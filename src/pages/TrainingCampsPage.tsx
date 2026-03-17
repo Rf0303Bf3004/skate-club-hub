@@ -32,8 +32,8 @@ const TrainingCampsPage: React.FC = () => {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
             <div><span className="text-muted-foreground">{t('club_ospitante')}</span><p className="font-medium text-foreground">{camp.club_ospitante}</p></div>
-            <div><span className="text-muted-foreground">{t('costo_diurno')}</span><p className="font-medium text-foreground tabular-nums">€{camp.costo_diurno}</p></div>
-            <div><span className="text-muted-foreground">{t('costo_completo')}</span><p className="font-medium text-foreground tabular-nums">€{camp.costo_completo}</p></div>
+            <div><span className="text-muted-foreground">{t('costo_diurno')}</span><p className="font-medium text-foreground tabular-nums">CHF {camp.costo_diurno}</p></div>
+            <div><span className="text-muted-foreground">{t('costo_completo')}</span><p className="font-medium text-foreground tabular-nums">CHF {camp.costo_completo}</p></div>
             <div><span className="text-muted-foreground">{t('iscrizioni')}</span><p className="font-medium text-foreground tabular-nums">{camp.iscrizioni.length}</p></div>
           </div>
           {camp.iscrizioni.length > 0 && (

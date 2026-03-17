@@ -77,7 +77,7 @@ const DashboardPage: React.FC = () => {
           icon={<Trophy className="w-5 h-5" />}
           subtitle={next_gara ? t('countdown_giorni', String(days_until(next_gara.data))) : undefined}
         />
-        <KPICard title={t('fatture_scadenza')} value={`€${totale_fatture.toLocaleString()}`} icon={<CreditCard className="w-5 h-5" />} highlight />
+        <KPICard title={t('fatture_scadenza')} value={`CHF ${totale_fatture.toLocaleString()}`} icon={<CreditCard className="w-5 h-5" />} highlight />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">

@@ -102,7 +102,7 @@ const PrivateLessonsPage: React.FC = () => {
                   <td className="px-4 py-3 font-medium text-foreground">{get_istruttore_name_from_list(istruttori, l.istruttore_id)}</td>
                   <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{l.atleti_ids.map((id: string) => get_atleta_name_from_list(atleti, id)).join(', ')}</td>
                   <td className="px-4 py-3 tabular-nums text-muted-foreground">{l.ora_inizio}-{l.ora_fine}</td>
-                  <td className="px-4 py-3 text-right tabular-nums font-medium text-foreground">€{l.costo}</td>
+                  <td className="px-4 py-3 text-right tabular-nums font-medium text-foreground">CHF {l.costo}</td>
                 </tr>
               ))}
             </tbody>

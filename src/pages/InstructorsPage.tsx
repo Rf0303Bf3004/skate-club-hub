@@ -35,7 +35,7 @@ const InstructorsPage: React.FC = () => {
             </div>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between"><span className="text-muted-foreground">{t('telefono')}</span><span className="text-foreground">{i.telefono}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">{t('costo_minuto')}</span><span className="text-foreground tabular-nums">€{i.costo_minuto.toFixed(2)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">{t('costo_minuto')}</span><span className="text-foreground tabular-nums">CHF {i.costo_minuto.toFixed(2)}</span></div>
             </div>
             <div className="mt-4">
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">{t('disponibilita')}</p>
