@@ -552,7 +552,7 @@ const PrivateLessonsPage: React.FC = () => {
                         className={`rounded-md px-2 py-1.5 text-xs transition-colors ${
                           slot.status === "libero"
                             ? "bg-success/10 hover:bg-success/20 cursor-pointer text-success"
-                            : "bg-accent/10 text-accent cursor-default"
+                            : "bg-accent/10 text-accent cursor-pointer hover:bg-destructive/10"
                         }`}
                       >
                         <span className="font-medium tabular-nums">{slot.time}</span>
