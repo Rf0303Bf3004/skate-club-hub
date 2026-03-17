@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useI18n } from '@/lib/i18n';
-import { mock_gare, get_atleta_name, days_until } from '@/lib/mock-data';
+import { use_gare, use_atleti, get_atleta_name_from_list } from '@/hooks/use-supabase-data';
+import { days_until } from '@/lib/mock-data';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -8,9 +9,15 @@ import { Plus, ArrowLeft, MapPin, Calendar } from 'lucide-react';
 
 const CompetitionsPage: React.FC = () => {
   const { t } = useI18n();
+  const { data: gare = [], isLoading } = use_gare();
+  const { data: atleti = [] } = use_atleti();
   const [selected_id, set_selected_id] = useState<string | null>(null);
 
-  const selected = mock_gare.find(g => g.id === selected_id);
+  const selected = gare.find((g: any) => g.id === selected_id);
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
+  }
 
   if (selected) {
     return (
@@ -52,9 +59,9 @@ const CompetitionsPage: React.FC = () => {
                   <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('medaglia')}</th>
                 </tr></thead>
                 <tbody>
-                  {selected.atleti_iscritti.map(ai => (
+                  {selected.atleti_iscritti.map((ai: any) => (
                     <tr key={ai.atleta_id} className="border-b border-border/50">
-                      <td className="px-4 py-3 font-medium text-foreground">{get_atleta_name(ai.atleta_id)}</td>
+                      <td className="px-4 py-3 font-medium text-foreground">{get_atleta_name_from_list(atleti, ai.atleta_id)}</td>
                       <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{ai.punteggio ?? '—'}</td>
                       <td className="px-4 py-3 text-center tabular-nums text-muted-foreground">{ai.posizione ?? '—'}</td>
                       <td className="px-4 py-3 text-center">
@@ -89,7 +96,7 @@ const CompetitionsPage: React.FC = () => {
               <th className="text-right px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">{t('costo_iscrizione')}</th>
             </tr></thead>
             <tbody>
-              {mock_gare.map(g => {
+              {gare.map((g: any) => {
                 const d = days_until(g.data);
                 return (
                   <tr key={g.id} onClick={() => set_selected_id(g.id)} className="border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors">

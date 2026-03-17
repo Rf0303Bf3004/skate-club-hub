@@ -1,22 +1,28 @@
 import React from 'react';
 import { useI18n } from '@/lib/i18n';
-import { mock_comunicazioni, mock_corsi } from '@/lib/mock-data';
+import { use_comunicazioni, use_corsi } from '@/hooks/use-supabase-data';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, MessageSquare } from 'lucide-react';
 
 const CommunicationsPage: React.FC = () => {
   const { t } = useI18n();
+  const { data: comunicazioni = [], isLoading } = use_comunicazioni();
+  const { data: corsi = [] } = use_corsi();
 
-  const get_destinatari_label = (c: typeof mock_comunicazioni[0]) => {
+  const get_destinatari_label = (c: any) => {
     if (c.tipo_destinatari === 'tutti') return t('tutti');
     if (c.tipo_destinatari === 'solo_istruttori') return t('solo_istruttori');
     if (c.tipo_destinatari === 'per_corso') {
-      const corso = mock_corsi.find(co => co.id === c.corso_id);
+      const corso = corsi.find((co: any) => co.id === c.corso_id);
       return corso ? corso.nome : t('per_corso');
     }
     return t('per_atleta');
   };
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -26,7 +32,7 @@ const CommunicationsPage: React.FC = () => {
       </div>
 
       <div className="space-y-4">
-        {mock_comunicazioni.map(c => (
+        {comunicazioni.map((c: any) => (
           <div key={c.id} className="bg-card rounded-xl shadow-card p-5 hover:shadow-card-hover transition-shadow">
             <div className="flex items-start justify-between gap-4">
               <div className="flex gap-3">
@@ -37,7 +43,7 @@ const CommunicationsPage: React.FC = () => {
                 </div>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-xs tabular-nums text-muted-foreground">{new Date(c.data).toLocaleDateString('it-CH')}</p>
+                <p className="text-xs tabular-nums text-muted-foreground">{c.data ? new Date(c.data).toLocaleDateString('it-CH') : ''}</p>
                 <Badge variant="secondary" className="text-xs mt-1">{get_destinatari_label(c)}</Badge>
               </div>
             </div>

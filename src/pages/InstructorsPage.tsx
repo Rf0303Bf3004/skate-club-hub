@@ -1,13 +1,18 @@
 import React from 'react';
 import { useI18n } from '@/lib/i18n';
-import { mock_istruttori } from '@/lib/mock-data';
+import { use_istruttori } from '@/hooks/use-supabase-data';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus } from 'lucide-react';
 
 const InstructorsPage: React.FC = () => {
   const { t } = useI18n();
+  const { data: istruttori = [], isLoading } = use_istruttori();
   const days = ['lunedi', 'martedi', 'mercoledi', 'giovedi', 'venerdi', 'sabato', 'domenica'];
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -16,7 +21,7 @@ const InstructorsPage: React.FC = () => {
         <Button className="bg-primary hover:bg-primary/90"><Plus className="w-4 h-4 mr-2" /> {t('nuovo_istruttore')}</Button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {mock_istruttori.map(i => (
+        {istruttori.map((i: any) => (
           <div key={i.id} className="bg-card rounded-xl shadow-card p-5 hover:shadow-card-hover transition-shadow">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">

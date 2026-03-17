@@ -1,12 +1,17 @@
 import React from 'react';
 import { useI18n } from '@/lib/i18n';
-import { mock_stagioni } from '@/lib/mock-data';
+import { use_stagioni } from '@/hooks/use-supabase-data';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus } from 'lucide-react';
 
 const SeasonsPage: React.FC = () => {
   const { t } = useI18n();
+  const { data: stagioni = [], isLoading } = use_stagioni();
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -24,7 +29,7 @@ const SeasonsPage: React.FC = () => {
             <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('stato')}</th>
           </tr></thead>
           <tbody>
-            {mock_stagioni.map(s => (
+            {stagioni.map((s: any) => (
               <tr key={s.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
                 <td className="px-4 py-3 font-medium text-foreground">{s.nome}</td>
                 <td className="px-4 py-3"><Badge variant="secondary" className="text-xs">{t(s.tipo)}</Badge></td>
