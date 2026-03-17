@@ -153,7 +153,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                   return (
                     <tr key={g.id} className="border-b border-border/50">
                       <td className="px-4 py-3 font-medium text-foreground">{g.nome}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{new Date(g.data).toLocaleDateString('it-CH')}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{new Date(g.data + 'T00:00:00').toLocaleDateString('it-CH')}</td>
                       <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{entry.punteggio ?? '—'}</td>
                       <td className="px-4 py-3 text-center tabular-nums text-muted-foreground">{entry.posizione ?? '—'}</td>
                       <td className="px-4 py-3 text-center">{entry.medaglia ? <MedalBadge tipo={entry.medaglia} /> : '—'}</td>
