@@ -308,6 +308,19 @@ const PrivateLessonsPage: React.FC = () => {
   const [week_offset, set_week_offset] = useState(0);
   const [form_open, set_form_open] = useState(false);
   const [form_data, set_form_data] = useState<Record<string, any>>({});
+  const [cancel_lesson_id, set_cancel_lesson_id] = useState<string | null>(null);
+
+  const handle_cancel_confirm = useCallback(async () => {
+    if (!cancel_lesson_id) return;
+    try {
+      await annulla.mutateAsync(cancel_lesson_id);
+      toast({ title: "Lezione annullata" });
+    } catch {
+      toast({ title: "Errore nell'annullamento", variant: "destructive" });
+    } finally {
+      set_cancel_lesson_id(null);
+    }
+  }, [cancel_lesson_id, annulla]);
 
   const week_start = useMemo(() => {
     const d = get_week_start(new Date());
