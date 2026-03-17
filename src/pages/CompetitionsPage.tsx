@@ -44,8 +44,8 @@ const CompetitionsPage: React.FC = () => {
               <InfoRow label={t('club_ospitante')} value={selected.club_ospitante} />
               <InfoRow label={t('livello_minimo')} value={t(selected.livello_minimo)} />
               <InfoRow label={t('carriera')} value={selected.carriera} />
-              <InfoRow label={t('costo_iscrizione')} value={`€${selected.costo_iscrizione}`} />
-              <InfoRow label={t('costo_accompagnamento')} value={`€${selected.costo_accompagnamento}`} />
+              <InfoRow label={t('costo_iscrizione')} value={`CHF ${selected.costo_iscrizione}`} />
+              <InfoRow label={t('costo_accompagnamento')} value={`CHF ${selected.costo_accompagnamento}`} />
               {selected.note && <InfoRow label={t('note')} value={selected.note} />}
             </div>
           </TabsContent>
