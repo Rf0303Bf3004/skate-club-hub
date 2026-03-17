@@ -1,6 +1,66 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, DEMO_CLUB_ID } from '@/lib/supabase';
 
+const GIORNI_DB = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'] as const;
+const GARA_LIVELLI_DB = ['Pulcini', 'Stellina 1', 'Stellina 2', 'Stellina 3', 'Stellina 4', 'Interbronzo', 'Bronzo', 'Interargento', 'Argento', 'Interoro', 'Oro'] as const;
+const GARA_CARRIERE_DB = ['Artistica', 'Stile', 'Entrambe'] as const;
+
+function normalize_day(value?: string) {
+  if (!value) return 'Lunedì';
+  const normalized = value.trim().toLowerCase();
+  const match = GIORNI_DB.find(day => day.toLowerCase() === normalized);
+  return match ?? 'Lunedì';
+}
+
+function normalize_gara_livello(value?: string) {
+  if (!value) return 'Pulcini';
+  const normalized = value.trim().toLowerCase().replace(/[_-]+/g, ' ');
+  const aliases: Record<string, string> = {
+    pulcini: 'Pulcini',
+    'stellina 1': 'Stellina 1',
+    stellina1: 'Stellina 1',
+    'stellina 2': 'Stellina 2',
+    stellina2: 'Stellina 2',
+    'stellina 3': 'Stellina 3',
+    stellina3: 'Stellina 3',
+    'stellina 4': 'Stellina 4',
+    stellina4: 'Stellina 4',
+    interbronzo: 'Interbronzo',
+    bronzo: 'Bronzo',
+    interargento: 'Interargento',
+    argento: 'Argento',
+    interoro: 'Interoro',
+    oro: 'Oro',
+  };
+  return aliases[normalized] ?? GARA_LIVELLI_DB.find(level => level.toLowerCase() === normalized) ?? 'Pulcini';
+}
+
+function normalize_gara_carriera(value?: string) {
+  if (!value) return 'Entrambe';
+  const normalized = value.trim().toLowerCase();
+  return GARA_CARRIERE_DB.find(item => item.toLowerCase() === normalized) ?? 'Entrambe';
+}
+
+function normalize_time(value?: string, fallback = '09:00:00') {
+  if (!value) return fallback;
+  const trimmed = value.trim();
+  return /^\d{2}:\d{2}$/.test(trimmed) ? `${trimmed}:00` : trimmed;
+}
+
+async function insert_lezioni_private_atlete(lezioni: { id: string }[], atleti_ids: string[], costo_totale: number) {
+  if (!lezioni.length || !atleti_ids.length) return;
+  const quota = costo_totale / atleti_ids.length;
+  const rows = lezioni.flatMap(lezione =>
+    atleti_ids.map(atleta_id => ({
+      lezione_id: lezione.id,
+      atleta_id,
+      quota_costo: quota,
+    })),
+  );
+  const { error } = await supabase.from('lezioni_private_atlete').insert(rows);
+  if (error) throw error;
+}
+
 export function use_upsert_atleta() {
   const qc = useQueryClient();
   return useMutation({
@@ -73,15 +133,16 @@ export function use_upsert_corso() {
         club_id: DEMO_CLUB_ID,
         nome: data.nome,
         tipo: data.tipo || '',
-        giorno: data.giorno || 'Lunedì',
-        ora_inizio: data.ora_inizio || '08:00',
-        ora_fine: data.ora_fine || '09:00',
+        giorno: normalize_day(data.giorno),
+        ora_inizio: normalize_time(data.ora_inizio, '08:00:00'),
+        ora_fine: normalize_time(data.ora_fine, '09:00:00'),
         costo_mensile: data.costo_mensile || 0,
         costo_annuale: data.costo_annuale || 0,
         attivo: data.attivo !== false,
         note: data.note || '',
       };
       if (data.stagione_id) payload.stagione_id = data.stagione_id;
+
       let corso_id = data.id;
       if (data.id) {
         const { error } = await supabase.from('corsi').update(payload).eq('id', data.id);
@@ -91,16 +152,23 @@ export function use_upsert_corso() {
         if (error) throw error;
         corso_id = inserted.id;
       }
-      // Update istruttori
+
       if (data.istruttori_ids) {
-        await supabase.from('corsi_istruttori').delete().eq('corso_id', corso_id);
-        if (data.istruttori_ids.length > 0) {
-          const rows = data.istruttori_ids.map((istruttore_id: string) => ({ corso_id, istruttore_id }));
-          await supabase.from('corsi_istruttori').insert(rows);
+        const unique_ids = Array.from(new Set((data.istruttori_ids as string[]).filter(Boolean)));
+        const { error: delete_error } = await supabase.from('corsi_istruttori').delete().eq('corso_id', corso_id);
+        if (delete_error) throw delete_error;
+        if (unique_ids.length > 0) {
+          const rows = unique_ids.map(istruttore_id => ({ corso_id, istruttore_id }));
+          const { error: insert_error } = await supabase
+            .from('corsi_istruttori')
+            .upsert(rows, { onConflict: 'corso_id,istruttore_id' });
+          if (insert_error) throw insert_error;
         }
       }
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['corsi'] }),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ['corsi'] });
+    },
   });
 }
 
@@ -112,11 +180,12 @@ export function use_upsert_gara() {
         club_id: DEMO_CLUB_ID,
         nome: data.nome,
         data: data.data,
-        ora: data.ora || '09:00',
+        ora: normalize_time(data.ora, '09:00:00'),
         club_ospitante: data.club_ospitante || '',
+        indirizzo_club_ospitante: data.indirizzo_club_ospitante || '',
         localita: data.localita || '',
-        livello_minimo: data.livello_minimo || 'pulcini',
-        carriera: data.carriera || '',
+        livello_minimo: normalize_gara_livello(data.livello_minimo),
+        carriera: normalize_gara_carriera(data.carriera),
         costo_iscrizione: data.costo_iscrizione || 0,
         costo_accompagnamento: data.costo_accompagnamento || 0,
         note: data.note || '',
@@ -158,29 +227,60 @@ export function use_crea_lezione_privata() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: any) => {
-      const { data: lezione, error } = await supabase.from('lezioni_private').insert({
+      const base_payload = {
         club_id: DEMO_CLUB_ID,
         istruttore_id: data.istruttore_id,
-        data: data.data,
-        ora_inizio: data.ora_inizio,
-        ora_fine: data.ora_fine,
+        ora_inizio: normalize_time(data.ora_inizio, '00:00:00'),
+        ora_fine: normalize_time(data.ora_fine, '00:20:00'),
         durata_minuti: data.durata_minuti || 20,
-        ricorrente: data.ricorrente || false,
+        ricorrente: !!data.ricorrente,
         condivisa: (data.atleti_ids?.length || 0) > 1,
         costo_totale: data.costo_totale || 0,
         annullata: false,
         note: data.note || '',
-      }).select('id').single();
-      if (error) throw error;
-      if (data.atleti_ids?.length > 0) {
-        const quota = (data.costo_totale || 0) / data.atleti_ids.length;
-        const rows = data.atleti_ids.map((atleta_id: string) => ({
-          lezione_id: lezione.id,
-          atleta_id,
-          quota_costo: quota,
-        }));
-        await supabase.from('lezioni_private_atlete').insert(rows);
+      };
+
+      if (data.ricorrente) {
+        const { data: stagione, error: stagione_error } = await supabase
+          .from('stagioni')
+          .select('id, data_fine')
+          .eq('club_id', DEMO_CLUB_ID)
+          .eq('attiva', true)
+          .eq('tipo', 'Regolare')
+          .order('data_fine', { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        if (stagione_error) throw stagione_error;
+        if (!stagione?.data_fine) throw new Error('Nessuna stagione Regolare attiva trovata');
+
+        const start_date = new Date(`${data.data}T00:00:00`);
+        const end_date = new Date(`${stagione.data_fine}T00:00:00`);
+        const lesson_rows: any[] = [];
+
+        for (const current = new Date(start_date); current <= end_date; current.setDate(current.getDate() + 7)) {
+          lesson_rows.push({
+            ...base_payload,
+            data: current.toISOString().split('T')[0],
+          });
+        }
+
+        const { data: inserted, error } = await supabase
+          .from('lezioni_private')
+          .insert(lesson_rows)
+          .select('id');
+        if (error) throw error;
+        await insert_lezioni_private_atlete(inserted ?? [], data.atleti_ids || [], data.costo_totale || 0);
+        return inserted;
       }
+
+      const { data: lezione, error } = await supabase
+        .from('lezioni_private')
+        .insert({ ...base_payload, data: data.data })
+        .select('id')
+        .single();
+      if (error) throw error;
+      await insert_lezioni_private_atlete(lezione ? [lezione] : [], data.atleti_ids || [], data.costo_totale || 0);
+      return lezione;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['lezioni_private'] }),
   });
@@ -204,11 +304,10 @@ export function use_genera_fatture_mensili() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      // Get active courses with enrollments
       const { data: corsi } = await supabase.from('corsi').select('*').eq('club_id', DEMO_CLUB_ID).eq('attivo', true);
       const { data: iscrizioni } = await supabase.from('iscrizioni_corsi').select('*').eq('attiva', true);
       const { data: fatture_esistenti } = await supabase.from('fatture').select('numero').eq('club_id', DEMO_CLUB_ID).order('numero', { ascending: false }).limit(1);
-      
+
       let next_num = 1;
       if (fatture_esistenti && fatture_esistenti.length > 0) {
         const match = fatture_esistenti[0].numero?.match(/(\d+)/);
@@ -334,10 +433,8 @@ export function use_save_disponibilita() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: { istruttore_id: string; disponibilita: Record<string, { ora_inizio: string; ora_fine: string }[]> }) => {
-      // Delete all existing
       const { error: del_err } = await supabase.from('disponibilita_istruttori').delete().eq('istruttore_id', data.istruttore_id);
       if (del_err) throw del_err;
-      // Insert new
       const rows: any[] = [];
       for (const [giorno, slots] of Object.entries(data.disponibilita)) {
         for (const s of slots) {
