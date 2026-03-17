@@ -69,20 +69,19 @@ export function use_upsert_corso() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: any) => {
-      const payload = {
+      const payload: any = {
         club_id: DEMO_CLUB_ID,
         nome: data.nome,
         tipo: data.tipo || '',
-        giorno: data.giorno || 'lunedi',
+        giorno: data.giorno || 'Lunedì',
         ora_inizio: data.ora_inizio || '08:00',
         ora_fine: data.ora_fine || '09:00',
-        durata_minuti: data.durata_minuti || 60,
         costo_mensile: data.costo_mensile || 0,
         costo_annuale: data.costo_annuale || 0,
         attivo: data.attivo !== false,
         note: data.note || '',
-        stagione_id: data.stagione_id || null,
       };
+      if (data.stagione_id) payload.stagione_id = data.stagione_id;
       let corso_id = data.id;
       if (data.id) {
         const { error } = await supabase.from('corsi').update(payload).eq('id', data.id);
