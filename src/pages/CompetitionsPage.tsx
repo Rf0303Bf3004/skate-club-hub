@@ -98,7 +98,7 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
       if (error) throw error;
 
-      await queryClient.invalidateQueries({ queryKey: ["gare_calendario"] });
+      await queryClient.invalidateQueries({ queryKey: ["gare"] });
       toast({ title: "Gara creata con successo!" });
       onClose();
     } catch (err: any) {
