@@ -545,7 +545,10 @@ const PrivateLessonsPage: React.FC = () => {
                     {slots.map((slot, i) => (
                       <div
                         key={i}
-                        onClick={() => slot.status === "libero" && open_slot(slot.date, slot.time)}
+                        onClick={() => {
+                          if (slot.status === "libero") open_slot(slot.date, slot.time);
+                          else if (slot.status === "occupato" && slot.lesson?.id) set_cancel_lesson_id(slot.lesson.id);
+                        }}
                         className={`rounded-md px-2 py-1.5 text-xs transition-colors ${
                           slot.status === "libero"
                             ? "bg-success/10 hover:bg-success/20 cursor-pointer text-success"
