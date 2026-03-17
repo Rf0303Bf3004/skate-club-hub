@@ -32,7 +32,7 @@ const CompetitionsPage: React.FC = () => {
     { key: 'indirizzo_club_ospitante', label: 'Indirizzo club ospitante' },
     { key: 'localita', label: t('luogo') },
     { key: 'livello_minimo', label: t('livello_minimo'), type: 'select', options: levels.map(l => ({ value: l, label: t(l) })) },
-    { key: 'carriera', label: t('carriera') },
+    { key: 'carriera', label: t('carriera'), type: 'select', options: [{ value: 'Artistica', label: 'Artistica' }, { value: 'Stile', label: 'Stile' }, { value: 'Entrambe', label: 'Entrambe' }] },
     { key: 'costo_iscrizione', label: t('costo_iscrizione'), type: 'number' },
     { key: 'costo_accompagnamento', label: t('costo_accompagnamento'), type: 'number' },
     { key: 'note', label: t('note'), type: 'textarea' },
