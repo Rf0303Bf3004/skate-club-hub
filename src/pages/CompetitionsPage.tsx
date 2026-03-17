@@ -12,7 +12,8 @@ import { toast } from "@/hooks/use-toast";
 
 const CLUB_ID = "00000000-0000-0000-0000-000000000002";
 
-const LIVELLI = ["base", "intermedio", "avanzato", "agonistico"];
+const LIVELLI = ["Pulcini", "Stellina 1", "Stellina 2", "Interbronzo", "Bronzo", "Argento", "Oro"];
+const CARRIERE = ["Artistica", "Stile", "Entrambe"];
 
 interface GaraFormData {
   nome: string;
@@ -31,8 +32,8 @@ const empty_form = (): GaraFormData => ({
   data: "",
   localita: "",
   club_ospitante: "",
-  livello_minimo: "base",
-  carriera: "",
+  livello_minimo: "Pulcini",
+  carriera: "Artistica",
   costo_iscrizione: "0",
   costo_accompagnamento: "0",
   note: "",
@@ -62,7 +63,7 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     set_saving(true);
     try {
       const { error } = await supabase
-        .from("gare")
+        .from("gare_calendario")
         .insert({
           club_id: CLUB_ID,
           nome: form.nome.trim(),
@@ -79,7 +80,7 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
       if (error) throw error;
 
-      await queryClient.invalidateQueries({ queryKey: ["gare"] });
+      await queryClient.invalidateQueries({ queryKey: ["gare_calendario"] });
       toast({ title: "Gara creata con successo!" });
       onClose();
     } catch (err: any) {
@@ -147,19 +148,19 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               <select name="livello_minimo" value={form.livello_minimo} onChange={handle_change} className="form-input">
                 {LIVELLI.map((l) => (
                   <option key={l} value={l}>
-                    {t(l)}
+                    {l}
                   </option>
                 ))}
               </select>
             </Field>
             <Field label={t("carriera")}>
-              <input
-                name="carriera"
-                value={form.carriera}
-                onChange={handle_change}
-                placeholder="es. Singolo Donne"
-                className="form-input"
-              />
+              <select name="carriera" value={form.carriera} onChange={handle_change} className="form-input">
+                {CARRIERE.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
             </Field>
           </div>
 
