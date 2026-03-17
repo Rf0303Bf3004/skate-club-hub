@@ -648,6 +648,18 @@ const PrivateLessonsPage: React.FC = () => {
           </div>
         )}
       </div>
+      <AlertDialog open={!!cancel_lesson_id} onOpenChange={(open) => !open && set_cancel_lesson_id(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Annullare questa lezione?</AlertDialogTitle>
+            <AlertDialogDescription>La lezione verrà segnata come annullata e lo slot tornerà libero.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>No, torna indietro</AlertDialogCancel>
+            <AlertDialogAction onClick={handle_cancel_confirm}>Sì, annulla lezione</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
