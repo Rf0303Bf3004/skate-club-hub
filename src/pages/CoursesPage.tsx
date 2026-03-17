@@ -44,7 +44,7 @@ const CoursesPage: React.FC = () => {
                   <td className="px-4 py-3 tabular-nums text-muted-foreground hidden sm:table-cell">{c.ora_inizio} - {c.ora_fine}</td>
                   <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{c.istruttori_ids.map((id: string) => get_istruttore_name_from_list(istruttori, id)).join(', ')}</td>
                   <td className="px-4 py-3 text-center tabular-nums font-medium text-foreground">{c.atleti_ids.length}</td>
-                  <td className="px-4 py-3 text-right tabular-nums text-muted-foreground hidden lg:table-cell">€{c.costo_mensile}</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-muted-foreground hidden lg:table-cell">CHF {c.costo_mensile}</td>
                   <td className="px-4 py-3 text-center"><span className={`inline-block w-2 h-2 rounded-full ${c.stato === 'attivo' ? 'bg-success' : 'bg-muted-foreground'}`} /></td>
                 </tr>
               ))}

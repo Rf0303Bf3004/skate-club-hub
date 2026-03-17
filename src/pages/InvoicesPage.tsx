@@ -53,7 +53,7 @@ const InvoicesPage: React.FC = () => {
                   <td className="px-4 py-3 font-medium tabular-nums text-foreground">{f.numero}</td>
                   <td className="px-4 py-3 text-foreground">{get_atleta_name_from_list(atleti, f.atleta_id)}</td>
                   <td className="px-4 py-3 text-muted-foreground hidden md:table-cell max-w-xs truncate">{f.descrizione}</td>
-                  <td className="px-4 py-3 text-right tabular-nums font-semibold text-foreground">€{f.importo}</td>
+                  <td className="px-4 py-3 text-right tabular-nums font-semibold text-foreground">CHF {f.importo}</td>
                   <td className="px-4 py-3 tabular-nums text-muted-foreground hidden sm:table-cell">{f.scadenza ? new Date(f.scadenza).toLocaleDateString('it-CH') : '—'}</td>
                   <td className="px-4 py-3 text-center">
                     <Badge variant={f.stato === 'pagata' ? 'default' : 'destructive'} className="text-xs">{t(f.stato)}</Badge>
