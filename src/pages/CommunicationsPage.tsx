@@ -61,7 +61,7 @@ const CommunicationsPage: React.FC = () => {
                 </div>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-xs tabular-nums text-muted-foreground">{c.data ? new Date(c.data).toLocaleDateString('it-CH') : ''}</p>
+                <p className="text-xs tabular-nums text-muted-foreground">{c.data ? new Date(c.data + 'T00:00:00').toLocaleDateString('it-CH') : ''}</p>
                 <Badge variant="secondary" className="text-xs mt-1">{get_destinatari_label(c)}</Badge>
               </div>
             </div>
