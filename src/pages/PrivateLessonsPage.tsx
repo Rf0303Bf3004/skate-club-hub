@@ -1,3 +1,4 @@
+// PrivateLessonsPage
 import React, { useState, useMemo, useCallback } from "react";
 import { useI18n } from "@/lib/i18n";
 import {
