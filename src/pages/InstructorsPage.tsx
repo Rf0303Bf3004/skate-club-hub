@@ -65,7 +65,20 @@ const InstructorsPage: React.FC = () => {
 
   const save_disponibilita = async () => {
     if (!selected_id) return;
-    await save_disp.mutateAsync({ istruttore_id: selected_id, disponibilita: disp_local });
+    // Deduplicate slots per day
+    const deduped: Record<string, { ora_inizio: string; ora_fine: string }[]> = {};
+    for (const [giorno, slots] of Object.entries(disp_local)) {
+      const seen = new Set<string>();
+      deduped[giorno] = [];
+      for (const s of slots) {
+        const key = `${s.ora_inizio}-${s.ora_fine}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        deduped[giorno].push(s);
+      }
+    }
+    set_disp_local(deduped);
+    await save_disp.mutateAsync({ istruttore_id: selected_id, disponibilita: deduped });
   };
 
   const selected = istruttori.find((i: any) => i.id === selected_id);

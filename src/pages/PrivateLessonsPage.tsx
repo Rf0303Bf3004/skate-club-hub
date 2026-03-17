@@ -1,14 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { useI18n } from '@/lib/i18n';
-import { use_lezioni_private, use_istruttori, use_atleti, get_istruttore_name_from_list, get_atleta_name_from_list } from '@/hooks/use-supabase-data';
+import { use_lezioni_private, use_istruttori, use_atleti, use_corsi, get_atleta_name_from_list } from '@/hooks/use-supabase-data';
 import { use_crea_lezione_privata, use_annulla_lezione } from '@/hooks/use-supabase-mutations';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import FormDialog, { FormField } from '@/components/forms/FormDialog';
 
 const GIORNI_SETTIMANA = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
-const GIORNO_TO_JS: Record<string, number> = { 'Lunedì': 1, 'Martedì': 2, 'Mercoledì': 3, 'Giovedì': 4, 'Venerdì': 5, 'Sabato': 6, 'Domenica': 0 };
 
 function get_week_start(d: Date): Date {
   const day = d.getDay();
@@ -32,11 +31,33 @@ function minutes_to_time(m: number): string {
   return `${Math.floor(m / 60).toString().padStart(2, '0')}:${(m % 60).toString().padStart(2, '0')}`;
 }
 
+/** Subtract intervals b from intervals a, returning remaining intervals */
+function subtract_intervals(
+  avail: { start: number; end: number }[],
+  busy: { start: number; end: number }[]
+): { start: number; end: number }[] {
+  let result = [...avail];
+  for (const b of busy) {
+    const next: { start: number; end: number }[] = [];
+    for (const a of result) {
+      if (b.end <= a.start || b.start >= a.end) {
+        next.push(a); // no overlap
+      } else {
+        if (a.start < b.start) next.push({ start: a.start, end: b.start });
+        if (a.end > b.end) next.push({ start: b.end, end: a.end });
+      }
+    }
+    result = next;
+  }
+  return result;
+}
+
 const PrivateLessonsPage: React.FC = () => {
   const { t } = useI18n();
   const { data: lezioni = [], isLoading } = use_lezioni_private();
   const { data: istruttori = [] } = use_istruttori();
   const { data: atleti = [] } = use_atleti();
+  const { data: corsi = [] } = use_corsi();
   const crea = use_crea_lezione_privata();
   const annulla = use_annulla_lezione();
   const [selected_istruttore, set_selected_istruttore] = useState<string>('');
@@ -60,17 +81,33 @@ const PrivateLessonsPage: React.FC = () => {
 
   const istruttore = istruttori.find((i: any) => i.id === selected_istruttore);
 
-  // Auto-select first instructor
   React.useEffect(() => {
     if (!selected_istruttore && istruttori.length > 0) {
       set_selected_istruttore(istruttori[0].id);
     }
   }, [istruttori, selected_istruttore]);
 
+  // Get course hours for the selected instructor per day of week
+  const corso_busy_by_day = useMemo(() => {
+    if (!selected_istruttore) return {};
+    const result: Record<string, { start: number; end: number }[]> = {};
+    for (const c of corsi) {
+      if (!c.istruttori_ids?.includes(selected_istruttore)) continue;
+      if (c.stato !== 'attivo') continue;
+      const giorno = c.giorno;
+      if (!giorno) continue;
+      if (!result[giorno]) result[giorno] = [];
+      const start = time_to_minutes(c.ora_inizio || '00:00');
+      const end = time_to_minutes(c.ora_fine || '00:00');
+      if (end > start) result[giorno].push({ start, end });
+    }
+    return result;
+  }, [corsi, selected_istruttore]);
+
   // Build slots for selected instructor
   const day_slots = useMemo(() => {
     if (!istruttore) return {};
-    const result: Record<number, { time: string; date: string; status: 'libero' | 'occupato'; lesson?: any }[]> = {};
+    const result: Record<number, { time: string; end_time: string; date: string; status: 'libero' | 'occupato'; lesson?: any }[]> = {};
 
     week_dates.forEach((date, dayIdx) => {
       const giorno = GIORNI_SETTIMANA[dayIdx];
@@ -78,30 +115,56 @@ const PrivateLessonsPage: React.FC = () => {
       const date_str = format_date(date);
       const slots: typeof result[0] = [];
 
-      for (const ds of disp_slots) {
-        const start = time_to_minutes(ds.ora_inizio);
-        const end = time_to_minutes(ds.ora_fine);
-        for (let m = start; m < end; m += 20) {
-          const time = minutes_to_time(m);
-          const lesson = lezioni.find((l: any) =>
-            l.istruttore_id === selected_istruttore &&
-            l.data === date_str &&
-            time_to_minutes(l.ora_inizio) <= m &&
-            time_to_minutes(l.ora_fine) > m &&
-            !l.annullata
-          );
-          slots.push({
-            time,
-            date: date_str,
-            status: lesson ? 'occupato' : 'libero',
-            lesson,
-          });
+      // Convert disponibilità to intervals
+      const avail_intervals = disp_slots.map((ds: any) => ({
+        start: time_to_minutes(ds.ora_inizio),
+        end: time_to_minutes(ds.ora_fine),
+      }));
+
+      // Subtract course hours
+      const busy = corso_busy_by_day[giorno] || [];
+      const free_intervals = subtract_intervals(avail_intervals, busy);
+
+      // Generate 20-min slots from free intervals
+      const free_slot_times = new Set<number>();
+      for (const interval of free_intervals) {
+        for (let m = interval.start; m + 20 <= interval.end; m += 20) {
+          free_slot_times.add(m);
         }
       }
+
+      // Also find booked lessons for this instructor on this date
+      const day_lessons = lezioni.filter((l: any) =>
+        l.istruttore_id === selected_istruttore &&
+        l.data === date_str &&
+        !l.annullata
+      );
+
+      // Add booked lesson slots
+      const all_slot_times = new Set(free_slot_times);
+      for (const l of day_lessons) {
+        const ls = time_to_minutes(l.ora_inizio);
+        all_slot_times.add(ls);
+      }
+
+      // Sort and build
+      const sorted = Array.from(all_slot_times).sort((a, b) => a - b);
+      for (const m of sorted) {
+        const time = minutes_to_time(m);
+        const lesson = day_lessons.find((l: any) => time_to_minutes(l.ora_inizio) === m);
+        slots.push({
+          time,
+          end_time: minutes_to_time(m + 20),
+          date: date_str,
+          status: lesson ? 'occupato' : 'libero',
+          lesson,
+        });
+      }
+
       result[dayIdx] = slots;
     });
     return result;
-  }, [istruttore, week_dates, lezioni, selected_istruttore]);
+  }, [istruttore, week_dates, lezioni, selected_istruttore, corso_busy_by_day]);
 
   const fields: FormField[] = [
     { key: 'atleti_ids', label: t('seleziona_atleta'), type: 'multi-select', options: atleti.map((a: any) => ({ value: a.id, label: `${a.nome} ${a.cognome}` })) },
@@ -125,7 +188,6 @@ const PrivateLessonsPage: React.FC = () => {
 
   const handle_submit = async () => { await crea.mutateAsync(form_data); set_form_open(false); };
 
-  // Week lessons for the list at bottom
   const week_lessons = useMemo(() => {
     const start_str = format_date(week_start);
     const end = new Date(week_start);
@@ -149,7 +211,6 @@ const PrivateLessonsPage: React.FC = () => {
         <h1 className="text-xl font-bold tracking-tight text-foreground">{t('lezioni_private')}</h1>
       </div>
 
-      {/* Controls: instructor + week */}
       <div className="flex flex-wrap items-center gap-4">
         <div className="w-64">
           <Select value={selected_istruttore} onValueChange={set_selected_istruttore}>
@@ -169,10 +230,9 @@ const PrivateLessonsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Agenda grid */}
       {istruttore ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          {GIORNI_SETTIMANA.slice(0, 6).map((giorno, dayIdx) => {
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
+          {GIORNI_SETTIMANA.map((giorno, dayIdx) => {
             const slots = day_slots[dayIdx] || [];
             const date = week_dates[dayIdx];
             const is_today = format_date(date) === format_date(new Date());
@@ -212,13 +272,11 @@ const PrivateLessonsPage: React.FC = () => {
         <div className="bg-card rounded-xl shadow-card p-8 text-center text-muted-foreground">Seleziona un istruttore</div>
       )}
 
-      {/* Legend */}
       <div className="flex items-center gap-6 text-xs text-muted-foreground">
         <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-success/20" /> Libero</div>
         <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-accent/20" /> Occupato</div>
       </div>
 
-      {/* Week lessons list */}
       {week_lessons.length > 0 && (
         <div>
           <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">{t('lezioni')} della settimana</h2>
