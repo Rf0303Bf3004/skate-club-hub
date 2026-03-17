@@ -12,13 +12,27 @@ import { toast } from "@/hooks/use-toast";
 
 const CLUB_ID = "00000000-0000-0000-0000-000000000002";
 
-const LIVELLI = ["Pulcini", "Stellina 1", "Stellina 2", "Interbronzo", "Bronzo", "Argento", "Oro"];
+const LIVELLI = [
+  "Pulcini",
+  "Stellina 1",
+  "Stellina 2",
+  "Stellina 3",
+  "Stellina 4",
+  "Interbronzo",
+  "Bronzo",
+  "Interargento",
+  "Argento",
+  "Interoro",
+  "Oro",
+];
 const CARRIERE = ["Artistica", "Stile", "Entrambe"];
 
 interface GaraFormData {
   nome: string;
   data: string;
+  ora: string;
   localita: string;
+  indirizzo: string;
   club_ospitante: string;
   livello_minimo: string;
   carriera: string;
@@ -30,7 +44,9 @@ interface GaraFormData {
 const empty_form = (): GaraFormData => ({
   nome: "",
   data: "",
+  ora: "",
   localita: "",
+  indirizzo: "",
   club_ospitante: "",
   livello_minimo: "Pulcini",
   carriera: "Artistica",
@@ -68,10 +84,12 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           club_id: CLUB_ID,
           nome: form.nome.trim(),
           data: form.data,
+          ora: form.ora || null,
           localita: form.localita.trim(),
+          indirizzo: form.indirizzo.trim() || null,
           club_ospitante: form.club_ospitante.trim() || null,
           livello_minimo: form.livello_minimo,
-          carriera: form.carriera.trim() || null,
+          carriera: form.carriera,
           costo_iscrizione: parseFloat(form.costo_iscrizione) || 0,
           costo_accompagnamento: parseFloat(form.costo_accompagnamento) || 0,
           note: form.note.trim() || null,
@@ -122,16 +140,30 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             <Field label={`${t("data")} *`}>
               <input name="data" type="date" value={form.data} onChange={handle_change} className="form-input" />
             </Field>
-            <Field label={`${t("luogo")} *`}>
-              <input
-                name="localita"
-                value={form.localita}
-                onChange={handle_change}
-                placeholder="es. Milano"
-                className="form-input"
-              />
+            <Field label={t("ora")}>
+              <input name="ora" type="time" value={form.ora} onChange={handle_change} className="form-input" />
             </Field>
           </div>
+
+          <Field label={`${t("luogo")} *`}>
+            <input
+              name="localita"
+              value={form.localita}
+              onChange={handle_change}
+              placeholder="es. Lugano"
+              className="form-input"
+            />
+          </Field>
+
+          <Field label={t("indirizzo")}>
+            <input
+              name="indirizzo"
+              value={form.indirizzo}
+              onChange={handle_change}
+              placeholder="es. Via Trevano 12, Lugano"
+              className="form-input"
+            />
+          </Field>
 
           <Field label={t("club_ospitante")}>
             <input
@@ -167,7 +199,7 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           <div className="grid grid-cols-2 gap-4">
             <Field label={t("costo_iscrizione")}>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">€</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">CHF </span>
                 <input
                   name="costo_iscrizione"
                   type="number"
@@ -181,7 +213,7 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             </Field>
             <Field label={t("costo_accompagnamento")}>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">€</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">CHF </span>
                 <input
                   name="costo_accompagnamento"
                   type="number"
@@ -284,10 +316,37 @@ const CompetitionsPage: React.FC = () => {
               <InfoRow label={t("club_ospitante")} value={selected.club_ospitante} />
               <InfoRow label={t("livello_minimo")} value={t(selected.livello_minimo)} />
               <InfoRow label={t("carriera")} value={selected.carriera} />
-              <InfoRow label={t("costo_iscrizione")} value={`€${selected.costo_iscrizione}`} />
-              <InfoRow label={t("costo_accompagnamento")} value={`€${selected.costo_accompagnamento}`} />
+              <InfoRow label={t("costo_iscrizione")} value={`CHF ${selected.costo_iscrizione}`} />
+              <InfoRow label={t("costo_accompagnamento")} value={`CHF ${selected.costo_accompagnamento}`} />
               {selected.note && <InfoRow label={t("note")} value={selected.note} />}
             </div>
+            {selected.indirizzo && (
+              <div className="mt-6 max-w-lg space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5" /> {t("indirizzo")}
+                </p>
+                <p className="text-sm text-foreground mb-3">{selected.indirizzo}</p>
+                <div className="rounded-xl overflow-hidden border border-border shadow-card" style={{ height: 260 }}>
+                  <iframe
+                    title="mappa"
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    src={`https://maps.google.com/maps?q=${encodeURIComponent(selected.indirizzo)}&output=embed`}
+                  />
+                </div>
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selected.indirizzo)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-primary underline"
+                >
+                  Apri in Google Maps →
+                </a>
+              </div>
+            )}
           </TabsContent>
           <TabsContent value="atleti" className="mt-6">
             <div className="bg-card rounded-xl shadow-card overflow-hidden">
@@ -400,7 +459,7 @@ const CompetitionsPage: React.FC = () => {
                           {g.atleti_iscritti?.length ?? 0}
                         </td>
                         <td className="px-4 py-3 text-right tabular-nums text-muted-foreground hidden lg:table-cell">
-                          €{g.costo_iscrizione}
+                          CHF {g.costo_iscrizione}
                         </td>
                       </tr>
                     );
