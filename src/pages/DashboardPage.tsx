@@ -107,7 +107,7 @@ const DashboardPage: React.FC = () => {
               <div key={gara.id} className="flex gap-4 items-start">
                 <div className="w-12 text-center">
                   <span className="text-xs font-medium tabular-nums text-muted-foreground">
-                    {new Date(gara.data).toLocaleDateString('it-CH', { day: '2-digit', month: 'short' })}
+                    {new Date(gara.data + 'T00:00:00').toLocaleDateString('it-CH', { day: '2-digit', month: 'short' })}
                   </span>
                 </div>
                 <div className="flex-1 p-3 rounded-lg bg-muted/50">

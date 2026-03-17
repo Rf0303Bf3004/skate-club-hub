@@ -246,7 +246,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
               <tbody>
                 {athlete_lezioni.map((l: any) => (
                   <tr key={l.id} className="border-b border-border/50">
-                    <td className="px-4 py-3 text-muted-foreground">{new Date(l.data).toLocaleDateString('it-CH')}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{new Date(l.data + 'T00:00:00').toLocaleDateString('it-CH')}</td>
                     <td className="px-4 py-3 font-medium text-foreground">{get_istruttore_name_from_list(istruttori, l.istruttore_id)}</td>
                     <td className="px-4 py-3 tabular-nums text-muted-foreground">{l.ora_inizio} - {l.ora_fine}</td>
                     <td className="px-4 py-3 text-right tabular-nums font-medium text-foreground">CHF {l.costo}</td>

@@ -447,7 +447,7 @@ const CompetitionsPage: React.FC = () => {
                           {d > 0 && <p className="text-xs text-accent">{t("countdown_giorni", String(d))}</p>}
                         </td>
                         <td className="px-4 py-3 tabular-nums text-muted-foreground">
-                          {new Date(g.data).toLocaleDateString("it-CH")}
+                          {new Date(g.data + "T00:00:00").toLocaleDateString("it-CH")}
                         </td>
                         <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{g.localita}</td>
                         <td className="px-4 py-3 hidden md:table-cell">
