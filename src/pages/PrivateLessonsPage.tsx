@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { useI18n } from "@/lib/i18n";
 import {
   use_lezioni_private,
@@ -12,6 +12,10 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, X, Search, Check } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const GIORNI_SETTIMANA = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
 
@@ -304,6 +308,19 @@ const PrivateLessonsPage: React.FC = () => {
   const [week_offset, set_week_offset] = useState(0);
   const [form_open, set_form_open] = useState(false);
   const [form_data, set_form_data] = useState<Record<string, any>>({});
+  const [cancel_lesson_id, set_cancel_lesson_id] = useState<string | null>(null);
+
+  const handle_cancel_confirm = useCallback(async () => {
+    if (!cancel_lesson_id) return;
+    try {
+      await annulla.mutateAsync(cancel_lesson_id);
+      toast({ title: "Lezione annullata" });
+    } catch {
+      toast({ title: "Errore nell'annullamento", variant: "destructive" });
+    } finally {
+      set_cancel_lesson_id(null);
+    }
+  }, [cancel_lesson_id, annulla]);
 
   const week_start = useMemo(() => {
     const d = get_week_start(new Date());
@@ -528,11 +545,14 @@ const PrivateLessonsPage: React.FC = () => {
                     {slots.map((slot, i) => (
                       <div
                         key={i}
-                        onClick={() => slot.status === "libero" && open_slot(slot.date, slot.time)}
+                        onClick={() => {
+                          if (slot.status === "libero") open_slot(slot.date, slot.time);
+                          else if (slot.status === "occupato" && slot.lesson?.id) set_cancel_lesson_id(slot.lesson.id);
+                        }}
                         className={`rounded-md px-2 py-1.5 text-xs transition-colors ${
                           slot.status === "libero"
                             ? "bg-success/10 hover:bg-success/20 cursor-pointer text-success"
-                            : "bg-accent/10 text-accent cursor-default"
+                            : "bg-accent/10 text-accent cursor-pointer hover:bg-destructive/10"
                         }`}
                       >
                         <span className="font-medium tabular-nums">{slot.time}</span>
@@ -628,6 +648,18 @@ const PrivateLessonsPage: React.FC = () => {
           </div>
         )}
       </div>
+      <AlertDialog open={!!cancel_lesson_id} onOpenChange={(open) => !open && set_cancel_lesson_id(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Annullare questa lezione?</AlertDialogTitle>
+            <AlertDialogDescription>La lezione verrà segnata come annullata e lo slot tornerà libero.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>No, torna indietro</AlertDialogCancel>
+            <AlertDialogAction onClick={handle_cancel_confirm}>Sì, annulla lezione</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
