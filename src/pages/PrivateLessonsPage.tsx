@@ -25,7 +25,10 @@ function get_week_start(d: Date): Date {
 }
 
 function format_date(d: Date): string {
-  return d.toISOString().split("T")[0];
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 function time_to_minutes(t: string): number {
