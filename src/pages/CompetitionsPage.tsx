@@ -29,6 +29,7 @@ const CompetitionsPage: React.FC = () => {
     { key: 'data', label: t('data'), type: 'date', required: true },
     { key: 'ora', label: t('ora_inizio'), type: 'time' },
     { key: 'club_ospitante', label: t('club_ospitante') },
+    { key: 'indirizzo_club_ospitante', label: 'Indirizzo club ospitante' },
     { key: 'localita', label: t('luogo') },
     { key: 'livello_minimo', label: t('livello_minimo'), type: 'select', options: levels.map(l => ({ value: l, label: t(l) })) },
     { key: 'carriera', label: t('carriera') },

@@ -69,20 +69,19 @@ export function use_upsert_corso() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: any) => {
-      const payload = {
+      const payload: any = {
         club_id: DEMO_CLUB_ID,
         nome: data.nome,
         tipo: data.tipo || '',
-        giorno: data.giorno || 'lunedi',
+        giorno: data.giorno || 'Lunedì',
         ora_inizio: data.ora_inizio || '08:00',
         ora_fine: data.ora_fine || '09:00',
-        durata_minuti: data.durata_minuti || 60,
         costo_mensile: data.costo_mensile || 0,
         costo_annuale: data.costo_annuale || 0,
         attivo: data.attivo !== false,
         note: data.note || '',
-        stagione_id: data.stagione_id || null,
       };
+      if (data.stagione_id) payload.stagione_id = data.stagione_id;
       let corso_id = data.id;
       if (data.id) {
         const { error } = await supabase.from('corsi').update(payload).eq('id', data.id);
@@ -328,5 +327,39 @@ export function use_iscrivi_atleta_campo() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['campi'] }),
+  });
+}
+
+export function use_save_disponibilita() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { istruttore_id: string; disponibilita: Record<string, { ora_inizio: string; ora_fine: string }[]> }) => {
+      // Delete all existing
+      const { error: del_err } = await supabase.from('disponibilita_istruttori').delete().eq('istruttore_id', data.istruttore_id);
+      if (del_err) throw del_err;
+      // Insert new
+      const rows: any[] = [];
+      for (const [giorno, slots] of Object.entries(data.disponibilita)) {
+        for (const s of slots) {
+          rows.push({ istruttore_id: data.istruttore_id, giorno, ora_inizio: s.ora_inizio, ora_fine: s.ora_fine });
+        }
+      }
+      if (rows.length > 0) {
+        const { error } = await supabase.from('disponibilita_istruttori').insert(rows);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['istruttori'] }),
+  });
+}
+
+export function use_annulla_lezione() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('lezioni_private').update({ annullata: true }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['lezioni_private'] }),
   });
 }
