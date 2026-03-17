@@ -1,24 +1,45 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useI18n } from '@/lib/i18n';
 import { use_corsi, use_istruttori, get_istruttore_name_from_list } from '@/hooks/use-supabase-data';
+import { use_upsert_corso } from '@/hooks/use-supabase-mutations';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus } from 'lucide-react';
+import FormDialog, { FormField } from '@/components/forms/FormDialog';
 
 const CoursesPage: React.FC = () => {
   const { t } = useI18n();
   const { data: corsi = [], isLoading } = use_corsi();
   const { data: istruttori = [] } = use_istruttori();
+  const upsert = use_upsert_corso();
+  const [form_open, set_form_open] = useState(false);
+  const [form_data, set_form_data] = useState<Record<string, any>>({});
 
-  if (isLoading) {
-    return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
-  }
+  const days = ['lunedi', 'martedi', 'mercoledi', 'giovedi', 'venerdi', 'sabato', 'domenica'];
+  const fields: FormField[] = [
+    { key: 'nome', label: t('nome'), required: true },
+    { key: 'tipo', label: t('tipo') },
+    { key: 'giorno', label: t('giorno'), type: 'select', options: days.map(d => ({ value: d, label: t(d) })) },
+    { key: 'ora_inizio', label: t('ora_inizio'), type: 'time' },
+    { key: 'ora_fine', label: t('ora_fine'), type: 'time' },
+    { key: 'costo_mensile', label: t('costo_mensile'), type: 'number' },
+    { key: 'costo_annuale', label: t('costo_annuale'), type: 'number' },
+    { key: 'istruttori_ids', label: t('istruttori'), type: 'multi-select', options: istruttori.map((i: any) => ({ value: i.id, label: `${i.nome} ${i.cognome}` })) },
+    { key: 'attivo', label: t('attivo'), type: 'checkbox' },
+    { key: 'note', label: t('note'), type: 'textarea' },
+  ];
+
+  const open_new = () => { set_form_data({ giorno: 'lunedi', ora_inizio: '08:00', ora_fine: '09:00', attivo: true, istruttori_ids: [] }); set_form_open(true); };
+  const open_edit = (c: any) => { set_form_data({ id: c.id, nome: c.nome, tipo: c.tipo, giorno: c.giorno, ora_inizio: c.ora_inizio, ora_fine: c.ora_fine, costo_mensile: c.costo_mensile, costo_annuale: c.costo_annuale, istruttori_ids: c.istruttori_ids, attivo: c.stato === 'attivo', note: c.note }); set_form_open(true); };
+  const handle_submit = async () => { await upsert.mutateAsync(form_data); set_form_open(false); };
+
+  if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold tracking-tight text-foreground">{t('corsi')}</h1>
-        <Button className="bg-primary hover:bg-primary/90"><Plus className="w-4 h-4 mr-2" /> {t('nuovo_corso')}</Button>
+        <Button className="bg-primary hover:bg-primary/90" onClick={open_new}><Plus className="w-4 h-4 mr-2" /> {t('nuovo_corso')}</Button>
       </div>
       <div className="bg-card rounded-xl shadow-card overflow-hidden">
         <div className="overflow-x-auto">
@@ -37,7 +58,7 @@ const CoursesPage: React.FC = () => {
             </thead>
             <tbody>
               {corsi.map((c: any) => (
-                <tr key={c.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                <tr key={c.id} onClick={() => open_edit(c)} className="border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors">
                   <td className="px-4 py-3 font-medium text-foreground">{c.nome}</td>
                   <td className="px-4 py-3"><Badge variant="secondary" className="text-xs capitalize">{c.tipo?.replace('_', ' ')}</Badge></td>
                   <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{t(c.giorno)}</td>
@@ -52,6 +73,7 @@ const CoursesPage: React.FC = () => {
           </table>
         </div>
       </div>
+      <FormDialog open={form_open} on_close={() => set_form_open(false)} title={form_data.id ? t('modifica') : t('nuovo_corso')} fields={fields} values={form_data} on_change={(k, v) => set_form_data(p => ({ ...p, [k]: v }))} on_submit={handle_submit} loading={upsert.isPending} />
     </div>
   );
 };

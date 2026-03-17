@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useI18n } from '@/lib/i18n';
 import { use_atleti } from '@/hooks/use-supabase-data';
+import { use_upsert_atleta } from '@/hooks/use-supabase-mutations';
 import { calculate_age } from '@/lib/mock-data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,13 +9,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Plus, Search, Shield } from 'lucide-react';
 import AtletaDetail from '@/components/AtletaDetail';
+import FormDialog, { FormField } from '@/components/forms/FormDialog';
 
 const AthletesPage: React.FC = () => {
   const { t } = useI18n();
   const { data: atleti = [], isLoading } = use_atleti();
+  const upsert = use_upsert_atleta();
   const [search, set_search] = useState('');
   const [level_filter, set_level_filter] = useState('tutti');
   const [selected_id, set_selected_id] = useState<string | null>(null);
+  const [form_open, set_form_open] = useState(false);
+  const [form_data, set_form_data] = useState<Record<string, any>>({});
 
   const levels = ['tutti', 'pulcini', 'stellina_1', 'stellina_2', 'stellina_3', 'stellina_4'];
 
@@ -24,24 +29,44 @@ const AthletesPage: React.FC = () => {
     return name_match && level_match;
   });
 
+  const fields: FormField[] = [
+    { key: 'nome', label: t('nome'), required: true },
+    { key: 'cognome', label: t('cognome'), required: true },
+    { key: 'data_nascita', label: t('data_nascita'), type: 'date', required: true },
+    { key: 'percorso_amatori', label: t('percorso_amatori'), type: 'select', options: levels.filter(l => l !== 'tutti').map(l => ({ value: l, label: t(l) })) },
+    { key: 'ore_pista_stagione', label: t('ore_pista'), type: 'number' },
+    { key: 'atleta_federazione', label: t('atleta_federazione'), type: 'checkbox' },
+    { key: 'genitore1_nome', label: `${t('genitore_1')} - ${t('nome')}` },
+    { key: 'genitore1_cognome', label: `${t('genitore_1')} - ${t('cognome')}` },
+    { key: 'genitore1_telefono', label: `${t('genitore_1')} - ${t('telefono')}` },
+    { key: 'genitore1_email', label: `${t('genitore_1')} - ${t('email')}`, type: 'email' },
+    { key: 'note', label: t('note'), type: 'textarea' },
+  ];
+
+  const open_new = () => {
+    set_form_data({ percorso_amatori: 'pulcini', attivo: true });
+    set_form_open(true);
+  };
+
+  const handle_submit = async () => {
+    await upsert.mutateAsync(form_data);
+    set_form_open(false);
+  };
+
   if (selected_id) {
     const atleta = atleti.find((a: any) => a.id === selected_id);
     if (atleta) return <AtletaDetail atleta={atleta} on_back={() => set_selected_id(null)} />;
   }
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
+    return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
   }
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="text-xl font-bold tracking-tight text-foreground">{t('atleti')}</h1>
-        <Button className="bg-primary hover:bg-primary/90">
+        <Button className="bg-primary hover:bg-primary/90" onClick={open_new}>
           <Plus className="w-4 h-4 mr-2" /> {t('nuovo_atleta')}
         </Button>
       </div>
@@ -52,14 +77,8 @@ const AthletesPage: React.FC = () => {
           <Input placeholder={t('cerca')} value={search} onChange={e => set_search(e.target.value)} className="pl-9" />
         </div>
         <Select value={level_filter} onValueChange={set_level_filter}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder={t('livello')} />
-          </SelectTrigger>
-          <SelectContent>
-            {levels.map(l => (
-              <SelectItem key={l} value={l}>{t(l)}</SelectItem>
-            ))}
-          </SelectContent>
+          <SelectTrigger className="w-48"><SelectValue placeholder={t('livello')} /></SelectTrigger>
+          <SelectContent>{levels.map(l => <SelectItem key={l} value={l}>{t(l)}</SelectItem>)}</SelectContent>
         </Select>
       </div>
 
@@ -78,11 +97,7 @@ const AthletesPage: React.FC = () => {
             </thead>
             <tbody>
               {filtered.map((a: any) => (
-                <tr
-                  key={a.id}
-                  onClick={() => set_selected_id(a.id)}
-                  className="border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors"
-                >
+                <tr key={a.id} onClick={() => set_selected_id(a.id)} className="border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-accent text-xs font-bold shrink-0">
@@ -100,12 +115,8 @@ const AthletesPage: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-4 py-3 tabular-nums text-muted-foreground hidden sm:table-cell">{calculate_age(a.data_nascita)}</td>
-                  <td className="px-4 py-3">
-                    <Badge variant="secondary" className="text-xs">{t(a.livello_amatori)}</Badge>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">
-                    {a.carriera_artistica ? t(a.carriera_artistica) : '—'}
-                  </td>
+                  <td className="px-4 py-3"><Badge variant="secondary" className="text-xs">{t(a.livello_amatori)}</Badge></td>
+                  <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{a.carriera_artistica ? t(a.carriera_artistica) : '—'}</td>
                   <td className="px-4 py-3 text-right tabular-nums text-muted-foreground hidden lg:table-cell">{a.ore_pista_stagione}h</td>
                   <td className="px-4 py-3 text-center hidden lg:table-cell">
                     <span className={`inline-block w-2 h-2 rounded-full ${a.stato === 'attivo' ? 'bg-success' : 'bg-muted-foreground'}`} />
@@ -116,6 +127,17 @@ const AthletesPage: React.FC = () => {
           </table>
         </div>
       </div>
+
+      <FormDialog
+        open={form_open}
+        on_close={() => set_form_open(false)}
+        title={form_data.id ? t('modifica') : t('nuovo_atleta')}
+        fields={fields}
+        values={form_data}
+        on_change={(k, v) => set_form_data(prev => ({ ...prev, [k]: v }))}
+        on_submit={handle_submit}
+        loading={upsert.isPending}
+      />
     </div>
   );
 };
