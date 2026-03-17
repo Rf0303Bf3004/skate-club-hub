@@ -49,7 +49,7 @@ const CompetitionsPage: React.FC = () => {
   const open_new_gara = () => { set_form_data({ livello_minimo: 'pulcini' }); set_form_open(true); };
   const handle_submit_gara = async () => { await upsert_gara.mutateAsync(form_data); set_form_open(false); };
   const open_iscrizione = () => { set_isc_data({ gara_id: selected_id }); set_isc_open(true); };
-  const handle_iscrizione = async () => { await iscrivi.mutateAsync(isc_data); set_isc_open(false); };
+  const handle_iscrizione = async () => { await iscrivi.mutateAsync(isc_data as any); set_isc_open(false); };
 
   if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
 
