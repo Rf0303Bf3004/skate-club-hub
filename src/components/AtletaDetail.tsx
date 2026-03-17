@@ -216,7 +216,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                   <tr key={f.id} className="border-b border-border/50">
                     <td className="px-4 py-3 font-medium tabular-nums text-foreground">{f.numero}</td>
                     <td className="px-4 py-3 text-muted-foreground">{f.descrizione}</td>
-                    <td className="px-4 py-3 text-right tabular-nums font-medium text-foreground">€{f.importo}</td>
+                    <td className="px-4 py-3 text-right tabular-nums font-medium text-foreground">CHF {f.importo}</td>
                     <td className="px-4 py-3 text-center">
                       <Badge variant={f.stato === 'pagata' ? 'default' : 'destructive'} className="text-xs">
                         {t(f.stato)}
