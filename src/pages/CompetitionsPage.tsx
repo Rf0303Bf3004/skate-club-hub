@@ -297,7 +297,7 @@ const CompetitionsPage: React.FC = () => {
             <h1 className="text-xl font-bold tracking-tight text-foreground">{selected.nome}</h1>
             <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5" /> {new Date(selected.data).toLocaleDateString("it-CH")}
+                <Calendar className="w-3.5 h-3.5" /> {new Date(selected.data + "T00:00:00").toLocaleDateString("it-CH")}
               </span>
               <span className="flex items-center gap-1">
                 <MapPin className="w-3.5 h-3.5" /> {selected.localita}
