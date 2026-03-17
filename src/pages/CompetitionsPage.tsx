@@ -47,7 +47,7 @@ const CompetitionsPage: React.FC = () => {
     { key: 'medaglia', label: t('medaglia'), type: 'select', options: [{ value: '', label: '—' }, { value: 'oro', label: t('oro') }, { value: 'argento', label: t('argento') }, { value: 'bronzo', label: t('bronzo') }] },
   ];
 
-  const open_new_gara = () => { set_form_data({ livello_minimo: 'pulcini' }); set_form_open(true); };
+  const open_new_gara = () => { set_form_data({ livello_minimo: 'pulcini', carriera: 'Entrambe' }); set_form_open(true); };
   const handle_submit_gara = async () => { await upsert_gara.mutateAsync(form_data); set_form_open(false); };
   const open_iscrizione = () => { set_isc_data({ gara_id: selected_id }); set_isc_open(true); };
   const handle_iscrizione = async () => { await iscrivi.mutateAsync(isc_data as any); set_isc_open(false); };
