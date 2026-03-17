@@ -1,12 +1,18 @@
 import React from 'react';
 import { useI18n } from '@/lib/i18n';
-import { mock_corsi, get_istruttore_name } from '@/lib/mock-data';
+import { use_corsi, use_istruttori, get_istruttore_name_from_list } from '@/hooks/use-supabase-data';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus } from 'lucide-react';
 
 const CoursesPage: React.FC = () => {
   const { t } = useI18n();
+  const { data: corsi = [], isLoading } = use_corsi();
+  const { data: istruttori = [] } = use_istruttori();
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -30,13 +36,13 @@ const CoursesPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {mock_corsi.map(c => (
+              {corsi.map((c: any) => (
                 <tr key={c.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
                   <td className="px-4 py-3 font-medium text-foreground">{c.nome}</td>
-                  <td className="px-4 py-3"><Badge variant="secondary" className="text-xs capitalize">{c.tipo.replace('_', ' ')}</Badge></td>
+                  <td className="px-4 py-3"><Badge variant="secondary" className="text-xs capitalize">{c.tipo?.replace('_', ' ')}</Badge></td>
                   <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{t(c.giorno)}</td>
                   <td className="px-4 py-3 tabular-nums text-muted-foreground hidden sm:table-cell">{c.ora_inizio} - {c.ora_fine}</td>
-                  <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{c.istruttori_ids.map(id => get_istruttore_name(id)).join(', ')}</td>
+                  <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{c.istruttori_ids.map((id: string) => get_istruttore_name_from_list(istruttori, id)).join(', ')}</td>
                   <td className="px-4 py-3 text-center tabular-nums font-medium text-foreground">{c.atleti_ids.length}</td>
                   <td className="px-4 py-3 text-right tabular-nums text-muted-foreground hidden lg:table-cell">€{c.costo_mensile}</td>
                   <td className="px-4 py-3 text-center"><span className={`inline-block w-2 h-2 rounded-full ${c.stato === 'attivo' ? 'bg-success' : 'bg-muted-foreground'}`} /></td>

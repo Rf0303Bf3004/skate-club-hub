@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useI18n } from '@/lib/i18n';
-import { atleta, mock_corsi, mock_gare, mock_fatture, mock_lezioni_private, get_istruttore_name, calculate_age } from '@/lib/mock-data';
+import { use_corsi, use_gare, use_fatture, use_lezioni_private, use_istruttori, use_atleti, get_istruttore_name_from_list } from '@/hooks/use-supabase-data';
+import { calculate_age } from '@/lib/mock-data';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,21 +10,26 @@ import { ArrowLeft, Shield, Trophy, Medal } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 interface Props {
-  atleta: atleta;
+  atleta: any;
   on_back: () => void;
 }
 
 const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   const { t } = useI18n();
   const [percorso_completato, set_percorso] = useState(a.percorso_amatori_completato);
+  const { data: corsi = [] } = use_corsi();
+  const { data: gare = [] } = use_gare();
+  const { data: fatture = [] } = use_fatture();
+  const { data: lezioni = [] } = use_lezioni_private();
+  const { data: istruttori = [] } = use_istruttori();
 
-  const athlete_corsi = mock_corsi.filter(c => c.atleti_ids.includes(a.id));
-  const athlete_gare = mock_gare.filter(g => g.atleti_iscritti.some(ai => ai.atleta_id === a.id));
-  const athlete_fatture = mock_fatture.filter(f => f.atleta_id === a.id);
-  const athlete_lezioni = mock_lezioni_private.filter(l => l.atleti_ids.includes(a.id));
+  const athlete_corsi = corsi.filter((c: any) => c.atleti_ids.includes(a.id));
+  const athlete_gare = gare.filter((g: any) => g.atleti_iscritti.some((ai: any) => ai.atleta_id === a.id));
+  const athlete_fatture = fatture.filter((f: any) => f.atleta_id === a.id);
+  const athlete_lezioni = lezioni.filter((l: any) => l.atleti_ids.includes(a.id));
 
-  const medals = athlete_gare.flatMap(g =>
-    g.atleti_iscritti.filter(ai => ai.atleta_id === a.id && ai.medaglia).map(ai => ({
+  const medals = athlete_gare.flatMap((g: any) =>
+    g.atleti_iscritti.filter((ai: any) => ai.atleta_id === a.id && ai.medaglia).map((ai: any) => ({
       gara: g.nome,
       medaglia: ai.medaglia,
       punteggio: ai.punteggio,
@@ -79,20 +85,12 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
           <div className="bg-card rounded-xl shadow-card p-6 space-y-5 max-w-lg">
             <InfoRow label={t('percorso_amatori')} value={t(a.livello_amatori)} />
             <div className="flex items-center gap-2">
-              <Checkbox
-                checked={percorso_completato}
-                onCheckedChange={(v) => set_percorso(!!v)}
-              />
+              <Checkbox checked={percorso_completato} onCheckedChange={(v) => set_percorso(!!v)} />
               <label className="text-sm font-medium text-foreground">{t('percorso_completato')}</label>
             </div>
             <AnimatePresence>
               {percorso_completato && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="space-y-4 pt-2"
-                >
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="space-y-4 pt-2">
                   <InfoRow label={t('carriera_artistica')} value={a.carriera_artistica ? t(a.carriera_artistica) : '—'} />
                   <InfoRow label={t('carriera_stile')} value={a.carriera_stile ? t(a.carriera_stile) : '—'} />
                   {(a.carriera_artistica || a.carriera_stile) && (
@@ -119,7 +117,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                 </tr>
               </thead>
               <tbody>
-                {athlete_corsi.map(c => (
+                {athlete_corsi.map((c: any) => (
                   <tr key={c.id} className="border-b border-border/50">
                     <td className="px-4 py-3 font-medium text-foreground">{c.nome}</td>
                     <td className="px-4 py-3 text-muted-foreground">{c.tipo}</td>
@@ -145,8 +143,8 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                 </tr>
               </thead>
               <tbody>
-                {athlete_gare.map(g => {
-                  const entry = g.atleti_iscritti.find(ai => ai.atleta_id === a.id)!;
+                {athlete_gare.map((g: any) => {
+                  const entry = g.atleti_iscritti.find((ai: any) => ai.atleta_id === a.id)!;
                   return (
                     <tr key={g.id} className="border-b border-border/50">
                       <td className="px-4 py-3 font-medium text-foreground">{g.nome}</td>
@@ -167,7 +165,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
         <TabsContent value="medagliere" className="mt-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {['oro', 'argento', 'bronzo'].map(tipo => {
-              const count = medals.filter(m => m.medaglia === tipo).length;
+              const count = medals.filter((m: any) => m.medaglia === tipo).length;
               const colors: Record<string, string> = {
                 oro: 'bg-yellow-100 text-yellow-700 border-yellow-200',
                 argento: 'bg-slate-100 text-slate-600 border-slate-200',
@@ -184,7 +182,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
           </div>
           {medals.length > 0 && (
             <div className="mt-4 bg-card rounded-xl shadow-card p-5 space-y-2">
-              {medals.map((m, i) => (
+              {medals.map((m: any, i: number) => (
                 <div key={i} className="flex items-center gap-3 text-sm">
                   <MedalBadge tipo={m.medaglia} />
                   <span className="font-medium text-foreground">{m.gara}</span>
@@ -214,7 +212,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                 </tr>
               </thead>
               <tbody>
-                {athlete_fatture.map(f => (
+                {athlete_fatture.map((f: any) => (
                   <tr key={f.id} className="border-b border-border/50">
                     <td className="px-4 py-3 font-medium tabular-nums text-foreground">{f.numero}</td>
                     <td className="px-4 py-3 text-muted-foreground">{f.descrizione}</td>
@@ -243,10 +241,10 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                 </tr>
               </thead>
               <tbody>
-                {athlete_lezioni.map(l => (
+                {athlete_lezioni.map((l: any) => (
                   <tr key={l.id} className="border-b border-border/50">
                     <td className="px-4 py-3 text-muted-foreground">{new Date(l.data).toLocaleDateString('it-CH')}</td>
-                    <td className="px-4 py-3 font-medium text-foreground">{get_istruttore_name(l.istruttore_id)}</td>
+                    <td className="px-4 py-3 font-medium text-foreground">{get_istruttore_name_from_list(istruttori, l.istruttore_id)}</td>
                     <td className="px-4 py-3 tabular-nums text-muted-foreground">{l.ora_inizio} - {l.ora_fine}</td>
                     <td className="px-4 py-3 text-right tabular-nums font-medium text-foreground">€{l.costo}</td>
                   </tr>

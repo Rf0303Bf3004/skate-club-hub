@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useI18n, LOCALE_LABELS, Locale } from '@/lib/i18n';
 import { useAuth } from '@/lib/auth';
-import { mock_club } from '@/lib/mock-data';
+import { use_club } from '@/hooks/use-supabase-data';
 import {
   LayoutDashboard, Users, BookOpen, Trophy, CreditCard, MessageSquare,
   Settings, Calendar, UserCheck, Tent, GraduationCap, LogOut, Globe, Menu, X
@@ -31,17 +31,16 @@ interface MainLayoutProps {
 const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const { t, locale, set_locale } = useI18n();
   const { user, logout } = useAuth();
+  const { data: club } = use_club();
   const location = useLocation();
   const [sidebar_open, set_sidebar_open] = React.useState(false);
 
   return (
     <div className="flex min-h-screen bg-background">
-      {/* Mobile overlay */}
       {sidebar_open && (
         <div className="fixed inset-0 bg-foreground/20 z-40 lg:hidden" onClick={() => set_sidebar_open(false)} />
       )}
 
-      {/* Sidebar */}
       <aside className={`
         fixed lg:static inset-y-0 left-0 z-50
         w-64 bg-muted/40 flex flex-col
@@ -61,7 +60,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
         <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
           {nav_items.map((item) => {
-            const is_active = location.pathname === item.path || 
+            const is_active = location.pathname === item.path ||
               (item.path !== '/' && location.pathname.startsWith(item.path));
             return (
               <NavLink
@@ -95,15 +94,13 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         </div>
       </aside>
 
-      {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
         <header className="h-14 shadow-header flex items-center justify-between px-4 lg:px-8 bg-background/80 backdrop-blur-md sticky top-0 z-30">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => set_sidebar_open(true)}>
               <Menu className="w-5 h-5" />
             </Button>
-            <h2 className="font-semibold text-foreground text-sm lg:text-base">{mock_club.nome_club}</h2>
+            <h2 className="font-semibold text-foreground text-sm lg:text-base">{club?.nome || 'CPA Manager'}</h2>
             <span className="px-2 py-0.5 rounded-full bg-muted text-[10px] uppercase tracking-wider font-bold text-muted-foreground hidden sm:inline-block">
               {user?.ruolo ? t(user.ruolo) : ''}
             </span>
@@ -126,7 +123,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           </div>
         </header>
 
-        {/* Content */}
         <main className="flex-1 p-4 lg:p-8 max-w-7xl mx-auto w-full">
           {children}
         </main>

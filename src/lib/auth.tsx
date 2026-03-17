@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
+import { DEMO_CLUB_ID } from '@/lib/supabase';
 
 export type user_role = 'superadmin' | 'admin' | 'istruttore' | 'genitore';
 
@@ -31,7 +32,7 @@ const DEMO_USER: auth_user = {
   nome: 'Admin',
   cognome: 'Demo',
   ruolo: 'admin',
-  club_id: 'club_001',
+  club_id: DEMO_CLUB_ID,
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

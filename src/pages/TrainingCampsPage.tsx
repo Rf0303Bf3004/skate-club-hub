@@ -1,12 +1,18 @@
 import React from 'react';
 import { useI18n } from '@/lib/i18n';
-import { mock_campi, get_atleta_name } from '@/lib/mock-data';
+import { use_campi, use_atleti, get_atleta_name_from_list } from '@/hooks/use-supabase-data';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, MapPin, Calendar } from 'lucide-react';
 
 const TrainingCampsPage: React.FC = () => {
   const { t } = useI18n();
+  const { data: campi = [], isLoading } = use_campi();
+  const { data: atleti = [] } = use_atleti();
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -15,7 +21,7 @@ const TrainingCampsPage: React.FC = () => {
         <Button className="bg-primary hover:bg-primary/90"><Plus className="w-4 h-4 mr-2" /> {t('nuovo_campo')}</Button>
       </div>
 
-      {mock_campi.map(camp => (
+      {campi.map((camp: any) => (
         <div key={camp.id} className="bg-card rounded-xl shadow-card p-6 space-y-5">
           <div>
             <h2 className="text-lg font-bold text-foreground">{camp.nome}</h2>
@@ -34,9 +40,9 @@ const TrainingCampsPage: React.FC = () => {
             <div>
               <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">{t('iscrizioni')}</h3>
               <div className="space-y-2">
-                {camp.iscrizioni.map(isc => (
+                {camp.iscrizioni.map((isc: any) => (
                   <div key={isc.atleta_id} className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
-                    <span className="text-sm font-medium text-foreground">{get_atleta_name(isc.atleta_id)}</span>
+                    <span className="text-sm font-medium text-foreground">{get_atleta_name_from_list(atleti, isc.atleta_id)}</span>
                     <Badge variant="secondary" className="text-xs">{t(isc.tipo)}</Badge>
                   </div>
                 ))}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useI18n } from '@/lib/i18n';
-import { mock_lezioni_private, mock_istruttori, get_istruttore_name, get_atleta_name } from '@/lib/mock-data';
+import { use_lezioni_private, use_istruttori, use_atleti, get_istruttore_name_from_list, get_atleta_name_from_list } from '@/hooks/use-supabase-data';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 
@@ -9,20 +9,27 @@ const DAYS = ['lunedi', 'martedi', 'mercoledi', 'giovedi', 'venerdi', 'sabato'];
 
 const PrivateLessonsPage: React.FC = () => {
   const { t } = useI18n();
+  const { data: lezioni = [], isLoading } = use_lezioni_private();
+  const { data: istruttori = [] } = use_istruttori();
+  const { data: atleti = [] } = use_atleti();
 
   const get_cell_status = (day: string, hour: string) => {
-    const lesson = mock_lezioni_private.find(l => {
+    const lesson = lezioni.find((l: any) => {
       const lesson_day = new Date(l.data).getDay();
       const day_map: Record<string, number> = { lunedi: 1, martedi: 2, mercoledi: 3, giovedi: 4, venerdi: 5, sabato: 6 };
       return day_map[day] === lesson_day && l.ora_inizio === hour;
     });
     if (lesson) return { status: 'occupato' as const, lesson };
 
-    const available = mock_istruttori.some(i =>
-      i.disponibilita[day]?.some(s => s.ora_inizio <= hour && s.ora_fine > hour)
+    const available = istruttori.some((i: any) =>
+      i.disponibilita[day]?.some((s: any) => s.ora_inizio <= hour && s.ora_fine > hour)
     );
     return { status: available ? 'libero' as const : 'non_disponibile' as const, lesson: null };
   };
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -31,7 +38,6 @@ const PrivateLessonsPage: React.FC = () => {
         <Button className="bg-primary hover:bg-primary/90"><Plus className="w-4 h-4 mr-2" /> {t('prenota_lezione')}</Button>
       </div>
 
-      {/* Weekly grid */}
       <div className="bg-card rounded-xl shadow-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -58,7 +64,7 @@ const PrivateLessonsPage: React.FC = () => {
                       <td key={d} className="px-1 py-1">
                         <div className={`rounded-md h-10 flex items-center justify-center text-xs transition-colors ${colors[status]}`}>
                           {status === 'occupato' && lesson && (
-                            <span className="text-accent font-medium truncate px-1">{get_istruttore_name(lesson.istruttore_id).split(' ')[0]}</span>
+                            <span className="text-accent font-medium truncate px-1">{get_istruttore_name_from_list(istruttori, lesson.istruttore_id).split(' ')[0]}</span>
                           )}
                           {status === 'libero' && <span className="text-success/60">+</span>}
                         </div>
@@ -72,14 +78,12 @@ const PrivateLessonsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Legend */}
       <div className="flex items-center gap-6 text-xs text-muted-foreground">
         <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-success/20" /> {t('libero')}</div>
         <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-accent/20" /> {t('occupato')}</div>
         <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-muted" /> {t('non_disponibile')}</div>
       </div>
 
-      {/* Booked lessons list */}
       <div>
         <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">{t('lezioni')}</h2>
         <div className="bg-card rounded-xl shadow-card overflow-hidden">
@@ -92,11 +96,11 @@ const PrivateLessonsPage: React.FC = () => {
               <th className="text-right px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('importo')}</th>
             </tr></thead>
             <tbody>
-              {mock_lezioni_private.map(l => (
+              {lezioni.map((l: any) => (
                 <tr key={l.id} className="border-b border-border/50">
                   <td className="px-4 py-3 text-muted-foreground">{new Date(l.data).toLocaleDateString('it-CH')}</td>
-                  <td className="px-4 py-3 font-medium text-foreground">{get_istruttore_name(l.istruttore_id)}</td>
-                  <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{l.atleti_ids.map(id => get_atleta_name(id)).join(', ')}</td>
+                  <td className="px-4 py-3 font-medium text-foreground">{get_istruttore_name_from_list(istruttori, l.istruttore_id)}</td>
+                  <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{l.atleti_ids.map((id: string) => get_atleta_name_from_list(atleti, id)).join(', ')}</td>
                   <td className="px-4 py-3 tabular-nums text-muted-foreground">{l.ora_inizio}-{l.ora_fine}</td>
                   <td className="px-4 py-3 text-right tabular-nums font-medium text-foreground">€{l.costo}</td>
                 </tr>

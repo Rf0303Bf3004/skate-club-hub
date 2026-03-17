@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useI18n } from '@/lib/i18n';
-import { mock_atleti, calculate_age } from '@/lib/mock-data';
+import { use_atleti } from '@/hooks/use-supabase-data';
+import { calculate_age } from '@/lib/mock-data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,21 +11,30 @@ import AtletaDetail from '@/components/AtletaDetail';
 
 const AthletesPage: React.FC = () => {
   const { t } = useI18n();
+  const { data: atleti = [], isLoading } = use_atleti();
   const [search, set_search] = useState('');
   const [level_filter, set_level_filter] = useState('tutti');
   const [selected_id, set_selected_id] = useState<string | null>(null);
 
   const levels = ['tutti', 'pulcini', 'stellina_1', 'stellina_2', 'stellina_3', 'stellina_4'];
 
-  const filtered = mock_atleti.filter(a => {
+  const filtered = atleti.filter((a: any) => {
     const name_match = `${a.nome} ${a.cognome}`.toLowerCase().includes(search.toLowerCase());
     const level_match = level_filter === 'tutti' || a.livello_amatori === level_filter;
     return name_match && level_match;
   });
 
   if (selected_id) {
-    const atleta = mock_atleti.find(a => a.id === selected_id);
+    const atleta = atleti.find((a: any) => a.id === selected_id);
     if (atleta) return <AtletaDetail atleta={atleta} on_back={() => set_selected_id(null)} />;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
   }
 
   return (
@@ -67,7 +77,7 @@ const AthletesPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(a => (
+              {filtered.map((a: any) => (
                 <tr
                   key={a.id}
                   onClick={() => set_selected_id(a.id)}

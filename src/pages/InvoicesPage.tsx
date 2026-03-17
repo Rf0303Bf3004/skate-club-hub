@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useI18n } from '@/lib/i18n';
-import { mock_fatture, get_atleta_name } from '@/lib/mock-data';
+import { use_fatture, use_atleti, get_atleta_name_from_list } from '@/hooks/use-supabase-data';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -8,9 +8,15 @@ import { FileText } from 'lucide-react';
 
 const InvoicesPage: React.FC = () => {
   const { t } = useI18n();
+  const { data: fatture = [], isLoading } = use_fatture();
+  const { data: atleti = [] } = use_atleti();
   const [status_filter, set_status_filter] = useState('tutti');
 
-  const filtered = mock_fatture.filter(f => status_filter === 'tutti' || f.stato === status_filter);
+  const filtered = fatture.filter((f: any) => status_filter === 'tutti' || f.stato === status_filter);
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -42,13 +48,13 @@ const InvoicesPage: React.FC = () => {
               <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('stato')}</th>
             </tr></thead>
             <tbody>
-              {filtered.map(f => (
+              {filtered.map((f: any) => (
                 <tr key={f.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
                   <td className="px-4 py-3 font-medium tabular-nums text-foreground">{f.numero}</td>
-                  <td className="px-4 py-3 text-foreground">{get_atleta_name(f.atleta_id)}</td>
+                  <td className="px-4 py-3 text-foreground">{get_atleta_name_from_list(atleti, f.atleta_id)}</td>
                   <td className="px-4 py-3 text-muted-foreground hidden md:table-cell max-w-xs truncate">{f.descrizione}</td>
                   <td className="px-4 py-3 text-right tabular-nums font-semibold text-foreground">€{f.importo}</td>
-                  <td className="px-4 py-3 tabular-nums text-muted-foreground hidden sm:table-cell">{new Date(f.scadenza).toLocaleDateString('it-CH')}</td>
+                  <td className="px-4 py-3 tabular-nums text-muted-foreground hidden sm:table-cell">{f.scadenza ? new Date(f.scadenza).toLocaleDateString('it-CH') : '—'}</td>
                   <td className="px-4 py-3 text-center">
                     <Badge variant={f.stato === 'pagata' ? 'default' : 'destructive'} className="text-xs">{t(f.stato)}</Badge>
                   </td>
