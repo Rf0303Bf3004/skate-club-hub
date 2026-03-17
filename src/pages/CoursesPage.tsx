@@ -42,14 +42,21 @@ const CoursesPage: React.FC = () => {
       ora_fine: c.ora_fine?.slice(0, 5),
       costo_mensile: c.costo_mensile,
       costo_annuale: c.costo_annuale,
-      istruttori_ids: c.istruttori_ids || [],
+      istruttori_ids: Array.from(new Set(c.istruttori_ids || [])),
       attivo: c.stato === 'attivo',
       note: c.note || '',
       stagione_id: c.stagione_id,
     });
     set_form_open(true);
   };
-  const handle_submit = async () => { await upsert.mutateAsync(form_data); set_form_open(false); };
+  const handle_submit = async () => {
+    try {
+      await upsert.mutateAsync({ ...form_data, istruttori_ids: Array.from(new Set(form_data.istruttori_ids || [])) });
+      set_form_open(false);
+    } catch (error) {
+      console.error('Errore salvataggio corso', error);
+    }
+  };
 
   if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
 

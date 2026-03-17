@@ -21,7 +21,7 @@ const CompetitionsPage: React.FC = () => {
   const [isc_open, set_isc_open] = useState(false);
   const [isc_data, set_isc_data] = useState<Record<string, any>>({});
 
-  const levels = ['pulcini', 'stellina_1', 'stellina_2', 'stellina_3', 'stellina_4', 'interbronzo', 'bronzo', 'interargento', 'argento', 'interoro', 'oro'];
+  const levels = ['Pulcini', 'Stellina 1', 'Stellina 2', 'Stellina 3', 'Stellina 4', 'Interbronzo', 'Bronzo', 'Interargento', 'Argento', 'Interoro', 'Oro'];
   const selected = gare.find((g: any) => g.id === selected_id);
 
   const gara_fields: FormField[] = [
@@ -31,7 +31,7 @@ const CompetitionsPage: React.FC = () => {
     { key: 'club_ospitante', label: t('club_ospitante') },
     { key: 'indirizzo_club_ospitante', label: 'Indirizzo club ospitante' },
     { key: 'localita', label: t('luogo') },
-    { key: 'livello_minimo', label: t('livello_minimo'), type: 'select', options: levels.map(l => ({ value: l, label: t(l) })) },
+    { key: 'livello_minimo', label: t('livello_minimo'), type: 'select', options: levels.map(level => ({ value: level, label: level })) },
     { key: 'carriera', label: t('carriera'), type: 'select', options: [{ value: 'Artistica', label: 'Artistica' }, { value: 'Stile', label: 'Stile' }, { value: 'Entrambe', label: 'Entrambe' }] },
     { key: 'costo_iscrizione', label: t('costo_iscrizione'), type: 'number' },
     { key: 'costo_accompagnamento', label: t('costo_accompagnamento'), type: 'number' },
@@ -47,8 +47,15 @@ const CompetitionsPage: React.FC = () => {
     { key: 'medaglia', label: t('medaglia'), type: 'select', options: [{ value: '', label: '—' }, { value: 'oro', label: t('oro') }, { value: 'argento', label: t('argento') }, { value: 'bronzo', label: t('bronzo') }] },
   ];
 
-  const open_new_gara = () => { set_form_data({ livello_minimo: 'pulcini', carriera: 'Entrambe' }); set_form_open(true); };
-  const handle_submit_gara = async () => { await upsert_gara.mutateAsync(form_data); set_form_open(false); };
+  const open_new_gara = () => { set_form_data({ livello_minimo: 'Pulcini', carriera: 'Entrambe', indirizzo_club_ospitante: '' }); set_form_open(true); };
+  const handle_submit_gara = async () => {
+    try {
+      await upsert_gara.mutateAsync(form_data);
+      set_form_open(false);
+    } catch (error) {
+      console.error('Errore salvataggio gara', error);
+    }
+  };
   const open_iscrizione = () => { set_isc_data({ gara_id: selected_id }); set_isc_open(true); };
   const handle_iscrizione = async () => { await iscrivi.mutateAsync(isc_data as any); set_isc_open(false); };
 

@@ -181,12 +181,20 @@ const PrivateLessonsPage: React.FC = () => {
       ora_fine: minutes_to_time(end_min),
       durata_minuti: 20,
       atleti_ids: [],
+      ricorrente: false,
       costo_totale: (istruttore?.costo_minuto || 0) * 20,
     });
     set_form_open(true);
   };
 
-  const handle_submit = async () => { await crea.mutateAsync(form_data); set_form_open(false); };
+  const handle_submit = async () => {
+    try {
+      await crea.mutateAsync(form_data);
+      set_form_open(false);
+    } catch (error) {
+      console.error('Errore salvataggio lezione privata', error);
+    }
+  };
 
   const week_lessons = useMemo(() => {
     const start_str = format_date(week_start);
