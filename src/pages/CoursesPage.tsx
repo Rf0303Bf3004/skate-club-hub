@@ -7,6 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { Plus } from 'lucide-react';
 import FormDialog, { FormField } from '@/components/forms/FormDialog';
 
+// Must match DB check constraint values exactly (capitalized Italian with accents)
+const GIORNI_DB = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
+
 const CoursesPage: React.FC = () => {
   const { t } = useI18n();
   const { data: corsi = [], isLoading } = use_corsi();
@@ -15,11 +18,10 @@ const CoursesPage: React.FC = () => {
   const [form_open, set_form_open] = useState(false);
   const [form_data, set_form_data] = useState<Record<string, any>>({});
 
-  const days = ['lunedi', 'martedi', 'mercoledi', 'giovedi', 'venerdi', 'sabato', 'domenica'];
   const fields: FormField[] = [
     { key: 'nome', label: t('nome'), required: true },
     { key: 'tipo', label: t('tipo') },
-    { key: 'giorno', label: t('giorno'), type: 'select', options: days.map(d => ({ value: d, label: t(d) })) },
+    { key: 'giorno', label: t('giorno'), type: 'select', options: GIORNI_DB.map(d => ({ value: d, label: d })) },
     { key: 'ora_inizio', label: t('ora_inizio'), type: 'time' },
     { key: 'ora_fine', label: t('ora_fine'), type: 'time' },
     { key: 'costo_mensile', label: t('costo_mensile'), type: 'number' },
@@ -29,8 +31,24 @@ const CoursesPage: React.FC = () => {
     { key: 'note', label: t('note'), type: 'textarea' },
   ];
 
-  const open_new = () => { set_form_data({ giorno: 'lunedi', ora_inizio: '08:00', ora_fine: '09:00', attivo: true, istruttori_ids: [] }); set_form_open(true); };
-  const open_edit = (c: any) => { set_form_data({ id: c.id, nome: c.nome, tipo: c.tipo, giorno: c.giorno, ora_inizio: c.ora_inizio, ora_fine: c.ora_fine, costo_mensile: c.costo_mensile, costo_annuale: c.costo_annuale, istruttori_ids: c.istruttori_ids, attivo: c.stato === 'attivo', note: c.note }); set_form_open(true); };
+  const open_new = () => { set_form_data({ giorno: 'Lunedì', ora_inizio: '08:00', ora_fine: '09:00', attivo: true, istruttori_ids: [] }); set_form_open(true); };
+  const open_edit = (c: any) => {
+    set_form_data({
+      id: c.id,
+      nome: c.nome,
+      tipo: c.tipo,
+      giorno: c.giorno,
+      ora_inizio: c.ora_inizio?.slice(0, 5),
+      ora_fine: c.ora_fine?.slice(0, 5),
+      costo_mensile: c.costo_mensile,
+      costo_annuale: c.costo_annuale,
+      istruttori_ids: c.istruttori_ids || [],
+      attivo: c.stato === 'attivo',
+      note: c.note || '',
+      stagione_id: c.stagione_id,
+    });
+    set_form_open(true);
+  };
   const handle_submit = async () => { await upsert.mutateAsync(form_data); set_form_open(false); };
 
   if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
@@ -61,10 +79,10 @@ const CoursesPage: React.FC = () => {
                 <tr key={c.id} onClick={() => open_edit(c)} className="border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors">
                   <td className="px-4 py-3 font-medium text-foreground">{c.nome}</td>
                   <td className="px-4 py-3"><Badge variant="secondary" className="text-xs capitalize">{c.tipo?.replace('_', ' ')}</Badge></td>
-                  <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{t(c.giorno)}</td>
-                  <td className="px-4 py-3 tabular-nums text-muted-foreground hidden sm:table-cell">{c.ora_inizio} - {c.ora_fine}</td>
-                  <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{c.istruttori_ids.map((id: string) => get_istruttore_name_from_list(istruttori, id)).join(', ')}</td>
-                  <td className="px-4 py-3 text-center tabular-nums font-medium text-foreground">{c.atleti_ids.length}</td>
+                  <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{c.giorno}</td>
+                  <td className="px-4 py-3 tabular-nums text-muted-foreground hidden sm:table-cell">{c.ora_inizio?.slice(0,5)} - {c.ora_fine?.slice(0,5)}</td>
+                  <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{(c.istruttori_ids || []).map((id: string) => get_istruttore_name_from_list(istruttori, id)).join(', ')}</td>
+                  <td className="px-4 py-3 text-center tabular-nums font-medium text-foreground">{(c.atleti_ids || []).length}</td>
                   <td className="px-4 py-3 text-right tabular-nums text-muted-foreground hidden lg:table-cell">CHF {c.costo_mensile}</td>
                   <td className="px-4 py-3 text-center"><span className={`inline-block w-2 h-2 rounded-full ${c.stato === 'attivo' ? 'bg-success' : 'bg-muted-foreground'}`} /></td>
                 </tr>
