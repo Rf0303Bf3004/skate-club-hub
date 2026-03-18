@@ -357,7 +357,7 @@ const SezioneSelezioneMolteplice: React.FC<{
       await annulla.mutateAsync(Array.from(selezionate));
       set_conferma_open(false);
       set_selezionate(new Set());
-      toast({ title: `🗑️ ${selezionate.size} lezione/i eliminate correttamente` });
+      toast({ title: `🗑️ ${selezionate.size} ${selezionate.size === 1 ? 'lezione eliminata' : 'lezioni eliminate'} correttamente` });
     } catch (err: any) {
       toast({ title: "Errore eliminazione", description: err?.message, variant: "destructive" });
     }
