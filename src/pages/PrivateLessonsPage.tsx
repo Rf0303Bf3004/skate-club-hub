@@ -433,7 +433,7 @@ const LezioniPrivatePage: React.FC = () => {
   const handle_annulla = async (lesson: any) => {
     if (!window.confirm("Annullare questa lezione e liberare lo slot?")) return;
     try {
-      await deleteLezione.mutateAsync(lesson.id);
+      await annulla_lezione.mutateAsync(lesson.id);
       toast({ title: "Lezione annullata — slot liberato" });
     } catch (err: any) {
       toast({ title: "Errore annullamento", description: err?.message, variant: "destructive" });
