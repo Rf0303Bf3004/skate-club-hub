@@ -101,6 +101,7 @@ export function use_upsert_atleta() {
         attivo: data.attivo !== false,
         note: data.note || "",
         disco_in_preparazione: data.disco_in_preparazione || null,
+        tag_nfc: data.tag_nfc || null,
       };
       if (data.id) {
         const { error } = await supabase.from("atleti").update(payload).eq("id", data.id);
@@ -346,10 +347,7 @@ export function use_segna_fattura_pagata() {
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from("fatture")
-        .update({
-          pagata: true,
-          data_pagamento: new Date().toISOString().split("T")[0],
-        })
+        .update({ pagata: true, data_pagamento: new Date().toISOString().split("T")[0] })
         .eq("id", id);
       if (error) throw error;
     },
@@ -522,6 +520,7 @@ export function use_annulla_lezione() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["lezioni_private"] }),
   });
 }
+
 export function use_elimina_atleta() {
   const qc = useQueryClient();
   return useMutation({
@@ -602,6 +601,7 @@ export function use_elimina_fattura() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["fatture"] }),
   });
 }
+
 export function use_annulla_ricorrenze() {
   const qc = useQueryClient();
   return useMutation({
