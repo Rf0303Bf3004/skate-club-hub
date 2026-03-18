@@ -292,7 +292,7 @@ const SezioneRicorrenze: React.FC<{
 
           <Button variant="destructive" onClick={handle_procedi} className="w-full">
             <Trash2 className="h-4 w-4 mr-2" />
-            Procedi con l'eliminazione ({calcola_ids().length} lezione/i)
+            Procedi con l'eliminazione ({calcola_ids().length} {calcola_ids().length === 1 ? 'lezione' : 'lezioni'})
           </Button>
         </div>
       )}
