@@ -338,7 +338,7 @@ const LezioniPrivatePage: React.FC = () => {
     const day_of_week = date.getDay();
     const giorno = GIORNI[day_of_week === 0 ? 6 : day_of_week - 1];
 
-    const dayDispSlots = dispSlots.filter((ds: DisponibilitaIstruttore) => ds.giorno === giorno);
+    const dayDispSlots = dispSlots.filter((ds: any) => ds.giorno === giorno);
     const avail = dayDispSlots.map((ds) => ({
       start: time_to_min(ds.ora_inizio),
       end: time_to_min(ds.ora_fine),
