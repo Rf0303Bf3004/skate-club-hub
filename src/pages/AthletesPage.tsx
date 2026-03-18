@@ -43,6 +43,7 @@ const AthletesPage: React.FC = () => {
     },
     { key: "ore_pista_stagione", label: t("ore_pista"), type: "number" },
     { key: "atleta_federazione", label: t("atleta_federazione"), type: "checkbox" },
+    { key: "tag_nfc", label: "TAG NFC (ID pattino)", placeholder: "es. 04:A3:B2:C1:D0" },
     { key: "genitore1_nome", label: `${t("genitore_1")} - ${t("nome")}` },
     { key: "genitore1_cognome", label: `${t("genitore_1")} - ${t("cognome")}` },
     { key: "genitore1_telefono", label: `${t("genitore_1")} - ${t("telefono")}` },
@@ -64,6 +65,7 @@ const AthletesPage: React.FC = () => {
       percorso_amatori: a.livello_amatori,
       ore_pista_stagione: a.ore_pista_stagione,
       atleta_federazione: a.atleta_federazione,
+      tag_nfc: a.tag_nfc || "",
       genitore1_nome: a.genitore_1?.nome,
       genitore1_cognome: a.genitore_1?.cognome,
       genitore1_telefono: a.genitore_1?.telefono,
@@ -157,6 +159,9 @@ const AthletesPage: React.FC = () => {
                   {t("ore_pista")}
                 </th>
                 <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">
+                  NFC
+                </th>
+                <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">
                   {t("stato")}
                 </th>
                 <th className="text-right px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
@@ -167,7 +172,7 @@ const AthletesPage: React.FC = () => {
             <tbody>
               {filtered.map((a: any) => (
                 <tr key={a.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                  <td className="px-4 py-3" onClick={() => set_selected_id(a.id)} style={{ cursor: "pointer" }}>
+                  <td className="px-4 py-3 cursor-pointer" onClick={() => set_selected_id(a.id)}>
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-accent text-xs font-bold shrink-0">
                         {a.nome[0]}
@@ -187,35 +192,40 @@ const AthletesPage: React.FC = () => {
                     </div>
                   </td>
                   <td
-                    className="px-4 py-3 tabular-nums text-muted-foreground hidden sm:table-cell"
+                    className="px-4 py-3 tabular-nums text-muted-foreground hidden sm:table-cell cursor-pointer"
                     onClick={() => set_selected_id(a.id)}
-                    style={{ cursor: "pointer" }}
                   >
                     {calculate_age(a.data_nascita)}
                   </td>
-                  <td className="px-4 py-3" onClick={() => set_selected_id(a.id)} style={{ cursor: "pointer" }}>
+                  <td className="px-4 py-3 cursor-pointer" onClick={() => set_selected_id(a.id)}>
                     <Badge variant="secondary" className="text-xs">
                       {t(a.livello_amatori)}
                     </Badge>
                   </td>
                   <td
-                    className="px-4 py-3 text-muted-foreground hidden md:table-cell"
+                    className="px-4 py-3 text-muted-foreground hidden md:table-cell cursor-pointer"
                     onClick={() => set_selected_id(a.id)}
-                    style={{ cursor: "pointer" }}
                   >
                     {a.carriera_artistica ? t(a.carriera_artistica) : "—"}
                   </td>
                   <td
-                    className="px-4 py-3 text-right tabular-nums text-muted-foreground hidden lg:table-cell"
+                    className="px-4 py-3 text-right tabular-nums text-muted-foreground hidden lg:table-cell cursor-pointer"
                     onClick={() => set_selected_id(a.id)}
-                    style={{ cursor: "pointer" }}
                   >
                     {a.ore_pista_stagione}h
                   </td>
+                  <td className="px-4 py-3 text-center hidden lg:table-cell">
+                    {a.tag_nfc ? (
+                      <span className="inline-flex items-center gap-1 text-xs font-mono bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                        📡 NFC
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground/40">—</span>
+                    )}
+                  </td>
                   <td
-                    className="px-4 py-3 text-center hidden lg:table-cell"
+                    className="px-4 py-3 text-center hidden lg:table-cell cursor-pointer"
                     onClick={() => set_selected_id(a.id)}
-                    style={{ cursor: "pointer" }}
                   >
                     <span
                       className={`inline-block w-2 h-2 rounded-full ${a.stato === "attivo" ? "bg-success" : "bg-muted-foreground"}`}
