@@ -260,7 +260,7 @@ export function use_crea_lezione_privata() {
         for (const current = new Date(start_date); current <= end_date; current.setDate(current.getDate() + 7)) {
           lesson_rows.push({
             ...base_payload,
-            data: current.getFullYear() + '-' + String(current.getMonth() + 1).padStart(2, '0') + '-' + String(current.getDate()).padStart(2, '0'),,
+            data: current.getFullYear() + '-' + String(current.getMonth() + 1).padStart(2, '0') + '-' + String(current.getDate()).padStart(2, '0'),
           });
         }
 
