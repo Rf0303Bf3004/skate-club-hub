@@ -289,6 +289,7 @@ const LezioniPrivatePage: React.FC = () => {
   const { data: corsi = [] } = use_corsi();
   const crea_lezione = use_crea_lezione_privata();
   const annulla_lezione = use_annulla_lezione();
+  const [selected_istruttore, set_selected_istruttore] = useState<string>("");
   const [cal_year, set_cal_year] = useState(new Date().getFullYear());
   const [cal_month, set_cal_month] = useState(new Date().getMonth());
   const [selected_date, set_selected_date] = useState<string>(fmt(new Date()));
@@ -304,14 +305,23 @@ const LezioniPrivatePage: React.FC = () => {
 
   const istruttore = istruttori.find((i: any) => i.id === selected_istruttore);
 
+  // Derive disponibilita slots from istruttore data
+  const dispSlots = useMemo(() => {
+    if (!istruttore?.disponibilita) return [];
+    const slots: { giorno: string; ora_inizio: string; ora_fine: string }[] = [];
+    for (const [giorno, times] of Object.entries(istruttore.disponibilita as Record<string, { ora_inizio: string; ora_fine: string }[]>)) {
+      for (const t of times) {
+        slots.push({ giorno, ora_inizio: t.ora_inizio, ora_fine: t.ora_fine });
+      }
+    }
+    return slots;
+  }, [istruttore]);
+
   const corso_busy_by_day = useMemo(() => {
     if (!selected_istruttore) return {};
     const result: Record<string, { start: number; end: number }[]> = {};
-    const istruttoreCorsiIds = allCorsiIstruttori
-      .filter((ci: any) => ci.istruttore_id === selected_istruttore)
-      .map((ci: any) => ci.corso_id);
     for (const c of corsi) {
-      if (!istruttoreCorsiIds.includes(c.id)) continue;
+      if (!c.istruttori_ids?.includes(selected_istruttore)) continue;
       if (!c.attivo) continue;
       if (!c.giorno) continue;
       if (!result[c.giorno]) result[c.giorno] = [];
@@ -320,7 +330,7 @@ const LezioniPrivatePage: React.FC = () => {
       if (e > s) result[c.giorno].push({ start: s, end: e });
     }
     return result;
-  }, [corsi, allCorsiIstruttori, selected_istruttore]);
+  }, [corsi, selected_istruttore]);
 
   const get_slots_for_date = (date_str: string) => {
     if (!istruttore) return [];
