@@ -1,17 +1,7 @@
 import React, { useState, useMemo } from "react";
-import {
-  useLezioniPrivate,
-  useIstruttori,
-  useAtleti,
-  useCorsi,
-  useCorsiIstruttori,
-  useDisponibilitaIstruttori,
-  useInsertLezionePrivata,
-  useInsertLezionePrivataAtlete,
-  useDeleteLezionePrivata,
-} from "@/hooks/useSupabase";
+import { use_lezioni_private, use_istruttori, use_atleti, use_corsi } from "@/hooks/use-supabase-data";
+import { use_crea_lezione_privata, use_annulla_lezione } from "@/hooks/use-supabase-mutations";
 import { supabase } from "@/lib/supabase";
-import type { DisponibilitaIstruttore } from "@/types/models";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, X, Search, Check, Clock } from "lucide-react";
