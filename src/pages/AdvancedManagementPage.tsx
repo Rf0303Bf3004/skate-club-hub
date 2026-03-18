@@ -93,7 +93,7 @@ const ConfermaEliminazioneModal: React.FC<{
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                 Elimino...
               </span>
-            ) : `🗑️ Elimina ${ids.length} lezione${ids.length !== 1 ? 'i' : ''}`}
+            ) : `🗑️ Elimina ${ids.length} ${ids.length === 1 ? 'lezione' : 'lezioni'}`}
           </Button>
         </div>
       </div>
