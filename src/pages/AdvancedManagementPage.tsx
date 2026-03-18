@@ -466,7 +466,7 @@ const SezioneSelezioneMolteplice: React.FC<{
       {selezionate.size > 0 && (
         <Button variant="destructive" onClick={() => set_conferma_open(true)} className="w-full">
           <Trash2 className="h-4 w-4 mr-2" />
-          Elimina {selezionate.size} lezione{selezionate.size !== 1 ? 'i' : ''} selezionate
+          Elimina {selezionate.size} {selezionate.size === 1 ? 'lezione selezionata' : 'lezioni selezionate'}
         </Button>
       )}
 
