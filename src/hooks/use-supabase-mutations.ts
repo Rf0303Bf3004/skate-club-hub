@@ -522,7 +522,86 @@ export function use_annulla_lezione() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["lezioni_private"] }),
   });
 }
+export function use_elimina_atleta() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("atleti").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["atleti"] }),
+  });
+}
 
+export function use_elimina_istruttore() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("istruttori").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["istruttori"] }),
+  });
+}
+
+export function use_elimina_corso() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await supabase.from("corsi_istruttori").delete().eq("corso_id", id);
+      await supabase.from("iscrizioni_corsi").delete().eq("corso_id", id);
+      const { error } = await supabase.from("corsi").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["corsi"] }),
+  });
+}
+
+export function use_elimina_gara() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await supabase.from("iscrizioni_gare").delete().eq("gara_id", id);
+      const { error } = await supabase.from("gare_calendario").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["gare"] }),
+  });
+}
+
+export function use_elimina_stagione() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("stagioni").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["stagioni"] }),
+  });
+}
+
+export function use_elimina_campo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await supabase.from("iscrizioni_campo").delete().eq("campo_id", id);
+      const { error } = await supabase.from("campi_allenamento").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["campi"] }),
+  });
+}
+
+export function use_elimina_fattura() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("fatture").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["fatture"] }),
+  });
+}
 export function use_annulla_ricorrenze() {
   const qc = useQueryClient();
   return useMutation({
