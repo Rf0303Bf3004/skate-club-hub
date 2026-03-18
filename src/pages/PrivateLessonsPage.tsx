@@ -1,9 +1,13 @@
 import React, { useState, useMemo } from "react";
 import { use_lezioni_private, use_istruttori, use_atleti, use_corsi } from "@/hooks/use-supabase-data";
-import { use_crea_lezione_privata, use_annulla_lezione } from "@/hooks/use-supabase-mutations";
+import {
+  use_crea_lezione_privata,
+  use_annulla_lezione,
+  use_aggiungi_atleta_lezione,
+} from "@/hooks/use-supabase-mutations";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, X, Search, Check, Clock, User } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Search, Check, Clock, User, UserPlus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -64,20 +68,29 @@ const MESI = [
   "Dicembre",
 ];
 
+// ─── Tipo lezione ──────────────────────────────────────────────────────────────
+type TipoLezione = "privata" | "semiprivata";
+
+function get_tipo_lezione(atleti_ids: string[]): TipoLezione {
+  return atleti_ids.length > 1 ? "semiprivata" : "privata";
+}
+
 // ─── Autocomplete atleta ───────────────────────────────────────────────────────
 const AtletaSearch: React.FC<{
   atleti: any[];
   selected_ids: string[];
   on_change: (ids: string[]) => void;
-}> = ({ atleti, selected_ids, on_change }) => {
+  escludi_ids?: string[];
+}> = ({ atleti, selected_ids, on_change, escludi_ids = [] }) => {
   const [query, set_query] = useState("");
   const [open, set_open] = useState(false);
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim();
-    if (!q) return atleti.slice(0, 8);
-    return atleti.filter((a: any) => `${a.nome} ${a.cognome}`.toLowerCase().includes(q)).slice(0, 8);
-  }, [atleti, query]);
+    const disponibili = atleti.filter((a: any) => !escludi_ids.includes(a.id));
+    if (!q) return disponibili.slice(0, 8);
+    return disponibili.filter((a: any) => `${a.nome} ${a.cognome}`.toLowerCase().includes(q)).slice(0, 8);
+  }, [atleti, query, escludi_ids]);
 
   const toggle = (id: string) => {
     on_change(selected_ids.includes(id) ? selected_ids.filter((i) => i !== id) : [...selected_ids, id]);
@@ -101,7 +114,6 @@ const AtletaSearch: React.FC<{
           onFocus={() => set_open(true)}
         />
       </div>
-
       {open && (
         <>
           <div
@@ -138,7 +150,6 @@ const AtletaSearch: React.FC<{
           </div>
         </>
       )}
-
       {selected_ids.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mt-2">
           {selected_ids.map((id) => {
@@ -193,17 +204,15 @@ const SlotModal: React.FC<{
             <X className="w-5 h-5" />
           </button>
         </div>
-
         <div className="px-6 py-5 space-y-5">
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Atleta *</label>
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Atleta/e *</label>
             <AtletaSearch
               atleti={atleti}
               selected_ids={form.atleti_ids || []}
               on_change={(ids) => on_change("atleti_ids", ids)}
             />
           </div>
-
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Costo totale</label>
             <div className="relative">
@@ -220,15 +229,10 @@ const SlotModal: React.FC<{
               />
             </div>
           </div>
-
           <div
             onClick={() => on_change("ricorrente", !form.ricorrente)}
             className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all
-              ${
-                form.ricorrente
-                  ? "border-primary bg-primary/5 text-primary"
-                  : "border-border bg-muted/20 text-muted-foreground hover:border-primary/40"
-              }`}
+              ${form.ricorrente ? "border-primary bg-primary/5 text-primary" : "border-border bg-muted/20 text-muted-foreground hover:border-primary/40"}`}
           >
             <div
               className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0
@@ -241,7 +245,6 @@ const SlotModal: React.FC<{
               <p className="text-xs opacity-70">Ogni settimana alla stessa ora fino a fine stagione</p>
             </div>
           </div>
-
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Note</label>
             <textarea
@@ -253,7 +256,6 @@ const SlotModal: React.FC<{
             />
           </div>
         </div>
-
         <div className="flex justify-end gap-3 px-6 py-4 border-t border-border">
           <Button variant="outline" onClick={on_close} disabled={loading}>
             Annulla
@@ -280,6 +282,138 @@ const SlotModal: React.FC<{
   );
 };
 
+// ─── Modal aggiungi atleta (semiprivata) ───────────────────────────────────────
+const AggiungiAtletaModal: React.FC<{
+  slot: any;
+  atleti: any[];
+  costo_attuale: number;
+  on_close: () => void;
+  on_confirm: (atleta_id: string, nuovo_costo: number, modalita: "dividi" | "manuale") => void;
+  loading: boolean;
+}> = ({ slot, atleti, costo_attuale, on_close, on_confirm, loading }) => {
+  const [atleta_id, set_atleta_id] = useState<string>("");
+  const [modalita, set_modalita] = useState<"dividi" | "manuale">("dividi");
+  const [costo_manuale, set_costo_manuale] = useState<number>(costo_attuale);
+
+  const atleti_esistenti = slot.lesson?.atleti_ids || [];
+  const n_totale = atleti_esistenti.length + 1;
+  const costo_diviso = modalita === "dividi" ? costo_attuale : costo_manuale;
+  const quota_per_atleta = costo_diviso / n_totale;
+
+  const atleta_sel = atleti.find((a: any) => a.id === atleta_id);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+          <div>
+            <h2 className="text-base font-bold text-foreground">Aggiungi atleta</h2>
+            <p className="text-xs text-muted-foreground">La lezione diventerà semiprivata</p>
+          </div>
+          <button onClick={on_close} className="text-muted-foreground hover:text-foreground">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="px-6 py-5 space-y-5">
+          {/* Badge semiprivata */}
+          <div className="flex items-center gap-2 px-3 py-2 bg-orange-500/10 border border-orange-500/20 rounded-xl">
+            <span className="text-orange-500 text-sm">👥</span>
+            <span className="text-xs font-medium text-orange-600">Diventerà una lezione semiprivata</span>
+          </div>
+
+          {/* Selezione atleta */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Nuova atleta *
+            </label>
+            <AtletaSearch
+              atleti={atleti}
+              selected_ids={atleta_id ? [atleta_id] : []}
+              on_change={(ids) => set_atleta_id(ids[ids.length - 1] || "")}
+              escludi_ids={atleti_esistenti}
+            />
+          </div>
+
+          {/* Gestione costo */}
+          <div className="space-y-3">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Gestione costo
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <div
+                onClick={() => set_modalita("dividi")}
+                className={`p-3 rounded-xl border-2 cursor-pointer transition-all text-center
+                  ${modalita === "dividi" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
+              >
+                <p className="text-sm font-medium">÷ Dividi</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Costo attuale diviso per {n_totale}</p>
+              </div>
+              <div
+                onClick={() => set_modalita("manuale")}
+                className={`p-3 rounded-xl border-2 cursor-pointer transition-all text-center
+                  ${modalita === "manuale" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
+              >
+                <p className="text-sm font-medium">✏️ Manuale</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Imposta nuovo totale</p>
+              </div>
+            </div>
+
+            {modalita === "manuale" && (
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-medium">
+                  CHF
+                </span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.50"
+                  value={costo_manuale}
+                  onChange={(e) => set_costo_manuale(parseFloat(e.target.value) || 0)}
+                  className="w-full rounded-lg border border-border bg-background pl-11 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                />
+              </div>
+            )}
+
+            {/* Riepilogo quote */}
+            <div className="bg-muted/30 rounded-xl px-4 py-3 space-y-1.5">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Riepilogo quote</p>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Totale lezione</span>
+                <span className="font-semibold">CHF {costo_diviso.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Quota per atleta ({n_totale})</span>
+                <span className="font-semibold text-primary">CHF {quota_per_atleta.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3 px-6 py-4 border-t border-border">
+          <Button variant="outline" onClick={on_close} disabled={loading}>
+            Annulla
+          </Button>
+          <Button
+            onClick={() => atleta_id && on_confirm(atleta_id, costo_diviso, modalita)}
+            disabled={loading || !atleta_id}
+            className="bg-orange-500 hover:bg-orange-600 text-white min-w-[120px]"
+          >
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                Salvo...
+              </span>
+            ) : (
+              "👥 Aggiungi atleta"
+            )}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ─── Modal dettaglio slot occupato ────────────────────────────────────────────
 const SlotDetailModal: React.FC<{
   slot: any;
@@ -287,9 +421,14 @@ const SlotDetailModal: React.FC<{
   on_close: () => void;
   on_annulla: () => void;
   on_modifica: () => void;
+  on_aggiungi_atleta: () => void;
   loading: boolean;
-}> = ({ slot, atleti, on_close, on_annulla, on_modifica, loading }) => {
-  const nomi_atleti = (slot.lesson?.atleti_ids || [])
+}> = ({ slot, atleti, on_close, on_annulla, on_modifica, on_aggiungi_atleta, loading }) => {
+  const atleti_ids: string[] = slot.lesson?.atleti_ids || [];
+  const tipo = get_tipo_lezione(atleti_ids);
+  const is_semiprivata = tipo === "semiprivata";
+
+  const nomi_atleti = atleti_ids
     .map((id: string) => {
       const a = atleti.find((x: any) => x.id === id);
       return a ? `${a.nome} ${a.cognome}` : null;
@@ -300,7 +439,18 @@ const SlotDetailModal: React.FC<{
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-          <h2 className="text-base font-bold text-foreground">Dettaglio lezione</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-bold text-foreground">Dettaglio lezione</h2>
+            {is_semiprivata ? (
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-orange-500/15 text-orange-600 border border-orange-500/20">
+                👥 Semiprivata
+              </span>
+            ) : (
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-destructive/10 text-destructive border border-destructive/20">
+                🔒 Privata
+              </span>
+            )}
+          </div>
           <button onClick={on_close} className="text-muted-foreground hover:text-foreground">
             <X className="w-5 h-5" />
           </button>
@@ -317,7 +467,7 @@ const SlotDetailModal: React.FC<{
 
           {/* Atleti */}
           <div className="space-y-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Atleta/i</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Atleta/e</p>
             {nomi_atleti.length > 0 ? (
               nomi_atleti.map((nome: string, i: number) => (
                 <div key={i} className="flex items-center gap-2 px-3 py-2 bg-primary/5 rounded-lg">
@@ -330,6 +480,14 @@ const SlotDetailModal: React.FC<{
             )}
           </div>
 
+          {/* Costo */}
+          {slot.lesson?.costo > 0 && (
+            <div className="flex items-center justify-between px-3 py-2 bg-muted/30 rounded-xl">
+              <span className="text-xs text-muted-foreground font-medium">Costo totale</span>
+              <span className="text-sm font-bold text-foreground">CHF {Number(slot.lesson.costo).toFixed(2)}</span>
+            </div>
+          )}
+
           {/* Note */}
           {slot.lesson?.note && (
             <div className="space-y-1">
@@ -339,20 +497,31 @@ const SlotDetailModal: React.FC<{
           )}
         </div>
 
-        <div className="flex justify-between gap-3 px-6 py-4 border-t border-border">
-          <Button variant="destructive" onClick={on_annulla} disabled={loading} className="flex-1">
-            {loading ? (
-              <span className="flex items-center gap-2">
-                <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                Annullo...
-              </span>
-            ) : (
-              "× Annulla lezione"
-            )}
+        <div className="px-6 py-4 border-t border-border space-y-2">
+          {/* Aggiungi atleta */}
+          <Button
+            variant="outline"
+            onClick={on_aggiungi_atleta}
+            disabled={loading}
+            className="w-full border-orange-500/40 text-orange-600 hover:bg-orange-500/10"
+          >
+            <UserPlus className="w-4 h-4 mr-2" />
+            Aggiungi atleta (semiprivata)
           </Button>
-          <Button variant="outline" onClick={on_modifica} disabled={loading} className="flex-1">
-            ✏️ Modifica
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={on_modifica} disabled={loading} className="flex-1">
+              ✏️ Modifica
+            </Button>
+            <Button variant="destructive" onClick={on_annulla} disabled={loading} className="flex-1">
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                </span>
+              ) : (
+                "× Annulla"
+              )}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
@@ -367,6 +536,7 @@ const LezioniPrivatePage: React.FC = () => {
   const { data: corsi = [] } = use_corsi();
   const crea_lezione = use_crea_lezione_privata();
   const annulla_lezione = use_annulla_lezione();
+  const aggiungi_atleta = use_aggiungi_atleta_lezione();
 
   const [selected_istruttore, set_selected_istruttore] = useState<string>("");
   const [cal_year, set_cal_year] = useState(new Date().getFullYear());
@@ -375,8 +545,8 @@ const LezioniPrivatePage: React.FC = () => {
   const [form_open, set_form_open] = useState(false);
   const [form_data, set_form_data] = useState<Record<string, any>>({});
   const [saving, set_saving] = useState(false);
-  // Nuovo stato per il modal dettaglio
   const [detail_slot, set_detail_slot] = useState<any>(null);
+  const [aggiungi_open, set_aggiungi_open] = useState(false);
 
   React.useEffect(() => {
     if (!selected_istruttore && istruttori.length > 0) {
@@ -392,9 +562,7 @@ const LezioniPrivatePage: React.FC = () => {
     for (const [giorno, times] of Object.entries(
       istruttore.disponibilita as Record<string, { ora_inizio: string; ora_fine: string }[]>,
     )) {
-      for (const t of times) {
-        slots.push({ giorno, ora_inizio: t.ora_inizio, ora_fine: t.ora_fine });
-      }
+      for (const t of times) slots.push({ giorno, ora_inizio: t.ora_inizio, ora_fine: t.ora_fine });
     }
     return slots;
   }, [istruttore]);
@@ -404,8 +572,7 @@ const LezioniPrivatePage: React.FC = () => {
     const result: Record<string, { start: number; end: number }[]> = {};
     for (const c of corsi) {
       if (!c.istruttori_ids?.includes(selected_istruttore)) continue;
-      if (!c.attivo) continue;
-      if (!c.giorno) continue;
+      if (!c.attivo || !c.giorno) continue;
       if (!result[c.giorno]) result[c.giorno] = [];
       const s = time_to_min(c.ora_inizio || "00:00");
       const e = time_to_min(c.ora_fine || "00:00");
@@ -421,39 +588,26 @@ const LezioniPrivatePage: React.FC = () => {
     const giorno = GIORNI[day_of_week === 0 ? 6 : day_of_week - 1];
 
     const dayDispSlots = dispSlots.filter((ds: any) => ds.giorno === giorno);
-    const avail = dayDispSlots.map((ds) => ({
-      start: time_to_min(ds.ora_inizio),
-      end: time_to_min(ds.ora_fine),
-    }));
-
+    const avail = dayDispSlots.map((ds) => ({ start: time_to_min(ds.ora_inizio), end: time_to_min(ds.ora_fine) }));
     const busy_corsi = corso_busy_by_day[giorno] || [];
     const free = subtract_intervals(avail, busy_corsi);
 
     const free_times = new Set<number>();
     for (const interval of free) {
-      for (let m = interval.start; m + 20 <= interval.end; m += 20) {
-        free_times.add(m);
-      }
+      for (let m = interval.start; m + 20 <= interval.end; m += 20) free_times.add(m);
     }
 
     const day_lessons = lezioni.filter((l: any) => l.istruttore_id === selected_istruttore && l.data === date_str);
-
     const all_times = new Set(free_times);
-    for (const l of day_lessons) {
-      all_times.add(time_to_min(l.ora_inizio));
-    }
+    for (const l of day_lessons) all_times.add(time_to_min(l.ora_inizio));
 
     return Array.from(all_times)
       .sort((a, b) => a - b)
       .map((m) => {
         const time = min_to_time(m);
         const lesson = day_lessons.find((l: any) => time_to_min(l.ora_inizio) === m);
-        return {
-          time,
-          end_time: min_to_time(m + 20),
-          status: lesson ? "occupato" : "libero",
-          lesson,
-        };
+        const tipo = lesson ? get_tipo_lezione(lesson.atleti_ids || []) : null;
+        return { time, end_time: min_to_time(m + 20), status: lesson ? "occupato" : "libero", lesson, tipo };
       });
   };
 
@@ -512,10 +666,7 @@ const LezioniPrivatePage: React.FC = () => {
     set_form_open(true);
   };
 
-  // Apre il modal dettaglio per uno slot occupato
-  const open_detail = (slot: any) => {
-    set_detail_slot(slot);
-  };
+  const open_detail = (slot: any) => set_detail_slot(slot);
 
   const handle_annulla = async () => {
     if (!detail_slot?.lesson) return;
@@ -547,6 +698,24 @@ const LezioniPrivatePage: React.FC = () => {
     set_form_open(true);
   };
 
+  const handle_aggiungi_atleta = async (atleta_id: string, nuovo_costo: number, modalita: "dividi" | "manuale") => {
+    if (!detail_slot?.lesson) return;
+    try {
+      await aggiungi_atleta.mutateAsync({
+        lezione_id: detail_slot.lesson.id,
+        atleta_id,
+        nuovo_costo_totale: nuovo_costo,
+        modalita_costo: modalita,
+        atleti_ids_esistenti: detail_slot.lesson.atleti_ids || [],
+      });
+      set_aggiungi_open(false);
+      set_detail_slot(null);
+      toast({ title: "👥 Atleta aggiunta — lezione diventata semiprivata!" });
+    } catch (err: any) {
+      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+    }
+  };
+
   const handle_submit = async () => {
     if (!form_data.atleti_ids?.length) {
       toast({ title: "Seleziona almeno un atleta", variant: "destructive" });
@@ -572,7 +741,7 @@ const LezioniPrivatePage: React.FC = () => {
     } catch (err: any) {
       toast({
         title: "Errore durante il salvataggio",
-        description: err?.message ?? "Controlla la console per dettagli.",
+        description: err?.message ?? "Controlla la console.",
         variant: "destructive",
       });
     } finally {
@@ -580,7 +749,6 @@ const LezioniPrivatePage: React.FC = () => {
     }
   };
 
-  // Risolve atleti_ids in nomi per la visualizzazione sullo slot
   const get_atleti_names = (atleti_ids: string[]): string => {
     return atleti_ids
       .map((id) => {
@@ -620,14 +788,26 @@ const LezioniPrivatePage: React.FC = () => {
         />
       )}
 
-      {detail_slot && (
+      {detail_slot && !aggiungi_open && (
         <SlotDetailModal
           slot={detail_slot}
           atleti={atleti}
           on_close={() => set_detail_slot(null)}
           on_annulla={handle_annulla}
           on_modifica={handle_modifica}
+          on_aggiungi_atleta={() => set_aggiungi_open(true)}
           loading={annulla_lezione.isPending}
+        />
+      )}
+
+      {detail_slot && aggiungi_open && (
+        <AggiungiAtletaModal
+          slot={detail_slot}
+          atleti={atleti}
+          costo_attuale={detail_slot.lesson?.costo || 0}
+          on_close={() => set_aggiungi_open(false)}
+          on_confirm={handle_aggiungi_atleta}
+          loading={aggiungi_atleta.isPending}
         />
       )}
 
@@ -666,7 +846,6 @@ const LezioniPrivatePage: React.FC = () => {
                   <ChevronRight className="w-4 h-4 text-muted-foreground" />
                 </button>
               </div>
-
               <div className="grid grid-cols-7 mb-2">
                 {GIORNI_SHORT.map((g) => (
                   <div key={g} className="text-center text-[10px] font-bold text-muted-foreground uppercase py-1">
@@ -674,7 +853,6 @@ const LezioniPrivatePage: React.FC = () => {
                   </div>
                 ))}
               </div>
-
               <div className="grid grid-cols-7 gap-1">
                 {cal_days.map((day, i) => {
                   if (!day) return <div key={i} />;
@@ -715,7 +893,6 @@ const LezioniPrivatePage: React.FC = () => {
                   );
                 })}
               </div>
-
               <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1.5">
                   <div className="w-2 h-2 rounded-full bg-success" /> Libero
@@ -737,51 +914,77 @@ const LezioniPrivatePage: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
-                  {selected_slots.map((slot, i) => (
-                    <div
-                      key={i}
-                      onClick={() => {
-                        if (slot.status === "libero") {
-                          open_slot(slot.time, slot.end_time);
-                        } else {
-                          open_detail(slot);
+                  {selected_slots.map((slot, i) => {
+                    const is_semiprivata = slot.tipo === "semiprivata";
+                    return (
+                      <div
+                        key={i}
+                        onClick={() =>
+                          slot.status === "libero" ? open_slot(slot.time, slot.end_time) : open_detail(slot)
                         }
-                      }}
-                      className={`flex items-center justify-between px-4 py-3 rounded-xl cursor-pointer transition-all
-                        ${
-                          slot.status === "libero"
-                            ? "bg-success/10 hover:bg-success/20 border border-success/20"
-                            : "bg-destructive/10 hover:bg-destructive/15 border border-destructive/20"
-                        }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-2 h-2 rounded-full flex-shrink-0 ${slot.status === "libero" ? "bg-success" : "bg-destructive"}`}
-                        />
-                        <div>
-                          <p className="text-sm font-semibold text-foreground tabular-nums">
-                            {slot.time} – {slot.end_time}
-                          </p>
-                          {slot.status === "occupato" && slot.lesson && (
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              {/* Mostra nomi atleti invece di "Occupato" */}
-                              {slot.lesson.atleti_ids?.length
-                                ? get_atleti_names(slot.lesson.atleti_ids)
-                                : slot.lesson.note || "Occupato"}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <span
-                        className={`text-xs font-medium px-2 py-0.5 rounded-full
-                        ${slot.status === "libero" ? "bg-success/20 text-success" : "bg-destructive/20 text-destructive"}`}
+                        className={`flex items-center justify-between px-4 py-3 rounded-xl cursor-pointer transition-all
+                          ${
+                            slot.status === "libero"
+                              ? "bg-success/10 hover:bg-success/20 border border-success/20"
+                              : is_semiprivata
+                                ? "bg-orange-500/10 hover:bg-orange-500/15 border border-orange-500/20"
+                                : "bg-destructive/10 hover:bg-destructive/15 border border-destructive/20"
+                          }`}
                       >
-                        {slot.status === "libero" ? "+ Prenota" : "Dettagli"}
-                      </span>
-                    </div>
-                  ))}
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-2 h-2 rounded-full flex-shrink-0
+                            ${
+                              slot.status === "libero"
+                                ? "bg-success"
+                                : is_semiprivata
+                                  ? "bg-orange-500"
+                                  : "bg-destructive"
+                            }`}
+                          />
+                          <div>
+                            <p className="text-sm font-semibold text-foreground tabular-nums">
+                              {slot.time} – {slot.end_time}
+                            </p>
+                            {slot.status === "occupato" && slot.lesson && (
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {slot.lesson.atleti_ids?.length
+                                  ? get_atleti_names(slot.lesson.atleti_ids)
+                                  : slot.lesson.note || "Occupato"}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <span
+                          className={`text-xs font-bold px-2 py-0.5 rounded-full
+                          ${
+                            slot.status === "libero"
+                              ? "bg-success/20 text-success"
+                              : is_semiprivata
+                                ? "bg-orange-500/20 text-orange-600"
+                                : "bg-destructive/20 text-destructive"
+                          }`}
+                        >
+                          {slot.status === "libero" ? "+ Prenota" : is_semiprivata ? "👥 Semi" : "Dettagli"}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
+
+              {/* Legenda */}
+              <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground flex-wrap">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-success" /> Libero
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-destructive" /> Privata
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-orange-500" /> Semiprivata
+                </div>
+              </div>
             </div>
           </div>
         ) : (
@@ -793,3 +996,5 @@ const LezioniPrivatePage: React.FC = () => {
     </>
   );
 };
+
+export default LezioniPrivatePage;
