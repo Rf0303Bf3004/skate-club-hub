@@ -18,15 +18,14 @@ import CommunicationsPage from "@/pages/CommunicationsPage";
 import SeasonsPage from "@/pages/SeasonsPage";
 import TrainingCampsPage from "@/pages/TrainingCampsPage";
 import ClubSetupPage from "@/pages/ClubSetupPage";
+import AdvancedManagementPage from "@/pages/AdvancedManagementPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const AuthenticatedApp = () => {
   const { is_authenticated } = useAuth();
-
   if (!is_authenticated) return <LoginPage />;
-
   return (
     <BrowserRouter>
       <MainLayout>
@@ -42,6 +41,7 @@ const AuthenticatedApp = () => {
           <Route path="/stagioni" element={<SeasonsPage />} />
           <Route path="/campi" element={<TrainingCampsPage />} />
           <Route path="/setup-club" element={<ClubSetupPage />} />
+          <Route path="/gestione-avanzata" element={<AdvancedManagementPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </MainLayout>
