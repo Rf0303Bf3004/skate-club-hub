@@ -2,10 +2,11 @@ import React, { useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { use_gare, use_atleti, get_atleta_name_from_list } from "@/hooks/use-supabase-data";
 import { days_until } from "@/lib/mock-data";
+import { use_elimina_gara } from "@/hooks/use-supabase-mutations";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, ArrowLeft, MapPin, Calendar, X } from "lucide-react";
+import { Plus, ArrowLeft, MapPin, Calendar, X, Trash2, AlertTriangle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
@@ -75,7 +76,6 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       });
       return;
     }
-
     set_saving(true);
     try {
       const { error } = await supabase
@@ -95,17 +95,14 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           note: form.note.trim() || null,
         })
         .select();
-
       if (error) throw error;
-
       await queryClient.invalidateQueries({ queryKey: ["gare"] });
       toast({ title: "Gara creata con successo!" });
       onClose();
     } catch (err: any) {
-      console.error("Errore salvataggio gara:", err);
       toast({
         title: "Errore durante il salvataggio",
-        description: err?.message ?? "Controlla la console per i dettagli.",
+        description: err?.message ?? "Controlla la console.",
         variant: "destructive",
       });
     } finally {
@@ -116,15 +113,12 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <h2 className="text-lg font-bold text-foreground">{t("nuova_gara")}</h2>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
-
-        {/* Body */}
         <div className="px-6 py-5 space-y-4">
           <Field label={`${t("nome")} *`}>
             <input
@@ -135,7 +129,6 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               className="form-input"
             />
           </Field>
-
           <div className="grid grid-cols-2 gap-4">
             <Field label={`${t("data")} *`}>
               <input name="data" type="date" value={form.data} onChange={handle_change} className="form-input" />
@@ -144,7 +137,6 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               <input name="ora" type="time" value={form.ora} onChange={handle_change} className="form-input" />
             </Field>
           </div>
-
           <Field label={`${t("luogo")} *`}>
             <input
               name="localita"
@@ -154,7 +146,6 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               className="form-input"
             />
           </Field>
-
           <Field label={t("indirizzo")}>
             <input
               name="indirizzo"
@@ -164,7 +155,6 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               className="form-input"
             />
           </Field>
-
           <Field label={t("club_ospitante")}>
             <input
               name="club_ospitante"
@@ -174,7 +164,6 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               className="form-input"
             />
           </Field>
-
           <div className="grid grid-cols-2 gap-4">
             <Field label={t("livello_minimo")}>
               <select name="livello_minimo" value={form.livello_minimo} onChange={handle_change} className="form-input">
@@ -195,7 +184,6 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               </select>
             </Field>
           </div>
-
           <div className="grid grid-cols-2 gap-4">
             <Field label={t("costo_iscrizione")}>
               <div className="relative">
@@ -226,7 +214,6 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               </div>
             </Field>
           </div>
-
           <Field label={t("note")}>
             <textarea
               name="note"
@@ -238,8 +225,6 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             />
           </Field>
         </div>
-
-        {/* Footer */}
         <div className="flex justify-end gap-3 px-6 py-4 border-t border-border">
           <Button variant="outline" onClick={onClose} disabled={saving}>
             {t("annulla")}
@@ -268,15 +253,45 @@ const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, 
   </div>
 );
 
+const InfoRow: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+  <div className="flex justify-between items-center py-1">
+    <span className="text-sm text-muted-foreground">{label}</span>
+    <span className="text-sm font-medium text-foreground">{value}</span>
+  </div>
+);
+
+const MedalBadge: React.FC<{ tipo: string }> = ({ tipo }) => {
+  const colors: Record<string, string> = {
+    oro: "bg-yellow-100 text-yellow-700",
+    argento: "bg-slate-100 text-slate-600",
+    bronzo: "bg-orange-100 text-orange-700",
+  };
+  return <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${colors[tipo] || ""}`}>{tipo}</span>;
+};
+
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 const CompetitionsPage: React.FC = () => {
   const { t } = useI18n();
   const { data: gare = [], isLoading } = use_gare();
   const { data: atleti = [] } = use_atleti();
+  const elimina = use_elimina_gara();
   const [selected_id, set_selected_id] = useState<string | null>(null);
   const [show_modal, set_show_modal] = useState(false);
+  const [confirm_delete, set_confirm_delete] = useState(false);
 
   const selected = gare.find((g: any) => g.id === selected_id);
+
+  const handle_delete = async () => {
+    if (!selected_id) return;
+    try {
+      await elimina.mutateAsync(selected_id);
+      set_selected_id(null);
+      set_confirm_delete(false);
+      toast({ title: "🗑️ Gara eliminata correttamente" });
+    } catch (err: any) {
+      toast({ title: "Errore eliminazione", description: err?.message, variant: "destructive" });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -289,9 +304,55 @@ const CompetitionsPage: React.FC = () => {
   if (selected) {
     return (
       <div className="space-y-6 animate-fade-in">
-        <Button variant="ghost" onClick={() => set_selected_id(null)} className="text-muted-foreground">
-          <ArrowLeft className="w-4 h-4 mr-2" /> {t("gare")}
-        </Button>
+        <div className="flex items-center justify-between">
+          <Button
+            variant="ghost"
+            onClick={() => {
+              set_selected_id(null);
+              set_confirm_delete(false);
+            }}
+            className="text-muted-foreground"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" /> {t("gare")}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => set_confirm_delete(true)}
+            className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-1.5"
+          >
+            <Trash2 className="w-4 h-4" /> Elimina gara
+          </Button>
+        </div>
+
+        {/* Pannello conferma eliminazione */}
+        {confirm_delete && (
+          <div className="bg-destructive/5 border border-destructive/20 rounded-xl px-4 py-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0" />
+              <p className="text-sm font-semibold text-destructive">Conferma eliminazione</p>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Stai per eliminare <strong>{selected.nome}</strong> e tutte le iscrizioni collegate. Operazione
+              irreversibile.
+            </p>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => set_confirm_delete(false)} className="flex-1">
+                Annulla
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handle_delete}
+                disabled={elimina.isPending}
+                className="flex-1"
+              >
+                {elimina.isPending ? "..." : "🗑️ Elimina definitivamente"}
+              </Button>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-start gap-4">
           <div>
             <h1 className="text-xl font-bold tracking-tight text-foreground">{selected.nome}</h1>
@@ -392,7 +453,6 @@ const CompetitionsPage: React.FC = () => {
   return (
     <>
       {show_modal && <GaraModal onClose={() => set_show_modal(false)} />}
-
       <div className="space-y-6 animate-fade-in">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold tracking-tight text-foreground">{t("gare")}</h1>
@@ -400,7 +460,6 @@ const CompetitionsPage: React.FC = () => {
             <Plus className="w-4 h-4 mr-2" /> {t("nuova_gara")}
           </Button>
         </div>
-
         <div className="bg-card rounded-xl shadow-card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -472,23 +531,6 @@ const CompetitionsPage: React.FC = () => {
       </div>
     </>
   );
-};
-
-// ─── Sub-components ────────────────────────────────────────────────────────────
-const InfoRow: React.FC<{ label: string; value: string }> = ({ label, value }) => (
-  <div className="flex justify-between items-center py-1">
-    <span className="text-sm text-muted-foreground">{label}</span>
-    <span className="text-sm font-medium text-foreground">{value}</span>
-  </div>
-);
-
-const MedalBadge: React.FC<{ tipo: string }> = ({ tipo }) => {
-  const colors: Record<string, string> = {
-    oro: "bg-yellow-100 text-yellow-700",
-    argento: "bg-slate-100 text-slate-600",
-    bronzo: "bg-orange-100 text-orange-700",
-  };
-  return <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${colors[tipo] || ""}`}>{tipo}</span>;
 };
 
 export default CompetitionsPage;
