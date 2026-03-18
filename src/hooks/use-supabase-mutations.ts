@@ -310,6 +310,53 @@ export function use_crea_lezione_privata() {
   });
 }
 
+// Aggiunge una seconda atleta a una lezione esistente (diventa semiprivata)
+export function use_aggiungi_atleta_lezione() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: {
+      lezione_id: string;
+      atleta_id: string;
+      nuovo_costo_totale: number;
+      modalita_costo: "dividi" | "manuale";
+      atleti_ids_esistenti: string[];
+    }) => {
+      // Calcola quota per ogni atleta
+      const tutti_atleti = [...data.atleti_ids_esistenti, data.atleta_id];
+      const quota = data.nuovo_costo_totale / tutti_atleti.length;
+
+      // Aggiorna costo_totale e condivisa su lezioni_private
+      const { error: err_update } = await supabase
+        .from("lezioni_private")
+        .update({
+          costo_totale: data.nuovo_costo_totale,
+          condivisa: true,
+        })
+        .eq("id", data.lezione_id);
+      if (err_update) throw err_update;
+
+      // Aggiorna le quote delle atlete esistenti
+      for (const aid of data.atleti_ids_esistenti) {
+        const { error } = await supabase
+          .from("lezioni_private_atlete")
+          .update({ quota_costo: quota })
+          .eq("lezione_id", data.lezione_id)
+          .eq("atleta_id", aid);
+        if (error) throw error;
+      }
+
+      // Inserisce la nuova atleta
+      const { error: err_insert } = await supabase.from("lezioni_private_atlete").insert({
+        lezione_id: data.lezione_id,
+        atleta_id: data.atleta_id,
+        quota_costo: quota,
+      });
+      if (err_insert) throw err_insert;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["lezioni_private"] }),
+  });
+}
+
 export function use_segna_fattura_pagata() {
   const qc = useQueryClient();
   return useMutation({
@@ -488,7 +535,6 @@ export function use_save_disponibilita() {
   });
 }
 
-// ── FIX: elimina prima da lezioni_private_atlete, poi da lezioni_private ──
 export function use_annulla_lezione() {
   const qc = useQueryClient();
   return useMutation({
