@@ -283,17 +283,12 @@ const SlotModal: React.FC<{
 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 const LezioniPrivatePage: React.FC = () => {
-  const { data: lezioni = [], isLoading } = useLezioniPrivate();
-  const { data: istruttori = [] } = useIstruttori();
-  const { data: atleti = [] } = useAtleti();
-  const { data: corsi = [] } = useCorsi();
-  const { data: allCorsiIstruttori = [] } = useCorsiIstruttori();
-  const insertLezione = useInsertLezionePrivata();
-  const insertAtlete = useInsertLezionePrivataAtlete();
-  const deleteLezione = useDeleteLezionePrivata();
-
-  const [selected_istruttore, set_selected_istruttore] = useState<string>("");
-  const { data: dispSlots = [] } = useDisponibilitaIstruttori(selected_istruttore || undefined);
+  const { data: lezioni = [], isLoading } = use_lezioni_private();
+  const { data: istruttori = [] } = use_istruttori();
+  const { data: atleti = [] } = use_atleti();
+  const { data: corsi = [] } = use_corsi();
+  const crea_lezione = use_crea_lezione_privata();
+  const annulla_lezione = use_annulla_lezione();
   const [cal_year, set_cal_year] = useState(new Date().getFullYear());
   const [cal_month, set_cal_month] = useState(new Date().getMonth());
   const [selected_date, set_selected_date] = useState<string>(fmt(new Date()));
