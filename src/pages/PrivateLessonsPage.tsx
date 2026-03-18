@@ -1,10 +1,9 @@
 import React, { useState, useMemo } from "react";
 import { use_lezioni_private, use_istruttori, use_atleti, use_corsi } from "@/hooks/use-supabase-data";
 import { use_crea_lezione_privata, use_annulla_lezione } from "@/hooks/use-supabase-mutations";
-import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, X, Search, Check, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Search, Check, Clock, User } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -281,6 +280,85 @@ const SlotModal: React.FC<{
   );
 };
 
+// ─── Modal dettaglio slot occupato ────────────────────────────────────────────
+const SlotDetailModal: React.FC<{
+  slot: any;
+  atleti: any[];
+  on_close: () => void;
+  on_annulla: () => void;
+  on_modifica: () => void;
+  loading: boolean;
+}> = ({ slot, atleti, on_close, on_annulla, on_modifica, loading }) => {
+  const nomi_atleti = (slot.lesson?.atleti_ids || [])
+    .map((id: string) => {
+      const a = atleti.find((x: any) => x.id === id);
+      return a ? `${a.nome} ${a.cognome}` : null;
+    })
+    .filter(Boolean);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+          <h2 className="text-base font-bold text-foreground">Dettaglio lezione</h2>
+          <button onClick={on_close} className="text-muted-foreground hover:text-foreground">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="px-6 py-5 space-y-4">
+          {/* Orario */}
+          <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl">
+            <Clock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            <span className="text-sm font-semibold text-foreground tabular-nums">
+              {slot.time} – {slot.end_time}
+            </span>
+          </div>
+
+          {/* Atleti */}
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Atleta/i</p>
+            {nomi_atleti.length > 0 ? (
+              nomi_atleti.map((nome: string, i: number) => (
+                <div key={i} className="flex items-center gap-2 px-3 py-2 bg-primary/5 rounded-lg">
+                  <User className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                  <span className="text-sm font-medium text-foreground">{nome}</span>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground italic">Nessun atleta registrato</p>
+            )}
+          </div>
+
+          {/* Note */}
+          {slot.lesson?.note && (
+            <div className="space-y-1">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Note</p>
+              <p className="text-sm text-foreground bg-muted/30 px-3 py-2 rounded-lg">{slot.lesson.note}</p>
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-between gap-3 px-6 py-4 border-t border-border">
+          <Button variant="destructive" onClick={on_annulla} disabled={loading} className="flex-1">
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                Annullo...
+              </span>
+            ) : (
+              "× Annulla lezione"
+            )}
+          </Button>
+          <Button variant="outline" onClick={on_modifica} disabled={loading} className="flex-1">
+            ✏️ Modifica
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 const LezioniPrivatePage: React.FC = () => {
   const { data: lezioni = [], isLoading } = use_lezioni_private();
@@ -289,6 +367,7 @@ const LezioniPrivatePage: React.FC = () => {
   const { data: corsi = [] } = use_corsi();
   const crea_lezione = use_crea_lezione_privata();
   const annulla_lezione = use_annulla_lezione();
+
   const [selected_istruttore, set_selected_istruttore] = useState<string>("");
   const [cal_year, set_cal_year] = useState(new Date().getFullYear());
   const [cal_month, set_cal_month] = useState(new Date().getMonth());
@@ -296,6 +375,8 @@ const LezioniPrivatePage: React.FC = () => {
   const [form_open, set_form_open] = useState(false);
   const [form_data, set_form_data] = useState<Record<string, any>>({});
   const [saving, set_saving] = useState(false);
+  // Nuovo stato per il modal dettaglio
+  const [detail_slot, set_detail_slot] = useState<any>(null);
 
   React.useEffect(() => {
     if (!selected_istruttore && istruttori.length > 0) {
@@ -305,11 +386,12 @@ const LezioniPrivatePage: React.FC = () => {
 
   const istruttore = istruttori.find((i: any) => i.id === selected_istruttore);
 
-  // Derive disponibilita slots from istruttore data
   const dispSlots = useMemo(() => {
     if (!istruttore?.disponibilita) return [];
     const slots: { giorno: string; ora_inizio: string; ora_fine: string }[] = [];
-    for (const [giorno, times] of Object.entries(istruttore.disponibilita as Record<string, { ora_inizio: string; ora_fine: string }[]>)) {
+    for (const [giorno, times] of Object.entries(
+      istruttore.disponibilita as Record<string, { ora_inizio: string; ora_fine: string }[]>,
+    )) {
       for (const t of times) {
         slots.push({ giorno, ora_inizio: t.ora_inizio, ora_fine: t.ora_fine });
       }
@@ -430,14 +512,39 @@ const LezioniPrivatePage: React.FC = () => {
     set_form_open(true);
   };
 
-  const handle_annulla = async (lesson: any) => {
+  // Apre il modal dettaglio per uno slot occupato
+  const open_detail = (slot: any) => {
+    set_detail_slot(slot);
+  };
+
+  const handle_annulla = async () => {
+    if (!detail_slot?.lesson) return;
     if (!window.confirm("Annullare questa lezione e liberare lo slot?")) return;
     try {
-      await annulla_lezione.mutateAsync(lesson.id);
+      await annulla_lezione.mutateAsync(detail_slot.lesson.id);
+      set_detail_slot(null);
       toast({ title: "Lezione annullata — slot liberato" });
     } catch (err: any) {
       toast({ title: "Errore annullamento", description: err?.message, variant: "destructive" });
     }
+  };
+
+  const handle_modifica = () => {
+    if (!detail_slot?.lesson) return;
+    const lesson = detail_slot.lesson;
+    set_form_data({
+      istruttore_id: selected_istruttore,
+      data: selected_date,
+      ora_inizio: lesson.ora_inizio,
+      ora_fine: lesson.ora_fine,
+      durata_minuti: lesson.durata_minuti || 20,
+      atleti_ids: lesson.atleti_ids || [],
+      ricorrente: false,
+      costo_totale: lesson.costo || 0,
+      note: lesson.note || "",
+    });
+    set_detail_slot(null);
+    set_form_open(true);
   };
 
   const handle_submit = async () => {
@@ -458,15 +565,11 @@ const LezioniPrivatePage: React.FC = () => {
         costo_totale: form_data.costo_totale || 0,
         note: form_data.note || "",
       });
-
       set_form_open(false);
       toast({
-        title: form_data.ricorrente
-          ? "📅 Lezioni ricorrenti create fino a fine stagione!"
-          : "✅ Lezione prenotata!",
+        title: form_data.ricorrente ? "📅 Lezioni ricorrenti create fino a fine stagione!" : "✅ Lezione prenotata!",
       });
     } catch (err: any) {
-      console.error("Errore lezione privata:", err);
       toast({
         title: "Errore durante il salvataggio",
         description: err?.message ?? "Controlla la console per dettagli.",
@@ -475,6 +578,17 @@ const LezioniPrivatePage: React.FC = () => {
     } finally {
       set_saving(false);
     }
+  };
+
+  // Risolve atleti_ids in nomi per la visualizzazione sullo slot
+  const get_atleti_names = (atleti_ids: string[]): string => {
+    return atleti_ids
+      .map((id) => {
+        const a = atleti.find((x: any) => x.id === id);
+        return a ? `${a.nome} ${a.cognome}` : null;
+      })
+      .filter(Boolean)
+      .join(", ");
   };
 
   const today = fmt(new Date());
@@ -503,6 +617,17 @@ const LezioniPrivatePage: React.FC = () => {
           on_submit={handle_submit}
           on_close={() => set_form_open(false)}
           loading={saving}
+        />
+      )}
+
+      {detail_slot && (
+        <SlotDetailModal
+          slot={detail_slot}
+          atleti={atleti}
+          on_close={() => set_detail_slot(null)}
+          on_annulla={handle_annulla}
+          on_modifica={handle_modifica}
+          loading={annulla_lezione.isPending}
         />
       )}
 
@@ -619,7 +744,7 @@ const LezioniPrivatePage: React.FC = () => {
                         if (slot.status === "libero") {
                           open_slot(slot.time, slot.end_time);
                         } else {
-                          handle_annulla(slot.lesson);
+                          open_detail(slot);
                         }
                       }}
                       className={`flex items-center justify-between px-4 py-3 rounded-xl cursor-pointer transition-all
@@ -638,7 +763,12 @@ const LezioniPrivatePage: React.FC = () => {
                             {slot.time} – {slot.end_time}
                           </p>
                           {slot.status === "occupato" && slot.lesson && (
-                            <p className="text-xs text-muted-foreground mt-0.5">{slot.lesson.note || "Occupato"}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {/* Mostra nomi atleti invece di "Occupato" */}
+                              {slot.lesson.atleti_ids?.length
+                                ? get_atleti_names(slot.lesson.atleti_ids)
+                                : slot.lesson.note || "Occupato"}
+                            </p>
                           )}
                         </div>
                       </div>
@@ -646,7 +776,7 @@ const LezioniPrivatePage: React.FC = () => {
                         className={`text-xs font-medium px-2 py-0.5 rounded-full
                         ${slot.status === "libero" ? "bg-success/20 text-success" : "bg-destructive/20 text-destructive"}`}
                       >
-                        {slot.status === "libero" ? "+ Prenota" : "× Annulla"}
+                        {slot.status === "libero" ? "+ Prenota" : "Dettagli"}
                       </span>
                     </div>
                   ))}
@@ -663,5 +793,3 @@ const LezioniPrivatePage: React.FC = () => {
     </>
   );
 };
-
-export default LezioniPrivatePage;
