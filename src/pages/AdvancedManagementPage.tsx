@@ -44,7 +44,7 @@ const ConfermaEliminazioneModal: React.FC<{
         <div className="px-6 py-4 space-y-4 max-h-[60vh] overflow-y-auto">
           <div className="space-y-2">
             <p className="text-sm text-destructive font-medium">
-              Stai per eliminare {ids.length} lezione{ids.length !== 1 ? 'i' : ''} in modo definitivo.
+              Stai per eliminare {ids.length} {ids.length === 1 ? 'lezione' : 'lezioni'} in modo definitivo.
             </p>
             <p className="text-xs text-muted-foreground">
               Questa operazione non può essere annullata.
