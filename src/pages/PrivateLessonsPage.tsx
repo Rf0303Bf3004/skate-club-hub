@@ -1,17 +1,7 @@
 import React, { useState, useMemo } from "react";
-import {
-  useLezioniPrivate,
-  useIstruttori,
-  useAtleti,
-  useCorsi,
-  useCorsiIstruttori,
-  useDisponibilitaIstruttori,
-  useInsertLezionePrivata,
-  useInsertLezionePrivataAtlete,
-  useDeleteLezionePrivata,
-} from "@/hooks/useSupabase";
+import { use_lezioni_private, use_istruttori, use_atleti, use_corsi } from "@/hooks/use-supabase-data";
+import { use_crea_lezione_privata, use_annulla_lezione } from "@/hooks/use-supabase-mutations";
 import { supabase } from "@/lib/supabase";
-import type { DisponibilitaIstruttore } from "@/types/models";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, X, Search, Check, Clock } from "lucide-react";
@@ -293,17 +283,13 @@ const SlotModal: React.FC<{
 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 const LezioniPrivatePage: React.FC = () => {
-  const { data: lezioni = [], isLoading } = useLezioniPrivate();
-  const { data: istruttori = [] } = useIstruttori();
-  const { data: atleti = [] } = useAtleti();
-  const { data: corsi = [] } = useCorsi();
-  const { data: allCorsiIstruttori = [] } = useCorsiIstruttori();
-  const insertLezione = useInsertLezionePrivata();
-  const insertAtlete = useInsertLezionePrivataAtlete();
-  const deleteLezione = useDeleteLezionePrivata();
-
+  const { data: lezioni = [], isLoading } = use_lezioni_private();
+  const { data: istruttori = [] } = use_istruttori();
+  const { data: atleti = [] } = use_atleti();
+  const { data: corsi = [] } = use_corsi();
+  const crea_lezione = use_crea_lezione_privata();
+  const annulla_lezione = use_annulla_lezione();
   const [selected_istruttore, set_selected_istruttore] = useState<string>("");
-  const { data: dispSlots = [] } = useDisponibilitaIstruttori(selected_istruttore || undefined);
   const [cal_year, set_cal_year] = useState(new Date().getFullYear());
   const [cal_month, set_cal_month] = useState(new Date().getMonth());
   const [selected_date, set_selected_date] = useState<string>(fmt(new Date()));
@@ -319,14 +305,23 @@ const LezioniPrivatePage: React.FC = () => {
 
   const istruttore = istruttori.find((i: any) => i.id === selected_istruttore);
 
+  // Derive disponibilita slots from istruttore data
+  const dispSlots = useMemo(() => {
+    if (!istruttore?.disponibilita) return [];
+    const slots: { giorno: string; ora_inizio: string; ora_fine: string }[] = [];
+    for (const [giorno, times] of Object.entries(istruttore.disponibilita as Record<string, { ora_inizio: string; ora_fine: string }[]>)) {
+      for (const t of times) {
+        slots.push({ giorno, ora_inizio: t.ora_inizio, ora_fine: t.ora_fine });
+      }
+    }
+    return slots;
+  }, [istruttore]);
+
   const corso_busy_by_day = useMemo(() => {
     if (!selected_istruttore) return {};
     const result: Record<string, { start: number; end: number }[]> = {};
-    const istruttoreCorsiIds = allCorsiIstruttori
-      .filter((ci: any) => ci.istruttore_id === selected_istruttore)
-      .map((ci: any) => ci.corso_id);
     for (const c of corsi) {
-      if (!istruttoreCorsiIds.includes(c.id)) continue;
+      if (!c.istruttori_ids?.includes(selected_istruttore)) continue;
       if (!c.attivo) continue;
       if (!c.giorno) continue;
       if (!result[c.giorno]) result[c.giorno] = [];
@@ -335,7 +330,7 @@ const LezioniPrivatePage: React.FC = () => {
       if (e > s) result[c.giorno].push({ start: s, end: e });
     }
     return result;
-  }, [corsi, allCorsiIstruttori, selected_istruttore]);
+  }, [corsi, selected_istruttore]);
 
   const get_slots_for_date = (date_str: string) => {
     if (!istruttore) return [];
@@ -343,7 +338,7 @@ const LezioniPrivatePage: React.FC = () => {
     const day_of_week = date.getDay();
     const giorno = GIORNI[day_of_week === 0 ? 6 : day_of_week - 1];
 
-    const dayDispSlots = dispSlots.filter((ds: DisponibilitaIstruttore) => ds.giorno === giorno);
+    const dayDispSlots = dispSlots.filter((ds: any) => ds.giorno === giorno);
     const avail = dayDispSlots.map((ds) => ({
       start: time_to_min(ds.ora_inizio),
       end: time_to_min(ds.ora_fine),
@@ -438,7 +433,7 @@ const LezioniPrivatePage: React.FC = () => {
   const handle_annulla = async (lesson: any) => {
     if (!window.confirm("Annullare questa lezione e liberare lo slot?")) return;
     try {
-      await deleteLezione.mutateAsync(lesson.id);
+      await annulla_lezione.mutateAsync(lesson.id);
       toast({ title: "Lezione annullata — slot liberato" });
     } catch (err: any) {
       toast({ title: "Errore annullamento", description: err?.message, variant: "destructive" });
@@ -452,56 +447,22 @@ const LezioniPrivatePage: React.FC = () => {
     }
     set_saving(true);
     try {
-      // Determina la data di fine per le ricorrenze
-      let end_date = new Date(form_data.data + "T00:00:00");
-      if (form_data.ricorrente) {
-        const { data: stagione, error: stagione_error } = await supabase
-          .from("stagioni")
-          .select("data_fine")
-          .eq("attiva", true)
-          .order("data_fine", { ascending: true })
-          .limit(1)
-          .maybeSingle();
-        if (stagione_error) throw stagione_error;
-        if (!stagione?.data_fine) throw new Error("Nessuna stagione attiva trovata. Crea prima una stagione.");
-        end_date = new Date(stagione.data_fine + "T00:00:00");
-      }
-
-      // Genera tutte le date (settimanali se ricorrente, singola altrimenti)
-      const dates: string[] = [];
-      const current = new Date(form_data.data + "T00:00:00");
-      while (current <= end_date) {
-        dates.push(fmt(current));
-        if (!form_data.ricorrente) break;
-        current.setDate(current.getDate() + 7);
-      }
-
-      // Inserisci ogni lezione con i suoi atleti
-      const quota_costo = (form_data.costo_totale || 0) / (form_data.atleti_ids?.length || 1);
-      for (const data of dates) {
-        const lezione = await insertLezione.mutateAsync({
-          istruttore_id: form_data.istruttore_id,
-          data,
-          ora_inizio: form_data.ora_inizio,
-          ora_fine: form_data.ora_fine,
-          durata_minuti: form_data.durata_minuti,
-          condivisa: (form_data.atleti_ids?.length || 0) > 1,
-          costo_totale: form_data.costo_totale || 0,
-          note: form_data.note || "",
-        });
-        await insertAtlete.mutateAsync(
-          form_data.atleti_ids.map((atleta_id: string) => ({
-            lezione_id: lezione.id,
-            atleta_id,
-            quota_costo,
-          })),
-        );
-      }
+      await crea_lezione.mutateAsync({
+        istruttore_id: form_data.istruttore_id,
+        data: form_data.data,
+        ora_inizio: form_data.ora_inizio,
+        ora_fine: form_data.ora_fine,
+        durata_minuti: form_data.durata_minuti,
+        atleti_ids: form_data.atleti_ids,
+        ricorrente: form_data.ricorrente,
+        costo_totale: form_data.costo_totale || 0,
+        note: form_data.note || "",
+      });
 
       set_form_open(false);
       toast({
         title: form_data.ricorrente
-          ? `📅 ${dates.length} lezioni create fino a fine stagione!`
+          ? "📅 Lezioni ricorrenti create fino a fine stagione!"
           : "✅ Lezione prenotata!",
       });
     } catch (err: any) {
