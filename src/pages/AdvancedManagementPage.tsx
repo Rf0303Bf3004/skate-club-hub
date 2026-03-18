@@ -160,7 +160,7 @@ const SezioneRicorrenze: React.FC<{
       set_conferma_open(false);
       set_lezione_base_id("");
       set_ids_da_eliminare([]);
-      toast({ title: `🗑️ ${ids_da_eliminare.length} lezione/i eliminate correttamente` });
+      toast({ title: `🗑️ ${ids_da_eliminare.length} ${ids_da_eliminare.length === 1 ? 'lezione eliminata' : 'lezioni eliminate'} correttamente` });
     } catch (err: any) {
       toast({ title: "Errore eliminazione", description: err?.message, variant: "destructive" });
     }
