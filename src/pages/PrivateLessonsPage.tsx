@@ -447,56 +447,22 @@ const LezioniPrivatePage: React.FC = () => {
     }
     set_saving(true);
     try {
-      // Determina la data di fine per le ricorrenze
-      let end_date = new Date(form_data.data + "T00:00:00");
-      if (form_data.ricorrente) {
-        const { data: stagione, error: stagione_error } = await supabase
-          .from("stagioni")
-          .select("data_fine")
-          .eq("attiva", true)
-          .order("data_fine", { ascending: true })
-          .limit(1)
-          .maybeSingle();
-        if (stagione_error) throw stagione_error;
-        if (!stagione?.data_fine) throw new Error("Nessuna stagione attiva trovata. Crea prima una stagione.");
-        end_date = new Date(stagione.data_fine + "T00:00:00");
-      }
-
-      // Genera tutte le date (settimanali se ricorrente, singola altrimenti)
-      const dates: string[] = [];
-      const current = new Date(form_data.data + "T00:00:00");
-      while (current <= end_date) {
-        dates.push(fmt(current));
-        if (!form_data.ricorrente) break;
-        current.setDate(current.getDate() + 7);
-      }
-
-      // Inserisci ogni lezione con i suoi atleti
-      const quota_costo = (form_data.costo_totale || 0) / (form_data.atleti_ids?.length || 1);
-      for (const data of dates) {
-        const lezione = await insertLezione.mutateAsync({
-          istruttore_id: form_data.istruttore_id,
-          data,
-          ora_inizio: form_data.ora_inizio,
-          ora_fine: form_data.ora_fine,
-          durata_minuti: form_data.durata_minuti,
-          condivisa: (form_data.atleti_ids?.length || 0) > 1,
-          costo_totale: form_data.costo_totale || 0,
-          note: form_data.note || "",
-        });
-        await insertAtlete.mutateAsync(
-          form_data.atleti_ids.map((atleta_id: string) => ({
-            lezione_id: lezione.id,
-            atleta_id,
-            quota_costo,
-          })),
-        );
-      }
+      await crea_lezione.mutateAsync({
+        istruttore_id: form_data.istruttore_id,
+        data: form_data.data,
+        ora_inizio: form_data.ora_inizio,
+        ora_fine: form_data.ora_fine,
+        durata_minuti: form_data.durata_minuti,
+        atleti_ids: form_data.atleti_ids,
+        ricorrente: form_data.ricorrente,
+        costo_totale: form_data.costo_totale || 0,
+        note: form_data.note || "",
+      });
 
       set_form_open(false);
       toast({
         title: form_data.ricorrente
-          ? `📅 ${dates.length} lezioni create fino a fine stagione!`
+          ? "📅 Lezioni ricorrenti create fino a fine stagione!"
           : "✅ Lezione prenotata!",
       });
     } catch (err: any) {
