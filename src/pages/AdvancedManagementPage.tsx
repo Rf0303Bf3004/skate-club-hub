@@ -44,7 +44,7 @@ const ConfermaEliminazioneModal: React.FC<{
         <div className="px-6 py-4 space-y-4 max-h-[60vh] overflow-y-auto">
           <div className="space-y-2">
             <p className="text-sm text-destructive font-medium">
-              Stai per eliminare {ids.length} lezione{ids.length !== 1 ? 'i' : ''} in modo definitivo.
+              Stai per eliminare {ids.length} {ids.length === 1 ? 'lezione' : 'lezioni'} in modo definitivo.
             </p>
             <p className="text-xs text-muted-foreground">
               Questa operazione non può essere annullata.
@@ -93,7 +93,7 @@ const ConfermaEliminazioneModal: React.FC<{
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                 Elimino...
               </span>
-            ) : `🗑️ Elimina ${ids.length} lezione${ids.length !== 1 ? 'i' : ''}`}
+            ) : `🗑️ Elimina ${ids.length} ${ids.length === 1 ? 'lezione' : 'lezioni'}`}
           </Button>
         </div>
       </div>
@@ -160,7 +160,7 @@ const SezioneRicorrenze: React.FC<{
       set_conferma_open(false);
       set_lezione_base_id("");
       set_ids_da_eliminare([]);
-      toast({ title: `🗑️ ${ids_da_eliminare.length} lezione/i eliminate correttamente` });
+      toast({ title: `🗑️ ${ids_da_eliminare.length} ${ids_da_eliminare.length === 1 ? 'lezione eliminata' : 'lezioni eliminate'} correttamente` });
     } catch (err: any) {
       toast({ title: "Errore eliminazione", description: err?.message, variant: "destructive" });
     }
@@ -292,7 +292,7 @@ const SezioneRicorrenze: React.FC<{
 
           <Button variant="destructive" onClick={handle_procedi} className="w-full">
             <Trash2 className="h-4 w-4 mr-2" />
-            Procedi con l'eliminazione ({calcola_ids().length} lezione/i)
+            Procedi con l'eliminazione ({calcola_ids().length} {calcola_ids().length === 1 ? 'lezione' : 'lezioni'})
           </Button>
         </div>
       )}
@@ -357,7 +357,7 @@ const SezioneSelezioneMolteplice: React.FC<{
       await annulla.mutateAsync(Array.from(selezionate));
       set_conferma_open(false);
       set_selezionate(new Set());
-      toast({ title: `🗑️ ${selezionate.size} lezione/i eliminate correttamente` });
+      toast({ title: `🗑️ ${selezionate.size} ${selezionate.size === 1 ? 'lezione eliminata' : 'lezioni eliminate'} correttamente` });
     } catch (err: any) {
       toast({ title: "Errore eliminazione", description: err?.message, variant: "destructive" });
     }
@@ -466,7 +466,7 @@ const SezioneSelezioneMolteplice: React.FC<{
       {selezionate.size > 0 && (
         <Button variant="destructive" onClick={() => set_conferma_open(true)} className="w-full">
           <Trash2 className="h-4 w-4 mr-2" />
-          Elimina {selezionate.size} lezione{selezionate.size !== 1 ? 'i' : ''} selezionate
+          Elimina {selezionate.size} {selezionate.size === 1 ? 'lezione selezionata' : 'lezioni selezionate'}
         </Button>
       )}
 
