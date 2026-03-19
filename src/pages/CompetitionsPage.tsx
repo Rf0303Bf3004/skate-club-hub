@@ -38,7 +38,7 @@ const LIVELLI = [
   "Oro",
 ];
 const CARRIERE = ["Artistica", "Stile", "Entrambe"];
-const MEDAGLIE = ["", "oro", "argento", "bronzo"];
+const MEDAGLIE = ["", "Oro", "Argento", "Bronzo"];
 
 interface GaraFormData {
   nome: string;
