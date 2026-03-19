@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { supabase, DEMO_CLUB_ID } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
-import { Upload, Globe, Phone, Mail, MapPin, Hash, Users, UserCheck, Calendar } from "lucide-react";
+import { Upload, Globe, Phone, Mail, MapPin, Hash, Users, UserCheck, Calendar, Building2 } from "lucide-react";
 
 const ClubSetupPage: React.FC = () => {
   const { t } = useI18n();
@@ -18,7 +18,6 @@ const ClubSetupPage: React.FC = () => {
   const { data: istruttori = [] } = use_istruttori();
 
   const stagione_attiva = stagioni.find((s: any) => s.attiva);
-
   const [form, set_form] = useState<Record<string, any>>({});
   const [saving, set_saving] = useState(false);
   const [uploading, set_uploading] = useState(false);
@@ -26,7 +25,7 @@ const ClubSetupPage: React.FC = () => {
 
   const get_val = (field: string, fallback: any = "") => {
     if (field in form) return form[field];
-    return club?.[field] ?? fallback;
+    return club?.[field] ?? setup?.[field] ?? fallback;
   };
 
   const set_val = (field: string, value: any) => {
@@ -46,7 +45,6 @@ const ClubSetupPage: React.FC = () => {
       const path = `${DEMO_CLUB_ID}/logo.${ext}`;
       const { error: upload_error } = await supabase.storage.from("loghi-club").upload(path, file, { upsert: true });
       if (upload_error) throw upload_error;
-
       const { data: url_data } = supabase.storage.from("loghi-club").getPublicUrl(path);
       const logo_url = url_data.publicUrl;
       set_val("logo_url", logo_url);
@@ -89,6 +87,10 @@ const ClubSetupPage: React.FC = () => {
         "max_lezioni_private_contemporanee",
         "max_atlete_lezione_condivisa",
         "slot_lezione_privata_minuti",
+        "iban",
+        "intestatario_conto",
+        "banca",
+        "indirizzo_banca",
       ];
       for (const f of setup_fields) {
         if (f in form) setup_payload[f] = form[f];
@@ -148,7 +150,7 @@ const ClubSetupPage: React.FC = () => {
       </div>
 
       <div className="bg-card rounded-xl shadow-card p-6 space-y-8 max-w-2xl">
-        {/* Logo + nome */}
+        {/* Logo */}
         <section className="space-y-4">
           <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Logo Club</h2>
           <div className="flex items-center gap-6">
@@ -222,9 +224,8 @@ const ClubSetupPage: React.FC = () => {
             </Field>
           </div>
 
-          {/* Colore primario */}
           <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground flex items-center gap-1.5">Colore sociale</Label>
+            <Label className="text-xs text-muted-foreground">Colore sociale</Label>
             <div className="flex items-center gap-3">
               <input
                 type="color"
@@ -242,7 +243,6 @@ const ClubSetupPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Descrizione */}
           <div className="space-y-1.5">
             <Label className="text-xs text-muted-foreground">Descrizione club</Label>
             <textarea
@@ -252,6 +252,45 @@ const ClubSetupPage: React.FC = () => {
               placeholder="Breve descrizione del club..."
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
+          </div>
+        </section>
+
+        <Separator />
+
+        {/* Dati bancari */}
+        <section className="space-y-4">
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Dati Bancari</h2>
+          <p className="text-xs text-muted-foreground">Utilizzati per generare il QR Swiss sulle fatture.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="IBAN" icon={<Building2 className="w-3.5 h-3.5" />}>
+              <Input
+                value={form.iban ?? setup?.iban ?? ""}
+                onChange={(e) => set_val("iban", e.target.value)}
+                placeholder="CH56 0483 5012 3456 7800 9"
+                className="font-mono"
+              />
+            </Field>
+            <Field label="Intestatario conto" icon={<Hash className="w-3.5 h-3.5" />}>
+              <Input
+                value={form.intestatario_conto ?? setup?.intestatario_conto ?? ""}
+                onChange={(e) => set_val("intestatario_conto", e.target.value)}
+                placeholder="Club Pattinaggio Ascona"
+              />
+            </Field>
+            <Field label="Banca" icon={<Building2 className="w-3.5 h-3.5" />}>
+              <Input
+                value={form.banca ?? setup?.banca ?? ""}
+                onChange={(e) => set_val("banca", e.target.value)}
+                placeholder="Banca dello Stato del Cantone Ticino"
+              />
+            </Field>
+            <Field label="Indirizzo banca" icon={<MapPin className="w-3.5 h-3.5" />}>
+              <Input
+                value={form.indirizzo_banca ?? setup?.indirizzo_banca ?? ""}
+                onChange={(e) => set_val("indirizzo_banca", e.target.value)}
+                placeholder="Via Lugano 1, 6500 Bellinzona"
+              />
+            </Field>
           </div>
         </section>
 
