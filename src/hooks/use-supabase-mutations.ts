@@ -543,14 +543,17 @@ export function use_elimina_istruttore() {
   });
 }
 
+// FIX: gestione errori esplicita su ogni DELETE
 export function use_elimina_corso() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      await supabase.from("corsi_istruttori").delete().eq("corso_id", id);
-      await supabase.from("iscrizioni_corsi").delete().eq("corso_id", id);
-      const { error } = await supabase.from("corsi").delete().eq("id", id);
-      if (error) throw error;
+      const { error: e1 } = await supabase.from("corsi_istruttori").delete().eq("corso_id", id);
+      if (e1) throw e1;
+      const { error: e2 } = await supabase.from("iscrizioni_corsi").delete().eq("corso_id", id);
+      if (e2) throw e2;
+      const { error: e3 } = await supabase.from("corsi").delete().eq("id", id);
+      if (e3) throw e3;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["corsi"] }),
   });
@@ -560,9 +563,10 @@ export function use_elimina_gara() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      await supabase.from("iscrizioni_gare").delete().eq("gara_id", id);
-      const { error } = await supabase.from("gare_calendario").delete().eq("id", id);
-      if (error) throw error;
+      const { error: e1 } = await supabase.from("iscrizioni_gare").delete().eq("gara_id", id);
+      if (e1) throw e1;
+      const { error: e2 } = await supabase.from("gare_calendario").delete().eq("id", id);
+      if (e2) throw e2;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["gare"] }),
   });
@@ -583,9 +587,10 @@ export function use_elimina_campo() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      await supabase.from("iscrizioni_campo").delete().eq("campo_id", id);
-      const { error } = await supabase.from("campi_allenamento").delete().eq("id", id);
-      if (error) throw error;
+      const { error: e1 } = await supabase.from("iscrizioni_campo").delete().eq("campo_id", id);
+      if (e1) throw e1;
+      const { error: e2 } = await supabase.from("campi_allenamento").delete().eq("id", id);
+      if (e2) throw e2;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["campi"] }),
   });
