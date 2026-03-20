@@ -1,11 +1,13 @@
 import React, { useState, useMemo } from "react";
 import { useI18n } from "@/lib/i18n";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { use_corsi, use_istruttori, get_istruttore_name_from_list } from "@/hooks/use-supabase-data";
 import { use_upsert_corso, use_elimina_corso } from "@/hooks/use-supabase-mutations";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, AlertTriangle, X } from "lucide-react";
+import { Plus, AlertTriangle, X, ChevronDown } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { supabase, DEMO_CLUB_ID } from "@/lib/supabase";
 
 const GIORNI_DB = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
 
@@ -20,6 +22,22 @@ function is_istruttore_disponibile(istruttore: any, giorno: string, ora_inizio: 
   const corso_start = time_to_min(ora_inizio);
   const corso_end = time_to_min(ora_fine);
   return slots.some((s: any) => time_to_min(s.ora_inizio) <= corso_start && time_to_min(s.ora_fine) >= corso_end);
+}
+
+// ─── Hook tipi corso ───────────────────────────────────────
+function use_tipi_corso() {
+  return useQuery({
+    queryKey: ["tipi_corso", DEMO_CLUB_ID],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tipi_corso")
+        .select("nome")
+        .eq("club_id", DEMO_CLUB_ID)
+        .order("nome");
+      if (error) throw error;
+      return (data ?? []).map((t: any) => t.nome as string);
+    },
+  });
 }
 
 // ─── Field helper ──────────────────────────────────────────
@@ -37,17 +55,112 @@ const Field: React.FC<{ label: string; children: React.ReactNode; required?: boo
   </div>
 );
 
+// ─── Selettore tipo corso con aggiunta ─────────────────────
+const TipoCorsoSelect: React.FC<{
+  value: string;
+  on_change: (v: string) => void;
+  tipi: string[];
+  on_add_tipo: (nome: string) => Promise<void>;
+}> = ({ value, on_change, tipi, on_add_tipo }) => {
+  const [show_aggiungi, set_show_aggiungi] = useState(false);
+  const [nuovo_tipo, set_nuovo_tipo] = useState("");
+  const [adding, set_adding] = useState(false);
+
+  const handle_aggiungi = async () => {
+    const nome = nuovo_tipo.trim();
+    if (!nome) return;
+    if (tipi.includes(nome)) {
+      on_change(nome);
+      set_show_aggiungi(false);
+      set_nuovo_tipo("");
+      return;
+    }
+    set_adding(true);
+    try {
+      await on_add_tipo(nome);
+      on_change(nome);
+      set_show_aggiungi(false);
+      set_nuovo_tipo("");
+    } finally {
+      set_adding(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="relative">
+        <select
+          value={value}
+          onChange={(e) => {
+            if (e.target.value === "__nuovo__") {
+              set_show_aggiungi(true);
+            } else {
+              on_change(e.target.value);
+              set_show_aggiungi(false);
+            }
+          }}
+          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 appearance-none pr-8"
+        >
+          <option value="">Nessun tipo</option>
+          {tipi.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+          <option value="__nuovo__">➕ Aggiungi nuovo tipo...</option>
+        </select>
+        <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+      </div>
+
+      {show_aggiungi && (
+        <div className="flex gap-2 p-3 bg-primary/5 border border-primary/20 rounded-xl">
+          <input
+            type="text"
+            value={nuovo_tipo}
+            onChange={(e) => set_nuovo_tipo(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handle_aggiungi()}
+            placeholder="Nome nuovo tipo..."
+            autoFocus
+            className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+          />
+          <Button
+            size="sm"
+            onClick={handle_aggiungi}
+            disabled={adding || !nuovo_tipo.trim()}
+            className="bg-primary hover:bg-primary/90 h-8"
+          >
+            {adding ? "..." : "Aggiungi"}
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              set_show_aggiungi(false);
+              set_nuovo_tipo("");
+            }}
+            className="h-8 w-8 p-0"
+          >
+            <X className="w-3.5 h-3.5" />
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ─── Modal corso ───────────────────────────────────────────
 const CorsoModal: React.FC<{
   corso?: any;
   istruttori: any[];
   corsi: any[];
+  tipi_corso: string[];
   on_close: () => void;
   on_save: (data: any) => Promise<void>;
   on_delete?: () => Promise<void>;
+  on_add_tipo: (nome: string) => Promise<void>;
   saving: boolean;
   deleting: boolean;
-}> = ({ corso, istruttori, corsi, on_close, on_save, on_delete, saving, deleting }) => {
+}> = ({ corso, istruttori, corsi, tipi_corso, on_close, on_save, on_delete, on_add_tipo, saving, deleting }) => {
   const [form, set_form] = useState({
     nome: corso?.nome || "",
     tipo: corso?.tipo || "",
@@ -76,7 +189,6 @@ const CorsoModal: React.FC<{
     }));
   };
 
-  // Calcola avvisi disponibilità in tempo reale
   const istruttori_non_disponibili = useMemo(() => {
     return form.istruttori_ids
       .map((id: string) => istruttori.find((i: any) => i.id === id))
@@ -84,7 +196,6 @@ const CorsoModal: React.FC<{
       .map((i: any) => `${i.nome} ${i.cognome}`);
   }, [form.istruttori_ids, form.giorno, form.ora_inizio, form.ora_fine, istruttori]);
 
-  // Controlla conflitti con altri corsi
   const conflitti_corsi = useMemo(() => {
     return form.istruttori_ids.flatMap((id: string) => {
       return corsi
@@ -141,7 +252,6 @@ const CorsoModal: React.FC<{
           </button>
         </div>
 
-        {/* Avviso forzatura */}
         {confirm_forzatura && (
           <div className="mx-6 mt-4 bg-orange-50 border border-orange-200 rounded-xl p-4 space-y-3">
             <div className="flex items-start gap-2">
@@ -182,11 +292,11 @@ const CorsoModal: React.FC<{
           </Field>
 
           <Field label="Tipo">
-            <input
+            <TipoCorsoSelect
               value={form.tipo}
-              onChange={(e) => set_val("tipo", e.target.value)}
-              placeholder="es. Artistica, Stile..."
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+              on_change={(v) => set_val("tipo", v)}
+              tipi={tipi_corso}
+              on_add_tipo={on_add_tipo}
             />
           </Field>
 
@@ -251,7 +361,6 @@ const CorsoModal: React.FC<{
             </Field>
           </div>
 
-          {/* Selezione istruttori con feedback disponibilità */}
           <Field label="Istruttori">
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {istruttori_attivi.map((i: any) => {
@@ -266,7 +375,6 @@ const CorsoModal: React.FC<{
                     time_to_min(c.ora_inizio?.slice(0, 5)) < time_to_min(form.ora_fine) &&
                     time_to_min(c.ora_fine?.slice(0, 5)) > time_to_min(form.ora_inizio),
                 );
-
                 return (
                   <div
                     key={i.id}
@@ -385,12 +493,21 @@ const CorsoModal: React.FC<{
 // ─── Main Page ─────────────────────────────────────────────
 const CoursesPage: React.FC = () => {
   const { t } = useI18n();
+  const qc = useQueryClient();
   const { data: corsi = [], isLoading } = use_corsi();
   const { data: istruttori = [] } = use_istruttori();
+  const { data: tipi_corso = [] } = use_tipi_corso();
   const upsert = use_upsert_corso();
   const elimina = use_elimina_corso();
   const [modal_open, set_modal_open] = useState(false);
   const [selected_corso, set_selected_corso] = useState<any>(null);
+
+  const handle_add_tipo = async (nome: string) => {
+    const { error } = await supabase.from("tipi_corso").insert({ club_id: DEMO_CLUB_ID, nome });
+    if (error) throw error;
+    await qc.invalidateQueries({ queryKey: ["tipi_corso"] });
+    toast({ title: `✅ Tipo "${nome}" aggiunto` });
+  };
 
   const handle_save = async (data: any) => {
     try {
@@ -426,9 +543,11 @@ const CoursesPage: React.FC = () => {
           corso={selected_corso}
           istruttori={istruttori}
           corsi={corsi}
+          tipi_corso={tipi_corso}
           on_close={() => set_modal_open(false)}
           on_save={handle_save}
           on_delete={selected_corso?.id ? handle_delete : undefined}
+          on_add_tipo={handle_add_tipo}
           saving={upsert.isPending}
           deleting={elimina.isPending}
         />
@@ -498,8 +617,8 @@ const CoursesPage: React.FC = () => {
                     >
                       <td className="px-4 py-3 font-medium text-foreground">{c.nome}</td>
                       <td className="px-4 py-3">
-                        <Badge variant="secondary" className="text-xs capitalize">
-                          {c.tipo?.replace("_", " ")}
+                        <Badge variant="secondary" className="text-xs">
+                          {c.tipo || "—"}
                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{c.giorno}</td>
