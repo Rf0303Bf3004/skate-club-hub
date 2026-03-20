@@ -5,65 +5,215 @@ import { use_upsert_stagione, use_elimina_stagione } from "@/hooks/use-supabase-
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus } from "lucide-react";
-import FormDialog, { FormField } from "@/components/forms/FormDialog";
 import { toast } from "@/hooks/use-toast";
+import { supabase, DEMO_CLUB_ID } from "@/lib/supabase";
+import { useQueryClient } from "@tanstack/react-query";
+import { X } from "lucide-react";
 
-const SeasonsPage: React.FC = () => {
-  const { t } = useI18n();
-  const { data: stagioni = [], isLoading } = use_stagioni();
-  const upsert = use_upsert_stagione();
+const TIPI_STAGIONE = [
+  { value: "Regolare", label: "Regolare" },
+  { value: "Pre-Season", label: "Pre-Season" },
+  { value: "Post-Season", label: "Post-Season" },
+  { value: "Campo", label: "Campo" },
+];
+
+const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
+  <div className="space-y-1.5">
+    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{label}</label>
+    {children}
+  </div>
+);
+
+const StagioneModal: React.FC<{
+  stagione?: any;
+  on_close: () => void;
+}> = ({ stagione, on_close }) => {
+  const qc = useQueryClient();
   const elimina = use_elimina_stagione();
-  const [form_open, set_form_open] = useState(false);
-  const [form_data, set_form_data] = useState<Record<string, any>>({});
+  const [form, set_form] = useState({
+    nome: stagione?.nome || "",
+    tipo: stagione?.tipo || "Regolare",
+    data_inizio: stagione?.data_inizio || "",
+    data_fine: stagione?.data_fine || "",
+    attiva: stagione?.attiva ?? true,
+  });
+  const [saving, set_saving] = useState(false);
+  const [confirm_delete, set_confirm_delete] = useState(false);
 
-  const fields: FormField[] = [
-    { key: "nome", label: t("nome"), required: true },
-    {
-      key: "tipo",
-      label: t("tipo_stagione"),
-      type: "select",
-      options: [
-        { value: "regolare", label: t("regolare") },
-        { value: "pre_season", label: t("pre_season") },
-        { value: "post_season", label: t("post_season") },
-        { value: "campo", label: t("campo") },
-      ],
-    },
-    { key: "data_inizio", label: t("data_inizio"), type: "date", required: true },
-    { key: "data_fine", label: t("data_fine"), type: "date", required: true },
-    { key: "attiva", label: t("attivo"), type: "checkbox" },
-  ];
+  const set_val = (k: string, v: any) => set_form((p) => ({ ...p, [k]: v }));
 
-  const open_new = () => {
-    set_form_data({ tipo: "regolare", attiva: true });
-    set_form_open(true);
-  };
-
-  const open_edit = (s: any) => {
-    set_form_data({
-      id: s.id,
-      nome: s.nome,
-      tipo: s.tipo,
-      data_inizio: s.data_inizio,
-      data_fine: s.data_fine,
-      attiva: s.attiva,
-    });
-    set_form_open(true);
-  };
-
-  const handle_submit = async () => {
-    await upsert.mutateAsync(form_data);
-    set_form_open(false);
+  const handle_save = async () => {
+    if (!form.nome.trim() || !form.data_inizio || !form.data_fine) {
+      toast({
+        title: "Campi obbligatori mancanti",
+        description: "Nome, data inizio e data fine sono obbligatori.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (form.data_fine < form.data_inizio) {
+      toast({
+        title: "Date non valide",
+        description: "La data fine deve essere successiva alla data inizio.",
+        variant: "destructive",
+      });
+      return;
+    }
+    set_saving(true);
+    try {
+      const payload = {
+        club_id: DEMO_CLUB_ID,
+        nome: form.nome.trim(),
+        tipo: form.tipo,
+        data_inizio: form.data_inizio,
+        data_fine: form.data_fine,
+        attiva: form.attiva,
+      };
+      if (stagione?.id) {
+        const { error } = await supabase.from("stagioni").update(payload).eq("id", stagione.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("stagioni").insert(payload);
+        if (error) throw error;
+      }
+      await qc.invalidateQueries({ queryKey: ["stagioni"] });
+      toast({ title: stagione?.id ? "✅ Stagione aggiornata" : "✅ Stagione creata" });
+      on_close();
+    } catch (err: any) {
+      toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
+    } finally {
+      set_saving(false);
+    }
   };
 
   const handle_delete = async () => {
     try {
-      await elimina.mutateAsync(form_data.id);
-      set_form_open(false);
-      toast({ title: "🗑️ Stagione eliminata correttamente" });
+      await elimina.mutateAsync(stagione.id);
+      toast({ title: "🗑️ Stagione eliminata" });
+      on_close();
     } catch (err: any) {
       toast({ title: "Errore eliminazione", description: err?.message, variant: "destructive" });
     }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-card rounded-2xl shadow-xl w-full max-w-md">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+          <h2 className="text-base font-bold text-foreground">
+            {stagione?.id ? "Modifica stagione" : "Nuova stagione"}
+          </h2>
+          <button onClick={on_close} className="text-muted-foreground hover:text-foreground">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="px-6 py-5 space-y-4">
+          <Field label="Nome *">
+            <input
+              value={form.nome}
+              onChange={(e) => set_val("nome", e.target.value)}
+              placeholder="es. Stagione 2025-2026"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+            />
+          </Field>
+          <Field label="Tipo">
+            <select
+              value={form.tipo}
+              onChange={(e) => set_val("tipo", e.target.value)}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+            >
+              {TIPI_STAGIONE.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Data inizio *">
+              <input
+                type="date"
+                value={form.data_inizio}
+                onChange={(e) => set_val("data_inizio", e.target.value)}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+              />
+            </Field>
+            <Field label="Data fine *">
+              <input
+                type="date"
+                value={form.data_fine}
+                onChange={(e) => set_val("data_fine", e.target.value)}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+              />
+            </Field>
+          </div>
+          <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
+            <input
+              type="checkbox"
+              id="attiva"
+              checked={form.attiva}
+              onChange={(e) => set_val("attiva", e.target.checked)}
+              className="w-4 h-4 accent-primary"
+            />
+            <label htmlFor="attiva" className="text-sm font-medium text-foreground cursor-pointer">
+              Stagione attiva
+            </label>
+          </div>
+        </div>
+        <div className="px-6 py-4 border-t border-border space-y-2">
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={on_close} disabled={saving} className="flex-1">
+              Annulla
+            </Button>
+            <Button onClick={handle_save} disabled={saving} className="flex-1 bg-primary hover:bg-primary/90">
+              {saving ? "..." : "💾 Salva"}
+            </Button>
+          </div>
+          {stagione?.id && !confirm_delete && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => set_confirm_delete(true)}
+              className="w-full text-destructive hover:bg-destructive/10"
+            >
+              🗑️ Elimina stagione
+            </Button>
+          )}
+          {confirm_delete && (
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => set_confirm_delete(false)} className="flex-1">
+                Annulla
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handle_delete}
+                disabled={elimina.isPending}
+                className="flex-1"
+              >
+                {elimina.isPending ? "..." : "Elimina definitivamente"}
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const SeasonsPage: React.FC = () => {
+  const { t } = useI18n();
+  const { data: stagioni = [], isLoading } = use_stagioni();
+  const [modal_open, set_modal_open] = useState(false);
+  const [selected, set_selected] = useState<any>(null);
+
+  const open_new = () => {
+    set_selected(null);
+    set_modal_open(true);
+  };
+  const open_edit = (s: any) => {
+    set_selected(s);
+    set_modal_open(true);
   };
 
   if (isLoading)
@@ -74,78 +224,76 @@ const SeasonsPage: React.FC = () => {
     );
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold tracking-tight text-foreground">{t("stagioni")}</h1>
-        <Button className="bg-primary hover:bg-primary/90" onClick={open_new}>
-          <Plus className="w-4 h-4 mr-2" /> {t("nuova_stagione")}
-        </Button>
-      </div>
+    <>
+      {modal_open && <StagioneModal stagione={selected} on_close={() => set_modal_open(false)} />}
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold tracking-tight text-foreground">{t("stagioni")}</h1>
+          <Button className="bg-primary hover:bg-primary/90" onClick={open_new}>
+            <Plus className="w-4 h-4 mr-2" /> {t("nuova_stagione")}
+          </Button>
+        </div>
 
-      <div className="bg-card rounded-xl shadow-card overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border">
-              <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                {t("nome")}
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                {t("tipo")}
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden sm:table-cell">
-                {t("data_inizio")}
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden sm:table-cell">
-                {t("data_fine")}
-              </th>
-              <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                {t("stato")}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {stagioni.map((s: any) => (
-              <tr
-                key={s.id}
-                onClick={() => open_edit(s)}
-                className="border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors"
-              >
-                <td className="px-4 py-3 font-medium text-foreground">{s.nome}</td>
-                <td className="px-4 py-3">
-                  <Badge variant="secondary" className="text-xs">
-                    {t(s.tipo)}
-                  </Badge>
-                </td>
-                <td className="px-4 py-3 tabular-nums text-muted-foreground hidden sm:table-cell">
-                  {new Date(s.data_inizio).toLocaleDateString("it-CH")}
-                </td>
-                <td className="px-4 py-3 tabular-nums text-muted-foreground hidden sm:table-cell">
-                  {new Date(s.data_fine).toLocaleDateString("it-CH")}
-                </td>
-                <td className="px-4 py-3 text-center">
-                  <Badge variant={s.attiva ? "default" : "secondary"} className="text-xs">
-                    {s.attiva ? t("attivo") : t("inattivo")}
-                  </Badge>
-                </td>
+        <div className="bg-card rounded-xl shadow-card overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                  {t("nome")}
+                </th>
+                <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                  {t("tipo")}
+                </th>
+                <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden sm:table-cell">
+                  {t("data_inizio")}
+                </th>
+                <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden sm:table-cell">
+                  {t("data_fine")}
+                </th>
+                <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                  {t("stato")}
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {stagioni.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-4 py-12 text-center text-muted-foreground text-sm">
+                    Nessuna stagione. Clicca "Nuova stagione" per aggiungerne una.
+                  </td>
+                </tr>
+              ) : (
+                stagioni.map((s: any) => (
+                  <tr
+                    key={s.id}
+                    onClick={() => open_edit(s)}
+                    className="border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors"
+                  >
+                    <td className="px-4 py-3 font-medium text-foreground">{s.nome}</td>
+                    <td className="px-4 py-3">
+                      <Badge variant="secondary" className="text-xs">
+                        {s.tipo}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3 tabular-nums text-muted-foreground hidden sm:table-cell">
+                      {new Date(s.data_inizio + "T00:00:00").toLocaleDateString("it-CH")}
+                    </td>
+                    <td className="px-4 py-3 tabular-nums text-muted-foreground hidden sm:table-cell">
+                      {new Date(s.data_fine + "T00:00:00").toLocaleDateString("it-CH")}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <Badge variant={s.attiva ? "default" : "secondary"} className="text-xs">
+                        {s.attiva ? "Attiva" : "Inattiva"}
+                      </Badge>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
-
-      <FormDialog
-        open={form_open}
-        on_close={() => set_form_open(false)}
-        title={form_data.id ? t("modifica") : t("nuova_stagione")}
-        fields={fields}
-        values={form_data}
-        on_change={(k, v) => set_form_data((p) => ({ ...p, [k]: v }))}
-        on_submit={handle_submit}
-        on_delete={form_data.id ? handle_delete : undefined}
-        delete_loading={elimina.isPending}
-        loading={upsert.isPending}
-      />
-    </div>
+    </>
   );
 };
 
