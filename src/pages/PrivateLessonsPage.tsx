@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { use_lezioni_private, use_istruttori, use_atleti, use_corsi } from "@/hooks/use-supabase-data";
+import { use_lezioni_private, use_istruttori, use_atleti, use_corsi, use_setup_club } from "@/hooks/use-supabase-data";
 import {
   use_crea_lezione_privata,
   use_annulla_lezione,
@@ -7,17 +7,18 @@ import {
 } from "@/hooks/use-supabase-mutations";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, X, Search, Check, Clock, User, UserPlus } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Search, Check, Clock, User, UserPlus, Settings } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { supabase, DEMO_CLUB_ID } from "@/lib/supabase";
+import { useQueryClient } from "@tanstack/react-query";
 
-// ─── Helpers ───────────────────────────────────────────────────────────────────
-
+// ─── Helpers ───────────────────────────────────────────────
 function fmt(d: Date): string {
   return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
 }
 
 function time_to_min(t: string): number {
-  const [h, m] = t.split(":").map(Number);
+  const [h, m] = (t || "00:00").split(":").map(Number);
   return h * 60 + (m || 0);
 }
 
@@ -68,14 +69,13 @@ const MESI = [
   "Dicembre",
 ];
 
-// ─── Tipo lezione ──────────────────────────────────────────────────────────────
 type TipoLezione = "privata" | "semiprivata";
 
 function get_tipo_lezione(atleti_ids: string[]): TipoLezione {
   return atleti_ids.length > 1 ? "semiprivata" : "privata";
 }
 
-// ─── Autocomplete atleta ───────────────────────────────────────────────────────
+// ─── Autocomplete atleta ───────────────────────────────────
 const AtletaSearch: React.FC<{
   atleti: any[];
   selected_ids: string[];
@@ -173,15 +173,16 @@ const AtletaSearch: React.FC<{
   );
 };
 
-// ─── Modal prenotazione ────────────────────────────────────────────────────────
+// ─── Modal prenotazione ────────────────────────────────────
 const SlotModal: React.FC<{
   form: Record<string, any>;
   atleti: any[];
+  slot_minuti: number;
   on_change: (k: string, v: any) => void;
   on_submit: () => void;
   on_close: () => void;
   loading: boolean;
-}> = ({ form, atleti, on_change, on_submit, on_close, loading }) => {
+}> = ({ form, atleti, slot_minuti, on_change, on_submit, on_close, loading }) => {
   const date_obj = new Date(form.data + "T00:00:00");
   const date_label = date_obj.toLocaleDateString("it-CH", {
     weekday: "long",
@@ -205,6 +206,12 @@ const SlotModal: React.FC<{
           </button>
         </div>
         <div className="px-6 py-5 space-y-5">
+          <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 rounded-lg">
+            <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">
+              Durata slot: <strong>{slot_minuti} minuti</strong>
+            </span>
+          </div>
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Atleta/e *</label>
             <AtletaSearch
@@ -282,7 +289,7 @@ const SlotModal: React.FC<{
   );
 };
 
-// ─── Modal aggiungi atleta (semiprivata) ───────────────────────────────────────
+// ─── Modal aggiungi atleta (semiprivata) ───────────────────
 const AggiungiAtletaModal: React.FC<{
   slot: any;
   atleti: any[];
@@ -300,8 +307,6 @@ const AggiungiAtletaModal: React.FC<{
   const costo_diviso = modalita === "dividi" ? costo_attuale : costo_manuale;
   const quota_per_atleta = costo_diviso / n_totale;
 
-  const atleta_sel = atleti.find((a: any) => a.id === atleta_id);
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm">
@@ -314,15 +319,11 @@ const AggiungiAtletaModal: React.FC<{
             <X className="w-5 h-5" />
           </button>
         </div>
-
         <div className="px-6 py-5 space-y-5">
-          {/* Badge semiprivata */}
           <div className="flex items-center gap-2 px-3 py-2 bg-orange-500/10 border border-orange-500/20 rounded-xl">
             <span className="text-orange-500 text-sm">👥</span>
             <span className="text-xs font-medium text-orange-600">Diventerà una lezione semiprivata</span>
           </div>
-
-          {/* Selezione atleta */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
               Nuova atleta *
@@ -334,8 +335,6 @@ const AggiungiAtletaModal: React.FC<{
               escludi_ids={atleti_esistenti}
             />
           </div>
-
-          {/* Gestione costo */}
           <div className="space-y-3">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
               Gestione costo
@@ -358,7 +357,6 @@ const AggiungiAtletaModal: React.FC<{
                 <p className="text-xs text-muted-foreground mt-0.5">Imposta nuovo totale</p>
               </div>
             </div>
-
             {modalita === "manuale" && (
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-medium">
@@ -374,8 +372,6 @@ const AggiungiAtletaModal: React.FC<{
                 />
               </div>
             )}
-
-            {/* Riepilogo quote */}
             <div className="bg-muted/30 rounded-xl px-4 py-3 space-y-1.5">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Riepilogo quote</p>
               <div className="flex justify-between text-sm">
@@ -389,7 +385,6 @@ const AggiungiAtletaModal: React.FC<{
             </div>
           </div>
         </div>
-
         <div className="flex justify-end gap-3 px-6 py-4 border-t border-border">
           <Button variant="outline" onClick={on_close} disabled={loading}>
             Annulla
@@ -414,7 +409,7 @@ const AggiungiAtletaModal: React.FC<{
   );
 };
 
-// ─── Modal dettaglio slot occupato ────────────────────────────────────────────
+// ─── Modal dettaglio slot occupato ────────────────────────
 const SlotDetailModal: React.FC<{
   slot: any;
   atleti: any[];
@@ -427,7 +422,6 @@ const SlotDetailModal: React.FC<{
   const atleti_ids: string[] = slot.lesson?.atleti_ids || [];
   const tipo = get_tipo_lezione(atleti_ids);
   const is_semiprivata = tipo === "semiprivata";
-
   const nomi_atleti = atleti_ids
     .map((id: string) => {
       const a = atleti.find((x: any) => x.id === id);
@@ -455,17 +449,13 @@ const SlotDetailModal: React.FC<{
             <X className="w-5 h-5" />
           </button>
         </div>
-
         <div className="px-6 py-5 space-y-4">
-          {/* Orario */}
           <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl">
             <Clock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
             <span className="text-sm font-semibold text-foreground tabular-nums">
               {slot.time} – {slot.end_time}
             </span>
           </div>
-
-          {/* Atleti */}
           <div className="space-y-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Atleta/e</p>
             {nomi_atleti.length > 0 ? (
@@ -479,16 +469,12 @@ const SlotDetailModal: React.FC<{
               <p className="text-sm text-muted-foreground italic">Nessun atleta registrato</p>
             )}
           </div>
-
-          {/* Costo */}
           {slot.lesson?.costo > 0 && (
             <div className="flex items-center justify-between px-3 py-2 bg-muted/30 rounded-xl">
               <span className="text-xs text-muted-foreground font-medium">Costo totale</span>
               <span className="text-sm font-bold text-foreground">CHF {Number(slot.lesson.costo).toFixed(2)}</span>
             </div>
           )}
-
-          {/* Note */}
           {slot.lesson?.note && (
             <div className="space-y-1">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Note</p>
@@ -496,30 +482,21 @@ const SlotDetailModal: React.FC<{
             </div>
           )}
         </div>
-
         <div className="px-6 py-4 border-t border-border space-y-2">
-          {/* Aggiungi atleta */}
           <Button
             variant="outline"
             onClick={on_aggiungi_atleta}
             disabled={loading}
             className="w-full border-orange-500/40 text-orange-600 hover:bg-orange-500/10"
           >
-            <UserPlus className="w-4 h-4 mr-2" />
-            Aggiungi atleta (semiprivata)
+            <UserPlus className="w-4 h-4 mr-2" /> Aggiungi atleta (semiprivata)
           </Button>
           <div className="flex gap-2">
             <Button variant="outline" onClick={on_modifica} disabled={loading} className="flex-1">
               ✏️ Modifica
             </Button>
             <Button variant="destructive" onClick={on_annulla} disabled={loading} className="flex-1">
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                </span>
-              ) : (
-                "× Annulla"
-              )}
+              {loading ? <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" /> : "× Annulla"}
             </Button>
           </div>
         </div>
@@ -528,15 +505,99 @@ const SlotDetailModal: React.FC<{
   );
 };
 
-// ─── Main Page ─────────────────────────────────────────────────────────────────
+// ─── Modal cambio durata slot ──────────────────────────────
+const CambioDurataModal: React.FC<{
+  durata_attuale: number;
+  on_close: () => void;
+  on_confirm: (nuova_durata: number, aggiorna_esistenti: boolean) => Promise<void>;
+  saving: boolean;
+}> = ({ durata_attuale, on_close, on_confirm, saving }) => {
+  const [nuova_durata, set_nuova_durata] = useState(durata_attuale);
+  const [aggiorna_esistenti, set_aggiorna_esistenti] = useState(false);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+          <h2 className="text-base font-bold text-foreground">Cambia durata slot</h2>
+          <button onClick={on_close} className="text-muted-foreground hover:text-foreground">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="px-6 py-5 space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Nuova durata (minuti)
+            </label>
+            <div className="flex gap-2">
+              {[15, 20, 30, 45, 60].map((m) => (
+                <button
+                  key={m}
+                  onClick={() => set_nuova_durata(m)}
+                  className={`flex-1 py-2 rounded-xl border-2 text-sm font-bold transition-all
+                    ${nuova_durata === m ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/40"}`}
+                >
+                  {m}'
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 space-y-3">
+            <p className="text-xs font-bold text-orange-700">Cosa fare con le lezioni già esistenti?</p>
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  checked={!aggiorna_esistenti}
+                  onChange={() => set_aggiorna_esistenti(false)}
+                  className="accent-primary"
+                />
+                <span className="text-sm text-foreground">Solo nuove prenotazioni (consigliato)</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  checked={aggiorna_esistenti}
+                  onChange={() => set_aggiorna_esistenti(true)}
+                  className="accent-primary"
+                />
+                <span className="text-sm text-foreground">Aggiorna anche le lezioni future esistenti</span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-2 px-6 py-4 border-t border-border">
+          <Button variant="outline" onClick={on_close} disabled={saving} className="flex-1">
+            Annulla
+          </Button>
+          <Button
+            onClick={() => on_confirm(nuova_durata, aggiorna_esistenti)}
+            disabled={saving || nuova_durata === durata_attuale}
+            className="flex-1 bg-primary hover:bg-primary/90"
+          >
+            {saving ? "..." : "💾 Salva durata"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── Main Page ─────────────────────────────────────────────
 const LezioniPrivatePage: React.FC = () => {
   const { data: lezioni = [], isLoading } = use_lezioni_private();
   const { data: istruttori = [] } = use_istruttori();
   const { data: atleti = [] } = use_atleti();
   const { data: corsi = [] } = use_corsi();
+  const { data: setup } = use_setup_club();
+  const qc = useQueryClient();
+
   const crea_lezione = use_crea_lezione_privata();
   const annulla_lezione = use_annulla_lezione();
-  const aggiungi_atleta = use_aggiungi_atleta_lezione();
+  const aggiungi_atleta_mut = use_aggiungi_atleta_lezione();
+
+  // Durata slot dal setup club (default 20)
+  const slot_minuti = setup?.slot_lezione_privata_minuti || 20;
 
   const [selected_istruttore, set_selected_istruttore] = useState<string>("");
   const [cal_year, set_cal_year] = useState(new Date().getFullYear());
@@ -547,6 +608,8 @@ const LezioniPrivatePage: React.FC = () => {
   const [saving, set_saving] = useState(false);
   const [detail_slot, set_detail_slot] = useState<any>(null);
   const [aggiungi_open, set_aggiungi_open] = useState(false);
+  const [durata_modal, set_durata_modal] = useState(false);
+  const [saving_durata, set_saving_durata] = useState(false);
 
   React.useEffect(() => {
     if (!selected_istruttore && istruttori.length > 0) {
@@ -590,13 +653,19 @@ const LezioniPrivatePage: React.FC = () => {
     const dayDispSlots = dispSlots.filter((ds: any) => ds.giorno === giorno);
     const avail = dayDispSlots.map((ds) => ({ start: time_to_min(ds.ora_inizio), end: time_to_min(ds.ora_fine) }));
     const busy_corsi = corso_busy_by_day[giorno] || [];
+
+    // Rimuovi completamente gli intervalli occupati dai corsi
     const free = subtract_intervals(avail, busy_corsi);
 
+    // Genera slot liberi usando slot_minuti dal setup
     const free_times = new Set<number>();
     for (const interval of free) {
-      for (let m = interval.start; m + 20 <= interval.end; m += 20) free_times.add(m);
+      for (let m = interval.start; m + slot_minuti <= interval.end; m += slot_minuti) {
+        free_times.add(m);
+      }
     }
 
+    // Aggiungi slot occupati da lezioni private (già prenotate)
     const day_lessons = lezioni.filter((l: any) => l.istruttore_id === selected_istruttore && l.data === date_str);
     const all_times = new Set(free_times);
     for (const l of day_lessons) all_times.add(time_to_min(l.ora_inizio));
@@ -607,7 +676,13 @@ const LezioniPrivatePage: React.FC = () => {
         const time = min_to_time(m);
         const lesson = day_lessons.find((l: any) => time_to_min(l.ora_inizio) === m);
         const tipo = lesson ? get_tipo_lezione(lesson.atleti_ids || []) : null;
-        return { time, end_time: min_to_time(m + 20), status: lesson ? "occupato" : "libero", lesson, tipo };
+        return {
+          time,
+          end_time: min_to_time(m + slot_minuti),
+          status: lesson ? "occupato" : "libero",
+          lesson,
+          tipo,
+        };
       });
   };
 
@@ -624,7 +699,7 @@ const LezioniPrivatePage: React.FC = () => {
       };
     }
     return result;
-  }, [istruttore, cal_year, cal_month, lezioni, corso_busy_by_day, dispSlots]);
+  }, [istruttore, cal_year, cal_month, lezioni, corso_busy_by_day, dispSlots, slot_minuti]);
 
   const cal_days = useMemo(() => {
     const first = new Date(cal_year, cal_month, 1);
@@ -651,13 +726,13 @@ const LezioniPrivatePage: React.FC = () => {
   };
 
   const open_slot = (time: string, end_time: string) => {
-    const costo = (istruttore?.costo_minuto_lezione_privata || 0) * 20;
+    const costo = (istruttore?.costo_minuto_lezione_privata || 0) * slot_minuti;
     set_form_data({
       istruttore_id: selected_istruttore,
       data: selected_date,
       ora_inizio: time,
       ora_fine: end_time,
-      durata_minuti: 20,
+      durata_minuti: slot_minuti,
       atleti_ids: [],
       ricorrente: false,
       costo_totale: costo,
@@ -665,8 +740,6 @@ const LezioniPrivatePage: React.FC = () => {
     });
     set_form_open(true);
   };
-
-  const open_detail = (slot: any) => set_detail_slot(slot);
 
   const handle_annulla = async () => {
     if (!detail_slot?.lesson) return;
@@ -688,7 +761,7 @@ const LezioniPrivatePage: React.FC = () => {
       data: selected_date,
       ora_inizio: lesson.ora_inizio,
       ora_fine: lesson.ora_fine,
-      durata_minuti: lesson.durata_minuti || 20,
+      durata_minuti: lesson.durata_minuti || slot_minuti,
       atleti_ids: lesson.atleti_ids || [],
       ricorrente: false,
       costo_totale: lesson.costo || 0,
@@ -701,7 +774,7 @@ const LezioniPrivatePage: React.FC = () => {
   const handle_aggiungi_atleta = async (atleta_id: string, nuovo_costo: number, modalita: "dividi" | "manuale") => {
     if (!detail_slot?.lesson) return;
     try {
-      await aggiungi_atleta.mutateAsync({
+      await aggiungi_atleta_mut.mutateAsync({
         lezione_id: detail_slot.lesson.id,
         atleta_id,
         nuovo_costo_totale: nuovo_costo,
@@ -749,6 +822,42 @@ const LezioniPrivatePage: React.FC = () => {
     }
   };
 
+  const handle_cambia_durata = async (nuova_durata: number, aggiorna_esistenti: boolean) => {
+    set_saving_durata(true);
+    try {
+      const { error } = await supabase
+        .from("setup_club")
+        .update({ slot_lezione_privata_minuti: nuova_durata })
+        .eq("club_id", DEMO_CLUB_ID);
+      if (error) throw error;
+
+      if (aggiorna_esistenti) {
+        const today = fmt(new Date());
+        const { error: e2 } = await supabase
+          .from("lezioni_private")
+          .update({ durata_minuti: nuova_durata })
+          .eq("club_id", DEMO_CLUB_ID)
+          .gte("data", today)
+          .eq("annullata", false);
+        if (e2) throw e2;
+        await qc.invalidateQueries({ queryKey: ["lezioni_private"] });
+      }
+
+      await qc.invalidateQueries({ queryKey: ["setup_club"] });
+      set_durata_modal(false);
+      toast({
+        title: `✅ Durata slot aggiornata a ${nuova_durata} minuti`,
+        description: aggiorna_esistenti
+          ? "Le lezioni future sono state aggiornate."
+          : "Valida per le nuove prenotazioni.",
+      });
+    } catch (err: any) {
+      toast({ title: "Errore salvataggio durata", description: err?.message, variant: "destructive" });
+    } finally {
+      set_saving_durata(false);
+    }
+  };
+
   const get_atleti_names = (atleti_ids: string[]): string => {
     return atleti_ids
       .map((id) => {
@@ -781,13 +890,13 @@ const LezioniPrivatePage: React.FC = () => {
         <SlotModal
           form={form_data}
           atleti={atleti}
+          slot_minuti={slot_minuti}
           on_change={(k, v) => set_form_data((p) => ({ ...p, [k]: v }))}
           on_submit={handle_submit}
           on_close={() => set_form_open(false)}
           loading={saving}
         />
       )}
-
       {detail_slot && !aggiungi_open && (
         <SlotDetailModal
           slot={detail_slot}
@@ -799,7 +908,6 @@ const LezioniPrivatePage: React.FC = () => {
           loading={annulla_lezione.isPending}
         />
       )}
-
       {detail_slot && aggiungi_open && (
         <AggiungiAtletaModal
           slot={detail_slot}
@@ -807,12 +915,26 @@ const LezioniPrivatePage: React.FC = () => {
           costo_attuale={detail_slot.lesson?.costo || 0}
           on_close={() => set_aggiungi_open(false)}
           on_confirm={handle_aggiungi_atleta}
-          loading={aggiungi_atleta.isPending}
+          loading={aggiungi_atleta_mut.isPending}
+        />
+      )}
+      {durata_modal && (
+        <CambioDurataModal
+          durata_attuale={slot_minuti}
+          on_close={() => set_durata_modal(false)}
+          on_confirm={handle_cambia_durata}
+          saving={saving_durata}
         />
       )}
 
       <div className="space-y-6 animate-fade-in">
-        <h1 className="text-xl font-bold tracking-tight text-foreground">Lezioni Private</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold tracking-tight text-foreground">Lezioni Private</h1>
+          <Button variant="outline" size="sm" onClick={() => set_durata_modal(true)} className="gap-2 text-xs">
+            <Settings className="w-3.5 h-3.5" />
+            Slot: {slot_minuti} min
+          </Button>
+        </div>
 
         <div className="w-64">
           <Select value={selected_istruttore} onValueChange={set_selected_istruttore}>
@@ -920,7 +1042,7 @@ const LezioniPrivatePage: React.FC = () => {
                       <div
                         key={i}
                         onClick={() =>
-                          slot.status === "libero" ? open_slot(slot.time, slot.end_time) : open_detail(slot)
+                          slot.status === "libero" ? open_slot(slot.time, slot.end_time) : set_detail_slot(slot)
                         }
                         className={`flex items-center justify-between px-4 py-3 rounded-xl cursor-pointer transition-all
                           ${
@@ -934,13 +1056,7 @@ const LezioniPrivatePage: React.FC = () => {
                         <div className="flex items-center gap-3">
                           <div
                             className={`w-2 h-2 rounded-full flex-shrink-0
-                            ${
-                              slot.status === "libero"
-                                ? "bg-success"
-                                : is_semiprivata
-                                  ? "bg-orange-500"
-                                  : "bg-destructive"
-                            }`}
+                            ${slot.status === "libero" ? "bg-success" : is_semiprivata ? "bg-orange-500" : "bg-destructive"}`}
                           />
                           <div>
                             <p className="text-sm font-semibold text-foreground tabular-nums">
@@ -972,8 +1088,6 @@ const LezioniPrivatePage: React.FC = () => {
                   })}
                 </div>
               )}
-
-              {/* Legenda */}
               <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground flex-wrap">
                 <div className="flex items-center gap-1.5">
                   <div className="w-2 h-2 rounded-full bg-success" /> Libero
