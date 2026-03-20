@@ -88,7 +88,6 @@ export function use_istruttori() {
       ]);
       if (ist_res.error) throw ist_res.error;
       if (disp_res.error) throw disp_res.error;
-
       const disp_all = disp_res.data ?? [];
       return (ist_res.data ?? []).map((i) => {
         const disp_map: Record<string, { ora_inizio: string; ora_fine: string }[]> = {};
@@ -133,6 +132,7 @@ export function use_corsi() {
 }
 
 // ─── Gare ──────────────────────────────────────────────────
+// Include stagione_id e livello_atleta per storia sportiva
 export function use_gare() {
   return useQuery({
     queryKey: ["gare", DEMO_CLUB_ID],
@@ -145,12 +145,14 @@ export function use_gare() {
       const isc = isc_res.data ?? [];
       return (gare_res.data ?? []).map((g) => ({
         ...g,
+        stagione_id: g.stagione_id || null,
         atleti_iscritti: isc
           .filter((x) => x.gara_id === g.id)
           .map((x) => ({
             id: x.id,
             atleta_id: x.atleta_id,
             carriera: x.carriera || "",
+            livello_atleta: x.livello_atleta || null, // livello storico al momento della gara
             punteggio: x.punteggio,
             punteggio_tecnico: x.punteggio_tecnico,
             punteggio_artistico: x.punteggio_artistico,
@@ -264,8 +266,34 @@ export function use_presenze(data?: string) {
       if (error) throw error;
       return rows ?? [];
     },
-    refetchInterval: 30000, // aggiorna ogni 30 secondi
+    refetchInterval: 30000,
   });
+}
+
+// ─── Storico livelli atleta ────────────────────────────────
+export function use_storico_livelli(atleta_id: string) {
+  return useQuery({
+    queryKey: ["storico_livelli", atleta_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("storico_livelli_atleta")
+        .select("*")
+        .eq("atleta_id", atleta_id)
+        .order("data_inizio", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!atleta_id,
+  });
+}
+
+// ─── Helper: trova stagione per una data ───────────────────
+export function get_stagione_per_data(stagioni: any[], data: string): any | null {
+  return (
+    stagioni.find((s: any) => {
+      return data >= s.data_inizio && data <= s.data_fine;
+    }) || null
+  );
 }
 
 // ─── Helper functions ──────────────────────────────────────
