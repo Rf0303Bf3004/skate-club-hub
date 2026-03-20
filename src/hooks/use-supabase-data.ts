@@ -120,10 +120,8 @@ export function use_corsi() {
         supabase.from("iscrizioni_corsi").select("*"),
       ]);
       if (corsi_res.error) throw corsi_res.error;
-
       const ci = ci_res.data ?? [];
       const ic = ic_res.data ?? [];
-
       return (corsi_res.data ?? []).map((c) => ({
         ...c,
         stato: c.attivo ? "attivo" : "inattivo",
@@ -135,7 +133,6 @@ export function use_corsi() {
 }
 
 // ─── Gare ──────────────────────────────────────────────────
-// FIX: aggiunto id iscrizione, punteggio_tecnico, punteggio_artistico, note
 export function use_gare() {
   return useQuery({
     queryKey: ["gare", DEMO_CLUB_ID],
@@ -145,19 +142,18 @@ export function use_gare() {
         supabase.from("iscrizioni_gare").select("*"),
       ]);
       if (gare_res.error) throw gare_res.error;
-
       const isc = isc_res.data ?? [];
       return (gare_res.data ?? []).map((g) => ({
         ...g,
         atleti_iscritti: isc
           .filter((x) => x.gara_id === g.id)
           .map((x) => ({
-            id: x.id, // ← FIX: id iscrizione
+            id: x.id,
             atleta_id: x.atleta_id,
             carriera: x.carriera || "",
             punteggio: x.punteggio,
-            punteggio_tecnico: x.punteggio_tecnico, // ← nuovo
-            punteggio_artistico: x.punteggio_artistico, // ← nuovo
+            punteggio_tecnico: x.punteggio_tecnico,
+            punteggio_artistico: x.punteggio_artistico,
             posizione: x.posizione,
             medaglia: x.medaglia || "",
             voto_giudici: x.voto_giudici,
@@ -178,7 +174,6 @@ export function use_lezioni_private() {
         supabase.from("lezioni_private_atlete").select("*"),
       ]);
       if (lez_res.error) throw lez_res.error;
-
       const la = la_res.data ?? [];
       return (lez_res.data ?? []).map((l) => ({
         ...l,
@@ -239,7 +234,6 @@ export function use_campi() {
         supabase.from("iscrizioni_campo").select("*"),
       ]);
       if (camp_res.error) throw camp_res.error;
-
       const isc = isc_res.data ?? [];
       return (camp_res.data ?? []).map((c) => ({
         ...c,
@@ -252,6 +246,25 @@ export function use_campi() {
           })),
       }));
     },
+  });
+}
+
+// ─── Presenze ──────────────────────────────────────────────
+export function use_presenze(data?: string) {
+  const today = data || new Date().toISOString().split("T")[0];
+  return useQuery({
+    queryKey: ["presenze", DEMO_CLUB_ID, today],
+    queryFn: async () => {
+      const { data: rows, error } = await supabase
+        .from("presenze")
+        .select("*")
+        .eq("club_id", DEMO_CLUB_ID)
+        .eq("data", today)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return rows ?? [];
+    },
+    refetchInterval: 30000, // aggiorna ogni 30 secondi
   });
 }
 
