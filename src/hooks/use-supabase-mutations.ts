@@ -76,6 +76,7 @@ async function elimina_lezione_singola(id: string) {
   if (e2) throw e2;
 }
 
+// ─── Atleti ────────────────────────────────────────────────
 export function use_upsert_atleta() {
   const qc = useQueryClient();
   return useMutation({
@@ -115,6 +116,33 @@ export function use_upsert_atleta() {
   });
 }
 
+export function use_elimina_atleta() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      // Cascata su tutte le tabelle collegate
+      const { error: e1 } = await supabase.from("lezioni_private_atlete").delete().eq("atleta_id", id);
+      if (e1) throw e1;
+      const { error: e2 } = await supabase.from("iscrizioni_corsi").delete().eq("atleta_id", id);
+      if (e2) throw e2;
+      const { error: e3 } = await supabase.from("iscrizioni_gare").delete().eq("atleta_id", id);
+      if (e3) throw e3;
+      const { error: e4 } = await supabase.from("iscrizioni_campo").delete().eq("atleta_id", id);
+      if (e4) throw e4;
+      const { error: e5 } = await supabase.from("fatture").delete().eq("atleta_id", id);
+      if (e5) throw e5;
+      const { error: e6 } = await supabase.from("presenze").delete().eq("persona_id", id);
+      if (e6) throw e6;
+      const { error: e7 } = await supabase.from("storico_livelli_atleta").delete().eq("atleta_id", id);
+      if (e7) throw e7;
+      const { error: e8 } = await supabase.from("atleti").delete().eq("id", id);
+      if (e8) throw e8;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["atleti"] }),
+  });
+}
+
+// ─── Istruttori ────────────────────────────────────────────
 export function use_upsert_istruttore() {
   const qc = useQueryClient();
   return useMutation({
@@ -141,6 +169,24 @@ export function use_upsert_istruttore() {
   });
 }
 
+export function use_elimina_istruttore() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error: e1 } = await supabase.from("presenze").delete().eq("persona_id", id);
+      if (e1) throw e1;
+      const { error: e2 } = await supabase.from("disponibilita_istruttori").delete().eq("istruttore_id", id);
+      if (e2) throw e2;
+      const { error: e3 } = await supabase.from("corsi_istruttori").delete().eq("istruttore_id", id);
+      if (e3) throw e3;
+      const { error: e4 } = await supabase.from("istruttori").delete().eq("id", id);
+      if (e4) throw e4;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["istruttori"] }),
+  });
+}
+
+// ─── Corsi ─────────────────────────────────────────────────
 export function use_upsert_corso() {
   const qc = useQueryClient();
   return useMutation({
@@ -186,11 +232,27 @@ export function use_upsert_corso() {
   });
 }
 
+export function use_elimina_corso() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error: e1 } = await supabase.from("corsi_istruttori").delete().eq("corso_id", id);
+      if (e1) throw e1;
+      const { error: e2 } = await supabase.from("iscrizioni_corsi").delete().eq("corso_id", id);
+      if (e2) throw e2;
+      const { error: e3 } = await supabase.from("corsi").delete().eq("id", id);
+      if (e3) throw e3;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["corsi"] }),
+  });
+}
+
+// ─── Gare ──────────────────────────────────────────────────
 export function use_upsert_gara() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: any) => {
-      const payload = {
+      const payload: any = {
         club_id: DEMO_CLUB_ID,
         nome: data.nome,
         data: data.data,
@@ -204,6 +266,7 @@ export function use_upsert_gara() {
         costo_accompagnamento: data.costo_accompagnamento || 0,
         note: data.note || "",
       };
+      if (data.stagione_id) payload.stagione_id = data.stagione_id;
       if (data.id) {
         const { error } = await supabase.from("gare_calendario").update(payload).eq("id", data.id);
         if (error) throw error;
@@ -216,6 +279,19 @@ export function use_upsert_gara() {
   });
 }
 
+export function use_elimina_gara() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error: e1 } = await supabase.from("iscrizioni_gare").delete().eq("gara_id", id);
+      if (e1) throw e1;
+      const { error: e2 } = await supabase.from("gare_calendario").delete().eq("id", id);
+      if (e2) throw e2;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["gare"] }),
+  });
+}
+
 export function use_iscrivi_atleta_gara() {
   const qc = useQueryClient();
   return useMutation({
@@ -223,6 +299,7 @@ export function use_iscrivi_atleta_gara() {
       atleta_id: string;
       gara_id: string;
       carriera?: string;
+      livello_atleta?: string;
       punteggio?: number;
       voto_giudici?: number;
       posizione?: number;
@@ -234,6 +311,7 @@ export function use_iscrivi_atleta_gara() {
         atleta_id: data.atleta_id,
         gara_id: data.gara_id,
         carriera: data.carriera || "",
+        livello_atleta: data.livello_atleta || null,
         punteggio: data.punteggio || null,
         voto_giudici: data.voto_giudici || null,
         posizione: data.posizione || null,
@@ -247,6 +325,7 @@ export function use_iscrivi_atleta_gara() {
   });
 }
 
+// ─── Lezioni Private ───────────────────────────────────────
 export function use_crea_lezione_privata() {
   const qc = useQueryClient();
   return useMutation({
@@ -341,6 +420,27 @@ export function use_aggiungi_atleta_lezione() {
   });
 }
 
+export function use_annulla_lezione() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (lezione_id: string) => {
+      await elimina_lezione_singola(lezione_id);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["lezioni_private"] }),
+  });
+}
+
+export function use_annulla_ricorrenze() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      for (const id of ids) await elimina_lezione_singola(id);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["lezioni_private"] }),
+  });
+}
+
+// ─── Fatture ───────────────────────────────────────────────
 export function use_segna_fattura_pagata() {
   const qc = useQueryClient();
   return useMutation({
@@ -355,12 +455,31 @@ export function use_segna_fattura_pagata() {
   });
 }
 
+export function use_elimina_fattura() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("fatture").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["fatture"] }),
+  });
+}
+
 export function use_genera_fatture_mensili() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      const { data: corsi } = await supabase.from("corsi").select("*").eq("club_id", DEMO_CLUB_ID).eq("attivo", true);
-      const { data: iscrizioni } = await supabase.from("iscrizioni_corsi").select("*").eq("attiva", true);
+      const now = new Date();
+      const anno = now.getFullYear();
+      const mese = now.getMonth() + 1;
+      const mese_str = String(mese).padStart(2, "0");
+      const data_inizio_mese = `${anno}-${mese_str}-01`;
+      const data_fine_mese = new Date(anno, mese, 0).toISOString().split("T")[0];
+      const scadenza = data_fine_mese;
+      const mese_label = now.toLocaleString("it-CH", { month: "long", year: "numeric" });
+
+      // Numero fattura più recente
       const { data: fatture_esistenti } = await supabase
         .from("fatture")
         .select("numero")
@@ -368,22 +487,26 @@ export function use_genera_fatture_mensili() {
         .order("numero", { ascending: false })
         .limit(1);
       let next_num = 1;
-      if (fatture_esistenti && fatture_esistenti.length > 0) {
+      if (fatture_esistenti?.length) {
         const match = fatture_esistenti[0].numero?.match(/(\d+)/);
         if (match) next_num = parseInt(match[1]) + 1;
       }
-      const now = new Date();
-      const scadenza = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0];
+
       const fatture_da_creare: any[] = [];
-      for (const isc of iscrizioni || []) {
+
+      // ── 1. Quote corsi ──────────────────────────────────
+      const { data: corsi } = await supabase.from("corsi").select("*").eq("club_id", DEMO_CLUB_ID).eq("attivo", true);
+      const { data: iscrizioni_corsi } = await supabase.from("iscrizioni_corsi").select("*").eq("attiva", true);
+
+      for (const isc of iscrizioni_corsi || []) {
         const corso = (corsi || []).find((c: any) => c.id === isc.corso_id);
-        if (!corso) continue;
+        if (!corso || !corso.costo_mensile) continue;
         fatture_da_creare.push({
           club_id: DEMO_CLUB_ID,
           atleta_id: isc.atleta_id,
           numero: `F-${String(next_num++).padStart(4, "0")}`,
-          descrizione: `Corso ${corso.nome} - ${now.toLocaleString("it-CH", { month: "long", year: "numeric" })}`,
-          importo: corso.costo_mensile || 0,
+          descrizione: `Corso ${corso.nome} - ${mese_label}`,
+          importo: corso.costo_mensile,
           data_emissione: now.toISOString().split("T")[0],
           data_scadenza: scadenza,
           pagata: false,
@@ -391,16 +514,51 @@ export function use_genera_fatture_mensili() {
           riferimento_id: corso.id,
         });
       }
+
+      // ── 2. Lezioni private del mese (raggruppate per atleta) ─
+      const { data: lezioni_mese } = await supabase
+        .from("lezioni_private")
+        .select("*, lezioni_private_atlete(*)")
+        .eq("club_id", DEMO_CLUB_ID)
+        .gte("data", data_inizio_mese)
+        .lte("data", data_fine_mese)
+        .eq("annullata", false);
+
+      const totale_per_atleta: Record<string, number> = {};
+      for (const lezione of lezioni_mese || []) {
+        for (const la of lezione.lezioni_private_atlete || []) {
+          totale_per_atleta[la.atleta_id] = (totale_per_atleta[la.atleta_id] || 0) + (la.quota_costo || 0);
+        }
+      }
+
+      for (const [atleta_id, totale] of Object.entries(totale_per_atleta)) {
+        if (totale <= 0) continue;
+        fatture_da_creare.push({
+          club_id: DEMO_CLUB_ID,
+          atleta_id,
+          numero: `F-${String(next_num++).padStart(4, "0")}`,
+          descrizione: `Lezioni private - ${mese_label}`,
+          importo: totale,
+          data_emissione: now.toISOString().split("T")[0],
+          data_scadenza: scadenza,
+          pagata: false,
+          tipo: "lezione_privata",
+          riferimento_id: null,
+        });
+      }
+
       if (fatture_da_creare.length > 0) {
         const { error } = await supabase.from("fatture").insert(fatture_da_creare);
         if (error) throw error;
       }
+
       return fatture_da_creare.length;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["fatture"] }),
   });
 }
 
+// ─── Comunicazioni ─────────────────────────────────────────
 export function use_crea_comunicazione() {
   const qc = useQueryClient();
   return useMutation({
@@ -418,6 +576,7 @@ export function use_crea_comunicazione() {
   });
 }
 
+// ─── Stagioni ──────────────────────────────────────────────
 export function use_upsert_stagione() {
   const qc = useQueryClient();
   return useMutation({
@@ -425,10 +584,10 @@ export function use_upsert_stagione() {
       const payload = {
         club_id: DEMO_CLUB_ID,
         nome: data.nome,
-        tipo: data.tipo || "regolare",
+        tipo: data.tipo || "Regolare",
         data_inizio: data.data_inizio,
         data_fine: data.data_fine,
-        attiva: data.attiva !== false,
+        attiva: data.attiva === true || data.attiva === "true",
       };
       if (data.id) {
         const { error } = await supabase.from("stagioni").update(payload).eq("id", data.id);
@@ -442,6 +601,18 @@ export function use_upsert_stagione() {
   });
 }
 
+export function use_elimina_stagione() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("stagioni").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["stagioni"] }),
+  });
+}
+
+// ─── Campi di allenamento ──────────────────────────────────
 export function use_upsert_campo() {
   const qc = useQueryClient();
   return useMutation({
@@ -469,6 +640,19 @@ export function use_upsert_campo() {
   });
 }
 
+export function use_elimina_campo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error: e1 } = await supabase.from("iscrizioni_campo").delete().eq("campo_id", id);
+      if (e1) throw e1;
+      const { error: e2 } = await supabase.from("campi_allenamento").delete().eq("id", id);
+      if (e2) throw e2;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["campi"] }),
+  });
+}
+
 export function use_iscrivi_atleta_campo() {
   const qc = useQueryClient();
   return useMutation({
@@ -485,6 +669,7 @@ export function use_iscrivi_atleta_campo() {
   });
 }
 
+// ─── Disponibilità istruttori ──────────────────────────────
 export function use_save_disponibilita() {
   const qc = useQueryClient();
   return useMutation({
@@ -511,113 +696,6 @@ export function use_save_disponibilita() {
   });
 }
 
-export function use_annulla_lezione() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (lezione_id: string) => {
-      await elimina_lezione_singola(lezione_id);
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["lezioni_private"] }),
-  });
-}
-
-export function use_elimina_atleta() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("atleti").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["atleti"] }),
-  });
-}
-
-export function use_elimina_istruttore() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("istruttori").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["istruttori"] }),
-  });
-}
-
-export function use_elimina_corso() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const { error: e1 } = await supabase.from("corsi_istruttori").delete().eq("corso_id", id);
-      if (e1) throw e1;
-      const { error: e2 } = await supabase.from("iscrizioni_corsi").delete().eq("corso_id", id);
-      if (e2) throw e2;
-      const { error: e3 } = await supabase.from("corsi").delete().eq("id", id);
-      if (e3) throw e3;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["corsi"] }),
-  });
-}
-
-export function use_elimina_gara() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const { error: e1 } = await supabase.from("iscrizioni_gare").delete().eq("gara_id", id);
-      if (e1) throw e1;
-      const { error: e2 } = await supabase.from("gare_calendario").delete().eq("id", id);
-      if (e2) throw e2;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["gare"] }),
-  });
-}
-
-export function use_elimina_stagione() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("stagioni").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["stagioni"] }),
-  });
-}
-
-export function use_elimina_campo() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const { error: e1 } = await supabase.from("iscrizioni_campo").delete().eq("campo_id", id);
-      if (e1) throw e1;
-      const { error: e2 } = await supabase.from("campi_allenamento").delete().eq("id", id);
-      if (e2) throw e2;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["campi"] }),
-  });
-}
-
-export function use_elimina_fattura() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("fatture").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["fatture"] }),
-  });
-}
-
-export function use_annulla_ricorrenze() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (ids: string[]) => {
-      for (const id of ids) {
-        await elimina_lezione_singola(id);
-      }
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["lezioni_private"] }),
-  });
-}
-
 // ─── Presenze ──────────────────────────────────────────────
 export function use_segna_presenza() {
   const qc = useQueryClient();
@@ -630,7 +708,6 @@ export function use_segna_presenza() {
       metodo: "nfc" | "manuale";
       note?: string;
     }) => {
-      // Controlla se esiste già una presenza per oggi
       const { data: existing } = await supabase
         .from("presenze")
         .select("id")
@@ -640,7 +717,6 @@ export function use_segna_presenza() {
         .maybeSingle();
 
       if (existing) {
-        // Aggiorna ora uscita
         const { error } = await supabase
           .from("presenze")
           .update({ ora_uscita: data.ora_entrata || new Date().toTimeString().slice(0, 5) })
@@ -648,7 +724,6 @@ export function use_segna_presenza() {
         if (error) throw error;
         return { tipo: "uscita" };
       } else {
-        // Crea nuova presenza
         const { error } = await supabase.from("presenze").insert({
           club_id: DEMO_CLUB_ID,
           persona_id: data.persona_id,
