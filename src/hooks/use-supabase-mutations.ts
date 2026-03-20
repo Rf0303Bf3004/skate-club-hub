@@ -543,7 +543,6 @@ export function use_elimina_istruttore() {
   });
 }
 
-// FIX: gestione errori esplicita su ogni DELETE
 export function use_elimina_corso() {
   const qc = useQueryClient();
   return useMutation({
@@ -616,5 +615,68 @@ export function use_annulla_ricorrenze() {
       }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["lezioni_private"] }),
+  });
+}
+
+// ─── Presenze ──────────────────────────────────────────────
+export function use_segna_presenza() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: {
+      persona_id: string;
+      tipo_persona: "istruttore" | "atleta";
+      data: string;
+      ora_entrata?: string;
+      metodo: "nfc" | "manuale";
+      note?: string;
+    }) => {
+      // Controlla se esiste già una presenza per oggi
+      const { data: existing } = await supabase
+        .from("presenze")
+        .select("id")
+        .eq("club_id", DEMO_CLUB_ID)
+        .eq("persona_id", data.persona_id)
+        .eq("data", data.data)
+        .maybeSingle();
+
+      if (existing) {
+        // Aggiorna ora uscita
+        const { error } = await supabase
+          .from("presenze")
+          .update({ ora_uscita: data.ora_entrata || new Date().toTimeString().slice(0, 5) })
+          .eq("id", existing.id);
+        if (error) throw error;
+        return { tipo: "uscita" };
+      } else {
+        // Crea nuova presenza
+        const { error } = await supabase.from("presenze").insert({
+          club_id: DEMO_CLUB_ID,
+          persona_id: data.persona_id,
+          tipo_persona: data.tipo_persona,
+          data: data.data,
+          ora_entrata: data.ora_entrata || new Date().toTimeString().slice(0, 5),
+          metodo: data.metodo,
+          note: data.note || null,
+        });
+        if (error) throw error;
+        return { tipo: "entrata" };
+      }
+    },
+    onSuccess: (_d, vars) => {
+      qc.invalidateQueries({ queryKey: ["presenze", DEMO_CLUB_ID, vars.data] });
+    },
+  });
+}
+
+export function use_elimina_presenza() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("presenze").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["presenze"] });
+    },
   });
 }
