@@ -715,7 +715,7 @@ const TabCompenso: React.FC<{
   );
 };
 
-// ─── Main Page ─────────────────────────────────────────────
+// ─── Main Page ──────────────────────────────────────────────
 const InstructorsPage: React.FC = () => {
   const { t } = useI18n();
   const { data: istruttori = [], isLoading } = use_istruttori();
