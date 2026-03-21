@@ -157,12 +157,13 @@ const TabIscrizioni: React.FC<{
   const [removing, set_removing] = useState<string | null>(null);
 
   const atleti_iscritti = tutti_atleti.filter((a: any) => atleti_iscritti_ids.includes(a.id));
+
   const atleti_disponibili = useMemo(() => {
     const q = query.toLowerCase();
     return tutti_atleti
       .filter((a: any) => a.stato === "attivo" && !atleti_iscritti_ids.includes(a.id))
       .filter((a: any) => !q || `${a.nome} ${a.cognome}`.toLowerCase().includes(q))
-      .slice(0, 8);
+      .slice(0, 20);
   }, [tutti_atleti, atleti_iscritti_ids, query]);
 
   const handle_iscrivi = async (atleta_id: string) => {
@@ -205,7 +206,7 @@ const TabIscrizioni: React.FC<{
 
   return (
     <div className="space-y-4">
-      {/* Aggiungi atleta */}
+      {/* Cerca e aggiungi */}
       <div className="space-y-2">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Aggiungi atleta</p>
         <div className="relative">
@@ -213,34 +214,44 @@ const TabIscrizioni: React.FC<{
           <input
             value={query}
             onChange={(e) => set_query(e.target.value)}
-            placeholder="Cerca per nome..."
+            placeholder="Filtra per nome..."
             className="w-full rounded-lg border border-border bg-background pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
-        {query && (
-          <div className="border border-border rounded-xl overflow-hidden divide-y divide-border/50">
-            {atleti_disponibili.length === 0 ? (
-              <p className="text-xs text-muted-foreground px-3 py-2">Nessuna atleta trovata</p>
-            ) : (
-              atleti_disponibili.map((a: any) => (
-                <div key={a.id} className="flex items-center justify-between px-3 py-2 hover:bg-muted/30">
+        {/* Lista atleti disponibili — sempre visibile */}
+        <div className="border border-border rounded-xl overflow-hidden divide-y divide-border/50 max-h-48 overflow-y-auto">
+          {atleti_disponibili.length === 0 ? (
+            <p className="text-xs text-muted-foreground px-3 py-3 text-center">
+              {query ? "Nessuna atleta trovata" : "Tutte le atlete sono già iscritte"}
+            </p>
+          ) : (
+            atleti_disponibili.map((a: any) => (
+              <div
+                key={a.id}
+                className="flex items-center justify-between px-3 py-2 hover:bg-muted/30 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-muted-foreground text-[10px] font-bold">
+                    {a.nome[0]}
+                    {a.cognome[0]}
+                  </div>
                   <span className="text-sm text-foreground">
                     {a.nome} {a.cognome}
                   </span>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => handle_iscrivi(a.id)}
-                    disabled={saving}
-                    className="h-7 text-xs text-primary hover:bg-primary/10 gap-1"
-                  >
-                    <UserPlus className="w-3.5 h-3.5" /> Iscrivi
-                  </Button>
                 </div>
-              ))
-            )}
-          </div>
-        )}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => handle_iscrivi(a.id)}
+                  disabled={saving}
+                  className="h-7 text-xs text-primary hover:bg-primary/10 gap-1"
+                >
+                  <UserPlus className="w-3.5 h-3.5" /> Iscrivi
+                </Button>
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
       {/* Lista iscritti */}
