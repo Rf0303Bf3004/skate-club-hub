@@ -9,6 +9,7 @@ import {
   use_istruttori,
   use_club,
   use_presenze,
+  use_lezioni_private,
   get_istruttore_name_from_list,
 } from "@/hooks/use-supabase-data";
 import { use_segna_presenza, use_elimina_presenza } from "@/hooks/use-supabase-mutations";
@@ -19,16 +20,16 @@ import {
   Trophy,
   CreditCard,
   TrendingUp,
-  UserCheck,
   MessageSquare,
-  CheckCircle,
   XCircle,
   Clock,
   Wifi,
+  ChevronDown,
+  ChevronUp,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import { DEMO_CLUB_ID } from "@/lib/supabase";
 
 const KPICard: React.FC<{
   title: string;
@@ -58,240 +59,252 @@ const KPICard: React.FC<{
   </div>
 );
 
-// ─── Sezione presenze ──────────────────────────────────────
-const SezionePresenze: React.FC<{
-  istruttori: any[];
+// ─── Appello atleti per corso ──────────────────────────────
+const AppelloCorso: React.FC<{
+  corso: any;
   atleti: any[];
-  today_key: string;
-}> = ({ istruttori, atleti, today_key }) => {
-  const today = new Date().toISOString().split("T")[0];
-  const { data: presenze = [] } = use_presenze(today);
-  const segna = use_segna_presenza();
-  const elimina_p = use_elimina_presenza();
-  const [tab, set_tab] = useState<"istruttori" | "atleti">("istruttori");
-
-  const today_istruttori = istruttori.filter(
-    (i: any) => i.stato === "attivo" && i.disponibilita[today_key]?.length > 0,
+  presenze: any[];
+  on_segna: (atleta_id: string, riferimento_id: string) => void;
+  loading: boolean;
+}> = ({ corso, atleti, presenze, on_segna, loading }) => {
+  const [expanded, set_expanded] = useState(false);
+  const atleti_corso = atleti.filter((a: any) => corso.atleti_ids?.includes(a.id));
+  const presenti = atleti_corso.filter((a: any) =>
+    presenze.some((p: any) => p.persona_id === a.id && p.riferimento_id === corso.id && !p.ora_uscita),
   );
 
-  const get_presenza = (persona_id: string) => presenze.find((p: any) => p.persona_id === persona_id);
-
-  const handle_segna = async (persona_id: string, tipo: "istruttore" | "atleta") => {
-    try {
-      const result = await segna.mutateAsync({
-        persona_id,
-        tipo_persona: tipo,
-        data: today,
-        metodo: "manuale",
-      });
-      toast({
-        title: result.tipo === "entrata" ? "✅ Entrata registrata" : "🚪 Uscita registrata",
-      });
-    } catch (err: any) {
-      toast({ title: "Errore", description: err?.message, variant: "destructive" });
-    }
-  };
-
-  const handle_elimina = async (id: string) => {
-    try {
-      await elimina_p.mutateAsync(id);
-      toast({ title: "🗑️ Presenza rimossa" });
-    } catch (err: any) {
-      toast({ title: "Errore", description: err?.message, variant: "destructive" });
-    }
-  };
-
-  const presenti_count = presenze.filter((p: any) =>
-    tab === "istruttori" ? p.tipo_persona === "istruttore" : p.tipo_persona === "atleta",
-  ).length;
-
   return (
-    <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Presenze oggi</h3>
-        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-success/10 text-success">
-          {presenti_count} presenti
+    <div className="border border-border/50 rounded-xl overflow-hidden">
+      <div
+        className="flex gap-4 items-center p-3 cursor-pointer hover:bg-muted/30 transition-colors"
+        onClick={() => set_expanded((e) => !e)}
+      >
+        <span className="text-xs font-medium tabular-nums text-muted-foreground w-12 flex-shrink-0">
+          {corso.ora_inizio?.slice(0, 5)}
         </span>
-      </div>
-
-      {/* Tab istruttori/atleti */}
-      <div className="flex gap-1 p-1 bg-muted/30 rounded-lg">
-        {(["istruttori", "atleti"] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => set_tab(t)}
-            className={`flex-1 text-xs font-medium py-1.5 rounded-md transition-all
-              ${tab === t ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-          >
-            {t === "istruttori" ? "👨‍🏫 Istruttori" : "⛸️ Atleti"}
-          </button>
-        ))}
-      </div>
-
-      {/* Lista istruttori attesi oggi */}
-      {tab === "istruttori" && (
-        <div className="space-y-2">
-          {today_istruttori.length === 0 ? (
-            <p className="text-xs text-muted-foreground text-center py-4">Nessun istruttore previsto oggi</p>
-          ) : (
-            today_istruttori.map((i: any) => {
-              const presenza = get_presenza(i.id);
-              const is_present = !!presenza && !presenza.ora_uscita;
-              const has_left = !!presenza?.ora_uscita;
-              return (
-                <div
-                  key={i.id}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all
-                  ${is_present ? "bg-success/5 border-success/20" : has_left ? "bg-muted/20 border-border/50" : "bg-muted/10 border-border/30"}`}
-                >
-                  <div
-                    className={`w-2 h-2 rounded-full flex-shrink-0
-                    ${is_present ? "bg-success" : has_left ? "bg-muted-foreground" : "bg-orange-400"}`}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground">
-                      {i.nome} {i.cognome}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {presenza ? (
-                        <>
-                          {presenza.metodo === "nfc" && <Wifi className="w-3 h-3 inline mr-1" />}
-                          Entrata: {presenza.ora_entrata?.slice(0, 5)}
-                          {presenza.ora_uscita && ` · Uscita: ${presenza.ora_uscita?.slice(0, 5)}`}
-                        </>
-                      ) : (
-                        i.disponibilita[today_key]?.map((s: any) => `${s.ora_inizio}-${s.ora_fine}`).join(", ")
-                      )}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {!has_left ? (
-                      <Button
-                        size="sm"
-                        variant={is_present ? "outline" : "default"}
-                        onClick={() => handle_segna(i.id, "istruttore")}
-                        disabled={segna.isPending}
-                        className={`h-7 text-xs ${is_present ? "" : "bg-success hover:bg-success/90 text-white"}`}
-                      >
-                        {is_present ? "🚪 Uscita" : "✅ Entrata"}
-                      </Button>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">Uscito</span>
-                    )}
-                    {presenza && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handle_elimina(presenza.id)}
-                        className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10"
-                      >
-                        <XCircle className="w-3.5 h-3.5" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              );
-            })
-          )}
-
-          {/* Istruttori non attesi ma presenti */}
-          {presenze
-            .filter(
-              (p: any) => p.tipo_persona === "istruttore" && !today_istruttori.find((i: any) => i.id === p.persona_id),
-            )
-            .map((p: any) => {
-              const istr = istruttori.find((i: any) => i.id === p.persona_id);
-              if (!istr) return null;
-              return (
-                <div
-                  key={p.id}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-primary/20 bg-primary/5"
-                >
-                  <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground">
-                      {istr.nome} {istr.cognome}
-                    </p>
-                    <p className="text-xs text-primary">Presente (non in programma)</p>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => handle_elimina(p.id)}
-                    className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10"
-                  >
-                    <XCircle className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
-              );
-            })}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-foreground">{corso.nome}</p>
+          <p className="text-xs text-muted-foreground">
+            {corso.atleti_ids?.length || 0} iscritte · {presenti.length} presenti
+          </p>
         </div>
-      )}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <span
+            className={`text-xs font-bold px-2 py-0.5 rounded-full
+            ${
+              presenti.length === atleti_corso.length && atleti_corso.length > 0
+                ? "bg-success/10 text-success"
+                : presenti.length > 0
+                  ? "bg-orange-100 text-orange-600"
+                  : "bg-muted/50 text-muted-foreground"
+            }`}
+          >
+            {presenti.length}/{atleti_corso.length}
+          </span>
+          {expanded ? (
+            <ChevronUp className="w-4 h-4 text-muted-foreground" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-muted-foreground" />
+          )}
+        </div>
+      </div>
 
-      {/* Lista atleti */}
-      {tab === "atleti" && (
-        <div className="space-y-2">
-          {atleti
-            .filter((a: any) => a.stato === "attivo")
-            .slice(0, 10)
-            .map((a: any) => {
-              const presenza = get_presenza(a.id);
-              const is_present = !!presenza && !presenza.ora_uscita;
-              const has_left = !!presenza?.ora_uscita;
+      {expanded && (
+        <div className="border-t border-border/50 divide-y divide-border/30">
+          {atleti_corso.length === 0 ? (
+            <p className="text-xs text-muted-foreground px-4 py-3">Nessuna atleta iscritta a questo corso.</p>
+          ) : (
+            atleti_corso.map((a: any) => {
+              const presenza = presenze.find(
+                (p: any) => p.persona_id === a.id && p.riferimento_id === corso.id && !p.ora_uscita,
+              );
+              const is_present = !!presenza;
               return (
                 <div
                   key={a.id}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all
-                ${is_present ? "bg-success/5 border-success/20" : has_left ? "bg-muted/20 border-border/50" : "bg-muted/10 border-border/30"}`}
+                  className={`flex items-center gap-3 px-4 py-2.5 transition-colors
+                  ${is_present ? "bg-success/5" : "bg-background"}`}
                 >
-                  <div
-                    className={`w-2 h-2 rounded-full flex-shrink-0
-                  ${is_present ? "bg-success" : has_left ? "bg-muted-foreground" : "bg-border"}`}
-                  />
+                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${is_present ? "bg-success" : "bg-border"}`} />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground">
                       {a.nome} {a.cognome}
                     </p>
-                    {presenza && (
-                      <p className="text-xs text-muted-foreground">
-                        {presenza.metodo === "nfc" && <Wifi className="w-3 h-3 inline mr-1" />}
-                        Entrata: {presenza.ora_entrata?.slice(0, 5)}
-                        {presenza.ora_uscita && ` · Uscita: ${presenza.ora_uscita?.slice(0, 5)}`}
-                      </p>
+                    {a.ruolo_pista && a.ruolo_pista !== "atleta" && (
+                      <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
+                        {a.ruolo_pista === "monitore" ? "Monitore" : "Aiuto monitore"}
+                      </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-1">
-                    {!has_left ? (
-                      <Button
-                        size="sm"
-                        variant={is_present ? "outline" : "ghost"}
-                        onClick={() => handle_segna(a.id, "atleta")}
-                        disabled={segna.isPending}
-                        className={`h-7 text-xs ${is_present ? "" : "text-muted-foreground"}`}
-                      >
-                        {is_present ? "🚪" : "✅"}
-                      </Button>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">Uscita</span>
-                    )}
-                    {presenza && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handle_elimina(presenza.id)}
-                        className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10"
-                      >
-                        <XCircle className="w-3.5 h-3.5" />
-                      </Button>
-                    )}
-                  </div>
+                  <Button
+                    size="sm"
+                    variant={is_present ? "outline" : "default"}
+                    onClick={() => on_segna(a.id, corso.id)}
+                    disabled={loading}
+                    className={`h-7 text-xs ${is_present ? "text-success border-success/40" : "bg-success hover:bg-success/90 text-white"}`}
+                  >
+                    {is_present ? "✓ Presente" : "Segna"}
+                  </Button>
                 </div>
               );
-            })}
-          <p className="text-xs text-muted-foreground text-center pt-1">
-            Mostra i primi 10 atleti attivi. Il tag NFC registrerà automaticamente la presenza.
+            })
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── Appello atleti per lezione privata ───────────────────
+const AppelloLezione: React.FC<{
+  lezione: any;
+  atleti: any[];
+  presenze: any[];
+  on_segna: (atleta_id: string, riferimento_id: string) => void;
+  loading: boolean;
+  istruttori: any[];
+}> = ({ lezione, atleti, presenze, on_segna, loading, istruttori }) => {
+  const [expanded, set_expanded] = useState(false);
+  const atleti_lezione = atleti.filter((a: any) => lezione.atleti_ids?.includes(a.id));
+  const istr = istruttori.find((i: any) => i.id === lezione.istruttore_id);
+
+  return (
+    <div className="border border-border/50 rounded-xl overflow-hidden">
+      <div
+        className="flex gap-4 items-center p-3 cursor-pointer hover:bg-muted/30 transition-colors"
+        onClick={() => set_expanded((e) => !e)}
+      >
+        <span className="text-xs font-medium tabular-nums text-muted-foreground w-12 flex-shrink-0">
+          {lezione.ora_inizio?.slice(0, 5)}
+        </span>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-foreground">
+            Lezione privata {lezione.atleti_ids?.length > 1 ? "👥" : ""}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {istr ? `${istr.nome} ${istr.cognome}` : "—"} · {atleti_lezione.map((a: any) => a.nome).join(", ")}
           </p>
         </div>
+        {expanded ? (
+          <ChevronUp className="w-4 h-4 text-muted-foreground" />
+        ) : (
+          <ChevronDown className="w-4 h-4 text-muted-foreground" />
+        )}
+      </div>
+
+      {expanded && (
+        <div className="border-t border-border/50 divide-y divide-border/30">
+          {atleti_lezione.map((a: any) => {
+            const presenza = presenze.find(
+              (p: any) => p.persona_id === a.id && p.riferimento_id === lezione.id && !p.ora_uscita,
+            );
+            const is_present = !!presenza;
+            return (
+              <div
+                key={a.id}
+                className={`flex items-center gap-3 px-4 py-2.5 transition-colors
+                ${is_present ? "bg-success/5" : "bg-background"}`}
+              >
+                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${is_present ? "bg-success" : "bg-border"}`} />
+                <p className="text-sm font-medium text-foreground flex-1">
+                  {a.nome} {a.cognome}
+                </p>
+                <Button
+                  size="sm"
+                  variant={is_present ? "outline" : "default"}
+                  onClick={() => on_segna(a.id, lezione.id)}
+                  disabled={loading}
+                  className={`h-7 text-xs ${is_present ? "text-success border-success/40" : "bg-success hover:bg-success/90 text-white"}`}
+                >
+                  {is_present ? "✓ Presente" : "Segna"}
+                </Button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── Sezione presenze istruttori ──────────────────────────
+const SezionePresenzeIstruttori: React.FC<{
+  istruttori: any[];
+  today_key: string;
+  presenze: any[];
+  on_segna: (id: string, tipo: "istruttore") => void;
+  on_elimina: (id: string) => void;
+  loading: boolean;
+}> = ({ istruttori, today_key, presenze, on_segna, on_elimina, loading }) => {
+  const today_istruttori = istruttori.filter(
+    (i: any) => i.stato === "attivo" && i.disponibilita[today_key]?.length > 0,
+  );
+
+  const get_presenza = (id: string) => presenze.find((p: any) => p.persona_id === id);
+
+  return (
+    <div className="space-y-2">
+      {today_istruttori.length === 0 ? (
+        <p className="text-xs text-muted-foreground text-center py-4">Nessun istruttore previsto oggi</p>
+      ) : (
+        today_istruttori.map((i: any) => {
+          const presenza = get_presenza(i.id);
+          const is_present = !!presenza && !presenza.ora_uscita;
+          const has_left = !!presenza?.ora_uscita;
+          return (
+            <div
+              key={i.id}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all
+              ${is_present ? "bg-success/5 border-success/20" : has_left ? "bg-muted/20 border-border/50" : "bg-muted/10 border-border/30"}`}
+            >
+              <div
+                className={`w-2 h-2 rounded-full flex-shrink-0
+                ${is_present ? "bg-success" : has_left ? "bg-muted-foreground" : "bg-orange-400"}`}
+              />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground">
+                  {i.nome} {i.cognome}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {presenza ? (
+                    <>
+                      {presenza.metodo === "nfc" && <Wifi className="w-3 h-3 inline mr-1" />}
+                      Entrata: {presenza.ora_entrata?.slice(0, 5)}
+                      {presenza.ora_uscita && ` · Uscita: ${presenza.ora_uscita?.slice(0, 5)}`}
+                    </>
+                  ) : (
+                    i.disponibilita[today_key]?.map((s: any) => `${s.ora_inizio}-${s.ora_fine}`).join(", ")
+                  )}
+                </p>
+              </div>
+              <div className="flex items-center gap-1">
+                {!has_left ? (
+                  <Button
+                    size="sm"
+                    variant={is_present ? "outline" : "default"}
+                    onClick={() => on_segna(i.id, "istruttore")}
+                    disabled={loading}
+                    className={`h-7 text-xs ${is_present ? "" : "bg-success hover:bg-success/90 text-white"}`}
+                  >
+                    {is_present ? "🚪 Uscita" : "✅ Entrata"}
+                  </Button>
+                ) : (
+                  <span className="text-xs text-muted-foreground">Uscito</span>
+                )}
+                {presenza && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => on_elimina(presenza.id)}
+                    className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10"
+                  >
+                    <XCircle className="w-3.5 h-3.5" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          );
+        })
       )}
     </div>
   );
@@ -306,7 +319,15 @@ const DashboardPage: React.FC = () => {
   const { data: fatture = [], isLoading: loading_fatture } = use_fatture();
   const { data: istruttori = [], isLoading: loading_istruttori } = use_istruttori();
   const { data: comunicazioni = [], isLoading: loading_com } = use_comunicazioni();
+  const { data: lezioni = [] } = use_lezioni_private();
   const { data: club } = use_club();
+
+  const today = new Date().toISOString().split("T")[0];
+  const { data: presenze = [] } = use_presenze(today);
+  const segna = use_segna_presenza();
+  const elimina_p = use_elimina_presenza();
+
+  const [tab_presenze, set_tab_presenze] = useState<"appello" | "istruttori">("appello");
 
   const is_loading =
     loading_atleti || loading_corsi || loading_gare || loading_fatture || loading_istruttori || loading_com;
@@ -320,12 +341,52 @@ const DashboardPage: React.FC = () => {
 
   const today_day_keys = ["domenica", "lunedi", "martedi", "mercoledi", "giovedi", "venerdi", "sabato"];
   const today_key = today_day_keys[new Date().getDay()];
+
+  // Corsi e lezioni di oggi
   const today_corsi = corsi.filter((c: any) => c.giorno === today_key && c.stato === "attivo");
+  const today_lezioni = lezioni.filter((l: any) => l.data === today && !l.annullata);
 
   const recent_atleti = [...atleti]
     .sort((a: any, b: any) => (b.data_aggiunta || "").localeCompare(a.data_aggiunta || ""))
     .slice(0, 5);
   const recent_comms = comunicazioni.slice(0, 3);
+
+  const handle_segna_atleta = async (atleta_id: string, riferimento_id: string) => {
+    try {
+      const result = await segna.mutateAsync({
+        persona_id: atleta_id,
+        tipo_persona: "atleta",
+        data: today,
+        metodo: "manuale",
+        riferimento_id,
+        tipo_riferimento: "corso",
+      } as any);
+      toast({ title: result.tipo === "entrata" ? "✅ Presenza registrata" : "🚪 Uscita registrata" });
+    } catch (err: any) {
+      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+    }
+  };
+
+  const handle_segna_istruttore = async (id: string, tipo: "istruttore") => {
+    try {
+      const result = await segna.mutateAsync({ persona_id: id, tipo_persona: tipo, data: today, metodo: "manuale" });
+      toast({ title: result.tipo === "entrata" ? "✅ Entrata registrata" : "🚪 Uscita registrata" });
+    } catch (err: any) {
+      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+    }
+  };
+
+  const handle_elimina = async (id: string) => {
+    try {
+      await elimina_p.mutateAsync(id);
+      toast({ title: "🗑️ Presenza rimossa" });
+    } catch (err: any) {
+      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+    }
+  };
+
+  // Conta presenze totali oggi
+  const totale_presenti = presenze.filter((p: any) => !p.ora_uscita).length;
 
   if (is_loading) {
     return (
@@ -382,61 +443,123 @@ const DashboardPage: React.FC = () => {
       {/* Contenuto principale */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
         <section className="lg:col-span-2 space-y-6">
-          {/* Oggi in pista */}
-          <div className="bg-card rounded-xl shadow-card p-6">
-            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-5">
-              {t("oggi_in_pista")}
-            </h3>
-            {today_corsi.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4">{t("nessun_risultato")}</p>
-            ) : (
+          {/* Oggi in pista + Appello */}
+          <div className="bg-card rounded-xl shadow-card p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                {t("oggi_in_pista")}
+              </h3>
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-success/10 text-success">
+                {totale_presenti} presenti oggi
+              </span>
+            </div>
+
+            {/* Tab appello / istruttori */}
+            <div className="flex gap-1 p-1 bg-muted/30 rounded-lg">
+              {(
+                [
+                  { key: "appello", label: "📋 Appello atlete" },
+                  { key: "istruttori", label: "👨‍🏫 Istruttori" },
+                ] as const
+              ).map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => set_tab_presenze(tab.key)}
+                  className={`flex-1 text-xs font-medium py-1.5 rounded-md transition-all
+                    ${tab_presenze === tab.key ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Appello atlete per corso/lezione */}
+            {tab_presenze === "appello" && (
               <div className="space-y-3">
-                {today_corsi.map((corso: any) => (
-                  <div key={corso.id} className="flex gap-4 items-start group">
-                    <span className="text-xs font-medium tabular-nums text-muted-foreground pt-1.5 w-12">
-                      {corso.ora_inizio?.slice(0, 5)}
-                    </span>
-                    <div className="flex-1 p-3 rounded-lg bg-muted/50 group-hover:bg-accent/5 transition-colors">
-                      <p className="text-sm font-semibold text-foreground">{corso.nome}</p>
+                {today_corsi.length === 0 && today_lezioni.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                    <Clock className="w-8 h-8 mb-2 opacity-30" />
+                    <p className="text-sm">Nessun corso o lezione oggi</p>
+                  </div>
+                ) : (
+                  <>
+                    {today_corsi.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Corsi</p>
+                        {today_corsi.map((corso: any) => (
+                          <AppelloCorso
+                            key={corso.id}
+                            corso={corso}
+                            atleti={atleti}
+                            presenze={presenze}
+                            on_segna={handle_segna_atleta}
+                            loading={segna.isPending}
+                          />
+                        ))}
+                      </div>
+                    )}
+                    {today_lezioni.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
+                          Lezioni private
+                        </p>
+                        {today_lezioni.map((lezione: any) => (
+                          <AppelloLezione
+                            key={lezione.id}
+                            lezione={lezione}
+                            atleti={atleti}
+                            presenze={presenze}
+                            on_segna={handle_segna_atleta}
+                            loading={segna.isPending}
+                            istruttori={istruttori}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Presenze istruttori */}
+            {tab_presenze === "istruttori" && (
+              <SezionePresenzeIstruttori
+                istruttori={istruttori}
+                today_key={today_key}
+                presenze={presenze}
+                on_segna={handle_segna_istruttore}
+                on_elimina={handle_elimina}
+                loading={segna.isPending}
+              />
+            )}
+
+            {/* Prossimi eventi */}
+            <div className="pt-2 border-t border-border">
+              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">
+                {t("prossimi_eventi")}
+              </h3>
+              <div className="space-y-3">
+                {upcoming_gare.slice(0, 3).map((gara: any) => (
+                  <div key={gara.id} className="flex gap-4 items-start">
+                    <div className="w-12 text-center">
+                      <span className="text-xs font-medium tabular-nums text-muted-foreground">
+                        {new Date(gara.data + "T00:00:00").toLocaleDateString("it-CH", {
+                          day: "2-digit",
+                          month: "short",
+                        })}
+                      </span>
+                    </div>
+                    <div className="flex-1 p-3 rounded-lg bg-muted/50">
+                      <p className="text-sm font-semibold text-foreground">{gara.nome}</p>
                       <p className="text-xs text-muted-foreground">
-                        {corso.istruttori_ids
-                          .map((id: string) => get_istruttore_name_from_list(istruttori, id))
-                          .join(", ")}{" "}
-                        • {corso.atleti_ids.length} {t("atleti")}
+                        {gara.localita} • {gara.atleti_iscritti.length} {t("atleti")}
                       </p>
                     </div>
                   </div>
                 ))}
               </div>
-            )}
-
-            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-8 mb-5">
-              {t("prossimi_eventi")}
-            </h3>
-            <div className="space-y-3">
-              {upcoming_gare.slice(0, 3).map((gara: any) => (
-                <div key={gara.id} className="flex gap-4 items-start">
-                  <div className="w-12 text-center">
-                    <span className="text-xs font-medium tabular-nums text-muted-foreground">
-                      {new Date(gara.data + "T00:00:00").toLocaleDateString("it-CH", {
-                        day: "2-digit",
-                        month: "short",
-                      })}
-                    </span>
-                  </div>
-                  <div className="flex-1 p-3 rounded-lg bg-muted/50">
-                    <p className="text-sm font-semibold text-foreground">{gara.nome}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {gara.localita} • {gara.atleti_iscritti.length} {t("atleti")}
-                    </p>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
-
-          {/* Sezione presenze */}
-          <SezionePresenze istruttori={istruttori} atleti={atleti} today_key={today_key} />
         </section>
 
         <aside className="space-y-6">
