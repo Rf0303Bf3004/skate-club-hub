@@ -103,6 +103,9 @@ export function use_upsert_atleta() {
         note: data.note || "",
         disco_in_preparazione: data.disco_in_preparazione || null,
         tag_nfc: data.tag_nfc || null,
+        ruolo_pista: data.ruolo_pista || "atleta",
+        compenso_orario_pista: data.compenso_orario_pista || 0,
+        attivo_come_monitore: data.attivo_come_monitore || false,
       };
       if (data.id) {
         const { error } = await supabase.from("atleti").update(payload).eq("id", data.id);
@@ -120,7 +123,6 @@ export function use_elimina_atleta() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      // Cascata su tutte le tabelle collegate
       const { error: e1 } = await supabase.from("lezioni_private_atlete").delete().eq("atleta_id", id);
       if (e1) throw e1;
       const { error: e2 } = await supabase.from("iscrizioni_corsi").delete().eq("atleta_id", id);
@@ -135,8 +137,10 @@ export function use_elimina_atleta() {
       if (e6) throw e6;
       const { error: e7 } = await supabase.from("storico_livelli_atleta").delete().eq("atleta_id", id);
       if (e7) throw e7;
-      const { error: e8 } = await supabase.from("atleti").delete().eq("id", id);
+      const { error: e8 } = await supabase.from("ore_pista_monitors").delete().eq("atleta_id", id);
       if (e8) throw e8;
+      const { error: e9 } = await supabase.from("atleti").delete().eq("id", id);
+      if (e9) throw e9;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["atleti"] }),
   });
@@ -479,7 +483,6 @@ export function use_genera_fatture_mensili() {
       const scadenza = data_fine_mese;
       const mese_label = now.toLocaleString("it-CH", { month: "long", year: "numeric" });
 
-      // Numero fattura più recente
       const { data: fatture_esistenti } = await supabase
         .from("fatture")
         .select("numero")
@@ -494,7 +497,6 @@ export function use_genera_fatture_mensili() {
 
       const fatture_da_creare: any[] = [];
 
-      // ── 1. Quote corsi ──────────────────────────────────
       const { data: corsi } = await supabase.from("corsi").select("*").eq("club_id", DEMO_CLUB_ID).eq("attivo", true);
       const { data: iscrizioni_corsi } = await supabase.from("iscrizioni_corsi").select("*").eq("attiva", true);
 
@@ -515,7 +517,6 @@ export function use_genera_fatture_mensili() {
         });
       }
 
-      // ── 2. Lezioni private del mese (raggruppate per atleta) ─
       const { data: lezioni_mese } = await supabase
         .from("lezioni_private")
         .select("*, lezioni_private_atlete(*)")
@@ -697,6 +698,7 @@ export function use_save_disponibilita() {
 }
 
 // ─── Presenze ──────────────────────────────────────────────
+// FIX: aggiunto riferimento_id e tipo_riferimento per appello atlete
 export function use_segna_presenza() {
   const qc = useQueryClient();
   return useMutation({
@@ -707,14 +709,25 @@ export function use_segna_presenza() {
       ora_entrata?: string;
       metodo: "nfc" | "manuale";
       note?: string;
+      riferimento_id?: string;
+      tipo_riferimento?: "corso" | "lezione_privata" | "libero";
     }) => {
-      const { data: existing } = await supabase
+      // Per l'appello atlete: cerca presenza specifica per corso/lezione
+      // Per istruttori: cerca presenza generica del giorno
+      const query = supabase
         .from("presenze")
         .select("id")
         .eq("club_id", DEMO_CLUB_ID)
         .eq("persona_id", data.persona_id)
-        .eq("data", data.data)
-        .maybeSingle();
+        .eq("data", data.data);
+
+      if (data.riferimento_id) {
+        query.eq("riferimento_id", data.riferimento_id);
+      } else {
+        query.is("riferimento_id", null);
+      }
+
+      const { data: existing } = await query.maybeSingle();
 
       if (existing) {
         const { error } = await supabase
@@ -732,6 +745,8 @@ export function use_segna_presenza() {
           ora_entrata: data.ora_entrata || new Date().toTimeString().slice(0, 5),
           metodo: data.metodo,
           note: data.note || null,
+          riferimento_id: data.riferimento_id || null,
+          tipo_riferimento: data.tipo_riferimento || null,
         });
         if (error) throw error;
         return { tipo: "entrata" };
