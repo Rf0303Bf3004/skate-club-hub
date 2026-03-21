@@ -17,6 +17,10 @@ import {
   UserPlus,
   Trophy,
   TrendingUp,
+  Archive,
+  Clock,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
@@ -39,6 +43,22 @@ const LIVELLI = [
 ];
 const CARRIERE = ["Artistica", "Stile", "Entrambe"];
 const MEDAGLIE = ["", "Oro", "Argento", "Bronzo"];
+
+// ─── Helpers ──────────────────────────────────────────────
+function is_passata(data: string): boolean {
+  const oggi = new Date().toISOString().split("T")[0];
+  return data < oggi;
+}
+
+function countdown_label(data: string): { testo: string; colore: string } {
+  const giorni = days_until(data);
+  if (giorni < 0) return { testo: "Passata", colore: "text-muted-foreground" };
+  if (giorni === 0) return { testo: "🔴 Oggi!", colore: "text-destructive font-bold" };
+  if (giorni === 1) return { testo: "⚡ Domani", colore: "text-orange-500 font-bold" };
+  if (giorni <= 7) return { testo: `⏰ ${giorni} giorni`, colore: "text-orange-500" };
+  if (giorni <= 30) return { testo: `📅 ${giorni} giorni`, colore: "text-primary" };
+  return { testo: `${giorni} giorni`, colore: "text-muted-foreground" };
+}
 
 interface GaraFormData {
   nome: string;
@@ -68,7 +88,6 @@ const empty_form = (): GaraFormData => ({
   note: "",
 });
 
-// ─── Field helper ──────────────────────────────────────────────────────────────
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <div className="space-y-1.5">
     <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{label}</label>
@@ -84,15 +103,22 @@ const InfoRow: React.FC<{ label: string; value: string }> = ({ label, value }) =
 );
 
 const MedalBadge: React.FC<{ tipo: string }> = ({ tipo }) => {
+  const tipo_lower = tipo?.toLowerCase();
   const colors: Record<string, string> = {
     oro: "bg-yellow-100 text-yellow-700",
     argento: "bg-slate-100 text-slate-600",
     bronzo: "bg-orange-100 text-orange-700",
   };
-  return <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${colors[tipo] || ""}`}>{tipo}</span>;
+  return <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${colors[tipo_lower] || ""}`}>{tipo}</span>;
 };
 
-// ─── Modal nuova gara ──────────────────────────────────────────────────────────
+// ─── Countdown visuale ─────────────────────────────────────
+const CountdownBadge: React.FC<{ data: string }> = ({ data }) => {
+  const { testo, colore } = countdown_label(data);
+  return <span className={`text-xs ${colore}`}>{testo}</span>;
+};
+
+// ─── Modal nuova gara ──────────────────────────────────────
 const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const { t } = useI18n();
   const queryClient = useQueryClient();
@@ -129,6 +155,7 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           costo_iscrizione: parseFloat(form.costo_iscrizione) || 0,
           costo_accompagnamento: parseFloat(form.costo_accompagnamento) || 0,
           note: form.note.trim() || null,
+          archiviata: false,
         })
         .select();
       if (error) throw error;
@@ -281,7 +308,7 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   );
 };
 
-// ─── Modal iscrizione atleta ───────────────────────────────────────────────────
+// ─── Modal iscrizione atleta ───────────────────────────────
 const IscrizioneModal: React.FC<{
   gara: any;
   atleti: any[];
@@ -292,7 +319,6 @@ const IscrizioneModal: React.FC<{
   const [atleta_id, set_atleta_id] = useState("");
   const [carriera, set_carriera] = useState("Artistica");
   const [saving, set_saving] = useState(false);
-
   const atleti_disponibili = atleti.filter((a: any) => !atleti_gia_iscritti.includes(a.id) && a.stato === "attivo");
 
   const handle_submit = async () => {
@@ -371,7 +397,7 @@ const IscrizioneModal: React.FC<{
   );
 };
 
-// ─── Modal risultato atleta ────────────────────────────────────────────────────
+// ─── Modal risultato atleta ────────────────────────────────
 const RisultatoModal: React.FC<{
   iscrizione: any;
   atleta_nome: string;
@@ -448,7 +474,7 @@ const RisultatoModal: React.FC<{
                 <option value="">Nessuna</option>
                 {MEDAGLIE.filter((m) => m).map((m) => (
                   <option key={m} value={m}>
-                    {m.charAt(0).toUpperCase() + m.slice(1)}
+                    {m}
                   </option>
                 ))}
               </select>
@@ -509,7 +535,7 @@ const RisultatoModal: React.FC<{
   );
 };
 
-// ─── Grafico andamento atleta ──────────────────────────────────────────────────
+// ─── Grafico andamento atleta ──────────────────────────────
 const GraficoAndamento: React.FC<{
   atleta_id: string;
   atleta_nome: string;
@@ -549,7 +575,6 @@ const GraficoAndamento: React.FC<{
             <X className="w-5 h-5" />
           </button>
         </div>
-
         <div className="px-6 py-5 space-y-6">
           {dati.length < 2 ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
@@ -558,7 +583,6 @@ const GraficoAndamento: React.FC<{
             </div>
           ) : (
             <>
-              {/* Grafico punteggio */}
               <div>
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">
                   📊 Andamento punteggio
@@ -606,11 +630,9 @@ const GraficoAndamento: React.FC<{
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-
-              {/* Grafico posizione */}
               <div>
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">
-                  🏆 Andamento posizione (più basso = meglio)
+                  🏆 Andamento posizione
                 </p>
                 <ResponsiveContainer width="100%" height={200}>
                   <LineChart data={dati.filter((d) => d.posizione !== null)}>
@@ -637,36 +659,32 @@ const GraficoAndamento: React.FC<{
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-
-              {/* Tabella riepilogo */}
               <div>
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">
                   Riepilogo risultati
                 </p>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="border-b border-border">
-                        <th className="text-left px-3 py-2 font-bold text-muted-foreground">Gara</th>
-                        <th className="text-center px-3 py-2 font-bold text-muted-foreground">Pos.</th>
-                        <th className="text-center px-3 py-2 font-bold text-muted-foreground">Tecnico</th>
-                        <th className="text-center px-3 py-2 font-bold text-muted-foreground">Artistico</th>
-                        <th className="text-center px-3 py-2 font-bold text-muted-foreground">Totale</th>
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left px-3 py-2 font-bold text-muted-foreground">Gara</th>
+                      <th className="text-center px-3 py-2 font-bold text-muted-foreground">Pos.</th>
+                      <th className="text-center px-3 py-2 font-bold text-muted-foreground">Tecnico</th>
+                      <th className="text-center px-3 py-2 font-bold text-muted-foreground">Artistico</th>
+                      <th className="text-center px-3 py-2 font-bold text-muted-foreground">Totale</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dati.map((d, i) => (
+                      <tr key={i} className="border-b border-border/50">
+                        <td className="px-3 py-2 font-medium text-foreground">{d.nome_gara}</td>
+                        <td className="px-3 py-2 text-center">{d.posizione ? `${d.posizione}°` : "—"}</td>
+                        <td className="px-3 py-2 text-center">{d.tecnico ?? "—"}</td>
+                        <td className="px-3 py-2 text-center">{d.artistico ?? "—"}</td>
+                        <td className="px-3 py-2 text-center font-semibold">{d.punteggio ?? "—"}</td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {dati.map((d, i) => (
-                        <tr key={i} className="border-b border-border/50">
-                          <td className="px-3 py-2 font-medium text-foreground">{d.nome_gara}</td>
-                          <td className="px-3 py-2 text-center">{d.posizione ? `${d.posizione}°` : "—"}</td>
-                          <td className="px-3 py-2 text-center">{d.tecnico ?? "—"}</td>
-                          <td className="px-3 py-2 text-center">{d.artistico ?? "—"}</td>
-                          <td className="px-3 py-2 text-center font-semibold">{d.punteggio ?? "—"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </>
           )}
@@ -676,18 +694,38 @@ const GraficoAndamento: React.FC<{
   );
 };
 
-// ─── Main Page ─────────────────────────────────────────────────────────────────
+// ─── Main Page ─────────────────────────────────────────────
 const CompetitionsPage: React.FC = () => {
   const { t } = useI18n();
   const { data: gare = [], isLoading } = use_gare();
   const { data: atleti = [] } = use_atleti();
   const elimina = use_elimina_gara();
+  const queryClient = useQueryClient();
+
   const [selected_id, set_selected_id] = useState<string | null>(null);
   const [show_modal, set_show_modal] = useState(false);
   const [confirm_delete, set_confirm_delete] = useState(false);
   const [show_iscrizione, set_show_iscrizione] = useState(false);
   const [risultato_iscrizione, set_risultato_iscrizione] = useState<any>(null);
   const [grafico_atleta, set_grafico_atleta] = useState<any>(null);
+  const [show_archivio, set_show_archivio] = useState(false);
+
+  // Separa gare future/oggi da gare archiviate/passate
+  const today = new Date().toISOString().split("T")[0];
+  const gare_future = useMemo(
+    () =>
+      gare
+        .filter((g: any) => !is_passata(g.data) && !g.archiviata)
+        .sort((a: any, b: any) => a.data.localeCompare(b.data)),
+    [gare],
+  );
+  const gare_archivio = useMemo(
+    () =>
+      gare
+        .filter((g: any) => is_passata(g.data) || g.archiviata)
+        .sort((a: any, b: any) => b.data.localeCompare(a.data)),
+    [gare],
+  );
 
   const selected = gare.find((g: any) => g.id === selected_id);
 
@@ -703,6 +741,17 @@ const CompetitionsPage: React.FC = () => {
     }
   };
 
+  const handle_archivia = async (id: string, archivia: boolean) => {
+    try {
+      const { error } = await supabase.from("gare_calendario").update({ archiviata: archivia }).eq("id", id);
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ["gare"] });
+      toast({ title: archivia ? "📦 Gara archiviata" : "✅ Gara ripristinata" });
+    } catch (err: any) {
+      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -711,10 +760,12 @@ const CompetitionsPage: React.FC = () => {
     );
   }
 
+  // ─── Vista dettaglio gara ──────────────────────────────────
   if (selected) {
+    const passata = is_passata(selected.data);
     return (
       <>
-        {show_iscrizione && (
+        {show_iscrizione && !passata && (
           <IscrizioneModal
             gara={selected}
             atleti={atleti}
@@ -750,14 +801,25 @@ const CompetitionsPage: React.FC = () => {
             >
               <ArrowLeft className="w-4 h-4 mr-2" /> {t("gare")}
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => set_confirm_delete(true)}
-              className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-1.5"
-            >
-              <Trash2 className="w-4 h-4" /> Elimina gara
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handle_archivia(selected.id, !selected.archiviata)}
+                className="text-muted-foreground hover:text-foreground gap-1.5"
+              >
+                <Archive className="w-4 h-4" />
+                {selected.archiviata ? "Ripristina" : "Archivia"}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => set_confirm_delete(true)}
+                className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-1.5"
+              >
+                <Trash2 className="w-4 h-4" /> Elimina
+              </Button>
+            </div>
           </div>
 
           {confirm_delete && (
@@ -767,8 +829,7 @@ const CompetitionsPage: React.FC = () => {
                 <p className="text-sm font-semibold text-destructive">Conferma eliminazione</p>
               </div>
               <p className="text-xs text-muted-foreground">
-                Stai per eliminare <strong>{selected.nome}</strong> e tutte le iscrizioni collegate. Operazione
-                irreversibile.
+                Stai per eliminare <strong>{selected.nome}</strong> e tutte le iscrizioni collegate.
               </p>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => set_confirm_delete(false)} className="flex-1">
@@ -787,8 +848,18 @@ const CompetitionsPage: React.FC = () => {
             </div>
           )}
 
+          {/* Header gara */}
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-foreground">{selected.nome}</h1>
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-xl font-bold tracking-tight text-foreground">{selected.nome}</h1>
+              {passata ? (
+                <Badge variant="secondary" className="text-xs gap-1">
+                  <Archive className="w-3 h-3" /> Passata
+                </Badge>
+              ) : (
+                <CountdownBadge data={selected.data} />
+              )}
+            </div>
             <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Calendar className="w-3.5 h-3.5" /> {new Date(selected.data + "T00:00:00").toLocaleDateString("it-CH")}
@@ -799,6 +870,16 @@ const CompetitionsPage: React.FC = () => {
             </div>
           </div>
 
+          {/* Banner gara passata */}
+          {passata && (
+            <div className="bg-muted/30 border border-border rounded-xl px-4 py-3 flex items-center gap-2">
+              <Archive className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <p className="text-sm text-muted-foreground">
+                Questa gara è già avvenuta. Puoi consultare i risultati ma non è possibile iscrivere nuovi atleti.
+              </p>
+            </div>
+          )}
+
           <Tabs defaultValue="atleti">
             <TabsList>
               <TabsTrigger value="atleti">
@@ -808,16 +889,21 @@ const CompetitionsPage: React.FC = () => {
             </TabsList>
 
             <TabsContent value="atleti" className="mt-6 space-y-4">
-              <div className="flex justify-end">
-                <Button onClick={() => set_show_iscrizione(true)} className="bg-primary hover:bg-primary/90 gap-2">
-                  <UserPlus className="w-4 h-4" /> Iscrivi atleta
-                </Button>
-              </div>
+              {/* Bottone iscrivi solo per gare future */}
+              {!passata && (
+                <div className="flex justify-end">
+                  <Button onClick={() => set_show_iscrizione(true)} className="bg-primary hover:bg-primary/90 gap-2">
+                    <UserPlus className="w-4 h-4" /> Iscrivi atleta
+                  </Button>
+                </div>
+              )}
 
               {selected.atleti_iscritti?.length === 0 ? (
                 <div className="bg-card rounded-xl shadow-card p-8 text-center text-muted-foreground">
                   <Trophy className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                  <p className="text-sm">Nessun atleta iscritto. Clicca "Iscrivi atleta" per aggiungere.</p>
+                  <p className="text-sm">
+                    {passata ? "Nessun atleta era iscritto a questa gara." : "Nessun atleta iscritto."}
+                  </p>
                 </div>
               ) : (
                 <div className="bg-card rounded-xl shadow-card overflow-hidden">
@@ -942,6 +1028,7 @@ const CompetitionsPage: React.FC = () => {
     );
   }
 
+  // ─── Vista lista gare ──────────────────────────────────────
   return (
     <>
       {show_modal && <GaraModal onClose={() => set_show_modal(false)} />}
@@ -952,7 +1039,14 @@ const CompetitionsPage: React.FC = () => {
             <Plus className="w-4 h-4 mr-2" /> {t("nuova_gara")}
           </Button>
         </div>
+
+        {/* Gare future */}
         <div className="bg-card rounded-xl shadow-card overflow-hidden">
+          <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+            <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+              <Clock className="w-3.5 h-3.5" /> Prossime gare ({gare_future.length})
+            </h2>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -963,6 +1057,9 @@ const CompetitionsPage: React.FC = () => {
                   <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
                     {t("data")}
                   </th>
+                  <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                    Countdown
+                  </th>
                   <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden sm:table-cell">
                     {t("luogo")}
                   </th>
@@ -972,54 +1069,119 @@ const CompetitionsPage: React.FC = () => {
                   <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
                     {t("iscritti")}
                   </th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">
-                    {t("costo_iscrizione")}
-                  </th>
                 </tr>
               </thead>
               <tbody>
-                {gare.length === 0 ? (
+                {gare_future.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground text-sm">
-                      Nessuna gara ancora. Clicca "Nuova Gara" per aggiungerne una.
+                    <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground text-sm">
+                      Nessuna gara in programma.
                     </td>
                   </tr>
                 ) : (
-                  gare.map((g: any) => {
-                    const d = days_until(g.data);
-                    return (
-                      <tr
-                        key={g.id}
-                        onClick={() => set_selected_id(g.id)}
-                        className="border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors"
-                      >
-                        <td className="px-4 py-3">
-                          <p className="font-medium text-foreground">{g.nome}</p>
-                          {d > 0 && <p className="text-xs text-accent">{t("countdown_giorni", String(d))}</p>}
-                        </td>
-                        <td className="px-4 py-3 tabular-nums text-muted-foreground">
-                          {new Date(g.data + "T00:00:00").toLocaleDateString("it-CH")}
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{g.localita}</td>
-                        <td className="px-4 py-3 hidden md:table-cell">
-                          <Badge variant="secondary" className="text-xs">
-                            {t(g.livello_minimo)}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-3 text-center tabular-nums font-medium text-foreground">
-                          {g.atleti_iscritti?.length ?? 0}
-                        </td>
-                        <td className="px-4 py-3 text-right tabular-nums text-muted-foreground hidden lg:table-cell">
-                          CHF {g.costo_iscrizione}
-                        </td>
-                      </tr>
-                    );
-                  })
+                  gare_future.map((g: any) => (
+                    <tr
+                      key={g.id}
+                      onClick={() => set_selected_id(g.id)}
+                      className="border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors"
+                    >
+                      <td className="px-4 py-3 font-medium text-foreground">{g.nome}</td>
+                      <td className="px-4 py-3 tabular-nums text-muted-foreground">
+                        {new Date(g.data + "T00:00:00").toLocaleDateString("it-CH")}
+                      </td>
+                      <td className="px-4 py-3">
+                        <CountdownBadge data={g.data} />
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{g.localita}</td>
+                      <td className="px-4 py-3 hidden md:table-cell">
+                        <Badge variant="secondary" className="text-xs">
+                          {t(g.livello_minimo)}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3 text-center tabular-nums font-medium text-foreground">
+                        {g.atleti_iscritti?.length ?? 0}
+                      </td>
+                    </tr>
+                  ))
                 )}
               </tbody>
             </table>
           </div>
         </div>
+
+        {/* Archivio gare passate */}
+        {gare_archivio.length > 0 && (
+          <div className="bg-card rounded-xl shadow-card overflow-hidden">
+            <button
+              onClick={() => set_show_archivio((v) => !v)}
+              className="w-full px-4 py-3 border-b border-border flex items-center justify-between hover:bg-muted/20 transition-colors"
+            >
+              <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                <Archive className="w-3.5 h-3.5" /> Archivio ({gare_archivio.length})
+              </h2>
+              {show_archivio ? (
+                <ChevronUp className="w-4 h-4 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+              )}
+            </button>
+            {show_archivio && (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/10">
+                      <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                        {t("nome")}
+                      </th>
+                      <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                        {t("data")}
+                      </th>
+                      <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden sm:table-cell">
+                        {t("luogo")}
+                      </th>
+                      <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                        {t("iscritti")}
+                      </th>
+                      <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                        Risultati
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {gare_archivio.map((g: any) => {
+                      const con_risultati = g.atleti_iscritti?.some((ai: any) => ai.posizione || ai.medaglia);
+                      return (
+                        <tr
+                          key={g.id}
+                          onClick={() => set_selected_id(g.id)}
+                          className="border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors opacity-75 hover:opacity-100"
+                        >
+                          <td className="px-4 py-3 font-medium text-foreground">{g.nome}</td>
+                          <td className="px-4 py-3 tabular-nums text-muted-foreground">
+                            {new Date(g.data + "T00:00:00").toLocaleDateString("it-CH")}
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{g.localita}</td>
+                          <td className="px-4 py-3 text-center tabular-nums text-muted-foreground">
+                            {g.atleti_iscritti?.length ?? 0}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            {con_risultati ? (
+                              <span className="text-xs font-bold text-success bg-success/10 px-2 py-0.5 rounded-full">
+                                ✓ Registrati
+                              </span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </>
   );
