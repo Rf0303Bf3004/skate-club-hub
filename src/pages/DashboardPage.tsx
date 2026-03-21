@@ -26,10 +26,20 @@ import {
   Wifi,
   ChevronDown,
   ChevronUp,
-  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
+
+// ─── Helpers ──────────────────────────────────────────────
+// Converte today_key (es. "sabato") in formato DB (es. "Sabato")
+function match_giorno(giorno_db: string, today_key: string): boolean {
+  return giorno_db?.toLowerCase() === today_key?.toLowerCase();
+}
+
+function get_slots_giorno(disponibilita: Record<string, any[]>, today_key: string): any[] {
+  const key = Object.keys(disponibilita).find((k) => k.toLowerCase() === today_key.toLowerCase());
+  return key ? disponibilita[key] : [];
+}
 
 const KPICard: React.FC<{
   title: string;
@@ -108,7 +118,6 @@ const AppelloCorso: React.FC<{
           )}
         </div>
       </div>
-
       {expanded && (
         <div className="border-t border-border/50 divide-y divide-border/30">
           {atleti_corso.length === 0 ? (
@@ -122,8 +131,7 @@ const AppelloCorso: React.FC<{
               return (
                 <div
                   key={a.id}
-                  className={`flex items-center gap-3 px-4 py-2.5 transition-colors
-                  ${is_present ? "bg-success/5" : "bg-background"}`}
+                  className={`flex items-center gap-3 px-4 py-2.5 transition-colors ${is_present ? "bg-success/5" : "bg-background"}`}
                 >
                   <div className={`w-2 h-2 rounded-full flex-shrink-0 ${is_present ? "bg-success" : "bg-border"}`} />
                   <div className="flex-1 min-w-0">
@@ -191,7 +199,6 @@ const AppelloLezione: React.FC<{
           <ChevronDown className="w-4 h-4 text-muted-foreground" />
         )}
       </div>
-
       {expanded && (
         <div className="border-t border-border/50 divide-y divide-border/30">
           {atleti_lezione.map((a: any) => {
@@ -202,8 +209,7 @@ const AppelloLezione: React.FC<{
             return (
               <div
                 key={a.id}
-                className={`flex items-center gap-3 px-4 py-2.5 transition-colors
-                ${is_present ? "bg-success/5" : "bg-background"}`}
+                className={`flex items-center gap-3 px-4 py-2.5 transition-colors ${is_present ? "bg-success/5" : "bg-background"}`}
               >
                 <div className={`w-2 h-2 rounded-full flex-shrink-0 ${is_present ? "bg-success" : "bg-border"}`} />
                 <p className="text-sm font-medium text-foreground flex-1">
@@ -236,9 +242,12 @@ const SezionePresenzeIstruttori: React.FC<{
   on_elimina: (id: string) => void;
   loading: boolean;
 }> = ({ istruttori, today_key, presenze, on_segna, on_elimina, loading }) => {
-  const today_istruttori = istruttori.filter(
-    (i: any) => i.stato === "attivo" && i.disponibilita[today_key]?.length > 0,
-  );
+  // FIX: confronto case-insensitive tra giorno DB (es. "Sabato") e today_key (es. "sabato")
+  const today_istruttori = istruttori.filter((i: any) => {
+    if (i.stato !== "attivo") return false;
+    const slots = get_slots_giorno(i.disponibilita || {}, today_key);
+    return slots.length > 0;
+  });
 
   const get_presenza = (id: string) => presenze.find((p: any) => p.persona_id === id);
 
@@ -251,6 +260,7 @@ const SezionePresenzeIstruttori: React.FC<{
           const presenza = get_presenza(i.id);
           const is_present = !!presenza && !presenza.ora_uscita;
           const has_left = !!presenza?.ora_uscita;
+          const slots = get_slots_giorno(i.disponibilita || {}, today_key);
           return (
             <div
               key={i.id}
@@ -273,7 +283,7 @@ const SezionePresenzeIstruttori: React.FC<{
                       {presenza.ora_uscita && ` · Uscita: ${presenza.ora_uscita?.slice(0, 5)}`}
                     </>
                   ) : (
-                    i.disponibilita[today_key]?.map((s: any) => `${s.ora_inizio}-${s.ora_fine}`).join(", ")
+                    slots.map((s: any) => `${s.ora_inizio}-${s.ora_fine}`).join(", ")
                   )}
                 </p>
               </div>
@@ -339,13 +349,12 @@ const DashboardPage: React.FC = () => {
   const fatture_da_pagare = fatture.filter((f: any) => f.stato === "da_pagare");
   const totale_fatture = fatture_da_pagare.reduce((s: number, f: any) => s + f.importo, 0);
 
+  // today_key in minuscolo (es. "sabato"), i giorni nel DB sono con maiuscola (es. "Sabato")
   const today_day_keys = ["domenica", "lunedi", "martedi", "mercoledi", "giovedi", "venerdi", "sabato"];
   const today_key = today_day_keys[new Date().getDay()];
 
-  // Corsi e lezioni di oggi
-  const toconst today_corsi = corsi.filter((c: any) => 
-  c.giorno?.toLowerCase() === today_key && c.stato === "attivo"
-);
+  // FIX: confronto case-insensitive
+  const today_corsi = corsi.filter((c: any) => match_giorno(c.giorno, today_key) && c.stato === "attivo");
   const today_lezioni = lezioni.filter((l: any) => l.data === today && !l.annullata);
 
   const recent_atleti = [...atleti]
@@ -387,7 +396,6 @@ const DashboardPage: React.FC = () => {
     }
   };
 
-  // Conta presenze totali oggi
   const totale_presenti = presenze.filter((p: any) => !p.ora_uscita).length;
 
   if (is_loading) {
@@ -445,7 +453,6 @@ const DashboardPage: React.FC = () => {
       {/* Contenuto principale */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
         <section className="lg:col-span-2 space-y-6">
-          {/* Oggi in pista + Appello */}
           <div className="bg-card rounded-xl shadow-card p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
@@ -475,7 +482,7 @@ const DashboardPage: React.FC = () => {
               ))}
             </div>
 
-            {/* Appello atlete per corso/lezione */}
+            {/* Appello atlete */}
             {tab_presenze === "appello" && (
               <div className="space-y-3">
                 {today_corsi.length === 0 && today_lezioni.length === 0 ? (
