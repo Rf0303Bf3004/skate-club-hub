@@ -343,7 +343,9 @@ const DashboardPage: React.FC = () => {
   const today_key = today_day_keys[new Date().getDay()];
 
   // Corsi e lezioni di oggi
-  const today_corsi = corsi.filter((c: any) => c.giorno === today_key && c.stato === "attivo");
+  const toconst today_corsi = corsi.filter((c: any) => 
+  c.giorno?.toLowerCase() === today_key && c.stato === "attivo"
+);
   const today_lezioni = lezioni.filter((l: any) => l.data === today && !l.annullata);
 
   const recent_atleti = [...atleti]
