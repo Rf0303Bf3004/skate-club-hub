@@ -18,29 +18,49 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Shield, Medal, Save } from "lucide-react";
+import { ArrowLeft, Shield, Medal, Save, Upload, Music } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
+import { supabase, DEMO_CLUB_ID } from "@/lib/supabase";
 
 interface Props {
   atleta: any;
   on_back: () => void;
 }
 
+const LEVELS = [
+  "pulcini",
+  "stellina_1",
+  "stellina_2",
+  "stellina_3",
+  "stellina_4",
+  "interbronzo",
+  "bronzo",
+  "interargento",
+  "argento",
+  "interoro",
+  "oro",
+];
+
 const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   const { t } = useI18n();
   const upsert = use_upsert_atleta();
   const [form, set_form] = useState({
     ...a,
-    genitore1_nome: a.genitore_1?.nome || "",
-    genitore1_cognome: a.genitore_1?.cognome || "",
-    genitore1_telefono: a.genitore_1?.telefono || "",
-    genitore1_email: a.genitore_1?.email || "",
-    genitore2_nome: a.genitore_2?.nome || "",
-    genitore2_cognome: a.genitore_2?.cognome || "",
-    genitore2_telefono: a.genitore_2?.telefono || "",
-    genitore2_email: a.genitore_2?.email || "",
+    genitore1_nome: a.genitore1_nome || a.genitore_1?.nome || "",
+    genitore1_cognome: a.genitore1_cognome || a.genitore_1?.cognome || "",
+    genitore1_telefono: a.genitore1_telefono || a.genitore_1?.telefono || "",
+    genitore1_email: a.genitore1_email || a.genitore_1?.email || "",
+    genitore2_nome: a.genitore2_nome || a.genitore_2?.nome || "",
+    genitore2_cognome: a.genitore2_cognome || a.genitore_2?.cognome || "",
+    genitore2_telefono: a.genitore2_telefono || a.genitore_2?.telefono || "",
+    genitore2_email: a.genitore2_email || a.genitore_2?.email || "",
+    foto_url: a.foto_url || "",
+    disco_url: a.disco_url || "",
+    disco_in_preparazione: a.disco_in_preparazione || "",
   });
+  const [uploading_foto, set_uploading_foto] = useState(false);
+  const [uploading_disco, set_uploading_disco] = useState(false);
 
   const { data: corsi = [] } = use_corsi();
   const { data: gare = [] } = use_gare();
@@ -53,7 +73,6 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   const athlete_fatture = fatture.filter((f: any) => f.atleta_id === a.id);
   const athlete_lezioni = lezioni.filter((l: any) => l.atleti_ids.includes(a.id));
 
-  // FIX: confronto case-insensitive per le medaglie
   const medals = athlete_gare.flatMap((g: any) =>
     g.atleti_iscritti
       .filter((ai: any) => ai.atleta_id === a.id && ai.medaglia)
@@ -72,46 +91,88 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
     medals.filter((m: any) => m.medaglia?.toLowerCase() === tipo.toLowerCase()).length;
 
   const upd = (k: string, v: any) => set_form((p: any) => ({ ...p, [k]: v }));
-  const levels = [
-    "pulcini",
-    "stellina_1",
-    "stellina_2",
-    "stellina_3",
-    "stellina_4",
-    "interbronzo",
-    "bronzo",
-    "interargento",
-    "argento",
-    "interoro",
-    "oro",
-  ];
+
+  const handle_foto_upload = async (file: File) => {
+    set_uploading_foto(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${DEMO_CLUB_ID}/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("foto-atleti").upload(path, file, { upsert: true });
+      if (error) throw error;
+      const { data } = supabase.storage.from("foto-atleti").getPublicUrl(path);
+      upd("foto_url", data.publicUrl);
+      toast({ title: "✅ Foto caricata" });
+    } catch (err: any) {
+      toast({ title: "Errore upload foto", description: err?.message, variant: "destructive" });
+    } finally {
+      set_uploading_foto(false);
+    }
+  };
+
+  const handle_disco_upload = async (file: File) => {
+    set_uploading_disco(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${DEMO_CLUB_ID}/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("dischi-audio").upload(path, file, { upsert: true });
+      if (error) throw error;
+      const { data } = supabase.storage.from("dischi-audio").getPublicUrl(path);
+      upd("disco_url", data.publicUrl);
+      toast({ title: "✅ Disco caricato" });
+    } catch (err: any) {
+      toast({ title: "Errore upload disco", description: err?.message, variant: "destructive" });
+    } finally {
+      set_uploading_disco(false);
+    }
+  };
 
   const handle_save = async () => {
-    await upsert.mutateAsync({
-      id: a.id,
-      nome: form.nome,
-      cognome: form.cognome,
-      data_nascita: form.data_nascita,
-      percorso_amatori: form.percorso_amatori || form.livello_amatori,
-      carriera_artistica: form.carriera_artistica,
-      carriera_stile: form.carriera_stile,
-      atleta_federazione: form.atleta_federazione,
-      ore_pista_stagione: form.ore_pista_stagione,
-      genitore1_nome: form.genitore1_nome,
-      genitore1_cognome: form.genitore1_cognome,
-      genitore1_telefono: form.genitore1_telefono,
-      genitore1_email: form.genitore1_email,
-      genitore2_nome: form.genitore2_nome,
-      genitore2_cognome: form.genitore2_cognome,
-      genitore2_telefono: form.genitore2_telefono,
-      genitore2_email: form.genitore2_email,
-      attivo: form.attivo !== false,
-      note: form.note,
-      disco_in_preparazione: form.disco_in_preparazione,
-      tag_nfc: form.tag_nfc,
-    });
-    toast.success("Atleta salvato");
+    try {
+      await upsert.mutateAsync({
+        id: a.id,
+        nome: form.nome,
+        cognome: form.cognome,
+        data_nascita: form.data_nascita,
+        percorso_amatori: form.percorso_amatori || form.livello_amatori,
+        carriera_artistica: form.carriera_artistica,
+        carriera_stile: form.carriera_stile,
+        atleta_federazione: form.atleta_federazione,
+        ore_pista_stagione: form.ore_pista_stagione,
+        genitore1_nome: form.genitore1_nome,
+        genitore1_cognome: form.genitore1_cognome,
+        genitore1_telefono: form.genitore1_telefono,
+        genitore1_email: form.genitore1_email,
+        genitore2_nome: form.genitore2_nome,
+        genitore2_cognome: form.genitore2_cognome,
+        genitore2_telefono: form.genitore2_telefono,
+        genitore2_email: form.genitore2_email,
+        attivo: form.attivo !== false,
+        note: form.note,
+        disco_in_preparazione: form.disco_in_preparazione,
+        tag_nfc: form.tag_nfc,
+        foto_url: form.foto_url || null,
+        disco_url: form.disco_url || null,
+        ruolo_pista: form.ruolo_pista || "atleta",
+        compenso_orario_pista: form.compenso_orario_pista || 0,
+        attivo_come_monitore: form.attivo_come_monitore || false,
+      });
+      toast({ title: "✅ Atleta salvata" });
+    } catch (err: any) {
+      toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
+    }
   };
+
+  const EditRow: React.FC<{ label: string; value: any; onChange: (v: string) => void; type?: string }> = ({
+    label,
+    value,
+    onChange,
+    type,
+  }) => (
+    <div className="space-y-1.5">
+      <Label className="text-sm text-muted-foreground">{label}</Label>
+      <Input type={type || "text"} value={value ?? ""} onChange={(e) => onChange(e.target.value)} className="h-9" />
+    </div>
+  );
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -119,15 +180,35 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
         <Button variant="ghost" onClick={on_back} className="text-muted-foreground">
           <ArrowLeft className="w-4 h-4 mr-2" /> {t("atleti")}
         </Button>
-        <Button onClick={handle_save} disabled={upsert.isPending}>
+        <Button onClick={handle_save} disabled={upsert.isPending} className="bg-primary hover:bg-primary/90">
           <Save className="w-4 h-4 mr-2" /> {upsert.isPending ? "..." : t("salva")}
         </Button>
       </div>
 
+      {/* Header atleta con foto */}
       <div className="flex items-center gap-4">
-        <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center text-accent text-lg font-bold">
-          {form.nome[0]}
-          {form.cognome[0]}
+        <div className="relative">
+          {form.foto_url ? (
+            <img
+              src={form.foto_url}
+              alt={form.nome}
+              className="w-16 h-16 rounded-full object-cover border-2 border-border shadow-sm"
+            />
+          ) : (
+            <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center text-accent text-lg font-bold">
+              {form.nome?.[0]}
+              {form.cognome?.[0]}
+            </div>
+          )}
+          <label className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center cursor-pointer hover:bg-primary/90 shadow-sm">
+            <Upload className="w-3 h-3 text-white" />
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => e.target.files?.[0] && handle_foto_upload(e.target.files[0])}
+            />
+          </label>
         </div>
         <div>
           <h1 className="text-xl font-bold tracking-tight text-foreground">
@@ -167,17 +248,68 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
               onChange={(v) => upd("data_nascita", v)}
               type="date"
             />
-            <InfoRow label={t("eta")} value={`${calculate_age(form.data_nascita)}`} />
+            <div className="flex justify-between items-center py-1">
+              <span className="text-sm text-muted-foreground">{t("eta")}</span>
+              <span className="text-sm font-medium text-foreground">{calculate_age(form.data_nascita)} anni</span>
+            </div>
             <EditRow
               label={t("ore_pista")}
               value={form.ore_pista_stagione}
               onChange={(v) => upd("ore_pista_stagione", Number(v))}
               type="number"
             />
-            <EditRow label="TAG NFC (ID pattino)" value={form.tag_nfc || ""} onChange={(v) => upd("tag_nfc", v)} />
+            <EditRow label="TAG NFC" value={form.tag_nfc || ""} onChange={(v) => upd("tag_nfc", v)} />
+
+            {/* Disco in preparazione */}
+            <div className="space-y-1.5">
+              <Label className="text-sm text-muted-foreground">Disco in preparazione</Label>
+              <Input
+                value={form.disco_in_preparazione || ""}
+                onChange={(e) => upd("disco_in_preparazione", e.target.value)}
+                placeholder="es. Romeo e Giulietta - Prokofiev"
+                className="h-9"
+              />
+            </div>
+
+            {/* File audio disco */}
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">File audio disco</Label>
+              {form.disco_url && (
+                <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg">
+                  <Music className="w-4 h-4 text-primary flex-shrink-0" />
+                  <audio controls src={form.disco_url} className="flex-1 h-8" />
+                </div>
+              )}
+              <label
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg border border-border cursor-pointer hover:bg-muted/30 text-sm text-muted-foreground transition-colors w-fit ${uploading_disco ? "opacity-50 pointer-events-none" : ""}`}
+              >
+                <Upload className="w-4 h-4" />
+                {uploading_disco ? "Caricamento..." : form.disco_url ? "Sostituisci disco" : "Carica disco audio"}
+                <input
+                  type="file"
+                  accept="audio/*"
+                  className="hidden"
+                  onChange={(e) => e.target.files?.[0] && handle_disco_upload(e.target.files[0])}
+                />
+              </label>
+            </div>
+
             <div className="space-y-1.5">
               <Label className="text-sm text-muted-foreground">{t("note")}</Label>
               <Textarea value={form.note || ""} onChange={(e) => upd("note", e.target.value)} />
+            </div>
+
+            <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
+              <input
+                type="checkbox"
+                id="attivo_atleta"
+                checked={form.attivo !== false}
+                onChange={(e) => upd("attivo", e.target.checked)}
+                className="w-4 h-4 accent-primary"
+              />
+              <label htmlFor="attivo_atleta" className="text-sm font-medium text-foreground cursor-pointer">
+                Atleta attiva
+              </label>
             </div>
           </div>
         </TabsContent>
@@ -195,7 +327,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {levels.map((l) => (
+                  {LEVELS.map((l) => (
                     <SelectItem key={l} value={l}>
                       {t(l)}
                     </SelectItem>
@@ -218,16 +350,22 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                   exit={{ opacity: 0, y: 10 }}
                   className="space-y-4 pt-2"
                 >
-                  <EditRow
-                    label={t("carriera_artistica")}
-                    value={form.carriera_artistica || ""}
-                    onChange={(v) => upd("carriera_artistica", v)}
-                  />
-                  <EditRow
-                    label={t("carriera_stile")}
-                    value={form.carriera_stile || ""}
-                    onChange={(v) => upd("carriera_stile", v)}
-                  />
+                  <div className="space-y-1.5">
+                    <Label className="text-sm text-muted-foreground">{t("carriera_artistica")}</Label>
+                    <Input
+                      value={form.carriera_artistica || ""}
+                      onChange={(e) => upd("carriera_artistica", e.target.value)}
+                      className="h-9"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-sm text-muted-foreground">{t("carriera_stile")}</Label>
+                    <Input
+                      value={form.carriera_stile || ""}
+                      onChange={(e) => upd("carriera_stile", e.target.value)}
+                      className="h-9"
+                    />
+                  </div>
                   <div className="flex items-center gap-2">
                     <Checkbox
                       checked={form.atleta_federazione}
@@ -238,6 +376,37 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                 </motion.div>
               )}
             </AnimatePresence>
+
+            {/* Ruolo pista */}
+            <div className="pt-4 border-t border-border space-y-3">
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Ruolo in pista</p>
+              <div className="space-y-1.5">
+                <Label className="text-sm text-muted-foreground">Ruolo</Label>
+                <Select value={form.ruolo_pista || "atleta"} onValueChange={(v) => upd("ruolo_pista", v)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="atleta">Solo atleta</SelectItem>
+                    <SelectItem value="monitore">Monitore</SelectItem>
+                    <SelectItem value="aiuto_monitore">Aiuto monitore</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {(form.ruolo_pista === "monitore" || form.ruolo_pista === "aiuto_monitore") && (
+                <div className="space-y-1.5">
+                  <Label className="text-sm text-muted-foreground">Compenso orario (CHF/ora)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    value={form.compenso_orario_pista || 0}
+                    onChange={(e) => upd("compenso_orario_pista", Number(e.target.value))}
+                    className="h-9"
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </TabsContent>
 
@@ -273,7 +442,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                     <tr key={c.id} className="border-b border-border/50">
                       <td className="px-4 py-3 font-medium text-foreground">{c.nome}</td>
                       <td className="px-4 py-3 text-muted-foreground">{c.tipo}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{t(c.giorno)}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{c.giorno}</td>
                       <td className="px-4 py-3 tabular-nums text-muted-foreground">
                         {c.ora_inizio?.slice(0, 5)} - {c.ora_fine?.slice(0, 5)}
                       </td>
@@ -355,18 +524,14 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
               { tipo: "Oro", color: "bg-yellow-50 text-yellow-700 border-yellow-200" },
               { tipo: "Argento", color: "bg-slate-50 text-slate-600 border-slate-200" },
               { tipo: "Bronzo", color: "bg-orange-50 text-orange-700 border-orange-200" },
-            ].map(({ tipo, color }) => {
-              const count = count_medaglia(tipo);
-              return (
-                <div key={tipo} className={`rounded-xl border p-6 text-center ${color}`}>
-                  <Medal className="w-8 h-8 mx-auto mb-2" />
-                  <p className="text-3xl font-bold tabular-nums">{count}</p>
-                  <p className="text-sm font-medium mt-1 capitalize">{tipo}</p>
-                </div>
-              );
-            })}
+            ].map(({ tipo, color }) => (
+              <div key={tipo} className={`rounded-xl border p-6 text-center ${color}`}>
+                <Medal className="w-8 h-8 mx-auto mb-2" />
+                <p className="text-3xl font-bold tabular-nums">{count_medaglia(tipo)}</p>
+                <p className="text-sm font-medium mt-1">{tipo}</p>
+              </div>
+            ))}
           </div>
-
           {medals.length > 0 ? (
             <div className="bg-card rounded-xl shadow-card p-5 space-y-2">
               {medals
@@ -398,46 +563,25 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
         {/* ── Genitori ── */}
         <TabsContent value="genitori" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-card rounded-xl shadow-card p-5 space-y-3">
-              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t("genitore_1")}</h4>
-              <EditRow label={t("nome")} value={form.genitore1_nome} onChange={(v) => upd("genitore1_nome", v)} />
-              <EditRow
-                label={t("cognome")}
-                value={form.genitore1_cognome}
-                onChange={(v) => upd("genitore1_cognome", v)}
-              />
-              <EditRow
-                label={t("telefono")}
-                value={form.genitore1_telefono}
-                onChange={(v) => upd("genitore1_telefono", v)}
-              />
-              <EditRow
-                label={t("email")}
-                value={form.genitore1_email}
-                onChange={(v) => upd("genitore1_email", v)}
-                type="email"
-              />
-            </div>
-            <div className="bg-card rounded-xl shadow-card p-5 space-y-3">
-              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t("genitore_2")}</h4>
-              <EditRow label={t("nome")} value={form.genitore2_nome} onChange={(v) => upd("genitore2_nome", v)} />
-              <EditRow
-                label={t("cognome")}
-                value={form.genitore2_cognome}
-                onChange={(v) => upd("genitore2_cognome", v)}
-              />
-              <EditRow
-                label={t("telefono")}
-                value={form.genitore2_telefono}
-                onChange={(v) => upd("genitore2_telefono", v)}
-              />
-              <EditRow
-                label={t("email")}
-                value={form.genitore2_email}
-                onChange={(v) => upd("genitore2_email", v)}
-                type="email"
-              />
-            </div>
+            {[
+              { label: t("genitore_1"), prefix: "genitore1" },
+              { label: t("genitore_2"), prefix: "genitore2" },
+            ].map(({ label, prefix }) => (
+              <div key={prefix} className="bg-card rounded-xl shadow-card p-5 space-y-3">
+                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{label}</h4>
+                {["nome", "cognome", "telefono", "email"].map((field) => (
+                  <div key={field} className="space-y-1.5">
+                    <Label className="text-sm text-muted-foreground">{t(field)}</Label>
+                    <Input
+                      type={field === "email" ? "email" : "text"}
+                      value={form[`${prefix}_${field}`] || ""}
+                      onChange={(e) => upd(`${prefix}_${field}`, e.target.value)}
+                      className="h-9"
+                    />
+                  </div>
+                ))}
+              </div>
+            ))}
           </div>
         </TabsContent>
 
@@ -529,7 +673,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                         {l.ora_inizio?.slice(0, 5)} - {l.ora_fine?.slice(0, 5)}
                       </td>
                       <td className="px-4 py-3 text-right tabular-nums font-medium text-foreground">
-                        CHF {Number(l.costo).toFixed(2)}
+                        CHF {Number(l.costo || l.costo_totale || 0).toFixed(2)}
                       </td>
                     </tr>
                   ))
@@ -542,25 +686,6 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
     </div>
   );
 };
-
-const InfoRow: React.FC<{ label: string; value: string }> = ({ label, value }) => (
-  <div className="flex justify-between items-center py-1">
-    <span className="text-sm text-muted-foreground">{label}</span>
-    <span className="text-sm font-medium text-foreground">{value}</span>
-  </div>
-);
-
-const EditRow: React.FC<{ label: string; value: any; onChange: (v: string) => void; type?: string }> = ({
-  label,
-  value,
-  onChange,
-  type,
-}) => (
-  <div className="space-y-1.5">
-    <Label className="text-sm text-muted-foreground">{label}</Label>
-    <Input type={type || "text"} value={value ?? ""} onChange={(e) => onChange(e.target.value)} className="h-9" />
-  </div>
-);
 
 const MedalBadge: React.FC<{ tipo: string }> = ({ tipo }) => {
   const tipo_lower = tipo?.toLowerCase();
