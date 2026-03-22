@@ -103,6 +103,8 @@ export function use_upsert_atleta() {
         note: data.note || "",
         disco_in_preparazione: data.disco_in_preparazione || null,
         tag_nfc: data.tag_nfc || null,
+        foto_url: data.foto_url || null,
+        disco_url: data.disco_url || null,
         ruolo_pista: data.ruolo_pista || "atleta",
         compenso_orario_pista: data.compenso_orario_pista || 0,
         attivo_come_monitore: data.attivo_come_monitore || false,
