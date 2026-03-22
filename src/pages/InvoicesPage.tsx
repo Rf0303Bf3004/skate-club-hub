@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useI18n } from "@/lib/i18n";
 import {
   use_fatture,
   use_atleti,
   use_setup_club,
   use_club,
+  use_corsi,
+  use_lezioni_private,
   get_atleta_name_from_list,
 } from "@/hooks/use-supabase-data";
 import {
@@ -15,112 +17,427 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Check, Trash2, ArrowLeft, QrCode, X } from "lucide-react";
-import { toast } from "sonner";
+import { FileText, Trash2, QrCode, X, Printer, Download } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
-// ─── QR Swiss Generator ────────────────────────────────────────────────────────
-// Genera il payload Swiss QR Code secondo standard ISO 20022
+// ─── Swiss QR ─────────────────────────────────────────────
 function genera_swiss_qr_payload(params: {
   iban: string;
   intestatario: string;
   indirizzo: string;
+  cap: string;
   citta: string;
   paese: string;
   importo: number;
   descrizione: string;
   numero_fattura: string;
 }): string {
-  const { iban, intestatario, indirizzo, citta, paese, importo, descrizione, numero_fattura } = params;
-  const importo_str = importo.toFixed(2);
-  // Swiss QR payload format
+  const { iban, intestatario, indirizzo, cap, citta, paese, importo, descrizione, numero_fattura } = params;
   const lines = [
-    "SPC", // QR Type
-    "0200", // Version
-    "1", // Coding
-    iban.replace(/\s/g, ""), // IBAN
-    "S", // Creditor address type
-    intestatario, // Creditor name
-    indirizzo, // Creditor street
-    citta, // Creditor city
-    paese, // Creditor country
-    "", // Ultimate creditor (empty)
+    "SPC",
+    "0200",
+    "1",
+    iban.replace(/\s/g, ""),
+    "S",
+    intestatario,
+    indirizzo,
+    `${cap} ${citta}`.trim(),
+    "",
+    paese,
     "",
     "",
     "",
     "",
-    importo_str, // Amount
-    "CHF", // Currency
-    "S", // Debtor address type (empty = unknown)
-    "", // Debtor name
-    "", // Debtor street
-    "", // Debtor city
-    "", // Debtor country
-    "NON", // Reference type (NON = no reference)
-    "", // Reference
-    descrizione.slice(0, 140), // Unstructured message
-    "EPD", // Trailer
-    numero_fattura, // Alternative procedure
+    "",
+    importo.toFixed(2),
+    "CHF",
+    "S",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "NON",
+    "",
+    descrizione.slice(0, 140),
+    "EPD",
+    numero_fattura,
   ];
   return lines.join("\n");
 }
 
-// Componente QR Code usando API pubblica
-const SwissQRCode: React.FC<{ payload: string; size?: number }> = ({ payload, size = 200 }) => {
+const SwissQRCode: React.FC<{ payload: string; size?: number }> = ({ payload, size = 180 }) => {
   const encoded = encodeURIComponent(payload);
-  const url = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encoded}&ecc=M`;
-  return (
-    <div className="flex flex-col items-center gap-2">
-      <img src={url} alt="QR Swiss" width={size} height={size} className="rounded-lg border border-border" />
-      <p className="text-[10px] text-muted-foreground text-center">Swiss QR Code</p>
-    </div>
-  );
+  const url = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encoded}&ecc=H`;
+  return <img src={url} alt="QR Swiss" width={size} height={size} className="rounded border border-gray-300" />;
 };
 
-// ─── Modal dettaglio fattura ───────────────────────────────────────────────────
-const FatturaModal: React.FC<{
+// ─── Fattura stampabile ────────────────────────────────────
+const FatturaStampabile: React.FC<{
   fattura: any;
-  atleta_nome: string;
+  atleta: any;
   setup: any;
   club: any;
-  on_close: () => void;
-  on_paga: () => void;
-  on_elimina: () => void;
-  paying: boolean;
-  deleting: boolean;
-}> = ({ fattura, atleta_nome, setup, club, on_close, on_paga, on_elimina, paying, deleting }) => {
-  const [show_qr, set_show_qr] = useState(false);
-  const [confirm_delete, set_confirm_delete] = useState(false);
-
+  corsi: any[];
+  lezioni: any[];
+}> = ({ fattura, atleta, setup, club, corsi, lezioni }) => {
   const has_iban = !!setup?.iban;
+
+  // Dettaglio voci fattura
+  const voci: { descrizione: string; importo: number }[] = [];
+
+  if (fattura.tipo === "corso") {
+    // Trova il corso collegato
+    const corso = corsi.find((c: any) => c.id === fattura.riferimento_id);
+    if (corso) {
+      voci.push({
+        descrizione: `Quota mensile — ${corso.nome} (${corso.giorno} ${corso.ora_inizio?.slice(0, 5)})`,
+        importo: fattura.importo,
+      });
+    } else {
+      voci.push({ descrizione: fattura.descrizione || "Quota corso", importo: fattura.importo });
+    }
+  } else if (fattura.tipo === "lezione_privata") {
+    // Raggruppa lezioni private del periodo
+    const mese_match = fattura.descrizione?.match(/- (.+)$/);
+    const mese_label = mese_match?.[1] || "";
+    const lezioni_atleta = lezioni.filter((l: any) => l.atleti_ids?.includes(atleta?.id) && !l.annullata);
+    if (lezioni_atleta.length > 0) {
+      lezioni_atleta.slice(0, 10).forEach((l: any) => {
+        const data = new Date(l.data + "T00:00:00").toLocaleDateString("it-CH", { day: "2-digit", month: "short" });
+        const quota = l.costo_totale / (l.atleti_ids?.length || 1);
+        voci.push({
+          descrizione: `Lezione privata ${data} ${l.ora_inizio?.slice(0, 5)}–${l.ora_fine?.slice(0, 5)} (${l.durata_minuti || 20} min)`,
+          importo: quota,
+        });
+      });
+    } else {
+      voci.push({ descrizione: fattura.descrizione || "Lezioni private", importo: fattura.importo });
+    }
+  } else {
+    voci.push({ descrizione: fattura.descrizione || "Servizi", importo: fattura.importo });
+  }
+
+  const totale = voci.reduce((s, v) => s + v.importo, 0);
 
   const qr_payload = has_iban
     ? genera_swiss_qr_payload({
         iban: setup.iban,
         intestatario: setup.intestatario_conto || club?.nome || "",
-        indirizzo: setup.indirizzo_banca?.split(",")[0] || "",
-        citta: setup.indirizzo_banca?.split(",")[1]?.trim() || "",
+        indirizzo: setup.indirizzo_intestatario || "",
+        cap: setup.cap_intestatario || "",
+        citta: setup.citta_intestatario || "",
         paese: club?.paese || "CH",
-        importo: fattura.importo,
+        importo: totale,
         descrizione: fattura.descrizione || "",
         numero_fattura: fattura.numero,
       })
     : "";
 
+  const atleta_nome = atleta ? `${atleta.nome} ${atleta.cognome}` : "—";
+  const colore = club?.colore_primario || "#3B82F6";
+
+  return (
+    <div
+      id="fattura-print"
+      style={{
+        fontFamily: "Arial, sans-serif",
+        fontSize: 13,
+        color: "#111",
+        background: "#fff",
+        padding: 40,
+        maxWidth: 720,
+        margin: "0 auto",
+      }}
+    >
+      {/* Header club */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 32 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          {club?.logo_url && (
+            <img
+              src={club.logo_url}
+              alt="logo"
+              style={{ width: 56, height: 56, objectFit: "contain", borderRadius: 8 }}
+            />
+          )}
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: colore }}>{club?.nome || "Club"}</div>
+            {club?.indirizzo && <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>{club.indirizzo}</div>}
+            {club?.citta && <div style={{ fontSize: 11, color: "#666" }}>{club.citta}</div>}
+            {club?.email && <div style={{ fontSize: 11, color: "#666" }}>{club.email}</div>}
+            {club?.telefono && <div style={{ fontSize: 11, color: "#666" }}>{club.telefono}</div>}
+            {club?.sito_web && <div style={{ fontSize: 11, color: "#666" }}>{club.sito_web}</div>}
+            {club?.numero_tessera_federale && (
+              <div style={{ fontSize: 11, color: "#666" }}>N. Fed: {club.numero_tessera_federale}</div>
+            )}
+          </div>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontSize: 22, fontWeight: 800, color: colore, letterSpacing: -0.5 }}>FATTURA</div>
+          <div style={{ fontSize: 13, color: "#444", marginTop: 4 }}>{fattura.numero}</div>
+          <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>
+            Emessa il: {fattura.data_emissione ? new Date(fattura.data_emissione).toLocaleDateString("it-CH") : "—"}
+          </div>
+          <div style={{ fontSize: 11, color: "#666" }}>
+            Scadenza:{" "}
+            {fattura.data_scadenza || fattura.scadenza
+              ? new Date(fattura.data_scadenza || fattura.scadenza).toLocaleDateString("it-CH")
+              : "—"}
+          </div>
+          <div style={{ marginTop: 6 }}>
+            <span
+              style={{
+                padding: "3px 10px",
+                borderRadius: 20,
+                fontSize: 11,
+                fontWeight: 700,
+                background: fattura.stato === "pagata" ? "#dcfce7" : "#fee2e2",
+                color: fattura.stato === "pagata" ? "#16a34a" : "#dc2626",
+              }}
+            >
+              {fattura.stato === "pagata" ? "✓ PAGATA" : "DA PAGARE"}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Separatore */}
+      <div
+        style={{
+          height: 3,
+          background: `linear-gradient(90deg, ${colore}, transparent)`,
+          marginBottom: 24,
+          borderRadius: 2,
+        }}
+      />
+
+      {/* Destinatario */}
+      <div style={{ marginBottom: 28 }}>
+        <div
+          style={{
+            fontSize: 10,
+            fontWeight: 700,
+            color: "#888",
+            textTransform: "uppercase",
+            letterSpacing: 1,
+            marginBottom: 6,
+          }}
+        >
+          Fatturato a
+        </div>
+        <div style={{ fontSize: 14, fontWeight: 600 }}>{atleta_nome}</div>
+        {atleta?.genitore1_nome && (
+          <div style={{ fontSize: 12, color: "#555" }}>
+            {atleta.genitore1_nome} {atleta.genitore1_cognome}
+          </div>
+        )}
+        {atleta?.genitore1_email && <div style={{ fontSize: 11, color: "#888" }}>{atleta.genitore1_email}</div>}
+      </div>
+
+      {/* Tabella voci */}
+      <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 24 }}>
+        <thead>
+          <tr style={{ background: colore, color: "#fff" }}>
+            <th
+              style={{
+                textAlign: "left",
+                padding: "10px 14px",
+                fontSize: 11,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: 0.5,
+                borderRadius: "4px 0 0 4px",
+              }}
+            >
+              Descrizione
+            </th>
+            <th
+              style={{
+                textAlign: "right",
+                padding: "10px 14px",
+                fontSize: 11,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: 0.5,
+                borderRadius: "0 4px 4px 0",
+              }}
+            >
+              Importo CHF
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {voci.map((v, i) => (
+            <tr key={i} style={{ background: i % 2 === 0 ? "#f9fafb" : "#fff", borderBottom: "1px solid #e5e7eb" }}>
+              <td style={{ padding: "10px 14px", fontSize: 12 }}>{v.descrizione}</td>
+              <td
+                style={{ padding: "10px 14px", fontSize: 12, textAlign: "right", fontVariantNumeric: "tabular-nums" }}
+              >
+                {v.importo.toFixed(2)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr style={{ background: "#f3f4f6", borderTop: "2px solid #e5e7eb" }}>
+            <td style={{ padding: "12px 14px", fontWeight: 700, fontSize: 13 }}>TOTALE</td>
+            <td
+              style={{
+                padding: "12px 14px",
+                fontWeight: 800,
+                fontSize: 15,
+                textAlign: "right",
+                color: colore,
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              CHF {totale.toFixed(2)}
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+
+      {/* Dati bancari + QR */}
+      {has_iban && (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            gap: 24,
+            marginTop: 16,
+            padding: 16,
+            background: "#f0f9ff",
+            borderRadius: 8,
+            border: "1px solid #bae6fd",
+          }}
+        >
+          <div style={{ flex: 1 }}>
+            <div
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                color: "#0369a1",
+                textTransform: "uppercase",
+                letterSpacing: 1,
+                marginBottom: 8,
+              }}
+            >
+              Dati per il pagamento
+            </div>
+            <div style={{ fontSize: 12, fontFamily: "monospace", color: "#111", marginBottom: 4 }}>{setup.iban}</div>
+            <div style={{ fontSize: 11, color: "#555" }}>{setup.intestatario_conto}</div>
+            {setup.indirizzo_intestatario && (
+              <div style={{ fontSize: 11, color: "#555" }}>{setup.indirizzo_intestatario}</div>
+            )}
+            {(setup.cap_intestatario || setup.citta_intestatario) && (
+              <div style={{ fontSize: 11, color: "#555" }}>
+                {setup.cap_intestatario} {setup.citta_intestatario}
+              </div>
+            )}
+            {setup.banca && <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>{setup.banca}</div>}
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#0369a1", marginTop: 8 }}>
+              Causale: {fattura.numero}
+            </div>
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <SwissQRCode payload={qr_payload} size={120} />
+            <div style={{ fontSize: 9, color: "#888", marginTop: 4 }}>Swiss QR Code</div>
+          </div>
+        </div>
+      )}
+
+      {/* Note */}
+      {fattura.note && (
+        <div style={{ marginTop: 20, fontSize: 11, color: "#666" }}>
+          <strong>Note:</strong> {fattura.note}
+        </div>
+      )}
+
+      {/* Footer */}
+      <div
+        style={{
+          marginTop: 32,
+          paddingTop: 12,
+          borderTop: "1px solid #e5e7eb",
+          fontSize: 10,
+          color: "#aaa",
+          textAlign: "center",
+        }}
+      >
+        {club?.nome} — {club?.indirizzo} {club?.citta} — {club?.email}
+      </div>
+    </div>
+  );
+};
+
+// ─── Modal fattura ─────────────────────────────────────────
+const FatturaModal: React.FC<{
+  fattura: any;
+  atleta: any;
+  setup: any;
+  club: any;
+  corsi: any[];
+  lezioni: any[];
+  on_close: () => void;
+  on_paga: () => void;
+  on_elimina: () => void;
+  paying: boolean;
+  deleting: boolean;
+}> = ({ fattura, atleta, setup, club, corsi, lezioni, on_close, on_paga, on_elimina, paying, deleting }) => {
+  const [confirm_delete, set_confirm_delete] = useState(false);
+  const [show_anteprima, set_show_anteprima] = useState(false);
+  const print_ref = useRef<HTMLDivElement>(null);
+
+  const handle_stampa = () => {
+    const content = document.getElementById("fattura-print");
+    if (!content) return;
+    const win = window.open("", "_blank", "width=800,height=900");
+    if (!win) return;
+    win.document.write(`
+      <!DOCTYPE html><html><head><title>${fattura.numero}</title>
+      <style>body{margin:0;padding:0;}</style></head>
+      <body>${content.outerHTML}</body></html>
+    `);
+    win.document.close();
+    win.focus();
+    setTimeout(() => {
+      win.print();
+      win.close();
+    }, 500);
+  };
+
+  const atleta_nome = atleta ? `${atleta.nome} ${atleta.cognome}` : "—";
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-card rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-        {/* Header */}
+      <div className="bg-card rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <div>
             <h2 className="text-base font-bold text-foreground">{fattura.numero}</h2>
             <p className="text-xs text-muted-foreground">{atleta_nome}</p>
           </div>
-          <button onClick={on_close} className="text-muted-foreground hover:text-foreground">
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => set_show_anteprima((v) => !v)}
+              className="gap-1.5 text-xs h-8"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              {show_anteprima ? "Nascondi" : "Anteprima"}
+            </Button>
+            {show_anteprima && (
+              <Button size="sm" onClick={handle_stampa} className="gap-1.5 text-xs h-8 bg-primary hover:bg-primary/90">
+                <Printer className="w-3.5 h-3.5" /> Stampa / PDF
+              </Button>
+            )}
+            <button onClick={on_close} className="text-muted-foreground hover:text-foreground ml-1">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
-        {/* Body */}
         <div className="px-6 py-5 space-y-4">
           {/* Stato */}
           <div className="flex items-center justify-between">
@@ -134,69 +451,56 @@ const FatturaModal: React.FC<{
             )}
           </div>
 
-          {/* Dettagli */}
-          <div className="bg-muted/30 rounded-xl px-4 py-4 space-y-3">
-            <Row label="Descrizione" value={fattura.descrizione || "—"} />
-            <Row label="Importo" value={`CHF ${Number(fattura.importo).toFixed(2)}`} bold />
-            <Row
-              label="Scadenza"
-              value={fattura.scadenza ? new Date(fattura.scadenza).toLocaleDateString("it-CH") : "—"}
-            />
-            <Row
-              label="Data emissione"
-              value={fattura.data_emissione ? new Date(fattura.data_emissione).toLocaleDateString("it-CH") : "—"}
-            />
-            <Row label="Tipo" value={fattura.tipo || "—"} />
-          </div>
-
-          {/* Dati bancari */}
-          {has_iban && (
-            <div className="bg-primary/5 border border-primary/20 rounded-xl px-4 py-3 space-y-1.5">
-              <p className="text-xs font-bold text-primary uppercase tracking-wide">Dati per il pagamento</p>
-              <p className="text-sm font-mono text-foreground">{setup.iban}</p>
-              <p className="text-xs text-muted-foreground">{setup.intestatario_conto}</p>
-              {setup.banca && <p className="text-xs text-muted-foreground">{setup.banca}</p>}
-              <p className="text-xs text-muted-foreground font-medium">Causale: {fattura.numero}</p>
+          {/* Anteprima fattura */}
+          {show_anteprima && (
+            <div className="border border-border rounded-xl overflow-hidden bg-white" ref={print_ref}>
+              <FatturaStampabile
+                fattura={fattura}
+                atleta={atleta}
+                setup={setup}
+                club={club}
+                corsi={corsi}
+                lezioni={lezioni}
+              />
             </div>
           )}
 
-          {/* QR Swiss */}
-          {has_iban && (
-            <div>
-              {show_qr ? (
-                <div className="flex flex-col items-center gap-3 p-4 bg-white rounded-xl border border-border">
-                  <SwissQRCode payload={qr_payload} size={220} />
-                  <p className="text-xs text-muted-foreground text-center">
-                    Scansiona con l'app della tua banca svizzera
-                  </p>
-                  <Button variant="ghost" size="sm" onClick={() => set_show_qr(false)} className="text-xs">
-                    Nascondi QR
-                  </Button>
+          {/* Riepilogo rapido se non anteprima */}
+          {!show_anteprima && (
+            <div className="bg-muted/30 rounded-xl px-4 py-4 space-y-3">
+              {[
+                { label: "Descrizione", value: fattura.descrizione || "—" },
+                { label: "Importo", value: `CHF ${Number(fattura.importo).toFixed(2)}`, bold: true },
+                {
+                  label: "Emissione",
+                  value: fattura.data_emissione ? new Date(fattura.data_emissione).toLocaleDateString("it-CH") : "—",
+                },
+                {
+                  label: "Scadenza",
+                  value:
+                    fattura.data_scadenza || fattura.scadenza
+                      ? new Date(fattura.data_scadenza || fattura.scadenza).toLocaleDateString("it-CH")
+                      : "—",
+                },
+                { label: "Tipo", value: fattura.tipo || "—" },
+              ].map(({ label, value, bold }) => (
+                <div key={label} className="flex justify-between items-start gap-2">
+                  <span className="text-xs text-muted-foreground flex-shrink-0">{label}</span>
+                  <span className={`text-sm text-right ${bold ? "font-bold text-foreground" : "text-foreground"}`}>
+                    {value}
+                  </span>
                 </div>
-              ) : (
-                <Button variant="outline" onClick={() => set_show_qr(true)} className="w-full gap-2">
-                  <QrCode className="w-4 h-4" />
-                  Mostra QR Swiss per pagamento
-                </Button>
-              )}
+              ))}
             </div>
-          )}
-
-          {!has_iban && (
-            <p className="text-xs text-muted-foreground italic text-center">
-              Configura IBAN in <span className="font-medium">Configurazione Club</span> per abilitare il QR Swiss.
-            </p>
           )}
         </div>
 
-        {/* Footer azioni */}
         <div className="px-6 py-4 border-t border-border space-y-2">
           {fattura.stato !== "pagata" && (
             <Button onClick={on_paga} disabled={paying} className="w-full bg-success hover:bg-success/90 text-white">
               {paying ? "..." : "✅ Segna come pagata"}
             </Button>
           )}
-
           {confirm_delete ? (
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => set_confirm_delete(false)} className="flex-1">
@@ -222,20 +526,15 @@ const FatturaModal: React.FC<{
   );
 };
 
-const Row: React.FC<{ label: string; value: string; bold?: boolean }> = ({ label, value, bold }) => (
-  <div className="flex justify-between items-start gap-2">
-    <span className="text-xs text-muted-foreground flex-shrink-0">{label}</span>
-    <span className={`text-sm text-right ${bold ? "font-bold text-foreground" : "text-foreground"}`}>{value}</span>
-  </div>
-);
-
-// ─── Main Page ─────────────────────────────────────────────────────────────────
+// ─── Main Page ─────────────────────────────────────────────
 const InvoicesPage: React.FC = () => {
   const { t } = useI18n();
   const { data: fatture = [], isLoading } = use_fatture();
   const { data: atleti = [] } = use_atleti();
   const { data: setup } = use_setup_club();
   const { data: club } = use_club();
+  const { data: corsi = [] } = use_corsi();
+  const { data: lezioni = [] } = use_lezioni_private();
   const segna_pagata = use_segna_fattura_pagata();
   const genera = use_genera_fatture_mensili();
   const elimina = use_elimina_fattura();
@@ -244,16 +543,28 @@ const InvoicesPage: React.FC = () => {
 
   const filtered = fatture.filter((f: any) => status_filter === "tutti" || f.stato === status_filter);
 
+  const totale_da_pagare = fatture
+    .filter((f: any) => f.stato !== "pagata")
+    .reduce((s: number, f: any) => s + Number(f.importo), 0);
+
   const handle_genera = async () => {
-    const count = await genera.mutateAsync();
-    toast.success(`${count} fatture generate`);
+    try {
+      const count = await genera.mutateAsync();
+      toast({ title: `✅ ${count} fatture generate` });
+    } catch (err: any) {
+      toast({ title: "Errore generazione", description: err?.message, variant: "destructive" });
+    }
   };
 
   const handle_paga = async () => {
     if (!selected_fattura) return;
-    await segna_pagata.mutateAsync(selected_fattura.id);
-    set_selected_fattura(null);
-    toast.success("Fattura segnata come pagata");
+    try {
+      await segna_pagata.mutateAsync(selected_fattura.id);
+      set_selected_fattura(null);
+      toast({ title: "✅ Fattura segnata come pagata" });
+    } catch (err: any) {
+      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+    }
   };
 
   const handle_elimina = async () => {
@@ -261,9 +572,9 @@ const InvoicesPage: React.FC = () => {
     try {
       await elimina.mutateAsync(selected_fattura.id);
       set_selected_fattura(null);
-      toast.success("Fattura eliminata");
+      toast({ title: "🗑️ Fattura eliminata" });
     } catch (err: any) {
-      toast.error(err?.message || "Errore eliminazione");
+      toast({ title: "Errore eliminazione", description: err?.message, variant: "destructive" });
     }
   };
 
@@ -274,14 +585,18 @@ const InvoicesPage: React.FC = () => {
       </div>
     );
 
+  const atleta_selected = selected_fattura ? atleti.find((a: any) => a.id === selected_fattura.atleta_id) : null;
+
   return (
     <>
       {selected_fattura && (
         <FatturaModal
           fattura={selected_fattura}
-          atleta_nome={get_atleta_name_from_list(atleti, selected_fattura.atleta_id)}
+          atleta={atleta_selected}
           setup={setup}
           club={club}
+          corsi={corsi}
+          lezioni={lezioni}
           on_close={() => set_selected_fattura(null)}
           on_paga={handle_paga}
           on_elimina={handle_elimina}
@@ -292,7 +607,14 @@ const InvoicesPage: React.FC = () => {
 
       <div className="space-y-6 animate-fade-in">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <h1 className="text-xl font-bold tracking-tight text-foreground">{t("fatture")}</h1>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-foreground">{t("fatture")}</h1>
+            {totale_da_pagare > 0 && (
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Da incassare: <span className="font-bold text-foreground">CHF {totale_da_pagare.toFixed(2)}</span>
+              </p>
+            )}
+          </div>
           <Button className="bg-primary hover:bg-primary/90" onClick={handle_genera} disabled={genera.isPending}>
             <FileText className="w-4 h-4 mr-2" /> {genera.isPending ? "..." : t("genera_fatture")}
           </Button>
@@ -357,7 +679,9 @@ const InvoicesPage: React.FC = () => {
                         CHF {Number(f.importo).toFixed(2)}
                       </td>
                       <td className="px-4 py-3 tabular-nums text-muted-foreground hidden sm:table-cell">
-                        {f.scadenza ? new Date(f.scadenza).toLocaleDateString("it-CH") : "—"}
+                        {f.data_scadenza || f.scadenza
+                          ? new Date(f.data_scadenza || f.scadenza).toLocaleDateString("it-CH")
+                          : "—"}
                       </td>
                       <td className="px-4 py-3 text-center">
                         <Badge variant={f.stato === "pagata" ? "default" : "destructive"} className="text-xs">
