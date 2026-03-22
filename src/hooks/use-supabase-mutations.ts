@@ -162,6 +162,10 @@ export function use_upsert_istruttore() {
         costo_minuto_lezione_privata: data.costo_minuto_lezione_privata || 0,
         attivo: data.attivo !== false,
         note: data.note || "",
+        foto_url: data.foto_url || null,
+        tag_nfc: data.tag_nfc || null,
+        ruolo: data.ruolo || "istruttore",
+        compenso_orario: data.compenso_orario || 0,
       };
       if (data.id) {
         const { error } = await supabase.from("istruttori").update(payload).eq("id", data.id);
