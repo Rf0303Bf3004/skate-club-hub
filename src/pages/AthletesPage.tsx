@@ -1,4 +1,4 @@
-import React, { useState } from "'react"';
+import React, { useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { use_atleti } from "@/hooks/use-supabase-data";
 import { use_upsert_atleta, use_elimina_atleta } from "@/hooks/use-supabase-mutations";
