@@ -1,56 +1,115 @@
-import React, { createContext, useContext, useState } from 'react';
-import { DEMO_CLUB_ID } from '@/lib/supabase';
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { supabase, set_current_club_id } from "./supabase";
 
-export type user_role = 'superadmin' | 'admin' | 'istruttore' | 'genitore';
-
-interface auth_user {
-  id: string;
+export interface UserSession {
+  user_id: string;
   email: string;
+  club_id: string;
+  club_nome: string;
+  ruolo: "superadmin" | "admin" | "staff";
   nome: string;
   cognome: string;
-  ruolo: user_role;
-  club_id: string;
 }
 
 interface AuthContextType {
-  user: auth_user | null;
-  login: (email: string, password: string) => void;
-  logout: () => void;
+  session: UserSession | null;
   is_authenticated: boolean;
+  is_loading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
-  user: null,
-  login: () => {},
-  logout: () => {},
+  session: null,
   is_authenticated: false,
+  is_loading: true,
+  login: async () => {},
+  logout: async () => {},
 });
 
-const DEMO_USER: auth_user = {
-  id: 'usr_001',
-  email: 'admin@demoskating.ch',
-  nome: 'Admin',
-  cognome: 'Demo',
-  ruolo: 'admin',
-  club_id: DEMO_CLUB_ID,
-};
+async function fetch_session(): Promise<UserSession | null> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) return null;
+
+  const { data: utente } = await supabase
+    .from("utenti_club")
+    .select("club_id, ruolo, nome, cognome, clubs(nome)")
+    .eq("user_id", session.user.id)
+    .maybeSingle();
+
+  if (!utente) return null;
+
+  const club_id = utente.club_id;
+  set_current_club_id(club_id);
+
+  return {
+    user_id: session.user.id,
+    email: session.user.email || "",
+    club_id,
+    club_nome: (utente.clubs as any)?.nome || "",
+    ruolo: utente.ruolo,
+    nome: utente.nome || "",
+    cognome: utente.cognome || "",
+  };
+}
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, set_user] = useState<auth_user | null>(null);
+  const [session, set_session] = useState<UserSession | null>(null);
+  const [is_loading, set_is_loading] = useState(true);
 
-  const login = (_email: string, _password: string) => {
-    set_user(DEMO_USER);
+  useEffect(() => {
+    // Carica sessione iniziale
+    fetch_session().then((s) => {
+      set_session(s);
+      set_is_loading(false);
+    });
+
+    // Ascolta cambiamenti auth
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event) => {
+      if (event === "SIGNED_OUT") {
+        set_session(null);
+        set_current_club_id("00000000-0000-0000-0000-000000000002");
+      } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        const s = await fetch_session();
+        set_session(s);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    const s = await fetch_session();
+    set_session(s);
   };
 
-  const logout = () => {
-    set_user(null);
+  const logout = async () => {
+    await supabase.auth.signOut();
+    set_session(null);
+    set_current_club_id("00000000-0000-0000-0000-000000000002");
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, is_authenticated: !!user }}>
+    <AuthContext.Provider
+      value={{
+        session,
+        is_authenticated: !!session,
+        is_loading,
+        login,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export function useAuth() {
+  return useContext(AuthContext);
+}
