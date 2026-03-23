@@ -44,7 +44,7 @@ interface MainLayoutProps {
 
 const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const { t, locale, set_locale } = useI18n();
-  const { user, logout } = useAuth();
+  const { session, logout } = useAuth();
   const { data: club } = use_club();
   const location = useLocation();
   const [sidebar_open, set_sidebar_open] = React.useState(false);
@@ -74,7 +74,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           </button>
         </div>
 
-        {/* Voci di navigazione principali */}
         <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
           {nav_items.map((item) => {
             const is_active =
@@ -100,12 +99,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             );
           })}
 
-          {/* Separatore */}
           <div className="pt-3 pb-1">
             <div className="border-t border-border" />
           </div>
 
-          {/* Gestione Avanzata — voce separata con stile warning */}
           {(() => {
             const is_active = location.pathname === "/gestione-avanzata";
             return (
@@ -129,7 +126,17 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           })()}
         </nav>
 
-        <div className="p-3 border-t border-border">
+        <div className="p-3 border-t border-border space-y-1">
+          {/* Info utente loggato */}
+          {session && (
+            <div className="px-3 py-2 rounded-md bg-muted/50">
+              <p className="text-xs font-medium text-foreground truncate">
+                {session.nome} {session.cognome}
+              </p>
+              <p className="text-[10px] text-muted-foreground truncate">{session.email}</p>
+              <p className="text-[10px] font-bold text-primary uppercase tracking-wide mt-0.5">{session.ruolo}</p>
+            </div>
+          )}
           <button
             onClick={logout}
             className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground w-full transition-colors"
@@ -146,9 +153,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => set_sidebar_open(true)}>
               <Menu className="w-5 h-5" />
             </Button>
-            <h2 className="font-semibold text-foreground text-sm lg:text-base">{club?.nome || "CPA Manager"}</h2>
+            <h2 className="font-semibold text-foreground text-sm lg:text-base">
+              {club?.nome || session?.club_nome || "CPA Manager"}
+            </h2>
             <span className="px-2 py-0.5 rounded-full bg-muted text-[10px] uppercase tracking-wider font-bold text-muted-foreground hidden sm:inline-block">
-              {user?.ruolo ? t(user.ruolo) : ""}
+              {session?.ruolo || ""}
             </span>
           </div>
           <div className="flex items-center gap-3">
@@ -166,8 +175,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               </SelectContent>
             </Select>
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
-              {user?.nome?.[0]}
-              {user?.cognome?.[0]}
+              {session?.nome?.[0]}
+              {session?.cognome?.[0]}
             </div>
           </div>
         </header>
