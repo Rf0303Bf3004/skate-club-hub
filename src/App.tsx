@@ -25,14 +25,25 @@ import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
 
+const SuperAdminRedirect = () => {
+  const navigate = useNavigate();
+  const { session } = useAuth();
+  useEffect(() => {
+    if (session?.ruolo === "superadmin") {
+      navigate("/superadmin", { replace: true });
+    }
+  }, [session, navigate]);
+  return session?.ruolo === "superadmin" ? null : <DashboardPage />;
+};
+
 const AuthenticatedApp = () => {
-  const { is_authenticated } = useAuth();
+  const { is_authenticated, session } = useAuth();
   if (!is_authenticated) return <LoginPage />;
   return (
     <BrowserRouter>
       <MainLayout>
         <Routes>
-          <Route path="/" element={<DashboardPage />} />
+          <Route path="/" element={<SuperAdminRedirect />} />
           <Route path="/atleti" element={<AthletesPage />} />
           <Route path="/istruttori" element={<InstructorsPage />} />
           <Route path="/corsi" element={<CoursesPage />} />
