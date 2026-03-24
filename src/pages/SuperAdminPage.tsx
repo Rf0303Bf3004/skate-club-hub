@@ -350,6 +350,19 @@ const SuperAdminPage: React.FC = () => {
 
   const selected_club_data = clubs.find((c) => c.id === selected_club);
 
+  // Controllo accesso superadmin
+  if (session?.ruolo !== "superadmin") {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center space-y-3">
+          <Shield className="w-12 h-12 text-destructive mx-auto" />
+          <h2 className="text-xl font-bold text-foreground">Accesso negato</h2>
+          <p className="text-muted-foreground">Questa pagina è riservata ai Super Admin.</p>
+        </div>
+      </div>
+    );
+  }
+
   // ─── Azioni di manutenzione ───────────────────────────────
   const azioni = [
     {
