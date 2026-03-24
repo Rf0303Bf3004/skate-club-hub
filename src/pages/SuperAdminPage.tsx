@@ -436,6 +436,7 @@ const CreaClubForm: React.FC<{ on_created: () => void }> = ({ on_created }) => {
       </div>
     </div>
   );
+};
 
 // ─── Main SuperAdmin Page ──────────────────────────────────
 const SuperAdminPage: React.FC = () => {
