@@ -7,7 +7,7 @@ import { toast } from "@/hooks/use-toast";
 import {
   Shield, Users, Database, Trash2, Copy, RefreshCw,
   ChevronDown, ChevronUp, AlertTriangle, Check, X,
-  Building2, UserCheck, BarChart3
+  Building2, UserCheck, BarChart3, Plus
 } from "lucide-react";
 
 // ─── Tipi ─────────────────────────────────────────────────
