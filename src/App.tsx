@@ -19,6 +19,7 @@ import SeasonsPage from "@/pages/SeasonsPage";
 import TrainingCampsPage from "@/pages/TrainingCampsPage";
 import ClubSetupPage from "@/pages/ClubSetupPage";
 import AdvancedManagementPage from "@/pages/AdvancedManagementPage";
+import SuperAdminPage from "@/pages/SuperAdminPage";
 
 import NotFound from "@/pages/NotFound";
 
@@ -43,6 +44,7 @@ const AuthenticatedApp = () => {
           <Route path="/campi" element={<TrainingCampsPage />} />
           <Route path="/setup-club" element={<ClubSetupPage />} />
           <Route path="/gestione-avanzata" element={<AdvancedManagementPage />} />
+          <Route path="/superadmin" element={<SuperAdminPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </MainLayout>
