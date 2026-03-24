@@ -26,7 +26,7 @@ import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const SuperAdminRedirect = () => {
+const SmartHome = () => {
   const navigate = useNavigate();
   const { session } = useAuth();
   useEffect(() => {
@@ -35,6 +35,17 @@ const SuperAdminRedirect = () => {
     }
   }, [session, navigate]);
   return session?.ruolo === "superadmin" ? null : <DashboardPage />;
+};
+
+const ProtectedSuperAdmin = () => {
+  const navigate = useNavigate();
+  const { session } = useAuth();
+  useEffect(() => {
+    if (session && session.ruolo !== "superadmin") {
+      navigate("/", { replace: true });
+    }
+  }, [session, navigate]);
+  return session?.ruolo === "superadmin" ? <SuperAdminPage /> : null;
 };
 
 const AuthenticatedApp = () => {
