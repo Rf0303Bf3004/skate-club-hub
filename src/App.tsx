@@ -67,7 +67,7 @@ const AuthenticatedApp = () => {
           <Route path="/campi" element={<TrainingCampsPage />} />
           <Route path="/setup-club" element={<ClubSetupPage />} />
           <Route path="/gestione-avanzata" element={<AdvancedManagementPage />} />
-          <Route path="/superadmin" element={<SuperAdminPage />} />
+          <Route path="/superadmin" element={<ProtectedSuperAdmin />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </MainLayout>
