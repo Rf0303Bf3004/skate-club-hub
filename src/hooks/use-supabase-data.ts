@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase, CURRENT_CLUB_ID } from "@/lib/supabase";
+import { supabase, get_current_club_id } from "@/lib/supabase";
 
 // Helper per ottenere sempre il club_id aggiornato
 function cid() {
-  return CURRENT_CLUB_ID;
+  return get_current_club_id();
 }
 
 // ─── Club & Setup ──────────────────────────────────────────
