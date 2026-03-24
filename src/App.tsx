@@ -19,6 +19,7 @@ import SeasonsPage from "@/pages/SeasonsPage";
 import TrainingCampsPage from "@/pages/TrainingCampsPage";
 import ClubSetupPage from "@/pages/ClubSetupPage";
 import AdvancedManagementPage from "@/pages/AdvancedManagementPage";
+import SuperAdminPage from "@/pages/SuperAdminPage";
 
 import NotFound from "@/pages/NotFound";
 
