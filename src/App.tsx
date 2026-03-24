@@ -55,7 +55,7 @@ const AuthenticatedApp = () => {
     <BrowserRouter>
       <MainLayout>
         <Routes>
-          <Route path="/" element={<SuperAdminRedirect />} />
+          <Route path="/" element={<SmartHome />} />
           <Route path="/atleti" element={<AthletesPage />} />
           <Route path="/istruttori" element={<InstructorsPage />} />
           <Route path="/corsi" element={<CoursesPage />} />
