@@ -26,7 +26,7 @@ import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const SuperAdminRedirect = () => {
+const SmartHome = () => {
   const navigate = useNavigate();
   const { session } = useAuth();
   useEffect(() => {
@@ -37,6 +37,17 @@ const SuperAdminRedirect = () => {
   return session?.ruolo === "superadmin" ? null : <DashboardPage />;
 };
 
+const ProtectedSuperAdmin = () => {
+  const navigate = useNavigate();
+  const { session } = useAuth();
+  useEffect(() => {
+    if (session && session.ruolo !== "superadmin") {
+      navigate("/", { replace: true });
+    }
+  }, [session, navigate]);
+  return session?.ruolo === "superadmin" ? <SuperAdminPage /> : null;
+};
+
 const AuthenticatedApp = () => {
   const { is_authenticated, session } = useAuth();
   if (!is_authenticated) return <LoginPage />;
@@ -44,7 +55,7 @@ const AuthenticatedApp = () => {
     <BrowserRouter>
       <MainLayout>
         <Routes>
-          <Route path="/" element={<SuperAdminRedirect />} />
+          <Route path="/" element={<SmartHome />} />
           <Route path="/atleti" element={<AthletesPage />} />
           <Route path="/istruttori" element={<InstructorsPage />} />
           <Route path="/corsi" element={<CoursesPage />} />
@@ -56,7 +67,7 @@ const AuthenticatedApp = () => {
           <Route path="/campi" element={<TrainingCampsPage />} />
           <Route path="/setup-club" element={<ClubSetupPage />} />
           <Route path="/gestione-avanzata" element={<AdvancedManagementPage />} />
-          <Route path="/superadmin" element={<SuperAdminPage />} />
+          <Route path="/superadmin" element={<ProtectedSuperAdmin />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </MainLayout>
