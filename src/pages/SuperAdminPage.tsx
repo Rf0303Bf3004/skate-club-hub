@@ -695,6 +695,7 @@ const SuperAdminPage: React.FC = () => {
               <h3 className="text-sm font-semibold text-muted-foreground">
                 Club registrati ({clubs.length})
               </h3>
+              <CreaClubForm on_created={load_clubs} />
             </div>
             {loading ? (
               <div className="flex items-center justify-center py-12">
