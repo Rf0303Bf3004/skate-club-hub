@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 
-// Helper per ottenere sempre il club_id aggiornato
 function cid() {
   return get_current_club_id();
 }
@@ -82,6 +81,24 @@ function transform_atleta(a: any) {
   };
 }
 
+// ─── Atleti monitori ───────────────────────────────────────
+export function use_atleti_monitori() {
+  return useQuery({
+    queryKey: ["atleti_monitori", cid()],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("atleti")
+        .select("*")
+        .eq("club_id", cid())
+        .in("ruolo_pista", ["monitore", "aiuto_monitore"])
+        .eq("attivo", true)
+        .order("cognome");
+      if (error) throw error;
+      return (data ?? []).map(transform_atleta);
+    },
+  });
+}
+
 // ─── Istruttori ────────────────────────────────────────────
 export function use_istruttori() {
   return useQuery({
@@ -118,21 +135,68 @@ export function use_corsi() {
   return useQuery({
     queryKey: ["corsi", cid()],
     queryFn: async () => {
-      const [corsi_res, ci_res, ic_res] = await Promise.all([
+      const [corsi_res, ci_res, ic_res, cm_res] = await Promise.all([
         supabase.from("corsi").select("*").eq("club_id", cid()).order("giorno"),
         supabase.from("corsi_istruttori").select("*"),
         supabase.from("iscrizioni_corsi").select("*"),
+        supabase.from("corsi_monitori").select("*"),
       ]);
       if (corsi_res.error) throw corsi_res.error;
       const ci = ci_res.data ?? [];
       const ic = ic_res.data ?? [];
+      const cm = cm_res.data ?? [];
       return (corsi_res.data ?? []).map((c) => ({
         ...c,
         stato: c.attivo ? "attivo" : "inattivo",
         istruttori_ids: ci.filter((x) => x.corso_id === c.id).map((x) => x.istruttore_id),
         atleti_ids: ic.filter((x) => x.corso_id === c.id && x.attiva !== false).map((x) => x.atleta_id),
+        monitori: cm.filter((x) => x.corso_id === c.id && x.tipo === "monitore").map((x) => x.persona_id),
+        aiuto_monitori: cm.filter((x) => x.corso_id === c.id && x.tipo === "aiuto_monitore").map((x) => x.persona_id),
       }));
     },
+  });
+}
+
+// ─── Corsi monitori ────────────────────────────────────────
+export function use_corsi_monitori(corso_id?: string) {
+  return useQuery({
+    queryKey: ["corsi_monitori", corso_id],
+    queryFn: async () => {
+      if (!corso_id) return [];
+      const { data, error } = await supabase.from("corsi_monitori").select("*").eq("corso_id", corso_id);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!corso_id,
+  });
+}
+
+export function use_tutti_corsi_monitori() {
+  return useQuery({
+    queryKey: ["tutti_corsi_monitori"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("corsi_monitori").select("*");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+// ─── Presenze corso ────────────────────────────────────────
+export function use_presenze_corso(corso_id?: string, data?: string) {
+  return useQuery({
+    queryKey: ["presenze_corso", corso_id, data],
+    queryFn: async () => {
+      if (!corso_id || !data) return [];
+      const { data: rows, error } = await supabase
+        .from("presenze_corso")
+        .select("*")
+        .eq("corso_id", corso_id)
+        .eq("data", data);
+      if (error) throw error;
+      return rows ?? [];
+    },
+    enabled: !!corso_id && !!data,
   });
 }
 
@@ -291,7 +355,7 @@ export function use_storico_livelli(atleta_id: string) {
   });
 }
 
-// ─── Tutti i club (per migrazione e superadmin) ────────────
+// ─── Tutti i club ──────────────────────────────────────────
 export function use_tutti_club() {
   return useQuery({
     queryKey: ["tutti_club"],
