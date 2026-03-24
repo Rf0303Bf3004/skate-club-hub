@@ -1,14 +1,19 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useI18n } from "@/lib/i18n";
-import { use_istruttori, use_lezioni_private, use_corsi, use_campi } from "@/hooks/use-supabase-data";
-import { use_upsert_istruttore, use_save_disponibilita, use_elimina_istruttore } from "@/hooks/use-supabase-mutations";
+import { use_istruttori, use_lezioni_private, use_corsi, use_campi, use_tutti_club } from "@/hooks/use-supabase-data";
+import {
+  use_upsert_istruttore,
+  use_save_disponibilita,
+  use_elimina_istruttore,
+  use_migra_istruttore,
+} from "@/hooks/use-supabase-mutations";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, ArrowLeft, Euro, Clock, TrendingUp, Download, Upload, X } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Euro, Clock, TrendingUp, Download, Upload, X, ArrowRightLeft } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { supabase, DEMO_CLUB_ID } from "@/lib/supabase";
+import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
 
 const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
@@ -41,7 +46,6 @@ function ore_fmt(ore: number): string {
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
-// ─── Field — fuori dai componenti per evitare re-mount ─────
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <div className="space-y-1.5">
     <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{label}</label>
@@ -51,6 +55,117 @@ const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, 
 
 const input_cls =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
+
+// ─── Modal Migrazione Istruttore ──────────────────────────
+const MigraIstruttoreModal: React.FC<{
+  istruttore: any;
+  on_close: () => void;
+  on_migra: (club_id: string, note: string) => Promise<void>;
+  saving: boolean;
+}> = ({ istruttore, on_close, on_migra, saving }) => {
+  const { data: tutti_club = [] } = use_tutti_club();
+  const [club_dest, set_club_dest] = useState("");
+  const [note, set_note] = useState("");
+  const [confirm, set_confirm] = useState(false);
+  const altri_club = tutti_club.filter((c: any) => c.id !== get_current_club_id());
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-card rounded-2xl shadow-xl w-full max-w-md">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+          <div>
+            <h2 className="text-base font-bold text-foreground">Migra istruttore</h2>
+            <p className="text-xs text-muted-foreground">
+              {istruttore.nome} {istruttore.cognome}
+            </p>
+          </div>
+          <button onClick={on_close} className="text-muted-foreground hover:text-foreground">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="px-6 py-5 space-y-4">
+          <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 space-y-1.5">
+            <p className="text-xs font-bold text-primary uppercase tracking-wide">Cosa viene migrato</p>
+            <p className="text-xs text-muted-foreground">✅ Anagrafica completa</p>
+            <p className="text-xs text-muted-foreground">✅ Disponibilità settimanale</p>
+            <p className="text-xs text-muted-foreground">✅ Foto e configurazione compenso</p>
+            <p className="text-xs text-muted-foreground">❌ Corsi (da riassegnare nel nuovo club)</p>
+            <p className="text-xs text-muted-foreground">❌ Storico ore lavoro</p>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Club di destinazione *
+            </label>
+            <select value={club_dest} onChange={(e) => set_club_dest(e.target.value)} className={input_cls}>
+              <option value="">Seleziona club...</option>
+              {altri_club.map((c: any) => (
+                <option key={c.id} value={c.id}>
+                  {c.nome} {c.citta ? `— ${c.citta}` : ""}
+                </option>
+              ))}
+            </select>
+            {altri_club.length === 0 && (
+              <p className="text-xs text-muted-foreground">Nessun altro club registrato nella piattaforma.</p>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Note</label>
+            <textarea
+              value={note}
+              onChange={(e) => set_note(e.target.value)}
+              rows={2}
+              placeholder="Motivo della migrazione (opzionale)..."
+              className={`${input_cls} resize-none`}
+            />
+          </div>
+          {club_dest && !confirm && (
+            <div className="bg-orange-50 border border-orange-200 rounded-xl p-3">
+              <p className="text-xs text-orange-700">
+                ⚠️{" "}
+                <strong>
+                  {istruttore.nome} {istruttore.cognome}
+                </strong>{" "}
+                verrà spostato nel club selezionato e non sarà più visibile qui.
+              </p>
+            </div>
+          )}
+        </div>
+        <div className="px-6 py-4 border-t border-border space-y-2">
+          {!confirm ? (
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={on_close} className="flex-1">
+                Annulla
+              </Button>
+              <Button
+                onClick={() => set_confirm(true)}
+                disabled={!club_dest}
+                className="flex-1 bg-primary hover:bg-primary/90"
+              >
+                Continua →
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-xs text-center text-muted-foreground">Sei sicuro? L'operazione non è reversibile.</p>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => set_confirm(false)} className="flex-1">
+                  ← Indietro
+                </Button>
+                <Button
+                  onClick={() => on_migra(club_dest, note)}
+                  disabled={saving}
+                  className="flex-1 bg-destructive hover:bg-destructive/90 text-white"
+                >
+                  {saving ? "..." : "🚀 Conferma migrazione"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // ─── Modal nuovo/modifica istruttore ───────────────────────
 const IstruttoreModal: React.FC<{
@@ -85,7 +200,7 @@ const IstruttoreModal: React.FC<{
     set_uploading_foto(true);
     try {
       const ext = file.name.split(".").pop();
-      const path = `${DEMO_CLUB_ID}/${Date.now()}.${ext}`;
+      const path = `${get_current_club_id()}/${Date.now()}.${ext}`;
       const { error } = await supabase.storage.from("foto-istruttori").upload(path, file, { upsert: true });
       if (error) throw error;
       const { data } = supabase.storage.from("foto-istruttori").getPublicUrl(path);
@@ -113,7 +228,6 @@ const IstruttoreModal: React.FC<{
         </div>
 
         <div className="px-6 py-5 space-y-4">
-          {/* Foto */}
           <Field label="Foto">
             <div className="flex items-center gap-3">
               {form.foto_url ? (
@@ -143,7 +257,6 @@ const IstruttoreModal: React.FC<{
             </div>
           </Field>
 
-          {/* Ruolo */}
           <Field label="Ruolo">
             <select value={form.ruolo} onChange={(e) => set_val("ruolo", e.target.value)} className={input_cls}>
               {RUOLI.map((r) => (
@@ -154,7 +267,6 @@ const IstruttoreModal: React.FC<{
             </select>
           </Field>
 
-          {/* Nome e Cognome */}
           <div className="grid grid-cols-2 gap-3">
             <Field label="Nome *">
               <input value={form.nome} onChange={(e) => set_val("nome", e.target.value)} className={input_cls} />
@@ -186,7 +298,6 @@ const IstruttoreModal: React.FC<{
             />
           </Field>
 
-          {/* Compenso — diverso per istruttori vs monitori */}
           {is_monitore ? (
             <Field label="Compenso orario (CHF/ora)">
               <div className="relative">
@@ -370,8 +481,6 @@ const TabOreLavoro: React.FC<{
   const costo_lezioni = ore_lezioni * (istruttore.costo_orario_lezioni || 0);
   const costo_corsi = ore_corsi * (istruttore.costo_orario_corsi || 0);
   const costo_totale_club = costo_lezioni + costo_corsi;
-
-  // Per monitori: compenso orario fisso
   const is_monitore = istruttore.ruolo === "monitore" || istruttore.ruolo === "aiuto_monitore";
   const compenso_monitore = ore_totali * (istruttore.compenso_orario || 0);
 
@@ -701,7 +810,6 @@ const TabCompenso: React.FC<{
 
   return (
     <div className="space-y-6">
-      {/* Configurazione compenso */}
       <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
         <div className="flex items-center gap-2">
           <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
@@ -802,7 +910,6 @@ const TabCompenso: React.FC<{
         )}
       </div>
 
-      {/* Costo orario club — solo per istruttori */}
       {!is_monitore && (
         <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
           <div className="flex items-center gap-2">
@@ -857,7 +964,6 @@ const TabCompenso: React.FC<{
         {saving ? "..." : "💾 Salva configurazione compenso"}
       </Button>
 
-      {/* Riepilogo mese */}
       <div className="flex items-center justify-between">
         <button
           onClick={() => {
@@ -919,11 +1025,13 @@ const InstructorsPage: React.FC = () => {
   const upsert = use_upsert_istruttore();
   const save_disp = use_save_disponibilita();
   const elimina = use_elimina_istruttore();
+  const migra_istr = use_migra_istruttore();
   const [modal_open, set_modal_open] = useState(false);
   const [selected_modal, set_selected_modal] = useState<any>(null);
   const [selected_id, set_selected_id] = useState<string | null>(null);
   const [disp_local, set_disp_local] = useState<Record<string, { ora_inizio: string; ora_fine: string }[]>>({});
   const [saving_contratto, set_saving_contratto] = useState(false);
+  const [show_migra, set_show_migra] = useState(false);
 
   const handle_save = async (data: any) => {
     try {
@@ -968,6 +1076,23 @@ const InstructorsPage: React.FC = () => {
       toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
     } finally {
       set_saving_contratto(false);
+    }
+  };
+
+  const handle_migra = async (club_dest_id: string, note: string) => {
+    if (!selected) return;
+    try {
+      await migra_istr.mutateAsync({
+        istruttore_id: selected.id,
+        istruttore_nome: `${selected.nome} ${selected.cognome}`,
+        club_destinazione_id: club_dest_id,
+        note,
+      });
+      toast({ title: "🚀 Istruttore migrato con successo" });
+      set_show_migra(false);
+      set_selected_id(null);
+    } catch (err: any) {
+      toast({ title: "Errore migrazione", description: err?.message, variant: "destructive" });
     }
   };
 
@@ -1024,6 +1149,14 @@ const InstructorsPage: React.FC = () => {
             deleting={elimina.isPending}
           />
         )}
+        {show_migra && (
+          <MigraIstruttoreModal
+            istruttore={selected}
+            on_close={() => set_show_migra(false)}
+            on_migra={handle_migra}
+            saving={migra_istr.isPending}
+          />
+        )}
         <div className="space-y-6 animate-fade-in">
           <div className="flex items-center gap-4">
             <Button variant="ghost" onClick={() => set_selected_id(null)}>
@@ -1051,16 +1184,26 @@ const InstructorsPage: React.FC = () => {
                 </Badge>
               </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                set_selected_modal(selected);
-                set_modal_open(true);
-              }}
-            >
-              {t("modifica")}
-            </Button>
+            <div className="flex items-center gap-2 ml-auto">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => set_show_migra(true)}
+                className="gap-1.5 text-xs border-primary/40 text-primary hover:bg-primary/5"
+              >
+                <ArrowRightLeft className="w-3.5 h-3.5" /> Migra
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  set_selected_modal(selected);
+                  set_modal_open(true);
+                }}
+              >
+                {t("modifica")}
+              </Button>
+            </div>
           </div>
 
           <Tabs defaultValue="info">
@@ -1208,7 +1351,6 @@ const InstructorsPage: React.FC = () => {
           </Button>
         </div>
 
-        {/* Raggruppa per ruolo */}
         {["istruttore", "monitore", "aiuto_monitore"].map((ruolo) => {
           const gruppo = istruttori.filter((i: any) => (i.ruolo || "istruttore") === ruolo);
           if (gruppo.length === 0) return null;
