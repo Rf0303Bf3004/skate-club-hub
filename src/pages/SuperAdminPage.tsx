@@ -297,6 +297,146 @@ const GestoreUtenti: React.FC<{ club_id: string; club_nome: string }> = ({ club_
   );
 };
 
+// ─── Form creazione nuovo club ─────────────────────────────
+const CreaClubForm: React.FC<{ on_created: () => void }> = ({ on_created }) => {
+  const [open, set_open] = useState(false);
+  const [saving, set_saving] = useState(false);
+  const [form, set_form] = useState({
+    nome: "", citta: "", paese: "CH", email: "", telefono: "",
+    indirizzo: "", sito_web: "", numero_tessera_federale: "",
+    colore_primario: "#3B82F6", descrizione: "",
+    admin_email: "", admin_password: "", admin_nome: "", admin_cognome: "",
+  });
+
+  const update = (key: string, value: string) => set_form((p) => ({ ...p, [key]: value }));
+  const input_cls = "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
+
+  const handle_crea = async () => {
+    if (!form.nome.trim()) {
+      toast({ title: "Il nome del club è obbligatorio", variant: "destructive" });
+      return;
+    }
+    set_saving(true);
+    try {
+      // 1. Crea il club
+      const { data: club, error: club_err } = await supabase.from("clubs").insert({
+        nome: form.nome.trim(),
+        citta: form.citta.trim() || null,
+        paese: form.paese.trim() || "CH",
+        email: form.email.trim() || null,
+        telefono: form.telefono.trim() || null,
+        indirizzo: form.indirizzo.trim() || null,
+        sito_web: form.sito_web.trim() || null,
+        numero_tessera_federale: form.numero_tessera_federale.trim() || null,
+        colore_primario: form.colore_primario || "#3B82F6",
+        descrizione: form.descrizione.trim() || null,
+        attivo: true,
+        is_demo: false,
+      }).select().single();
+
+      if (club_err) throw club_err;
+
+      // 2. Crea setup_club
+      await supabase.from("setup_club").insert({ club_id: club.id });
+
+      // 3. Se forniti, crea utente admin per il club
+      if (form.admin_email.trim() && form.admin_password.trim()) {
+        const { data: auth_data, error: auth_err } = await supabase.auth.admin.createUser({
+          email: form.admin_email.trim(),
+          password: form.admin_password.trim(),
+          email_confirm: true,
+        });
+        if (auth_err) {
+          toast({ title: "⚠️ Club creato ma errore utente admin", description: auth_err.message, variant: "destructive" });
+        } else {
+          await supabase.from("utenti_club").insert({
+            user_id: auth_data.user.id,
+            club_id: club.id,
+            ruolo: "admin",
+            nome: form.admin_nome.trim() || "Admin",
+            cognome: form.admin_cognome.trim() || form.nome.trim(),
+          });
+        }
+      }
+
+      toast({ title: `✅ Club "${club.nome}" creato con successo!` });
+      set_form({
+        nome: "", citta: "", paese: "CH", email: "", telefono: "",
+        indirizzo: "", sito_web: "", numero_tessera_federale: "",
+        colore_primario: "#3B82F6", descrizione: "",
+        admin_email: "", admin_password: "", admin_nome: "", admin_cognome: "",
+      });
+      set_open(false);
+      on_created();
+    } catch (err: any) {
+      toast({ title: "Errore creazione club", description: err?.message, variant: "destructive" });
+    } finally {
+      set_saving(false);
+    }
+  };
+
+  if (!open) {
+    return (
+      <Button onClick={() => set_open(true)} className="gap-2">
+        <Plus className="w-4 h-4" /> Nuovo Club
+      </Button>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-primary/30 bg-card p-6 space-y-5">
+      <div className="flex items-center justify-between">
+        <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+          <Building2 className="w-5 h-5 text-primary" />
+          Crea nuovo club
+        </h3>
+        <Button variant="ghost" size="icon" onClick={() => set_open(false)} className="h-7 w-7">
+          <X className="w-4 h-4" />
+        </Button>
+      </div>
+
+      {/* Dati club */}
+      <div className="space-y-3">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Dati club</p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <input value={form.nome} onChange={(e) => update("nome", e.target.value)} placeholder="Nome club *" className={input_cls} />
+          <input value={form.citta} onChange={(e) => update("citta", e.target.value)} placeholder="Città" className={input_cls} />
+          <input value={form.paese} onChange={(e) => update("paese", e.target.value)} placeholder="Paese (es. CH)" className={input_cls} />
+          <input value={form.email} onChange={(e) => update("email", e.target.value)} placeholder="Email club" type="email" className={input_cls} />
+          <input value={form.telefono} onChange={(e) => update("telefono", e.target.value)} placeholder="Telefono" className={input_cls} />
+          <input value={form.indirizzo} onChange={(e) => update("indirizzo", e.target.value)} placeholder="Indirizzo" className={input_cls} />
+          <input value={form.sito_web} onChange={(e) => update("sito_web", e.target.value)} placeholder="Sito web" className={input_cls} />
+          <input value={form.numero_tessera_federale} onChange={(e) => update("numero_tessera_federale", e.target.value)} placeholder="N° tessera federale" className={input_cls} />
+        </div>
+        <div className="flex items-center gap-3">
+          <label className="text-sm text-muted-foreground">Colore primario:</label>
+          <input type="color" value={form.colore_primario} onChange={(e) => update("colore_primario", e.target.value)} className="w-10 h-8 rounded cursor-pointer border border-border" />
+          <span className="text-xs text-muted-foreground font-mono">{form.colore_primario}</span>
+        </div>
+        <textarea value={form.descrizione} onChange={(e) => update("descrizione", e.target.value)} placeholder="Descrizione (opzionale)" rows={2} className={input_cls} />
+      </div>
+
+      {/* Admin del club */}
+      <div className="space-y-3 border-t border-border pt-4">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Utente admin del club (opzionale)</p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <input value={form.admin_nome} onChange={(e) => update("admin_nome", e.target.value)} placeholder="Nome admin" className={input_cls} />
+          <input value={form.admin_cognome} onChange={(e) => update("admin_cognome", e.target.value)} placeholder="Cognome admin" className={input_cls} />
+          <input value={form.admin_email} onChange={(e) => update("admin_email", e.target.value)} placeholder="Email admin" type="email" className={input_cls} />
+          <input value={form.admin_password} onChange={(e) => update("admin_password", e.target.value)} placeholder="Password admin" type="password" className={input_cls} />
+        </div>
+      </div>
+
+      <div className="flex gap-3 pt-2">
+        <Button onClick={handle_crea} disabled={saving} className="gap-2">
+          {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+          {saving ? "Creazione..." : "Crea club"}
+        </Button>
+        <Button variant="outline" onClick={() => set_open(false)}>Annulla</Button>
+      </div>
+    </div>
+  );
+
 // ─── Main SuperAdmin Page ──────────────────────────────────
 const SuperAdminPage: React.FC = () => {
   const { session } = useAuth();
