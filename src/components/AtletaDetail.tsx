@@ -664,4 +664,3 @@ const MedalBadge: React.FC<{ tipo: string }> = ({ tipo }) => {
 };
 
 export default AtletaDetail;
-Dimmi quando fatto — poi aggiungo il tasto Migra anche nella scheda istruttore.
