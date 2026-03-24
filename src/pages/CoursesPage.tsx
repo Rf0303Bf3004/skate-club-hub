@@ -320,15 +320,31 @@ const TabMonitori: React.FC<{
   on_refresh: () => void;
 }> = ({ corso, tutti_monitori, on_refresh }) => {
   const [saving, set_saving] = useState(false);
+  const [local_monitori, set_local_monitori] = useState<string[]>(corso.monitori || []);
+  const [local_aiuto, set_local_aiuto] = useState<string[]>(corso.aiuto_monitori || []);
 
-  const monitori_ids: string[] = corso.monitori || [];
-  const aiuto_ids: string[] = corso.aiuto_monitori || [];
+  // Sync from parent when corso changes (after refetch)
+  React.useEffect(() => {
+    set_local_monitori(corso.monitori || []);
+    set_local_aiuto(corso.aiuto_monitori || []);
+  }, [corso.monitori, corso.aiuto_monitori]);
+
+  const monitori_ids = local_monitori;
+  const aiuto_ids = local_aiuto;
 
   const toggle_persona = async (persona_id: string, tipo: "monitore" | "aiuto_monitore") => {
     set_saving(true);
     try {
       const lista = tipo === "monitore" ? monitori_ids : aiuto_ids;
       const is_present = lista.includes(persona_id);
+
+      // Optimistic update
+      if (tipo === "monitore") {
+        set_local_monitori(is_present ? lista.filter(id => id !== persona_id) : [...lista, persona_id]);
+      } else {
+        set_local_aiuto(is_present ? lista.filter(id => id !== persona_id) : [...lista, persona_id]);
+      }
+
       if (is_present) {
         await supabase.from("corsi_monitori").delete().eq("corso_id", corso.id).eq("persona_id", persona_id);
       } else {
@@ -336,6 +352,9 @@ const TabMonitori: React.FC<{
       }
       on_refresh();
     } catch (err: any) {
+      // Revert on error
+      set_local_monitori(corso.monitori || []);
+      set_local_aiuto(corso.aiuto_monitori || []);
       toast({ title: "Errore", description: err?.message, variant: "destructive" });
     } finally {
       set_saving(false);
