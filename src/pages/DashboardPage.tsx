@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useI18n } from "@/lib/i18n";
 import {
   use_atleti,
@@ -10,9 +10,10 @@ import {
   use_club,
   use_presenze,
   use_lezioni_private,
+  use_atleti_monitori,
   get_istruttore_name_from_list,
 } from "@/hooks/use-supabase-data";
-import { use_segna_presenza, use_elimina_presenza } from "@/hooks/use-supabase-mutations";
+import { use_segna_presenza, use_elimina_presenza, use_crea_comunicazione } from "@/hooks/use-supabase-mutations";
 import { calculate_age, days_until } from "@/lib/mock-data";
 import {
   Users,
@@ -26,12 +27,18 @@ import {
   Wifi,
   ChevronDown,
   ChevronUp,
+  Gift,
+  AlertTriangle,
+  Send,
+  MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
+import { supabase, get_current_club_id } from "@/lib/supabase";
+import { useQuery } from "@tanstack/react-query";
 
 // ─── Helpers ──────────────────────────────────────────────
-// Converte today_key (es. "sabato") in formato DB (es. "Sabato")
 function match_giorno(giorno_db: string, today_key: string): boolean {
   return giorno_db?.toLowerCase() === today_key?.toLowerCase();
 }
@@ -41,6 +48,38 @@ function get_slots_giorno(disponibilita: Record<string, any[]>, today_key: strin
   return key ? disponibilita[key] : [];
 }
 
+function add_days(date: string, days: number): string {
+  const d = new Date(date + "T00:00:00");
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split("T")[0];
+}
+
+function get_giorno_key(date: string): string {
+  const keys = ["domenica", "lunedi", "martedi", "mercoledi", "giovedi", "venerdi", "sabato"];
+  return keys[new Date(date + "T00:00:00").getDay()];
+}
+
+function format_data_breve(date: string): string {
+  return new Date(date + "T00:00:00").toLocaleDateString("it-CH", { weekday: "short", day: "numeric", month: "short" });
+}
+
+// ─── Hook template comunicazioni ──────────────────────────
+function use_template_comunicazioni() {
+  return useQuery({
+    queryKey: ["comunicazioni_template", get_current_club_id()],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("comunicazioni_template")
+        .select("*")
+        .eq("club_id", get_current_club_id())
+        .order("nome");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+// ─── KPI Card ─────────────────────────────────────────────
 const KPICard: React.FC<{
   title: string;
   value: string;
@@ -69,48 +108,103 @@ const KPICard: React.FC<{
   </div>
 );
 
-// ─── Appello atleti per corso ──────────────────────────────
-const AppelloCorso: React.FC<{
+// ─── Card corso del giorno ─────────────────────────────────
+const CorsoCard: React.FC<{
   corso: any;
   atleti: any[];
+  monitori: any[];
+  istruttori: any[];
   presenze: any[];
+  presenze_corso: any[];
+  data: string;
   on_segna: (atleta_id: string, riferimento_id: string) => void;
+  on_segna_istr: (id: string) => void;
   loading: boolean;
-}> = ({ corso, atleti, presenze, on_segna, loading }) => {
+}> = ({ corso, atleti, monitori, istruttori, presenze, presenze_corso, data, on_segna, on_segna_istr, loading }) => {
   const [expanded, set_expanded] = useState(false);
-  const atleti_corso = atleti.filter((a: any) => corso.atleti_ids?.includes(a.id));
-  const presenti = atleti_corso.filter((a: any) =>
-    presenze.some((p: any) => p.persona_id === a.id && p.riferimento_id === corso.id && !p.ora_uscita),
+
+  const atleti_corso = atleti.filter((a) => corso.atleti_ids?.includes(a.id));
+  const presenti_atleti = atleti_corso.filter((a) =>
+    presenze.some((p) => p.persona_id === a.id && p.riferimento_id === corso.id && !p.ora_uscita),
   );
+
+  const monitori_assegnati = monitori.filter(
+    (m) => (corso.monitori || []).includes(m.id) || (corso.aiuto_monitori || []).includes(m.id),
+  );
+
+  const istruttori_corso = istruttori.filter((i) => corso.istruttori_ids?.includes(i.id));
+
+  const get_stato_monitore = (id: string) => {
+    const p = presenze_corso.find((x) => x.persona_id === id && x.corso_id === corso.id);
+    return p?.stato || "attesa";
+  };
+
+  // WhatsApp remind per monitore
+  const genera_wa_monitore = (persona: any) => {
+    const tel = persona.genitore1_telefono || "";
+    if (!tel) return null;
+    const tipo = (corso.monitori || []).includes(persona.id) ? "monitore" : "aiuto monitore";
+    const data_fmt = new Date(data + "T00:00:00").toLocaleDateString("it-CH", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    });
+    const msg = encodeURIComponent(
+      `Ciao ${persona.nome}! 👋\nTi ricordiamo che hai il corso *${corso.nome}* come ${tipo} il ${data_fmt} dalle ${corso.ora_inizio?.slice(0, 5)} alle ${corso.ora_fine?.slice(0, 5)}.\nConfermi la presenza? Grazie! ⛸️`,
+    );
+    const tel_clean = tel.replace(/\s+/g, "").replace(/^0/, "+41");
+    return `https://wa.me/${tel_clean}?text=${msg}`;
+  };
+
+  const stato_color = (stato: string) => {
+    if (stato === "confermato") return "text-success";
+    if (stato === "assente") return "text-destructive";
+    return "text-orange-500";
+  };
+
+  const stato_label = (stato: string) => {
+    if (stato === "confermato") return "✅";
+    if (stato === "assente") return "❌";
+    return "⏳";
+  };
 
   return (
     <div className="border border-border/50 rounded-xl overflow-hidden">
       <div
-        className="flex gap-4 items-center p-3 cursor-pointer hover:bg-muted/30 transition-colors"
+        className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/30 transition-colors"
         onClick={() => set_expanded((e) => !e)}
       >
-        <span className="text-xs font-medium tabular-nums text-muted-foreground w-12 flex-shrink-0">
-          {corso.ora_inizio?.slice(0, 5)}
-        </span>
+        <div className="text-center w-12 flex-shrink-0">
+          <p className="text-xs font-bold tabular-nums text-primary">{corso.ora_inizio?.slice(0, 5)}</p>
+          <p className="text-[10px] text-muted-foreground">{corso.ora_fine?.slice(0, 5)}</p>
+        </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-foreground">{corso.nome}</p>
-          <p className="text-xs text-muted-foreground">
-            {corso.atleti_ids?.length || 0} iscritte · {presenti.length} presenti
-          </p>
+          <div className="flex items-center gap-2 mt-0.5">
+            <Badge variant="secondary" className="text-[10px]">
+              {corso.tipo || "Corso"}
+            </Badge>
+            <span className="text-xs text-muted-foreground">
+              {istruttori_corso.map((i) => `${i.nome} ${i.cognome}`).join(", ") || "—"}
+            </span>
+          </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <span
             className={`text-xs font-bold px-2 py-0.5 rounded-full
             ${
-              presenti.length === atleti_corso.length && atleti_corso.length > 0
+              presenti_atleti.length === atleti_corso.length && atleti_corso.length > 0
                 ? "bg-success/10 text-success"
-                : presenti.length > 0
+                : presenti_atleti.length > 0
                   ? "bg-orange-100 text-orange-600"
                   : "bg-muted/50 text-muted-foreground"
             }`}
           >
-            {presenti.length}/{atleti_corso.length}
+            {presenti_atleti.length}/{atleti_corso.length}
           </span>
+          {monitori_assegnati.length > 0 && (
+            <span className="text-xs text-muted-foreground">👥 {monitori_assegnati.length}</span>
+          )}
           {expanded ? (
             <ChevronUp className="w-4 h-4 text-muted-foreground" />
           ) : (
@@ -118,146 +212,539 @@ const AppelloCorso: React.FC<{
           )}
         </div>
       </div>
+
       {expanded && (
-        <div className="border-t border-border/50 divide-y divide-border/30">
-          {atleti_corso.length === 0 ? (
-            <p className="text-xs text-muted-foreground px-4 py-3">Nessuna atleta iscritta a questo corso.</p>
-          ) : (
-            atleti_corso.map((a: any) => {
-              const presenza = presenze.find(
-                (p: any) => p.persona_id === a.id && p.riferimento_id === corso.id && !p.ora_uscita,
-              );
-              const is_present = !!presenza;
-              return (
-                <div
-                  key={a.id}
-                  className={`flex items-center gap-3 px-4 py-2.5 transition-colors ${is_present ? "bg-success/5" : "bg-background"}`}
-                >
-                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${is_present ? "bg-success" : "bg-border"}`} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground">
+        <div className="border-t border-border/50">
+          {/* Istruttori */}
+          {istruttori_corso.length > 0 && (
+            <div className="px-4 py-2 bg-muted/10">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-1">Istruttori</p>
+              {istruttori_corso.map((i) => {
+                const presenza = presenze.find((p) => p.persona_id === i.id && !p.ora_uscita);
+                return (
+                  <div key={i.id} className="flex items-center justify-between py-1">
+                    <span className="text-xs text-foreground">
+                      {i.nome} {i.cognome}
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`text-[10px] ${presenza ? "text-success" : "text-muted-foreground"}`}>
+                        {presenza ? "✅ Presente" : "⏳ Atteso"}
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => on_segna_istr(i.id)}
+                        className="h-6 text-[10px] px-2"
+                      >
+                        {presenza ? "Uscita" : "Entrata"}
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Monitori */}
+          {monitori_assegnati.length > 0 && (
+            <div className="px-4 py-2 bg-primary/3 border-t border-border/30">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-1">
+                Monitori & Aiuto monitori
+              </p>
+              {monitori_assegnati.map((m) => {
+                const tipo = (corso.monitori || []).includes(m.id) ? "Monitore" : "Aiuto monitore";
+                const stato = get_stato_monitore(m.id);
+                const wa = genera_wa_monitore(m);
+                return (
+                  <div key={m.id} className="flex items-center justify-between py-1">
+                    <div>
+                      <span className="text-xs text-foreground">
+                        {m.nome} {m.cognome}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground ml-1">({tipo})</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`text-xs ${stato_color(stato)}`}>{stato_label(stato)}</span>
+                      {wa && stato === "attesa" && (
+                        <a
+                          href={wa}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] px-1.5 py-0.5 rounded bg-green-100 text-green-700 hover:bg-green-200 flex items-center gap-0.5"
+                        >
+                          <MessageCircle className="w-2.5 h-2.5" /> WA
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Atleti */}
+          <div className="divide-y divide-border/30">
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide px-4 py-2">
+              Atleti ({atleti_corso.length})
+            </p>
+            {atleti_corso.length === 0 ? (
+              <p className="text-xs text-muted-foreground px-4 py-3">Nessuna atleta iscritta.</p>
+            ) : (
+              atleti_corso.map((a) => {
+                const presenza = presenze.find(
+                  (p) => p.persona_id === a.id && p.riferimento_id === corso.id && !p.ora_uscita,
+                );
+                return (
+                  <div
+                    key={a.id}
+                    className={`flex items-center gap-3 px-4 py-2.5 transition-colors ${presenza ? "bg-success/5" : "bg-background"}`}
+                  >
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${presenza ? "bg-success" : "bg-border"}`} />
+                    <p className="text-sm font-medium text-foreground flex-1">
                       {a.nome} {a.cognome}
                     </p>
-                    {a.ruolo_pista && a.ruolo_pista !== "atleta" && (
-                      <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
-                        {a.ruolo_pista === "monitore" ? "Monitore" : "Aiuto monitore"}
-                      </span>
-                    )}
+                    <Button
+                      size="sm"
+                      variant={presenza ? "outline" : "default"}
+                      onClick={() => on_segna(a.id, corso.id)}
+                      disabled={loading}
+                      className={`h-7 text-xs ${presenza ? "text-success border-success/40" : "bg-success hover:bg-success/90 text-white"}`}
+                    >
+                      {presenza ? "✓ Presente" : "Segna"}
+                    </Button>
                   </div>
-                  <Button
-                    size="sm"
-                    variant={is_present ? "outline" : "default"}
-                    onClick={() => on_segna(a.id, corso.id)}
-                    disabled={loading}
-                    className={`h-7 text-xs ${is_present ? "text-success border-success/40" : "bg-success hover:bg-success/90 text-white"}`}
-                  >
-                    {is_present ? "✓ Presente" : "Segna"}
-                  </Button>
-                </div>
-              );
-            })
-          )}
+                );
+              })
+            )}
+          </div>
         </div>
       )}
     </div>
   );
 };
 
-// ─── Appello atleti per lezione privata ───────────────────
-const AppelloLezione: React.FC<{
-  lezione: any;
+// ─── Box comunicazione rapida ──────────────────────────────
+const BoxComunicazione: React.FC<{
   atleti: any[];
-  presenze: any[];
-  on_segna: (atleta_id: string, riferimento_id: string) => void;
-  loading: boolean;
   istruttori: any[];
-}> = ({ lezione, atleti, presenze, on_segna, loading, istruttori }) => {
-  const [expanded, set_expanded] = useState(false);
-  const atleti_lezione = atleti.filter((a: any) => lezione.atleti_ids?.includes(a.id));
-  const istr = istruttori.find((i: any) => i.id === lezione.istruttore_id);
+  monitori: any[];
+  corsi: any[];
+  gare: any[];
+}> = ({ atleti, istruttori, monitori, corsi, gare }) => {
+  const { data: templates = [] } = use_template_comunicazioni();
+  const crea = use_crea_comunicazione();
+
+  const [tipo_dest, set_tipo_dest] = useState("tutti");
+  const [riferimento_id, set_riferimento_id] = useState("");
+  const [persona_id, set_persona_id] = useState("");
+  const [titolo, set_titolo] = useState("");
+  const [testo, set_testo] = useState("");
+  const [template_sel, set_template_sel] = useState("");
+  const [sending_wa, set_sending_wa] = useState(false);
+
+  const input_cls =
+    "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
+
+  // Calcola destinatari effettivi
+  const get_destinatari = (): { nome: string; telefono: string }[] => {
+    if (tipo_dest === "tutti") {
+      return atleti
+        .filter((a) => a.stato === "attivo")
+        .map((a) => ({
+          nome: `${a.nome} ${a.cognome}`,
+          telefono: a.genitore1_telefono || "",
+        }))
+        .filter((x) => x.telefono);
+    }
+    if (tipo_dest === "atleti_attivi") {
+      return atleti
+        .filter((a) => a.stato === "attivo")
+        .map((a) => ({
+          nome: `${a.nome} ${a.cognome}`,
+          telefono: a.genitore1_telefono || "",
+        }))
+        .filter((x) => x.telefono);
+    }
+    if (tipo_dest === "istruttori") {
+      return istruttori
+        .filter((i) => i.stato === "attivo")
+        .map((i) => ({
+          nome: `${i.nome} ${i.cognome}`,
+          telefono: i.telefono || "",
+        }))
+        .filter((x) => x.telefono);
+    }
+    if (tipo_dest === "monitori") {
+      return monitori
+        .filter((m) => m.ruolo_pista === "monitore")
+        .map((m) => ({
+          nome: `${m.nome} ${m.cognome}`,
+          telefono: m.genitore1_telefono || "",
+        }))
+        .filter((x) => x.telefono);
+    }
+    if (tipo_dest === "aiuto_monitori") {
+      return monitori
+        .filter((m) => m.ruolo_pista === "aiuto_monitore")
+        .map((m) => ({
+          nome: `${m.nome} ${m.cognome}`,
+          telefono: m.genitore1_telefono || "",
+        }))
+        .filter((x) => x.telefono);
+    }
+    if (tipo_dest === "corso" && riferimento_id) {
+      const corso = corsi.find((c) => c.id === riferimento_id);
+      if (!corso) return [];
+      return atleti
+        .filter((a) => corso.atleti_ids?.includes(a.id))
+        .map((a) => ({
+          nome: `${a.nome} ${a.cognome}`,
+          telefono: a.genitore1_telefono || "",
+        }))
+        .filter((x) => x.telefono);
+    }
+    if (tipo_dest === "gara" && riferimento_id) {
+      const gara = gare.find((g) => g.id === riferimento_id);
+      if (!gara) return [];
+      return atleti
+        .filter((a) => gara.atleti_iscritti?.some((ai: any) => ai.atleta_id === a.id))
+        .map((a) => ({
+          nome: `${a.nome} ${a.cognome}`,
+          telefono: a.genitore1_telefono || "",
+        }))
+        .filter((x) => x.telefono);
+    }
+    if (tipo_dest === "singolo_atleta" && persona_id) {
+      const a = atleti.find((x) => x.id === persona_id);
+      if (!a) return [];
+      return [{ nome: `${a.nome} ${a.cognome}`, telefono: a.genitore1_telefono || "" }].filter((x) => x.telefono);
+    }
+    if (tipo_dest === "singolo_istruttore" && persona_id) {
+      const i = istruttori.find((x) => x.id === persona_id);
+      if (!i) return [];
+      return [{ nome: `${i.nome} ${i.cognome}`, telefono: i.telefono || "" }].filter((x) => x.telefono);
+    }
+    return [];
+  };
+
+  const destinatari = get_destinatari();
+
+  const handle_template = (tid: string) => {
+    set_template_sel(tid);
+    const t = templates.find((x) => x.id === tid);
+    if (t) {
+      set_titolo(t.nome);
+      set_testo(t.testo);
+    }
+  };
+
+  const handle_salva_inapp = async () => {
+    if (!titolo || !testo) {
+      toast({ title: "Inserisci titolo e testo", variant: "destructive" });
+      return;
+    }
+    try {
+      await crea.mutateAsync({
+        titolo,
+        testo,
+        tipo_destinatari: tipo_dest,
+        corso_id: tipo_dest === "corso" ? riferimento_id : null,
+      });
+      toast({ title: "✅ Comunicazione salvata" });
+      set_titolo("");
+      set_testo("");
+      set_template_sel("");
+    } catch (err: any) {
+      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+    }
+  };
+
+  const handle_invia_wa = () => {
+    if (!testo) {
+      toast({ title: "Inserisci il testo del messaggio", variant: "destructive" });
+      return;
+    }
+    if (destinatari.length === 0) {
+      toast({ title: "Nessun destinatario con numero WhatsApp", variant: "destructive" });
+      return;
+    }
+    set_sending_wa(true);
+    destinatari.forEach((d) => {
+      const tel = d.telefono.replace(/\s+/g, "").replace(/^0/, "+41");
+      const msg_personale = testo.replace("{nome}", d.nome.split(" ")[0]);
+      const msg = encodeURIComponent(msg_personale);
+      window.open(`https://wa.me/${tel}?text=${msg}`, "_blank");
+    });
+    set_sending_wa(false);
+    toast({ title: `✅ Aperte ${destinatari.length} chat WhatsApp` });
+  };
 
   return (
-    <div className="border border-border/50 rounded-xl overflow-hidden">
-      <div
-        className="flex gap-4 items-center p-3 cursor-pointer hover:bg-muted/30 transition-colors"
-        onClick={() => set_expanded((e) => !e)}
-      >
-        <span className="text-xs font-medium tabular-nums text-muted-foreground w-12 flex-shrink-0">
-          {lezione.ora_inizio?.slice(0, 5)}
-        </span>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-foreground">
-            Lezione privata {lezione.atleti_ids?.length > 1 ? "👥" : ""}
+    <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
+      <div className="flex items-center gap-2">
+        <MessageSquare className="w-4 h-4 text-primary" />
+        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Comunicazione rapida</h3>
+      </div>
+
+      {/* Template */}
+      <div className="space-y-1.5">
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Template</label>
+        <select value={template_sel} onChange={(e) => handle_template(e.target.value)} className={input_cls}>
+          <option value="">Scegli template...</option>
+          {templates.map((t: any) => (
+            <option key={t.id} value={t.id}>
+              {t.nome}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Destinatari */}
+      <div className="space-y-1.5">
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Destinatari</label>
+        <select
+          value={tipo_dest}
+          onChange={(e) => {
+            set_tipo_dest(e.target.value);
+            set_riferimento_id("");
+            set_persona_id("");
+          }}
+          className={input_cls}
+        >
+          <option value="tutti">Tutti (club intero)</option>
+          <option value="atleti_attivi">Tutti gli atleti attivi</option>
+          <option value="istruttori">Tutti gli istruttori</option>
+          <option value="monitori">Tutti i monitori</option>
+          <option value="aiuto_monitori">Tutti gli aiuto monitori</option>
+          <option value="corso">Iscritti a un corso</option>
+          <option value="gara">Iscritti a una gara</option>
+          <option value="singolo_atleta">Singolo atleta</option>
+          <option value="singolo_istruttore">Singolo istruttore/monitore</option>
+        </select>
+
+        {tipo_dest === "corso" && (
+          <select value={riferimento_id} onChange={(e) => set_riferimento_id(e.target.value)} className={input_cls}>
+            <option value="">Seleziona corso...</option>
+            {corsi
+              .filter((c) => c.stato === "attivo")
+              .map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nome}
+                </option>
+              ))}
+          </select>
+        )}
+        {tipo_dest === "gara" && (
+          <select value={riferimento_id} onChange={(e) => set_riferimento_id(e.target.value)} className={input_cls}>
+            <option value="">Seleziona gara...</option>
+            {gare.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.nome} — {new Date(g.data + "T00:00:00").toLocaleDateString("it-CH")}
+              </option>
+            ))}
+          </select>
+        )}
+        {tipo_dest === "singolo_atleta" && (
+          <select value={persona_id} onChange={(e) => set_persona_id(e.target.value)} className={input_cls}>
+            <option value="">Seleziona atleta...</option>
+            {atleti
+              .filter((a) => a.stato === "attivo")
+              .map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.nome} {a.cognome}
+                </option>
+              ))}
+          </select>
+        )}
+        {tipo_dest === "singolo_istruttore" && (
+          <select value={persona_id} onChange={(e) => set_persona_id(e.target.value)} className={input_cls}>
+            <option value="">Seleziona persona...</option>
+            {[...istruttori, ...monitori].map((i) => (
+              <option key={i.id} value={i.id}>
+                {i.nome} {i.cognome}
+              </option>
+            ))}
+          </select>
+        )}
+
+        {destinatari.length > 0 && (
+          <p className="text-xs text-primary font-medium">
+            📨 {destinatari.length} destinatar{destinatari.length === 1 ? "io" : "i"} con WhatsApp
           </p>
-          <p className="text-xs text-muted-foreground">
-            {istr ? `${istr.nome} ${istr.cognome}` : "—"} · {atleti_lezione.map((a: any) => a.nome).join(", ")}
-          </p>
-        </div>
-        {expanded ? (
-          <ChevronUp className="w-4 h-4 text-muted-foreground" />
-        ) : (
-          <ChevronDown className="w-4 h-4 text-muted-foreground" />
         )}
       </div>
-      {expanded && (
-        <div className="border-t border-border/50 divide-y divide-border/30">
-          {atleti_lezione.map((a: any) => {
-            const presenza = presenze.find(
-              (p: any) => p.persona_id === a.id && p.riferimento_id === lezione.id && !p.ora_uscita,
-            );
-            const is_present = !!presenza;
-            return (
-              <div
-                key={a.id}
-                className={`flex items-center gap-3 px-4 py-2.5 transition-colors ${is_present ? "bg-success/5" : "bg-background"}`}
-              >
-                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${is_present ? "bg-success" : "bg-border"}`} />
-                <p className="text-sm font-medium text-foreground flex-1">
-                  {a.nome} {a.cognome}
-                </p>
-                <Button
-                  size="sm"
-                  variant={is_present ? "outline" : "default"}
-                  onClick={() => on_segna(a.id, lezione.id)}
-                  disabled={loading}
-                  className={`h-7 text-xs ${is_present ? "text-success border-success/40" : "bg-success hover:bg-success/90 text-white"}`}
-                >
-                  {is_present ? "✓ Presente" : "Segna"}
-                </Button>
-              </div>
-            );
-          })}
-        </div>
-      )}
+
+      {/* Titolo */}
+      <div className="space-y-1.5">
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Titolo</label>
+        <input
+          value={titolo}
+          onChange={(e) => set_titolo(e.target.value)}
+          placeholder="Oggetto comunicazione..."
+          className={input_cls}
+        />
+      </div>
+
+      {/* Testo */}
+      <div className="space-y-1.5">
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Messaggio</label>
+        <textarea
+          value={testo}
+          onChange={(e) => set_testo(e.target.value)}
+          rows={4}
+          placeholder="Scrivi il messaggio... Usa {nome} per personalizzarlo"
+          className={`${input_cls} resize-none`}
+        />
+        <p className="text-[10px] text-muted-foreground">
+          Variabili: {"{nome}"}, {"{corso}"}, {"{gara}"}, {"{data}"}, {"{importo}"}
+        </p>
+      </div>
+
+      {/* Azioni */}
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handle_salva_inapp}
+          disabled={crea.isPending}
+          className="flex-1 gap-1.5 text-xs"
+        >
+          <Send className="w-3.5 h-3.5" />
+          {crea.isPending ? "..." : "Salva in-app"}
+        </Button>
+        <Button
+          size="sm"
+          onClick={handle_invia_wa}
+          disabled={sending_wa || destinatari.length === 0}
+          className="flex-1 gap-1.5 text-xs bg-green-600 hover:bg-green-700 text-white"
+        >
+          <MessageCircle className="w-3.5 h-3.5" />
+          WhatsApp ({destinatari.length})
+        </Button>
+      </div>
     </div>
   );
 };
 
-// ─── Sezione presenze istruttori ──────────────────────────
+// ─── Widget compleanni ─────────────────────────────────────
+const WidgetCompleanni: React.FC<{ atleti: any[] }> = ({ atleti }) => {
+  const today = new Date();
+  const today_md = `${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
+  const compleanni = atleti
+    .filter((a) => a.data_nascita)
+    .map((a) => {
+      const dn = new Date(a.data_nascita);
+      const md = `${String(dn.getMonth() + 1).padStart(2, "0")}-${String(dn.getDate()).padStart(2, "0")}`;
+      const this_year = new Date(today.getFullYear(), dn.getMonth(), dn.getDate());
+      let giorni = Math.ceil((this_year.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      if (giorni < 0) giorni += 365;
+      return { ...a, md, giorni, eta: today.getFullYear() - dn.getFullYear() + (giorni === 0 ? 0 : 1) };
+    })
+    .filter((a) => a.giorni <= 7)
+    .sort((a, b) => a.giorni - b.giorni);
+
+  if (compleanni.length === 0) return null;
+
+  return (
+    <div className="bg-card rounded-xl shadow-card p-5 space-y-3">
+      <div className="flex items-center gap-2">
+        <Gift className="w-4 h-4 text-pink-500" />
+        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Compleanni</h3>
+      </div>
+      {compleanni.map((a) => (
+        <div key={a.id} className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full bg-pink-100 flex items-center justify-center text-pink-600 text-xs font-bold">
+              {a.nome[0]}
+              {a.cognome[0]}
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                {a.nome} {a.cognome}
+              </p>
+              <p className="text-xs text-muted-foreground">compie {a.eta} anni</p>
+            </div>
+          </div>
+          <Badge variant={a.giorni === 0 ? "default" : "secondary"} className="text-xs">
+            {a.giorni === 0 ? "🎂 Oggi!" : a.giorni === 1 ? "Domani" : `fra ${a.giorni}gg`}
+          </Badge>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// ─── Widget fatture in scadenza ────────────────────────────
+const WidgetFatture: React.FC<{ fatture: any[]; atleti: any[] }> = ({ fatture, atleti }) => {
+  const today = new Date().toISOString().split("T")[0];
+  const tra_7 = add_days(today, 7);
+
+  const in_scadenza = fatture
+    .filter((f) => f.stato === "da_pagare" && f.scadenza && f.scadenza >= today && f.scadenza <= tra_7)
+    .sort((a, b) => a.scadenza.localeCompare(b.scadenza))
+    .slice(0, 5);
+
+  const scadute = fatture.filter((f) => f.stato === "da_pagare" && f.scadenza && f.scadenza < today);
+
+  if (in_scadenza.length === 0 && scadute.length === 0) return null;
+
+  return (
+    <div className="bg-card rounded-xl shadow-card p-5 space-y-3">
+      <div className="flex items-center gap-2">
+        <AlertTriangle className="w-4 h-4 text-orange-500" />
+        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Fatture</h3>
+      </div>
+      {scadute.length > 0 && (
+        <div className="bg-destructive/5 border border-destructive/20 rounded-lg px-3 py-2">
+          <p className="text-xs font-bold text-destructive">{scadute.length} fatture scadute</p>
+          <p className="text-xs text-muted-foreground">
+            CHF {scadute.reduce((s, f) => s + f.importo, 0).toFixed(2)} da incassare
+          </p>
+        </div>
+      )}
+      {in_scadenza.map((f) => {
+        const atleta = atleti.find((a) => a.id === f.atleta_id);
+        return (
+          <div key={f.id} className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-foreground">{atleta ? `${atleta.nome} ${atleta.cognome}` : "—"}</p>
+              <p className="text-xs text-muted-foreground">{f.descrizione}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs font-bold text-foreground">CHF {Number(f.importo).toFixed(2)}</p>
+              <p className="text-xs text-orange-500">
+                {new Date(f.scadenza + "T00:00:00").toLocaleDateString("it-CH", { day: "2-digit", month: "short" })}
+              </p>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+// ─── Presenze istruttori ───────────────────────────────────
 const SezionePresenzeIstruttori: React.FC<{
   istruttori: any[];
   today_key: string;
   presenze: any[];
-  on_segna: (id: string, tipo: "istruttore") => void;
+  on_segna: (id: string) => void;
   on_elimina: (id: string) => void;
   loading: boolean;
 }> = ({ istruttori, today_key, presenze, on_segna, on_elimina, loading }) => {
-  // FIX: confronto case-insensitive tra giorno DB (es. "Sabato") e today_key (es. "sabato")
-  const today_istruttori = istruttori.filter((i: any) => {
+  const today_istruttori = istruttori.filter((i) => {
     if (i.stato !== "attivo") return false;
-    const slots = get_slots_giorno(i.disponibilita || {}, today_key);
-    return slots.length > 0;
+    return get_slots_giorno(i.disponibilita || {}, today_key).length > 0;
   });
-
-  const get_presenza = (id: string) => presenze.find((p: any) => p.persona_id === id);
 
   return (
     <div className="space-y-2">
       {today_istruttori.length === 0 ? (
         <p className="text-xs text-muted-foreground text-center py-4">Nessun istruttore previsto oggi</p>
       ) : (
-        today_istruttori.map((i: any) => {
-          const presenza = get_presenza(i.id);
+        today_istruttori.map((i) => {
+          const presenza = presenze.find((p) => p.persona_id === i.id);
           const is_present = !!presenza && !presenza.ora_uscita;
           const has_left = !!presenza?.ora_uscita;
           const slots = get_slots_giorno(i.disponibilita || {}, today_key);
@@ -268,8 +755,7 @@ const SezionePresenzeIstruttori: React.FC<{
               ${is_present ? "bg-success/5 border-success/20" : has_left ? "bg-muted/20 border-border/50" : "bg-muted/10 border-border/30"}`}
             >
               <div
-                className={`w-2 h-2 rounded-full flex-shrink-0
-                ${is_present ? "bg-success" : has_left ? "bg-muted-foreground" : "bg-orange-400"}`}
+                className={`w-2 h-2 rounded-full flex-shrink-0 ${is_present ? "bg-success" : has_left ? "bg-muted-foreground" : "bg-orange-400"}`}
               />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground">
@@ -283,7 +769,7 @@ const SezionePresenzeIstruttori: React.FC<{
                       {presenza.ora_uscita && ` · Uscita: ${presenza.ora_uscita?.slice(0, 5)}`}
                     </>
                   ) : (
-                    slots.map((s: any) => `${s.ora_inizio}-${s.ora_fine}`).join(", ")
+                    slots.map((s) => `${s.ora_inizio}-${s.ora_fine}`).join(", ")
                   )}
                 </p>
               </div>
@@ -292,7 +778,7 @@ const SezionePresenzeIstruttori: React.FC<{
                   <Button
                     size="sm"
                     variant={is_present ? "outline" : "default"}
-                    onClick={() => on_segna(i.id, "istruttore")}
+                    onClick={() => on_segna(i.id)}
                     disabled={loading}
                     className={`h-7 text-xs ${is_present ? "" : "bg-success hover:bg-success/90 text-white"}`}
                   >
@@ -328,39 +814,52 @@ const DashboardPage: React.FC = () => {
   const { data: gare = [], isLoading: loading_gare } = use_gare();
   const { data: fatture = [], isLoading: loading_fatture } = use_fatture();
   const { data: istruttori = [], isLoading: loading_istruttori } = use_istruttori();
-  const { data: comunicazioni = [], isLoading: loading_com } = use_comunicazioni();
+  const { data: monitori = [] } = use_atleti_monitori();
+  const { data: comunicazioni = [] } = use_comunicazioni();
   const { data: lezioni = [] } = use_lezioni_private();
   const { data: club } = use_club();
 
   const today = new Date().toISOString().split("T")[0];
   const { data: presenze = [] } = use_presenze(today);
+  const { data: presenze_corso = [] } = useQuery({
+    queryKey: ["presenze_corso_oggi", today],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("presenze_corso").select("*").eq("data", today);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   const segna = use_segna_presenza();
   const elimina_p = use_elimina_presenza();
+  const [tab_presenze, set_tab_presenze] = useState<"corsi" | "istruttori">("corsi");
 
-  const [tab_presenze, set_tab_presenze] = useState<"appello" | "istruttori">("appello");
+  const is_loading = loading_atleti || loading_corsi || loading_gare || loading_fatture || loading_istruttori;
 
-  const is_loading =
-    loading_atleti || loading_corsi || loading_gare || loading_fatture || loading_istruttori || loading_com;
+  const active_atleti = atleti.filter((a) => a.stato === "attivo").length;
+  const active_corsi = corsi.filter((c) => c.stato === "attivo").length;
+  const upcoming_gare = gare.filter((g) => days_until(g.data) >= 0);
+  const next_gara = upcoming_gare.sort((a, b) => days_until(a.data) - days_until(b.data))[0];
+  const fatture_da_pagare = fatture.filter((f) => f.stato === "da_pagare");
+  const totale_fatture = fatture_da_pagare.reduce((s, f) => s + f.importo, 0);
 
-  const active_atleti = atleti.filter((a: any) => a.stato === "attivo").length;
-  const active_corsi = corsi.filter((c: any) => c.stato === "attivo").length;
-  const upcoming_gare = gare.filter((g: any) => days_until(g.data) > 0);
-  const next_gara = upcoming_gare.sort((a: any, b: any) => days_until(a.data) - days_until(b.data))[0];
-  const fatture_da_pagare = fatture.filter((f: any) => f.stato === "da_pagare");
-  const totale_fatture = fatture_da_pagare.reduce((s: number, f: any) => s + f.importo, 0);
-
-  // today_key in minuscolo (es. "sabato"), i giorni nel DB sono con maiuscola (es. "Sabato")
   const today_day_keys = ["domenica", "lunedi", "martedi", "mercoledi", "giovedi", "venerdi", "sabato"];
   const today_key = today_day_keys[new Date().getDay()];
 
-  // FIX: confronto case-insensitive
-  const today_corsi = corsi.filter((c: any) => match_giorno(c.giorno, today_key) && c.stato === "attivo");
-  const today_lezioni = lezioni.filter((l: any) => l.data === today && !l.annullata);
+  // Corsi oggi + prossimi 2 giorni
+  const giorni_da_mostrare = [today, add_days(today, 1), add_days(today, 2)];
+  const corsi_per_giorno = giorni_da_mostrare
+    .map((data) => ({
+      data,
+      label: format_data_breve(data),
+      corsi: corsi
+        .filter((c) => match_giorno(c.giorno, get_giorno_key(data)) && c.stato === "attivo")
+        .sort((a, b) => (a.ora_inizio || "").localeCompare(b.ora_inizio || "")),
+    }))
+    .filter((g) => g.corsi.length > 0);
 
-  const recent_atleti = [...atleti]
-    .sort((a: any, b: any) => (b.data_aggiunta || "").localeCompare(a.data_aggiunta || ""))
-    .slice(0, 5);
-  const recent_comms = comunicazioni.slice(0, 3);
+  const today_lezioni = lezioni.filter((l) => l.data === today && !l.annullata);
+  const totale_presenti = presenze.filter((p) => !p.ora_uscita).length;
 
   const handle_segna_atleta = async (atleta_id: string, riferimento_id: string) => {
     try {
@@ -378,9 +877,14 @@ const DashboardPage: React.FC = () => {
     }
   };
 
-  const handle_segna_istruttore = async (id: string, tipo: "istruttore") => {
+  const handle_segna_istruttore = async (id: string) => {
     try {
-      const result = await segna.mutateAsync({ persona_id: id, tipo_persona: tipo, data: today, metodo: "manuale" });
+      const result = await segna.mutateAsync({
+        persona_id: id,
+        tipo_persona: "istruttore",
+        data: today,
+        metodo: "manuale",
+      });
       toast({ title: result.tipo === "entrata" ? "✅ Entrata registrata" : "🚪 Uscita registrata" });
     } catch (err: any) {
       toast({ title: "Errore", description: err?.message, variant: "destructive" });
@@ -396,8 +900,6 @@ const DashboardPage: React.FC = () => {
     }
   };
 
-  const totale_presenti = presenze.filter((p: any) => !p.ora_uscita).length;
-
   if (is_loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -407,8 +909,8 @@ const DashboardPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      {/* Header con logo club */}
+    <div className="space-y-6 animate-fade-in">
+      {/* Header */}
       <div className="flex items-center gap-4">
         {club?.logo_url ? (
           <img
@@ -430,99 +932,147 @@ const DashboardPage: React.FC = () => {
             </p>
           )}
         </div>
+        <div className="ml-auto text-right">
+          <p className="text-xs text-muted-foreground capitalize">
+            {new Date().toLocaleDateString("it-CH", {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })}
+          </p>
+          <p className="text-xs font-bold text-success">{totale_presenti} presenti in pista</p>
+        </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-        <KPICard title={t("atleti_attivi")} value={String(active_atleti)} icon={<Users className="w-5 h-5" />} />
-        <KPICard title={t("corsi_settimana")} value={String(active_corsi)} icon={<BookOpen className="w-5 h-5" />} />
+      {/* KPI */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <KPICard title="Atleti attivi" value={String(active_atleti)} icon={<Users className="w-5 h-5" />} />
+        <KPICard title="Corsi attivi" value={String(active_corsi)} icon={<BookOpen className="w-5 h-5" />} />
         <KPICard
-          title={t("prossime_gare")}
+          title="Prossime gare"
           value={String(upcoming_gare.length)}
           icon={<Trophy className="w-5 h-5" />}
-          subtitle={next_gara ? t("countdown_giorni", String(days_until(next_gara.data))) : undefined}
+          subtitle={next_gara ? `fra ${days_until(next_gara.data)}gg: ${next_gara.nome}` : undefined}
         />
         <KPICard
-          title={t("fatture_scadenza")}
+          title="Da incassare"
           value={`CHF ${totale_fatture.toLocaleString()}`}
           icon={<CreditCard className="w-5 h-5" />}
           highlight
         />
       </div>
 
-      {/* Contenuto principale */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-        <section className="lg:col-span-2 space-y-6">
-          <div className="bg-card rounded-xl shadow-card p-6 space-y-4">
+      {/* Layout principale */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Colonna sinistra — corsi + presenze */}
+        <div className="lg:col-span-2 space-y-5">
+          {/* Corsi oggi + 2 giorni */}
+          <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                {t("oggi_in_pista")}
-              </h3>
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-success/10 text-success">
-                {totale_presenti} presenti oggi
-              </span>
+              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Agenda corsi</h3>
+              <span className="text-xs text-muted-foreground">Oggi + 2 giorni</span>
             </div>
 
-            {/* Tab appello / istruttori */}
             <div className="flex gap-1 p-1 bg-muted/30 rounded-lg">
-              {(
-                [
-                  { key: "appello", label: "📋 Appello atlete" },
-                  { key: "istruttori", label: "👨‍🏫 Istruttori" },
-                ] as const
-              ).map((tab) => (
+              {(["corsi", "istruttori"] as const).map((tab) => (
                 <button
-                  key={tab.key}
-                  onClick={() => set_tab_presenze(tab.key)}
+                  key={tab}
+                  onClick={() => set_tab_presenze(tab)}
                   className={`flex-1 text-xs font-medium py-1.5 rounded-md transition-all
-                    ${tab_presenze === tab.key ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                    ${tab_presenze === tab ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
                 >
-                  {tab.label}
+                  {tab === "corsi" ? "📋 Corsi & Appello" : "👨‍🏫 Istruttori"}
                 </button>
               ))}
             </div>
 
-            {/* Appello atlete */}
-            {tab_presenze === "appello" && (
-              <div className="space-y-3">
-                {today_corsi.length === 0 && today_lezioni.length === 0 ? (
+            {tab_presenze === "corsi" && (
+              <div className="space-y-5">
+                {corsi_per_giorno.length === 0 && today_lezioni.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
                     <Clock className="w-8 h-8 mb-2 opacity-30" />
-                    <p className="text-sm">Nessun corso o lezione oggi</p>
+                    <p className="text-sm">Nessun corso nei prossimi 3 giorni</p>
                   </div>
                 ) : (
                   <>
-                    {today_corsi.length > 0 && (
-                      <div className="space-y-2">
-                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Corsi</p>
-                        {today_corsi.map((corso: any) => (
-                          <AppelloCorso
+                    {corsi_per_giorno.map(({ data, label, corsi: corsi_giorno }) => (
+                      <div key={data} className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={`text-xs font-bold px-2.5 py-1 rounded-full
+                            ${data === today ? "bg-primary text-white" : "bg-muted text-muted-foreground"}`}
+                          >
+                            {data === today ? "Oggi" : label}
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {corsi_giorno.length} cors{corsi_giorno.length === 1 ? "o" : "i"}
+                          </span>
+                        </div>
+                        {corsi_giorno.map((corso) => (
+                          <CorsoCard
                             key={corso.id}
                             corso={corso}
                             atleti={atleti}
+                            monitori={monitori}
+                            istruttori={istruttori}
                             presenze={presenze}
+                            presenze_corso={presenze_corso}
+                            data={data}
                             on_segna={handle_segna_atleta}
+                            on_segna_istr={handle_segna_istruttore}
                             loading={segna.isPending}
                           />
                         ))}
                       </div>
-                    )}
+                    ))}
                     {today_lezioni.length > 0 && (
                       <div className="space-y-2">
-                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
-                          Lezioni private
-                        </p>
-                        {today_lezioni.map((lezione: any) => (
-                          <AppelloLezione
-                            key={lezione.id}
-                            lezione={lezione}
-                            atleti={atleti}
-                            presenze={presenze}
-                            on_segna={handle_segna_atleta}
-                            loading={segna.isPending}
-                            istruttori={istruttori}
-                          />
-                        ))}
+                        <div className="flex items-center gap-2">
+                          <div className="text-xs font-bold px-2.5 py-1 rounded-full bg-primary text-white">
+                            Lezioni private oggi
+                          </div>
+                        </div>
+                        {today_lezioni.map((lezione) => {
+                          const atleti_lezione = atleti.filter((a) => lezione.atleti_ids?.includes(a.id));
+                          const istr = istruttori.find((i) => i.id === lezione.istruttore_id);
+                          return (
+                            <div key={lezione.id} className="border border-border/50 rounded-xl p-3">
+                              <div className="flex items-center gap-3 mb-2">
+                                <span className="text-xs font-bold text-primary w-12">
+                                  {lezione.ora_inizio?.slice(0, 5)}
+                                </span>
+                                <div>
+                                  <p className="text-sm font-semibold text-foreground">Lezione privata</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {istr ? `${istr.nome} ${istr.cognome}` : "—"}
+                                  </p>
+                                </div>
+                              </div>
+                              {atleti_lezione.map((a) => {
+                                const presenza = presenze.find(
+                                  (p) => p.persona_id === a.id && p.riferimento_id === lezione.id,
+                                );
+                                return (
+                                  <div key={a.id} className="flex items-center justify-between px-2 py-1.5">
+                                    <span className="text-sm text-foreground">
+                                      {a.nome} {a.cognome}
+                                    </span>
+                                    <Button
+                                      size="sm"
+                                      variant={presenza ? "outline" : "default"}
+                                      onClick={() => handle_segna_atleta(a.id, lezione.id)}
+                                      disabled={segna.isPending}
+                                      className={`h-6 text-xs ${presenza ? "text-success border-success/40" : "bg-success hover:bg-success/90 text-white"}`}
+                                    >
+                                      {presenza ? "✓" : "Segna"}
+                                    </Button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </>
@@ -530,7 +1080,6 @@ const DashboardPage: React.FC = () => {
               </div>
             )}
 
-            {/* Presenze istruttori */}
             {tab_presenze === "istruttori" && (
               <SezionePresenzeIstruttori
                 istruttori={istruttori}
@@ -541,82 +1090,59 @@ const DashboardPage: React.FC = () => {
                 loading={segna.isPending}
               />
             )}
-
-            {/* Prossimi eventi */}
-            <div className="pt-2 border-t border-border">
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">
-                {t("prossimi_eventi")}
-              </h3>
-              <div className="space-y-3">
-                {upcoming_gare.slice(0, 3).map((gara: any) => (
-                  <div key={gara.id} className="flex gap-4 items-start">
-                    <div className="w-12 text-center">
-                      <span className="text-xs font-medium tabular-nums text-muted-foreground">
-                        {new Date(gara.data + "T00:00:00").toLocaleDateString("it-CH", {
-                          day: "2-digit",
-                          month: "short",
-                        })}
-                      </span>
-                    </div>
-                    <div className="flex-1 p-3 rounded-lg bg-muted/50">
-                      <p className="text-sm font-semibold text-foreground">{gara.nome}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {gara.localita} • {gara.atleti_iscritti.length} {t("atleti")}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
-        </section>
 
-        <aside className="space-y-6">
-          <div className="bg-card rounded-xl shadow-card p-5">
-            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">
-              {t("ultimi_atleti")}
-            </h3>
-            <div className="space-y-3">
-              {recent_atleti.map((a: any) => (
-                <div key={a.id} className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-accent text-xs font-bold shrink-0">
-                    {a.nome[0]}
-                    {a.cognome[0]}
+          {/* Box comunicazione rapida */}
+          <BoxComunicazione atleti={atleti} istruttori={istruttori} monitori={monitori} corsi={corsi} gare={gare} />
+        </div>
+
+        {/* Colonna destra — widget */}
+        <div className="space-y-5">
+          <WidgetCompleanni atleti={atleti} />
+          <WidgetFatture fatture={fatture} atleti={atleti} />
+
+          {/* Prossime gare */}
+          {upcoming_gare.length > 0 && (
+            <div className="bg-card rounded-xl shadow-card p-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <Trophy className="w-4 h-4 text-primary" />
+                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Prossime gare</h3>
+              </div>
+              {upcoming_gare.slice(0, 3).map((g) => (
+                <div key={g.id} className="flex items-center gap-3">
+                  <div
+                    className={`text-center px-2 py-1.5 rounded-lg min-w-[40px]
+                    ${days_until(g.data) <= 7 ? "bg-orange-100 text-orange-700" : "bg-muted/50 text-muted-foreground"}`}
+                  >
+                    <p className="text-xs font-bold tabular-nums">{days_until(g.data)}gg</p>
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">
-                      {a.nome} {a.cognome}
-                    </p>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{g.nome}</p>
                     <p className="text-xs text-muted-foreground">
-                      {t(a.livello_amatori)} • {calculate_age(a.data_nascita)} {t("eta")}
+                      {g.localita} · {g.atleti_iscritti?.length || 0} atleti
                     </p>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
+          )}
 
-          <div className="bg-card rounded-xl shadow-card p-5">
-            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">
-              {t("ultime_comunicazioni")}
-            </h3>
-            <div className="space-y-3">
-              {recent_comms.length === 0 ? (
-                <p className="text-xs text-muted-foreground">{t("nessun_risultato")}</p>
-              ) : (
-                recent_comms.map((c: any) => (
-                  <div key={c.id} className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <MessageSquare className="w-3 h-3 text-muted-foreground shrink-0" />
-                      <p className="text-sm font-medium text-foreground truncate">{c.titolo}</p>
-                    </div>
-                    <p className="text-xs text-muted-foreground pl-5">{c.data}</p>
-                  </div>
-                ))
-              )}
+          {/* Ultime comunicazioni */}
+          {comunicazioni.length > 0 && (
+            <div className="bg-card rounded-xl shadow-card p-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-primary" />
+                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Comunicazioni</h3>
+              </div>
+              {comunicazioni.slice(0, 3).map((c) => (
+                <div key={c.id} className="space-y-0.5">
+                  <p className="text-sm font-medium text-foreground">{c.titolo}</p>
+                  <p className="text-xs text-muted-foreground">{c.data}</p>
+                </div>
+              ))}
             </div>
-          </div>
-        </aside>
+          )}
+        </div>
       </div>
     </div>
   );
