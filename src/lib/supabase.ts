@@ -21,7 +21,5 @@ export function get_current_club_id(): string {
   return club_state.current_id;
 }
 
-// Manteniamo CURRENT_CLUB_ID come getter per compatibilità
-Object.defineProperty(exports, "CURRENT_CLUB_ID", {
-  get: () => club_state.current_id,
-});
+// Esporta CURRENT_CLUB_ID come valore leggibile (usare get_current_club_id() per il valore aggiornato)
+export const CURRENT_CLUB_ID = club_state.current_id;
