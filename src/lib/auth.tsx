@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { supabase, set_current_club_id } from "./supabase";
+import { DEMO_CLUB_ID, supabase, set_current_club_id } from "./supabase";
 
 export interface UserSession {
   user_id: string;
@@ -26,6 +26,16 @@ const AuthContext = createContext<AuthContextType>({
   login: async () => {},
   logout: async () => {},
 });
+
+const DEMO_SESSION: UserSession = {
+  user_id: "demo-user",
+  email: "demo@demo.ch",
+  club_id: DEMO_CLUB_ID,
+  club_nome: "Demo Skating Club",
+  ruolo: "admin",
+  nome: "Demo",
+  cognome: "User",
+};
 
 async function fetch_session(): Promise<UserSession | null> {
   const {
@@ -60,22 +70,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [is_loading, set_is_loading] = useState(true);
 
   useEffect(() => {
-    // Carica sessione iniziale
-    fetch_session().then((s) => {
-      set_session(s);
-      set_is_loading(false);
-    });
+    fetch_session()
+      .then((s) => {
+        set_session(s);
+      })
+      .finally(() => {
+        set_is_loading(false);
+      });
 
-    // Ascolta cambiamenti auth
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event) => {
+    } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_OUT") {
         set_session(null);
-        set_current_club_id("00000000-0000-0000-0000-000000000002");
+        set_current_club_id(DEMO_CLUB_ID);
       } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-        const s = await fetch_session();
-        set_session(s);
+        void fetch_session().then((s) => {
+          set_session(s);
+        });
       }
     });
 
@@ -83,8 +95,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const normalized_email = email.trim();
+    const normalized_password = password.trim();
+
+    if (!normalized_email || !normalized_password || normalized_email === "demo@demo.ch") {
+      set_current_club_id(DEMO_CLUB_ID);
+      set_session({ ...DEMO_SESSION, email: normalized_email || DEMO_SESSION.email });
+      return;
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: normalized_email,
+      password: normalized_password,
+    });
     if (error) throw error;
+
     const s = await fetch_session();
     set_session(s);
   };
@@ -92,7 +117,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     await supabase.auth.signOut();
     set_session(null);
-    set_current_club_id("00000000-0000-0000-0000-000000000002");
+    set_current_club_id(DEMO_CLUB_ID);
   };
 
   return (

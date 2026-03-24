@@ -5,23 +5,33 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Lock, Mail, Globe } from 'lucide-react';
+import { toast } from 'sonner';
 
 const LoginPage: React.FC = () => {
   const { t, locale, set_locale } = useI18n();
   const { login } = useAuth();
   const [email, set_email] = useState('');
   const [password, set_password] = useState('');
+  const [is_submitting, set_is_submitting] = useState(false);
 
-  const handle_submit = (e: React.FormEvent) => {
+  const handle_submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    login(email || 'demo@demo.ch', password || 'demo');
+    set_is_submitting(true);
+
+    try {
+      await login(email, password);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Login non riuscito';
+      toast.error(message);
+    } finally {
+      set_is_submitting(false);
+    }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30">
       <div className="w-full max-w-md mx-4">
         <div className="bg-card rounded-xl shadow-card p-8 space-y-8">
-          {/* Logo */}
           <div className="flex flex-col items-center gap-4">
             <div className="w-14 h-14 bg-primary rounded-xl flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-xl tracking-tight">C</span>
@@ -32,7 +42,6 @@ const LoginPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Language selector */}
           <div className="flex justify-center">
             <Select value={locale} onValueChange={(v) => set_locale(v as Locale)}>
               <SelectTrigger className="w-48">
@@ -47,7 +56,6 @@ const LoginPage: React.FC = () => {
             </Select>
           </div>
 
-          {/* Form */}
           <form onSubmit={handle_submit} className="space-y-4">
             <div className="space-y-2">
               <div className="relative">
@@ -73,8 +81,8 @@ const LoginPage: React.FC = () => {
                 />
               </div>
             </div>
-            <Button type="submit" className="w-full bg-primary hover:bg-primary/90">
-              {t('accedi')}
+            <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={is_submitting}>
+              {is_submitting ? '...' : t('accedi')}
             </Button>
           </form>
 
