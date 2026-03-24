@@ -306,19 +306,6 @@ const SuperAdminPage: React.FC = () => {
   const [tab, set_tab] = useState<"clubs" | "azioni" | "utenti" | "db">("clubs");
   const [log, set_log] = useState<string[]>([]);
 
-  // Controllo accesso superadmin
-  if (session?.ruolo !== "superadmin") {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center space-y-3">
-          <Shield className="w-12 h-12 text-destructive mx-auto" />
-          <h2 className="text-xl font-bold text-foreground">Accesso negato</h2>
-          <p className="text-muted-foreground">Questa pagina è riservata ai Super Admin.</p>
-        </div>
-      </div>
-    );
-  }
-
   const add_log = (msg: string) => {
     const ts = new Date().toLocaleTimeString("it-CH");
     set_log((prev) => [`[${ts}] ${msg}`, ...prev.slice(0, 49)]);
