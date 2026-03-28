@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -61,8 +61,77 @@ function use_tipi_corso() {
   });
 }
 
+// ─── NumInput ──────────────────────────────────────────────
+function to_num(v: string | number): number {
+  if (typeof v === "number") return isNaN(v) ? 0 : v;
+  const n = parseFloat(String(v).replace(",", "."));
+  return isNaN(n) ? 0 : n;
+}
+
 const input_cls =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
+
+const NumInput: React.FC<{
+  value: string | number;
+  onChange: (v: string) => void;
+  className?: string;
+  placeholder?: string;
+}> = ({ value, onChange, className = "", placeholder = "0.00" }) => {
+  const [local, set_local] = useState(() => {
+    const n = to_num(String(value));
+    return n === 0 ? "" : n.toFixed(2);
+  });
+  const [focused, set_focused] = useState(false);
+
+  useEffect(() => {
+    if (!focused) {
+      const n = to_num(String(value));
+      set_local(n === 0 ? "" : n.toFixed(2));
+    }
+  }, [value, focused]);
+
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      value={local}
+      placeholder={placeholder}
+      onFocus={() => set_focused(true)}
+      onKeyDown={(e) => {
+        const allowed = [
+          "Backspace",
+          "Delete",
+          "Tab",
+          "Escape",
+          "Enter",
+          "ArrowLeft",
+          "ArrowRight",
+          "ArrowUp",
+          "ArrowDown",
+          "Home",
+          "End",
+        ];
+        if (allowed.includes(e.key)) return;
+        if ((e.key === "." || e.key === ",") && !local.includes(".")) return;
+        if (/^\d$/.test(e.key)) return;
+        if (e.ctrlKey || e.metaKey) return;
+        e.preventDefault();
+      }}
+      onChange={(e) => {
+        const v = e.target.value.replace(",", ".");
+        set_local(v);
+        onChange(v);
+      }}
+      onBlur={() => {
+        set_focused(false);
+        const n = to_num(local);
+        set_local(n === 0 ? "" : n.toFixed(2));
+        onChange(String(n));
+      }}
+      className={`${input_cls} ${className}`}
+    />
+  );
+};
 
 const Field: React.FC<{ label: string; children: React.ReactNode; required?: boolean }> = ({
   label,
@@ -668,8 +737,14 @@ const CorsoModal: React.FC<{
     giorno: corso?.giorno || "Lunedì",
     ora_inizio: corso?.ora_inizio?.slice(0, 5) || "08:00",
     ora_fine: corso?.ora_fine?.slice(0, 5) || "09:00",
-    costo_mensile: corso?.costo_mensile ?? 0,
-    costo_annuale: corso?.costo_annuale ?? 0,
+    costo_mensile_str: (() => {
+      const n = to_num(corso?.costo_mensile ?? 0);
+      return n === 0 ? "" : n.toFixed(2);
+    })(),
+    costo_annuale_str: (() => {
+      const n = to_num(corso?.costo_annuale ?? 0);
+      return n === 0 ? "" : n.toFixed(2);
+    })(),
     istruttori_ids: corso?.istruttori_ids || [],
     attivo: corso?.stato === "attivo" || corso?.attivo !== false,
     note: corso?.note || "",
@@ -735,15 +810,20 @@ const CorsoModal: React.FC<{
       set_confirm_forzatura(true);
       return;
     }
-    on_save({ ...form, id: corso?.id });
+    on_save({
+      ...form,
+      id: corso?.id,
+      costo_mensile: to_num(form.costo_mensile_str),
+      costo_annuale: to_num(form.costo_annuale_str),
+    });
   };
 
   const istruttori_attivi = istruttori.filter((i) => i.attivo);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-card rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+      <div className="bg-card rounded-2xl shadow-xl w-full max-w-lg flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
           <h2 className="text-base font-bold text-foreground">{corso?.id ? "Modifica corso" : "Nuovo corso"}</h2>
           <button onClick={on_close} className="text-muted-foreground hover:text-foreground">
             <X className="w-5 h-5" />
@@ -751,7 +831,7 @@ const CorsoModal: React.FC<{
         </div>
 
         {confirm_forzatura && (
-          <div className="mx-6 mt-4 bg-orange-50 border border-orange-200 rounded-xl p-4 space-y-3">
+          <div className="mx-6 mt-4 bg-orange-50 border border-orange-200 rounded-xl p-4 space-y-3 flex-shrink-0">
             <div className="flex items-start gap-2">
               <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
               <div className="space-y-1">
@@ -771,7 +851,12 @@ const CorsoModal: React.FC<{
                 size="sm"
                 onClick={() => {
                   set_confirm_forzatura(false);
-                  on_save({ ...form, id: corso?.id });
+                  on_save({
+                    ...form,
+                    id: corso?.id,
+                    costo_mensile: to_num(form.costo_mensile_str),
+                    costo_annuale: to_num(form.costo_annuale_str),
+                  });
                 }}
                 disabled={saving}
                 className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
@@ -782,8 +867,8 @@ const CorsoModal: React.FC<{
           </div>
         )}
 
-        <Tabs defaultValue="info" className="px-6 pt-4">
-          <TabsList className="w-full flex">
+        <Tabs defaultValue="info" className="px-6 pt-4 flex flex-col flex-1 overflow-hidden">
+          <TabsList className="w-full flex flex-shrink-0">
             <TabsTrigger value="info" className="flex-1">
               Informazioni
             </TabsTrigger>
@@ -798,182 +883,187 @@ const CorsoModal: React.FC<{
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="info" className="py-4 space-y-4">
-            <Field label="Nome" required>
-              <input
-                value={form.nome}
-                onChange={(e) => set_val("nome", e.target.value)}
-                placeholder="es. Corso Avanzato"
-                className={input_cls}
-              />
-            </Field>
-            <Field label="Tipo">
-              <TipoCorsoSelect
-                value={form.tipo}
-                on_change={(v) => set_val("tipo", v)}
-                tipi={tipi_corso}
-                on_add_tipo={on_add_tipo}
-              />
-            </Field>
-            <div className="grid grid-cols-3 gap-3">
-              <Field label="Giorno">
-                <select value={form.giorno} onChange={(e) => set_val("giorno", e.target.value)} className={input_cls}>
-                  {GIORNI_DB.map((g) => (
-                    <option key={g} value={g}>
-                      {g}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Ora inizio">
+          <div className="overflow-y-auto flex-1">
+            <TabsContent value="info" className="py-4 space-y-4">
+              <Field label="Nome" required>
                 <input
-                  type="time"
-                  value={form.ora_inizio}
-                  onChange={(e) => set_val("ora_inizio", e.target.value)}
+                  value={form.nome}
+                  onChange={(e) => set_val("nome", e.target.value)}
+                  placeholder="es. Corso Avanzato"
                   className={input_cls}
                 />
               </Field>
-              <Field label="Ora fine">
-                <input
-                  type="time"
-                  value={form.ora_fine}
-                  onChange={(e) => set_val("ora_fine", e.target.value)}
-                  className={input_cls}
+              <Field label="Tipo">
+                <TipoCorsoSelect
+                  value={form.tipo}
+                  on_change={(v) => set_val("tipo", v)}
+                  tipi={tipi_corso}
+                  on_add_tipo={on_add_tipo}
                 />
               </Field>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Costo mensile">
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF</span>
+              <div className="grid grid-cols-3 gap-3">
+                <Field label="Giorno">
+                  <select value={form.giorno} onChange={(e) => set_val("giorno", e.target.value)} className={input_cls}>
+                    {GIORNI_DB.map((g) => (
+                      <option key={g} value={g}>
+                        {g}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Ora inizio">
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={form.costo_mensile}
-                    onChange={(e) => set_val("costo_mensile", parseFloat(e.target.value) || 0)}
-                    className={`${input_cls} pl-11`}
+                    type="time"
+                    value={form.ora_inizio}
+                    onChange={(e) => set_val("ora_inizio", e.target.value)}
+                    className={input_cls}
                   />
-                </div>
-              </Field>
-              <Field label="Costo annuale">
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF</span>
+                </Field>
+                <Field label="Ora fine">
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={form.costo_annuale}
-                    onChange={(e) => set_val("costo_annuale", parseFloat(e.target.value) || 0)}
-                    className={`${input_cls} pl-11`}
+                    type="time"
+                    value={form.ora_fine}
+                    onChange={(e) => set_val("ora_fine", e.target.value)}
+                    className={input_cls}
                   />
-                </div>
-              </Field>
-            </div>
-            <Field label="Istruttori">
-              <div className="space-y-2 max-h-40 overflow-y-auto">
-                {istruttori_attivi.map((i) => {
-                  const selected = form.istruttori_ids.includes(i.id);
-                  const disponibile = is_istruttore_disponibile(i, form.giorno, form.ora_inizio, form.ora_fine);
-                  const ha_conflitto = corsi.some(
-                    (c) =>
-                      c.id !== corso?.id &&
-                      c.istruttori_ids?.includes(i.id) &&
-                      c.giorno === form.giorno &&
-                      c.attivo !== false &&
-                      time_to_min(c.ora_inizio?.slice(0, 5)) < time_to_min(form.ora_fine) &&
-                      time_to_min(c.ora_fine?.slice(0, 5)) > time_to_min(form.ora_inizio),
-                  );
-                  return (
-                    <div
-                      key={i.id}
-                      onClick={() => toggle_istruttore(i.id)}
-                      className={`flex items-center justify-between px-3 py-2.5 rounded-xl border-2 cursor-pointer transition-all ${selected ? (ha_conflitto ? "border-destructive bg-destructive/5" : !disponibile ? "border-orange-400 bg-orange-50" : "border-primary bg-primary/5") : "border-border hover:border-primary/40 bg-background"}`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <div
-                          className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${selected ? (ha_conflitto ? "border-destructive bg-destructive" : "border-primary bg-primary") : "border-muted-foreground"}`}
-                        >
-                          {selected && <span className="text-white text-[10px] font-bold">✓</span>}
-                        </div>
-                        <span className="text-sm font-medium text-foreground">
-                          {i.nome} {i.cognome}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {selected && ha_conflitto && (
-                          <span className="text-[10px] font-bold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded-full">
-                            Conflitto
-                          </span>
-                        )}
-                        {selected && !ha_conflitto && !disponibile && (
-                          <span className="text-[10px] font-bold text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded-full">
-                            Non disponibile
-                          </span>
-                        )}
-                        {!selected && (
-                          <span
-                            className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${disponibile ? "text-success bg-success/10" : "text-muted-foreground bg-muted/50"}`}
-                          >
-                            {disponibile ? "✓ Disponibile" : "Non disp."}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+                </Field>
               </div>
-            </Field>
-            <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
-              <input
-                type="checkbox"
-                id="attivo_corso"
-                checked={form.attivo}
-                onChange={(e) => set_val("attivo", e.target.checked)}
-                className="w-4 h-4 accent-primary"
-              />
-              <label htmlFor="attivo_corso" className="text-sm font-medium text-foreground cursor-pointer">
-                Corso attivo
-              </label>
-            </div>
-            <Field label="Note">
-              <textarea
-                value={form.note}
-                onChange={(e) => set_val("note", e.target.value)}
-                rows={2}
-                placeholder="Note aggiuntive..."
-                className={`${input_cls} resize-none`}
-              />
-            </Field>
-          </TabsContent>
 
-          <TabsContent value="iscrizioni" className="py-4">
-            {corso?.id && (
-              <TabIscrizioni
-                corso_id={corso.id}
-                atleti_iscritti_ids={corso.atleti_ids || []}
-                tutti_atleti={atleti}
-                on_refresh={() => qc.invalidateQueries({ queryKey: ["corsi"] })}
-              />
-            )}
-          </TabsContent>
-          <TabsContent value="monitori" className="py-4">
-            {corso?.id && (
-              <TabMonitori
-                corso={corso}
-                tutti_monitori={monitori}
-                on_refresh={() => qc.invalidateQueries({ queryKey: ["corsi"] })}
-              />
-            )}
-          </TabsContent>
-          <TabsContent value="presenze" className="py-4">
-            {corso?.id && (
-              <TabPresenze corso={corso} tutti_atleti={atleti} tutti_monitori={monitori} istruttori={istruttori} />
-            )}
-          </TabsContent>
+              {/* ← Costi con NumInput */}
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Costo mensile">
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">
+                      CHF
+                    </span>
+                    <NumInput
+                      value={form.costo_mensile_str}
+                      onChange={(v) => set_val("costo_mensile_str", v)}
+                      className="pl-11"
+                      placeholder="0.00"
+                    />
+                  </div>
+                </Field>
+                <Field label="Costo annuale">
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">
+                      CHF
+                    </span>
+                    <NumInput
+                      value={form.costo_annuale_str}
+                      onChange={(v) => set_val("costo_annuale_str", v)}
+                      className="pl-11"
+                      placeholder="0.00"
+                    />
+                  </div>
+                </Field>
+              </div>
+
+              <Field label="Istruttori">
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {istruttori_attivi.map((i) => {
+                    const selected = form.istruttori_ids.includes(i.id);
+                    const disponibile = is_istruttore_disponibile(i, form.giorno, form.ora_inizio, form.ora_fine);
+                    const ha_conflitto = corsi.some(
+                      (c) =>
+                        c.id !== corso?.id &&
+                        c.istruttori_ids?.includes(i.id) &&
+                        c.giorno === form.giorno &&
+                        c.attivo !== false &&
+                        time_to_min(c.ora_inizio?.slice(0, 5)) < time_to_min(form.ora_fine) &&
+                        time_to_min(c.ora_fine?.slice(0, 5)) > time_to_min(form.ora_inizio),
+                    );
+                    return (
+                      <div
+                        key={i.id}
+                        onClick={() => toggle_istruttore(i.id)}
+                        className={`flex items-center justify-between px-3 py-2.5 rounded-xl border-2 cursor-pointer transition-all ${selected ? (ha_conflitto ? "border-destructive bg-destructive/5" : !disponibile ? "border-orange-400 bg-orange-50" : "border-primary bg-primary/5") : "border-border hover:border-primary/40 bg-background"}`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${selected ? (ha_conflitto ? "border-destructive bg-destructive" : "border-primary bg-primary") : "border-muted-foreground"}`}
+                          >
+                            {selected && <span className="text-white text-[10px] font-bold">✓</span>}
+                          </div>
+                          <span className="text-sm font-medium text-foreground">
+                            {i.nome} {i.cognome}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {selected && ha_conflitto && (
+                            <span className="text-[10px] font-bold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded-full">
+                              Conflitto
+                            </span>
+                          )}
+                          {selected && !ha_conflitto && !disponibile && (
+                            <span className="text-[10px] font-bold text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded-full">
+                              Non disponibile
+                            </span>
+                          )}
+                          {!selected && (
+                            <span
+                              className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${disponibile ? "text-success bg-success/10" : "text-muted-foreground bg-muted/50"}`}
+                            >
+                              {disponibile ? "✓ Disponibile" : "Non disp."}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Field>
+              <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
+                <input
+                  type="checkbox"
+                  id="attivo_corso"
+                  checked={form.attivo}
+                  onChange={(e) => set_val("attivo", e.target.checked)}
+                  className="w-4 h-4 accent-primary"
+                />
+                <label htmlFor="attivo_corso" className="text-sm font-medium text-foreground cursor-pointer">
+                  Corso attivo
+                </label>
+              </div>
+              <Field label="Note">
+                <textarea
+                  value={form.note}
+                  onChange={(e) => set_val("note", e.target.value)}
+                  rows={2}
+                  placeholder="Note aggiuntive..."
+                  className={`${input_cls} resize-none`}
+                />
+              </Field>
+            </TabsContent>
+
+            <TabsContent value="iscrizioni" className="py-4">
+              {corso?.id && (
+                <TabIscrizioni
+                  corso_id={corso.id}
+                  atleti_iscritti_ids={corso.atleti_ids || []}
+                  tutti_atleti={atleti}
+                  on_refresh={() => qc.invalidateQueries({ queryKey: ["corsi"] })}
+                />
+              )}
+            </TabsContent>
+            <TabsContent value="monitori" className="py-4">
+              {corso?.id && (
+                <TabMonitori
+                  corso={corso}
+                  tutti_monitori={monitori}
+                  on_refresh={() => qc.invalidateQueries({ queryKey: ["corsi"] })}
+                />
+              )}
+            </TabsContent>
+            <TabsContent value="presenze" className="py-4">
+              {corso?.id && (
+                <TabPresenze corso={corso} tutti_atleti={atleti} tutti_monitori={monitori} istruttori={istruttori} />
+              )}
+            </TabsContent>
+          </div>
         </Tabs>
 
-        <div className="px-6 py-4 border-t border-border space-y-2">
+        <div className="px-6 py-4 border-t border-border space-y-2 flex-shrink-0">
           <div className="flex gap-2">
             <Button variant="outline" onClick={on_close} disabled={saving} className="flex-1">
               Annulla
@@ -1030,7 +1120,6 @@ const CorsoCard: React.FC<{
       onClick={onClick}
       className="bg-card rounded-xl shadow-card p-5 hover:shadow-card-hover transition-shadow cursor-pointer border border-border/50 hover:border-primary/30 space-y-4"
     >
-      {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="font-semibold text-foreground text-base">{corso.nome}</h3>
@@ -1046,21 +1135,22 @@ const CorsoCard: React.FC<{
           </div>
         </div>
         <div className="flex flex-col items-end gap-0.5 shrink-0">
-          <div className="flex items-center gap-1.5">
-            <span
-              className={`inline-block w-2 h-2 rounded-full ${corso.stato === "attivo" ? "bg-success" : "bg-muted-foreground"}`}
-            />
-          </div>
-          {corso.costo_mensile > 0 && (
-            <span className="text-xs text-muted-foreground tabular-nums">CHF {corso.costo_mensile}/mese</span>
+          <span
+            className={`inline-block w-2 h-2 rounded-full ${corso.stato === "attivo" ? "bg-success" : "bg-muted-foreground"}`}
+          />
+          {to_num(corso.costo_mensile) > 0 && (
+            <span className="text-xs text-muted-foreground tabular-nums">
+              CHF {to_num(corso.costo_mensile).toFixed(2)}/mese
+            </span>
           )}
-          {corso.costo_annuale > 0 && (
-            <span className="text-xs text-muted-foreground tabular-nums">CHF {corso.costo_annuale}/anno</span>
+          {to_num(corso.costo_annuale) > 0 && (
+            <span className="text-xs text-muted-foreground tabular-nums">
+              CHF {to_num(corso.costo_annuale).toFixed(2)}/anno
+            </span>
           )}
         </div>
       </div>
 
-      {/* Personale */}
       <div className="space-y-3">
         {istruttori_corso.length > 0 && (
           <div className="space-y-1.5">
@@ -1077,7 +1167,6 @@ const CorsoCard: React.FC<{
             </div>
           </div>
         )}
-
         {monitori_corso.length > 0 && (
           <div className="space-y-1.5">
             <p className="text-[10px] font-bold uppercase tracking-wide text-teal-700">Monitori</p>
@@ -1093,7 +1182,6 @@ const CorsoCard: React.FC<{
             </div>
           </div>
         )}
-
         {aiuto_corso.length > 0 && (
           <div className="space-y-1.5">
             <p className="text-[10px] font-bold uppercase tracking-wide text-blue-700">Aiuto Monitori</p>
@@ -1109,13 +1197,11 @@ const CorsoCard: React.FC<{
             </div>
           </div>
         )}
-
         {istruttori_corso.length === 0 && monitori_corso.length === 0 && aiuto_corso.length === 0 && (
           <p className="text-xs text-muted-foreground italic">Nessun personale assegnato</p>
         )}
       </div>
 
-      {/* Footer */}
       <div className="flex items-center justify-between pt-2 border-t border-border/50">
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
           <Users className="w-3.5 h-3.5" />
