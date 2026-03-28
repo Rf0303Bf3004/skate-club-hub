@@ -864,12 +864,10 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                       type="button"
                       variant="outline"
                       size="sm"
-                      disabled={invito_loading}
-                      onClick={() => handle_genera_invito(form[`${prefix}_email`])}
+                      onClick={() => prefix === "genitore1" ? set_show_invito_1(true) : set_show_invito_2(true)}
                       className="w-full gap-1.5 mt-2"
                     >
-                      <Mail className="w-3.5 h-3.5" />
-                      {invito_loading ? "..." : "Genera Invito App"}
+                      📱 Genera Invito App
                     </Button>
                   )}
                 </div>
