@@ -276,17 +276,13 @@ export function use_upsert_corso() {
           if (ie) throw ie;
         }
       }
-      // Salva monitori e aiuto monitori
       if (data.monitori !== undefined || data.aiuto_monitori !== undefined) {
         const { error: dm } = await supabase.from("corsi_monitori").delete().eq("corso_id", corso_id);
         if (dm) throw dm;
         const monitori_rows: any[] = [];
-        for (const pid of data.monitori || []) {
-          monitori_rows.push({ corso_id, persona_id: pid, tipo: "monitore" });
-        }
-        for (const pid of data.aiuto_monitori || []) {
+        for (const pid of data.monitori || []) monitori_rows.push({ corso_id, persona_id: pid, tipo: "monitore" });
+        for (const pid of data.aiuto_monitori || [])
           monitori_rows.push({ corso_id, persona_id: pid, tipo: "aiuto_monitore" });
-        }
         if (monitori_rows.length > 0) {
           const { error: im } = await supabase.from("corsi_monitori").insert(monitori_rows);
           if (im) throw im;
@@ -329,11 +325,7 @@ export function use_salva_corsi_monitori() {
       const { error: de } = await supabase.from("corsi_monitori").delete().eq("corso_id", data.corso_id);
       if (de) throw de;
       if (data.monitori.length > 0) {
-        const rows = data.monitori.map((m) => ({
-          corso_id: data.corso_id,
-          persona_id: m.persona_id,
-          tipo: m.tipo,
-        }));
+        const rows = data.monitori.map((m) => ({ corso_id: data.corso_id, persona_id: m.persona_id, tipo: m.tipo }));
         const { error: ie } = await supabase.from("corsi_monitori").insert(rows);
         if (ie) throw ie;
       }
@@ -639,7 +631,7 @@ export function use_genera_fatture_mensili() {
           data_emissione: now.toISOString().split("T")[0],
           data_scadenza: data_fine_mese,
           pagata: false,
-          tipo: "corso",
+          tipo: "Corso", // ← FIX: maiuscolo
           riferimento_id: corso.id,
         });
       }
@@ -670,7 +662,7 @@ export function use_genera_fatture_mensili() {
           data_emissione: now.toISOString().split("T")[0],
           data_scadenza: data_fine_mese,
           pagata: false,
-          tipo: "lezione_privata",
+          tipo: "Lezione Privata", // ← FIX: formato corretto
           riferimento_id: null,
         });
       }
