@@ -1,12 +1,12 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useI18n } from "@/lib/i18n";
-import { use_istruttori, use_lezioni_private, use_corsi, use_campi } from "@/hooks/use-supabase-data";
+import { use_istruttori, use_lezioni_private, use_corsi, use_campi, use_atleti } from "@/hooks/use-supabase-data";
 import { use_upsert_istruttore, use_save_disponibilita, use_elimina_istruttore } from "@/hooks/use-supabase-mutations";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, ArrowLeft, Euro, Clock, TrendingUp, Download, Upload, X } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Euro, Clock, TrendingUp, Download, Upload, X, Search } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
@@ -41,7 +41,6 @@ function ore_fmt(ore: number): string {
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
-// Converte stringa in numero preciso per calcoli e salvataggio
 function to_num(v: string | number): number {
   if (typeof v === "number") return isNaN(v) ? 0 : v;
   const cleaned = String(v).replace(",", ".");
@@ -59,37 +58,78 @@ const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, 
 const input_cls =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
 
-// ─── NumInput — accetta punto e virgola, non azzera mai ────
 const NumInput: React.FC<{
   value: string | number;
   onChange: (v: string) => void;
   className?: string;
   placeholder?: string;
-}> = ({ value, onChange, className = "", placeholder = "0" }) => (
-  <input
-    type="text"
-    inputMode="decimal"
-    value={value}
-    placeholder={placeholder}
-    onChange={(e) => {
-      const v = e.target.value.replace(",", ".");
-      if (v === "" || v === "." || /^\d*\.?\d*$/.test(v)) {
+}> = ({ value, onChange, className = "", placeholder = "0" }) => {
+  const [local, set_local] = useState(String(value));
+
+  useEffect(() => {
+    if (to_num(String(value)) !== to_num(local)) {
+      set_local(String(value));
+    }
+  }, [value]);
+
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      value={local}
+      placeholder={placeholder}
+      onKeyDown={(e) => {
+        const allowed = [
+          "Backspace",
+          "Delete",
+          "Tab",
+          "Escape",
+          "Enter",
+          "ArrowLeft",
+          "ArrowRight",
+          "ArrowUp",
+          "ArrowDown",
+          "Home",
+          "End",
+        ];
+        if (allowed.includes(e.key)) return;
+        if ((e.key === "." || e.key === ",") && !local.includes(".")) return;
+        if (/^\d$/.test(e.key)) return;
+        if (e.ctrlKey || e.metaKey) return;
+        e.preventDefault();
+      }}
+      onChange={(e) => {
+        const v = e.target.value.replace(",", ".");
+        set_local(v);
         onChange(v);
-      }
-    }}
-    className={`${input_cls} ${className}`}
-  />
-);
+      }}
+      onBlur={() => {
+        const n = to_num(local);
+        set_local(n === 0 && local === "" ? "" : String(n));
+        onChange(String(n));
+      }}
+      className={`${input_cls} ${className}`}
+    />
+  );
+};
 
 // ─── Modal nuovo/modifica istruttore ───────────────────────
 const IstruttoreModal: React.FC<{
   istruttore?: any;
+  atleti: any[];
   on_close: () => void;
   on_save: (data: any) => Promise<void>;
   on_delete?: () => Promise<void>;
   saving: boolean;
   deleting: boolean;
-}> = ({ istruttore, on_close, on_save, on_delete, saving, deleting }) => {
+}> = ({ istruttore, atleti, on_close, on_save, on_delete, saving, deleting }) => {
+  const [ruolo, set_ruolo] = useState(istruttore?.ruolo || "istruttore");
+  const [step, set_step] = useState<"ruolo" | "cerca_atleta" | "form">(istruttore?.id ? "form" : "ruolo");
+  const [search, set_search] = useState("");
+  const [atleta_selezionato, set_atleta_selezionato] = useState<any>(null);
+  const [confirm_delete, set_confirm_delete] = useState(false);
+  const [uploading_foto, set_uploading_foto] = useState(false);
+
   const [form, set_form] = useState({
     nome: istruttore?.nome || "",
     cognome: istruttore?.cognome || "",
@@ -102,13 +142,38 @@ const IstruttoreModal: React.FC<{
     tag_nfc: istruttore?.tag_nfc || "",
     ruolo: istruttore?.ruolo || "istruttore",
     compenso_orario: String(istruttore?.compenso_orario || ""),
+    atleta_id: istruttore?.atleta_id || null,
   });
-  const [confirm_delete, set_confirm_delete] = useState(false);
-  const [uploading_foto, set_uploading_foto] = useState(false);
 
   const set_val = useCallback((k: string, v: any) => {
     set_form((p) => ({ ...p, [k]: v }));
   }, []);
+
+  const is_monitore = ruolo === "monitore" || ruolo === "aiuto_monitore";
+
+  const atleti_filtrati = useMemo(() => {
+    if (!search) return atleti;
+    const q = search.toLowerCase();
+    return atleti.filter((a: any) => `${a.nome} ${a.cognome}`.toLowerCase().includes(q));
+  }, [atleti, search]);
+
+  const handle_seleziona_atleta = (atleta: any) => {
+    set_atleta_selezionato(atleta);
+    set_form((p) => ({
+      ...p,
+      nome: atleta.nome,
+      cognome: atleta.cognome,
+      foto_url: atleta.foto_url || "",
+      atleta_id: atleta.id,
+      ruolo,
+    }));
+    set_step("form");
+  };
+
+  const handle_inserimento_manuale = () => {
+    set_form((p) => ({ ...p, ruolo }));
+    set_step("form");
+  };
 
   const handle_foto_upload = async (file: File) => {
     set_uploading_foto(true);
@@ -127,15 +192,24 @@ const IstruttoreModal: React.FC<{
     }
   };
 
-  const is_monitore = form.ruolo === "monitore" || form.ruolo === "aiuto_monitore";
-
   const handle_save = () => {
     on_save({
       ...form,
       id: istruttore?.id,
+      ruolo,
       costo_minuto_lezione_privata: to_num(form.costo_minuto_lezione_privata),
       compenso_orario: to_num(form.compenso_orario),
     });
+  };
+
+  const livello_display = (atleta: any) => {
+    if (atleta.carriera_artistica || atleta.carriera_stile) {
+      const parts = [];
+      if (atleta.carriera_artistica) parts.push(`Art: ${atleta.carriera_artistica}`);
+      if (atleta.carriera_stile) parts.push(`Stile: ${atleta.carriera_stile}`);
+      return parts.join(" · ");
+    }
+    return atleta.percorso_amatori || atleta.livello_amatori || "—";
   };
 
   return (
@@ -143,163 +217,291 @@ const IstruttoreModal: React.FC<{
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <h2 className="text-base font-bold text-foreground">
-            {istruttore?.id ? "Modifica" : "Nuovo"} {RUOLI.find((r) => r.value === form.ruolo)?.label || "Istruttore"}
+            {istruttore?.id ? "Modifica" : "Nuovo"} {RUOLI.find((r) => r.value === ruolo)?.label || "Istruttore"}
           </h2>
           <button onClick={on_close} className="text-muted-foreground hover:text-foreground">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="px-6 py-5 space-y-4">
-          <Field label="Foto">
-            <div className="flex items-center gap-3">
-              {form.foto_url ? (
-                <img
-                  src={form.foto_url}
-                  alt="foto"
-                  className="w-16 h-16 rounded-full object-cover border border-border"
-                />
+        {/* ── Step 1: scelta ruolo (solo nuovo) ── */}
+        {step === "ruolo" && (
+          <div className="px-6 py-5 space-y-4">
+            <p className="text-sm text-muted-foreground">Seleziona il ruolo da assegnare:</p>
+            <div className="space-y-2">
+              {RUOLI.map((r) => (
+                <div
+                  key={r.value}
+                  onClick={() => {
+                    set_ruolo(r.value);
+                    set_form((p) => ({ ...p, ruolo: r.value }));
+                    if (r.value === "monitore" || r.value === "aiuto_monitore") {
+                      set_step("cerca_atleta");
+                    } else {
+                      set_step("form");
+                    }
+                  }}
+                  className="p-4 rounded-xl border-2 border-border hover:border-primary cursor-pointer transition-all"
+                >
+                  <p className="text-sm font-medium text-foreground">{r.label}</p>
+                  {(r.value === "monitore" || r.value === "aiuto_monitore") && (
+                    <p className="text-xs text-muted-foreground mt-0.5">Cerca prima tra gli atleti del club</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Step 2: cerca atleta (monitore/aiuto) ── */}
+        {step === "cerca_atleta" && (
+          <div className="px-6 py-5 space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Cerca l'atleta da nominare <strong>{RUOLI.find((r) => r.value === ruolo)?.label}</strong>:
+            </p>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                value={search}
+                onChange={(e) => set_search(e.target.value)}
+                placeholder="Cerca per nome o cognome..."
+                className={`${input_cls} pl-9`}
+                autoFocus
+              />
+            </div>
+
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {atleti_filtrati.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">Nessun atleta trovato</p>
               ) : (
-                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-muted-foreground text-xl font-bold">
-                  {form.nome?.[0] || "?"}
-                  {form.cognome?.[0] || ""}
+                atleti_filtrati.map((a: any) => (
+                  <div
+                    key={a.id}
+                    onClick={() => handle_seleziona_atleta(a)}
+                    className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-primary hover:bg-primary/5 cursor-pointer transition-all"
+                  >
+                    {a.foto_url ? (
+                      <img src={a.foto_url} alt={a.nome} className="w-10 h-10 rounded-full object-cover shrink-0" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+                        {a.nome[0]}
+                        {a.cognome[0]}
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-foreground text-sm">
+                        {a.nome} {a.cognome}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{livello_display(a)}</p>
+                    </div>
+                    <Badge variant="secondary" className="text-xs shrink-0">
+                      Seleziona
+                    </Badge>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="pt-2 border-t border-border">
+              <button
+                onClick={handle_inserimento_manuale}
+                className="w-full text-sm text-muted-foreground hover:text-foreground py-2 text-center transition-colors"
+              >
+                Non trovo l'atleta → Inserimento manuale
+              </button>
+            </div>
+
+            <Button variant="outline" size="sm" onClick={() => set_step("ruolo")} className="w-full">
+              ← Torna alla scelta ruolo
+            </Button>
+          </div>
+        )}
+
+        {/* ── Step 3: form dati ── */}
+        {step === "form" && (
+          <>
+            {atleta_selezionato && (
+              <div className="px-6 pt-4">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/5 border border-primary/20">
+                  {atleta_selezionato.foto_url ? (
+                    <img
+                      src={atleta_selezionato.foto_url}
+                      alt={atleta_selezionato.nome}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+                      {atleta_selezionato.nome[0]}
+                      {atleta_selezionato.cognome[0]}
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-sm font-medium text-foreground">
+                      {atleta_selezionato.nome} {atleta_selezionato.cognome}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{livello_display(atleta_selezionato)}</p>
+                  </div>
+                  <Badge className="ml-auto text-xs bg-primary/10 text-primary border-0">Atleta collegato</Badge>
+                </div>
+              </div>
+            )}
+
+            <div className="px-6 py-5 space-y-4">
+              {!atleta_selezionato && (
+                <Field label="Foto">
+                  <div className="flex items-center gap-3">
+                    {form.foto_url ? (
+                      <img
+                        src={form.foto_url}
+                        alt="foto"
+                        className="w-16 h-16 rounded-full object-cover border border-border"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-muted-foreground text-xl font-bold">
+                        {form.nome?.[0] || "?"}
+                        {form.cognome?.[0] || ""}
+                      </div>
+                    )}
+                    <label
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg border border-border cursor-pointer hover:bg-muted/30 text-sm text-muted-foreground transition-colors ${uploading_foto ? "opacity-50 pointer-events-none" : ""}`}
+                    >
+                      <Upload className="w-4 h-4" />
+                      {uploading_foto ? "Caricamento..." : "Carica foto"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => e.target.files?.[0] && handle_foto_upload(e.target.files[0])}
+                      />
+                    </label>
+                  </div>
+                </Field>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Nome *">
+                  <input value={form.nome} onChange={(e) => set_val("nome", e.target.value)} className={input_cls} />
+                </Field>
+                <Field label="Cognome *">
+                  <input
+                    value={form.cognome}
+                    onChange={(e) => set_val("cognome", e.target.value)}
+                    className={input_cls}
+                  />
+                </Field>
+              </div>
+
+              <Field label="Email">
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => set_val("email", e.target.value)}
+                  className={input_cls}
+                />
+              </Field>
+
+              <Field label="Telefono">
+                <input
+                  value={form.telefono}
+                  onChange={(e) => set_val("telefono", e.target.value)}
+                  className={input_cls}
+                />
+              </Field>
+
+              <Field label="TAG NFC">
+                <input
+                  value={form.tag_nfc}
+                  onChange={(e) => set_val("tag_nfc", e.target.value)}
+                  placeholder="es. 04:A3:B2:C1:D0"
+                  className={input_cls}
+                />
+              </Field>
+
+              {is_monitore ? (
+                <Field label="Compenso orario (CHF/ora)">
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">
+                      CHF/h
+                    </span>
+                    <NumInput
+                      value={form.compenso_orario}
+                      onChange={(v) => set_val("compenso_orario", v)}
+                      className="pl-14"
+                      placeholder="es. 25.50"
+                    />
+                  </div>
+                </Field>
+              ) : (
+                <Field label="Prezzo al minuto lezioni private (vendita al cliente)">
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">
+                      CHF/min
+                    </span>
+                    <NumInput
+                      value={form.costo_minuto_lezione_privata}
+                      onChange={(v) => set_val("costo_minuto_lezione_privata", v)}
+                      className="pl-16"
+                      placeholder="es. 1.50"
+                    />
+                  </div>
+                </Field>
+              )}
+
+              <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
+                <input
+                  type="checkbox"
+                  id="attivo_istr"
+                  checked={form.attivo}
+                  onChange={(e) => set_val("attivo", e.target.checked)}
+                  className="w-4 h-4 accent-primary"
+                />
+                <label htmlFor="attivo_istr" className="text-sm font-medium text-foreground cursor-pointer">
+                  Attivo
+                </label>
+              </div>
+
+              <Field label="Note">
+                <textarea
+                  value={form.note}
+                  onChange={(e) => set_val("note", e.target.value)}
+                  rows={2}
+                  className={`${input_cls} resize-none`}
+                />
+              </Field>
+            </div>
+
+            <div className="px-6 py-4 border-t border-border space-y-2">
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={on_close} disabled={saving} className="flex-1">
+                  Annulla
+                </Button>
+                <Button onClick={handle_save} disabled={saving} className="flex-1 bg-primary hover:bg-primary/90">
+                  {saving ? "..." : "💾 Salva"}
+                </Button>
+              </div>
+              {istruttore?.id && !confirm_delete && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => set_confirm_delete(true)}
+                  className="w-full text-destructive hover:bg-destructive/10"
+                >
+                  <Trash2 className="w-3.5 h-3.5 mr-2" /> Elimina
+                </Button>
+              )}
+              {confirm_delete && (
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => set_confirm_delete(false)} className="flex-1">
+                    Annulla
+                  </Button>
+                  <Button variant="destructive" size="sm" onClick={on_delete} disabled={deleting} className="flex-1">
+                    {deleting ? "..." : "Elimina definitivamente"}
+                  </Button>
                 </div>
               )}
-              <label
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg border border-border cursor-pointer hover:bg-muted/30 text-sm text-muted-foreground transition-colors ${uploading_foto ? "opacity-50 pointer-events-none" : ""}`}
-              >
-                <Upload className="w-4 h-4" />
-                {uploading_foto ? "Caricamento..." : "Carica foto"}
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => e.target.files?.[0] && handle_foto_upload(e.target.files[0])}
-                />
-              </label>
             </div>
-          </Field>
-
-          <Field label="Ruolo">
-            <select value={form.ruolo} onChange={(e) => set_val("ruolo", e.target.value)} className={input_cls}>
-              {RUOLI.map((r) => (
-                <option key={r.value} value={r.value}>
-                  {r.label}
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Nome *">
-              <input value={form.nome} onChange={(e) => set_val("nome", e.target.value)} className={input_cls} />
-            </Field>
-            <Field label="Cognome *">
-              <input value={form.cognome} onChange={(e) => set_val("cognome", e.target.value)} className={input_cls} />
-            </Field>
-          </div>
-
-          <Field label="Email">
-            <input
-              type="email"
-              value={form.email}
-              onChange={(e) => set_val("email", e.target.value)}
-              className={input_cls}
-            />
-          </Field>
-
-          <Field label="Telefono">
-            <input value={form.telefono} onChange={(e) => set_val("telefono", e.target.value)} className={input_cls} />
-          </Field>
-
-          <Field label="TAG NFC">
-            <input
-              value={form.tag_nfc}
-              onChange={(e) => set_val("tag_nfc", e.target.value)}
-              placeholder="es. 04:A3:B2:C1:D0"
-              className={input_cls}
-            />
-          </Field>
-
-          {is_monitore ? (
-            <Field label="Compenso orario (CHF/ora)">
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF/h</span>
-                <NumInput
-                  value={form.compenso_orario}
-                  onChange={(v) => set_val("compenso_orario", v)}
-                  className="pl-14"
-                  placeholder="es. 25.50"
-                />
-              </div>
-            </Field>
-          ) : (
-            <Field label="Prezzo al minuto lezioni private (vendita al cliente)">
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF/min</span>
-                <NumInput
-                  value={form.costo_minuto_lezione_privata}
-                  onChange={(v) => set_val("costo_minuto_lezione_privata", v)}
-                  className="pl-16"
-                  placeholder="es. 1.50"
-                />
-              </div>
-            </Field>
-          )}
-
-          <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
-            <input
-              type="checkbox"
-              id="attivo_istr"
-              checked={form.attivo}
-              onChange={(e) => set_val("attivo", e.target.checked)}
-              className="w-4 h-4 accent-primary"
-            />
-            <label htmlFor="attivo_istr" className="text-sm font-medium text-foreground cursor-pointer">
-              Attivo
-            </label>
-          </div>
-
-          <Field label="Note">
-            <textarea
-              value={form.note}
-              onChange={(e) => set_val("note", e.target.value)}
-              rows={2}
-              className={`${input_cls} resize-none`}
-            />
-          </Field>
-        </div>
-
-        <div className="px-6 py-4 border-t border-border space-y-2">
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={on_close} disabled={saving} className="flex-1">
-              Annulla
-            </Button>
-            <Button onClick={handle_save} disabled={saving} className="flex-1 bg-primary hover:bg-primary/90">
-              {saving ? "..." : "💾 Salva"}
-            </Button>
-          </div>
-          {istruttore?.id && !confirm_delete && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => set_confirm_delete(true)}
-              className="w-full text-destructive hover:bg-destructive/10"
-            >
-              <Trash2 className="w-3.5 h-3.5 mr-2" /> Elimina
-            </Button>
-          )}
-          {confirm_delete && (
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => set_confirm_delete(false)} className="flex-1">
-                Annulla
-              </Button>
-              <Button variant="destructive" size="sm" onClick={on_delete} disabled={deleting} className="flex-1">
-                {deleting ? "..." : "Elimina definitivamente"}
-              </Button>
-            </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -913,6 +1115,7 @@ const TabCompenso: React.FC<{
 const InstructorsPage: React.FC = () => {
   const { t } = useI18n();
   const { data: istruttori = [], isLoading } = use_istruttori();
+  const { data: atleti = [] } = use_atleti();
   const { data: lezioni = [] } = use_lezioni_private();
   const { data: corsi = [] } = use_corsi();
   const { data: campi = [] } = use_campi();
@@ -1016,6 +1219,7 @@ const InstructorsPage: React.FC = () => {
           <IstruttoreModal
             key={selected_modal?.id || "nuovo"}
             istruttore={selected_modal}
+            atleti={atleti}
             on_close={() => set_modal_open(false)}
             on_save={handle_save}
             on_delete={selected_modal?.id ? handle_delete : undefined}
@@ -1185,6 +1389,7 @@ const InstructorsPage: React.FC = () => {
         <IstruttoreModal
           key={selected_modal?.id || "nuovo"}
           istruttore={selected_modal}
+          atleti={atleti}
           on_close={() => set_modal_open(false)}
           on_save={handle_save}
           on_delete={selected_modal?.id ? handle_delete : undefined}
