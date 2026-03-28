@@ -1,8 +1,13 @@
 import React, { useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import {
-  use_corsi, use_gare, use_fatture, use_lezioni_private,
-  use_istruttori, use_tutti_club, get_istruttore_name_from_list,
+  use_corsi,
+  use_gare,
+  use_fatture,
+  use_lezioni_private,
+  use_istruttori,
+  use_tutti_club,
+  get_istruttore_name_from_list,
 } from "@/hooks/use-supabase-data";
 import { use_upsert_atleta, use_migra_atleta } from "@/hooks/use-supabase-mutations";
 import { calculate_age } from "@/lib/mock-data";
@@ -11,11 +16,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Shield, Medal, Save, Upload, Music, ArrowRightLeft, X } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 
@@ -24,10 +27,8 @@ interface Props {
   on_back: () => void;
 }
 
-const LEVELS = [
-  "pulcini","stellina_1","stellina_2","stellina_3","stellina_4",
-  "interbronzo","bronzo","interargento","argento","interoro","oro",
-];
+const LIVELLI_COMUNI = ["Pulcini", "Stellina 1", "Stellina 2", "Stellina 3", "Stellina 4"];
+const LIVELLI_CARRIERA = ["Interbronzo", "Bronzo", "Interargento", "Argento", "Interoro", "Oro"];
 
 // ─── Modal Migrazione ──────────────────────────────────────
 const MigraModal: React.FC<{
@@ -41,7 +42,6 @@ const MigraModal: React.FC<{
   const [note, set_note] = useState("");
   const [confirm, set_confirm] = useState(false);
 
-  // Escludi il club attuale
   const altri_club = tutti_club.filter((c: any) => c.id !== get_current_club_id());
 
   return (
@@ -50,7 +50,9 @@ const MigraModal: React.FC<{
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <div>
             <h2 className="text-base font-bold text-foreground">Migra atleta</h2>
-            <p className="text-xs text-muted-foreground">{atleta.nome} {atleta.cognome}</p>
+            <p className="text-xs text-muted-foreground">
+              {atleta.nome} {atleta.cognome}
+            </p>
           </div>
           <button onClick={on_close} className="text-muted-foreground hover:text-foreground">
             <X className="w-5 h-5" />
@@ -58,7 +60,6 @@ const MigraModal: React.FC<{
         </div>
 
         <div className="px-6 py-5 space-y-4">
-          {/* Info migrazione */}
           <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 space-y-1.5">
             <p className="text-xs font-bold text-primary uppercase tracking-wide">Cosa viene migrato</p>
             <p className="text-xs text-muted-foreground">✅ Anagrafica completa</p>
@@ -69,14 +70,13 @@ const MigraModal: React.FC<{
             <p className="text-xs text-muted-foreground">❌ Fatture (rimangono nel vecchio club)</p>
           </div>
 
-          {/* Selezione club destinazione */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
               Club di destinazione *
             </label>
             <select
               value={club_dest}
-              onChange={e => set_club_dest(e.target.value)}
+              onChange={(e) => set_club_dest(e.target.value)}
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
             >
               <option value="">Seleziona club...</option>
@@ -95,19 +95,21 @@ const MigraModal: React.FC<{
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Note</label>
             <textarea
               value={note}
-              onChange={e => set_note(e.target.value)}
+              onChange={(e) => set_note(e.target.value)}
               rows={2}
               placeholder="Motivo della migrazione (opzionale)..."
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
           </div>
 
-          {/* Conferma */}
           {club_dest && !confirm && (
             <div className="bg-orange-50 border border-orange-200 rounded-xl p-3">
               <p className="text-xs text-orange-700">
-                ⚠️ Questa operazione sposterà <strong>{atleta.nome} {atleta.cognome}</strong> nel club selezionato.
-                Non sarà più visibile in questo club.
+                ⚠️ Questa operazione sposterà{" "}
+                <strong>
+                  {atleta.nome} {atleta.cognome}
+                </strong>{" "}
+                nel club selezionato. Non sarà più visibile in questo club.
               </p>
             </div>
           )}
@@ -116,7 +118,9 @@ const MigraModal: React.FC<{
         <div className="px-6 py-4 border-t border-border space-y-2">
           {!confirm ? (
             <div className="flex gap-2">
-              <Button variant="outline" onClick={on_close} className="flex-1">Annulla</Button>
+              <Button variant="outline" onClick={on_close} className="flex-1">
+                Annulla
+              </Button>
               <Button
                 onClick={() => set_confirm(true)}
                 disabled={!club_dest}
@@ -129,7 +133,9 @@ const MigraModal: React.FC<{
             <div className="space-y-2">
               <p className="text-xs text-center text-muted-foreground">Sei sicuro? L'operazione non è reversibile.</p>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => set_confirm(false)} className="flex-1">← Indietro</Button>
+                <Button variant="outline" onClick={() => set_confirm(false)} className="flex-1">
+                  ← Indietro
+                </Button>
                 <Button
                   onClick={() => on_migra(club_dest, note)}
                   disabled={saving}
@@ -154,6 +160,9 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
 
   const [form, set_form] = useState({
     ...a,
+    percorso_amatori: a.percorso_amatori || a.livello_amatori || "Pulcini",
+    carriera_artistica: a.carriera_artistica || "",
+    carriera_stile: a.carriera_stile || "",
     genitore1_nome: a.genitore1_nome || a.genitore_1?.nome || "",
     genitore1_cognome: a.genitore1_cognome || a.genitore_1?.cognome || "",
     genitore1_telefono: a.genitore1_telefono || a.genitore_1?.telefono || "",
@@ -184,9 +193,13 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
     g.atleti_iscritti
       .filter((ai: any) => ai.atleta_id === a.id && ai.medaglia)
       .map((ai: any) => ({
-        gara: g.nome, data: g.data, medaglia: ai.medaglia,
-        punteggio_tecnico: ai.punteggio_tecnico, punteggio_artistico: ai.punteggio_artistico,
-        punteggio: ai.punteggio, posizione: ai.posizione,
+        gara: g.nome,
+        data: g.data,
+        medaglia: ai.medaglia,
+        punteggio_tecnico: ai.punteggio_tecnico,
+        punteggio_artistico: ai.punteggio_artistico,
+        punteggio: ai.punteggio,
+        posizione: ai.posizione,
       })),
   );
 
@@ -194,6 +207,8 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
     medals.filter((m: any) => m.medaglia?.toLowerCase() === tipo.toLowerCase()).length;
 
   const upd = (k: string, v: any) => set_form((p: any) => ({ ...p, [k]: v }));
+
+  const is_carriera_attiva = form.percorso_amatori === "Stellina 4";
 
   const handle_foto_upload = async (file: File) => {
     set_uploading_foto(true);
@@ -207,7 +222,9 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
       toast({ title: "✅ Foto caricata" });
     } catch (err: any) {
       toast({ title: "Errore upload foto", description: err?.message, variant: "destructive" });
-    } finally { set_uploading_foto(false); }
+    } finally {
+      set_uploading_foto(false);
+    }
   };
 
   const handle_disco_upload = async (file: File) => {
@@ -222,24 +239,37 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
       toast({ title: "✅ Disco caricato" });
     } catch (err: any) {
       toast({ title: "Errore upload disco", description: err?.message, variant: "destructive" });
-    } finally { set_uploading_disco(false); }
+    } finally {
+      set_uploading_disco(false);
+    }
   };
 
   const handle_save = async () => {
     try {
       await upsert.mutateAsync({
-        id: a.id, nome: form.nome, cognome: form.cognome,
+        id: a.id,
+        nome: form.nome,
+        cognome: form.cognome,
         data_nascita: form.data_nascita,
-        percorso_amatori: form.percorso_amatori || form.livello_amatori,
-        carriera_artistica: form.carriera_artistica, carriera_stile: form.carriera_stile,
-        atleta_federazione: form.atleta_federazione, ore_pista_stagione: form.ore_pista_stagione,
-        genitore1_nome: form.genitore1_nome, genitore1_cognome: form.genitore1_cognome,
-        genitore1_telefono: form.genitore1_telefono, genitore1_email: form.genitore1_email,
-        genitore2_nome: form.genitore2_nome, genitore2_cognome: form.genitore2_cognome,
-        genitore2_telefono: form.genitore2_telefono, genitore2_email: form.genitore2_email,
-        attivo: form.attivo !== false, note: form.note,
-        disco_in_preparazione: form.disco_in_preparazione, tag_nfc: form.tag_nfc,
-        foto_url: form.foto_url || null, disco_url: form.disco_url || null,
+        percorso_amatori: form.percorso_amatori,
+        carriera_artistica: is_carriera_attiva ? form.carriera_artistica || null : null,
+        carriera_stile: is_carriera_attiva ? form.carriera_stile || null : null,
+        atleta_federazione: is_carriera_attiva ? form.atleta_federazione : false,
+        ore_pista_stagione: form.ore_pista_stagione,
+        genitore1_nome: form.genitore1_nome,
+        genitore1_cognome: form.genitore1_cognome,
+        genitore1_telefono: form.genitore1_telefono,
+        genitore1_email: form.genitore1_email,
+        genitore2_nome: form.genitore2_nome,
+        genitore2_cognome: form.genitore2_cognome,
+        genitore2_telefono: form.genitore2_telefono,
+        genitore2_email: form.genitore2_email,
+        attivo: form.attivo !== false,
+        note: form.note,
+        disco_in_preparazione: form.disco_in_preparazione,
+        tag_nfc: form.tag_nfc,
+        foto_url: form.foto_url || null,
+        disco_url: form.disco_url || null,
         ruolo_pista: form.ruolo_pista || "atleta",
         compenso_orario_pista: form.compenso_orario_pista || 0,
         attivo_come_monitore: form.attivo_come_monitore || false,
@@ -267,13 +297,19 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   };
 
   const EditRow: React.FC<{ label: string; value: any; onChange: (v: string) => void; type?: string }> = ({
-    label, value, onChange, type,
+    label,
+    value,
+    onChange,
+    type,
   }) => (
     <div className="space-y-1.5">
       <Label className="text-sm text-muted-foreground">{label}</Label>
-      <Input type={type || "text"} value={value ?? ""} onChange={e => onChange(e.target.value)} className="h-9" />
+      <Input type={type || "text"} value={value ?? ""} onChange={(e) => onChange(e.target.value)} className="h-9" />
     </div>
   );
+
+  // Badge livello per header
+  const livello_display = form.carriera_artistica || form.carriera_stile ? null : form.percorso_amatori;
 
   return (
     <>
@@ -292,8 +328,12 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
             <ArrowLeft className="w-4 h-4 mr-2" /> {t("atleti")}
           </Button>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => set_show_migra(true)}
-              className="gap-1.5 text-xs border-primary/40 text-primary hover:bg-primary/5">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => set_show_migra(true)}
+              className="gap-1.5 text-xs border-primary/40 text-primary hover:bg-primary/5"
+            >
               <ArrowRightLeft className="w-3.5 h-3.5" /> Migra
             </Button>
             <Button onClick={handle_save} disabled={upsert.isPending} className="bg-primary hover:bg-primary/90">
@@ -302,27 +342,45 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
           </div>
         </div>
 
-        {/* Header atleta con foto */}
+        {/* Header atleta */}
         <div className="flex items-center gap-4">
           <div className="relative">
             {form.foto_url ? (
-              <img src={form.foto_url} alt={form.nome}
-                className="w-16 h-16 rounded-full object-cover border-2 border-border shadow-sm" />
+              <img
+                src={form.foto_url}
+                alt={form.nome}
+                className="w-16 h-16 rounded-full object-cover border-2 border-border shadow-sm"
+              />
             ) : (
               <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center text-accent text-lg font-bold">
-                {form.nome?.[0]}{form.cognome?.[0]}
+                {form.nome?.[0]}
+                {form.cognome?.[0]}
               </div>
             )}
             <label className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center cursor-pointer hover:bg-primary/90 shadow-sm">
               <Upload className="w-3 h-3 text-white" />
-              <input type="file" accept="image/*" className="hidden"
-                onChange={e => e.target.files?.[0] && handle_foto_upload(e.target.files[0])} />
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => e.target.files?.[0] && handle_foto_upload(e.target.files[0])}
+              />
             </label>
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-foreground">{form.nome} {form.cognome}</h1>
-            <div className="flex items-center gap-2 mt-1">
-              <Badge variant="secondary">{t(form.livello_amatori)}</Badge>
+            <h1 className="text-xl font-bold tracking-tight text-foreground">
+              {form.nome} {form.cognome}
+            </h1>
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              {livello_display && <Badge variant="secondary">{livello_display}</Badge>}
+              {form.carriera_artistica && (
+                <Badge className="bg-purple-100 text-purple-800 border-0 text-xs">
+                  Artistica: {form.carriera_artistica}
+                </Badge>
+              )}
+              {form.carriera_stile && (
+                <Badge className="bg-blue-100 text-blue-800 border-0 text-xs">Stile: {form.carriera_stile}</Badge>
+              )}
               {form.atleta_federazione && (
                 <Badge variant="outline" className="gap-1">
                   <Shield className="w-3 h-3" /> {t("atleta_federazione")}
@@ -347,22 +405,33 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
           {/* ── Anagrafica ── */}
           <TabsContent value="anagrafica" className="mt-6">
             <div className="bg-card rounded-xl shadow-card p-6 space-y-4 max-w-lg">
-              <EditRow label={t("nome")} value={form.nome} onChange={v => upd("nome", v)} />
-              <EditRow label={t("cognome")} value={form.cognome} onChange={v => upd("cognome", v)} />
-              <EditRow label={t("data_nascita")} value={form.data_nascita?.split("T")[0]}
-                onChange={v => upd("data_nascita", v)} type="date" />
+              <EditRow label={t("nome")} value={form.nome} onChange={(v) => upd("nome", v)} />
+              <EditRow label={t("cognome")} value={form.cognome} onChange={(v) => upd("cognome", v)} />
+              <EditRow
+                label={t("data_nascita")}
+                value={form.data_nascita?.split("T")[0]}
+                onChange={(v) => upd("data_nascita", v)}
+                type="date"
+              />
               <div className="flex justify-between items-center py-1">
                 <span className="text-sm text-muted-foreground">{t("eta")}</span>
                 <span className="text-sm font-medium text-foreground">{calculate_age(form.data_nascita)} anni</span>
               </div>
-              <EditRow label={t("ore_pista")} value={form.ore_pista_stagione}
-                onChange={v => upd("ore_pista_stagione", Number(v))} type="number" />
-              <EditRow label="TAG NFC" value={form.tag_nfc || ""} onChange={v => upd("tag_nfc", v)} />
+              <EditRow
+                label={t("ore_pista")}
+                value={form.ore_pista_stagione}
+                onChange={(v) => upd("ore_pista_stagione", Number(v))}
+                type="number"
+              />
+              <EditRow label="TAG NFC" value={form.tag_nfc || ""} onChange={(v) => upd("tag_nfc", v)} />
               <div className="space-y-1.5">
                 <Label className="text-sm text-muted-foreground">Disco in preparazione</Label>
-                <Input value={form.disco_in_preparazione || ""}
-                  onChange={e => upd("disco_in_preparazione", e.target.value)}
-                  placeholder="es. Romeo e Giulietta - Prokofiev" className="h-9" />
+                <Input
+                  value={form.disco_in_preparazione || ""}
+                  onChange={(e) => upd("disco_in_preparazione", e.target.value)}
+                  placeholder="es. Romeo e Giulietta - Prokofiev"
+                  className="h-9"
+                />
               </div>
               <div className="space-y-2">
                 <Label className="text-sm text-muted-foreground">File audio disco</Label>
@@ -372,20 +441,31 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                     <audio controls src={form.disco_url} className="flex-1 h-8" />
                   </div>
                 )}
-                <label className={`flex items-center gap-2 px-3 py-2 rounded-lg border border-border cursor-pointer hover:bg-muted/30 text-sm text-muted-foreground transition-colors w-fit ${uploading_disco ? "opacity-50 pointer-events-none" : ""}`}>
+                <label
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border border-border cursor-pointer hover:bg-muted/30 text-sm text-muted-foreground transition-colors w-fit ${uploading_disco ? "opacity-50 pointer-events-none" : ""}`}
+                >
                   <Upload className="w-4 h-4" />
                   {uploading_disco ? "Caricamento..." : form.disco_url ? "Sostituisci disco" : "Carica disco audio"}
-                  <input type="file" accept="audio/*" className="hidden"
-                    onChange={e => e.target.files?.[0] && handle_disco_upload(e.target.files[0])} />
+                  <input
+                    type="file"
+                    accept="audio/*"
+                    className="hidden"
+                    onChange={(e) => e.target.files?.[0] && handle_disco_upload(e.target.files[0])}
+                  />
                 </label>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-sm text-muted-foreground">{t("note")}</Label>
-                <Textarea value={form.note || ""} onChange={e => upd("note", e.target.value)} />
+                <Textarea value={form.note || ""} onChange={(e) => upd("note", e.target.value)} />
               </div>
               <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
-                <input type="checkbox" id="attivo_atleta" checked={form.attivo !== false}
-                  onChange={e => upd("attivo", e.target.checked)} className="w-4 h-4 accent-primary" />
+                <input
+                  type="checkbox"
+                  id="attivo_atleta"
+                  checked={form.attivo !== false}
+                  onChange={(e) => upd("attivo", e.target.checked)}
+                  className="w-4 h-4 accent-primary"
+                />
                 <label htmlFor="attivo_atleta" className="text-sm font-medium text-foreground cursor-pointer">
                   Atleta attiva
                 </label>
@@ -396,49 +476,117 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
           {/* ── Livello ── */}
           <TabsContent value="livello" className="mt-6">
             <div className="bg-card rounded-xl shadow-card p-6 space-y-5 max-w-lg">
+              {/* Percorso comune */}
               <div className="space-y-1.5">
-                <Label className="text-sm text-muted-foreground">{t("percorso_amatori")}</Label>
-                <Select value={form.percorso_amatori || form.livello_amatori}
-                  onValueChange={v => upd("percorso_amatori", v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Label className="text-sm text-muted-foreground">Percorso comune</Label>
+                <Select
+                  value={form.percorso_amatori}
+                  onValueChange={(v) => {
+                    set_form((p: any) => ({
+                      ...p,
+                      percorso_amatori: v,
+                      carriera_artistica: v !== "Stellina 4" ? "" : p.carriera_artistica,
+                      carriera_stile: v !== "Stellina 4" ? "" : p.carriera_stile,
+                      atleta_federazione: v !== "Stellina 4" ? false : p.atleta_federazione,
+                    }));
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
-                    {LEVELS.map(l => <SelectItem key={l} value={l}>{t(l)}</SelectItem>)}
+                    {LIVELLI_COMUNI.map((l) => (
+                      <SelectItem key={l} value={l}>
+                        {l}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-center gap-2">
-                <Checkbox checked={form.percorso_amatori_completato}
-                  onCheckedChange={v => upd("percorso_amatori_completato", !!v)} />
-                <label className="text-sm font-medium text-foreground">{t("percorso_completato")}</label>
-              </div>
-              <AnimatePresence>
-                {form.percorso_amatori_completato && (
-                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }} className="space-y-4 pt-2">
-                    <div className="space-y-1.5">
-                      <Label className="text-sm text-muted-foreground">{t("carriera_artistica")}</Label>
-                      <Input value={form.carriera_artistica || ""}
-                        onChange={e => upd("carriera_artistica", e.target.value)} className="h-9" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-sm text-muted-foreground">{t("carriera_stile")}</Label>
-                      <Input value={form.carriera_stile || ""}
-                        onChange={e => upd("carriera_stile", e.target.value)} className="h-9" />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Checkbox checked={form.atleta_federazione}
-                        onCheckedChange={v => upd("atleta_federazione", !!v)} />
-                      <label className="text-sm text-foreground">{t("atleta_federazione")}</label>
-                    </div>
-                  </motion.div>
+
+              {/* Carriera Artistica */}
+              <div className="space-y-1.5">
+                <Label
+                  className={`text-sm ${!is_carriera_attiva ? "text-muted-foreground/50" : "text-muted-foreground"}`}
+                >
+                  Carriera Artistica
+                </Label>
+                <Select
+                  value={form.carriera_artistica || "nessuna"}
+                  onValueChange={(v) => upd("carriera_artistica", v === "nessuna" ? "" : v)}
+                  disabled={!is_carriera_attiva}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Nessuna" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="nessuna">Nessuna</SelectItem>
+                    {LIVELLI_CARRIERA.map((l) => (
+                      <SelectItem key={l} value={l}>
+                        {l}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {!is_carriera_attiva && (
+                  <p className="text-xs text-muted-foreground italic">Si sblocca dopo Stellina 4</p>
                 )}
-              </AnimatePresence>
+              </div>
+
+              {/* Carriera Stile */}
+              <div className="space-y-1.5">
+                <Label
+                  className={`text-sm ${!is_carriera_attiva ? "text-muted-foreground/50" : "text-muted-foreground"}`}
+                >
+                  Carriera Stile
+                </Label>
+                <Select
+                  value={form.carriera_stile || "nessuna"}
+                  onValueChange={(v) => upd("carriera_stile", v === "nessuna" ? "" : v)}
+                  disabled={!is_carriera_attiva}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Nessuna" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="nessuna">Nessuna</SelectItem>
+                    {LIVELLI_CARRIERA.map((l) => (
+                      <SelectItem key={l} value={l}>
+                        {l}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {!is_carriera_attiva && (
+                  <p className="text-xs text-muted-foreground italic">Si sblocca dopo Stellina 4</p>
+                )}
+              </div>
+
+              {/* Atleta federazione */}
+              {is_carriera_attiva && (form.carriera_artistica || form.carriera_stile) && (
+                <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
+                  <input
+                    type="checkbox"
+                    id="fed_check"
+                    checked={form.atleta_federazione}
+                    onChange={(e) => upd("atleta_federazione", e.target.checked)}
+                    className="w-4 h-4 accent-primary"
+                  />
+                  <label htmlFor="fed_check" className="text-sm font-medium text-foreground cursor-pointer">
+                    Atleta federazione
+                  </label>
+                </div>
+              )}
+
+              {/* Ruolo in pista */}
               <div className="pt-4 border-t border-border space-y-3">
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Ruolo in pista</p>
                 <div className="space-y-1.5">
                   <Label className="text-sm text-muted-foreground">Ruolo</Label>
-                  <Select value={form.ruolo_pista || "atleta"} onValueChange={v => upd("ruolo_pista", v)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                  <Select value={form.ruolo_pista || "atleta"} onValueChange={(v) => upd("ruolo_pista", v)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="atleta">Solo atleta</SelectItem>
                       <SelectItem value="monitore">Monitore</SelectItem>
@@ -449,8 +597,14 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                 {(form.ruolo_pista === "monitore" || form.ruolo_pista === "aiuto_monitore") && (
                   <div className="space-y-1.5">
                     <Label className="text-sm text-muted-foreground">Compenso orario (CHF/ora)</Label>
-                    <Input type="number" min="0" step="0.5" value={form.compenso_orario_pista || 0}
-                      onChange={e => upd("compenso_orario_pista", Number(e.target.value))} className="h-9" />
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.5"
+                      value={form.compenso_orario_pista || 0}
+                      onChange={(e) => upd("compenso_orario_pista", Number(e.target.value))}
+                      className="h-9"
+                    />
                   </div>
                 )}
               </div>
@@ -463,22 +617,36 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border">
-                    <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">{t("nome")}</th>
-                    <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">{t("tipo")}</th>
-                    <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">{t("giorno")}</th>
-                    <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">{t("ora_inizio")}</th>
+                    <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                      {t("nome")}
+                    </th>
+                    <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                      {t("tipo")}
+                    </th>
+                    <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                      {t("giorno")}
+                    </th>
+                    <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                      {t("ora_inizio")}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {athlete_corsi.length === 0 ? (
-                    <tr><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground text-sm">Nessun corso iscritto.</td></tr>
+                    <tr>
+                      <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground text-sm">
+                        Nessun corso iscritto.
+                      </td>
+                    </tr>
                   ) : (
                     athlete_corsi.map((c: any) => (
                       <tr key={c.id} className="border-b border-border/50">
                         <td className="px-4 py-3 font-medium text-foreground">{c.nome}</td>
                         <td className="px-4 py-3 text-muted-foreground">{c.tipo}</td>
                         <td className="px-4 py-3 text-muted-foreground">{c.giorno}</td>
-                        <td className="px-4 py-3 tabular-nums text-muted-foreground">{c.ora_inizio?.slice(0, 5)} - {c.ora_fine?.slice(0, 5)}</td>
+                        <td className="px-4 py-3 tabular-nums text-muted-foreground">
+                          {c.ora_inizio?.slice(0, 5)} - {c.ora_fine?.slice(0, 5)}
+                        </td>
                       </tr>
                     ))
                   )}
@@ -493,28 +661,54 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border">
-                    <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">{t("nome")}</th>
-                    <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">{t("data")}</th>
-                    <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Tecnico</th>
-                    <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Artistico</th>
-                    <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">{t("posizione")}</th>
-                    <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">{t("medaglia")}</th>
+                    <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                      {t("nome")}
+                    </th>
+                    <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                      {t("data")}
+                    </th>
+                    <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                      Tecnico
+                    </th>
+                    <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                      Artistico
+                    </th>
+                    <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                      {t("posizione")}
+                    </th>
+                    <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                      {t("medaglia")}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {athlete_gare.length === 0 ? (
-                    <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground text-sm">Nessuna gara registrata.</td></tr>
+                    <tr>
+                      <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground text-sm">
+                        Nessuna gara registrata.
+                      </td>
+                    </tr>
                   ) : (
                     athlete_gare.map((g: any) => {
                       const entry = g.atleti_iscritti.find((ai: any) => ai.atleta_id === a.id);
                       return (
                         <tr key={g.id} className="border-b border-border/50">
                           <td className="px-4 py-3 font-medium text-foreground">{g.nome}</td>
-                          <td className="px-4 py-3 text-muted-foreground">{new Date(g.data + "T00:00:00").toLocaleDateString("it-CH")}</td>
-                          <td className="px-4 py-3 text-center tabular-nums text-muted-foreground">{entry?.punteggio_tecnico ?? "—"}</td>
-                          <td className="px-4 py-3 text-center tabular-nums text-muted-foreground">{entry?.punteggio_artistico ?? "—"}</td>
-                          <td className="px-4 py-3 text-center tabular-nums text-muted-foreground">{entry?.posizione ? `${entry.posizione}°` : "—"}</td>
-                          <td className="px-4 py-3 text-center">{entry?.medaglia ? <MedalBadge tipo={entry.medaglia} /> : "—"}</td>
+                          <td className="px-4 py-3 text-muted-foreground">
+                            {new Date(g.data + "T00:00:00").toLocaleDateString("it-CH")}
+                          </td>
+                          <td className="px-4 py-3 text-center tabular-nums text-muted-foreground">
+                            {entry?.punteggio_tecnico ?? "—"}
+                          </td>
+                          <td className="px-4 py-3 text-center tabular-nums text-muted-foreground">
+                            {entry?.punteggio_artistico ?? "—"}
+                          </td>
+                          <td className="px-4 py-3 text-center tabular-nums text-muted-foreground">
+                            {entry?.posizione ? `${entry.posizione}°` : "—"}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            {entry?.medaglia ? <MedalBadge tipo={entry.medaglia} /> : "—"}
+                          </td>
                         </tr>
                       );
                     })
@@ -541,20 +735,23 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
             </div>
             {medals.length > 0 ? (
               <div className="bg-card rounded-xl shadow-card p-5 space-y-2">
-                {medals.sort((a: any, b: any) => (b.data || "").localeCompare(a.data || "")).map((m: any, i: number) => {
-                  const pt = m.punteggio_tecnico;
-                  const pa = m.punteggio_artistico;
-                  const totale = pt != null && pa != null ? (Number(pt) + Number(pa)).toFixed(2) : m.punteggio;
-                  return (
-                    <div key={i} className="flex items-center gap-3 text-sm">
-                      <MedalBadge tipo={m.medaglia} />
-                      <span className="font-medium text-foreground">{m.gara}</span>
-                      <span className="text-muted-foreground tabular-nums">
-                        {totale ? `— ${totale}pts` : ""}{m.posizione ? `, #${m.posizione}` : ""}
-                      </span>
-                    </div>
-                  );
-                })}
+                {medals
+                  .sort((a: any, b: any) => (b.data || "").localeCompare(a.data || ""))
+                  .map((m: any, i: number) => {
+                    const pt = m.punteggio_tecnico;
+                    const pa = m.punteggio_artistico;
+                    const totale = pt != null && pa != null ? (Number(pt) + Number(pa)).toFixed(2) : m.punteggio;
+                    return (
+                      <div key={i} className="flex items-center gap-3 text-sm">
+                        <MedalBadge tipo={m.medaglia} />
+                        <span className="font-medium text-foreground">{m.gara}</span>
+                        <span className="text-muted-foreground tabular-nums">
+                          {totale ? `— ${totale}pts` : ""}
+                          {m.posizione ? `, #${m.posizione}` : ""}
+                        </span>
+                      </div>
+                    );
+                  })}
               </div>
             ) : (
               <div className="bg-card rounded-xl shadow-card p-8 text-center text-muted-foreground">
@@ -573,12 +770,15 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
               ].map(({ label, prefix }) => (
                 <div key={prefix} className="bg-card rounded-xl shadow-card p-5 space-y-3">
                   <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{label}</h4>
-                  {["nome", "cognome", "telefono", "email"].map(field => (
+                  {["nome", "cognome", "telefono", "email"].map((field) => (
                     <div key={field} className="space-y-1.5">
                       <Label className="text-sm text-muted-foreground">{t(field)}</Label>
-                      <Input type={field === "email" ? "email" : "text"}
+                      <Input
+                        type={field === "email" ? "email" : "text"}
                         value={form[`${prefix}_${field}`] || ""}
-                        onChange={e => upd(`${prefix}_${field}`, e.target.value)} className="h-9" />
+                        onChange={(e) => upd(`${prefix}_${field}`, e.target.value)}
+                        className="h-9"
+                      />
                     </div>
                   ))}
                 </div>
@@ -592,23 +792,39 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border">
-                    <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">{t("numero_fattura")}</th>
-                    <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">{t("descrizione")}</th>
-                    <th className="text-right px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">{t("importo")}</th>
-                    <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">{t("stato")}</th>
+                    <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                      {t("numero_fattura")}
+                    </th>
+                    <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                      {t("descrizione")}
+                    </th>
+                    <th className="text-right px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                      {t("importo")}
+                    </th>
+                    <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                      {t("stato")}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {athlete_fatture.length === 0 ? (
-                    <tr><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground text-sm">Nessuna fattura.</td></tr>
+                    <tr>
+                      <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground text-sm">
+                        Nessuna fattura.
+                      </td>
+                    </tr>
                   ) : (
                     athlete_fatture.map((f: any) => (
                       <tr key={f.id} className="border-b border-border/50">
                         <td className="px-4 py-3 font-medium tabular-nums text-foreground">{f.numero}</td>
                         <td className="px-4 py-3 text-muted-foreground">{f.descrizione}</td>
-                        <td className="px-4 py-3 text-right tabular-nums font-medium text-foreground">CHF {Number(f.importo).toFixed(2)}</td>
+                        <td className="px-4 py-3 text-right tabular-nums font-medium text-foreground">
+                          CHF {Number(f.importo).toFixed(2)}
+                        </td>
                         <td className="px-4 py-3 text-center">
-                          <Badge variant={f.stato === "pagata" ? "default" : "destructive"} className="text-xs">{t(f.stato)}</Badge>
+                          <Badge variant={f.stato === "pagata" ? "default" : "destructive"} className="text-xs">
+                            {t(f.stato)}
+                          </Badge>
                         </td>
                       </tr>
                     ))
@@ -624,22 +840,42 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border">
-                    <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">{t("data")}</th>
-                    <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">{t("istruttori")}</th>
-                    <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">{t("ora_inizio")}</th>
-                    <th className="text-right px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">{t("importo")}</th>
+                    <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                      {t("data")}
+                    </th>
+                    <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                      {t("istruttori")}
+                    </th>
+                    <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                      {t("ora_inizio")}
+                    </th>
+                    <th className="text-right px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                      {t("importo")}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {athlete_lezioni.length === 0 ? (
-                    <tr><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground text-sm">Nessuna lezione privata.</td></tr>
+                    <tr>
+                      <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground text-sm">
+                        Nessuna lezione privata.
+                      </td>
+                    </tr>
                   ) : (
                     athlete_lezioni.map((l: any) => (
                       <tr key={l.id} className="border-b border-border/50">
-                        <td className="px-4 py-3 text-muted-foreground">{new Date(l.data + "T00:00:00").toLocaleDateString("it-CH")}</td>
-                        <td className="px-4 py-3 font-medium text-foreground">{get_istruttore_name_from_list(istruttori, l.istruttore_id)}</td>
-                        <td className="px-4 py-3 tabular-nums text-muted-foreground">{l.ora_inizio?.slice(0, 5)} - {l.ora_fine?.slice(0, 5)}</td>
-                        <td className="px-4 py-3 text-right tabular-nums font-medium text-foreground">CHF {Number(l.costo || l.costo_totale || 0).toFixed(2)}</td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {new Date(l.data + "T00:00:00").toLocaleDateString("it-CH")}
+                        </td>
+                        <td className="px-4 py-3 font-medium text-foreground">
+                          {get_istruttore_name_from_list(istruttori, l.istruttore_id)}
+                        </td>
+                        <td className="px-4 py-3 tabular-nums text-muted-foreground">
+                          {l.ora_inizio?.slice(0, 5)} - {l.ora_fine?.slice(0, 5)}
+                        </td>
+                        <td className="px-4 py-3 text-right tabular-nums font-medium text-foreground">
+                          CHF {Number(l.costo || l.costo_totale || 0).toFixed(2)}
+                        </td>
                       </tr>
                     ))
                   )}
