@@ -20,6 +20,7 @@ import {
   Menu,
   X,
   ShieldAlert,
+  ShieldCheck,
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const location = useLocation();
   const [sidebar_open, set_sidebar_open] = React.useState(false);
 
+  const is_superadmin = session?.ruolo === "superadmin";
+
   return (
     <div className="flex min-h-screen bg-background">
       {sidebar_open && (
@@ -57,13 +60,14 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
       <aside
         className={`
-        fixed lg:static inset-y-0 left-0 z-50
-        w-64 bg-muted/40 flex flex-col
-        shadow-[1px_0_0_0_hsl(var(--border))]
-        transform transition-transform duration-200 ease-out
-        ${sidebar_open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
-      `}
+          fixed lg:static inset-y-0 left-0 z-50
+          w-64 bg-muted/40 flex flex-col
+          shadow-[1px_0_0_0_hsl(var(--border))]
+          transform transition-transform duration-200 ease-out
+          ${sidebar_open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+        `}
       >
+        {/* Logo */}
         <div className="p-5 flex items-center gap-3">
           <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center shrink-0">
             <span className="text-primary-foreground font-bold text-lg">C</span>
@@ -75,15 +79,17 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         </div>
 
         <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
-          {nav_items.map((item) => {
-            const is_active =
-              location.pathname === item.path || (item.path !== "/" && location.pathname.startsWith(item.path));
-            return (
-              <NavLink
-                key={item.key}
-                to={item.path}
-                onClick={() => set_sidebar_open(false)}
-                className={`
+          {/* Voci normali — nascoste per superadmin */}
+          {!is_superadmin &&
+            nav_items.map((item) => {
+              const is_active =
+                location.pathname === item.path || (item.path !== "/" && location.pathname.startsWith(item.path));
+              return (
+                <NavLink
+                  key={item.key}
+                  to={item.path}
+                  onClick={() => set_sidebar_open(false)}
+                  className={`
                   flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium
                   transition-all duration-150
                   ${
@@ -92,20 +98,19 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   }
                 `}
-              >
-                <item.icon className="w-4 h-4 shrink-0" />
-                <span>{t(item.key)}</span>
-              </NavLink>
-            );
-          })}
+                >
+                  <item.icon className="w-4 h-4 shrink-0" />
+                  <span>{t(item.key)}</span>
+                </NavLink>
+              );
+            })}
 
-          <div className="pt-3 pb-1">
-            <div className="border-t border-border" />
-          </div>
-
-          {(() => {
-            const is_active = location.pathname === "/gestione-avanzata";
-            return (
+          {/* Gestione Avanzata — solo per admin normali */}
+          {!is_superadmin && (
+            <>
+              <div className="pt-3 pb-1">
+                <div className="border-t border-border" />
+              </div>
               <NavLink
                 to="/gestione-avanzata"
                 onClick={() => set_sidebar_open(false)}
@@ -113,7 +118,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                   flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium
                   transition-all duration-150
                   ${
-                    is_active
+                    location.pathname === "/gestione-avanzata"
                       ? "bg-destructive text-destructive-foreground shadow-sm"
                       : "text-destructive/70 hover:bg-destructive/10 hover:text-destructive"
                   }
@@ -122,12 +127,89 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                 <ShieldAlert className="w-4 h-4 shrink-0" />
                 <span>Gestione Avanzata</span>
               </NavLink>
-            );
-          })()}
+            </>
+          )}
+
+          {/* ── SEZIONE SUPERADMIN ── solo per superadmin */}
+          {is_superadmin && (
+            <>
+              <div className="pt-2 pb-1">
+                <p className="px-3 text-[10px] font-bold uppercase tracking-widest text-purple-400 mb-1">SuperAdmin</p>
+              </div>
+
+              <NavLink
+                to="/superadmin"
+                onClick={() => set_sidebar_open(false)}
+                className={`
+                  flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium
+                  transition-all duration-150
+                  ${
+                    location.pathname === "/superadmin"
+                      ? "bg-purple-600 text-white shadow-sm"
+                      : "text-purple-500 hover:bg-purple-100 hover:text-purple-700"
+                  }
+                `}
+              >
+                <ShieldCheck className="w-4 h-4 shrink-0" />
+                <span>Dashboard</span>
+              </NavLink>
+
+              <NavLink
+                to="/superadmin/club"
+                onClick={() => set_sidebar_open(false)}
+                className={`
+                  flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium
+                  transition-all duration-150
+                  ${
+                    location.pathname === "/superadmin/club"
+                      ? "bg-purple-600 text-white shadow-sm"
+                      : "text-purple-500 hover:bg-purple-100 hover:text-purple-700"
+                  }
+                `}
+              >
+                <Users className="w-4 h-4 shrink-0" />
+                <span>Gestione Club</span>
+              </NavLink>
+
+              <NavLink
+                to="/superadmin/manutenzione"
+                onClick={() => set_sidebar_open(false)}
+                className={`
+                  flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium
+                  transition-all duration-150
+                  ${
+                    location.pathname === "/superadmin/manutenzione"
+                      ? "bg-purple-600 text-white shadow-sm"
+                      : "text-purple-500 hover:bg-purple-100 hover:text-purple-700"
+                  }
+                `}
+              >
+                <Settings className="w-4 h-4 shrink-0" />
+                <span>Manutenzione Ordinaria</span>
+              </NavLink>
+
+              <NavLink
+                to="/superadmin/manutenzione-straordinaria"
+                onClick={() => set_sidebar_open(false)}
+                className={`
+                  flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium
+                  transition-all duration-150
+                  ${
+                    location.pathname === "/superadmin/manutenzione-straordinaria"
+                      ? "bg-red-600 text-white shadow-sm"
+                      : "text-red-400 hover:bg-red-50 hover:text-red-600"
+                  }
+                `}
+              >
+                <ShieldAlert className="w-4 h-4 shrink-0" />
+                <span>Manutenzione Straordinaria</span>
+              </NavLink>
+            </>
+          )}
         </nav>
 
+        {/* Footer sidebar */}
         <div className="p-3 border-t border-border space-y-1">
-          {/* Info utente loggato */}
           {session && (
             <div className="px-3 py-2 rounded-md bg-muted/50">
               <p className="text-xs font-medium text-foreground truncate">
@@ -147,6 +229,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         </div>
       </aside>
 
+      {/* Contenuto principale */}
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-14 shadow-header flex items-center justify-between px-4 lg:px-8 bg-background/80 backdrop-blur-md sticky top-0 z-30">
           <div className="flex items-center gap-3">
