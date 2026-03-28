@@ -26,6 +26,7 @@ import {
   XCircle,
   Clock,
   ArrowRightLeft,
+  Users,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
@@ -191,12 +192,9 @@ const TabIscrizioni: React.FC<{
   const handle_iscrivi = async (atleta_id: string) => {
     set_saving(true);
     try {
-      const { error } = await supabase.from("iscrizioni_corsi").insert({
-        corso_id,
-        atleta_id,
-        attiva: true,
-        data_iscrizione: new Date().toISOString().split("T")[0],
-      });
+      const { error } = await supabase
+        .from("iscrizioni_corsi")
+        .insert({ corso_id, atleta_id, attiva: true, data_iscrizione: new Date().toISOString().split("T")[0] });
       if (error) throw error;
       set_query("");
       on_refresh();
@@ -323,36 +321,24 @@ const TabMonitori: React.FC<{
   const [local_monitori, set_local_monitori] = useState<string[]>(corso.monitori || []);
   const [local_aiuto, set_local_aiuto] = useState<string[]>(corso.aiuto_monitori || []);
 
-  // Sync from parent when corso changes (after refetch)
   React.useEffect(() => {
     set_local_monitori(corso.monitori || []);
     set_local_aiuto(corso.aiuto_monitori || []);
   }, [corso.monitori, corso.aiuto_monitori]);
 
-  const monitori_ids = local_monitori;
-  const aiuto_ids = local_aiuto;
-
   const toggle_persona = async (persona_id: string, tipo: "monitore" | "aiuto_monitore") => {
     set_saving(true);
     try {
-      const lista = tipo === "monitore" ? monitori_ids : aiuto_ids;
+      const lista = tipo === "monitore" ? local_monitori : local_aiuto;
       const is_present = lista.includes(persona_id);
-
-      // Optimistic update
-      if (tipo === "monitore") {
-        set_local_monitori(is_present ? lista.filter(id => id !== persona_id) : [...lista, persona_id]);
-      } else {
-        set_local_aiuto(is_present ? lista.filter(id => id !== persona_id) : [...lista, persona_id]);
-      }
-
-      if (is_present) {
+      if (tipo === "monitore")
+        set_local_monitori(is_present ? lista.filter((id) => id !== persona_id) : [...lista, persona_id]);
+      else set_local_aiuto(is_present ? lista.filter((id) => id !== persona_id) : [...lista, persona_id]);
+      if (is_present)
         await supabase.from("corsi_monitori").delete().eq("corso_id", corso.id).eq("persona_id", persona_id);
-      } else {
-        await supabase.from("corsi_monitori").insert({ corso_id: corso.id, persona_id, tipo });
-      }
+      else await supabase.from("corsi_monitori").insert({ corso_id: corso.id, persona_id, tipo });
       on_refresh();
     } catch (err: any) {
-      // Revert on error
       set_local_monitori(corso.monitori || []);
       set_local_aiuto(corso.aiuto_monitori || []);
       toast({ title: "Errore", description: err?.message, variant: "destructive" });
@@ -364,20 +350,18 @@ const TabMonitori: React.FC<{
   const monitori = tutti_monitori.filter((a) => a.ruolo_pista === "monitore");
   const aiuto_monitori = tutti_monitori.filter((a) => a.ruolo_pista === "aiuto_monitore");
 
-  const PersonaRow: React.FC<{
-    persona: any;
-    tipo: "monitore" | "aiuto_monitore";
-    selected: boolean;
-  }> = ({ persona, tipo, selected }) => (
+  const PersonaRow: React.FC<{ persona: any; tipo: "monitore" | "aiuto_monitore"; selected: boolean }> = ({
+    persona,
+    tipo,
+    selected,
+  }) => (
     <div
       onClick={() => !saving && toggle_persona(persona.id, tipo)}
-      className={`flex items-center justify-between px-3 py-2.5 rounded-xl border-2 cursor-pointer transition-all
-        ${selected ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 bg-background"}`}
+      className={`flex items-center justify-between px-3 py-2.5 rounded-xl border-2 cursor-pointer transition-all ${selected ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 bg-background"}`}
     >
       <div className="flex items-center gap-2">
         <div
-          className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0
-          ${selected ? "border-primary bg-primary" : "border-muted-foreground"}`}
+          className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${selected ? "border-primary bg-primary" : "border-muted-foreground"}`}
         >
           {selected && <span className="text-white text-[10px] font-bold">✓</span>}
         </div>
@@ -406,11 +390,11 @@ const TabMonitori: React.FC<{
       {monitori.length > 0 && (
         <div className="space-y-2">
           <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
-            Monitori ({monitori_ids.length} assegnati)
+            Monitori ({local_monitori.length} assegnati)
           </p>
           <div className="space-y-1.5">
             {monitori.map((m) => (
-              <PersonaRow key={m.id} persona={m} tipo="monitore" selected={monitori_ids.includes(m.id)} />
+              <PersonaRow key={m.id} persona={m} tipo="monitore" selected={local_monitori.includes(m.id)} />
             ))}
           </div>
         </div>
@@ -418,11 +402,11 @@ const TabMonitori: React.FC<{
       {aiuto_monitori.length > 0 && (
         <div className="space-y-2">
           <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
-            Aiuto monitori ({aiuto_ids.length} assegnati)
+            Aiuto monitori ({local_aiuto.length} assegnati)
           </p>
           <div className="space-y-1.5">
             {aiuto_monitori.map((m) => (
-              <PersonaRow key={m.id} persona={m} tipo="aiuto_monitore" selected={aiuto_ids.includes(m.id)} />
+              <PersonaRow key={m.id} persona={m} tipo="aiuto_monitore" selected={local_aiuto.includes(m.id)} />
             ))}
           </div>
         </div>
@@ -445,7 +429,6 @@ const TabPresenze: React.FC<{
   istruttori: any[];
 }> = ({ corso, tutti_atleti, tutti_monitori, istruttori }) => {
   const [data_sel, set_data_sel] = useState(new Date().toISOString().split("T")[0]);
-  const [show_sostituto, set_show_sostituto] = useState<string | null>(null);
   const { data: presenze = [] } = use_presenze_corso(corso.id, data_sel);
   const upsert_presenza = use_upsert_presenza_corso();
 
@@ -453,15 +436,10 @@ const TabPresenze: React.FC<{
     (a) => (corso.monitori || []).includes(a.id) || (corso.aiuto_monitori || []).includes(a.id),
   );
 
-  const get_stato_persona = (persona_id: string) => {
-    const p = presenze.find((x: any) => x.persona_id === persona_id);
-    return p?.stato || "attesa";
-  };
-
-  const get_sostituto_persona = (persona_id: string) => {
-    const p = presenze.find((x: any) => x.persona_id === persona_id);
-    return p?.sostituto_id || null;
-  };
+  const get_stato_persona = (persona_id: string) =>
+    presenze.find((x: any) => x.persona_id === persona_id)?.stato || "attesa";
+  const get_sostituto_persona = (persona_id: string) =>
+    presenze.find((x: any) => x.persona_id === persona_id)?.sostituto_id || null;
 
   const handle_set_stato = async (
     persona_id: string,
@@ -483,7 +461,6 @@ const TabPresenze: React.FC<{
     }
   };
 
-  // Genera link WhatsApp per remind
   const genera_wa_link = (persona: any, tipo: string) => {
     const tel = persona.genitore1_telefono || persona.telefono || "";
     if (!tel) return null;
@@ -495,8 +472,7 @@ const TabPresenze: React.FC<{
     const msg = encodeURIComponent(
       `Ciao ${persona.nome}! 👋\n\nTi ricordiamo che hai il corso *${corso.nome}* come ${tipo} il ${data_fmt} dalle ${corso.ora_inizio?.slice(0, 5)} alle ${corso.ora_fine?.slice(0, 5)}.\n\nPuoi confermare la tua presenza? Grazie! ⛸️`,
     );
-    const tel_clean = tel.replace(/\s+/g, "").replace(/^0/, "+41");
-    return `https://wa.me/${tel_clean}?text=${msg}`;
+    return `https://wa.me/${tel.replace(/\s+/g, "").replace(/^0/, "+41")}?text=${msg}`;
   };
 
   const stato_icon = (stato: string) => {
@@ -506,25 +482,17 @@ const TabPresenze: React.FC<{
     return <Clock className="w-4 h-4 text-muted-foreground" />;
   };
 
-  const stato_label = (stato: string) => {
-    if (stato === "confermato") return "Confermato";
-    if (stato === "assente") return "Assente";
-    if (stato === "sostituito") return "Sostituito";
-    return "In attesa";
-  };
-
+  const stato_label = (stato: string) =>
+    ({ confermato: "Confermato", assente: "Assente", sostituito: "Sostituito" })[stato] || "In attesa";
   const monitori_disponibili_sostituzione = tutti_monitori.filter(
     (m) => !monitori_assegnati.find((ma) => ma.id === m.id),
   );
 
   return (
     <div className="space-y-4">
-      {/* Selezione data */}
-      <div className="flex items-center gap-3">
-        <Field label="Data lezione">
-          <input type="date" value={data_sel} onChange={(e) => set_data_sel(e.target.value)} className={input_cls} />
-        </Field>
-      </div>
+      <Field label="Data lezione">
+        <input type="date" value={data_sel} onChange={(e) => set_data_sel(e.target.value)} className={input_cls} />
+      </Field>
 
       {monitori_assegnati.length === 0 ? (
         <div className="text-center py-6 text-muted-foreground">
@@ -542,7 +510,6 @@ const TabPresenze: React.FC<{
                 month: "long",
               })}
             </p>
-            {/* Invia remind a tutti */}
             <Button
               size="sm"
               variant="outline"
@@ -599,23 +566,12 @@ const TabPresenze: React.FC<{
                     <span className="text-xs text-muted-foreground">{stato_label(stato)}</span>
                   </div>
                 </div>
-
-                {/* Azioni stato */}
                 <div className="flex gap-1.5 flex-wrap">
                   {["confermato", "assente", "attesa"].map((s) => (
                     <button
                       key={s}
                       onClick={() => handle_set_stato(persona.id, tipo as any, s as any)}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all border
-                        ${
-                          stato === s
-                            ? s === "confermato"
-                              ? "bg-success text-white border-success"
-                              : s === "assente"
-                                ? "bg-destructive text-white border-destructive"
-                                : "bg-muted text-foreground border-border"
-                            : "bg-background text-muted-foreground border-border hover:border-primary/40"
-                        }`}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all border ${stato === s ? (s === "confermato" ? "bg-success text-white border-success" : s === "assente" ? "bg-destructive text-white border-destructive" : "bg-muted text-foreground border-border") : "bg-background text-muted-foreground border-border hover:border-primary/40"}`}
                     >
                       {s === "confermato" ? "✅ Confermato" : s === "assente" ? "❌ Assente" : "⏳ In attesa"}
                     </button>
@@ -631,8 +587,6 @@ const TabPresenze: React.FC<{
                     </a>
                   )}
                 </div>
-
-                {/* Sostituto se assente */}
                 {stato === "assente" && (
                   <div className="space-y-2 pt-1 border-t border-border">
                     {sostituto ? (
@@ -658,9 +612,7 @@ const TabPresenze: React.FC<{
                         <p className="text-xs font-semibold text-muted-foreground">Assegna sostituto</p>
                         <select
                           onChange={(e) => {
-                            if (e.target.value) {
-                              handle_set_stato(persona.id, tipo as any, "sostituito", e.target.value);
-                            }
+                            if (e.target.value) handle_set_stato(persona.id, tipo as any, "sostituito", e.target.value);
                           }}
                           defaultValue=""
                           className={`${input_cls} text-xs py-1.5`}
@@ -794,12 +746,6 @@ const CorsoModal: React.FC<{
 
   const istruttori_attivi = istruttori.filter((i) => i.attivo);
 
-  // Determina quante tab mostrare
-  const ha_monitori =
-    corso?.id &&
-    (monitori.filter((m) => m.ruolo_pista === "monitore").length > 0 ||
-      monitori.filter((m) => m.ruolo_pista === "aiuto_monitore").length > 0);
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
@@ -858,7 +804,6 @@ const CorsoModal: React.FC<{
             </TabsTrigger>
           </TabsList>
 
-          {/* ── Info ── */}
           <TabsContent value="info" className="py-4 space-y-4">
             <Field label="Nome" required>
               <input
@@ -949,21 +894,11 @@ const CorsoModal: React.FC<{
                     <div
                       key={i.id}
                       onClick={() => toggle_istruttore(i.id)}
-                      className={`flex items-center justify-between px-3 py-2.5 rounded-xl border-2 cursor-pointer transition-all
-                        ${
-                          selected
-                            ? ha_conflitto
-                              ? "border-destructive bg-destructive/5"
-                              : !disponibile
-                                ? "border-orange-400 bg-orange-50"
-                                : "border-primary bg-primary/5"
-                            : "border-border hover:border-primary/40 bg-background"
-                        }`}
+                      className={`flex items-center justify-between px-3 py-2.5 rounded-xl border-2 cursor-pointer transition-all ${selected ? (ha_conflitto ? "border-destructive bg-destructive/5" : !disponibile ? "border-orange-400 bg-orange-50" : "border-primary bg-primary/5") : "border-border hover:border-primary/40 bg-background"}`}
                     >
                       <div className="flex items-center gap-2">
                         <div
-                          className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0
-                          ${selected ? (ha_conflitto ? "border-destructive bg-destructive" : "border-primary bg-primary") : "border-muted-foreground"}`}
+                          className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${selected ? (ha_conflitto ? "border-destructive bg-destructive" : "border-primary bg-primary") : "border-muted-foreground"}`}
                         >
                           {selected && <span className="text-white text-[10px] font-bold">✓</span>}
                         </div>
@@ -1018,7 +953,6 @@ const CorsoModal: React.FC<{
             </Field>
           </TabsContent>
 
-          {/* ── Iscrizioni ── */}
           <TabsContent value="iscrizioni" className="py-4">
             {corso?.id && (
               <TabIscrizioni
@@ -1029,8 +963,6 @@ const CorsoModal: React.FC<{
               />
             )}
           </TabsContent>
-
-          {/* ── Monitori ── */}
           <TabsContent value="monitori" className="py-4">
             {corso?.id && (
               <TabMonitori
@@ -1040,8 +972,6 @@ const CorsoModal: React.FC<{
               />
             )}
           </TabsContent>
-
-          {/* ── Presenze ── */}
           <TabsContent value="presenze" className="py-4">
             {corso?.id && (
               <TabPresenze corso={corso} tutti_atleti={atleti} tutti_monitori={monitori} istruttori={istruttori} />
@@ -1082,6 +1012,113 @@ const CorsoModal: React.FC<{
               </Button>
             </div>
           )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── Card corso ────────────────────────────────────────────
+const CorsoCard: React.FC<{
+  corso: any;
+  istruttori: any[];
+  monitori: any[];
+  onClick: () => void;
+}> = ({ corso, istruttori, monitori, onClick }) => {
+  const istruttori_corso = (corso.istruttori_ids || [])
+    .map((id: string) => istruttori.find((i: any) => i.id === id))
+    .filter(Boolean);
+  const monitori_corso = monitori.filter((m: any) => (corso.monitori || []).includes(m.id));
+  const aiuto_corso = monitori.filter((m: any) => (corso.aiuto_monitori || []).includes(m.id));
+
+  return (
+    <div
+      onClick={onClick}
+      className="bg-card rounded-xl shadow-card p-5 hover:shadow-card-hover transition-shadow cursor-pointer border border-border/50 hover:border-primary/30 space-y-4"
+    >
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="font-semibold text-foreground text-base">{corso.nome}</h3>
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            {corso.tipo && (
+              <Badge variant="secondary" className="text-xs">
+                {corso.tipo}
+              </Badge>
+            )}
+            <span className="text-xs text-muted-foreground">
+              {corso.giorno} · {corso.ora_inizio?.slice(0, 5)}–{corso.ora_fine?.slice(0, 5)}
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span
+            className={`inline-block w-2 h-2 rounded-full ${corso.stato === "attivo" ? "bg-success" : "bg-muted-foreground"}`}
+          />
+          <span className="text-xs text-muted-foreground tabular-nums">CHF {corso.costo_mensile}/m</span>
+        </div>
+      </div>
+
+      {/* Personale */}
+      <div className="space-y-2">
+        {/* Istruttori */}
+        {istruttori_corso.length > 0 && (
+          <div className="flex items-start gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-wide text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded shrink-0 mt-0.5">
+              IST
+            </span>
+            <div className="flex flex-wrap gap-1">
+              {istruttori_corso.map((i: any) => (
+                <span key={i.id} className="text-xs text-foreground font-medium">
+                  {i.nome} {i.cognome}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Monitori */}
+        {monitori_corso.length > 0 && (
+          <div className="flex items-start gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-wide text-teal-600 bg-teal-50 px-1.5 py-0.5 rounded shrink-0 mt-0.5">
+              MON
+            </span>
+            <div className="flex flex-wrap gap-1">
+              {monitori_corso.map((m: any) => (
+                <span key={m.id} className="text-xs text-foreground">
+                  {m.nome} {m.cognome}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Aiuto monitori */}
+        {aiuto_corso.length > 0 && (
+          <div className="flex items-start gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-wide text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded shrink-0 mt-0.5">
+              AIM
+            </span>
+            <div className="flex flex-wrap gap-1">
+              {aiuto_corso.map((m: any) => (
+                <span key={m.id} className="text-xs text-foreground">
+                  {m.nome} {m.cognome}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {istruttori_corso.length === 0 && monitori_corso.length === 0 && aiuto_corso.length === 0 && (
+          <p className="text-xs text-muted-foreground italic">Nessun personale assegnato</p>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="flex items-center justify-between pt-2 border-t border-border/50">
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <Users className="w-3.5 h-3.5" />
+          <span>{(corso.atleti_ids || []).length} iscritti</span>
         </div>
       </div>
     </div>
@@ -1169,99 +1206,26 @@ const CoursesPage: React.FC = () => {
           </Button>
         </div>
 
-        <div className="bg-card rounded-xl shadow-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                    {t("nome")}
-                  </th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                    {t("tipo")}
-                  </th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden sm:table-cell">
-                    {t("giorno")}
-                  </th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden sm:table-cell">
-                    {t("ora_inizio")}
-                  </th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden md:table-cell">
-                    {t("istruttori")}
-                  </th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                    Monitori
-                  </th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                    {t("iscritti")}
-                  </th>
-                  <th className="text-right px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">
-                    {t("costo_mensile")}
-                  </th>
-                  <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                    {t("stato")}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {corsi.length === 0 ? (
-                  <tr>
-                    <td colSpan={9} className="px-4 py-12 text-center text-muted-foreground text-sm">
-                      Nessun corso. Clicca "Nuovo corso" per aggiungerne uno.
-                    </td>
-                  </tr>
-                ) : (
-                  corsi.map((c: any) => (
-                    <tr
-                      key={c.id}
-                      onClick={() => {
-                        set_selected_corso(c);
-                        set_modal_open(true);
-                      }}
-                      className="border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors"
-                    >
-                      <td className="px-4 py-3 font-medium text-foreground">{c.nome}</td>
-                      <td className="px-4 py-3">
-                        <Badge variant="secondary" className="text-xs">
-                          {c.tipo || "—"}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{c.giorno}</td>
-                      <td className="px-4 py-3 tabular-nums text-muted-foreground hidden sm:table-cell">
-                        {c.ora_inizio?.slice(0, 5)} - {c.ora_fine?.slice(0, 5)}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">
-                        {(c.istruttori_ids || [])
-                          .map((id: string) => get_istruttore_name_from_list(istruttori, id))
-                          .join(", ")}
-                      </td>
-                      <td className="px-4 py-3 text-center tabular-nums text-muted-foreground">
-                        {(c.monitori?.length || 0) + (c.aiuto_monitori?.length || 0) > 0 ? (
-                          <Badge variant="outline" className="text-xs">
-                            {(c.monitori?.length || 0) + (c.aiuto_monitori?.length || 0)}
-                          </Badge>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-center tabular-nums font-medium text-foreground">
-                        {(c.atleti_ids || []).length}
-                      </td>
-                      <td className="px-4 py-3 text-right tabular-nums text-muted-foreground hidden lg:table-cell">
-                        CHF {c.costo_mensile}
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <span
-                          className={`inline-block w-2 h-2 rounded-full ${c.stato === "attivo" ? "bg-success" : "bg-muted-foreground"}`}
-                        />
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+        {corsi.length === 0 ? (
+          <div className="bg-card rounded-xl shadow-card p-12 text-center text-muted-foreground">
+            <p className="text-sm">Nessun corso. Clicca "Nuovo corso" per aggiungerne uno.</p>
           </div>
-        </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {corsi.map((c: any) => (
+              <CorsoCard
+                key={c.id}
+                corso={c}
+                istruttori={istruttori}
+                monitori={monitori}
+                onClick={() => {
+                  set_selected_corso(c);
+                  set_modal_open(true);
+                }}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </>
   );
