@@ -1251,8 +1251,8 @@ const InstructorsPage: React.FC = () => {
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Costo/h club</span>
                             <span className="text-foreground tabular-nums text-xs">
-                              L: CHF {(i.costo_orario_lezioni || 0).toFixed(0)} · C: CHF{" "}
-                              {(i.costo_orario_corsi || 0).toFixed(0)}
+                              L: CHF {(i.costo_orario_lezioni || 0).toFixed(2)} · C: CHF{" "}
+                              {(i.costo_orario_corsi || 0).toFixed(2)}
                             </span>
                           </div>
                         </>
