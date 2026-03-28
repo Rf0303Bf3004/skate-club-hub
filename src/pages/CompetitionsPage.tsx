@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useI18n } from "@/lib/i18n";
 import { use_gare, use_atleti, get_atleta_name_from_list } from "@/hooks/use-supabase-data";
 import { days_until } from "@/lib/mock-data";
@@ -22,12 +22,11 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
-const CLUB_ID = "00000000-0000-0000-0000-000000000002";
 const LIVELLI = [
   "Pulcini",
   "Stellina 1",
@@ -46,8 +45,7 @@ const MEDAGLIE = ["", "Oro", "Argento", "Bronzo"];
 
 // ─── Helpers ──────────────────────────────────────────────
 function is_passata(data: string): boolean {
-  const oggi = new Date().toISOString().split("T")[0];
-  return data < oggi;
+  return data < new Date().toISOString().split("T")[0];
 }
 
 function countdown_label(data: string): { testo: string; colore: string } {
@@ -59,6 +57,78 @@ function countdown_label(data: string): { testo: string; colore: string } {
   if (giorni <= 30) return { testo: `📅 ${giorni} giorni`, colore: "text-primary" };
   return { testo: `${giorni} giorni`, colore: "text-muted-foreground" };
 }
+
+// ─── NumInput ──────────────────────────────────────────────
+function to_num(v: string | number): number {
+  if (typeof v === "number") return isNaN(v) ? 0 : v;
+  const n = parseFloat(String(v).replace(",", "."));
+  return isNaN(n) ? 0 : n;
+}
+
+const input_cls =
+  "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
+
+const NumInput: React.FC<{
+  value: string | number;
+  onChange: (v: string) => void;
+  className?: string;
+  placeholder?: string;
+}> = ({ value, onChange, className = "", placeholder = "0" }) => {
+  const [local, set_local] = useState(() => {
+    const n = to_num(String(value));
+    return n === 0 ? "" : String(n);
+  });
+  const [focused, set_focused] = useState(false);
+
+  useEffect(() => {
+    if (!focused) {
+      const n = to_num(String(value));
+      set_local(n === 0 ? "" : String(n));
+    }
+  }, [value, focused]);
+
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      value={local}
+      placeholder={placeholder}
+      onFocus={() => set_focused(true)}
+      onKeyDown={(e) => {
+        const allowed = [
+          "Backspace",
+          "Delete",
+          "Tab",
+          "Escape",
+          "Enter",
+          "ArrowLeft",
+          "ArrowRight",
+          "ArrowUp",
+          "ArrowDown",
+          "Home",
+          "End",
+        ];
+        if (allowed.includes(e.key)) return;
+        if ((e.key === "." || e.key === ",") && !local.includes(".")) return;
+        if (/^\d$/.test(e.key)) return;
+        if (e.ctrlKey || e.metaKey) return;
+        e.preventDefault();
+      }}
+      onChange={(e) => {
+        const v = e.target.value.replace(",", ".");
+        set_local(v);
+        onChange(v);
+      }}
+      onBlur={() => {
+        set_focused(false);
+        const n = to_num(local);
+        set_local(n === 0 ? "" : String(n));
+        onChange(String(n));
+      }}
+      className={`${input_cls} ${className}`}
+    />
+  );
+};
 
 interface GaraFormData {
   nome: string;
@@ -83,8 +153,8 @@ const empty_form = (): GaraFormData => ({
   club_ospitante: "",
   livello_minimo: "Pulcini",
   carriera: "Artistica",
-  costo_iscrizione: "0",
-  costo_accompagnamento: "0",
+  costo_iscrizione: "",
+  costo_accompagnamento: "",
   note: "",
 });
 
@@ -112,7 +182,6 @@ const MedalBadge: React.FC<{ tipo: string }> = ({ tipo }) => {
   return <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${colors[tipo_lower] || ""}`}>{tipo}</span>;
 };
 
-// ─── Countdown visuale ─────────────────────────────────────
 const CountdownBadge: React.FC<{ data: string }> = ({ data }) => {
   const { testo, colore } = countdown_label(data);
   return <span className={`text-xs ${colore}`}>{testo}</span>;
@@ -124,6 +193,8 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const queryClient = useQueryClient();
   const [form, set_form] = useState<GaraFormData>(empty_form());
   const [saving, set_saving] = useState(false);
+
+  const upd = (k: keyof GaraFormData, v: string) => set_form((p) => ({ ...p, [k]: v }));
 
   const handle_change = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     set_form((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -143,7 +214,7 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       const { error } = await supabase
         .from("gare_calendario")
         .insert({
-          club_id: CLUB_ID,
+          club_id: get_current_club_id(), // ← FIX: usa club_id dinamico
           nome: form.nome.trim(),
           data: form.data,
           ora: form.ora || null,
@@ -152,8 +223,8 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           club_ospitante: form.club_ospitante.trim() || null,
           livello_minimo: form.livello_minimo,
           carriera: form.carriera,
-          costo_iscrizione: parseFloat(form.costo_iscrizione) || 0,
-          costo_accompagnamento: parseFloat(form.costo_accompagnamento) || 0,
+          costo_iscrizione: to_num(form.costo_iscrizione),
+          costo_accompagnamento: to_num(form.costo_accompagnamento),
           note: form.note.trim() || null,
           archiviata: false,
         })
@@ -189,15 +260,15 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               value={form.nome}
               onChange={handle_change}
               placeholder="es. Trofeo Invernale 2025"
-              className="form-input"
+              className={input_cls}
             />
           </Field>
           <div className="grid grid-cols-2 gap-4">
             <Field label={`${t("data")} *`}>
-              <input name="data" type="date" value={form.data} onChange={handle_change} className="form-input" />
+              <input name="data" type="date" value={form.data} onChange={handle_change} className={input_cls} />
             </Field>
             <Field label={t("ora")}>
-              <input name="ora" type="time" value={form.ora} onChange={handle_change} className="form-input" />
+              <input name="ora" type="time" value={form.ora} onChange={handle_change} className={input_cls} />
             </Field>
           </div>
           <Field label={`${t("luogo")} *`}>
@@ -206,7 +277,7 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               value={form.localita}
               onChange={handle_change}
               placeholder="es. Lugano"
-              className="form-input"
+              className={input_cls}
             />
           </Field>
           <Field label={t("indirizzo")}>
@@ -215,7 +286,7 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               value={form.indirizzo}
               onChange={handle_change}
               placeholder="es. Via Trevano 12, Lugano"
-              className="form-input"
+              className={input_cls}
             />
           </Field>
           <Field label={t("club_ospitante")}>
@@ -224,12 +295,12 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               value={form.club_ospitante}
               onChange={handle_change}
               placeholder="es. ASD Ghiaccio Milano"
-              className="form-input"
+              className={input_cls}
             />
           </Field>
           <div className="grid grid-cols-2 gap-4">
             <Field label={t("livello_minimo")}>
-              <select name="livello_minimo" value={form.livello_minimo} onChange={handle_change} className="form-input">
+              <select name="livello_minimo" value={form.livello_minimo} onChange={handle_change} className={input_cls}>
                 {LIVELLI.map((l) => (
                   <option key={l} value={l}>
                     {l}
@@ -238,7 +309,7 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               </select>
             </Field>
             <Field label={t("carriera")}>
-              <select name="carriera" value={form.carriera} onChange={handle_change} className="form-input">
+              <select name="carriera" value={form.carriera} onChange={handle_change} className={input_cls}>
                 {CARRIERE.map((c) => (
                   <option key={c} value={c}>
                     {c}
@@ -247,36 +318,37 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               </select>
             </Field>
           </div>
+
+          {/* Campi costo con NumInput — niente sovrapposizione CHF */}
           <div className="grid grid-cols-2 gap-4">
             <Field label={t("costo_iscrizione")}>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">CHF </span>
-                <input
-                  name="costo_iscrizione"
-                  type="number"
-                  min="0"
-                  step="0.01"
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">
+                  CHF
+                </span>
+                <NumInput
                   value={form.costo_iscrizione}
-                  onChange={handle_change}
-                  className="form-input pl-7"
+                  onChange={(v) => upd("costo_iscrizione", v)}
+                  className="pl-11"
+                  placeholder="es. 50"
                 />
               </div>
             </Field>
             <Field label={t("costo_accompagnamento")}>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">CHF </span>
-                <input
-                  name="costo_accompagnamento"
-                  type="number"
-                  min="0"
-                  step="0.01"
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">
+                  CHF
+                </span>
+                <NumInput
                   value={form.costo_accompagnamento}
-                  onChange={handle_change}
-                  className="form-input pl-7"
+                  onChange={(v) => upd("costo_accompagnamento", v)}
+                  className="pl-11"
+                  placeholder="es. 30"
                 />
               </div>
             </Field>
           </div>
+
           <Field label={t("note")}>
             <textarea
               name="note"
@@ -284,7 +356,7 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               onChange={handle_change}
               rows={3}
               placeholder="Note aggiuntive..."
-              className="form-input resize-none"
+              className={`${input_cls} resize-none`}
             />
           </Field>
         </div>
@@ -357,11 +429,7 @@ const IscrizioneModal: React.FC<{
         </div>
         <div className="px-6 py-5 space-y-4">
           <Field label="Atleta *">
-            <select
-              value={atleta_id}
-              onChange={(e) => set_atleta_id(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-            >
+            <select value={atleta_id} onChange={(e) => set_atleta_id(e.target.value)} className={input_cls}>
               <option value="">Seleziona atleta...</option>
               {atleti_disponibili.map((a: any) => (
                 <option key={a.id} value={a.id}>
@@ -371,11 +439,7 @@ const IscrizioneModal: React.FC<{
             </select>
           </Field>
           <Field label="Carriera">
-            <select
-              value={carriera}
-              onChange={(e) => set_carriera(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-            >
+            <select value={carriera} onChange={(e) => set_carriera(e.target.value)} className={input_cls}>
               {CARRIERE.map((c) => (
                 <option key={c} value={c}>
                   {c}
@@ -462,15 +526,11 @@ const RisultatoModal: React.FC<{
                 value={form.posizione}
                 onChange={(e) => set_val("posizione", e.target.value)}
                 placeholder="es. 3"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                className={input_cls}
               />
             </Field>
             <Field label="Medaglia">
-              <select
-                value={form.medaglia}
-                onChange={(e) => set_val("medaglia", e.target.value)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-              >
+              <select value={form.medaglia} onChange={(e) => set_val("medaglia", e.target.value)} className={input_cls}>
                 <option value="">Nessuna</option>
                 {MEDAGLIE.filter((m) => m).map((m) => (
                   <option key={m} value={m}>
@@ -488,7 +548,7 @@ const RisultatoModal: React.FC<{
                 value={form.punteggio_tecnico}
                 onChange={(e) => set_val("punteggio_tecnico", e.target.value)}
                 placeholder="es. 24.50"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                className={input_cls}
               />
             </Field>
             <Field label="Punt. artistico">
@@ -498,7 +558,7 @@ const RisultatoModal: React.FC<{
                 value={form.punteggio_artistico}
                 onChange={(e) => set_val("punteggio_artistico", e.target.value)}
                 placeholder="es. 26.80"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                className={input_cls}
               />
             </Field>
           </div>
@@ -509,7 +569,7 @@ const RisultatoModal: React.FC<{
               value={form.voto_giudici}
               onChange={(e) => set_val("voto_giudici", e.target.value)}
               placeholder="es. 5.8"
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+              className={input_cls}
             />
           </Field>
           <Field label="Note prestazione">
@@ -518,7 +578,7 @@ const RisultatoModal: React.FC<{
               onChange={(e) => set_val("note", e.target.value)}
               rows={2}
               placeholder="Note sulla prestazione..."
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/40"
+              className={`${input_cls} resize-none`}
             />
           </Field>
         </div>
@@ -710,8 +770,6 @@ const CompetitionsPage: React.FC = () => {
   const [grafico_atleta, set_grafico_atleta] = useState<any>(null);
   const [show_archivio, set_show_archivio] = useState(false);
 
-  // Separa gare future/oggi da gare archiviate/passate
-  const today = new Date().toISOString().split("T")[0];
   const gare_future = useMemo(
     () =>
       gare
@@ -752,13 +810,12 @@ const CompetitionsPage: React.FC = () => {
     }
   };
 
-  if (isLoading) {
+  if (isLoading)
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
-  }
 
   // ─── Vista dettaglio gara ──────────────────────────────────
   if (selected) {
@@ -808,8 +865,7 @@ const CompetitionsPage: React.FC = () => {
                 onClick={() => handle_archivia(selected.id, !selected.archiviata)}
                 className="text-muted-foreground hover:text-foreground gap-1.5"
               >
-                <Archive className="w-4 h-4" />
-                {selected.archiviata ? "Ripristina" : "Archivia"}
+                <Archive className="w-4 h-4" /> {selected.archiviata ? "Ripristina" : "Archivia"}
               </Button>
               <Button
                 variant="ghost"
@@ -848,7 +904,6 @@ const CompetitionsPage: React.FC = () => {
             </div>
           )}
 
-          {/* Header gara */}
           <div>
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-xl font-bold tracking-tight text-foreground">{selected.nome}</h1>
@@ -870,7 +925,6 @@ const CompetitionsPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Banner gara passata */}
           {passata && (
             <div className="bg-muted/30 border border-border rounded-xl px-4 py-3 flex items-center gap-2">
               <Archive className="w-4 h-4 text-muted-foreground flex-shrink-0" />
@@ -889,7 +943,6 @@ const CompetitionsPage: React.FC = () => {
             </TabsList>
 
             <TabsContent value="atleti" className="mt-6 space-y-4">
-              {/* Bottone iscrivi solo per gare future */}
               {!passata && (
                 <div className="flex justify-end">
                   <Button onClick={() => set_show_iscrizione(true)} className="bg-primary hover:bg-primary/90 gap-2">
@@ -897,7 +950,6 @@ const CompetitionsPage: React.FC = () => {
                   </Button>
                 </div>
               )}
-
               {selected.atleti_iscritti?.length === 0 ? (
                 <div className="bg-card rounded-xl shadow-card p-8 text-center text-muted-foreground">
                   <Trophy className="w-8 h-8 mx-auto mb-2 opacity-30" />
@@ -1040,7 +1092,6 @@ const CompetitionsPage: React.FC = () => {
           </Button>
         </div>
 
-        {/* Gare future */}
         <div className="bg-card rounded-xl shadow-card overflow-hidden">
           <div className="px-4 py-3 border-b border-border flex items-center justify-between">
             <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
@@ -1109,7 +1160,6 @@ const CompetitionsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Archivio gare passate */}
         {gare_archivio.length > 0 && (
           <div className="bg-card rounded-xl shadow-card overflow-hidden">
             <button
