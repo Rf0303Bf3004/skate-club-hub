@@ -26,8 +26,6 @@ const TIPI_CONTRATTO = [
   { value: "misto", label: "Fisso mensile + variabile lezioni private" },
 ];
 
-const RUOLI_ISTRUTTORE = [{ value: "istruttore", label: "Istruttore/Istruttrice" }];
-
 function get_mese_label(anno: number, mese: number) {
   return new Date(anno, mese - 1, 1).toLocaleDateString("it-CH", { month: "long", year: "numeric" });
 }
@@ -60,19 +58,25 @@ const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, 
 const input_cls =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
 
+// ─── NumInput corretto ─────────────────────────────────────
 const NumInput: React.FC<{
   value: string | number;
   onChange: (v: string) => void;
   className?: string;
   placeholder?: string;
 }> = ({ value, onChange, className = "", placeholder = "0" }) => {
-  const [local, set_local] = useState(String(value));
+  const [local, set_local] = useState(() => {
+    const n = to_num(String(value));
+    return n === 0 ? "" : String(n);
+  });
+  const [focused, set_focused] = useState(false);
 
   useEffect(() => {
-    if (to_num(String(value)) !== to_num(local)) {
-      set_local(String(value));
+    if (!focused) {
+      const n = to_num(String(value));
+      set_local(n === 0 ? "" : String(n));
     }
-  }, [value]);
+  }, [value, focused]);
 
   return (
     <input
@@ -80,6 +84,7 @@ const NumInput: React.FC<{
       inputMode="decimal"
       value={local}
       placeholder={placeholder}
+      onFocus={() => set_focused(true)}
       onKeyDown={(e) => {
         const allowed = [
           "Backspace",
@@ -106,8 +111,10 @@ const NumInput: React.FC<{
         onChange(v);
       }}
       onBlur={() => {
+        set_focused(false);
         const n = to_num(local);
-        set_local(n === 0 && local === "" ? "" : String(n));
+        const display = n === 0 ? "" : String(n);
+        set_local(display);
         onChange(String(n));
       }}
       className={`${input_cls} ${className}`}
@@ -115,7 +122,7 @@ const NumInput: React.FC<{
   );
 };
 
-// ─── Modal istruttore (solo istruttori veri) ───────────────
+// ─── Modal istruttore ──────────────────────────────────────
 const IstruttoreModal: React.FC<{
   istruttore?: any;
   on_close: () => void;
@@ -312,7 +319,7 @@ const IstruttoreModal: React.FC<{
   );
 };
 
-// ─── Tab Ore Lavoro Istruttore ─────────────────────────────
+// ─── Tab Ore Lavoro ────────────────────────────────────────
 const TabOreLavoro: React.FC<{
   istruttore: any;
   lezioni: any[];
@@ -616,7 +623,7 @@ const TabOreLavoro: React.FC<{
   );
 };
 
-// ─── Tab Compenso Istruttore ───────────────────────────────
+// ─── Tab Compenso ──────────────────────────────────────────
 const TabCompenso: React.FC<{
   istruttore: any;
   lezioni: any[];
@@ -874,8 +881,11 @@ const MonitoreDetail: React.FC<{
   const now = new Date();
   const [anno, set_anno] = useState(now.getFullYear());
   const [mese, set_mese] = useState(now.getMonth() + 1);
-  const [compenso_orario, set_compenso_orario] = useState<string>(String(monitore.compenso_orario_pista || ""));
-  const [ore_extra, set_ore_extra] = useState<string>("");
+  const [compenso_orario, set_compenso_orario] = useState<string>(() => {
+    const n = to_num(monitore.compenso_orario_pista);
+    return n === 0 ? "" : String(n);
+  });
+  const [ore_pista, set_ore_pista] = useState<string>("");
   const [note_extra, set_note_extra] = useState("");
   const [saving, set_saving] = useState(false);
   const [saving_compenso, set_saving_compenso] = useState(false);
@@ -891,15 +901,16 @@ const MonitoreDetail: React.FC<{
         .eq("anno", anno)
         .eq("mese", mese)
         .maybeSingle();
-      set_ore_extra(data?.ore_extra != null ? String(data.ore_extra) : "");
+      const n = to_num(data?.ore_extra);
+      set_ore_pista(n === 0 ? "" : String(n));
       set_note_extra(data?.note_extra ?? "");
     };
     load();
   }, [monitore.id, anno, mese]);
 
-  const ore_extra_num = to_num(ore_extra);
+  const ore_num = to_num(ore_pista);
   const compenso_num = to_num(compenso_orario);
-  const compenso_totale = ore_extra_num * compenso_num;
+  const compenso_totale = ore_num * compenso_num;
 
   const handle_save_ore = async () => {
     set_saving(true);
@@ -909,7 +920,7 @@ const MonitoreDetail: React.FC<{
           atleta_id: monitore.id,
           anno,
           mese,
-          ore_extra: ore_extra_num,
+          ore_extra: ore_num,
           note_extra,
           updated_at: new Date().toISOString(),
         },
@@ -1025,8 +1036,8 @@ const MonitoreDetail: React.FC<{
 
       {/* Ore pista mensili */}
       <div className="bg-card rounded-xl shadow-card overflow-hidden max-w-lg">
-        <div className="px-5 py-3 border-b border-border flex items-center justify-between">
-          <div className="flex items-center justify-between w-full">
+        <div className="px-5 py-3 border-b border-border">
+          <div className="flex items-center justify-between">
             <button
               onClick={() => {
                 if (mese === 1) {
@@ -1062,7 +1073,7 @@ const MonitoreDetail: React.FC<{
                 <Clock className="w-3.5 h-3.5 text-primary" />
                 <p className="text-xs text-muted-foreground">Ore pista</p>
               </div>
-              <p className="text-lg font-bold tabular-nums text-primary">{ore_fmt(ore_extra_num)}</p>
+              <p className="text-lg font-bold tabular-nums text-primary">{ore_fmt(ore_num)}</p>
             </div>
             <div className="bg-muted/20 rounded-xl p-4">
               <div className="flex items-center gap-2 mb-1">
@@ -1074,7 +1085,7 @@ const MonitoreDetail: React.FC<{
           </div>
 
           <Field label="Ore pista questo mese">
-            <NumInput value={ore_extra} onChange={(v) => set_ore_extra(v)} placeholder="es. 12.5" />
+            <NumInput value={ore_pista} onChange={(v) => set_ore_pista(v)} placeholder="es. 12.5" />
           </Field>
           <Field label="Note">
             <input
@@ -1117,7 +1128,6 @@ const InstructorsPage: React.FC = () => {
   const [disp_local, set_disp_local] = useState<Record<string, { ora_inizio: string; ora_fine: string }[]>>({});
   const [saving_contratto, set_saving_contratto] = useState(false);
 
-  // Filtra istruttori veri (ruolo = istruttore)
   const istruttori_veri = istruttori.filter((i: any) => !i.ruolo || i.ruolo === "istruttore");
   const monitori = monitori_atleti.filter((a: any) => a.ruolo_pista === "monitore");
   const aiuto_monitori = monitori_atleti.filter((a: any) => a.ruolo_pista === "aiuto_monitore");
@@ -1206,12 +1216,10 @@ const InstructorsPage: React.FC = () => {
       </div>
     );
 
-  // Vista dettaglio monitore
   if (selected_monitore) {
     return <MonitoreDetail monitore={selected_monitore} on_back={() => set_selected_monitore_id(null)} />;
   }
 
-  // Vista dettaglio istruttore
   if (selected) {
     return (
       <>
@@ -1375,7 +1383,6 @@ const InstructorsPage: React.FC = () => {
     );
   }
 
-  // ─── Vista lista principale ────────────────────────────────
   return (
     <>
       {modal_open && (
@@ -1404,7 +1411,7 @@ const InstructorsPage: React.FC = () => {
           </Button>
         </div>
 
-        {/* ── Sezione Istruttori ── */}
+        {/* Istruttori */}
         {istruttori_veri.length > 0 && (
           <div>
             <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
@@ -1479,7 +1486,7 @@ const InstructorsPage: React.FC = () => {
           </div>
         )}
 
-        {/* ── Sezione Monitori ── */}
+        {/* Monitori */}
         {monitori.length > 0 && (
           <div>
             <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
@@ -1523,7 +1530,7 @@ const InstructorsPage: React.FC = () => {
           </div>
         )}
 
-        {/* ── Sezione Aiuto Monitori ── */}
+        {/* Aiuto Monitori */}
         {aiuto_monitori.length > 0 && (
           <div>
             <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
@@ -1567,7 +1574,6 @@ const InstructorsPage: React.FC = () => {
           </div>
         )}
 
-        {/* Messaggio se tutto vuoto */}
         {istruttori_veri.length === 0 && monitori.length === 0 && aiuto_monitori.length === 0 && (
           <div className="bg-card rounded-xl shadow-card p-12 text-center text-muted-foreground">
             <p className="text-sm">Nessun istruttore o monitore registrato.</p>
@@ -1577,7 +1583,6 @@ const InstructorsPage: React.FC = () => {
           </div>
         )}
 
-        {/* Info monitori */}
         {monitori.length === 0 && aiuto_monitori.length === 0 && istruttori_veri.length > 0 && (
           <div className="flex items-start gap-2 p-4 bg-muted/30 rounded-xl border border-border">
             <Info className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
