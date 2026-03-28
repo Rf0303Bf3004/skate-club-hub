@@ -17,7 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Trash2, QrCode, X, Printer, Download } from "lucide-react";
+import { FileText, Trash2, X, Printer } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 // ─── Swiss QR ─────────────────────────────────────────────
@@ -82,12 +82,10 @@ const FatturaStampabile: React.FC<{
   lezioni: any[];
 }> = ({ fattura, atleta, setup, club, corsi, lezioni }) => {
   const has_iban = !!setup?.iban;
-
-  // Dettaglio voci fattura
   const voci: { descrizione: string; importo: number }[] = [];
 
-  if (fattura.tipo === "corso") {
-    // Trova il corso collegato
+  // ← FIX: controlli tipo con valori corretti del DB
+  if (fattura.tipo === "Corso") {
     const corso = corsi.find((c: any) => c.id === fattura.riferimento_id);
     if (corso) {
       voci.push({
@@ -97,10 +95,7 @@ const FatturaStampabile: React.FC<{
     } else {
       voci.push({ descrizione: fattura.descrizione || "Quota corso", importo: fattura.importo });
     }
-  } else if (fattura.tipo === "lezione_privata") {
-    // Raggruppa lezioni private del periodo
-    const mese_match = fattura.descrizione?.match(/- (.+)$/);
-    const mese_label = mese_match?.[1] || "";
+  } else if (fattura.tipo === "Lezione Privata") {
     const lezioni_atleta = lezioni.filter((l: any) => l.atleti_ids?.includes(atleta?.id) && !l.annullata);
     if (lezioni_atleta.length > 0) {
       lezioni_atleta.slice(0, 10).forEach((l: any) => {
@@ -201,7 +196,6 @@ const FatturaStampabile: React.FC<{
         </div>
       </div>
 
-      {/* Separatore */}
       <div
         style={{
           height: 3,
@@ -347,14 +341,12 @@ const FatturaStampabile: React.FC<{
         </div>
       )}
 
-      {/* Note */}
       {fattura.note && (
         <div style={{ marginTop: 20, fontSize: 11, color: "#666" }}>
           <strong>Note:</strong> {fattura.note}
         </div>
       )}
 
-      {/* Footer */}
       <div
         style={{
           marginTop: 32,
@@ -394,11 +386,9 @@ const FatturaModal: React.FC<{
     if (!content) return;
     const win = window.open("", "_blank", "width=800,height=900");
     if (!win) return;
-    win.document.write(`
-      <!DOCTYPE html><html><head><title>${fattura.numero}</title>
-      <style>body{margin:0;padding:0;}</style></head>
-      <body>${content.outerHTML}</body></html>
-    `);
+    win.document.write(
+      `<!DOCTYPE html><html><head><title>${fattura.numero}</title><style>body{margin:0;padding:0;}</style></head><body>${content.outerHTML}</body></html>`,
+    );
     win.document.close();
     win.focus();
     setTimeout(() => {
@@ -411,8 +401,8 @@ const FatturaModal: React.FC<{
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-card rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+      <div className="bg-card rounded-2xl shadow-xl w-full max-w-2xl flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
           <div>
             <h2 className="text-base font-bold text-foreground">{fattura.numero}</h2>
             <p className="text-xs text-muted-foreground">{atleta_nome}</p>
@@ -438,8 +428,7 @@ const FatturaModal: React.FC<{
           </div>
         </div>
 
-        <div className="px-6 py-5 space-y-4">
-          {/* Stato */}
+        <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
           <div className="flex items-center justify-between">
             <Badge variant={fattura.stato === "pagata" ? "default" : "destructive"} className="text-sm px-3 py-1">
               {fattura.stato === "pagata" ? "✅ Pagata" : "⏳ Da pagare"}
@@ -451,7 +440,6 @@ const FatturaModal: React.FC<{
             )}
           </div>
 
-          {/* Anteprima fattura */}
           {show_anteprima && (
             <div className="border border-border rounded-xl overflow-hidden bg-white" ref={print_ref}>
               <FatturaStampabile
@@ -465,7 +453,6 @@ const FatturaModal: React.FC<{
             </div>
           )}
 
-          {/* Riepilogo rapido se non anteprima */}
           {!show_anteprima && (
             <div className="bg-muted/30 rounded-xl px-4 py-4 space-y-3">
               {[
@@ -495,7 +482,7 @@ const FatturaModal: React.FC<{
           )}
         </div>
 
-        <div className="px-6 py-4 border-t border-border space-y-2">
+        <div className="px-6 py-4 border-t border-border space-y-2 flex-shrink-0">
           {fattura.stato !== "pagata" && (
             <Button onClick={on_paga} disabled={paying} className="w-full bg-success hover:bg-success/90 text-white">
               {paying ? "..." : "✅ Segna come pagata"}
