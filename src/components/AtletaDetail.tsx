@@ -874,59 +874,6 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
               ))}
             </div>
 
-            {/* Modal invito generato */}
-            <Dialog open={!!invito_modal} onOpenChange={(v) => !v && set_invito_modal(null)}>
-              <DialogContent className="max-w-md">
-                <DialogHeader>
-                  <DialogTitle>🏅 Invito Generato</DialogTitle>
-                </DialogHeader>
-                {invito_modal && (
-                  <div className="space-y-4">
-                    <div className="space-y-2 text-sm">
-                      <p><span className="text-muted-foreground">Atleta:</span> <strong>{form.nome} {form.cognome}</strong></p>
-                      <p><span className="text-muted-foreground">Email:</span> <strong>{invito_modal.email}</strong></p>
-                      <p><span className="text-muted-foreground">Scadenza:</span> <strong>{invito_modal.scadenza}</strong></p>
-                    </div>
-
-                    <div className="bg-muted/50 border-2 border-dashed border-border rounded-xl p-5 text-center space-y-2">
-                      <p className="text-xs text-muted-foreground">Codice Invito</p>
-                      <p className="text-2xl font-bold font-mono tracking-[4px] text-foreground">{invito_modal.token}</p>
-                    </div>
-
-                    <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 space-y-1.5">
-                      <p className="text-xs font-bold text-primary uppercase tracking-wide">📱 Istruzioni per il genitore</p>
-                      <ol className="text-xs text-muted-foreground list-decimal list-inside space-y-1">
-                        <li>Scarica l'app dal Play Store o App Store</li>
-                        <li>Apri l'app e seleziona "Ho un codice invito"</li>
-                        <li>Inserisci il codice mostrato sopra</li>
-                        <li>Completa la registrazione con l'email indicata</li>
-                      </ol>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 gap-1.5"
-                        onClick={() => {
-                          navigator.clipboard.writeText(invito_modal.token);
-                          toast({ title: "📋 Codice copiato!" });
-                        }}
-                      >
-                        <Copy className="w-3.5 h-3.5" /> Copia codice
-                      </Button>
-                      <Button
-                        size="sm"
-                        className="flex-1 gap-1.5"
-                        onClick={handle_stampa_invito}
-                      >
-                        <Printer className="w-3.5 h-3.5" /> Stampa PDF
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </DialogContent>
-            </Dialog>
           </TabsContent>
 
           {/* ── Fatture ── */}
