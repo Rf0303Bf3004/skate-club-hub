@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import InvitoGenitoreModal from "@/components/InvitoGenitoreModal";
 import { useI18n } from "@/lib/i18n";
 import {
   use_corsi,
@@ -231,86 +232,8 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   const upsert = use_upsert_atleta();
   const migra = use_migra_atleta();
   const [show_migra, set_show_migra] = useState(false);
-  const [invito_modal, set_invito_modal] = useState<{ token: string; email: string; scadenza: string } | null>(null);
-  const [invito_loading, set_invito_loading] = useState(false);
-
-  const genera_token = () => {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    return Array.from({ length: 16 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-  };
-
-  const handle_genera_invito = async (email: string) => {
-    set_invito_loading(true);
-    try {
-      const token = genera_token();
-      const expires_at = new Date();
-      expires_at.setDate(expires_at.getDate() + 30);
-      const { error } = await supabase.from("inviti_genitori").insert({
-        atleta_id: a.id,
-        club_id: get_current_club_id(),
-        email,
-        token,
-        expires_at: expires_at.toISOString(),
-        usato: false,
-      });
-      if (error) throw error;
-      set_invito_modal({
-        token,
-        email,
-        scadenza: expires_at.toLocaleDateString("it-CH"),
-      });
-      toast({ title: "✅ Invito generato con successo" });
-    } catch (err: any) {
-      toast({ title: "Errore", description: err?.message, variant: "destructive" });
-    } finally {
-      set_invito_loading(false);
-    }
-  };
-
-  const handle_stampa_invito = () => {
-    if (!invito_modal) return;
-    const w = window.open("", "_blank");
-    if (!w) return;
-    w.document.write(`
-      <html><head><title>Invito App Genitore</title>
-      <style>
-        body { font-family: Arial, sans-serif; padding: 40px; max-width: 600px; margin: 0 auto; }
-        .header { text-align: center; margin-bottom: 30px; }
-        .token-box { background: #f3f4f6; border: 2px dashed #6b7280; border-radius: 12px; padding: 20px; text-align: center; margin: 20px 0; }
-        .token { font-size: 28px; font-weight: bold; letter-spacing: 4px; font-family: monospace; }
-        .info { margin: 15px 0; line-height: 1.8; }
-        .footer { margin-top: 30px; font-size: 12px; color: #6b7280; text-align: center; }
-      </style></head><body>
-        <div class="header">
-          <h1>🏅 Invito App Genitore</h1>
-          <p>Accesso all'area genitore dell'applicazione</p>
-        </div>
-        <div class="info">
-          <p><strong>Atleta:</strong> ${form.nome} ${form.cognome}</p>
-          <p><strong>Email genitore:</strong> ${invito_modal.email}</p>
-          <p><strong>Scadenza invito:</strong> ${invito_modal.scadenza}</p>
-        </div>
-        <div class="token-box">
-          <p style="margin:0 0 8px; font-size:14px; color:#6b7280;">Il tuo codice invito</p>
-          <div class="token">${invito_modal.token}</div>
-        </div>
-        <div class="info">
-          <h3>📱 Istruzioni</h3>
-          <ol>
-            <li>Scarica l'app dal Play Store o App Store</li>
-            <li>Apri l'app e seleziona "Ho un codice invito"</li>
-            <li>Inserisci il codice mostrato sopra</li>
-            <li>Completa la registrazione con l'email: <strong>${invito_modal.email}</strong></li>
-          </ol>
-        </div>
-        <div class="footer">
-          <p>Questo invito è valido fino al ${invito_modal.scadenza}. Può essere utilizzato una sola volta.</p>
-        </div>
-      </body></html>
-    `);
-    w.document.close();
-    w.print();
-  };
+  const [show_invito_1, set_show_invito_1] = useState(false);
+  const [show_invito_2, set_show_invito_2] = useState(false);
 
   const [form, set_form] = useState({
     ...a,
@@ -941,71 +864,16 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                       type="button"
                       variant="outline"
                       size="sm"
-                      disabled={invito_loading}
-                      onClick={() => handle_genera_invito(form[`${prefix}_email`])}
+                      onClick={() => prefix === "genitore1" ? set_show_invito_1(true) : set_show_invito_2(true)}
                       className="w-full gap-1.5 mt-2"
                     >
-                      <Mail className="w-3.5 h-3.5" />
-                      {invito_loading ? "..." : "Genera Invito App"}
+                      📱 Genera Invito App
                     </Button>
                   )}
                 </div>
               ))}
             </div>
 
-            {/* Modal invito generato */}
-            <Dialog open={!!invito_modal} onOpenChange={(v) => !v && set_invito_modal(null)}>
-              <DialogContent className="max-w-md">
-                <DialogHeader>
-                  <DialogTitle>🏅 Invito Generato</DialogTitle>
-                </DialogHeader>
-                {invito_modal && (
-                  <div className="space-y-4">
-                    <div className="space-y-2 text-sm">
-                      <p><span className="text-muted-foreground">Atleta:</span> <strong>{form.nome} {form.cognome}</strong></p>
-                      <p><span className="text-muted-foreground">Email:</span> <strong>{invito_modal.email}</strong></p>
-                      <p><span className="text-muted-foreground">Scadenza:</span> <strong>{invito_modal.scadenza}</strong></p>
-                    </div>
-
-                    <div className="bg-muted/50 border-2 border-dashed border-border rounded-xl p-5 text-center space-y-2">
-                      <p className="text-xs text-muted-foreground">Codice Invito</p>
-                      <p className="text-2xl font-bold font-mono tracking-[4px] text-foreground">{invito_modal.token}</p>
-                    </div>
-
-                    <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 space-y-1.5">
-                      <p className="text-xs font-bold text-primary uppercase tracking-wide">📱 Istruzioni per il genitore</p>
-                      <ol className="text-xs text-muted-foreground list-decimal list-inside space-y-1">
-                        <li>Scarica l'app dal Play Store o App Store</li>
-                        <li>Apri l'app e seleziona "Ho un codice invito"</li>
-                        <li>Inserisci il codice mostrato sopra</li>
-                        <li>Completa la registrazione con l'email indicata</li>
-                      </ol>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 gap-1.5"
-                        onClick={() => {
-                          navigator.clipboard.writeText(invito_modal.token);
-                          toast({ title: "📋 Codice copiato!" });
-                        }}
-                      >
-                        <Copy className="w-3.5 h-3.5" /> Copia codice
-                      </Button>
-                      <Button
-                        size="sm"
-                        className="flex-1 gap-1.5"
-                        onClick={handle_stampa_invito}
-                      >
-                        <Printer className="w-3.5 h-3.5" /> Stampa PDF
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </DialogContent>
-            </Dialog>
           </TabsContent>
 
           {/* ── Fatture ── */}
@@ -1107,6 +975,22 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
           </TabsContent>
         </Tabs>
       </div>
+      {show_invito_1 && form.genitore1_email && (
+        <InvitoGenitoreModal
+          atleta={form}
+          genitore_email={form.genitore1_email}
+          genitore_nome={`${form.genitore1_nome} ${form.genitore1_cognome}`}
+          on_close={() => set_show_invito_1(false)}
+        />
+      )}
+      {show_invito_2 && form.genitore2_email && (
+        <InvitoGenitoreModal
+          atleta={form}
+          genitore_email={form.genitore2_email}
+          genitore_nome={`${form.genitore2_nome} ${form.genitore2_cognome}`}
+          on_close={() => set_show_invito_2(false)}
+        />
+      )}
     </>
   );
 };
