@@ -59,17 +59,26 @@ export function use_atleti() {
 function transform_atleta(a: any) {
   return {
     ...a,
-    livello_amatori: a.percorso_amatori || "pulcini",
+    // camelCase aliases per il componente
+    percorsoAmatori: a.percorso_amatori || "Pulcini",
+    carrieraArtistica: a.carriera_artistica || undefined,
+    carrieraStile: a.carriera_stile || undefined,
+    atletaFederazione: a.atleta_federazione || false,
+    dataNascita: a.data_nascita || "",
+    orePista: a.ore_pista_stagione ?? 0,
+    foto: a.foto_url || undefined,
+    // snake_case originali mantenuti
+    livello_amatori: a.percorso_amatori || "Pulcini",
     percorso_amatori_completato: !!(a.carriera_artistica || a.carriera_stile),
     stato: a.attivo ? "attivo" : "inattivo",
     ore_pista_stagione: a.ore_pista_stagione ?? 0,
-    genitore_1: {
+    genitore1: {
       nome: a.genitore1_nome || "",
       cognome: a.genitore1_cognome || "",
       telefono: a.genitore1_telefono || "",
       email: a.genitore1_email || "",
     },
-    genitore_2: a.genitore2_nome
+    genitore2: a.genitore2_nome
       ? {
           nome: a.genitore2_nome,
           cognome: a.genitore2_cognome || "",
