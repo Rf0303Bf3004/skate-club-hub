@@ -6,7 +6,78 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, MapPin, Calendar, X, AlertTriangle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { useQueryClient } from "@tanstack/react-query";
+
+// ─── NumInput ──────────────────────────────────────────────
+function to_num(v: string | number): number {
+  if (typeof v === "number") return isNaN(v) ? 0 : v;
+  const n = parseFloat(String(v).replace(",", "."));
+  return isNaN(n) ? 0 : n;
+}
+
+const input_cls =
+  "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
+
+const NumInput: React.FC<{
+  value: string | number;
+  onChange: (v: string) => void;
+  className?: string;
+  placeholder?: string;
+}> = ({ value, onChange, className = "", placeholder = "0.00" }) => {
+  const [local, set_local] = useState(() => {
+    const n = to_num(String(value));
+    return n === 0 ? "" : n.toFixed(2);
+  });
+  const [focused, set_focused] = useState(false);
+
+  useEffect(() => {
+    if (!focused) {
+      const n = to_num(String(value));
+      set_local(n === 0 ? "" : n.toFixed(2));
+    }
+  }, [value, focused]);
+
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      value={local}
+      placeholder={placeholder}
+      onFocus={() => set_focused(true)}
+      onKeyDown={(e) => {
+        const allowed = [
+          "Backspace",
+          "Delete",
+          "Tab",
+          "Escape",
+          "Enter",
+          "ArrowLeft",
+          "ArrowRight",
+          "ArrowUp",
+          "ArrowDown",
+          "Home",
+          "End",
+        ];
+        if (allowed.includes(e.key)) return;
+        if ((e.key === "." || e.key === ",") && !local.includes(".")) return;
+        if (/^\d$/.test(e.key)) return;
+        if (e.ctrlKey || e.metaKey) return;
+        e.preventDefault();
+      }}
+      onChange={(e) => {
+        const v = e.target.value.replace(",", ".");
+        set_local(v);
+        onChange(v);
+      }}
+      onBlur={() => {
+        set_focused(false);
+        const n = to_num(local);
+        set_local(n === 0 ? "" : n.toFixed(2));
+        onChange(String(n));
+      }}
+      className={`${input_cls} ${className}`}
+    />
+  );
+};
 
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <div className="space-y-1.5">
@@ -24,13 +95,15 @@ const IscrizioneModal: React.FC<{
   const iscrivi = use_iscrivi_atleta_campo();
   const [atleta_id, set_atleta_id] = useState("");
   const [tipo, set_tipo] = useState<"diurno" | "completo">("diurno");
-  const [costo, set_costo] = useState<number>(campo.costo_diurno || 0);
+  const [costo_str, set_costo_str] = useState<string>(() => {
+    const n = to_num(campo.costo_diurno);
+    return n === 0 ? "" : n.toFixed(2);
+  });
   const [saving, set_saving] = useState(false);
 
-  // Aggiorna costo automaticamente quando cambia il tipo
   useEffect(() => {
-    if (tipo === "diurno") set_costo(campo.costo_diurno || 0);
-    else set_costo(campo.costo_completo || 0);
+    const n = to_num(tipo === "diurno" ? campo.costo_diurno : campo.costo_completo);
+    set_costo_str(n === 0 ? "" : n.toFixed(2));
   }, [tipo, campo]);
 
   const atleti_non_iscritti = atleti.filter(
@@ -44,7 +117,7 @@ const IscrizioneModal: React.FC<{
     }
     set_saving(true);
     try {
-      await iscrivi.mutateAsync({ campo_id: campo.id, atleta_id, tipo, costo_totale: costo });
+      await iscrivi.mutateAsync({ campo_id: campo.id, atleta_id, tipo, costo_totale: to_num(costo_str) });
       toast({ title: "✅ Atleta iscritto al campo" });
       on_close();
     } catch (err: any) {
@@ -56,8 +129,8 @@ const IscrizioneModal: React.FC<{
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+      <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
           <div>
             <h2 className="text-base font-bold text-foreground">Iscrivi atleta</h2>
             <p className="text-xs text-muted-foreground">{campo.nome}</p>
@@ -66,13 +139,9 @@ const IscrizioneModal: React.FC<{
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="px-6 py-5 space-y-4">
+        <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
           <Field label="Atleta *">
-            <select
-              value={atleta_id}
-              onChange={(e) => set_atleta_id(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-            >
+            <select value={atleta_id} onChange={(e) => set_atleta_id(e.target.value)} className={input_cls}>
               <option value="">Seleziona atleta...</option>
               {atleti_non_iscritti.map((a: any) => (
                 <option key={a.id} value={a.id}>
@@ -94,27 +163,22 @@ const IscrizioneModal: React.FC<{
                     ${tipo === opt.val ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
                 >
                   <p className="text-sm font-medium text-foreground">{opt.label}</p>
-                  <p className="text-xs text-muted-foreground tabular-nums">CHF {opt.costo || 0}</p>
+                  <p className="text-xs text-muted-foreground tabular-nums">CHF {to_num(opt.costo).toFixed(2)}</p>
                 </button>
               ))}
             </div>
           </Field>
           <Field label="Importo (modificabile)">
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF</span>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={costo}
-                onChange={(e) => set_costo(parseFloat(e.target.value) || 0)}
-                className="w-full rounded-lg border border-border bg-background pl-11 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-              />
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">
+                CHF
+              </span>
+              <NumInput value={costo_str} onChange={(v) => set_costo_str(v)} className="pl-11" placeholder="0.00" />
             </div>
             <p className="text-xs text-muted-foreground">Precompilato dal costo del campo, modificabile manualmente</p>
           </Field>
         </div>
-        <div className="flex gap-2 px-6 py-4 border-t border-border">
+        <div className="flex gap-2 px-6 py-4 border-t border-border flex-shrink-0">
           <Button variant="outline" onClick={on_close} disabled={saving} className="flex-1">
             Annulla
           </Button>
@@ -144,8 +208,14 @@ const CampoModal: React.FC<{
     data_fine: campo?.data_fine || "",
     luogo: campo?.luogo || "",
     club_ospitante: campo?.club_ospitante || "",
-    costo_diurno: campo?.costo_diurno ?? 0,
-    costo_completo: campo?.costo_completo ?? 0,
+    costo_diurno_str: (() => {
+      const n = to_num(campo?.costo_diurno);
+      return n === 0 ? "" : n.toFixed(2);
+    })(),
+    costo_completo_str: (() => {
+      const n = to_num(campo?.costo_completo);
+      return n === 0 ? "" : n.toFixed(2);
+    })(),
     note: campo?.note || "",
   });
   const [saving, set_saving] = useState(false);
@@ -160,7 +230,17 @@ const CampoModal: React.FC<{
     }
     set_saving(true);
     try {
-      await upsert.mutateAsync({ ...form, id: campo?.id });
+      await upsert.mutateAsync({
+        id: campo?.id,
+        nome: form.nome,
+        data_inizio: form.data_inizio,
+        data_fine: form.data_fine,
+        luogo: form.luogo,
+        club_ospitante: form.club_ospitante,
+        costo_diurno: to_num(form.costo_diurno_str),
+        costo_completo: to_num(form.costo_completo_str),
+        note: form.note,
+      });
       toast({ title: campo?.id ? "✅ Campo aggiornato" : "✅ Campo creato" });
       on_close();
     } catch (err: any) {
@@ -182,20 +262,20 @@ const CampoModal: React.FC<{
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-card rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+      <div className="bg-card rounded-2xl shadow-xl w-full max-w-lg flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
           <h2 className="text-base font-bold text-foreground">{campo?.id ? "Modifica campo" : "Nuovo campo"}</h2>
           <button onClick={on_close} className="text-muted-foreground hover:text-foreground">
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="px-6 py-5 space-y-4">
+        <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
           <Field label="Nome *">
             <input
               value={form.nome}
               onChange={(e) => set_val("nome", e.target.value)}
               placeholder="es. Campo estivo 2025"
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+              className={input_cls}
             />
           </Field>
           <div className="grid grid-cols-2 gap-4">
@@ -204,7 +284,7 @@ const CampoModal: React.FC<{
                 type="date"
                 value={form.data_inizio}
                 onChange={(e) => set_val("data_inizio", e.target.value)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                className={input_cls}
               />
             </Field>
             <Field label="Data fine *">
@@ -212,7 +292,7 @@ const CampoModal: React.FC<{
                 type="date"
                 value={form.data_fine}
                 onChange={(e) => set_val("data_fine", e.target.value)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                className={input_cls}
               />
             </Field>
           </div>
@@ -221,7 +301,7 @@ const CampoModal: React.FC<{
               value={form.luogo}
               onChange={(e) => set_val("luogo", e.target.value)}
               placeholder="es. Lugano"
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+              className={input_cls}
             />
           </Field>
           <Field label="Club ospitante">
@@ -229,33 +309,33 @@ const CampoModal: React.FC<{
               value={form.club_ospitante}
               onChange={(e) => set_val("club_ospitante", e.target.value)}
               placeholder="es. Hockey Club Lugano"
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+              className={input_cls}
             />
           </Field>
           <div className="grid grid-cols-2 gap-4">
             <Field label="Costo diurno">
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF</span>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={form.costo_diurno}
-                  onChange={(e) => set_val("costo_diurno", parseFloat(e.target.value) || 0)}
-                  className="w-full rounded-lg border border-border bg-background pl-11 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">
+                  CHF
+                </span>
+                <NumInput
+                  value={form.costo_diurno_str}
+                  onChange={(v) => set_val("costo_diurno_str", v)}
+                  className="pl-11"
+                  placeholder="0.00"
                 />
               </div>
             </Field>
             <Field label="Costo completo">
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF</span>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={form.costo_completo}
-                  onChange={(e) => set_val("costo_completo", parseFloat(e.target.value) || 0)}
-                  className="w-full rounded-lg border border-border bg-background pl-11 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">
+                  CHF
+                </span>
+                <NumInput
+                  value={form.costo_completo_str}
+                  onChange={(v) => set_val("costo_completo_str", v)}
+                  className="pl-11"
+                  placeholder="0.00"
                 />
               </div>
             </Field>
@@ -266,11 +346,11 @@ const CampoModal: React.FC<{
               onChange={(e) => set_val("note", e.target.value)}
               rows={2}
               placeholder="Note aggiuntive..."
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/40"
+              className={`${input_cls} resize-none`}
             />
           </Field>
         </div>
-        <div className="px-6 py-4 border-t border-border space-y-2">
+        <div className="px-6 py-4 border-t border-border space-y-2 flex-shrink-0">
           <div className="flex gap-2">
             <Button variant="outline" onClick={on_close} disabled={saving} className="flex-1">
               Annulla
@@ -322,7 +402,7 @@ const TrainingCampsPage: React.FC = () => {
   const { t } = useI18n();
   const { data: campi = [], isLoading } = use_campi();
   const { data: atleti = [] } = use_atleti();
-  const [campo_modal, set_campo_modal] = useState<any>(null); // null=chiuso, {}=nuovo, campo=modifica
+  const [campo_modal, set_campo_modal] = useState<any>(null);
   const [isc_campo, set_isc_campo] = useState<any>(null);
 
   if (isLoading)
@@ -388,11 +468,13 @@ const TrainingCampsPage: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-muted-foreground text-xs">{t("costo_diurno")}</p>
-                  <p className="font-medium text-foreground tabular-nums">CHF {camp.costo_diurno}</p>
+                  <p className="font-medium text-foreground tabular-nums">CHF {to_num(camp.costo_diurno).toFixed(2)}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground text-xs">{t("costo_completo")}</p>
-                  <p className="font-medium text-foreground tabular-nums">CHF {camp.costo_completo}</p>
+                  <p className="font-medium text-foreground tabular-nums">
+                    CHF {to_num(camp.costo_completo).toFixed(2)}
+                  </p>
                 </div>
                 <div>
                   <p className="text-muted-foreground text-xs">{t("iscrizioni")}</p>
