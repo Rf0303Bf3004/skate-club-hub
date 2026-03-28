@@ -1,12 +1,18 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useI18n } from "@/lib/i18n";
-import { use_istruttori, use_lezioni_private, use_corsi, use_campi, use_atleti } from "@/hooks/use-supabase-data";
+import {
+  use_istruttori,
+  use_atleti_monitori,
+  use_lezioni_private,
+  use_corsi,
+  use_campi,
+} from "@/hooks/use-supabase-data";
 import { use_upsert_istruttore, use_save_disponibilita, use_elimina_istruttore } from "@/hooks/use-supabase-mutations";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, ArrowLeft, Euro, Clock, TrendingUp, Download, Upload, X, Search } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Euro, Clock, TrendingUp, Download, Upload, X, Info } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
@@ -20,11 +26,7 @@ const TIPI_CONTRATTO = [
   { value: "misto", label: "Fisso mensile + variabile lezioni private" },
 ];
 
-const RUOLI = [
-  { value: "istruttore", label: "Istruttore/Istruttrice" },
-  { value: "monitore", label: "Monitore/Monitrice" },
-  { value: "aiuto_monitore", label: "Aiuto Monitore/Monitrice" },
-];
+const RUOLI_ISTRUTTORE = [{ value: "istruttore", label: "Istruttore/Istruttrice" }];
 
 function get_mese_label(anno: number, mese: number) {
   return new Date(anno, mese - 1, 1).toLocaleDateString("it-CH", { month: "long", year: "numeric" });
@@ -113,23 +115,15 @@ const NumInput: React.FC<{
   );
 };
 
-// ─── Modal nuovo/modifica istruttore ───────────────────────
+// ─── Modal istruttore (solo istruttori veri) ───────────────
 const IstruttoreModal: React.FC<{
   istruttore?: any;
-  atleti: any[];
   on_close: () => void;
   on_save: (data: any) => Promise<void>;
   on_delete?: () => Promise<void>;
   saving: boolean;
   deleting: boolean;
-}> = ({ istruttore, atleti, on_close, on_save, on_delete, saving, deleting }) => {
-  const [ruolo, set_ruolo] = useState(istruttore?.ruolo || "istruttore");
-  const [step, set_step] = useState<"ruolo" | "cerca_atleta" | "form">(istruttore?.id ? "form" : "ruolo");
-  const [search, set_search] = useState("");
-  const [atleta_selezionato, set_atleta_selezionato] = useState<any>(null);
-  const [confirm_delete, set_confirm_delete] = useState(false);
-  const [uploading_foto, set_uploading_foto] = useState(false);
-
+}> = ({ istruttore, on_close, on_save, on_delete, saving, deleting }) => {
   const [form, set_form] = useState({
     nome: istruttore?.nome || "",
     cognome: istruttore?.cognome || "",
@@ -140,40 +134,14 @@ const IstruttoreModal: React.FC<{
     note: istruttore?.note || "",
     foto_url: istruttore?.foto_url || "",
     tag_nfc: istruttore?.tag_nfc || "",
-    ruolo: istruttore?.ruolo || "istruttore",
-    compenso_orario: String(istruttore?.compenso_orario || ""),
-    atleta_id: istruttore?.atleta_id || null,
+    ruolo: "istruttore",
   });
+  const [confirm_delete, set_confirm_delete] = useState(false);
+  const [uploading_foto, set_uploading_foto] = useState(false);
 
   const set_val = useCallback((k: string, v: any) => {
     set_form((p) => ({ ...p, [k]: v }));
   }, []);
-
-  const is_monitore = ruolo === "monitore" || ruolo === "aiuto_monitore";
-
-  const atleti_filtrati = useMemo(() => {
-    if (!search) return atleti;
-    const q = search.toLowerCase();
-    return atleti.filter((a: any) => `${a.nome} ${a.cognome}`.toLowerCase().includes(q));
-  }, [atleti, search]);
-
-  const handle_seleziona_atleta = (atleta: any) => {
-    set_atleta_selezionato(atleta);
-    set_form((p) => ({
-      ...p,
-      nome: atleta.nome,
-      cognome: atleta.cognome,
-      foto_url: atleta.foto_url || "",
-      atleta_id: atleta.id,
-      ruolo,
-    }));
-    set_step("form");
-  };
-
-  const handle_inserimento_manuale = () => {
-    set_form((p) => ({ ...p, ruolo }));
-    set_step("form");
-  };
 
   const handle_foto_upload = async (file: File) => {
     set_uploading_foto(true);
@@ -196,20 +164,9 @@ const IstruttoreModal: React.FC<{
     on_save({
       ...form,
       id: istruttore?.id,
-      ruolo,
+      ruolo: "istruttore",
       costo_minuto_lezione_privata: to_num(form.costo_minuto_lezione_privata),
-      compenso_orario: to_num(form.compenso_orario),
     });
-  };
-
-  const livello_display = (atleta: any) => {
-    if (atleta.carriera_artistica || atleta.carriera_stile) {
-      const parts = [];
-      if (atleta.carriera_artistica) parts.push(`Art: ${atleta.carriera_artistica}`);
-      if (atleta.carriera_stile) parts.push(`Stile: ${atleta.carriera_stile}`);
-      return parts.join(" · ");
-    }
-    return atleta.percorso_amatori || atleta.livello_amatori || "—";
   };
 
   return (
@@ -217,297 +174,145 @@ const IstruttoreModal: React.FC<{
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <h2 className="text-base font-bold text-foreground">
-            {istruttore?.id ? "Modifica" : "Nuovo"} {RUOLI.find((r) => r.value === ruolo)?.label || "Istruttore"}
+            {istruttore?.id ? "Modifica istruttore" : "Nuovo istruttore"}
           </h2>
           <button onClick={on_close} className="text-muted-foreground hover:text-foreground">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* ── Step 1: scelta ruolo (solo nuovo) ── */}
-        {step === "ruolo" && (
-          <div className="px-6 py-5 space-y-4">
-            <p className="text-sm text-muted-foreground">Seleziona il ruolo da assegnare:</p>
-            <div className="space-y-2">
-              {RUOLI.map((r) => (
-                <div
-                  key={r.value}
-                  onClick={() => {
-                    set_ruolo(r.value);
-                    set_form((p) => ({ ...p, ruolo: r.value }));
-                    if (r.value === "monitore" || r.value === "aiuto_monitore") {
-                      set_step("cerca_atleta");
-                    } else {
-                      set_step("form");
-                    }
-                  }}
-                  className="p-4 rounded-xl border-2 border-border hover:border-primary cursor-pointer transition-all"
-                >
-                  <p className="text-sm font-medium text-foreground">{r.label}</p>
-                  {(r.value === "monitore" || r.value === "aiuto_monitore") && (
-                    <p className="text-xs text-muted-foreground mt-0.5">Cerca prima tra gli atleti del club</p>
-                  )}
+        <div className="px-6 py-5 space-y-4">
+          <Field label="Foto">
+            <div className="flex items-center gap-3">
+              {form.foto_url ? (
+                <img
+                  src={form.foto_url}
+                  alt="foto"
+                  className="w-16 h-16 rounded-full object-cover border border-border"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-muted-foreground text-xl font-bold">
+                  {form.nome?.[0] || "?"}
+                  {form.cognome?.[0] || ""}
                 </div>
-              ))}
+              )}
+              <label
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg border border-border cursor-pointer hover:bg-muted/30 text-sm text-muted-foreground transition-colors ${uploading_foto ? "opacity-50 pointer-events-none" : ""}`}
+              >
+                <Upload className="w-4 h-4" />
+                {uploading_foto ? "Caricamento..." : "Carica foto"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => e.target.files?.[0] && handle_foto_upload(e.target.files[0])}
+                />
+              </label>
             </div>
-          </div>
-        )}
+          </Field>
 
-        {/* ── Step 2: cerca atleta (monitore/aiuto) ── */}
-        {step === "cerca_atleta" && (
-          <div className="px-6 py-5 space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Cerca l'atleta da nominare <strong>{RUOLI.find((r) => r.value === ruolo)?.label}</strong>:
-            </p>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Nome *">
+              <input value={form.nome} onChange={(e) => set_val("nome", e.target.value)} className={input_cls} />
+            </Field>
+            <Field label="Cognome *">
+              <input value={form.cognome} onChange={(e) => set_val("cognome", e.target.value)} className={input_cls} />
+            </Field>
+          </div>
+
+          <Field label="Email">
+            <input
+              type="email"
+              value={form.email}
+              onChange={(e) => set_val("email", e.target.value)}
+              className={input_cls}
+            />
+          </Field>
+
+          <Field label="Telefono">
+            <input value={form.telefono} onChange={(e) => set_val("telefono", e.target.value)} className={input_cls} />
+          </Field>
+
+          <Field label="TAG NFC">
+            <input
+              value={form.tag_nfc}
+              onChange={(e) => set_val("tag_nfc", e.target.value)}
+              placeholder="es. 04:A3:B2:C1:D0"
+              className={input_cls}
+            />
+          </Field>
+
+          <Field label="Prezzo al minuto lezioni private (vendita al cliente)">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                value={search}
-                onChange={(e) => set_search(e.target.value)}
-                placeholder="Cerca per nome o cognome..."
-                className={`${input_cls} pl-9`}
-                autoFocus
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF/min</span>
+              <NumInput
+                value={form.costo_minuto_lezione_privata}
+                onChange={(v) => set_val("costo_minuto_lezione_privata", v)}
+                className="pl-16"
+                placeholder="es. 1.50"
               />
             </div>
+          </Field>
 
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {atleti_filtrati.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">Nessun atleta trovato</p>
-              ) : (
-                atleti_filtrati.map((a: any) => (
-                  <div
-                    key={a.id}
-                    onClick={() => handle_seleziona_atleta(a)}
-                    className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-primary hover:bg-primary/5 cursor-pointer transition-all"
-                  >
-                    {a.foto_url ? (
-                      <img src={a.foto_url} alt={a.nome} className="w-10 h-10 rounded-full object-cover shrink-0" />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
-                        {a.nome[0]}
-                        {a.cognome[0]}
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-foreground text-sm">
-                        {a.nome} {a.cognome}
-                      </p>
-                      <p className="text-xs text-muted-foreground">{livello_display(a)}</p>
-                    </div>
-                    <Badge variant="secondary" className="text-xs shrink-0">
-                      Seleziona
-                    </Badge>
-                  </div>
-                ))
-              )}
-            </div>
+          <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
+            <input
+              type="checkbox"
+              id="attivo_istr"
+              checked={form.attivo}
+              onChange={(e) => set_val("attivo", e.target.checked)}
+              className="w-4 h-4 accent-primary"
+            />
+            <label htmlFor="attivo_istr" className="text-sm font-medium text-foreground cursor-pointer">
+              Attivo
+            </label>
+          </div>
 
-            <div className="pt-2 border-t border-border">
-              <button
-                onClick={handle_inserimento_manuale}
-                className="w-full text-sm text-muted-foreground hover:text-foreground py-2 text-center transition-colors"
-              >
-                Non trovo l'atleta → Inserimento manuale
-              </button>
-            </div>
+          <Field label="Note">
+            <textarea
+              value={form.note}
+              onChange={(e) => set_val("note", e.target.value)}
+              rows={2}
+              className={`${input_cls} resize-none`}
+            />
+          </Field>
+        </div>
 
-            <Button variant="outline" size="sm" onClick={() => set_step("ruolo")} className="w-full">
-              ← Torna alla scelta ruolo
+        <div className="px-6 py-4 border-t border-border space-y-2">
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={on_close} disabled={saving} className="flex-1">
+              Annulla
+            </Button>
+            <Button onClick={handle_save} disabled={saving} className="flex-1 bg-primary hover:bg-primary/90">
+              {saving ? "..." : "💾 Salva"}
             </Button>
           </div>
-        )}
-
-        {/* ── Step 3: form dati ── */}
-        {step === "form" && (
-          <>
-            {atleta_selezionato && (
-              <div className="px-6 pt-4">
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/5 border border-primary/20">
-                  {atleta_selezionato.foto_url ? (
-                    <img
-                      src={atleta_selezionato.foto_url}
-                      alt={atleta_selezionato.nome}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
-                      {atleta_selezionato.nome[0]}
-                      {atleta_selezionato.cognome[0]}
-                    </div>
-                  )}
-                  <div>
-                    <p className="text-sm font-medium text-foreground">
-                      {atleta_selezionato.nome} {atleta_selezionato.cognome}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{livello_display(atleta_selezionato)}</p>
-                  </div>
-                  <Badge className="ml-auto text-xs bg-primary/10 text-primary border-0">Atleta collegato</Badge>
-                </div>
-              </div>
-            )}
-
-            <div className="px-6 py-5 space-y-4">
-              {!atleta_selezionato && (
-                <Field label="Foto">
-                  <div className="flex items-center gap-3">
-                    {form.foto_url ? (
-                      <img
-                        src={form.foto_url}
-                        alt="foto"
-                        className="w-16 h-16 rounded-full object-cover border border-border"
-                      />
-                    ) : (
-                      <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-muted-foreground text-xl font-bold">
-                        {form.nome?.[0] || "?"}
-                        {form.cognome?.[0] || ""}
-                      </div>
-                    )}
-                    <label
-                      className={`flex items-center gap-2 px-3 py-2 rounded-lg border border-border cursor-pointer hover:bg-muted/30 text-sm text-muted-foreground transition-colors ${uploading_foto ? "opacity-50 pointer-events-none" : ""}`}
-                    >
-                      <Upload className="w-4 h-4" />
-                      {uploading_foto ? "Caricamento..." : "Carica foto"}
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => e.target.files?.[0] && handle_foto_upload(e.target.files[0])}
-                      />
-                    </label>
-                  </div>
-                </Field>
-              )}
-
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Nome *">
-                  <input value={form.nome} onChange={(e) => set_val("nome", e.target.value)} className={input_cls} />
-                </Field>
-                <Field label="Cognome *">
-                  <input
-                    value={form.cognome}
-                    onChange={(e) => set_val("cognome", e.target.value)}
-                    className={input_cls}
-                  />
-                </Field>
-              </div>
-
-              <Field label="Email">
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => set_val("email", e.target.value)}
-                  className={input_cls}
-                />
-              </Field>
-
-              <Field label="Telefono">
-                <input
-                  value={form.telefono}
-                  onChange={(e) => set_val("telefono", e.target.value)}
-                  className={input_cls}
-                />
-              </Field>
-
-              <Field label="TAG NFC">
-                <input
-                  value={form.tag_nfc}
-                  onChange={(e) => set_val("tag_nfc", e.target.value)}
-                  placeholder="es. 04:A3:B2:C1:D0"
-                  className={input_cls}
-                />
-              </Field>
-
-              {is_monitore ? (
-                <Field label="Compenso orario (CHF/ora)">
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">
-                      CHF/h
-                    </span>
-                    <NumInput
-                      value={form.compenso_orario}
-                      onChange={(v) => set_val("compenso_orario", v)}
-                      className="pl-14"
-                      placeholder="es. 25.50"
-                    />
-                  </div>
-                </Field>
-              ) : (
-                <Field label="Prezzo al minuto lezioni private (vendita al cliente)">
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">
-                      CHF/min
-                    </span>
-                    <NumInput
-                      value={form.costo_minuto_lezione_privata}
-                      onChange={(v) => set_val("costo_minuto_lezione_privata", v)}
-                      className="pl-16"
-                      placeholder="es. 1.50"
-                    />
-                  </div>
-                </Field>
-              )}
-
-              <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
-                <input
-                  type="checkbox"
-                  id="attivo_istr"
-                  checked={form.attivo}
-                  onChange={(e) => set_val("attivo", e.target.checked)}
-                  className="w-4 h-4 accent-primary"
-                />
-                <label htmlFor="attivo_istr" className="text-sm font-medium text-foreground cursor-pointer">
-                  Attivo
-                </label>
-              </div>
-
-              <Field label="Note">
-                <textarea
-                  value={form.note}
-                  onChange={(e) => set_val("note", e.target.value)}
-                  rows={2}
-                  className={`${input_cls} resize-none`}
-                />
-              </Field>
+          {istruttore?.id && !confirm_delete && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => set_confirm_delete(true)}
+              className="w-full text-destructive hover:bg-destructive/10"
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-2" /> Elimina
+            </Button>
+          )}
+          {confirm_delete && (
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => set_confirm_delete(false)} className="flex-1">
+                Annulla
+              </Button>
+              <Button variant="destructive" size="sm" onClick={on_delete} disabled={deleting} className="flex-1">
+                {deleting ? "..." : "Elimina definitivamente"}
+              </Button>
             </div>
-
-            <div className="px-6 py-4 border-t border-border space-y-2">
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={on_close} disabled={saving} className="flex-1">
-                  Annulla
-                </Button>
-                <Button onClick={handle_save} disabled={saving} className="flex-1 bg-primary hover:bg-primary/90">
-                  {saving ? "..." : "💾 Salva"}
-                </Button>
-              </div>
-              {istruttore?.id && !confirm_delete && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => set_confirm_delete(true)}
-                  className="w-full text-destructive hover:bg-destructive/10"
-                >
-                  <Trash2 className="w-3.5 h-3.5 mr-2" /> Elimina
-                </Button>
-              )}
-              {confirm_delete && (
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => set_confirm_delete(false)} className="flex-1">
-                    Annulla
-                  </Button>
-                  <Button variant="destructive" size="sm" onClick={on_delete} disabled={deleting} className="flex-1">
-                    {deleting ? "..." : "Elimina definitivamente"}
-                  </Button>
-                </div>
-              )}
-            </div>
-          </>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
 };
 
-// ─── Tab Ore Lavoro ────────────────────────────────────────
+// ─── Tab Ore Lavoro Istruttore ─────────────────────────────
 const TabOreLavoro: React.FC<{
   istruttore: any;
   lezioni: any[];
@@ -600,8 +405,6 @@ const TabOreLavoro: React.FC<{
   const costo_lezioni = ore_lezioni * (istruttore.costo_orario_lezioni || 0);
   const costo_corsi = ore_corsi * (istruttore.costo_orario_corsi || 0);
   const costo_totale_club = costo_lezioni + costo_corsi;
-  const is_monitore = istruttore.ruolo === "monitore" || istruttore.ruolo === "aiuto_monitore";
-  const compenso_monitore = ore_totali * (istruttore.compenso_orario || 0);
 
   const handle_save = async () => {
     set_saving(true);
@@ -634,16 +437,15 @@ const TabOreLavoro: React.FC<{
   const handle_export_csv = () => {
     const rows = [
       ["Istruttore", `${istruttore.nome} ${istruttore.cognome}`],
-      ["Ruolo", RUOLI.find((r) => r.value === istruttore.ruolo)?.label || "Istruttore"],
       ["Mese", get_mese_label(anno, mese)],
       [""],
-      ["Categoria", "Ore", "Compenso (CHF)"],
-      ["Lezioni private", ore_lezioni.toFixed(2), is_monitore ? "" : costo_lezioni.toFixed(2)],
-      ["Corsi", ore_corsi.toFixed(2), is_monitore ? "" : costo_corsi.toFixed(2)],
+      ["Categoria", "Ore", "Costo (CHF)"],
+      ["Lezioni private", ore_lezioni.toFixed(2), costo_lezioni.toFixed(2)],
+      ["Corsi", ore_corsi.toFixed(2), costo_corsi.toFixed(2)],
       ["Campi allenamento", ore_campi.toFixed(2), ""],
       ["Accompagnamento gare", ore_gare_num.toFixed(2), ""],
       ["Extra/Altro", ore_extra_num.toFixed(2), ""],
-      ["TOTALE", ore_totali.toFixed(2), is_monitore ? compenso_monitore.toFixed(2) : costo_totale_club.toFixed(2)],
+      ["TOTALE", ore_totali.toFixed(2), costo_totale_club.toFixed(2)],
     ];
     const csv = rows.map((r) => r.join(";")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -685,27 +487,16 @@ const TabOreLavoro: React.FC<{
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {[
-          {
-            label: is_monitore ? "Ore pista" : "Lezioni private",
-            ore: is_monitore ? ore_totali : ore_lezioni,
-            color: "text-primary",
-          },
+          { label: "Lezioni private", ore: ore_lezioni, color: "text-primary" },
           { label: "Corsi", ore: ore_corsi, color: "text-orange-500" },
-          {
-            label: is_monitore ? "Compenso totale" : "Ore totali",
-            ore: is_monitore ? compenso_monitore : ore_totali,
-            color: "text-success",
-            is_chf: is_monitore,
-          },
+          { label: "Ore totali", ore: ore_totali, color: "text-success" },
         ].map((kpi, i) => (
           <div key={i} className="bg-card rounded-xl shadow-card p-4">
             <div className="flex items-center gap-2 mb-1">
               <Clock className={`w-3.5 h-3.5 ${kpi.color}`} />
               <p className="text-xs text-muted-foreground">{kpi.label}</p>
             </div>
-            <p className={`text-lg font-bold tabular-nums ${kpi.color}`}>
-              {(kpi as any).is_chf ? `CHF ${kpi.ore.toFixed(2)}` : ore_fmt(kpi.ore)}
-            </p>
+            <p className={`text-lg font-bold tabular-nums ${kpi.color}`}>{ore_fmt(kpi.ore)}</p>
           </div>
         ))}
       </div>
@@ -732,9 +523,7 @@ const TabOreLavoro: React.FC<{
             <tr className="border-b border-border bg-muted/20">
               <th className="text-left px-4 py-2.5 text-xs font-bold text-muted-foreground">Categoria</th>
               <th className="text-right px-4 py-2.5 text-xs font-bold text-muted-foreground">Ore</th>
-              <th className="text-right px-4 py-2.5 text-xs font-bold text-muted-foreground">
-                {is_monitore ? "Compenso/h" : "Costo/h club"}
-              </th>
+              <th className="text-right px-4 py-2.5 text-xs font-bold text-muted-foreground">Costo/h club</th>
               <th className="text-right px-4 py-2.5 text-xs font-bold text-muted-foreground">Totale</th>
             </tr>
           </thead>
@@ -746,14 +535,10 @@ const TabOreLavoro: React.FC<{
               </td>
               <td className="px-4 py-3 text-right tabular-nums font-medium">{ore_fmt(ore_lezioni)}</td>
               <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
-                CHF{" "}
-                {is_monitore
-                  ? (istruttore.compenso_orario || 0).toFixed(2)
-                  : (istruttore.costo_orario_lezioni || 0).toFixed(2)}
+                CHF {(istruttore.costo_orario_lezioni || 0).toFixed(2)}
               </td>
               <td className="px-4 py-3 text-right tabular-nums font-semibold text-primary">
-                CHF{" "}
-                {is_monitore ? (ore_lezioni * (istruttore.compenso_orario || 0)).toFixed(2) : costo_lezioni.toFixed(2)}
+                CHF {costo_lezioni.toFixed(2)}
               </td>
             </tr>
             <tr className="border-b border-border/50">
@@ -763,13 +548,10 @@ const TabOreLavoro: React.FC<{
               </td>
               <td className="px-4 py-3 text-right tabular-nums font-medium">{ore_fmt(ore_corsi)}</td>
               <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
-                CHF{" "}
-                {is_monitore
-                  ? (istruttore.compenso_orario || 0).toFixed(2)
-                  : (istruttore.costo_orario_corsi || 0).toFixed(2)}
+                CHF {(istruttore.costo_orario_corsi || 0).toFixed(2)}
               </td>
               <td className="px-4 py-3 text-right tabular-nums font-semibold text-primary">
-                CHF {is_monitore ? (ore_corsi * (istruttore.compenso_orario || 0)).toFixed(2) : costo_corsi.toFixed(2)}
+                CHF {costo_corsi.toFixed(2)}
               </td>
             </tr>
             <tr className="border-b border-border/50">
@@ -778,12 +560,8 @@ const TabOreLavoro: React.FC<{
                 <p className="text-xs text-muted-foreground">automatico (8h/giorno)</p>
               </td>
               <td className="px-4 py-3 text-right tabular-nums font-medium">{ore_fmt(ore_campi)}</td>
-              <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
-                {is_monitore ? `CHF ${(istruttore.compenso_orario || 0).toFixed(2)}` : "—"}
-              </td>
-              <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
-                {is_monitore ? `CHF ${(ore_campi * (istruttore.compenso_orario || 0)).toFixed(2)}` : "—"}
-              </td>
+              <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">—</td>
+              <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">—</td>
             </tr>
             <tr className="border-b border-border/50">
               <td className="px-4 py-3">
@@ -828,7 +606,7 @@ const TabOreLavoro: React.FC<{
               <td className="px-4 py-3 text-right tabular-nums font-bold text-foreground">{ore_fmt(ore_totali)}</td>
               <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">—</td>
               <td className="px-4 py-3 text-right tabular-nums font-bold text-primary">
-                CHF {is_monitore ? compenso_monitore.toFixed(2) : costo_totale_club.toFixed(2)}
+                CHF {costo_totale_club.toFixed(2)}
               </td>
             </tr>
           </tbody>
@@ -838,7 +616,7 @@ const TabOreLavoro: React.FC<{
   );
 };
 
-// ─── Tab Compenso ──────────────────────────────────────────
+// ─── Tab Compenso Istruttore ───────────────────────────────
 const TabCompenso: React.FC<{
   istruttore: any;
   lezioni: any[];
@@ -856,10 +634,7 @@ const TabCompenso: React.FC<{
     compenso_fisso_corsi: String(istruttore.compenso_fisso_corsi || ""),
     costo_orario_corsi: String(istruttore.costo_orario_corsi || ""),
     costo_orario_lezioni: String(istruttore.costo_orario_lezioni || ""),
-    compenso_orario: String(istruttore.compenso_orario || ""),
   });
-
-  const is_monitore = istruttore.ruolo === "monitore" || istruttore.ruolo === "aiuto_monitore";
 
   const lezioni_mese = useMemo(
     () =>
@@ -904,7 +679,6 @@ const TabCompenso: React.FC<{
   const ore_totali = ore_lezioni_private + ore_corsi;
 
   const compenso_vendita = useMemo(() => {
-    if (is_monitore) return ore_totali * to_num(contratto_form.compenso_orario);
     const tipo = contratto_form.tipo_contratto;
     const costo_min = to_num(contratto_form.costo_minuto_lezione_privata);
     const fisso_mensile = to_num(contratto_form.compenso_fisso_mensile);
@@ -921,7 +695,7 @@ const TabCompenso: React.FC<{
       default:
         return 0;
     }
-  }, [contratto_form, minuti_lezioni_private, minuti_corsi, is_monitore, ore_totali]);
+  }, [contratto_form, minuti_lezioni_private, minuti_corsi]);
 
   const handle_save = () => {
     on_save_contratto({
@@ -931,7 +705,6 @@ const TabCompenso: React.FC<{
       compenso_fisso_corsi: to_num(contratto_form.compenso_fisso_corsi),
       costo_orario_corsi: to_num(contratto_form.costo_orario_corsi),
       costo_orario_lezioni: to_num(contratto_form.costo_orario_lezioni),
-      compenso_orario: to_num(contratto_form.compenso_orario),
     });
   };
 
@@ -942,119 +715,100 @@ const TabCompenso: React.FC<{
       <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
         <div className="flex items-center gap-2">
           <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-            {is_monitore ? "Compenso orario" : "Prezzo di vendita al cliente"}
+            Prezzo di vendita al cliente
           </h3>
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">RICAVI</span>
         </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {TIPI_CONTRATTO.map((tc) => (
+            <div
+              key={tc.value}
+              onClick={() => set_contratto_form((p) => ({ ...p, tipo_contratto: tc.value }))}
+              className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${contratto_form.tipo_contratto === tc.value ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
+            >
+              <p className="text-sm font-medium text-foreground">{tc.label}</p>
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+          {(contratto_form.tipo_contratto === "orario" ||
+            contratto_form.tipo_contratto === "fisso_corsi" ||
+            contratto_form.tipo_contratto === "misto") && (
+            <Field label="Prezzo al minuto lezioni private (vendita)">
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF</span>
+                <NumInput
+                  value={contratto_form.costo_minuto_lezione_privata}
+                  onChange={(v) => upd("costo_minuto_lezione_privata", v)}
+                  className="pl-11"
+                  placeholder="es. 1.50"
+                />
+              </div>
+            </Field>
+          )}
+          {(contratto_form.tipo_contratto === "fisso_mensile" || contratto_form.tipo_contratto === "misto") && (
+            <Field label="Compenso fisso mensile">
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF</span>
+                <NumInput
+                  value={contratto_form.compenso_fisso_mensile}
+                  onChange={(v) => upd("compenso_fisso_mensile", v)}
+                  className="pl-11"
+                  placeholder="es. 1500"
+                />
+              </div>
+            </Field>
+          )}
+          {contratto_form.tipo_contratto === "fisso_corsi" && (
+            <Field label="Compenso fisso corsi">
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF</span>
+                <NumInput
+                  value={contratto_form.compenso_fisso_corsi}
+                  onChange={(v) => upd("compenso_fisso_corsi", v)}
+                  className="pl-11"
+                  placeholder="es. 800"
+                />
+              </div>
+            </Field>
+          )}
+        </div>
+      </div>
 
-        {is_monitore ? (
-          <Field label="Compenso orario (CHF/ora)">
+      <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+            Costo orario club (interno)
+          </h3>
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-destructive/10 text-destructive font-bold">
+            COSTI
+          </span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Costo orario — lezioni private">
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF/h</span>
               <NumInput
-                value={contratto_form.compenso_orario}
-                onChange={(v) => upd("compenso_orario", v)}
+                value={contratto_form.costo_orario_lezioni}
+                onChange={(v) => upd("costo_orario_lezioni", v)}
                 className="pl-14"
-                placeholder="es. 25.50"
+                placeholder="es. 45"
               />
             </div>
           </Field>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {TIPI_CONTRATTO.map((tc) => (
-                <div
-                  key={tc.value}
-                  onClick={() => set_contratto_form((p) => ({ ...p, tipo_contratto: tc.value }))}
-                  className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${contratto_form.tipo_contratto === tc.value ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
-                >
-                  <p className="text-sm font-medium text-foreground">{tc.label}</p>
-                </div>
-              ))}
+          <Field label="Costo orario — corsi e altro">
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF/h</span>
+              <NumInput
+                value={contratto_form.costo_orario_corsi}
+                onChange={(v) => upd("costo_orario_corsi", v)}
+                className="pl-14"
+                placeholder="es. 35"
+              />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-              {(contratto_form.tipo_contratto === "orario" ||
-                contratto_form.tipo_contratto === "fisso_corsi" ||
-                contratto_form.tipo_contratto === "misto") && (
-                <Field label="Prezzo al minuto lezioni private (vendita)">
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF</span>
-                    <NumInput
-                      value={contratto_form.costo_minuto_lezione_privata}
-                      onChange={(v) => upd("costo_minuto_lezione_privata", v)}
-                      className="pl-11"
-                      placeholder="es. 1.50"
-                    />
-                  </div>
-                </Field>
-              )}
-              {(contratto_form.tipo_contratto === "fisso_mensile" || contratto_form.tipo_contratto === "misto") && (
-                <Field label="Compenso fisso mensile">
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF</span>
-                    <NumInput
-                      value={contratto_form.compenso_fisso_mensile}
-                      onChange={(v) => upd("compenso_fisso_mensile", v)}
-                      className="pl-11"
-                      placeholder="es. 1500"
-                    />
-                  </div>
-                </Field>
-              )}
-              {contratto_form.tipo_contratto === "fisso_corsi" && (
-                <Field label="Compenso fisso corsi">
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF</span>
-                    <NumInput
-                      value={contratto_form.compenso_fisso_corsi}
-                      onChange={(v) => upd("compenso_fisso_corsi", v)}
-                      className="pl-11"
-                      placeholder="es. 800"
-                    />
-                  </div>
-                </Field>
-              )}
-            </div>
-          </>
-        )}
-      </div>
-
-      {!is_monitore && (
-        <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
-          <div className="flex items-center gap-2">
-            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-              Costo orario club (interno)
-            </h3>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-destructive/10 text-destructive font-bold">
-              COSTI
-            </span>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Costo orario — lezioni private">
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF/h</span>
-                <NumInput
-                  value={contratto_form.costo_orario_lezioni}
-                  onChange={(v) => upd("costo_orario_lezioni", v)}
-                  className="pl-14"
-                  placeholder="es. 45"
-                />
-              </div>
-            </Field>
-            <Field label="Costo orario — corsi e altro">
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF/h</span>
-                <NumInput
-                  value={contratto_form.costo_orario_corsi}
-                  onChange={(v) => upd("costo_orario_corsi", v)}
-                  className="pl-14"
-                  placeholder="es. 35"
-                />
-              </div>
-            </Field>
-          </div>
+          </Field>
         </div>
-      )}
+      </div>
 
       <Button onClick={handle_save} disabled={saving} size="sm" className="bg-primary hover:bg-primary/90">
         {saving ? "..." : "💾 Salva configurazione compenso"}
@@ -1092,7 +846,7 @@ const TabCompenso: React.FC<{
           { label: "Ore corsi", value: ore_fmt(ore_corsi), icon: Clock, color: "text-orange-500" },
           { label: "Ore totali", value: ore_fmt(ore_totali), icon: TrendingUp, color: "text-success" },
           {
-            label: is_monitore ? "Compenso stimato" : "Ricavo stimato",
+            label: "Ricavo stimato",
             value: `CHF ${compenso_vendita.toFixed(2)}`,
             icon: Euro,
             color: "text-foreground",
@@ -1111,11 +865,245 @@ const TabCompenso: React.FC<{
   );
 };
 
+// ─── Scheda monitore/aiuto monitore ───────────────────────
+const MonitoreDetail: React.FC<{
+  monitore: any;
+  on_back: () => void;
+}> = ({ monitore, on_back }) => {
+  const qc = useQueryClient();
+  const now = new Date();
+  const [anno, set_anno] = useState(now.getFullYear());
+  const [mese, set_mese] = useState(now.getMonth() + 1);
+  const [compenso_orario, set_compenso_orario] = useState<string>(String(monitore.compenso_orario_pista || ""));
+  const [ore_extra, set_ore_extra] = useState<string>("");
+  const [note_extra, set_note_extra] = useState("");
+  const [saving, set_saving] = useState(false);
+  const [saving_compenso, set_saving_compenso] = useState(false);
+
+  const ruolo_label = monitore.ruolo_pista === "monitore" ? "Monitore" : "Aiuto Monitore";
+
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await supabase
+        .from("ore_pista_monitors")
+        .select("*")
+        .eq("atleta_id", monitore.id)
+        .eq("anno", anno)
+        .eq("mese", mese)
+        .maybeSingle();
+      set_ore_extra(data?.ore_extra != null ? String(data.ore_extra) : "");
+      set_note_extra(data?.note_extra ?? "");
+    };
+    load();
+  }, [monitore.id, anno, mese]);
+
+  const ore_extra_num = to_num(ore_extra);
+  const compenso_num = to_num(compenso_orario);
+  const compenso_totale = ore_extra_num * compenso_num;
+
+  const handle_save_ore = async () => {
+    set_saving(true);
+    try {
+      const { error } = await supabase.from("ore_pista_monitors").upsert(
+        {
+          atleta_id: monitore.id,
+          anno,
+          mese,
+          ore_extra: ore_extra_num,
+          note_extra,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "atleta_id,anno,mese" },
+      );
+      if (error) throw error;
+      toast({ title: "✅ Ore salvate" });
+    } catch (err: any) {
+      toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
+    } finally {
+      set_saving(false);
+    }
+  };
+
+  const handle_save_compenso = async () => {
+    set_saving_compenso(true);
+    try {
+      const { error } = await supabase
+        .from("atleti")
+        .update({ compenso_orario_pista: compenso_num })
+        .eq("id", monitore.id);
+      if (error) throw error;
+      await qc.invalidateQueries({ queryKey: ["atleti"] });
+      await qc.invalidateQueries({ queryKey: ["atleti_monitori"] });
+      toast({ title: "✅ Compenso salvato" });
+    } catch (err: any) {
+      toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
+    } finally {
+      set_saving_compenso(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" onClick={on_back}>
+          <ArrowLeft className="w-4 h-4 mr-2" /> Istruttori
+        </Button>
+        <div className="flex items-center gap-3">
+          {monitore.foto_url ? (
+            <img
+              src={monitore.foto_url}
+              alt={monitore.nome}
+              className="w-10 h-10 rounded-full object-cover border border-border"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+              {monitore.nome[0]}
+              {monitore.cognome[0]}
+            </div>
+          )}
+          <div>
+            <h1 className="text-xl font-bold text-foreground">
+              {monitore.nome} {monitore.cognome}
+            </h1>
+            <Badge variant="secondary" className="text-xs">
+              {ruolo_label}
+            </Badge>
+          </div>
+        </div>
+      </div>
+
+      {/* Info */}
+      <div className="bg-card rounded-xl shadow-card p-5 space-y-3 max-w-lg">
+        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Informazioni</p>
+        <div className="flex items-start gap-2 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+          <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-muted-foreground">
+            {monitore.nome} è un atleta del club con ruolo pista <strong>{ruolo_label}</strong>. Per modificare i dati
+            anagrafici vai nella scheda <strong>Atleti</strong>.
+          </p>
+        </div>
+        {[
+          { label: "Livello", value: monitore.percorso_amatori || monitore.livello_amatori || "—" },
+          { label: "Carriera Artistica", value: monitore.carriera_artistica || "—" },
+          { label: "Carriera Stile", value: monitore.carriera_stile || "—" },
+        ].map(({ label, value }) => (
+          <div key={label} className="flex justify-between text-sm">
+            <span className="text-muted-foreground">{label}</span>
+            <span className="text-foreground">{value}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Compenso */}
+      <div className="bg-card rounded-xl shadow-card p-5 space-y-4 max-w-lg">
+        <div className="flex items-center gap-2">
+          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Compenso orario</h3>
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-destructive/10 text-destructive font-bold">
+            COSTI
+          </span>
+        </div>
+        <Field label="Compenso orario (CHF/ora)">
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF/h</span>
+            <NumInput
+              value={compenso_orario}
+              onChange={(v) => set_compenso_orario(v)}
+              className="pl-14"
+              placeholder="es. 15.00"
+            />
+          </div>
+        </Field>
+        <Button
+          onClick={handle_save_compenso}
+          disabled={saving_compenso}
+          size="sm"
+          className="bg-primary hover:bg-primary/90"
+        >
+          {saving_compenso ? "..." : "💾 Salva compenso"}
+        </Button>
+      </div>
+
+      {/* Ore pista mensili */}
+      <div className="bg-card rounded-xl shadow-card overflow-hidden max-w-lg">
+        <div className="px-5 py-3 border-b border-border flex items-center justify-between">
+          <div className="flex items-center justify-between w-full">
+            <button
+              onClick={() => {
+                if (mese === 1) {
+                  set_anno((a) => a - 1);
+                  set_mese(12);
+                } else set_mese((m) => m - 1);
+              }}
+              className="p-1 rounded-lg hover:bg-muted/50 text-muted-foreground"
+            >
+              ←
+            </button>
+            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest capitalize">
+              {get_mese_label(anno, mese)}
+            </h3>
+            <button
+              onClick={() => {
+                if (mese === 12) {
+                  set_anno((a) => a + 1);
+                  set_mese(1);
+                } else set_mese((m) => m + 1);
+              }}
+              className="p-1 rounded-lg hover:bg-muted/50 text-muted-foreground"
+            >
+              →
+            </button>
+          </div>
+        </div>
+
+        <div className="p-5 space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-muted/20 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Clock className="w-3.5 h-3.5 text-primary" />
+                <p className="text-xs text-muted-foreground">Ore pista</p>
+              </div>
+              <p className="text-lg font-bold tabular-nums text-primary">{ore_fmt(ore_extra_num)}</p>
+            </div>
+            <div className="bg-muted/20 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Euro className="w-3.5 h-3.5 text-success" />
+                <p className="text-xs text-muted-foreground">Compenso totale</p>
+              </div>
+              <p className="text-lg font-bold tabular-nums text-success">CHF {compenso_totale.toFixed(2)}</p>
+            </div>
+          </div>
+
+          <Field label="Ore pista questo mese">
+            <NumInput value={ore_extra} onChange={(v) => set_ore_extra(v)} placeholder="es. 12.5" />
+          </Field>
+          <Field label="Note">
+            <input
+              type="text"
+              value={note_extra}
+              onChange={(e) => set_note_extra(e.target.value)}
+              placeholder="Note opzionali..."
+              className={input_cls}
+            />
+          </Field>
+          <Button
+            onClick={handle_save_ore}
+            disabled={saving}
+            size="sm"
+            className="w-full bg-primary hover:bg-primary/90"
+          >
+            {saving ? "..." : "💾 Salva ore"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ─── Main Page ─────────────────────────────────────────────
 const InstructorsPage: React.FC = () => {
   const { t } = useI18n();
   const { data: istruttori = [], isLoading } = use_istruttori();
-  const { data: atleti = [] } = use_atleti();
+  const { data: monitori_atleti = [] } = use_atleti_monitori();
   const { data: lezioni = [] } = use_lezioni_private();
   const { data: corsi = [] } = use_corsi();
   const { data: campi = [] } = use_campi();
@@ -1125,8 +1113,14 @@ const InstructorsPage: React.FC = () => {
   const [modal_open, set_modal_open] = useState(false);
   const [selected_modal, set_selected_modal] = useState<any>(null);
   const [selected_id, set_selected_id] = useState<string | null>(null);
+  const [selected_monitore_id, set_selected_monitore_id] = useState<string | null>(null);
   const [disp_local, set_disp_local] = useState<Record<string, { ora_inizio: string; ora_fine: string }[]>>({});
   const [saving_contratto, set_saving_contratto] = useState(false);
+
+  // Filtra istruttori veri (ruolo = istruttore)
+  const istruttori_veri = istruttori.filter((i: any) => !i.ruolo || i.ruolo === "istruttore");
+  const monitori = monitori_atleti.filter((a: any) => a.ruolo_pista === "monitore");
+  const aiuto_monitori = monitori_atleti.filter((a: any) => a.ruolo_pista === "aiuto_monitore");
 
   const handle_save = async (data: any) => {
     try {
@@ -1162,7 +1156,6 @@ const InstructorsPage: React.FC = () => {
           compenso_fisso_corsi: data.compenso_fisso_corsi,
           costo_orario_corsi: data.costo_orario_corsi,
           costo_orario_lezioni: data.costo_orario_lezioni,
-          compenso_orario: data.compenso_orario,
         })
         .eq("id", selected_id);
       if (error) throw error;
@@ -1203,7 +1196,8 @@ const InstructorsPage: React.FC = () => {
     toast({ title: "✅ Disponibilità salvata" });
   };
 
-  const selected = istruttori.find((i: any) => i.id === selected_id);
+  const selected = istruttori_veri.find((i: any) => i.id === selected_id);
+  const selected_monitore = monitori_atleti.find((a: any) => a.id === selected_monitore_id);
 
   if (isLoading)
     return (
@@ -1212,6 +1206,12 @@ const InstructorsPage: React.FC = () => {
       </div>
     );
 
+  // Vista dettaglio monitore
+  if (selected_monitore) {
+    return <MonitoreDetail monitore={selected_monitore} on_back={() => set_selected_monitore_id(null)} />;
+  }
+
+  // Vista dettaglio istruttore
   if (selected) {
     return (
       <>
@@ -1219,7 +1219,6 @@ const InstructorsPage: React.FC = () => {
           <IstruttoreModal
             key={selected_modal?.id || "nuovo"}
             istruttore={selected_modal}
-            atleti={atleti}
             on_close={() => set_modal_open(false)}
             on_save={handle_save}
             on_delete={selected_modal?.id ? handle_delete : undefined}
@@ -1250,7 +1249,7 @@ const InstructorsPage: React.FC = () => {
                   {selected.nome} {selected.cognome}
                 </h1>
                 <Badge variant="secondary" className="text-xs">
-                  {RUOLI.find((r) => r.value === selected.ruolo)?.label || "Istruttore"}
+                  Istruttore/Istruttrice
                 </Badge>
               </div>
             </div>
@@ -1278,17 +1277,10 @@ const InstructorsPage: React.FC = () => {
             <TabsContent value="info" className="mt-6">
               <div className="bg-card rounded-xl shadow-card p-6 space-y-3 max-w-lg">
                 {[
-                  { label: "Ruolo", value: RUOLI.find((r) => r.value === selected.ruolo)?.label || "Istruttore" },
                   { label: t("email"), value: selected.email },
                   { label: t("telefono"), value: selected.telefono },
                   { label: "TAG NFC", value: selected.tag_nfc || "—" },
-                  {
-                    label: selected.ruolo === "istruttore" ? "Prezzo vendita/min" : "Compenso orario",
-                    value:
-                      selected.ruolo === "istruttore"
-                        ? `CHF ${(selected.costo_minuto || 0).toFixed(2)}/min`
-                        : `CHF ${(selected.compenso_orario || 0).toFixed(2)}/h`,
-                  },
+                  { label: "Prezzo vendita/min", value: `CHF ${(selected.costo_minuto || 0).toFixed(2)}/min` },
                 ].map(({ label, value }) => (
                   <div key={label} className="flex justify-between text-sm">
                     <span className="text-muted-foreground">{label}</span>
@@ -1383,13 +1375,13 @@ const InstructorsPage: React.FC = () => {
     );
   }
 
+  // ─── Vista lista principale ────────────────────────────────
   return (
     <>
       {modal_open && (
         <IstruttoreModal
           key={selected_modal?.id || "nuovo"}
           istruttore={selected_modal}
-          atleti={atleti}
           on_close={() => set_modal_open(false)}
           on_save={handle_save}
           on_delete={selected_modal?.id ? handle_delete : undefined}
@@ -1412,94 +1404,189 @@ const InstructorsPage: React.FC = () => {
           </Button>
         </div>
 
-        {["istruttore", "monitore", "aiuto_monitore"].map((ruolo) => {
-          const gruppo = istruttori.filter((i: any) => (i.ruolo || "istruttore") === ruolo);
-          if (gruppo.length === 0) return null;
-          return (
-            <div key={ruolo}>
-              <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
-                {RUOLI.find((r) => r.value === ruolo)?.label} ({gruppo.length})
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {gruppo.map((i: any) => (
-                  <div
-                    key={i.id}
-                    onClick={() => open_detail(i)}
-                    className="bg-card rounded-xl shadow-card p-5 hover:shadow-card-hover transition-shadow cursor-pointer"
-                  >
-                    <div className="flex items-center gap-3 mb-4">
-                      {i.foto_url ? (
-                        <img src={i.foto_url} alt={i.nome} className="w-11 h-11 rounded-full object-cover" />
-                      ) : (
-                        <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                          {i.nome[0]}
-                          {i.cognome[0]}
-                        </div>
-                      )}
-                      <div>
-                        <p className="font-semibold text-foreground">
-                          {i.nome} {i.cognome}
-                        </p>
-                        <p className="text-xs text-muted-foreground">{i.email}</p>
+        {/* ── Sezione Istruttori ── */}
+        {istruttori_veri.length > 0 && (
+          <div>
+            <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
+              Istruttori/Istruttrice ({istruttori_veri.length})
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {istruttori_veri.map((i: any) => (
+                <div
+                  key={i.id}
+                  onClick={() => open_detail(i)}
+                  className="bg-card rounded-xl shadow-card p-5 hover:shadow-card-hover transition-shadow cursor-pointer"
+                >
+                  <div className="flex items-center gap-3 mb-4">
+                    {i.foto_url ? (
+                      <img src={i.foto_url} alt={i.nome} className="w-11 h-11 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                        {i.nome[0]}
+                        {i.cognome[0]}
                       </div>
-                      <span
-                        className={`ml-auto inline-block w-2 h-2 rounded-full ${i.stato === "attivo" ? "bg-success" : "bg-muted-foreground"}`}
-                      />
-                    </div>
-                    <div className="space-y-2 text-sm">
-                      {ruolo === "istruttore" ? (
-                        <>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Vendita/min</span>
-                            <span className="text-foreground tabular-nums">CHF {(i.costo_minuto || 0).toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Costo/h club</span>
-                            <span className="text-foreground tabular-nums text-xs">
-                              L: CHF {(i.costo_orario_lezioni || 0).toFixed(2)} · C: CHF{" "}
-                              {(i.costo_orario_corsi || 0).toFixed(2)}
-                            </span>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Compenso orario</span>
-                          <span className="text-foreground tabular-nums">
-                            CHF {(i.compenso_orario || 0).toFixed(2)}/h
-                          </span>
-                        </div>
-                      )}
-                      {i.tag_nfc && (
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">NFC</span>
-                          <span className="text-xs font-mono bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                            📡 {i.tag_nfc}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="mt-4">
-                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
-                        {t("disponibilita")}
+                    )}
+                    <div>
+                      <p className="font-semibold text-foreground">
+                        {i.nome} {i.cognome}
                       </p>
-                      <div className="flex flex-wrap gap-1">
-                        {GIORNI.map((d) => (
-                          <Badge
-                            key={d}
-                            variant={i.disponibilita[d]?.length > 0 ? "default" : "secondary"}
-                            className="text-[10px] px-1.5"
-                          >
-                            {d.slice(0, 3)}
-                          </Badge>
-                        ))}
+                      <p className="text-xs text-muted-foreground">{i.email}</p>
+                    </div>
+                    <span
+                      className={`ml-auto inline-block w-2 h-2 rounded-full ${i.stato === "attivo" ? "bg-success" : "bg-muted-foreground"}`}
+                    />
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Vendita/min</span>
+                      <span className="text-foreground tabular-nums">CHF {(i.costo_minuto || 0).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Costo/h club</span>
+                      <span className="text-foreground tabular-nums text-xs">
+                        L: CHF {(i.costo_orario_lezioni || 0).toFixed(2)} · C: CHF{" "}
+                        {(i.costo_orario_corsi || 0).toFixed(2)}
+                      </span>
+                    </div>
+                    {i.tag_nfc && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">NFC</span>
+                        <span className="text-xs font-mono bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                          📡 {i.tag_nfc}
+                        </span>
                       </div>
+                    )}
+                  </div>
+                  <div className="mt-4">
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
+                      {t("disponibilita")}
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {GIORNI.map((d) => (
+                        <Badge
+                          key={d}
+                          variant={i.disponibilita[d]?.length > 0 ? "default" : "secondary"}
+                          className="text-[10px] px-1.5"
+                        >
+                          {d.slice(0, 3)}
+                        </Badge>
+                      ))}
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
-          );
-        })}
+          </div>
+        )}
+
+        {/* ── Sezione Monitori ── */}
+        {monitori.length > 0 && (
+          <div>
+            <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
+              Monitori/Monitrici ({monitori.length})
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {monitori.map((m: any) => (
+                <div
+                  key={m.id}
+                  onClick={() => set_selected_monitore_id(m.id)}
+                  className="bg-card rounded-xl shadow-card p-5 hover:shadow-card-hover transition-shadow cursor-pointer"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    {m.foto_url ? (
+                      <img src={m.foto_url} alt={m.nome} className="w-11 h-11 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                        {m.nome[0]}
+                        {m.cognome[0]}
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-semibold text-foreground">
+                        {m.nome} {m.cognome}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{m.percorso_amatori || m.livello_amatori}</p>
+                    </div>
+                    <span
+                      className={`ml-auto inline-block w-2 h-2 rounded-full ${m.attivo ? "bg-success" : "bg-muted-foreground"}`}
+                    />
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Compenso orario</span>
+                    <span className="text-foreground tabular-nums">
+                      CHF {(m.compenso_orario_pista || 0).toFixed(2)}/h
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Sezione Aiuto Monitori ── */}
+        {aiuto_monitori.length > 0 && (
+          <div>
+            <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
+              Aiuto Monitori/Monitrici ({aiuto_monitori.length})
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {aiuto_monitori.map((m: any) => (
+                <div
+                  key={m.id}
+                  onClick={() => set_selected_monitore_id(m.id)}
+                  className="bg-card rounded-xl shadow-card p-5 hover:shadow-card-hover transition-shadow cursor-pointer"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    {m.foto_url ? (
+                      <img src={m.foto_url} alt={m.nome} className="w-11 h-11 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                        {m.nome[0]}
+                        {m.cognome[0]}
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-semibold text-foreground">
+                        {m.nome} {m.cognome}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{m.percorso_amatori || m.livello_amatori}</p>
+                    </div>
+                    <span
+                      className={`ml-auto inline-block w-2 h-2 rounded-full ${m.attivo ? "bg-success" : "bg-muted-foreground"}`}
+                    />
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Compenso orario</span>
+                    <span className="text-foreground tabular-nums">
+                      CHF {(m.compenso_orario_pista || 0).toFixed(2)}/h
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Messaggio se tutto vuoto */}
+        {istruttori_veri.length === 0 && monitori.length === 0 && aiuto_monitori.length === 0 && (
+          <div className="bg-card rounded-xl shadow-card p-12 text-center text-muted-foreground">
+            <p className="text-sm">Nessun istruttore o monitore registrato.</p>
+            <p className="text-xs mt-1">
+              Clicca "Nuovo istruttore" per aggiungerne uno, oppure vai in Atleti per impostare il ruolo pista.
+            </p>
+          </div>
+        )}
+
+        {/* Info monitori */}
+        {monitori.length === 0 && aiuto_monitori.length === 0 && istruttori_veri.length > 0 && (
+          <div className="flex items-start gap-2 p-4 bg-muted/30 rounded-xl border border-border">
+            <Info className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-muted-foreground">
+              Per aggiungere monitori o aiuto monitori, vai nella scheda <strong>Atleti</strong> e imposta il campo{" "}
+              <strong>Ruolo in pista</strong> su "Monitore" o "Aiuto monitore".
+            </p>
+          </div>
+        )}
       </div>
     </>
   );
