@@ -21,7 +21,9 @@ import TrainingCampsPage from "@/pages/TrainingCampsPage";
 import ClubSetupPage from "@/pages/ClubSetupPage";
 import AdvancedManagementPage from "@/pages/AdvancedManagementPage";
 import SuperAdminPage from "@/pages/SuperAdminPage";
-
+import SuperAdminClubPage from "@/pages/SuperAdminClubPage";
+import SuperAdminManutenzione from "@/pages/SuperAdminManutenzione";
+import SuperAdminManutenzioneStr from "@/pages/SuperAdminManutenzioneStr";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,7 +39,7 @@ const SmartHome = () => {
   return session?.ruolo === "superadmin" ? null : <DashboardPage />;
 };
 
-const ProtectedSuperAdmin = () => {
+const ProtectedSuperAdmin = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const { session } = useAuth();
   useEffect(() => {
@@ -45,11 +47,11 @@ const ProtectedSuperAdmin = () => {
       navigate("/", { replace: true });
     }
   }, [session, navigate]);
-  return session?.ruolo === "superadmin" ? <SuperAdminPage /> : null;
+  return session?.ruolo === "superadmin" ? <>{children}</> : null;
 };
 
 const AuthenticatedApp = () => {
-  const { is_authenticated, session } = useAuth();
+  const { is_authenticated } = useAuth();
   if (!is_authenticated) return <LoginPage />;
   return (
     <BrowserRouter>
@@ -67,7 +69,38 @@ const AuthenticatedApp = () => {
           <Route path="/campi" element={<TrainingCampsPage />} />
           <Route path="/setup-club" element={<ClubSetupPage />} />
           <Route path="/gestione-avanzata" element={<AdvancedManagementPage />} />
-          <Route path="/superadmin" element={<ProtectedSuperAdmin />} />
+          <Route
+            path="/superadmin"
+            element={
+              <ProtectedSuperAdmin>
+                <SuperAdminPage />
+              </ProtectedSuperAdmin>
+            }
+          />
+          <Route
+            path="/superadmin/club"
+            element={
+              <ProtectedSuperAdmin>
+                <SuperAdminClubPage />
+              </ProtectedSuperAdmin>
+            }
+          />
+          <Route
+            path="/superadmin/manutenzione"
+            element={
+              <ProtectedSuperAdmin>
+                <SuperAdminManutenzione />
+              </ProtectedSuperAdmin>
+            }
+          />
+          <Route
+            path="/superadmin/manutenzione-straordinaria"
+            element={
+              <ProtectedSuperAdmin>
+                <SuperAdminManutenzioneStr />
+              </ProtectedSuperAdmin>
+            }
+          />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </MainLayout>
