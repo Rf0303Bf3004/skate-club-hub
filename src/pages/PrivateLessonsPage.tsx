@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { use_lezioni_private, use_istruttori, use_atleti, use_corsi, use_setup_club } from "@/hooks/use-supabase-data";
 import {
   use_crea_lezione_privata,
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, X, Search, Check, Clock, User, UserPlus, Settings } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { supabase, DEMO_CLUB_ID } from "@/lib/supabase";
+import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
 
 // ─── Helpers ───────────────────────────────────────────────
@@ -52,6 +52,12 @@ function subtract_intervals(
   return result;
 }
 
+function to_num(v: string | number): number {
+  if (typeof v === "number") return isNaN(v) ? 0 : v;
+  const n = parseFloat(String(v).replace(",", "."));
+  return isNaN(n) ? 0 : n;
+}
+
 const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
 const GIORNI_SHORT = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
 const MESI = [
@@ -74,6 +80,72 @@ type TipoLezione = "privata" | "semiprivata";
 function get_tipo_lezione(atleti_ids: string[]): TipoLezione {
   return atleti_ids.length > 1 ? "semiprivata" : "privata";
 }
+
+// ─── NumInput ──────────────────────────────────────────────
+const input_cls =
+  "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
+
+const NumInput: React.FC<{
+  value: string | number;
+  onChange: (v: string) => void;
+  className?: string;
+  placeholder?: string;
+}> = ({ value, onChange, className = "", placeholder = "0.00" }) => {
+  const [local, set_local] = useState(() => {
+    const n = to_num(String(value));
+    return n === 0 ? "" : n.toFixed(2);
+  });
+  const [focused, set_focused] = useState(false);
+
+  useEffect(() => {
+    if (!focused) {
+      const n = to_num(String(value));
+      set_local(n === 0 ? "" : n.toFixed(2));
+    }
+  }, [value, focused]);
+
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      value={local}
+      placeholder={placeholder}
+      onFocus={() => set_focused(true)}
+      onKeyDown={(e) => {
+        const allowed = [
+          "Backspace",
+          "Delete",
+          "Tab",
+          "Escape",
+          "Enter",
+          "ArrowLeft",
+          "ArrowRight",
+          "ArrowUp",
+          "ArrowDown",
+          "Home",
+          "End",
+        ];
+        if (allowed.includes(e.key)) return;
+        if ((e.key === "." || e.key === ",") && !local.includes(".")) return;
+        if (/^\d$/.test(e.key)) return;
+        if (e.ctrlKey || e.metaKey) return;
+        e.preventDefault();
+      }}
+      onChange={(e) => {
+        const v = e.target.value.replace(",", ".");
+        set_local(v);
+        onChange(v);
+      }}
+      onBlur={() => {
+        set_focused(false);
+        const n = to_num(local);
+        set_local(n === 0 ? "" : n.toFixed(2));
+        onChange(String(n));
+      }}
+      className={`${input_cls} ${className}`}
+    />
+  );
+};
 
 // ─── Autocomplete atleta ───────────────────────────────────
 const AtletaSearch: React.FC<{
@@ -193,8 +265,9 @@ const SlotModal: React.FC<{
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-card rounded-2xl shadow-xl w-full max-w-md">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+      <div className="bg-card rounded-2xl shadow-xl w-full max-w-md flex flex-col max-h-[90vh]">
+        {/* Header fisso */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
           <div>
             <h2 className="text-base font-bold text-foreground">
               Prenota {form.ora_inizio}–{form.ora_fine}
@@ -205,7 +278,9 @@ const SlotModal: React.FC<{
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="px-6 py-5 space-y-5">
+
+        {/* Contenuto scrollabile */}
+        <div className="px-6 py-5 space-y-5 overflow-y-auto flex-1">
           <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 rounded-lg">
             <Clock className="w-3.5 h-3.5 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">
@@ -223,16 +298,14 @@ const SlotModal: React.FC<{
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Costo totale</label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-medium">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-medium pointer-events-none">
                 CHF
               </span>
-              <input
-                type="number"
-                min="0"
-                step="0.50"
-                value={form.costo_totale || 0}
-                onChange={(e) => on_change("costo_totale", parseFloat(e.target.value) || 0)}
-                className="w-full rounded-lg border border-border bg-background pl-11 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+              <NumInput
+                value={form.costo_totale ?? ""}
+                onChange={(v) => on_change("costo_totale", to_num(v))}
+                className="pl-11"
+                placeholder="0.00"
               />
             </div>
           </div>
@@ -263,7 +336,9 @@ const SlotModal: React.FC<{
             />
           </div>
         </div>
-        <div className="flex justify-end gap-3 px-6 py-4 border-t border-border">
+
+        {/* Footer fisso */}
+        <div className="flex justify-end gap-3 px-6 py-4 border-t border-border flex-shrink-0">
           <Button variant="outline" onClick={on_close} disabled={loading}>
             Annulla
           </Button>
@@ -300,17 +375,17 @@ const AggiungiAtletaModal: React.FC<{
 }> = ({ slot, atleti, costo_attuale, on_close, on_confirm, loading }) => {
   const [atleta_id, set_atleta_id] = useState<string>("");
   const [modalita, set_modalita] = useState<"dividi" | "manuale">("dividi");
-  const [costo_manuale, set_costo_manuale] = useState<number>(costo_attuale);
+  const [costo_manuale_str, set_costo_manuale_str] = useState<string>(costo_attuale.toFixed(2));
 
   const atleti_esistenti = slot.lesson?.atleti_ids || [];
   const n_totale = atleti_esistenti.length + 1;
-  const costo_diviso = modalita === "dividi" ? costo_attuale : costo_manuale;
+  const costo_diviso = modalita === "dividi" ? costo_attuale : to_num(costo_manuale_str);
   const quota_per_atleta = costo_diviso / n_totale;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+      <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
           <div>
             <h2 className="text-base font-bold text-foreground">Aggiungi atleta</h2>
             <p className="text-xs text-muted-foreground">La lezione diventerà semiprivata</p>
@@ -319,7 +394,7 @@ const AggiungiAtletaModal: React.FC<{
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="px-6 py-5 space-y-5">
+        <div className="px-6 py-5 space-y-5 overflow-y-auto flex-1">
           <div className="flex items-center gap-2 px-3 py-2 bg-orange-500/10 border border-orange-500/20 rounded-xl">
             <span className="text-orange-500 text-sm">👥</span>
             <span className="text-xs font-medium text-orange-600">Diventerà una lezione semiprivata</span>
@@ -359,16 +434,14 @@ const AggiungiAtletaModal: React.FC<{
             </div>
             {modalita === "manuale" && (
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-medium">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-medium pointer-events-none">
                   CHF
                 </span>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.50"
-                  value={costo_manuale}
-                  onChange={(e) => set_costo_manuale(parseFloat(e.target.value) || 0)}
-                  className="w-full rounded-lg border border-border bg-background pl-11 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                <NumInput
+                  value={costo_manuale_str}
+                  onChange={(v) => set_costo_manuale_str(v)}
+                  className="pl-11"
+                  placeholder="0.00"
                 />
               </div>
             )}
@@ -385,7 +458,7 @@ const AggiungiAtletaModal: React.FC<{
             </div>
           </div>
         </div>
-        <div className="flex justify-end gap-3 px-6 py-4 border-t border-border">
+        <div className="flex justify-end gap-3 px-6 py-4 border-t border-border flex-shrink-0">
           <Button variant="outline" onClick={on_close} disabled={loading}>
             Annulla
           </Button>
@@ -431,8 +504,8 @@ const SlotDetailModal: React.FC<{
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+      <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
           <div className="flex items-center gap-2">
             <h2 className="text-base font-bold text-foreground">Dettaglio lezione</h2>
             {is_semiprivata ? (
@@ -449,7 +522,7 @@ const SlotDetailModal: React.FC<{
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="px-6 py-5 space-y-4">
+        <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
           <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl">
             <Clock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
             <span className="text-sm font-semibold text-foreground tabular-nums">
@@ -482,7 +555,7 @@ const SlotDetailModal: React.FC<{
             </div>
           )}
         </div>
-        <div className="px-6 py-4 border-t border-border space-y-2">
+        <div className="px-6 py-4 border-t border-border space-y-2 flex-shrink-0">
           <Button
             variant="outline"
             onClick={on_aggiungi_atleta}
@@ -517,14 +590,14 @@ const CambioDurataModal: React.FC<{
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+      <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
           <h2 className="text-base font-bold text-foreground">Cambia durata slot</h2>
           <button onClick={on_close} className="text-muted-foreground hover:text-foreground">
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="px-6 py-5 space-y-4">
+        <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
               Nuova durata (minuti)
@@ -566,7 +639,7 @@ const CambioDurataModal: React.FC<{
             </div>
           </div>
         </div>
-        <div className="flex gap-2 px-6 py-4 border-t border-border">
+        <div className="flex gap-2 px-6 py-4 border-t border-border flex-shrink-0">
           <Button variant="outline" onClick={on_close} disabled={saving} className="flex-1">
             Annulla
           </Button>
@@ -596,7 +669,6 @@ const LezioniPrivatePage: React.FC = () => {
   const annulla_lezione = use_annulla_lezione();
   const aggiungi_atleta_mut = use_aggiungi_atleta_lezione();
 
-  // Durata slot dal setup club (default 20)
   const slot_minuti = setup?.slot_lezione_privata_minuti || 20;
 
   const [selected_istruttore, set_selected_istruttore] = useState<string>("");
@@ -612,9 +684,7 @@ const LezioniPrivatePage: React.FC = () => {
   const [saving_durata, set_saving_durata] = useState(false);
 
   React.useEffect(() => {
-    if (!selected_istruttore && istruttori.length > 0) {
-      set_selected_istruttore(istruttori[0].id);
-    }
+    if (!selected_istruttore && istruttori.length > 0) set_selected_istruttore(istruttori[0].id);
   }, [istruttori, selected_istruttore]);
 
   const istruttore = istruttori.find((i: any) => i.id === selected_istruttore);
@@ -634,8 +704,7 @@ const LezioniPrivatePage: React.FC = () => {
     if (!selected_istruttore) return {};
     const result: Record<string, { start: number; end: number }[]> = {};
     for (const c of corsi) {
-      if (!c.istruttori_ids?.includes(selected_istruttore)) continue;
-      if (!c.attivo || !c.giorno) continue;
+      if (!c.istruttori_ids?.includes(selected_istruttore) || !c.attivo || !c.giorno) continue;
       if (!result[c.giorno]) result[c.giorno] = [];
       const s = time_to_min(c.ora_inizio || "00:00");
       const e = time_to_min(c.ora_fine || "00:00");
@@ -649,40 +718,24 @@ const LezioniPrivatePage: React.FC = () => {
     const date = new Date(date_str + "T00:00:00");
     const day_of_week = date.getDay();
     const giorno = GIORNI[day_of_week === 0 ? 6 : day_of_week - 1];
-
     const dayDispSlots = dispSlots.filter((ds: any) => ds.giorno === giorno);
     const avail = dayDispSlots.map((ds) => ({ start: time_to_min(ds.ora_inizio), end: time_to_min(ds.ora_fine) }));
     const busy_corsi = corso_busy_by_day[giorno] || [];
-
-    // Rimuovi completamente gli intervalli occupati dai corsi
     const free = subtract_intervals(avail, busy_corsi);
-
-    // Genera slot liberi usando slot_minuti dal setup
     const free_times = new Set<number>();
     for (const interval of free) {
-      for (let m = interval.start; m + slot_minuti <= interval.end; m += slot_minuti) {
-        free_times.add(m);
-      }
+      for (let m = interval.start; m + slot_minuti <= interval.end; m += slot_minuti) free_times.add(m);
     }
-
-    // Aggiungi slot occupati da lezioni private (già prenotate)
     const day_lessons = lezioni.filter((l: any) => l.istruttore_id === selected_istruttore && l.data === date_str);
     const all_times = new Set(free_times);
     for (const l of day_lessons) all_times.add(time_to_min(l.ora_inizio));
-
     return Array.from(all_times)
       .sort((a, b) => a - b)
       .map((m) => {
         const time = min_to_time(m);
         const lesson = day_lessons.find((l: any) => time_to_min(l.ora_inizio) === m);
         const tipo = lesson ? get_tipo_lezione(lesson.atleti_ids || []) : null;
-        return {
-          time,
-          end_time: min_to_time(m + slot_minuti),
-          status: lesson ? "occupato" : "libero",
-          lesson,
-          tipo,
-        };
+        return { time, end_time: min_to_time(m + slot_minuti), status: lesson ? "occupato" : "libero", lesson, tipo };
       });
   };
 
@@ -828,21 +881,19 @@ const LezioniPrivatePage: React.FC = () => {
       const { error } = await supabase
         .from("setup_club")
         .update({ slot_lezione_privata_minuti: nuova_durata })
-        .eq("club_id", DEMO_CLUB_ID);
+        .eq("club_id", get_current_club_id());
       if (error) throw error;
-
       if (aggiorna_esistenti) {
         const today = fmt(new Date());
         const { error: e2 } = await supabase
           .from("lezioni_private")
           .update({ durata_minuti: nuova_durata })
-          .eq("club_id", DEMO_CLUB_ID)
+          .eq("club_id", get_current_club_id())
           .gte("data", today)
           .eq("annullata", false);
         if (e2) throw e2;
         await qc.invalidateQueries({ queryKey: ["lezioni_private"] });
       }
-
       await qc.invalidateQueries({ queryKey: ["setup_club"] });
       set_durata_modal(false);
       toast({
@@ -931,8 +982,7 @@ const LezioniPrivatePage: React.FC = () => {
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold tracking-tight text-foreground">Lezioni Private</h1>
           <Button variant="outline" size="sm" onClick={() => set_durata_modal(true)} className="gap-2 text-xs">
-            <Settings className="w-3.5 h-3.5" />
-            Slot: {slot_minuti} min
+            <Settings className="w-3.5 h-3.5" /> Slot: {slot_minuti} min
           </Button>
         </div>
 
@@ -988,15 +1038,7 @@ const LezioniPrivatePage: React.FC = () => {
                       key={i}
                       onClick={() => set_selected_date(date_str)}
                       className={`relative flex flex-col items-center justify-center rounded-xl py-2 text-sm font-medium transition-all
-                        ${
-                          is_selected
-                            ? "bg-primary text-primary-foreground shadow-md"
-                            : is_today
-                              ? "ring-2 ring-primary text-primary"
-                              : has_slots
-                                ? "hover:bg-muted/50 text-foreground"
-                                : "text-muted-foreground/40 cursor-default"
-                        }`}
+                        ${is_selected ? "bg-primary text-primary-foreground shadow-md" : is_today ? "ring-2 ring-primary text-primary" : has_slots ? "hover:bg-muted/50 text-foreground" : "text-muted-foreground/40 cursor-default"}`}
                     >
                       {day}
                       {has_slots && (
@@ -1045,18 +1087,11 @@ const LezioniPrivatePage: React.FC = () => {
                           slot.status === "libero" ? open_slot(slot.time, slot.end_time) : set_detail_slot(slot)
                         }
                         className={`flex items-center justify-between px-4 py-3 rounded-xl cursor-pointer transition-all
-                          ${
-                            slot.status === "libero"
-                              ? "bg-success/10 hover:bg-success/20 border border-success/20"
-                              : is_semiprivata
-                                ? "bg-orange-500/10 hover:bg-orange-500/15 border border-orange-500/20"
-                                : "bg-destructive/10 hover:bg-destructive/15 border border-destructive/20"
-                          }`}
+                          ${slot.status === "libero" ? "bg-success/10 hover:bg-success/20 border border-success/20" : is_semiprivata ? "bg-orange-500/10 hover:bg-orange-500/15 border border-orange-500/20" : "bg-destructive/10 hover:bg-destructive/15 border border-destructive/20"}`}
                       >
                         <div className="flex items-center gap-3">
                           <div
-                            className={`w-2 h-2 rounded-full flex-shrink-0
-                            ${slot.status === "libero" ? "bg-success" : is_semiprivata ? "bg-orange-500" : "bg-destructive"}`}
+                            className={`w-2 h-2 rounded-full flex-shrink-0 ${slot.status === "libero" ? "bg-success" : is_semiprivata ? "bg-orange-500" : "bg-destructive"}`}
                           />
                           <div>
                             <p className="text-sm font-semibold text-foreground tabular-nums">
@@ -1072,14 +1107,7 @@ const LezioniPrivatePage: React.FC = () => {
                           </div>
                         </div>
                         <span
-                          className={`text-xs font-bold px-2 py-0.5 rounded-full
-                          ${
-                            slot.status === "libero"
-                              ? "bg-success/20 text-success"
-                              : is_semiprivata
-                                ? "bg-orange-500/20 text-orange-600"
-                                : "bg-destructive/20 text-destructive"
-                          }`}
+                          className={`text-xs font-bold px-2 py-0.5 rounded-full ${slot.status === "libero" ? "bg-success/20 text-success" : is_semiprivata ? "bg-orange-500/20 text-orange-600" : "bg-destructive/20 text-destructive"}`}
                         >
                           {slot.status === "libero" ? "+ Prenota" : is_semiprivata ? "👥 Semi" : "Dettagli"}
                         </span>
