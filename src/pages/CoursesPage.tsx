@@ -435,7 +435,6 @@ const TabPresenze: React.FC<{
   const monitori_assegnati = tutti_monitori.filter(
     (a) => (corso.monitori || []).includes(a.id) || (corso.aiuto_monitori || []).includes(a.id),
   );
-
   const get_stato_persona = (persona_id: string) =>
     presenze.find((x: any) => x.persona_id === persona_id)?.stato || "attesa";
   const get_sostituto_persona = (persona_id: string) =>
@@ -493,7 +492,6 @@ const TabPresenze: React.FC<{
       <Field label="Data lezione">
         <input type="date" value={data_sel} onChange={(e) => set_data_sel(e.target.value)} className={input_cls} />
       </Field>
-
       {monitori_assegnati.length === 0 ? (
         <div className="text-center py-6 text-muted-foreground">
           <p className="text-sm">Nessun monitore assegnato a questo corso.</p>
@@ -531,7 +529,6 @@ const TabPresenze: React.FC<{
               Remind tutti ({monitori_assegnati.filter((m) => get_stato_persona(m.id) === "attesa").length})
             </Button>
           </div>
-
           {monitori_assegnati.map((persona) => {
             const tipo = (corso.monitori || []).includes(persona.id) ? "monitore" : "aiuto_monitore";
             const tipo_label = tipo === "monitore" ? "Monitore" : "Aiuto monitore";
@@ -539,7 +536,6 @@ const TabPresenze: React.FC<{
             const sostituto_id = get_sostituto_persona(persona.id);
             const sostituto = sostituto_id ? tutti_monitori.find((m) => m.id === sostituto_id) : null;
             const wa_link = genera_wa_link(persona, tipo_label.toLowerCase());
-
             return (
               <div key={persona.id} className="bg-muted/20 rounded-xl border border-border p-4 space-y-3">
                 <div className="flex items-center justify-between">
@@ -684,15 +680,13 @@ const CorsoModal: React.FC<{
   const [confirm_forzatura, set_confirm_forzatura] = useState(false);
 
   const set_val = (k: string, v: any) => set_form((p) => ({ ...p, [k]: v }));
-
-  const toggle_istruttore = (id: string) => {
+  const toggle_istruttore = (id: string) =>
     set_form((p) => ({
       ...p,
       istruttori_ids: p.istruttori_ids.includes(id)
         ? p.istruttori_ids.filter((x: string) => x !== id)
         : [...p.istruttori_ids, id],
     }));
-  };
 
   const istruttori_non_disponibili = useMemo(
     () =>
@@ -1059,17 +1053,17 @@ const CorsoCard: React.FC<{
         </div>
       </div>
 
-      {/* Personale */}
-      <div className="space-y-2">
-        {/* Istruttori */}
+      {/* Personale — sezioni separate per ruolo */}
+      <div className="space-y-3">
         {istruttori_corso.length > 0 && (
-          <div className="flex items-start gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-wide text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded shrink-0 mt-0.5">
-              IST
-            </span>
+          <div className="space-y-1.5">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-purple-700">Istruttori</p>
             <div className="flex flex-wrap gap-1">
               {istruttori_corso.map((i: any) => (
-                <span key={i.id} className="text-xs text-foreground font-medium">
+                <span
+                  key={i.id}
+                  className="text-xs bg-purple-50 text-purple-800 px-2 py-0.5 rounded-full font-medium border border-purple-100"
+                >
                   {i.nome} {i.cognome}
                 </span>
               ))}
@@ -1077,15 +1071,15 @@ const CorsoCard: React.FC<{
           </div>
         )}
 
-        {/* Monitori */}
         {monitori_corso.length > 0 && (
-          <div className="flex items-start gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-wide text-teal-600 bg-teal-50 px-1.5 py-0.5 rounded shrink-0 mt-0.5">
-              MON
-            </span>
+          <div className="space-y-1.5">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-teal-700">Monitori</p>
             <div className="flex flex-wrap gap-1">
               {monitori_corso.map((m: any) => (
-                <span key={m.id} className="text-xs text-foreground">
+                <span
+                  key={m.id}
+                  className="text-xs bg-teal-50 text-teal-800 px-2 py-0.5 rounded-full font-medium border border-teal-100"
+                >
                   {m.nome} {m.cognome}
                 </span>
               ))}
@@ -1093,15 +1087,15 @@ const CorsoCard: React.FC<{
           </div>
         )}
 
-        {/* Aiuto monitori */}
         {aiuto_corso.length > 0 && (
-          <div className="flex items-start gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-wide text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded shrink-0 mt-0.5">
-              AIM
-            </span>
+          <div className="space-y-1.5">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-blue-700">Aiuto Monitori</p>
             <div className="flex flex-wrap gap-1">
               {aiuto_corso.map((m: any) => (
-                <span key={m.id} className="text-xs text-foreground">
+                <span
+                  key={m.id}
+                  className="text-xs bg-blue-50 text-blue-800 px-2 py-0.5 rounded-full font-medium border border-blue-100"
+                >
                   {m.nome} {m.cognome}
                 </span>
               ))}
