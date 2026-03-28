@@ -41,10 +41,11 @@ function ore_fmt(ore: number): string {
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
-// Converte stringa in numero in modo sicuro, permettendo input parziali come "1."
+// Converte stringa in numero preciso per calcoli e salvataggio
 function to_num(v: string | number): number {
-  if (typeof v === "number") return v;
-  const n = parseFloat(v);
+  if (typeof v === "number") return isNaN(v) ? 0 : v;
+  const cleaned = String(v).replace(",", ".");
+  const n = parseFloat(cleaned);
   return isNaN(n) ? 0 : n;
 }
 
@@ -58,22 +59,24 @@ const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, 
 const input_cls =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
 
-// ─── NumInput — input numerico che non azzera durante la digitazione ──
+// ─── NumInput — accetta punto e virgola, non azzera mai ────
 const NumInput: React.FC<{
   value: string | number;
   onChange: (v: string) => void;
-  step?: string;
-  min?: string;
   className?: string;
   placeholder?: string;
-}> = ({ value, onChange, step = "0.01", min = "0", className = "", placeholder = "0" }) => (
+}> = ({ value, onChange, className = "", placeholder = "0" }) => (
   <input
-    type="number"
-    step={step}
-    min={min}
+    type="text"
+    inputMode="decimal"
     value={value}
     placeholder={placeholder}
-    onChange={(e) => onChange(e.target.value)}
+    onChange={(e) => {
+      const v = e.target.value.replace(",", ".");
+      if (v === "" || v === "." || /^\d*\.?\d*$/.test(v)) {
+        onChange(v);
+      }
+    }}
     className={`${input_cls} ${className}`}
   />
 );
@@ -225,8 +228,8 @@ const IstruttoreModal: React.FC<{
                 <NumInput
                   value={form.compenso_orario}
                   onChange={(v) => set_val("compenso_orario", v)}
-                  step="0.5"
                   className="pl-14"
+                  placeholder="es. 25.50"
                 />
               </div>
             </Field>
@@ -237,8 +240,8 @@ const IstruttoreModal: React.FC<{
                 <NumInput
                   value={form.costo_minuto_lezione_privata}
                   onChange={(v) => set_val("costo_minuto_lezione_privata", v)}
-                  step="0.01"
                   className="pl-16"
+                  placeholder="es. 1.50"
                 />
               </div>
             </Field>
@@ -589,7 +592,6 @@ const TabOreLavoro: React.FC<{
                 <NumInput
                   value={ore_gare_manual}
                   onChange={(v) => set_ore_gare_manual(v)}
-                  step="0.5"
                   className="w-20 px-2 py-1 text-right"
                   placeholder="0"
                 />
@@ -612,7 +614,6 @@ const TabOreLavoro: React.FC<{
                 <NumInput
                   value={ore_extra}
                   onChange={(v) => set_ore_extra(v)}
-                  step="0.5"
                   className="w-20 px-2 py-1 text-right"
                   placeholder="0"
                 />
@@ -751,8 +752,8 @@ const TabCompenso: React.FC<{
               <NumInput
                 value={contratto_form.compenso_orario}
                 onChange={(v) => upd("compenso_orario", v)}
-                step="0.5"
                 className="pl-14"
+                placeholder="es. 25.50"
               />
             </div>
           </Field>
@@ -779,8 +780,8 @@ const TabCompenso: React.FC<{
                     <NumInput
                       value={contratto_form.costo_minuto_lezione_privata}
                       onChange={(v) => upd("costo_minuto_lezione_privata", v)}
-                      step="0.01"
                       className="pl-11"
+                      placeholder="es. 1.50"
                     />
                   </div>
                 </Field>
@@ -792,8 +793,8 @@ const TabCompenso: React.FC<{
                     <NumInput
                       value={contratto_form.compenso_fisso_mensile}
                       onChange={(v) => upd("compenso_fisso_mensile", v)}
-                      step="0.01"
                       className="pl-11"
+                      placeholder="es. 1500"
                     />
                   </div>
                 </Field>
@@ -805,8 +806,8 @@ const TabCompenso: React.FC<{
                     <NumInput
                       value={contratto_form.compenso_fisso_corsi}
                       onChange={(v) => upd("compenso_fisso_corsi", v)}
-                      step="0.01"
                       className="pl-11"
+                      placeholder="es. 800"
                     />
                   </div>
                 </Field>
@@ -833,8 +834,8 @@ const TabCompenso: React.FC<{
                 <NumInput
                   value={contratto_form.costo_orario_lezioni}
                   onChange={(v) => upd("costo_orario_lezioni", v)}
-                  step="0.01"
                   className="pl-14"
+                  placeholder="es. 45"
                 />
               </div>
             </Field>
@@ -844,8 +845,8 @@ const TabCompenso: React.FC<{
                 <NumInput
                   value={contratto_form.costo_orario_corsi}
                   onChange={(v) => upd("costo_orario_corsi", v)}
-                  step="0.01"
                   className="pl-14"
+                  placeholder="es. 35"
                 />
               </div>
             </Field>
