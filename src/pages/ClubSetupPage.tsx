@@ -185,3 +185,63 @@ const ClubSetupPage: React.FC = () => {
             <Field label="Sito web" icon={<Globe className="w-3.5 h-3.5" />}>
               <Input value={get_val("sito_web")} onChange={(e) => set_val("sito_web", e.target.value)} placeholder="https://www.clubname.ch" />
             </Field>
+            <Field label="Tessera federale" icon={<Hash className="w-3.5 h-3.5" />}>
+              <Input value={get_val("numero_tessera_federale")} onChange={(e) => set_val("numero_tessera_federale", e.target.value)} />
+            </Field>
+          </div>
+        </section>
+
+        <Separator />
+
+        {/* Colore primario */}
+        <section className="space-y-4">
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Colore primario</h2>
+          <div className="flex items-center gap-4">
+            <input
+              type="color"
+              value={colore}
+              onChange={(e) => set_val("colore_primario", e.target.value)}
+              className="w-10 h-10 rounded-lg border border-border cursor-pointer"
+            />
+            <span className="text-sm text-muted-foreground">{colore}</span>
+          </div>
+        </section>
+
+        <Separator />
+
+        {/* Descrizione */}
+        <section className="space-y-4">
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Descrizione</h2>
+          <textarea
+            value={get_val("descrizione")}
+            onChange={(e) => set_val("descrizione", e.target.value)}
+            rows={3}
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            placeholder="Descrizione del club..."
+          />
+        </section>
+
+        <Separator />
+
+        {/* Salva */}
+        <div className="flex justify-end">
+          <Button onClick={handle_save} disabled={saving || Object.keys(form).length === 0}>
+            {saving ? "Salvataggio..." : "Salva modifiche"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const Field: React.FC<{ label: string; icon?: React.ReactNode; children: React.ReactNode }> = ({ label, icon, children }) => (
+  <div className="space-y-1.5">
+    <Label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      {icon}
+      {label}
+    </Label>
+    {children}
+  </div>
+);
+
+export default ClubSetupPage;
