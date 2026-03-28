@@ -41,6 +41,13 @@ function ore_fmt(ore: number): string {
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
+// Converte stringa in numero in modo sicuro, permettendo input parziali come "1."
+function to_num(v: string | number): number {
+  if (typeof v === "number") return v;
+  const n = parseFloat(v);
+  return isNaN(n) ? 0 : n;
+}
+
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <div className="space-y-1.5">
     <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{label}</label>
@@ -50,6 +57,26 @@ const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, 
 
 const input_cls =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
+
+// ─── NumInput — input numerico che non azzera durante la digitazione ──
+const NumInput: React.FC<{
+  value: string | number;
+  onChange: (v: string) => void;
+  step?: string;
+  min?: string;
+  className?: string;
+  placeholder?: string;
+}> = ({ value, onChange, step = "0.01", min = "0", className = "", placeholder = "0" }) => (
+  <input
+    type="number"
+    step={step}
+    min={min}
+    value={value}
+    placeholder={placeholder}
+    onChange={(e) => onChange(e.target.value)}
+    className={`${input_cls} ${className}`}
+  />
+);
 
 // ─── Modal nuovo/modifica istruttore ───────────────────────
 const IstruttoreModal: React.FC<{
@@ -65,13 +92,13 @@ const IstruttoreModal: React.FC<{
     cognome: istruttore?.cognome || "",
     email: istruttore?.email || "",
     telefono: istruttore?.telefono || "",
-    costo_minuto_lezione_privata: istruttore?.costo_minuto || istruttore?.costo_minuto_lezione_privata || 0,
+    costo_minuto_lezione_privata: String(istruttore?.costo_minuto || istruttore?.costo_minuto_lezione_privata || ""),
     attivo: istruttore?.attivo !== false && istruttore?.stato !== "inattivo",
     note: istruttore?.note || "",
     foto_url: istruttore?.foto_url || "",
     tag_nfc: istruttore?.tag_nfc || "",
     ruolo: istruttore?.ruolo || "istruttore",
-    compenso_orario: istruttore?.compenso_orario || 0,
+    compenso_orario: String(istruttore?.compenso_orario || ""),
   });
   const [confirm_delete, set_confirm_delete] = useState(false);
   const [uploading_foto, set_uploading_foto] = useState(false);
@@ -98,6 +125,15 @@ const IstruttoreModal: React.FC<{
   };
 
   const is_monitore = form.ruolo === "monitore" || form.ruolo === "aiuto_monitore";
+
+  const handle_save = () => {
+    on_save({
+      ...form,
+      id: istruttore?.id,
+      costo_minuto_lezione_privata: to_num(form.costo_minuto_lezione_privata),
+      compenso_orario: to_num(form.compenso_orario),
+    });
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -186,13 +222,11 @@ const IstruttoreModal: React.FC<{
             <Field label="Compenso orario (CHF/ora)">
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF/h</span>
-                <input
-                  type="number"
-                  step="0.5"
-                  min="0"
+                <NumInput
                   value={form.compenso_orario}
-                  onChange={(e) => set_val("compenso_orario", parseFloat(e.target.value) || 0)}
-                  className={`${input_cls} pl-14`}
+                  onChange={(v) => set_val("compenso_orario", v)}
+                  step="0.5"
+                  className="pl-14"
                 />
               </div>
             </Field>
@@ -200,13 +234,11 @@ const IstruttoreModal: React.FC<{
             <Field label="Prezzo al minuto lezioni private (vendita al cliente)">
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF/min</span>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                <NumInput
                   value={form.costo_minuto_lezione_privata}
-                  onChange={(e) => set_val("costo_minuto_lezione_privata", parseFloat(e.target.value) || 0)}
-                  className={`${input_cls} pl-16`}
+                  onChange={(v) => set_val("costo_minuto_lezione_privata", v)}
+                  step="0.01"
+                  className="pl-16"
                 />
               </div>
             </Field>
@@ -240,11 +272,7 @@ const IstruttoreModal: React.FC<{
             <Button variant="outline" onClick={on_close} disabled={saving} className="flex-1">
               Annulla
             </Button>
-            <Button
-              onClick={() => on_save({ ...form, id: istruttore?.id })}
-              disabled={saving}
-              className="flex-1 bg-primary hover:bg-primary/90"
-            >
+            <Button onClick={handle_save} disabled={saving} className="flex-1 bg-primary hover:bg-primary/90">
               {saving ? "..." : "💾 Salva"}
             </Button>
           </div>
@@ -285,9 +313,9 @@ const TabOreLavoro: React.FC<{
   const now = new Date();
   const [anno, set_anno] = useState(now.getFullYear());
   const [mese, set_mese] = useState(now.getMonth() + 1);
-  const [ore_extra, set_ore_extra] = useState(0);
+  const [ore_extra, set_ore_extra] = useState<string>("");
   const [note_extra, set_note_extra] = useState("");
-  const [ore_gare_manual, set_ore_gare_manual] = useState(0);
+  const [ore_gare_manual, set_ore_gare_manual] = useState<string>("");
   const [saving, set_saving] = useState(false);
 
   useEffect(() => {
@@ -299,9 +327,9 @@ const TabOreLavoro: React.FC<{
         .eq("anno", anno)
         .eq("mese", mese)
         .maybeSingle();
-      set_ore_extra(data?.ore_extra ?? 0);
+      set_ore_extra(data?.ore_extra != null ? String(data.ore_extra) : "");
       set_note_extra(data?.note_extra ?? "");
-      set_ore_gare_manual(data?.ore_gare ?? 0);
+      set_ore_gare_manual(data?.ore_gare != null ? String(data.ore_gare) : "");
     };
     load();
   }, [istruttore.id, anno, mese]);
@@ -361,7 +389,9 @@ const TabOreLavoro: React.FC<{
     return totale;
   }, [campi, anno, mese]);
 
-  const ore_totali = ore_lezioni + ore_corsi + ore_campi + ore_gare_manual + ore_extra;
+  const ore_gare_num = to_num(ore_gare_manual);
+  const ore_extra_num = to_num(ore_extra);
+  const ore_totali = ore_lezioni + ore_corsi + ore_campi + ore_gare_num + ore_extra_num;
   const costo_lezioni = ore_lezioni * (istruttore.costo_orario_lezioni || 0);
   const costo_corsi = ore_corsi * (istruttore.costo_orario_corsi || 0);
   const costo_totale_club = costo_lezioni + costo_corsi;
@@ -379,8 +409,8 @@ const TabOreLavoro: React.FC<{
           ore_corsi,
           ore_lezioni_private: ore_lezioni,
           ore_campi,
-          ore_gare: ore_gare_manual,
-          ore_extra,
+          ore_gare: ore_gare_num,
+          ore_extra: ore_extra_num,
           note_extra,
           updated_at: new Date().toISOString(),
         },
@@ -406,8 +436,8 @@ const TabOreLavoro: React.FC<{
       ["Lezioni private", ore_lezioni.toFixed(2), is_monitore ? "" : costo_lezioni.toFixed(2)],
       ["Corsi", ore_corsi.toFixed(2), is_monitore ? "" : costo_corsi.toFixed(2)],
       ["Campi allenamento", ore_campi.toFixed(2), ""],
-      ["Accompagnamento gare", ore_gare_manual.toFixed(2), ""],
-      ["Extra/Altro", ore_extra.toFixed(2), ""],
+      ["Accompagnamento gare", ore_gare_num.toFixed(2), ""],
+      ["Extra/Altro", ore_extra_num.toFixed(2), ""],
       ["TOTALE", ore_totali.toFixed(2), is_monitore ? compenso_monitore.toFixed(2) : costo_totale_club.toFixed(2)],
     ];
     const csv = rows.map((r) => r.join(";")).join("\n");
@@ -556,13 +586,12 @@ const TabOreLavoro: React.FC<{
                 <p className="text-xs text-muted-foreground">inserimento manuale</p>
               </td>
               <td className="px-4 py-3 text-right">
-                <input
-                  type="number"
-                  min="0"
-                  step="0.5"
+                <NumInput
                   value={ore_gare_manual}
-                  onChange={(e) => set_ore_gare_manual(parseFloat(e.target.value) || 0)}
-                  className="w-20 rounded-lg border border-border bg-background px-2 py-1 text-sm text-right tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  onChange={(v) => set_ore_gare_manual(v)}
+                  step="0.5"
+                  className="w-20 px-2 py-1 text-right"
+                  placeholder="0"
                 />
               </td>
               <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">—</td>
@@ -580,13 +609,12 @@ const TabOreLavoro: React.FC<{
                 />
               </td>
               <td className="px-4 py-3 text-right">
-                <input
-                  type="number"
-                  min="0"
-                  step="0.5"
+                <NumInput
                   value={ore_extra}
-                  onChange={(e) => set_ore_extra(parseFloat(e.target.value) || 0)}
-                  className="w-20 rounded-lg border border-border bg-background px-2 py-1 text-sm text-right tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  onChange={(v) => set_ore_extra(v)}
+                  step="0.5"
+                  className="w-20 px-2 py-1 text-right"
+                  placeholder="0"
                 />
               </td>
               <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">—</td>
@@ -620,12 +648,12 @@ const TabCompenso: React.FC<{
   const [mese, set_mese] = useState(now.getMonth() + 1);
   const [contratto_form, set_contratto_form] = useState({
     tipo_contratto: istruttore.tipo_contratto || "orario",
-    costo_minuto_lezione_privata: istruttore.costo_minuto || istruttore.costo_minuto_lezione_privata || 0,
-    compenso_fisso_mensile: istruttore.compenso_fisso_mensile || 0,
-    compenso_fisso_corsi: istruttore.compenso_fisso_corsi || 0,
-    costo_orario_corsi: istruttore.costo_orario_corsi || 0,
-    costo_orario_lezioni: istruttore.costo_orario_lezioni || 0,
-    compenso_orario: istruttore.compenso_orario || 0,
+    costo_minuto_lezione_privata: String(istruttore.costo_minuto || istruttore.costo_minuto_lezione_privata || ""),
+    compenso_fisso_mensile: String(istruttore.compenso_fisso_mensile || ""),
+    compenso_fisso_corsi: String(istruttore.compenso_fisso_corsi || ""),
+    costo_orario_corsi: String(istruttore.costo_orario_corsi || ""),
+    costo_orario_lezioni: String(istruttore.costo_orario_lezioni || ""),
+    compenso_orario: String(istruttore.compenso_orario || ""),
   });
 
   const is_monitore = istruttore.ruolo === "monitore" || istruttore.ruolo === "aiuto_monitore";
@@ -673,11 +701,11 @@ const TabCompenso: React.FC<{
   const ore_totali = ore_lezioni_private + ore_corsi;
 
   const compenso_vendita = useMemo(() => {
-    if (is_monitore) return ore_totali * (contratto_form.compenso_orario || 0);
+    if (is_monitore) return ore_totali * to_num(contratto_form.compenso_orario);
     const tipo = contratto_form.tipo_contratto;
-    const costo_min = Number(contratto_form.costo_minuto_lezione_privata);
-    const fisso_mensile = Number(contratto_form.compenso_fisso_mensile);
-    const fisso_corsi = Number(contratto_form.compenso_fisso_corsi);
+    const costo_min = to_num(contratto_form.costo_minuto_lezione_privata);
+    const fisso_mensile = to_num(contratto_form.compenso_fisso_mensile);
+    const fisso_corsi = to_num(contratto_form.compenso_fisso_corsi);
     switch (tipo) {
       case "orario":
         return (minuti_lezioni_private + minuti_corsi) * costo_min;
@@ -691,6 +719,20 @@ const TabCompenso: React.FC<{
         return 0;
     }
   }, [contratto_form, minuti_lezioni_private, minuti_corsi, is_monitore, ore_totali]);
+
+  const handle_save = () => {
+    on_save_contratto({
+      tipo_contratto: contratto_form.tipo_contratto,
+      costo_minuto_lezione_privata: to_num(contratto_form.costo_minuto_lezione_privata),
+      compenso_fisso_mensile: to_num(contratto_form.compenso_fisso_mensile),
+      compenso_fisso_corsi: to_num(contratto_form.compenso_fisso_corsi),
+      costo_orario_corsi: to_num(contratto_form.costo_orario_corsi),
+      costo_orario_lezioni: to_num(contratto_form.costo_orario_lezioni),
+      compenso_orario: to_num(contratto_form.compenso_orario),
+    });
+  };
+
+  const upd = (k: string, v: string) => set_contratto_form((p) => ({ ...p, [k]: v }));
 
   return (
     <div className="space-y-6">
@@ -706,14 +748,10 @@ const TabCompenso: React.FC<{
           <Field label="Compenso orario (CHF/ora)">
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF/h</span>
-              <Input
-                type="number"
-                step="0.5"
-                min="0"
+              <NumInput
                 value={contratto_form.compenso_orario}
-                onChange={(e) =>
-                  set_contratto_form((p) => ({ ...p, compenso_orario: parseFloat(e.target.value) || 0 }))
-                }
+                onChange={(v) => upd("compenso_orario", v)}
+                step="0.5"
                 className="pl-14"
               />
             </div>
@@ -725,8 +763,7 @@ const TabCompenso: React.FC<{
                 <div
                   key={tc.value}
                   onClick={() => set_contratto_form((p) => ({ ...p, tipo_contratto: tc.value }))}
-                  className={`p-3 rounded-xl border-2 cursor-pointer transition-all
-                    ${contratto_form.tipo_contratto === tc.value ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
+                  className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${contratto_form.tipo_contratto === tc.value ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
                 >
                   <p className="text-sm font-medium text-foreground">{tc.label}</p>
                 </div>
@@ -739,17 +776,10 @@ const TabCompenso: React.FC<{
                 <Field label="Prezzo al minuto lezioni private (vendita)">
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF</span>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
+                    <NumInput
                       value={contratto_form.costo_minuto_lezione_privata}
-                      onChange={(e) =>
-                        set_contratto_form((p) => ({
-                          ...p,
-                          costo_minuto_lezione_privata: parseFloat(e.target.value) || 0,
-                        }))
-                      }
+                      onChange={(v) => upd("costo_minuto_lezione_privata", v)}
+                      step="0.01"
                       className="pl-11"
                     />
                   </div>
@@ -759,14 +789,10 @@ const TabCompenso: React.FC<{
                 <Field label="Compenso fisso mensile">
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF</span>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
+                    <NumInput
                       value={contratto_form.compenso_fisso_mensile}
-                      onChange={(e) =>
-                        set_contratto_form((p) => ({ ...p, compenso_fisso_mensile: parseFloat(e.target.value) || 0 }))
-                      }
+                      onChange={(v) => upd("compenso_fisso_mensile", v)}
+                      step="0.01"
                       className="pl-11"
                     />
                   </div>
@@ -776,14 +802,10 @@ const TabCompenso: React.FC<{
                 <Field label="Compenso fisso corsi">
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF</span>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
+                    <NumInput
                       value={contratto_form.compenso_fisso_corsi}
-                      onChange={(e) =>
-                        set_contratto_form((p) => ({ ...p, compenso_fisso_corsi: parseFloat(e.target.value) || 0 }))
-                      }
+                      onChange={(v) => upd("compenso_fisso_corsi", v)}
+                      step="0.01"
                       className="pl-11"
                     />
                   </div>
@@ -808,14 +830,10 @@ const TabCompenso: React.FC<{
             <Field label="Costo orario — lezioni private">
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF/h</span>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                <NumInput
                   value={contratto_form.costo_orario_lezioni}
-                  onChange={(e) =>
-                    set_contratto_form((p) => ({ ...p, costo_orario_lezioni: parseFloat(e.target.value) || 0 }))
-                  }
+                  onChange={(v) => upd("costo_orario_lezioni", v)}
+                  step="0.01"
                   className="pl-14"
                 />
               </div>
@@ -823,14 +841,10 @@ const TabCompenso: React.FC<{
             <Field label="Costo orario — corsi e altro">
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF/h</span>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                <NumInput
                   value={contratto_form.costo_orario_corsi}
-                  onChange={(e) =>
-                    set_contratto_form((p) => ({ ...p, costo_orario_corsi: parseFloat(e.target.value) || 0 }))
-                  }
+                  onChange={(v) => upd("costo_orario_corsi", v)}
+                  step="0.01"
                   className="pl-14"
                 />
               </div>
@@ -839,12 +853,7 @@ const TabCompenso: React.FC<{
         </div>
       )}
 
-      <Button
-        onClick={() => on_save_contratto(contratto_form)}
-        disabled={saving}
-        size="sm"
-        className="bg-primary hover:bg-primary/90"
-      >
+      <Button onClick={handle_save} disabled={saving} size="sm" className="bg-primary hover:bg-primary/90">
         {saving ? "..." : "💾 Salva configurazione compenso"}
       </Button>
 
@@ -999,7 +1008,6 @@ const InstructorsPage: React.FC = () => {
       </div>
     );
 
-  // ─── Vista dettaglio istruttore ───────────────────────────
   if (selected) {
     return (
       <>
@@ -1170,7 +1178,6 @@ const InstructorsPage: React.FC = () => {
     );
   }
 
-  // ─── Vista lista istruttori ───────────────────────────────
   return (
     <>
       {modal_open && (
