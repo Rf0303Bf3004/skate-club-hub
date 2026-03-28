@@ -14,7 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      inviti_genitori: {
+        Row: {
+          atleta_id: string
+          club_id: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          token: string
+          usato: boolean
+        }
+        Insert: {
+          atleta_id: string
+          club_id: string
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          token: string
+          usato?: boolean
+        }
+        Update: {
+          atleta_id?: string
+          club_id?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          token?: string
+          usato?: boolean
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
