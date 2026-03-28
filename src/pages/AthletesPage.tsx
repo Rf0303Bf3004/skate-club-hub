@@ -12,21 +12,13 @@ import AtletaDetail from "@/components/AtletaDetail";
 import { toast } from "@/hooks/use-toast";
 import { supabase, DEMO_CLUB_ID } from "@/lib/supabase";
 
-const LEVELS = [
-  "pulcini",
-  "stellina_1",
-  "stellina_2",
-  "stellina_3",
-  "stellina_4",
-  "interbronzo",
-  "bronzo",
-  "interargento",
-  "argento",
-  "interoro",
-  "oro",
-];
+const LIVELLI_COMUNI = ["Pulcini", "Stellina 1", "Stellina 2", "Stellina 3", "Stellina 4"];
 
-// ─── Field — definito FUORI dal modal per evitare re-mount ─
+const LIVELLI_CARRIERA = ["Interbronzo", "Bronzo", "Interargento", "Argento", "Interoro", "Oro"];
+
+const TUTTI_LIVELLI = [...LIVELLI_COMUNI, ...LIVELLI_CARRIERA];
+
+// ─── Field ─────────────────────────────────────────────────
 const Field: React.FC<{ label: string; children: React.ReactNode; required?: boolean }> = ({
   label,
   children,
@@ -44,7 +36,39 @@ const Field: React.FC<{ label: string; children: React.ReactNode; required?: boo
 const input_cls =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
 
-// ─── Modal nuovo/modifica atleta — definito FUORI da AthletesPage ──
+// ─── Carriera Badge ────────────────────────────────────────
+const CarrieraBadge: React.FC<{ atleta: any }> = ({ atleta }) => {
+  const ha_artistica = !!atleta.carriera_artistica;
+  const ha_stile = !!atleta.carriera_stile;
+  if (!ha_artistica && !ha_stile) return <span className="text-muted-foreground/40">—</span>;
+  return (
+    <div className="flex flex-col gap-1">
+      {ha_artistica && (
+        <Badge className="bg-purple-100 text-purple-800 text-xs font-medium border-0 w-fit">
+          Artistica: {atleta.carriera_artistica}
+        </Badge>
+      )}
+      {ha_stile && (
+        <Badge className="bg-blue-100 text-blue-800 text-xs font-medium border-0 w-fit">
+          Stile: {atleta.carriera_stile}
+        </Badge>
+      )}
+    </div>
+  );
+};
+
+// ─── Livello Badge ─────────────────────────────────────────
+const LivelloBadge: React.FC<{ atleta: any }> = ({ atleta }) => {
+  const ha_carriera = !!(atleta.carriera_artistica || atleta.carriera_stile);
+  if (ha_carriera) return null;
+  return (
+    <Badge variant="secondary" className="text-xs">
+      {atleta.percorso_amatori || atleta.livello_amatori}
+    </Badge>
+  );
+};
+
+// ─── Modal nuovo/modifica atleta ───────────────────────────
 const AtletaModal: React.FC<{
   atleta?: any;
   on_close: () => void;
@@ -53,11 +77,15 @@ const AtletaModal: React.FC<{
   saving: boolean;
   deleting: boolean;
 }> = ({ atleta, on_close, on_save, on_delete, saving, deleting }) => {
+  const carriera_attiva = atleta?.percorso_amatori === "Stellina 4" || atleta?.livello_amatori === "Stellina 4";
+
   const [form, set_form] = useState({
     nome: atleta?.nome || "",
     cognome: atleta?.cognome || "",
     data_nascita: atleta?.data_nascita?.split("T")[0] || "",
-    percorso_amatori: atleta?.livello_amatori || atleta?.percorso_amatori || "pulcini",
+    percorso_amatori: atleta?.percorso_amatori || atleta?.livello_amatori || "Pulcini",
+    carriera_artistica: atleta?.carriera_artistica || "",
+    carriera_stile: atleta?.carriera_stile || "",
     ore_pista_stagione: atleta?.ore_pista_stagione || 0,
     atleta_federazione: atleta?.atleta_federazione || false,
     tag_nfc: atleta?.tag_nfc || "",
@@ -75,10 +103,11 @@ const AtletaModal: React.FC<{
   const [uploading_foto, set_uploading_foto] = useState(false);
   const [uploading_disco, set_uploading_disco] = useState(false);
 
-  // useCallback evita che set_val venga ricreata ad ogni render
   const set_val = useCallback((k: string, v: any) => {
     set_form((p) => ({ ...p, [k]: v }));
   }, []);
+
+  const is_carriera_attiva = form.percorso_amatori === "Stellina 4";
 
   const handle_foto_upload = async (file: File) => {
     set_uploading_foto(true);
@@ -174,18 +203,68 @@ const AtletaModal: React.FC<{
             />
           </Field>
 
-          <Field label="Livello">
+          {/* Percorso comune */}
+          <Field label="Percorso comune">
             <select
               value={form.percorso_amatori}
-              onChange={(e) => set_val("percorso_amatori", e.target.value)}
+              onChange={(e) => {
+                const v = e.target.value;
+                set_form((p) => ({
+                  ...p,
+                  percorso_amatori: v,
+                  carriera_artistica: v !== "Stellina 4" ? "" : p.carriera_artistica,
+                  carriera_stile: v !== "Stellina 4" ? "" : p.carriera_stile,
+                  atleta_federazione: v !== "Stellina 4" ? false : p.atleta_federazione,
+                }));
+              }}
               className={input_cls}
             >
-              {LEVELS.map((l) => (
+              {LIVELLI_COMUNI.map((l) => (
                 <option key={l} value={l}>
-                  {l.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                  {l}
                 </option>
               ))}
             </select>
+          </Field>
+
+          {/* Carriera Artistica */}
+          <Field label="Carriera Artistica">
+            <select
+              value={form.carriera_artistica}
+              onChange={(e) => set_val("carriera_artistica", e.target.value)}
+              disabled={!is_carriera_attiva}
+              className={`${input_cls} ${!is_carriera_attiva ? "opacity-40 cursor-not-allowed" : ""}`}
+            >
+              <option value="">Nessuna</option>
+              {LIVELLI_CARRIERA.map((l) => (
+                <option key={l} value={l}>
+                  {l}
+                </option>
+              ))}
+            </select>
+            {!is_carriera_attiva && (
+              <p className="text-xs text-muted-foreground italic mt-1">Si sblocca dopo Stellina 4</p>
+            )}
+          </Field>
+
+          {/* Carriera Stile */}
+          <Field label="Carriera Stile">
+            <select
+              value={form.carriera_stile}
+              onChange={(e) => set_val("carriera_stile", e.target.value)}
+              disabled={!is_carriera_attiva}
+              className={`${input_cls} ${!is_carriera_attiva ? "opacity-40 cursor-not-allowed" : ""}`}
+            >
+              <option value="">Nessuna</option>
+              {LIVELLI_CARRIERA.map((l) => (
+                <option key={l} value={l}>
+                  {l}
+                </option>
+              ))}
+            </select>
+            {!is_carriera_attiva && (
+              <p className="text-xs text-muted-foreground italic mt-1">Si sblocca dopo Stellina 4</p>
+            )}
           </Field>
 
           <Field label="Ore pista stagione">
@@ -278,8 +357,12 @@ const AtletaModal: React.FC<{
               checked={form.atleta_federazione}
               onChange={(e) => set_val("atleta_federazione", e.target.checked)}
               className="w-4 h-4 accent-primary"
+              disabled={!is_carriera_attiva}
             />
-            <label htmlFor="fed_check" className="text-sm font-medium text-foreground cursor-pointer">
+            <label
+              htmlFor="fed_check"
+              className={`text-sm font-medium cursor-pointer ${!is_carriera_attiva ? "text-muted-foreground" : "text-foreground"}`}
+            >
               Atleta federazione
             </label>
           </div>
@@ -358,11 +441,10 @@ const AthletesPage: React.FC = () => {
   const [modal_open, set_modal_open] = useState(false);
   const [selected_atleta, set_selected_atleta] = useState<any>(null);
 
-  const levels_filter = ["tutti", ...LEVELS];
-
   const filtered = atleti.filter((a: any) => {
     const name_match = `${a.nome} ${a.cognome}`.toLowerCase().includes(search.toLowerCase());
-    const level_match = level_filter === "tutti" || a.livello_amatori === level_filter;
+    const livello = a.percorso_amatori || a.livello_amatori || "";
+    const level_match = level_filter === "tutti" || livello === level_filter;
     return name_match && level_match;
   });
 
@@ -443,9 +525,10 @@ const AthletesPage: React.FC = () => {
               <SelectValue placeholder={t("livello")} />
             </SelectTrigger>
             <SelectContent>
-              {levels_filter.map((l) => (
+              <SelectItem value="tutti">Tutti i livelli</SelectItem>
+              {TUTTI_LIVELLI.map((l) => (
                 <SelectItem key={l} value={l}>
-                  {l === "tutti" ? "Tutti i livelli" : l.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                  {l}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -464,10 +547,7 @@ const AthletesPage: React.FC = () => {
                     {t("eta")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                    {t("livello")}
-                  </th>
-                  <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden md:table-cell">
-                    {t("carriera")}
+                    Livello / Carriera
                   </th>
                   <th className="text-right px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">
                     {t("ore_pista")}
@@ -486,7 +566,7 @@ const AthletesPage: React.FC = () => {
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground text-sm">
+                    <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground text-sm">
                       Nessuna atleta trovata.
                     </td>
                   </tr>
@@ -523,15 +603,8 @@ const AthletesPage: React.FC = () => {
                         {calculate_age(a.data_nascita)}
                       </td>
                       <td className="px-4 py-3 cursor-pointer" onClick={() => set_selected_id(a.id)}>
-                        <Badge variant="secondary" className="text-xs">
-                          {t(a.livello_amatori)}
-                        </Badge>
-                      </td>
-                      <td
-                        className="px-4 py-3 text-muted-foreground hidden md:table-cell cursor-pointer"
-                        onClick={() => set_selected_id(a.id)}
-                      >
-                        {a.carriera_artistica ? t(a.carriera_artistica) : "—"}
+                        <LivelloBadge atleta={a} />
+                        <CarrieraBadge atleta={a} />
                       </td>
                       <td
                         className="px-4 py-3 text-right tabular-nums text-muted-foreground hidden lg:table-cell cursor-pointer"
