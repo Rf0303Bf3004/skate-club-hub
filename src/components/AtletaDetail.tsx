@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import InvitoGenitoreModal from "@/components/InvitoGenitoreModal";
 import { useI18n } from "@/lib/i18n";
 import {
   use_corsi,
