@@ -1045,15 +1045,22 @@ const CorsoCard: React.FC<{
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span
-            className={`inline-block w-2 h-2 rounded-full ${corso.stato === "attivo" ? "bg-success" : "bg-muted-foreground"}`}
-          />
-          <span className="text-xs text-muted-foreground tabular-nums">CHF {corso.costo_mensile}/m</span>
+        <div className="flex flex-col items-end gap-0.5 shrink-0">
+          <div className="flex items-center gap-1.5">
+            <span
+              className={`inline-block w-2 h-2 rounded-full ${corso.stato === "attivo" ? "bg-success" : "bg-muted-foreground"}`}
+            />
+          </div>
+          {corso.costo_mensile > 0 && (
+            <span className="text-xs text-muted-foreground tabular-nums">CHF {corso.costo_mensile}/mese</span>
+          )}
+          {corso.costo_annuale > 0 && (
+            <span className="text-xs text-muted-foreground tabular-nums">CHF {corso.costo_annuale}/anno</span>
+          )}
         </div>
       </div>
 
-      {/* Personale — sezioni separate per ruolo */}
+      {/* Personale */}
       <div className="space-y-3">
         {istruttori_corso.length > 0 && (
           <div className="space-y-1.5">
