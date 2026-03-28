@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useI18n } from "@/lib/i18n";
 import {
   use_corsi,
@@ -29,6 +29,79 @@ interface Props {
 
 const LIVELLI_COMUNI = ["Pulcini", "Stellina 1", "Stellina 2", "Stellina 3", "Stellina 4"];
 const LIVELLI_CARRIERA = ["Interbronzo", "Bronzo", "Interargento", "Argento", "Interoro", "Oro"];
+
+// ─── NumInput ──────────────────────────────────────────────
+function to_num(v: string | number): number {
+  if (typeof v === "number") return isNaN(v) ? 0 : v;
+  const cleaned = String(v).replace(",", ".");
+  const n = parseFloat(cleaned);
+  return isNaN(n) ? 0 : n;
+}
+
+const input_cls =
+  "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
+
+const NumInput: React.FC<{
+  value: string | number;
+  onChange: (v: string) => void;
+  className?: string;
+  placeholder?: string;
+}> = ({ value, onChange, className = "", placeholder = "0" }) => {
+  const [local, set_local] = useState(() => {
+    const n = to_num(String(value));
+    return n === 0 ? "" : String(n);
+  });
+  const [focused, set_focused] = useState(false);
+
+  useEffect(() => {
+    if (!focused) {
+      const n = to_num(String(value));
+      set_local(n === 0 ? "" : String(n));
+    }
+  }, [value, focused]);
+
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      value={local}
+      placeholder={placeholder}
+      onFocus={() => set_focused(true)}
+      onKeyDown={(e) => {
+        const allowed = [
+          "Backspace",
+          "Delete",
+          "Tab",
+          "Escape",
+          "Enter",
+          "ArrowLeft",
+          "ArrowRight",
+          "ArrowUp",
+          "ArrowDown",
+          "Home",
+          "End",
+        ];
+        if (allowed.includes(e.key)) return;
+        if ((e.key === "." || e.key === ",") && !local.includes(".")) return;
+        if (/^\d$/.test(e.key)) return;
+        if (e.ctrlKey || e.metaKey) return;
+        e.preventDefault();
+      }}
+      onChange={(e) => {
+        const v = e.target.value.replace(",", ".");
+        set_local(v);
+        onChange(v);
+      }}
+      onBlur={() => {
+        set_focused(false);
+        const n = to_num(local);
+        set_local(n === 0 ? "" : String(n));
+        onChange(String(n));
+      }}
+      className={`${input_cls} ${className}`}
+    />
+  );
+};
 
 // ─── Modal Migrazione ──────────────────────────────────────
 const MigraModal: React.FC<{
@@ -174,7 +247,12 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
     foto_url: a.foto_url || "",
     disco_url: a.disco_url || "",
     disco_in_preparazione: a.disco_in_preparazione || "",
+    compenso_orario_pista_str: (() => {
+      const n = to_num(a.compenso_orario_pista);
+      return n === 0 ? "" : String(n);
+    })(),
   });
+
   const [uploading_foto, set_uploading_foto] = useState(false);
   const [uploading_disco, set_uploading_disco] = useState(false);
 
@@ -207,7 +285,6 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
     medals.filter((m: any) => m.medaglia?.toLowerCase() === tipo.toLowerCase()).length;
 
   const upd = (k: string, v: any) => set_form((p: any) => ({ ...p, [k]: v }));
-
   const is_carriera_attiva = form.percorso_amatori === "Stellina 4";
 
   const handle_foto_upload = async (file: File) => {
@@ -271,7 +348,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
         foto_url: form.foto_url || null,
         disco_url: form.disco_url || null,
         ruolo_pista: form.ruolo_pista || "atleta",
-        compenso_orario_pista: form.compenso_orario_pista || 0,
+        compenso_orario_pista: to_num(form.compenso_orario_pista_str),
         attivo_come_monitore: form.attivo_come_monitore || false,
       });
       toast({ title: "✅ Atleta salvata" });
@@ -308,7 +385,6 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
     </div>
   );
 
-  // Badge livello per header
   const livello_display = form.carriera_artistica || form.carriera_stile ? null : form.percorso_amatori;
 
   return (
@@ -342,7 +418,6 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
           </div>
         </div>
 
-        {/* Header atleta */}
         <div className="flex items-center gap-4">
           <div className="relative">
             {form.foto_url ? (
@@ -476,7 +551,6 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
           {/* ── Livello ── */}
           <TabsContent value="livello" className="mt-6">
             <div className="bg-card rounded-xl shadow-card p-6 space-y-5 max-w-lg">
-              {/* Percorso comune */}
               <div className="space-y-1.5">
                 <Label className="text-sm text-muted-foreground">Percorso comune</Label>
                 <Select
@@ -504,7 +578,6 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                 </Select>
               </div>
 
-              {/* Carriera Artistica */}
               <div className="space-y-1.5">
                 <Label
                   className={`text-sm ${!is_carriera_attiva ? "text-muted-foreground/50" : "text-muted-foreground"}`}
@@ -533,7 +606,6 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                 )}
               </div>
 
-              {/* Carriera Stile */}
               <div className="space-y-1.5">
                 <Label
                   className={`text-sm ${!is_carriera_attiva ? "text-muted-foreground/50" : "text-muted-foreground"}`}
@@ -562,7 +634,6 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                 )}
               </div>
 
-              {/* Atleta federazione */}
               {is_carriera_attiva && (form.carriera_artistica || form.carriera_stile) && (
                 <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
                   <input
@@ -597,14 +668,17 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                 {(form.ruolo_pista === "monitore" || form.ruolo_pista === "aiuto_monitore") && (
                   <div className="space-y-1.5">
                     <Label className="text-sm text-muted-foreground">Compenso orario (CHF/ora)</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.5"
-                      value={form.compenso_orario_pista || 0}
-                      onChange={(e) => upd("compenso_orario_pista", Number(e.target.value))}
-                      className="h-9"
-                    />
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">
+                        CHF/h
+                      </span>
+                      <NumInput
+                        value={form.compenso_orario_pista_str}
+                        onChange={(v) => upd("compenso_orario_pista_str", v)}
+                        className="pl-14 h-9"
+                        placeholder="es. 15.50"
+                      />
+                    </div>
                   </div>
                 )}
               </div>
