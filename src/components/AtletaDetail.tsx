@@ -975,6 +975,22 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
           </TabsContent>
         </Tabs>
       </div>
+      {show_invito_1 && form.genitore1_email && (
+        <InvitoGenitoreModal
+          atleta={form}
+          genitore_email={form.genitore1_email}
+          genitore_nome={`${form.genitore1_nome} ${form.genitore1_cognome}`}
+          on_close={() => set_show_invito_1(false)}
+        />
+      )}
+      {show_invito_2 && form.genitore2_email && (
+        <InvitoGenitoreModal
+          atleta={form}
+          genitore_email={form.genitore2_email}
+          genitore_nome={`${form.genitore2_nome} ${form.genitore2_cognome}`}
+          on_close={() => set_show_invito_2(false)}
+        />
+      )}
     </>
   );
 };
