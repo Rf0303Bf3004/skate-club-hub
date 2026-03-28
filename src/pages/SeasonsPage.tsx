@@ -4,11 +4,10 @@ import { use_stagioni } from "@/hooks/use-supabase-data";
 import { use_upsert_stagione, use_elimina_stagione } from "@/hooks/use-supabase-mutations";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { supabase, DEMO_CLUB_ID } from "@/lib/supabase";
+import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
-import { X } from "lucide-react";
 
 const TIPI_STAGIONE = [
   { value: "Regolare", label: "Regolare" },
@@ -16,6 +15,9 @@ const TIPI_STAGIONE = [
   { value: "Post-Season", label: "Post-Season" },
   { value: "Campo", label: "Campo" },
 ];
+
+const input_cls =
+  "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
 
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <div className="space-y-1.5">
@@ -62,7 +64,7 @@ const StagioneModal: React.FC<{
     set_saving(true);
     try {
       const payload = {
-        club_id: DEMO_CLUB_ID,
+        club_id: get_current_club_id(), // ← FIX: dinamico
         nome: form.nome.trim(),
         tipo: form.tipo,
         data_inizio: form.data_inizio,
@@ -98,8 +100,8 @@ const StagioneModal: React.FC<{
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-card rounded-2xl shadow-xl w-full max-w-md">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+      <div className="bg-card rounded-2xl shadow-xl w-full max-w-md flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
           <h2 className="text-base font-bold text-foreground">
             {stagione?.id ? "Modifica stagione" : "Nuova stagione"}
           </h2>
@@ -107,21 +109,18 @@ const StagioneModal: React.FC<{
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="px-6 py-5 space-y-4">
+
+        <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
           <Field label="Nome *">
             <input
               value={form.nome}
               onChange={(e) => set_val("nome", e.target.value)}
               placeholder="es. Stagione 2025-2026"
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+              className={input_cls}
             />
           </Field>
           <Field label="Tipo">
-            <select
-              value={form.tipo}
-              onChange={(e) => set_val("tipo", e.target.value)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-            >
+            <select value={form.tipo} onChange={(e) => set_val("tipo", e.target.value)} className={input_cls}>
               {TIPI_STAGIONE.map((t) => (
                 <option key={t.value} value={t.value}>
                   {t.label}
@@ -135,7 +134,7 @@ const StagioneModal: React.FC<{
                 type="date"
                 value={form.data_inizio}
                 onChange={(e) => set_val("data_inizio", e.target.value)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                className={input_cls}
               />
             </Field>
             <Field label="Data fine *">
@@ -143,7 +142,7 @@ const StagioneModal: React.FC<{
                 type="date"
                 value={form.data_fine}
                 onChange={(e) => set_val("data_fine", e.target.value)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                className={input_cls}
               />
             </Field>
           </div>
@@ -160,7 +159,8 @@ const StagioneModal: React.FC<{
             </label>
           </div>
         </div>
-        <div className="px-6 py-4 border-t border-border space-y-2">
+
+        <div className="px-6 py-4 border-t border-border space-y-2 flex-shrink-0">
           <div className="flex gap-2">
             <Button variant="outline" onClick={on_close} disabled={saving} className="flex-1">
               Annulla
