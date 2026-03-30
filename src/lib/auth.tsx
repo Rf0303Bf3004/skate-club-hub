@@ -74,7 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_OUT") {
         set_session(null);
-        set_current_club_id(DEMO_CLUB_ID);
+        }
       } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
         void fetch_session().then((s) => {
           set_session(s);
