@@ -89,10 +89,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const normalized_email = email.trim();
     const normalized_password = password.trim();
 
-    if (!normalized_email || !normalized_password || normalized_email === "demo@demo.ch") {
-      set_current_club_id(DEMO_CLUB_ID);
-      set_session({ ...DEMO_SESSION, email: normalized_email || DEMO_SESSION.email });
-      return;
+    if (!normalized_email || !normalized_password) {
+      throw new Error("Email e password sono obbligatori");
     }
 
     const { error } = await supabase.auth.signInWithPassword({
