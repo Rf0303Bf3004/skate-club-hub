@@ -86,7 +86,7 @@ const LoginPage: React.FC = () => {
             </Button>
           </form>
 
-          <p className="text-center text-xs text-muted-foreground">{t('demo_text')}</p>
+          
         </div>
       </div>
     </div>
