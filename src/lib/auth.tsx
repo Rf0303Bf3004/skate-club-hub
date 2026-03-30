@@ -27,15 +27,6 @@ const AuthContext = createContext<AuthContextType>({
   logout: async () => {},
 });
 
-const DEMO_SESSION: UserSession = {
-  user_id: "demo-user",
-  email: "demo@demo.ch",
-  club_id: DEMO_CLUB_ID,
-  club_nome: "Demo Skating Club",
-  ruolo: "admin",
-  nome: "Demo",
-  cognome: "User",
-};
 
 async function fetch_session(): Promise<UserSession | null> {
   const {
