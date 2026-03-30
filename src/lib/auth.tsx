@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { DEMO_CLUB_ID, supabase, set_current_club_id } from "./supabase";
+import { supabase, set_current_club_id } from "./supabase";
 
 export interface UserSession {
   user_id: string;
