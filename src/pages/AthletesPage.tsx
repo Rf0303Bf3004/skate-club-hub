@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Shield, X, Trash2, Upload } from "lucide-react";
 import AtletaDetail from "@/components/AtletaDetail";
 import { toast } from "@/hooks/use-toast";
-import { supabase, DEMO_CLUB_ID } from "@/lib/supabase";
+import { supabase, get_current_club_id } from "@/lib/supabase";
 
 const LIVELLI_COMUNI = ["Pulcini", "Stellina 1", "Stellina 2", "Stellina 3", "Stellina 4"];
 
