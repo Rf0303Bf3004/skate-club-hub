@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Shield, X, Trash2, Upload } from "lucide-react";
 import AtletaDetail from "@/components/AtletaDetail";
 import { toast } from "@/hooks/use-toast";
-import { supabase, DEMO_CLUB_ID } from "@/lib/supabase";
+import { supabase, get_current_club_id } from "@/lib/supabase";
 
 const LIVELLI_COMUNI = ["Pulcini", "Stellina 1", "Stellina 2", "Stellina 3", "Stellina 4"];
 
@@ -113,7 +113,7 @@ const AtletaModal: React.FC<{
     set_uploading_foto(true);
     try {
       const ext = file.name.split(".").pop();
-      const path = `${DEMO_CLUB_ID}/${Date.now()}.${ext}`;
+      const path = `${get_current_club_id()}/${Date.now()}.${ext}`;
       const { error } = await supabase.storage.from("foto-atleti").upload(path, file, { upsert: true });
       if (error) throw error;
       const { data } = supabase.storage.from("foto-atleti").getPublicUrl(path);
@@ -130,7 +130,7 @@ const AtletaModal: React.FC<{
     set_uploading_disco(true);
     try {
       const ext = file.name.split(".").pop();
-      const path = `${DEMO_CLUB_ID}/${Date.now()}.${ext}`;
+      const path = `${get_current_club_id()}/${Date.now()}.${ext}`;
       const { error } = await supabase.storage.from("dischi-audio").upload(path, file, { upsert: true });
       if (error) throw error;
       const { data } = supabase.storage.from("dischi-audio").getPublicUrl(path);

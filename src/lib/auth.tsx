@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { DEMO_CLUB_ID, supabase, set_current_club_id } from "./supabase";
+import { supabase, set_current_club_id } from "./supabase";
 
 export interface UserSession {
   user_id: string;
@@ -27,15 +27,6 @@ const AuthContext = createContext<AuthContextType>({
   logout: async () => {},
 });
 
-const DEMO_SESSION: UserSession = {
-  user_id: "demo-user",
-  email: "demo@demo.ch",
-  club_id: DEMO_CLUB_ID,
-  club_nome: "Demo Skating Club",
-  ruolo: "admin",
-  nome: "Demo",
-  cognome: "User",
-};
 
 async function fetch_session(): Promise<UserSession | null> {
   const {
@@ -83,7 +74,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_OUT") {
         set_session(null);
-        set_current_club_id(DEMO_CLUB_ID);
       } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
         void fetch_session().then((s) => {
           set_session(s);
@@ -98,10 +88,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const normalized_email = email.trim();
     const normalized_password = password.trim();
 
-    if (!normalized_email || !normalized_password || normalized_email === "demo@demo.ch") {
-      set_current_club_id(DEMO_CLUB_ID);
-      set_session({ ...DEMO_SESSION, email: normalized_email || DEMO_SESSION.email });
-      return;
+    if (!normalized_email || !normalized_password) {
+      throw new Error("Email e password sono obbligatori");
     }
 
     const { error } = await supabase.auth.signInWithPassword({
@@ -117,7 +105,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     await supabase.auth.signOut();
     set_session(null);
-    set_current_club_id(DEMO_CLUB_ID);
   };
 
   return (
