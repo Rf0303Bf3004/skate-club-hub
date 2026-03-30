@@ -130,7 +130,7 @@ const AtletaModal: React.FC<{
     set_uploading_disco(true);
     try {
       const ext = file.name.split(".").pop();
-      const path = `${DEMO_CLUB_ID}/${Date.now()}.${ext}`;
+      const path = `${get_current_club_id()}/${Date.now()}.${ext}`;
       const { error } = await supabase.storage.from("dischi-audio").upload(path, file, { upsert: true });
       if (error) throw error;
       const { data } = supabase.storage.from("dischi-audio").getPublicUrl(path);
