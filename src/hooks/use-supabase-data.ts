@@ -190,7 +190,7 @@ export function use_corsi_monitori(corso_id?: string) {
   return useQuery({
     refetchOnMount: "always",
     staleTime: 0,
-    enabled: !!get_current_club_id(),
+    enabled: !!corso_id,
     queryKey: ["corsi_monitori", corso_id],
     queryFn: async () => {
       if (!corso_id) return [];
