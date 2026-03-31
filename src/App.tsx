@@ -51,8 +51,18 @@ const ProtectedSuperAdmin = ({ children }: { children: React.ReactNode }) => {
 };
 
 const AuthenticatedApp = () => {
-  const { is_authenticated } = useAuth();
+  const { is_authenticated, is_loading } = useAuth();
+
+  if (is_loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
+      </div>
+    );
+  }
+
   if (!is_authenticated) return <LoginPage />;
+
   return (
     <BrowserRouter>
       <MainLayout>
