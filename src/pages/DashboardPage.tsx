@@ -138,6 +138,12 @@ const CorsoCard: React.FC<{
 }> = ({ corso, atleti, monitori, istruttori, presenze, presenze_corso, data, on_segna, on_segna_istr, loading }) => {
   const [expanded, set_expanded] = useState(false);
 
+  // Controlla se il corso è già iniziato
+  const now = new Date();
+  const ora_corrente = now.getHours() * 60 + now.getMinutes();
+  const [h, m] = (corso.ora_inizio || "00:00").split(":").map(Number);
+  const ora_inizio_minuti = h * 60 + m;
+  const corso_non_iniziato = ora_inizio_minuti > ora_corrente;
   const atleti_corso = atleti.filter((a) => corso.atleti_ids?.includes(a.id));
   const presenti_atleti = atleti_corso.filter((a) =>
     presenze.some((p) => p.persona_id === a.id && p.riferimento_id === corso.id && !p.ora_uscita),
@@ -195,6 +201,11 @@ const CorsoCard: React.FC<{
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-foreground">{corso.nome}</p>
+                  {corso_non_iniziato && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-600 ml-1">
+                      Inizia alle {corso.ora_inizio?.slice(0,5)}
+                    </span>
+                  )}
           <div className="flex items-center gap-2 mt-0.5">
             <Badge variant="secondary" className="text-[10px]">
               {corso.tipo || "Corso"}
