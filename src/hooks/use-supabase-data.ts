@@ -396,7 +396,7 @@ export function use_storico_livelli(atleta_id: string) {
   return useQuery({
     refetchOnMount: "always",
     staleTime: 0,
-    enabled: !!get_current_club_id(),
+    enabled: !!atleta_id,
     queryKey: ["storico_livelli", atleta_id],
     queryFn: async () => {
       const { data, error } = await supabase
