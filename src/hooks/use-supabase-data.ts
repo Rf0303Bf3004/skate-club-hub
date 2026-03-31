@@ -220,7 +220,7 @@ export function use_presenze_corso(corso_id?: string, data?: string) {
   return useQuery({
     refetchOnMount: "always",
     staleTime: 0,
-    enabled: !!get_current_club_id(),
+    enabled: !!corso_id && !!data,
     queryKey: ["presenze_corso", corso_id, data],
     queryFn: async () => {
       if (!corso_id || !data) return [];
