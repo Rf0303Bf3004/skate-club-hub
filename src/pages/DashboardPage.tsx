@@ -843,7 +843,7 @@ const DashboardPage: React.FC = () => {
   const fatture_da_pagare = fatture.filter((f) => f.stato === "da_pagare");
   const totale_fatture = fatture_da_pagare.reduce((s, f) => s + f.importo, 0);
 
-  const today_day_keys = ["domenica", "lunedi", "martedi", "mercoledi", "giovedi", "venerdi", "sabato"];
+  const today_day_keys = ["domenica", "lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato"];
   const today_key = today_day_keys[new Date().getDay()];
 
   // Corsi oggi + prossimi 2 giorni
