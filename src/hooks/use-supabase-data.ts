@@ -210,8 +210,6 @@ export function use_tutti_corsi_monitori() {
 export function use_presenze_corso(corso_id?: string, data?: string) {
   return useQuery({
     refetchOnMount: true,
-    enabled: !!get_current_club_id(),
-    queryKey: ["presenze_corso", corso_id, data],
     queryFn: async () => {
       if (!corso_id || !data) return [];
       const { data: rows, error } = await supabase
