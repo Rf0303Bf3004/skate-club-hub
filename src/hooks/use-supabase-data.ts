@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 
 // ─── Club & Setup ──────────────────────────────────────────
