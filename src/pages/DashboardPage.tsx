@@ -333,8 +333,8 @@ const CorsoCard: React.FC<{
                       size="sm"
                       variant={presenza ? "outline" : "default"}
                       onClick={() => on_segna(a.id, corso.id)}
-                      disabled={loading}
-                      className={`h-7 text-xs ${presenza ? "text-success border-success/40" : "bg-success hover:bg-success/90 text-white"}`}
+                      disabled={loading || corso_non_iniziato}
+                      className={`h-7 text-xs ${presenza ? "text-success border-success/40" : corso_non_iniziato ? "opacity-40 cursor-not-allowed bg-muted text-muted-foreground" : "bg-success hover:bg-success/90 text-white"}`}
                     >
                       {presenza ? "✓ Presente" : "Segna"}
                     </Button>
