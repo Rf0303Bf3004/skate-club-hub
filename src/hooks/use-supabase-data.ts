@@ -209,6 +209,7 @@ export function use_tutti_corsi_monitori() {
 // ─── Presenze corso ────────────────────────────────────────
 export function use_presenze_corso(corso_id?: string, data?: string) {
   return useQuery({
+    queryKey: ["presenze_corso", corso_id, data],
     refetchOnMount: true,
     queryFn: async () => {
       if (!corso_id || !data) return [];
