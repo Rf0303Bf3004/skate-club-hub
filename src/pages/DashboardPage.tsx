@@ -55,7 +55,7 @@ function add_days(date: string, days: number): string {
 }
 
 function get_giorno_key(date: string): string {
-  const keys = ["domenica", "lunedi", "martedi", "mercoledi", "giovedi", "venerdi", "sabato"];
+  const keys = ["domenica", "lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato"];
   return keys[new Date(date + "T00:00:00").getDay()];
 }
 
