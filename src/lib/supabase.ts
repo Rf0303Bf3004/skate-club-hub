@@ -10,7 +10,7 @@ export const DEMO_CLUB_ID = "00000000-0000-0000-0000-000000000002";
 
 // Oggetto con riferimento mutabile — le funzioni leggono sempre il valore aggiornato
 const club_state = {
-  current_id: "00000000-0000-0000-0000-000000000002",
+  current_id: "",
 };
 
 export function set_current_club_id(id: string) {
