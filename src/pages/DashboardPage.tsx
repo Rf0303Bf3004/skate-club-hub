@@ -39,19 +39,34 @@ import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
 
 // ─── Helpers ──────────────────────────────────────────────
+function normalize_giorno(value?: string): string {
+  return (value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
 function match_giorno(giorno_db: string, today_key: string): boolean {
-  return giorno_db?.toLowerCase() === today_key?.toLowerCase();
+  return normalize_giorno(giorno_db) === normalize_giorno(today_key);
 }
 
 function get_slots_giorno(disponibilita: Record<string, any[]>, today_key: string): any[] {
-  const key = Object.keys(disponibilita).find((k) => k.toLowerCase() === today_key.toLowerCase());
+  const key = Object.keys(disponibilita).find((k) => normalize_giorno(k) === normalize_giorno(today_key));
   return key ? disponibilita[key] : [];
+}
+
+function to_date_key(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function add_days(date: string, days: number): string {
   const d = new Date(date + "T00:00:00");
   d.setDate(d.getDate() + days);
-  return d.toISOString().split("T")[0];
+  return to_date_key(d);
 }
 
 function get_giorno_key(date: string): string {
