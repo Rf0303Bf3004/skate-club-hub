@@ -1,25 +1,15 @@
-import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
-
-// Hook che legge club_id dalla sessione — si aggiorna automaticamente dopo il login
-function useClubId(): string {
-  const { session } = useAuth();
-  return session?.club_id || "";
-}
-
-
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase, get_current_club_id } from "@/lib/supabase";
 
 // ─── Club & Setup ──────────────────────────────────────────
 export function use_club() {
-  const cid = useClubId();
   return useQuery({
     refetchOnMount: "always",
     staleTime: 0,
-    enabled: !!cid,
-    queryKey: ["club", cid],
+    enabled: !!get_current_club_id(),
+    queryKey: ["club"],
     queryFn: async () => {
-      const club_id = cid;
+      const club_id = get_current_club_id();
       if (!club_id || club_id === "00000000-0000-0000-0000-000000000002") return null;
       const { data, error } = await supabase.from("clubs").select("*").eq("id", club_id).single();
       if (error) throw error;
@@ -29,14 +19,13 @@ export function use_club() {
 }
 
 export function use_setup_club() {
-  const cid = useClubId();
   return useQuery({
     refetchOnMount: "always",
     staleTime: 0,
-    enabled: !!cid,
-    queryKey: ["setup_club", cid],
+    enabled: !!get_current_club_id(),
+    queryKey: ["setup_club", get_current_club_id()],
     queryFn: async () => {
-      const { data, error } = await supabase.from("setup_club").select("*").eq("club_id", cid).single();
+      const { data, error } = await supabase.from("setup_club").select("*").eq("club_id", get_current_club_id()).single();
       if (error && error.code !== "PGRST116") throw error;
       return data;
     },
@@ -45,17 +34,16 @@ export function use_setup_club() {
 
 // ─── Stagioni ──────────────────────────────────────────────
 export function use_stagioni() {
-  const cid = useClubId();
   return useQuery({
     refetchOnMount: "always",
     staleTime: 0,
-    enabled: !!cid,
-    queryKey: ["stagioni", cid],
+    enabled: !!get_current_club_id(),
+    queryKey: ["stagioni", get_current_club_id()],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("stagioni")
         .select("*")
-        .eq("club_id", cid)
+        .eq("club_id", get_current_club_id())
         .order("data_inizio", { ascending: false });
       if (error) throw error;
       return data ?? [];
@@ -65,14 +53,13 @@ export function use_stagioni() {
 
 // ─── Atleti ────────────────────────────────────────────────
 export function use_atleti() {
-  const cid = useClubId();
   return useQuery({
     refetchOnMount: "always",
     staleTime: 0,
-    enabled: !!cid,
-    queryKey: ["atleti", cid],
+    enabled: !!get_current_club_id(),
+    queryKey: ["atleti", get_current_club_id()],
     queryFn: async () => {
-      const { data, error } = await supabase.from("atleti").select("*").eq("club_id", cid).order("cognome");
+      const { data, error } = await supabase.from("atleti").select("*").eq("club_id", get_current_club_id()).order("cognome");
       if (error) throw error;
       return (data ?? []).map(transform_atleta);
     },
@@ -115,17 +102,16 @@ function transform_atleta(a: any) {
 
 // ─── Atleti monitori ───────────────────────────────────────
 export function use_atleti_monitori() {
-  const cid = useClubId();
   return useQuery({
     refetchOnMount: "always",
     staleTime: 0,
-    enabled: !!cid,
-    queryKey: ["atleti_monitori", cid],
+    enabled: !!get_current_club_id(),
+    queryKey: ["atleti_monitori", get_current_club_id()],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("atleti")
         .select("*")
-        .eq("club_id", cid)
+        .eq("club_id", get_current_club_id())
         .in("ruolo_pista", ["monitore", "aiuto_monitore"])
         .eq("attivo", true)
         .order("cognome");
@@ -137,15 +123,14 @@ export function use_atleti_monitori() {
 
 // ─── Istruttori ────────────────────────────────────────────
 export function use_istruttori() {
-  const cid = useClubId();
   return useQuery({
     refetchOnMount: "always",
     staleTime: 0,
-    enabled: !!cid,
-    queryKey: ["istruttori", cid],
+    enabled: !!get_current_club_id(),
+    queryKey: ["istruttori", get_current_club_id()],
     queryFn: async () => {
       const [ist_res, disp_res] = await Promise.all([
-        supabase.from("istruttori").select("*").eq("club_id", cid).order("cognome"),
+        supabase.from("istruttori").select("*").eq("club_id", get_current_club_id()).order("cognome"),
         supabase.from("disponibilita_istruttori").select("*"),
       ]);
       if (ist_res.error) throw ist_res.error;
@@ -172,15 +157,14 @@ export function use_istruttori() {
 
 // ─── Corsi ─────────────────────────────────────────────────
 export function use_corsi() {
-  const cid = useClubId();
   return useQuery({
     refetchOnMount: "always",
     staleTime: 0,
-    enabled: !!cid,
-    queryKey: ["corsi", cid],
+    enabled: !!get_current_club_id(),
+    queryKey: ["corsi", get_current_club_id()],
     queryFn: async () => {
       const [corsi_res, ci_res, ic_res, cm_res] = await Promise.all([
-        supabase.from("corsi").select("*").eq("club_id", cid).order("giorno"),
+        supabase.from("corsi").select("*").eq("club_id", get_current_club_id()).order("giorno"),
         supabase.from("corsi_istruttori").select("*"),
         supabase.from("iscrizioni_corsi").select("*"),
         supabase.from("corsi_monitori").select("*"),
@@ -221,8 +205,8 @@ export function use_tutti_corsi_monitori() {
   return useQuery({
     refetchOnMount: "always",
     staleTime: 0,
-    enabled: !!cid,
-    queryKey: ["tutti_corsi_monitori", cid],
+    enabled: !!get_current_club_id(),
+    queryKey: ["tutti_corsi_monitori"],
     queryFn: async () => {
       const { data, error } = await supabase.from("corsi_monitori").select("*");
       if (error) throw error;
@@ -253,15 +237,14 @@ export function use_presenze_corso(corso_id?: string, data?: string) {
 
 // ─── Gare ──────────────────────────────────────────────────
 export function use_gare() {
-  const cid = useClubId();
   return useQuery({
     refetchOnMount: "always",
     staleTime: 0,
-    enabled: !!cid,
-    queryKey: ["gare", cid],
+    enabled: !!get_current_club_id(),
+    queryKey: ["gare", get_current_club_id()],
     queryFn: async () => {
       const [gare_res, isc_res] = await Promise.all([
-        supabase.from("gare_calendario").select("*").eq("club_id", cid).order("data"),
+        supabase.from("gare_calendario").select("*").eq("club_id", get_current_club_id()).order("data"),
         supabase.from("iscrizioni_gare").select("*"),
       ]);
       if (gare_res.error) throw gare_res.error;
@@ -291,15 +274,14 @@ export function use_gare() {
 
 // ─── Lezioni Private ───────────────────────────────────────
 export function use_lezioni_private() {
-  const cid = useClubId();
   return useQuery({
     refetchOnMount: "always",
     staleTime: 0,
-    enabled: !!cid,
-    queryKey: ["lezioni_private", cid],
+    enabled: !!get_current_club_id(),
+    queryKey: ["lezioni_private", get_current_club_id()],
     queryFn: async () => {
       const [lez_res, la_res] = await Promise.all([
-        supabase.from("lezioni_private").select("*").eq("club_id", cid).order("data"),
+        supabase.from("lezioni_private").select("*").eq("club_id", get_current_club_id()).order("data"),
         supabase.from("lezioni_private_atlete").select("*"),
       ]);
       if (lez_res.error) throw lez_res.error;
@@ -315,17 +297,16 @@ export function use_lezioni_private() {
 
 // ─── Fatture ───────────────────────────────────────────────
 export function use_fatture() {
-  const cid = useClubId();
   return useQuery({
     refetchOnMount: "always",
     staleTime: 0,
-    enabled: !!cid,
-    queryKey: ["fatture", cid],
+    enabled: !!get_current_club_id(),
+    queryKey: ["fatture", get_current_club_id()],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("fatture")
         .select("*")
-        .eq("club_id", cid)
+        .eq("club_id", get_current_club_id())
         .order("data_scadenza", { ascending: false });
       if (error) throw error;
       return (data ?? []).map((f) => ({
@@ -340,17 +321,16 @@ export function use_fatture() {
 
 // ─── Comunicazioni ─────────────────────────────────────────
 export function use_comunicazioni() {
-  const cid = useClubId();
   return useQuery({
     refetchOnMount: "always",
     staleTime: 0,
-    enabled: !!cid,
-    queryKey: ["comunicazioni", cid],
+    enabled: !!get_current_club_id(),
+    queryKey: ["comunicazioni", get_current_club_id()],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("comunicazioni")
         .select("*")
-        .eq("club_id", cid)
+        .eq("club_id", get_current_club_id())
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []).map((c) => ({
@@ -363,15 +343,14 @@ export function use_comunicazioni() {
 
 // ─── Campi di allenamento ──────────────────────────────────
 export function use_campi() {
-  const cid = useClubId();
   return useQuery({
     refetchOnMount: "always",
     staleTime: 0,
-    enabled: !!cid,
-    queryKey: ["campi", cid],
+    enabled: !!get_current_club_id(),
+    queryKey: ["campi", get_current_club_id()],
     queryFn: async () => {
       const [camp_res, isc_res] = await Promise.all([
-        supabase.from("campi_allenamento").select("*").eq("club_id", cid).order("data_inizio"),
+        supabase.from("campi_allenamento").select("*").eq("club_id", get_current_club_id()).order("data_inizio"),
         supabase.from("iscrizioni_campo").select("*"),
       ]);
       if (camp_res.error) throw camp_res.error;
@@ -396,13 +375,13 @@ export function use_presenze(data?: string) {
   return useQuery({
     refetchOnMount: "always",
     staleTime: 0,
-    enabled: !!cid,
-    queryKey: ["presenze", cid, today],
+    enabled: !!get_current_club_id(),
+    queryKey: ["presenze", get_current_club_id(), today],
     queryFn: async () => {
       const { data: rows, error } = await supabase
         .from("presenze")
         .select("*")
-        .eq("club_id", cid)
+        .eq("club_id", get_current_club_id())
         .eq("data", today)
         .order("created_at", { ascending: true });
       if (error) throw error;
@@ -436,8 +415,8 @@ export function use_tutti_club() {
   return useQuery({
     refetchOnMount: "always",
     staleTime: 0,
-    enabled: !!cid,
-    queryKey: ["tutti_club", cid],
+    enabled: !!get_current_club_id(),
+    queryKey: ["tutti_club"],
     queryFn: async () => {
       const { data, error } = await supabase.from("clubs").select("id, nome, citta").order("nome");
       if (error) throw error;

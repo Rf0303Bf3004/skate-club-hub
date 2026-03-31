@@ -127,9 +127,3 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 export function useAuth() {
   return useContext(AuthContext);
 }
-
-export function useClubId(): string {
-  const { session } = useAuth();
-  return session?.club_id || "";
-}
-
