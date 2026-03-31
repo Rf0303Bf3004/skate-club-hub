@@ -498,7 +498,7 @@ const TabPresenze: React.FC<{
   istruttori: any[];
 }> = ({ corso, tutti_atleti, tutti_monitori, istruttori }) => {
   const [data_sel, set_data_sel] = useState(new Date().toISOString().split("T")[0]);
-  const { data: presenze = [] } = use_presenze_corso(corso.id, data_sel) as { data: any[] };
+  const { data: presenze = [] } = use_presenze_corso(corso.id, data_sel);
   const upsert_presenza = use_upsert_presenza_corso();
 
   const monitori_assegnati = tutti_monitori.filter(

@@ -4,7 +4,8 @@ import { supabase, get_current_club_id } from "@/lib/supabase";
 // ─── Club & Setup ──────────────────────────────────────────
 export function use_club() {
   return useQuery({
-    refetchOnMount: true,
+    refetchOnMount: "always",
+    staleTime: 0,
     enabled: !!get_current_club_id(),
     queryKey: ["club"],
     queryFn: async () => {
@@ -19,7 +20,8 @@ export function use_club() {
 
 export function use_setup_club() {
   return useQuery({
-    refetchOnMount: true,
+    refetchOnMount: "always",
+    staleTime: 0,
     enabled: !!get_current_club_id(),
     queryKey: ["setup_club", get_current_club_id()],
     queryFn: async () => {
@@ -33,7 +35,8 @@ export function use_setup_club() {
 // ─── Stagioni ──────────────────────────────────────────────
 export function use_stagioni() {
   return useQuery({
-    refetchOnMount: true,
+    refetchOnMount: "always",
+    staleTime: 0,
     enabled: !!get_current_club_id(),
     queryKey: ["stagioni", get_current_club_id()],
     queryFn: async () => {
@@ -51,7 +54,8 @@ export function use_stagioni() {
 // ─── Atleti ────────────────────────────────────────────────
 export function use_atleti() {
   return useQuery({
-    refetchOnMount: true,
+    refetchOnMount: "always",
+    staleTime: 0,
     enabled: !!get_current_club_id(),
     queryKey: ["atleti", get_current_club_id()],
     queryFn: async () => {
@@ -99,7 +103,8 @@ function transform_atleta(a: any) {
 // ─── Atleti monitori ───────────────────────────────────────
 export function use_atleti_monitori() {
   return useQuery({
-    refetchOnMount: true,
+    refetchOnMount: "always",
+    staleTime: 0,
     enabled: !!get_current_club_id(),
     queryKey: ["atleti_monitori", get_current_club_id()],
     queryFn: async () => {
@@ -119,7 +124,8 @@ export function use_atleti_monitori() {
 // ─── Istruttori ────────────────────────────────────────────
 export function use_istruttori() {
   return useQuery({
-    refetchOnMount: true,
+    refetchOnMount: "always",
+    staleTime: 0,
     enabled: !!get_current_club_id(),
     queryKey: ["istruttori", get_current_club_id()],
     queryFn: async () => {
@@ -152,7 +158,8 @@ export function use_istruttori() {
 // ─── Corsi ─────────────────────────────────────────────────
 export function use_corsi() {
   return useQuery({
-    refetchOnMount: true,
+    refetchOnMount: "always",
+    staleTime: 0,
     enabled: !!get_current_club_id(),
     queryKey: ["corsi", get_current_club_id()],
     queryFn: async () => {
@@ -181,7 +188,9 @@ export function use_corsi() {
 // ─── Corsi monitori ────────────────────────────────────────
 export function use_corsi_monitori(corso_id?: string) {
   return useQuery({
-    refetchOnMount: true,
+    refetchOnMount: "always",
+    staleTime: 0,
+    enabled: !!corso_id,
     queryKey: ["corsi_monitori", corso_id],
     queryFn: async () => {
       if (!corso_id) return [];
@@ -189,13 +198,13 @@ export function use_corsi_monitori(corso_id?: string) {
       if (error) throw error;
       return data ?? [];
     },
-    enabled: !!corso_id,
   });
 }
 
 export function use_tutti_corsi_monitori() {
   return useQuery({
-    refetchOnMount: true,
+    refetchOnMount: "always",
+    staleTime: 0,
     enabled: !!get_current_club_id(),
     queryKey: ["tutti_corsi_monitori"],
     queryFn: async () => {
@@ -209,8 +218,10 @@ export function use_tutti_corsi_monitori() {
 // ─── Presenze corso ────────────────────────────────────────
 export function use_presenze_corso(corso_id?: string, data?: string) {
   return useQuery({
+    refetchOnMount: "always",
+    staleTime: 0,
+    enabled: !!corso_id && !!data,
     queryKey: ["presenze_corso", corso_id, data],
-    refetchOnMount: true,
     queryFn: async () => {
       if (!corso_id || !data) return [];
       const { data: rows, error } = await supabase
@@ -221,14 +232,14 @@ export function use_presenze_corso(corso_id?: string, data?: string) {
       if (error) throw error;
       return rows ?? [];
     },
-    enabled: !!corso_id && !!data,
   });
 }
 
 // ─── Gare ──────────────────────────────────────────────────
 export function use_gare() {
   return useQuery({
-    refetchOnMount: true,
+    refetchOnMount: "always",
+    staleTime: 0,
     enabled: !!get_current_club_id(),
     queryKey: ["gare", get_current_club_id()],
     queryFn: async () => {
@@ -264,7 +275,8 @@ export function use_gare() {
 // ─── Lezioni Private ───────────────────────────────────────
 export function use_lezioni_private() {
   return useQuery({
-    refetchOnMount: true,
+    refetchOnMount: "always",
+    staleTime: 0,
     enabled: !!get_current_club_id(),
     queryKey: ["lezioni_private", get_current_club_id()],
     queryFn: async () => {
@@ -286,7 +298,8 @@ export function use_lezioni_private() {
 // ─── Fatture ───────────────────────────────────────────────
 export function use_fatture() {
   return useQuery({
-    refetchOnMount: true,
+    refetchOnMount: "always",
+    staleTime: 0,
     enabled: !!get_current_club_id(),
     queryKey: ["fatture", get_current_club_id()],
     queryFn: async () => {
@@ -309,7 +322,8 @@ export function use_fatture() {
 // ─── Comunicazioni ─────────────────────────────────────────
 export function use_comunicazioni() {
   return useQuery({
-    refetchOnMount: true,
+    refetchOnMount: "always",
+    staleTime: 0,
     enabled: !!get_current_club_id(),
     queryKey: ["comunicazioni", get_current_club_id()],
     queryFn: async () => {
@@ -330,7 +344,8 @@ export function use_comunicazioni() {
 // ─── Campi di allenamento ──────────────────────────────────
 export function use_campi() {
   return useQuery({
-    refetchOnMount: true,
+    refetchOnMount: "always",
+    staleTime: 0,
     enabled: !!get_current_club_id(),
     queryKey: ["campi", get_current_club_id()],
     queryFn: async () => {
@@ -358,7 +373,8 @@ export function use_campi() {
 export function use_presenze(data?: string) {
   const today = data || new Date().toISOString().split("T")[0];
   return useQuery({
-    refetchOnMount: true,
+    refetchOnMount: "always",
+    staleTime: 0,
     enabled: !!get_current_club_id(),
     queryKey: ["presenze", get_current_club_id(), today],
     queryFn: async () => {
@@ -378,7 +394,9 @@ export function use_presenze(data?: string) {
 // ─── Storico livelli atleta ────────────────────────────────
 export function use_storico_livelli(atleta_id: string) {
   return useQuery({
-    refetchOnMount: true,
+    refetchOnMount: "always",
+    staleTime: 0,
+    enabled: !!atleta_id,
     queryKey: ["storico_livelli", atleta_id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -389,14 +407,14 @@ export function use_storico_livelli(atleta_id: string) {
       if (error) throw error;
       return data ?? [];
     },
-    enabled: !!atleta_id,
   });
 }
 
 // ─── Tutti i club ──────────────────────────────────────────
 export function use_tutti_club() {
   return useQuery({
-    refetchOnMount: true,
+    refetchOnMount: "always",
+    staleTime: 0,
     enabled: !!get_current_club_id(),
     queryKey: ["tutti_club"],
     queryFn: async () => {

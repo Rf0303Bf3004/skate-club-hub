@@ -100,6 +100,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const s = await fetch_session();
     set_session(s);
+    // Forza reload per pulire la cache React Query
+    window.location.reload();
   };
 
   const logout = async () => {
