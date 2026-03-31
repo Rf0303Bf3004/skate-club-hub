@@ -232,7 +232,6 @@ export function use_presenze_corso(corso_id?: string, data?: string) {
       if (error) throw error;
       return rows ?? [];
     },
-    enabled: !!corso_id && !!data,
   });
 }
 
