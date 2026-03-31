@@ -198,7 +198,6 @@ export function use_corsi_monitori(corso_id?: string) {
       if (error) throw error;
       return data ?? [];
     },
-    enabled: !!corso_id,
   });
 }
 
