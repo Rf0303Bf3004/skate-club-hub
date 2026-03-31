@@ -1,21 +1,23 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
-import { supabase, get_current_club_id } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 
-// Helper che legge il club_id dalla sessione React (si aggiorna dopo il login)
-function useClubId() {
+// Hook che legge club_id dalla sessione — si aggiorna automaticamente dopo il login
+function useClubId(): string {
   const { session } = useAuth();
   return session?.club_id || "";
 }
 
 
+
 // ─── Club & Setup ──────────────────────────────────────────
 export function use_club() {
+  const cid = useClubId();
   return useQuery({
     refetchOnMount: "always",
     staleTime: 0,
     enabled: !!cid,
-    queryKey: ["club"],
+    queryKey: ["club", cid],
     queryFn: async () => {
       const club_id = cid;
       if (!club_id || club_id === "00000000-0000-0000-0000-000000000002") return null;
@@ -220,7 +222,7 @@ export function use_tutti_corsi_monitori() {
     refetchOnMount: "always",
     staleTime: 0,
     enabled: !!cid,
-    queryKey: ["tutti_corsi_monitori"],
+    queryKey: ["tutti_corsi_monitori", cid],
     queryFn: async () => {
       const { data, error } = await supabase.from("corsi_monitori").select("*");
       if (error) throw error;
@@ -435,7 +437,7 @@ export function use_tutti_club() {
     refetchOnMount: "always",
     staleTime: 0,
     enabled: !!cid,
-    queryKey: ["tutti_club"],
+    queryKey: ["tutti_club", cid],
     queryFn: async () => {
       const { data, error } = await supabase.from("clubs").select("id, nome, citta").order("nome");
       if (error) throw error;
