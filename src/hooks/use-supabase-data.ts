@@ -10,7 +10,7 @@ export function use_club() {
     queryKey: ["club"],
     queryFn: async () => {
       const club_id = get_current_club_id();
-      if (|| club_id === "00000000-0000-0000-0000-000000000002") return null;
+      if (!club_id || club_id === "00000000-0000-0000-0000-000000000002") return null;
       const { data, error } = await supabase.from("clubs").select("*").eq("id", club_id).single();
       if (error) throw error;
       return data;
