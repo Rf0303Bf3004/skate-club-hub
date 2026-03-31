@@ -407,7 +407,6 @@ export function use_storico_livelli(atleta_id: string) {
       if (error) throw error;
       return data ?? [];
     },
-    enabled: !!atleta_id,
   });
 }
 
