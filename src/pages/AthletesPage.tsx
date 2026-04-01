@@ -678,6 +678,14 @@ const AthletesPage: React.FC = () => {
 
   return (
     <>
+      {invito_atleta && (
+        <InvitoGenitoreModal
+          atleta={invito_atleta}
+          genitore_email={invito_atleta.genitore1_email}
+          genitore_nome={`${invito_atleta.genitore1_nome} ${invito_atleta.genitore1_cognome}`.trim()}
+          on_close={() => set_invito_atleta(null)}
+        />
+      )}
       {modal_open && (
         <AtletaModal
           key={selected_atleta?.id || "nuovo"}
