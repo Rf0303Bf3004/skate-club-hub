@@ -98,6 +98,14 @@ const AtletaModal: React.FC<{
     foto_url: atleta?.foto_url || "",
     disco_in_preparazione: atleta?.disco_in_preparazione || "",
     disco_url: atleta?.disco_url || "",
+    licenza_sis_numero: atleta?.licenza_sis_numero || "",
+    licenza_sis_categoria: atleta?.licenza_sis_categoria || "",
+    licenza_sis_disciplina: atleta?.licenza_sis_disciplina || "",
+    licenza_sis_validita_a: atleta?.licenza_sis_validita_a?.split("T")[0] || "",
+    codice_fiscale: atleta?.codice_fiscale || "",
+    luogo_nascita: atleta?.luogo_nascita || "",
+    indirizzo: atleta?.indirizzo || "",
+    telefono: atleta?.telefono || "",
   });
   const [confirm_delete, set_confirm_delete] = useState(false);
   const [uploading_foto, set_uploading_foto] = useState(false);
