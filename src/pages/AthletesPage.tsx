@@ -1,13 +1,13 @@
 import React, { useState, useCallback } from "react";
 import { useI18n } from "@/lib/i18n";
-import { use_atleti } from "@/hooks/use-supabase-data";
+import { use_atleti, use_club } from "@/hooks/use-supabase-data";
 import { use_upsert_atleta, use_elimina_atleta } from "@/hooks/use-supabase-mutations";
 import { calculate_age } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Shield, X, Trash2, Upload } from "lucide-react";
+import { Plus, Search, Shield, X, Trash2, Upload, ArrowLeft, Printer } from "lucide-react";
 import AtletaDetail from "@/components/AtletaDetail";
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
@@ -442,6 +442,8 @@ const AthletesPage: React.FC = () => {
   const [selected_id, set_selected_id] = useState<string | null>(null);
   const [modal_open, set_modal_open] = useState(false);
   const [selected_atleta, set_selected_atleta] = useState<any>(null);
+  const [scheda_id, set_scheda_id] = useState<string | null>(null);
+  const { data: club } = use_club();
 
   const filtered = atleti.filter((a: any) => {
     const name_match = `${a.nome} ${a.cognome}`.toLowerCase().includes(search.toLowerCase());
@@ -470,6 +472,143 @@ const AthletesPage: React.FC = () => {
       toast({ title: "Errore eliminazione", description: err?.message, variant: "destructive" });
     }
   };
+
+  if (scheda_id) {
+    const atleta = atleti.find((a: any) => a.id === scheda_id);
+    if (atleta) {
+      const codice = (atleta.cognome + atleta.nome + "0001").toUpperCase().replace(/\s/g, "").slice(0, 16);
+      const qr_src = "https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=" + encodeURIComponent(codice);
+      return (
+        <div className="space-y-4 animate-fade-in">
+          <div className="flex items-center gap-3 print:hidden">
+            <Button variant="ghost" size="sm" onClick={() => set_scheda_id(null)}>
+              <ArrowLeft className="w-4 h-4 mr-1" /> Indietro
+            </Button>
+            <Button size="sm" onClick={() => window.print()} className="ml-auto">
+              <Printer className="w-4 h-4 mr-2" /> Stampa / Salva PDF
+            </Button>
+          </div>
+
+          <div className="bg-white rounded-2xl overflow-hidden border border-border max-w-2xl mx-auto print:max-w-full print:border-0 print:rounded-none">
+            {/* Header */}
+            <div className="bg-[hsl(var(--primary))] px-6 py-4 flex items-center gap-4">
+              <div className="bg-[hsl(var(--accent))] w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-xl shrink-0">C</div>
+              <div>
+                <p className="text-primary-foreground font-semibold text-base">{club?.nome || "Club"}</p>
+                <p className="text-primary-foreground/50 text-xs">Scheda anagrafica atleta</p>
+              </div>
+              <span className="ml-auto text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider bg-accent/20 text-accent">
+                {atleta.stato === "attivo" ? "Attivo" : "Inattivo"}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-3 divide-x divide-border">
+              {/* Left 2/3 */}
+              <div className="col-span-2 p-6 space-y-5">
+                <div className="flex items-center gap-4">
+                  {atleta.foto_url ? (
+                    <img src={atleta.foto_url} className="w-16 h-16 rounded-full object-cover border-2 border-accent/20" />
+                  ) : (
+                    <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center text-accent font-bold text-2xl">
+                      {atleta.nome?.[0]}{atleta.cognome?.[0]}
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-xl font-semibold text-foreground">{atleta.nome} {atleta.cognome}</p>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      Nato/a il {atleta.data_nascita ? new Date(atleta.data_nascita).toLocaleDateString("it-IT") : "—"}
+                    </p>
+                    <span className="inline-block mt-1 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-accent/10 text-accent">
+                      {atleta.percorso_amatori || atleta.carriera_artistica || "—"}
+                    </span>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Dati personali</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {([["Codice fiscale", atleta.codice_fiscale], ["Luogo di nascita", atleta.luogo_nascita], ["Indirizzo", atleta.indirizzo], ["Telefono", atleta.telefono]] as [string, string | undefined][]).map(([l, v]) => (
+                      <div key={l} className="bg-muted/30 rounded-lg px-3 py-2">
+                        <p className="text-xs text-muted-foreground">{l}</p>
+                        <p className="text-sm font-medium text-foreground">{v || <span className="text-muted-foreground/40 italic">—</span>}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Genitore / Tutore</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {([["Nome", atleta.genitore1_nome ? atleta.genitore1_nome + " " + atleta.genitore1_cognome : null], ["Email", atleta.genitore1_email], ["Telefono", atleta.genitore1_telefono]] as [string, string | null][]).map(([l, v]) => (
+                      <div key={l} className="bg-muted/30 rounded-lg px-3 py-2">
+                        <p className="text-xs text-muted-foreground">{l}</p>
+                        <p className="text-sm font-medium text-foreground">{v || <span className="text-muted-foreground/40 italic">—</span>}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {atleta.licenza_sis_numero && (
+                  <div>
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Licenza Swiss Ice Skating</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {([["N. Licenza", atleta.licenza_sis_numero], ["Categoria", atleta.licenza_sis_categoria], ["Disciplina", atleta.licenza_sis_disciplina], ["Validità", atleta.licenza_sis_validita_a ? "fino al " + new Date(atleta.licenza_sis_validita_a).toLocaleDateString("it-IT") : null]] as [string, string | null][]).map(([l, v]) => (
+                        <div key={l} className="bg-blue-50 rounded-lg px-3 py-2 border border-blue-100">
+                          <p className="text-xs text-blue-400">{l}</p>
+                          <p className="text-sm font-medium text-blue-800">{v || "—"}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {atleta.tag_nfc && (
+                  <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                    <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center shrink-0">
+                      <span className="text-green-700 text-sm">📡</span>
+                    </div>
+                    <div>
+                      <p className="text-xs text-green-600 font-medium">Tag NFC</p>
+                      <p className="text-sm font-bold text-green-800 font-mono">{atleta.tag_nfc}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Right 1/3 */}
+              <div className="p-5 flex flex-col items-center gap-4">
+                <div className="text-center">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">App Ice Arena</p>
+                  <img src={qr_src} alt="QR Code" className="w-28 h-28 rounded-xl border border-border mx-auto" />
+                  <p className="text-xs text-muted-foreground mt-2 leading-snug">Scansiona per<br />scaricare l'app</p>
+                  <p className="text-xs font-bold text-accent mt-1 font-mono break-all">{codice}</p>
+                  <p className="text-xs text-green-600 font-medium mt-1">Non scade mai</p>
+                </div>
+
+                <div className="w-full border-t border-border pt-3 space-y-2">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest text-center">Foto profilo</p>
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-2 text-center">
+                    <p className="text-xs text-amber-700 font-medium leading-snug">Sfondo bianco<br />Busto e viso<br />JPG/PNG min 300px<br />Max 2MB</p>
+                  </div>
+                </div>
+
+                <div className="w-full space-y-1 text-center">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Istruzioni app</p>
+                  <p className="text-xs text-muted-foreground leading-snug">1. Scarica Ice Arena<br />2. Tocca Accedi<br />3. Inserisci il codice<br />4. Carica foto profilo</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-3 bg-muted/30 border-t border-border flex items-center justify-between">
+              <p className="text-xs text-muted-foreground"><span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-1"></span>Tessera valida · Stagione 2025/26</p>
+              <p className="text-xs text-muted-foreground">Generato il {new Date().toLocaleDateString("it-IT")} · CPA Manager</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+  }
 
   if (selected_id) {
     const atleta = atleti.find((a: any) => a.id === selected_id);
@@ -631,7 +770,15 @@ const AthletesPage: React.FC = () => {
                           className={`inline-block w-2 h-2 rounded-full ${a.stato === "attivo" ? "bg-success" : "bg-muted-foreground"}`}
                         />
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-3 text-right space-x-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => set_scheda_id(a.id)}
+                          className="text-xs h-7"
+                        >
+                          Scheda
+                        </Button>
                         <Button
                           variant="ghost"
                           size="sm"
