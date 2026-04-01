@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { use_club } from "@/hooks/use-supabase-data";
 import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
-import { LayoutDashboard, Users, BookOpen, Trophy, CreditCard, MessageSquare, Settings, Calendar, UserCheck, Tent, GraduationCap, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Users, BookOpen, Trophy, CreditCard, MessageSquare, Settings, Calendar, UserCheck, Tent, GraduationCap, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, Lock } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 
@@ -91,6 +91,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/gestione-avanzata" ? "bg-destructive text-destructive-foreground shadow-sm" : "text-destructive/70 hover:bg-destructive/10 hover:text-destructive"}`}>
                 <ShieldAlert className="w-4 h-4 shrink-0" />
                 <span>Gestione Avanzata</span>
+              </NavLink>
+              <NavLink to="/ruoli-permessi" onClick={() => set_sidebar_open(false)}
+                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/ruoli-permessi" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+                <Lock className="w-4 h-4 shrink-0" />
+                <span>Gestione Ruoli</span>
               </NavLink>
             </>
           )}
