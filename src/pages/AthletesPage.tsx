@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Shield, X, Trash2, Upload, QrCode, Copy, Check } from "lucide-react";
+import { Plus, Search, Shield, X, Trash2, Upload } from "lucide-react";
 import AtletaDetail from "@/components/AtletaDetail";
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
@@ -431,85 +431,6 @@ const AtletaModal: React.FC<{
 
 // ─── Main Page ─────────────────────────────────────────────
 
-// ─── Genera Invito Genitore ────────────────────────────────
-const GeneraInvito: React.FC<{ atleta: any }> = ({ atleta }) => {
-  const [loading, set_loading] = React.useState(false);
-  const [token, set_token] = React.useState<string | null>(null);
-  const [copiato, set_copiato] = React.useState(false);
-
-  const genera = async () => {
-    set_loading(true);
-    try {
-      // Genera token univoco
-      const nuovo_token = atleta.cognome.toUpperCase().replace(/\s/g, '') + atleta.nome.toUpperCase().replace(/\s/g, '').slice(0,4) + Math.random().toString(36).slice(2,6).toUpperCase();
-      const scadenza = new Date();
-      scadenza.setFullYear(scadenza.getFullYear() + 10);
-
-      // Elimina inviti precedenti per questo atleta
-      await supabase.from('inviti_genitori').delete().eq('atleta_id', atleta.id);
-
-      // Crea nuovo invito
-      const { error } = await supabase.from('inviti_genitori').insert({
-        atleta_id: atleta.id,
-        club_id: get_current_club_id(),
-        email: atleta.genitore1?.email || 'genitore@icearena.ch',
-        token: nuovo_token,
-        expires_at: scadenza.toISOString(),
-        usato: false,
-      });
-
-      if (error) throw error;
-      set_token(nuovo_token);
-    } catch (err: any) {
-      console.error(err);
-    } finally {
-      set_loading(false);
-    }
-  };
-
-  const copia = () => {
-    if (token) {
-      navigator.clipboard.writeText(token);
-      set_copiato(true);
-      setTimeout(() => set_copiato(false), 2000);
-    }
-  };
-
-  return (
-    <div className="space-y-3">
-      {!token ? (
-        <button
-          onClick={genera}
-          disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
-        >
-          <QrCode className="w-4 h-4" />
-          {loading ? "Generazione..." : "Genera Codice Invito"}
-        </button>
-      ) : (
-        <div className="space-y-3">
-          <div className="bg-muted/30 rounded-xl p-4 space-y-2">
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Codice invito generato</p>
-            <div className="flex items-center gap-2">
-              <code className="flex-1 text-lg font-bold tracking-widest text-primary bg-background border border-border rounded-lg px-3 py-2">{token}</code>
-              <button onClick={copia} className="p-2 rounded-lg hover:bg-muted transition-colors">
-                {copiato ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4 text-muted-foreground" />}
-              </button>
-            </div>
-            <p className="text-xs text-muted-foreground">Il genitore inserisce questo codice nell app Ice Arena per accedere al profilo di {atleta.nome}.</p>
-          </div>
-          <button
-            onClick={() => { set_token(null); genera(); }}
-            disabled={loading}
-            className="text-xs text-muted-foreground hover:text-foreground underline"
-          >
-            Rigenera codice
-          </button>
-        </div>
-      )}
-    </div>
-  );
-};
 
 const AthletesPage: React.FC = () => {
   const { t } = useI18n();
