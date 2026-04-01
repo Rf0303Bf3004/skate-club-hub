@@ -1,21 +1,14 @@
 import React from 'react';
-import { use_atleti, use_club } from '@/hooks/use-supabase-data';
-import { useAuth } from '@/lib/auth';
+import { use_club } from '@/hooks/use-supabase-data';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Printer, QrCode } from 'lucide-react';
-import QRCode from 'qrcode';
 
 interface SchedaProps { atleta: any; on_back: () => void; }
 
 const SchedaAnagrafica: React.FC<SchedaProps> = ({ atleta, on_back }) => {
   const { data: club } = use_club();
-  const [qr_data_url, set_qr] = React.useState('');
   const codice = (atleta.cognome + atleta.nome + '0001').toUpperCase().replace(/\s/g, '').slice(0, 16);
-
-  React.useEffect(() => {
-    QRCode.toDataURL(codice, { width: 180, margin: 1, color: { dark: '#1a1a2e', light: '#ffffff' } })
-      .then(set_qr).catch(() => {});
-  }, [codice]);
+  const qr_src = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(codice);
 
   return (
     <div className='space-y-4 animate-fade-in'>
