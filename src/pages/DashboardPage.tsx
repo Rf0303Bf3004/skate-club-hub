@@ -138,15 +138,14 @@ const CorsoCard: React.FC<{
 }> = ({ corso, atleti, monitori, istruttori, presenze, presenze_corso, data, on_segna, on_segna_istr, loading }) => {
   const [expanded, set_expanded] = useState(false);
 
-  // Controlla stato del corso rispetto all'orario attuale
-  const now = new Date();
-  const ora_corrente = now.getHours() * 60 + now.getMinutes();
+  // Controlla stato del corso rispetto all'orario attuale (si aggiorna ogni minuto)
   const [h_i, m_i] = (corso.ora_inizio || "00:00").split(":").map(Number);
   const [h_f, m_f] = (corso.ora_fine || "23:59").split(":").map(Number);
   const ora_inizio_minuti = h_i * 60 + m_i;
   const ora_fine_minuti = h_f * 60 + m_f;
-  const corso_non_iniziato = ora_inizio_minuti > ora_corrente;
-  const corso_terminato = ora_fine_minuti < ora_corrente;
+  // Gestisce corsi notturni (es. 00:00-02:00)
+  const corso_non_iniziato = ora_inizio_minuti > ora_now;
+  const corso_terminato = ora_fine_minuti > 0 && ora_fine_minuti < ora_now && ora_fine_minuti < ora_inizio_minuti === false;
   const corso_bloccato = corso_non_iniziato || corso_terminato;
   const atleti_corso = atleti.filter((a) => corso.atleti_ids?.includes(a.id));
   const presenti_atleti = atleti_corso.filter((a) =>
@@ -838,6 +837,18 @@ const SezionePresenzeIstruttori: React.FC<{
 
 // ─── Main Dashboard ────────────────────────────────────────
 const DashboardPage: React.FC = () => {
+  // Aggiorna l'orario corrente ogni minuto per aggiornare i badge dei corsi
+  const [ora_now, set_ora_now] = React.useState(() => {
+    const n = new Date();
+    return n.getHours() * 60 + n.getMinutes();
+  });
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      const n = new Date();
+      set_ora_now(n.getHours() * 60 + n.getMinutes());
+    }, 60000); // aggiorna ogni minuto
+    return () => clearInterval(timer);
+  }, []);
   const { t } = useI18n();
   const { data: atleti = [], isLoading: loading_atleti } = use_atleti();
   const { data: corsi = [], isLoading: loading_corsi } = use_corsi();
