@@ -14,6 +14,123 @@ export type Database = {
   }
   public: {
     Tables: {
+      atleti: {
+        Row: {
+          atleta_federazione: boolean | null
+          attivo: boolean | null
+          attivo_come_monitore: boolean | null
+          carriera_artistica: string | null
+          carriera_stile: string | null
+          club_id: string
+          codice_fiscale: string | null
+          cognome: string
+          compenso_orario_pista: number | null
+          created_at: string
+          data_nascita: string | null
+          disco_in_preparazione: string | null
+          disco_url: string | null
+          foto_url: string | null
+          genitore1_cognome: string | null
+          genitore1_email: string | null
+          genitore1_nome: string | null
+          genitore1_telefono: string | null
+          genitore2_cognome: string | null
+          genitore2_email: string | null
+          genitore2_nome: string | null
+          genitore2_telefono: string | null
+          id: string
+          indirizzo: string | null
+          licenza_sis_categoria: string | null
+          licenza_sis_disciplina: string | null
+          licenza_sis_numero: string | null
+          licenza_sis_validita_a: string | null
+          luogo_nascita: string | null
+          nome: string
+          note: string | null
+          ore_pista_stagione: number | null
+          percorso_amatori: string | null
+          ruolo_pista: string | null
+          tag_nfc: string | null
+          telefono: string | null
+        }
+        Insert: {
+          atleta_federazione?: boolean | null
+          attivo?: boolean | null
+          attivo_come_monitore?: boolean | null
+          carriera_artistica?: string | null
+          carriera_stile?: string | null
+          club_id: string
+          codice_fiscale?: string | null
+          cognome?: string
+          compenso_orario_pista?: number | null
+          created_at?: string
+          data_nascita?: string | null
+          disco_in_preparazione?: string | null
+          disco_url?: string | null
+          foto_url?: string | null
+          genitore1_cognome?: string | null
+          genitore1_email?: string | null
+          genitore1_nome?: string | null
+          genitore1_telefono?: string | null
+          genitore2_cognome?: string | null
+          genitore2_email?: string | null
+          genitore2_nome?: string | null
+          genitore2_telefono?: string | null
+          id?: string
+          indirizzo?: string | null
+          licenza_sis_categoria?: string | null
+          licenza_sis_disciplina?: string | null
+          licenza_sis_numero?: string | null
+          licenza_sis_validita_a?: string | null
+          luogo_nascita?: string | null
+          nome?: string
+          note?: string | null
+          ore_pista_stagione?: number | null
+          percorso_amatori?: string | null
+          ruolo_pista?: string | null
+          tag_nfc?: string | null
+          telefono?: string | null
+        }
+        Update: {
+          atleta_federazione?: boolean | null
+          attivo?: boolean | null
+          attivo_come_monitore?: boolean | null
+          carriera_artistica?: string | null
+          carriera_stile?: string | null
+          club_id?: string
+          codice_fiscale?: string | null
+          cognome?: string
+          compenso_orario_pista?: number | null
+          created_at?: string
+          data_nascita?: string | null
+          disco_in_preparazione?: string | null
+          disco_url?: string | null
+          foto_url?: string | null
+          genitore1_cognome?: string | null
+          genitore1_email?: string | null
+          genitore1_nome?: string | null
+          genitore1_telefono?: string | null
+          genitore2_cognome?: string | null
+          genitore2_email?: string | null
+          genitore2_nome?: string | null
+          genitore2_telefono?: string | null
+          id?: string
+          indirizzo?: string | null
+          licenza_sis_categoria?: string | null
+          licenza_sis_disciplina?: string | null
+          licenza_sis_numero?: string | null
+          licenza_sis_validita_a?: string | null
+          luogo_nascita?: string | null
+          nome?: string
+          note?: string | null
+          ore_pista_stagione?: number | null
+          percorso_amatori?: string | null
+          ruolo_pista?: string | null
+          tag_nfc?: string | null
+          telefono?: string | null
+        }
+        Relationships: []
+      }
       inviti_genitori: {
         Row: {
           atleta_id: string

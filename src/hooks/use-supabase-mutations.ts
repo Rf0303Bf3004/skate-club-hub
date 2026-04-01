@@ -112,6 +112,14 @@ export function use_upsert_atleta() {
         ruolo_pista: data.ruolo_pista || "atleta",
         compenso_orario_pista: data.compenso_orario_pista || 0,
         attivo_come_monitore: data.attivo_come_monitore || false,
+        codice_fiscale: data.codice_fiscale || "",
+        luogo_nascita: data.luogo_nascita || "",
+        indirizzo: data.indirizzo || "",
+        telefono: data.telefono || "",
+        licenza_sis_numero: data.licenza_sis_numero || "",
+        licenza_sis_categoria: data.licenza_sis_categoria || "",
+        licenza_sis_disciplina: data.licenza_sis_disciplina || "",
+        licenza_sis_validita_a: data.licenza_sis_validita_a || null,
       };
       if (data.id) {
         const { error } = await supabase.from("atleti").update(payload).eq("id", data.id);
