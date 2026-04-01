@@ -321,6 +321,44 @@ const AtletaModal: React.FC<{
             </div>
           </Field>
 
+          {/* Dati anagrafici extra */}
+          <div className="pt-2 border-t border-border">
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">Dati anagrafici</p>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Codice fiscale">
+                <input value={form.codice_fiscale} onChange={(e) => set_val("codice_fiscale", e.target.value)} className={input_cls} />
+              </Field>
+              <Field label="Luogo di nascita">
+                <input value={form.luogo_nascita} onChange={(e) => set_val("luogo_nascita", e.target.value)} className={input_cls} />
+              </Field>
+              <Field label="Indirizzo">
+                <input value={form.indirizzo} onChange={(e) => set_val("indirizzo", e.target.value)} className={input_cls} />
+              </Field>
+              <Field label="Telefono">
+                <input value={form.telefono} onChange={(e) => set_val("telefono", e.target.value)} className={input_cls} />
+              </Field>
+            </div>
+          </div>
+
+          {/* Licenza SIS */}
+          <div className="pt-2 border-t border-border">
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">Licenza Swiss Ice Skating</p>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="N. Licenza">
+                <input value={form.licenza_sis_numero} onChange={(e) => set_val("licenza_sis_numero", e.target.value)} placeholder="es. SIS-12345" className={input_cls} />
+              </Field>
+              <Field label="Categoria">
+                <input value={form.licenza_sis_categoria} onChange={(e) => set_val("licenza_sis_categoria", e.target.value)} className={input_cls} />
+              </Field>
+              <Field label="Disciplina">
+                <input value={form.licenza_sis_disciplina} onChange={(e) => set_val("licenza_sis_disciplina", e.target.value)} className={input_cls} />
+              </Field>
+              <Field label="Validità fino al">
+                <input type="date" value={form.licenza_sis_validita_a} onChange={(e) => set_val("licenza_sis_validita_a", e.target.value)} className={input_cls} />
+              </Field>
+            </div>
+          </div>
+
           {/* Genitore 1 */}
           <div className="pt-2 border-t border-border">
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">Genitore 1</p>
