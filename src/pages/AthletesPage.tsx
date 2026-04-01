@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { useI18n } from "@/lib/i18n";
-import { use_atleti } from "@/hooks/use-supabase-data";
+import { use_atleti, use_club } from "@/hooks/use-supabase-data";
 import { use_upsert_atleta, use_elimina_atleta } from "@/hooks/use-supabase-mutations";
 import { calculate_age } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
