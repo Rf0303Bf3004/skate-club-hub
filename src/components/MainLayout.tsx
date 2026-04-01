@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { use_club } from "@/hooks/use-supabase-data";
 import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
-import { LayoutDashboard, Users, BookOpen, Trophy, CreditCard, MessageSquare, Settings, Calendar, UserCheck, Tent, GraduationCap, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, Lock, BarChart2 } from "lucide-react";
+import { LayoutDashboard, Users, BookOpen, Trophy, CreditCard, MessageSquare, Settings, Calendar, UserCheck, Tent, GraduationCap, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, Lock } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 
@@ -57,7 +57,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   };
 
   const nav_items = all_nav_items.filter((item) => can_see(item.sezione));
-  const show_statistiche = session?.ruolo === "direttore_tecnico" || is_admin;
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -85,16 +84,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               </NavLink>
             );
           })}
-          {show_statistiche && !is_superadmin && (
-            <>
-              <div className="pt-3 pb-1"><div className="border-t border-border" /></div>
-              <NavLink to="/statistiche" onClick={() => set_sidebar_open(false)}
-                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/statistiche" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
-                <BarChart2 className="w-4 h-4 shrink-0" />
-                <span>Statistiche</span>
-              </NavLink>
-            </>
-          )}
           {is_admin && (
             <>
               <div className="pt-3 pb-1"><div className="border-t border-border" /></div>
