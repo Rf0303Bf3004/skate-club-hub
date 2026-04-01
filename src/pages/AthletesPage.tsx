@@ -770,7 +770,15 @@ const AthletesPage: React.FC = () => {
                           className={`inline-block w-2 h-2 rounded-full ${a.stato === "attivo" ? "bg-success" : "bg-muted-foreground"}`}
                         />
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-3 text-right space-x-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => set_scheda_id(a.id)}
+                          className="text-xs h-7"
+                        >
+                          Scheda
+                        </Button>
                         <Button
                           variant="ghost"
                           size="sm"
