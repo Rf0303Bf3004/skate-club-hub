@@ -413,11 +413,25 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
       )}
 
       <div className="space-y-6 animate-fade-in">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Button variant="ghost" onClick={on_back} className="text-muted-foreground">
             <ArrowLeft className="w-4 h-4 mr-2" /> {t("atleti")}
           </Button>
-          <div className="flex items-center gap-2">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
+            {form.genitore1_email ? (
+              <Button variant="outline" size="sm" onClick={() => set_show_invito_1(true)} className="gap-1.5 text-xs">
+                <Mail className="w-3.5 h-3.5" /> Scheda genitore 1 + QR
+              </Button>
+            ) : !form.genitore2_email ? (
+              <Button variant="outline" size="sm" disabled className="gap-1.5 text-xs">
+                <Mail className="w-3.5 h-3.5" /> Inserisci email genitore per QR
+              </Button>
+            ) : null}
+            {form.genitore2_email && (
+              <Button variant="outline" size="sm" onClick={() => set_show_invito_2(true)} className="gap-1.5 text-xs">
+                <Mail className="w-3.5 h-3.5" /> Scheda genitore 2 + QR
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"
@@ -513,6 +527,34 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                 type="number"
               />
               <EditRow label="TAG NFC" value={form.tag_nfc || ""} onChange={(v) => upd("tag_nfc", v)} />
+
+              <div className="pt-3 border-t border-border space-y-3">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Licenza Swiss Ice Skating</p>
+                <EditRow
+                  label="N° licenza SIS"
+                  value={form.licenza_sis_numero || ""}
+                  onChange={(v) => upd("licenza_sis_numero", v)}
+                />
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <EditRow
+                    label="Categoria SIS"
+                    value={form.licenza_sis_categoria || ""}
+                    onChange={(v) => upd("licenza_sis_categoria", v)}
+                  />
+                  <EditRow
+                    label="Disciplina SIS"
+                    value={form.licenza_sis_disciplina || ""}
+                    onChange={(v) => upd("licenza_sis_disciplina", v)}
+                  />
+                  <EditRow
+                    label="Validità fino al"
+                    value={form.licenza_sis_validita_a?.split("T")[0] || ""}
+                    onChange={(v) => upd("licenza_sis_validita_a", v)}
+                    type="date"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-1.5">
                 <Label className="text-sm text-muted-foreground">Disco in preparazione</Label>
                 <Input
@@ -869,16 +911,21 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                       />
                     </div>
                   ))}
-                  {form[`${prefix}_email`] && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => prefix === "genitore1" ? set_show_invito_1(true) : set_show_invito_2(true)}
-                      className="w-full gap-1.5 mt-2"
-                    >
-                      📱 Genera Invito App
-                    </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => (prefix === "genitore1" ? set_show_invito_1(true) : set_show_invito_2(true))}
+                    disabled={!form[`${prefix}_email`]}
+                    className="w-full gap-1.5 mt-2"
+                  >
+                    <Mail className="w-4 h-4" />
+                    {form[`${prefix}_email`] ? "Scheda atleta + QR per app" : "Inserisci email per generare la scheda"}
+                  </Button>
+                  {!form[`${prefix}_email`] && (
+                    <p className="text-xs text-muted-foreground">
+                      Aggiungi l'email del genitore per generare QR code e accesso dedicato nell'app mobile.
+                    </p>
                   )}
                 </div>
               ))}
