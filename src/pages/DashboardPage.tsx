@@ -823,16 +823,6 @@ const SezionePresenzeIstruttori: React.FC<{
 
 // ─── Main Dashboard ────────────────────────────────────────
 const DashboardPage: React.FC = () => {
-  // Orario corrente aggiornato ogni minuto per badge corsi
-  const [minuti_correnti, set_minuti_correnti] = React.useState(() => {
-    const n = new Date(); return n.getHours() * 60 + n.getMinutes();
-  });
-  React.useEffect(() => {
-    const timer = setInterval(() => {
-      const n = new Date(); set_minuti_correnti(n.getHours() * 60 + n.getMinutes());
-    }, 60000);
-    return () => clearInterval(timer);
-  }, []);
   const { t } = useI18n();
   const { data: atleti = [], isLoading: loading_atleti } = use_atleti();
   const { data: corsi = [], isLoading: loading_corsi } = use_corsi();
