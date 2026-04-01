@@ -138,12 +138,16 @@ const CorsoCard: React.FC<{
 }> = ({ corso, atleti, monitori, istruttori, presenze, presenze_corso, data, on_segna, on_segna_istr, loading }) => {
   const [expanded, set_expanded] = useState(false);
 
-  // Controlla se il corso è già iniziato
+  // Controlla stato del corso rispetto all'orario attuale
   const now = new Date();
   const ora_corrente = now.getHours() * 60 + now.getMinutes();
-  const [h, m] = (corso.ora_inizio || "00:00").split(":").map(Number);
-  const ora_inizio_minuti = h * 60 + m;
+  const [h_i, m_i] = (corso.ora_inizio || "00:00").split(":").map(Number);
+  const [h_f, m_f] = (corso.ora_fine || "23:59").split(":").map(Number);
+  const ora_inizio_minuti = h_i * 60 + m_i;
+  const ora_fine_minuti = h_f * 60 + m_f;
   const corso_non_iniziato = ora_inizio_minuti > ora_corrente;
+  const corso_terminato = ora_fine_minuti < ora_corrente;
+  const corso_bloccato = corso_non_iniziato || corso_terminato;
   const atleti_corso = atleti.filter((a) => corso.atleti_ids?.includes(a.id));
   const presenti_atleti = atleti_corso.filter((a) =>
     presenze.some((p) => p.persona_id === a.id && p.riferimento_id === corso.id && !p.ora_uscita),
@@ -333,8 +337,8 @@ const CorsoCard: React.FC<{
                       size="sm"
                       variant={presenza ? "outline" : "default"}
                       onClick={() => on_segna(a.id, corso.id)}
-                      disabled={loading || corso_non_iniziato}
-                      className={`h-7 text-xs ${presenza ? "text-success border-success/40" : corso_non_iniziato ? "opacity-40 cursor-not-allowed bg-muted text-muted-foreground" : "bg-success hover:bg-success/90 text-white"}`}
+                      disabled={loading || corso_bloccato}
+                      className={`h-7 text-xs ${presenza ? "text-success border-success/40" : corso_bloccato ? "opacity-40 cursor-not-allowed bg-muted text-muted-foreground" : "bg-success hover:bg-success/90 text-white"}`}
                     >
                       {presenza ? "✓ Presente" : "Segna"}
                     </Button>
