@@ -532,6 +532,11 @@ const AthletesPage: React.FC = () => {
             <Button variant="ghost" size="sm" onClick={() => set_scheda_id(null)}>
               <ArrowLeft className="w-4 h-4 mr-1" /> Indietro
             </Button>
+            {atleta.genitore1_email && (
+              <Button size="sm" variant="outline" onClick={() => set_invito_atleta(atleta)}>
+                <Mail className="w-4 h-4 mr-2" /> Genera invito genitore
+              </Button>
+            )}
             <Button size="sm" onClick={() => window.print()} className="ml-auto">
               <Printer className="w-4 h-4 mr-2" /> Stampa / Salva PDF
             </Button>
