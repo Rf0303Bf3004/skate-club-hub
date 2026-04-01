@@ -975,7 +975,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
           </TabsContent>
         </Tabs>
       </div>
-      {show_invito_1 && form.genitore1_email && (
+      {show_invito_1 && (
         <InvitoGenitoreModal
           atleta={form}
           genitore_email={form.genitore1_email}
@@ -983,7 +983,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
           on_close={() => set_show_invito_1(false)}
         />
       )}
-      {show_invito_2 && form.genitore2_email && (
+      {show_invito_2 && (
         <InvitoGenitoreModal
           atleta={form}
           genitore_email={form.genitore2_email}
