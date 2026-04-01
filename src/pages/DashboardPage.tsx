@@ -139,7 +139,17 @@ const CorsoCard: React.FC<{
   const [expanded, set_expanded] = useState(false);
 
   // Stato corso basato sull'orario corrente
-    const atleti_corso = atleti.filter((a) => corso.atleti_ids?.includes(a.id));
+    // Calcola stato corso basato sull'orario corrente
+  const adesso = new Date();
+  const min_ora = adesso.getHours() * 60 + adesso.getMinutes();
+  const [hi, mi] = (corso.ora_inizio || "00:00").split(":").map(Number);
+  const [hf, mf] = (corso.ora_fine || "23:59").split(":").map(Number);
+  const min_inizio = hi * 60 + mi;
+  const min_fine = hf * 60 + mf;
+  const non_iniziato = min_inizio > min_ora;
+  const terminato = min_fine <= min_ora;
+  const bloccato = non_iniziato || terminato;
+  const atleti_corso = atleti.filter((a) => corso.atleti_ids?.includes(a.id));
   const presenti_atleti = atleti_corso.filter((a) =>
     presenze.some((p) => p.persona_id === a.id && p.riferimento_id === corso.id && !p.ora_uscita),
   );
@@ -195,7 +205,10 @@ const CorsoCard: React.FC<{
           <p className="text-[10px] text-muted-foreground">{corso.ora_fine?.slice(0, 5)}</p>
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-foreground">{corso.nome}</p>          <div className="flex items-center gap-2 mt-0.5">
+          <p className="text-sm font-semibold text-foreground">{corso.nome}
+                  {non_iniziato && <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-600">Inizia alle {corso.ora_inizio?.slice(0,5)}</span>}
+                  {terminato && <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Terminato</span>}
+                </p>          <div className="flex items-center gap-2 mt-0.5">
             <Badge variant="secondary" className="text-[10px]">
               {corso.tipo || "Corso"}
             </Badge>
@@ -322,8 +335,8 @@ const CorsoCard: React.FC<{
                       size="sm"
                       variant={presenza ? "outline" : "default"}
                       onClick={() => on_segna(a.id, corso.id)}
-                      disabled={loading}
-                      className={`h-7 text-xs ${presenza ? "text-success border-success/40" : "bg-success hover:bg-success/90 text-white"}`}
+                      disabled={loading || bloccato}
+                      className={`h-7 text-xs ${presenza ? "text-success border-success/40" : bloccato ? "opacity-40 cursor-not-allowed bg-muted text-muted-foreground" : "bg-success hover:bg-success/90 text-white"}`}
                     >
                       {presenza ? "✓ Presente" : "Segna"}
                     </Button>
