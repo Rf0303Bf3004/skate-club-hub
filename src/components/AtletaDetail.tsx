@@ -859,7 +859,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                       />
                     </div>
                   ))}
-                  {form[`${prefix}_email`] && (
+                  {(
                     <Button
                       type="button"
                       variant="outline"
