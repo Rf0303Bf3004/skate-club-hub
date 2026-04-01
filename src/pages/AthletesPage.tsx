@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Shield, X, Trash2, Upload } from "lucide-react";
 import AtletaDetail from "@/components/AtletaDetail";
+import SchedaAnagrafica from "@/components/SchedaAnagrafica";
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 
@@ -441,6 +442,7 @@ const AthletesPage: React.FC = () => {
   const [level_filter, set_level_filter] = useState("tutti");
   const [selected_id, set_selected_id] = useState<string | null>(null);
   const [modal_open, set_modal_open] = useState(false);
+  const [selected_scheda, set_selected_scheda] = useState(null);
   const [selected_atleta, set_selected_atleta] = useState<any>(null);
 
   const filtered = atleti.filter((a: any) => {
@@ -471,6 +473,9 @@ const AthletesPage: React.FC = () => {
     }
   };
 
+  if (selected_scheda) {
+    return <SchedaAnagrafica atleta={selected_scheda} on_back={() => set_selected_scheda(null)} />;
+  }
   if (selected_id) {
     const atleta = atleti.find((a: any) => a.id === selected_id);
     if (atleta) return <AtletaDetail atleta={atleta} on_back={() => set_selected_id(null)} />;
@@ -642,6 +647,9 @@ const AthletesPage: React.FC = () => {
                           className="text-xs h-7"
                         >
                           Modifica
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => set_selected_scheda(a)} className="text-xs h-7 text-indigo-600">
+                          Scheda
                         </Button>
                       </td>
                     </tr>
