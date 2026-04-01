@@ -148,9 +148,7 @@ const CorsoCard: React.FC<{
   const min_fine = hf * 60 + mf;
   const non_iniziato = min_inizio > min_ora;
   const terminato = min_fine <= min_ora;
-  const presto = non_iniziato && (min_inizio - min_ora) <= 30;
   const bloccato = non_iniziato || terminato;
-  const stato_corso = terminato ? "terminato" : (!non_iniziato ? "in_corso" : presto ? "presto" : "futuro");
   const atleti_corso = atleti.filter((a) => corso.atleti_ids?.includes(a.id));
   const presenti_atleti = atleti_corso.filter((a) =>
     presenze.some((p) => p.persona_id === a.id && p.riferimento_id === corso.id && !p.ora_uscita),
@@ -197,7 +195,7 @@ const CorsoCard: React.FC<{
   };
 
   return (
-    <div className={"rounded-xl overflow-hidden border-l-4 border border-border/50 " + (stato_corso === "in_corso" ? "border-l-green-500 bg-green-50/30" : stato_corso === "presto" ? "border-l-amber-400 bg-amber-50/30" : stato_corso === "terminato" ? "border-l-red-400 bg-red-50/20" : "border-l-gray-300 bg-gray-50/20")}>
+    <div className="border border-border/50 rounded-xl overflow-hidden">
       <div
         className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/30 transition-colors"
         onClick={() => set_expanded((e) => !e)}
@@ -208,10 +206,8 @@ const CorsoCard: React.FC<{
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-foreground">{corso.nome}
-                  {stato_corso === "in_corso" && <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700">In corso</span>}
-                  {stato_corso === "presto" && <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Inizia fra {min_inizio - min_ora} min</span>}
-                  {stato_corso === "futuro" && <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Inizia alle {corso.ora_inizio?.slice(0,5)}</span>}
-                  {stato_corso === "terminato" && <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-600">Terminato</span>}
+                  {non_iniziato && <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-600">Inizia alle {corso.ora_inizio?.slice(0,5)}</span>}
+                  {terminato && <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Terminato</span>}
                 </p>          <div className="flex items-center gap-2 mt-0.5">
             <Badge variant="secondary" className="text-[10px]">
               {corso.tipo || "Corso"}
