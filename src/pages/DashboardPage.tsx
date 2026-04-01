@@ -135,9 +135,18 @@ const CorsoCard: React.FC<{
   on_segna: (atleta_id: string, riferimento_id: string) => void;
   on_segna_istr: (id: string) => void;
   loading: boolean;
+  minuti_correnti: number;
 }> = ({ corso, atleti, monitori, istruttori, presenze, presenze_corso, data, on_segna, on_segna_istr, loading }) => {
   const [expanded, set_expanded] = useState(false);
 
+  // Stato corso basato sull'orario corrente
+  const [h_i, m_i] = (corso.ora_inizio || "00:00").split(":").map(Number);
+  const [h_f, m_f] = (corso.ora_fine || "23:59").split(":").map(Number);
+  const inizio = h_i * 60 + m_i;
+  const fine = h_f * 60 + m_f;
+  const corso_non_iniziato = inizio > minuti_correnti;
+  const corso_terminato = fine <= minuti_correnti;
+  const corso_bloccato = corso_non_iniziato || corso_terminato;
   const atleti_corso = atleti.filter((a) => corso.atleti_ids?.includes(a.id));
   const presenti_atleti = atleti_corso.filter((a) =>
     presenze.some((p) => p.persona_id === a.id && p.riferimento_id === corso.id && !p.ora_uscita),
@@ -195,6 +204,8 @@ const CorsoCard: React.FC<{
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-foreground">{corso.nome}</p>
+                  {corso_non_iniziato && <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-600">Inizia alle {corso.ora_inizio?.slice(0,5)}</span>}
+                  {corso_terminato && <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Terminato</span>}
           <div className="flex items-center gap-2 mt-0.5">
             <Badge variant="secondary" className="text-[10px]">
               {corso.tipo || "Corso"}
@@ -322,8 +333,8 @@ const CorsoCard: React.FC<{
                       size="sm"
                       variant={presenza ? "outline" : "default"}
                       onClick={() => on_segna(a.id, corso.id)}
-                      disabled={loading}
-                      className={`h-7 text-xs ${presenza ? "text-success border-success/40" : "bg-success hover:bg-success/90 text-white"}`}
+                      disabled={loading || corso_bloccato}
+                      className={`h-7 text-xs ${presenza ? "text-success border-success/40" : corso_bloccato ? "opacity-40 cursor-not-allowed bg-muted text-muted-foreground" : "bg-success hover:bg-success/90 text-white"}`}
                     >
                       {presenza ? "✓ Presente" : "Segna"}
                     </Button>
@@ -823,6 +834,16 @@ const SezionePresenzeIstruttori: React.FC<{
 
 // ─── Main Dashboard ────────────────────────────────────────
 const DashboardPage: React.FC = () => {
+  // Orario corrente aggiornato ogni minuto per badge corsi
+  const [minuti_correnti, set_minuti_correnti] = React.useState(() => {
+    const n = new Date(); return n.getHours() * 60 + n.getMinutes();
+  });
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      const n = new Date(); set_minuti_correnti(n.getHours() * 60 + n.getMinutes());
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
   const { t } = useI18n();
   const { data: atleti = [], isLoading: loading_atleti } = use_atleti();
   const { data: corsi = [], isLoading: loading_corsi } = use_corsi();
@@ -1037,6 +1058,7 @@ const DashboardPage: React.FC = () => {
                             on_segna={handle_segna_atleta}
                             on_segna_istr={handle_segna_istruttore}
                             loading={segna.isPending}
+                            minuti_correnti={minuti_correnti}
                           />
                         ))}
                       </div>
