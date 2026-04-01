@@ -413,11 +413,25 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
       )}
 
       <div className="space-y-6 animate-fade-in">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Button variant="ghost" onClick={on_back} className="text-muted-foreground">
             <ArrowLeft className="w-4 h-4 mr-2" /> {t("atleti")}
           </Button>
-          <div className="flex items-center gap-2">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
+            {form.genitore1_email ? (
+              <Button variant="outline" size="sm" onClick={() => set_show_invito_1(true)} className="gap-1.5 text-xs">
+                <Mail className="w-3.5 h-3.5" /> Scheda genitore 1 + QR
+              </Button>
+            ) : !form.genitore2_email ? (
+              <Button variant="outline" size="sm" disabled className="gap-1.5 text-xs">
+                <Mail className="w-3.5 h-3.5" /> Inserisci email genitore per QR
+              </Button>
+            ) : null}
+            {form.genitore2_email && (
+              <Button variant="outline" size="sm" onClick={() => set_show_invito_2(true)} className="gap-1.5 text-xs">
+                <Mail className="w-3.5 h-3.5" /> Scheda genitore 2 + QR
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"
