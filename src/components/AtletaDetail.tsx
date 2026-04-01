@@ -527,6 +527,34 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                 type="number"
               />
               <EditRow label="TAG NFC" value={form.tag_nfc || ""} onChange={(v) => upd("tag_nfc", v)} />
+
+              <div className="pt-3 border-t border-border space-y-3">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Licenza Swiss Ice Skating</p>
+                <EditRow
+                  label="N° licenza SIS"
+                  value={form.licenza_sis_numero || ""}
+                  onChange={(v) => upd("licenza_sis_numero", v)}
+                />
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <EditRow
+                    label="Categoria SIS"
+                    value={form.licenza_sis_categoria || ""}
+                    onChange={(v) => upd("licenza_sis_categoria", v)}
+                  />
+                  <EditRow
+                    label="Disciplina SIS"
+                    value={form.licenza_sis_disciplina || ""}
+                    onChange={(v) => upd("licenza_sis_disciplina", v)}
+                  />
+                  <EditRow
+                    label="Validità fino al"
+                    value={form.licenza_sis_validita_a?.split("T")[0] || ""}
+                    onChange={(v) => upd("licenza_sis_validita_a", v)}
+                    type="date"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-1.5">
                 <Label className="text-sm text-muted-foreground">Disco in preparazione</Label>
                 <Input
