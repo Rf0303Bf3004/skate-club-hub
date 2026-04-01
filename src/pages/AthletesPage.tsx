@@ -722,6 +722,7 @@ const AthletesPage: React.FC = () => {
                         >
                           Modifica
                         </Button>
+                        <GeneraInvito atleta={a} />
                       </td>
                     </tr>
                   ))
