@@ -442,6 +442,8 @@ const AthletesPage: React.FC = () => {
   const [selected_id, set_selected_id] = useState<string | null>(null);
   const [modal_open, set_modal_open] = useState(false);
   const [selected_atleta, set_selected_atleta] = useState<any>(null);
+  const [scheda_id, set_scheda_id] = useState<string | null>(null);
+  const { data: club } = use_club();
 
   const filtered = atleti.filter((a: any) => {
     const name_match = `${a.nome} ${a.cognome}`.toLowerCase().includes(search.toLowerCase());
