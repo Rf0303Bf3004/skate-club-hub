@@ -68,9 +68,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center shrink-0">
             <span className="text-primary-foreground font-bold text-lg">C</span>
           </div>
-          <span className="font-bold tracking-tight text-primary text-lg">CPA Manager</span>
+          <span className="font-bold tracking-tight text-lg"><span style={{color:"#fff"}}>CPA </span><span style={{color:"#818cf8"}}>Manager</span></span>
           <button className="ml-auto lg:hidden" onClick={() => set_sidebar_open(false)}>
-            <X className="w-5 h-5 text-muted-foreground" />
+            <X className="w-5 h-5 text-white/50" />
           </button>
         </div>
         <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
@@ -78,7 +78,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             const is_active = location.pathname === item.path || (item.path !== "/" && location.pathname.startsWith(item.path));
             return (
               <NavLink key={item.key} to={item.path} onClick={() => set_sidebar_open(false)}
-                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${is_active ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${is_active ? "bg-[#818cf8]/20 text-[#818cf8]" : "text-white/50 hover:bg-white/10 hover:text-white"}`}>
                 <item.icon className="w-4 h-4 shrink-0" />
                 <span>{t(item.key)}</span>
               </NavLink>
@@ -86,14 +86,14 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           })}
           {is_admin && (
             <>
-              <div className="pt-3 pb-1"><div className="border-t border-border" /></div>
+              <div className="pt-3 pb-1"><div className="border-t border-white/10" /></div>
               <NavLink to="/gestione-avanzata" onClick={() => set_sidebar_open(false)}
-                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/gestione-avanzata" ? "bg-destructive text-destructive-foreground shadow-sm" : "text-destructive/70 hover:bg-destructive/10 hover:text-destructive"}`}>
+                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/gestione-avanzata" ? "bg-red-900/40 text-red-400 shadow-sm" : "text-red-400/70 hover:bg-red-900/20 hover:text-red-400"}`}>
                 <ShieldAlert className="w-4 h-4 shrink-0" />
                 <span>Gestione Avanzata</span>
               </NavLink>
               <NavLink to="/ruoli-permessi" onClick={() => set_sidebar_open(false)}
-                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/ruoli-permessi" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/ruoli-permessi" ? "bg-[#818cf8]/20 text-[#818cf8]" : "text-white/50 hover:bg-white/10 hover:text-white"}`}>
                 <Lock className="w-4 h-4 shrink-0" />
                 <span>Gestione Ruoli</span>
               </NavLink>
@@ -125,13 +125,13 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         </nav>
         <div className="p-3 border-t border-border space-y-1">
           {session && (
-            <div className="px-3 py-2 rounded-md bg-muted/50">
-              <p className="text-xs font-medium text-foreground truncate">{session.nome} {session.cognome}</p>
-              <p className="text-[10px] text-muted-foreground truncate">{session.email}</p>
-              <p className="text-[10px] font-bold text-primary uppercase tracking-wide mt-0.5">{session.ruolo}</p>
+            <div className="px-3 py-2 rounded-md bg-white/10">
+              <p className="text-xs font-medium text-white truncate">{session.nome} {session.cognome}</p>
+              <p className="text-[10px] text-white/50 truncate">{session.email}</p>
+              <p className="text-[10px] font-bold text-[#818cf8] uppercase tracking-wide mt-0.5">{session.ruolo}</p>
             </div>
           )}
-          <button onClick={logout} className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground w-full transition-colors">
+          <button onClick={logout} className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-white/50 hover:bg-white/10 hover:text-white w-full transition-colors">
             <LogOut className="w-4 h-4" /><span>{t("logout")}</span>
           </button>
         </div>
