@@ -3,8 +3,6 @@ import { NavLink, useLocation } from "react-router-dom";
 import { useI18n, LOCALE_LABELS, Locale } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { use_club } from "@/hooks/use-supabase-data";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
 import {
   LayoutDashboard,
   Users,
@@ -26,25 +24,6 @@ import {
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-
-
-// Hook che legge i permessi del ruolo corrente dal DB
-function use_permessi(club_id: string, ruolo: string) {
-  return useQuery({
-    queryKey: ["permessi", club_id, ruolo],
-    queryFn: async () => {
-      if (!club_id || !ruolo) return [];
-      const { data, error } = await supabase
-        .from("ruoli_permessi")
-        .select("sezione, abilitato")
-        .eq("club_id", club_id)
-        .eq("ruolo", ruolo);
-      if (error) return [];
-      return data ?? [];
-    },
-    enabled: !!club_id && !!ruolo,
-  });
-}
 
 const nav_items = [
   { key: "dashboard", path: "/", icon: LayoutDashboard },
@@ -72,14 +51,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const [sidebar_open, set_sidebar_open] = React.useState(false);
 
   const is_superadmin = session?.ruolo === "superadmin";
-  const { data: permessi = [] } = use_permessi(session?.club_id || "", session?.ruolo || "");
-  
-  // Funzione che controlla se una sezione è abilitata per il ruolo corrente
-  const can_see = (sezione: string): boolean => {
-    if (is_superadmin || session?.ruolo === "admin") return true;
-    const p = permessi.find((x: any) => x.sezione === sezione);
-    return p ? p.abilitato : false;
-  };
 
   return (
     <div className="flex min-h-screen bg-background">
