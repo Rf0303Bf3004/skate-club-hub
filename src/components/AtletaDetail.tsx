@@ -911,16 +911,21 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                       />
                     </div>
                   ))}
-                  {form[`${prefix}_email`] && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => prefix === "genitore1" ? set_show_invito_1(true) : set_show_invito_2(true)}
-                      className="w-full gap-1.5 mt-2"
-                    >
-                      📱 Genera Invito App
-                    </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => (prefix === "genitore1" ? set_show_invito_1(true) : set_show_invito_2(true))}
+                    disabled={!form[`${prefix}_email`]}
+                    className="w-full gap-1.5 mt-2"
+                  >
+                    <Mail className="w-4 h-4" />
+                    {form[`${prefix}_email`] ? "Scheda atleta + QR per app" : "Inserisci email per generare la scheda"}
+                  </Button>
+                  {!form[`${prefix}_email`] && (
+                    <p className="text-xs text-muted-foreground">
+                      Aggiungi l'email del genitore per generare QR code e accesso dedicato nell'app mobile.
+                    </p>
                   )}
                 </div>
               ))}
