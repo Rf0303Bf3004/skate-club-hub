@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Shield, X, Trash2, Upload, ArrowLeft, Printer } from "lucide-react";
+import { Plus, Search, Shield, X, Trash2, Upload, ArrowLeft, Printer, Mail } from "lucide-react";
 import AtletaDetail from "@/components/AtletaDetail";
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
+import InvitoGenitoreModal from "@/components/InvitoGenitoreModal";
 
 const LIVELLI_COMUNI = ["Pulcini", "Stellina 1", "Stellina 2", "Stellina 3", "Stellina 4"];
 
