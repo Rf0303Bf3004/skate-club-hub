@@ -92,7 +92,7 @@ const SchedaAnagrafica: React.FC<SchedaProps> = ({ atleta, on_back }) => {
           <div className='p-5 flex flex-col items-center gap-4'>
             <div className='text-center'>
               <p className='text-xs font-bold text-gray-500 uppercase tracking-widest mb-3'>App Ice Arena</p>
-              {qr_data_url ? <img src={qr_data_url} className='w-28 h-28 rounded-xl border border-gray-200' /> : <div className='w-28 h-28 bg-gray-100 rounded-xl animate-pulse' />}
+              {qr_src ? <img src={qr_src} className='w-28 h-28 rounded-xl border border-gray-200' /> : <div className='w-28 h-28 bg-gray-100 rounded-xl animate-pulse' />}
               <p className='text-xs text-gray-500 mt-2 leading-snug'>Scansiona per<br/>scaricare l app</p>
               <p className='text-xs font-bold text-indigo-600 mt-1 font-mono break-all'>{codice}</p>
               <p className='text-xs text-green-600 font-medium mt-1'>Non scade mai</p>
