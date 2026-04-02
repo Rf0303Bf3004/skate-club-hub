@@ -213,7 +213,7 @@ body{font-family:-apple-system,Helvetica,Arial,sans-serif;}
                     {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
                   </button>
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">Valido fino al {scadenza}</p>
+                <p className="text-xs text-muted-foreground mt-2">Codice permanente — nessuna scadenza</p>
               </div>
 
               <div className="flex gap-2">
