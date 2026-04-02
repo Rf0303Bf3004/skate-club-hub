@@ -26,9 +26,7 @@ export default function InvitoGenitoreModal({ atleta, genitore_email, genitore_n
     set_loading(true);
     try {
       const nuovo_token = genera_token();
-      const expires = new Date();
-      expires.setDate(expires.getDate() + 30);
-      const scadenza_display = expires.toLocaleDateString("it-CH", { day: "2-digit", month: "long", year: "numeric" });
+      const scadenza_display = "Nessuna scadenza";
       const { error } = await supabase.from("inviti_genitori").insert({
         atleta_id: atleta.id,
         club_id: get_current_club_id(),
