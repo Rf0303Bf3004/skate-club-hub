@@ -178,7 +178,7 @@ body{font-family:-apple-system,Helvetica,Arial,sans-serif;}
               <div className="bg-muted rounded-xl p-4 mb-4">
                 <p className="text-sm font-semibold text-foreground mb-1">Come funziona</p>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Verrà generato un codice invito valido 30 giorni. Il genitore lo inserirà nell'app Ice Arena per accedere al profilo di {atleta.nome}.
+                  Verrà generato un codice invito permanente (senza scadenza). Il genitore lo inserirà nell'app Ice Arena per accedere al profilo di {atleta.nome}.
                 </p>
               </div>
 
