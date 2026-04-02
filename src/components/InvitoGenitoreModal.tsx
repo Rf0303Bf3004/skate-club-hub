@@ -130,7 +130,7 @@ body{font-family:-apple-system,Helvetica,Arial,sans-serif;}
       <div class="codice-title">Codice Invito Manuale</div>
       <div class="codice-desc">Se il QR non funziona, inserisci questo codice nell'app:</div>
       <div class="codice-value">${token.slice(0, 8)}-${token.slice(8)}</div>
-      <div class="codice-scadenza">⏱ Valido fino al ${scadenza}</div>
+      <div class="codice-scadenza">✅ Codice senza scadenza</div>
       <ul class="istruzioni">
         <li>Scarica "Ice Arena" dall'App Store</li>
         <li>Tocca "Codice Invito"</li>
