@@ -26,15 +26,14 @@ export default function InvitoGenitoreModal({ atleta, genitore_email, genitore_n
     set_loading(true);
     try {
       const nuovo_token = genera_token();
-      const expires = new Date();
-      expires.setDate(expires.getDate() + 30);
-      const scadenza_display = expires.toLocaleDateString("it-CH", { day: "2-digit", month: "long", year: "numeric" });
+      const scadenza_display = "Nessuna scadenza";
+      const far_future = new Date("2099-12-31T23:59:59Z");
       const { error } = await supabase.from("inviti_genitori").insert({
         atleta_id: atleta.id,
         club_id: get_current_club_id(),
         email: genitore_email,
         token: nuovo_token,
-        expires_at: expires.toISOString(),
+        expires_at: far_future.toISOString(),
         usato: false,
       });
       if (error) throw error;
@@ -131,7 +130,7 @@ body{font-family:-apple-system,Helvetica,Arial,sans-serif;}
       <div class="codice-title">Codice Invito Manuale</div>
       <div class="codice-desc">Se il QR non funziona, inserisci questo codice nell'app:</div>
       <div class="codice-value">${token.slice(0, 8)}-${token.slice(8)}</div>
-      <div class="codice-scadenza">⏱ Valido fino al ${scadenza}</div>
+      <div class="codice-scadenza">✅ Codice senza scadenza</div>
       <ul class="istruzioni">
         <li>Scarica "Ice Arena" dall'App Store</li>
         <li>Tocca "Codice Invito"</li>
@@ -149,7 +148,7 @@ body{font-family:-apple-system,Helvetica,Arial,sans-serif;}
       <div class="feature"><div class="feature-emoji">💳</div><div class="feature-name">Fatture</div><div class="feature-desc">Pagamenti e storico</div></div>
     </div>
   </div>
-  <div class="footer">Ice Arena Manager · Documento riservato al destinatario · Codice valido fino al ${scadenza}</div>
+  <div class="footer">Ice Arena Manager · Documento riservato al destinatario · Codice senza scadenza</div>
 </div>
 </body></html>`;
     const win = window.open("", "_blank");
@@ -179,7 +178,7 @@ body{font-family:-apple-system,Helvetica,Arial,sans-serif;}
               <div className="bg-muted rounded-xl p-4 mb-4">
                 <p className="text-sm font-semibold text-foreground mb-1">Come funziona</p>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Verrà generato un codice invito valido 30 giorni. Il genitore lo inserirà nell'app Ice Arena per accedere al profilo di {atleta.nome}.
+                  Verrà generato un codice invito permanente (senza scadenza). Il genitore lo inserirà nell'app Ice Arena per accedere al profilo di {atleta.nome}.
                 </p>
               </div>
 
@@ -214,7 +213,7 @@ body{font-family:-apple-system,Helvetica,Arial,sans-serif;}
                     {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
                   </button>
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">Valido fino al {scadenza}</p>
+                <p className="text-xs text-muted-foreground mt-2">Codice permanente — nessuna scadenza</p>
               </div>
 
               <div className="flex gap-2">
