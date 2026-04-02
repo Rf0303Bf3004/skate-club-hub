@@ -148,7 +148,7 @@ body{font-family:-apple-system,Helvetica,Arial,sans-serif;}
       <div class="feature"><div class="feature-emoji">💳</div><div class="feature-name">Fatture</div><div class="feature-desc">Pagamenti e storico</div></div>
     </div>
   </div>
-  <div class="footer">Ice Arena Manager · Documento riservato al destinatario · Codice valido fino al ${scadenza}</div>
+  <div class="footer">Ice Arena Manager · Documento riservato al destinatario · Codice senza scadenza</div>
 </div>
 </body></html>`;
     const win = window.open("", "_blank");
