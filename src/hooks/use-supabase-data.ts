@@ -52,6 +52,21 @@ export function use_stagioni() {
 }
 
 // ─── Atleti ────────────────────────────────────────────────
+// Ordine livelli: prima carriera federale (dal più alto), poi amatori
+const LIVELLO_ORDER: Record<string, number> = {
+  "Oro": 1, "Argento": 2, "Bronzo": 3, "Interbronzo": 4,
+  "Stelline 4": 5, "Stelline 3": 6, "Stelline 2": 7, "Stelline 1": 8,
+  "Pulcini": 9,
+};
+
+function get_livello(a: any): string {
+  return a.carriera_artistica || a.carriera_stile || a.percorso_amatori || "Pulcini";
+}
+
+function livello_rank(a: any): number {
+  return LIVELLO_ORDER[get_livello(a)] ?? 99;
+}
+
 export function use_atleti() {
   return useQuery({
     refetchOnMount: "always",
@@ -59,9 +74,14 @@ export function use_atleti() {
     enabled: !!get_current_club_id(),
     queryKey: ["atleti", get_current_club_id()],
     queryFn: async () => {
-      const { data, error } = await supabase.from("atleti").select("*").eq("club_id", get_current_club_id()).order("cognome");
+      const { data, error } = await supabase.from("atleti").select("*").eq("club_id", get_current_club_id());
       if (error) throw error;
-      return (data ?? []).map(transform_atleta);
+      const mapped = (data ?? []).map(transform_atleta);
+      return mapped.sort((a, b) => {
+        const lvl = livello_rank(a) - livello_rank(b);
+        if (lvl !== 0) return lvl;
+        return (a.cognome || "").localeCompare(b.cognome || "", "it");
+      });
     },
   });
 }
