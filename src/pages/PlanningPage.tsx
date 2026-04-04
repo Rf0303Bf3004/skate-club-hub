@@ -235,21 +235,7 @@ export default function PlanningPage() {
         }
       }
 
-      // Pulizia after ice slot
-      const pulizia_start = g_end;
-      const pulizia_end = Math.min(g_end + durata_pulizia, end_min);
-      if (pulizia_end > pulizia_start) {
-        blocks.push({
-          left: ((pulizia_start - start_min) / total_min) * 100,
-          width: ((pulizia_end - pulizia_start) / total_min) * 100,
-          color: PULIZIA_COLOR.bg, textColor: PULIZIA_COLOR.text,
-          label: "Pulizia",
-          onClick: () => setDetail({
-            type: "pulizia", giorno,
-            ora_inizio: min_to_time(pulizia_start), ora_fine: min_to_time(pulizia_end),
-          }),
-        });
-      }
+      // (pulizia slots now come from DB, not auto-generated)
     });
 
     // Off-ice courses
