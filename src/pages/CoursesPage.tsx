@@ -1424,10 +1424,10 @@ const CorsoModal: React.FC<{
             </Button>
             <Button
               onClick={handle_save_click}
-              disabled={saving || confirm_forzatura}
+              disabled={saving || confirm_forzatura || validating_ghiaccio || !!ghiaccio_error}
               className="flex-1 bg-primary hover:bg-primary/90"
             >
-              {saving ? "..." : "💾 Salva"}
+              {validating_ghiaccio ? "Verifica..." : saving ? "..." : "💾 Salva"}
             </Button>
           </div>
           {corso?.id && !confirm_delete && (
