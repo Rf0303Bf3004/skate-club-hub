@@ -224,6 +224,28 @@ const ClubSetupPage: React.FC = () => {
     }));
   };
 
+  // Pulizia CRUD
+  const add_slot_pulizia = (giorno: string) => {
+    set_disp_pulizia_local((prev) => ({
+      ...prev,
+      [giorno]: [...(prev[giorno] || []), { ora_inizio: "12:00", ora_fine: "12:30" }],
+    }));
+  };
+
+  const remove_slot_pulizia = (giorno: string, idx: number) => {
+    set_disp_pulizia_local((prev) => ({
+      ...prev,
+      [giorno]: (prev[giorno] || []).filter((_, i) => i !== idx),
+    }));
+  };
+
+  const update_slot_pulizia = (giorno: string, idx: number, field: "ora_inizio" | "ora_fine", value: string) => {
+    set_disp_pulizia_local((prev) => ({
+      ...prev,
+      [giorno]: (prev[giorno] || []).map((s, i) => (i === idx ? { ...s, [field]: value } : s)),
+    }));
+  };
+
   const save_disponibilita = async () => {
     set_saving_disp(true);
     try {
@@ -232,11 +254,16 @@ const ClubSetupPage: React.FC = () => {
       const { error: del_err } = await supabase.from("disponibilita_ghiaccio").delete().eq("club_id", club_id);
       if (del_err) throw del_err;
 
-      // Insert all
+      // Insert all (ghiaccio + pulizia)
       const rows: any[] = [];
       for (const [giorno, slots] of Object.entries(disp_local)) {
         for (const s of slots) {
-          rows.push({ club_id, giorno, ora_inizio: s.ora_inizio, ora_fine: s.ora_fine });
+          rows.push({ club_id, giorno, ora_inizio: s.ora_inizio, ora_fine: s.ora_fine, tipo: "ghiaccio" });
+        }
+      }
+      for (const [giorno, slots] of Object.entries(disp_pulizia_local)) {
+        for (const s of slots) {
+          rows.push({ club_id, giorno, ora_inizio: s.ora_inizio, ora_fine: s.ora_fine, tipo: "pulizia" });
         }
       }
       if (rows.length > 0) {
@@ -244,7 +271,7 @@ const ClubSetupPage: React.FC = () => {
         if (ins_err) throw ins_err;
       }
 
-      toast({ title: "✅ Disponibilità ghiaccio salvata" });
+      toast({ title: "✅ Disponibilità ghiaccio e pulizia salvata" });
       queryClient.invalidateQueries({ queryKey: ["disponibilita_ghiaccio"] });
     } catch (err: any) {
       toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
