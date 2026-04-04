@@ -1,0 +1,1 @@
+ALTER TABLE public.disponibilita_ghiaccio ADD COLUMN note text DEFAULT '';

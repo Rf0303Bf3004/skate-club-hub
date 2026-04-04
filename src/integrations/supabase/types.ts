@@ -233,6 +233,7 @@ export type Database = {
           created_at: string
           giorno: string
           id: string
+          note: string | null
           ora_fine: string
           ora_inizio: string
           stagione_id: string | null
@@ -242,6 +243,7 @@ export type Database = {
           created_at?: string
           giorno?: string
           id?: string
+          note?: string | null
           ora_fine: string
           ora_inizio: string
           stagione_id?: string | null
@@ -251,6 +253,7 @@ export type Database = {
           created_at?: string
           giorno?: string
           id?: string
+          note?: string | null
           ora_fine?: string
           ora_inizio?: string
           stagione_id?: string | null
