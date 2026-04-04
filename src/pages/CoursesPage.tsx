@@ -877,6 +877,7 @@ const CorsoModal: React.FC<{
   const [form, set_form] = useState({
     nome: corso?.nome || "",
     tipo: corso?.tipo || "",
+    livello_richiesto: corso?.livello_richiesto || "tutti",
     giorno: corso?.giorno || "Lunedì",
     ora_inizio: corso?.ora_inizio?.slice(0, 5) || "08:00",
     ora_fine: corso?.ora_fine?.slice(0, 5) || "09:00",
