@@ -1045,6 +1045,20 @@ const CorsoModal: React.FC<{
                   on_add_tipo={on_add_tipo}
                 />
               </Field>
+              <Field label="Livello richiesto">
+                <div className="relative">
+                  <select
+                    value={form.livello_richiesto}
+                    onChange={(e) => set_val("livello_richiesto", e.target.value)}
+                    className={`${input_cls} appearance-none pr-8`}
+                  >
+                    {LIVELLI_CORSO.map((l) => (
+                      <option key={l} value={l}>{LIVELLO_LABELS[l] || l}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+              </Field>
               <div className="grid grid-cols-3 gap-3">
                 <Field label="Giorno">
                   <select value={form.giorno} onChange={(e) => set_val("giorno", e.target.value)} className={input_cls}>
