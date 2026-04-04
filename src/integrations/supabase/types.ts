@@ -139,6 +139,7 @@ export type Database = {
           id: string
           max_atleti_contemporanei: number
           max_atleti_per_istruttore: number
+          min_atleti_attivazione_corso: number
           ora_apertura_default: string
           ora_chiusura_default: string
           stagione_id: string | null
@@ -150,6 +151,7 @@ export type Database = {
           id?: string
           max_atleti_contemporanei?: number
           max_atleti_per_istruttore?: number
+          min_atleti_attivazione_corso?: number
           ora_apertura_default?: string
           ora_chiusura_default?: string
           stagione_id?: string | null
@@ -161,6 +163,7 @@ export type Database = {
           id?: string
           max_atleti_contemporanei?: number
           max_atleti_per_istruttore?: number
+          min_atleti_attivazione_corso?: number
           ora_apertura_default?: string
           ora_chiusura_default?: string
           stagione_id?: string | null
