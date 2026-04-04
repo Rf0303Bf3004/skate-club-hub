@@ -199,6 +199,7 @@ const translations: Record<Locale, Record<string, string>> = {
     stagioni: "Saisons",
     istruttori: "Trainer",
     campi: "Trainingslager",
+    planning_ghiaccio: "Eis-Planung",
     atleti_attivi: "Aktive Athleten",
     corsi_settimana: "Kurse diese Woche",
     prossime_gare: "Nächste Wettkämpfe",
