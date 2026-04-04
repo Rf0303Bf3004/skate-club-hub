@@ -371,7 +371,7 @@ export default function PlanningPage() {
                 >
                   {GIORNI_ABBR[giorno]}
                 </div>
-                <div className="flex-1 relative" style={{ height: 50, minWidth: total_min * 1.5 }}>
+                <div className="flex-1 relative" style={{ height: 50, minWidth: total_min * 1.5, background: "#F3F4F6" }}>
                   {blocks.map((b, i) => (
                     <div
                       key={i}
