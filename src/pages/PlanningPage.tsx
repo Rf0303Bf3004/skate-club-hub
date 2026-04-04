@@ -208,8 +208,9 @@ export default function PlanningPage() {
   }, [visible_days]);
 
   const is_compact = view_mode >= 3;
-  const LABEL_W = is_compact ? 72 : 120;
-  const SUB_ROW_H = 26;
+  const LABEL_W = is_compact ? 80 : 130;
+  const BASE_ROW_H = view_mode <= 2 ? 60 : view_mode === 3 ? 48 : 40;
+  const EXTRA_PER_ROW = 30;
   const OFF_ICE_ROW_H = 18;
 
   if (loading) {
