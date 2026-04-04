@@ -227,6 +227,96 @@ export type Database = {
         }
         Relationships: []
       }
+      disponibilita_ghiaccio: {
+        Row: {
+          club_id: string
+          created_at: string
+          giorno: string
+          id: string
+          ora_fine: string
+          ora_inizio: string
+          stagione_id: string | null
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          giorno?: string
+          id?: string
+          ora_fine: string
+          ora_inizio: string
+          stagione_id?: string | null
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          giorno?: string
+          id?: string
+          ora_fine?: string
+          ora_inizio?: string
+          stagione_id?: string | null
+        }
+        Relationships: []
+      }
+      disponibilita_istruttori: {
+        Row: {
+          club_id: string
+          created_at: string
+          giorno: string
+          id: string
+          istruttore_id: string
+          ora_fine: string
+          ora_inizio: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          giorno?: string
+          id?: string
+          istruttore_id: string
+          ora_fine: string
+          ora_inizio: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          giorno?: string
+          id?: string
+          istruttore_id?: string
+          ora_fine?: string
+          ora_inizio?: string
+        }
+        Relationships: []
+      }
+      impostazioni_planning: {
+        Row: {
+          club_id: string
+          created_at: string
+          durata_slot_minuti: number
+          id: string
+          ora_fine_giornata: string
+          ora_inizio_giornata: string
+          stagione_id: string | null
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          durata_slot_minuti?: number
+          id?: string
+          ora_fine_giornata?: string
+          ora_inizio_giornata?: string
+          stagione_id?: string | null
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          durata_slot_minuti?: number
+          id?: string
+          ora_fine_giornata?: string
+          ora_inizio_giornata?: string
+          stagione_id?: string | null
+        }
+        Relationships: []
+      }
       inviti_genitori: {
         Row: {
           atleta_id: string
