@@ -18,6 +18,7 @@ import InvoicesPage from "@/pages/InvoicesPage";
 import CommunicationsPage from "@/pages/CommunicationsPage";
 import SeasonsPage from "@/pages/SeasonsPage";
 import TrainingCampsPage from "@/pages/TrainingCampsPage";
+import PlanningPage from "@/pages/PlanningPage";
 import ClubSetupPage from "@/pages/ClubSetupPage";
 import AdvancedManagementPage from "@/pages/AdvancedManagementPage";
 import SuperAdminPage from "@/pages/SuperAdminPage";
@@ -78,6 +79,7 @@ const AuthenticatedApp = () => {
           <Route path="/comunicazioni" element={<CommunicationsPage />} />
           <Route path="/stagioni" element={<SeasonsPage />} />
           <Route path="/campi" element={<TrainingCampsPage />} />
+          <Route path="/planning" element={<PlanningPage />} />
           <Route path="/setup-club" element={<ClubSetupPage />} />
           <Route path="/gestione-avanzata" element={<AdvancedManagementPage />} />
           <Route path="/ruoli-permessi" element={<RuoliPermessiPage />} />

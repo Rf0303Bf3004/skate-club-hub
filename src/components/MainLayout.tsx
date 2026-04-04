@@ -20,6 +20,7 @@ const all_nav_items = [
   { key: "comunicazioni", sezione: "comunicazioni", path: "/comunicazioni", icon: MessageSquare },
   { key: "stagioni", sezione: "stagioni", path: "/stagioni", icon: Calendar },
   { key: "campi", sezione: "campi", path: "/campi", icon: Tent },
+  { key: "planning_ghiaccio", sezione: "planning_ghiaccio", path: "/planning", icon: Calendar },
   { key: "setup_club", sezione: "setup_club", path: "/setup-club", icon: Settings },
 ];
 
