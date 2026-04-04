@@ -262,6 +262,7 @@ export function use_upsert_corso() {
         attivo: data.attivo !== false,
         note: data.note || "",
       };
+      if (data.livello_richiesto !== undefined) payload.livello_richiesto = data.livello_richiesto || "tutti";
       if (data.stagione_id) payload.stagione_id = data.stagione_id;
       let corso_id = data.id;
       if (data.id) {

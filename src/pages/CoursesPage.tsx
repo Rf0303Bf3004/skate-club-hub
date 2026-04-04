@@ -33,6 +33,55 @@ import { supabase, get_current_club_id } from "@/lib/supabase";
 
 const GIORNI_DB = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
 
+const LIVELLI_CORSO = [
+  "tutti", "pulcini", "stellina1", "stellina2", "stellina3", "stellina4",
+  "Interbronzo", "Bronzo", "Interargento", "Argento", "Interoro", "Oro",
+];
+
+const LIVELLO_LABELS: Record<string, string> = {
+  tutti: "Tutti i livelli",
+  pulcini: "Pulcini",
+  stellina1: "Stellina 1",
+  stellina2: "Stellina 2",
+  stellina3: "Stellina 3",
+  stellina4: "Stellina 4",
+  Interbronzo: "Interbronzo",
+  Bronzo: "Bronzo",
+  Interargento: "Interargento",
+  Argento: "Argento",
+  Interoro: "Interoro",
+  Oro: "Oro",
+};
+
+function get_atleta_livello(atleta: any): string {
+  return atleta.carriera_artistica || atleta.carriera_stile || atleta.percorso_amatori || "Pulcini";
+}
+
+function normalize_livello(l: string): string {
+  if (!l) return "pulcini";
+  const map: Record<string, string> = {
+    "pulcini": "pulcini",
+    "stellina 1": "stellina1", "stellina1": "stellina1", "stelline 1": "stellina1",
+    "stellina 2": "stellina2", "stellina2": "stellina2", "stelline 2": "stellina2",
+    "stellina 3": "stellina3", "stellina3": "stellina3", "stelline 3": "stellina3",
+    "stellina 4": "stellina4", "stellina4": "stellina4", "stelline 4": "stellina4",
+    "interbronzo": "Interbronzo",
+    "bronzo": "Bronzo",
+    "interargento": "Interargento",
+    "argento": "Argento",
+    "interoro": "Interoro",
+    "oro": "Oro",
+  };
+  return map[l.toLowerCase()] ?? l;
+}
+
+function is_livello_compatibile(atleta: any, livello_richiesto: string): boolean {
+  if (!livello_richiesto || livello_richiesto === "tutti") return true;
+  const livello_atleta = normalize_livello(get_atleta_livello(atleta));
+  const livello_corso = normalize_livello(livello_richiesto);
+  return livello_atleta === livello_corso;
+}
+
 function time_to_min(t: string): number {
   const [h, m] = (t || "00:00").split(":").map(Number);
   return h * 60 + (m || 0);
@@ -241,38 +290,70 @@ const TipoCorsoSelect: React.FC<{
 // ─── Tab Iscrizioni ────────────────────────────────────────
 const TabIscrizioni: React.FC<{
   corso_id: string;
+  livello_richiesto: string;
   atleti_iscritti_ids: string[];
   tutti_atleti: any[];
   on_refresh: () => void;
-}> = ({ corso_id, atleti_iscritti_ids, tutti_atleti, on_refresh }) => {
+}> = ({ corso_id, livello_richiesto, atleti_iscritti_ids, tutti_atleti, on_refresh }) => {
   const [query, set_query] = useState("");
   const [saving, set_saving] = useState(false);
   const [removing, set_removing] = useState<string | null>(null);
+  const [salto_dialog, set_salto_dialog] = useState<any>(null);
+  const [note_salto, set_note_salto] = useState("");
 
   const atleti_iscritti = tutti_atleti.filter((a: any) => atleti_iscritti_ids.includes(a.id));
   const atleti_disponibili = useMemo(() => {
     const q = query.toLowerCase();
-    return tutti_atleti
+    const filtered = tutti_atleti
       .filter((a: any) => a.stato === "attivo" && !atleti_iscritti_ids.includes(a.id))
-      .filter((a: any) => !q || `${a.nome} ${a.cognome}`.toLowerCase().includes(q))
-      .slice(0, 20);
-  }, [tutti_atleti, atleti_iscritti_ids, query]);
+      .filter((a: any) => !q || `${a.nome} ${a.cognome}`.toLowerCase().includes(q));
+    // Sort: compatible first, then incompatible
+    filtered.sort((a, b) => {
+      const a_ok = is_livello_compatibile(a, livello_richiesto) ? 0 : 1;
+      const b_ok = is_livello_compatibile(b, livello_richiesto) ? 0 : 1;
+      if (a_ok !== b_ok) return a_ok - b_ok;
+      return (a.cognome || "").localeCompare(b.cognome || "", "it");
+    });
+    return filtered.slice(0, 30);
+  }, [tutti_atleti, atleti_iscritti_ids, query, livello_richiesto]);
 
-  const handle_iscrivi = async (atleta_id: string) => {
+  const do_iscrivi = async (atleta_id: string, salto_livello = false, note_sl = "") => {
     set_saving(true);
     try {
-      const { error } = await supabase
-        .from("iscrizioni_corsi")
-        .insert({ corso_id, atleta_id, attiva: true, data_iscrizione: new Date().toISOString().split("T")[0] });
+      const payload: any = {
+        corso_id,
+        atleta_id,
+        attiva: true,
+        data_iscrizione: new Date().toISOString().split("T")[0],
+        salto_livello,
+        note_salto_livello: note_sl || "",
+      };
+      const { error } = await supabase.from("iscrizioni_corsi").insert(payload);
       if (error) throw error;
       set_query("");
       on_refresh();
-      toast({ title: "✅ Atleta iscritta al corso" });
+      toast({ title: salto_livello ? "⚠️ Iscrizione con salto di livello" : "✅ Atleta iscritta al corso" });
     } catch (err: any) {
       toast({ title: "Errore iscrizione", description: err?.message, variant: "destructive" });
     } finally {
       set_saving(false);
+      set_salto_dialog(null);
+      set_note_salto("");
     }
+  };
+
+  const handle_iscrivi = (atleta: any) => {
+    if (!livello_richiesto || livello_richiesto === "tutti") {
+      do_iscrivi(atleta.id);
+      return;
+    }
+    if (is_livello_compatibile(atleta, livello_richiesto)) {
+      do_iscrivi(atleta.id);
+      return;
+    }
+    // Level mismatch → show confirmation
+    set_salto_dialog(atleta);
+    set_note_salto("");
   };
 
   const handle_rimuovi = async (atleta_id: string) => {
@@ -293,10 +374,60 @@ const TabIscrizioni: React.FC<{
     }
   };
 
+  const livello_label = LIVELLO_LABELS[livello_richiesto] || livello_richiesto || "Tutti";
+
   return (
     <div className="space-y-4">
+      {/* Level jump confirmation dialog */}
+      {salto_dialog && (
+        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 space-y-3">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="text-sm font-bold text-orange-700">Attenzione: salto di livello</p>
+              <p className="text-xs text-orange-600">
+                <strong>{salto_dialog.nome} {salto_dialog.cognome}</strong> ha livello{" "}
+                <strong>{get_atleta_livello(salto_dialog)}</strong>, ma il corso richiede{" "}
+                <strong>{livello_label}</strong>.
+              </p>
+              <p className="text-xs text-orange-600">Stai richiedendo un salto di livello. Vuoi procedere comunque?</p>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Note salto di livello (opzionale)
+            </label>
+            <textarea
+              value={note_salto}
+              onChange={(e) => set_note_salto(e.target.value)}
+              placeholder="Motivazione del salto di livello..."
+              rows={2}
+              className={`${input_cls} resize-none`}
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => set_salto_dialog(null)} className="flex-1">
+              Annulla
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => do_iscrivi(salto_dialog.id, true, note_salto)}
+              disabled={saving}
+              className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
+            >
+              {saving ? "..." : "Conferma salto di livello"}
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-2">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Aggiungi atleta</p>
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Aggiungi atleta</p>
+          {livello_richiesto && livello_richiesto !== "tutti" && (
+            <Badge variant="secondary" className="text-[10px]">Livello: {livello_label}</Badge>
+          )}
+        </div>
         <div className="relative">
           <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
           <input
@@ -306,37 +437,50 @@ const TabIscrizioni: React.FC<{
             className="w-full rounded-lg border border-border bg-background pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
-        <div className="border border-border rounded-xl overflow-hidden divide-y divide-border/50 max-h-48 overflow-y-auto">
+        <div className="border border-border rounded-xl overflow-hidden divide-y divide-border/50 max-h-56 overflow-y-auto">
           {atleti_disponibili.length === 0 ? (
             <p className="text-xs text-muted-foreground px-3 py-3 text-center">
               {query ? "Nessuna atleta trovata" : "Tutte le atlete sono già iscritte"}
             </p>
           ) : (
-            atleti_disponibili.map((a: any) => (
-              <div
-                key={a.id}
-                className="flex items-center justify-between px-3 py-2 hover:bg-muted/30 transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-muted-foreground text-[10px] font-bold">
-                    {a.nome[0]}
-                    {a.cognome[0]}
-                  </div>
-                  <span className="text-sm text-foreground">
-                    {a.nome} {a.cognome}
-                  </span>
-                </div>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => handle_iscrivi(a.id)}
-                  disabled={saving}
-                  className="h-7 text-xs text-primary hover:bg-primary/10 gap-1"
+            atleti_disponibili.map((a: any) => {
+              const livello = get_atleta_livello(a);
+              const compatibile = is_livello_compatibile(a, livello_richiesto);
+              return (
+                <div
+                  key={a.id}
+                  className={`flex items-center justify-between px-3 py-2 hover:bg-muted/30 transition-colors ${!compatibile ? "bg-orange-50/50" : ""}`}
                 >
-                  <UserPlus className="w-3.5 h-3.5" /> Iscrivi
-                </Button>
-              </div>
-            ))
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-muted-foreground text-[10px] font-bold flex-shrink-0">
+                      {a.nome[0]}{a.cognome[0]}
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-sm text-foreground block truncate">
+                        {a.cognome} {a.nome}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] text-muted-foreground">{livello}</span>
+                        {!compatibile && (
+                          <span className="text-[9px] font-bold text-orange-600 bg-orange-100 px-1 py-0.5 rounded">
+                            Salto di livello
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handle_iscrivi(a)}
+                    disabled={saving}
+                    className={`h-7 text-xs gap-1 flex-shrink-0 ${compatibile ? "text-primary hover:bg-primary/10" : "text-orange-600 hover:bg-orange-50"}`}
+                  >
+                    <UserPlus className="w-3.5 h-3.5" /> Iscrivi
+                  </Button>
+                </div>
+              );
+            })
           )}
         </div>
       </div>
@@ -352,14 +496,13 @@ const TabIscrizioni: React.FC<{
               <div key={a.id} className="flex items-center justify-between px-3 py-2.5">
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
-                    {a.nome[0]}
-                    {a.cognome[0]}
+                    {a.nome[0]}{a.cognome[0]}
                   </div>
                   <div>
                     <p className="text-sm font-medium text-foreground">
-                      {a.nome} {a.cognome}
+                      {a.cognome} {a.nome}
                     </p>
-                    <p className="text-xs text-muted-foreground">{a.livello_amatori}</p>
+                    <p className="text-xs text-muted-foreground">{get_atleta_livello(a)}</p>
                   </div>
                 </div>
                 <Button
@@ -734,6 +877,7 @@ const CorsoModal: React.FC<{
   const [form, set_form] = useState({
     nome: corso?.nome || "",
     tipo: corso?.tipo || "",
+    livello_richiesto: corso?.livello_richiesto || "tutti",
     giorno: corso?.giorno || "Lunedì",
     ora_inizio: corso?.ora_inizio?.slice(0, 5) || "08:00",
     ora_fine: corso?.ora_fine?.slice(0, 5) || "09:00",
@@ -901,6 +1045,20 @@ const CorsoModal: React.FC<{
                   on_add_tipo={on_add_tipo}
                 />
               </Field>
+              <Field label="Livello richiesto">
+                <div className="relative">
+                  <select
+                    value={form.livello_richiesto}
+                    onChange={(e) => set_val("livello_richiesto", e.target.value)}
+                    className={`${input_cls} appearance-none pr-8`}
+                  >
+                    {LIVELLI_CORSO.map((l) => (
+                      <option key={l} value={l}>{LIVELLO_LABELS[l] || l}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+              </Field>
               <div className="grid grid-cols-3 gap-3">
                 <Field label="Giorno">
                   <select value={form.giorno} onChange={(e) => set_val("giorno", e.target.value)} className={input_cls}>
@@ -1040,6 +1198,7 @@ const CorsoModal: React.FC<{
               {corso?.id && (
                 <TabIscrizioni
                   corso_id={corso.id}
+                  livello_richiesto={corso.livello_richiesto || "tutti"}
                   atleti_iscritti_ids={corso.atleti_ids || []}
                   tutti_atleti={atleti}
                   on_refresh={() => qc.invalidateQueries({ queryKey: ["corsi"] })}
