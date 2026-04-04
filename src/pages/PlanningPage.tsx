@@ -133,6 +133,7 @@ export default function PlanningPage() {
     const all_slots = ghiaccio_slots ?? [];
     const day_ghiaccio = all_slots.filter((g: any) => g.giorno === giorno && (g.tipo ?? "ghiaccio") === "ghiaccio");
     const day_pulizia = all_slots.filter((g: any) => g.giorno === giorno && g.tipo === "pulizia");
+    const day_corsi_ice = corsi.filter((c: any) => c.giorno === giorno && !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
     const day_corsi_off = corsi.filter((c: any) => c.giorno === giorno && OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
 
     type Block = { left: number; width: number; color: string; textColor: string; label: string; onClick: () => void; alert?: boolean };
