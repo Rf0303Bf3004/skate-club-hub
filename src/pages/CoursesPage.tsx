@@ -300,22 +300,35 @@ const TabIscrizioni: React.FC<{
   const [removing, set_removing] = useState<string | null>(null);
   const [salto_dialog, set_salto_dialog] = useState<any>(null);
   const [note_salto, set_note_salto] = useState("");
+  const [show_salto_search, set_show_salto_search] = useState(false);
+  const [salto_query, set_salto_query] = useState("");
+
+  const ha_filtro_livello = !!livello_richiesto && livello_richiesto !== "tutti";
 
   const atleti_iscritti = tutti_atleti.filter((a: any) => atleti_iscritti_ids.includes(a.id));
+
+  // Lista principale: solo atleti compatibili (o tutti se livello_richiesto = 'tutti')
   const atleti_disponibili = useMemo(() => {
     const q = query.toLowerCase();
-    const filtered = tutti_atleti
+    return tutti_atleti
       .filter((a: any) => a.stato === "attivo" && !atleti_iscritti_ids.includes(a.id))
-      .filter((a: any) => !q || `${a.nome} ${a.cognome}`.toLowerCase().includes(q));
-    // Sort: compatible first, then incompatible
-    filtered.sort((a, b) => {
-      const a_ok = is_livello_compatibile(a, livello_richiesto) ? 0 : 1;
-      const b_ok = is_livello_compatibile(b, livello_richiesto) ? 0 : 1;
-      if (a_ok !== b_ok) return a_ok - b_ok;
-      return (a.cognome || "").localeCompare(b.cognome || "", "it");
-    });
-    return filtered.slice(0, 30);
-  }, [tutti_atleti, atleti_iscritti_ids, query, livello_richiesto]);
+      .filter((a: any) => !ha_filtro_livello || is_livello_compatibile(a, livello_richiesto))
+      .filter((a: any) => !q || `${a.nome} ${a.cognome}`.toLowerCase().includes(q))
+      .sort((a, b) => (a.cognome || "").localeCompare(b.cognome || "", "it"))
+      .slice(0, 30);
+  }, [tutti_atleti, atleti_iscritti_ids, query, livello_richiesto, ha_filtro_livello]);
+
+  // Lista salto di livello: SOLO atleti NON compatibili
+  const atleti_salto = useMemo(() => {
+    if (!show_salto_search || !ha_filtro_livello) return [];
+    const q = salto_query.toLowerCase();
+    return tutti_atleti
+      .filter((a: any) => a.stato === "attivo" && !atleti_iscritti_ids.includes(a.id))
+      .filter((a: any) => !is_livello_compatibile(a, livello_richiesto))
+      .filter((a: any) => !q || `${a.nome} ${a.cognome}`.toLowerCase().includes(q))
+      .sort((a, b) => (a.cognome || "").localeCompare(b.cognome || "", "it"))
+      .slice(0, 30);
+  }, [tutti_atleti, atleti_iscritti_ids, salto_query, livello_richiesto, show_salto_search, ha_filtro_livello]);
 
   const do_iscrivi = async (atleta_id: string, salto_livello = false, note_sl = "") => {
     set_saving(true);
@@ -324,13 +337,14 @@ const TabIscrizioni: React.FC<{
         corso_id,
         atleta_id,
         attiva: true,
-        data_iscrizione: new Date().toISOString().split("T")[0],
         salto_livello,
         note_salto_livello: note_sl || "",
       };
       const { error } = await supabase.from("iscrizioni_corsi").insert(payload);
       if (error) throw error;
       set_query("");
+      set_salto_query("");
+      set_show_salto_search(false);
       on_refresh();
       toast({ title: salto_livello ? "⚠️ Iscrizione con salto di livello" : "✅ Atleta iscritta al corso" });
     } catch (err: any) {
@@ -343,15 +357,10 @@ const TabIscrizioni: React.FC<{
   };
 
   const handle_iscrivi = (atleta: any) => {
-    if (!livello_richiesto || livello_richiesto === "tutti") {
-      do_iscrivi(atleta.id);
-      return;
-    }
-    if (is_livello_compatibile(atleta, livello_richiesto)) {
-      do_iscrivi(atleta.id);
-      return;
-    }
-    // Level mismatch → show confirmation
+    do_iscrivi(atleta.id);
+  };
+
+  const handle_iscrivi_salto = (atleta: any) => {
     set_salto_dialog(atleta);
     set_note_salto("");
   };
@@ -390,7 +399,7 @@ const TabIscrizioni: React.FC<{
                 <strong>{get_atleta_livello(salto_dialog)}</strong>, ma il corso richiede{" "}
                 <strong>{livello_label}</strong>.
               </p>
-              <p className="text-xs text-orange-600">Stai richiedendo un salto di livello. Vuoi procedere comunque?</p>
+              <p className="text-xs text-orange-600">Vuoi procedere con un salto di livello?</p>
             </div>
           </div>
           <div className="space-y-2">
@@ -421,10 +430,11 @@ const TabIscrizioni: React.FC<{
         </div>
       )}
 
+      {/* Lista atleti compatibili */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Aggiungi atleta</p>
-          {livello_richiesto && livello_richiesto !== "tutti" && (
+          {ha_filtro_livello && (
             <Badge variant="secondary" className="text-[10px]">Livello: {livello_label}</Badge>
           )}
         </div>
@@ -440,16 +450,15 @@ const TabIscrizioni: React.FC<{
         <div className="border border-border rounded-xl overflow-hidden divide-y divide-border/50 max-h-56 overflow-y-auto">
           {atleti_disponibili.length === 0 ? (
             <p className="text-xs text-muted-foreground px-3 py-3 text-center">
-              {query ? "Nessuna atleta trovata" : "Tutte le atlete sono già iscritte"}
+              {query ? "Nessuna atleta trovata" : ha_filtro_livello ? "Nessuna atleta con livello compatibile" : "Tutte le atlete sono già iscritte"}
             </p>
           ) : (
             atleti_disponibili.map((a: any) => {
               const livello = get_atleta_livello(a);
-              const compatibile = is_livello_compatibile(a, livello_richiesto);
               return (
                 <div
                   key={a.id}
-                  className={`flex items-center justify-between px-3 py-2 hover:bg-muted/30 transition-colors ${!compatibile ? "bg-orange-50/50" : ""}`}
+                  className="flex items-center justify-between px-3 py-2 hover:bg-muted/30 transition-colors"
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-muted-foreground text-[10px] font-bold flex-shrink-0">
@@ -459,14 +468,7 @@ const TabIscrizioni: React.FC<{
                       <span className="text-sm text-foreground block truncate">
                         {a.cognome} {a.nome}
                       </span>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] text-muted-foreground">{livello}</span>
-                        {!compatibile && (
-                          <span className="text-[9px] font-bold text-orange-600 bg-orange-100 px-1 py-0.5 rounded">
-                            Salto di livello
-                          </span>
-                        )}
-                      </div>
+                      <span className="text-[10px] text-muted-foreground">{livello}</span>
                     </div>
                   </div>
                   <Button
@@ -474,7 +476,7 @@ const TabIscrizioni: React.FC<{
                     variant="ghost"
                     onClick={() => handle_iscrivi(a)}
                     disabled={saving}
-                    className={`h-7 text-xs gap-1 flex-shrink-0 ${compatibile ? "text-primary hover:bg-primary/10" : "text-orange-600 hover:bg-orange-50"}`}
+                    className="h-7 text-xs gap-1 flex-shrink-0 text-primary hover:bg-primary/10"
                   >
                     <UserPlus className="w-3.5 h-3.5" /> Iscrivi
                   </Button>
@@ -484,6 +486,77 @@ const TabIscrizioni: React.FC<{
           )}
         </div>
       </div>
+
+      {/* Pulsante salto di livello */}
+      {ha_filtro_livello && !show_salto_search && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => set_show_salto_search(true)}
+          className="w-full text-xs gap-1.5 text-orange-600 border-orange-200 hover:bg-orange-50"
+        >
+          <ArrowRightLeft className="w-3.5 h-3.5" /> Iscrivi con salto di livello
+        </Button>
+      )}
+
+      {/* Ricerca salto di livello */}
+      {show_salto_search && ha_filtro_livello && (
+        <div className="space-y-2 border border-orange-200 rounded-xl p-3 bg-orange-50/30">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-orange-600 uppercase tracking-wide flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" /> Salto di livello
+            </p>
+            <Button variant="ghost" size="sm" onClick={() => { set_show_salto_search(false); set_salto_query(""); }} className="h-6 w-6 p-0">
+              <X className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              value={salto_query}
+              onChange={(e) => set_salto_query(e.target.value)}
+              placeholder="Cerca atleta..."
+              autoFocus
+              className="w-full rounded-lg border border-orange-200 bg-background pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
+            />
+          </div>
+          <div className="border border-orange-200 rounded-xl overflow-hidden divide-y divide-orange-100 max-h-48 overflow-y-auto">
+            {atleti_salto.length === 0 ? (
+              <p className="text-xs text-muted-foreground px-3 py-3 text-center">
+                {salto_query ? "Nessuna atleta trovata" : "Nessuna atleta disponibile"}
+              </p>
+            ) : (
+              atleti_salto.map((a: any) => {
+                const livello = get_atleta_livello(a);
+                return (
+                  <div key={a.id} className="flex items-center justify-between px-3 py-2 hover:bg-orange-50 transition-colors">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 text-[10px] font-bold flex-shrink-0">
+                        {a.nome[0]}{a.cognome[0]}
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-sm text-foreground block truncate">{a.cognome} {a.nome}</span>
+                        <span className="text-[10px] text-orange-600">{livello}</span>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handle_iscrivi_salto(a)}
+                      disabled={saving}
+                      className="h-7 text-xs gap-1 flex-shrink-0 text-orange-600 hover:bg-orange-100"
+                    >
+                      <UserPlus className="w-3.5 h-3.5" /> Iscrivi
+                    </Button>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Lista iscritti */}
       <div className="space-y-2">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
           Iscritte ({atleti_iscritti.length})
