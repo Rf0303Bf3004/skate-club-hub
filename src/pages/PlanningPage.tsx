@@ -24,6 +24,7 @@ const TIPO_COLORS: Record<string, { bg: string; text: string }> = {
 };
 const PRIVATE_COLOR = { bg: "#FB923C", text: "#fff" };
 const PULIZIA_COLOR = { bg: "#9CA3AF", text: "#fff" };
+const GHIACCIO_BG = "#7F77DD";
 
 function time_to_min(t: string): number {
   const [h, m] = (t || "00:00").split(":").map(Number);

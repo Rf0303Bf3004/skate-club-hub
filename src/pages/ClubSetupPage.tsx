@@ -532,6 +532,56 @@ const ClubSetupPage: React.FC = () => {
             })}
           </div>
         </div>
+
+        <Separator />
+
+        {/* Pulizia Ghiaccio */}
+        <div>
+          <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">
+            🧹 Pulizia Ghiaccio
+          </h3>
+          <div className="space-y-4">
+            {GIORNI.map((giorno) => {
+              const slots = disp_pulizia_local[giorno] || [];
+              return (
+                <div key={giorno} className="border border-border/50 rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-foreground">{giorno}</span>
+                    <Button variant="ghost" size="sm" onClick={() => add_slot_pulizia(giorno)} className="h-7 text-xs">
+                      <Plus className="w-3 h-3 mr-1" /> Slot
+                    </Button>
+                  </div>
+                  {slots.length === 0 && <p className="text-xs text-muted-foreground">Nessuno slot</p>}
+                  {slots.map((s, idx) => (
+                    <div key={idx} className="flex items-center gap-2 mb-1">
+                      <Input
+                        type="time"
+                        value={s.ora_inizio}
+                        onChange={(e) => update_slot_pulizia(giorno, idx, "ora_inizio", e.target.value)}
+                        className="w-28 h-8 text-xs"
+                      />
+                      <span className="text-muted-foreground text-xs">—</span>
+                      <Input
+                        type="time"
+                        value={s.ora_fine}
+                        onChange={(e) => update_slot_pulizia(giorno, idx, "ora_fine", e.target.value)}
+                        className="w-28 h-8 text-xs"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => remove_slot_pulizia(giorno, idx)}
+                        className="h-7 w-7 p-0 text-destructive"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );
