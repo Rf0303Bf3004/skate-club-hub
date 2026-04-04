@@ -276,6 +276,7 @@ export type Database = {
           ora_fine: string
           ora_inizio: string
           stagione_id: string | null
+          tipo: string
         }
         Insert: {
           club_id: string
@@ -286,6 +287,7 @@ export type Database = {
           ora_fine: string
           ora_inizio: string
           stagione_id?: string | null
+          tipo?: string
         }
         Update: {
           club_id?: string
@@ -296,6 +298,7 @@ export type Database = {
           ora_fine?: string
           ora_inizio?: string
           stagione_id?: string | null
+          tipo?: string
         }
         Relationships: []
       }

@@ -68,17 +68,21 @@ const ClubSetupPage: React.FC = () => {
 
   // Disponibilità ghiaccio local state
   const [disp_local, set_disp_local] = useState<Record<string, { ora_inizio: string; ora_fine: string }[]>>({});
+  const [disp_pulizia_local, set_disp_pulizia_local] = useState<Record<string, { ora_inizio: string; ora_fine: string }[]>>({});
   const [saving_disp, set_saving_disp] = useState(false);
 
   // Sync disp_local when data loads
   useEffect(() => {
     if (disp_ghiaccio_raw) {
-      const m: Record<string, { ora_inizio: string; ora_fine: string }[]> = {};
+      const ghiaccio: Record<string, { ora_inizio: string; ora_fine: string }[]> = {};
+      const pulizia: Record<string, { ora_inizio: string; ora_fine: string }[]> = {};
       disp_ghiaccio_raw.forEach((d: any) => {
-        if (!m[d.giorno]) m[d.giorno] = [];
-        m[d.giorno].push({ ora_inizio: d.ora_inizio, ora_fine: d.ora_fine });
+        const target = d.tipo === "pulizia" ? pulizia : ghiaccio;
+        if (!target[d.giorno]) target[d.giorno] = [];
+        target[d.giorno].push({ ora_inizio: d.ora_inizio, ora_fine: d.ora_fine });
       });
-      set_disp_local(m);
+      set_disp_local(ghiaccio);
+      set_disp_pulizia_local(pulizia);
     }
   }, [disp_ghiaccio_raw]);
 
@@ -220,6 +224,28 @@ const ClubSetupPage: React.FC = () => {
     }));
   };
 
+  // Pulizia CRUD
+  const add_slot_pulizia = (giorno: string) => {
+    set_disp_pulizia_local((prev) => ({
+      ...prev,
+      [giorno]: [...(prev[giorno] || []), { ora_inizio: "12:00", ora_fine: "12:30" }],
+    }));
+  };
+
+  const remove_slot_pulizia = (giorno: string, idx: number) => {
+    set_disp_pulizia_local((prev) => ({
+      ...prev,
+      [giorno]: (prev[giorno] || []).filter((_, i) => i !== idx),
+    }));
+  };
+
+  const update_slot_pulizia = (giorno: string, idx: number, field: "ora_inizio" | "ora_fine", value: string) => {
+    set_disp_pulizia_local((prev) => ({
+      ...prev,
+      [giorno]: (prev[giorno] || []).map((s, i) => (i === idx ? { ...s, [field]: value } : s)),
+    }));
+  };
+
   const save_disponibilita = async () => {
     set_saving_disp(true);
     try {
@@ -228,11 +254,16 @@ const ClubSetupPage: React.FC = () => {
       const { error: del_err } = await supabase.from("disponibilita_ghiaccio").delete().eq("club_id", club_id);
       if (del_err) throw del_err;
 
-      // Insert all
+      // Insert all (ghiaccio + pulizia)
       const rows: any[] = [];
       for (const [giorno, slots] of Object.entries(disp_local)) {
         for (const s of slots) {
-          rows.push({ club_id, giorno, ora_inizio: s.ora_inizio, ora_fine: s.ora_fine });
+          rows.push({ club_id, giorno, ora_inizio: s.ora_inizio, ora_fine: s.ora_fine, tipo: "ghiaccio" });
+        }
+      }
+      for (const [giorno, slots] of Object.entries(disp_pulizia_local)) {
+        for (const s of slots) {
+          rows.push({ club_id, giorno, ora_inizio: s.ora_inizio, ora_fine: s.ora_fine, tipo: "pulizia" });
         }
       }
       if (rows.length > 0) {
@@ -240,7 +271,7 @@ const ClubSetupPage: React.FC = () => {
         if (ins_err) throw ins_err;
       }
 
-      toast({ title: "✅ Disponibilità ghiaccio salvata" });
+      toast({ title: "✅ Disponibilità ghiaccio e pulizia salvata" });
       queryClient.invalidateQueries({ queryKey: ["disponibilita_ghiaccio"] });
     } catch (err: any) {
       toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
@@ -490,6 +521,56 @@ const ClubSetupPage: React.FC = () => {
                         variant="ghost"
                         size="sm"
                         onClick={() => remove_slot(giorno, idx)}
+                        className="h-7 w-7 p-0 text-destructive"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Pulizia Ghiaccio */}
+        <div>
+          <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">
+            🧹 Pulizia Ghiaccio
+          </h3>
+          <div className="space-y-4">
+            {GIORNI.map((giorno) => {
+              const slots = disp_pulizia_local[giorno] || [];
+              return (
+                <div key={giorno} className="border border-border/50 rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-foreground">{giorno}</span>
+                    <Button variant="ghost" size="sm" onClick={() => add_slot_pulizia(giorno)} className="h-7 text-xs">
+                      <Plus className="w-3 h-3 mr-1" /> Slot
+                    </Button>
+                  </div>
+                  {slots.length === 0 && <p className="text-xs text-muted-foreground">Nessuno slot</p>}
+                  {slots.map((s, idx) => (
+                    <div key={idx} className="flex items-center gap-2 mb-1">
+                      <Input
+                        type="time"
+                        value={s.ora_inizio}
+                        onChange={(e) => update_slot_pulizia(giorno, idx, "ora_inizio", e.target.value)}
+                        className="w-28 h-8 text-xs"
+                      />
+                      <span className="text-muted-foreground text-xs">—</span>
+                      <Input
+                        type="time"
+                        value={s.ora_fine}
+                        onChange={(e) => update_slot_pulizia(giorno, idx, "ora_fine", e.target.value)}
+                        className="w-28 h-8 text-xs"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => remove_slot_pulizia(giorno, idx)}
                         className="h-7 w-7 p-0 text-destructive"
                       >
                         <Trash2 className="w-3 h-3" />

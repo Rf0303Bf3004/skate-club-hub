@@ -24,6 +24,7 @@ const TIPO_COLORS: Record<string, { bg: string; text: string }> = {
 };
 const PRIVATE_COLOR = { bg: "#FB923C", text: "#fff" };
 const PULIZIA_COLOR = { bg: "#9CA3AF", text: "#fff" };
+const GHIACCIO_BG = "#7F77DD";
 
 function time_to_min(t: string): number {
   const [h, m] = (t || "00:00").split(":").map(Number);
@@ -129,7 +130,9 @@ export default function PlanningPage() {
 
   // Build blocks per day
   const build_day = (giorno: string) => {
-    const day_ghiaccio = (ghiaccio_slots ?? []).filter((g: any) => g.giorno === giorno);
+    const all_slots = ghiaccio_slots ?? [];
+    const day_ghiaccio = all_slots.filter((g: any) => g.giorno === giorno && (g.tipo ?? "ghiaccio") === "ghiaccio");
+    const day_pulizia = all_slots.filter((g: any) => g.giorno === giorno && g.tipo === "pulizia");
     const day_corsi_ice = corsi.filter((c: any) => c.giorno === giorno && !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
     const day_corsi_off = corsi.filter((c: any) => c.giorno === giorno && OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
 
@@ -232,21 +235,7 @@ export default function PlanningPage() {
         }
       }
 
-      // Pulizia after ice slot
-      const pulizia_start = g_end;
-      const pulizia_end = Math.min(g_end + durata_pulizia, end_min);
-      if (pulizia_end > pulizia_start) {
-        blocks.push({
-          left: ((pulizia_start - start_min) / total_min) * 100,
-          width: ((pulizia_end - pulizia_start) / total_min) * 100,
-          color: PULIZIA_COLOR.bg, textColor: PULIZIA_COLOR.text,
-          label: "Pulizia",
-          onClick: () => setDetail({
-            type: "pulizia", giorno,
-            ora_inizio: min_to_time(pulizia_start), ora_fine: min_to_time(pulizia_end),
-          }),
-        });
-      }
+      // (pulizia slots now come from DB, not auto-generated)
     });
 
     // Off-ice courses
@@ -270,15 +259,33 @@ export default function PlanningPage() {
       });
     });
 
+    // DB pulizia slots
+    day_pulizia.forEach((p: any) => {
+      const ps = time_to_min(p.ora_inizio);
+      const pe = time_to_min(p.ora_fine);
+      blocks.push({
+        left: ((ps - start_min) / total_min) * 100,
+        width: ((pe - ps) / total_min) * 100,
+        color: PULIZIA_COLOR.bg, textColor: PULIZIA_COLOR.text,
+        label: "Pulizia",
+        onClick: () => setDetail({
+          type: "pulizia", giorno,
+          ora_inizio: p.ora_inizio, ora_fine: p.ora_fine,
+        }),
+      });
+    });
+
     return { blocks, off_blocks };
   };
 
   // Total ice hours
   const ore_ghiaccio = useMemo(() => {
     if (!ghiaccio_slots) return 0;
-    return ghiaccio_slots.reduce((acc: number, g: any) => {
-      return acc + (time_to_min(g.ora_fine) - time_to_min(g.ora_inizio));
-    }, 0) / 60;
+    return ghiaccio_slots
+      .filter((g: any) => (g.tipo ?? "ghiaccio") === "ghiaccio")
+      .reduce((acc: number, g: any) => {
+        return acc + (time_to_min(g.ora_fine) - time_to_min(g.ora_inizio));
+      }, 0) / 60;
   }, [ghiaccio_slots]);
 
   if (loading) {
