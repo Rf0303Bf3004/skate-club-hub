@@ -281,9 +281,11 @@ export default function PlanningPage() {
   // Total ice hours
   const ore_ghiaccio = useMemo(() => {
     if (!ghiaccio_slots) return 0;
-    return ghiaccio_slots.reduce((acc: number, g: any) => {
-      return acc + (time_to_min(g.ora_fine) - time_to_min(g.ora_inizio));
-    }, 0) / 60;
+    return ghiaccio_slots
+      .filter((g: any) => (g.tipo ?? "ghiaccio") === "ghiaccio")
+      .reduce((acc: number, g: any) => {
+        return acc + (time_to_min(g.ora_fine) - time_to_min(g.ora_inizio));
+      }, 0) / 60;
   }, [ghiaccio_slots]);
 
   if (loading) {
