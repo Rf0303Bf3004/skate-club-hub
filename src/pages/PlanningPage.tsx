@@ -24,7 +24,6 @@ const TIPO_COLORS: Record<string, { bg: string; text: string }> = {
 };
 const PRIVATE_COLOR = { bg: "#FB923C", text: "#fff" };
 const PULIZIA_COLOR = { bg: "#9CA3AF", text: "#fff" };
-const GHIACCIO_BG = "#7F77DD";
 
 function time_to_min(t: string): number {
   const [h, m] = (t || "00:00").split(":").map(Number);
@@ -81,7 +80,12 @@ type DetailInfo = {
   alert_max?: boolean;
   alert_ratio?: boolean;
   istruttori_disponibili?: string[];
+  istruttore_nome?: string;
+  istruttore_colore?: string;
 };
+
+const SUB_ROW_H = 32;
+const LABEL_W = 48;
 
 // ── Main component ──
 export default function PlanningPage() {
@@ -103,7 +107,6 @@ export default function PlanningPage() {
   const end_min = time_to_min(ora_chiusura);
   const total_min = end_min - start_min;
 
-  // Header ticks every 30 min
   const ticks = useMemo(() => {
     const arr: number[] = [];
     for (let m = start_min; m <= end_min; m += 30) arr.push(m);
@@ -115,167 +118,29 @@ export default function PlanningPage() {
 
   // Istruttori name map
   const istr_map = useMemo(() => {
-    const m: Record<string, string> = {};
-    istruttori.forEach((i: any) => { m[i.id] = `${i.nome} ${i.cognome}`; });
+    const m: Record<string, { nome: string; colore: string; disponibilita: Record<string, { ora_inizio: string; ora_fine: string }[]> }> = {};
+    istruttori.forEach((i: any) => {
+      m[i.id] = {
+        nome: `${i.nome} ${i.cognome}`,
+        colore: i.colore || "#6B7280",
+        disponibilita: i.disponibilita || {},
+      };
+    });
     return m;
   }, [istruttori]);
 
-  // Count available instructors for a given day and time range
-  const count_istr_disponibili = (giorno: string, start: number, end: number): string[] => {
+  // Get instructors with availability on a given day
+  const get_day_instructors = (giorno: string) => {
     return istruttori.filter((ist: any) => {
       const slots = ist.disponibilita?.[giorno] ?? [];
-      return slots.some((s: any) => time_to_min(s.ora_inizio) <= start && time_to_min(s.ora_fine) >= end);
-    }).map((ist: any) => `${ist.nome} ${ist.cognome}`);
+      return slots.length > 0;
+    });
   };
 
-  // Build blocks per day
-  const build_day = (giorno: string) => {
-    const all_slots = ghiaccio_slots ?? [];
-    const day_ghiaccio = all_slots.filter((g: any) => g.giorno === giorno && (g.tipo ?? "ghiaccio") === "ghiaccio");
-    const day_pulizia = all_slots.filter((g: any) => g.giorno === giorno && g.tipo === "pulizia");
-    const day_corsi_ice = corsi.filter((c: any) => c.giorno === giorno && !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
-    const day_corsi_off = corsi.filter((c: any) => c.giorno === giorno && OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
-
-    type Block = { left: number; width: number; color: string; textColor: string; label: string; onClick: () => void; alert?: boolean };
-    const blocks: Block[] = [];
-    const off_blocks: Block[] = [];
-
-    // Process each ghiaccio slot
-    day_ghiaccio.forEach((g: any) => {
-      const g_start = time_to_min(g.ora_inizio);
-      const g_end = time_to_min(g.ora_fine);
-
-      // Find courses overlapping this ice slot
-      const overlapping = day_corsi_ice.filter((c: any) => {
-        const cs = time_to_min(c.ora_inizio);
-        const ce = time_to_min(c.ora_fine);
-        return cs < g_end && ce > g_start;
-      });
-
-      if (overlapping.length === 0) {
-        // Entire slot is private
-        const names = count_istr_disponibili(giorno, g_start, g_end);
-        blocks.push({
-          left: ((g_start - start_min) / total_min) * 100,
-          width: ((g_end - g_start) / total_min) * 100,
-          color: PRIVATE_COLOR.bg,
-          textColor: PRIVATE_COLOR.text,
-          label: `Priv.(${names.length})`,
-          onClick: () => setDetail({
-            type: "private", giorno,
-            ora_inizio: min_to_time(g_start), ora_fine: min_to_time(g_end),
-            istruttori_disponibili: names,
-          }),
-        });
-      } else {
-        // Fill gaps with private, add courses
-        const sorted = [...overlapping].sort((a: any, b: any) => time_to_min(a.ora_inizio) - time_to_min(b.ora_inizio));
-        let cursor = g_start;
-
-        sorted.forEach((c: any) => {
-          const cs = Math.max(time_to_min(c.ora_inizio), g_start);
-          const ce = Math.min(time_to_min(c.ora_fine), g_end);
-
-          // Gap before course = private
-          if (cs > cursor) {
-            const names = count_istr_disponibili(giorno, cursor, cs);
-            blocks.push({
-              left: ((cursor - start_min) / total_min) * 100,
-              width: ((cs - cursor) / total_min) * 100,
-              color: PRIVATE_COLOR.bg, textColor: PRIVATE_COLOR.text,
-              label: `Priv.(${names.length})`,
-              onClick: () => setDetail({
-                type: "private", giorno,
-                ora_inizio: min_to_time(cursor), ora_fine: min_to_time(cs),
-                istruttori_disponibili: names,
-              }),
-            });
-          }
-
-          // Course block
-          const tipo_key = (c.tipo || "").toLowerCase();
-          const colors = TIPO_COLORS[tipo_key] || { bg: "#94A3B8", text: "#fff" };
-          const n_iscritti = c.atleti_ids?.length ?? 0;
-          const alert_max = n_iscritti > max_atleti;
-          const n_istr = c.istruttori_ids?.length || 1;
-          const alert_ratio = n_iscritti / n_istr > max_per_istr;
-
-          blocks.push({
-            left: ((cs - start_min) / total_min) * 100,
-            width: ((ce - cs) / total_min) * 100,
-            color: colors.bg, textColor: colors.text,
-            label: c.nome || tipo_key,
-            alert: alert_max,
-            onClick: () => setDetail({
-              type: "corso", nome: c.nome, giorno, tipo: c.tipo,
-              ora_inizio: c.ora_inizio, ora_fine: c.ora_fine,
-              livello: c.livello_richiesto,
-              n_iscritti,
-              istruttori_nomi: (c.istruttori_ids ?? []).map((id: string) => istr_map[id] || id),
-              alert_max, alert_ratio,
-            }),
-          });
-          cursor = ce;
-        });
-
-        // Gap after last course
-        if (cursor < g_end) {
-          const names = count_istr_disponibili(giorno, cursor, g_end);
-          blocks.push({
-            left: ((cursor - start_min) / total_min) * 100,
-            width: ((g_end - cursor) / total_min) * 100,
-            color: PRIVATE_COLOR.bg, textColor: PRIVATE_COLOR.text,
-            label: `Priv.(${names.length})`,
-            onClick: () => setDetail({
-              type: "private", giorno,
-              ora_inizio: min_to_time(cursor), ora_fine: min_to_time(g_end),
-              istruttori_disponibili: names,
-            }),
-          });
-        }
-      }
-
-      // (pulizia slots now come from DB, not auto-generated)
-    });
-
-    // Off-ice courses
-    day_corsi_off.forEach((c: any) => {
-      const cs = time_to_min(c.ora_inizio);
-      const ce = time_to_min(c.ora_fine);
-      const tipo_key = (c.tipo || "").toLowerCase();
-      const colors = TIPO_COLORS[tipo_key] || { bg: "#94A3B8", text: "#fff" };
-      off_blocks.push({
-        left: ((cs - start_min) / total_min) * 100,
-        width: ((ce - cs) / total_min) * 100,
-        color: colors.bg, textColor: colors.text,
-        label: c.nome || tipo_key,
-        onClick: () => setDetail({
-          type: "corso", nome: c.nome, giorno, tipo: c.tipo,
-          ora_inizio: c.ora_inizio, ora_fine: c.ora_fine,
-          livello: c.livello_richiesto,
-          n_iscritti: c.atleti_ids?.length ?? 0,
-          istruttori_nomi: (c.istruttori_ids ?? []).map((id: string) => istr_map[id] || id),
-        }),
-      });
-    });
-
-    // DB pulizia slots
-    day_pulizia.forEach((p: any) => {
-      const ps = time_to_min(p.ora_inizio);
-      const pe = time_to_min(p.ora_fine);
-      blocks.push({
-        left: ((ps - start_min) / total_min) * 100,
-        width: ((pe - ps) / total_min) * 100,
-        color: PULIZIA_COLOR.bg, textColor: PULIZIA_COLOR.text,
-        label: "Pulizia",
-        onClick: () => setDetail({
-          type: "pulizia", giorno,
-          ora_inizio: p.ora_inizio, ora_fine: p.ora_fine,
-        }),
-      });
-    });
-
-    return { blocks, off_blocks };
+  // Check if instructor is available at specific time range
+  const is_istr_available = (ist: any, giorno: string, cs: number, ce: number): boolean => {
+    const slots = ist.disponibilita?.[giorno] ?? [];
+    return slots.some((s: any) => time_to_min(s.ora_inizio) <= cs && time_to_min(s.ora_fine) >= ce);
   };
 
   // Total ice hours
@@ -303,8 +168,6 @@ export default function PlanningPage() {
       </div>
     );
   }
-
-  const LABEL_W = 48;
 
   return (
     <div className="p-4 space-y-4">
@@ -348,54 +211,228 @@ export default function PlanningPage() {
 
         {/* Day rows */}
         {GIORNI.map((giorno) => {
-          const { blocks, off_blocks } = build_day(giorno);
+          const all_slots = ghiaccio_slots ?? [];
+          const day_ghiaccio = all_slots.filter((g: any) => g.giorno === giorno && (g.tipo ?? "ghiaccio") === "ghiaccio");
+          const day_pulizia = all_slots.filter((g: any) => g.giorno === giorno && g.tipo === "pulizia");
+          const day_corsi_ice = corsi.filter((c: any) => c.giorno === giorno && !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
+          const day_corsi_off = corsi.filter((c: any) => c.giorno === giorno && OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
+          const day_instructors = get_day_instructors(giorno);
+          const n_rows = Math.max(day_instructors.length, 1);
+
           return (
             <div key={giorno} className="border-b border-border last:border-b-0">
               {/* Off-ice thin row */}
-              {off_blocks.length > 0 && (
+              {day_corsi_off.length > 0 && (
                 <div className="flex">
                   <div className="flex-shrink-0 border-r border-border" style={{ width: LABEL_W }} />
                   <div className="flex-1 relative" style={{ height: 16, minWidth: total_min * 1.5 }}>
-                    {off_blocks.map((b, i) => (
-                      <div
-                        key={i}
-                        className="absolute top-0 h-full rounded-sm cursor-pointer flex items-center justify-center overflow-hidden"
-                        style={{ left: `${b.left}%`, width: `${b.width}%`, background: b.color, color: b.textColor }}
-                        onClick={b.onClick}
-                      >
-                        <span className="text-[9px] font-medium truncate px-0.5">{b.label}</span>
-                      </div>
-                    ))}
+                    {day_corsi_off.map((c: any, i: number) => {
+                      const cs = time_to_min(c.ora_inizio);
+                      const ce = time_to_min(c.ora_fine);
+                      const tipo_key = (c.tipo || "").toLowerCase();
+                      const colors = TIPO_COLORS[tipo_key] || { bg: "#94A3B8", text: "#fff" };
+                      return (
+                        <div
+                          key={i}
+                          className="absolute top-0 h-full rounded-sm cursor-pointer flex items-center justify-center overflow-hidden"
+                          style={{ left: `${((cs - start_min) / total_min) * 100}%`, width: `${((ce - cs) / total_min) * 100}%`, background: colors.bg, color: colors.text }}
+                          onClick={() => setDetail({
+                            type: "corso", nome: c.nome, giorno, tipo: c.tipo,
+                            ora_inizio: c.ora_inizio, ora_fine: c.ora_fine,
+                            livello: c.livello_richiesto,
+                            n_iscritti: c.atleti_ids?.length ?? 0,
+                            istruttori_nomi: (c.istruttori_ids ?? []).map((id: string) => istr_map[id]?.nome || id),
+                          })}
+                        >
+                          <span className="text-[9px] font-medium truncate px-0.5">{c.nome || tipo_key}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
 
-              {/* Main ice row */}
+              {/* Main area: day label + stacked instructor sub-rows */}
               <div className="flex">
                 <div
                   className="flex-shrink-0 flex items-center justify-center font-semibold text-xs text-foreground border-r border-border bg-muted"
-                  style={{ width: LABEL_W, height: 50 }}
+                  style={{ width: LABEL_W, height: n_rows * SUB_ROW_H }}
                 >
                   {GIORNI_ABBR[giorno]}
                 </div>
-                <div className="flex-1 relative" style={{ height: 50, minWidth: total_min * 1.5, background: "#F3F4F6" }}>
-                  {blocks.map((b, i) => (
-                    <div
-                      key={i}
-                      className="absolute top-1 cursor-pointer flex items-center justify-center overflow-hidden rounded"
-                      style={{
-                        left: `${b.left}%`,
-                        width: `${b.width}%`,
-                        height: 42,
-                        background: b.color,
-                        color: b.textColor,
-                        border: b.alert ? "2px solid #E24B4A" : "1px solid rgba(0,0,0,0.08)",
-                      }}
-                      onClick={b.onClick}
-                    >
-                      <span className="text-[11px] font-semibold truncate px-1">{b.label}</span>
-                    </div>
-                  ))}
+                <div className="flex-1 flex flex-col" style={{ minWidth: total_min * 1.5 }}>
+                  {day_instructors.length === 0 ? (
+                    /* No instructors — show a single empty row with ghiaccio/pulizia */
+                    <DayBaseRow
+                      day_ghiaccio={day_ghiaccio}
+                      day_pulizia={day_pulizia}
+                      start_min={start_min}
+                      total_min={total_min}
+                      setDetail={setDetail}
+                      giorno={giorno}
+                      durata_pulizia={durata_pulizia}
+                    />
+                  ) : (
+                    day_instructors.map((ist: any) => {
+                      const colore = ist.colore || "#6B7280";
+                      const ist_nome = `${ist.nome} ${ist.cognome}`;
+                      // Courses assigned to this instructor for this day
+                      const ist_corsi = day_corsi_ice.filter((c: any) =>
+                        (c.istruttori_ids ?? []).includes(ist.id)
+                      );
+
+                      return (
+                        <div key={ist.id} className="relative border-b border-border/30 last:border-b-0" style={{ height: SUB_ROW_H, background: "#F3F4F6" }}>
+                          {/* Instructor name label (small, positioned left) */}
+                          <span
+                            className="absolute left-0.5 top-0 text-[8px] font-medium truncate z-10 pointer-events-none"
+                            style={{ color: colore, maxWidth: 60 }}
+                          >
+                            {ist.cognome}
+                          </span>
+
+                          {/* Ghiaccio background slots */}
+                          {day_ghiaccio.map((g: any, gi: number) => {
+                            const gs = time_to_min(g.ora_inizio);
+                            const ge = time_to_min(g.ora_fine);
+                            return (
+                              <div
+                                key={`g-${gi}`}
+                                className="absolute top-0 h-full opacity-15"
+                                style={{
+                                  left: `${((gs - start_min) / total_min) * 100}%`,
+                                  width: `${((ge - gs) / total_min) * 100}%`,
+                                  background: "#7F77DD",
+                                }}
+                              />
+                            );
+                          })}
+
+                          {/* Pulizia blocks */}
+                          {day_pulizia.map((p: any, pi: number) => {
+                            const ps = time_to_min(p.ora_inizio);
+                            const pe = time_to_min(p.ora_fine);
+                            return (
+                              <div
+                                key={`p-${pi}`}
+                                className="absolute top-0.5 rounded-sm cursor-pointer flex items-center justify-center overflow-hidden"
+                                style={{
+                                  left: `${((ps - start_min) / total_min) * 100}%`,
+                                  width: `${((pe - ps) / total_min) * 100}%`,
+                                  height: SUB_ROW_H - 4,
+                                  background: PULIZIA_COLOR.bg,
+                                  color: PULIZIA_COLOR.text,
+                                  border: "1px solid rgba(0,0,0,0.08)",
+                                }}
+                                onClick={() => setDetail({
+                                  type: "pulizia", giorno,
+                                  ora_inizio: p.ora_inizio, ora_fine: p.ora_fine,
+                                })}
+                              >
+                                <span className="text-[9px] font-semibold truncate px-0.5">Pulizia</span>
+                              </div>
+                            );
+                          })}
+
+                          {/* Course blocks for this instructor */}
+                          {ist_corsi.map((c: any, ci: number) => {
+                            const cs = time_to_min(c.ora_inizio);
+                            const ce = time_to_min(c.ora_fine);
+                            const available = is_istr_available(ist, giorno, cs, ce);
+                            const n_iscritti = c.atleti_ids?.length ?? 0;
+                            const alert_max = n_iscritti > max_atleti;
+                            const n_istr = c.istruttori_ids?.length || 1;
+                            const alert_ratio = n_iscritti / n_istr > max_per_istr;
+
+                            const bg = available
+                              ? colore
+                              : `repeating-linear-gradient(45deg, ${colore} 0px, ${colore} 4px, transparent 4px, transparent 8px)`;
+
+                            return (
+                              <div
+                                key={`c-${ci}`}
+                                className="absolute top-0.5 rounded cursor-pointer flex items-center justify-center overflow-hidden"
+                                style={{
+                                  left: `${((cs - start_min) / total_min) * 100}%`,
+                                  width: `${((ce - cs) / total_min) * 100}%`,
+                                  height: SUB_ROW_H - 4,
+                                  background: bg,
+                                  color: "#fff",
+                                  border: alert_max ? "2px solid #E24B4A" : "1px solid rgba(0,0,0,0.15)",
+                                }}
+                                onClick={() => setDetail({
+                                  type: "corso", nome: c.nome, giorno, tipo: c.tipo,
+                                  ora_inizio: c.ora_inizio, ora_fine: c.ora_fine,
+                                  livello: c.livello_richiesto,
+                                  n_iscritti,
+                                  istruttori_nomi: (c.istruttori_ids ?? []).map((id: string) => istr_map[id]?.nome || id),
+                                  alert_max, alert_ratio,
+                                  istruttore_nome: ist_nome,
+                                  istruttore_colore: colore,
+                                })}
+                              >
+                                <span className="text-[10px] font-semibold truncate px-1">{c.nome || (c.tipo || "").toLowerCase()}</span>
+                              </div>
+                            );
+                          })}
+
+                          {/* Private slots: ghiaccio time not covered by any course for this instructor */}
+                          {day_ghiaccio.map((g: any, gi: number) => {
+                            const gs = time_to_min(g.ora_inizio);
+                            const ge = time_to_min(g.ora_fine);
+                            // Find gaps in this ghiaccio slot not covered by ist_corsi
+                            const sorted_courses = [...ist_corsi]
+                              .map((c: any) => ({ s: Math.max(time_to_min(c.ora_inizio), gs), e: Math.min(time_to_min(c.ora_fine), ge) }))
+                              .filter(x => x.s < x.e)
+                              .sort((a, b) => a.s - b.s);
+
+                            // Also exclude pulizia
+                            const pulizia_ranges = day_pulizia
+                              .map((p: any) => ({ s: Math.max(time_to_min(p.ora_inizio), gs), e: Math.min(time_to_min(p.ora_fine), ge) }))
+                              .filter(x => x.s < x.e);
+
+                            const all_occupied = [...sorted_courses, ...pulizia_ranges].sort((a, b) => a.s - b.s);
+
+                            const gaps: { s: number; e: number }[] = [];
+                            let cursor = gs;
+                            all_occupied.forEach(r => {
+                              if (r.s > cursor) gaps.push({ s: cursor, e: r.s });
+                              cursor = Math.max(cursor, r.e);
+                            });
+                            if (cursor < ge) gaps.push({ s: cursor, e: ge });
+
+                            return gaps.map((gap, gapi) => {
+                              const available = is_istr_available(ist, giorno, gap.s, gap.e);
+                              if (!available) return null; // Don't show private if instructor not available
+                              return (
+                                <div
+                                  key={`priv-${gi}-${gapi}`}
+                                  className="absolute top-0.5 rounded-sm cursor-pointer flex items-center justify-center overflow-hidden opacity-60"
+                                  style={{
+                                    left: `${((gap.s - start_min) / total_min) * 100}%`,
+                                    width: `${((gap.e - gap.s) / total_min) * 100}%`,
+                                    height: SUB_ROW_H - 4,
+                                    background: PRIVATE_COLOR.bg,
+                                    color: PRIVATE_COLOR.text,
+                                    border: "1px solid rgba(0,0,0,0.08)",
+                                  }}
+                                  onClick={() => setDetail({
+                                    type: "private", giorno,
+                                    ora_inizio: min_to_time(gap.s), ora_fine: min_to_time(gap.e),
+                                    istruttori_disponibili: [ist_nome],
+                                    istruttore_nome: ist_nome,
+                                    istruttore_colore: colore,
+                                  })}
+                                >
+                                  <span className="text-[9px] font-medium truncate px-0.5">Priv.</span>
+                                </div>
+                              );
+                            });
+                          })}
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               </div>
             </div>
@@ -420,8 +457,11 @@ export default function PlanningPage() {
               <p>Tipo: <span className="font-medium">{detail.tipo}</span></p>
               {detail.livello && <p>Livello: {detail.livello}</p>}
               <p>Iscritti: <span className="font-semibold">{detail.n_iscritti}</span></p>
+              {detail.istruttore_nome && (
+                <p>Istruttore: <span className="font-semibold" style={{ color: detail.istruttore_colore }}>{detail.istruttore_nome}</span></p>
+              )}
               {detail.istruttori_nomi && detail.istruttori_nomi.length > 0 && (
-                <p>Istruttori: {detail.istruttori_nomi.join(", ")}</p>
+                <p>Tutti gli istruttori: {detail.istruttori_nomi.join(", ")}</p>
               )}
               {detail.alert_max && (
                 <p className="text-destructive font-semibold">⚠ Superato limite max atleti contemporanei ({max_atleti})</p>
@@ -436,6 +476,9 @@ export default function PlanningPage() {
             <div className="space-y-1 text-sm">
               <p className="font-bold text-foreground">Slot Lezione Privata</p>
               <p className="text-muted-foreground">{detail.giorno} — {detail.ora_inizio} / {detail.ora_fine}</p>
+              {detail.istruttore_nome && (
+                <p>Istruttore: <span className="font-semibold" style={{ color: detail.istruttore_colore }}>{detail.istruttore_nome}</span></p>
+              )}
               <p>Istruttori disponibili: <span className="font-semibold">{detail.istruttori_disponibili?.length ?? 0}</span></p>
               {detail.istruttori_disponibili && detail.istruttori_disponibili.length > 0 && (
                 <ul className="list-disc list-inside">
@@ -454,6 +497,61 @@ export default function PlanningPage() {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// Fallback row when no instructors have availability for a day
+function DayBaseRow({ day_ghiaccio, day_pulizia, start_min, total_min, setDetail, giorno, durata_pulizia }: {
+  day_ghiaccio: any[];
+  day_pulizia: any[];
+  start_min: number;
+  total_min: number;
+  setDetail: (d: DetailInfo | null) => void;
+  giorno: string;
+  durata_pulizia: number;
+}) {
+  return (
+    <div className="relative" style={{ height: SUB_ROW_H, background: "#F3F4F6" }}>
+      {day_ghiaccio.map((g: any, gi: number) => {
+        const gs = time_to_min(g.ora_inizio);
+        const ge = time_to_min(g.ora_fine);
+        return (
+          <div
+            key={`g-${gi}`}
+            className="absolute top-0 h-full opacity-20"
+            style={{
+              left: `${((gs - start_min) / total_min) * 100}%`,
+              width: `${((ge - gs) / total_min) * 100}%`,
+              background: "#7F77DD",
+            }}
+          />
+        );
+      })}
+      {day_pulizia.map((p: any, pi: number) => {
+        const ps = time_to_min(p.ora_inizio);
+        const pe = time_to_min(p.ora_fine);
+        return (
+          <div
+            key={`p-${pi}`}
+            className="absolute top-0.5 rounded-sm cursor-pointer flex items-center justify-center overflow-hidden"
+            style={{
+              left: `${((ps - start_min) / total_min) * 100}%`,
+              width: `${((pe - ps) / total_min) * 100}%`,
+              height: SUB_ROW_H - 4,
+              background: PULIZIA_COLOR.bg,
+              color: PULIZIA_COLOR.text,
+              border: "1px solid rgba(0,0,0,0.08)",
+            }}
+            onClick={() => setDetail({
+              type: "pulizia", giorno,
+              ora_inizio: p.ora_inizio, ora_fine: p.ora_fine,
+            })}
+          >
+            <span className="text-[9px] font-semibold truncate px-0.5">Pulizia</span>
+          </div>
+        );
+      })}
     </div>
   );
 }
