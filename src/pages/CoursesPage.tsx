@@ -1334,115 +1334,151 @@ const CorsoModal: React.FC<{
   );
 };
 
-// ─── Card corso ────────────────────────────────────────────
+// ─── Livello badge color ───────────────────────────────────
+function get_livello_badge_classes(livello: string): string {
+  const l = (livello || "tutti").toLowerCase();
+  if (l === "tutti") return "bg-muted text-muted-foreground border-border";
+  if (l === "pulcini" || l.startsWith("stellina")) return "bg-emerald-100 text-emerald-800 border-emerald-200";
+  if (["interbronzo", "bronzo", "interargento", "argento", "interoro", "oro"].includes(l))
+    return "bg-blue-100 text-blue-800 border-blue-200";
+  return "bg-orange-100 text-orange-800 border-orange-200";
+}
+
+// ─── Card corso (redesigned) ──────────────────────────────
 const CorsoCard: React.FC<{
   corso: any;
   istruttori: any[];
-  monitori: any[];
+  onGestisciIscrizioni: () => void;
   onClick: () => void;
-}> = ({ corso, istruttori, monitori, onClick }) => {
+}> = ({ corso, istruttori, onGestisciIscrizioni, onClick }) => {
   const istruttori_corso = (corso.istruttori_ids || [])
     .map((id: string) => istruttori.find((i: any) => i.id === id))
     .filter(Boolean);
-  const monitori_corso = monitori.filter((m: any) => (corso.monitori || []).includes(m.id));
-  const aiuto_corso = monitori.filter((m: any) => (corso.aiuto_monitori || []).includes(m.id));
+
+  const livello = corso.livello_richiesto || "tutti";
+  const livello_label = LIVELLO_LABELS[livello] || livello;
+  const num_iscritti = (corso.atleti_ids || []).length;
 
   return (
     <div
       onClick={onClick}
-      className="bg-card rounded-xl shadow-card p-5 hover:shadow-card-hover transition-shadow cursor-pointer border border-border/50 hover:border-primary/30 space-y-4"
+      className="bg-card rounded-xl shadow-card p-5 hover:shadow-card-hover transition-shadow cursor-pointer border border-border/50 hover:border-primary/30 space-y-3"
     >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="font-semibold text-foreground text-base">{corso.nome}</h3>
-          <div className="flex items-center gap-2 mt-1 flex-wrap">
-            {corso.tipo && (
-              <Badge variant="secondary" className="text-xs">
-                {corso.tipo}
-              </Badge>
-            )}
-            <span className="text-xs text-muted-foreground">
-              {corso.giorno} · {corso.ora_inizio?.slice(0, 5)}–{corso.ora_fine?.slice(0, 5)}
-            </span>
-          </div>
-        </div>
-        <div className="flex flex-col items-end gap-0.5 shrink-0">
-          <span
-            className={`inline-block w-2 h-2 rounded-full ${corso.stato === "attivo" ? "bg-success" : "bg-muted-foreground"}`}
-          />
-          {to_num(corso.costo_mensile) > 0 && (
-            <span className="text-xs text-muted-foreground tabular-nums">
-              CHF {to_num(corso.costo_mensile).toFixed(2)}/mese
-            </span>
-          )}
-          {to_num(corso.costo_annuale) > 0 && (
-            <span className="text-xs text-muted-foreground tabular-nums">
-              CHF {to_num(corso.costo_annuale).toFixed(2)}/anno
-            </span>
-          )}
-        </div>
+      <div className="space-y-1">
+        <h3 className="font-bold text-foreground text-lg leading-tight">{corso.nome}</h3>
+        <p className="text-sm text-muted-foreground">
+          {corso.giorno} {corso.ora_inizio?.slice(0, 5)} – {corso.ora_fine?.slice(0, 5)}
+        </p>
       </div>
 
-      <div className="space-y-3">
-        {istruttori_corso.length > 0 && (
-          <div className="space-y-1.5">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-purple-700">Istruttori</p>
-            <div className="flex flex-wrap gap-1">
-              {istruttori_corso.map((i: any) => (
-                <span
-                  key={i.id}
-                  className="text-xs bg-purple-50 text-purple-800 px-2 py-0.5 rounded-full font-medium border border-purple-100"
-                >
-                  {i.nome} {i.cognome}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-        {monitori_corso.length > 0 && (
-          <div className="space-y-1.5">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-teal-700">Monitori</p>
-            <div className="flex flex-wrap gap-1">
-              {monitori_corso.map((m: any) => (
-                <span
-                  key={m.id}
-                  className="text-xs bg-teal-50 text-teal-800 px-2 py-0.5 rounded-full font-medium border border-teal-100"
-                >
-                  {m.nome} {m.cognome}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-        {aiuto_corso.length > 0 && (
-          <div className="space-y-1.5">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-blue-700">Aiuto Monitori</p>
-            <div className="flex flex-wrap gap-1">
-              {aiuto_corso.map((m: any) => (
-                <span
-                  key={m.id}
-                  className="text-xs bg-blue-50 text-blue-800 px-2 py-0.5 rounded-full font-medium border border-blue-100"
-                >
-                  {m.nome} {m.cognome}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-        {istruttori_corso.length === 0 && monitori_corso.length === 0 && aiuto_corso.length === 0 && (
-          <p className="text-xs text-muted-foreground italic">Nessun personale assegnato</p>
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className={`inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full border ${get_livello_badge_classes(livello)}`}>
+          {livello_label}
+        </span>
+        {corso.tipo && (
+          <Badge variant="secondary" className="text-xs">{corso.tipo}</Badge>
         )}
       </div>
+
+      {istruttori_corso.length > 0 && (
+        <p className="text-sm text-foreground">
+          {istruttori_corso.map((i: any) => `${i.nome} ${i.cognome}`).join(", ")}
+        </p>
+      )}
 
       <div className="flex items-center justify-between pt-2 border-t border-border/50">
-        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-          <Users className="w-3.5 h-3.5" />
-          <span>{(corso.atleti_ids || []).length} iscritti</span>
+        <div className="flex items-center gap-2">
+          <Users className="w-4 h-4 text-muted-foreground" />
+          <span className="text-sm font-medium text-foreground">{num_iscritti} iscritti</span>
         </div>
+        <Button
+          size="sm"
+          variant="outline"
+          className="text-xs h-8"
+          onClick={(e) => {
+            e.stopPropagation();
+            onGestisciIscrizioni();
+          }}
+        >
+          Gestisci iscrizioni
+        </Button>
       </div>
     </div>
   );
 };
+
+// ─── Filter bar ────────────────────────────────────────────
+const GIORNI_FILTRO = ["Tutti", ...GIORNI_DB];
+
+const FilterBar: React.FC<{
+  giorno: string;
+  setGiorno: (g: string) => void;
+  tipo: string;
+  setTipo: (t: string) => void;
+  istruttoreId: string;
+  setIstruttoreId: (id: string) => void;
+  tipi: string[];
+  istruttori: any[];
+  onReset: () => void;
+  hasFilters: boolean;
+}> = ({ giorno, setGiorno, tipo, setTipo, istruttoreId, setIstruttoreId, tipi, istruttori, onReset, hasFilters }) => (
+  <div className="bg-card rounded-xl border border-border p-4 space-y-3">
+    {/* Day pills */}
+    <div className="flex flex-wrap gap-1.5">
+      {GIORNI_FILTRO.map((g) => (
+        <button
+          key={g}
+          onClick={() => setGiorno(g)}
+          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
+            giorno === g
+              ? "bg-primary text-primary-foreground border-primary"
+              : "bg-background text-foreground border-border hover:border-primary/40"
+          }`}
+        >
+          {g}
+        </button>
+      ))}
+    </div>
+
+    <div className="flex flex-wrap gap-2 items-center">
+      {/* Tipo dropdown */}
+      <div className="relative">
+        <select
+          value={tipo}
+          onChange={(e) => setTipo(e.target.value)}
+          className={`${input_cls} appearance-none pr-8 min-w-[160px]`}
+        >
+          <option value="">Tutti i tipi</option>
+          {tipi.map((t) => (
+            <option key={t} value={t}>{t}</option>
+          ))}
+        </select>
+        <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+      </div>
+
+      {/* Istruttore dropdown */}
+      <div className="relative">
+        <select
+          value={istruttoreId}
+          onChange={(e) => setIstruttoreId(e.target.value)}
+          className={`${input_cls} appearance-none pr-8 min-w-[180px]`}
+        >
+          <option value="">Tutti gli istruttori</option>
+          {istruttori.filter((i: any) => i.attivo).map((i: any) => (
+            <option key={i.id} value={i.id}>{i.nome} {i.cognome}</option>
+          ))}
+        </select>
+        <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+      </div>
+
+      {hasFilters && (
+        <Button variant="ghost" size="sm" onClick={onReset} className="text-xs text-muted-foreground">
+          <X className="w-3.5 h-3.5 mr-1" /> Azzera filtri
+        </Button>
+      )}
+    </div>
+  </div>
+);
 
 // ─── Main Page ─────────────────────────────────────────────
 const CoursesPage: React.FC = () => {
@@ -1457,6 +1493,33 @@ const CoursesPage: React.FC = () => {
   const elimina = use_elimina_corso();
   const [modal_open, set_modal_open] = useState(false);
   const [selected_corso, set_selected_corso] = useState<any>(null);
+  const [default_tab, set_default_tab] = useState<string | undefined>(undefined);
+
+  // Filters
+  const [filtro_giorno, set_filtro_giorno] = useState("Tutti");
+  const [filtro_tipo, set_filtro_tipo] = useState("");
+  const [filtro_istruttore, set_filtro_istruttore] = useState("");
+
+  const has_filters = filtro_giorno !== "Tutti" || filtro_tipo !== "" || filtro_istruttore !== "";
+
+  const reset_filters = () => {
+    set_filtro_giorno("Tutti");
+    set_filtro_tipo("");
+    set_filtro_istruttore("");
+  };
+
+  const corsi_filtrati = useMemo(() => {
+    return corsi
+      .filter((c: any) => filtro_giorno === "Tutti" || c.giorno === filtro_giorno)
+      .filter((c: any) => !filtro_tipo || c.tipo === filtro_tipo)
+      .filter((c: any) => !filtro_istruttore || (c.istruttori_ids || []).includes(filtro_istruttore))
+      .sort((a: any, b: any) => {
+        const day_a = GIORNI_DB.indexOf(a.giorno);
+        const day_b = GIORNI_DB.indexOf(b.giorno);
+        if (day_a !== day_b) return day_a - day_b;
+        return time_to_min(a.ora_inizio) - time_to_min(b.ora_inizio);
+      });
+  }, [corsi, filtro_giorno, filtro_tipo, filtro_istruttore]);
 
   const handle_add_tipo = async (nome: string) => {
     const { error } = await supabase.from("tipi_corso").insert({ club_id: get_current_club_id(), nome });
@@ -1483,6 +1546,18 @@ const CoursesPage: React.FC = () => {
     } catch (err: any) {
       toast({ title: "Errore eliminazione", description: err?.message, variant: "destructive" });
     }
+  };
+
+  const open_iscrizioni = (corso: any) => {
+    set_selected_corso(corso);
+    set_default_tab("iscrizioni");
+    set_modal_open(true);
+  };
+
+  const open_corso = (corso: any) => {
+    set_selected_corso(corso);
+    set_default_tab(undefined);
+    set_modal_open(true);
   };
 
   if (isLoading)
@@ -1518,6 +1593,7 @@ const CoursesPage: React.FC = () => {
             className="bg-primary hover:bg-primary/90"
             onClick={() => {
               set_selected_corso(null);
+              set_default_tab(undefined);
               set_modal_open(true);
             }}
           >
@@ -1525,22 +1601,36 @@ const CoursesPage: React.FC = () => {
           </Button>
         </div>
 
-        {corsi.length === 0 ? (
+        <FilterBar
+          giorno={filtro_giorno}
+          setGiorno={set_filtro_giorno}
+          tipo={filtro_tipo}
+          setTipo={set_filtro_tipo}
+          istruttoreId={filtro_istruttore}
+          setIstruttoreId={set_filtro_istruttore}
+          tipi={tipi_corso}
+          istruttori={istruttori}
+          onReset={reset_filters}
+          hasFilters={has_filters}
+        />
+
+        {corsi_filtrati.length === 0 ? (
           <div className="bg-card rounded-xl shadow-card p-12 text-center text-muted-foreground">
-            <p className="text-sm">Nessun corso. Clicca "Nuovo corso" per aggiungerne uno.</p>
+            <p className="text-sm">
+              {has_filters
+                ? "Nessun corso trovato con questi filtri."
+                : "Nessun corso. Clicca \"Nuovo corso\" per aggiungerne uno."}
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {corsi.map((c: any) => (
+            {corsi_filtrati.map((c: any) => (
               <CorsoCard
                 key={c.id}
                 corso={c}
                 istruttori={istruttori}
-                monitori={monitori}
-                onClick={() => {
-                  set_selected_corso(c);
-                  set_modal_open(true);
-                }}
+                onGestisciIscrizioni={() => open_iscrizioni(c)}
+                onClick={() => open_corso(c)}
               />
             ))}
           </div>
