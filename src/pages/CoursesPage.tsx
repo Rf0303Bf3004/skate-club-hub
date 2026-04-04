@@ -1197,7 +1197,6 @@ const CorsoModal: React.FC<{
                   set_confirm_forzatura(false);
                   do_save();
                 }}
-                }}
                 disabled={saving}
                 className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
               >
