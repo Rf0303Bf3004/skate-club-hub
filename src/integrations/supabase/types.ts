@@ -131,6 +131,102 @@ export type Database = {
         }
         Relationships: []
       }
+      corsi: {
+        Row: {
+          attivo: boolean | null
+          club_id: string
+          costo_annuale: number | null
+          costo_mensile: number | null
+          created_at: string
+          giorno: string
+          id: string
+          livello_richiesto: string | null
+          nome: string
+          note: string | null
+          ora_fine: string
+          ora_inizio: string
+          stagione_id: string | null
+          tipo: string | null
+        }
+        Insert: {
+          attivo?: boolean | null
+          club_id: string
+          costo_annuale?: number | null
+          costo_mensile?: number | null
+          created_at?: string
+          giorno?: string
+          id?: string
+          livello_richiesto?: string | null
+          nome?: string
+          note?: string | null
+          ora_fine?: string
+          ora_inizio?: string
+          stagione_id?: string | null
+          tipo?: string | null
+        }
+        Update: {
+          attivo?: boolean | null
+          club_id?: string
+          costo_annuale?: number | null
+          costo_mensile?: number | null
+          created_at?: string
+          giorno?: string
+          id?: string
+          livello_richiesto?: string | null
+          nome?: string
+          note?: string | null
+          ora_fine?: string
+          ora_inizio?: string
+          stagione_id?: string | null
+          tipo?: string | null
+        }
+        Relationships: []
+      }
+      corsi_istruttori: {
+        Row: {
+          corso_id: string
+          created_at: string
+          id: string
+          istruttore_id: string
+        }
+        Insert: {
+          corso_id: string
+          created_at?: string
+          id?: string
+          istruttore_id: string
+        }
+        Update: {
+          corso_id?: string
+          created_at?: string
+          id?: string
+          istruttore_id?: string
+        }
+        Relationships: []
+      }
+      corsi_monitori: {
+        Row: {
+          corso_id: string
+          created_at: string
+          id: string
+          persona_id: string
+          tipo: string
+        }
+        Insert: {
+          corso_id: string
+          created_at?: string
+          id?: string
+          persona_id: string
+          tipo?: string
+        }
+        Update: {
+          corso_id?: string
+          created_at?: string
+          id?: string
+          persona_id?: string
+          tipo?: string
+        }
+        Relationships: []
+      }
       inviti_genitori: {
         Row: {
           atleta_id: string
@@ -161,6 +257,84 @@ export type Database = {
           id?: string
           token?: string
           usato?: boolean
+        }
+        Relationships: []
+      }
+      iscrizioni_corsi: {
+        Row: {
+          atleta_id: string
+          attiva: boolean | null
+          corso_id: string
+          created_at: string
+          id: string
+          note_salto_livello: string | null
+          salto_livello: boolean | null
+        }
+        Insert: {
+          atleta_id: string
+          attiva?: boolean | null
+          corso_id: string
+          created_at?: string
+          id?: string
+          note_salto_livello?: string | null
+          salto_livello?: boolean | null
+        }
+        Update: {
+          atleta_id?: string
+          attiva?: boolean | null
+          corso_id?: string
+          created_at?: string
+          id?: string
+          note_salto_livello?: string | null
+          salto_livello?: boolean | null
+        }
+        Relationships: []
+      }
+      presenze_corso: {
+        Row: {
+          atleta_id: string
+          corso_id: string
+          created_at: string
+          data: string
+          id: string
+          presente: boolean | null
+        }
+        Insert: {
+          atleta_id: string
+          corso_id: string
+          created_at?: string
+          data: string
+          id?: string
+          presente?: boolean | null
+        }
+        Update: {
+          atleta_id?: string
+          corso_id?: string
+          created_at?: string
+          data?: string
+          id?: string
+          presente?: boolean | null
+        }
+        Relationships: []
+      }
+      tipi_corso: {
+        Row: {
+          club_id: string
+          created_at: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          id?: string
+          nome?: string
         }
         Relationships: []
       }
