@@ -1183,6 +1183,7 @@ const CorsoModal: React.FC<{
               {corso?.id && (
                 <TabIscrizioni
                   corso_id={corso.id}
+                  livello_richiesto={corso.livello_richiesto || "tutti"}
                   atleti_iscritti_ids={corso.atleti_ids || []}
                   tutti_atleti={atleti}
                   on_refresh={() => qc.invalidateQueries({ queryKey: ["corsi"] })}
