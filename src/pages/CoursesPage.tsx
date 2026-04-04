@@ -33,6 +33,55 @@ import { supabase, get_current_club_id } from "@/lib/supabase";
 
 const GIORNI_DB = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
 
+const LIVELLI_CORSO = [
+  "tutti", "pulcini", "stellina1", "stellina2", "stellina3", "stellina4",
+  "Interbronzo", "Bronzo", "Interargento", "Argento", "Interoro", "Oro",
+];
+
+const LIVELLO_LABELS: Record<string, string> = {
+  tutti: "Tutti i livelli",
+  pulcini: "Pulcini",
+  stellina1: "Stellina 1",
+  stellina2: "Stellina 2",
+  stellina3: "Stellina 3",
+  stellina4: "Stellina 4",
+  Interbronzo: "Interbronzo",
+  Bronzo: "Bronzo",
+  Interargento: "Interargento",
+  Argento: "Argento",
+  Interoro: "Interoro",
+  Oro: "Oro",
+};
+
+function get_atleta_livello(atleta: any): string {
+  return atleta.carriera_artistica || atleta.carriera_stile || atleta.percorso_amatori || "Pulcini";
+}
+
+function normalize_livello(l: string): string {
+  if (!l) return "pulcini";
+  const map: Record<string, string> = {
+    "pulcini": "pulcini",
+    "stellina 1": "stellina1", "stellina1": "stellina1", "stelline 1": "stellina1",
+    "stellina 2": "stellina2", "stellina2": "stellina2", "stelline 2": "stellina2",
+    "stellina 3": "stellina3", "stellina3": "stellina3", "stelline 3": "stellina3",
+    "stellina 4": "stellina4", "stellina4": "stellina4", "stelline 4": "stellina4",
+    "interbronzo": "Interbronzo",
+    "bronzo": "Bronzo",
+    "interargento": "Interargento",
+    "argento": "Argento",
+    "interoro": "Interoro",
+    "oro": "Oro",
+  };
+  return map[l.toLowerCase()] ?? l;
+}
+
+function is_livello_compatibile(atleta: any, livello_richiesto: string): boolean {
+  if (!livello_richiesto || livello_richiesto === "tutti") return true;
+  const livello_atleta = normalize_livello(get_atleta_livello(atleta));
+  const livello_corso = normalize_livello(livello_richiesto);
+  return livello_atleta === livello_corso;
+}
+
 function time_to_min(t: string): number {
   const [h, m] = (t || "00:00").split(":").map(Number);
   return h * 60 + (m || 0);
