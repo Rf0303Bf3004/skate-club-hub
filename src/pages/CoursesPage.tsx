@@ -974,7 +974,13 @@ const CorsoModal: React.FC<{
   const [ghiaccio_warning, set_ghiaccio_warning] = useState<string | null>(null);
   const [validating_ghiaccio, set_validating_ghiaccio] = useState(false);
 
-  const set_val = (k: string, v: any) => set_form((p) => ({ ...p, [k]: v }));
+  const set_val = (k: string, v: any) => {
+    set_form((p) => ({ ...p, [k]: v }));
+    if (["giorno", "ora_inizio", "ora_fine", "tipo"].includes(k)) {
+      set_ghiaccio_error(null);
+      set_ghiaccio_warning(null);
+    }
+  };
   const toggle_istruttore = (id: string) =>
     set_form((p) => ({
       ...p,
