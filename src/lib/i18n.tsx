@@ -16,6 +16,7 @@ const translations: Record<Locale, Record<string, string>> = {
     stagioni: "Stagioni",
     istruttori: "Istruttori",
     campi: "Campi di Allenamento",
+    planning_ghiaccio: "Planning Ghiaccio",
     // Dashboard KPIs
     atleti_attivi: "Atleti Attivi",
     corsi_settimana: "Corsi Settimana",
