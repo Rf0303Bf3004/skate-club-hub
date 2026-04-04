@@ -1020,16 +1020,96 @@ const CorsoModal: React.FC<{
     ]),
   ];
 
-  const handle_save_click = () => {
+  const TIPI_OFF_ICE = ["danza", "off-ice", "stretching", "off ice"];
+
+  const validate_ghiaccio = async (): Promise<{ blocked: boolean; warning: string | null }> => {
+    const tipo_lower = (form.tipo || "").toLowerCase().trim();
+    if (TIPI_OFF_ICE.includes(tipo_lower)) {
+      return { blocked: false, warning: null };
+    }
+
+    const club_id = get_current_club_id();
+    const { data: slots_ghiaccio, error: err1 } = await supabase
+      .from("disponibilita_ghiaccio")
+      .select("*")
+      .eq("club_id", club_id)
+      .eq("giorno", form.giorno)
+      .eq("tipo", "ghiaccio");
+
+    if (err1) throw err1;
+
+    const corso_start = time_to_min(form.ora_inizio);
+    const corso_end = time_to_min(form.ora_fine);
+
+    const slot_copre = (slots_ghiaccio || []).some(
+      (s: any) => time_to_min(s.ora_inizio) <= corso_start && time_to_min(s.ora_fine) >= corso_end
+    );
+
+    if (!slot_copre) {
+      return {
+        blocked: true,
+        warning: null,
+      };
+    }
+
+    // Check pulizia overlap
+    const { data: slots_pulizia } = await supabase
+      .from("disponibilita_ghiaccio")
+      .select("*")
+      .eq("club_id", club_id)
+      .eq("giorno", form.giorno)
+      .eq("tipo", "pulizia");
+
+    const has_pulizia_overlap = (slots_pulizia || []).some((s: any) => {
+      const p_start = time_to_min(s.ora_inizio);
+      const p_end = time_to_min(s.ora_fine);
+      return p_start < corso_end && p_end > corso_start;
+    });
+
+    return {
+      blocked: false,
+      warning: has_pulizia_overlap
+        ? "Attenzione: parte di questo slot è occupata dalla pulizia ghiaccio."
+        : null,
+    };
+  };
+
+  const handle_save_click = async () => {
     if (!form.nome.trim()) {
       toast({ title: "Il nome del corso è obbligatorio", variant: "destructive" });
       return;
     }
+
+    // Validate ghiaccio availability
+    set_ghiaccio_error(null);
+    set_ghiaccio_warning(null);
+    set_validating_ghiaccio(true);
+    try {
+      const result = await validate_ghiaccio();
+      if (result.blocked) {
+        set_ghiaccio_error("Nessun ghiaccio disponibile in questo orario. Configura prima la disponibilità ghiaccio in Configurazione Club.");
+        set_validating_ghiaccio(false);
+        return;
+      }
+      if (result.warning) {
+        set_ghiaccio_warning(result.warning);
+      }
+    } catch {
+      set_validating_ghiaccio(false);
+      toast({ title: "Errore verifica ghiaccio", variant: "destructive" });
+      return;
+    }
+    set_validating_ghiaccio(false);
+
     if (tutti_avvisi.length > 0) {
       set_avviso_istruttori(tutti_avvisi);
       set_confirm_forzatura(true);
       return;
     }
+    do_save();
+  };
+
+  const do_save = () => {
     on_save({
       ...form,
       id: corso?.id,
