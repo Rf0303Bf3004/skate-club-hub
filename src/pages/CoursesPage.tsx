@@ -1319,9 +1319,10 @@ const CorsoModal: React.FC<{
               </div>
 
               <Field label="Istruttori">
-                <div className="space-y-2 max-h-40 overflow-y-auto">
+                <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
                   {istruttori_attivi.map((i) => {
                     const selected = form.istruttori_ids.includes(i.id);
+                    const colore = i.colore || "#6B7280";
                     const disponibile = is_istruttore_disponibile(i, form.giorno, form.ora_inizio, form.ora_fine);
                     const ha_conflitto = corsi.some(
                       (c) =>
@@ -1332,42 +1333,35 @@ const CorsoModal: React.FC<{
                         time_to_min(c.ora_inizio?.slice(0, 5)) < time_to_min(form.ora_fine) &&
                         time_to_min(c.ora_fine?.slice(0, 5)) > time_to_min(form.ora_inizio),
                     );
+                    const warning_label = selected && ha_conflitto
+                      ? "Conflitto"
+                      : selected && !disponibile
+                        ? "Non disp."
+                        : null;
                     return (
-                      <div
+                      <button
                         key={i.id}
+                        type="button"
                         onClick={() => toggle_istruttore(i.id)}
-                        className={`flex items-center justify-between px-3 py-2.5 rounded-xl border-2 cursor-pointer transition-all ${selected ? (ha_conflitto ? "border-destructive bg-destructive/5" : !disponibile ? "border-orange-400 bg-orange-50" : "border-primary bg-primary/5") : "border-border hover:border-primary/40 bg-background"}`}
+                        className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium cursor-pointer transition-all border-2"
+                        style={{
+                          borderColor: selected ? colore : "hsl(var(--border))",
+                          backgroundColor: selected ? `${colore}20` : "transparent",
+                          color: selected ? colore : "hsl(var(--foreground))",
+                        }}
                       >
-                        <div className="flex items-center gap-2">
-                          <div
-                            className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${selected ? (ha_conflitto ? "border-destructive bg-destructive" : "border-primary bg-primary") : "border-muted-foreground"}`}
-                          >
-                            {selected && <span className="text-white text-[10px] font-bold">✓</span>}
-                          </div>
-                          <span className="text-sm font-medium text-foreground">
-                            {i.nome} {i.cognome}
+                        <span
+                          className="w-3 h-3 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: colore }}
+                        />
+                        {i.nome} {i.cognome}
+                        {selected && <span className="text-[10px] font-bold">✓</span>}
+                        {warning_label && (
+                          <span className="text-[9px] font-bold text-destructive ml-0.5">
+                            ({warning_label})
                           </span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          {selected && ha_conflitto && (
-                            <span className="text-[10px] font-bold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded-full">
-                              Conflitto
-                            </span>
-                          )}
-                          {selected && !ha_conflitto && !disponibile && (
-                            <span className="text-[10px] font-bold text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded-full">
-                              Non disponibile
-                            </span>
-                          )}
-                          {!selected && (
-                            <span
-                              className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${disponibile ? "text-success bg-success/10" : "text-muted-foreground bg-muted/50"}`}
-                            >
-                              {disponibile ? "✓ Disponibile" : "Non disp."}
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                        )}
+                      </button>
                     );
                   })}
                 </div>
