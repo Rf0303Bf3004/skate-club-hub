@@ -68,17 +68,21 @@ const ClubSetupPage: React.FC = () => {
 
   // Disponibilità ghiaccio local state
   const [disp_local, set_disp_local] = useState<Record<string, { ora_inizio: string; ora_fine: string }[]>>({});
+  const [disp_pulizia_local, set_disp_pulizia_local] = useState<Record<string, { ora_inizio: string; ora_fine: string }[]>>({});
   const [saving_disp, set_saving_disp] = useState(false);
 
   // Sync disp_local when data loads
   useEffect(() => {
     if (disp_ghiaccio_raw) {
-      const m: Record<string, { ora_inizio: string; ora_fine: string }[]> = {};
+      const ghiaccio: Record<string, { ora_inizio: string; ora_fine: string }[]> = {};
+      const pulizia: Record<string, { ora_inizio: string; ora_fine: string }[]> = {};
       disp_ghiaccio_raw.forEach((d: any) => {
-        if (!m[d.giorno]) m[d.giorno] = [];
-        m[d.giorno].push({ ora_inizio: d.ora_inizio, ora_fine: d.ora_fine });
+        const target = d.tipo === "pulizia" ? pulizia : ghiaccio;
+        if (!target[d.giorno]) target[d.giorno] = [];
+        target[d.giorno].push({ ora_inizio: d.ora_inizio, ora_fine: d.ora_fine });
       });
-      set_disp_local(m);
+      set_disp_local(ghiaccio);
+      set_disp_pulizia_local(pulizia);
     }
   }, [disp_ghiaccio_raw]);
 
