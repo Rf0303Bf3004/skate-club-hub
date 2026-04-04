@@ -1130,6 +1130,50 @@ const CorsoModal: React.FC<{
           </button>
         </div>
 
+        {/* Ghiaccio blocking error */}
+        {ghiaccio_error && (
+          <div className="mx-6 mt-4 bg-destructive/10 border border-destructive/30 rounded-xl p-4 space-y-2 flex-shrink-0">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+              <p className="text-sm font-semibold text-destructive">{ghiaccio_error}</p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => set_ghiaccio_error(null)} className="w-full">
+              ← Correggi orario
+            </Button>
+          </div>
+        )}
+
+        {/* Ghiaccio pulizia warning (non-blocking) */}
+        {ghiaccio_warning && !ghiaccio_error && !confirm_forzatura && (
+          <div className="mx-6 mt-4 bg-orange-50 border border-orange-200 rounded-xl p-4 space-y-3 flex-shrink-0">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
+              <p className="text-sm font-semibold text-orange-700">{ghiaccio_warning}</p>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => { set_ghiaccio_warning(null); }} className="flex-1">
+                ← Correggi
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => {
+                  set_ghiaccio_warning(null);
+                  if (tutti_avvisi.length > 0) {
+                    set_avviso_istruttori(tutti_avvisi);
+                    set_confirm_forzatura(true);
+                  } else {
+                    do_save();
+                  }
+                }}
+                disabled={saving}
+                className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
+              >
+                {saving ? "..." : "Procedi comunque"}
+              </Button>
+            </div>
+          </div>
+        )}
+
         {confirm_forzatura && (
           <div className="mx-6 mt-4 bg-orange-50 border border-orange-200 rounded-xl p-4 space-y-3 flex-shrink-0">
             <div className="flex items-start gap-2">
@@ -1151,12 +1195,8 @@ const CorsoModal: React.FC<{
                 size="sm"
                 onClick={() => {
                   set_confirm_forzatura(false);
-                  on_save({
-                    ...form,
-                    id: corso?.id,
-                    costo_mensile: to_num(form.costo_mensile_str),
-                    costo_annuale: to_num(form.costo_annuale_str),
-                  });
+                  do_save();
+                }}
                 }}
                 disabled={saving}
                 className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
