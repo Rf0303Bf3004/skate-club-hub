@@ -384,10 +384,12 @@ const ClubSetupPage: React.FC = () => {
       </div>
 
       {/* ═══════════════════════════════════════════════════ */}
-      {/* GHIACCIO E PLANNING */}
+      {/* GHIACCIO E PLANNING — card separato */}
       {/* ═══════════════════════════════════════════════════ */}
-      <div className="bg-card rounded-xl shadow-card p-6 space-y-8 max-w-2xl">
-        <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">🧊 Ghiaccio e Planning</h2>
+      <div className="bg-card rounded-xl shadow-card p-6 space-y-8 max-w-2xl border-2 border-primary/20">
+        <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+          🧊 Ghiaccio e Planning
+        </h2>
 
         {/* Config fields */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -417,7 +419,7 @@ const ClubSetupPage: React.FC = () => {
             <Input
               type="number"
               min={1}
-              value={get_ghiaccio_val("max_atleti_contemporanei", 30)}
+              value={get_ghiaccio_val("max_atleti_contemporanei", 20)}
               onChange={(e) => set_ghiaccio_val("max_atleti_contemporanei", e.target.value)}
             />
           </Field>
