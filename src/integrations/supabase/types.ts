@@ -131,6 +131,42 @@ export type Database = {
         }
         Relationships: []
       }
+      configurazione_ghiaccio: {
+        Row: {
+          club_id: string
+          created_at: string
+          durata_pulizia_minuti: number
+          id: string
+          max_atleti_contemporanei: number
+          max_atleti_per_istruttore: number
+          ora_apertura_default: string
+          ora_chiusura_default: string
+          stagione_id: string | null
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          durata_pulizia_minuti?: number
+          id?: string
+          max_atleti_contemporanei?: number
+          max_atleti_per_istruttore?: number
+          ora_apertura_default?: string
+          ora_chiusura_default?: string
+          stagione_id?: string | null
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          durata_pulizia_minuti?: number
+          id?: string
+          max_atleti_contemporanei?: number
+          max_atleti_per_istruttore?: number
+          ora_apertura_default?: string
+          ora_chiusura_default?: string
+          stagione_id?: string | null
+        }
+        Relationships: []
+      }
       corsi: {
         Row: {
           attivo: boolean | null

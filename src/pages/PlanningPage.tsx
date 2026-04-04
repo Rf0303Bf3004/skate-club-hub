@@ -2,28 +2,37 @@ import React, { useState, useMemo, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
+import { use_corsi, use_istruttori, use_stagioni } from "@/hooks/use-supabase-data";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Settings, Plus, Trash2, ChevronDown, ChevronUp, Info, X } from "lucide-react";
+import { Plus, X, Trash2, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 // ── Constants ──
 const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"] as const;
-const TIPO_COLORI: Record<string, string> = {
-  pulcini: "bg-green-500 text-white",
-  amatori: "bg-blue-500 text-white",
-  artistica: "bg-violet-500 text-white",
-  stile: "bg-orange-500 text-white",
-  danza: "bg-pink-400 text-white",
-  "off-ice": "bg-gray-500 text-white",
-  adulti: "bg-teal-500 text-white",
-  stretching: "bg-yellow-500 text-white",
+const GIORNI_ABBR: Record<string, string> = {
+  "Lunedì": "Lun", "Martedì": "Mar", "Mercoledì": "Mer",
+  "Giovedì": "Gio", "Venerdì": "Ven", "Sabato": "Sab", "Domenica": "Dom",
 };
 const OFF_ICE_TYPES = ["danza", "off-ice", "stretching"];
+
+const TIPO_COLORS: Record<string, { bg: string; text: string }> = {
+  pulcini: { bg: "#C0DD97", text: "#27500A" },
+  amatori: { bg: "#B5D4F4", text: "#0C447C" },
+  artistica: { bg: "#CECBF6", text: "#3C3489" },
+  stile: { bg: "#FAC775", text: "#633806" },
+  adulti: { bg: "#9FE1CB", text: "#085041" },
+  danza: { bg: "#F4C0D1", text: "#72243E" },
+  "off-ice": { bg: "#D3D1C7", text: "#444441" },
+  stretching: { bg: "#EAF3DE", text: "#27500A" },
+};
+const PRIVATE_COLOR = { bg: "#F5C4B3", text: "#712B13" };
+const ICE_COLOR = { bg: "#EEEDFE", border: "#AFA9EC" };
+const PULIZIA_COLOR = "#D3D1C7";
 
 function time_to_min(t: string): number {
   const [h, m] = (t || "00:00").split(":").map(Number);
@@ -33,162 +42,165 @@ function min_to_time(m: number): string {
   return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
 }
 
-// ── Ice availability config panel ──
-function PannelloDisponibilitaGhiaccio({
-  club_id,
-  ghiaccio,
-  on_saved,
-}: {
-  club_id: string;
-  ghiaccio: any[];
-  on_saved: () => void;
-}) {
+// ── Data hooks ──
+function use_configurazione_ghiaccio() {
+  const club_id = get_current_club_id();
+  return useQuery({
+    queryKey: ["configurazione_ghiaccio", club_id],
+    enabled: !!club_id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("configurazione_ghiaccio")
+        .select("*")
+        .eq("club_id", club_id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+function use_disponibilita_ghiaccio() {
+  const club_id = get_current_club_id();
+  return useQuery({
+    queryKey: ["disponibilita_ghiaccio", club_id],
+    enabled: !!club_id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("disponibilita_ghiaccio")
+        .select("*")
+        .eq("club_id", club_id);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+function use_disponibilita_istruttori() {
+  const club_id = get_current_club_id();
+  return useQuery({
+    queryKey: ["disponibilita_istruttori_planning", club_id],
+    enabled: !!club_id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("disponibilita_istruttori")
+        .select("*")
+        .eq("club_id", club_id);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+function use_corsi_istruttori() {
+  return useQuery({
+    queryKey: ["corsi_istruttori_all"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("corsi_istruttori").select("*");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+function use_iscrizioni_corsi() {
+  return useQuery({
+    queryKey: ["iscrizioni_corsi_all"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("iscrizioni_corsi").select("*").eq("attiva", true);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+// ── Ice config panel ──
+function PannelloGhiaccio({
+  club_id, ghiaccio, on_saved,
+}: { club_id: string; ghiaccio: any[]; on_saved: () => void }) {
   const [open, set_open] = useState(false);
   const [local, set_local] = useState<Record<string, { ora_inizio: string; ora_fine: string; note: string; id?: string }[]>>({});
   const [saving, set_saving] = useState(false);
 
-  // Initialize local state from ghiaccio data
-  const init_local = useCallback(() => {
+  const init = useCallback(() => {
     const grouped: Record<string, any[]> = {};
     GIORNI.forEach((g) => (grouped[g] = []));
     ghiaccio.forEach((g: any) => {
-      const giorno = g.giorno;
-      if (!grouped[giorno]) grouped[giorno] = [];
-      grouped[giorno].push({
+      if (!grouped[g.giorno]) grouped[g.giorno] = [];
+      grouped[g.giorno].push({
         ora_inizio: (g.ora_inizio || "").slice(0, 5),
         ora_fine: (g.ora_fine || "").slice(0, 5),
         note: g.note || "",
         id: g.id,
       });
     });
-    // Sort each day by ora_inizio
     Object.keys(grouped).forEach((g) =>
       grouped[g].sort((a, b) => time_to_min(a.ora_inizio) - time_to_min(b.ora_inizio))
     );
     set_local(grouped);
   }, [ghiaccio]);
 
-  const toggle = () => {
-    if (!open) init_local();
-    set_open(!open);
-  };
-
+  const toggle = () => { if (!open) init(); set_open(!open); };
   const add_slot = (giorno: string) => {
-    set_local((prev) => ({
-      ...prev,
-      [giorno]: [...(prev[giorno] || []), { ora_inizio: "08:00", ora_fine: "09:00", note: "" }],
-    }));
+    set_local((p) => ({ ...p, [giorno]: [...(p[giorno] || []), { ora_inizio: "08:00", ora_fine: "09:00", note: "" }] }));
   };
-
   const update_slot = (giorno: string, idx: number, field: string, value: string) => {
-    set_local((prev) => {
-      const slots = [...(prev[giorno] || [])];
-      slots[idx] = { ...slots[idx], [field]: value };
-      return { ...prev, [giorno]: slots };
-    });
+    set_local((p) => { const s = [...(p[giorno] || [])]; s[idx] = { ...s[idx], [field]: value }; return { ...p, [giorno]: s }; });
   };
-
   const remove_slot = (giorno: string, idx: number) => {
-    set_local((prev) => {
-      const slots = [...(prev[giorno] || [])];
-      slots.splice(idx, 1);
-      return { ...prev, [giorno]: slots };
-    });
+    set_local((p) => { const s = [...(p[giorno] || [])]; s.splice(idx, 1); return { ...p, [giorno]: s }; });
   };
-
   const save = async () => {
     set_saving(true);
     try {
-      // Delete all existing slots for this club
       await supabase.from("disponibilita_ghiaccio").delete().eq("club_id", club_id);
-      // Insert new ones
       const rows: any[] = [];
       Object.entries(local).forEach(([giorno, slots]) => {
         slots.forEach((s) => {
-          if (s.ora_inizio && s.ora_fine) {
-            rows.push({ club_id, giorno, ora_inizio: s.ora_inizio, ora_fine: s.ora_fine, note: s.note || "" });
-          }
+          if (s.ora_inizio && s.ora_fine) rows.push({ club_id, giorno, ora_inizio: s.ora_inizio, ora_fine: s.ora_fine, note: s.note || "" });
         });
       });
-      if (rows.length > 0) {
-        const { error } = await supabase.from("disponibilita_ghiaccio").insert(rows);
-        if (error) throw error;
-      }
+      if (rows.length > 0) { const { error } = await supabase.from("disponibilita_ghiaccio").insert(rows); if (error) throw error; }
       on_saved();
       toast({ title: "Disponibilità ghiaccio salvata" });
     } catch (err: any) {
       toast({ title: "Errore", description: err?.message, variant: "destructive" });
-    } finally {
-      set_saving(false);
-    }
+    } finally { set_saving(false); }
   };
 
   return (
     <div className="bg-card rounded-xl border border-border shadow-sm">
-      <button
-        onClick={toggle}
-        className="w-full flex items-center justify-between px-5 py-3 text-sm font-semibold text-foreground hover:bg-muted/30 transition-colors rounded-xl"
-      >
+      <button onClick={toggle} className="w-full flex items-center justify-between px-5 py-3 text-sm font-semibold text-foreground hover:bg-muted/30 transition-colors rounded-xl">
         <span className="flex items-center gap-2">
-          <span className="w-3 h-3 rounded bg-violet-200 border border-violet-300" />
+          <span className="w-3 h-3 rounded" style={{ background: ICE_COLOR.bg, border: `1px solid ${ICE_COLOR.border}` }} />
           Configura disponibilità ghiaccio
         </span>
         {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
       </button>
-
       {open && (
         <div className="px-5 pb-5 space-y-4">
           <div className="flex justify-end">
-            <Button size="sm" onClick={save} disabled={saving}>
-              {saving ? "Salvataggio..." : "💾 Salva"}
-            </Button>
+            <Button size="sm" onClick={save} disabled={saving}>{saving ? "Salvataggio..." : "💾 Salva"}</Button>
           </div>
           <div className="space-y-3">
-            {GIORNI.map((giorno) => {
-              const slots = local[giorno] || [];
-              return (
-                <div key={giorno} className="border border-border/50 rounded-lg p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-foreground">{giorno}</span>
-                    <Button variant="ghost" size="sm" onClick={() => add_slot(giorno)} className="h-7 text-xs">
-                      <Plus className="w-3 h-3 mr-1" /> Slot
-                    </Button>
-                  </div>
-                  {slots.length === 0 && <p className="text-xs text-muted-foreground">Nessuno slot</p>}
-                  {slots.map((s, idx) => (
-                    <div key={idx} className="flex items-center gap-2 mb-1">
-                      <Input
-                        type="time"
-                        value={s.ora_inizio}
-                        onChange={(e) => update_slot(giorno, idx, "ora_inizio", e.target.value)}
-                        className="w-28 h-8 text-xs"
-                      />
-                      <span className="text-muted-foreground text-xs">—</span>
-                      <Input
-                        type="time"
-                        value={s.ora_fine}
-                        onChange={(e) => update_slot(giorno, idx, "ora_fine", e.target.value)}
-                        className="w-28 h-8 text-xs"
-                      />
-                      <Input
-                        value={s.note}
-                        onChange={(e) => update_slot(giorno, idx, "note", e.target.value)}
-                        placeholder="Note..."
-                        className="flex-1 h-8 text-xs"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => remove_slot(giorno, idx)}
-                        className="h-7 w-7 p-0 text-destructive"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  ))}
+            {GIORNI.map((giorno) => (
+              <div key={giorno} className="border border-border/50 rounded-lg p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-foreground">{giorno}</span>
+                  <Button variant="ghost" size="sm" onClick={() => add_slot(giorno)} className="h-7 text-xs"><Plus className="w-3 h-3 mr-1" /> Slot</Button>
                 </div>
-              );
-            })}
+                {(local[giorno] || []).length === 0 && <p className="text-xs text-muted-foreground">Nessuno slot</p>}
+                {(local[giorno] || []).map((s, idx) => (
+                  <div key={idx} className="flex items-center gap-2 mb-1">
+                    <Input type="time" value={s.ora_inizio} onChange={(e) => update_slot(giorno, idx, "ora_inizio", e.target.value)} className="w-28 h-8 text-xs" />
+                    <span className="text-muted-foreground text-xs">—</span>
+                    <Input type="time" value={s.ora_fine} onChange={(e) => update_slot(giorno, idx, "ora_fine", e.target.value)} className="w-28 h-8 text-xs" />
+                    <Input value={s.note} onChange={(e) => update_slot(giorno, idx, "note", e.target.value)} placeholder="Note..." className="flex-1 h-8 text-xs" />
+                    <Button variant="ghost" size="sm" onClick={() => remove_slot(giorno, idx)} className="h-7 w-7 p-0 text-destructive"><Trash2 className="w-3 h-3" /></Button>
+                  </div>
+                ))}
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -196,371 +208,124 @@ function PannelloDisponibilitaGhiaccio({
   );
 }
 
-// ── Weekly Planning View ──
-function VistaPlanningSettimanale({
-  ghiaccio,
-  corsi,
-  corsi_istruttori_raw,
-  istruttori_raw,
-  disp_istruttori,
-  config,
-}: {
-  ghiaccio: any[];
-  corsi: any[];
-  corsi_istruttori_raw: any[];
-  istruttori_raw: any[];
-  disp_istruttori: any[];
-  config: any;
+// ── Detail Panel ──
+function PannelloDettaglio({ detail, istruttori, iscrizioni, onClose }: {
+  detail: any; istruttori: any[]; iscrizioni: any[]; onClose: () => void;
 }) {
-  const [selected_detail, set_selected_detail] = useState<any>(null);
+  if (!detail) return null;
 
-  const ora_inizio = config?.ora_inizio_giornata?.slice(0, 5) || "06:00";
-  const ora_fine = config?.ora_fine_giornata?.slice(0, 5) || "22:30";
-  const durata = config?.durata_slot_minuti || 20;
+  if (detail.type === "corso") {
+    const c = detail.corso;
+    const tipo = (c.tipo || "").toLowerCase();
+    const colors = TIPO_COLORS[tipo] || { bg: "#e5e5e5", text: "#333" };
+    const ist_names = (detail.istruttori_nomi || []).join(", ") || "Nessuno";
+    const n_iscritti = iscrizioni.filter((i: any) => i.corso_id === c.id).length;
+    return (
+      <div className="bg-card border border-border rounded-xl p-4 space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded" style={{ background: colors.bg }} />
+            <h3 className="font-bold text-foreground">{c.nome}</h3>
+          </div>
+          <Button variant="ghost" size="sm" onClick={onClose} className="h-7 w-7 p-0"><X className="w-4 h-4" /></Button>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+          <div><span className="text-muted-foreground">Giorno:</span> {c.giorno}</div>
+          <div><span className="text-muted-foreground">Orario:</span> {(c.ora_inizio || "").slice(0, 5)} - {(c.ora_fine || "").slice(0, 5)}</div>
+          <div><span className="text-muted-foreground">Livello:</span> {c.livello_richiesto || "Tutti"}</div>
+          <div><span className="text-muted-foreground">Istruttore:</span> {ist_names}</div>
+          <div><span className="text-muted-foreground">Iscritti:</span> {n_iscritti}</div>
+          <div><span className="text-muted-foreground">Tipo:</span> {c.tipo || "—"}</div>
+        </div>
+        {detail.alerts && detail.alerts.length > 0 && (
+          <div className="space-y-1">
+            {detail.alerts.map((a: string, i: number) => (
+              <div key={i} className="text-xs font-medium text-destructive bg-destructive/10 rounded px-2 py-1">{a}</div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
 
-  // Build time columns
-  const time_cols = useMemo(() => {
-    const cols: string[] = [];
-    const s = time_to_min(ora_inizio);
-    const e = time_to_min(ora_fine);
-    for (let t = s; t < e; t += durata) cols.push(min_to_time(t));
-    return cols;
-  }, [ora_inizio, ora_fine, durata]);
+  if (detail.type === "privati") {
+    const available = detail.istruttori_disponibili || [];
+    return (
+      <div className="bg-card border border-border rounded-xl p-4 space-y-2">
+        <div className="flex items-center justify-between">
+          <h3 className="font-bold text-foreground">Lezioni Private — {detail.giorno} {detail.ora}</h3>
+          <Button variant="ghost" size="sm" onClick={onClose} className="h-7 w-7 p-0"><X className="w-4 h-4" /></Button>
+        </div>
+        <p className="text-sm text-muted-foreground">{available.length} istruttori disponibili:</p>
+        <div className="flex flex-wrap gap-2">
+          {available.map((ist: any, i: number) => (
+            <Badge key={i} variant="secondary">{ist.nome} {ist.cognome}</Badge>
+          ))}
+          {available.length === 0 && <p className="text-sm text-muted-foreground">Nessun istruttore disponibile</p>}
+        </div>
+      </div>
+    );
+  }
 
-  // Istruttori map
-  const istruttori_map = useMemo(() => {
-    const m: Record<string, any> = {};
-    istruttori_raw.forEach((ist: any) => {
-      m[ist.id] = ist;
-    });
-    return m;
-  }, [istruttori_raw]);
+  return null;
+}
 
-  // Corso → istruttore
-  const corso_istruttore = useMemo(() => {
-    const m: Record<string, string> = {};
-    corsi_istruttori_raw.forEach((ci: any) => {
-      m[ci.corso_id] = ci.istruttore_id;
-    });
-    return m;
-  }, [corsi_istruttori_raw]);
+// ── Add Course Dialog ──
+function AggiungiCorsoDialog({ open, onClose, club_id, onSaved }: {
+  open: boolean; onClose: () => void; club_id: string; onSaved: () => void;
+}) {
+  const [nome, set_nome] = useState("");
+  const [tipo, set_tipo] = useState("");
+  const [giorno, set_giorno] = useState("Lunedì");
+  const [ora_inizio, set_ora_inizio] = useState("08:00");
+  const [ora_fine, set_ora_fine] = useState("09:00");
+  const [saving, set_saving] = useState(false);
 
-  // Check if slot has ice
-  const has_ice = useCallback(
-    (giorno: string, slot_min: number): boolean => {
-      return ghiaccio.some((g: any) => {
-        if (g.giorno !== giorno) return false;
-        return slot_min >= time_to_min(g.ora_inizio) && slot_min < time_to_min(g.ora_fine);
+  const save = async () => {
+    if (!nome.trim()) { toast({ title: "Inserisci il nome del corso", variant: "destructive" }); return; }
+    set_saving(true);
+    try {
+      const { error } = await supabase.from("corsi").insert({
+        club_id, nome: nome.trim(), tipo, giorno, ora_inizio, ora_fine, attivo: true,
       });
-    },
-    [ghiaccio]
-  );
-
-  // Ice courses (require ghiaccio)
-  const ice_corsi = useMemo(() => corsi.filter((c: any) => !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase())), [corsi]);
-  // Off-ice courses
-  const off_ice_corsi = useMemo(() => corsi.filter((c: any) => OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase())), [corsi]);
-
-  // Get course occupying a slot
-  const get_corso_at = useCallback(
-    (giorno: string, slot_min: number, course_list: any[]) => {
-      return course_list.find((c: any) => {
-        if (c.giorno !== giorno) return false;
-        const ci = time_to_min(c.ora_inizio);
-        const cf = time_to_min(c.ora_fine);
-        return slot_min >= ci && slot_min < cf;
-      });
-    },
-    []
-  );
-
-  // Is start of course
-  const is_corso_start = useCallback(
-    (giorno: string, slot_min: number, course_list: any[]) => {
-      return course_list.find((c: any) => c.giorno === giorno && time_to_min(c.ora_inizio) === slot_min);
-    },
-    []
-  );
-
-  // Corso span in columns
-  const get_span = useCallback(
-    (corso: any) => {
-      const ci = time_to_min(corso.ora_inizio);
-      const cf = time_to_min(corso.ora_fine);
-      return Math.max(1, Math.round((cf - ci) / durata));
-    },
-    [durata]
-  );
-
-  // Count available instructors in slot
-  const count_istruttori_disponibili = useCallback(
-    (giorno: string, slot_min: number): number => {
-      const slot_end = slot_min + durata;
-      // Get instructor IDs busy with courses in this slot
-      const busy_ids = new Set<string>();
-      ice_corsi.forEach((c: any) => {
-        if (c.giorno !== giorno) return;
-        const ci = time_to_min(c.ora_inizio);
-        const cf = time_to_min(c.ora_fine);
-        if (slot_min >= ci && slot_min < cf) {
-          const iid = corso_istruttore[c.id];
-          if (iid) busy_ids.add(iid);
-        }
-      });
-
-      let count = 0;
-      disp_istruttori.forEach((d: any) => {
-        if (d.giorno !== giorno) return;
-        if (busy_ids.has(d.istruttore_id)) return;
-        const di = time_to_min(d.ora_inizio);
-        const df = time_to_min(d.ora_fine);
-        if (slot_min >= di && slot_end <= df) count++;
-      });
-      return count;
-    },
-    [disp_istruttori, ice_corsi, corso_istruttore, durata]
-  );
-
-  const handle_click = (type: string, data: any) => {
-    set_selected_detail({ type, ...data });
-  };
-
-  const get_istruttore_nome = (corso_id: string) => {
-    const iid = corso_istruttore[corso_id];
-    if (!iid) return "";
-    const ist = istruttori_map[iid];
-    return ist ? `${ist.nome} ${ist.cognome}` : "";
+      if (error) throw error;
+      toast({ title: "Corso creato" });
+      onSaved();
+      onClose();
+      set_nome(""); set_tipo(""); set_giorno("Lunedì"); set_ora_inizio("08:00"); set_ora_fine("09:00");
+    } catch (err: any) {
+      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+    } finally { set_saving(false); }
   };
 
   return (
-    <div className="space-y-4">
-      {/* Legend */}
-      <div className="flex flex-wrap gap-3 text-xs items-center">
-        <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded bg-violet-200 border border-violet-300" /> Ghiaccio disponibile
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded bg-violet-100 border border-violet-200 text-[8px] font-bold text-violet-600 flex items-center justify-center">P</span> Privati disponibili
-        </span>
-        {Object.entries(TIPO_COLORI).map(([tipo, cls]) => (
-          <span key={tipo} className="flex items-center gap-1.5">
-            <span className={`w-3 h-3 rounded ${cls}`} />
-            {tipo.charAt(0).toUpperCase() + tipo.slice(1)}
-          </span>
-        ))}
-      </div>
-
-      {/* Horizontal weekly grid */}
-      <div className="overflow-x-auto border border-border rounded-lg bg-card">
-        <table className="w-full min-w-[900px] border-collapse text-xs">
-          <thead>
-            <tr>
-              <th className="sticky left-0 z-10 bg-muted border-b border-r border-border px-2 py-1.5 text-left w-24 text-muted-foreground">
-                Giorno
-              </th>
-              {time_cols.map((t) => (
-                <th key={t} className="border-b border-r border-border px-1 py-1.5 text-center text-muted-foreground font-medium whitespace-nowrap min-w-[60px]">
-                  {t}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {/* Ice rows */}
-            {GIORNI.map((giorno) => {
-              // Precompute to skip columns covered by multi-span courses
-              const skip_cols = new Set<number>();
-              time_cols.forEach((t, col_idx) => {
-                const slot_min = time_to_min(t);
-                const corso_start = is_corso_start(giorno, slot_min, ice_corsi);
-                if (corso_start) {
-                  const span = get_span(corso_start);
-                  for (let s = 1; s < span; s++) {
-                    if (col_idx + s < time_cols.length) skip_cols.add(col_idx + s);
-                  }
-                }
-              });
-
-              return (
-                <tr key={giorno} className="group">
-                  <td className="sticky left-0 z-10 bg-muted border-b border-r border-border px-2 py-1 font-medium text-foreground whitespace-nowrap">
-                    {giorno}
-                  </td>
-                  {time_cols.map((t, col_idx) => {
-                    if (skip_cols.has(col_idx)) return null;
-                    const slot_min = time_to_min(t);
-                    const ice = has_ice(giorno, slot_min);
-                    const corso_start = is_corso_start(giorno, slot_min, ice_corsi);
-                    const corso_occupying = !corso_start ? get_corso_at(giorno, slot_min, ice_corsi) : null;
-
-                    // Course starts here
-                    if (corso_start) {
-                      const span = get_span(corso_start);
-                      const tipo = (corso_start.tipo || "").toLowerCase();
-                      const cls = TIPO_COLORI[tipo] || "bg-muted text-foreground";
-                      return (
-                        <td
-                          key={t}
-                          colSpan={span}
-                          className={`border-b border-r border-border px-1 py-0.5 cursor-pointer hover:opacity-80 transition-opacity ${cls} rounded-sm`}
-                          onClick={() =>
-                            handle_click("corso", {
-                              corso: corso_start,
-                              istruttore: get_istruttore_nome(corso_start.id),
-                            })
-                          }
-                        >
-                          <div className="truncate font-semibold leading-tight">{corso_start.nome}</div>
-                          <div className="truncate opacity-80 leading-tight">{get_istruttore_nome(corso_start.id)}</div>
-                        </td>
-                      );
-                    }
-
-                    // Ice available, no course
-                    if (ice && !corso_occupying) {
-                      const n_priv = count_istruttori_disponibili(giorno, slot_min);
-                      return (
-                        <td
-                          key={t}
-                          className="border-b border-r border-border bg-violet-100 dark:bg-violet-900/20 text-center cursor-pointer hover:bg-violet-200 dark:hover:bg-violet-900/30 transition-colors"
-                          onClick={() =>
-                            handle_click("privati", { giorno, ora: t, n_istruttori: n_priv })
-                          }
-                        >
-                          {n_priv > 0 && (
-                            <span className="text-[10px] font-bold text-violet-700 dark:text-violet-300">
-                              Priv.({n_priv})
-                            </span>
-                          )}
-                        </td>
-                      );
-                    }
-
-                    // No ice
-                    return (
-                      <td
-                        key={t}
-                        className="border-b border-r border-border bg-muted/20"
-                      />
-                    );
-                  })}
-                </tr>
-              );
-            })}
-
-            {/* Off-ice row */}
-            {off_ice_corsi.length > 0 && (
-              <tr className="bg-muted/10">
-                <td className="sticky left-0 z-10 bg-muted border-b border-r border-border px-2 py-0.5 font-medium text-muted-foreground text-[10px] uppercase tracking-wider whitespace-nowrap">
-                  Off-Ice
-                </td>
-                {time_cols.map((t, col_idx) => {
-                  const slot_min = time_to_min(t);
-                  // Check if any off-ice course starts here (across all days)
-                  // For off-ice we show all days merged in one row for simplicity — OR we show per day
-                  // Actually let's keep it per-slot: show all off-ice courses that include this time regardless of day
-                  // But better: show off-ice grouped. Let's render them if ANY off-ice starts at this slot
-                  const starts_here = off_ice_corsi.filter(
-                    (c: any) => time_to_min(c.ora_inizio) === slot_min
-                  );
-                  if (starts_here.length > 0) {
-                    return (
-                      <td key={t} className="border-b border-r border-border px-0.5 py-0.5">
-                        {starts_here.map((c: any) => {
-                          const tipo = (c.tipo || "").toLowerCase();
-                          const cls = TIPO_COLORI[tipo] || "bg-muted text-foreground";
-                          return (
-                            <div
-                              key={c.id}
-                              className={`${cls} rounded text-[9px] px-1 py-0.5 truncate cursor-pointer hover:opacity-80 mb-0.5`}
-                              onClick={() =>
-                                handle_click("corso", {
-                                  corso: c,
-                                  istruttore: get_istruttore_nome(c.id),
-                                })
-                              }
-                            >
-                              {c.nome} ({c.giorno?.slice(0, 3)})
-                            </div>
-                          );
-                        })}
-                      </td>
-                    );
-                  }
-                  return <td key={t} className="border-b border-r border-border" />;
-                })}
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Detail panel */}
-      {selected_detail && (
-        <div className="bg-card border border-border rounded-xl p-5 shadow-sm animate-fade-in">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-bold text-foreground">
-              {selected_detail.type === "corso" ? "Dettaglio Corso" : "Slot disponibile per lezioni private"}
-            </h3>
-            <Button variant="ghost" size="sm" onClick={() => set_selected_detail(null)} className="h-7 w-7 p-0">
-              <X className="w-4 h-4" />
-            </Button>
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Aggiungi corso</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <div><Label>Nome</Label><Input value={nome} onChange={(e) => set_nome(e.target.value)} /></div>
+          <div><Label>Tipo</Label>
+            <Select value={tipo} onValueChange={set_tipo}>
+              <SelectTrigger><SelectValue placeholder="Seleziona tipo" /></SelectTrigger>
+              <SelectContent>
+                {Object.keys(TIPO_COLORS).map((t) => <SelectItem key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
-
-          {selected_detail.type === "corso" && (
-            <div className="space-y-2 text-sm">
-              <div>
-                <span className="text-muted-foreground">Nome: </span>
-                <span className="font-medium">{selected_detail.corso.nome}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Tipo: </span>
-                <Badge className={TIPO_COLORI[(selected_detail.corso.tipo || "").toLowerCase()] || ""}>
-                  {selected_detail.corso.tipo || "—"}
-                </Badge>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Giorno: </span>
-                <span>{selected_detail.corso.giorno}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Orario: </span>
-                <span>
-                  {(selected_detail.corso.ora_inizio || "").slice(0, 5)} – {(selected_detail.corso.ora_fine || "").slice(0, 5)}
-                </span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Istruttore: </span>
-                <span>{selected_detail.istruttore || "Non assegnato"}</span>
-              </div>
-              {selected_detail.corso.livello_richiesto && (
-                <div>
-                  <span className="text-muted-foreground">Livello: </span>
-                  <span>{selected_detail.corso.livello_richiesto}</span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {selected_detail.type === "privati" && (
-            <div className="space-y-2 text-sm">
-              <div>
-                <span className="text-muted-foreground">Giorno: </span>
-                <span>{selected_detail.giorno}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Orario: </span>
-                <span>{selected_detail.ora}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Istruttori disponibili: </span>
-                <span className="font-semibold text-violet-700 dark:text-violet-300">{selected_detail.n_istruttori}</span>
-              </div>
-            </div>
-          )}
+          <div><Label>Giorno</Label>
+            <Select value={giorno} onValueChange={set_giorno}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{GIORNI.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>Inizio</Label><Input type="time" value={ora_inizio} onChange={(e) => set_ora_inizio(e.target.value)} /></div>
+            <div><Label>Fine</Label><Input type="time" value={ora_fine} onChange={(e) => set_ora_fine(e.target.value)} /></div>
+          </div>
         </div>
-      )}
-    </div>
+        <DialogFooter><Button onClick={save} disabled={saving}>{saving ? "Salvataggio..." : "Crea corso"}</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -570,219 +335,377 @@ export default function PlanningPage() {
   const club_id = session?.club_id || get_current_club_id();
   const qc = useQueryClient();
 
-  const [config_open, set_config_open] = useState(false);
-  const [cfg_ora_inizio, set_cfg_ora_inizio] = useState("06:00");
-  const [cfg_ora_fine, set_cfg_ora_fine] = useState("22:30");
-  const [cfg_durata, set_cfg_durata] = useState(20);
-  const [info_pista_open, set_info_pista_open] = useState(false);
+  const { data: config, isLoading: config_loading } = use_configurazione_ghiaccio();
+  const { data: ghiaccio = [], isLoading: ghiaccio_loading, refetch: refetch_ghiaccio } = use_disponibilita_ghiaccio();
+  const { data: corsi_raw = [], isLoading: corsi_loading } = use_corsi();
+  const { data: istruttori_raw = [] } = use_istruttori();
+  const { data: disp_istruttori = [] } = use_disponibilita_istruttori();
+  const { data: corsi_istruttori_raw = [] } = use_corsi_istruttori();
+  const { data: iscrizioni = [] } = use_iscrizioni_corsi();
+  const { data: stagioni = [] } = use_stagioni();
 
-  // ── Queries ──
-  const { data: config } = useQuery({
-    queryKey: ["impostazioni_planning", club_id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("impostazioni_planning")
-        .select("*")
-        .eq("club_id", club_id)
-        .maybeSingle();
-      return data;
-    },
-    enabled: !!club_id,
-  });
+  const [detail, set_detail] = useState<any>(null);
+  const [show_add_corso, set_show_add_corso] = useState(false);
 
-  const { data: ghiaccio = [], refetch: refetch_ghiaccio } = useQuery({
-    queryKey: ["disponibilita_ghiaccio", club_id],
-    queryFn: async () => {
-      const { data } = await supabase.from("disponibilita_ghiaccio").select("*").eq("club_id", club_id);
-      return data || [];
-    },
-    enabled: !!club_id,
-  });
+  const stagione_attiva = useMemo(() => stagioni.find((s: any) => s.attiva), [stagioni]);
 
-  const { data: corsi = [] } = useQuery({
-    queryKey: ["corsi_planning", club_id],
-    queryFn: async () => {
-      const { data } = await supabase.from("corsi").select("*").eq("club_id", club_id).eq("attivo", true);
-      return data || [];
-    },
-    enabled: !!club_id,
-  });
+  const ora_apertura = config?.ora_apertura_default?.toString().slice(0, 5) || "06:00";
+  const ora_chiusura = config?.ora_chiusura_default?.toString().slice(0, 5) || "22:30";
+  const durata_pulizia = config?.durata_pulizia_minuti || 10;
+  const max_atleti = config?.max_atleti_contemporanei || 30;
+  const max_per_ist = config?.max_atleti_per_istruttore || 8;
 
-  const { data: corsi_istruttori_raw = [] } = useQuery({
-    queryKey: ["corsi_istruttori_planning", club_id],
-    queryFn: async () => {
-      const { data } = await supabase.from("corsi_istruttori").select("*");
-      return data || [];
-    },
-    enabled: !!club_id,
-  });
+  // Build 30-min time headers
+  const time_headers = useMemo(() => {
+    const headers: string[] = [];
+    const s = time_to_min(ora_apertura);
+    const e = time_to_min(ora_chiusura);
+    for (let t = s; t < e; t += 30) headers.push(min_to_time(t));
+    return headers;
+  }, [ora_apertura, ora_chiusura]);
 
-  const { data: istruttori_raw = [] } = useQuery({
-    queryKey: ["istruttori_planning", club_id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("atleti")
-        .select("id, nome, cognome")
-        .eq("club_id", club_id)
-        .eq("ruolo_pista", "istruttore");
-      return data || [];
-    },
-    enabled: !!club_id,
-  });
+  // Total minutes & pixel scale: 1 min = 2px
+  const PX_PER_MIN = 2;
+  const total_min = time_to_min(ora_chiusura) - time_to_min(ora_apertura);
+  const grid_width = total_min * PX_PER_MIN;
+  const base_min = time_to_min(ora_apertura);
 
-  const { data: disp_istruttori = [] } = useQuery({
-    queryKey: ["disponibilita_istruttori", club_id],
-    queryFn: async () => {
-      const { data } = await supabase.from("disponibilita_istruttori").select("*").eq("club_id", club_id);
-      return data || [];
-    },
-    enabled: !!club_id,
-  });
+  // Maps
+  const ist_map = useMemo(() => {
+    const m: Record<string, any> = {};
+    istruttori_raw.forEach((i: any) => (m[i.id] = i));
+    return m;
+  }, [istruttori_raw]);
 
-  // ── Save config ──
-  const save_config = useMutation({
-    mutationFn: async () => {
-      if (config) {
-        await supabase
-          .from("impostazioni_planning")
-          .update({
-            ora_inizio_giornata: cfg_ora_inizio,
-            ora_fine_giornata: cfg_ora_fine,
-            durata_slot_minuti: cfg_durata,
-          })
-          .eq("id", config.id);
-      } else {
-        await supabase.from("impostazioni_planning").insert({
-          club_id,
-          ora_inizio_giornata: cfg_ora_inizio,
-          ora_fine_giornata: cfg_ora_fine,
-          durata_slot_minuti: cfg_durata,
-        });
+  const corso_ist_map = useMemo(() => {
+    const m: Record<string, string[]> = {};
+    corsi_istruttori_raw.forEach((ci: any) => {
+      if (!m[ci.corso_id]) m[ci.corso_id] = [];
+      m[ci.corso_id].push(ci.istruttore_id);
+    });
+    return m;
+  }, [corsi_istruttori_raw]);
+
+  // Split corsi
+  const corsi = useMemo(() => corsi_raw.filter((c: any) => c.club_id === club_id), [corsi_raw, club_id]);
+  const ice_corsi = useMemo(() => corsi.filter((c: any) => !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase())), [corsi]);
+  const off_ice_corsi = useMemo(() => corsi.filter((c: any) => OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase())), [corsi]);
+
+  // Compute ice hours
+  const ore_ghiaccio = useMemo(() => {
+    let total = 0;
+    ghiaccio.forEach((g: any) => { total += time_to_min(g.ora_fine) - time_to_min(g.ora_inizio); });
+    return Math.round(total / 60 * 10) / 10;
+  }, [ghiaccio]);
+
+  // Build ice+pulizia segments per day
+  const ice_segments = useMemo(() => {
+    const m: Record<string, { start: number; end: number; type: "ice" | "pulizia" }[]> = {};
+    GIORNI.forEach((g) => (m[g] = []));
+    ghiaccio.forEach((g: any) => {
+      const s = time_to_min(g.ora_inizio);
+      const e = time_to_min(g.ora_fine);
+      m[g.giorno]?.push({ start: s, end: e, type: "ice" });
+      // pulizia after ice
+      const pe = Math.min(e + durata_pulizia, time_to_min(ora_chiusura));
+      if (pe > e) m[g.giorno]?.push({ start: e, end: pe, type: "pulizia" });
+    });
+    // Sort by start
+    Object.keys(m).forEach((g) => m[g].sort((a, b) => a.start - b.start));
+    return m;
+  }, [ghiaccio, durata_pulizia, ora_chiusura]);
+
+  // Check if a time range overlaps ice
+  const is_on_ice = useCallback((giorno: string, start: number, end: number) => {
+    return (ice_segments[giorno] || []).some((seg) => seg.type === "ice" && start < seg.end && end > seg.start);
+  }, [ice_segments]);
+
+  // Get corsi on ice for a day
+  const get_ice_corsi_for_day = useCallback((giorno: string) => {
+    return ice_corsi.filter((c: any) => c.giorno === giorno);
+  }, [ice_corsi]);
+
+  // Get private slots (ice segments not covered by courses)
+  const get_private_slots = useCallback((giorno: string) => {
+    const segments = (ice_segments[giorno] || []).filter((s) => s.type === "ice");
+    const courses = get_ice_corsi_for_day(giorno);
+    const privates: { start: number; end: number; n_istruttori: number; istruttori: any[] }[] = [];
+
+    segments.forEach((seg) => {
+      // Find uncovered portions
+      let cursor = seg.start;
+      const sorted_courses = courses
+        .map((c: any) => ({ start: time_to_min(c.ora_inizio), end: time_to_min(c.ora_fine) }))
+        .filter((c) => c.start < seg.end && c.end > seg.start)
+        .sort((a, b) => a.start - b.start);
+
+      sorted_courses.forEach((c) => {
+        if (cursor < c.start) {
+          // Gap before this course
+          const gap_start = Math.max(cursor, seg.start);
+          const gap_end = Math.min(c.start, seg.end);
+          if (gap_end > gap_start) {
+            const avail = get_available_instructors(giorno, gap_start, gap_end);
+            privates.push({ start: gap_start, end: gap_end, n_istruttori: avail.length, istruttori: avail });
+          }
+        }
+        cursor = Math.max(cursor, c.end);
+      });
+      // Gap after last course
+      if (cursor < seg.end) {
+        const avail = get_available_instructors(giorno, cursor, seg.end);
+        privates.push({ start: cursor, end: seg.end, n_istruttori: avail.length, istruttori: avail });
       }
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["impostazioni_planning"] });
-      set_config_open(false);
-      toast({ title: "Configurazione salvata" });
-    },
-  });
+    });
+    return privates;
+  }, [ice_segments, get_ice_corsi_for_day]);
 
-  function open_config() {
-    set_cfg_ora_inizio(config?.ora_inizio_giornata?.slice(0, 5) || "06:00");
-    set_cfg_ora_fine(config?.ora_fine_giornata?.slice(0, 5) || "22:30");
-    set_cfg_durata(config?.durata_slot_minuti || 20);
-    set_config_open(true);
-  }
+  const get_available_instructors = useCallback((giorno: string, start: number, end: number) => {
+    // Instructors busy with courses
+    const busy = new Set<string>();
+    ice_corsi.forEach((c: any) => {
+      if (c.giorno !== giorno) return;
+      const cs = time_to_min(c.ora_inizio);
+      const ce = time_to_min(c.ora_fine);
+      if (start < ce && end > cs) {
+        (corso_ist_map[c.id] || []).forEach((id) => busy.add(id));
+      }
+    });
+    // Filter available
+    return disp_istruttori
+      .filter((d: any) => {
+        if (d.giorno !== giorno) return false;
+        if (busy.has(d.istruttore_id)) return false;
+        const ds = time_to_min(d.ora_inizio);
+        const de = time_to_min(d.ora_fine);
+        return start >= ds && end <= de;
+      })
+      .map((d: any) => ist_map[d.istruttore_id])
+      .filter(Boolean);
+  }, [disp_istruttori, ice_corsi, corso_ist_map, ist_map]);
 
-  if (!club_id) {
+  // Alert checks
+  const get_corso_alerts = useCallback((corso: any) => {
+    const alerts: string[] = [];
+    const n_iscritti = iscrizioni.filter((i: any) => i.corso_id === corso.id).length;
+    if (n_iscritti > max_atleti) alerts.push(`⚠ ${n_iscritti} atleti superano il massimo consentito (${max_atleti})`);
+    const n_ist = (corso_ist_map[corso.id] || []).length || 1;
+    if (n_iscritti / n_ist > max_per_ist) alerts.push(`⚠ Rapporto atleti/istruttore (${Math.round(n_iscritti / n_ist)}) supera il massimo (${max_per_ist})`);
+    return alerts;
+  }, [iscrizioni, max_atleti, max_per_ist, corso_ist_map]);
+
+  const get_corso_border = useCallback((corso: any) => {
+    const n_iscritti = iscrizioni.filter((i: any) => i.corso_id === corso.id).length;
+    if (n_iscritti > max_atleti) return "2px solid #E24B4A";
+    const n_ist = (corso_ist_map[corso.id] || []).length || 1;
+    if (n_iscritti / n_ist > max_per_ist) return "2px solid #EF9F27";
+    return "none";
+  }, [iscrizioni, max_atleti, max_per_ist, corso_ist_map]);
+
+  const handle_corso_click = (corso: any) => {
+    const ids = corso_ist_map[corso.id] || [];
+    const nomi = ids.map((id: string) => ist_map[id]).filter(Boolean).map((i: any) => `${i.nome} ${i.cognome}`);
+    set_detail({ type: "corso", corso, istruttori_nomi: nomi, alerts: get_corso_alerts(corso) });
+  };
+
+  const handle_private_click = (giorno: string, slot: any) => {
+    set_detail({ type: "privati", giorno, ora: `${min_to_time(slot.start)} - ${min_to_time(slot.end)}`, istruttori_disponibili: slot.istruttori });
+  };
+
+  const is_loading = config_loading || ghiaccio_loading || corsi_loading;
+
+  if (is_loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
+  const no_ghiaccio = ghiaccio.length === 0;
+
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="text-2xl font-bold text-foreground">Planning Ghiaccio</h1>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => set_info_pista_open(true)}>
-            <Info className="w-4 h-4 mr-1" /> Info occupazione pista
-          </Button>
-          <Button variant="outline" size="sm" onClick={open_config}>
-            <Settings className="w-4 h-4 mr-1" /> Configura Planning
-          </Button>
+    <div className="space-y-4">
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold text-foreground">
+            Planning Ghiaccio {stagione_attiva ? `— ${stagione_attiva.nome}` : ""}
+          </h1>
+          <p className="text-sm text-muted-foreground">{ore_ghiaccio} ore ghiaccio disponibili questa settimana</p>
         </div>
+        <Button size="sm" onClick={() => set_show_add_corso(true)}>
+          <Plus className="w-4 h-4 mr-1" /> Aggiungi corso
+        </Button>
       </div>
 
-      {/* SECTION 1: Ice availability config */}
-      <PannelloDisponibilitaGhiaccio
+      {/* Ice config panel */}
+      <PannelloGhiaccio club_id={club_id} ghiaccio={ghiaccio} on_saved={() => { refetch_ghiaccio(); qc.invalidateQueries({ queryKey: ["disponibilita_ghiaccio"] }); }} />
+
+      {/* Legend */}
+      <div className="flex flex-wrap gap-3 text-xs items-center">
+        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded" style={{ background: ICE_COLOR.bg, border: `1px solid ${ICE_COLOR.border}` }} /> Ghiaccio</span>
+        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded" style={{ background: PULIZIA_COLOR }} /> Pulizia</span>
+        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded" style={{ background: PRIVATE_COLOR.bg }} /> Private</span>
+        {Object.entries(TIPO_COLORS).map(([tipo, c]) => (
+          <span key={tipo} className="flex items-center gap-1.5"><span className="w-3 h-3 rounded" style={{ background: c.bg }} /> {tipo.charAt(0).toUpperCase() + tipo.slice(1)}</span>
+        ))}
+      </div>
+
+      {/* Grid */}
+      {no_ghiaccio ? (
+        <div className="bg-card border border-border rounded-xl p-8 text-center text-muted-foreground">
+          Nessuna disponibilità ghiaccio configurata. Apri il pannello sopra per inserirla.
+        </div>
+      ) : (
+        <div className="overflow-x-auto border border-border rounded-lg bg-card">
+          <div style={{ width: grid_width + 60, minWidth: "100%" }}>
+            {/* Time header */}
+            <div className="flex" style={{ marginLeft: 60 }}>
+              {time_headers.map((t) => (
+                <div
+                  key={t}
+                  className="text-[10px] text-muted-foreground font-medium border-l border-border/30"
+                  style={{ width: 30 * PX_PER_MIN, flexShrink: 0 }}
+                >
+                  {t}
+                </div>
+              ))}
+            </div>
+
+            {/* Day rows */}
+            {GIORNI.map((giorno) => {
+              const day_ice_corsi = get_ice_corsi_for_day(giorno);
+              const day_off_ice = off_ice_corsi.filter((c: any) => c.giorno === giorno);
+              const day_privates = get_private_slots(giorno);
+              const segments = ice_segments[giorno] || [];
+
+              return (
+                <div key={giorno}>
+                  {/* Main ice row */}
+                  <div className="flex items-stretch border-t border-border/30" style={{ height: 32 }}>
+                    <div className="w-[60px] flex-shrink-0 flex items-center px-2 text-xs font-semibold text-foreground bg-muted/50 border-r border-border/30">
+                      {GIORNI_ABBR[giorno]}
+                    </div>
+                    <div className="relative flex-1" style={{ width: grid_width }}>
+                      {/* Layer 1: Ice + pulizia segments */}
+                      {segments.map((seg, i) => (
+                        <div
+                          key={i}
+                          className="absolute top-0 bottom-0"
+                          style={{
+                            left: (seg.start - base_min) * PX_PER_MIN,
+                            width: (seg.end - seg.start) * PX_PER_MIN,
+                            background: seg.type === "ice" ? ICE_COLOR.bg : PULIZIA_COLOR,
+                            borderTop: seg.type === "ice" ? `1px solid ${ICE_COLOR.border}` : undefined,
+                            borderBottom: seg.type === "ice" ? `1px solid ${ICE_COLOR.border}` : undefined,
+                          }}
+                        />
+                      ))}
+
+                      {/* Layer 2: Courses on ice */}
+                      {day_ice_corsi.map((c: any) => {
+                        const cs = time_to_min(c.ora_inizio);
+                        const ce = time_to_min(c.ora_fine);
+                        const tipo = (c.tipo || "").toLowerCase();
+                        const colors = TIPO_COLORS[tipo] || { bg: "#e5e5e5", text: "#333" };
+                        const border = get_corso_border(c);
+                        return (
+                          <div
+                            key={c.id}
+                            className="absolute top-0 bottom-0 flex items-center px-1 cursor-pointer hover:brightness-95 transition-all overflow-hidden rounded-sm"
+                            style={{
+                              left: (cs - base_min) * PX_PER_MIN,
+                              width: (ce - cs) * PX_PER_MIN,
+                              background: colors.bg,
+                              color: colors.text,
+                              border,
+                              zIndex: 2,
+                            }}
+                            onClick={() => handle_corso_click(c)}
+                            title={c.nome}
+                          >
+                            <span className="text-[10px] font-bold truncate leading-tight">{c.nome}</span>
+                          </div>
+                        );
+                      })}
+
+                      {/* Layer 3: Private slots */}
+                      {day_privates.map((p, i) => (
+                        <div
+                          key={`priv-${i}`}
+                          className="absolute top-0 bottom-0 flex items-center justify-center cursor-pointer hover:brightness-95 transition-all"
+                          style={{
+                            left: (p.start - base_min) * PX_PER_MIN,
+                            width: (p.end - p.start) * PX_PER_MIN,
+                            background: PRIVATE_COLOR.bg,
+                            color: PRIVATE_COLOR.text,
+                            zIndex: 1,
+                          }}
+                          onClick={() => handle_private_click(giorno, p)}
+                        >
+                          <span className="text-[10px] font-bold">Priv.({p.n_istruttori})</span>
+                        </div>
+                      ))}
+
+                      {/* 30-min grid lines */}
+                      {time_headers.map((t) => (
+                        <div
+                          key={t}
+                          className="absolute top-0 bottom-0 border-l border-border/10"
+                          style={{ left: (time_to_min(t) - base_min) * PX_PER_MIN, zIndex: 0 }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Layer 4: Off-ice row */}
+                  {day_off_ice.length > 0 && (
+                    <div className="flex items-stretch border-t border-border/10" style={{ height: 16 }}>
+                      <div className="w-[60px] flex-shrink-0 bg-muted/30 border-r border-border/30" />
+                      <div className="relative flex-1" style={{ width: grid_width }}>
+                        {day_off_ice.map((c: any) => {
+                          const cs = time_to_min(c.ora_inizio);
+                          const ce = time_to_min(c.ora_fine);
+                          const tipo = (c.tipo || "").toLowerCase();
+                          const colors = TIPO_COLORS[tipo] || { bg: "#e5e5e5", text: "#333" };
+                          return (
+                            <div
+                              key={c.id}
+                              className="absolute top-0 bottom-0 flex items-center px-1 cursor-pointer hover:brightness-95 transition-all overflow-hidden rounded-sm"
+                              style={{
+                                left: (cs - base_min) * PX_PER_MIN,
+                                width: (ce - cs) * PX_PER_MIN,
+                                background: colors.bg,
+                                color: colors.text,
+                              }}
+                              onClick={() => handle_corso_click(c)}
+                              title={c.nome}
+                            >
+                              <span className="text-[9px] font-semibold truncate">{c.nome}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Detail Panel */}
+      <PannelloDettaglio detail={detail} istruttori={istruttori_raw} iscrizioni={iscrizioni} onClose={() => set_detail(null)} />
+
+      {/* Add Course Dialog */}
+      <AggiungiCorsoDialog
+        open={show_add_corso}
+        onClose={() => set_show_add_corso(false)}
         club_id={club_id}
-        ghiaccio={ghiaccio}
-        on_saved={() => refetch_ghiaccio()}
+        onSaved={() => qc.invalidateQueries({ queryKey: ["corsi"] })}
       />
-
-      {/* SECTION 2: Weekly planning view */}
-      <VistaPlanningSettimanale
-        ghiaccio={ghiaccio}
-        corsi={corsi}
-        corsi_istruttori_raw={corsi_istruttori_raw}
-        istruttori_raw={istruttori_raw}
-        disp_istruttori={disp_istruttori}
-        config={config}
-      />
-
-      {corsi.length === 0 && ghiaccio.length > 0 && (
-        <div className="text-center py-8 text-muted-foreground">
-          Nessun corso pianificato. I corsi vengono gestiti dalla pagina Corsi.
-        </div>
-      )}
-
-      {ghiaccio.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground">
-          Nessuna disponibilità ghiaccio configurata. Apri il pannello sopra per aggiungere slot.
-        </div>
-      )}
-
-      {/* Config Dialog */}
-      <Dialog open={config_open} onOpenChange={set_config_open}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Configura Planning</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-xs">Ora inizio giornata</Label>
-                <Input type="time" value={cfg_ora_inizio} onChange={(e) => set_cfg_ora_inizio(e.target.value)} />
-              </div>
-              <div>
-                <Label className="text-xs">Ora fine giornata</Label>
-                <Input type="time" value={cfg_ora_fine} onChange={(e) => set_cfg_ora_fine(e.target.value)} />
-              </div>
-            </div>
-            <div>
-              <Label className="text-xs">Durata slot (minuti)</Label>
-              <Select value={String(cfg_durata)} onValueChange={(v) => set_cfg_durata(Number(v))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="15">15 minuti</SelectItem>
-                  <SelectItem value="20">20 minuti</SelectItem>
-                  <SelectItem value="30">30 minuti</SelectItem>
-                  <SelectItem value="60">60 minuti</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => set_config_open(false)}>Annulla</Button>
-            <Button onClick={() => save_config.mutate()}>Salva</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Info Occupazione Pista Dialog */}
-      <Dialog open={info_pista_open} onOpenChange={set_info_pista_open}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Info occupazione pista</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 text-sm text-muted-foreground">
-            <p>
-              Questa sezione mostra gli altri occupanti della pista (Hockey, Curling, Pattinaggio libero).
-            </p>
-            <p className="text-xs">
-              Funzionalità in fase di sviluppo. Al momento la vista planning mostra solo la disponibilità ghiaccio configurata per il club e i corsi pianificati.
-            </p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => set_info_pista_open(false)}>Chiudi</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
