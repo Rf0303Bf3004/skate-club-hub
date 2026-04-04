@@ -392,6 +392,8 @@ export default function PlanningPage() {
             const total = concurrent.reduce((sum: number, c: any) => sum + (c.atleti_ids?.length ?? 0), 0);
             return total > max_atleti;
           };
+          const row_h = BASE_ROW_H + Math.max(0, n_sub_rows - 1) * EXTRA_PER_ROW;
+          const sub_row_h = n_sub_rows > 1 ? row_h / n_sub_rows : row_h;
 
           return (
             <div key={giorno} className="border-b border-border last:border-b-0">
@@ -399,168 +401,178 @@ export default function PlanningPage() {
               <div className="flex">
                 {/* Day label */}
                 <div
-                  className="flex-shrink-0 flex flex-col items-center justify-center text-xs font-semibold text-foreground border-r border-border bg-muted px-1"
-                  style={{ width: LABEL_W, minHeight: n_sub_rows * SUB_ROW_H }}
+                  className="flex-shrink-0 flex flex-col items-center justify-center border-r border-border bg-muted px-1"
+                  style={{ width: LABEL_W, minHeight: row_h }}
                 >
-                  <span>{is_compact ? giorno.slice(0, 3) : giorno}</span>
-                  <span className="text-[10px] font-normal text-muted-foreground">{day_ice_h}h ghiaccio</span>
+                  <span style={{ fontSize: 13, fontWeight: 700 }} className="text-foreground leading-tight">{giorno}</span>
+                  <span style={{ fontSize: 11 }} className="text-muted-foreground leading-tight">{day_ice_h}h ghiaccio</span>
                 </div>
 
                 {/* Grid area */}
-                <div className="flex-1 flex flex-col" style={{ minWidth: total_min * 1.2 }}>
-                  {course_rows.map((row_courses, row_idx) => (
-                    <div key={row_idx} className="relative border-b border-border/20 last:border-b-0" style={{ height: SUB_ROW_H }}>
-                      {/* Ghiaccio background */}
-                      {day_ghiaccio.map((g: any, gi: number) => {
-                        const gs = time_to_min(g.ora_inizio);
-                        const ge = time_to_min(g.ora_fine);
-                        return (
-                          <div
-                            key={`g-${gi}`}
-                            className="absolute top-0 h-full"
-                            style={{
-                              left: `${((gs - range_start) / total_min) * 100}%`,
-                              width: `${((ge - gs) / total_min) * 100}%`,
-                              background: "#EEEDFE",
-                              border: "1px solid #AFA9EC",
-                              borderRadius: 5,
-                            }}
-                          />
-                        );
-                      })}
+                <div className="flex-1 relative" style={{ minWidth: total_min * 1.2, height: row_h }}>
+                  {/* Ghiaccio background — full bar height */}
+                  {day_ghiaccio.map((g: any, gi: number) => {
+                    const gs = time_to_min(g.ora_inizio);
+                    const ge = time_to_min(g.ora_fine);
+                    return (
+                      <div
+                        key={`g-${gi}`}
+                        className="absolute"
+                        style={{
+                          left: `${((gs - range_start) / total_min) * 100}%`,
+                          width: `${((ge - gs) / total_min) * 100}%`,
+                          top: 0,
+                          bottom: 0,
+                          background: "#EEEDFE",
+                          border: "1px solid #AFA9EC",
+                          borderRadius: 6,
+                        }}
+                      />
+                    );
+                  })}
 
-                      {/* Pulizia */}
-                      {day_pulizia.map((p: any, pi: number) => {
-                        const ps = time_to_min(p.ora_inizio);
-                        const pe = time_to_min(p.ora_fine);
-                        return (
-                          <div
-                            key={`p-${pi}`}
-                            className="absolute top-0.5 rounded-sm cursor-pointer flex items-center justify-center overflow-hidden z-[2]"
-                            style={{
-                              left: `${((ps - range_start) / total_min) * 100}%`,
-                              width: `${((pe - ps) / total_min) * 100}%`,
-                              height: SUB_ROW_H - 4,
-                              background: "#9CA3AF",
-                              opacity: 0.75,
-                              color: "#fff",
-                            }}
-                            onClick={() => set_detail({
-                              type: "pulizia", giorno,
-                              ora_inizio: p.ora_inizio, ora_fine: p.ora_fine,
-                              durata_min: time_to_min(p.ora_fine) - time_to_min(p.ora_inizio),
-                            })}
-                          >
-                            <span className="text-[9px] font-semibold truncate px-0.5">
-                              {!is_compact ? `Pulizia ${p.ora_inizio?.slice(0,5)}–${p.ora_fine?.slice(0,5)}` : "Pul."}
+                  {/* Pulizia — full bar height */}
+                  {day_pulizia.map((p: any, pi: number) => {
+                    const ps = time_to_min(p.ora_inizio);
+                    const pe = time_to_min(p.ora_fine);
+                    return (
+                      <div
+                        key={`p-${pi}`}
+                        className="absolute cursor-pointer flex items-center justify-center overflow-hidden z-[2]"
+                        style={{
+                          left: `${((ps - range_start) / total_min) * 100}%`,
+                          width: `${((pe - ps) / total_min) * 100}%`,
+                          top: 4,
+                          bottom: 4,
+                          background: "#9CA3AF",
+                          opacity: 0.75,
+                          borderRadius: 4,
+                          color: "#fff",
+                        }}
+                        onClick={() => set_detail({
+                          type: "pulizia", giorno,
+                          ora_inizio: p.ora_inizio, ora_fine: p.ora_fine,
+                          durata_min: time_to_min(p.ora_fine) - time_to_min(p.ora_inizio),
+                        })}
+                      >
+                        <span className="text-[9px] font-semibold truncate px-0.5">
+                          {!is_compact ? `Pulizia ${p.ora_inizio?.slice(0,5)}–${p.ora_fine?.slice(0,5)}` : "Pul."}
+                        </span>
+                      </div>
+                    );
+                  })}
+
+                  {/* Private slots — full bar height */}
+                  {day_ghiaccio.map((g: any, gi: number) => {
+                    const gs = time_to_min(g.ora_inizio);
+                    const ge = time_to_min(g.ora_fine);
+                    const occupied = [...day_corsi_ice, ...day_pulizia].map((c: any) => ({
+                      s: Math.max(time_to_min(c.ora_inizio), gs),
+                      e: Math.min(time_to_min(c.ora_fine ?? c.ora_fine), ge),
+                    })).filter((x) => x.s < x.e).sort((a, b) => a.s - b.s);
+                    const gaps: { s: number; e: number }[] = [];
+                    let cursor = gs;
+                    occupied.forEach((r) => {
+                      if (r.s > cursor) gaps.push({ s: cursor, e: r.s });
+                      cursor = Math.max(cursor, r.e);
+                    });
+                    if (cursor < ge) gaps.push({ s: cursor, e: ge });
+
+                    return gaps.map((gap, gapi) => (
+                      <div
+                        key={`priv-${gi}-${gapi}`}
+                        className="absolute cursor-pointer flex flex-col items-center justify-center overflow-hidden z-[1]"
+                        style={{
+                          left: `${((gap.s - range_start) / total_min) * 100}%`,
+                          width: `${((gap.e - gap.s) / total_min) * 100}%`,
+                          top: 4,
+                          bottom: 4,
+                          background: "#FB923C",
+                          opacity: 0.85,
+                          borderRadius: 4,
+                          color: "#fff",
+                        }}
+                        onClick={() => set_detail({
+                          type: "private", giorno,
+                          ora_inizio: min_to_time(gap.s), ora_fine: min_to_time(gap.e),
+                          durata_min: gap.e - gap.s,
+                          istruttori: day_instructors.map((ist: any) => ({
+                            nome: `${ist.nome} ${ist.cognome}`,
+                            colore: ist.colore || "#6B7280",
+                          })),
+                        })}
+                      >
+                        <span style={{ fontSize: 10, fontWeight: 600 }} className="truncate px-0.5 leading-tight">
+                          Private ({n_instructors_avail} istruttori)
+                        </span>
+                        {!is_compact && (
+                          <span style={{ fontSize: 9, opacity: 0.75 }} className="truncate px-0.5 leading-tight">
+                            {min_to_time(gap.s)}–{min_to_time(gap.e)}
+                          </span>
+                        )}
+                      </div>
+                    ));
+                  })}
+
+                  {/* Courses — positioned in sub-rows */}
+                  {course_rows.map((row_courses, row_idx) =>
+                    row_courses.map((c: any, ci: number) => {
+                      const cs = time_to_min(c.ora_inizio);
+                      const ce = time_to_min(c.ora_fine);
+                      const alert = check_capacity_alert(c);
+                      const istr_ids: string[] = c.istruttori_ids ?? [];
+                      const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
+                      const colore = first_istr?.colore || "#3B82F6";
+                      const istr_available = istr_ids.length > 0 ? istr_ids.every((id) => is_istr_available(id, giorno, cs, ce)) : true;
+
+                      const bg = istr_available
+                        ? colore
+                        : `repeating-linear-gradient(45deg, ${colore} 0px, ${colore} 4px, transparent 4px, transparent 8px)`;
+
+                      const corso_istruttori = istr_ids.map((id) => ({
+                        nome: istr_map[id] ? `${istr_map[id].nome} ${istr_map[id].cognome}` : id,
+                        colore: istr_map[id]?.colore || "#6B7280",
+                      }));
+
+                      const top_px = row_idx * sub_row_h + 2;
+                      const h_px = sub_row_h - 4;
+
+                      return (
+                        <div
+                          key={`c-${row_idx}-${ci}`}
+                          className="absolute rounded cursor-pointer flex flex-col justify-center overflow-hidden z-[3]"
+                          style={{
+                            left: `${((cs - range_start) / total_min) * 100}%`,
+                            width: `${((ce - cs) / total_min) * 100}%`,
+                            top: top_px,
+                            height: h_px,
+                            background: bg,
+                            color: "#fff",
+                            border: alert ? "2px solid #E24B4A" : "1px solid rgba(0,0,0,0.15)",
+                            borderRadius: 4,
+                          }}
+                          onClick={() => set_detail({
+                            type: "corso", nome: c.nome, giorno, tipo: c.tipo,
+                            ora_inizio: c.ora_inizio, ora_fine: c.ora_fine,
+                            livello: c.livello_richiesto,
+                            durata_min: ce - cs,
+                            n_iscritti: c.atleti_ids?.length ?? 0,
+                            istruttori: corso_istruttori,
+                            alert_max: alert,
+                          })}
+                        >
+                          <span style={{ fontSize: is_compact ? 10 : 11, fontWeight: 700 }} className="truncate px-1 leading-tight text-white">
+                            {c.nome || (c.tipo || "").toLowerCase()}
+                          </span>
+                          {!is_compact && (
+                            <span style={{ fontSize: 10, opacity: 0.75 }} className="truncate px-1 leading-tight text-white">
+                              {corso_istruttori.map((i) => i.nome).join(", ")} {c.ora_inizio?.slice(0,5)}–{c.ora_fine?.slice(0,5)}
                             </span>
-                          </div>
-                        );
-                      })}
-
-                      {/* Courses in this sub-row */}
-                      {row_courses.map((c: any, ci: number) => {
-                        const cs = time_to_min(c.ora_inizio);
-                        const ce = time_to_min(c.ora_fine);
-                        const alert = check_capacity_alert(c);
-                        const istr_ids: string[] = c.istruttori_ids ?? [];
-                        const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
-                        const colore = first_istr?.colore || "#3B82F6";
-                        const istr_available = istr_ids.length > 0 ? istr_ids.every((id) => is_istr_available(id, giorno, cs, ce)) : true;
-
-                        const bg = istr_available
-                          ? colore
-                          : `repeating-linear-gradient(45deg, ${colore} 0px, ${colore} 4px, transparent 4px, transparent 8px)`;
-
-                        const corso_istruttori = istr_ids.map((id) => ({
-                          nome: istr_map[id] ? `${istr_map[id].nome} ${istr_map[id].cognome}` : id,
-                          colore: istr_map[id]?.colore || "#6B7280",
-                        }));
-
-                        return (
-                          <div
-                            key={`c-${ci}`}
-                            className="absolute top-0.5 rounded cursor-pointer flex items-center overflow-hidden z-[3]"
-                            style={{
-                              left: `${((cs - range_start) / total_min) * 100}%`,
-                              width: `${((ce - cs) / total_min) * 100}%`,
-                              height: SUB_ROW_H - 4,
-                              background: bg,
-                              color: "#fff",
-                              border: alert ? "2px solid #E24B4A" : "1px solid rgba(0,0,0,0.15)",
-                            }}
-                            onClick={() => set_detail({
-                              type: "corso", nome: c.nome, giorno, tipo: c.tipo,
-                              ora_inizio: c.ora_inizio, ora_fine: c.ora_fine,
-                              livello: c.livello_richiesto,
-                              durata_min: ce - cs,
-                              n_iscritti: c.atleti_ids?.length ?? 0,
-                              istruttori: corso_istruttori,
-                              alert_max: alert,
-                            })}
-                          >
-                            <span className="text-[10px] font-semibold truncate px-1">
-                              {is_compact
-                                ? (c.nome || (c.tipo || "").toLowerCase())
-                                : `${c.nome || (c.tipo || "").toLowerCase()} — ${corso_istruttori.map((i) => i.nome).join(", ")} ${c.ora_inizio?.slice(0,5)}–${c.ora_fine?.slice(0,5)}`
-                              }
-                            </span>
-                          </div>
-                        );
-                      })}
-
-                      {/* Private slots — only on the first sub-row to avoid duplication */}
-                      {row_idx === 0 && day_ghiaccio.map((g: any, gi: number) => {
-                        const gs = time_to_min(g.ora_inizio);
-                        const ge = time_to_min(g.ora_fine);
-
-                        // All ice courses on this day
-                        const occupied = [...day_corsi_ice, ...day_pulizia].map((c: any) => ({
-                          s: Math.max(time_to_min(c.ora_inizio), gs),
-                          e: Math.min(time_to_min(c.ora_fine ?? c.ora_fine), ge),
-                        })).filter((x) => x.s < x.e).sort((a, b) => a.s - b.s);
-
-                        const gaps: { s: number; e: number }[] = [];
-                        let cursor = gs;
-                        occupied.forEach((r) => {
-                          if (r.s > cursor) gaps.push({ s: cursor, e: r.s });
-                          cursor = Math.max(cursor, r.e);
-                        });
-                        if (cursor < ge) gaps.push({ s: cursor, e: ge });
-
-                        return gaps.map((gap, gapi) => (
-                          <div
-                            key={`priv-${gi}-${gapi}`}
-                            className="absolute top-0.5 rounded-sm cursor-pointer flex items-center justify-center overflow-hidden z-[1]"
-                            style={{
-                              left: `${((gap.s - range_start) / total_min) * 100}%`,
-                              width: `${((gap.e - gap.s) / total_min) * 100}%`,
-                              height: SUB_ROW_H - 4,
-                              background: "#FB923C",
-                              opacity: 0.85,
-                              color: "#fff",
-                            }}
-                            onClick={() => set_detail({
-                              type: "private", giorno,
-                              ora_inizio: min_to_time(gap.s), ora_fine: min_to_time(gap.e),
-                              durata_min: gap.e - gap.s,
-                              istruttori: day_instructors.map((ist: any) => ({
-                                nome: `${ist.nome} ${ist.cognome}`,
-                                colore: ist.colore || "#6B7280",
-                              })),
-                            })}
-                          >
-                            <span className="text-[9px] font-medium truncate px-0.5">
-                              {is_compact
-                                ? `Priv. (${n_instructors_avail})`
-                                : `Private (${n_instructors_avail} istruttori) ${min_to_time(gap.s)}–${min_to_time(gap.e)}`
-                              }
-                            </span>
-                          </div>
-                        ));
-                      })}
-                    </div>
-                  ))}
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               </div>
 
