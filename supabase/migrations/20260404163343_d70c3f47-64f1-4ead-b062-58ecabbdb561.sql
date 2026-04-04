@@ -1,0 +1,1 @@
+ALTER TABLE public.configurazione_ghiaccio ADD COLUMN min_atleti_attivazione_corso integer NOT NULL DEFAULT 3;
