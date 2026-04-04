@@ -259,6 +259,22 @@ export default function PlanningPage() {
       });
     });
 
+    // DB pulizia slots
+    day_pulizia.forEach((p: any) => {
+      const ps = time_to_min(p.ora_inizio);
+      const pe = time_to_min(p.ora_fine);
+      blocks.push({
+        left: ((ps - start_min) / total_min) * 100,
+        width: ((pe - ps) / total_min) * 100,
+        color: PULIZIA_COLOR.bg, textColor: PULIZIA_COLOR.text,
+        label: "Pulizia",
+        onClick: () => setDetail({
+          type: "pulizia", giorno,
+          ora_inizio: p.ora_inizio, ora_fine: p.ora_fine,
+        }),
+      });
+    });
+
     return { blocks, off_blocks };
   };
 
