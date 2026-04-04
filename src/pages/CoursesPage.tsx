@@ -970,6 +970,9 @@ const CorsoModal: React.FC<{
   const [confirm_delete, set_confirm_delete] = useState(false);
   const [avviso_istruttori, set_avviso_istruttori] = useState<string[]>([]);
   const [confirm_forzatura, set_confirm_forzatura] = useState(false);
+  const [ghiaccio_error, set_ghiaccio_error] = useState<string | null>(null);
+  const [ghiaccio_warning, set_ghiaccio_warning] = useState<string | null>(null);
+  const [validating_ghiaccio, set_validating_ghiaccio] = useState(false);
 
   const set_val = (k: string, v: any) => set_form((p) => ({ ...p, [k]: v }));
   const toggle_istruttore = (id: string) =>
