@@ -423,7 +423,7 @@ export default function PlanningPage() {
       private: (ore_private / 60).toFixed(1),
       pulizia: (ore_pulizia / 60).toFixed(1),
     };
-  }, [ghiaccio_slots, corsi, visible_days]);
+  }, [ghiaccio_slots, corsi_posizionati, visible_days]);
 
   const is_istr_available = (ist_id: string, giorno: string, cs: number, ce: number): boolean => {
     const slots = istr_map[ist_id]?.disponibilita[giorno] ?? [];
