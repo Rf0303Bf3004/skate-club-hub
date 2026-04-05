@@ -96,29 +96,17 @@ function use_disponibilita_istruttori() {
   });
 }
 
-function use_corsi_non_posizionati() {
-  const club_id = get_current_club_id();
-  return useQuery({
-    queryKey: ["corsi_non_posizionati", club_id],
-    enabled: !!club_id,
-    refetchOnMount: "always",
-    staleTime: 0,
-    queryFn: async () => {
-      const [corsi_res, ci_res, ic_res] = await Promise.all([
-        supabase.from("corsi").select("*").eq("club_id", club_id!).is("giorno", null),
-        supabase.from("corsi_istruttori").select("*"),
-        supabase.from("iscrizioni_corsi").select("*"),
-      ]);
-      if (corsi_res.error) throw corsi_res.error;
-      const ci = ci_res.data ?? [];
-      const ic = ic_res.data ?? [];
-      return (corsi_res.data ?? []).map((c) => ({
-        ...c,
-        istruttori_ids: ci.filter((x) => x.corso_id === c.id).map((x) => x.istruttore_id),
-        atleti_ids: ic.filter((x) => x.corso_id === c.id && x.attiva !== false).map((x) => x.atleta_id),
-      }));
-    },
-  });
+// Helper: check if a course has valid ice coverage
+function has_valid_ice(corso: any, ghiaccio_slots: any[]): boolean {
+  if (!corso.giorno || !corso.ora_inizio || !corso.ora_fine) return false;
+  // Off-ice types don't need ice
+  if (OFF_ICE_TYPES.includes((corso.tipo || "").toLowerCase())) return true;
+  const cs = time_to_min(corso.ora_inizio);
+  const ce = time_to_min(corso.ora_fine);
+  return ghiaccio_slots.some((s: any) =>
+    s.giorno === corso.giorno && (s.tipo ?? "ghiaccio") === "ghiaccio" &&
+    time_to_min(s.ora_inizio) <= cs && time_to_min(s.ora_fine) >= ce
+  );
 }
 
 // ── Types ──
