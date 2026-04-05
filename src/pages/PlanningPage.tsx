@@ -984,7 +984,7 @@ export default function PlanningPage() {
   );
 
   return (
-    <DndContext sensors={sensors} onDragStart={handle_drag_start} onDragEnd={handle_drag_end}>
+    <DndContext sensors={sensors} onDragStart={handle_drag_start} onDragMove={handle_drag_move} onDragEnd={handle_drag_end}>
       <div className="p-4 space-y-4">
         {/* ── TOOLBAR ── */}
         <div className="flex items-center justify-between flex-wrap gap-3">
