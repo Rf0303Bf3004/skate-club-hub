@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { use_corsi, use_istruttori, use_stagioni } from "@/hooks/use-supabase-data";
@@ -18,6 +18,7 @@ import {
   useSensors,
   type DragStartEvent,
   type DragEndEvent,
+  type DragMoveEvent,
 } from "@dnd-kit/core";
 import {
   Dialog,
@@ -245,49 +246,20 @@ function DraggableGridCourse({ corso, children, enabled }: {
 }
 
 
-// ── Droppable slot on grid ──
-function DroppableSlot({ id, giorno, start_min, end_min, range_start, total_min, row_h, is_valid, is_warning, is_build_mode }: {
-  id: string;
+// ── Droppable day row (full width per day) ──
+function DroppableDayRow({ giorno, children, is_build_mode }: {
   giorno: string;
-  start_min: number;
-  end_min: number;
-  range_start: number;
-  total_min: number;
-  row_h: number;
-  is_valid: boolean;
-  is_warning: boolean;
+  children: React.ReactNode;
   is_build_mode: boolean;
 }) {
-  const { isOver, setNodeRef } = useDroppable({
-    id,
-    data: { giorno, start_min, end_min },
+  const { setNodeRef } = useDroppable({
+    id: `day-${giorno}`,
+    data: { giorno },
     disabled: !is_build_mode,
   });
 
-  if (!is_build_mode) return null;
-
-  const bg = isOver
-    ? is_warning ? "rgba(251,146,60,0.3)" : is_valid ? "rgba(34,197,94,0.2)" : "rgba(156,163,175,0.2)"
-    : "transparent";
-
-  return (
-    <div
-      ref={setNodeRef}
-      className="absolute z-[0]"
-      style={{
-        left: `${((start_min - range_start) / total_min) * 100}%`,
-        width: `${((end_min - start_min) / total_min) * 100}%`,
-        top: 0,
-        height: row_h,
-        background: bg,
-        border: isOver ? (is_valid ? "2px dashed #22C55E" : is_warning ? "2px dashed #FB923C" : "2px dashed #9CA3AF") : "none",
-        borderRadius: 4,
-        transition: "background 150ms, border 150ms",
-      }}
-    />
-  );
+  return <div ref={setNodeRef}>{children}</div>;
 }
-
 // ── Main component ──
 export default function PlanningPage() {
   const navigate = useNavigate();
@@ -307,7 +279,16 @@ export default function PlanningPage() {
   const [dragging_type, set_dragging_type] = useState<"unpositioned" | "positioned" | null>(null);
   const [drop_confirm, set_drop_confirm] = useState<DropConfirm | null>(null);
   const [saving, set_saving] = useState(false);
-
+  const [drag_preview, set_drag_preview] = useState<{
+    giorno: string;
+    start_min: number;
+    end_min: number;
+    valid: boolean;
+    warning: boolean;
+    pointer_x: number;
+    pointer_y: number;
+  } | null>(null);
+  const grid_refs = useRef<Record<string, HTMLDivElement | null>>({});
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   const loading = loadingConfig || loadingGhiaccio || loadingCorsi || loadingIstr;
@@ -468,17 +449,14 @@ export default function PlanningPage() {
     return result;
   }, [ghiaccio_slots, disp_istr]);
 
-  // ── Drop zone slots: for each day, create droppable zones at each ice slot ──
-  const get_drop_slots = useCallback((giorno: string) => {
-    const all_slots = ghiaccio_slots ?? [];
-    const ice = all_slots.filter((s: any) => s.giorno === giorno && (s.tipo ?? "ghiaccio") === "ghiaccio");
-    return ice.map((s: any) => ({
-      id: `drop-${giorno}-${s.ora_inizio}-${s.ora_fine}`,
-      giorno,
-      start_min: time_to_min(s.ora_inizio),
-      end_min: time_to_min(s.ora_fine),
-    }));
-  }, [ghiaccio_slots]);
+  // ── Drop zone slots: removed, using pointer-based 5-min snap instead ──
+
+  // Get course duration helper
+  const get_corso_durata = useCallback((corso: any): number => {
+    return corso.ora_fine && corso.ora_inizio
+      ? time_to_min(corso.ora_fine) - time_to_min(corso.ora_inizio)
+      : 60;
+  }, []);
 
   // Check if drop is valid for a given course
   const check_drop_validity = useCallback((corso: any, giorno: string, start_min: number): { valid: boolean; warning: boolean } => {
@@ -515,34 +493,79 @@ export default function PlanningPage() {
     return { valid: true, warning: false };
   }, [ghiaccio_slots, corsi_posizionati, max_atleti, is_istr_available]);
 
+  // ── Drag move handler (5-min snap) ──
+  const handle_drag_move = useCallback((event: DragMoveEvent) => {
+    if (!dragging_corso) return;
+    const durata = get_corso_durata(dragging_corso);
+    const ae = event.activatorEvent as PointerEvent;
+    const px = ae.clientX + event.delta.x;
+    const py = ae.clientY + event.delta.y;
+
+    let found_giorno: string | null = null;
+    let relative_x = 0;
+    let grid_width = 0;
+
+    for (const giorno of visible_days) {
+      const el = grid_refs.current[giorno];
+      if (!el) continue;
+      const rect = el.getBoundingClientRect();
+      if (py >= rect.top && py <= rect.bottom && px >= rect.left && px <= rect.right) {
+        found_giorno = giorno;
+        relative_x = px - rect.left;
+        grid_width = rect.width;
+        break;
+      }
+    }
+
+    if (!found_giorno || grid_width === 0) {
+      set_drag_preview(null);
+      return;
+    }
+
+    const raw_min = (relative_x / grid_width) * total_min + range_start;
+    const snapped = Math.round(raw_min / 5) * 5;
+    const start = Math.max(range_start, Math.min(snapped, range_end - durata));
+    const end = start + durata;
+
+    const { valid, warning } = check_drop_validity(dragging_corso, found_giorno, start);
+
+    set_drag_preview({
+      giorno: found_giorno,
+      start_min: start,
+      end_min: end,
+      valid,
+      warning,
+      pointer_x: px,
+      pointer_y: py,
+    });
+  }, [dragging_corso, visible_days, total_min, range_start, range_end, check_drop_validity, get_corso_durata]);
+
   // ── DnD handlers ──
   const handle_drag_start = (event: DragStartEvent) => {
     const data = event.active.data.current;
     if (data?.corso) {
       set_dragging_corso(data.corso);
       set_dragging_type(data.type as "unpositioned" | "positioned");
+      set_drag_preview(null);
     }
   };
 
   const handle_drag_end = async (event: DragEndEvent) => {
     const was_type = dragging_type;
     const was_corso = dragging_corso;
+    const preview = drag_preview;
     set_dragging_corso(null);
     set_dragging_type(null);
-    const { active, over } = event;
+    set_drag_preview(null);
 
-    // If positioned course dropped outside grid or on invalid slot → unposition it
-    if (was_type === "positioned" && was_corso) {
-      const drop_data = over?.data?.current;
-      const has_valid_drop = drop_data?.giorno;
+    if (!was_corso) return;
 
-      if (!has_valid_drop) {
-        // Dropped outside → set giorno=NULL
+    // If positioned course dropped with no valid preview → unposition it
+    if (was_type === "positioned") {
+      if (!preview || !preview.valid) {
         try {
           await supabase.from("corsi").update({ giorno: null, ora_inizio: null, ora_fine: null } as any).eq("id", was_corso.id);
-          await Promise.all([
-            queryClient.invalidateQueries({ queryKey: ["corsi"] }),
-          ]);
+          await queryClient.invalidateQueries({ queryKey: ["corsi"] });
           toast.info(`${was_corso.nome} rimosso dal planning`);
         } catch (e: any) {
           toast.error("Errore: " + e.message);
@@ -550,60 +573,27 @@ export default function PlanningPage() {
         return;
       }
 
-      // Check validity
-      const durata = was_corso.ora_fine && was_corso.ora_inizio
-        ? time_to_min(was_corso.ora_fine) - time_to_min(was_corso.ora_inizio)
-        : 60;
-      const start_min = drop_data.start_min as number;
-      const { valid } = check_drop_validity(was_corso, drop_data.giorno, start_min);
-      if (!valid) {
-        // Invalid slot → unposition
-        try {
-          await supabase.from("corsi").update({ giorno: null, ora_inizio: null, ora_fine: null } as any).eq("id", was_corso.id);
-          await Promise.all([
-            queryClient.invalidateQueries({ queryKey: ["corsi"] }),
-          ]);
-          toast.info(`${was_corso.nome} rimosso dal planning (slot non valido)`);
-        } catch (e: any) {
-          toast.error("Errore: " + e.message);
-        }
-        return;
-      }
-
-      // Valid drop → show confirm
-      const end_min = start_min + durata;
+      // Valid preview → confirm
       set_drop_confirm({
         corso: was_corso,
-        giorno: drop_data.giorno,
-        ora_inizio: min_to_time(start_min),
-        ora_fine: min_to_time(end_min),
+        giorno: preview.giorno,
+        ora_inizio: min_to_time(preview.start_min),
+        ora_fine: min_to_time(preview.end_min),
       });
       return;
     }
 
-    // Unpositioned course drag
-    if (!over || !active.data.current?.corso) return;
-    const corso = active.data.current.corso;
-    const drop_data = over.data.current;
-    if (!drop_data?.giorno) return;
-
-    const durata = corso.ora_fine && corso.ora_inizio
-      ? time_to_min(corso.ora_fine) - time_to_min(corso.ora_inizio)
-      : 60;
-    const start_min = drop_data.start_min as number;
-    const end_min = start_min + durata;
-
-    const { valid } = check_drop_validity(corso, drop_data.giorno, start_min);
-    if (!valid) {
-      toast.error("Slot non compatibile per questo corso");
+    // Unpositioned course
+    if (!preview || !preview.valid) {
+      if (preview && !preview.valid) toast.error("Slot non compatibile per questo corso");
       return;
     }
 
     set_drop_confirm({
-      corso,
-      giorno: drop_data.giorno,
-      ora_inizio: min_to_time(start_min),
-      ora_fine: min_to_time(end_min),
+      corso: was_corso,
+      giorno: preview.giorno,
+      ora_inizio: min_to_time(preview.start_min),
+      ora_fine: min_to_time(preview.end_min),
     });
   };
 
@@ -718,10 +708,10 @@ export default function PlanningPage() {
         const row_h = BASE_ROW_H + Math.max(0, n_sub_rows - 1) * EXTRA_PER_ROW;
         const sub_row_h = n_sub_rows > 1 ? row_h / n_sub_rows : row_h;
 
-        const drop_slots = build_mode ? get_drop_slots(giorno) : [];
 
         return (
-          <div key={giorno} className="border-b border-border last:border-b-0">
+          <DroppableDayRow key={giorno} giorno={giorno} is_build_mode={build_mode}>
+          <div className="border-b border-border last:border-b-0">
             <div className="flex">
               <div
                 className="flex-shrink-0 flex flex-col items-center justify-center border-r border-border bg-muted px-1"
@@ -731,26 +721,11 @@ export default function PlanningPage() {
                 <span style={{ fontSize: 11 }} className="text-muted-foreground leading-tight">{day_ice_h}h ghiaccio</span>
               </div>
 
-              <div className="flex-1 relative" style={{ minWidth: total_min * 1.2, height: row_h }}>
-                {/* Drop zones (build mode only) */}
-                {drop_slots.map((slot) => {
-                  const validity = dragging_corso ? check_drop_validity(dragging_corso, giorno, slot.start_min) : { valid: false, warning: false };
-                  return (
-                    <DroppableSlot
-                      key={slot.id}
-                      id={slot.id}
-                      giorno={giorno}
-                      start_min={slot.start_min}
-                      end_min={slot.end_min}
-                      range_start={range_start}
-                      total_min={total_min}
-                      row_h={row_h}
-                      is_valid={validity.valid}
-                      is_warning={validity.warning}
-                      is_build_mode={build_mode}
-                    />
-                  );
-                })}
+              <div
+                className="flex-1 relative"
+                style={{ minWidth: total_min * 1.2, height: row_h }}
+                ref={(el) => { grid_refs.current[giorno] = el; }}
+              >
 
                 {/* Ghiaccio background */}
                 {day_ghiaccio.map((g: any, gi: number) => {
@@ -930,6 +905,30 @@ export default function PlanningPage() {
                     return <React.Fragment key={`c-${row_idx}-${ci}`}>{inner}</React.Fragment>;
                   })
                 )}
+
+                {/* Ghost preview (build mode drag) */}
+                {build_mode && drag_preview && drag_preview.giorno === giorno && (
+                  <div
+                    className="absolute z-[6] flex items-center justify-center overflow-hidden pointer-events-none"
+                    style={{
+                      left: `${((drag_preview.start_min - range_start) / total_min) * 100}%`,
+                      width: `${((drag_preview.end_min - drag_preview.start_min) / total_min) * 100}%`,
+                      top: 4,
+                      bottom: 4,
+                      background: drag_preview.valid
+                        ? drag_preview.warning ? "rgba(251,146,60,0.35)" : "rgba(34,197,94,0.35)"
+                        : "rgba(239,68,68,0.3)",
+                      border: `2px dashed ${drag_preview.valid ? (drag_preview.warning ? "#FB923C" : "#22C55E") : "#EF4444"}`,
+                      borderRadius: 4,
+                    }}
+                  >
+                    <span className="text-xs font-bold px-1 truncate" style={{
+                      color: drag_preview.valid ? (drag_preview.warning ? "#FB923C" : "#16A34A") : "#EF4444",
+                    }}>
+                      {dragging_corso?.nome}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -978,13 +977,14 @@ export default function PlanningPage() {
               </div>
             )}
           </div>
+          </DroppableDayRow>
         );
       })}
     </div>
   );
 
   return (
-    <DndContext sensors={sensors} onDragStart={handle_drag_start} onDragEnd={handle_drag_end}>
+    <DndContext sensors={sensors} onDragStart={handle_drag_start} onDragMove={handle_drag_move} onDragEnd={handle_drag_end}>
       <div className="p-4 space-y-4">
         {/* ── TOOLBAR ── */}
         <div className="flex items-center justify-between flex-wrap gap-3">
@@ -1211,18 +1211,40 @@ export default function PlanningPage() {
       </div>
 
       {/* Drag overlay */}
-      <DragOverlay>
+      <DragOverlay dropAnimation={null}>
         {dragging_corso && (
-          <div className="border border-primary rounded-lg p-3 bg-card shadow-lg opacity-90 w-[260px]">
-            <span className="font-bold text-sm text-foreground">{dragging_corso.nome}</span>
+          <div className="border border-primary rounded-lg p-2 bg-card shadow-lg opacity-80 w-[200px] pointer-events-none">
+            <span className="font-bold text-xs text-foreground">{dragging_corso.nome}</span>
             {dragging_corso.tipo && (
-              <span className="ml-2 text-[10px] font-semibold px-1.5 py-0.5 rounded-full text-white" style={{ backgroundColor: "#7F77DD" }}>
+              <span className="ml-1 text-[9px] font-semibold px-1 py-0.5 rounded-full text-white" style={{ backgroundColor: "#7F77DD" }}>
                 {dragging_corso.tipo}
               </span>
             )}
           </div>
         )}
       </DragOverlay>
+
+      {/* Real-time tooltip during drag */}
+      {drag_preview && dragging_corso && (
+        <div
+          className="fixed z-[9999] pointer-events-none"
+          style={{
+            left: drag_preview.pointer_x + 16,
+            top: drag_preview.pointer_y - 36,
+          }}
+        >
+          <div
+            className="rounded-md px-2.5 py-1.5 text-xs font-bold shadow-lg border"
+            style={{
+              background: drag_preview.valid ? (drag_preview.warning ? "#FFF7ED" : "#F0FDF4") : "#FEF2F2",
+              borderColor: drag_preview.valid ? (drag_preview.warning ? "#FB923C" : "#22C55E") : "#EF4444",
+              color: drag_preview.valid ? (drag_preview.warning ? "#9A3412" : "#166534") : "#991B1B",
+            }}
+          >
+            {min_to_time(drag_preview.start_min)} → {min_to_time(drag_preview.end_min)}
+          </div>
+        </div>
+      )}
 
       {/* Confirm dialog */}
       <Dialog open={!!drop_confirm} onOpenChange={(open) => !open && set_drop_confirm(null)}>
