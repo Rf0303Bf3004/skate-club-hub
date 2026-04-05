@@ -279,7 +279,16 @@ export default function PlanningPage() {
   const [dragging_type, set_dragging_type] = useState<"unpositioned" | "positioned" | null>(null);
   const [drop_confirm, set_drop_confirm] = useState<DropConfirm | null>(null);
   const [saving, set_saving] = useState(false);
-
+  const [drag_preview, set_drag_preview] = useState<{
+    giorno: string;
+    start_min: number;
+    end_min: number;
+    valid: boolean;
+    warning: boolean;
+    pointer_x: number;
+    pointer_y: number;
+  } | null>(null);
+  const grid_refs = useRef<Record<string, HTMLDivElement | null>>({});
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   const loading = loadingConfig || loadingGhiaccio || loadingCorsi || loadingIstr;
