@@ -408,7 +408,7 @@ export default function PlanningPage() {
     visible_days.forEach((giorno) => {
       const day_ice = slots.filter((s: any) => s.giorno === giorno && (s.tipo ?? "ghiaccio") === "ghiaccio");
       const day_pulizia = slots.filter((s: any) => s.giorno === giorno && s.tipo === "pulizia");
-      const day_corsi_ice = corsi.filter((c: any) => c.giorno === giorno && !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
+      const day_corsi_ice = corsi_posizionati.filter((c: any) => c.giorno === giorno && !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
 
       day_ice.forEach((s: any) => ore_ghiaccio += time_to_min(s.ora_fine) - time_to_min(s.ora_inizio));
       day_pulizia.forEach((s: any) => ore_pulizia += time_to_min(s.ora_fine) - time_to_min(s.ora_inizio));
