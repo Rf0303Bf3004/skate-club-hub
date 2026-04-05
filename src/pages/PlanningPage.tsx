@@ -618,10 +618,7 @@ export default function PlanningPage() {
       }).eq("id", drop_confirm.corso.id);
       if (error) throw error;
 
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["corsi"] }),
-        queryClient.invalidateQueries({ queryKey: ["corsi_non_posizionati"] }),
-      ]);
+      await queryClient.invalidateQueries({ queryKey: ["corsi"] });
       toast.success(`${drop_confirm.corso.nome} posizionato con successo`);
     } catch (e: any) {
       toast.error("Errore nel posizionamento: " + e.message);
