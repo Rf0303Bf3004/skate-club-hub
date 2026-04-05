@@ -947,6 +947,8 @@ const CorsoModal: React.FC<{
   deleting,
 }) => {
   const qc = useQueryClient();
+  const has_planning = !!(corso?.giorno && corso?.ora_inizio && corso?.ora_fine);
+  const [posiziona_planning, set_posiziona_planning] = useState(corso ? has_planning : true);
   const [form, set_form] = useState({
     nome: corso?.nome || "",
     tipo: corso?.tipo || "",
