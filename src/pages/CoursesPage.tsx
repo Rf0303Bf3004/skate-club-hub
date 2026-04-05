@@ -1121,6 +1121,9 @@ const CorsoModal: React.FC<{
     on_save({
       ...form,
       id: corso?.id,
+      giorno: posiziona_planning ? form.giorno : null,
+      ora_inizio: posiziona_planning ? form.ora_inizio : null,
+      ora_fine: posiziona_planning ? form.ora_fine : null,
       costo_mensile: to_num(form.costo_mensile_str),
       costo_annuale: to_num(form.costo_annuale_str),
     });
