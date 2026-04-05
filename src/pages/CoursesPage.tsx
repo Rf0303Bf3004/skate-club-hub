@@ -985,6 +985,23 @@ const CorsoModal: React.FC<{
       set_ghiaccio_warning(null);
     }
   };
+
+  // Real-time ice availability check
+  useEffect(() => {
+    if (!posiziona_planning) { set_no_ice_realtime(false); return; }
+    const tipo_lower = (form.tipo || "").toLowerCase().trim();
+    if (["danza", "off-ice", "stretching", "off ice"].includes(tipo_lower)) { set_no_ice_realtime(false); return; }
+    let cancelled = false;
+    (async () => {
+      const club_id = get_current_club_id();
+      const { data: slots } = await supabase.from("disponibilita_ghiaccio").select("ora_inizio, ora_fine").eq("club_id", club_id).eq("giorno", form.giorno).eq("tipo", "ghiaccio");
+      if (cancelled) return;
+      const cs = time_to_min(form.ora_inizio), ce = time_to_min(form.ora_fine);
+      set_no_ice_realtime(!(slots || []).some((s: any) => time_to_min(s.ora_inizio) <= cs && time_to_min(s.ora_fine) >= ce));
+    })();
+    return () => { cancelled = true; };
+  }, [posiziona_planning, form.giorno, form.ora_inizio, form.ora_fine, form.tipo]);
+
   const toggle_istruttore = (id: string) =>
     set_form((p) => ({
       ...p,
