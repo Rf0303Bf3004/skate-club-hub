@@ -231,6 +231,31 @@ function DraggableCourseCard({ corso, istr_map, compatibility }: {
     </div>
   );
 }
+// ── Draggable course block on grid ──
+function DraggableGridCourse({ corso, children, enabled }: {
+  corso: any;
+  children: React.ReactNode;
+  enabled: boolean;
+}) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: `positioned-${corso.id}`,
+    data: { corso, type: "positioned" },
+    disabled: !enabled,
+  });
+
+  const style: React.CSSProperties = {
+    ...(transform ? { transform: `translate(${transform.x}px, ${transform.y}px)` } : {}),
+    opacity: isDragging ? 0.2 : 1,
+    cursor: enabled ? "grab" : "pointer",
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      {children}
+    </div>
+  );
+}
+
 
 // ── Droppable slot on grid ──
 function DroppableSlot({ id, giorno, start_min, end_min, range_start, total_min, row_h, is_valid, is_warning, is_build_mode }: {
@@ -291,6 +316,7 @@ export default function PlanningPage() {
   const [day_offset, set_day_offset] = useState(0);
   const [build_mode, set_build_mode] = useState(false);
   const [dragging_corso, set_dragging_corso] = useState<any>(null);
+  const [dragging_type, set_dragging_type] = useState<"unpositioned" | "positioned" | null>(null);
   const [drop_confirm, set_drop_confirm] = useState<DropConfirm | null>(null);
   const [saving, set_saving] = useState(false);
 
@@ -474,7 +500,7 @@ export default function PlanningPage() {
     if (!istr_ok) return { valid: false, warning: false };
 
     // Check capacity
-    const day_corsi_ice = corsi.filter((c: any) => c.giorno === giorno && !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
+    const day_corsi_ice = corsi.filter((c: any) => c.id !== corso.id && c.giorno === giorno && !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
     const concurrent = day_corsi_ice.filter((c: any) => {
       const s = time_to_min(c.ora_inizio);
       const e = time_to_min(c.ora_fine);
@@ -489,11 +515,16 @@ export default function PlanningPage() {
   // ── DnD handlers ──
   const handle_drag_start = (event: DragStartEvent) => {
     const data = event.active.data.current;
-    if (data?.corso) set_dragging_corso(data.corso);
+    if (data?.corso) {
+      set_dragging_corso(data.corso);
+      set_dragging_type(data.type as "unpositioned" | "positioned");
+    }
   };
 
   const handle_drag_end = async (event: DragEndEvent) => {
+    const was_type = dragging_type;
     set_dragging_corso(null);
+    set_dragging_type(null);
     const { active, over } = event;
     if (!over || !active.data.current?.corso) return;
 
@@ -795,22 +826,23 @@ export default function PlanningPage() {
 
                     const top_px = row_idx * sub_row_h + 2;
                     const h_px = sub_row_h - 4;
+                    const is_being_dragged = dragging_type === "positioned" && dragging_corso?.id === c.id;
 
-                    return (
+                    const inner = (
                       <div
-                        key={`c-${row_idx}-${ci}`}
-                        className="absolute rounded cursor-pointer flex flex-col justify-center overflow-hidden z-[3]"
+                        className="absolute rounded flex flex-col justify-center overflow-hidden z-[3]"
                         style={{
                           left: `${((cs - range_start) / total_min) * 100}%`,
                           width: `${((ce - cs) / total_min) * 100}%`,
                           top: top_px,
                           height: h_px,
-                          background: bg,
+                          background: is_being_dragged ? "rgba(156,163,175,0.3)" : bg,
                           color: "#fff",
-                          border: alert ? "2px solid #E24B4A" : "1px solid rgba(0,0,0,0.15)",
+                          border: is_being_dragged ? "2px dashed #9CA3AF" : alert ? "2px solid #E24B4A" : "1px solid rgba(0,0,0,0.15)",
                           borderRadius: 4,
+                          cursor: build_mode ? "grab" : "pointer",
                         }}
-                        onClick={() => set_detail({
+                        onClick={() => !build_mode && set_detail({
                           type: "corso", nome: c.nome, giorno, tipo: c.tipo,
                           ora_inizio: c.ora_inizio, ora_fine: c.ora_fine,
                           livello: c.livello_richiesto,
@@ -820,16 +852,30 @@ export default function PlanningPage() {
                           alert_max: alert,
                         })}
                       >
-                        <span style={{ fontSize: is_compact ? 10 : 11, fontWeight: 700 }} className="truncate px-1 leading-tight text-white">
-                          {c.nome || (c.tipo || "").toLowerCase()}
-                        </span>
-                        {!is_compact && (
-                          <span style={{ fontSize: 10, opacity: 0.75 }} className="truncate px-1 leading-tight text-white">
-                            {corso_istruttori.map((i) => i.nome).join(", ")} {c.ora_inizio?.slice(0, 5)}–{c.ora_fine?.slice(0, 5)}
-                          </span>
+                        {!is_being_dragged && (
+                          <>
+                            <span style={{ fontSize: is_compact ? 10 : 11, fontWeight: 700 }} className="truncate px-1 leading-tight text-white">
+                              {c.nome || (c.tipo || "").toLowerCase()}
+                            </span>
+                            {!is_compact && (
+                              <span style={{ fontSize: 10, opacity: 0.75 }} className="truncate px-1 leading-tight text-white">
+                                {corso_istruttori.map((i) => i.nome).join(", ")} {c.ora_inizio?.slice(0, 5)}–{c.ora_fine?.slice(0, 5)}
+                              </span>
+                            )}
+                          </>
                         )}
                       </div>
                     );
+
+                    if (build_mode) {
+                      return (
+                        <DraggableGridCourse key={`c-${row_idx}-${ci}`} corso={c} enabled={build_mode}>
+                          {inner}
+                        </DraggableGridCourse>
+                      );
+                    }
+
+                    return <React.Fragment key={`c-${row_idx}-${ci}`}>{inner}</React.Fragment>;
                   })
                 )}
               </div>
@@ -1002,13 +1048,25 @@ export default function PlanningPage() {
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
-              ) : all_positioned ? (
+              ) : all_positioned && !dragging_corso ? (
                 <div className="border border-border rounded-lg p-4 text-center space-y-1 bg-muted/30">
                   <Check className="h-6 w-6 text-green-500 mx-auto" />
                   <p className="text-sm font-medium text-foreground">Tutti i corsi sono stati posizionati</p>
                 </div>
               ) : (
                 <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
+                  {/* Show dragged positioned course as "in movimento" */}
+                  {dragging_type === "positioned" && dragging_corso && (
+                    <div className="border-2 border-dashed border-primary rounded-lg p-3 bg-primary/5 space-y-1">
+                      <div className="flex items-center gap-1.5">
+                        <GripVertical className="h-4 w-4 text-primary flex-shrink-0" />
+                        <span className="font-bold text-sm text-foreground">{dragging_corso.nome}</span>
+                      </div>
+                      <Badge variant="outline" className="text-[10px] text-primary border-primary">
+                        In movimento
+                      </Badge>
+                    </div>
+                  )}
                   {unpositioned.map((corso: any) => (
                     <DraggableCourseCard
                       key={corso.id}
