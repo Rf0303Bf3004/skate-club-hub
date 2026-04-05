@@ -1262,33 +1262,50 @@ const CorsoModal: React.FC<{
                   <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </Field>
-              <div className="grid grid-cols-3 gap-3">
-                <Field label="Giorno">
-                  <select value={form.giorno} onChange={(e) => set_val("giorno", e.target.value)} className={input_cls}>
-                    {GIORNI_DB.map((g) => (
-                      <option key={g} value={g}>
-                        {g}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="Ora inizio">
-                  <input
-                    type="time"
-                    value={form.ora_inizio}
-                    onChange={(e) => set_val("ora_inizio", e.target.value)}
-                    className={input_cls}
-                  />
-                </Field>
-                <Field label="Ora fine">
-                  <input
-                    type="time"
-                    value={form.ora_fine}
-                    onChange={(e) => set_val("ora_fine", e.target.value)}
-                    className={input_cls}
-                  />
-                </Field>
+              <div className="flex items-center justify-between px-3 py-2 bg-muted/30 rounded-lg">
+                <div className="space-y-0.5">
+                  <label htmlFor="posiziona_planning" className="text-sm font-medium text-foreground cursor-pointer">
+                    Posiziona subito nel planning
+                  </label>
+                  {!posiziona_planning && (
+                    <p className="text-xs text-muted-foreground">Il corso verrà posizionato nel planning in seguito</p>
+                  )}
+                </div>
+                <Switch
+                  id="posiziona_planning"
+                  checked={posiziona_planning}
+                  onCheckedChange={set_posiziona_planning}
+                />
               </div>
+              {posiziona_planning && (
+                <div className="grid grid-cols-3 gap-3">
+                  <Field label="Giorno">
+                    <select value={form.giorno} onChange={(e) => set_val("giorno", e.target.value)} className={input_cls}>
+                      {GIORNI_DB.map((g) => (
+                        <option key={g} value={g}>
+                          {g}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Ora inizio">
+                    <input
+                      type="time"
+                      value={form.ora_inizio}
+                      onChange={(e) => set_val("ora_inizio", e.target.value)}
+                      className={input_cls}
+                    />
+                  </Field>
+                  <Field label="Ora fine">
+                    <input
+                      type="time"
+                      value={form.ora_fine}
+                      onChange={(e) => set_val("ora_fine", e.target.value)}
+                      className={input_cls}
+                    />
+                  </Field>
+                </div>
+              )}
 
               {/* ← Costi con NumInput */}
               <div className="grid grid-cols-2 gap-3">
