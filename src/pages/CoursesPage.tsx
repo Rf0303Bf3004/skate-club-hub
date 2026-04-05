@@ -1107,8 +1107,8 @@ const CorsoModal: React.FC<{
       return;
     }
 
-    // Skip ghiaccio validation when not placing in planning
-    if (!posiziona_planning) {
+    // Skip ghiaccio validation when not placing in planning or when realtime check already detected no ice
+    if (!posiziona_planning || no_ice_realtime) {
       do_save();
       return;
     }
