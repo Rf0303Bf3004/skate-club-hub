@@ -826,22 +826,23 @@ export default function PlanningPage() {
 
                     const top_px = row_idx * sub_row_h + 2;
                     const h_px = sub_row_h - 4;
+                    const is_being_dragged = dragging_type === "positioned" && dragging_corso?.id === c.id;
 
-                    return (
+                    const inner = (
                       <div
-                        key={`c-${row_idx}-${ci}`}
-                        className="absolute rounded cursor-pointer flex flex-col justify-center overflow-hidden z-[3]"
+                        className="absolute rounded flex flex-col justify-center overflow-hidden z-[3]"
                         style={{
                           left: `${((cs - range_start) / total_min) * 100}%`,
                           width: `${((ce - cs) / total_min) * 100}%`,
                           top: top_px,
                           height: h_px,
-                          background: bg,
+                          background: is_being_dragged ? "rgba(156,163,175,0.3)" : bg,
                           color: "#fff",
-                          border: alert ? "2px solid #E24B4A" : "1px solid rgba(0,0,0,0.15)",
+                          border: is_being_dragged ? "2px dashed #9CA3AF" : alert ? "2px solid #E24B4A" : "1px solid rgba(0,0,0,0.15)",
                           borderRadius: 4,
+                          cursor: build_mode ? "grab" : "pointer",
                         }}
-                        onClick={() => set_detail({
+                        onClick={() => !build_mode && set_detail({
                           type: "corso", nome: c.nome, giorno, tipo: c.tipo,
                           ora_inizio: c.ora_inizio, ora_fine: c.ora_fine,
                           livello: c.livello_richiesto,
@@ -851,16 +852,30 @@ export default function PlanningPage() {
                           alert_max: alert,
                         })}
                       >
-                        <span style={{ fontSize: is_compact ? 10 : 11, fontWeight: 700 }} className="truncate px-1 leading-tight text-white">
-                          {c.nome || (c.tipo || "").toLowerCase()}
-                        </span>
-                        {!is_compact && (
-                          <span style={{ fontSize: 10, opacity: 0.75 }} className="truncate px-1 leading-tight text-white">
-                            {corso_istruttori.map((i) => i.nome).join(", ")} {c.ora_inizio?.slice(0, 5)}–{c.ora_fine?.slice(0, 5)}
-                          </span>
+                        {!is_being_dragged && (
+                          <>
+                            <span style={{ fontSize: is_compact ? 10 : 11, fontWeight: 700 }} className="truncate px-1 leading-tight text-white">
+                              {c.nome || (c.tipo || "").toLowerCase()}
+                            </span>
+                            {!is_compact && (
+                              <span style={{ fontSize: 10, opacity: 0.75 }} className="truncate px-1 leading-tight text-white">
+                                {corso_istruttori.map((i) => i.nome).join(", ")} {c.ora_inizio?.slice(0, 5)}–{c.ora_fine?.slice(0, 5)}
+                              </span>
+                            )}
+                          </>
                         )}
                       </div>
                     );
+
+                    if (build_mode) {
+                      return (
+                        <DraggableGridCourse key={`c-${row_idx}-${ci}`} corso={c} enabled={build_mode}>
+                          {inner}
+                        </DraggableGridCourse>
+                      );
+                    }
+
+                    return <React.Fragment key={`c-${row_idx}-${ci}`}>{inner}</React.Fragment>;
                   })
                 )}
               </div>
