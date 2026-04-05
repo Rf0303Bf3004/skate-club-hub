@@ -976,6 +976,7 @@ const CorsoModal: React.FC<{
   const [ghiaccio_error, set_ghiaccio_error] = useState<string | null>(null);
   const [ghiaccio_warning, set_ghiaccio_warning] = useState<string | null>(null);
   const [validating_ghiaccio, set_validating_ghiaccio] = useState(false);
+  const [no_ice_realtime, set_no_ice_realtime] = useState(false);
 
   const set_val = (k: string, v: any) => {
     set_form((p) => ({ ...p, [k]: v }));
@@ -984,6 +985,23 @@ const CorsoModal: React.FC<{
       set_ghiaccio_warning(null);
     }
   };
+
+  // Real-time ice availability check
+  useEffect(() => {
+    if (!posiziona_planning) { set_no_ice_realtime(false); return; }
+    const tipo_lower = (form.tipo || "").toLowerCase().trim();
+    if (["danza", "off-ice", "stretching", "off ice"].includes(tipo_lower)) { set_no_ice_realtime(false); return; }
+    let cancelled = false;
+    (async () => {
+      const club_id = get_current_club_id();
+      const { data: slots } = await supabase.from("disponibilita_ghiaccio").select("ora_inizio, ora_fine").eq("club_id", club_id).eq("giorno", form.giorno).eq("tipo", "ghiaccio");
+      if (cancelled) return;
+      const cs = time_to_min(form.ora_inizio), ce = time_to_min(form.ora_fine);
+      set_no_ice_realtime(!(slots || []).some((s: any) => time_to_min(s.ora_inizio) <= cs && time_to_min(s.ora_fine) >= ce));
+    })();
+    return () => { cancelled = true; };
+  }, [posiziona_planning, form.giorno, form.ora_inizio, form.ora_fine, form.tipo]);
+
   const toggle_istruttore = (id: string) =>
     set_form((p) => ({
       ...p,
@@ -1089,8 +1107,8 @@ const CorsoModal: React.FC<{
       return;
     }
 
-    // Skip ghiaccio validation when not placing in planning
-    if (!posiziona_planning) {
+    // Skip ghiaccio validation when not placing in planning or when realtime check already detected no ice
+    if (!posiziona_planning || no_ice_realtime) {
       do_save();
       return;
     }
@@ -1125,12 +1143,13 @@ const CorsoModal: React.FC<{
   };
 
   const do_save = () => {
+    const place = posiziona_planning && !no_ice_realtime;
     on_save({
       ...form,
       id: corso?.id,
-      giorno: posiziona_planning ? form.giorno : null,
-      ora_inizio: posiziona_planning ? form.ora_inizio : null,
-      ora_fine: posiziona_planning ? form.ora_fine : null,
+      giorno: place ? form.giorno : null,
+      ora_inizio: place ? form.ora_inizio : null,
+      ora_fine: place ? form.ora_fine : null,
       costo_mensile: to_num(form.costo_mensile_str),
       costo_annuale: to_num(form.costo_annuale_str),
     });
@@ -1288,33 +1307,43 @@ const CorsoModal: React.FC<{
                 />
               </div>
               {posiziona_planning && (
-                <div className="grid grid-cols-3 gap-3">
-                  <Field label="Giorno">
-                    <select value={form.giorno} onChange={(e) => set_val("giorno", e.target.value)} className={input_cls}>
-                      {GIORNI_DB.map((g) => (
-                        <option key={g} value={g}>
-                          {g}
-                        </option>
-                      ))}
-                    </select>
-                  </Field>
-                  <Field label="Ora inizio">
-                    <input
-                      type="time"
-                      value={form.ora_inizio}
-                      onChange={(e) => set_val("ora_inizio", e.target.value)}
-                      className={input_cls}
-                    />
-                  </Field>
-                  <Field label="Ora fine">
-                    <input
-                      type="time"
-                      value={form.ora_fine}
-                      onChange={(e) => set_val("ora_fine", e.target.value)}
-                      className={input_cls}
-                    />
-                  </Field>
-                </div>
+                <>
+                  <div className="grid grid-cols-3 gap-3">
+                    <Field label="Giorno">
+                      <select value={form.giorno} onChange={(e) => set_val("giorno", e.target.value)} className={input_cls}>
+                        {GIORNI_DB.map((g) => (
+                          <option key={g} value={g}>
+                            {g}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                    <Field label="Ora inizio">
+                      <input
+                        type="time"
+                        value={form.ora_inizio}
+                        onChange={(e) => set_val("ora_inizio", e.target.value)}
+                        className={input_cls}
+                      />
+                    </Field>
+                    <Field label="Ora fine">
+                      <input
+                        type="time"
+                        value={form.ora_fine}
+                        onChange={(e) => set_val("ora_fine", e.target.value)}
+                        className={input_cls}
+                      />
+                    </Field>
+                  </div>
+                  {no_ice_realtime && (
+                    <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-orange-50 border border-orange-200">
+                      <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-orange-700">
+                        Nessun ghiaccio disponibile in questo orario — il corso verrà salvato ma dovrà essere riposizionato nel planning.
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
 
               {/* ← Costi con NumInput */}
