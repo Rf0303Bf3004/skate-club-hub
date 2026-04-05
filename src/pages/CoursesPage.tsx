@@ -12,6 +12,7 @@ import {
 import { use_upsert_corso, use_elimina_corso, use_upsert_presenza_corso } from "@/hooks/use-supabase-mutations";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Plus,
@@ -947,6 +948,8 @@ const CorsoModal: React.FC<{
   deleting,
 }) => {
   const qc = useQueryClient();
+  const has_planning = !!(corso?.giorno && corso?.ora_inizio && corso?.ora_fine);
+  const [posiziona_planning, set_posiziona_planning] = useState(corso ? has_planning : true);
   const [form, set_form] = useState({
     nome: corso?.nome || "",
     tipo: corso?.tipo || "",
@@ -1086,6 +1089,12 @@ const CorsoModal: React.FC<{
       return;
     }
 
+    // Skip ghiaccio validation when not placing in planning
+    if (!posiziona_planning) {
+      do_save();
+      return;
+    }
+
     // Validate ghiaccio availability
     set_ghiaccio_error(null);
     set_ghiaccio_warning(null);
@@ -1119,6 +1128,9 @@ const CorsoModal: React.FC<{
     on_save({
       ...form,
       id: corso?.id,
+      giorno: posiziona_planning ? form.giorno : null,
+      ora_inizio: posiziona_planning ? form.ora_inizio : null,
+      ora_fine: posiziona_planning ? form.ora_fine : null,
       costo_mensile: to_num(form.costo_mensile_str),
       costo_annuale: to_num(form.costo_annuale_str),
     });
@@ -1260,33 +1272,50 @@ const CorsoModal: React.FC<{
                   <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </Field>
-              <div className="grid grid-cols-3 gap-3">
-                <Field label="Giorno">
-                  <select value={form.giorno} onChange={(e) => set_val("giorno", e.target.value)} className={input_cls}>
-                    {GIORNI_DB.map((g) => (
-                      <option key={g} value={g}>
-                        {g}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="Ora inizio">
-                  <input
-                    type="time"
-                    value={form.ora_inizio}
-                    onChange={(e) => set_val("ora_inizio", e.target.value)}
-                    className={input_cls}
-                  />
-                </Field>
-                <Field label="Ora fine">
-                  <input
-                    type="time"
-                    value={form.ora_fine}
-                    onChange={(e) => set_val("ora_fine", e.target.value)}
-                    className={input_cls}
-                  />
-                </Field>
+              <div className="flex items-center justify-between px-3 py-2 bg-muted/30 rounded-lg">
+                <div className="space-y-0.5">
+                  <label htmlFor="posiziona_planning" className="text-sm font-medium text-foreground cursor-pointer">
+                    Posiziona subito nel planning
+                  </label>
+                  {!posiziona_planning && (
+                    <p className="text-xs text-muted-foreground">Il corso verrà posizionato nel planning in seguito</p>
+                  )}
+                </div>
+                <Switch
+                  id="posiziona_planning"
+                  checked={posiziona_planning}
+                  onCheckedChange={set_posiziona_planning}
+                />
               </div>
+              {posiziona_planning && (
+                <div className="grid grid-cols-3 gap-3">
+                  <Field label="Giorno">
+                    <select value={form.giorno} onChange={(e) => set_val("giorno", e.target.value)} className={input_cls}>
+                      {GIORNI_DB.map((g) => (
+                        <option key={g} value={g}>
+                          {g}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Ora inizio">
+                    <input
+                      type="time"
+                      value={form.ora_inizio}
+                      onChange={(e) => set_val("ora_inizio", e.target.value)}
+                      className={input_cls}
+                    />
+                  </Field>
+                  <Field label="Ora fine">
+                    <input
+                      type="time"
+                      value={form.ora_fine}
+                      onChange={(e) => set_val("ora_fine", e.target.value)}
+                      className={input_cls}
+                    />
+                  </Field>
+                </div>
+              )}
 
               {/* ← Costi con NumInput */}
               <div className="grid grid-cols-2 gap-3">
@@ -1488,9 +1517,13 @@ const CorsoCard: React.FC<{
     >
       <div className="space-y-1">
         <h3 className="font-bold text-foreground text-lg leading-tight">{corso.nome}</h3>
-        <p className="text-sm text-muted-foreground">
-          {corso.giorno} {corso.ora_inizio?.slice(0, 5)} – {corso.ora_fine?.slice(0, 5)}
-        </p>
+        {corso.giorno && corso.ora_inizio && corso.ora_fine ? (
+          <p className="text-sm text-muted-foreground">
+            {corso.giorno} {corso.ora_inizio?.slice(0, 5)} – {corso.ora_fine?.slice(0, 5)}
+          </p>
+        ) : (
+          <Badge variant="secondary" className="text-[10px] bg-muted text-muted-foreground">Da posizionare</Badge>
+        )}
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
