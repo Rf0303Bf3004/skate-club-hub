@@ -246,49 +246,20 @@ function DraggableGridCourse({ corso, children, enabled }: {
 }
 
 
-// ── Droppable slot on grid ──
-function DroppableSlot({ id, giorno, start_min, end_min, range_start, total_min, row_h, is_valid, is_warning, is_build_mode }: {
-  id: string;
+// ── Droppable day row (full width per day) ──
+function DroppableDayRow({ giorno, children, is_build_mode }: {
   giorno: string;
-  start_min: number;
-  end_min: number;
-  range_start: number;
-  total_min: number;
-  row_h: number;
-  is_valid: boolean;
-  is_warning: boolean;
+  children: React.ReactNode;
   is_build_mode: boolean;
 }) {
-  const { isOver, setNodeRef } = useDroppable({
-    id,
-    data: { giorno, start_min, end_min },
+  const { setNodeRef } = useDroppable({
+    id: `day-${giorno}`,
+    data: { giorno },
     disabled: !is_build_mode,
   });
 
-  if (!is_build_mode) return null;
-
-  const bg = isOver
-    ? is_warning ? "rgba(251,146,60,0.3)" : is_valid ? "rgba(34,197,94,0.2)" : "rgba(156,163,175,0.2)"
-    : "transparent";
-
-  return (
-    <div
-      ref={setNodeRef}
-      className="absolute z-[0]"
-      style={{
-        left: `${((start_min - range_start) / total_min) * 100}%`,
-        width: `${((end_min - start_min) / total_min) * 100}%`,
-        top: 0,
-        height: row_h,
-        background: bg,
-        border: isOver ? (is_valid ? "2px dashed #22C55E" : is_warning ? "2px dashed #FB923C" : "2px dashed #9CA3AF") : "none",
-        borderRadius: 4,
-        transition: "background 150ms, border 150ms",
-      }}
-    />
-  );
+  return <div ref={setNodeRef}>{children}</div>;
 }
-
 // ── Main component ──
 export default function PlanningPage() {
   const navigate = useNavigate();
