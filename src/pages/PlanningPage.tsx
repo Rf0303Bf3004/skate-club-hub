@@ -449,17 +449,14 @@ export default function PlanningPage() {
     return result;
   }, [ghiaccio_slots, disp_istr]);
 
-  // ── Drop zone slots: for each day, create droppable zones at each ice slot ──
-  const get_drop_slots = useCallback((giorno: string) => {
-    const all_slots = ghiaccio_slots ?? [];
-    const ice = all_slots.filter((s: any) => s.giorno === giorno && (s.tipo ?? "ghiaccio") === "ghiaccio");
-    return ice.map((s: any) => ({
-      id: `drop-${giorno}-${s.ora_inizio}-${s.ora_fine}`,
-      giorno,
-      start_min: time_to_min(s.ora_inizio),
-      end_min: time_to_min(s.ora_fine),
-    }));
-  }, [ghiaccio_slots]);
+  // ── Drop zone slots: removed, using pointer-based 5-min snap instead ──
+
+  // Get course duration helper
+  const get_corso_durata = useCallback((corso: any): number => {
+    return corso.ora_fine && corso.ora_inizio
+      ? time_to_min(corso.ora_fine) - time_to_min(corso.ora_inizio)
+      : 60;
+  }, []);
 
   // Check if drop is valid for a given course
   const check_drop_validity = useCallback((corso: any, giorno: string, start_min: number): { valid: boolean; warning: boolean } => {
