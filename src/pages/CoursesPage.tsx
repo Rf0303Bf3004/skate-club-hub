@@ -1333,6 +1333,14 @@ const CorsoModal: React.FC<{
                     />
                   </Field>
                 </div>
+                {no_ice_realtime && (
+                  <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-orange-50 border border-orange-200">
+                    <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-orange-700">
+                      Nessun ghiaccio disponibile in questo orario — il corso verrà salvato ma dovrà essere riposizionato nel planning.
+                    </p>
+                  </div>
+                )}
               )}
 
               {/* ← Costi con NumInput */}
