@@ -96,29 +96,17 @@ function use_disponibilita_istruttori() {
   });
 }
 
-function use_corsi_non_posizionati() {
-  const club_id = get_current_club_id();
-  return useQuery({
-    queryKey: ["corsi_non_posizionati", club_id],
-    enabled: !!club_id,
-    refetchOnMount: "always",
-    staleTime: 0,
-    queryFn: async () => {
-      const [corsi_res, ci_res, ic_res] = await Promise.all([
-        supabase.from("corsi").select("*").eq("club_id", club_id!).is("giorno", null),
-        supabase.from("corsi_istruttori").select("*"),
-        supabase.from("iscrizioni_corsi").select("*"),
-      ]);
-      if (corsi_res.error) throw corsi_res.error;
-      const ci = ci_res.data ?? [];
-      const ic = ic_res.data ?? [];
-      return (corsi_res.data ?? []).map((c) => ({
-        ...c,
-        istruttori_ids: ci.filter((x) => x.corso_id === c.id).map((x) => x.istruttore_id),
-        atleti_ids: ic.filter((x) => x.corso_id === c.id && x.attiva !== false).map((x) => x.atleta_id),
-      }));
-    },
-  });
+// Helper: check if a course has valid ice coverage
+function has_valid_ice(corso: any, ghiaccio_slots: any[]): boolean {
+  if (!corso.giorno || !corso.ora_inizio || !corso.ora_fine) return false;
+  // Off-ice types don't need ice
+  if (OFF_ICE_TYPES.includes((corso.tipo || "").toLowerCase())) return true;
+  const cs = time_to_min(corso.ora_inizio);
+  const ce = time_to_min(corso.ora_fine);
+  return ghiaccio_slots.some((s: any) =>
+    s.giorno === corso.giorno && (s.tipo ?? "ghiaccio") === "ghiaccio" &&
+    time_to_min(s.ora_inizio) <= cs && time_to_min(s.ora_fine) >= ce
+  );
 }
 
 // ── Types ──
@@ -310,7 +298,7 @@ export default function PlanningPage() {
   const { data: corsi_raw, isLoading: loadingCorsi } = use_corsi();
   const { data: istruttori_raw, isLoading: loadingIstr } = use_istruttori();
   const { data: stagioni_raw } = use_stagioni();
-  const { data: corsi_non_pos, isLoading: loadingNonPos } = use_corsi_non_posizionati();
+  
   const [detail, set_detail] = useState<DetailInfo | null>(null);
   const [view_mode, set_view_mode] = useState<ViewMode>(7);
   const [day_offset, set_day_offset] = useState(0);
@@ -327,6 +315,21 @@ export default function PlanningPage() {
   const max_atleti = config?.max_atleti_contemporanei ?? 30;
 
   const corsi = useMemo(() => (corsi_raw ?? []).filter((c: any) => c.attivo !== false), [corsi_raw]);
+
+  // Split courses into validly positioned vs to-position
+  const { corsi_posizionati, corsi_da_posizionare } = useMemo(() => {
+    const slots = ghiaccio_slots ?? [];
+    const positioned: any[] = [];
+    const to_position: any[] = [];
+    corsi.forEach((c: any) => {
+      if (has_valid_ice(c, slots)) {
+        positioned.push(c);
+      } else {
+        to_position.push(c);
+      }
+    });
+    return { corsi_posizionati: positioned, corsi_da_posizionare: to_position };
+  }, [corsi, ghiaccio_slots]);
   const istruttori: any[] = istruttori_raw ?? [];
   const disp_istr = disp_istr_raw ?? [];
 
@@ -371,7 +374,7 @@ export default function PlanningPage() {
   // Compute time range from actual data
   const { range_start, range_end } = useMemo(() => {
     const all_slots = ghiaccio_slots ?? [];
-    const all_corsi = corsi;
+    const all_corsi = corsi_posizionati;
     let mn = 24 * 60, mx = 0;
     all_slots.forEach((s: any) => {
       if (!visible_days.includes(s.giorno)) return;
@@ -387,7 +390,7 @@ export default function PlanningPage() {
     mn = Math.floor(mn / 60) * 60;
     mx = Math.ceil(mx / 60) * 60;
     return { range_start: mn, range_end: mx };
-  }, [ghiaccio_slots, corsi, visible_days]);
+  }, [ghiaccio_slots, corsi_posizionati, visible_days]);
 
   const total_min = range_end - range_start;
 
@@ -405,7 +408,7 @@ export default function PlanningPage() {
     visible_days.forEach((giorno) => {
       const day_ice = slots.filter((s: any) => s.giorno === giorno && (s.tipo ?? "ghiaccio") === "ghiaccio");
       const day_pulizia = slots.filter((s: any) => s.giorno === giorno && s.tipo === "pulizia");
-      const day_corsi_ice = corsi.filter((c: any) => c.giorno === giorno && !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
+      const day_corsi_ice = corsi_posizionati.filter((c: any) => c.giorno === giorno && !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
 
       day_ice.forEach((s: any) => ore_ghiaccio += time_to_min(s.ora_fine) - time_to_min(s.ora_inizio));
       day_pulizia.forEach((s: any) => ore_pulizia += time_to_min(s.ora_fine) - time_to_min(s.ora_inizio));
@@ -420,7 +423,7 @@ export default function PlanningPage() {
       private: (ore_private / 60).toFixed(1),
       pulizia: (ore_pulizia / 60).toFixed(1),
     };
-  }, [ghiaccio_slots, corsi, visible_days]);
+  }, [ghiaccio_slots, corsi_posizionati, visible_days]);
 
   const is_istr_available = (ist_id: string, giorno: string, cs: number, ce: number): boolean => {
     const slots = istr_map[ist_id]?.disponibilita[giorno] ?? [];
@@ -500,7 +503,7 @@ export default function PlanningPage() {
     if (!istr_ok) return { valid: false, warning: false };
 
     // Check capacity
-    const day_corsi_ice = corsi.filter((c: any) => c.id !== corso.id && c.giorno === giorno && !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
+    const day_corsi_ice = corsi_posizionati.filter((c: any) => c.id !== corso.id && c.giorno === giorno && !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
     const concurrent = day_corsi_ice.filter((c: any) => {
       const s = time_to_min(c.ora_inizio);
       const e = time_to_min(c.ora_fine);
@@ -510,7 +513,7 @@ export default function PlanningPage() {
     if (total_athletes > max_atleti) return { valid: true, warning: true };
 
     return { valid: true, warning: false };
-  }, [ghiaccio_slots, corsi, max_atleti, is_istr_available]);
+  }, [ghiaccio_slots, corsi_posizionati, max_atleti, is_istr_available]);
 
   // ── DnD handlers ──
   const handle_drag_start = (event: DragStartEvent) => {
@@ -523,11 +526,63 @@ export default function PlanningPage() {
 
   const handle_drag_end = async (event: DragEndEvent) => {
     const was_type = dragging_type;
+    const was_corso = dragging_corso;
     set_dragging_corso(null);
     set_dragging_type(null);
     const { active, over } = event;
-    if (!over || !active.data.current?.corso) return;
 
+    // If positioned course dropped outside grid or on invalid slot → unposition it
+    if (was_type === "positioned" && was_corso) {
+      const drop_data = over?.data?.current;
+      const has_valid_drop = drop_data?.giorno;
+
+      if (!has_valid_drop) {
+        // Dropped outside → set giorno=NULL
+        try {
+          await supabase.from("corsi").update({ giorno: null, ora_inizio: null, ora_fine: null } as any).eq("id", was_corso.id);
+          await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ["corsi"] }),
+          ]);
+          toast.info(`${was_corso.nome} rimosso dal planning`);
+        } catch (e: any) {
+          toast.error("Errore: " + e.message);
+        }
+        return;
+      }
+
+      // Check validity
+      const durata = was_corso.ora_fine && was_corso.ora_inizio
+        ? time_to_min(was_corso.ora_fine) - time_to_min(was_corso.ora_inizio)
+        : 60;
+      const start_min = drop_data.start_min as number;
+      const { valid } = check_drop_validity(was_corso, drop_data.giorno, start_min);
+      if (!valid) {
+        // Invalid slot → unposition
+        try {
+          await supabase.from("corsi").update({ giorno: null, ora_inizio: null, ora_fine: null } as any).eq("id", was_corso.id);
+          await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ["corsi"] }),
+          ]);
+          toast.info(`${was_corso.nome} rimosso dal planning (slot non valido)`);
+        } catch (e: any) {
+          toast.error("Errore: " + e.message);
+        }
+        return;
+      }
+
+      // Valid drop → show confirm
+      const end_min = start_min + durata;
+      set_drop_confirm({
+        corso: was_corso,
+        giorno: drop_data.giorno,
+        ora_inizio: min_to_time(start_min),
+        ora_fine: min_to_time(end_min),
+      });
+      return;
+    }
+
+    // Unpositioned course drag
+    if (!over || !active.data.current?.corso) return;
     const corso = active.data.current.corso;
     const drop_data = over.data.current;
     if (!drop_data?.giorno) return;
@@ -563,10 +618,7 @@ export default function PlanningPage() {
       }).eq("id", drop_confirm.corso.id);
       if (error) throw error;
 
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["corsi"] }),
-        queryClient.invalidateQueries({ queryKey: ["corsi_non_posizionati"] }),
-      ]);
+      await queryClient.invalidateQueries({ queryKey: ["corsi"] });
       toast.success(`${drop_confirm.corso.nome} posizionato con successo`);
     } catch (e: any) {
       toast.error("Errore nel posizionamento: " + e.message);
@@ -593,7 +645,7 @@ export default function PlanningPage() {
     );
   }
 
-  const unpositioned = corsi_non_pos ?? [];
+  const unpositioned = corsi_da_posizionare;
   const all_positioned = unpositioned.length === 0;
 
   // ── RENDER ──
@@ -621,8 +673,8 @@ export default function PlanningPage() {
         const all_slots = ghiaccio_slots ?? [];
         const day_ghiaccio = all_slots.filter((g: any) => g.giorno === giorno && (g.tipo ?? "ghiaccio") === "ghiaccio");
         const day_pulizia = all_slots.filter((g: any) => g.giorno === giorno && g.tipo === "pulizia");
-        const day_corsi_ice = corsi.filter((c: any) => c.giorno === giorno && !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
-        const day_corsi_off = corsi.filter((c: any) => c.giorno === giorno && OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
+        const day_corsi_ice = corsi_posizionati.filter((c: any) => c.giorno === giorno && !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
+        const day_corsi_off = corsi_posizionati.filter((c: any) => c.giorno === giorno && OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
         const day_instructors = get_day_instructors(giorno);
 
         const compute_course_rows = (courses: any[]): any[][] => {
@@ -1044,7 +1096,7 @@ export default function PlanningPage() {
                 </h2>
               </div>
 
-              {loadingNonPos ? (
+              {loading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
