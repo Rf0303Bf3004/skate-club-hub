@@ -596,7 +596,7 @@ export default function PlanningPage() {
     );
   }
 
-  const unpositioned = corsi_non_pos ?? [];
+  const unpositioned = corsi_da_posizionare;
   const all_positioned = unpositioned.length === 0;
 
   // ── RENDER ──
