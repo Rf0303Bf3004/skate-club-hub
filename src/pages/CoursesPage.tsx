@@ -976,6 +976,7 @@ const CorsoModal: React.FC<{
   const [ghiaccio_error, set_ghiaccio_error] = useState<string | null>(null);
   const [ghiaccio_warning, set_ghiaccio_warning] = useState<string | null>(null);
   const [validating_ghiaccio, set_validating_ghiaccio] = useState(false);
+  const [no_ice_realtime, set_no_ice_realtime] = useState(false);
 
   const set_val = (k: string, v: any) => {
     set_form((p) => ({ ...p, [k]: v }));
