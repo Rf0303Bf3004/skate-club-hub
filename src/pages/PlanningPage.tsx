@@ -500,7 +500,7 @@ export default function PlanningPage() {
     if (!istr_ok) return { valid: false, warning: false };
 
     // Check capacity
-    const day_corsi_ice = corsi.filter((c: any) => c.giorno === giorno && !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
+    const day_corsi_ice = corsi.filter((c: any) => c.id !== corso.id && c.giorno === giorno && !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
     const concurrent = day_corsi_ice.filter((c: any) => {
       const s = time_to_min(c.ora_inizio);
       const e = time_to_min(c.ora_fine);
