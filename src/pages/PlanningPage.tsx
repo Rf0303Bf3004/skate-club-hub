@@ -1211,18 +1211,40 @@ export default function PlanningPage() {
       </div>
 
       {/* Drag overlay */}
-      <DragOverlay>
+      <DragOverlay dropAnimation={null}>
         {dragging_corso && (
-          <div className="border border-primary rounded-lg p-3 bg-card shadow-lg opacity-90 w-[260px]">
-            <span className="font-bold text-sm text-foreground">{dragging_corso.nome}</span>
+          <div className="border border-primary rounded-lg p-2 bg-card shadow-lg opacity-80 w-[200px] pointer-events-none">
+            <span className="font-bold text-xs text-foreground">{dragging_corso.nome}</span>
             {dragging_corso.tipo && (
-              <span className="ml-2 text-[10px] font-semibold px-1.5 py-0.5 rounded-full text-white" style={{ backgroundColor: "#7F77DD" }}>
+              <span className="ml-1 text-[9px] font-semibold px-1 py-0.5 rounded-full text-white" style={{ backgroundColor: "#7F77DD" }}>
                 {dragging_corso.tipo}
               </span>
             )}
           </div>
         )}
       </DragOverlay>
+
+      {/* Real-time tooltip during drag */}
+      {drag_preview && dragging_corso && (
+        <div
+          className="fixed z-[9999] pointer-events-none"
+          style={{
+            left: drag_preview.pointer_x + 16,
+            top: drag_preview.pointer_y - 36,
+          }}
+        >
+          <div
+            className="rounded-md px-2.5 py-1.5 text-xs font-bold shadow-lg border"
+            style={{
+              background: drag_preview.valid ? (drag_preview.warning ? "#FFF7ED" : "#F0FDF4") : "#FEF2F2",
+              borderColor: drag_preview.valid ? (drag_preview.warning ? "#FB923C" : "#22C55E") : "#EF4444",
+              color: drag_preview.valid ? (drag_preview.warning ? "#9A3412" : "#166534") : "#991B1B",
+            }}
+          >
+            {min_to_time(drag_preview.start_min)} → {min_to_time(drag_preview.end_min)}
+          </div>
+        </div>
+      )}
 
       {/* Confirm dialog */}
       <Dialog open={!!drop_confirm} onOpenChange={(open) => !open && set_drop_confirm(null)}>
