@@ -298,7 +298,7 @@ export default function PlanningPage() {
   const { data: corsi_raw, isLoading: loadingCorsi } = use_corsi();
   const { data: istruttori_raw, isLoading: loadingIstr } = use_istruttori();
   const { data: stagioni_raw } = use_stagioni();
-  const { data: corsi_non_pos, isLoading: loadingNonPos } = use_corsi_non_posizionati();
+  
   const [detail, set_detail] = useState<DetailInfo | null>(null);
   const [view_mode, set_view_mode] = useState<ViewMode>(7);
   const [day_offset, set_day_offset] = useState(0);
