@@ -503,7 +503,7 @@ export default function PlanningPage() {
     if (!istr_ok) return { valid: false, warning: false };
 
     // Check capacity
-    const day_corsi_ice = corsi.filter((c: any) => c.id !== corso.id && c.giorno === giorno && !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
+    const day_corsi_ice = corsi_posizionati.filter((c: any) => c.id !== corso.id && c.giorno === giorno && !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
     const concurrent = day_corsi_ice.filter((c: any) => {
       const s = time_to_min(c.ora_inizio);
       const e = time_to_min(c.ora_fine);
@@ -513,7 +513,7 @@ export default function PlanningPage() {
     if (total_athletes > max_atleti) return { valid: true, warning: true };
 
     return { valid: true, warning: false };
-  }, [ghiaccio_slots, corsi, max_atleti, is_istr_available]);
+  }, [ghiaccio_slots, corsi_posizionati, max_atleti, is_istr_available]);
 
   // ── DnD handlers ──
   const handle_drag_start = (event: DragStartEvent) => {
