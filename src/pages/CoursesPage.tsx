@@ -1516,9 +1516,13 @@ const CorsoCard: React.FC<{
     >
       <div className="space-y-1">
         <h3 className="font-bold text-foreground text-lg leading-tight">{corso.nome}</h3>
-        <p className="text-sm text-muted-foreground">
-          {corso.giorno} {corso.ora_inizio?.slice(0, 5)} – {corso.ora_fine?.slice(0, 5)}
-        </p>
+        {corso.giorno && corso.ora_inizio && corso.ora_fine ? (
+          <p className="text-sm text-muted-foreground">
+            {corso.giorno} {corso.ora_inizio?.slice(0, 5)} – {corso.ora_fine?.slice(0, 5)}
+          </p>
+        ) : (
+          <Badge variant="secondary" className="text-[10px] bg-muted text-muted-foreground">Da posizionare</Badge>
+        )}
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
