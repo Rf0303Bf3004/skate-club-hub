@@ -493,34 +493,79 @@ export default function PlanningPage() {
     return { valid: true, warning: false };
   }, [ghiaccio_slots, corsi_posizionati, max_atleti, is_istr_available]);
 
+  // ── Drag move handler (5-min snap) ──
+  const handle_drag_move = useCallback((event: DragMoveEvent) => {
+    if (!dragging_corso) return;
+    const durata = get_corso_durata(dragging_corso);
+    const ae = event.activatorEvent as PointerEvent;
+    const px = ae.clientX + event.delta.x;
+    const py = ae.clientY + event.delta.y;
+
+    let found_giorno: string | null = null;
+    let relative_x = 0;
+    let grid_width = 0;
+
+    for (const giorno of visible_days) {
+      const el = grid_refs.current[giorno];
+      if (!el) continue;
+      const rect = el.getBoundingClientRect();
+      if (py >= rect.top && py <= rect.bottom && px >= rect.left && px <= rect.right) {
+        found_giorno = giorno;
+        relative_x = px - rect.left;
+        grid_width = rect.width;
+        break;
+      }
+    }
+
+    if (!found_giorno || grid_width === 0) {
+      set_drag_preview(null);
+      return;
+    }
+
+    const raw_min = (relative_x / grid_width) * total_min + range_start;
+    const snapped = Math.round(raw_min / 5) * 5;
+    const start = Math.max(range_start, Math.min(snapped, range_end - durata));
+    const end = start + durata;
+
+    const { valid, warning } = check_drop_validity(dragging_corso, found_giorno, start);
+
+    set_drag_preview({
+      giorno: found_giorno,
+      start_min: start,
+      end_min: end,
+      valid,
+      warning,
+      pointer_x: px,
+      pointer_y: py,
+    });
+  }, [dragging_corso, visible_days, total_min, range_start, range_end, check_drop_validity, get_corso_durata]);
+
   // ── DnD handlers ──
   const handle_drag_start = (event: DragStartEvent) => {
     const data = event.active.data.current;
     if (data?.corso) {
       set_dragging_corso(data.corso);
       set_dragging_type(data.type as "unpositioned" | "positioned");
+      set_drag_preview(null);
     }
   };
 
   const handle_drag_end = async (event: DragEndEvent) => {
     const was_type = dragging_type;
     const was_corso = dragging_corso;
+    const preview = drag_preview;
     set_dragging_corso(null);
     set_dragging_type(null);
-    const { active, over } = event;
+    set_drag_preview(null);
 
-    // If positioned course dropped outside grid or on invalid slot → unposition it
-    if (was_type === "positioned" && was_corso) {
-      const drop_data = over?.data?.current;
-      const has_valid_drop = drop_data?.giorno;
+    if (!was_corso) return;
 
-      if (!has_valid_drop) {
-        // Dropped outside → set giorno=NULL
+    // If positioned course dropped with no valid preview → unposition it
+    if (was_type === "positioned") {
+      if (!preview || !preview.valid) {
         try {
           await supabase.from("corsi").update({ giorno: null, ora_inizio: null, ora_fine: null } as any).eq("id", was_corso.id);
-          await Promise.all([
-            queryClient.invalidateQueries({ queryKey: ["corsi"] }),
-          ]);
+          await queryClient.invalidateQueries({ queryKey: ["corsi"] });
           toast.info(`${was_corso.nome} rimosso dal planning`);
         } catch (e: any) {
           toast.error("Errore: " + e.message);
@@ -528,60 +573,27 @@ export default function PlanningPage() {
         return;
       }
 
-      // Check validity
-      const durata = was_corso.ora_fine && was_corso.ora_inizio
-        ? time_to_min(was_corso.ora_fine) - time_to_min(was_corso.ora_inizio)
-        : 60;
-      const start_min = drop_data.start_min as number;
-      const { valid } = check_drop_validity(was_corso, drop_data.giorno, start_min);
-      if (!valid) {
-        // Invalid slot → unposition
-        try {
-          await supabase.from("corsi").update({ giorno: null, ora_inizio: null, ora_fine: null } as any).eq("id", was_corso.id);
-          await Promise.all([
-            queryClient.invalidateQueries({ queryKey: ["corsi"] }),
-          ]);
-          toast.info(`${was_corso.nome} rimosso dal planning (slot non valido)`);
-        } catch (e: any) {
-          toast.error("Errore: " + e.message);
-        }
-        return;
-      }
-
-      // Valid drop → show confirm
-      const end_min = start_min + durata;
+      // Valid preview → confirm
       set_drop_confirm({
         corso: was_corso,
-        giorno: drop_data.giorno,
-        ora_inizio: min_to_time(start_min),
-        ora_fine: min_to_time(end_min),
+        giorno: preview.giorno,
+        ora_inizio: min_to_time(preview.start_min),
+        ora_fine: min_to_time(preview.end_min),
       });
       return;
     }
 
-    // Unpositioned course drag
-    if (!over || !active.data.current?.corso) return;
-    const corso = active.data.current.corso;
-    const drop_data = over.data.current;
-    if (!drop_data?.giorno) return;
-
-    const durata = corso.ora_fine && corso.ora_inizio
-      ? time_to_min(corso.ora_fine) - time_to_min(corso.ora_inizio)
-      : 60;
-    const start_min = drop_data.start_min as number;
-    const end_min = start_min + durata;
-
-    const { valid } = check_drop_validity(corso, drop_data.giorno, start_min);
-    if (!valid) {
-      toast.error("Slot non compatibile per questo corso");
+    // Unpositioned course
+    if (!preview || !preview.valid) {
+      if (preview && !preview.valid) toast.error("Slot non compatibile per questo corso");
       return;
     }
 
     set_drop_confirm({
-      corso,
-      giorno: drop_data.giorno,
-      ora_inizio: min_to_time(start_min),
-      ora_fine: min_to_time(end_min),
+      corso: was_corso,
+      giorno: preview.giorno,
+      ora_inizio: min_to_time(preview.start_min),
+      ora_fine: min_to_time(preview.end_min),
     });
   };
 
