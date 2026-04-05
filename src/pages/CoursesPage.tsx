@@ -1306,41 +1306,43 @@ const CorsoModal: React.FC<{
                 />
               </div>
               {posiziona_planning && (
-                <div className="grid grid-cols-3 gap-3">
-                  <Field label="Giorno">
-                    <select value={form.giorno} onChange={(e) => set_val("giorno", e.target.value)} className={input_cls}>
-                      {GIORNI_DB.map((g) => (
-                        <option key={g} value={g}>
-                          {g}
-                        </option>
-                      ))}
-                    </select>
-                  </Field>
-                  <Field label="Ora inizio">
-                    <input
-                      type="time"
-                      value={form.ora_inizio}
-                      onChange={(e) => set_val("ora_inizio", e.target.value)}
-                      className={input_cls}
-                    />
-                  </Field>
-                  <Field label="Ora fine">
-                    <input
-                      type="time"
-                      value={form.ora_fine}
-                      onChange={(e) => set_val("ora_fine", e.target.value)}
-                      className={input_cls}
-                    />
-                  </Field>
-                </div>
-                {no_ice_realtime && (
-                  <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-orange-50 border border-orange-200">
-                    <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs text-orange-700">
-                      Nessun ghiaccio disponibile in questo orario — il corso verrà salvato ma dovrà essere riposizionato nel planning.
-                    </p>
+                <>
+                  <div className="grid grid-cols-3 gap-3">
+                    <Field label="Giorno">
+                      <select value={form.giorno} onChange={(e) => set_val("giorno", e.target.value)} className={input_cls}>
+                        {GIORNI_DB.map((g) => (
+                          <option key={g} value={g}>
+                            {g}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                    <Field label="Ora inizio">
+                      <input
+                        type="time"
+                        value={form.ora_inizio}
+                        onChange={(e) => set_val("ora_inizio", e.target.value)}
+                        className={input_cls}
+                      />
+                    </Field>
+                    <Field label="Ora fine">
+                      <input
+                        type="time"
+                        value={form.ora_fine}
+                        onChange={(e) => set_val("ora_fine", e.target.value)}
+                        className={input_cls}
+                      />
+                    </Field>
                   </div>
-                )}
+                  {no_ice_realtime && (
+                    <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-orange-50 border border-orange-200">
+                      <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-orange-700">
+                        Nessun ghiaccio disponibile in questo orario — il corso verrà salvato ma dovrà essere riposizionato nel planning.
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
 
               {/* ← Costi con NumInput */}
