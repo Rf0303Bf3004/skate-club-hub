@@ -1088,6 +1088,12 @@ const CorsoModal: React.FC<{
       return;
     }
 
+    // Skip ghiaccio validation when not placing in planning
+    if (!posiziona_planning) {
+      do_save();
+      return;
+    }
+
     // Validate ghiaccio availability
     set_ghiaccio_error(null);
     set_ghiaccio_warning(null);
