@@ -316,6 +316,7 @@ export default function PlanningPage() {
   const [day_offset, set_day_offset] = useState(0);
   const [build_mode, set_build_mode] = useState(false);
   const [dragging_corso, set_dragging_corso] = useState<any>(null);
+  const [dragging_type, set_dragging_type] = useState<"unpositioned" | "positioned" | null>(null);
   const [drop_confirm, set_drop_confirm] = useState<DropConfirm | null>(null);
   const [saving, set_saving] = useState(false);
 
