@@ -374,7 +374,7 @@ export default function PlanningPage() {
   // Compute time range from actual data
   const { range_start, range_end } = useMemo(() => {
     const all_slots = ghiaccio_slots ?? [];
-    const all_corsi = corsi;
+    const all_corsi = corsi_posizionati;
     let mn = 24 * 60, mx = 0;
     all_slots.forEach((s: any) => {
       if (!visible_days.includes(s.giorno)) return;
@@ -390,7 +390,7 @@ export default function PlanningPage() {
     mn = Math.floor(mn / 60) * 60;
     mx = Math.ceil(mx / 60) * 60;
     return { range_start: mn, range_end: mx };
-  }, [ghiaccio_slots, corsi, visible_days]);
+  }, [ghiaccio_slots, corsi_posizionati, visible_days]);
 
   const total_min = range_end - range_start;
 
