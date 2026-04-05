@@ -970,14 +970,14 @@ export default function PlanningPage() {
                         })}
                       >
                         <span className="text-[9px] font-medium truncate px-0.5">{c.nome || tipo_key}</span>
-          </div>
-          </DroppableDayRow>
-        );
-      })}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
           </div>
+          </DroppableDayRow>
         );
       })}
     </div>
