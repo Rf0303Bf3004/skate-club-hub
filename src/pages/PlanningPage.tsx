@@ -522,7 +522,9 @@ export default function PlanningPage() {
   };
 
   const handle_drag_end = async (event: DragEndEvent) => {
+    const was_type = dragging_type;
     set_dragging_corso(null);
+    set_dragging_type(null);
     const { active, over } = event;
     if (!over || !active.data.current?.corso) return;
 
