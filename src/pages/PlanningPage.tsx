@@ -315,6 +315,21 @@ export default function PlanningPage() {
   const max_atleti = config?.max_atleti_contemporanei ?? 30;
 
   const corsi = useMemo(() => (corsi_raw ?? []).filter((c: any) => c.attivo !== false), [corsi_raw]);
+
+  // Split courses into validly positioned vs to-position
+  const { corsi_posizionati, corsi_da_posizionare } = useMemo(() => {
+    const slots = ghiaccio_slots ?? [];
+    const positioned: any[] = [];
+    const to_position: any[] = [];
+    corsi.forEach((c: any) => {
+      if (has_valid_ice(c, slots)) {
+        positioned.push(c);
+      } else {
+        to_position.push(c);
+      }
+    });
+    return { corsi_posizionati: positioned, corsi_da_posizionare: to_position };
+  }, [corsi, ghiaccio_slots]);
   const istruttori: any[] = istruttori_raw ?? [];
   const disp_istr = disp_istr_raw ?? [];
 
