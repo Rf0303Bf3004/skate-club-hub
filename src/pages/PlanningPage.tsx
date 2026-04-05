@@ -1048,13 +1048,25 @@ export default function PlanningPage() {
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
-              ) : all_positioned ? (
+              ) : all_positioned && !dragging_corso ? (
                 <div className="border border-border rounded-lg p-4 text-center space-y-1 bg-muted/30">
                   <Check className="h-6 w-6 text-green-500 mx-auto" />
                   <p className="text-sm font-medium text-foreground">Tutti i corsi sono stati posizionati</p>
                 </div>
               ) : (
                 <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
+                  {/* Show dragged positioned course as "in movimento" */}
+                  {dragging_type === "positioned" && dragging_corso && (
+                    <div className="border-2 border-dashed border-primary rounded-lg p-3 bg-primary/5 space-y-1">
+                      <div className="flex items-center gap-1.5">
+                        <GripVertical className="h-4 w-4 text-primary flex-shrink-0" />
+                        <span className="font-bold text-sm text-foreground">{dragging_corso.nome}</span>
+                      </div>
+                      <Badge variant="outline" className="text-[10px] text-primary border-primary">
+                        In movimento
+                      </Badge>
+                    </div>
+                  )}
                   {unpositioned.map((corso: any) => (
                     <DraggableCourseCard
                       key={corso.id}
