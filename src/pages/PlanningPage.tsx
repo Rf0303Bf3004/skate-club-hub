@@ -708,10 +708,10 @@ export default function PlanningPage() {
         const row_h = BASE_ROW_H + Math.max(0, n_sub_rows - 1) * EXTRA_PER_ROW;
         const sub_row_h = n_sub_rows > 1 ? row_h / n_sub_rows : row_h;
 
-        const drop_slots = build_mode ? get_drop_slots(giorno) : [];
 
         return (
-          <div key={giorno} className="border-b border-border last:border-b-0">
+          <DroppableDayRow key={giorno} giorno={giorno} is_build_mode={build_mode}>
+          <div className="border-b border-border last:border-b-0">
             <div className="flex">
               <div
                 className="flex-shrink-0 flex flex-col items-center justify-center border-r border-border bg-muted px-1"
@@ -721,26 +721,11 @@ export default function PlanningPage() {
                 <span style={{ fontSize: 11 }} className="text-muted-foreground leading-tight">{day_ice_h}h ghiaccio</span>
               </div>
 
-              <div className="flex-1 relative" style={{ minWidth: total_min * 1.2, height: row_h }}>
-                {/* Drop zones (build mode only) */}
-                {drop_slots.map((slot) => {
-                  const validity = dragging_corso ? check_drop_validity(dragging_corso, giorno, slot.start_min) : { valid: false, warning: false };
-                  return (
-                    <DroppableSlot
-                      key={slot.id}
-                      id={slot.id}
-                      giorno={giorno}
-                      start_min={slot.start_min}
-                      end_min={slot.end_min}
-                      range_start={range_start}
-                      total_min={total_min}
-                      row_h={row_h}
-                      is_valid={validity.valid}
-                      is_warning={validity.warning}
-                      is_build_mode={build_mode}
-                    />
-                  );
-                })}
+              <div
+                className="flex-1 relative"
+                style={{ minWidth: total_min * 1.2, height: row_h }}
+                ref={(el) => { grid_refs.current[giorno] = el; }}
+              >
 
                 {/* Ghiaccio background */}
                 {day_ghiaccio.map((g: any, gi: number) => {
