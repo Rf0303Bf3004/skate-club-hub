@@ -515,7 +515,10 @@ export default function PlanningPage() {
   // ── DnD handlers ──
   const handle_drag_start = (event: DragStartEvent) => {
     const data = event.active.data.current;
-    if (data?.corso) set_dragging_corso(data.corso);
+    if (data?.corso) {
+      set_dragging_corso(data.corso);
+      set_dragging_type(data.type as "unpositioned" | "positioned");
+    }
   };
 
   const handle_drag_end = async (event: DragEndEvent) => {
