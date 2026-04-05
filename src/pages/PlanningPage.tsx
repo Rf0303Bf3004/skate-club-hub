@@ -526,11 +526,63 @@ export default function PlanningPage() {
 
   const handle_drag_end = async (event: DragEndEvent) => {
     const was_type = dragging_type;
+    const was_corso = dragging_corso;
     set_dragging_corso(null);
     set_dragging_type(null);
     const { active, over } = event;
-    if (!over || !active.data.current?.corso) return;
 
+    // If positioned course dropped outside grid or on invalid slot → unposition it
+    if (was_type === "positioned" && was_corso) {
+      const drop_data = over?.data?.current;
+      const has_valid_drop = drop_data?.giorno;
+
+      if (!has_valid_drop) {
+        // Dropped outside → set giorno=NULL
+        try {
+          await supabase.from("corsi").update({ giorno: null, ora_inizio: null, ora_fine: null } as any).eq("id", was_corso.id);
+          await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ["corsi"] }),
+          ]);
+          toast.info(`${was_corso.nome} rimosso dal planning`);
+        } catch (e: any) {
+          toast.error("Errore: " + e.message);
+        }
+        return;
+      }
+
+      // Check validity
+      const durata = was_corso.ora_fine && was_corso.ora_inizio
+        ? time_to_min(was_corso.ora_fine) - time_to_min(was_corso.ora_inizio)
+        : 60;
+      const start_min = drop_data.start_min as number;
+      const { valid } = check_drop_validity(was_corso, drop_data.giorno, start_min);
+      if (!valid) {
+        // Invalid slot → unposition
+        try {
+          await supabase.from("corsi").update({ giorno: null, ora_inizio: null, ora_fine: null } as any).eq("id", was_corso.id);
+          await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ["corsi"] }),
+          ]);
+          toast.info(`${was_corso.nome} rimosso dal planning (slot non valido)`);
+        } catch (e: any) {
+          toast.error("Errore: " + e.message);
+        }
+        return;
+      }
+
+      // Valid drop → show confirm
+      const end_min = start_min + durata;
+      set_drop_confirm({
+        corso: was_corso,
+        giorno: drop_data.giorno,
+        ora_inizio: min_to_time(start_min),
+        ora_fine: min_to_time(end_min),
+      });
+      return;
+    }
+
+    // Unpositioned course drag
+    if (!over || !active.data.current?.corso) return;
     const corso = active.data.current.corso;
     const drop_data = over.data.current;
     if (!drop_data?.giorno) return;
