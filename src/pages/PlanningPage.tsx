@@ -905,6 +905,30 @@ export default function PlanningPage() {
                     return <React.Fragment key={`c-${row_idx}-${ci}`}>{inner}</React.Fragment>;
                   })
                 )}
+
+                {/* Ghost preview (build mode drag) */}
+                {build_mode && drag_preview && drag_preview.giorno === giorno && (
+                  <div
+                    className="absolute z-[6] flex items-center justify-center overflow-hidden pointer-events-none"
+                    style={{
+                      left: `${((drag_preview.start_min - range_start) / total_min) * 100}%`,
+                      width: `${((drag_preview.end_min - drag_preview.start_min) / total_min) * 100}%`,
+                      top: 4,
+                      bottom: 4,
+                      background: drag_preview.valid
+                        ? drag_preview.warning ? "rgba(251,146,60,0.35)" : "rgba(34,197,94,0.35)"
+                        : "rgba(239,68,68,0.3)",
+                      border: `2px dashed ${drag_preview.valid ? (drag_preview.warning ? "#FB923C" : "#22C55E") : "#EF4444"}`,
+                      borderRadius: 4,
+                    }}
+                  >
+                    <span className="text-xs font-bold px-1 truncate" style={{
+                      color: drag_preview.valid ? (drag_preview.warning ? "#FB923C" : "#16A34A") : "#EF4444",
+                    }}>
+                      {dragging_corso?.nome}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
