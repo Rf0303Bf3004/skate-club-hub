@@ -231,6 +231,31 @@ function DraggableCourseCard({ corso, istr_map, compatibility }: {
     </div>
   );
 }
+// ── Draggable course block on grid ──
+function DraggableGridCourse({ corso, children, enabled }: {
+  corso: any;
+  children: React.ReactNode;
+  enabled: boolean;
+}) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: `positioned-${corso.id}`,
+    data: { corso, type: "positioned" },
+    disabled: !enabled,
+  });
+
+  const style: React.CSSProperties = {
+    ...(transform ? { transform: `translate(${transform.x}px, ${transform.y}px)` } : {}),
+    opacity: isDragging ? 0.2 : 1,
+    cursor: enabled ? "grab" : "pointer",
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      {children}
+    </div>
+  );
+}
+
 
 // ── Droppable slot on grid ──
 function DroppableSlot({ id, giorno, start_min, end_min, range_start, total_min, row_h, is_valid, is_warning, is_build_mode }: {
