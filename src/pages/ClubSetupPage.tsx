@@ -315,6 +315,33 @@ const ClubSetupPage: React.FC = () => {
         ))}
       </div>
 
+      <Tabs defaultValue="configurazione" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="configurazione">Configurazione</TabsTrigger>
+          <TabsTrigger value="ghiaccio">Ghiaccio e Planning</TabsTrigger>
+          <TabsTrigger value="catalogo">Catalogo Offerta</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="configurazione">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {[
+          { icon: Users, label: "Atleti", value: atleti.length, color: "text-primary" },
+          { icon: UserCheck, label: "Istruttori", value: istruttori.filter((i: any) => i.attivo).length, color: "text-success" },
+          { icon: Calendar, label: "Stagione attiva", value: stagione_attiva?.nome || "—", color: "text-orange-500" },
+          { icon: Hash, label: "Club ID", value: get_current_club_id().slice(0, 8) + "...", color: "text-muted-foreground" },
+        ].map((stat, i) => (
+          <div key={i} className="bg-card rounded-xl shadow-card p-4 flex items-center gap-3">
+            <div className={`w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center ${stat.color}`}>
+              <stat.icon className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">{stat.label}</p>
+              <p className="text-sm font-bold text-foreground truncate max-w-[100px]">{stat.value}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
       <div className="bg-card rounded-xl shadow-card p-6 space-y-8 max-w-2xl">
         {/* Logo */}
         <section className="space-y-4">
