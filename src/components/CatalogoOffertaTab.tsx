@@ -74,30 +74,30 @@ interface PacchettoRow {
 }
 
 // ── Hooks ──
-function use_catalogo_livelli(club_id: string | null, stagione_id: string | null) {
+function use_catalogo_livelli(club_id: string | null) {
   return useQuery({
-    queryKey: ["catalogo_livelli", club_id, stagione_id],
+    queryKey: ["catalogo_livelli", club_id],
     enabled: !!club_id,
     queryFn: async () => {
-      if (!club_id) return [] as LivelloRow[];
-      let q = (supabase as any).from("catalogo_livelli").select("*").eq("club_id", club_id);
-      if (stagione_id) q = q.eq("stagione_id", stagione_id);
-      const { data, error } = await q;
+      const { data, error } = await (supabase as any)
+        .from("catalogo_livelli")
+        .select("*")
+        .eq("club_id", club_id);
       if (error) throw error;
       return (data ?? []) as LivelloRow[];
     },
   });
 }
 
-function use_catalogo_pacchetti(club_id: string | null, stagione_id: string | null) {
+function use_catalogo_pacchetti(club_id: string | null) {
   return useQuery({
-    queryKey: ["catalogo_pacchetti_opzionali", club_id, stagione_id],
+    queryKey: ["catalogo_pacchetti_opzionali", club_id],
     enabled: !!club_id,
     queryFn: async () => {
-      if (!club_id) return [] as PacchettoRow[];
-      let q = (supabase as any).from("catalogo_pacchetti_opzionali").select("*").eq("club_id", club_id);
-      if (stagione_id) q = q.eq("stagione_id", stagione_id);
-      const { data, error } = await q;
+      const { data, error } = await (supabase as any)
+        .from("catalogo_pacchetti_opzionali")
+        .select("*")
+        .eq("club_id", club_id);
       if (error) throw error;
       return (data ?? []) as PacchettoRow[];
     },
