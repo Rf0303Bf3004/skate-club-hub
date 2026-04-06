@@ -6,9 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
 import { Upload, Globe, Phone, Mail, MapPin, Hash, Users, UserCheck, Calendar, Building2, Plus, Trash2, Loader2 } from "lucide-react";
+import CatalogoOffertaTab from "@/components/CatalogoOffertaTab";
 
 const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"] as const;
 
@@ -313,6 +315,33 @@ const ClubSetupPage: React.FC = () => {
         ))}
       </div>
 
+      <Tabs defaultValue="configurazione" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="configurazione">Configurazione</TabsTrigger>
+          <TabsTrigger value="ghiaccio">Ghiaccio e Planning</TabsTrigger>
+          <TabsTrigger value="catalogo">Catalogo Offerta</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="configurazione">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {[
+          { icon: Users, label: "Atleti", value: atleti.length, color: "text-primary" },
+          { icon: UserCheck, label: "Istruttori", value: istruttori.filter((i: any) => i.attivo).length, color: "text-success" },
+          { icon: Calendar, label: "Stagione attiva", value: stagione_attiva?.nome || "—", color: "text-orange-500" },
+          { icon: Hash, label: "Club ID", value: get_current_club_id().slice(0, 8) + "...", color: "text-muted-foreground" },
+        ].map((stat, i) => (
+          <div key={i} className="bg-card rounded-xl shadow-card p-4 flex items-center gap-3">
+            <div className={`w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center ${stat.color}`}>
+              <stat.icon className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">{stat.label}</p>
+              <p className="text-sm font-bold text-foreground truncate max-w-[100px]">{stat.value}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
       <div className="bg-card rounded-xl shadow-card p-6 space-y-8 max-w-2xl">
         {/* Logo */}
         <section className="space-y-4">
@@ -412,11 +441,10 @@ const ClubSetupPage: React.FC = () => {
             {saving ? "Salvataggio..." : "Salva modifiche"}
           </Button>
         </div>
-      </div>
+        </div>
+        </TabsContent>
 
-      {/* ═══════════════════════════════════════════════════ */}
-      {/* GHIACCIO E PLANNING — card separato */}
-      {/* ═══════════════════════════════════════════════════ */}
+        <TabsContent value="ghiaccio">
       <div className="bg-card rounded-xl shadow-card p-6 space-y-8 max-w-2xl border-2 border-primary/20">
         <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
           🧊 Ghiaccio e Planning
@@ -583,6 +611,12 @@ const ClubSetupPage: React.FC = () => {
           </div>
         </div>
       </div>
+        </TabsContent>
+
+        <TabsContent value="catalogo">
+          <CatalogoOffertaTab stagione_id={stagione_attiva?.id || null} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
