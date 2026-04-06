@@ -74,12 +74,12 @@ interface PacchettoRow {
 }
 
 // ── Hooks ──
-function use_catalogo_livelli(stagione_id: string | null) {
-  const club_id = get_current_club_id();
+function use_catalogo_livelli(club_id: string | null, stagione_id: string | null) {
   return useQuery({
     queryKey: ["catalogo_livelli", club_id, stagione_id],
     enabled: !!club_id,
     queryFn: async () => {
+      if (!club_id) return [] as LivelloRow[];
       let q = (supabase as any).from("catalogo_livelli").select("*").eq("club_id", club_id);
       if (stagione_id) q = q.eq("stagione_id", stagione_id);
       const { data, error } = await q;
@@ -89,12 +89,12 @@ function use_catalogo_livelli(stagione_id: string | null) {
   });
 }
 
-function use_catalogo_pacchetti(stagione_id: string | null) {
-  const club_id = get_current_club_id();
+function use_catalogo_pacchetti(club_id: string | null, stagione_id: string | null) {
   return useQuery({
     queryKey: ["catalogo_pacchetti_opzionali", club_id, stagione_id],
     enabled: !!club_id,
     queryFn: async () => {
+      if (!club_id) return [] as PacchettoRow[];
       let q = (supabase as any).from("catalogo_pacchetti_opzionali").select("*").eq("club_id", club_id);
       if (stagione_id) q = q.eq("stagione_id", stagione_id);
       const { data, error } = await q;
@@ -106,18 +106,28 @@ function use_catalogo_pacchetti(stagione_id: string | null) {
 
 // ── Component ──
 interface Props {
+  club_id?: string | null;
   stagione_id: string | null;
 }
 
-const CatalogoOffertaTab: React.FC<Props> = ({ stagione_id }) => {
+const CatalogoOffertaTab: React.FC<Props> = ({ club_id, stagione_id }) => {
+  const resolved_club_id = club_id || get_current_club_id() || null;
   const queryClient = useQueryClient();
-  const { data: livelli_raw = [], isLoading: loading_livelli } = use_catalogo_livelli(stagione_id);
-  const { data: pacchetti_raw = [], isLoading: loading_pacchetti } = use_catalogo_pacchetti(stagione_id);
+  const { data: livelli_raw = [], isLoading: loading_livelli } = use_catalogo_livelli(resolved_club_id, stagione_id);
+  const { data: pacchetti_raw = [], isLoading: loading_pacchetti } = use_catalogo_pacchetti(resolved_club_id, stagione_id);
 
   const [livelli, set_livelli] = useState<LivelloRow[]>([]);
   const [pacchetti, set_pacchetti] = useState<PacchettoRow[]>([]);
   const [saving_livelli, set_saving_livelli] = useState(false);
   const [saving_pacchetti, set_saving_pacchetti] = useState(false);
+
+  useEffect(() => {
+    console.log("CatalogoOfferta debug:", {
+      club_id: get_current_club_id(),
+      stagione_id,
+      effective_club_id: resolved_club_id,
+    });
+  }, [resolved_club_id, stagione_id]);
 
   // Sync from DB, ordered by LIVELLI_ORDINE
   useEffect(() => {

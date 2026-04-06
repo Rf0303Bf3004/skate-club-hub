@@ -614,7 +614,10 @@ const ClubSetupPage: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="catalogo">
-          <CatalogoOffertaTab stagione_id={stagione_attiva?.id || null} />
+          <CatalogoOffertaTab
+            club_id={club?.id || get_current_club_id() || null}
+            stagione_id={stagione_attiva?.id || null}
+          />
         </TabsContent>
       </Tabs>
     </div>
