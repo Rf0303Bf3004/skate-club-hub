@@ -441,11 +441,10 @@ const ClubSetupPage: React.FC = () => {
             {saving ? "Salvataggio..." : "Salva modifiche"}
           </Button>
         </div>
-      </div>
+        </div>
+        </TabsContent>
 
-      {/* ═══════════════════════════════════════════════════ */}
-      {/* GHIACCIO E PLANNING — card separato */}
-      {/* ═══════════════════════════════════════════════════ */}
+        <TabsContent value="ghiaccio">
       <div className="bg-card rounded-xl shadow-card p-6 space-y-8 max-w-2xl border-2 border-primary/20">
         <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
           🧊 Ghiaccio e Planning
@@ -612,6 +611,12 @@ const ClubSetupPage: React.FC = () => {
           </div>
         </div>
       </div>
+        </TabsContent>
+
+        <TabsContent value="catalogo">
+          <CatalogoOffertaTab stagione_id={stagione_attiva?.id || null} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
