@@ -113,8 +113,8 @@ interface Props {
 const CatalogoOffertaTab: React.FC<Props> = ({ club_id, stagione_id }) => {
   const resolved_club_id = club_id || get_current_club_id() || null;
   const queryClient = useQueryClient();
-  const { data: livelli_raw = [], isLoading: loading_livelli } = use_catalogo_livelli(resolved_club_id, stagione_id);
-  const { data: pacchetti_raw = [], isLoading: loading_pacchetti } = use_catalogo_pacchetti(resolved_club_id, stagione_id);
+  const { data: livelli_raw = [], isLoading: loading_livelli } = use_catalogo_livelli(resolved_club_id);
+  const { data: pacchetti_raw = [], isLoading: loading_pacchetti } = use_catalogo_pacchetti(resolved_club_id);
 
   const [livelli, set_livelli] = useState<LivelloRow[]>([]);
   const [pacchetti, set_pacchetti] = useState<PacchettoRow[]>([]);
