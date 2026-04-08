@@ -1,42 +1,33 @@
-import React, { useState, useMemo, useCallback, useRef } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase, get_current_club_id } from "@/lib/supabase";
-import { use_corsi, use_istruttori, use_stagioni } from "@/hooks/use-supabase-data";
-import { X, Loader2, ChevronLeft, ChevronRight, Plus, Wrench, Eye, GripVertical, Check } from "lucide-react";
+import { use_corsi, use_istruttori, use_stagioni, use_atleti } from "@/hooks/use-supabase-data";
+import {
+  X, Loader2, ChevronLeft, ChevronRight, Plus, Wrench, Eye, Check,
+  ArrowLeft, LayoutGrid, Pencil, Undo2, Mail, Move,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  DndContext,
-  DragOverlay,
-  useDraggable,
-  useDroppable,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragStartEvent,
-  type DragEndEvent,
-  type DragMoveEvent,
-} from "@dnd-kit/core";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { toast } from "sonner";
 
 // ── Constants ──
+const CLUB_ID = "d33e590e-73ef-4ead-ad0e-5e321854ef50";
+const STAGIONE_ID = "841a5837-3382-472f-a582-557f8b5d69e9";
 const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"] as const;
 const OFF_ICE_TYPES = ["danza", "off-ice", "stretching"];
-const OFF_ICE_COLORS: Record<string, string> = {
-  danza: "#B83280",
-  "off-ice": "#718096",
-  stretching: "#276749",
-};
+const OFF_ICE_COLORS: Record<string, string> = { danza: "#B83280", "off-ice": "#718096", stretching: "#276749" };
+const PPM_FOCUS = 7; // pixels per minute in focus day
 
 type ViewMode = 1 | 2 | 3 | 7;
 
@@ -50,31 +41,20 @@ function min_to_time(m: number): string {
 
 // ── Data hooks ──
 function use_config_ghiaccio() {
-  const club_id = get_current_club_id();
   return useQuery({
-    queryKey: ["configurazione_ghiaccio", club_id],
-    enabled: !!club_id,
+    queryKey: ["configurazione_ghiaccio", CLUB_ID],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("configurazione_ghiaccio")
-        .select("*")
-        .eq("club_id", club_id)
-        .maybeSingle();
+      const { data } = await supabase.from("configurazione_ghiaccio").select("*").eq("club_id", CLUB_ID).maybeSingle();
       return data;
     },
   });
 }
 
 function use_disponibilita_ghiaccio() {
-  const club_id = get_current_club_id();
   return useQuery({
-    queryKey: ["disponibilita_ghiaccio", club_id],
-    enabled: !!club_id,
+    queryKey: ["disponibilita_ghiaccio", CLUB_ID],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("disponibilita_ghiaccio")
-        .select("*")
-        .eq("club_id", club_id);
+      const { data, error } = await supabase.from("disponibilita_ghiaccio").select("*").eq("club_id", CLUB_ID);
       if (error) throw error;
       return data ?? [];
     },
@@ -82,25 +62,19 @@ function use_disponibilita_ghiaccio() {
 }
 
 function use_disponibilita_istruttori() {
-  const club_id = get_current_club_id();
   return useQuery({
-    queryKey: ["disponibilita_istruttori", club_id],
-    enabled: !!club_id,
+    queryKey: ["disponibilita_istruttori", CLUB_ID],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("disponibilita_istruttori")
-        .select("*")
-        .eq("club_id", club_id);
+      const { data, error } = await supabase.from("disponibilita_istruttori").select("*").eq("club_id", CLUB_ID);
       if (error) throw error;
       return data ?? [];
     },
   });
 }
 
-// Helper: check if a course has valid ice coverage
+// Check if course has valid ice coverage
 function has_valid_ice(corso: any, ghiaccio_slots: any[]): boolean {
   if (!corso.giorno || !corso.ora_inizio || !corso.ora_fine) return false;
-  // Off-ice types don't need ice
   if (OFF_ICE_TYPES.includes((corso.tipo || "").toLowerCase())) return true;
   const cs = time_to_min(corso.ora_inizio);
   const ce = time_to_min(corso.ora_fine);
@@ -110,260 +84,83 @@ function has_valid_ice(corso: any, ghiaccio_slots: any[]): boolean {
   );
 }
 
-// ── Types ──
-type DetailInfo = {
-  type: "corso" | "private" | "pulizia" | "off-ice";
-  nome?: string;
-  giorno: string;
-  ora_inizio: string;
-  ora_fine: string;
-  tipo?: string;
-  livello?: string;
-  durata_min?: number;
-  n_iscritti?: number;
-  istruttori?: { nome: string; colore: string }[];
-  alert_max?: boolean;
-};
+// ── Livelli ──
+const LIVELLI = ["pulcini","stellina1","stellina2","stellina3","stellina4","Interbronzo","Bronzo","Interargento","Argento","Interoro","Oro"];
 
-type DropConfirm = {
-  corso: any;
-  giorno: string;
-  ora_inizio: string;
-  ora_fine: string;
-};
-
-// ── Draggable card in left panel ──
-function DraggableCourseCard({ corso, istr_map, compatibility }: {
-  corso: any;
-  istr_map: Record<string, any>;
-  compatibility: Record<string, "green" | "yellow" | "red">;
-}) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: `unpositioned-${corso.id}`,
-    data: { corso, type: "unpositioned" },
-  });
-
-  const style: React.CSSProperties = {
-    transform: transform ? `translate(${transform.x}px, ${transform.y}px)` : undefined,
-    opacity: isDragging ? 0.4 : 1,
-  };
-
-  const istr_ids: string[] = corso.istruttori_ids ?? [];
-  const durata = corso.ora_fine && corso.ora_inizio
-    ? time_to_min(corso.ora_fine) - time_to_min(corso.ora_inizio)
-    : 60;
-
-  const tipo_key = (corso.tipo || "").toLowerCase();
-  const tipo_colors: Record<string, string> = {
-    ghiaccio: "#7F77DD",
-    danza: "#B83280",
-    "off-ice": "#718096",
-    stretching: "#276749",
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className="border border-border rounded-lg p-3 bg-card cursor-grab active:cursor-grabbing space-y-2 hover:shadow-md transition-shadow"
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-1.5">
-          <GripVertical className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-          <span className="font-bold text-sm text-foreground">{corso.nome}</span>
-        </div>
-        {corso.tipo && (
-          <span
-            className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full text-white flex-shrink-0"
-            style={{ backgroundColor: tipo_colors[tipo_key] || "#6B7280" }}
-          >
-            {corso.tipo}
-          </span>
-        )}
-      </div>
-
-      {istr_ids.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {istr_ids.map((id) => {
-            const ist = istr_map[id];
-            if (!ist) return null;
-            return (
-              <span key={id} className="inline-flex items-center gap-1 text-[10px] text-foreground">
-                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: ist.colore || "#6B7280" }} />
-                {ist.nome} {ist.cognome}
-              </span>
-            );
-          })}
-        </div>
-      )}
-
-      <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-        <span>{corso.atleti_ids?.length ?? 0} atleti</span>
-        <span>{durata} min</span>
-      </div>
-
-      {/* Compatibility indicators */}
-      <div className="flex gap-1">
-        {GIORNI.map((g) => {
-          const status = compatibility[g] || "red";
-          const colors = { green: "#22C55E", yellow: "#EAB308", red: "#EF4444" };
-          return (
-            <div key={g} className="flex flex-col items-center gap-0.5">
-              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: colors[status] }} />
-              <span className="text-[8px] text-muted-foreground">{g.slice(0, 2)}</span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-// ── Draggable course block on grid ──
-function DraggableGridCourse({ corso, children, enabled }: {
-  corso: any;
-  children: React.ReactNode;
-  enabled: boolean;
-}) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: `positioned-${corso.id}`,
-    data: { corso, type: "positioned" },
-    disabled: !enabled,
-  });
-
-  const style: React.CSSProperties = {
-    ...(transform ? { transform: `translate(${transform.x}px, ${transform.y}px)` } : {}),
-    opacity: isDragging ? 0.2 : 1,
-    cursor: enabled ? "grab" : "pointer",
-  };
-
-  return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      {children}
-    </div>
-  );
-}
-
-
-// ── Droppable day row (full width per day) ──
-function DroppableDayRow({ giorno, children, is_build_mode }: {
-  giorno: string;
-  children: React.ReactNode;
-  is_build_mode: boolean;
-}) {
-  const { setNodeRef } = useDroppable({
-    id: `day-${giorno}`,
-    data: { giorno },
-    disabled: !is_build_mode,
-  });
-
-  return <div ref={setNodeRef}>{children}</div>;
-}
-// ── Main component ──
+// ══════════════════════════════════════════════════════════════
+// MAIN COMPONENT
+// ══════════════════════════════════════════════════════════════
 export default function PlanningPage() {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { data: config, isLoading: loadingConfig } = use_config_ghiaccio();
+  const { data: config } = use_config_ghiaccio();
   const { data: ghiaccio_slots, isLoading: loadingGhiaccio } = use_disponibilita_ghiaccio();
   const { data: disp_istr_raw } = use_disponibilita_istruttori();
   const { data: corsi_raw, isLoading: loadingCorsi } = use_corsi();
   const { data: istruttori_raw, isLoading: loadingIstr } = use_istruttori();
   const { data: stagioni_raw } = use_stagioni();
-  
-  const [detail, set_detail] = useState<DetailInfo | null>(null);
+  const { data: atleti_raw } = use_atleti();
+
   const [view_mode, set_view_mode] = useState<ViewMode>(7);
   const [day_offset, set_day_offset] = useState(0);
   const [build_mode, set_build_mode] = useState(false);
-  const [dragging_corso, set_dragging_corso] = useState<any>(null);
-  const [dragging_type, set_dragging_type] = useState<"unpositioned" | "positioned" | null>(null);
-  const [drop_confirm, set_drop_confirm] = useState<DropConfirm | null>(null);
+  const [focus_day, set_focus_day] = useState<string | null>(null);
+  const [selected_corso_id, set_selected_corso_id] = useState<string | null>(null);
+  const [pick_corso, set_pick_corso] = useState<any>(null); // course being placed via pick mode
+  const [slot_manager_open, set_slot_manager_open] = useState(false);
+  const [show_new_corso, set_show_new_corso] = useState(false);
+  const [show_new_privata, set_show_new_privata] = useState(false);
+  const [show_edit_corso, set_show_edit_corso] = useState<any>(null);
   const [saving, set_saving] = useState(false);
-  const [drag_preview, set_drag_preview] = useState<{
-    giorno: string;
-    start_min: number;
-    end_min: number;
-    valid: boolean;
-    warning: boolean;
-    pointer_x: number;
-    pointer_y: number;
-  } | null>(null);
-  const grid_refs = useRef<Record<string, HTMLDivElement | null>>({});
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
-  const loading = loadingConfig || loadingGhiaccio || loadingCorsi || loadingIstr;
-
-  const max_atleti = config?.max_atleti_contemporanei ?? 30;
+  const loading = loadingGhiaccio || loadingCorsi || loadingIstr;
 
   const corsi = useMemo(() => (corsi_raw ?? []).filter((c: any) => c.attivo !== false), [corsi_raw]);
+  const istruttori: any[] = useMemo(() => istruttori_raw ?? [], [istruttori_raw]);
+  const atleti: any[] = useMemo(() => atleti_raw ?? [], [atleti_raw]);
+  const disp_istr = useMemo(() => disp_istr_raw ?? [], [disp_istr_raw]);
+  const slots = useMemo(() => ghiaccio_slots ?? [], [ghiaccio_slots]);
 
-  // Split courses into validly positioned vs to-position
-  const { corsi_posizionati, corsi_da_posizionare } = useMemo(() => {
-    const slots = ghiaccio_slots ?? [];
-    const positioned: any[] = [];
-    const to_position: any[] = [];
+  // Positioned vs unpositioned
+  const { posizionati, da_posizionare } = useMemo(() => {
+    const pos: any[] = [];
+    const unpos: any[] = [];
     corsi.forEach((c: any) => {
-      if (has_valid_ice(c, slots)) {
-        positioned.push(c);
-      } else {
-        to_position.push(c);
-      }
+      if (has_valid_ice(c, slots)) pos.push(c);
+      else unpos.push(c);
     });
-    return { corsi_posizionati: positioned, corsi_da_posizionare: to_position };
-  }, [corsi, ghiaccio_slots]);
-  const istruttori: any[] = istruttori_raw ?? [];
-  const disp_istr = disp_istr_raw ?? [];
-
-  // Active season
-  const stagione_attiva = useMemo(() => {
-    if (!stagioni_raw) return null;
-    const today = new Date().toISOString().slice(0, 10);
-    return stagioni_raw.find((s: any) => today >= s.data_inizio && today <= s.data_fine) || stagioni_raw[0] || null;
-  }, [stagioni_raw]);
-
-  // Visible days
-  const visible_days = useMemo(() => {
-    const start = day_offset;
-    const count = view_mode;
-    return GIORNI.slice(start, start + count).length > 0
-      ? GIORNI.slice(start, Math.min(start + count, 7))
-      : GIORNI.slice(0, count);
-  }, [view_mode, day_offset]);
-
-  const set_view = useCallback((m: ViewMode) => {
-    set_view_mode(m);
-    set_day_offset((prev) => Math.min(prev, 7 - m));
-  }, []);
-
-  const go_prev = () => set_day_offset((p) => Math.max(0, p - view_mode));
-  const go_next = () => set_day_offset((p) => Math.min(6, Math.min(p + view_mode, 7 - view_mode)));
+    return { posizionati: pos, da_posizionare: unpos };
+  }, [corsi, slots]);
 
   // Instructor map
   const istr_map = useMemo(() => {
-    const m: Record<string, { nome: string; cognome: string; colore: string; disponibilita: Record<string, { ora_inizio: string; ora_fine: string }[]> }> = {};
+    const m: Record<string, any> = {};
     istruttori.forEach((i: any) => {
-      m[i.id] = {
-        nome: i.nome,
-        cognome: i.cognome,
-        colore: i.colore || "#6B7280",
-        disponibilita: i.disponibilita || {},
-      };
+      m[i.id] = i;
     });
     return m;
   }, [istruttori]);
 
-  // Compute time range from actual data
+  // Visible days
+  const visible_days = useMemo(() => {
+    const start = day_offset;
+    return GIORNI.slice(start, Math.min(start + view_mode, 7));
+  }, [view_mode, day_offset]);
+
+  const set_view = (m: ViewMode) => {
+    set_view_mode(m);
+    set_day_offset((prev) => Math.min(prev, 7 - m));
+  };
+  const go_prev = () => set_day_offset((p) => Math.max(0, p - view_mode));
+  const go_next = () => set_day_offset((p) => Math.min(p + view_mode, 7 - view_mode));
+
+  // Time range from data
   const { range_start, range_end } = useMemo(() => {
-    const all_slots = ghiaccio_slots ?? [];
-    const all_corsi = corsi_posizionati;
     let mn = 24 * 60, mx = 0;
-    all_slots.forEach((s: any) => {
-      if (!visible_days.includes(s.giorno)) return;
+    slots.forEach((s: any) => {
       mn = Math.min(mn, time_to_min(s.ora_inizio));
       mx = Math.max(mx, time_to_min(s.ora_fine));
     });
-    all_corsi.forEach((c: any) => {
-      if (!visible_days.includes(c.giorno)) return;
+    posizionati.forEach((c: any) => {
       mn = Math.min(mn, time_to_min(c.ora_inizio));
       mx = Math.max(mx, time_to_min(c.ora_fine));
     });
@@ -371,7 +168,7 @@ export default function PlanningPage() {
     mn = Math.floor(mn / 60) * 60;
     mx = Math.ceil(mx / 60) * 60;
     return { range_start: mn, range_end: mx };
-  }, [ghiaccio_slots, corsi_posizionati, visible_days]);
+  }, [slots, posizionati]);
 
   const total_min = range_end - range_start;
 
@@ -381,890 +178,1033 @@ export default function PlanningPage() {
     return arr;
   }, [range_start, range_end]);
 
-  // ── Metrics ──
-  const metrics = useMemo(() => {
-    const slots = ghiaccio_slots ?? [];
-    let ore_ghiaccio = 0, ore_pulizia = 0, ore_corso = 0, ore_private = 0;
-
-    visible_days.forEach((giorno) => {
-      const day_ice = slots.filter((s: any) => s.giorno === giorno && (s.tipo ?? "ghiaccio") === "ghiaccio");
-      const day_pulizia = slots.filter((s: any) => s.giorno === giorno && s.tipo === "pulizia");
-      const day_corsi_ice = corsi_posizionati.filter((c: any) => c.giorno === giorno && !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
-
-      day_ice.forEach((s: any) => ore_ghiaccio += time_to_min(s.ora_fine) - time_to_min(s.ora_inizio));
-      day_pulizia.forEach((s: any) => ore_pulizia += time_to_min(s.ora_fine) - time_to_min(s.ora_inizio));
-      day_corsi_ice.forEach((c: any) => ore_corso += time_to_min(c.ora_fine) - time_to_min(c.ora_inizio));
-    });
-
-    ore_private = Math.max(0, ore_ghiaccio - ore_corso - ore_pulizia);
-
-    return {
-      ghiaccio: (ore_ghiaccio / 60).toFixed(1),
-      corso: (ore_corso / 60).toFixed(1),
-      private: (ore_private / 60).toFixed(1),
-      pulizia: (ore_pulizia / 60).toFixed(1),
-    };
-  }, [ghiaccio_slots, corsi_posizionati, visible_days]);
-
-  const is_istr_available = (ist_id: string, giorno: string, cs: number, ce: number): boolean => {
-    const slots = istr_map[ist_id]?.disponibilita[giorno] ?? [];
-    return slots.some((s) => time_to_min(s.ora_inizio) <= cs && time_to_min(s.ora_fine) >= ce);
-  };
-
-  const get_day_instructors = useCallback((giorno: string) => {
-    return istruttori.filter((ist: any) => {
-      const slots = ist.disponibilita?.[giorno] ?? [];
-      return slots.length > 0;
-    });
-  }, [istruttori]);
-
-  const view_label = useMemo(() => {
-    if (visible_days.length === 1) return visible_days[0];
-    return `${visible_days[0]} — ${visible_days[visible_days.length - 1]}`;
-  }, [visible_days]);
-
-  const is_compact = view_mode >= 3;
-  const LABEL_W = is_compact ? 80 : 130;
-  const BASE_ROW_H = view_mode <= 2 ? 60 : view_mode === 3 ? 48 : 40;
-  const EXTRA_PER_ROW = 30;
-  const OFF_ICE_ROW_H = 18;
-
-  // ── Compatibility for unpositioned courses ──
-  const get_compatibility = useCallback((corso: any): Record<string, "green" | "yellow" | "red"> => {
-    const result: Record<string, "green" | "yellow" | "red"> = {};
-    const istr_ids: string[] = corso.istruttori_ids ?? [];
-    const all_slots = ghiaccio_slots ?? [];
-
-    GIORNI.forEach((giorno) => {
-      const has_ice = all_slots.some((s: any) => s.giorno === giorno && (s.tipo ?? "ghiaccio") === "ghiaccio");
-      const has_istr = istr_ids.length === 0 || istr_ids.some((id) => {
-        const d = disp_istr.filter((x: any) => x.istruttore_id === id && x.giorno === giorno);
-        return d.length > 0;
+  // ── Instructor hours ──
+  const istr_hours = useMemo(() => {
+    const result: Record<string, { assigned: number; available: number }> = {};
+    istruttori.forEach((ist: any) => {
+      let avail = 0;
+      const disp = ist.disponibilita || {};
+      Object.values(disp).forEach((daySlots: any) => {
+        (daySlots as any[]).forEach((s: any) => {
+          avail += time_to_min(s.ora_fine) - time_to_min(s.ora_inizio);
+        });
       });
-
-      if (has_ice && has_istr) result[giorno] = "green";
-      else if (has_ice || has_istr) result[giorno] = "yellow";
-      else result[giorno] = "red";
+      let assigned = 0;
+      posizionati.forEach((c: any) => {
+        if ((c.istruttori_ids ?? []).includes(ist.id)) {
+          assigned += time_to_min(c.ora_fine) - time_to_min(c.ora_inizio);
+        }
+      });
+      result[ist.id] = { assigned: assigned / 60, available: avail / 60 };
     });
     return result;
-  }, [ghiaccio_slots, disp_istr]);
+  }, [istruttori, posizionati]);
 
-  // ── Drop zone slots: removed, using pointer-based 5-min snap instead ──
+  // Selected corso
+  const selected_corso = useMemo(() => {
+    if (!selected_corso_id) return null;
+    return corsi.find((c: any) => c.id === selected_corso_id) || null;
+  }, [selected_corso_id, corsi]);
 
-  // Get course duration helper
-  const get_corso_durata = useCallback((corso: any): number => {
-    return corso.ora_fine && corso.ora_inizio
-      ? time_to_min(corso.ora_fine) - time_to_min(corso.ora_inizio)
+  // ── Compute pick mode slots ──
+  const pick_slots = useMemo(() => {
+    if (!pick_corso || !focus_day) return [];
+    const istr_ids: string[] = pick_corso.istruttori_ids ?? [];
+    const durata = pick_corso.ora_fine && pick_corso.ora_inizio
+      ? time_to_min(pick_corso.ora_fine) - time_to_min(pick_corso.ora_inizio)
       : 60;
-  }, []);
+    const day_ice = slots.filter((s: any) => s.giorno === focus_day && (s.tipo ?? "ghiaccio") === "ghiaccio");
+    const result: { start: number; end: number }[] = [];
+    day_ice.forEach((s: any) => {
+      const gs = time_to_min(s.ora_inizio);
+      const ge = time_to_min(s.ora_fine);
+      for (let t = gs; t + durata <= ge; t += 5) {
+        // Check instructor availability
+        const istr_ok = istr_ids.length === 0 || istr_ids.some((id) => {
+          const ist_disp = (istr_map[id]?.disponibilita || {})[focus_day] ?? [];
+          return ist_disp.some((d: any) => time_to_min(d.ora_inizio) <= t && time_to_min(d.ora_fine) >= t + durata);
+        });
+        if (istr_ok) {
+          result.push({ start: t, end: t + durata });
+        }
+      }
+    });
+    return result;
+  }, [pick_corso, focus_day, slots, istr_map]);
 
-  // Check if drop is valid for a given course
-  const check_drop_validity = useCallback((corso: any, giorno: string, start_min: number): { valid: boolean; warning: boolean } => {
-    const istr_ids: string[] = corso.istruttori_ids ?? [];
-    const durata = corso.ora_fine && corso.ora_inizio
-      ? time_to_min(corso.ora_fine) - time_to_min(corso.ora_inizio)
-      : 60;
-    const end_min = start_min + durata;
-
-    // Check ice availability
-    const all_slots = ghiaccio_slots ?? [];
-    const has_ice = all_slots.some((s: any) =>
-      s.giorno === giorno && (s.tipo ?? "ghiaccio") === "ghiaccio" &&
-      time_to_min(s.ora_inizio) <= start_min && time_to_min(s.ora_fine) >= end_min
-    );
-    if (!has_ice) return { valid: false, warning: false };
-
-    // Check instructor availability
-    const istr_ok = istr_ids.length === 0 || istr_ids.some((id) =>
-      is_istr_available(id, giorno, start_min, end_min)
-    );
-    if (!istr_ok) return { valid: false, warning: false };
-
-    // Check capacity
-    const day_corsi_ice = corsi_posizionati.filter((c: any) => c.id !== corso.id && c.giorno === giorno && !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
-    const concurrent = day_corsi_ice.filter((c: any) => {
+  // ── Actions ──
+  const place_corso = async (corso: any, giorno: string, ora_inizio: string, ora_fine: string) => {
+    // Check conflicts
+    const day_corsi = posizionati.filter((c: any) => c.giorno === giorno && c.id !== corso.id);
+    const cs = time_to_min(ora_inizio);
+    const ce = time_to_min(ora_fine);
+    const conflicts = day_corsi.filter((c: any) => {
+      const istr_ids: string[] = c.istruttori_ids ?? [];
+      const corso_istr: string[] = corso.istruttori_ids ?? [];
+      const same_istr = istr_ids.some((id) => corso_istr.includes(id));
+      if (!same_istr) return false;
       const s = time_to_min(c.ora_inizio);
       const e = time_to_min(c.ora_fine);
-      return s < end_min && e > start_min;
+      return s < ce && e > cs;
     });
-    const total_athletes = concurrent.reduce((sum: number, c: any) => sum + (c.atleti_ids?.length ?? 0), 0) + (corso.atleti_ids?.length ?? 0);
-    if (total_athletes > max_atleti) return { valid: true, warning: true };
-
-    return { valid: true, warning: false };
-  }, [ghiaccio_slots, corsi_posizionati, max_atleti, is_istr_available]);
-
-  // ── Drag move handler (5-min snap) ──
-  const handle_drag_move = useCallback((event: DragMoveEvent) => {
-    if (!dragging_corso) return;
-    const durata = get_corso_durata(dragging_corso);
-    const ae = event.activatorEvent as PointerEvent;
-    const px = ae.clientX + event.delta.x;
-    const py = ae.clientY + event.delta.y;
-
-    let found_giorno: string | null = null;
-    let relative_x = 0;
-    let grid_width = 0;
-
-    for (const giorno of visible_days) {
-      const el = grid_refs.current[giorno];
-      if (!el) continue;
-      const rect = el.getBoundingClientRect();
-      if (py >= rect.top && py <= rect.bottom && px >= rect.left && px <= rect.right) {
-        found_giorno = giorno;
-        relative_x = px - rect.left;
-        grid_width = rect.width;
-        break;
-      }
+    if (conflicts.length > 0) {
+      const names = conflicts.map((c: any) => c.nome).join(", ");
+      if (!window.confirm(`Conflitto con: ${names}. Continuare comunque?`)) return;
     }
-
-    if (!found_giorno || grid_width === 0) {
-      set_drag_preview(null);
-      return;
-    }
-
-    const raw_min = (relative_x / grid_width) * total_min + range_start;
-    const snapped = Math.round(raw_min / 5) * 5;
-    const start = Math.max(range_start, Math.min(snapped, range_end - durata));
-    const end = start + durata;
-
-    const { valid, warning } = check_drop_validity(dragging_corso, found_giorno, start);
-
-    set_drag_preview({
-      giorno: found_giorno,
-      start_min: start,
-      end_min: end,
-      valid,
-      warning,
-      pointer_x: px,
-      pointer_y: py,
-    });
-  }, [dragging_corso, visible_days, total_min, range_start, range_end, check_drop_validity, get_corso_durata]);
-
-  // ── DnD handlers ──
-  const handle_drag_start = (event: DragStartEvent) => {
-    const data = event.active.data.current;
-    if (data?.corso) {
-      set_dragging_corso(data.corso);
-      set_dragging_type(data.type as "unpositioned" | "positioned");
-      set_drag_preview(null);
+    set_saving(true);
+    try {
+      const { error } = await supabase.from("corsi").update({ giorno, ora_inizio, ora_fine }).eq("id", corso.id);
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ["corsi"] });
+      toast.success(`${corso.nome} posizionato`);
+      set_pick_corso(null);
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      set_saving(false);
     }
   };
 
-  const handle_drag_end = async (event: DragEndEvent) => {
-    const was_type = dragging_type;
-    const was_corso = dragging_corso;
-    const preview = drag_preview;
-    set_dragging_corso(null);
-    set_dragging_type(null);
-    set_drag_preview(null);
-
-    if (!was_corso) return;
-
-    // If positioned course dropped with no valid preview → unposition it
-    if (was_type === "positioned") {
-      if (!preview || !preview.valid) {
-        try {
-          await supabase.from("corsi").update({ giorno: null, ora_inizio: null, ora_fine: null } as any).eq("id", was_corso.id);
-          await queryClient.invalidateQueries({ queryKey: ["corsi"] });
-          toast.info(`${was_corso.nome} rimosso dal planning`);
-        } catch (e: any) {
-          toast.error("Errore: " + e.message);
-        }
-        return;
-      }
-
-      // Valid preview → confirm
-      set_drop_confirm({
-        corso: was_corso,
-        giorno: preview.giorno,
-        ora_inizio: min_to_time(preview.start_min),
-        ora_fine: min_to_time(preview.end_min),
-      });
-      return;
-    }
-
-    // Unpositioned course
-    if (!preview || !preview.valid) {
-      if (preview && !preview.valid) toast.error("Slot non compatibile per questo corso");
-      return;
-    }
-
-    set_drop_confirm({
-      corso: was_corso,
-      giorno: preview.giorno,
-      ora_inizio: min_to_time(preview.start_min),
-      ora_fine: min_to_time(preview.end_min),
-    });
-  };
-
-  const confirm_drop = async () => {
-    if (!drop_confirm) return;
+  const remove_corso = async (corso: any) => {
     set_saving(true);
     try {
       const { error } = await supabase.from("corsi").update({
-        giorno: drop_confirm.giorno,
-        ora_inizio: drop_confirm.ora_inizio,
-        ora_fine: drop_confirm.ora_fine,
-      }).eq("id", drop_confirm.corso.id);
+        giorno: null as any, ora_inizio: null as any, ora_fine: null as any,
+      }).eq("id", corso.id);
       if (error) throw error;
-
       await queryClient.invalidateQueries({ queryKey: ["corsi"] });
-      toast.success(`${drop_confirm.corso.nome} posizionato con successo`);
+      toast.info(`${corso.nome} rimosso dal planning`);
+      set_selected_corso_id(null);
     } catch (e: any) {
-      toast.error("Errore nel posizionamento: " + e.message);
+      toast.error(e.message);
     } finally {
       set_saving(false);
-      set_drop_confirm(null);
     }
   };
 
+  // ── Loading ──
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
   }
 
-  if (!ghiaccio_slots || ghiaccio_slots.length === 0) {
+  // ══════════════════════════════════════════════════════════
+  // FOCUS DAY (fullscreen overlay)
+  // ══════════════════════════════════════════════════════════
+  if (focus_day) {
+    const day_ghiaccio = slots.filter((s: any) => s.giorno === focus_day && (s.tipo ?? "ghiaccio") === "ghiaccio");
+    const day_pulizia = slots.filter((s: any) => s.giorno === focus_day && s.tipo === "pulizia");
+    const day_corsi_ice = posizionati.filter((c: any) => c.giorno === focus_day && !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
+    const day_corsi_off = posizionati.filter((c: any) => c.giorno === focus_day && OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
+    const day_ice_min = day_ghiaccio.reduce((a: number, s: any) => a + time_to_min(s.ora_fine) - time_to_min(s.ora_inizio), 0);
+
+    // Time range for focus
+    let f_start = 24 * 60, f_end = 0;
+    [...day_ghiaccio, ...day_pulizia].forEach((s: any) => {
+      f_start = Math.min(f_start, time_to_min(s.ora_inizio));
+      f_end = Math.max(f_end, time_to_min(s.ora_fine));
+    });
+    [...day_corsi_ice, ...day_corsi_off].forEach((c: any) => {
+      f_start = Math.min(f_start, time_to_min(c.ora_inizio));
+      f_end = Math.max(f_end, time_to_min(c.ora_fine));
+    });
+    if (f_start >= f_end) { f_start = 6 * 60; f_end = 22 * 60; }
+    f_start = Math.floor(f_start / 60) * 60;
+    f_end = Math.ceil(f_end / 60) * 60;
+    const f_total = f_end - f_start;
+    const grid_w = f_total * PPM_FOCUS;
+
+    // Compute course sub-rows
+    const compute_rows = (courses: any[]): any[][] => {
+      if (!courses.length) return [];
+      const sorted = [...courses].sort((a, b) => time_to_min(a.ora_inizio) - time_to_min(b.ora_inizio));
+      const rows: any[][] = [];
+      sorted.forEach((c) => {
+        const cs = time_to_min(c.ora_inizio);
+        let placed = false;
+        for (const row of rows) {
+          if (time_to_min(row[row.length - 1].ora_fine) <= cs) { row.push(c); placed = true; break; }
+        }
+        if (!placed) rows.push([c]);
+      });
+      return rows;
+    };
+
+    const course_rows = compute_rows(day_corsi_ice);
+    const ROW_H = 48;
+
+    // Focus ticks
+    const f_ticks: number[] = [];
+    for (let m = f_start; m <= f_end; m += 60) f_ticks.push(m);
+
+    // Selected corso detail
+    const sel = selected_corso;
+
     return (
-      <div className="p-8 text-center text-muted-foreground space-y-3">
-        <p className="text-lg font-medium">Nessuna disponibilità ghiaccio configurata.</p>
-        <p className="text-sm">Vai in Configurazione Club → sezione Ghiaccio.</p>
-      </div>
-    );
-  }
-
-  const unpositioned = corsi_da_posizionare;
-  const all_positioned = unpositioned.length === 0;
-
-  // ── RENDER ──
-  const render_grid = () => (
-    <div className="border border-border rounded-lg overflow-x-auto bg-card">
-      {/* Time header */}
-      <div className="flex border-b border-border sticky top-0 bg-card z-10">
-        <div className="flex-shrink-0 border-r border-border" style={{ width: LABEL_W }} />
-        <div className="flex-1 relative" style={{ minWidth: total_min * 1.2 }}>
-          {ticks.map((t) => (
-            <span
-              key={t}
-              className="absolute text-[10px] text-muted-foreground top-0 -translate-x-1/2"
-              style={{ left: `${((t - range_start) / total_min) * 100}%` }}
-            >
-              {min_to_time(t)}
-            </span>
-          ))}
-          <div className="h-5" />
-        </div>
-      </div>
-
-      {/* Day rows */}
-      {visible_days.map((giorno) => {
-        const all_slots = ghiaccio_slots ?? [];
-        const day_ghiaccio = all_slots.filter((g: any) => g.giorno === giorno && (g.tipo ?? "ghiaccio") === "ghiaccio");
-        const day_pulizia = all_slots.filter((g: any) => g.giorno === giorno && g.tipo === "pulizia");
-        const day_corsi_ice = corsi_posizionati.filter((c: any) => c.giorno === giorno && !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
-        const day_corsi_off = corsi_posizionati.filter((c: any) => c.giorno === giorno && OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
-        const day_instructors = get_day_instructors(giorno);
-
-        const compute_course_rows = (courses: any[]): any[][] => {
-          if (courses.length === 0) return [[]];
-          const sorted = [...courses].sort((a, b) => time_to_min(a.ora_inizio) - time_to_min(b.ora_inizio));
-          const rows: any[][] = [];
-          sorted.forEach((c) => {
-            const cs = time_to_min(c.ora_inizio);
-            let placed = false;
-            for (const row of rows) {
-              const last = row[row.length - 1];
-              if (time_to_min(last.ora_fine) <= cs) {
-                row.push(c);
-                placed = true;
-                break;
-              }
-            }
-            if (!placed) rows.push([c]);
-          });
-          return rows.length > 0 ? rows : [[]];
-        };
-
-        const course_rows = compute_course_rows(day_corsi_ice);
-        const n_sub_rows = Math.max(course_rows.length, 1);
-        const day_ice_min = day_ghiaccio.reduce((acc: number, s: any) => acc + time_to_min(s.ora_fine) - time_to_min(s.ora_inizio), 0);
-        const day_ice_h = (day_ice_min / 60).toFixed(1);
-        const n_instructors_avail = day_instructors.length;
-
-        const check_capacity_alert = (corso: any): boolean => {
-          const cs = time_to_min(corso.ora_inizio);
-          const ce = time_to_min(corso.ora_fine);
-          const concurrent = day_corsi_ice.filter((c: any) => {
-            const s = time_to_min(c.ora_inizio);
-            const e = time_to_min(c.ora_fine);
-            return s < ce && e > cs;
-          });
-          const total = concurrent.reduce((sum: number, c: any) => sum + (c.atleti_ids?.length ?? 0), 0);
-          return total > max_atleti;
-        };
-
-        const row_h = BASE_ROW_H + Math.max(0, n_sub_rows - 1) * EXTRA_PER_ROW;
-        const sub_row_h = n_sub_rows > 1 ? row_h / n_sub_rows : row_h;
-
-
-        return (
-          <DroppableDayRow key={giorno} giorno={giorno} is_build_mode={build_mode}>
-          <div className="border-b border-border last:border-b-0">
-            <div className="flex">
-              <div
-                className="flex-shrink-0 flex flex-col items-center justify-center border-r border-border bg-muted px-1"
-                style={{ width: LABEL_W, minHeight: row_h }}
-              >
-                <span style={{ fontSize: 13, fontWeight: 700 }} className="text-foreground leading-tight">{giorno}</span>
-                <span style={{ fontSize: 11 }} className="text-muted-foreground leading-tight">{day_ice_h}h ghiaccio</span>
-              </div>
-
-              <div
-                className="flex-1 relative"
-                style={{ minWidth: total_min * 1.2, height: row_h }}
-                ref={(el) => { grid_refs.current[giorno] = el; }}
-              >
-
-                {/* Ghiaccio background */}
-                {day_ghiaccio.map((g: any, gi: number) => {
-                  const gs = time_to_min(g.ora_inizio);
-                  const ge = time_to_min(g.ora_fine);
-                  return (
-                    <div
-                      key={`g-${gi}`}
-                      className="absolute"
-                      style={{
-                        left: `${((gs - range_start) / total_min) * 100}%`,
-                        width: `${((ge - gs) / total_min) * 100}%`,
-                        top: 0,
-                        bottom: 0,
-                        background: "#EEEDFE",
-                        border: "1px solid #AFA9EC",
-                        borderRadius: 6,
-                      }}
-                    />
-                  );
-                })}
-
-                {/* Pulizia */}
-                {day_pulizia.map((p: any, pi: number) => {
-                  const ps = time_to_min(p.ora_inizio);
-                  const pe = time_to_min(p.ora_fine);
-                  return (
-                    <div
-                      key={`p-${pi}`}
-                      className="absolute cursor-pointer flex items-center justify-center overflow-hidden z-[2]"
-                      style={{
-                        left: `${((ps - range_start) / total_min) * 100}%`,
-                        width: `${((pe - ps) / total_min) * 100}%`,
-                        top: 4,
-                        bottom: 4,
-                        background: "#9CA3AF",
-                        opacity: 0.75,
-                        borderRadius: 4,
-                        color: "#fff",
-                      }}
-                      onClick={() => set_detail({
-                        type: "pulizia", giorno,
-                        ora_inizio: p.ora_inizio, ora_fine: p.ora_fine,
-                        durata_min: time_to_min(p.ora_fine) - time_to_min(p.ora_inizio),
-                      })}
-                    >
-                      <span className="text-[9px] font-semibold truncate px-0.5">
-                        {!is_compact ? `Pulizia ${p.ora_inizio?.slice(0, 5)}–${p.ora_fine?.slice(0, 5)}` : "Pul."}
-                      </span>
-                    </div>
-                  );
-                })}
-
-                {/* Private slots */}
-                {day_ghiaccio.map((g: any, gi: number) => {
-                  const gs = time_to_min(g.ora_inizio);
-                  const ge = time_to_min(g.ora_fine);
-                  const occupied = [...day_corsi_ice, ...day_pulizia].map((c: any) => ({
-                    s: Math.max(time_to_min(c.ora_inizio), gs),
-                    e: Math.min(time_to_min(c.ora_fine ?? c.ora_fine), ge),
-                  })).filter((x) => x.s < x.e).sort((a, b) => a.s - b.s);
-                  const gaps: { s: number; e: number }[] = [];
-                  let cursor = gs;
-                  occupied.forEach((r) => {
-                    if (r.s > cursor) gaps.push({ s: cursor, e: r.s });
-                    cursor = Math.max(cursor, r.e);
-                  });
-                  if (cursor < ge) gaps.push({ s: cursor, e: ge });
-
-                  return gaps.map((gap, gapi) => (
-                    <div
-                      key={`priv-${gi}-${gapi}`}
-                      className="absolute cursor-pointer flex flex-col items-center justify-center overflow-hidden z-[1]"
-                      style={{
-                        left: `${((gap.s - range_start) / total_min) * 100}%`,
-                        width: `${((gap.e - gap.s) / total_min) * 100}%`,
-                        top: 4,
-                        bottom: 4,
-                        background: "#FB923C",
-                        opacity: 0.85,
-                        borderRadius: 4,
-                        color: "#fff",
-                      }}
-                      onClick={() => set_detail({
-                        type: "private", giorno,
-                        ora_inizio: min_to_time(gap.s), ora_fine: min_to_time(gap.e),
-                        durata_min: gap.e - gap.s,
-                        istruttori: day_instructors.map((ist: any) => ({
-                          nome: `${ist.nome} ${ist.cognome}`,
-                          colore: ist.colore || "#6B7280",
-                        })),
-                      })}
-                    >
-                      <span style={{ fontSize: 10, fontWeight: 600 }} className="truncate px-0.5 leading-tight">
-                        Private ({n_instructors_avail} istruttori)
-                      </span>
-                      {!is_compact && (
-                        <span style={{ fontSize: 9, opacity: 0.75 }} className="truncate px-0.5 leading-tight">
-                          {min_to_time(gap.s)}–{min_to_time(gap.e)}
-                        </span>
-                      )}
-                    </div>
-                  ));
-                })}
-
-                {/* Courses */}
-                {course_rows.map((row_courses, row_idx) =>
-                  row_courses.map((c: any, ci: number) => {
-                    const cs = time_to_min(c.ora_inizio);
-                    const ce = time_to_min(c.ora_fine);
-                    const alert = check_capacity_alert(c);
-                    const istr_ids: string[] = c.istruttori_ids ?? [];
-                    const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
-                    const colore = first_istr?.colore || "#3B82F6";
-                    const istr_available = istr_ids.length > 0 ? istr_ids.every((id) => is_istr_available(id, giorno, cs, ce)) : true;
-
-                    const bg = istr_available
-                      ? colore
-                      : `repeating-linear-gradient(45deg, ${colore} 0px, ${colore} 4px, transparent 4px, transparent 8px)`;
-
-                    const corso_istruttori = istr_ids.map((id) => ({
-                      nome: istr_map[id] ? `${istr_map[id].nome} ${istr_map[id].cognome}` : id,
-                      colore: istr_map[id]?.colore || "#6B7280",
-                    }));
-
-                    const top_px = row_idx * sub_row_h + 2;
-                    const h_px = sub_row_h - 4;
-                    const is_being_dragged = dragging_type === "positioned" && dragging_corso?.id === c.id;
-
-                    const inner = (
-                      <div
-                        className="absolute rounded flex flex-col justify-center overflow-hidden z-[3]"
-                        style={{
-                          left: `${((cs - range_start) / total_min) * 100}%`,
-                          width: `${((ce - cs) / total_min) * 100}%`,
-                          top: top_px,
-                          height: h_px,
-                          background: is_being_dragged ? "rgba(156,163,175,0.3)" : bg,
-                          color: "#fff",
-                          border: is_being_dragged ? "2px dashed #9CA3AF" : alert ? "2px solid #E24B4A" : "1px solid rgba(0,0,0,0.15)",
-                          borderRadius: 4,
-                          cursor: build_mode ? "grab" : "pointer",
-                        }}
-                        onClick={() => !build_mode && set_detail({
-                          type: "corso", nome: c.nome, giorno, tipo: c.tipo,
-                          ora_inizio: c.ora_inizio, ora_fine: c.ora_fine,
-                          livello: c.livello_richiesto,
-                          durata_min: ce - cs,
-                          n_iscritti: c.atleti_ids?.length ?? 0,
-                          istruttori: corso_istruttori,
-                          alert_max: alert,
-                        })}
-                      >
-                        {!is_being_dragged && (
-                          <>
-                            <span style={{ fontSize: is_compact ? 10 : 11, fontWeight: 700 }} className="truncate px-1 leading-tight text-white">
-                              {c.nome || (c.tipo || "").toLowerCase()}
-                            </span>
-                            {!is_compact && (
-                              <span style={{ fontSize: 10, opacity: 0.75 }} className="truncate px-1 leading-tight text-white">
-                                {corso_istruttori.map((i) => i.nome).join(", ")} {c.ora_inizio?.slice(0, 5)}–{c.ora_fine?.slice(0, 5)}
-                              </span>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    );
-
-                    if (build_mode) {
-                      return (
-                        <DraggableGridCourse key={`c-${row_idx}-${ci}`} corso={c} enabled={build_mode}>
-                          {inner}
-                        </DraggableGridCourse>
-                      );
-                    }
-
-                    return <React.Fragment key={`c-${row_idx}-${ci}`}>{inner}</React.Fragment>;
-                  })
-                )}
-
-                {/* Ghost preview (build mode drag) */}
-                {build_mode && drag_preview && drag_preview.giorno === giorno && (
-                  <div
-                    className="absolute z-[6] flex items-center justify-center overflow-hidden pointer-events-none"
-                    style={{
-                      left: `${((drag_preview.start_min - range_start) / total_min) * 100}%`,
-                      width: `${((drag_preview.end_min - drag_preview.start_min) / total_min) * 100}%`,
-                      top: 4,
-                      bottom: 4,
-                      background: drag_preview.valid
-                        ? drag_preview.warning ? "rgba(251,146,60,0.35)" : "rgba(34,197,94,0.35)"
-                        : "rgba(239,68,68,0.3)",
-                      border: `2px dashed ${drag_preview.valid ? (drag_preview.warning ? "#FB923C" : "#22C55E") : "#EF4444"}`,
-                      borderRadius: 4,
-                    }}
-                  >
-                    <span className="text-xs font-bold px-1 truncate" style={{
-                      color: drag_preview.valid ? (drag_preview.warning ? "#FB923C" : "#16A34A") : "#EF4444",
-                    }}>
-                      {dragging_corso?.nome}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* OFF-ICE ROW */}
-            {day_corsi_off.length > 0 && (
-              <div className="flex">
-                <div
-                  className="flex-shrink-0 flex items-center justify-center text-[9px] text-muted-foreground border-r border-border bg-muted/50 italic px-1"
-                  style={{ width: LABEL_W, height: OFF_ICE_ROW_H }}
-                >
-                  fuori ghiaccio
-                </div>
-                <div className="flex-1 relative" style={{ height: OFF_ICE_ROW_H, minWidth: total_min * 1.2 }}>
-                  {day_corsi_off.map((c: any, i: number) => {
-                    const cs = time_to_min(c.ora_inizio);
-                    const ce = time_to_min(c.ora_fine);
-                    const tipo_key = (c.tipo || "").toLowerCase();
-                    const bg_color = OFF_ICE_COLORS[tipo_key] || "#94A3B8";
-                    return (
-                      <div
-                        key={i}
-                        className="absolute top-0 h-full rounded-sm cursor-pointer flex items-center justify-center overflow-hidden"
-                        style={{
-                          left: `${((cs - range_start) / total_min) * 100}%`,
-                          width: `${((ce - cs) / total_min) * 100}%`,
-                          background: bg_color,
-                          color: "#fff",
-                        }}
-                        onClick={() => set_detail({
-                          type: "off-ice", nome: c.nome, giorno, tipo: c.tipo,
-                          ora_inizio: c.ora_inizio, ora_fine: c.ora_fine,
-                          durata_min: ce - cs,
-                          livello: c.livello_richiesto,
-                          n_iscritti: c.atleti_ids?.length ?? 0,
-                          istruttori: (c.istruttori_ids ?? []).map((id: string) => ({
-                            nome: istr_map[id] ? `${istr_map[id].nome} ${istr_map[id].cognome}` : id,
-                            colore: istr_map[id]?.colore || "#6B7280",
-                          })),
-                        })}
-                      >
-                        <span className="text-[9px] font-medium truncate px-0.5">{c.nome || tipo_key}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-          </DroppableDayRow>
-        );
-      })}
-    </div>
-  );
-
-  return (
-    <DndContext sensors={sensors} onDragStart={handle_drag_start} onDragMove={handle_drag_move} onDragEnd={handle_drag_end}>
-      <div className="p-4 space-y-4">
-        {/* ── TOOLBAR ── */}
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <h1 className="text-xl font-bold text-foreground">
-            Planning Ghiaccio{stagione_attiva ? ` — ${stagione_attiva.nome}` : ""}
-          </h1>
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant={build_mode ? "default" : "outline"}
-              onClick={() => set_build_mode(!build_mode)}
-              className="gap-1.5"
-            >
-              {build_mode ? <><Eye className="h-4 w-4" /> Modalità visualizzazione</> : <><Wrench className="h-4 w-4" /> Modalità costruzione</>}
-            </Button>
-            <Button size="sm" onClick={() => navigate("/corsi")} className="gap-1">
-              <Plus className="h-4 w-4" /> Aggiungi corso
-            </Button>
-          </div>
-        </div>
-
-        {/* View mode + navigation */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="inline-flex rounded-lg border border-border overflow-hidden">
-            {([1, 2, 3, 7] as ViewMode[]).map((m, idx) => (
-              <button
-                key={m}
-                onClick={() => set_view(m)}
-                className={`px-3 py-1.5 text-sm font-medium transition-colors ${
-                  view_mode === m
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-card text-foreground hover:bg-muted"
-                } ${idx > 0 ? "border-l border-border" : ""}`}
-              >
-                {m === 1 ? "Giorno" : m === 2 ? "2 giorni" : m === 3 ? "3 giorni" : "Settimana"}
-              </button>
-            ))}
-          </div>
-
-          <div className="inline-flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={go_prev} disabled={day_offset === 0}>
-              <ChevronLeft className="h-4 w-4" /> Precedente
-            </Button>
-            <span className="text-sm font-medium text-foreground min-w-[140px] text-center">{view_label}</span>
-            <Button variant="outline" size="sm" onClick={go_next} disabled={day_offset + view_mode >= 7}>
-              Successivo <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        {/* ── METRICHE ── */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {[
-            { label: "Ore ghiaccio", value: metrics.ghiaccio, color: "#7F77DD" },
-            { label: "Ore corso", value: metrics.corso, color: "#3B82F6" },
-            { label: "Ore private", value: metrics.private, color: "#FB923C" },
-            { label: "Ore pulizia", value: metrics.pulizia, color: "#9CA3AF" },
-          ].map((m) => (
-            <Card key={m.label} className="p-3 flex items-center gap-3">
-              <div className="w-3 h-10 rounded-full" style={{ backgroundColor: m.color }} />
-              <div>
-                <p className="text-xs text-muted-foreground">{m.label}</p>
-                <p className="text-lg font-bold text-foreground">{m.value}h</p>
-              </div>
-            </Card>
-          ))}
-        </div>
-
-        {/* ── LEGENDA ISTRUTTORI ── */}
-        <div className="space-y-1">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Istruttori</p>
-          <div className="flex flex-wrap gap-1.5">
-            {istruttori.map((ist: any) => (
-              <span
-                key={ist.id}
-                className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium border"
-                style={{
-                  borderColor: ist.colore || "#6B7280",
-                  backgroundColor: `${ist.colore || "#6B7280"}20`,
-                  color: ist.colore || "#6B7280",
-                }}
-              >
-                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: ist.colore || "#6B7280" }} />
-                {ist.nome} {ist.cognome}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* ── LEGENDA TIPI ── */}
-        <div className="flex flex-wrap gap-2 text-xs">
-          <span className="px-2 py-0.5 rounded font-medium" style={{ background: "#EEEDFE", color: "#7F77DD", border: "1px solid #AFA9EC" }}>Ghiaccio disponibile</span>
-          <span className="px-2 py-0.5 rounded font-medium" style={{ background: "#FB923C", color: "#fff" }}>Lezioni private</span>
-          <span className="px-2 py-0.5 rounded font-medium" style={{ background: "#9CA3AF", color: "#fff" }}>Pulizia ghiaccio</span>
-          <span className="px-2 py-0.5 rounded font-medium" style={{ background: "#B83280", color: "#fff" }}>Danza *</span>
-          <span className="px-2 py-0.5 rounded font-medium" style={{ background: "#718096", color: "#fff" }}>Off-Ice *</span>
-          <span className="px-2 py-0.5 rounded font-medium" style={{ background: "#276749", color: "#fff" }}>Stretching *</span>
-          <span className="text-muted-foreground italic self-center">* senza ghiaccio</span>
-        </div>
-
-        {/* ── MAIN CONTENT ── */}
-        <div className={build_mode ? "flex gap-4" : ""}>
-          {/* LEFT PANEL — build mode only */}
-          {build_mode && (
-            <div className="flex-shrink-0 space-y-3" style={{ width: 280 }}>
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-bold text-foreground">
-                  Corsi da posizionare ({unpositioned.length})
-                </h2>
-              </div>
-
-              {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                </div>
-              ) : all_positioned && !dragging_corso ? (
-                <div className="border border-border rounded-lg p-4 text-center space-y-1 bg-muted/30">
-                  <Check className="h-6 w-6 text-green-500 mx-auto" />
-                  <p className="text-sm font-medium text-foreground">Tutti i corsi sono stati posizionati</p>
-                </div>
-              ) : (
-                <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
-                  {/* Show dragged positioned course as "in movimento" */}
-                  {dragging_type === "positioned" && dragging_corso && (
-                    <div className="border-2 border-dashed border-primary rounded-lg p-3 bg-primary/5 space-y-1">
-                      <div className="flex items-center gap-1.5">
-                        <GripVertical className="h-4 w-4 text-primary flex-shrink-0" />
-                        <span className="font-bold text-sm text-foreground">{dragging_corso.nome}</span>
-                      </div>
-                      <Badge variant="outline" className="text-[10px] text-primary border-primary">
-                        In movimento
-                      </Badge>
-                    </div>
-                  )}
-                  {unpositioned.map((corso: any) => (
-                    <DraggableCourseCard
-                      key={corso.id}
-                      corso={corso}
-                      istr_map={istr_map}
-                      compatibility={get_compatibility(corso)}
-                    />
-                  ))}
-                </div>
-              )}
+      <TooltipProvider delayDuration={200}>
+        <div className="fixed inset-0 z-50 bg-background flex flex-col">
+          {/* Pick mode banner */}
+          {pick_corso && (
+            <div className="bg-primary text-primary-foreground px-4 py-2 flex items-center justify-between">
+              <span className="font-bold text-sm">Posizionamento: {pick_corso.nome}</span>
+              <Button size="sm" variant="ghost" className="text-primary-foreground hover:text-primary-foreground/80" onClick={() => set_pick_corso(null)}>
+                <X className="h-4 w-4 mr-1" /> Annulla
+              </Button>
             </div>
           )}
 
-          {/* RIGHT — Grid */}
-          <div className="flex-1 min-w-0 space-y-4">
-            {render_grid()}
+          {/* Toolbar */}
+          <div className="flex items-center gap-3 px-4 py-2 border-b border-border bg-card">
+            <Button variant="ghost" size="sm" onClick={() => { set_focus_day(null); set_selected_corso_id(null); set_pick_corso(null); set_slot_manager_open(false); }}>
+              <ArrowLeft className="h-4 w-4 mr-1" /> Settimana
+            </Button>
+            <h2 className="text-lg font-bold text-foreground flex-1">{focus_day}</h2>
+            <span className="text-sm text-muted-foreground">{(day_ice_min / 60).toFixed(1)}h ghiaccio</span>
+            {build_mode && (
+              <Button size="sm" variant="outline" onClick={() => set_slot_manager_open(!slot_manager_open)}>
+                <LayoutGrid className="h-4 w-4 mr-1" /> Slot ghiaccio
+              </Button>
+            )}
+          </div>
 
-            {/* ── DETAIL PANEL ── */}
-            {detail && (
-              <div className="border border-border rounded-lg p-4 bg-card relative">
-                <button
-                  className="absolute top-2 right-2 text-muted-foreground hover:text-foreground"
-                  onClick={() => set_detail(null)}
-                >
-                  <X className="h-5 w-5" />
-                </button>
-
-                {(detail.type === "corso" || detail.type === "off-ice") && (
-                  <div className="space-y-1.5 text-sm">
-                    <p className="font-bold text-foreground text-base">{detail.nome}</p>
-                    <p className="text-muted-foreground">{detail.giorno} — {detail.ora_inizio?.slice(0, 5)} / {detail.ora_fine?.slice(0, 5)}</p>
-                    <p>Tipo: <span className="font-medium">{detail.tipo}</span></p>
-                    {detail.livello && <p>Livello: {detail.livello}</p>}
-                    <p>Durata: {detail.durata_min} min</p>
-                    <p>Iscritti: <span className="font-semibold">{detail.n_iscritti}</span></p>
-                    {detail.istruttori && detail.istruttori.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 pt-1">
-                        {detail.istruttori.map((ist, i) => (
-                          <span
-                            key={i}
-                            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium border"
-                            style={{ borderColor: ist.colore, backgroundColor: `${ist.colore}20`, color: ist.colore }}
-                          >
-                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: ist.colore }} />
-                            {ist.nome}
+          {/* Content */}
+          <div className="flex flex-1 overflow-hidden">
+            {/* Sidebar left - build mode backlog */}
+            {build_mode && !pick_corso && (
+              <div className="w-[220px] flex-shrink-0 border-r border-border overflow-y-auto p-3 space-y-2 bg-muted/30">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-foreground uppercase">Da posizionare ({da_posizionare.length})</span>
+                </div>
+                <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => set_show_new_corso(true)}>
+                  <Plus className="h-3 w-3 mr-1" /> Corso/Pacchetto
+                </Button>
+                <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => set_show_new_privata(true)}>
+                  <Plus className="h-3 w-3 mr-1" /> Lezione privata
+                </Button>
+                {da_posizionare.length === 0 ? (
+                  <div className="text-center py-4 text-muted-foreground text-xs">
+                    <Check className="h-5 w-5 mx-auto text-green-500 mb-1" />
+                    Tutti posizionati
+                  </div>
+                ) : (
+                  da_posizionare.map((c: any) => {
+                    const istr_ids: string[] = c.istruttori_ids ?? [];
+                    const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
+                    return (
+                      <div
+                        key={c.id}
+                        className="border border-border rounded p-2 bg-card cursor-pointer hover:shadow-md transition-shadow space-y-1"
+                        onClick={() => { set_pick_corso(c); }}
+                      >
+                        <span className="font-bold text-xs text-foreground block truncate">{c.nome}</span>
+                        {first_istr && (
+                          <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: first_istr.colore || "#6B7280" }} />
+                            {first_istr.nome} {first_istr.cognome}
                           </span>
-                        ))}
+                        )}
+                        <span className="text-[10px] text-muted-foreground block">{c.atleti_ids?.length ?? 0} atleti</span>
                       </div>
-                    )}
-                    {detail.alert_max && (
-                      <p className="text-[#E24B4A] font-semibold mt-1">⚠ Superato limite max atleti contemporanei ({max_atleti})</p>
-                    )}
-                  </div>
-                )}
-
-                {detail.type === "private" && (
-                  <div className="space-y-1.5 text-sm">
-                    <p className="font-bold text-foreground text-base">Slot Lezione Privata</p>
-                    <p className="text-muted-foreground">{detail.giorno} — {detail.ora_inizio?.slice(0, 5)} / {detail.ora_fine?.slice(0, 5)}</p>
-                    <p>Durata: {detail.durata_min} min</p>
-                    <p className="font-medium">Istruttori disponibili ({detail.istruttori?.length ?? 0}):</p>
-                    {detail.istruttori && detail.istruttori.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {detail.istruttori.map((ist, i) => (
-                          <span
-                            key={i}
-                            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium border"
-                            style={{ borderColor: ist.colore, backgroundColor: `${ist.colore}20`, color: ist.colore }}
-                          >
-                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: ist.colore }} />
-                            {ist.nome}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {detail.type === "pulizia" && (
-                  <div className="space-y-1 text-sm">
-                    <p className="font-bold text-foreground text-base">Pulizia Ghiaccio</p>
-                    <p className="text-muted-foreground">{detail.giorno} — {detail.ora_inizio?.slice(0, 5)} / {detail.ora_fine?.slice(0, 5)}</p>
-                    <p>Durata: {detail.durata_min} min</p>
-                  </div>
+                    );
+                  })
                 )}
               </div>
             )}
+
+            {/* Main grid */}
+            <div className="flex-1 overflow-auto p-4">
+              <div className="relative" style={{ width: grid_w, minHeight: (course_rows.length || 1) * ROW_H + 60 }}>
+                {/* Hour lines */}
+                {f_ticks.map((t) => (
+                  <div key={t} className="absolute top-0 bottom-0 border-l border-border/40" style={{ left: (t - f_start) * PPM_FOCUS }}>
+                    <span className="absolute -top-5 -translate-x-1/2 text-[10px] text-muted-foreground">{min_to_time(t)}</span>
+                  </div>
+                ))}
+
+                {/* Background: default grey */}
+                <div className="absolute inset-0" style={{ background: "#f5f4f0", borderRadius: 6 }} />
+
+                {/* Ghiaccio slots background */}
+                {day_ghiaccio.map((g: any, i: number) => (
+                  <div key={`g${i}`} className="absolute" style={{
+                    left: (time_to_min(g.ora_inizio) - f_start) * PPM_FOCUS,
+                    width: (time_to_min(g.ora_fine) - time_to_min(g.ora_inizio)) * PPM_FOCUS,
+                    top: 0, bottom: 0, background: "#EEEDFE", borderRadius: 6,
+                  }} />
+                ))}
+
+                {/* Pulizia slots */}
+                {day_pulizia.map((p: any, i: number) => (
+                  <div key={`p${i}`} className="absolute z-[1]" style={{
+                    left: (time_to_min(p.ora_inizio) - f_start) * PPM_FOCUS,
+                    width: (time_to_min(p.ora_fine) - time_to_min(p.ora_inizio)) * PPM_FOCUS,
+                    top: 4, bottom: 4,
+                    background: "repeating-linear-gradient(-45deg, #c8c4b8 0px, #c8c4b8 3px, #f0ede6 3px, #f0ede6 10px)",
+                    borderRadius: 4, border: "1px solid #b0ada4",
+                  }} />
+                ))}
+
+                {/* Pick mode: available slots */}
+                {pick_corso && pick_slots.map((ps, i) => (
+                  <div
+                    key={`pick${i}`}
+                    className="absolute z-[5] cursor-pointer hover:opacity-80"
+                    style={{
+                      left: (ps.start - f_start) * PPM_FOCUS,
+                      width: (ps.end - ps.start) * PPM_FOCUS,
+                      top: 4, bottom: 4,
+                      background: "rgba(72,187,120,0.25)",
+                      border: "2px dashed #48BB78",
+                      borderRadius: 4,
+                    }}
+                    onClick={() => place_corso(pick_corso, focus_day!, min_to_time(ps.start), min_to_time(ps.end))}
+                  >
+                    <span className="text-[10px] font-bold text-green-700 px-1">{min_to_time(ps.start)}</span>
+                  </div>
+                ))}
+
+                {/* Course blocks */}
+                {course_rows.map((row, ri) =>
+                  row.map((c: any) => {
+                    const cs = time_to_min(c.ora_inizio);
+                    const ce = time_to_min(c.ora_fine);
+                    const istr_ids: string[] = c.istruttori_ids ?? [];
+                    const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
+                    const colore = first_istr?.colore || "#3B82F6";
+                    const w_px = (ce - cs) * PPM_FOCUS;
+                    const is_private = (c.tipo || "").toLowerCase() === "privata";
+                    const is_selected = selected_corso_id === c.id;
+
+                    return (
+                      <Tooltip key={c.id}>
+                        <TooltipTrigger asChild>
+                          <div
+                            className={`absolute z-[3] rounded flex flex-col justify-center overflow-hidden cursor-pointer ${is_selected ? "ring-2 ring-primary" : ""}`}
+                            style={{
+                              left: (cs - f_start) * PPM_FOCUS,
+                              width: w_px,
+                              top: ri * ROW_H + 8,
+                              height: ROW_H - 12,
+                              background: is_private
+                                ? `repeating-linear-gradient(-45deg, ${colore} 0px, ${colore} 3px, transparent 3px, transparent 8px)`
+                                : colore,
+                              border: is_private ? `2px dashed ${colore}` : `1px solid rgba(0,0,0,0.15)`,
+                              borderRadius: 4,
+                              color: "#fff",
+                            }}
+                            onClick={() => set_selected_corso_id(c.id)}
+                          >
+                            <span className="truncate px-1 leading-tight font-bold" style={{ fontSize: 12, color: is_private ? colore : "#fff" }}>
+                              {c.nome}
+                            </span>
+                            {w_px > 70 && first_istr && (
+                              <span className="truncate px-1 leading-tight" style={{ fontSize: 10, opacity: 0.85, color: is_private ? colore : "#fff" }}>
+                                {first_istr.nome} {first_istr.cognome}
+                              </span>
+                            )}
+                            {w_px > 90 && c.livello_richiesto && (
+                              <span className="truncate px-1" style={{ fontSize: 9, opacity: 0.7, color: is_private ? colore : "#fff" }}>
+                                {c.livello_richiesto}
+                              </span>
+                            )}
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                          <p className="font-bold">{c.nome}</p>
+                          {first_istr && <p className="text-xs">{first_istr.nome} {first_istr.cognome}</p>}
+                          <p className="text-xs">{c.ora_inizio?.slice(0, 5)} – {c.ora_fine?.slice(0, 5)}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  })
+                )}
+
+                {/* Off-ice strip */}
+                {day_corsi_off.length > 0 && (
+                  <div className="absolute left-0 right-0" style={{ top: (course_rows.length || 1) * ROW_H + 4, height: 6 }}>
+                    {day_corsi_off.map((c: any) => {
+                      const cs = time_to_min(c.ora_inizio);
+                      const ce = time_to_min(c.ora_fine);
+                      const istr_ids: string[] = c.istruttori_ids ?? [];
+                      const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
+                      const colore = first_istr?.colore || OFF_ICE_COLORS[(c.tipo || "").toLowerCase()] || "#94A3B8";
+                      return (
+                        <Tooltip key={c.id}>
+                          <TooltipTrigger asChild>
+                            <div
+                              className="absolute top-0 h-full rounded-sm cursor-pointer"
+                              style={{
+                                left: (cs - f_start) * PPM_FOCUS,
+                                width: (ce - cs) * PPM_FOCUS,
+                                background: colore,
+                              }}
+                              onClick={() => set_selected_corso_id(c.id)}
+                            />
+                          </TooltipTrigger>
+                          <TooltipContent><p>{c.nome}</p></TooltipContent>
+                        </Tooltip>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Detail panel right */}
+            {sel && !slot_manager_open && (
+              <DetailPanel
+                corso={sel}
+                istr_map={istr_map}
+                atleti={atleti}
+                build_mode={build_mode}
+                on_close={() => set_selected_corso_id(null)}
+                on_remove={() => remove_corso(sel)}
+                on_edit={() => { set_show_edit_corso(sel); }}
+              />
+            )}
+
+            {/* Slot manager right */}
+            {slot_manager_open && focus_day && (
+              <SlotManagerPanel
+                giorno={focus_day}
+                slots={slots.filter((s: any) => s.giorno === focus_day)}
+                istruttori={istruttori}
+                disp_istr={disp_istr}
+                on_close={() => set_slot_manager_open(false)}
+                queryClient={queryClient}
+              />
+            )}
           </div>
+        </div>
+
+        {/* Modals */}
+        <NewCorsoModal open={show_new_corso} on_close={() => set_show_new_corso(false)} istruttori={istruttori} queryClient={queryClient} tipo="corso" />
+        <NewCorsoModal open={show_new_privata} on_close={() => set_show_new_privata(false)} istruttori={istruttori} queryClient={queryClient} tipo="privata" atleti={atleti} />
+        {show_edit_corso && (
+          <EditCorsoModal corso={show_edit_corso} on_close={() => set_show_edit_corso(null)} istruttori={istruttori} queryClient={queryClient} posizionati={posizionati} />
+        )}
+      </TooltipProvider>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // AGGREGATED VIEW (week / multi-day)
+  // ══════════════════════════════════════════════════════════
+  const view_label = visible_days.length === 1 ? visible_days[0] : `${visible_days[0]} — ${visible_days[visible_days.length - 1]}`;
+
+  return (
+    <TooltipProvider delayDuration={200}>
+      <div className="p-4 space-y-4">
+        {/* Toolbar */}
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <h1 className="text-xl font-bold text-foreground">Planning Ghiaccio</h1>
+          <Button size="sm" variant={build_mode ? "default" : "outline"} onClick={() => set_build_mode(!build_mode)} className="gap-1.5">
+            {build_mode ? <><Eye className="h-4 w-4" /> Visualizzazione</> : <><Wrench className="h-4 w-4" /> Costruzione</>}
+          </Button>
+        </div>
+
+        {/* View selector + nav */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="inline-flex rounded-lg border border-border overflow-hidden">
+            {([1, 2, 3, 7] as ViewMode[]).map((m, idx) => (
+              <button key={m} onClick={() => set_view(m)}
+                className={`px-3 py-1.5 text-sm font-medium transition-colors ${view_mode === m ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"} ${idx > 0 ? "border-l border-border" : ""}`}
+              >
+                {m === 1 ? "1g" : m === 2 ? "2g" : m === 3 ? "3g" : "7g"}
+              </button>
+            ))}
+          </div>
+          <div className="inline-flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={go_prev} disabled={day_offset === 0}><ChevronLeft className="h-4 w-4" /></Button>
+            <span className="text-sm font-medium text-foreground min-w-[120px] text-center">{view_label}</span>
+            <Button variant="outline" size="sm" onClick={go_next} disabled={day_offset + view_mode >= 7}><ChevronRight className="h-4 w-4" /></Button>
+          </div>
+        </div>
+
+        {/* Instructor legend with hour bars */}
+        <div className="space-y-1">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Istruttori</p>
+          <div className="flex flex-wrap gap-2">
+            {istruttori.map((ist: any) => {
+              const h = istr_hours[ist.id] || { assigned: 0, available: 0 };
+              const pct = h.available > 0 ? (h.assigned / h.available) * 100 : 0;
+              const bar_color = pct >= 90 ? "#EF4444" : pct >= 70 ? "#F59E0B" : "#22C55E";
+              return (
+                <Tooltip key={ist.id}>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium border"
+                      style={{ borderColor: ist.colore || "#6B7280", backgroundColor: `${ist.colore || "#6B7280"}15`, color: ist.colore || "#6B7280" }}>
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: ist.colore || "#6B7280" }} />
+                      {ist.nome}
+                      <span className="relative w-8 h-2 rounded-full bg-muted overflow-hidden">
+                        <span className="absolute left-0 top-0 bottom-0 rounded-full" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: bar_color }} />
+                      </span>
+                      <span className="text-[10px]">{h.assigned.toFixed(1)}h/{h.available.toFixed(1)}h</span>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Disponibile: {h.available.toFixed(1)}h</p>
+                    <p>Assegnato: {h.assigned.toFixed(1)}h</p>
+                    <p>Libero: {(h.available - h.assigned).toFixed(1)}h</p>
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Legend badges */}
+        <div className="flex flex-wrap gap-2 text-xs">
+          <span className="px-2 py-0.5 rounded font-medium" style={{ background: "#EEEDFE", color: "#7F77DD", border: "1px solid #AFA9EC" }}>Ghiaccio</span>
+          <span className="px-2 py-0.5 rounded font-medium" style={{ background: "repeating-linear-gradient(-45deg, #c8c4b8 0px, #c8c4b8 3px, #f0ede6 3px, #f0ede6 10px)", border: "1px solid #b0ada4" }}>Pulizia</span>
+          <span className="px-2 py-0.5 rounded font-medium" style={{ background: "#f5f4f0", border: "1px solid #ddd" }}>Off-ice</span>
+          <span className="px-2 py-0.5 rounded font-medium" style={{ background: "#FB923C", color: "#fff" }}>Privata</span>
+        </div>
+
+        {/* Grid */}
+        <div className="border border-border rounded-lg overflow-x-auto bg-card">
+          {/* Time header */}
+          <div className="flex border-b border-border sticky top-0 bg-card z-10">
+            <div className="flex-shrink-0 border-r border-border" style={{ width: 80 }} />
+            <div className="flex-1 relative" style={{ minWidth: total_min * 1.2 }}>
+              {ticks.map((t) => (
+                <span key={t} className="absolute text-[10px] text-muted-foreground top-0 -translate-x-1/2"
+                  style={{ left: `${((t - range_start) / total_min) * 100}%` }}>{min_to_time(t)}</span>
+              ))}
+              <div className="h-5" />
+            </div>
+          </div>
+
+          {/* Day rows */}
+          {visible_days.map((giorno) => {
+            const day_ghiaccio = slots.filter((s: any) => s.giorno === giorno && (s.tipo ?? "ghiaccio") === "ghiaccio");
+            const day_pulizia = slots.filter((s: any) => s.giorno === giorno && s.tipo === "pulizia");
+            const day_corsi_ice = posizionati.filter((c: any) => c.giorno === giorno && !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
+            const day_corsi_off = posizionati.filter((c: any) => c.giorno === giorno && OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
+
+            // Sub-rows
+            const compute_rows = (courses: any[]): any[][] => {
+              if (!courses.length) return [[]];
+              const sorted = [...courses].sort((a, b) => time_to_min(a.ora_inizio) - time_to_min(b.ora_inizio));
+              const rows: any[][] = [];
+              sorted.forEach((c) => {
+                const cs = time_to_min(c.ora_inizio);
+                let placed = false;
+                for (const row of rows) {
+                  if (time_to_min(row[row.length - 1].ora_fine) <= cs) { row.push(c); placed = true; break; }
+                }
+                if (!placed) rows.push([c]);
+              });
+              return rows.length > 0 ? rows : [[]];
+            };
+            const course_rows = compute_rows(day_corsi_ice);
+            const n_rows = Math.max(course_rows.length, 1);
+            const ROW_H = 40;
+            const day_h = n_rows * (14 + 2) + 8;
+
+            return (
+              <div key={giorno} className="border-b border-border last:border-b-0 cursor-pointer hover:bg-muted/20"
+                onClick={() => set_focus_day(giorno)}>
+                <div className="flex">
+                  <div className="flex-shrink-0 flex items-center justify-center border-r border-border bg-muted px-1"
+                    style={{ width: 80, minHeight: day_h }}>
+                    <span className="text-xs font-bold text-foreground">{giorno.slice(0, 3)}</span>
+                  </div>
+
+                  <div className="flex-1 relative" style={{ minWidth: total_min * 1.2, height: day_h }}>
+                    {/* Default bg = grey */}
+                    <div className="absolute inset-0" style={{ background: "#f5f4f0" }} />
+
+                    {/* Ghiaccio bg */}
+                    {day_ghiaccio.map((g: any, gi: number) => {
+                      const gs = time_to_min(g.ora_inizio); const ge = time_to_min(g.ora_fine);
+                      return <div key={`g${gi}`} className="absolute" style={{
+                        left: `${((gs - range_start) / total_min) * 100}%`, width: `${((ge - gs) / total_min) * 100}%`,
+                        top: 0, bottom: 0, background: "#EEEDFE",
+                      }} />;
+                    })}
+
+                    {/* Pulizia bg */}
+                    {day_pulizia.map((p: any, pi: number) => {
+                      const ps = time_to_min(p.ora_inizio); const pe = time_to_min(p.ora_fine);
+                      return <div key={`p${pi}`} className="absolute" style={{
+                        left: `${((ps - range_start) / total_min) * 100}%`, width: `${((pe - ps) / total_min) * 100}%`,
+                        top: 0, bottom: 0,
+                        background: "repeating-linear-gradient(-45deg, #c8c4b8 0px, #c8c4b8 3px, #f0ede6 3px, #f0ede6 10px)",
+                      }} />;
+                    })}
+
+                    {/* Course blocks: ZERO TEXT, only colors, 14px tall */}
+                    {course_rows.map((row, ri) =>
+                      row.map((c: any) => {
+                        const cs = time_to_min(c.ora_inizio); const ce = time_to_min(c.ora_fine);
+                        const istr_ids: string[] = c.istruttori_ids ?? [];
+                        const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
+                        const colore = first_istr?.colore || "#3B82F6";
+                        const is_private = (c.tipo || "").toLowerCase() === "privata";
+                        return (
+                          <Tooltip key={c.id}>
+                            <TooltipTrigger asChild>
+                              <div className="absolute z-[3] rounded-sm" style={{
+                                left: `${((cs - range_start) / total_min) * 100}%`,
+                                width: `${((ce - cs) / total_min) * 100}%`,
+                                top: 4 + ri * 16,
+                                height: 14,
+                                background: is_private
+                                  ? `repeating-linear-gradient(-45deg, ${colore} 0px, ${colore} 3px, transparent 3px, transparent 8px)`
+                                  : colore,
+                                border: is_private ? `1px dashed ${colore}` : "none",
+                              }} />
+                            </TooltipTrigger>
+                            <TooltipContent side="top">
+                              <p className="font-bold">{c.nome}</p>
+                              {first_istr && <p className="text-xs">{first_istr.nome} {first_istr.cognome}</p>}
+                              <p className="text-xs">{c.ora_inizio?.slice(0, 5)} – {c.ora_fine?.slice(0, 5)}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        );
+                      })
+                    )}
+
+                    {/* Off-ice strip 6px */}
+                    {day_corsi_off.length > 0 && day_corsi_off.map((c: any) => {
+                      const cs = time_to_min(c.ora_inizio); const ce = time_to_min(c.ora_fine);
+                      const istr_ids: string[] = c.istruttori_ids ?? [];
+                      const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
+                      const colore = first_istr?.colore || OFF_ICE_COLORS[(c.tipo || "").toLowerCase()] || "#94A3B8";
+                      return (
+                        <Tooltip key={c.id}>
+                          <TooltipTrigger asChild>
+                            <div className="absolute z-[2] rounded-sm" style={{
+                              left: `${((cs - range_start) / total_min) * 100}%`,
+                              width: `${((ce - cs) / total_min) * 100}%`,
+                              top: 0, height: 6, background: colore,
+                            }} />
+                          </TooltipTrigger>
+                          <TooltipContent><p>{c.nome}</p></TooltipContent>
+                        </Tooltip>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </TooltipProvider>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+// DETAIL PANEL
+// ══════════════════════════════════════════════════════════════
+function DetailPanel({ corso, istr_map, atleti, build_mode, on_close, on_remove, on_edit }: {
+  corso: any; istr_map: Record<string, any>; atleti: any[]; build_mode: boolean;
+  on_close: () => void; on_remove: () => void; on_edit: () => void;
+}) {
+  const { data: iscrizioni } = useQuery({
+    queryKey: ["iscrizioni_corsi", corso.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("iscrizioni_corsi").select("*").eq("corso_id", corso.id).eq("attiva", true);
+      return data ?? [];
+    },
+  });
+
+  const istr_ids: string[] = corso.istruttori_ids ?? [];
+  const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
+
+  const enrolled = useMemo(() => {
+    if (!iscrizioni) return [];
+    return iscrizioni.map((i: any) => {
+      const a = atleti.find((at: any) => at.id === i.atleta_id);
+      return a ? { id: a.id, nome: `${a.nome} ${a.cognome}` } : { id: i.atleta_id, nome: "?" };
+    });
+  }, [iscrizioni, atleti]);
+
+  return (
+    <div className="w-[260px] flex-shrink-0 border-l border-border overflow-y-auto p-4 bg-card space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="font-bold text-foreground text-sm truncate">{corso.nome}</span>
+        <button onClick={on_close} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
+      </div>
+      <div className="space-y-1 text-xs text-muted-foreground">
+        {corso.tipo && <p>Tipo: <span className="text-foreground font-medium">{corso.tipo}</span></p>}
+        <p>{corso.giorno} · {corso.ora_inizio?.slice(0, 5)} – {corso.ora_fine?.slice(0, 5)}</p>
+        <p>Durata: {corso.ora_inizio && corso.ora_fine ? time_to_min(corso.ora_fine) - time_to_min(corso.ora_inizio) : "?"} min</p>
+        {first_istr && (
+          <div className="flex items-center gap-1.5 pt-1">
+            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: first_istr.colore || "#6B7280" }} />
+            <span className="text-foreground font-medium">{first_istr.nome} {first_istr.cognome}</span>
+          </div>
+        )}
+        {corso.costo_mensile > 0 && <p>Costo mensile: CHF {corso.costo_mensile}</p>}
+        {corso.note && <p className="italic">{corso.note}</p>}
+      </div>
+
+      {/* Enrolled */}
+      <div>
+        <p className="text-xs font-bold text-foreground mb-1">Iscritti ({enrolled.length})</p>
+        <div className="space-y-0.5 max-h-40 overflow-y-auto">
+          {enrolled.map((a) => (
+            <div key={a.id} className="flex items-center gap-1.5 text-xs text-foreground">
+              <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-[9px] font-bold">{a.nome.charAt(0)}</div>
+              {a.nome}
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Drag overlay */}
-      <DragOverlay dropAnimation={null}>
-        {dragging_corso && (
-          <div className="border border-primary rounded-lg p-2 bg-card shadow-lg opacity-80 w-[200px] pointer-events-none">
-            <span className="font-bold text-xs text-foreground">{dragging_corso.nome}</span>
-            {dragging_corso.tipo && (
-              <span className="ml-1 text-[9px] font-semibold px-1 py-0.5 rounded-full text-white" style={{ backgroundColor: "#7F77DD" }}>
-                {dragging_corso.tipo}
-              </span>
-            )}
-          </div>
-        )}
-      </DragOverlay>
-
-      {/* Real-time tooltip during drag */}
-      {drag_preview && dragging_corso && (
-        <div
-          className="fixed z-[9999] pointer-events-none"
-          style={{
-            left: drag_preview.pointer_x + 16,
-            top: drag_preview.pointer_y - 36,
-          }}
-        >
-          <div
-            className="rounded-md px-2.5 py-1.5 text-xs font-bold shadow-lg border"
-            style={{
-              background: drag_preview.valid ? (drag_preview.warning ? "#FFF7ED" : "#F0FDF4") : "#FEF2F2",
-              borderColor: drag_preview.valid ? (drag_preview.warning ? "#FB923C" : "#22C55E") : "#EF4444",
-              color: drag_preview.valid ? (drag_preview.warning ? "#9A3412" : "#166534") : "#991B1B",
-            }}
-          >
-            {min_to_time(drag_preview.start_min)} → {min_to_time(drag_preview.end_min)}
-          </div>
+      {/* Actions */}
+      {build_mode && (
+        <div className="space-y-1.5 pt-2 border-t border-border">
+          <Button size="sm" variant="outline" className="w-full justify-start text-xs gap-1.5" onClick={on_edit}>
+            <Pencil className="h-3 w-3" /> Modifica
+          </Button>
+          <Button size="sm" variant="outline" className="w-full justify-start text-xs gap-1.5 text-destructive" onClick={on_remove}>
+            <Undo2 className="h-3 w-3" /> Rimuovi dalla griglia
+          </Button>
         </div>
       )}
+    </div>
+  );
+}
 
-      {/* Confirm dialog */}
-      <Dialog open={!!drop_confirm} onOpenChange={(open) => !open && set_drop_confirm(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Conferma posizionamento</DialogTitle>
-            <DialogDescription>
-              Posizionare <strong>{drop_confirm?.corso?.nome}</strong> il <strong>{drop_confirm?.giorno}</strong> dalle{" "}
-              <strong>{drop_confirm?.ora_inizio?.slice(0, 5)}</strong> alle <strong>{drop_confirm?.ora_fine?.slice(0, 5)}</strong>?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => set_drop_confirm(null)} disabled={saving}>Annulla</Button>
-            <Button onClick={confirm_drop} disabled={saving}>
-              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-              Conferma
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </DndContext>
+// ══════════════════════════════════════════════════════════════
+// SLOT MANAGER PANEL
+// ══════════════════════════════════════════════════════════════
+function SlotManagerPanel({ giorno, slots, istruttori, disp_istr, on_close, queryClient }: {
+  giorno: string; slots: any[]; istruttori: any[]; disp_istr: any[];
+  on_close: () => void; queryClient: any;
+}) {
+  const [new_tipo, set_new_tipo] = useState("ghiaccio");
+  const [new_start, set_new_start] = useState("08:00");
+  const [new_end, set_new_end] = useState("09:00");
+  const [saving, set_saving] = useState(false);
+
+  const add_slot = async () => {
+    set_saving(true);
+    try {
+      const { error } = await supabase.from("disponibilita_ghiaccio").insert({
+        club_id: CLUB_ID, giorno, tipo: new_tipo, ora_inizio: new_start, ora_fine: new_end,
+      });
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ["disponibilita_ghiaccio"] });
+      toast.success("Slot aggiunto");
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      set_saving(false);
+    }
+  };
+
+  const delete_slot = async (id: string) => {
+    const { error } = await supabase.from("disponibilita_ghiaccio").delete().eq("id", id);
+    if (error) toast.error(error.message);
+    else {
+      await queryClient.invalidateQueries({ queryKey: ["disponibilita_ghiaccio"] });
+      toast.info("Slot eliminato");
+    }
+  };
+
+  const day_istr = istruttori.map((ist: any) => {
+    const d = (ist.disponibilita || {})[giorno] ?? [];
+    const tot = d.reduce((a: number, s: any) => a + time_to_min(s.ora_fine) - time_to_min(s.ora_inizio), 0);
+    return { ...ist, fasce: d, ore: tot / 60 };
+  }).filter((x) => x.fasce.length > 0);
+
+  return (
+    <div className="w-[260px] flex-shrink-0 border-l border-border overflow-y-auto p-4 bg-card space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="font-bold text-foreground text-sm">Slot Ghiaccio</span>
+        <button onClick={on_close} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
+      </div>
+
+      {/* Existing slots */}
+      <div className="space-y-1">
+        {slots.map((s: any) => (
+          <div key={s.id} className="flex items-center justify-between text-xs bg-muted rounded px-2 py-1">
+            <span className="font-medium">{s.tipo === "pulizia" ? "🧹" : "❄️"} {s.ora_inizio?.slice(0, 5)} – {s.ora_fine?.slice(0, 5)}</span>
+            <button onClick={() => delete_slot(s.id)} className="text-destructive hover:text-destructive/80"><X className="h-3 w-3" /></button>
+          </div>
+        ))}
+      </div>
+
+      {/* Add form */}
+      <div className="space-y-2 pt-2 border-t border-border">
+        <Select value={new_tipo} onValueChange={set_new_tipo}>
+          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ghiaccio">Ghiaccio</SelectItem>
+            <SelectItem value="pulizia">Pulizia</SelectItem>
+          </SelectContent>
+        </Select>
+        <div className="flex gap-2">
+          <Input type="time" value={new_start} onChange={(e) => set_new_start(e.target.value)} className="h-8 text-xs" />
+          <Input type="time" value={new_end} onChange={(e) => set_new_end(e.target.value)} className="h-8 text-xs" />
+        </div>
+        <Button size="sm" className="w-full text-xs" onClick={add_slot} disabled={saving}>
+          <Plus className="h-3 w-3 mr-1" /> Aggiungi
+        </Button>
+      </div>
+
+      {/* Instructor availability */}
+      <div className="pt-2 border-t border-border space-y-2">
+        <p className="text-xs font-bold text-foreground">Disponibilità istruttori</p>
+        {day_istr.map((ist) => (
+          <div key={ist.id} className="space-y-0.5">
+            <div className="flex items-center gap-1.5 text-xs">
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: ist.colore || "#6B7280" }} />
+              <span className="font-medium text-foreground">{ist.nome} {ist.cognome}</span>
+              <span className="text-muted-foreground ml-auto">{ist.ore.toFixed(1)}h</span>
+            </div>
+            {ist.fasce.map((f: any, fi: number) => (
+              <span key={fi} className="text-[10px] text-muted-foreground block pl-3.5">
+                {f.ora_inizio?.slice(0, 5)} – {f.ora_fine?.slice(0, 5)}
+              </span>
+            ))}
+          </div>
+        ))}
+        {day_istr.length === 0 && <p className="text-xs text-muted-foreground italic">Nessun istruttore disponibile</p>}
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+// NEW CORSO MODAL
+// ══════════════════════════════════════════════════════════════
+function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti }: {
+  open: boolean; on_close: () => void; istruttori: any[]; queryClient: any;
+  tipo: "corso" | "privata"; atleti?: any[];
+}) {
+  const [nome, set_nome] = useState("");
+  const [corso_tipo, set_corso_tipo] = useState(tipo === "privata" ? "privata" : "");
+  const [istr_id, set_istr_id] = useState("");
+  const [livello, set_livello] = useState("tutti");
+  const [durata, set_durata] = useState(60);
+  const [costo, set_costo] = useState(0);
+  const [note, set_note] = useState("");
+  const [atleta_id, set_atleta_id] = useState("");
+  const [saving, set_saving] = useState(false);
+
+  const save = async () => {
+    const final_nome = tipo === "privata" && atleta_id && atleti
+      ? `Privata · ${atleti.find((a: any) => a.id === atleta_id)?.nome || "?"}`
+      : nome;
+    if (!final_nome.trim()) { toast.error("Nome obbligatorio"); return; }
+    set_saving(true);
+    try {
+      const { data: new_corso, error } = await supabase.from("corsi").insert({
+        club_id: CLUB_ID, nome: final_nome, tipo: tipo === "privata" ? "privata" : corso_tipo,
+        livello_richiesto: livello, costo_mensile: costo, note,
+        giorno: null as any, ora_inizio: null as any, ora_fine: null as any,
+      }).select().single();
+      if (error) throw error;
+      if (istr_id && new_corso) {
+        await supabase.from("corsi_istruttori").insert({ corso_id: new_corso.id, istruttore_id: istr_id });
+      }
+      await queryClient.invalidateQueries({ queryKey: ["corsi"] });
+      toast.success("Corso creato");
+      on_close();
+      set_nome(""); set_corso_tipo(""); set_istr_id(""); set_note("");
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      set_saving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && on_close()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{tipo === "privata" ? "Nuova lezione privata" : "Nuovo corso"}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          {tipo === "privata" && atleti ? (
+            <div>
+              <Label className="text-xs">Atleta</Label>
+              <Select value={atleta_id} onValueChange={set_atleta_id}>
+                <SelectTrigger className="h-9"><SelectValue placeholder="Seleziona atleta" /></SelectTrigger>
+                <SelectContent>
+                  {atleti.map((a: any) => <SelectItem key={a.id} value={a.id}>{a.nome} {a.cognome}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            <div>
+              <Label className="text-xs">Nome</Label>
+              <Input value={nome} onChange={(e) => set_nome(e.target.value)} />
+            </div>
+          )}
+          {tipo === "corso" && (
+            <div>
+              <Label className="text-xs">Tipo</Label>
+              <Input value={corso_tipo} onChange={(e) => set_corso_tipo(e.target.value)} placeholder="es. Ghiaccio, Danza..." />
+            </div>
+          )}
+          <div>
+            <Label className="text-xs">Istruttore</Label>
+            <Select value={istr_id} onValueChange={set_istr_id}>
+              <SelectTrigger className="h-9"><SelectValue placeholder="Seleziona" /></SelectTrigger>
+              <SelectContent>
+                {istruttori.map((i: any) => <SelectItem key={i.id} value={i.id}>{i.nome} {i.cognome}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs">Livello</Label>
+            <Select value={livello} onValueChange={set_livello}>
+              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="tutti">Tutti</SelectItem>
+                {LIVELLI.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <Label className="text-xs">Durata (min)</Label>
+              <Input type="number" value={durata} onChange={(e) => set_durata(+e.target.value)} min={15} step={5} />
+            </div>
+            <div className="flex-1">
+              <Label className="text-xs">Costo mensile</Label>
+              <Input type="number" value={costo} onChange={(e) => set_costo(+e.target.value)} min={0} />
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs">Note</Label>
+            <Input value={note} onChange={(e) => set_note(e.target.value)} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={on_close}>Annulla</Button>
+          <Button onClick={save} disabled={saving}>{saving && <Loader2 className="h-4 w-4 animate-spin mr-1" />}Crea</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+// EDIT CORSO MODAL
+// ══════════════════════════════════════════════════════════════
+function EditCorsoModal({ corso, on_close, istruttori, queryClient, posizionati }: {
+  corso: any; on_close: () => void; istruttori: any[]; queryClient: any; posizionati: any[];
+}) {
+  const [nome, set_nome] = useState(corso.nome || "");
+  const [tipo, set_tipo] = useState(corso.tipo || "");
+  const [istr_id, set_istr_id] = useState((corso.istruttori_ids ?? [])[0] || "");
+  const [livello, set_livello] = useState(corso.livello_richiesto || "tutti");
+  const [giorno, set_giorno] = useState(corso.giorno || "");
+  const [ora_inizio, set_ora_inizio] = useState(corso.ora_inizio?.slice(0, 5) || "");
+  const [ora_fine, set_ora_fine] = useState(corso.ora_fine?.slice(0, 5) || "");
+  const [costo, set_costo] = useState(corso.costo_mensile || 0);
+  const [note, set_note] = useState(corso.note || "");
+  const [saving, set_saving] = useState(false);
+
+  const save = async () => {
+    set_saving(true);
+    try {
+      const update: any = { nome, tipo, livello_richiesto: livello, costo_mensile: costo, note };
+      if (giorno && ora_inizio && ora_fine) {
+        // Check conflicts
+        const cs = time_to_min(ora_inizio);
+        const ce = time_to_min(ora_fine);
+        const conflicts = posizionati.filter((c: any) => {
+          if (c.id === corso.id || c.giorno !== giorno) return false;
+          const istr_ids: string[] = c.istruttori_ids ?? [];
+          if (!istr_ids.includes(istr_id)) return false;
+          const s = time_to_min(c.ora_inizio); const e = time_to_min(c.ora_fine);
+          return s < ce && e > cs;
+        });
+        if (conflicts.length > 0) {
+          if (!window.confirm(`Conflitto con: ${conflicts.map((c: any) => c.nome).join(", ")}. Continuare?`)) {
+            set_saving(false);
+            return;
+          }
+        }
+        update.giorno = giorno;
+        update.ora_inizio = ora_inizio;
+        update.ora_fine = ora_fine;
+      }
+      const { error } = await supabase.from("corsi").update(update).eq("id", corso.id);
+      if (error) throw error;
+
+      // Update instructor
+      const old_istr = (corso.istruttori_ids ?? [])[0];
+      if (istr_id !== old_istr) {
+        if (old_istr) await supabase.from("corsi_istruttori").delete().eq("corso_id", corso.id);
+        if (istr_id) await supabase.from("corsi_istruttori").insert({ corso_id: corso.id, istruttore_id: istr_id });
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ["corsi"] });
+      toast.success("Corso aggiornato");
+      on_close();
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      set_saving(false);
+    }
+  };
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && on_close()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Modifica corso</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div><Label className="text-xs">Nome</Label><Input value={nome} onChange={(e) => set_nome(e.target.value)} /></div>
+          <div><Label className="text-xs">Tipo</Label><Input value={tipo} onChange={(e) => set_tipo(e.target.value)} /></div>
+          <div>
+            <Label className="text-xs">Istruttore</Label>
+            <Select value={istr_id} onValueChange={set_istr_id}>
+              <SelectTrigger className="h-9"><SelectValue placeholder="Seleziona" /></SelectTrigger>
+              <SelectContent>
+                {istruttori.map((i: any) => <SelectItem key={i.id} value={i.id}>{i.nome} {i.cognome}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs">Livello</Label>
+            <Select value={livello} onValueChange={set_livello}>
+              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="tutti">Tutti</SelectItem>
+                {LIVELLI.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <Label className="text-xs">Giorno</Label>
+              <Select value={giorno} onValueChange={set_giorno}>
+                <SelectTrigger className="h-9"><SelectValue placeholder="—" /></SelectTrigger>
+                <SelectContent>
+                  {GIORNI.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex-1">
+              <Label className="text-xs">Inizio</Label>
+              <Input type="time" value={ora_inizio} onChange={(e) => set_ora_inizio(e.target.value)} className="h-9" />
+            </div>
+            <div className="flex-1">
+              <Label className="text-xs">Fine</Label>
+              <Input type="time" value={ora_fine} onChange={(e) => set_ora_fine(e.target.value)} className="h-9" />
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <div className="flex-1"><Label className="text-xs">Costo mensile</Label><Input type="number" value={costo} onChange={(e) => set_costo(+e.target.value)} /></div>
+          </div>
+          <div><Label className="text-xs">Note</Label><Input value={note} onChange={(e) => set_note(e.target.value)} /></div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={on_close}>Annulla</Button>
+          <Button onClick={save} disabled={saving}>{saving && <Loader2 className="h-4 w-4 animate-spin mr-1" />}Salva</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
