@@ -144,7 +144,8 @@ function PlanningPageInner() {
   const [build_mode, set_build_mode] = useState(false);
   const [focus_day, set_focus_day] = useState<string | null>(null);
   const [selected_corso_id, set_selected_corso_id] = useState<string | null>(null);
-  const [pick_corso, set_pick_corso] = useState<any>(null); // course being placed via pick mode
+  const [pick_corso, set_pick_corso] = useState<any>(null); // course selected for two-click placement
+  const [confirm_place, set_confirm_place] = useState<{ corso: any; giorno: string; ora_inizio: string; ora_fine: string } | null>(null);
   const [slot_manager_open, set_slot_manager_open] = useState(false);
   const [show_new_corso, set_show_new_corso] = useState(false);
   const [show_new_privata, set_show_new_privata] = useState(false);
