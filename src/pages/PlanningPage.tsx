@@ -1287,7 +1287,7 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti }
       await queryClient.invalidateQueries({ queryKey: ["corsi"] });
       toast.success("Corso creato");
       on_close();
-      set_nome(""); set_corso_tipo(""); set_istr_id(""); set_note("");
+      set_nome(""); set_corso_tipo(""); set_istr_id(""); set_note(""); set_costo(""); set_costo_min("");
     } catch (e: any) {
       toast.error(e.message);
     } finally {
