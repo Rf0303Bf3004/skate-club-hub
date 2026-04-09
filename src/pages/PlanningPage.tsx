@@ -179,14 +179,34 @@ export default function PlanningPage() {
   }, [range_start, range_end]);
 
   // ── Instructor hours ──
+  // Intersect two time ranges, return overlap in minutes
+  const intersect_min = (a_start: number, a_end: number, b_start: number, b_end: number): number => {
+    const s = Math.max(a_start, b_start);
+    const e = Math.min(a_end, b_end);
+    return e > s ? e - s : 0;
+  };
+
   const istr_hours = useMemo(() => {
     const result: Record<string, { assigned: number; available: number }> = {};
+    const ice_by_day: Record<string, { s: number; e: number }[]> = {};
+    slots.forEach((sl: any) => {
+      if ((sl.tipo ?? "ghiaccio") !== "ghiaccio") return;
+      if (!ice_by_day[sl.giorno]) ice_by_day[sl.giorno] = [];
+      ice_by_day[sl.giorno].push({ s: time_to_min(sl.ora_inizio), e: time_to_min(sl.ora_fine) });
+    });
+
     istruttori.forEach((ist: any) => {
       let avail = 0;
       const disp = ist.disponibilita || {};
-      Object.values(disp).forEach((daySlots: any) => {
-        (daySlots as any[]).forEach((s: any) => {
-          avail += time_to_min(s.ora_fine) - time_to_min(s.ora_inizio);
+      GIORNI.forEach((giorno) => {
+        const day_disp: any[] = disp[giorno] ?? [];
+        const day_ice = ice_by_day[giorno] ?? [];
+        day_disp.forEach((d: any) => {
+          const ds = time_to_min(d.ora_inizio);
+          const de = time_to_min(d.ora_fine);
+          day_ice.forEach((ice) => {
+            avail += intersect_min(ds, de, ice.s, ice.e);
+          });
         });
       });
       let assigned = 0;
@@ -198,7 +218,7 @@ export default function PlanningPage() {
       result[ist.id] = { assigned: assigned / 60, available: avail / 60 };
     });
     return result;
-  }, [istruttori, posizionati]);
+  }, [istruttori, posizionati, slots]);
 
   // Selected corso
   const selected_corso = useMemo(() => {
@@ -657,7 +677,7 @@ export default function PlanningPage() {
           <span className="px-2 py-0.5 rounded font-medium" style={{ background: "#EEEDFE", color: "#7F77DD", border: "1px solid #AFA9EC" }}>Ghiaccio</span>
           <span className="px-2 py-0.5 rounded font-medium" style={{ background: "repeating-linear-gradient(-45deg, #c8c4b8 0px, #c8c4b8 3px, #f0ede6 3px, #f0ede6 10px)", border: "1px solid #b0ada4" }}>Pulizia</span>
           <span className="px-2 py-0.5 rounded font-medium" style={{ background: "#f5f4f0", border: "1px solid #ddd" }}>Off-ice</span>
-          <span className="px-2 py-0.5 rounded font-medium" style={{ background: "#FB923C", color: "#fff" }}>Privata</span>
+          <span className="px-2 py-0.5 rounded font-medium" style={{ background: "transparent", border: "2px dashed #6B7280" }}>Privata</span>
         </div>
 
         {/* Grid */}
@@ -707,7 +727,7 @@ export default function PlanningPage() {
                 <div className="flex">
                   <div className="flex-shrink-0 flex items-center justify-center border-r border-border bg-muted px-1"
                     style={{ width: 80, minHeight: day_h }}>
-                    <span className="text-xs font-bold text-foreground">{giorno.slice(0, 3)}</span>
+                    <span className="text-xs font-bold text-foreground">{giorno}</span>
                   </div>
 
                   <div className="flex-1 relative" style={{ minWidth: total_min * 1.2, height: day_h }}>
