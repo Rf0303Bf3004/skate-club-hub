@@ -164,7 +164,7 @@ function PlanningPageInner() {
     const pos: any[] = [];
     const unpos: any[] = [];
     corsi.forEach((c: any) => {
-      if (has_valid_ice(c, slots)) pos.push(c);
+      if (c.giorno && c.ora_inizio && c.ora_fine) pos.push(c);
       else unpos.push(c);
     });
     return { posizionati: pos, da_posizionare: unpos };
@@ -428,7 +428,7 @@ function PlanningPageInner() {
           {/* Content */}
           <div className="flex flex-1 overflow-hidden">
             {/* Sidebar left - build mode backlog */}
-            {build_mode && !pick_corso && (
+            {build_mode && (
               <div className="w-[220px] flex-shrink-0 border-r border-border overflow-y-auto p-3 space-y-2 bg-muted/30">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-bold text-foreground uppercase">Da posizionare ({da_posizionare.length})</span>
