@@ -635,9 +635,13 @@ function PlanningPageInner() {
           </div>
         </div>
 
-        {/* Modals */}
-        <NewCorsoModal open={show_new_corso} on_close={() => set_show_new_corso(false)} istruttori={istruttori} queryClient={queryClient} tipo="corso" />
-        <NewCorsoModal open={show_new_privata} on_close={() => set_show_new_privata(false)} istruttori={istruttori} queryClient={queryClient} tipo="privata" atleti={atleti} />
+        {/* Modals - lazy rendered */}
+        {show_new_corso && (
+          <NewCorsoModal open={show_new_corso} on_close={() => set_show_new_corso(false)} istruttori={istruttori} queryClient={queryClient} tipo="corso" />
+        )}
+        {show_new_privata && (
+          <NewCorsoModal open={show_new_privata} on_close={() => set_show_new_privata(false)} istruttori={istruttori} queryClient={queryClient} tipo="privata" atleti={atleti} />
+        )}
         {show_edit_corso && (
           <EditCorsoModal corso={show_edit_corso} on_close={() => set_show_edit_corso(null)} istruttori={istruttori} queryClient={queryClient} posizionati={posizionati} />
         )}
