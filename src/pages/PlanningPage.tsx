@@ -209,7 +209,7 @@ function PlanningPageInner() {
     return { range_start: mn, range_end: mx };
   }, [slots, posizionati]);
 
-  const total_min = range_end - range_start;
+  const total_min = Math.max(range_end - range_start, 1); // prevent division by zero
 
   const ticks = useMemo(() => {
     const arr: number[] = [];
@@ -635,9 +635,13 @@ function PlanningPageInner() {
           </div>
         </div>
 
-        {/* Modals */}
-        <NewCorsoModal open={show_new_corso} on_close={() => set_show_new_corso(false)} istruttori={istruttori} queryClient={queryClient} tipo="corso" />
-        <NewCorsoModal open={show_new_privata} on_close={() => set_show_new_privata(false)} istruttori={istruttori} queryClient={queryClient} tipo="privata" atleti={atleti} />
+        {/* Modals - lazy rendered */}
+        {show_new_corso && (
+          <NewCorsoModal open={show_new_corso} on_close={() => set_show_new_corso(false)} istruttori={istruttori} queryClient={queryClient} tipo="corso" />
+        )}
+        {show_new_privata && (
+          <NewCorsoModal open={show_new_privata} on_close={() => set_show_new_privata(false)} istruttori={istruttori} queryClient={queryClient} tipo="privata" atleti={atleti} />
+        )}
         {show_edit_corso && (
           <EditCorsoModal corso={show_edit_corso} on_close={() => set_show_edit_corso(null)} istruttori={istruttori} queryClient={queryClient} posizionati={posizionati} />
         )}
@@ -849,6 +853,17 @@ function PlanningPageInner() {
             );
           })}
         </div>
+
+        {/* Modals - lazy rendered */}
+        {show_new_corso && (
+          <NewCorsoModal open={show_new_corso} on_close={() => set_show_new_corso(false)} istruttori={istruttori} queryClient={queryClient} tipo="corso" />
+        )}
+        {show_new_privata && (
+          <NewCorsoModal open={show_new_privata} on_close={() => set_show_new_privata(false)} istruttori={istruttori} queryClient={queryClient} tipo="privata" atleti={atleti} />
+        )}
+        {show_edit_corso && (
+          <EditCorsoModal corso={show_edit_corso} on_close={() => set_show_edit_corso(null)} istruttori={istruttori} queryClient={queryClient} posizionati={posizionati} />
+        )}
       </div>
     </TooltipProvider>
   );
