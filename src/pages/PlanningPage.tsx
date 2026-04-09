@@ -4,7 +4,7 @@ import { supabase, get_current_club_id } from "@/lib/supabase";
 import { use_corsi, use_istruttori, use_stagioni, use_atleti } from "@/hooks/use-supabase-data";
 import {
   X, Loader2, ChevronLeft, ChevronRight, Plus, Wrench, Eye, Check,
-  ArrowLeft, LayoutGrid, Pencil, Undo2, Mail, Move, AlertTriangle,
+  ArrowLeft, LayoutGrid, Pencil, Undo2, Mail, Move, AlertTriangle, Calendar, Zap, CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -91,11 +91,51 @@ function PlanningPageWrapper() {
 const CLUB_ID = "d33e590e-73ef-4ead-ad0e-5e321854ef50";
 const STAGIONE_ID = "841a5837-3382-472f-a582-557f8b5d69e9";
 const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"] as const;
+const GIORNI_SHORT = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
 const OFF_ICE_TYPES = ["danza", "off-ice", "stretching"];
 const OFF_ICE_COLORS: Record<string, string> = { danza: "#B83280", "off-ice": "#718096", stretching: "#276749" };
-const PPM_FOCUS = 7; // pixels per minute in focus day
+const PPM_FOCUS = 7;
+const MESI_IT = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
 
 type ViewMode = 1 | 2 | 3 | 7;
+
+// ── Date helpers ──
+function getMondayOfWeek(d: Date): Date {
+  const date = new Date(d);
+  const day = date.getDay(); // 0=Sun,1=Mon...6=Sat
+  const diff = day === 0 ? -6 : 1 - day;
+  date.setDate(date.getDate() + diff);
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function addDays(d: Date, n: number): Date {
+  const r = new Date(d);
+  r.setDate(r.getDate() + n);
+  return r;
+}
+
+function formatDateISO(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function formatWeekLabel(lunedi: Date): string {
+  const dom = addDays(lunedi, 6);
+  const d1 = lunedi.getDate();
+  const d2 = dom.getDate();
+  const m1 = MESI_IT[lunedi.getMonth()];
+  const m2 = MESI_IT[dom.getMonth()];
+  const y = dom.getFullYear();
+  if (lunedi.getMonth() === dom.getMonth()) {
+    return `${d1} – ${d2} ${m1} ${y}`;
+  }
+  return `${d1} ${m1} – ${d2} ${m2} ${y}`;
+}
+
+function dayIndexFromDate(date: Date): number {
+  const day = date.getDay();
+  return day === 0 ? 6 : day - 1; // 0=Mon...6=Sun
+}
 
 function time_to_min(t: any): number {
   if (!t || typeof t !== "string") return 0;
@@ -197,16 +237,59 @@ function use_disponibilita_istruttori() {
   });
 }
 
-// Check if course has valid ice coverage
-function has_valid_ice(corso: any, ghiaccio_slots: any[]): boolean {
-  if (!corso.giorno || !corso.ora_inizio || !corso.ora_fine) return false;
-  if (OFF_ICE_TYPES.includes((corso.tipo || "").toLowerCase())) return true;
-  const cs = time_to_min(corso.ora_inizio);
-  const ce = time_to_min(corso.ora_fine);
-  return ghiaccio_slots.some((s: any) =>
-    s.giorno === corso.giorno && (s.tipo ?? "ghiaccio") === "ghiaccio" &&
-    time_to_min(s.ora_inizio) <= cs && time_to_min(s.ora_fine) >= ce
-  );
+// ── Planning settimane hooks ──
+function use_planning_settimana(data_lunedi: string) {
+  return useQuery({
+    queryKey: ["planning_settimana", CLUB_ID, data_lunedi],
+    refetchOnMount: "always",
+    staleTime: 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("planning_settimane")
+        .select("*")
+        .eq("club_id", CLUB_ID)
+        .eq("data_lunedi", data_lunedi)
+        .maybeSingle();
+      if (error) throw error;
+      return data ?? null;
+    },
+  });
+}
+
+function use_planning_corsi(settimana_id: string | null) {
+  return useQuery({
+    queryKey: ["planning_corsi_settimana", settimana_id],
+    enabled: !!settimana_id,
+    refetchOnMount: "always",
+    staleTime: 0,
+    queryFn: async () => {
+      if (!settimana_id) return [];
+      const { data, error } = await supabase
+        .from("planning_corsi_settimana")
+        .select("*")
+        .eq("settimana_id", settimana_id);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+function use_planning_private(settimana_id: string | null) {
+  return useQuery({
+    queryKey: ["planning_private_settimana", settimana_id],
+    enabled: !!settimana_id,
+    refetchOnMount: "always",
+    staleTime: 0,
+    queryFn: async () => {
+      if (!settimana_id) return [];
+      const { data, error } = await supabase
+        .from("planning_private_settimana")
+        .select("*")
+        .eq("settimana_id", settimana_id);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 }
 
 // ── Livelli ──
@@ -220,24 +303,28 @@ function SidebarCard({ corso, istr_map, pick_corso, set_pick_corso }: {
 }) {
   const istr_ids: string[] = corso.istruttori_ids ?? [];
   const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
+  const istr_id_single = corso.istruttore_id;
+  const istr_display = first_istr || (istr_id_single ? istr_map[istr_id_single] : null);
   const is_picked = pick_corso?.id === corso.id;
+  const is_annullato = corso.annullato === true;
   return (
     <div
-      className={`border rounded p-2 bg-card cursor-pointer hover:shadow-md transition-shadow space-y-1 ${is_picked ? "border-primary ring-2 ring-primary/30" : "border-border"}`}
+      className={`border rounded p-2 bg-card cursor-pointer hover:shadow-md transition-shadow space-y-1 ${is_picked ? "border-primary ring-2 ring-primary/30" : "border-border"} ${is_annullato ? "opacity-50" : ""}`}
       onClick={() => set_pick_corso(is_picked ? null : corso)}
     >
       <div className="flex items-center justify-between">
-        <span className="font-bold text-xs text-foreground block truncate flex-1">{corso.nome}</span>
+        <span className={`font-bold text-xs text-foreground block truncate flex-1 ${is_annullato ? "line-through" : ""}`}>{corso.nome}</span>
+        {is_annullato && <X className="h-3 w-3 text-destructive flex-shrink-0" />}
         {is_picked && (
           <button onClick={(e) => { e.stopPropagation(); set_pick_corso(null); }} className="text-muted-foreground hover:text-foreground ml-1">
             <X className="h-3 w-3" />
           </button>
         )}
       </div>
-      {first_istr && (
+      {istr_display && (
         <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: first_istr.colore || "#6B7280" }} />
-          {first_istr.nome} {first_istr.cognome}
+          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: istr_display.colore || "#6B7280" }} />
+          {istr_display.nome} {istr_display.cognome}
         </span>
       )}
       <span className="text-[10px] text-muted-foreground block">{corso.atleti_ids?.length ?? 0} atleti</span>
@@ -253,6 +340,10 @@ function SidebarCostruzione({
   on_new_corso,
   on_new_privata,
   className,
+  settimana,
+  on_genera,
+  on_pubblica,
+  generating,
 }: {
   corsiDaPosizionare: any[];
   istr_map: Record<string, any>;
@@ -261,9 +352,26 @@ function SidebarCostruzione({
   on_new_corso: () => void;
   on_new_privata: () => void;
   className: string;
+  settimana: any | null;
+  on_genera: () => void;
+  on_pubblica: () => void;
+  generating: boolean;
 }) {
   return (
     <div data-sidebar className={className}>
+      {/* Week actions */}
+      {!settimana && (
+        <Button size="sm" className="w-full text-xs gap-1.5 mb-2" onClick={on_genera} disabled={generating}>
+          {generating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3" />}
+          Genera settimana
+        </Button>
+      )}
+      {settimana?.stato === "bozza" && (
+        <Button size="sm" variant="outline" className="w-full text-xs gap-1.5 mb-2 border-green-500 text-green-600 hover:bg-green-50" onClick={on_pubblica}>
+          <CheckCircle2 className="h-3 w-3" /> Pubblica settimana
+        </Button>
+      )}
+
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs font-bold text-foreground uppercase">Da posizionare ({corsiDaPosizionare.length})</span>
       </div>
@@ -311,29 +419,103 @@ function PlanningPageInner() {
   const loadingCorsi = corsiQuery.isLoading;
   const loadingIstr = istruttoriQuery.isLoading;
 
+  // ── Week navigation state ──
+  const [dataLunedi, setDataLunedi] = useState<Date>(() => getMondayOfWeek(new Date()));
+  const dataLunediISO = formatDateISO(dataLunedi);
+
+  // ── Planning settimana data ──
+  const settimanaQuery = use_planning_settimana(dataLunediISO);
+  const settimana = settimanaQuery.data ?? null;
+  const settimana_id = settimana?.id ?? null;
+  const planCorsiQuery = use_planning_corsi(settimana_id);
+  const planPrivateQuery = use_planning_private(settimana_id);
+  const plan_corsi = planCorsiQuery.data ?? [];
+  const plan_private = planPrivateQuery.data ?? [];
+  const is_generated = !!settimana;
+
   const [view_mode, set_view_mode] = useState<ViewMode>(7);
   const [day_offset, set_day_offset] = useState(0);
   const [build_mode, set_build_mode] = useState(false);
   const [focus_day, set_focus_day] = useState<string | null>(null);
   const [selected_corso_id, set_selected_corso_id] = useState<string | null>(null);
-  const [pick_corso, set_pick_corso] = useState<any>(null); // course selected for two-click placement
+  const [pick_corso, set_pick_corso] = useState<any>(null);
   const [confirm_place, set_confirm_place] = useState<{ corso: any; giorno: string; ora_inizio: string; ora_fine: string } | null>(null);
   const [slot_manager_open, set_slot_manager_open] = useState(false);
   const [show_new_corso, set_show_new_corso] = useState(false);
   const [show_new_privata, set_show_new_privata] = useState(false);
   const [show_edit_corso, set_show_edit_corso] = useState<any>(null);
   const [saving, set_saving] = useState(false);
+  const [generating, set_generating] = useState(false);
 
   const loading = loadingGhiaccio || loadingCorsi || loadingIstr;
 
-  const corsi = useMemo(() => (corsi_raw ?? []).filter((c: any) => c.attivo !== false), [corsi_raw]);
+  const corsi_template = useMemo(() => (corsi_raw ?? []).filter((c: any) => c.attivo !== false), [corsi_raw]);
   const istruttori: any[] = useMemo(() => istruttori_raw ?? [], [istruttori_raw]);
   const atleti: any[] = useMemo(() => atleti_raw ?? [], [atleti_raw]);
   const disp_istr = useMemo(() => disp_istr_raw ?? [], [disp_istr_raw]);
   const slots = useMemo(() => ghiaccio_slots ?? [], [ghiaccio_slots]);
 
-  const posizionati = useMemo(() => (corsi ?? []).filter((c: any) => c.giorno && c.ora_inizio && c.ora_fine), [corsi]);
-  const corsiDaPosizionare = useMemo(() => (corsi ?? []).filter((c: any) => !c.giorno || !c.ora_inizio), [corsi]);
+  // ── Build unified course list for the grid ──
+  // When generated: use planning_corsi_settimana rows mapped to display format
+  // When template: use corsi_template
+  const posizionati = useMemo(() => {
+    if (is_generated) {
+      // Map planning rows to display format with giorno name
+      return plan_corsi.map((pc: any) => {
+        const template = corsi_template.find((c: any) => c.id === pc.corso_id);
+        const dateObj = new Date(pc.data + "T00:00:00");
+        const dayIdx = dayIndexFromDate(dateObj);
+        return {
+          id: pc.id, // use planning row id for operations
+          corso_id: pc.corso_id,
+          nome: template?.nome || "?",
+          tipo: template?.tipo || "",
+          giorno: GIORNI[dayIdx],
+          data: pc.data,
+          ora_inizio: pc.ora_inizio,
+          ora_fine: pc.ora_fine,
+          istruttore_id: pc.istruttore_id,
+          istruttori_ids: pc.istruttore_id ? [pc.istruttore_id] : (template?.istruttori_ids ?? []),
+          atleti_ids: template?.atleti_ids ?? [],
+          livello_richiesto: template?.livello_richiesto || "",
+          costo_mensile: template?.costo_mensile || 0,
+          note: template?.note || "",
+          annullato: pc.annullato,
+          motivo: pc.motivo,
+          _is_plan_row: true,
+        };
+      }).filter((c: any) => !c.annullato);
+    }
+    // Template mode: show positioned courses
+    return corsi_template.filter((c: any) => c.giorno && c.ora_inizio && c.ora_fine);
+  }, [is_generated, plan_corsi, corsi_template]);
+
+  // Annullati for display (greyed out)
+  const annullati = useMemo(() => {
+    if (!is_generated) return [];
+    return plan_corsi.filter((pc: any) => pc.annullato).map((pc: any) => {
+      const template = corsi_template.find((c: any) => c.id === pc.corso_id);
+      const dateObj = new Date(pc.data + "T00:00:00");
+      const dayIdx = dayIndexFromDate(dateObj);
+      return {
+        id: pc.id,
+        corso_id: pc.corso_id,
+        nome: template?.nome || "?",
+        tipo: template?.tipo || "",
+        giorno: GIORNI[dayIdx],
+        ora_inizio: pc.ora_inizio,
+        ora_fine: pc.ora_fine,
+        istruttori_ids: pc.istruttore_id ? [pc.istruttore_id] : [],
+        annullato: true,
+        _is_plan_row: true,
+      };
+    });
+  }, [is_generated, plan_corsi, corsi_template]);
+
+  const corsiDaPosizionare = useMemo(() => {
+    if (is_generated) return []; // In generated mode, all courses come from plan
+    return corsi_template.filter((c: any) => !c.giorno || !c.ora_inizio);
+  }, [is_generated, corsi_template]);
 
   // Instructor map
   const istr_map = useMemo(() => {
@@ -350,10 +532,22 @@ function PlanningPageInner() {
     return GIORNI.slice(start, Math.min(start + view_mode, 7));
   }, [view_mode, day_offset]);
 
+  // Date for each giorno in current week
+  const date_for_giorno = useMemo(() => {
+    const map: Record<string, string> = {};
+    GIORNI.forEach((g, i) => {
+      map[g] = formatDateISO(addDays(dataLunedi, i));
+    });
+    return map;
+  }, [dataLunedi]);
+
   const set_view = (m: ViewMode) => {
     set_view_mode(m);
     set_day_offset((prev) => Math.min(prev, 7 - m));
   };
+  const go_prev_week = () => setDataLunedi(prev => addDays(prev, -7));
+  const go_next_week = () => setDataLunedi(prev => addDays(prev, 7));
+  const go_today = () => setDataLunedi(getMondayOfWeek(new Date()));
   const go_prev = () => set_day_offset((p) => Math.max(0, p - view_mode));
   const go_next = () => set_day_offset((p) => Math.min(p + view_mode, 7 - view_mode));
 
@@ -406,8 +600,8 @@ function PlanningPageInner() {
   // Selected corso
   const selected_corso = useMemo(() => {
     if (!selected_corso_id) return null;
-    return corsi.find((c: any) => c.id === selected_corso_id) || null;
-  }, [selected_corso_id, corsi]);
+    return posizionati.find((c: any) => c.id === selected_corso_id) || null;
+  }, [selected_corso_id, posizionati]);
 
   // ── Compute available placement slots per day (for two-click) ──
   const pick_slots_by_day = useMemo(() => {
@@ -431,8 +625,186 @@ function PlanningPageInner() {
     return result;
   }, [pick_corso, slots]);
 
+  // ── Refetch helpers ──
+  const refetchSettimana = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["planning_settimana", CLUB_ID, dataLunediISO] });
+    queryClient.invalidateQueries({ queryKey: ["planning_corsi_settimana"] });
+    queryClient.invalidateQueries({ queryKey: ["planning_private_settimana"] });
+  }, [queryClient, dataLunediISO]);
+
+  // ── Genera settimana ──
+  const generaSettimana = async () => {
+    set_generating(true);
+    try {
+      // Step 1: Create week row
+      const { data: newSett, error: e1 } = await supabase.from("planning_settimane").insert({
+        club_id: CLUB_ID,
+        stagione_id: STAGIONE_ID,
+        data_lunedi: dataLunediISO,
+        stato: "bozza",
+      }).select().single();
+      if (e1) throw e1;
+
+      // Step 2: Find previous week
+      const { data: ultimaSett } = await supabase.from("planning_settimane")
+        .select("*")
+        .eq("club_id", CLUB_ID)
+        .lt("data_lunedi", dataLunediISO)
+        .order("data_lunedi", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      // Step 3: Copy courses
+      if (ultimaSett) {
+        const { data: corsiUltima } = await supabase.from("planning_corsi_settimana")
+          .select("*")
+          .eq("settimana_id", ultimaSett.id)
+          .eq("annullato", false);
+
+        if (corsiUltima?.length) {
+          const nuoviCorsi = corsiUltima.map((c: any) => {
+            const dateObj = new Date(c.data + "T00:00:00");
+            const giornoDaSett = dayIndexFromDate(dateObj);
+            const nuovaData = addDays(dataLunedi, giornoDaSett);
+            return {
+              settimana_id: newSett.id,
+              corso_id: c.corso_id,
+              data: formatDateISO(nuovaData),
+              ora_inizio: c.ora_inizio,
+              ora_fine: c.ora_fine,
+              istruttore_id: c.istruttore_id,
+            };
+          });
+          await supabase.from("planning_corsi_settimana").insert(nuoviCorsi);
+        }
+
+        // Also copy private from previous week
+        const { data: privateUltima } = await supabase.from("planning_private_settimana")
+          .select("*")
+          .eq("settimana_id", ultimaSett.id)
+          .eq("annullato", false);
+
+        if (privateUltima?.length) {
+          const nuovePrivate = privateUltima.map((p: any) => {
+            const dateObj = new Date(p.data + "T00:00:00");
+            const giornoDaSett = dayIndexFromDate(dateObj);
+            const nuovaData = addDays(dataLunedi, giornoDaSett);
+            return {
+              settimana_id: newSett.id,
+              lezione_privata_id: p.lezione_privata_id,
+              data: formatDateISO(nuovaData),
+              ora_inizio: p.ora_inizio,
+              ora_fine: p.ora_fine,
+              istruttore_id: p.istruttore_id,
+            };
+          });
+          await supabase.from("planning_private_settimana").insert(nuovePrivate);
+        }
+      } else {
+        // First time: use template
+        const corsiTemplate = corsi_template.filter((c: any) => c.giorno && c.ora_inizio && c.ora_fine);
+        if (corsiTemplate.length) {
+          const nuoviCorsi = corsiTemplate.map((c: any) => {
+            const offset = GIORNI.indexOf(c.giorno as any);
+            const data = addDays(dataLunedi, offset >= 0 ? offset : 0);
+            const istrId = (c.istruttori_ids ?? [])[0] || null;
+            return {
+              settimana_id: newSett.id,
+              corso_id: c.id,
+              data: formatDateISO(data),
+              ora_inizio: c.ora_inizio,
+              ora_fine: c.ora_fine,
+              istruttore_id: istrId,
+            };
+          });
+          await supabase.from("planning_corsi_settimana").insert(nuoviCorsi);
+        }
+      }
+
+      // Step 4: Add recurring private lessons
+      const { data: privateRicorrenti } = await supabase.from("lezioni_private")
+        .select("*")
+        .eq("club_id", CLUB_ID)
+        .eq("ricorrente", true)
+        .or(`data_revoca.is.null,data_revoca.gt.${dataLunediISO}`);
+
+      if (privateRicorrenti?.length) {
+        const nuovePrivate = privateRicorrenti
+          .filter((p: any) => p.data && p.ora_inizio && p.ora_fine)
+          .map((p: any) => {
+            const dateObj = new Date(p.data + "T00:00:00");
+            const giornoOrig = dayIndexFromDate(dateObj);
+            const nuovaData = addDays(dataLunedi, giornoOrig);
+            return {
+              settimana_id: newSett.id,
+              lezione_privata_id: p.id,
+              data: formatDateISO(nuovaData),
+              ora_inizio: p.ora_inizio,
+              ora_fine: p.ora_fine,
+              istruttore_id: p.istruttore_id,
+            };
+          });
+        if (nuovePrivate.length) {
+          await supabase.from("planning_private_settimana").insert(nuovePrivate);
+        }
+      }
+
+      // Step 5: Update copiata_da if from previous
+      if (ultimaSett) {
+        await supabase.from("planning_settimane").update({ copiata_da: ultimaSett.id }).eq("id", newSett.id);
+      }
+
+      refetchSettimana();
+      toast.success("Settimana generata!");
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      set_generating(false);
+    }
+  };
+
+  // ── Pubblica settimana ──
+  const pubblicaSettimana = async () => {
+    if (!settimana) return;
+    try {
+      const { error } = await supabase.from("planning_settimane").update({ stato: "pubblicata" }).eq("id", settimana.id);
+      if (error) throw error;
+      refetchSettimana();
+      toast.success("Settimana pubblicata!");
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
   // ── Actions ──
   const place_corso = async (corso: any, giorno: string, ora_inizio: string, ora_fine: string) => {
+    if (is_generated && settimana) {
+      // In generated mode: insert into planning_corsi_settimana
+      set_saving(true);
+      try {
+        const data_giorno = date_for_giorno[giorno];
+        const istrId = (corso.istruttori_ids ?? [])[0] || null;
+        const { error } = await supabase.from("planning_corsi_settimana").insert({
+          settimana_id: settimana.id,
+          corso_id: corso.corso_id || corso.id,
+          data: data_giorno,
+          ora_inizio,
+          ora_fine,
+          istruttore_id: istrId,
+        });
+        if (error) throw error;
+        refetchSettimana();
+        toast.success(`${corso.nome} posizionato`);
+        set_pick_corso(null);
+      } catch (e: any) {
+        toast.error(e.message);
+      } finally {
+        set_saving(false);
+      }
+      return;
+    }
+
+    // Template mode (original logic)
     const day_corsi = posizionati.filter((c: any) => c.giorno === giorno && c.id !== corso.id);
     const cs = time_to_min(ora_inizio);
     const ce = time_to_min(ora_fine);
@@ -466,12 +838,20 @@ function PlanningPageInner() {
   const remove_corso = async (corso: any) => {
     set_saving(true);
     try {
-      const { error } = await supabase.from("corsi").update({
-        giorno: null as any, ora_inizio: null as any, ora_fine: null as any,
-      }).eq("id", corso.id);
-      if (error) throw error;
-      await queryClient.invalidateQueries({ queryKey: ["corsi"] });
-      toast.info(`${corso.nome} rimosso dal planning`);
+      if (corso._is_plan_row) {
+        // In generated mode: mark as annullato
+        const { error } = await supabase.from("planning_corsi_settimana").update({ annullato: true }).eq("id", corso.id);
+        if (error) throw error;
+        refetchSettimana();
+        toast.info(`${corso.nome} annullato`);
+      } else {
+        const { error } = await supabase.from("corsi").update({
+          giorno: null as any, ora_inizio: null as any, ora_fine: null as any,
+        }).eq("id", corso.id);
+        if (error) throw error;
+        await queryClient.invalidateQueries({ queryKey: ["corsi"] });
+        toast.info(`${corso.nome} rimosso dal planning`);
+      }
       set_selected_corso_id(null);
     } catch (e: any) {
       toast.error(e.message);
@@ -500,6 +880,7 @@ function PlanningPageInner() {
     const day_pulizia = slots.filter((s: any) => s.giorno === focus_day && s.tipo === "pulizia");
     const day_corsi_ice = posizionati.filter((c: any) => c.giorno === focus_day && !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
     const day_corsi_off = posizionati.filter((c: any) => c.giorno === focus_day && OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
+    const day_annullati = annullati.filter((c: any) => c.giorno === focus_day);
     const day_ice_min = day_ghiaccio.reduce((a: number, s: any) => a + time_to_min(s.ora_fine) - time_to_min(s.ora_inizio), 0);
 
     let f_start = 24 * 60, f_end = 0;
@@ -540,6 +921,7 @@ function PlanningPageInner() {
 
     const sel = selected_corso;
     const focus_pick_slots = pick_corso ? (pick_slots_by_day[focus_day] ?? []) : [];
+    const focus_date = date_for_giorno[focus_day] || "";
 
     return (
       <TooltipProvider delayDuration={200}>
@@ -554,7 +936,14 @@ function PlanningPageInner() {
             <Button variant="ghost" size="sm" onClick={() => { set_focus_day(null); set_selected_corso_id(null); set_pick_corso(null); set_slot_manager_open(false); }}>
               <ArrowLeft className="h-4 w-4 mr-1" /> Settimana
             </Button>
-            <h2 className="text-lg font-bold text-foreground flex-1">{focus_day}</h2>
+            <h2 className="text-lg font-bold text-foreground flex-1">
+              {focus_day} {focus_date && <span className="text-sm font-normal text-muted-foreground ml-1">{focus_date}</span>}
+            </h2>
+            {settimana && (
+              <Badge variant={settimana.stato === "pubblicata" ? "default" : "secondary"} className={`text-xs ${settimana.stato === "pubblicata" ? "bg-green-600" : ""}`}>
+                {settimana.stato === "pubblicata" ? "PUBBLICATA" : "BOZZA"}
+              </Badge>
+            )}
             {pick_corso && <Badge variant="outline" className="border-primary text-primary text-xs">Selezionato: {pick_corso.nome}</Badge>}
             <span className="text-sm text-muted-foreground">{(day_ice_min / 60).toFixed(1)}h ghiaccio</span>
             {build_mode && (
@@ -577,6 +966,10 @@ function PlanningPageInner() {
                   set_pick_corso={set_pick_corso}
                   on_new_corso={() => set_show_new_corso(true)}
                   on_new_privata={() => set_show_new_privata(true)}
+                  settimana={settimana}
+                  on_genera={generaSettimana}
+                  on_pubblica={pubblicaSettimana}
+                  generating={generating}
                 />
               </SidebarErrorBoundary>
             )}
@@ -689,9 +1082,34 @@ function PlanningPageInner() {
                   })
                 )}
 
+                {/* Annullati (greyed out with strikethrough) */}
+                {day_annullati.map((c: any) => {
+                  const cs = time_to_min(c.ora_inizio);
+                  const ce = time_to_min(c.ora_fine);
+                  return (
+                    <Tooltip key={`ann-${c.id}`}>
+                      <TooltipTrigger asChild>
+                        <div className="absolute z-[2] rounded flex items-center px-1 overflow-hidden" style={{
+                          left: (cs - f_start) * PPM_FOCUS,
+                          width: (ce - cs) * PPM_FOCUS,
+                          top: (course_rows.length) * ROW_H + 8,
+                          height: 20,
+                          background: "#e5e5e5",
+                          border: "1px solid #ccc",
+                          borderRadius: 4,
+                        }}>
+                          <X className="h-3 w-3 text-muted-foreground mr-1 flex-shrink-0" />
+                          <span className="truncate text-[10px] text-muted-foreground line-through">{c.nome}</span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent><p className="line-through">{c.nome} (annullato)</p></TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+
                 {/* Off-ice strip */}
                 {day_corsi_off.length > 0 && (
-                  <div className="absolute left-0 right-0" style={{ top: (course_rows.length || 1) * ROW_H + 4, height: 6 }}>
+                  <div className="absolute left-0 right-0" style={{ top: (course_rows.length || 1) * ROW_H + (day_annullati.length > 0 ? 34 : 4), height: 6 }}>
                     {day_corsi_off.map((c: any) => {
                       const cs = time_to_min(c.ora_inizio);
                       const ce = time_to_min(c.ora_fine);
@@ -780,6 +1198,11 @@ function PlanningPageInner() {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <h1 className="text-xl font-bold text-foreground">Planning Ghiaccio</h1>
           <div className="flex items-center gap-2">
+            {settimana && (
+              <Badge variant={settimana.stato === "pubblicata" ? "default" : "secondary"} className={`text-xs ${settimana.stato === "pubblicata" ? "bg-green-600" : ""}`}>
+                {settimana.stato === "pubblicata" ? "PUBBLICATA" : "BOZZA"}
+              </Badge>
+            )}
             {pick_corso && <Badge variant="outline" className="border-primary text-primary text-xs">Selezionato: {pick_corso.nome}</Badge>}
             <Button size="sm" variant={build_mode ? "default" : "outline"} onClick={() => { set_build_mode(!build_mode); set_pick_corso(null); }} className="gap-1.5">
               {build_mode ? <><Eye className="h-4 w-4" /> Visualizzazione</> : <><Wrench className="h-4 w-4" /> Costruzione</>}
@@ -787,9 +1210,15 @@ function PlanningPageInner() {
           </div>
         </div>
 
-        {/* View selector + nav */}
+        {/* Week navigation */}
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="inline-flex rounded-lg border border-border overflow-hidden">
+          <div className="inline-flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={go_prev_week}><ChevronLeft className="h-4 w-4" /></Button>
+            <span className="text-sm font-semibold text-foreground min-w-[220px] text-center">{formatWeekLabel(dataLunedi)}</span>
+            <Button variant="outline" size="sm" onClick={go_next_week}><ChevronRight className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="sm" onClick={go_today} className="text-xs"><Calendar className="h-3.5 w-3.5 mr-1" />Oggi</Button>
+          </div>
+          <div className="inline-flex rounded-lg border border-border overflow-hidden ml-auto">
             {([1, 2, 3, 7] as ViewMode[]).map((m, idx) => (
               <button key={m} onClick={() => set_view(m)}
                 className={`px-3 py-1.5 text-sm font-medium transition-colors ${view_mode === m ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"} ${idx > 0 ? "border-l border-border" : ""}`}
@@ -798,12 +1227,22 @@ function PlanningPageInner() {
               </button>
             ))}
           </div>
-          <div className="inline-flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={go_prev} disabled={day_offset === 0}><ChevronLeft className="h-4 w-4" /></Button>
-            <span className="text-sm font-medium text-foreground min-w-[120px] text-center">{view_label}</span>
-            <Button variant="outline" size="sm" onClick={go_next} disabled={day_offset + view_mode >= 7}><ChevronRight className="h-4 w-4" /></Button>
-          </div>
+          {view_mode < 7 && (
+            <div className="inline-flex items-center gap-1">
+              <Button variant="outline" size="sm" onClick={go_prev} disabled={day_offset === 0}><ChevronLeft className="h-4 w-4" /></Button>
+              <span className="text-sm font-medium text-foreground min-w-[80px] text-center">{view_label}</span>
+              <Button variant="outline" size="sm" onClick={go_next} disabled={day_offset + view_mode >= 7}><ChevronRight className="h-4 w-4" /></Button>
+            </div>
+          )}
         </div>
+
+        {/* Template banner */}
+        {!is_generated && (
+          <div className="flex items-center gap-2 rounded-lg border border-yellow-400/60 bg-yellow-50 dark:bg-yellow-900/20 px-4 py-2.5 text-sm text-yellow-800 dark:text-yellow-200">
+            <span>📋</span>
+            <span><strong>Template</strong> — questa settimana non è ancora stata generata. {build_mode ? "Clicca 'Genera settimana' nella sidebar per crearla." : "Attiva la modalità Costruzione per generarla."}</span>
+          </div>
+        )}
 
         {/* Instructor legend with hour bars */}
         <div className="space-y-1">
@@ -858,12 +1297,16 @@ function PlanningPageInner() {
                 set_pick_corso={set_pick_corso}
                 on_new_corso={() => set_show_new_corso(true)}
                 on_new_privata={() => set_show_new_privata(true)}
+                settimana={settimana}
+                on_genera={generaSettimana}
+                on_pubblica={pubblicaSettimana}
+                generating={generating}
               />
             </SidebarErrorBoundary>
           )}
 
         {/* Grid */}
-        <div className="flex-1 border border-border rounded-lg overflow-x-auto bg-card" data-grid>
+        <div className={`flex-1 border border-border rounded-lg overflow-x-auto ${is_generated ? "bg-card" : "bg-muted/40"}`} data-grid>
           {/* Time header */}
           <div className="flex border-b border-border sticky top-0 bg-card z-10">
             <div className="flex-shrink-0 border-r border-border" style={{ width: 100 }} />
@@ -882,7 +1325,12 @@ function PlanningPageInner() {
             const day_pulizia = slots.filter((s: any) => s.giorno === giorno && s.tipo === "pulizia");
             const day_corsi_ice = posizionati.filter((c: any) => c.giorno === giorno && !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
             const day_corsi_off = posizionati.filter((c: any) => c.giorno === giorno && OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
+            const day_annullati_list = annullati.filter((c: any) => c.giorno === giorno);
             const day_pick = pick_corso ? (pick_slots_by_day[giorno] ?? []) : [];
+            const giorno_idx = GIORNI.indexOf(giorno as any);
+            const giorno_date = date_for_giorno[giorno];
+            const giorno_date_obj = addDays(dataLunedi, giorno_idx);
+            const giorno_day_num = giorno_date_obj.getDate();
 
             // Sub-rows
             const compute_rows = (courses: any[]): any[][] => {
@@ -902,9 +1350,8 @@ function PlanningPageInner() {
             const course_rows = compute_rows(day_corsi_ice);
             const n_rows = Math.max(course_rows.length, 1);
             const ROW_H = 40;
-            const day_h = n_rows * (14 + 2) + 8 + (day_pick.length > 0 ? 10 : 0);
+            const day_h = n_rows * (14 + 2) + 8 + (day_pick.length > 0 ? 10 : 0) + (day_annullati_list.length > 0 ? 18 : 0);
 
-            // For weekly view green slots, show one merged bar per ice slot instead of every 5-min increment
             const day_ice_ranges = day_ghiaccio.map((g: any) => ({
               start: time_to_min(g.ora_inizio),
               end: time_to_min(g.ora_fine),
@@ -913,19 +1360,19 @@ function PlanningPageInner() {
             return (
               <div key={giorno} className="border-b border-border last:border-b-0 cursor-pointer hover:bg-muted/20"
                 onClick={(e) => {
-                  // If pick_corso and clicking on a green slot, don't navigate to focus day
                   if ((e.target as HTMLElement).closest('[data-green-slot]')) return;
                   set_focus_day(giorno);
                 }}>
                 <div className="flex">
-                  <div className="flex-shrink-0 flex items-center justify-center border-r border-border bg-muted px-2"
+                  <div className="flex-shrink-0 flex flex-col items-center justify-center border-r border-border bg-muted px-2"
                     style={{ width: 100, minHeight: day_h }}>
-                    <span className="text-xs font-bold text-foreground">{giorno}</span>
+                    <span className="text-xs font-bold text-foreground">{GIORNI_SHORT[giorno_idx]}</span>
+                    <span className="text-[10px] text-muted-foreground">{giorno_day_num}</span>
                   </div>
 
                   <div className="flex-1 relative" style={{ minWidth: total_min * 1.2, height: day_h }}>
                     {/* Default bg = grey */}
-                    <div className="absolute inset-0" style={{ background: "#f5f4f0" }} />
+                    <div className="absolute inset-0" style={{ background: is_generated ? "transparent" : "#f5f4f0" }} />
 
                     {/* Ghiaccio bg */}
                     {day_ghiaccio.map((g: any, gi: number) => {
@@ -946,7 +1393,7 @@ function PlanningPageInner() {
                       }} />;
                     })}
 
-                    {/* Green available zones (merged per ice slot) when a course is selected */}
+                    {/* Green available zones when a course is selected */}
                     {pick_corso && day_ice_ranges.map((range, ri) => (
                       <div
                         key={`green${ri}`}
@@ -961,13 +1408,12 @@ function PlanningPageInner() {
                         }}
                         onClick={(e) => {
                           e.stopPropagation();
-                          // Open focus day for precise placement
                           set_focus_day(giorno);
                         }}
                       />
                     ))}
 
-                    {/* Course blocks: ZERO TEXT, only colors, 14px tall */}
+                    {/* Course blocks */}
                     {course_rows.map((row, ri) =>
                       row.map((c: any) => {
                         const cs = time_to_min(c.ora_inizio); const ce = time_to_min(c.ora_fine);
@@ -998,6 +1444,27 @@ function PlanningPageInner() {
                         );
                       })
                     )}
+
+                    {/* Annullati (greyed minibar) */}
+                    {day_annullati_list.map((c: any, ai: number) => {
+                      const cs = time_to_min(c.ora_inizio); const ce = time_to_min(c.ora_fine);
+                      return (
+                        <Tooltip key={`ann-${c.id}`}>
+                          <TooltipTrigger asChild>
+                            <div className="absolute z-[2] rounded-sm" style={{
+                              left: `${((cs - range_start) / total_min) * 100}%`,
+                              width: `${((ce - cs) / total_min) * 100}%`,
+                              top: 4 + n_rows * 16 + ai * 16,
+                              height: 12,
+                              background: "#e0e0e0",
+                              border: "1px solid #bbb",
+                              opacity: 0.6,
+                            }} />
+                          </TooltipTrigger>
+                          <TooltipContent><p className="line-through">{c.nome} (annullato)</p></TooltipContent>
+                        </Tooltip>
+                      );
+                    })}
 
                     {/* Off-ice strip 6px */}
                     {day_corsi_off.length > 0 && day_corsi_off.map((c: any) => {
@@ -1080,10 +1547,11 @@ function DetailPanel({ corso, istr_map, atleti, build_mode, on_close, on_remove,
   corso: any; istr_map: Record<string, any>; atleti: any[]; build_mode: boolean;
   on_close: () => void; on_remove: () => void; on_edit: () => void;
 }) {
+  const corso_id_for_query = corso.corso_id || corso.id;
   const { data: iscrizioni } = useQuery({
-    queryKey: ["iscrizioni_corsi", corso.id],
+    queryKey: ["iscrizioni_corsi", corso_id_for_query],
     queryFn: async () => {
-      const { data } = await supabase.from("iscrizioni_corsi").select("*").eq("corso_id", corso.id).eq("attiva", true);
+      const { data } = await supabase.from("iscrizioni_corsi").select("*").eq("corso_id", corso_id_for_query).eq("attiva", true);
       return data ?? [];
     },
   });
@@ -1139,7 +1607,7 @@ function DetailPanel({ corso, istr_map, atleti, build_mode, on_close, on_remove,
             <Pencil className="h-3 w-3" /> Modifica
           </Button>
           <Button size="sm" variant="outline" className="w-full justify-start text-xs gap-1.5 text-destructive" onClick={on_remove}>
-            <Undo2 className="h-3 w-3" /> Rimuovi dalla griglia
+            <Undo2 className="h-3 w-3" /> {corso._is_plan_row ? "Annulla dalla settimana" : "Rimuovi dalla griglia"}
           </Button>
         </div>
       )}
@@ -1251,7 +1719,6 @@ function SlotManagerPanel({ giorno, slots, istruttori, disp_istr, on_close, quer
 // ══════════════════════════════════════════════════════════════
 // NEW CORSO MODAL
 // ══════════════════════════════════════════════════════════════
-// ── AtletaSearchPlanning (reusable multi-select) ──
 function AtletaSearchPlanning({ atleti, selected_ids, on_change, max }: {
   atleti: any[]; selected_ids: string[]; on_change: (ids: string[]) => void; max?: number;
 }) {
@@ -1332,7 +1799,7 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti }
   const [atleti_ids, set_atleti_ids] = useState<string[]>([]);
   const [saving, set_saving] = useState(false);
 
-  const MAX_ATLETI_SEMI = 3; // default, could read from configurazione_ghiaccio
+  const MAX_ATLETI_SEMI = 3;
   const costo_totale = (parseFloat(String(costo_min)) || 0) * durata;
   const is_semiprivata = atleti_ids.length > 1;
   const quota_per_atleta = atleti_ids.length > 0 ? costo_totale / atleti_ids.length : 0;
@@ -1349,7 +1816,6 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti }
     if (!final_nome.trim()) { toast.error("Nome obbligatorio"); return; }
     set_saving(true);
     try {
-      // 1. Insert lezione_privata (if tipo === "privata")
       let lezione_id: string | null = null;
       if (tipo === "privata") {
         const { data: lp, error: lp_err } = await supabase.from("lezioni_private").insert({
@@ -1368,7 +1834,6 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti }
         if (lp_err) throw lp_err;
         lezione_id = lp.id;
 
-        // 2. Insert atlete
         if (lezione_id && atleti_ids.length > 0) {
           const rows = atleti_ids.map((aid) => ({
             lezione_id: lezione_id!,
@@ -1380,7 +1845,6 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti }
         }
       }
 
-      // 3. Create corso for planning backlog
       const { data: new_corso, error } = await supabase.from("corsi").insert({
         club_id: CLUB_ID, nome: final_nome, tipo: tipo === "privata" ? "privata" : corso_tipo,
         livello_richiesto: livello,
@@ -1390,7 +1854,6 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti }
       }).select().single();
       if (error) throw error;
 
-      // 4. Link istruttore
       if (istr_id && new_corso) {
         await supabase.from("corsi_istruttori").insert({ corso_id: new_corso.id, istruttore_id: istr_id });
       }
@@ -1471,7 +1934,6 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti }
               )}
             </div>
           </div>
-          {/* Riepilogo costi per lezioni private */}
           {tipo === "privata" && atleti_ids.length > 0 && (
             <div className="bg-muted/30 rounded-xl px-4 py-3 space-y-1">
               <p className="text-xs text-muted-foreground">Costo totale lezione: <strong className="text-foreground">CHF {costo_totale.toFixed(2)}</strong></p>
@@ -1512,38 +1974,51 @@ function EditCorsoModal({ corso, on_close, istruttori, queryClient, posizionati 
   const save = async () => {
     set_saving(true);
     try {
-      const update: any = { nome, tipo, livello_richiesto: livello, costo_mensile: parseFloat(String(costo)) || 0, note };
-      if (giorno && ora_inizio && ora_fine) {
-        const cs = time_to_min(ora_inizio);
-        const ce = time_to_min(ora_fine);
-        const conflicts = posizionati.filter((c: any) => {
-          if (c.id === corso.id || c.giorno !== giorno) return false;
-          const istr_ids: string[] = c.istruttori_ids ?? [];
-          if (!istr_ids.includes(istr_id)) return false;
-          const s = time_to_min(c.ora_inizio); const e = time_to_min(c.ora_fine);
-          return s < ce && e > cs;
-        });
-        if (conflicts.length > 0) {
-          if (!window.confirm(`Conflitto con: ${conflicts.map((c: any) => c.nome).join(", ")}. Continuare?`)) {
-            set_saving(false);
-            return;
+      if (corso._is_plan_row) {
+        // Editing a planning row: update planning_corsi_settimana
+        const update: any = {};
+        if (ora_inizio) update.ora_inizio = ora_inizio;
+        if (ora_fine) update.ora_fine = ora_fine;
+        if (istr_id) update.istruttore_id = istr_id;
+        const { error } = await supabase.from("planning_corsi_settimana").update(update).eq("id", corso.id);
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ["planning_corsi_settimana"] });
+        toast.success("Corso aggiornato nella settimana");
+      } else {
+        // Template mode
+        const update: any = { nome, tipo, livello_richiesto: livello, costo_mensile: parseFloat(String(costo)) || 0, note };
+        if (giorno && ora_inizio && ora_fine) {
+          const cs = time_to_min(ora_inizio);
+          const ce = time_to_min(ora_fine);
+          const conflicts = posizionati.filter((c: any) => {
+            if (c.id === corso.id || c.giorno !== giorno) return false;
+            const istr_ids: string[] = c.istruttori_ids ?? [];
+            if (!istr_ids.includes(istr_id)) return false;
+            const s = time_to_min(c.ora_inizio); const e = time_to_min(c.ora_fine);
+            return s < ce && e > cs;
+          });
+          if (conflicts.length > 0) {
+            if (!window.confirm(`Conflitto con: ${conflicts.map((c: any) => c.nome).join(", ")}. Continuare?`)) {
+              set_saving(false);
+              return;
+            }
           }
+          update.giorno = giorno;
+          update.ora_inizio = ora_inizio;
+          update.ora_fine = ora_fine;
         }
-        update.giorno = giorno;
-        update.ora_inizio = ora_inizio;
-        update.ora_fine = ora_fine;
-      }
-      const { error } = await supabase.from("corsi").update(update).eq("id", corso.id);
-      if (error) throw error;
+        const { error } = await supabase.from("corsi").update(update).eq("id", corso.id);
+        if (error) throw error;
 
-      const old_istr = (corso.istruttori_ids ?? [])[0];
-      if (istr_id !== old_istr) {
-        if (old_istr) await supabase.from("corsi_istruttori").delete().eq("corso_id", corso.id);
-        if (istr_id) await supabase.from("corsi_istruttori").insert({ corso_id: corso.id, istruttore_id: istr_id });
-      }
+        const old_istr = (corso.istruttori_ids ?? [])[0];
+        if (istr_id !== old_istr) {
+          if (old_istr) await supabase.from("corsi_istruttori").delete().eq("corso_id", corso.id);
+          if (istr_id) await supabase.from("corsi_istruttori").insert({ corso_id: corso.id, istruttore_id: istr_id });
+        }
 
-      await queryClient.invalidateQueries({ queryKey: ["corsi"] });
-      toast.success("Corso aggiornato");
+        await queryClient.invalidateQueries({ queryKey: ["corsi"] });
+        toast.success("Corso aggiornato");
+      }
       on_close();
     } catch (e: any) {
       toast.error(e.message);
