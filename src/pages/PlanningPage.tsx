@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useRef, useEffect, Component, ErrorInfo, ReactNode } from "react";
+import React, { useState, useMemo, useCallback, Component, ErrorInfo, ReactNode } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { use_corsi, use_istruttori, use_stagioni, use_atleti } from "@/hooks/use-supabase-data";
