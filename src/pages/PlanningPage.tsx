@@ -66,11 +66,15 @@ const PPM_FOCUS = 7; // pixels per minute in focus day
 
 type ViewMode = 1 | 2 | 3 | 7;
 
-function time_to_min(t: string): number {
-  const [h, m] = (t || "00:00").split(":").map(Number);
-  return h * 60 + (m || 0);
+function time_to_min(t: any): number {
+  if (!t || typeof t !== "string") return 0;
+  const parts = t.split(":");
+  const h = parseInt(parts[0] || "0", 10) || 0;
+  const m = parseInt(parts[1] || "0", 10) || 0;
+  return h * 60 + m;
 }
 function min_to_time(m: number): string {
+  if (!Number.isFinite(m) || m < 0) m = 0;
   return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
 }
 
