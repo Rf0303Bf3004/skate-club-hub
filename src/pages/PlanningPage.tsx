@@ -1263,3 +1263,5 @@ function EditCorsoModal({ corso, on_close, istruttori, queryClient, posizionati 
     </Dialog>
   );
 }
+
+export default PlanningPageWrapper;
