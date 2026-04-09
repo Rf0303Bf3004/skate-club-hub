@@ -266,31 +266,27 @@ function PlanningPageInner() {
     return corsi.find((c: any) => c.id === selected_corso_id) || null;
   }, [selected_corso_id, corsi]);
 
-  // ── Compute pick mode slots ──
-  const pick_slots = useMemo(() => {
-    if (!pick_corso || !focus_day) return [];
-    const istr_ids: string[] = pick_corso.istruttori_ids ?? [];
+  // ── Compute pick mode slots per day ──
+  const pick_slots_by_day = useMemo(() => {
+    if (!pick_corso) return {} as Record<string, { start: number; end: number }[]>;
     const durata = pick_corso.ora_fine && pick_corso.ora_inizio
       ? time_to_min(pick_corso.ora_fine) - time_to_min(pick_corso.ora_inizio)
       : 60;
-    const day_ice = slots.filter((s: any) => s.giorno === focus_day && (s.tipo ?? "ghiaccio") === "ghiaccio");
-    const result: { start: number; end: number }[] = [];
-    day_ice.forEach((s: any) => {
-      const gs = time_to_min(s.ora_inizio);
-      const ge = time_to_min(s.ora_fine);
-      for (let t = gs; t + durata <= ge; t += 5) {
-        // Check instructor availability
-        const istr_ok = istr_ids.length === 0 || istr_ids.some((id) => {
-          const ist_disp = (istr_map[id]?.disponibilita || {})[focus_day] ?? [];
-          return ist_disp.some((d: any) => time_to_min(d.ora_inizio) <= t && time_to_min(d.ora_fine) >= t + durata);
-        });
-        if (istr_ok) {
-          result.push({ start: t, end: t + durata });
+    const result: Record<string, { start: number; end: number }[]> = {};
+    GIORNI.forEach((giorno) => {
+      const day_ice = slots.filter((s: any) => s.giorno === giorno && (s.tipo ?? "ghiaccio") === "ghiaccio");
+      const day_slots: { start: number; end: number }[] = [];
+      day_ice.forEach((s: any) => {
+        const gs = time_to_min(s.ora_inizio);
+        const ge = time_to_min(s.ora_fine);
+        for (let t = gs; t + durata <= ge; t += 5) {
+          day_slots.push({ start: t, end: t + durata });
         }
-      }
+      });
+      if (day_slots.length > 0) result[giorno] = day_slots;
     });
     return result;
-  }, [pick_corso, focus_day, slots, istr_map]);
+  }, [pick_corso, slots]);
 
   // ── Actions ──
   const place_corso = async (corso: any, giorno: string, ora_inizio: string, ora_fine: string) => {
