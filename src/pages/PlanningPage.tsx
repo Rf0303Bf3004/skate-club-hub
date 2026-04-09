@@ -1,10 +1,10 @@
-import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import React, { useState, useMemo, useCallback, useRef, useEffect, Component, ErrorInfo, ReactNode } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { use_corsi, use_istruttori, use_stagioni, use_atleti } from "@/hooks/use-supabase-data";
 import {
   X, Loader2, ChevronLeft, ChevronRight, Plus, Wrench, Eye, Check,
-  ArrowLeft, LayoutGrid, Pencil, Undo2, Mail, Move,
+  ArrowLeft, LayoutGrid, Pencil, Undo2, Mail, Move, AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -20,6 +20,41 @@ import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { toast } from "sonner";
+
+// ── ErrorBoundary ──
+class PlanningErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error("PlanningPage crash:", error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center h-64 gap-3">
+          <AlertTriangle className="h-8 w-8 text-destructive" />
+          <p className="text-foreground font-bold">Errore nel Planning</p>
+          <p className="text-sm text-muted-foreground max-w-md text-center">{this.state.error?.message}</p>
+          <button className="text-sm text-primary underline" onClick={() => this.setState({ hasError: false, error: null })}>Riprova</button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function PlanningPageWrapper() {
+  return (
+    <PlanningErrorBoundary>
+      <PlanningPageInner />
+    </PlanningErrorBoundary>
+  );
+}
 
 // ── Constants ──
 const CLUB_ID = "d33e590e-73ef-4ead-ad0e-5e321854ef50";
