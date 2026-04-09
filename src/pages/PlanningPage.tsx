@@ -1275,7 +1275,9 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti }
     try {
       const { data: new_corso, error } = await supabase.from("corsi").insert({
         club_id: CLUB_ID, nome: final_nome, tipo: tipo === "privata" ? "privata" : corso_tipo,
-        livello_richiesto: livello, costo_mensile: costo, note,
+        livello_richiesto: livello,
+        costo_mensile: tipo === "privata" ? (parseFloat(String(costo_min)) || 0) * durata : (parseFloat(String(costo)) || 0),
+        note,
         giorno: null as any, ora_inizio: null as any, ora_fine: null as any,
       }).select().single();
       if (error) throw error;
@@ -1347,8 +1349,20 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti }
               <Input type="number" value={durata} onChange={(e) => set_durata(+e.target.value)} min={15} step={5} />
             </div>
             <div className="flex-1">
-              <Label className="text-xs">Costo mensile</Label>
-              <Input type="number" value={costo} onChange={(e) => set_costo(+e.target.value)} min={0} />
+              {tipo === "privata" ? (
+                <>
+                  <Label className="text-xs">Costo al minuto (CHF/min)</Label>
+                  <Input type="number" value={costo_min} onChange={(e) => set_costo_min(e.target.value)} step="0.10" placeholder="es. 1.50" onFocus={(e) => e.target.select()} />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Totale lezione: CHF {((parseFloat(String(costo_min)) || 0) * durata).toFixed(2)}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <Label className="text-xs">Costo mensile (CHF)</Label>
+                  <Input type="number" value={costo} onChange={(e) => set_costo(e.target.value)} min={0} onFocus={(e) => e.target.select()} />
+                </>
+              )}
             </div>
           </div>
           <div>
@@ -1378,14 +1392,14 @@ function EditCorsoModal({ corso, on_close, istruttori, queryClient, posizionati 
   const [giorno, set_giorno] = useState(corso.giorno || "");
   const [ora_inizio, set_ora_inizio] = useState(corso.ora_inizio?.slice(0, 5) || "");
   const [ora_fine, set_ora_fine] = useState(corso.ora_fine?.slice(0, 5) || "");
-  const [costo, set_costo] = useState(corso.costo_mensile || 0);
+  const [costo, set_costo] = useState<number | string>(corso.costo_mensile ?? "");
   const [note, set_note] = useState(corso.note || "");
   const [saving, set_saving] = useState(false);
 
   const save = async () => {
     set_saving(true);
     try {
-      const update: any = { nome, tipo, livello_richiesto: livello, costo_mensile: costo, note };
+      const update: any = { nome, tipo, livello_richiesto: livello, costo_mensile: parseFloat(String(costo)) || 0, note };
       if (giorno && ora_inizio && ora_fine) {
         const cs = time_to_min(ora_inizio);
         const ce = time_to_min(ora_fine);
@@ -1473,7 +1487,7 @@ function EditCorsoModal({ corso, on_close, istruttori, queryClient, posizionati 
             </div>
           </div>
           <div className="flex gap-3">
-            <div className="flex-1"><Label className="text-xs">Costo mensile</Label><Input type="number" value={costo} onChange={(e) => set_costo(+e.target.value)} /></div>
+            <div className="flex-1"><Label className="text-xs">Costo mensile (CHF)</Label><Input type="number" value={costo} onChange={(e) => set_costo(e.target.value)} onFocus={(e) => e.target.select()} /></div>
           </div>
           <div><Label className="text-xs">Note</Label><Input value={note} onChange={(e) => set_note(e.target.value)} /></div>
         </div>
