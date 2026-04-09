@@ -433,6 +433,7 @@ export type Database = {
           costo_totale: number
           created_at: string
           data: string | null
+          data_revoca: string | null
           durata_minuti: number
           id: string
           istruttore_id: string | null
@@ -448,6 +449,7 @@ export type Database = {
           costo_totale?: number
           created_at?: string
           data?: string | null
+          data_revoca?: string | null
           durata_minuti?: number
           id?: string
           istruttore_id?: string | null
@@ -463,6 +465,7 @@ export type Database = {
           costo_totale?: number
           created_at?: string
           data?: string | null
+          data_revoca?: string | null
           durata_minuti?: number
           id?: string
           istruttore_id?: string | null
@@ -504,6 +507,133 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      planning_corsi_settimana: {
+        Row: {
+          annullato: boolean
+          corso_id: string
+          created_at: string
+          data: string
+          id: string
+          istruttore_id: string | null
+          motivo: string | null
+          ora_fine: string
+          ora_inizio: string
+          settimana_id: string
+        }
+        Insert: {
+          annullato?: boolean
+          corso_id: string
+          created_at?: string
+          data: string
+          id?: string
+          istruttore_id?: string | null
+          motivo?: string | null
+          ora_fine: string
+          ora_inizio: string
+          settimana_id: string
+        }
+        Update: {
+          annullato?: boolean
+          corso_id?: string
+          created_at?: string
+          data?: string
+          id?: string
+          istruttore_id?: string | null
+          motivo?: string | null
+          ora_fine?: string
+          ora_inizio?: string
+          settimana_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "planning_corsi_settimana_settimana_id_fkey"
+            columns: ["settimana_id"]
+            isOneToOne: false
+            referencedRelation: "planning_settimane"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      planning_private_settimana: {
+        Row: {
+          annullato: boolean
+          created_at: string
+          data: string
+          id: string
+          istruttore_id: string | null
+          lezione_privata_id: string
+          motivo: string | null
+          ora_fine: string
+          ora_inizio: string
+          settimana_id: string
+        }
+        Insert: {
+          annullato?: boolean
+          created_at?: string
+          data: string
+          id?: string
+          istruttore_id?: string | null
+          lezione_privata_id: string
+          motivo?: string | null
+          ora_fine: string
+          ora_inizio: string
+          settimana_id: string
+        }
+        Update: {
+          annullato?: boolean
+          created_at?: string
+          data?: string
+          id?: string
+          istruttore_id?: string | null
+          lezione_privata_id?: string
+          motivo?: string | null
+          ora_fine?: string
+          ora_inizio?: string
+          settimana_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "planning_private_settimana_settimana_id_fkey"
+            columns: ["settimana_id"]
+            isOneToOne: false
+            referencedRelation: "planning_settimane"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      planning_settimane: {
+        Row: {
+          club_id: string
+          copiata_da: string | null
+          created_at: string
+          data_lunedi: string
+          id: string
+          note: string | null
+          stagione_id: string | null
+          stato: string
+        }
+        Insert: {
+          club_id: string
+          copiata_da?: string | null
+          created_at?: string
+          data_lunedi: string
+          id?: string
+          note?: string | null
+          stagione_id?: string | null
+          stato?: string
+        }
+        Update: {
+          club_id?: string
+          copiata_da?: string | null
+          created_at?: string
+          data_lunedi?: string
+          id?: string
+          note?: string | null
+          stagione_id?: string | null
+          stato?: string
+        }
+        Relationships: []
       }
       presenze_corso: {
         Row: {
