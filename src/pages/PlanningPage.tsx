@@ -1,17 +1,15 @@
 import React, { useState, useMemo, useCallback, Component, ErrorInfo, ReactNode } from "react";
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { supabase, get_current_club_id } from "@/lib/supabase";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
 import { use_corsi, use_istruttori, use_stagioni, use_atleti } from "@/hooks/use-supabase-data";
 import {
   X, Loader2, ChevronLeft, ChevronRight, Plus, Wrench, Eye, Check,
-  ArrowLeft, LayoutGrid, Pencil, Undo2, Mail, Move, AlertTriangle,
+  ArrowLeft, LayoutGrid, Pencil, Undo2, AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -58,20 +56,18 @@ function PlanningPageWrapper() {
 
 // ── Constants ──
 const CLUB_ID = "d33e590e-73ef-4ead-ad0e-5e321854ef50";
-const STAGIONE_ID = "841a5837-3382-472f-a582-557f8b5d69e9";
 const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"] as const;
 const OFF_ICE_TYPES = ["danza", "off-ice", "stretching"];
 const OFF_ICE_COLORS: Record<string, string> = { danza: "#B83280", "off-ice": "#718096", stretching: "#276749" };
-const PPM_FOCUS = 7; // pixels per minute in focus day
+const PPM_FOCUS = 7;
+const LIVELLI = ["pulcini","stellina1","stellina2","stellina3","stellina4","Interbronzo","Bronzo","Interargento","Argento","Interoro","Oro"];
 
 type ViewMode = 1 | 2 | 3 | 7;
 
 function time_to_min(t: any): number {
   if (!t || typeof t !== "string") return 0;
   const parts = t.split(":");
-  const h = parseInt(parts[0] || "0", 10) || 0;
-  const m = parseInt(parts[1] || "0", 10) || 0;
-  return h * 60 + m;
+  return (parseInt(parts[0] || "0", 10) || 0) * 60 + (parseInt(parts[1] || "0", 10) || 0);
 }
 function min_to_time(m: number): string {
   if (!Number.isFinite(m) || m < 0) m = 0;
@@ -111,7 +107,6 @@ function use_disponibilita_istruttori() {
   });
 }
 
-// Check if course has valid ice coverage
 function has_valid_ice(corso: any, ghiaccio_slots: any[]): boolean {
   if (!corso.giorno || !corso.ora_inizio || !corso.ora_fine) return false;
   if (OFF_ICE_TYPES.includes((corso.tipo || "").toLowerCase())) return true;
@@ -123,12 +118,22 @@ function has_valid_ice(corso: any, ghiaccio_slots: any[]): boolean {
   );
 }
 
-// ── Livelli ──
-const LIVELLI = ["pulcini","stellina1","stellina2","stellina3","stellina4","Interbronzo","Bronzo","Interargento","Argento","Interoro","Oro"];
+function compute_rows(courses: any[]): any[][] {
+  if (!courses.length) return [];
+  const sorted = [...courses].sort((a, b) => time_to_min(a.ora_inizio) - time_to_min(b.ora_inizio));
+  const rows: any[][] = [];
+  sorted.forEach((c) => {
+    const cs = time_to_min(c.ora_inizio);
+    let placed = false;
+    for (const row of rows) {
+      if (time_to_min(row[row.length - 1].ora_fine) <= cs) { row.push(c); placed = true; break; }
+    }
+    if (!placed) rows.push([c]);
+  });
+  return rows;
+}
 
-// ══════════════════════════════════════════════════════════════
-// SIDEBAR CARD (reusable for both views)
-// ══════════════════════════════════════════════════════════════
+// ── Sidebar Card ──
 function SidebarCard({ corso, istr_map, pick_corso, set_pick_corso }: {
   corso: any; istr_map: Record<string, any>; pick_corso: any; set_pick_corso: (c: any) => void;
 }) {
@@ -138,7 +143,7 @@ function SidebarCard({ corso, istr_map, pick_corso, set_pick_corso }: {
   return (
     <div
       className={`border rounded p-2 bg-card cursor-pointer hover:shadow-md transition-shadow space-y-1 ${is_picked ? "border-primary ring-2 ring-primary/30" : "border-border"}`}
-      onClick={() => set_pick_corso(is_picked ? null : corso)}
+      onClick={(e) => { e.stopPropagation(); set_pick_corso(is_picked ? null : corso); }}
     >
       <div className="flex items-center justify-between">
         <span className="font-bold text-xs text-foreground block truncate flex-1">{corso.nome}</span>
@@ -150,7 +155,7 @@ function SidebarCard({ corso, istr_map, pick_corso, set_pick_corso }: {
       </div>
       {first_istr && (
         <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: first_istr.colore || "#6B7280" }} />
+          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: first_istr.colore || "hsl(var(--muted-foreground))" }} />
           {first_istr.nome} {first_istr.cognome}
         </span>
       )}
@@ -172,13 +177,15 @@ function PlanningPageInner() {
   const { data: stagioni_raw } = use_stagioni();
   const { data: atleti_raw } = use_atleti();
 
+  // ── All state in one place ──
   const [view_mode, set_view_mode] = useState<ViewMode>(7);
   const [day_offset, set_day_offset] = useState(0);
   const [build_mode, set_build_mode] = useState(false);
   const [focus_day, set_focus_day] = useState<string | null>(null);
   const [selected_corso_id, set_selected_corso_id] = useState<string | null>(null);
-  const [pick_corso, set_pick_corso] = useState<any>(null); // course selected for two-click placement
+  const [pick_corso, set_pick_corso] = useState<any>(null);
   const [confirm_place, set_confirm_place] = useState<{ corso: any; giorno: string; ora_inizio: string; ora_fine: string } | null>(null);
+  const [conflict_confirm, set_conflict_confirm] = useState<{ corso: any; giorno: string; ora_inizio: string; ora_fine: string; conflicts: string } | null>(null);
   const [slot_manager_open, set_slot_manager_open] = useState(false);
   const [show_new_corso, set_show_new_corso] = useState(false);
   const [show_new_privata, set_show_new_privata] = useState(false);
@@ -187,13 +194,13 @@ function PlanningPageInner() {
 
   const loading = loadingGhiaccio || loadingCorsi || loadingIstr;
 
+  // ── Derived data ──
   const corsi = useMemo(() => (corsi_raw ?? []).filter((c: any) => c.attivo !== false), [corsi_raw]);
   const istruttori: any[] = useMemo(() => istruttori_raw ?? [], [istruttori_raw]);
   const atleti: any[] = useMemo(() => atleti_raw ?? [], [atleti_raw]);
   const disp_istr = useMemo(() => disp_istr_raw ?? [], [disp_istr_raw]);
   const slots = useMemo(() => ghiaccio_slots ?? [], [ghiaccio_slots]);
 
-  // Positioned vs unpositioned
   const { posizionati, da_posizionare } = useMemo(() => {
     const pos: any[] = [];
     const unpos: any[] = [];
@@ -202,31 +209,26 @@ function PlanningPageInner() {
       else unpos.push(c);
     });
     return { posizionati: pos, da_posizionare: unpos };
-  }, [corsi, slots]);
+  }, [corsi]);
 
-  // Instructor map
   const istr_map = useMemo(() => {
     const m: Record<string, any> = {};
-    istruttori.forEach((i: any) => {
-      m[i.id] = i;
-    });
+    istruttori.forEach((i: any) => { m[i.id] = i; });
     return m;
   }, [istruttori]);
 
-  // Visible days
   const visible_days = useMemo(() => {
-    const start = day_offset;
-    return GIORNI.slice(start, Math.min(start + view_mode, 7));
+    return GIORNI.slice(day_offset, Math.min(day_offset + view_mode, 7));
   }, [view_mode, day_offset]);
 
-  const set_view = (m: ViewMode) => {
+  const set_view = useCallback((m: ViewMode) => {
     set_view_mode(m);
     set_day_offset((prev) => Math.min(prev, 7 - m));
-  };
-  const go_prev = () => set_day_offset((p) => Math.max(0, p - view_mode));
-  const go_next = () => set_day_offset((p) => Math.min(p + view_mode, 7 - view_mode));
+  }, []);
+  const go_prev = useCallback(() => set_day_offset((p) => Math.max(0, p - view_mode)), [view_mode]);
+  const go_next = useCallback(() => set_day_offset((p) => Math.min(p + view_mode, 7 - view_mode)), [view_mode]);
 
-  // Time range from data
+  // Time range
   const { range_start, range_end } = useMemo(() => {
     let mn = 24 * 60, mx = 0;
     slots.forEach((s: any) => {
@@ -251,7 +253,7 @@ function PlanningPageInner() {
     return arr;
   }, [range_start, range_end]);
 
-  // ── Instructor hours ──
+  // Instructor hours
   const intersect_min = (a_start: number, a_end: number, b_start: number, b_end: number): number => {
     const s = Math.max(a_start, b_start);
     const e = Math.min(a_end, b_end);
@@ -266,7 +268,6 @@ function PlanningPageInner() {
       if (!ice_by_day[sl.giorno]) ice_by_day[sl.giorno] = [];
       ice_by_day[sl.giorno].push({ s: time_to_min(sl.ora_inizio), e: time_to_min(sl.ora_fine) });
     });
-
     istruttori.forEach((ist: any) => {
       let avail = 0;
       const disp = ist.disponibilita || {};
@@ -276,9 +277,7 @@ function PlanningPageInner() {
         day_disp.forEach((d: any) => {
           const ds = time_to_min(d.ora_inizio);
           const de = time_to_min(d.ora_fine);
-          day_ice.forEach((ice) => {
-            avail += intersect_min(ds, de, ice.s, ice.e);
-          });
+          day_ice.forEach((ice) => { avail += intersect_min(ds, de, ice.s, ice.e); });
         });
       });
       let assigned = 0;
@@ -292,13 +291,12 @@ function PlanningPageInner() {
     return result;
   }, [istruttori, posizionati, slots]);
 
-  // Selected corso
   const selected_corso = useMemo(() => {
     if (!selected_corso_id) return null;
     return corsi.find((c: any) => c.id === selected_corso_id) || null;
   }, [selected_corso_id, corsi]);
 
-  // ── Compute available placement slots per day (for two-click) ──
+  // Available placement slots per day (two-click)
   const pick_slots_by_day = useMemo(() => {
     if (!pick_corso) return {} as Record<string, { start: number; end: number }[]>;
     const durata = pick_corso.ora_fine && pick_corso.ora_inizio
@@ -320,8 +318,8 @@ function PlanningPageInner() {
     return result;
   }, [pick_corso, slots]);
 
-  // ── Actions ──
-  const place_corso = async (corso: any, giorno: string, ora_inizio: string, ora_fine: string) => {
+  // ── Actions (pure state, no DOM) ──
+  const place_corso = useCallback(async (corso: any, giorno: string, ora_inizio: string, ora_fine: string) => {
     const day_corsi = posizionati.filter((c: any) => c.giorno === giorno && c.id !== corso.id);
     const cs = time_to_min(ora_inizio);
     const ce = time_to_min(ora_fine);
@@ -335,9 +333,16 @@ function PlanningPageInner() {
       return s < ce && e > cs;
     });
     if (conflicts.length > 0) {
-      const names = conflicts.map((c: any) => c.nome).join(", ");
-      if (!window.confirm(`Conflitto con: ${names}. Continuare comunque?`)) return;
+      set_conflict_confirm({
+        corso, giorno, ora_inizio, ora_fine,
+        conflicts: conflicts.map((c: any) => c.nome).join(", "),
+      });
+      return;
     }
+    await do_place(corso, giorno, ora_inizio, ora_fine);
+  }, [posizionati]);
+
+  const do_place = useCallback(async (corso: any, giorno: string, ora_inizio: string, ora_fine: string) => {
     set_saving(true);
     try {
       const { error } = await supabase.from("corsi").update({ giorno, ora_inizio, ora_fine }).eq("id", corso.id);
@@ -350,9 +355,9 @@ function PlanningPageInner() {
     } finally {
       set_saving(false);
     }
-  };
+  }, [queryClient]);
 
-  const remove_corso = async (corso: any) => {
+  const remove_corso = useCallback(async (corso: any) => {
     set_saving(true);
     try {
       const { error } = await supabase.from("corsi").update({
@@ -367,14 +372,24 @@ function PlanningPageInner() {
     } finally {
       set_saving(false);
     }
-  };
+  }, [queryClient]);
 
-  // ── Confirmation dialog handler ──
-  const handle_confirm_place = () => {
+  const handle_confirm_place = useCallback(() => {
     if (!confirm_place) return;
     place_corso(confirm_place.corso, confirm_place.giorno, confirm_place.ora_inizio, confirm_place.ora_fine);
     set_confirm_place(null);
-  };
+  }, [confirm_place, place_corso]);
+
+  const handle_conflict_confirm = useCallback(() => {
+    if (!conflict_confirm) return;
+    do_place(conflict_confirm.corso, conflict_confirm.giorno, conflict_confirm.ora_inizio, conflict_confirm.ora_fine);
+    set_conflict_confirm(null);
+  }, [conflict_confirm, do_place]);
+
+  // Deselect pick_corso when clicking on background
+  const handle_background_click = useCallback(() => {
+    if (pick_corso) set_pick_corso(null);
+  }, [pick_corso]);
 
   // ── Loading ──
   if (loading) {
@@ -382,7 +397,7 @@ function PlanningPageInner() {
   }
 
   // ══════════════════════════════════════════════════════════
-  // FOCUS DAY (fullscreen overlay)
+  // FOCUS DAY
   // ══════════════════════════════════════════════════════════
   if (focus_day) {
     const day_ghiaccio = slots.filter((s: any) => s.giorno === focus_day && (s.tipo ?? "ghiaccio") === "ghiaccio");
@@ -406,21 +421,6 @@ function PlanningPageInner() {
     const f_total = f_end - f_start;
     const grid_w = f_total * PPM_FOCUS;
 
-    const compute_rows = (courses: any[]): any[][] => {
-      if (!courses.length) return [];
-      const sorted = [...courses].sort((a, b) => time_to_min(a.ora_inizio) - time_to_min(b.ora_inizio));
-      const rows: any[][] = [];
-      sorted.forEach((c) => {
-        const cs = time_to_min(c.ora_inizio);
-        let placed = false;
-        for (const row of rows) {
-          if (time_to_min(row[row.length - 1].ora_fine) <= cs) { row.push(c); placed = true; break; }
-        }
-        if (!placed) rows.push([c]);
-      });
-      return rows;
-    };
-
     const course_rows = compute_rows(day_corsi_ice);
     const ROW_H = 48;
 
@@ -432,14 +432,10 @@ function PlanningPageInner() {
 
     return (
       <TooltipProvider delayDuration={200}>
-        <div className="fixed inset-0 z-50 bg-background flex flex-col" onClick={(e) => {
-          if (pick_corso && !(e.target as HTMLElement).closest('[data-grid]') && !(e.target as HTMLElement).closest('[data-sidebar]')) {
-            set_pick_corso(null);
-          }
-        }}>
+        <div className="fixed inset-0 z-50 bg-background flex flex-col" onClick={handle_background_click}>
 
           {/* Toolbar */}
-          <div className="flex items-center gap-3 px-4 py-2 border-b border-border bg-card">
+          <div className="flex items-center gap-3 px-4 py-2 border-b border-border bg-card" onClick={(e) => e.stopPropagation()}>
             <Button variant="ghost" size="sm" onClick={() => { set_focus_day(null); set_selected_corso_id(null); set_pick_corso(null); set_slot_manager_open(false); }}>
               <ArrowLeft className="h-4 w-4 mr-1" /> Settimana
             </Button>
@@ -457,7 +453,7 @@ function PlanningPageInner() {
           <div className="flex flex-1 overflow-hidden">
             {/* Sidebar left - build mode backlog */}
             {build_mode && (
-              <div data-sidebar className="w-[280px] flex-shrink-0 border-r border-border overflow-y-auto p-3 space-y-2 bg-muted/30">
+              <div className="w-[280px] flex-shrink-0 border-r border-border overflow-y-auto p-3 space-y-2 bg-muted/30" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-bold text-foreground uppercase">Da posizionare ({da_posizionare.length})</span>
                 </div>
@@ -469,7 +465,7 @@ function PlanningPageInner() {
                 </Button>
                 {da_posizionare.length === 0 ? (
                   <div className="text-center py-4 text-muted-foreground text-xs">
-                    <Check className="h-5 w-5 mx-auto text-green-500 mb-1" />
+                    <Check className="h-5 w-5 mx-auto mb-1 text-primary" />
                     Tutti posizionati
                   </div>
                 ) : (
@@ -481,54 +477,54 @@ function PlanningPageInner() {
             )}
 
             {/* Main grid */}
-            <div className="flex-1 overflow-auto p-4" data-grid>
+            <div className="flex-1 overflow-auto p-4" onClick={(e) => e.stopPropagation()}>
               <div className="relative" style={{ width: grid_w, minHeight: (course_rows.length || 1) * ROW_H + 60 }}>
                 {/* Hour lines */}
                 {f_ticks.map((t) => (
-                  <div key={t} className="absolute top-0 bottom-0 border-l border-border/40" style={{ left: (t - f_start) * PPM_FOCUS }}>
+                  <div key={`tick-${t}`} className="absolute top-0 bottom-0 border-l border-border/40" style={{ left: (t - f_start) * PPM_FOCUS }}>
                     <span className="absolute -top-5 -translate-x-1/2 text-[10px] text-muted-foreground">{min_to_time(t)}</span>
                   </div>
                 ))}
 
                 {/* Background: default grey */}
-                <div className="absolute inset-0" style={{ background: "#f5f4f0", borderRadius: 6 }} />
+                <div className="absolute inset-0 rounded-md" style={{ background: "hsl(var(--muted) / 0.5)" }} />
 
                 {/* Ghiaccio slots background */}
-                {day_ghiaccio.map((g: any, i: number) => (
-                  <div key={`g${i}`} className="absolute" style={{
+                {day_ghiaccio.map((g: any) => (
+                  <div key={`ghiaccio-${g.id}`} className="absolute rounded-md" style={{
                     left: (time_to_min(g.ora_inizio) - f_start) * PPM_FOCUS,
                     width: (time_to_min(g.ora_fine) - time_to_min(g.ora_inizio)) * PPM_FOCUS,
-                    top: 0, bottom: 0, background: "#EEEDFE", borderRadius: 6,
+                    top: 0, bottom: 0, background: "#EEEDFE",
                   }} />
                 ))}
 
                 {/* Pulizia slots */}
-                {day_pulizia.map((p: any, i: number) => (
-                  <div key={`p${i}`} className="absolute z-[1]" style={{
+                {day_pulizia.map((p: any) => (
+                  <div key={`pulizia-${p.id}`} className="absolute z-[1]" style={{
                     left: (time_to_min(p.ora_inizio) - f_start) * PPM_FOCUS,
                     width: (time_to_min(p.ora_fine) - time_to_min(p.ora_inizio)) * PPM_FOCUS,
                     top: 4, bottom: 4,
-                    background: "repeating-linear-gradient(-45deg, #c8c4b8 0px, #c8c4b8 3px, #f0ede6 3px, #f0ede6 10px)",
-                    borderRadius: 4, border: "1px solid #b0ada4",
+                    background: "repeating-linear-gradient(-45deg, hsl(var(--muted-foreground) / 0.3) 0px, hsl(var(--muted-foreground) / 0.3) 3px, hsl(var(--muted) / 0.5) 3px, hsl(var(--muted) / 0.5) 10px)",
+                    borderRadius: 4, border: "1px solid hsl(var(--border))",
                   }} />
                 ))}
 
                 {/* Two-click: green available slots */}
                 {pick_corso && focus_pick_slots.map((ps, i) => (
                   <div
-                    key={`pick${i}`}
+                    key={`pick-${ps.start}-${ps.end}`}
                     className="absolute z-[5] cursor-pointer hover:opacity-80"
                     style={{
                       left: (ps.start - f_start) * PPM_FOCUS,
                       width: (ps.end - ps.start) * PPM_FOCUS,
                       top: 4, bottom: 4,
-                      background: "rgba(72,187,120,0.25)",
-                      border: "2px dashed #48BB78",
+                      background: "hsla(145, 63%, 49%, 0.25)",
+                      border: "2px dashed hsl(145, 63%, 49%)",
                       borderRadius: 4,
                     }}
                     onClick={() => set_confirm_place({ corso: pick_corso, giorno: focus_day!, ora_inizio: min_to_time(ps.start), ora_fine: min_to_time(ps.end) })}
                   >
-                    <span className="text-[10px] font-bold text-green-700 px-1">{min_to_time(ps.start)}</span>
+                    <span className="text-[10px] font-bold px-1" style={{ color: "hsl(145, 63%, 30%)" }}>{min_to_time(ps.start)}</span>
                   </div>
                 ))}
 
@@ -539,13 +535,13 @@ function PlanningPageInner() {
                     const ce = time_to_min(c.ora_fine);
                     const istr_ids: string[] = c.istruttori_ids ?? [];
                     const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
-                    const colore = first_istr?.colore || "#3B82F6";
+                    const colore = first_istr?.colore || "hsl(var(--primary))";
                     const w_px = (ce - cs) * PPM_FOCUS;
                     const is_private = (c.tipo || "").toLowerCase() === "privata";
                     const is_selected = selected_corso_id === c.id;
 
                     return (
-                      <Tooltip key={c.id}>
+                      <Tooltip key={`course-${c.id}`}>
                         <TooltipTrigger asChild>
                           <div
                             className={`absolute z-[3] rounded flex flex-col justify-center overflow-hidden cursor-pointer ${is_selected ? "ring-2 ring-primary" : ""}`}
@@ -557,7 +553,7 @@ function PlanningPageInner() {
                               background: is_private
                                 ? `repeating-linear-gradient(-45deg, ${colore} 0px, ${colore} 3px, transparent 3px, transparent 8px)`
                                 : colore,
-                              border: is_private ? `2px dashed ${colore}` : `1px solid rgba(0,0,0,0.15)`,
+                              border: is_private ? `2px dashed ${colore}` : "1px solid rgba(0,0,0,0.15)",
                               borderRadius: 4,
                               color: "#fff",
                             }}
@@ -596,9 +592,9 @@ function PlanningPageInner() {
                       const ce = time_to_min(c.ora_fine);
                       const istr_ids: string[] = c.istruttori_ids ?? [];
                       const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
-                      const colore = first_istr?.colore || OFF_ICE_COLORS[(c.tipo || "").toLowerCase()] || "#94A3B8";
+                      const colore = first_istr?.colore || OFF_ICE_COLORS[(c.tipo || "").toLowerCase()] || "hsl(var(--muted-foreground))";
                       return (
-                        <Tooltip key={c.id}>
+                        <Tooltip key={`office-${c.id}`}>
                           <TooltipTrigger asChild>
                             <div
                               className="absolute top-0 h-full rounded-sm cursor-pointer"
@@ -628,7 +624,7 @@ function PlanningPageInner() {
                 build_mode={build_mode}
                 on_close={() => set_selected_corso_id(null)}
                 on_remove={() => remove_corso(sel)}
-                on_edit={() => { set_show_edit_corso(sel); }}
+                on_edit={() => set_show_edit_corso(sel)}
               />
             )}
 
@@ -657,8 +653,8 @@ function PlanningPageInner() {
           <EditCorsoModal corso={show_edit_corso} on_close={() => set_show_edit_corso(null)} istruttori={istruttori} queryClient={queryClient} posizionati={posizionati} />
         )}
 
-        {/* Confirmation dialog */}
         <ConfirmPlaceDialog confirm={confirm_place} saving={saving} on_confirm={handle_confirm_place} on_cancel={() => set_confirm_place(null)} />
+        <ConflictConfirmDialog confirm={conflict_confirm} saving={saving} on_confirm={handle_conflict_confirm} on_cancel={() => set_conflict_confirm(null)} />
       </TooltipProvider>
     );
   }
@@ -670,13 +666,9 @@ function PlanningPageInner() {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="p-4 space-y-4" onClick={(e) => {
-        if (pick_corso && !(e.target as HTMLElement).closest('[data-grid]') && !(e.target as HTMLElement).closest('[data-sidebar]')) {
-          set_pick_corso(null);
-        }
-      }}>
+      <div className="p-4 space-y-4" onClick={handle_background_click}>
         {/* Toolbar */}
-        <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center justify-between flex-wrap gap-3" onClick={(e) => e.stopPropagation()}>
           <h1 className="text-xl font-bold text-foreground">Planning Ghiaccio</h1>
           <div className="flex items-center gap-2">
             {pick_corso && <Badge variant="outline" className="border-primary text-primary text-xs">Selezionato: {pick_corso.nome}</Badge>}
@@ -687,10 +679,10 @@ function PlanningPageInner() {
         </div>
 
         {/* View selector + nav */}
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap" onClick={(e) => e.stopPropagation()}>
           <div className="inline-flex rounded-lg border border-border overflow-hidden">
             {([1, 2, 3, 7] as ViewMode[]).map((m, idx) => (
-              <button key={m} onClick={() => set_view(m)}
+              <button key={`view-${m}`} onClick={() => set_view(m)}
                 className={`px-3 py-1.5 text-sm font-medium transition-colors ${view_mode === m ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"} ${idx > 0 ? "border-l border-border" : ""}`}
               >
                 {m === 1 ? "1g" : m === 2 ? "2g" : m === 3 ? "3g" : "7g"}
@@ -704,20 +696,20 @@ function PlanningPageInner() {
           </div>
         </div>
 
-        {/* Instructor legend with hour bars */}
-        <div className="space-y-1">
+        {/* Instructor legend */}
+        <div className="space-y-1" onClick={(e) => e.stopPropagation()}>
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Istruttori</p>
           <div className="flex flex-wrap gap-2">
             {istruttori.map((ist: any) => {
               const h = istr_hours[ist.id] || { assigned: 0, available: 0 };
               const pct = h.available > 0 ? (h.assigned / h.available) * 100 : 0;
-              const bar_color = pct >= 90 ? "#EF4444" : pct >= 70 ? "#F59E0B" : "#22C55E";
+              const bar_color = pct >= 90 ? "hsl(var(--destructive))" : pct >= 70 ? "hsl(40, 96%, 53%)" : "hsl(142, 71%, 45%)";
               return (
-                <Tooltip key={ist.id}>
+                <Tooltip key={`istr-${ist.id}`}>
                   <TooltipTrigger asChild>
                     <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium border"
-                      style={{ borderColor: ist.colore || "#6B7280", backgroundColor: `${ist.colore || "#6B7280"}15`, color: ist.colore || "#6B7280" }}>
-                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: ist.colore || "#6B7280" }} />
+                      style={{ borderColor: ist.colore || "hsl(var(--muted-foreground))", backgroundColor: `${ist.colore || "#6B7280"}15`, color: ist.colore || "hsl(var(--muted-foreground))" }}>
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: ist.colore || "hsl(var(--muted-foreground))" }} />
                       {ist.nome}
                       <span className="relative w-8 h-2 rounded-full bg-muted overflow-hidden">
                         <span className="absolute left-0 top-0 bottom-0 rounded-full" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: bar_color }} />
@@ -737,18 +729,18 @@ function PlanningPageInner() {
         </div>
 
         {/* Legend badges */}
-        <div className="flex flex-wrap gap-2 text-xs">
+        <div className="flex flex-wrap gap-2 text-xs" onClick={(e) => e.stopPropagation()}>
           <span className="px-2 py-0.5 rounded font-medium" style={{ background: "#EEEDFE", color: "#7F77DD", border: "1px solid #AFA9EC" }}>Ghiaccio</span>
-          <span className="px-2 py-0.5 rounded font-medium" style={{ background: "repeating-linear-gradient(-45deg, #c8c4b8 0px, #c8c4b8 3px, #f0ede6 3px, #f0ede6 10px)", border: "1px solid #b0ada4" }}>Pulizia</span>
-          <span className="px-2 py-0.5 rounded font-medium" style={{ background: "#f5f4f0", border: "1px solid #ddd" }}>Off-ice</span>
-          <span className="px-2 py-0.5 rounded font-medium" style={{ background: "transparent", border: "2px dashed #6B7280" }}>Privata</span>
+          <span className="px-2 py-0.5 rounded font-medium" style={{ background: "repeating-linear-gradient(-45deg, hsl(var(--muted-foreground) / 0.3) 0px, hsl(var(--muted-foreground) / 0.3) 3px, hsl(var(--muted) / 0.5) 3px, hsl(var(--muted) / 0.5) 10px)", border: "1px solid hsl(var(--border))" }}>Pulizia</span>
+          <span className="px-2 py-0.5 rounded font-medium bg-muted border border-border">Off-ice</span>
+          <span className="px-2 py-0.5 rounded font-medium" style={{ background: "transparent", border: "2px dashed hsl(var(--muted-foreground))" }}>Privata</span>
         </div>
 
         {/* Main content: sidebar + grid */}
         <div className="flex gap-0">
           {/* Build mode sidebar */}
           {build_mode && (
-            <div data-sidebar className="w-[280px] flex-shrink-0 border border-border rounded-lg overflow-y-auto p-3 space-y-2 bg-muted/30 mr-3">
+            <div className="w-[280px] flex-shrink-0 border border-border rounded-lg overflow-y-auto p-3 space-y-2 bg-muted/30 mr-3" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-foreground uppercase">Da posizionare ({da_posizionare.length})</span>
               </div>
@@ -760,7 +752,7 @@ function PlanningPageInner() {
               </Button>
               {da_posizionare.length === 0 ? (
                 <div className="text-center py-4 text-muted-foreground text-xs">
-                  <Check className="h-5 w-5 mx-auto text-green-500 mb-1" />
+                  <Check className="h-5 w-5 mx-auto mb-1 text-primary" />
                   Tutti i corsi posizionati
                 </div>
               ) : (
@@ -771,168 +763,147 @@ function PlanningPageInner() {
             </div>
           )}
 
-        {/* Grid */}
-        <div className="flex-1 border border-border rounded-lg overflow-x-auto bg-card" data-grid>
-          {/* Time header */}
-          <div className="flex border-b border-border sticky top-0 bg-card z-10">
-            <div className="flex-shrink-0 border-r border-border" style={{ width: 100 }} />
-            <div className="flex-1 relative" style={{ minWidth: total_min * 1.2 }}>
-              {ticks.map((t) => (
-                <span key={t} className="absolute text-[10px] text-muted-foreground top-0 -translate-x-1/2"
-                  style={{ left: `${((t - range_start) / total_min) * 100}%` }}>{min_to_time(t)}</span>
-              ))}
-              <div className="h-5" />
+          {/* Grid */}
+          <div className="flex-1 border border-border rounded-lg overflow-x-auto bg-card" onClick={(e) => e.stopPropagation()}>
+            {/* Time header */}
+            <div className="flex border-b border-border sticky top-0 bg-card z-10">
+              <div className="flex-shrink-0 border-r border-border" style={{ width: 100 }} />
+              <div className="flex-1 relative" style={{ minWidth: total_min * 1.2 }}>
+                {ticks.map((t) => (
+                  <span key={`htick-${t}`} className="absolute text-[10px] text-muted-foreground top-0 -translate-x-1/2"
+                    style={{ left: `${((t - range_start) / total_min) * 100}%` }}>{min_to_time(t)}</span>
+                ))}
+                <div className="h-5" />
+              </div>
             </div>
-          </div>
 
-          {/* Day rows */}
-          {visible_days.map((giorno) => {
-            const day_ghiaccio = slots.filter((s: any) => s.giorno === giorno && (s.tipo ?? "ghiaccio") === "ghiaccio");
-            const day_pulizia = slots.filter((s: any) => s.giorno === giorno && s.tipo === "pulizia");
-            const day_corsi_ice = posizionati.filter((c: any) => c.giorno === giorno && !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
-            const day_corsi_off = posizionati.filter((c: any) => c.giorno === giorno && OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
-            const day_pick = pick_corso ? (pick_slots_by_day[giorno] ?? []) : [];
+            {/* Day rows */}
+            {visible_days.map((giorno) => {
+              const day_ghiaccio = slots.filter((s: any) => s.giorno === giorno && (s.tipo ?? "ghiaccio") === "ghiaccio");
+              const day_pulizia = slots.filter((s: any) => s.giorno === giorno && s.tipo === "pulizia");
+              const day_corsi_ice = posizionati.filter((c: any) => c.giorno === giorno && !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
+              const day_corsi_off = posizionati.filter((c: any) => c.giorno === giorno && OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
 
-            // Sub-rows
-            const compute_rows = (courses: any[]): any[][] => {
-              if (!courses.length) return [[]];
-              const sorted = [...courses].sort((a, b) => time_to_min(a.ora_inizio) - time_to_min(b.ora_inizio));
-              const rows: any[][] = [];
-              sorted.forEach((c) => {
-                const cs = time_to_min(c.ora_inizio);
-                let placed = false;
-                for (const row of rows) {
-                  if (time_to_min(row[row.length - 1].ora_fine) <= cs) { row.push(c); placed = true; break; }
-                }
-                if (!placed) rows.push([c]);
-              });
-              return rows.length > 0 ? rows : [[]];
-            };
-            const course_rows = compute_rows(day_corsi_ice);
-            const n_rows = Math.max(course_rows.length, 1);
-            const ROW_H = 40;
-            const day_h = n_rows * (14 + 2) + 8 + (day_pick.length > 0 ? 10 : 0);
+              const course_rows_week = compute_rows(day_corsi_ice);
+              const n_rows = Math.max(course_rows_week.length, 1);
+              const ROW_H = 40;
+              const day_pick = pick_corso ? (pick_slots_by_day[giorno] ?? []) : [];
+              const day_h = n_rows * (14 + 2) + 8 + (day_pick.length > 0 ? 10 : 0);
 
-            // For weekly view green slots, show one merged bar per ice slot instead of every 5-min increment
-            const day_ice_ranges = day_ghiaccio.map((g: any) => ({
-              start: time_to_min(g.ora_inizio),
-              end: time_to_min(g.ora_fine),
-            }));
+              const day_ice_ranges = day_ghiaccio.map((g: any) => ({
+                id: g.id,
+                start: time_to_min(g.ora_inizio),
+                end: time_to_min(g.ora_fine),
+              }));
 
-            return (
-              <div key={giorno} className="border-b border-border last:border-b-0 cursor-pointer hover:bg-muted/20"
-                onClick={(e) => {
-                  // If pick_corso and clicking on a green slot, don't navigate to focus day
-                  if ((e.target as HTMLElement).closest('[data-green-slot]')) return;
-                  set_focus_day(giorno);
-                }}>
-                <div className="flex">
-                  <div className="flex-shrink-0 flex items-center justify-center border-r border-border bg-muted px-2"
-                    style={{ width: 100, minHeight: day_h }}>
-                    <span className="text-xs font-bold text-foreground">{giorno}</span>
-                  </div>
+              return (
+                <div key={`day-${giorno}`} className="border-b border-border last:border-b-0 cursor-pointer hover:bg-muted/20"
+                  onClick={() => set_focus_day(giorno)}>
+                  <div className="flex">
+                    <div className="flex-shrink-0 flex items-center justify-center border-r border-border bg-muted px-2"
+                      style={{ width: 100, minHeight: day_h }}>
+                      <span className="text-xs font-bold text-foreground">{giorno}</span>
+                    </div>
 
-                  <div className="flex-1 relative" style={{ minWidth: total_min * 1.2, height: day_h }}>
-                    {/* Default bg = grey */}
-                    <div className="absolute inset-0" style={{ background: "#f5f4f0" }} />
+                    <div className="flex-1 relative" style={{ minWidth: total_min * 1.2, height: day_h }}>
+                      {/* Default bg */}
+                      <div className="absolute inset-0 bg-muted/50" />
 
-                    {/* Ghiaccio bg */}
-                    {day_ghiaccio.map((g: any, gi: number) => {
-                      const gs = time_to_min(g.ora_inizio); const ge = time_to_min(g.ora_fine);
-                      return <div key={`g${gi}`} className="absolute" style={{
-                        left: `${((gs - range_start) / total_min) * 100}%`, width: `${((ge - gs) / total_min) * 100}%`,
-                        top: 0, bottom: 0, background: "#EEEDFE",
-                      }} />;
-                    })}
+                      {/* Ghiaccio bg */}
+                      {day_ghiaccio.map((g: any) => {
+                        const gs = time_to_min(g.ora_inizio); const ge = time_to_min(g.ora_fine);
+                        return <div key={`gbg-${g.id}`} className="absolute" style={{
+                          left: `${((gs - range_start) / total_min) * 100}%`, width: `${((ge - gs) / total_min) * 100}%`,
+                          top: 0, bottom: 0, background: "#EEEDFE",
+                        }} />;
+                      })}
 
-                    {/* Pulizia bg */}
-                    {day_pulizia.map((p: any, pi: number) => {
-                      const ps_start = time_to_min(p.ora_inizio); const pe = time_to_min(p.ora_fine);
-                      return <div key={`p${pi}`} className="absolute" style={{
-                        left: `${((ps_start - range_start) / total_min) * 100}%`, width: `${((pe - ps_start) / total_min) * 100}%`,
-                        top: 0, bottom: 0,
-                        background: "repeating-linear-gradient(-45deg, #c8c4b8 0px, #c8c4b8 3px, #f0ede6 3px, #f0ede6 10px)",
-                      }} />;
-                    })}
-
-                    {/* Green available zones (merged per ice slot) when a course is selected */}
-                    {pick_corso && day_ice_ranges.map((range, ri) => (
-                      <div
-                        key={`green${ri}`}
-                        data-green-slot
-                        className="absolute z-[4] cursor-pointer"
-                        style={{
-                          left: `${((range.start - range_start) / total_min) * 100}%`,
-                          width: `${((range.end - range.start) / total_min) * 100}%`,
+                      {/* Pulizia bg */}
+                      {day_pulizia.map((p: any) => {
+                        const ps_start = time_to_min(p.ora_inizio); const pe = time_to_min(p.ora_fine);
+                        return <div key={`pbg-${p.id}`} className="absolute" style={{
+                          left: `${((ps_start - range_start) / total_min) * 100}%`, width: `${((pe - ps_start) / total_min) * 100}%`,
                           top: 0, bottom: 0,
-                          background: "rgba(72,187,120,0.18)",
-                          border: "2px dashed #48BB78",
-                        }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          // Open focus day for precise placement
-                          set_focus_day(giorno);
-                        }}
-                      />
-                    ))}
+                          background: "repeating-linear-gradient(-45deg, hsl(var(--muted-foreground) / 0.3) 0px, hsl(var(--muted-foreground) / 0.3) 3px, hsl(var(--muted) / 0.5) 3px, hsl(var(--muted) / 0.5) 10px)",
+                        }} />;
+                      })}
 
-                    {/* Course blocks: ZERO TEXT, only colors, 14px tall */}
-                    {course_rows.map((row, ri) =>
-                      row.map((c: any) => {
+                      {/* Green available zones when a course is selected */}
+                      {pick_corso && day_ice_ranges.map((range) => (
+                        <div
+                          key={`green-${giorno}-${range.id}`}
+                          className="absolute z-[4] cursor-pointer"
+                          style={{
+                            left: `${((range.start - range_start) / total_min) * 100}%`,
+                            width: `${((range.end - range.start) / total_min) * 100}%`,
+                            top: 0, bottom: 0,
+                            background: "hsla(145, 63%, 49%, 0.18)",
+                            border: "2px dashed hsl(145, 63%, 49%)",
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            set_focus_day(giorno);
+                          }}
+                        />
+                      ))}
+
+                      {/* Course blocks */}
+                      {course_rows_week.map((row, ri) =>
+                        row.map((c: any) => {
+                          const cs = time_to_min(c.ora_inizio); const ce = time_to_min(c.ora_fine);
+                          const istr_ids: string[] = c.istruttori_ids ?? [];
+                          const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
+                          const colore = first_istr?.colore || "hsl(var(--primary))";
+                          const is_private = (c.tipo || "").toLowerCase() === "privata";
+                          return (
+                            <Tooltip key={`wc-${c.id}`}>
+                              <TooltipTrigger asChild>
+                                <div className="absolute z-[3] rounded-sm" style={{
+                                  left: `${((cs - range_start) / total_min) * 100}%`,
+                                  width: `${((ce - cs) / total_min) * 100}%`,
+                                  top: 4 + ri * 16,
+                                  height: 14,
+                                  background: is_private
+                                    ? `repeating-linear-gradient(-45deg, ${colore} 0px, ${colore} 3px, transparent 3px, transparent 8px)`
+                                    : colore,
+                                  border: is_private ? `1px dashed ${colore}` : "none",
+                                }} />
+                              </TooltipTrigger>
+                              <TooltipContent side="top">
+                                <p className="font-bold">{c.nome}</p>
+                                {first_istr && <p className="text-xs">{first_istr.nome} {first_istr.cognome}</p>}
+                                <p className="text-xs">{c.ora_inizio?.slice(0, 5)} – {c.ora_fine?.slice(0, 5)}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          );
+                        })
+                      )}
+
+                      {/* Off-ice strip */}
+                      {day_corsi_off.map((c: any) => {
                         const cs = time_to_min(c.ora_inizio); const ce = time_to_min(c.ora_fine);
                         const istr_ids: string[] = c.istruttori_ids ?? [];
                         const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
-                        const colore = first_istr?.colore || "#3B82F6";
-                        const is_private = (c.tipo || "").toLowerCase() === "privata";
+                        const colore = first_istr?.colore || OFF_ICE_COLORS[(c.tipo || "").toLowerCase()] || "hsl(var(--muted-foreground))";
                         return (
-                          <Tooltip key={c.id}>
+                          <Tooltip key={`wo-${c.id}`}>
                             <TooltipTrigger asChild>
-                              <div className="absolute z-[3] rounded-sm" style={{
+                              <div className="absolute z-[2] rounded-sm" style={{
                                 left: `${((cs - range_start) / total_min) * 100}%`,
                                 width: `${((ce - cs) / total_min) * 100}%`,
-                                top: 4 + ri * 16,
-                                height: 14,
-                                background: is_private
-                                  ? `repeating-linear-gradient(-45deg, ${colore} 0px, ${colore} 3px, transparent 3px, transparent 8px)`
-                                  : colore,
-                                border: is_private ? `1px dashed ${colore}` : "none",
+                                top: 0, height: 6, background: colore,
                               }} />
                             </TooltipTrigger>
-                            <TooltipContent side="top">
-                              <p className="font-bold">{c.nome}</p>
-                              {first_istr && <p className="text-xs">{first_istr.nome} {first_istr.cognome}</p>}
-                              <p className="text-xs">{c.ora_inizio?.slice(0, 5)} – {c.ora_fine?.slice(0, 5)}</p>
-                            </TooltipContent>
+                            <TooltipContent><p>{c.nome}</p></TooltipContent>
                           </Tooltip>
                         );
-                      })
-                    )}
-
-                    {/* Off-ice strip 6px */}
-                    {day_corsi_off.length > 0 && day_corsi_off.map((c: any) => {
-                      const cs = time_to_min(c.ora_inizio); const ce = time_to_min(c.ora_fine);
-                      const istr_ids: string[] = c.istruttori_ids ?? [];
-                      const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
-                      const colore = first_istr?.colore || OFF_ICE_COLORS[(c.tipo || "").toLowerCase()] || "#94A3B8";
-                      return (
-                        <Tooltip key={c.id}>
-                          <TooltipTrigger asChild>
-                            <div className="absolute z-[2] rounded-sm" style={{
-                              left: `${((cs - range_start) / total_min) * 100}%`,
-                              width: `${((ce - cs) / total_min) * 100}%`,
-                              top: 0, height: 6, background: colore,
-                            }} />
-                          </TooltipTrigger>
-                          <TooltipContent><p>{c.nome}</p></TooltipContent>
-                        </Tooltip>
-                      );
-                    })}
+                      })}
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Modals */}
@@ -946,8 +917,8 @@ function PlanningPageInner() {
           <EditCorsoModal corso={show_edit_corso} on_close={() => set_show_edit_corso(null)} istruttori={istruttori} queryClient={queryClient} posizionati={posizionati} />
         )}
 
-        {/* Confirmation dialog */}
         <ConfirmPlaceDialog confirm={confirm_place} saving={saving} on_confirm={handle_confirm_place} on_cancel={() => set_confirm_place(null)} />
+        <ConflictConfirmDialog confirm={conflict_confirm} saving={saving} on_confirm={handle_conflict_confirm} on_cancel={() => set_conflict_confirm(null)} />
       </div>
     </TooltipProvider>
   );
@@ -975,6 +946,38 @@ function ConfirmPlaceDialog({ confirm, saving, on_confirm, on_cancel }: {
           <Button onClick={on_confirm} disabled={saving}>
             {saving && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
             Conferma
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+// CONFLICT CONFIRM DIALOG (replaces window.confirm)
+// ══════════════════════════════════════════════════════════════
+function ConflictConfirmDialog({ confirm, saving, on_confirm, on_cancel }: {
+  confirm: { corso: any; giorno: string; ora_inizio: string; ora_fine: string; conflicts: string } | null;
+  saving: boolean; on_confirm: () => void; on_cancel: () => void;
+}) {
+  if (!confirm) return null;
+  return (
+    <Dialog open={!!confirm} onOpenChange={(o) => !o && on_cancel()}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-destructive" />
+            Conflitto rilevato
+          </DialogTitle>
+          <DialogDescription>
+            <strong>{confirm.corso.nome}</strong> è in conflitto con: <strong>{confirm.conflicts}</strong>. Vuoi posizionarlo comunque?
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={on_cancel}>Annulla</Button>
+          <Button variant="destructive" onClick={on_confirm} disabled={saving}>
+            {saving && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+            Posiziona comunque
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -1020,7 +1023,7 @@ function DetailPanel({ corso, istr_map, atleti, build_mode, on_close, on_remove,
         <p>Durata: {corso.ora_inizio && corso.ora_fine ? time_to_min(corso.ora_fine) - time_to_min(corso.ora_inizio) : "?"} min</p>
         {first_istr && (
           <div className="flex items-center gap-1.5 pt-1">
-            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: first_istr.colore || "#6B7280" }} />
+            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: first_istr.colore || "hsl(var(--muted-foreground))" }} />
             <span className="text-foreground font-medium">{first_istr.nome} {first_istr.cognome}</span>
           </div>
         )}
@@ -1028,12 +1031,11 @@ function DetailPanel({ corso, istr_map, atleti, build_mode, on_close, on_remove,
         {corso.note && <p className="italic">{corso.note}</p>}
       </div>
 
-      {/* Enrolled */}
       <div>
         <p className="text-xs font-bold text-foreground mb-1">Iscritti ({enrolled.length})</p>
         <div className="space-y-0.5 max-h-40 overflow-y-auto">
           {enrolled.map((a) => (
-            <div key={a.id} className="flex items-center gap-1.5 text-xs text-foreground">
+            <div key={`enrolled-${a.id}`} className="flex items-center gap-1.5 text-xs text-foreground">
               <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-[9px] font-bold">{a.nome.charAt(0)}</div>
               {a.nome}
             </div>
@@ -1041,7 +1043,6 @@ function DetailPanel({ corso, istr_map, atleti, build_mode, on_close, on_remove,
         </div>
       </div>
 
-      {/* Actions */}
       {build_mode && (
         <div className="space-y-1.5 pt-2 border-t border-border">
           <Button size="sm" variant="outline" className="w-full justify-start text-xs gap-1.5" onClick={on_edit}>
@@ -1106,17 +1107,15 @@ function SlotManagerPanel({ giorno, slots, istruttori, disp_istr, on_close, quer
         <button onClick={on_close} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
       </div>
 
-      {/* Existing slots */}
       <div className="space-y-1">
         {slots.map((s: any) => (
-          <div key={s.id} className="flex items-center justify-between text-xs bg-muted rounded px-2 py-1">
+          <div key={`slot-${s.id}`} className="flex items-center justify-between text-xs bg-muted rounded px-2 py-1">
             <span className="font-medium">{s.tipo === "pulizia" ? "🧹" : "❄️"} {s.ora_inizio?.slice(0, 5)} – {s.ora_fine?.slice(0, 5)}</span>
             <button onClick={() => delete_slot(s.id)} className="text-destructive hover:text-destructive/80"><X className="h-3 w-3" /></button>
           </div>
         ))}
       </div>
 
-      {/* Add form */}
       <div className="space-y-2 pt-2 border-t border-border">
         <Select value={new_tipo} onValueChange={set_new_tipo}>
           <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
@@ -1134,18 +1133,17 @@ function SlotManagerPanel({ giorno, slots, istruttori, disp_istr, on_close, quer
         </Button>
       </div>
 
-      {/* Instructor availability */}
       <div className="pt-2 border-t border-border space-y-2">
         <p className="text-xs font-bold text-foreground">Disponibilità istruttori</p>
         {day_istr.map((ist) => (
-          <div key={ist.id} className="space-y-0.5">
+          <div key={`distr-${ist.id}`} className="space-y-0.5">
             <div className="flex items-center gap-1.5 text-xs">
-              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: ist.colore || "#6B7280" }} />
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: ist.colore || "hsl(var(--muted-foreground))" }} />
               <span className="font-medium text-foreground">{ist.nome} {ist.cognome}</span>
               <span className="text-muted-foreground ml-auto">{ist.ore.toFixed(1)}h</span>
             </div>
             {ist.fasce.map((f: any, fi: number) => (
-              <span key={fi} className="text-[10px] text-muted-foreground block pl-3.5">
+              <span key={`fascia-${ist.id}-${fi}`} className="text-[10px] text-muted-foreground block pl-3.5">
                 {f.ora_inizio?.slice(0, 5)} – {f.ora_fine?.slice(0, 5)}
               </span>
             ))}
@@ -1214,7 +1212,7 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti }
               <Select value={atleta_id} onValueChange={set_atleta_id}>
                 <SelectTrigger className="h-9"><SelectValue placeholder="Seleziona atleta" /></SelectTrigger>
                 <SelectContent>
-                  {atleti.map((a: any) => <SelectItem key={a.id} value={a.id}>{a.nome} {a.cognome}</SelectItem>)}
+                  {atleti.map((a: any) => <SelectItem key={`atl-${a.id}`} value={a.id}>{a.nome} {a.cognome}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -1235,7 +1233,7 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti }
             <Select value={istr_id} onValueChange={set_istr_id}>
               <SelectTrigger className="h-9"><SelectValue placeholder="Seleziona" /></SelectTrigger>
               <SelectContent>
-                {istruttori.map((i: any) => <SelectItem key={i.id} value={i.id}>{i.nome} {i.cognome}</SelectItem>)}
+                {istruttori.map((i: any) => <SelectItem key={`nistr-${i.id}`} value={i.id}>{i.nome} {i.cognome}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -1245,7 +1243,7 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti }
               <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="tutti">Tutti</SelectItem>
-                {LIVELLI.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                {LIVELLI.map((l) => <SelectItem key={`nliv-${l}`} value={l}>{l}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -1289,6 +1287,7 @@ function EditCorsoModal({ corso, on_close, istruttori, queryClient, posizionati 
   const [costo, set_costo] = useState(corso.costo_mensile || 0);
   const [note, set_note] = useState(corso.note || "");
   const [saving, set_saving] = useState(false);
+  const [edit_conflict, set_edit_conflict] = useState<{ update: any; old_istr: string } | null>(null);
 
   const save = async () => {
     set_saving(true);
@@ -1299,30 +1298,36 @@ function EditCorsoModal({ corso, on_close, istruttori, queryClient, posizionati 
         const ce = time_to_min(ora_fine);
         const conflicts = posizionati.filter((c: any) => {
           if (c.id === corso.id || c.giorno !== giorno) return false;
-          const istr_ids: string[] = c.istruttori_ids ?? [];
-          if (!istr_ids.includes(istr_id)) return false;
+          const c_istr_ids: string[] = c.istruttori_ids ?? [];
+          if (!c_istr_ids.includes(istr_id)) return false;
           const s = time_to_min(c.ora_inizio); const e = time_to_min(c.ora_fine);
           return s < ce && e > cs;
         });
         if (conflicts.length > 0) {
-          if (!window.confirm(`Conflitto con: ${conflicts.map((c: any) => c.nome).join(", ")}. Continuare?`)) {
-            set_saving(false);
-            return;
-          }
+          set_edit_conflict({ update: { ...update, giorno, ora_inizio, ora_fine }, old_istr: (corso.istruttori_ids ?? [])[0] });
+          set_saving(false);
+          return;
         }
         update.giorno = giorno;
         update.ora_inizio = ora_inizio;
         update.ora_fine = ora_fine;
       }
+      await do_save(update, (corso.istruttori_ids ?? [])[0]);
+    } catch (e: any) {
+      toast.error(e.message);
+      set_saving(false);
+    }
+  };
+
+  const do_save = async (update: any, old_istr: string) => {
+    set_saving(true);
+    try {
       const { error } = await supabase.from("corsi").update(update).eq("id", corso.id);
       if (error) throw error;
-
-      const old_istr = (corso.istruttori_ids ?? [])[0];
       if (istr_id !== old_istr) {
         if (old_istr) await supabase.from("corsi_istruttori").delete().eq("corso_id", corso.id);
         if (istr_id) await supabase.from("corsi_istruttori").insert({ corso_id: corso.id, istruttore_id: istr_id });
       }
-
       await queryClient.invalidateQueries({ queryKey: ["corsi"] });
       toast.success("Corso aggiornato");
       on_close();
@@ -1334,63 +1339,92 @@ function EditCorsoModal({ corso, on_close, istruttori, queryClient, posizionati 
   };
 
   return (
-    <Dialog open onOpenChange={(o) => !o && on_close()}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Modifica corso</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-3">
-          <div><Label className="text-xs">Nome</Label><Input value={nome} onChange={(e) => set_nome(e.target.value)} /></div>
-          <div><Label className="text-xs">Tipo</Label><Input value={tipo} onChange={(e) => set_tipo(e.target.value)} /></div>
-          <div>
-            <Label className="text-xs">Istruttore</Label>
-            <Select value={istr_id} onValueChange={set_istr_id}>
-              <SelectTrigger className="h-9"><SelectValue placeholder="Seleziona" /></SelectTrigger>
-              <SelectContent>
-                {istruttori.map((i: any) => <SelectItem key={i.id} value={i.id}>{i.nome} {i.cognome}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label className="text-xs">Livello</Label>
-            <Select value={livello} onValueChange={set_livello}>
-              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="tutti">Tutti</SelectItem>
-                {LIVELLI.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <Label className="text-xs">Giorno</Label>
-              <Select value={giorno} onValueChange={set_giorno}>
-                <SelectTrigger className="h-9"><SelectValue placeholder="—" /></SelectTrigger>
+    <>
+      <Dialog open onOpenChange={(o) => !o && on_close()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Modifica corso</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div><Label className="text-xs">Nome</Label><Input value={nome} onChange={(e) => set_nome(e.target.value)} /></div>
+            <div><Label className="text-xs">Tipo</Label><Input value={tipo} onChange={(e) => set_tipo(e.target.value)} /></div>
+            <div>
+              <Label className="text-xs">Istruttore</Label>
+              <Select value={istr_id} onValueChange={set_istr_id}>
+                <SelectTrigger className="h-9"><SelectValue placeholder="Seleziona" /></SelectTrigger>
                 <SelectContent>
-                  {GIORNI.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}
+                  {istruttori.map((i: any) => <SelectItem key={`eistr-${i.id}`} value={i.id}>{i.nome} {i.cognome}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex-1">
-              <Label className="text-xs">Inizio</Label>
-              <Input type="time" value={ora_inizio} onChange={(e) => set_ora_inizio(e.target.value)} className="h-9" />
+            <div>
+              <Label className="text-xs">Livello</Label>
+              <Select value={livello} onValueChange={set_livello}>
+                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="tutti">Tutti</SelectItem>
+                  {LIVELLI.map((l) => <SelectItem key={`eliv-${l}`} value={l}>{l}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
-            <div className="flex-1">
-              <Label className="text-xs">Fine</Label>
-              <Input type="time" value={ora_fine} onChange={(e) => set_ora_fine(e.target.value)} className="h-9" />
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <Label className="text-xs">Giorno</Label>
+                <Select value={giorno} onValueChange={set_giorno}>
+                  <SelectTrigger className="h-9"><SelectValue placeholder="—" /></SelectTrigger>
+                  <SelectContent>
+                    {GIORNI.map((g) => <SelectItem key={`eday-${g}`} value={g}>{g}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex-1">
+                <Label className="text-xs">Inizio</Label>
+                <Input type="time" value={ora_inizio} onChange={(e) => set_ora_inizio(e.target.value)} className="h-9" />
+              </div>
+              <div className="flex-1">
+                <Label className="text-xs">Fine</Label>
+                <Input type="time" value={ora_fine} onChange={(e) => set_ora_fine(e.target.value)} className="h-9" />
+              </div>
             </div>
+            <div className="flex gap-3">
+              <div className="flex-1"><Label className="text-xs">Costo mensile</Label><Input type="number" value={costo} onChange={(e) => set_costo(+e.target.value)} /></div>
+            </div>
+            <div><Label className="text-xs">Note</Label><Input value={note} onChange={(e) => set_note(e.target.value)} /></div>
           </div>
-          <div className="flex gap-3">
-            <div className="flex-1"><Label className="text-xs">Costo mensile</Label><Input type="number" value={costo} onChange={(e) => set_costo(+e.target.value)} /></div>
-          </div>
-          <div><Label className="text-xs">Note</Label><Input value={note} onChange={(e) => set_note(e.target.value)} /></div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={on_close}>Annulla</Button>
-          <Button onClick={save} disabled={saving}>{saving && <Loader2 className="h-4 w-4 animate-spin mr-1" />}Salva</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <DialogFooter>
+            <Button variant="outline" onClick={on_close}>Annulla</Button>
+            <Button onClick={save} disabled={saving}>{saving && <Loader2 className="h-4 w-4 animate-spin mr-1" />}Salva</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit conflict dialog (replaces window.confirm) */}
+      {edit_conflict && (
+        <Dialog open onOpenChange={(o) => !o && set_edit_conflict(null)}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+                Conflitto rilevato
+              </DialogTitle>
+              <DialogDescription>
+                Il corso è in conflitto con altri corsi dello stesso istruttore. Vuoi salvare comunque?
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => set_edit_conflict(null)}>Annulla</Button>
+              <Button variant="destructive" onClick={() => {
+                do_save(edit_conflict.update, edit_conflict.old_istr);
+                set_edit_conflict(null);
+              }} disabled={saving}>
+                {saving && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+                Salva comunque
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   );
 }
 
