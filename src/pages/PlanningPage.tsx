@@ -1251,6 +1251,72 @@ function SlotManagerPanel({ giorno, slots, istruttori, disp_istr, on_close, quer
 // ══════════════════════════════════════════════════════════════
 // NEW CORSO MODAL
 // ══════════════════════════════════════════════════════════════
+// ── AtletaSearchPlanning (reusable multi-select) ──
+function AtletaSearchPlanning({ atleti, selected_ids, on_change, max }: {
+  atleti: any[]; selected_ids: string[]; on_change: (ids: string[]) => void; max?: number;
+}) {
+  const [query, set_query] = useState("");
+  const [open_dd, set_open_dd] = useState(false);
+  const filtered = useMemo(() => {
+    const q = query.toLowerCase().trim();
+    if (!q) return (atleti ?? []).slice(0, 12);
+    return (atleti ?? []).filter((a: any) => `${a.nome} ${a.cognome}`.toLowerCase().includes(q)).slice(0, 12);
+  }, [atleti, query]);
+
+  const toggle = (id: string) => {
+    if (selected_ids.includes(id)) {
+      on_change(selected_ids.filter((i) => i !== id));
+    } else {
+      if (max && selected_ids.length >= max) return;
+      on_change([...selected_ids, id]);
+    }
+  };
+
+  return (
+    <div className="relative">
+      <div className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm flex items-center gap-2 cursor-text min-h-[38px]" onClick={() => set_open_dd(true)}>
+        <input className="flex-1 bg-transparent outline-none text-sm placeholder:text-muted-foreground" placeholder="Cerca atleta..." value={query}
+          onChange={(e) => { set_query(e.target.value); set_open_dd(true); }} onFocus={() => set_open_dd(true)} />
+      </div>
+      {open_dd && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => { set_open_dd(false); set_query(""); }} />
+          <div className="absolute z-20 top-full mt-1 w-full bg-card border border-border rounded-lg shadow-xl overflow-hidden max-h-48 overflow-y-auto">
+            {filtered.length === 0 ? (
+              <p className="text-sm text-muted-foreground px-3 py-2">Nessun atleta</p>
+            ) : filtered.map((a: any) => {
+              const sel = selected_ids.includes(a.id);
+              const disabled_max = !sel && max != null && selected_ids.length >= max;
+              return (
+                <div key={a.id} onClick={() => !disabled_max && toggle(a.id)}
+                  className={`flex items-center justify-between px-3 py-2 cursor-pointer text-sm transition-colors
+                    ${sel ? "bg-primary/10 text-primary" : disabled_max ? "opacity-40 cursor-not-allowed" : "hover:bg-muted/50 text-foreground"}`}>
+                  <span>{a.nome} {a.cognome}</span>
+                  {sel && <Check className="w-4 h-4" />}
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+      {selected_ids.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-2">
+          {selected_ids.map((id) => {
+            const a = (atleti ?? []).find((x: any) => x.id === id);
+            if (!a) return null;
+            return (
+              <span key={id} className="flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-1 rounded-full">
+                {a.nome} {a.cognome}
+                <button onClick={() => toggle(id)} className="hover:text-destructive transition-colors"><X className="w-3 h-3" /></button>
+              </span>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti }: {
   open: boolean; on_close: () => void; istruttori: any[]; queryClient: any;
   tipo: "corso" | "privata"; atleti?: any[];
@@ -1263,31 +1329,76 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti }
   const [costo, set_costo] = useState<number | string>("");
   const [costo_min, set_costo_min] = useState<number | string>("");
   const [note, set_note] = useState("");
-  const [atleta_id, set_atleta_id] = useState("");
+  const [atleti_ids, set_atleti_ids] = useState<string[]>([]);
   const [saving, set_saving] = useState(false);
 
+  const MAX_ATLETI_SEMI = 3; // default, could read from configurazione_ghiaccio
+  const costo_totale = (parseFloat(String(costo_min)) || 0) * durata;
+  const is_semiprivata = atleti_ids.length > 1;
+  const quota_per_atleta = atleti_ids.length > 0 ? costo_totale / atleti_ids.length : 0;
+
   const save = async () => {
-    const final_nome = tipo === "privata" && atleta_id && atleti
-      ? `Privata · ${atleti.find((a: any) => a.id === atleta_id)?.nome || "?"}`
+    if (tipo === "privata" && atleti_ids.length === 0) { toast.error("Seleziona almeno un atleta"); return; }
+    const nomi_atleti = atleti_ids.map((id) => {
+      const a = (atleti ?? []).find((x: any) => x.id === id);
+      return a ? a.nome : "?";
+    });
+    const final_nome = tipo === "privata"
+      ? `${is_semiprivata ? "Semi" : "Privata"} · ${nomi_atleti.join(", ")}`
       : nome;
     if (!final_nome.trim()) { toast.error("Nome obbligatorio"); return; }
     set_saving(true);
     try {
+      // 1. Insert lezione_privata (if tipo === "privata")
+      let lezione_id: string | null = null;
+      if (tipo === "privata") {
+        const { data: lp, error: lp_err } = await supabase.from("lezioni_private").insert({
+          club_id: CLUB_ID,
+          istruttore_id: istr_id || null,
+          data: null,
+          ora_inizio: null,
+          ora_fine: null,
+          durata_minuti: durata,
+          condivisa: is_semiprivata,
+          costo_totale,
+          ricorrente: false,
+          annullata: false,
+          note,
+        }).select().single();
+        if (lp_err) throw lp_err;
+        lezione_id = lp.id;
+
+        // 2. Insert atlete
+        if (lezione_id && atleti_ids.length > 0) {
+          const rows = atleti_ids.map((aid) => ({
+            lezione_id: lezione_id!,
+            atleta_id: aid,
+            quota_costo: costo_totale / atleti_ids.length,
+          }));
+          const { error: at_err } = await supabase.from("lezioni_private_atlete").insert(rows);
+          if (at_err) throw at_err;
+        }
+      }
+
+      // 3. Create corso for planning backlog
       const { data: new_corso, error } = await supabase.from("corsi").insert({
         club_id: CLUB_ID, nome: final_nome, tipo: tipo === "privata" ? "privata" : corso_tipo,
         livello_richiesto: livello,
-        costo_mensile: tipo === "privata" ? (parseFloat(String(costo_min)) || 0) * durata : (parseFloat(String(costo)) || 0),
+        costo_mensile: tipo === "privata" ? costo_totale : (parseFloat(String(costo)) || 0),
         note,
         giorno: null as any, ora_inizio: null as any, ora_fine: null as any,
       }).select().single();
       if (error) throw error;
+
+      // 4. Link istruttore
       if (istr_id && new_corso) {
         await supabase.from("corsi_istruttori").insert({ corso_id: new_corso.id, istruttore_id: istr_id });
       }
+
       await queryClient.invalidateQueries({ queryKey: ["corsi"] });
-      toast.success("Corso creato");
+      toast.success(tipo === "privata" ? "Lezione privata creata" : "Corso creato");
       on_close();
-      set_nome(""); set_corso_tipo(""); set_istr_id(""); set_note(""); set_costo(""); set_costo_min("");
+      set_nome(""); set_corso_tipo(""); set_istr_id(""); set_note(""); set_costo(""); set_costo_min(""); set_atleti_ids([]);
     } catch (e: any) {
       toast.error(e.message);
     } finally {
@@ -1297,20 +1408,16 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti }
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && on_close()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{tipo === "privata" ? "Nuova lezione privata" : "Nuovo corso"}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           {tipo === "privata" && atleti ? (
             <div>
-              <Label className="text-xs">Atleta</Label>
-              <Select value={atleta_id} onValueChange={set_atleta_id}>
-                <SelectTrigger className="h-9"><SelectValue placeholder="Seleziona atleta" /></SelectTrigger>
-                <SelectContent>
-                  {atleti.map((a: any) => <SelectItem key={a.id} value={a.id}>{a.nome} {a.cognome}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <Label className="text-xs">Atleta/e {is_semiprivata && <Badge variant="outline" className="ml-2 text-[10px] border-green-500 text-green-600">SEMIPRIVATA</Badge>}</Label>
+              <AtletaSearchPlanning atleti={atleti} selected_ids={atleti_ids} on_change={set_atleti_ids} max={MAX_ATLETI_SEMI} />
+              {atleti_ids.length >= MAX_ATLETI_SEMI && <p className="text-xs text-muted-foreground mt-1">Massimo {MAX_ATLETI_SEMI} atleti per lezione semiprivata</p>}
             </div>
           ) : (
             <div>
@@ -1333,16 +1440,18 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti }
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <Label className="text-xs">Livello</Label>
-            <Select value={livello} onValueChange={set_livello}>
-              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="tutti">Tutti</SelectItem>
-                {LIVELLI.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
+          {tipo !== "privata" && (
+            <div>
+              <Label className="text-xs">Livello</Label>
+              <Select value={livello} onValueChange={set_livello}>
+                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="tutti">Tutti</SelectItem>
+                  {LIVELLI.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="flex gap-3">
             <div className="flex-1">
               <Label className="text-xs">Durata (min)</Label>
@@ -1353,9 +1462,6 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti }
                 <>
                   <Label className="text-xs">Costo al minuto (CHF/min)</Label>
                   <Input type="number" value={costo_min} onChange={(e) => set_costo_min(e.target.value)} step="0.10" placeholder="es. 1.50" onFocus={(e) => e.target.select()} />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Totale lezione: CHF {((parseFloat(String(costo_min)) || 0) * durata).toFixed(2)}
-                  </p>
                 </>
               ) : (
                 <>
@@ -1365,6 +1471,13 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti }
               )}
             </div>
           </div>
+          {/* Riepilogo costi per lezioni private */}
+          {tipo === "privata" && atleti_ids.length > 0 && (
+            <div className="bg-muted/30 rounded-xl px-4 py-3 space-y-1">
+              <p className="text-xs text-muted-foreground">Costo totale lezione: <strong className="text-foreground">CHF {costo_totale.toFixed(2)}</strong></p>
+              <p className="text-xs text-muted-foreground">Quota per atleta ({atleti_ids.length}): <strong className="text-foreground">CHF {quota_per_atleta.toFixed(2)}</strong></p>
+            </div>
+          )}
           <div>
             <Label className="text-xs">Note</Label>
             <Input value={note} onChange={(e) => set_note(e.target.value)} />
