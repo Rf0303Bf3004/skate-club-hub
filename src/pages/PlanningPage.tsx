@@ -125,7 +125,7 @@ const LIVELLI = ["pulcini","stellina1","stellina2","stellina3","stellina4","Inte
 // ══════════════════════════════════════════════════════════════
 // MAIN COMPONENT
 // ══════════════════════════════════════════════════════════════
-export default function PlanningPage() {
+function PlanningPageInner() {
   const queryClient = useQueryClient();
   const { data: config } = use_config_ghiaccio();
   const { data: ghiaccio_slots, isLoading: loadingGhiaccio } = use_disponibilita_ghiaccio();
