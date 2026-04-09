@@ -164,7 +164,7 @@ function PlanningPageInner() {
     const pos: any[] = [];
     const unpos: any[] = [];
     corsi.forEach((c: any) => {
-      if (has_valid_ice(c, slots)) pos.push(c);
+      if (c.giorno && c.ora_inizio && c.ora_fine) pos.push(c);
       else unpos.push(c);
     });
     return { posizionati: pos, da_posizionare: unpos };
