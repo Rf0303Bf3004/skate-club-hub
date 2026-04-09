@@ -127,6 +127,39 @@ function has_valid_ice(corso: any, ghiaccio_slots: any[]): boolean {
 const LIVELLI = ["pulcini","stellina1","stellina2","stellina3","stellina4","Interbronzo","Bronzo","Interargento","Argento","Interoro","Oro"];
 
 // ══════════════════════════════════════════════════════════════
+// SIDEBAR CARD (reusable for both views)
+// ══════════════════════════════════════════════════════════════
+function SidebarCard({ corso, istr_map, pick_corso, set_pick_corso }: {
+  corso: any; istr_map: Record<string, any>; pick_corso: any; set_pick_corso: (c: any) => void;
+}) {
+  const istr_ids: string[] = corso.istruttori_ids ?? [];
+  const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
+  const is_picked = pick_corso?.id === corso.id;
+  return (
+    <div
+      className={`border rounded p-2 bg-card cursor-pointer hover:shadow-md transition-shadow space-y-1 ${is_picked ? "border-primary ring-2 ring-primary/30" : "border-border"}`}
+      onClick={() => set_pick_corso(is_picked ? null : corso)}
+    >
+      <div className="flex items-center justify-between">
+        <span className="font-bold text-xs text-foreground block truncate flex-1">{corso.nome}</span>
+        {is_picked && (
+          <button onClick={(e) => { e.stopPropagation(); set_pick_corso(null); }} className="text-muted-foreground hover:text-foreground ml-1">
+            <X className="h-3 w-3" />
+          </button>
+        )}
+      </div>
+      {first_istr && (
+        <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: first_istr.colore || "#6B7280" }} />
+          {first_istr.nome} {first_istr.cognome}
+        </span>
+      )}
+      <span className="text-[10px] text-muted-foreground block">{corso.atleti_ids?.length ?? 0} atleti</span>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
 // MAIN COMPONENT
 // ══════════════════════════════════════════════════════════════
 function PlanningPageInner() {
@@ -144,7 +177,8 @@ function PlanningPageInner() {
   const [build_mode, set_build_mode] = useState(false);
   const [focus_day, set_focus_day] = useState<string | null>(null);
   const [selected_corso_id, set_selected_corso_id] = useState<string | null>(null);
-  const [pick_corso, set_pick_corso] = useState<any>(null); // course being placed via pick mode
+  const [pick_corso, set_pick_corso] = useState<any>(null); // course selected for two-click placement
+  const [confirm_place, set_confirm_place] = useState<{ corso: any; giorno: string; ora_inizio: string; ora_fine: string } | null>(null);
   const [slot_manager_open, set_slot_manager_open] = useState(false);
   const [show_new_corso, set_show_new_corso] = useState(false);
   const [show_new_privata, set_show_new_privata] = useState(false);
@@ -209,7 +243,7 @@ function PlanningPageInner() {
     return { range_start: mn, range_end: mx };
   }, [slots, posizionati]);
 
-  const total_min = Math.max(range_end - range_start, 1); // prevent division by zero
+  const total_min = Math.max(range_end - range_start, 1);
 
   const ticks = useMemo(() => {
     const arr: number[] = [];
@@ -218,7 +252,6 @@ function PlanningPageInner() {
   }, [range_start, range_end]);
 
   // ── Instructor hours ──
-  // Intersect two time ranges, return overlap in minutes
   const intersect_min = (a_start: number, a_end: number, b_start: number, b_end: number): number => {
     const s = Math.max(a_start, b_start);
     const e = Math.min(a_end, b_end);
@@ -265,35 +298,30 @@ function PlanningPageInner() {
     return corsi.find((c: any) => c.id === selected_corso_id) || null;
   }, [selected_corso_id, corsi]);
 
-  // ── Compute pick mode slots ──
-  const pick_slots = useMemo(() => {
-    if (!pick_corso || !focus_day) return [];
-    const istr_ids: string[] = pick_corso.istruttori_ids ?? [];
+  // ── Compute available placement slots per day (for two-click) ──
+  const pick_slots_by_day = useMemo(() => {
+    if (!pick_corso) return {} as Record<string, { start: number; end: number }[]>;
     const durata = pick_corso.ora_fine && pick_corso.ora_inizio
       ? time_to_min(pick_corso.ora_fine) - time_to_min(pick_corso.ora_inizio)
       : 60;
-    const day_ice = slots.filter((s: any) => s.giorno === focus_day && (s.tipo ?? "ghiaccio") === "ghiaccio");
-    const result: { start: number; end: number }[] = [];
-    day_ice.forEach((s: any) => {
-      const gs = time_to_min(s.ora_inizio);
-      const ge = time_to_min(s.ora_fine);
-      for (let t = gs; t + durata <= ge; t += 5) {
-        // Check instructor availability
-        const istr_ok = istr_ids.length === 0 || istr_ids.some((id) => {
-          const ist_disp = (istr_map[id]?.disponibilita || {})[focus_day] ?? [];
-          return ist_disp.some((d: any) => time_to_min(d.ora_inizio) <= t && time_to_min(d.ora_fine) >= t + durata);
-        });
-        if (istr_ok) {
-          result.push({ start: t, end: t + durata });
+    const result: Record<string, { start: number; end: number }[]> = {};
+    GIORNI.forEach((giorno) => {
+      const day_ice = slots.filter((s: any) => s.giorno === giorno && (s.tipo ?? "ghiaccio") === "ghiaccio");
+      const day_slots: { start: number; end: number }[] = [];
+      day_ice.forEach((s: any) => {
+        const gs = time_to_min(s.ora_inizio);
+        const ge = time_to_min(s.ora_fine);
+        for (let t = gs; t + durata <= ge; t += 5) {
+          day_slots.push({ start: t, end: t + durata });
         }
-      }
+      });
+      if (day_slots.length > 0) result[giorno] = day_slots;
     });
     return result;
-  }, [pick_corso, focus_day, slots, istr_map]);
+  }, [pick_corso, slots]);
 
   // ── Actions ──
   const place_corso = async (corso: any, giorno: string, ora_inizio: string, ora_fine: string) => {
-    // Check conflicts
     const day_corsi = posizionati.filter((c: any) => c.giorno === giorno && c.id !== corso.id);
     const cs = time_to_min(ora_inizio);
     const ce = time_to_min(ora_fine);
@@ -341,6 +369,13 @@ function PlanningPageInner() {
     }
   };
 
+  // ── Confirmation dialog handler ──
+  const handle_confirm_place = () => {
+    if (!confirm_place) return;
+    place_corso(confirm_place.corso, confirm_place.giorno, confirm_place.ora_inizio, confirm_place.ora_fine);
+    set_confirm_place(null);
+  };
+
   // ── Loading ──
   if (loading) {
     return <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
@@ -356,7 +391,6 @@ function PlanningPageInner() {
     const day_corsi_off = posizionati.filter((c: any) => c.giorno === focus_day && OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
     const day_ice_min = day_ghiaccio.reduce((a: number, s: any) => a + time_to_min(s.ora_fine) - time_to_min(s.ora_inizio), 0);
 
-    // Time range for focus
     let f_start = 24 * 60, f_end = 0;
     [...day_ghiaccio, ...day_pulizia].forEach((s: any) => {
       f_start = Math.min(f_start, time_to_min(s.ora_inizio));
@@ -372,7 +406,6 @@ function PlanningPageInner() {
     const f_total = f_end - f_start;
     const grid_w = f_total * PPM_FOCUS;
 
-    // Compute course sub-rows
     const compute_rows = (courses: any[]): any[][] => {
       if (!courses.length) return [];
       const sorted = [...courses].sort((a, b) => time_to_min(a.ora_inizio) - time_to_min(b.ora_inizio));
@@ -391,25 +424,19 @@ function PlanningPageInner() {
     const course_rows = compute_rows(day_corsi_ice);
     const ROW_H = 48;
 
-    // Focus ticks
     const f_ticks: number[] = [];
     for (let m = f_start; m <= f_end; m += 60) f_ticks.push(m);
 
-    // Selected corso detail
     const sel = selected_corso;
+    const focus_pick_slots = pick_corso ? (pick_slots_by_day[focus_day] ?? []) : [];
 
     return (
       <TooltipProvider delayDuration={200}>
-        <div className="fixed inset-0 z-50 bg-background flex flex-col">
-          {/* Pick mode banner */}
-          {pick_corso && (
-            <div className="bg-primary text-primary-foreground px-4 py-2 flex items-center justify-between">
-              <span className="font-bold text-sm">Posizionamento: {pick_corso.nome}</span>
-              <Button size="sm" variant="ghost" className="text-primary-foreground hover:text-primary-foreground/80" onClick={() => set_pick_corso(null)}>
-                <X className="h-4 w-4 mr-1" /> Annulla
-              </Button>
-            </div>
-          )}
+        <div className="fixed inset-0 z-50 bg-background flex flex-col" onClick={(e) => {
+          if (pick_corso && !(e.target as HTMLElement).closest('[data-grid]') && !(e.target as HTMLElement).closest('[data-sidebar]')) {
+            set_pick_corso(null);
+          }
+        }}>
 
           {/* Toolbar */}
           <div className="flex items-center gap-3 px-4 py-2 border-b border-border bg-card">
@@ -417,6 +444,7 @@ function PlanningPageInner() {
               <ArrowLeft className="h-4 w-4 mr-1" /> Settimana
             </Button>
             <h2 className="text-lg font-bold text-foreground flex-1">{focus_day}</h2>
+            {pick_corso && <Badge variant="outline" className="border-primary text-primary text-xs">Selezionato: {pick_corso.nome}</Badge>}
             <span className="text-sm text-muted-foreground">{(day_ice_min / 60).toFixed(1)}h ghiaccio</span>
             {build_mode && (
               <Button size="sm" variant="outline" onClick={() => set_slot_manager_open(!slot_manager_open)}>
@@ -429,7 +457,7 @@ function PlanningPageInner() {
           <div className="flex flex-1 overflow-hidden">
             {/* Sidebar left - build mode backlog */}
             {build_mode && (
-              <div className="w-[280px] flex-shrink-0 border-r border-border overflow-y-auto p-3 space-y-2 bg-muted/30">
+              <div data-sidebar className="w-[280px] flex-shrink-0 border-r border-border overflow-y-auto p-3 space-y-2 bg-muted/30">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-bold text-foreground uppercase">Da posizionare ({da_posizionare.length})</span>
                 </div>
@@ -445,32 +473,15 @@ function PlanningPageInner() {
                     Tutti posizionati
                   </div>
                 ) : (
-                  da_posizionare.map((c: any) => {
-                    const istr_ids: string[] = c.istruttori_ids ?? [];
-                    const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
-                    return (
-                      <div
-                        key={c.id}
-                        className="border border-border rounded p-2 bg-card cursor-pointer hover:shadow-md transition-shadow space-y-1"
-                        onClick={() => { set_pick_corso(c); }}
-                      >
-                        <span className="font-bold text-xs text-foreground block truncate">{c.nome}</span>
-                        {first_istr && (
-                          <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: first_istr.colore || "#6B7280" }} />
-                            {first_istr.nome} {first_istr.cognome}
-                          </span>
-                        )}
-                        <span className="text-[10px] text-muted-foreground block">{c.atleti_ids?.length ?? 0} atleti</span>
-                      </div>
-                    );
-                  })
+                  da_posizionare.map((c: any) => (
+                    <SidebarCard key={c.id} corso={c} istr_map={istr_map} pick_corso={pick_corso} set_pick_corso={set_pick_corso} />
+                  ))
                 )}
               </div>
             )}
 
             {/* Main grid */}
-            <div className="flex-1 overflow-auto p-4">
+            <div className="flex-1 overflow-auto p-4" data-grid>
               <div className="relative" style={{ width: grid_w, minHeight: (course_rows.length || 1) * ROW_H + 60 }}>
                 {/* Hour lines */}
                 {f_ticks.map((t) => (
@@ -502,8 +513,8 @@ function PlanningPageInner() {
                   }} />
                 ))}
 
-                {/* Pick mode: available slots */}
-                {pick_corso && pick_slots.map((ps, i) => (
+                {/* Two-click: green available slots */}
+                {pick_corso && focus_pick_slots.map((ps, i) => (
                   <div
                     key={`pick${i}`}
                     className="absolute z-[5] cursor-pointer hover:opacity-80"
@@ -515,7 +526,7 @@ function PlanningPageInner() {
                       border: "2px dashed #48BB78",
                       borderRadius: 4,
                     }}
-                    onClick={() => place_corso(pick_corso, focus_day!, min_to_time(ps.start), min_to_time(ps.end))}
+                    onClick={() => set_confirm_place({ corso: pick_corso, giorno: focus_day!, ora_inizio: min_to_time(ps.start), ora_fine: min_to_time(ps.end) })}
                   >
                     <span className="text-[10px] font-bold text-green-700 px-1">{min_to_time(ps.start)}</span>
                   </div>
@@ -635,7 +646,7 @@ function PlanningPageInner() {
           </div>
         </div>
 
-        {/* Modals - lazy rendered */}
+        {/* Modals */}
         {show_new_corso && (
           <NewCorsoModal open={show_new_corso} on_close={() => set_show_new_corso(false)} istruttori={istruttori} queryClient={queryClient} tipo="corso" />
         )}
@@ -645,6 +656,9 @@ function PlanningPageInner() {
         {show_edit_corso && (
           <EditCorsoModal corso={show_edit_corso} on_close={() => set_show_edit_corso(null)} istruttori={istruttori} queryClient={queryClient} posizionati={posizionati} />
         )}
+
+        {/* Confirmation dialog */}
+        <ConfirmPlaceDialog confirm={confirm_place} saving={saving} on_confirm={handle_confirm_place} on_cancel={() => set_confirm_place(null)} />
       </TooltipProvider>
     );
   }
@@ -656,13 +670,20 @@ function PlanningPageInner() {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="p-4 space-y-4">
+      <div className="p-4 space-y-4" onClick={(e) => {
+        if (pick_corso && !(e.target as HTMLElement).closest('[data-grid]') && !(e.target as HTMLElement).closest('[data-sidebar]')) {
+          set_pick_corso(null);
+        }
+      }}>
         {/* Toolbar */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <h1 className="text-xl font-bold text-foreground">Planning Ghiaccio</h1>
-          <Button size="sm" variant={build_mode ? "default" : "outline"} onClick={() => set_build_mode(!build_mode)} className="gap-1.5">
-            {build_mode ? <><Eye className="h-4 w-4" /> Visualizzazione</> : <><Wrench className="h-4 w-4" /> Costruzione</>}
-          </Button>
+          <div className="flex items-center gap-2">
+            {pick_corso && <Badge variant="outline" className="border-primary text-primary text-xs">Selezionato: {pick_corso.nome}</Badge>}
+            <Button size="sm" variant={build_mode ? "default" : "outline"} onClick={() => { set_build_mode(!build_mode); set_pick_corso(null); }} className="gap-1.5">
+              {build_mode ? <><Eye className="h-4 w-4" /> Visualizzazione</> : <><Wrench className="h-4 w-4" /> Costruzione</>}
+            </Button>
+          </div>
         </div>
 
         {/* View selector + nav */}
@@ -727,7 +748,7 @@ function PlanningPageInner() {
         <div className="flex gap-0">
           {/* Build mode sidebar */}
           {build_mode && (
-            <div className="w-[280px] flex-shrink-0 border border-border rounded-lg overflow-y-auto p-3 space-y-2 bg-muted/30 mr-3">
+            <div data-sidebar className="w-[280px] flex-shrink-0 border border-border rounded-lg overflow-y-auto p-3 space-y-2 bg-muted/30 mr-3">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-foreground uppercase">Da posizionare ({da_posizionare.length})</span>
               </div>
@@ -743,32 +764,15 @@ function PlanningPageInner() {
                   Tutti i corsi posizionati
                 </div>
               ) : (
-                da_posizionare.map((c: any) => {
-                  const istr_ids: string[] = c.istruttori_ids ?? [];
-                  const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
-                  return (
-                    <div
-                      key={c.id}
-                      className="border border-border rounded p-2 bg-card cursor-pointer hover:shadow-md transition-shadow space-y-1"
-                      onClick={() => { set_focus_day(c.giorno || visible_days[0] || GIORNI[0]); set_pick_corso(c); }}
-                    >
-                      <span className="font-bold text-xs text-foreground block truncate">{c.nome}</span>
-                      {first_istr && (
-                        <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: first_istr.colore || "#6B7280" }} />
-                          {first_istr.nome} {first_istr.cognome}
-                        </span>
-                      )}
-                      <span className="text-[10px] text-muted-foreground block">{c.atleti_ids?.length ?? 0} atleti</span>
-                    </div>
-                  );
-                })
+                da_posizionare.map((c: any) => (
+                  <SidebarCard key={c.id} corso={c} istr_map={istr_map} pick_corso={pick_corso} set_pick_corso={set_pick_corso} />
+                ))
               )}
             </div>
           )}
 
         {/* Grid */}
-        <div className="flex-1 border border-border rounded-lg overflow-x-auto bg-card">
+        <div className="flex-1 border border-border rounded-lg overflow-x-auto bg-card" data-grid>
           {/* Time header */}
           <div className="flex border-b border-border sticky top-0 bg-card z-10">
             <div className="flex-shrink-0 border-r border-border" style={{ width: 100 }} />
@@ -787,6 +791,7 @@ function PlanningPageInner() {
             const day_pulizia = slots.filter((s: any) => s.giorno === giorno && s.tipo === "pulizia");
             const day_corsi_ice = posizionati.filter((c: any) => c.giorno === giorno && !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
             const day_corsi_off = posizionati.filter((c: any) => c.giorno === giorno && OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
+            const day_pick = pick_corso ? (pick_slots_by_day[giorno] ?? []) : [];
 
             // Sub-rows
             const compute_rows = (courses: any[]): any[][] => {
@@ -806,11 +811,21 @@ function PlanningPageInner() {
             const course_rows = compute_rows(day_corsi_ice);
             const n_rows = Math.max(course_rows.length, 1);
             const ROW_H = 40;
-            const day_h = n_rows * (14 + 2) + 8;
+            const day_h = n_rows * (14 + 2) + 8 + (day_pick.length > 0 ? 10 : 0);
+
+            // For weekly view green slots, show one merged bar per ice slot instead of every 5-min increment
+            const day_ice_ranges = day_ghiaccio.map((g: any) => ({
+              start: time_to_min(g.ora_inizio),
+              end: time_to_min(g.ora_fine),
+            }));
 
             return (
               <div key={giorno} className="border-b border-border last:border-b-0 cursor-pointer hover:bg-muted/20"
-                onClick={() => set_focus_day(giorno)}>
+                onClick={(e) => {
+                  // If pick_corso and clicking on a green slot, don't navigate to focus day
+                  if ((e.target as HTMLElement).closest('[data-green-slot]')) return;
+                  set_focus_day(giorno);
+                }}>
                 <div className="flex">
                   <div className="flex-shrink-0 flex items-center justify-center border-r border-border bg-muted px-2"
                     style={{ width: 100, minHeight: day_h }}>
@@ -832,13 +847,34 @@ function PlanningPageInner() {
 
                     {/* Pulizia bg */}
                     {day_pulizia.map((p: any, pi: number) => {
-                      const ps = time_to_min(p.ora_inizio); const pe = time_to_min(p.ora_fine);
+                      const ps_start = time_to_min(p.ora_inizio); const pe = time_to_min(p.ora_fine);
                       return <div key={`p${pi}`} className="absolute" style={{
-                        left: `${((ps - range_start) / total_min) * 100}%`, width: `${((pe - ps) / total_min) * 100}%`,
+                        left: `${((ps_start - range_start) / total_min) * 100}%`, width: `${((pe - ps_start) / total_min) * 100}%`,
                         top: 0, bottom: 0,
                         background: "repeating-linear-gradient(-45deg, #c8c4b8 0px, #c8c4b8 3px, #f0ede6 3px, #f0ede6 10px)",
                       }} />;
                     })}
+
+                    {/* Green available zones (merged per ice slot) when a course is selected */}
+                    {pick_corso && day_ice_ranges.map((range, ri) => (
+                      <div
+                        key={`green${ri}`}
+                        data-green-slot
+                        className="absolute z-[4] cursor-pointer"
+                        style={{
+                          left: `${((range.start - range_start) / total_min) * 100}%`,
+                          width: `${((range.end - range.start) / total_min) * 100}%`,
+                          top: 0, bottom: 0,
+                          background: "rgba(72,187,120,0.18)",
+                          border: "2px dashed #48BB78",
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // Open focus day for precise placement
+                          set_focus_day(giorno);
+                        }}
+                      />
+                    ))}
 
                     {/* Course blocks: ZERO TEXT, only colors, 14px tall */}
                     {course_rows.map((row, ri) =>
@@ -899,7 +935,7 @@ function PlanningPageInner() {
         </div>
         </div>
 
-        {/* Modals - lazy rendered */}
+        {/* Modals */}
         {show_new_corso && (
           <NewCorsoModal open={show_new_corso} on_close={() => set_show_new_corso(false)} istruttori={istruttori} queryClient={queryClient} tipo="corso" />
         )}
@@ -909,8 +945,40 @@ function PlanningPageInner() {
         {show_edit_corso && (
           <EditCorsoModal corso={show_edit_corso} on_close={() => set_show_edit_corso(null)} istruttori={istruttori} queryClient={queryClient} posizionati={posizionati} />
         )}
+
+        {/* Confirmation dialog */}
+        <ConfirmPlaceDialog confirm={confirm_place} saving={saving} on_confirm={handle_confirm_place} on_cancel={() => set_confirm_place(null)} />
       </div>
     </TooltipProvider>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+// CONFIRM PLACEMENT DIALOG
+// ══════════════════════════════════════════════════════════════
+function ConfirmPlaceDialog({ confirm, saving, on_confirm, on_cancel }: {
+  confirm: { corso: any; giorno: string; ora_inizio: string; ora_fine: string } | null;
+  saving: boolean; on_confirm: () => void; on_cancel: () => void;
+}) {
+  if (!confirm) return null;
+  return (
+    <Dialog open={!!confirm} onOpenChange={(o) => !o && on_cancel()}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Conferma posizionamento</DialogTitle>
+          <DialogDescription>
+            Posizionare <strong>{confirm.corso.nome}</strong> il <strong>{confirm.giorno}</strong> dalle <strong>{confirm.ora_inizio}</strong> alle <strong>{confirm.ora_fine}</strong>?
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={on_cancel}>Annulla</Button>
+          <Button onClick={on_confirm} disabled={saving}>
+            {saving && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+            Conferma
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -1227,7 +1295,6 @@ function EditCorsoModal({ corso, on_close, istruttori, queryClient, posizionati 
     try {
       const update: any = { nome, tipo, livello_richiesto: livello, costo_mensile: costo, note };
       if (giorno && ora_inizio && ora_fine) {
-        // Check conflicts
         const cs = time_to_min(ora_inizio);
         const ce = time_to_min(ora_fine);
         const conflicts = posizionati.filter((c: any) => {
@@ -1250,7 +1317,6 @@ function EditCorsoModal({ corso, on_close, istruttori, queryClient, posizionati 
       const { error } = await supabase.from("corsi").update(update).eq("id", corso.id);
       if (error) throw error;
 
-      // Update instructor
       const old_istr = (corso.istruttori_ids ?? [])[0];
       if (istr_id !== old_istr) {
         if (old_istr) await supabase.from("corsi_istruttori").delete().eq("corso_id", corso.id);
