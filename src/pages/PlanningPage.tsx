@@ -684,7 +684,7 @@ export default function PlanningPage() {
         <div className="border border-border rounded-lg overflow-x-auto bg-card">
           {/* Time header */}
           <div className="flex border-b border-border sticky top-0 bg-card z-10">
-            <div className="flex-shrink-0 border-r border-border" style={{ width: 80 }} />
+            <div className="flex-shrink-0 border-r border-border" style={{ width: 100 }} />
             <div className="flex-1 relative" style={{ minWidth: total_min * 1.2 }}>
               {ticks.map((t) => (
                 <span key={t} className="absolute text-[10px] text-muted-foreground top-0 -translate-x-1/2"
@@ -725,8 +725,8 @@ export default function PlanningPage() {
               <div key={giorno} className="border-b border-border last:border-b-0 cursor-pointer hover:bg-muted/20"
                 onClick={() => set_focus_day(giorno)}>
                 <div className="flex">
-                  <div className="flex-shrink-0 flex items-center justify-center border-r border-border bg-muted px-1"
-                    style={{ width: 80, minHeight: day_h }}>
+                  <div className="flex-shrink-0 flex items-center justify-center border-r border-border bg-muted px-2"
+                    style={{ width: 100, minHeight: day_h }}>
                     <span className="text-xs font-bold text-foreground">{giorno}</span>
                   </div>
 
