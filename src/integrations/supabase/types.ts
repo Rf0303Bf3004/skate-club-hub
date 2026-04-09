@@ -425,6 +425,86 @@ export type Database = {
         }
         Relationships: []
       }
+      lezioni_private: {
+        Row: {
+          annullata: boolean
+          club_id: string
+          condivisa: boolean
+          costo_totale: number
+          created_at: string
+          data: string | null
+          durata_minuti: number
+          id: string
+          istruttore_id: string | null
+          note: string | null
+          ora_fine: string | null
+          ora_inizio: string | null
+          ricorrente: boolean
+        }
+        Insert: {
+          annullata?: boolean
+          club_id: string
+          condivisa?: boolean
+          costo_totale?: number
+          created_at?: string
+          data?: string | null
+          durata_minuti?: number
+          id?: string
+          istruttore_id?: string | null
+          note?: string | null
+          ora_fine?: string | null
+          ora_inizio?: string | null
+          ricorrente?: boolean
+        }
+        Update: {
+          annullata?: boolean
+          club_id?: string
+          condivisa?: boolean
+          costo_totale?: number
+          created_at?: string
+          data?: string | null
+          durata_minuti?: number
+          id?: string
+          istruttore_id?: string | null
+          note?: string | null
+          ora_fine?: string | null
+          ora_inizio?: string | null
+          ricorrente?: boolean
+        }
+        Relationships: []
+      }
+      lezioni_private_atlete: {
+        Row: {
+          atleta_id: string
+          created_at: string
+          id: string
+          lezione_id: string
+          quota_costo: number
+        }
+        Insert: {
+          atleta_id: string
+          created_at?: string
+          id?: string
+          lezione_id: string
+          quota_costo?: number
+        }
+        Update: {
+          atleta_id?: string
+          created_at?: string
+          id?: string
+          lezione_id?: string
+          quota_costo?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lezioni_private_atlete_lezione_id_fkey"
+            columns: ["lezione_id"]
+            isOneToOne: false
+            referencedRelation: "lezioni_private"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       presenze_corso: {
         Row: {
           atleta_id: string
