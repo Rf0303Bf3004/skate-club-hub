@@ -897,6 +897,7 @@ function PlanningPageInner() {
             );
           })}
         </div>
+        </div>
 
         {/* Modals - lazy rendered */}
         {show_new_corso && (
