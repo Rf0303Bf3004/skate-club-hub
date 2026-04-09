@@ -723,8 +723,52 @@ function PlanningPageInner() {
           <span className="px-2 py-0.5 rounded font-medium" style={{ background: "transparent", border: "2px dashed #6B7280" }}>Privata</span>
         </div>
 
+        {/* Main content: sidebar + grid */}
+        <div className="flex gap-0">
+          {/* Build mode sidebar */}
+          {build_mode && (
+            <div className="w-[280px] flex-shrink-0 border border-border rounded-lg overflow-y-auto p-3 space-y-2 bg-muted/30 mr-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-foreground uppercase">Da posizionare ({da_posizionare.length})</span>
+              </div>
+              <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => set_show_new_corso(true)}>
+                <Plus className="h-3 w-3 mr-1" /> Corso/Pacchetto
+              </Button>
+              <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => set_show_new_privata(true)}>
+                <Plus className="h-3 w-3 mr-1" /> Lezione privata
+              </Button>
+              {da_posizionare.length === 0 ? (
+                <div className="text-center py-4 text-muted-foreground text-xs">
+                  <Check className="h-5 w-5 mx-auto text-green-500 mb-1" />
+                  Tutti i corsi posizionati
+                </div>
+              ) : (
+                da_posizionare.map((c: any) => {
+                  const istr_ids: string[] = c.istruttori_ids ?? [];
+                  const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
+                  return (
+                    <div
+                      key={c.id}
+                      className="border border-border rounded p-2 bg-card cursor-pointer hover:shadow-md transition-shadow space-y-1"
+                      onClick={() => { set_focus_day(c.giorno || visible_days[0] || GIORNI[0]); set_pick_corso(c); }}
+                    >
+                      <span className="font-bold text-xs text-foreground block truncate">{c.nome}</span>
+                      {first_istr && (
+                        <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: first_istr.colore || "#6B7280" }} />
+                          {first_istr.nome} {first_istr.cognome}
+                        </span>
+                      )}
+                      <span className="text-[10px] text-muted-foreground block">{c.atleti_ids?.length ?? 0} atleti</span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
+
         {/* Grid */}
-        <div className="border border-border rounded-lg overflow-x-auto bg-card">
+        <div className="flex-1 border border-border rounded-lg overflow-x-auto bg-card">
           {/* Time header */}
           <div className="flex border-b border-border sticky top-0 bg-card z-10">
             <div className="flex-shrink-0 border-r border-border" style={{ width: 100 }} />
