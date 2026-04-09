@@ -1260,7 +1260,8 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti }
   const [istr_id, set_istr_id] = useState("");
   const [livello, set_livello] = useState("tutti");
   const [durata, set_durata] = useState(60);
-  const [costo, set_costo] = useState(0);
+  const [costo, set_costo] = useState<number | string>("");
+  const [costo_min, set_costo_min] = useState<number | string>("");
   const [note, set_note] = useState("");
   const [atleta_id, set_atleta_id] = useState("");
   const [saving, set_saving] = useState(false);
