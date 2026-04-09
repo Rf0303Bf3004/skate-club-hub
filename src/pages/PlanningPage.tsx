@@ -428,7 +428,7 @@ function PlanningPageInner() {
           {/* Content */}
           <div className="flex flex-1 overflow-hidden">
             {/* Sidebar left - build mode backlog */}
-            {build_mode && !pick_corso && (
+            {build_mode && (
               <div className="w-[220px] flex-shrink-0 border-r border-border overflow-y-auto p-3 space-y-2 bg-muted/30">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-bold text-foreground uppercase">Da posizionare ({da_posizionare.length})</span>
