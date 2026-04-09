@@ -48,6 +48,37 @@ class PlanningErrorBoundary extends Component<{ children: ReactNode }, { hasErro
   }
 }
 
+class SidebarErrorBoundary extends Component<{ children: ReactNode; className: string }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode; className: string }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error("Planning sidebar crash:", error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div data-sidebar className={this.props.className}>
+          <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-card p-3 text-sm text-destructive">
+            <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+            <div className="space-y-2">
+              <p className="font-medium">Errore nella sidebar costruzione</p>
+              <Button size="sm" variant="outline" onClick={() => this.setState({ hasError: false })}>
+                Riprova
+              </Button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function PlanningPageWrapper() {
   return (
     <PlanningErrorBoundary>
@@ -76,6 +107,61 @@ function time_to_min(t: any): number {
 function min_to_time(m: number): string {
   if (!Number.isFinite(m) || m < 0) m = 0;
   return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+}
+
+function intersect_min(a_start: number, a_end: number, b_start: number, b_end: number): number {
+  const s = Math.max(a_start, b_start);
+  const e = Math.min(a_end, b_end);
+  return e > s ? e - s : 0;
+}
+
+type InstructorHours = { disp: number; assegnate: number; libere: number; pct: number };
+
+function calcola_ore_istruttore({
+  istruttore,
+  disponibilita,
+  corsi,
+  ice_by_day,
+}: {
+  istruttore: any;
+  disponibilita: any[];
+  corsi: any[];
+  ice_by_day: Record<string, { s: number; e: number }[]>;
+}): InstructorHours {
+  if (!disponibilita?.length || !corsi?.length) {
+    return { disp: 0, assegnate: 0, libere: 0, pct: 0 };
+  }
+
+  let disponibilita_minuti = 0;
+  const disponibilita_per_giorno = istruttore?.disponibilita || {};
+
+  GIORNI.forEach((giorno) => {
+    const fasce_giornaliere: any[] = disponibilita_per_giorno[giorno] ?? [];
+    const ghiaccio_giornaliero = ice_by_day[giorno] ?? [];
+
+    fasce_giornaliere.forEach((fascia: any) => {
+      const ds = time_to_min(fascia.ora_inizio);
+      const de = time_to_min(fascia.ora_fine);
+
+      ghiaccio_giornaliero.forEach((ice) => {
+        disponibilita_minuti += intersect_min(ds, de, ice.s, ice.e);
+      });
+    });
+  });
+
+  let assegnate_minuti = 0;
+  corsi.forEach((corso: any) => {
+    if ((corso.istruttori_ids ?? []).includes(istruttore.id)) {
+      assegnate_minuti += time_to_min(corso.ora_fine) - time_to_min(corso.ora_inizio);
+    }
+  });
+
+  const disp = disponibilita_minuti / 60;
+  const assegnate = assegnate_minuti / 60;
+  const libere = Math.max(disp - assegnate, 0);
+  const pct = disp > 0 ? (assegnate / disp) * 100 : 0;
+
+  return { disp, assegnate, libere, pct };
 }
 
 // ── Data hooks ──
@@ -159,18 +245,71 @@ function SidebarCard({ corso, istr_map, pick_corso, set_pick_corso }: {
   );
 }
 
+function SidebarCostruzione({
+  corsiDaPosizionare,
+  istr_map,
+  pick_corso,
+  set_pick_corso,
+  on_new_corso,
+  on_new_privata,
+  className,
+}: {
+  corsiDaPosizionare: any[];
+  istr_map: Record<string, any>;
+  pick_corso: any;
+  set_pick_corso: (c: any) => void;
+  on_new_corso: () => void;
+  on_new_privata: () => void;
+  className: string;
+}) {
+  return (
+    <div data-sidebar className={className}>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-bold text-foreground uppercase">Da posizionare ({corsiDaPosizionare.length})</span>
+      </div>
+      <Button size="sm" variant="outline" className="w-full text-xs" onClick={on_new_corso}>
+        <Plus className="h-3 w-3 mr-1" /> Corso/Pacchetto
+      </Button>
+      <Button size="sm" variant="outline" className="w-full text-xs" onClick={on_new_privata}>
+        <Plus className="h-3 w-3 mr-1" /> Lezione privata
+      </Button>
+      {corsiDaPosizionare.length === 0 ? (
+        <div className="text-center py-4 text-muted-foreground text-xs">
+          <Check className="h-5 w-5 mx-auto text-green-500 mb-1" />
+          Tutti i corsi posizionati
+        </div>
+      ) : (
+        corsiDaPosizionare.map((corso: any) => (
+          <SidebarCard key={corso.id} corso={corso} istr_map={istr_map} pick_corso={pick_corso} set_pick_corso={set_pick_corso} />
+        ))
+      )}
+    </div>
+  );
+}
+
 // ══════════════════════════════════════════════════════════════
 // MAIN COMPONENT
 // ══════════════════════════════════════════════════════════════
 function PlanningPageInner() {
   const queryClient = useQueryClient();
-  const { data: config } = use_config_ghiaccio();
-  const { data: ghiaccio_slots, isLoading: loadingGhiaccio } = use_disponibilita_ghiaccio();
-  const { data: disp_istr_raw } = use_disponibilita_istruttori();
-  const { data: corsi_raw, isLoading: loadingCorsi } = use_corsi();
-  const { data: istruttori_raw, isLoading: loadingIstr } = use_istruttori();
-  const { data: stagioni_raw } = use_stagioni();
-  const { data: atleti_raw } = use_atleti();
+  const configQuery = use_config_ghiaccio();
+  const ghiaccioQuery = use_disponibilita_ghiaccio();
+  const dispIstrQuery = use_disponibilita_istruttori();
+  const corsiQuery = use_corsi();
+  const istruttoriQuery = use_istruttori();
+  const stagioniQuery = use_stagioni();
+  const atletiQuery = use_atleti();
+
+  const config = configQuery.data ?? null;
+  const ghiaccio_slots = ghiaccioQuery.data ?? [];
+  const disp_istr_raw = dispIstrQuery.data ?? [];
+  const corsi_raw = corsiQuery.data ?? [];
+  const istruttori_raw = istruttoriQuery.data ?? [];
+  const stagioni_raw = stagioniQuery.data ?? [];
+  const atleti_raw = atletiQuery.data ?? [];
+  const loadingGhiaccio = ghiaccioQuery.isLoading;
+  const loadingCorsi = corsiQuery.isLoading;
+  const loadingIstr = istruttoriQuery.isLoading;
 
   const [view_mode, set_view_mode] = useState<ViewMode>(7);
   const [day_offset, set_day_offset] = useState(0);
@@ -193,16 +332,8 @@ function PlanningPageInner() {
   const disp_istr = useMemo(() => disp_istr_raw ?? [], [disp_istr_raw]);
   const slots = useMemo(() => ghiaccio_slots ?? [], [ghiaccio_slots]);
 
-  // Positioned vs unpositioned
-  const { posizionati, da_posizionare } = useMemo(() => {
-    const pos: any[] = [];
-    const unpos: any[] = [];
-    corsi.forEach((c: any) => {
-      if (c.giorno && c.ora_inizio && c.ora_fine) pos.push(c);
-      else unpos.push(c);
-    });
-    return { posizionati: pos, da_posizionare: unpos };
-  }, [corsi, slots]);
+  const posizionati = useMemo(() => (corsi ?? []).filter((c: any) => c.giorno && c.ora_inizio && c.ora_fine), [corsi]);
+  const corsiDaPosizionare = useMemo(() => (corsi ?? []).filter((c: any) => !c.giorno || !c.ora_inizio), [corsi]);
 
   // Instructor map
   const istr_map = useMemo(() => {
@@ -251,15 +382,8 @@ function PlanningPageInner() {
     return arr;
   }, [range_start, range_end]);
 
-  // ── Instructor hours ──
-  const intersect_min = (a_start: number, a_end: number, b_start: number, b_end: number): number => {
-    const s = Math.max(a_start, b_start);
-    const e = Math.min(a_end, b_end);
-    return e > s ? e - s : 0;
-  };
-
   const istr_hours = useMemo(() => {
-    const result: Record<string, { assigned: number; available: number }> = {};
+    const result: Record<string, InstructorHours> = {};
     const ice_by_day: Record<string, { s: number; e: number }[]> = {};
     slots.forEach((sl: any) => {
       if ((sl.tipo ?? "ghiaccio") !== "ghiaccio") return;
@@ -268,27 +392,14 @@ function PlanningPageInner() {
     });
 
     istruttori.forEach((ist: any) => {
-      let avail = 0;
-      const disp = ist.disponibilita || {};
-      GIORNI.forEach((giorno) => {
-        const day_disp: any[] = disp[giorno] ?? [];
-        const day_ice = ice_by_day[giorno] ?? [];
-        day_disp.forEach((d: any) => {
-          const ds = time_to_min(d.ora_inizio);
-          const de = time_to_min(d.ora_fine);
-          day_ice.forEach((ice) => {
-            avail += intersect_min(ds, de, ice.s, ice.e);
-          });
-        });
+      result[ist.id] = calcola_ore_istruttore({
+        istruttore: ist,
+        disponibilita: slots,
+        corsi: posizionati,
+        ice_by_day,
       });
-      let assigned = 0;
-      posizionati.forEach((c: any) => {
-        if ((c.istruttori_ids ?? []).includes(ist.id)) {
-          assigned += time_to_min(c.ora_fine) - time_to_min(c.ora_inizio);
-        }
-      });
-      result[ist.id] = { assigned: assigned / 60, available: avail / 60 };
     });
+
     return result;
   }, [istruttori, posizionati, slots]);
 
@@ -457,27 +568,17 @@ function PlanningPageInner() {
           <div className="flex flex-1 overflow-hidden">
             {/* Sidebar left - build mode backlog */}
             {build_mode && (
-              <div data-sidebar className="w-[280px] flex-shrink-0 border-r border-border overflow-y-auto p-3 space-y-2 bg-muted/30">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-foreground uppercase">Da posizionare ({da_posizionare.length})</span>
-                </div>
-                <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => set_show_new_corso(true)}>
-                  <Plus className="h-3 w-3 mr-1" /> Corso/Pacchetto
-                </Button>
-                <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => set_show_new_privata(true)}>
-                  <Plus className="h-3 w-3 mr-1" /> Lezione privata
-                </Button>
-                {da_posizionare.length === 0 ? (
-                  <div className="text-center py-4 text-muted-foreground text-xs">
-                    <Check className="h-5 w-5 mx-auto text-green-500 mb-1" />
-                    Tutti posizionati
-                  </div>
-                ) : (
-                  da_posizionare.map((c: any) => (
-                    <SidebarCard key={c.id} corso={c} istr_map={istr_map} pick_corso={pick_corso} set_pick_corso={set_pick_corso} />
-                  ))
-                )}
-              </div>
+              <SidebarErrorBoundary className="w-[280px] flex-shrink-0 border-r border-border overflow-y-auto p-3 space-y-2 bg-muted/30">
+                <SidebarCostruzione
+                  className="w-[280px] flex-shrink-0 border-r border-border overflow-y-auto p-3 space-y-2 bg-muted/30"
+                  corsiDaPosizionare={corsiDaPosizionare}
+                  istr_map={istr_map}
+                  pick_corso={pick_corso}
+                  set_pick_corso={set_pick_corso}
+                  on_new_corso={() => set_show_new_corso(true)}
+                  on_new_privata={() => set_show_new_privata(true)}
+                />
+              </SidebarErrorBoundary>
             )}
 
             {/* Main grid */}
@@ -709,8 +810,8 @@ function PlanningPageInner() {
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Istruttori</p>
           <div className="flex flex-wrap gap-2">
             {istruttori.map((ist: any) => {
-              const h = istr_hours[ist.id] || { assigned: 0, available: 0 };
-              const pct = h.available > 0 ? (h.assigned / h.available) * 100 : 0;
+              const h = istr_hours[ist.id] || { disp: 0, assegnate: 0, libere: 0, pct: 0 };
+              const pct = h.pct;
               const bar_color = pct >= 90 ? "#EF4444" : pct >= 70 ? "#F59E0B" : "#22C55E";
               return (
                 <Tooltip key={ist.id}>
@@ -722,13 +823,13 @@ function PlanningPageInner() {
                       <span className="relative w-8 h-2 rounded-full bg-muted overflow-hidden">
                         <span className="absolute left-0 top-0 bottom-0 rounded-full" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: bar_color }} />
                       </span>
-                      <span className="text-[10px]">{h.assigned.toFixed(1)}h/{h.available.toFixed(1)}h</span>
+                      <span className="text-[10px]">{h.assegnate.toFixed(1)}h/{h.disp.toFixed(1)}h</span>
                     </span>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Disponibile: {h.available.toFixed(1)}h</p>
-                    <p>Assegnato: {h.assigned.toFixed(1)}h</p>
-                    <p>Libero: {(h.available - h.assigned).toFixed(1)}h</p>
+                    <p>Disponibile: {h.disp.toFixed(1)}h</p>
+                    <p>Assegnato: {h.assegnate.toFixed(1)}h</p>
+                    <p>Libero: {h.libere.toFixed(1)}h</p>
                   </TooltipContent>
                 </Tooltip>
               );
@@ -748,27 +849,17 @@ function PlanningPageInner() {
         <div className="flex gap-0">
           {/* Build mode sidebar */}
           {build_mode && (
-            <div data-sidebar className="w-[280px] flex-shrink-0 border border-border rounded-lg overflow-y-auto p-3 space-y-2 bg-muted/30 mr-3">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-foreground uppercase">Da posizionare ({da_posizionare.length})</span>
-              </div>
-              <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => set_show_new_corso(true)}>
-                <Plus className="h-3 w-3 mr-1" /> Corso/Pacchetto
-              </Button>
-              <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => set_show_new_privata(true)}>
-                <Plus className="h-3 w-3 mr-1" /> Lezione privata
-              </Button>
-              {da_posizionare.length === 0 ? (
-                <div className="text-center py-4 text-muted-foreground text-xs">
-                  <Check className="h-5 w-5 mx-auto text-green-500 mb-1" />
-                  Tutti i corsi posizionati
-                </div>
-              ) : (
-                da_posizionare.map((c: any) => (
-                  <SidebarCard key={c.id} corso={c} istr_map={istr_map} pick_corso={pick_corso} set_pick_corso={set_pick_corso} />
-                ))
-              )}
-            </div>
+            <SidebarErrorBoundary className="w-[280px] flex-shrink-0 border border-border rounded-lg overflow-y-auto p-3 space-y-2 bg-muted/30 mr-3">
+              <SidebarCostruzione
+                className="w-[280px] flex-shrink-0 border border-border rounded-lg overflow-y-auto p-3 space-y-2 bg-muted/30 mr-3"
+                corsiDaPosizionare={corsiDaPosizionare}
+                istr_map={istr_map}
+                pick_corso={pick_corso}
+                set_pick_corso={set_pick_corso}
+                on_new_corso={() => set_show_new_corso(true)}
+                on_new_privata={() => set_show_new_privata(true)}
+              />
+            </SidebarErrorBoundary>
           )}
 
         {/* Grid */}
