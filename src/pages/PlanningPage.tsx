@@ -209,7 +209,7 @@ function PlanningPageInner() {
     return { range_start: mn, range_end: mx };
   }, [slots, posizionati]);
 
-  const total_min = range_end - range_start;
+  const total_min = Math.max(range_end - range_start, 1); // prevent division by zero
 
   const ticks = useMemo(() => {
     const arr: number[] = [];
