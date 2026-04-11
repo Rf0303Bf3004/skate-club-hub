@@ -1678,6 +1678,7 @@ const CoursesPage: React.FC = () => {
   const [modal_open, set_modal_open] = useState(false);
   const [selected_corso, set_selected_corso] = useState<any>(null);
   const [default_tab, set_default_tab] = useState<string | undefined>(undefined);
+  const [vista, set_vista] = useState<"giorno" | "istruttore">("giorno");
 
   // Filters
   const [filtro_giorno, set_filtro_giorno] = useState("Tutti");
@@ -1704,6 +1705,31 @@ const CoursesPage: React.FC = () => {
         return time_to_min(a.ora_inizio) - time_to_min(b.ora_inizio);
       });
   }, [corsi, filtro_giorno, filtro_tipo, filtro_istruttore]);
+
+  const corsi_per_giorno = useMemo(() => {
+    const groups: Record<string, any[]> = {};
+    GIORNI_DB.forEach(g => { groups[g] = []; });
+    groups["Da pianificare"] = [];
+    corsi_filtrati.forEach((c: any) => {
+      if (c.giorno && GIORNI_DB.includes(c.giorno)) groups[c.giorno].push(c);
+      else groups["Da pianificare"].push(c);
+    });
+    return groups;
+  }, [corsi_filtrati]);
+
+  const corsi_per_istruttore = useMemo(() => {
+    const groups: Record<string, { label: string; corsi: any[] }> = {};
+    groups["_none"] = { label: "Senza istruttore", corsi: [] };
+    istruttori.filter((i: any) => i.attivo).forEach((i: any) => {
+      groups[i.id] = { label: `${i.nome} ${i.cognome}`, corsi: [] };
+    });
+    corsi_filtrati.forEach((c: any) => {
+      const ids = c.istruttori_ids || [];
+      if (ids.length === 0) groups["_none"].corsi.push(c);
+      else ids.forEach((id: string) => { if (groups[id]) groups[id].corsi.push(c); });
+    });
+    return groups;
+  }, [corsi_filtrati, istruttori]);
 
   const handle_add_tipo = async (nome: string) => {
     const { error } = await supabase.from("tipi_corso").insert({ club_id: get_current_club_id(), nome });
@@ -1785,6 +1811,18 @@ const CoursesPage: React.FC = () => {
           </Button>
         </div>
 
+        {/* Vista toggle */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="inline-flex rounded-lg border border-border overflow-hidden">
+            {(["giorno", "istruttore"] as const).map((v) => (
+              <button key={v} onClick={() => set_vista(v)}
+                className={`px-4 py-1.5 text-sm font-medium transition-colors ${vista === v ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"}`}>
+                {v === "giorno" ? "Per giorno" : "Per istruttore"}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <FilterBar
           giorno={filtro_giorno}
           setGiorno={set_filtro_giorno}
@@ -1806,17 +1844,71 @@ const CoursesPage: React.FC = () => {
                 : "Nessun corso. Clicca \"Nuovo corso\" per aggiungerne uno."}
             </p>
           </div>
+        ) : vista === "giorno" ? (
+          <div className="space-y-6">
+            {[...GIORNI_DB, "Da pianificare"].map((giorno) => {
+              const group = corsi_per_giorno[giorno] || [];
+              if (group.length === 0) return null;
+              return (
+                <div key={giorno}>
+                  <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-3 border-b border-border pb-1">
+                    {giorno === "Da pianificare" ? "📋 Da pianificare" : giorno}
+                    <span className="text-xs font-normal ml-2 text-muted-foreground">({group.length})</span>
+                  </h2>
+                  <div className="space-y-2">
+                    {group.map((c: any) => {
+                      const istruttori_corso = (c.istruttori_ids || []).map((id: string) => istruttori.find((i: any) => i.id === id)).filter(Boolean);
+                      return (
+                        <div key={c.id} onClick={() => open_corso(c)}
+                          className="flex items-center gap-4 px-4 py-3 bg-card rounded-xl border border-border/50 hover:border-primary/30 cursor-pointer transition-shadow hover:shadow-card-hover">
+                          <div className="w-24 text-xs font-bold text-primary tabular-nums flex-shrink-0">
+                            {c.ora_inizio?.slice(0,5)}–{c.ora_fine?.slice(0,5)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="font-semibold text-foreground">{c.nome}</span>
+                          </div>
+                          <span className="text-sm text-muted-foreground truncate max-w-[140px]">
+                            {istruttori_corso.map((i: any) => `${i.nome} ${i.cognome?.charAt(0)}.`).join(", ") || "—"}
+                          </span>
+                          {c.tipo && <Badge variant="secondary" className="text-xs flex-shrink-0">{c.tipo}</Badge>}
+                          <span className="text-xs text-muted-foreground flex-shrink-0">{(c.atleti_ids||[]).length} iscritti</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {corsi_filtrati.map((c: any) => (
-              <CorsoCard
-                key={c.id}
-                corso={c}
-                istruttori={istruttori}
-                onGestisciIscrizioni={() => open_iscrizioni(c)}
-                onClick={() => open_corso(c)}
-              />
-            ))}
+          <div className="space-y-6">
+            {Object.entries(corsi_per_istruttore).map(([key, { label, corsi: group }]) => {
+              if (group.length === 0) return null;
+              return (
+                <div key={key}>
+                  <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-3 border-b border-border pb-1">
+                    {label}
+                    <span className="text-xs font-normal ml-2 text-muted-foreground">({group.length})</span>
+                  </h2>
+                  <div className="space-y-2">
+                    {group.sort((a: any, b: any) => GIORNI_DB.indexOf(a.giorno) - GIORNI_DB.indexOf(b.giorno) || time_to_min(a.ora_inizio) - time_to_min(b.ora_inizio)).map((c: any) => (
+                      <div key={c.id} onClick={() => open_corso(c)}
+                        className="flex items-center gap-4 px-4 py-3 bg-card rounded-xl border border-border/50 hover:border-primary/30 cursor-pointer transition-shadow hover:shadow-card-hover">
+                        <div className="w-20 text-xs font-bold text-muted-foreground flex-shrink-0">{c.giorno || "—"}</div>
+                        <div className="w-24 text-xs font-bold text-primary tabular-nums flex-shrink-0">
+                          {c.ora_inizio?.slice(0,5)}–{c.ora_fine?.slice(0,5)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="font-semibold text-foreground">{c.nome}</span>
+                        </div>
+                        {c.tipo && <Badge variant="secondary" className="text-xs flex-shrink-0">{c.tipo}</Badge>}
+                        <span className="text-xs text-muted-foreground flex-shrink-0">{(c.atleti_ids||[]).length} iscritti</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

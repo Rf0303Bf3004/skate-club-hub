@@ -341,6 +341,27 @@ const FatturaStampabile: React.FC<{
         </div>
       )}
 
+      {/* TWINT payment link */}
+      {has_iban && setup?.twint_paylink && (
+        <div style={{ marginTop: 12, padding: 10, border: "2px solid #000", borderRadius: 8, textAlign: "center" }}>
+          <img src="https://www.twint.ch/wp-content/uploads/2021/09/TWINT_Logo_RGB.png" height="30" alt="TWINT" style={{ display: "inline-block" }} />
+          <p style={{ fontSize: 12, fontWeight: 600, marginTop: 4 }}>Paga con TWINT</p>
+          <a
+            href={`${setup.twint_paylink}?amount=${totale.toFixed(2)}&reference=${fattura.numero}`}
+            style={{ fontSize: 12, color: "#0369a1", textDecoration: "underline", marginTop: 4, display: "inline-block" }}
+          >
+            Apri link TWINT
+          </a>
+        </div>
+      )}
+
+      {/* Missing IBAN banner */}
+      {!has_iban && (
+        <div style={{ marginTop: 16, padding: 12, background: "#fef9c3", border: "1px solid #fde68a", borderRadius: 8, fontSize: 12, color: "#92400e" }}>
+          ⚠️ Configura i dati bancari nelle impostazioni club per abilitare il QR Bill e i pagamenti TWINT.
+        </div>
+      )}
+
       {fattura.note && (
         <div style={{ marginTop: 20, fontSize: 11, color: "#666" }}>
           <strong>Note:</strong> {fattura.note}

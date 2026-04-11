@@ -152,7 +152,7 @@ const ClubSetupPage: React.FC = () => {
       const setup_payload: Record<string, any> = {};
       const setup_fields = [
         "max_lezioni_private_contemporanee", "max_atlete_lezione_condivisa",
-        "slot_lezione_privata_minuti", "iban", "intestatario_conto", "banca", "indirizzo_banca",
+        "slot_lezione_privata_minuti", "iban", "intestatario_conto", "banca", "indirizzo_banca", "twint_paylink",
       ];
       for (const f of setup_fields) {
         if (f in form) setup_payload[f] = form[f];
@@ -431,6 +431,42 @@ const ClubSetupPage: React.FC = () => {
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
             placeholder="Descrizione del club..."
           />
+        </section>
+
+        <Separator />
+
+        {/* Dati bancari */}
+        <section className="space-y-4">
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">💳 Dati bancari per pagamenti</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="IBAN" icon={<Hash className="w-3.5 h-3.5" />}>
+              <Input
+                value={get_val("iban")}
+                onChange={(e) => {
+                  const v = e.target.value.toUpperCase().replace(/[^A-Z0-9\s]/g, "");
+                  set_val("iban", v);
+                }}
+                placeholder="CH56 0483 5012 3456 7800 9"
+                maxLength={26}
+              />
+              {(() => {
+                const iban = get_val("iban", "").replace(/\s/g, "");
+                if (iban && (!iban.startsWith("CH") || iban.length !== 21)) {
+                  return <p className="text-xs text-destructive mt-1">IBAN svizzero: inizia con CH, 21 caratteri</p>;
+                }
+                return null;
+              })()}
+            </Field>
+            <Field label="Intestatario conto" icon={<Building2 className="w-3.5 h-3.5" />}>
+              <Input value={get_val("intestatario_conto")} onChange={(e) => set_val("intestatario_conto", e.target.value)} placeholder="Club Pattinaggio Ascona" />
+            </Field>
+            <Field label="Banca" icon={<Building2 className="w-3.5 h-3.5" />}>
+              <Input value={get_val("banca")} onChange={(e) => set_val("banca", e.target.value)} placeholder="UBS, Raiffeisen, PostFinance..." />
+            </Field>
+            <Field label="TWINT Paylink" icon={<Globe className="w-3.5 h-3.5" />}>
+              <Input value={get_val("twint_paylink")} onChange={(e) => set_val("twint_paylink", e.target.value)} placeholder="https://pay.raisenow.io/xxxxx" />
+            </Field>
+          </div>
         </section>
 
         <Separator />
