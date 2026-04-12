@@ -89,7 +89,7 @@ function PlanningPageWrapper() {
 
 // ── Constants ──
 const CLUB_ID = "d33e590e-73ef-4ead-ad0e-5e321854ef50";
-const STAGIONE_ID = "841a5837-3382-472f-a582-557f8b5d69e9";
+
 const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"] as const;
 const GIORNI_SHORT = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
 const OFF_ICE_TYPES = ["danza", "off-ice", "stretching"];
@@ -414,6 +414,7 @@ function PlanningPageInner() {
   const corsi_raw = corsiQuery.data ?? [];
   const istruttori_raw = istruttoriQuery.data ?? [];
   const stagioni_raw = stagioniQuery.data ?? [];
+  const stagione_id = stagioni_raw.find((s: any) => s.attiva)?.id ?? stagioni_raw[0]?.id ?? "841a5837-3382-472f-a582-557f8b5d69e9";
   const atleti_raw = atletiQuery.data ?? [];
   const loadingGhiaccio = ghiaccioQuery.isLoading;
   const loadingCorsi = corsiQuery.isLoading;
@@ -639,7 +640,7 @@ function PlanningPageInner() {
       // Step 1: Create week row
       const { data: newSett, error: e1 } = await supabase.from("planning_settimane").insert({
         club_id: CLUB_ID,
-        stagione_id: STAGIONE_ID,
+        stagione_id: stagione_id,
         data_lunedi: dataLunediISO,
         stato: "bozza",
       }).select().single();
