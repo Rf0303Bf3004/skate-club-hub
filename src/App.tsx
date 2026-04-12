@@ -83,6 +83,7 @@ const AuthenticatedApp = () => {
           <Route path="/planning" element={<PlanningPage />} />
           <Route path="/setup-club" element={<ClubSetupPage />} />
           <Route path="/gestione-avanzata" element={<AdvancedManagementPage />} />
+          <Route path="/richieste-iscrizione" element={<RichiesteIscrizionePage />} />
           <Route path="/ruoli-permessi" element={<RuoliPermessiPage />} />
           <Route
             path="/superadmin"
