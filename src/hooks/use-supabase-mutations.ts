@@ -697,6 +697,7 @@ export function use_crea_comunicazione() {
         testo: data.testo,
         tipo_destinatari: data.tipo_destinatari || "tutti",
         corso_id: data.corso_id || null,
+        atleta_id: data.atleta_id || null,
       });
       if (error) throw error;
     },
@@ -887,5 +888,84 @@ export function use_elimina_presenza() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["presenze"] }),
+  });
+}
+
+// ─── Richieste Iscrizione ──────────────────────────────────
+export function use_gestisci_richiesta() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: {
+      richiesta_id: string;
+      azione: "approvata" | "rifiutata";
+      atleta_id: string;
+      atleta_nome: string;
+      corso_id: string;
+      corso_nome: string;
+      note_risposta?: string;
+      gestita_da?: string;
+    }) => {
+      // 1) Update request status
+      const { error: err1 } = await supabase
+        .from("richieste_iscrizione")
+        .update({
+          stato: data.azione,
+          note_risposta: data.note_risposta || "",
+          gestita_da: data.gestita_da || "",
+          gestita_il: new Date().toISOString(),
+        })
+        .eq("id", data.richiesta_id);
+      if (err1) throw err1;
+
+      // 2) If approved → create enrollment
+      if (data.azione === "approvata") {
+        const { error: err2 } = await supabase.from("iscrizioni_corsi").insert({
+          atleta_id: data.atleta_id,
+          corso_id: data.corso_id,
+          attiva: true,
+        });
+        if (err2) throw err2;
+      }
+
+      // 3) Auto-create communication with atleta_id
+      const titolo =
+        data.azione === "approvata"
+          ? `Iscrizione approvata — ${data.corso_nome}`
+          : `Iscrizione rifiutata — ${data.corso_nome}`;
+      const testo =
+        data.azione === "approvata"
+          ? `La richiesta di iscrizione di ${data.atleta_nome} al corso ${data.corso_nome} è stata approvata.`
+          : `La richiesta di iscrizione di ${data.atleta_nome} al corso ${data.corso_nome} è stata rifiutata.${data.note_risposta ? " Motivo: " + data.note_risposta : ""}`;
+
+      const { error: err3 } = await supabase.from("comunicazioni").insert({
+        club_id: cid(),
+        titolo,
+        testo,
+        tipo_destinatari: "per_atleta",
+        atleta_id: data.atleta_id,
+      });
+      if (err3) throw err3;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["richieste_iscrizione"] });
+      qc.invalidateQueries({ queryKey: ["iscrizioni_corsi"] });
+      qc.invalidateQueries({ queryKey: ["comunicazioni"] });
+    },
+  });
+}
+
+export function use_crea_richiesta_iscrizione() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { atleta_id: string; corso_id: string; note_richiesta?: string }) => {
+      const { error } = await supabase.from("richieste_iscrizione").insert({
+        club_id: cid(),
+        atleta_id: data.atleta_id,
+        corso_id: data.corso_id,
+        note_richiesta: data.note_richiesta || "",
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["richieste_iscrizione"] }),
   });
 }

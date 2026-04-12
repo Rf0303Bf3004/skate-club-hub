@@ -131,6 +131,39 @@ export type Database = {
         }
         Relationships: []
       }
+      comunicazioni: {
+        Row: {
+          atleta_id: string | null
+          club_id: string
+          corso_id: string | null
+          created_at: string
+          id: string
+          testo: string
+          tipo_destinatari: string
+          titolo: string
+        }
+        Insert: {
+          atleta_id?: string | null
+          club_id: string
+          corso_id?: string | null
+          created_at?: string
+          id?: string
+          testo?: string
+          tipo_destinatari?: string
+          titolo?: string
+        }
+        Update: {
+          atleta_id?: string | null
+          club_id?: string
+          corso_id?: string | null
+          created_at?: string
+          id?: string
+          testo?: string
+          tipo_destinatari?: string
+          titolo?: string
+        }
+        Relationships: []
+      }
       configurazione_ghiaccio: {
         Row: {
           club_id: string
@@ -659,6 +692,45 @@ export type Database = {
           data?: string
           id?: string
           presente?: boolean | null
+        }
+        Relationships: []
+      }
+      richieste_iscrizione: {
+        Row: {
+          atleta_id: string
+          club_id: string
+          corso_id: string
+          created_at: string
+          gestita_da: string | null
+          gestita_il: string | null
+          id: string
+          note_richiesta: string | null
+          note_risposta: string | null
+          stato: string
+        }
+        Insert: {
+          atleta_id: string
+          club_id: string
+          corso_id: string
+          created_at?: string
+          gestita_da?: string | null
+          gestita_il?: string | null
+          id?: string
+          note_richiesta?: string | null
+          note_risposta?: string | null
+          stato?: string
+        }
+        Update: {
+          atleta_id?: string
+          club_id?: string
+          corso_id?: string
+          created_at?: string
+          gestita_da?: string | null
+          gestita_il?: string | null
+          id?: string
+          note_richiesta?: string | null
+          note_risposta?: string | null
+          stato?: string
         }
         Relationships: []
       }

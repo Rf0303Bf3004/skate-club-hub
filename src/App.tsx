@@ -27,6 +27,7 @@ import SuperAdminManutenzione from "@/pages/SuperAdminManutenzione";
 import SuperAdminManutenzioneStr from "@/pages/SuperAdminManutenzioneStr";
 import NotFound from "@/pages/NotFound";
 import RuoliPermessiPage from "@/pages/RuoliPermessiPage";
+import RichiesteIscrizionePage from "@/pages/RichiesteIscrizionePage";
 
 const queryClient = new QueryClient();
 
@@ -82,6 +83,7 @@ const AuthenticatedApp = () => {
           <Route path="/planning" element={<PlanningPage />} />
           <Route path="/setup-club" element={<ClubSetupPage />} />
           <Route path="/gestione-avanzata" element={<AdvancedManagementPage />} />
+          <Route path="/richieste-iscrizione" element={<RichiesteIscrizionePage />} />
           <Route path="/ruoli-permessi" element={<RuoliPermessiPage />} />
           <Route
             path="/superadmin"
