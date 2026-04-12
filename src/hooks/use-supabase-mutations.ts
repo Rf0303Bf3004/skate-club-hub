@@ -906,13 +906,24 @@ export function use_gestisci_richiesta() {
       gestita_da?: string;
     }) => {
       // 1) Update request status
-      const { error: err1 } = await supabase
+      const base_update = { stato: data.azione };
+      const update_payload = data.note_risposta?.trim()
+        ? { ...base_update, note_risposta: data.note_risposta.trim() }
+        : base_update;
+
+      let { error: err1 } = await supabase
         .from("richieste_iscrizione")
-        .update({
-          stato: data.azione,
-          note_risposta: data.note_risposta || "",
-        })
+        .update(update_payload)
         .eq("id", data.richiesta_id);
+
+      if (err1 && /note_risposta/i.test(err1.message || "")) {
+        const retry = await supabase
+          .from("richieste_iscrizione")
+          .update(base_update)
+          .eq("id", data.richiesta_id);
+        err1 = retry.error;
+      }
+
       if (err1) throw err1;
 
       // 2) If approved → create enrollment
