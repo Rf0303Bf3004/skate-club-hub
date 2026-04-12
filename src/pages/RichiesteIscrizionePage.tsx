@@ -14,9 +14,10 @@ type Filtro = "tutte" | "in_attesa" | "approvata" | "rifiutata";
 
 const RichiesteIscrizionePage: React.FC = () => {
   const { session } = useAuth();
-  const { data: richieste = [], isLoading, isError } = use_richieste_iscrizione();
-  const { data: atleti = [] } = use_atleti();
-  const { data: corsi = [] } = use_corsi();
+  const { data: richieste = [], isLoading: isLoadingRichieste, isError } = use_richieste_iscrizione();
+  const { data: atleti = [], isLoading: isLoadingAtleti } = use_atleti();
+  const { data: corsi = [], isLoading: isLoadingCorsi } = use_corsi();
+  const isLoading = isLoadingRichieste || isLoadingAtleti || isLoadingCorsi;
   const gestisci = use_gestisci_richiesta();
 
   const [filtro, set_filtro] = useState<Filtro>("in_attesa");
