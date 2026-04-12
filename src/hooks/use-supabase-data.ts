@@ -474,7 +474,14 @@ export function use_richieste_iscrizione() {
         .eq("club_id", get_current_club_id())
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data ?? [];
+      return (data ?? [])
+        .filter((r: any) => !r.tipo || r.tipo === "corso")
+        .map((r: any) => ({
+          ...r,
+          corso_id: r.corso_id ?? r.riferimento_id ?? "",
+          note_richiesta: r.note_richiesta ?? r.note ?? "",
+          note_risposta: r.note_risposta ?? "",
+        }));
     },
   });
 }
