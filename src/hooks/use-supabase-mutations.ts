@@ -954,6 +954,28 @@ export function use_gestisci_richiesta() {
         atleta_id: data.atleta_id,
       });
       if (err3) throw err3;
+
+      // 4) Invia notifica push se il device token esiste
+      try {
+        const { data: tokens } = await supabase
+          .from("device_tokens")
+          .select("token")
+          .eq("atleta_id", data.atleta_id);
+        if (tokens && tokens.length > 0) {
+          await fetch("https://exp.host/--/api/v2/push/send", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(tokens.map((t: any) => ({
+              to: t.token,
+              title: titolo,
+              body: testo,
+              sound: "default",
+            }))),
+          });
+        }
+      } catch (pushErr) {
+        console.log("Push notification failed:", pushErr);
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["richieste_iscrizione"] });
