@@ -911,8 +911,6 @@ export function use_gestisci_richiesta() {
         .update({
           stato: data.azione,
           note_risposta: data.note_risposta || "",
-          gestita_da: data.gestita_da || "",
-          gestita_il: new Date().toISOString(),
         })
         .eq("id", data.richiesta_id);
       if (err1) throw err1;
