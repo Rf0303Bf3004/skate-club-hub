@@ -96,10 +96,10 @@ const RichiesteIscrizionePage: React.FC = () => {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-semibold text-foreground">
-                {atleta ? `${atleta.cognome} ${atleta.nome}` : r.atleta_id.slice(0, 8)}
+                {atleta ? `${atleta.cognome} ${atleta.nome}` : (r.atleta_id ?? "").slice(0, 8)}
               </span>
               <span className="text-muted-foreground">→</span>
-              <span className="text-sm font-medium text-primary">{corso?.nome || r.corso_id.slice(0, 8)}</span>
+              <span className="text-sm font-medium text-primary">{corso?.nome || (r.corso_id ?? "").slice(0, 8)}</span>
             </div>
             {r.note_richiesta && (
               <p className="text-xs text-muted-foreground mt-1 line-clamp-1">"{r.note_richiesta}"</p>
