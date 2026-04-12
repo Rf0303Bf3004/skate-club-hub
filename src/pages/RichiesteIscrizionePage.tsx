@@ -5,7 +5,7 @@ import { use_gestisci_richiesta } from "@/hooks/use-supabase-mutations";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, Clock, Search, MessageSquare } from "lucide-react";
+import { Check, X, Clock, Search, MessageSquare, ClipboardList } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,7 +16,7 @@ type Filtro = "tutte" | "in_attesa" | "approvata" | "rifiutata";
 const RichiesteIscrizionePage: React.FC = () => {
   const { t } = useI18n();
   const { session } = useAuth();
-  const { data: richieste = [], isLoading } = use_richieste_iscrizione();
+  const { data: richieste = [], isLoading, isError } = use_richieste_iscrizione();
   const { data: atleti = [] } = use_atleti();
   const { data: corsi = [] } = use_corsi();
   const gestisci = use_gestisci_richiesta();
@@ -85,12 +85,19 @@ const RichiesteIscrizionePage: React.FC = () => {
     return <Badge variant="destructive"><X className="w-3 h-3 mr-1" />Rifiutata</Badge>;
   };
 
-  if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
-
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold tracking-tight text-foreground">Richieste Iscrizione</h1>
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-primary/10">
+            <ClipboardList className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-foreground">Richieste Iscrizione</h1>
+            <p className="text-sm text-muted-foreground">Gestisci le richieste di iscrizione ai corsi</p>
+          </div>
+        </div>
         {counts.in_attesa > 0 && (
           <Badge className="bg-amber-100 text-amber-700 text-sm px-3 py-1">
             {counts.in_attesa} in attesa
@@ -98,87 +105,111 @@ const RichiesteIscrizionePage: React.FC = () => {
         )}
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex gap-1 bg-muted/40 p-1 rounded-xl">
-          {([
-            { key: "in_attesa", label: "In attesa", count: counts.in_attesa },
-            { key: "approvata", label: "Approvate", count: counts.approvata },
-            { key: "rifiutata", label: "Rifiutate", count: counts.rifiutata },
-            { key: "tutte", label: "Tutte", count: richieste.length },
-          ] as const).map((f) => (
-            <button
-              key={f.key}
-              onClick={() => set_filtro(f.key)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                filtro === f.key ? "bg-background shadow text-foreground" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {f.label} ({f.count})
-            </button>
-          ))}
+      {/* Loading */}
+      {isLoading && (
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
         </div>
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            value={query}
-            onChange={(e) => set_query(e.target.value)}
-            placeholder="Cerca atleta o corso..."
-            className="pl-9 h-9"
-          />
-        </div>
-      </div>
+      )}
 
-      {/* List */}
-      {filtered.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">
-          <MessageSquare className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p className="text-sm">Nessuna richiesta{filtro !== "tutte" ? ` ${filtro === "in_attesa" ? "in attesa" : filtro}` : ""}</p>
+      {/* Error */}
+      {isError && (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-6 text-center">
+          <p className="text-sm text-destructive">Errore nel caricamento delle richieste.</p>
         </div>
-      ) : (
-        <div className="space-y-3">
-          {filtered.map((r: any) => {
-            const atleta = get_atleta(r.atleta_id);
-            const corso = get_corso(r.corso_id);
-            return (
-              <div key={r.id} className="bg-card rounded-xl shadow-card p-4 hover:shadow-card-hover transition-shadow">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-foreground">
-                        {atleta ? `${atleta.cognome} ${atleta.nome}` : r.atleta_id.slice(0, 8)}
-                      </span>
-                      <span className="text-muted-foreground">→</span>
-                      <span className="text-sm font-medium text-primary">{corso?.nome || r.corso_id.slice(0, 8)}</span>
+      )}
+
+      {/* Content (when loaded) */}
+      {!isLoading && !isError && (
+        <>
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex gap-1 bg-muted/40 p-1 rounded-xl">
+              {([
+                { key: "in_attesa", label: "In attesa", count: counts.in_attesa },
+                { key: "approvata", label: "Approvate", count: counts.approvata },
+                { key: "rifiutata", label: "Rifiutate", count: counts.rifiutata },
+                { key: "tutte", label: "Tutte", count: richieste.length },
+              ] as const).map((f) => (
+                <button
+                  key={f.key}
+                  onClick={() => set_filtro(f.key)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    filtro === f.key ? "bg-background shadow text-foreground" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {f.label} ({f.count})
+                </button>
+              ))}
+            </div>
+            <div className="relative flex-1 min-w-[200px] max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                value={query}
+                onChange={(e) => set_query(e.target.value)}
+                placeholder="Cerca atleta o corso..."
+                className="pl-9 h-9"
+              />
+            </div>
+          </div>
+
+          {/* List */}
+          {filtered.length === 0 ? (
+            <div className="text-center py-16 border rounded-lg border-dashed border-border">
+              <MessageSquare className="w-10 h-10 mx-auto mb-3 text-muted-foreground/30" />
+              <p className="text-sm font-medium text-muted-foreground">
+                Nessuna richiesta{filtro !== "tutte" ? ` ${filtro === "in_attesa" ? "in attesa" : filtro}` : ""}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Le richieste di iscrizione inviate dai genitori appariranno qui.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filtered.map((r: any) => {
+                const atleta = get_atleta(r.atleta_id);
+                const corso = get_corso(r.corso_id);
+                return (
+                  <div key={r.id} className="bg-card rounded-xl border border-border p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold text-foreground">
+                            {atleta ? `${atleta.cognome} ${atleta.nome}` : r.atleta_id.slice(0, 8)}
+                          </span>
+                          <span className="text-muted-foreground">→</span>
+                          <span className="text-sm font-medium text-primary">{corso?.nome || r.corso_id.slice(0, 8)}</span>
+                        </div>
+                        {r.note_richiesta && (
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">"{r.note_richiesta}"</p>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {new Date(r.created_at).toLocaleDateString("it-CH", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                        </p>
+                        {r.stato !== "in_attesa" && r.note_risposta && (
+                          <p className="text-xs text-muted-foreground mt-1 italic">Risposta: {r.note_risposta}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {stato_badge(r.stato)}
+                        {r.stato === "in_attesa" && (
+                          <>
+                            <Button size="sm" variant="outline" className="text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => open_modal(r, "approvata")}>
+                              <Check className="w-4 h-4" />
+                            </Button>
+                            <Button size="sm" variant="outline" className="text-destructive border-destructive/20 hover:bg-destructive/5" onClick={() => open_modal(r, "rifiutata")}>
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </div>
-                    {r.note_richiesta && (
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-1">"{r.note_richiesta}"</p>
-                    )}
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {new Date(r.created_at).toLocaleDateString("it-CH", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
-                    </p>
-                    {r.stato !== "in_attesa" && r.note_risposta && (
-                      <p className="text-xs text-muted-foreground mt-1 italic">Risposta: {r.note_risposta}</p>
-                    )}
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {stato_badge(r.stato)}
-                    {r.stato === "in_attesa" && (
-                      <>
-                        <Button size="sm" variant="outline" className="text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => open_modal(r, "approvata")}>
-                          <Check className="w-4 h-4" />
-                        </Button>
-                        <Button size="sm" variant="outline" className="text-destructive border-destructive/20 hover:bg-destructive/5" onClick={() => open_modal(r, "rifiutata")}>
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+                );
+              })}
+            </div>
+          )}
+        </>
       )}
 
       {/* Confirmation modal */}
