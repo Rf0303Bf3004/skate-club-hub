@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from "react";
-import { useI18n } from "@/lib/i18n";
 import { use_richieste_iscrizione, use_atleti, use_corsi } from "@/hooks/use-supabase-data";
 import { use_gestisci_richiesta } from "@/hooks/use-supabase-mutations";
 import { useAuth } from "@/lib/auth";
@@ -14,7 +13,6 @@ import { toast } from "@/hooks/use-toast";
 type Filtro = "tutte" | "in_attesa" | "approvata" | "rifiutata";
 
 const RichiesteIscrizionePage: React.FC = () => {
-  const { t } = useI18n();
   const { session } = useAuth();
   const { data: richieste = [], isLoading, isError } = use_richieste_iscrizione();
   const { data: atleti = [] } = use_atleti();
@@ -80,9 +78,55 @@ const RichiesteIscrizionePage: React.FC = () => {
   };
 
   const stato_badge = (stato: string) => {
-    if (stato === "in_attesa") return <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50"><Clock className="w-3 h-3 mr-1" />In attesa</Badge>;
+    if (stato === "in_attesa") return <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-600"><Clock className="w-3 h-3 mr-1" />In attesa</Badge>;
     if (stato === "approvata") return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200"><Check className="w-3 h-3 mr-1" />Approvata</Badge>;
     return <Badge variant="destructive"><X className="w-3 h-3 mr-1" />Rifiutata</Badge>;
+  };
+
+  // Separate pending from handled
+  const pendenti = filtered.filter((r: any) => r.stato === "in_attesa");
+  const gestite = filtered.filter((r: any) => r.stato !== "in_attesa");
+
+  const render_card = (r: any) => {
+    const atleta = get_atleta(r.atleta_id);
+    const corso = get_corso(r.corso_id);
+    return (
+      <div key={r.id} className="bg-card rounded-xl border border-border p-4 hover:shadow-md transition-shadow">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-semibold text-foreground">
+                {atleta ? `${atleta.cognome} ${atleta.nome}` : r.atleta_id.slice(0, 8)}
+              </span>
+              <span className="text-muted-foreground">→</span>
+              <span className="text-sm font-medium text-primary">{corso?.nome || r.corso_id.slice(0, 8)}</span>
+            </div>
+            {r.note_richiesta && (
+              <p className="text-xs text-muted-foreground mt-1 line-clamp-1">"{r.note_richiesta}"</p>
+            )}
+            <p className="text-xs text-muted-foreground mt-1">
+              {new Date(r.created_at).toLocaleDateString("it-CH", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+            </p>
+            {r.stato !== "in_attesa" && r.note_risposta && (
+              <p className="text-xs text-muted-foreground mt-1 italic">Risposta: {r.note_risposta}</p>
+            )}
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {stato_badge(r.stato)}
+            {r.stato === "in_attesa" && (
+              <>
+                <Button size="sm" variant="outline" className="border-emerald-200 text-emerald-600 hover:bg-emerald-50" onClick={() => open_modal(r, "approvata")}>
+                  <Check className="w-4 h-4" />
+                </Button>
+                <Button size="sm" variant="outline" className="border-destructive/20 text-destructive hover:bg-destructive/5" onClick={() => open_modal(r, "rifiutata")}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -119,7 +163,7 @@ const RichiesteIscrizionePage: React.FC = () => {
         </div>
       )}
 
-      {/* Content (when loaded) */}
+      {/* Content */}
       {!isLoading && !isError && (
         <>
           {/* Filters */}
@@ -153,60 +197,41 @@ const RichiesteIscrizionePage: React.FC = () => {
             </div>
           </div>
 
-          {/* List */}
-          {filtered.length === 0 ? (
+          {/* Empty state */}
+          {richieste.length === 0 && (
             <div className="text-center py-16 border rounded-lg border-dashed border-border">
               <MessageSquare className="w-10 h-10 mx-auto mb-3 text-muted-foreground/30" />
-              <p className="text-sm font-medium text-muted-foreground">
-                Nessuna richiesta{filtro !== "tutte" ? ` ${filtro === "in_attesa" ? "in attesa" : filtro}` : ""}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Le richieste di iscrizione inviate dai genitori appariranno qui.
-              </p>
+              <p className="text-sm font-medium text-muted-foreground">Nessuna richiesta di iscrizione</p>
+              <p className="text-xs text-muted-foreground mt-1">Le richieste inviate dai genitori appariranno qui.</p>
             </div>
-          ) : (
+          )}
+
+          {/* Pending section */}
+          {(filtro === "tutte" || filtro === "in_attesa") && pendenti.length > 0 && (
             <div className="space-y-3">
-              {filtered.map((r: any) => {
-                const atleta = get_atleta(r.atleta_id);
-                const corso = get_corso(r.corso_id);
-                return (
-                  <div key={r.id} className="bg-card rounded-xl border border-border p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-semibold text-foreground">
-                            {atleta ? `${atleta.cognome} ${atleta.nome}` : r.atleta_id.slice(0, 8)}
-                          </span>
-                          <span className="text-muted-foreground">→</span>
-                          <span className="text-sm font-medium text-primary">{corso?.nome || r.corso_id.slice(0, 8)}</span>
-                        </div>
-                        {r.note_richiesta && (
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">"{r.note_richiesta}"</p>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {new Date(r.created_at).toLocaleDateString("it-CH", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
-                        </p>
-                        {r.stato !== "in_attesa" && r.note_risposta && (
-                          <p className="text-xs text-muted-foreground mt-1 italic">Risposta: {r.note_risposta}</p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        {stato_badge(r.stato)}
-                        {r.stato === "in_attesa" && (
-                          <>
-                            <Button size="sm" variant="outline" className="text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => open_modal(r, "approvata")}>
-                              <Check className="w-4 h-4" />
-                            </Button>
-                            <Button size="sm" variant="outline" className="text-destructive border-destructive/20 hover:bg-destructive/5" onClick={() => open_modal(r, "rifiutata")}>
-                              <X className="w-4 h-4" />
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+              <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Clock className="w-4 h-4 text-amber-500" />
+                Da gestire ({pendenti.length})
+              </h2>
+              {pendenti.map(render_card)}
+            </div>
+          )}
+
+          {/* Handled section */}
+          {(filtro === "tutte" || filtro === "approvata" || filtro === "rifiutata") && gestite.length > 0 && (
+            <div className="space-y-3">
+              <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                <Check className="w-4 h-4" />
+                Già gestite ({gestite.length})
+              </h2>
+              {gestite.map(render_card)}
+            </div>
+          )}
+
+          {/* Filtered empty */}
+          {richieste.length > 0 && filtered.length === 0 && (
+            <div className="text-center py-12 border rounded-lg border-dashed border-border">
+              <p className="text-sm text-muted-foreground">Nessuna richiesta corrispondente ai filtri.</p>
             </div>
           )}
         </>
@@ -224,8 +249,8 @@ const RichiesteIscrizionePage: React.FC = () => {
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">
                 {modal.azione === "approvata"
-                  ? `L'atleta verrà iscritto al corso e riceverà una comunicazione di conferma.`
-                  : `L'atleta riceverà una comunicazione di rifiuto.`}
+                  ? "L'atleta verrà iscritto al corso e riceverà una comunicazione di conferma."
+                  : "L'atleta riceverà una comunicazione di rifiuto."}
               </p>
               <div>
                 <Label className="text-xs">Note (opzionale)</Label>
