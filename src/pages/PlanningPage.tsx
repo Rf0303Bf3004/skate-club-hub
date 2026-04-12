@@ -1058,45 +1058,21 @@ function PlanningPageInner() {
                             onClick={() => set_selected_corso_id(c.id)}
                           >
                             {is_private ? (
-                              <>
-                                <span
-                                  className="truncate px-1 leading-tight"
-                                  style={{
-                                    fontSize: 12,
-                                    fontWeight: 700,
-                                    color: "#ffffff",
-                                    textShadow: "0px 0px 3px rgba(0,0,0,0.9), 0px 0px 3px rgba(0,0,0,0.9)",
-                                  }}
-                                >
+                              <div className="flex flex-col gap-0.5 px-1 py-0.5 overflow-hidden">
+                                <span className="truncate" style={{ background: "rgba(0,0,0,0.55)", color: "white", padding: "1px 4px", borderRadius: 3, fontSize: 11, fontWeight: 600, display: "inline-block" }}>
                                   {c.nome}
                                 </span>
                                 {w_px > 70 && first_istr && (
-                                  <span
-                                    className="truncate px-1 leading-tight"
-                                    style={{
-                                      fontSize: 10,
-                                      fontWeight: 700,
-                                      color: "#ffffff",
-                                      textShadow: "0px 0px 3px rgba(0,0,0,0.9), 0px 0px 3px rgba(0,0,0,0.9)",
-                                    }}
-                                  >
+                                  <span className="truncate" style={{ background: "rgba(0,0,0,0.55)", color: "white", padding: "1px 4px", borderRadius: 3, fontSize: 10, fontWeight: 600, display: "inline-block" }}>
                                     {first_istr.nome} {first_istr.cognome}
                                   </span>
                                 )}
                                 {w_px > 90 && c.livello_richiesto && (
-                                  <span
-                                    className="truncate px-1"
-                                    style={{
-                                      fontSize: 9,
-                                      fontWeight: 700,
-                                      color: "#ffffff",
-                                      textShadow: "0px 0px 3px rgba(0,0,0,0.9), 0px 0px 3px rgba(0,0,0,0.9)",
-                                    }}
-                                  >
+                                  <span className="truncate" style={{ background: "rgba(0,0,0,0.55)", color: "white", padding: "1px 4px", borderRadius: 3, fontSize: 9, fontWeight: 600, display: "inline-block" }}>
                                     {c.livello_richiesto}
                                   </span>
                                 )}
-                              </>
+                              </div>
                             ) : (
                               <>
                                 <span className="truncate px-1 leading-tight font-bold" style={{ fontSize: 12, color: "#fff" }}>{c.nome}</span>
