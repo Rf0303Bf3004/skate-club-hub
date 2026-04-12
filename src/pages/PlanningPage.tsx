@@ -1059,16 +1059,16 @@ function PlanningPageInner() {
                           >
                             {is_private ? (
                               <div className="flex flex-col gap-0.5 px-1 py-0.5 overflow-hidden">
-                                <span className="truncate" style={{ background: "rgba(0,0,0,0.55)", color: "white", padding: "1px 4px", borderRadius: 3, fontSize: 11, fontWeight: 600, display: "inline-block" }}>
+                                <span className="truncate" style={{ color: "#1a1a1a", fontSize: 11, fontWeight: 700, display: "inline-block", textShadow: "0 0 4px rgba(255,255,255,0.9), 0 0 4px rgba(255,255,255,0.9)" }}>
                                   {c.nome}
                                 </span>
                                 {w_px > 70 && first_istr && (
-                                  <span className="truncate" style={{ background: "rgba(0,0,0,0.55)", color: "white", padding: "1px 4px", borderRadius: 3, fontSize: 10, fontWeight: 600, display: "inline-block" }}>
+                                  <span className="truncate" style={{ color: "#1a1a1a", fontSize: 10, fontWeight: 700, display: "inline-block", textShadow: "0 0 4px rgba(255,255,255,0.9), 0 0 4px rgba(255,255,255,0.9)" }}>
                                     {first_istr.nome} {first_istr.cognome}
                                   </span>
                                 )}
                                 {w_px > 90 && c.livello_richiesto && (
-                                  <span className="truncate" style={{ background: "rgba(0,0,0,0.55)", color: "white", padding: "1px 4px", borderRadius: 3, fontSize: 9, fontWeight: 600, display: "inline-block" }}>
+                                  <span className="truncate" style={{ color: "#1a1a1a", fontSize: 9, fontWeight: 700, display: "inline-block", textShadow: "0 0 4px rgba(255,255,255,0.9), 0 0 4px rgba(255,255,255,0.9)" }}>
                                     {c.livello_richiesto}
                                   </span>
                                 )}
