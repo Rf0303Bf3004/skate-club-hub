@@ -1057,18 +1057,26 @@ function PlanningPageInner() {
                             }}
                             onClick={() => set_selected_corso_id(c.id)}
                           >
-                            <span className="truncate px-1 leading-tight font-bold" style={{ fontSize: 12, color: is_private ? colore : "#fff" }}>
-                              {c.nome}
-                            </span>
-                            {w_px > 70 && first_istr && (
-                              <span className="truncate px-1 leading-tight" style={{ fontSize: 10, opacity: 0.85, color: is_private ? colore : "#fff" }}>
-                                {first_istr.nome} {first_istr.cognome}
-                              </span>
-                            )}
-                            {w_px > 90 && c.livello_richiesto && (
-                              <span className="truncate px-1" style={{ fontSize: 9, opacity: 0.7, color: is_private ? colore : "#fff" }}>
-                                {c.livello_richiesto}
-                              </span>
+                            {is_private ? (
+                              <div className="flex flex-col justify-center px-1" style={{ background: "rgba(255,255,255,0.85)", borderRadius: 3, margin: 2, overflow: "hidden" }}>
+                                <span className="truncate leading-tight font-bold" style={{ fontSize: 12, color: colore }}>{c.nome}</span>
+                                {w_px > 70 && first_istr && (
+                                  <span className="truncate leading-tight" style={{ fontSize: 10, color: colore, opacity: 0.85 }}>{first_istr.nome} {first_istr.cognome}</span>
+                                )}
+                                {w_px > 90 && c.livello_richiesto && (
+                                  <span className="truncate" style={{ fontSize: 9, color: colore, opacity: 0.7 }}>{c.livello_richiesto}</span>
+                                )}
+                              </div>
+                            ) : (
+                              <>
+                                <span className="truncate px-1 leading-tight font-bold" style={{ fontSize: 12, color: "#fff" }}>{c.nome}</span>
+                                {w_px > 70 && first_istr && (
+                                  <span className="truncate px-1 leading-tight" style={{ fontSize: 10, opacity: 0.85, color: "#fff" }}>{first_istr.nome} {first_istr.cognome}</span>
+                                )}
+                                {w_px > 90 && c.livello_richiesto && (
+                                  <span className="truncate px-1" style={{ fontSize: 9, opacity: 0.7, color: "#fff" }}>{c.livello_richiesto}</span>
+                                )}
+                              </>
                             )}
                           </div>
                         </TooltipTrigger>
