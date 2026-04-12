@@ -459,3 +459,22 @@ export function get_istruttore_name_from_list(istruttori: any[], id: string): st
   const i = istruttori.find((x: any) => x.id === id);
   return i ? `${i.nome} ${i.cognome}` : id;
 }
+
+// ─── Richieste Iscrizione ──────────────────────────────────
+export function use_richieste_iscrizione() {
+  return useQuery({
+    refetchOnMount: "always",
+    staleTime: 0,
+    enabled: !!get_current_club_id(),
+    queryKey: ["richieste_iscrizione", get_current_club_id()],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("richieste_iscrizione")
+        .select("*")
+        .eq("club_id", get_current_club_id())
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
