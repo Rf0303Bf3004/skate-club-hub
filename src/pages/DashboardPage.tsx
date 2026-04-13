@@ -852,7 +852,8 @@ const DashboardPage: React.FC = () => {
   const { data: comunicazioni = [] } = use_comunicazioni();
   const { data: lezioni = [] } = use_lezioni_private();
   const { data: club } = use_club();
-
+  const { data: setup } = use_setup_club();
+  const navigate = useNavigate();
   const today = new Date().toISOString().split("T")[0];
   const { data: presenze = [] } = use_presenze(today);
   const { data: presenze_corso = [] } = useQuery({
