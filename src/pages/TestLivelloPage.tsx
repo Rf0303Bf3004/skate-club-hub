@@ -43,6 +43,11 @@ const TIPO_OPTIONS = [
   { value: "amatori", label: "Amatori" },
 ];
 
+const LIVELLI_PROGRESSIONE = [
+  "Pulcini", "Stellina 1", "Stellina 2", "Stellina 3", "Stellina 4",
+  "Interbronzo", "Bronzo", "Interargento", "Argento", "Interoro", "Oro",
+];
+
 const empty_form = {
   nome: "", data: "", ora: "", luogo: "", tipo: "artistica",
   livello_attuale: "", livello_accesso: "", note: "",
@@ -294,11 +299,25 @@ export default function TestLivelloPage() {
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground">Attuale livello atleta</label>
-                <Input value={form.livello_attuale} onChange={(e) => set_form({ ...form, livello_attuale: e.target.value })} placeholder="es. Stellina 1" />
+                <Select value={form.livello_attuale || ""} onValueChange={(v) => set_form({ ...form, livello_attuale: v })}>
+                  <SelectTrigger><SelectValue placeholder="Seleziona livello" /></SelectTrigger>
+                  <SelectContent>
+                    {LIVELLI_PROGRESSIONE.map((l) => (
+                      <SelectItem key={l} value={l}>{l}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground">Test per accedere al livello</label>
-                <Input value={form.livello_accesso} onChange={(e) => set_form({ ...form, livello_accesso: e.target.value })} placeholder="es. Stellina 2" />
+                <Select value={form.livello_accesso || ""} onValueChange={(v) => set_form({ ...form, livello_accesso: v })}>
+                  <SelectTrigger><SelectValue placeholder="Seleziona livello" /></SelectTrigger>
+                  <SelectContent>
+                    {LIVELLI_PROGRESSIONE.filter((l) => l !== form.livello_attuale).map((l) => (
+                      <SelectItem key={l} value={l}>{l}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div>

@@ -31,6 +31,7 @@ interface Props {
 
 const LIVELLI_COMUNI = ["Pulcini", "Stellina 1", "Stellina 2", "Stellina 3", "Stellina 4"];
 const LIVELLI_CARRIERA = ["Interbronzo", "Bronzo", "Interargento", "Argento", "Interoro", "Oro"];
+const LIVELLI_PROGRESSIONE = [...LIVELLI_COMUNI, ...LIVELLI_CARRIERA];
 
 // ─── NumInput ──────────────────────────────────────────────
 function to_num(v: string | number): number {
@@ -650,7 +651,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="nessuna">Nessuna</SelectItem>
-                    {LIVELLI_CARRIERA.map((l) => (
+                    {LIVELLI_PROGRESSIONE.map((l) => (
                       <SelectItem key={l} value={l}>
                         {l}
                       </SelectItem>
@@ -678,7 +679,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="nessuna">Nessuna</SelectItem>
-                    {LIVELLI_CARRIERA.map((l) => (
+                    {LIVELLI_PROGRESSIONE.map((l) => (
                       <SelectItem key={l} value={l}>
                         {l}
                       </SelectItem>
