@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { use_lezioni_private, use_istruttori, use_atleti, use_corsi, use_setup_club } from "@/hooks/use-supabase-data";
+import { useQuery } from "@tanstack/react-query";
 import {
   use_crea_lezione_privata,
   use_annulla_lezione,
@@ -48,6 +49,21 @@ function subtract_intervals(
       }
     }
     result = next;
+  }
+  return result;
+}
+
+function intersect_intervals(
+  a: { start: number; end: number }[],
+  b: { start: number; end: number }[],
+): { start: number; end: number }[] {
+  const result: { start: number; end: number }[] = [];
+  for (const ia of a) {
+    for (const ib of b) {
+      const start = Math.max(ia.start, ib.start);
+      const end = Math.min(ia.end, ib.end);
+      if (start < end) result.push({ start, end });
+    }
   }
   return result;
 }
