@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { AlertTriangle } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
-import { use_atleti, use_club } from "@/hooks/use-supabase-data";
+import { use_atleti, use_club, use_adesioni_atleta, is_atleta_attivo_oggi } from "@/hooks/use-supabase-data";
 import { use_upsert_atleta, use_elimina_atleta } from "@/hooks/use-supabase-mutations";
 import { calculate_age } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
@@ -496,6 +496,7 @@ const AthletesPage: React.FC = () => {
   const [scheda_id, set_scheda_id] = useState<string | null>(null);
   const [invito_atleta, set_invito_atleta] = useState<any>(null);
   const { data: club } = use_club();
+  const { data: adesioni = [] } = use_adesioni_atleta();
 
   // Banner: atleti senza iscrizioni nella stagione corrente
   const { data: non_iscritti_count = 0 } = useQuery({
@@ -581,7 +582,7 @@ const AthletesPage: React.FC = () => {
                 <p className="text-primary-foreground/50 text-xs">Scheda anagrafica atleta</p>
               </div>
               <span className="ml-auto text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider bg-accent/20 text-accent">
-                {atleta.stato === "attivo" ? "Attivo" : "Inattivo"}
+                {is_atleta_attivo_oggi(adesioni, atleta.id) ? "Attivo" : "Inattivo"}
               </span>
             </div>
 
@@ -869,7 +870,7 @@ const AthletesPage: React.FC = () => {
                         onClick={() => set_selected_id(a.id)}
                       >
                         <span
-                          className={`inline-block w-2 h-2 rounded-full ${a.stato === "attivo" ? "bg-success" : "bg-muted-foreground"}`}
+                          className={`inline-block w-2 h-2 rounded-full ${is_atleta_attivo_oggi(adesioni, a.id) ? "bg-success" : "bg-muted-foreground"}`}
                         />
                       </td>
                       <td className="px-4 py-3 text-right space-x-1">
