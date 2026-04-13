@@ -28,6 +28,7 @@ import SuperAdminManutenzioneStr from "@/pages/SuperAdminManutenzioneStr";
 import NotFound from "@/pages/NotFound";
 import RuoliPermessiPage from "@/pages/RuoliPermessiPage";
 import RichiesteIscrizionePage from "@/pages/RichiesteIscrizionePage";
+import NuovaStagionePage from "@/pages/NuovaStagionePage";
 
 const queryClient = new QueryClient();
 
@@ -85,6 +86,7 @@ const AuthenticatedApp = () => {
           <Route path="/gestione-avanzata" element={<AdvancedManagementPage />} />
           <Route path="/richieste-iscrizione" element={<RichiesteIscrizionePage />} />
           <Route path="/ruoli-permessi" element={<RuoliPermessiPage />} />
+          <Route path="/nuova-stagione" element={<NuovaStagionePage />} />
           <Route
             path="/superadmin"
             element={
