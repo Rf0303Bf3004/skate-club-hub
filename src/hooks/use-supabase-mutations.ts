@@ -515,12 +515,9 @@ export function use_crea_lezione_privata() {
       await insert_lezioni_private_atlete(lezione ? [lezione] : [], data.atleti_ids || [], data.costo_totale || 0);
 
       // Also create a corsi record so the lesson appears in Planning
-      const atleti_nomi = (data.atleti_ids || []).map((aid: string) => {
-        // We only have IDs here, use a placeholder; the Planning will resolve names
-        return aid;
-      });
       const is_semi = (data.atleti_ids?.length || 0) > 1;
-      const corso_nome = is_semi ? "Semi · Privata" : "Privata";
+      const nomi = data.atleti_nomi?.length ? data.atleti_nomi : data.atleti_ids || [];
+      const corso_nome = `${is_semi ? "Semi" : "Privata"} · ${nomi.join(", ")}`;
       const { data: new_corso } = await supabase.from("corsi").insert({
         club_id: cid(),
         nome: corso_nome,
