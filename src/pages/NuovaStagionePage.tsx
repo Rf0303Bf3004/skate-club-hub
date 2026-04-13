@@ -59,8 +59,7 @@ export default function NuovaStagionePage() {
         data_fine,
         attiva: true,
         tipo: "Regolare",
-        stato: "attiva",
-      });
+      } as any);
       if (err_insert) throw err_insert;
 
       // Aggiorna setup_club con le nuove date
