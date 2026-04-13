@@ -1579,15 +1579,6 @@ function DetailPanel({ corso, istr_map, atleti, build_mode, on_close, on_remove,
   const { data: private_atlete } = useQuery({
     queryKey: ["lezioni_private_atlete_detail", corso_id_for_query],
     queryFn: async () => {
-      // The corso record for a private lesson has a linked lezione_privata; find via corsi table or directly
-      // First try to find lezioni_private_atlete via lezione_id matching lezioni_private that generated this corso
-      // The private lesson corso name contains the lesson info; we need to find the lezione_privata that created this corso
-      // lezioni_private are linked to corsi by sharing the same istruttore, giorno, ora_inizio, ora_fine
-      // But the simplest approach: query all lezioni_private for this club/istruttore/time, then get atlete
-      // Actually, let's check if there's a direct link. The corso_id_for_query is the corsi.id.
-      // From memory: private lessons create a corso record. We need to find the lezione_privata matching this corso's schedule.
-      
-      // Get the corso details to match
       const { data: lp_list } = await supabase
         .from("lezioni_private")
         .select("id")
@@ -1601,7 +1592,7 @@ function DetailPanel({ corso, istr_map, atleti, build_mode, on_close, on_remove,
       const lp_ids = lp_list.map((l: any) => l.id);
       const { data: atlete } = await supabase
         .from("lezioni_private_atlete")
-        .select("*, atleti(nome, cognome)")
+        .select("*")
         .in("lezione_id", lp_ids);
       
       return atlete ?? [];
@@ -1616,7 +1607,7 @@ function DetailPanel({ corso, istr_map, atleti, build_mode, on_close, on_remove,
     if (is_private) {
       if (!private_atlete) return [];
       return private_atlete.map((pa: any) => {
-        const a = pa.atleti;
+        const a = atleti.find((at: any) => at.id === pa.atleta_id);
         return a ? { id: pa.atleta_id, nome: `${a.nome} ${a.cognome}` } : { id: pa.atleta_id, nome: "?" };
       });
     }
