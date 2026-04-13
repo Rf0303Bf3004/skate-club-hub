@@ -1117,7 +1117,7 @@ const DashboardPage: React.FC = () => {
                         />
                       ))}
                     </div>
-                    {today_lezioni.length > 0 && (
+                    {agenda_is_today && today_lezioni.length > 0 && (
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
                           <div className="text-xs font-bold px-2.5 py-1 rounded-full bg-primary text-white">
