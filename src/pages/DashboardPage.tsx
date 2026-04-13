@@ -1012,6 +1012,32 @@ const DashboardPage: React.FC = () => {
         />
       </div>
 
+      {/* Banner fine stagione */}
+      {(() => {
+        const data_fine = (setup as any)?.data_fine_stagione;
+        if (!data_fine) return null;
+        const fine = new Date(data_fine + "T00:00:00");
+        const oggi = new Date();
+        oggi.setHours(0, 0, 0, 0);
+        const diff_days = Math.ceil((fine.getTime() - oggi.getTime()) / (1000 * 60 * 60 * 24));
+        if (diff_days > 30) return null;
+        const data_fmt = fine.toLocaleDateString("it-CH", { day: "numeric", month: "long", year: "numeric" });
+        const is_past = diff_days < 0;
+        return (
+          <div className="flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-5 py-3">
+            <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
+            <p className="text-sm text-amber-800 flex-1">
+              {is_past
+                ? `La stagione è terminata il ${data_fmt}. È ora di pianificare la nuova stagione.`
+                : `La stagione termina il ${data_fmt}. È ora di pianificare la nuova stagione.`}
+            </p>
+            <Button size="sm" variant="outline" className="border-amber-500/40 text-amber-700 hover:bg-amber-500/10 flex-shrink-0" onClick={() => navigate("/stagioni")}>
+              Avvia Nuova Stagione
+            </Button>
+          </div>
+        );
+      })()}
+
       {/* Layout principale */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Colonna sinistra — corsi + presenze */}
