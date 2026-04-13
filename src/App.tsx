@@ -29,6 +29,7 @@ import NotFound from "@/pages/NotFound";
 import RuoliPermessiPage from "@/pages/RuoliPermessiPage";
 import RichiesteIscrizionePage from "@/pages/RichiesteIscrizionePage";
 import NuovaStagionePage from "@/pages/NuovaStagionePage";
+import TestLivelloPage from "@/pages/TestLivelloPage";
 
 const queryClient = new QueryClient();
 
@@ -76,6 +77,7 @@ const AuthenticatedApp = () => {
           <Route path="/istruttori" element={<InstructorsPage />} />
           <Route path="/corsi" element={<CoursesPage />} />
           <Route path="/gare" element={<CompetitionsPage />} />
+          <Route path="/test" element={<TestLivelloPage />} />
           <Route path="/lezioni-private" element={<PrivateLessonsPage />} />
           <Route path="/fatture" element={<InvoicesPage />} />
           <Route path="/comunicazioni" element={<CommunicationsPage />} />

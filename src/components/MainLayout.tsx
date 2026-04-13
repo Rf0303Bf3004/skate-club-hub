@@ -15,6 +15,7 @@ const all_nav_items = [
   { key: "istruttori", sezione: "istruttori", path: "/istruttori", icon: UserCheck },
   { key: "corsi", sezione: "corsi", path: "/corsi", icon: BookOpen },
   { key: "gare", sezione: "gare", path: "/gare", icon: Trophy },
+  { key: "test_livello", sezione: "gare", path: "/test", icon: Trophy },
   { key: "lezioni_private", sezione: "lezioni_private", path: "/lezioni-private", icon: GraduationCap },
   { key: "fatture", sezione: "fatture", path: "/fatture", icon: CreditCard },
   { key: "comunicazioni", sezione: "comunicazioni", path: "/comunicazioni", icon: MessageSquare },
