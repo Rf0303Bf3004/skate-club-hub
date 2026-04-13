@@ -597,16 +597,38 @@ export function use_crea_lezione_privata() {
           .maybeSingle();
 
         if (settimana?.id) {
-          const { error: planning_error } = await supabase.from("planning_private_settimana").upsert({
-            settimana_id: settimana.id,
-            lezione_privata_id: lezione.id,
+          const planning_payload = {
             data: lezione.data,
             ora_inizio: lezione.ora_inizio,
             ora_fine: lezione.ora_fine,
             istruttore_id: lezione.istruttore_id,
             annullato: false,
-          }, { onConflict: "settimana_id,lezione_privata_id" });
-          if (planning_error) throw planning_error;
+          };
+
+          const { data: existing_planning, error: existing_planning_error } = await supabase
+            .from("planning_private_settimana")
+            .select("id")
+            .eq("settimana_id", settimana.id)
+            .eq("lezione_privata_id", lezione.id)
+            .maybeSingle();
+          if (existing_planning_error) throw existing_planning_error;
+
+          if (existing_planning?.id) {
+            const { error: planning_error } = await supabase
+              .from("planning_private_settimana")
+              .update(planning_payload)
+              .eq("id", existing_planning.id);
+            if (planning_error) throw planning_error;
+          } else {
+            const { error: planning_error } = await supabase
+              .from("planning_private_settimana")
+              .insert({
+                settimana_id: settimana.id,
+                lezione_privata_id: lezione.id,
+                ...planning_payload,
+              });
+            if (planning_error) throw planning_error;
+          }
         }
       }
 

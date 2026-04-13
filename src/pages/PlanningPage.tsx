@@ -296,6 +296,44 @@ function use_planning_private(settimana_id: string | null) {
   });
 }
 
+function use_private_lessons_week(data_lunedi: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["lezioni_private_settimana", CLUB_ID, data_lunedi],
+    enabled,
+    refetchOnMount: "always",
+    staleTime: 0,
+    queryFn: async () => {
+      const weekEnd = addDays(new Date(`${data_lunedi}T00:00:00`), 6);
+      const weekEndISO = formatDateISO(weekEnd);
+      const { data, error } = await supabase
+        .from("lezioni_private")
+        .select("id, data, ora_inizio, ora_fine, istruttore_id")
+        .eq("club_id", CLUB_ID)
+        .eq("annullata", false)
+        .gte("data", data_lunedi)
+        .lte("data", weekEndISO);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+function private_lesson_has_ice(lesson: any, ghiaccio_slots: any[]) {
+  if (!lesson?.data || !lesson?.ora_inizio || !lesson?.ora_fine) return false;
+  const dateObj = new Date(`${lesson.data}T00:00:00`);
+  const day = dateObj.getDay();
+  const giorno = GIORNI[day === 0 ? 6 : day - 1];
+  const start = time_to_min(lesson.ora_inizio);
+  const end = time_to_min(lesson.ora_fine);
+
+  return ghiaccio_slots.some((slot: any) =>
+    slot.giorno === giorno &&
+    (slot.tipo ?? "ghiaccio") === "ghiaccio" &&
+    time_to_min(slot.ora_inizio) < end &&
+    time_to_min(slot.ora_fine) > start,
+  );
+}
+
 // ── Livelli ──
 const LIVELLI = ["pulcini","stellina1","stellina2","stellina3","stellina4","Interbronzo","Bronzo","Interargento","Argento","Interoro","Oro"];
 
@@ -434,8 +472,10 @@ function PlanningPageInner() {
   const settimana_id = settimana?.id ?? null;
   const planCorsiQuery = use_planning_corsi(settimana_id);
   const planPrivateQuery = use_planning_private(settimana_id);
+  const weekPrivateLessonsQuery = use_private_lessons_week(dataLunediISO, !!settimana_id);
   const plan_corsi = planCorsiQuery.data ?? [];
   const plan_private = planPrivateQuery.data ?? [];
+  const week_private_lessons = weekPrivateLessonsQuery.data ?? [];
   const is_generated = !!settimana;
 
   const [view_mode, set_view_mode] = useState<ViewMode>(7);
@@ -467,6 +507,54 @@ function PlanningPageInner() {
   const atleti: any[] = useMemo(() => atleti_raw ?? [], [atleti_raw]);
   const disp_istr = useMemo(() => disp_istr_raw ?? [], [disp_istr_raw]);
   const slots = useMemo(() => ghiaccio_slots ?? [], [ghiaccio_slots]);
+  const syncing_private_ids_ref = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!settimana_id || !week_private_lessons.length) return;
+
+    const existing_private_ids = new Set(plan_private.map((item: any) => item.lezione_privata_id));
+    const missing_lessons = week_private_lessons.filter((lesson: any) =>
+      lesson.id &&
+      lesson.data &&
+      lesson.ora_inizio &&
+      lesson.ora_fine &&
+      !existing_private_ids.has(lesson.id) &&
+      !syncing_private_ids_ref.current.has(lesson.id) &&
+      private_lesson_has_ice(lesson, slots),
+    );
+
+    if (!missing_lessons.length) return;
+
+    missing_lessons.forEach((lesson: any) => syncing_private_ids_ref.current.add(lesson.id));
+    let cancelled = false;
+
+    (async () => {
+      const rows = missing_lessons.map((lesson: any) => ({
+        settimana_id,
+        lezione_privata_id: lesson.id,
+        data: lesson.data,
+        ora_inizio: lesson.ora_inizio,
+        ora_fine: lesson.ora_fine,
+        istruttore_id: lesson.istruttore_id,
+        annullato: false,
+      }));
+
+      const { error } = await supabase.from("planning_private_settimana").insert(rows);
+      if (error) {
+        missing_lessons.forEach((lesson: any) => syncing_private_ids_ref.current.delete(lesson.id));
+        console.error("Planning private sync error:", error);
+        return;
+      }
+
+      if (!cancelled) {
+        await queryClient.invalidateQueries({ queryKey: ["planning_private_settimana", settimana_id] });
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [settimana_id, week_private_lessons, plan_private, slots, queryClient]);
 
   // ── Build unified course list for the grid ──
   // When generated: use planning_corsi_settimana rows mapped to display format
