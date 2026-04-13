@@ -28,6 +28,7 @@ import SuperAdminManutenzioneStr from "@/pages/SuperAdminManutenzioneStr";
 import NotFound from "@/pages/NotFound";
 import RuoliPermessiPage from "@/pages/RuoliPermessiPage";
 import RichiesteIscrizionePage from "@/pages/RichiesteIscrizionePage";
+import NuovaStagionePage from "@/pages/NuovaStagionePage";
 
 const queryClient = new QueryClient();
 
