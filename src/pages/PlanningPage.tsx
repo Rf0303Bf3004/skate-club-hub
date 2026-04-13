@@ -462,7 +462,7 @@ function PlanningPageInner() {
   const posizionati = useMemo(() => {
     if (is_generated) {
       // Map planning rows to display format with giorno name
-      return plan_corsi.map((pc: any) => {
+      const corsi_items = plan_corsi.map((pc: any) => {
         const template = corsi_template.find((c: any) => c.id === pc.corso_id);
         const dateObj = new Date(pc.data + "T00:00:00");
         const dayIdx = dayIndexFromDate(dateObj);
@@ -487,10 +487,44 @@ function PlanningPageInner() {
           _is_plan_row: true,
         };
       }).filter((c: any) => !c.annullato);
+
+      // Map private planning rows – they carry lezione_privata_id directly
+      const private_items = plan_private.map((pp: any) => {
+        const dateObj = new Date(pp.data + "T00:00:00");
+        const dayIdx = dayIndexFromDate(dateObj);
+        // Try to find the corsi template that matches this private lesson
+        const template = corsi_template.find((c: any) =>
+          (c.tipo || "").toLowerCase() === "privata" &&
+          (c.istruttori_ids ?? []).includes(pp.istruttore_id)
+        );
+        return {
+          id: pp.id,
+          corso_id: pp.lezione_privata_id,
+          lezione_privata_id: pp.lezione_privata_id,
+          club_id: CLUB_ID,
+          nome: template?.nome || "Privata",
+          tipo: "privata",
+          giorno: GIORNI[dayIdx],
+          data: pp.data,
+          ora_inizio: pp.ora_inizio,
+          ora_fine: pp.ora_fine,
+          istruttore_id: pp.istruttore_id,
+          istruttori_ids: pp.istruttore_id ? [pp.istruttore_id] : [],
+          atleti_ids: [],
+          livello_richiesto: "",
+          costo_mensile: 0,
+          note: "",
+          annullato: pp.annullato,
+          motivo: pp.motivo,
+          _is_plan_row: true,
+        };
+      }).filter((c: any) => !c.annullato);
+
+      return [...corsi_items, ...private_items];
     }
     // Template mode: show positioned courses
     return corsi_template.filter((c: any) => c.giorno && c.ora_inizio && c.ora_fine);
-  }, [is_generated, plan_corsi, corsi_template]);
+  }, [is_generated, plan_corsi, plan_private, corsi_template]);
 
   // Annullati for display (greyed out)
   const annullati = useMemo(() => {
@@ -1061,16 +1095,16 @@ function PlanningPageInner() {
                           >
                             {is_private ? (
                               <div className="flex flex-col gap-0.5 px-1 py-0.5 overflow-hidden">
-                                <span className="truncate" style={{ background: "rgba(255,255,255,0.9)", color: "#1a1a1a", padding: "1px 4px", borderRadius: 3, position: "relative", zIndex: 1, fontSize: 11, fontWeight: 700, display: "inline-block" }}>
+                                <span className="truncate bg-white/90 px-1 rounded text-gray-900 relative z-[1] inline-block text-[11px] font-bold">
                                   {c.nome}
                                 </span>
                                 {w_px > 70 && first_istr && (
-                                  <span className="truncate" style={{ background: "rgba(255,255,255,0.9)", color: "#1a1a1a", padding: "1px 4px", borderRadius: 3, position: "relative", zIndex: 1, fontSize: 10, fontWeight: 700, display: "inline-block" }}>
+                                  <span className="truncate bg-white/90 px-1 rounded text-gray-900 relative z-[1] inline-block text-[10px] font-bold">
                                     {first_istr.nome} {first_istr.cognome}
                                   </span>
                                 )}
                                 {w_px > 90 && c.livello_richiesto && (
-                                  <span className="truncate" style={{ background: "rgba(255,255,255,0.9)", color: "#1a1a1a", padding: "1px 4px", borderRadius: 3, position: "relative", zIndex: 1, fontSize: 9, fontWeight: 700, display: "inline-block" }}>
+                                  <span className="truncate bg-white/90 px-1 rounded text-gray-900 relative z-[1] inline-block text-[9px] font-bold">
                                     {c.livello_richiesto}
                                   </span>
                                 )}
@@ -1576,23 +1610,31 @@ function DetailPanel({ corso, istr_map, atleti, build_mode, on_close, on_remove,
     enabled: !is_private,
   });
 
-  // Private lesson athletes – query lezioni_private to find the lesson, then its athletes
+  // Private lesson athletes – use lezione_privata_id if available, otherwise fallback to matching
+  const lezione_privata_id = corso.lezione_privata_id || null;
   const { data: private_atlete } = useQuery({
-    queryKey: ["lezioni_private_atlete_detail", corso_id_for_query, corso.data],
+    queryKey: ["lezioni_private_atlete_detail", lezione_privata_id, corso_id_for_query, corso.data],
     queryFn: async () => {
-      let q = supabase
-        .from("lezioni_private")
-        .select("id")
-        .eq("club_id", corso.club_id || CLUB_ID)
-        .eq("istruttore_id", corso.istruttori_ids?.[0] || "")
-        .eq("ora_inizio", corso.ora_inizio)
-        .eq("ora_fine", corso.ora_fine);
-      if (corso.data) q = q.eq("data", corso.data);
-      const { data: lp_list } = await q;
-      
-      if (!lp_list || lp_list.length === 0) return [];
-      
-      const lp_ids = lp_list.map((l: any) => l.id);
+      let lp_ids: string[] = [];
+
+      if (lezione_privata_id) {
+        // Direct link available
+        lp_ids = [lezione_privata_id];
+      } else {
+        // Fallback: find by matching fields
+        let q = supabase
+          .from("lezioni_private")
+          .select("id")
+          .eq("club_id", corso.club_id || CLUB_ID)
+          .eq("istruttore_id", corso.istruttori_ids?.[0] || "")
+          .eq("ora_inizio", corso.ora_inizio)
+          .eq("ora_fine", corso.ora_fine);
+        if (corso.data) q = q.eq("data", corso.data);
+        const { data: lp_list } = await q;
+        if (!lp_list || lp_list.length === 0) return [];
+        lp_ids = lp_list.map((l: any) => l.id);
+      }
+
       const { data: atlete } = await supabase
         .from("lezioni_private_atlete")
         .select("*")
