@@ -86,6 +86,7 @@ const AuthenticatedApp = () => {
           <Route path="/gestione-avanzata" element={<AdvancedManagementPage />} />
           <Route path="/richieste-iscrizione" element={<RichiesteIscrizionePage />} />
           <Route path="/ruoli-permessi" element={<RuoliPermessiPage />} />
+          <Route path="/nuova-stagione" element={<NuovaStagionePage />} />
           <Route
             path="/superadmin"
             element={
