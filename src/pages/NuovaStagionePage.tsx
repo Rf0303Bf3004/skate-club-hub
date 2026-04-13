@@ -276,7 +276,7 @@ export default function NuovaStagionePage() {
             disabled={!conferma || submitting}
             onClick={handle_complete}
           >
-            {submitting ? "Creazione..." : "Completa e Crea Nuova Stagione"}
+            {submitting ? "Archiviazione..." : "Termina e Archivia Stagione"}
           </Button>
         )}
       </div>
