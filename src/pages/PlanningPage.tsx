@@ -1578,15 +1578,17 @@ function DetailPanel({ corso, istr_map, atleti, build_mode, on_close, on_remove,
 
   // Private lesson athletes – query lezioni_private to find the lesson, then its athletes
   const { data: private_atlete } = useQuery({
-    queryKey: ["lezioni_private_atlete_detail", corso_id_for_query],
+    queryKey: ["lezioni_private_atlete_detail", corso_id_for_query, corso.data],
     queryFn: async () => {
-      const { data: lp_list } = await supabase
+      let q = supabase
         .from("lezioni_private")
         .select("id")
-        .eq("club_id", corso.club_id)
+        .eq("club_id", corso.club_id || CLUB_ID)
         .eq("istruttore_id", corso.istruttori_ids?.[0] || "")
         .eq("ora_inizio", corso.ora_inizio)
         .eq("ora_fine", corso.ora_fine);
+      if (corso.data) q = q.eq("data", corso.data);
+      const { data: lp_list } = await q;
       
       if (!lp_list || lp_list.length === 0) return [];
       
