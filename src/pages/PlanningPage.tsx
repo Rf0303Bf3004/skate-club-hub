@@ -1613,36 +1613,36 @@ function DetailPanel({ corso, istr_map, atleti, build_mode, on_close, on_remove,
     enabled: !is_private,
   });
 
-  // Private lesson athletes – direct lookup by lezione_privata_id, with fallback via istruttore_id
+  // Private lesson athletes – direct lookup by lezione_privata_id, with fallback
   const lezione_privata_id_direct = corso.lezione_privata_id || null;
   const istr_id_for_private = corso.istruttori_ids?.[0] || corso.istruttore_id || null;
+  const club_id_for_query = corso.club_id || null;
 
-  // If we don't have a direct lezione_privata_id, try to find the lezione_private record by istruttore
+  // Fallback: find lezione_privata by matching istruttore + athlete names in corso.nome
   const { data: resolved_lezione } = useQuery({
-    queryKey: ["resolve_lezione_privata", corso_id_for_query, istr_id_for_private],
+    queryKey: ["resolve_lezione_privata", corso_id_for_query, istr_id_for_private, corso.nome],
     queryFn: async () => {
-      // Try to find a lezione_private that matches this instructor
-      const q = supabase.from("lezioni_private").select("id");
+      const q = supabase.from("lezioni_private").select("id, istruttore_id").eq("annullata", false);
+      if (club_id_for_query) q.eq("club_id", club_id_for_query);
       if (istr_id_for_private) q.eq("istruttore_id", istr_id_for_private);
-      q.eq("annullata", false);
       const { data } = await q;
       if (!data || data.length === 0) return null;
-      // If multiple, try to match by checking if athletes in lezioni_private_atlete match the corso name
       if (data.length === 1) return data[0].id;
-      // Multiple matches: check which one has athletes that match the course name
+      // Multiple matches: find one whose athletes match the corso name
+      const nome = corso.nome || "";
       for (const lp of data) {
         const { data: atl } = await supabase.from("lezioni_private_atlete").select("atleta_id").eq("lezione_id", lp.id);
         if (atl && atl.length > 0) {
-          const names = atl.map((a: any) => {
+          const all_match = atl.every((a: any) => {
             const found = atleti.find((at: any) => at.id === a.atleta_id);
-            return found?.nome || "";
-          }).filter(Boolean);
-          if (names.some((n: string) => corso.nome?.includes(n))) return lp.id;
+            return found && nome.includes(found.nome);
+          });
+          if (all_match) return lp.id;
         }
       }
       return data[0].id;
     },
-    enabled: is_private && !lezione_privata_id_direct && !!istr_id_for_private,
+    enabled: is_private && !lezione_privata_id_direct,
   });
 
   const lezione_privata_id = lezione_privata_id_direct || resolved_lezione || null;
