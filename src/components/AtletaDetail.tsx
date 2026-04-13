@@ -504,6 +504,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
             <TabsTrigger value="genitori">{t("genitori")}</TabsTrigger>
             <TabsTrigger value="fatture">{t("fatture")}</TabsTrigger>
             <TabsTrigger value="lezioni">{t("lezioni")}</TabsTrigger>
+            <TabsTrigger value="calendario">Calendario</TabsTrigger>
           </TabsList>
 
           {/* ── Anagrafica ── */}
@@ -1030,6 +1031,11 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                 </tbody>
               </table>
             </div>
+          </TabsContent>
+
+          {/* ── Calendario ── */}
+          <TabsContent value="calendario" className="mt-6">
+            <CalendarioAtleta atletaId={a.id} clubId={get_current_club_id()} />
           </TabsContent>
         </Tabs>
       </div>
