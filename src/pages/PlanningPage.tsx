@@ -469,6 +469,7 @@ function PlanningPageInner() {
         return {
           id: pc.id, // use planning row id for operations
           corso_id: pc.corso_id,
+          club_id: template?.club_id || CLUB_ID,
           nome: template?.nome || "?",
           tipo: template?.tipo || "",
           giorno: GIORNI[dayIdx],
@@ -1060,16 +1061,16 @@ function PlanningPageInner() {
                           >
                             {is_private ? (
                               <div className="flex flex-col gap-0.5 px-1 py-0.5 overflow-hidden">
-                                <span className="truncate" style={{ background: "rgba(255,255,255,0.92)", color: "#1a1a1a", padding: "1px 4px", borderRadius: 3, position: "relative", zIndex: 1, fontSize: 11, fontWeight: 700, display: "inline-block" }}>
+                                <span className="truncate" style={{ background: "rgba(255,255,255,0.9)", color: "#1a1a1a", padding: "1px 4px", borderRadius: 3, position: "relative", zIndex: 1, fontSize: 11, fontWeight: 700, display: "inline-block" }}>
                                   {c.nome}
                                 </span>
                                 {w_px > 70 && first_istr && (
-                                  <span className="truncate" style={{ background: "rgba(255,255,255,0.92)", color: "#1a1a1a", padding: "1px 4px", borderRadius: 3, position: "relative", zIndex: 1, fontSize: 10, fontWeight: 700, display: "inline-block" }}>
+                                  <span className="truncate" style={{ background: "rgba(255,255,255,0.9)", color: "#1a1a1a", padding: "1px 4px", borderRadius: 3, position: "relative", zIndex: 1, fontSize: 10, fontWeight: 700, display: "inline-block" }}>
                                     {first_istr.nome} {first_istr.cognome}
                                   </span>
                                 )}
                                 {w_px > 90 && c.livello_richiesto && (
-                                  <span className="truncate" style={{ background: "rgba(255,255,255,0.92)", color: "#1a1a1a", padding: "1px 4px", borderRadius: 3, position: "relative", zIndex: 1, fontSize: 9, fontWeight: 700, display: "inline-block" }}>
+                                  <span className="truncate" style={{ background: "rgba(255,255,255,0.9)", color: "#1a1a1a", padding: "1px 4px", borderRadius: 3, position: "relative", zIndex: 1, fontSize: 9, fontWeight: 700, display: "inline-block" }}>
                                     {c.livello_richiesto}
                                   </span>
                                 )}
@@ -1577,15 +1578,17 @@ function DetailPanel({ corso, istr_map, atleti, build_mode, on_close, on_remove,
 
   // Private lesson athletes – query lezioni_private to find the lesson, then its athletes
   const { data: private_atlete } = useQuery({
-    queryKey: ["lezioni_private_atlete_detail", corso_id_for_query],
+    queryKey: ["lezioni_private_atlete_detail", corso_id_for_query, corso.data],
     queryFn: async () => {
-      const { data: lp_list } = await supabase
+      let q = supabase
         .from("lezioni_private")
         .select("id")
-        .eq("club_id", corso.club_id)
+        .eq("club_id", corso.club_id || CLUB_ID)
         .eq("istruttore_id", corso.istruttori_ids?.[0] || "")
         .eq("ora_inizio", corso.ora_inizio)
         .eq("ora_fine", corso.ora_fine);
+      if (corso.data) q = q.eq("data", corso.data);
+      const { data: lp_list } = await q;
       
       if (!lp_list || lp_list.length === 0) return [];
       
