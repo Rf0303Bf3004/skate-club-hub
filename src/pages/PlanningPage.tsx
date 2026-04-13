@@ -757,32 +757,49 @@ function PlanningPageInner() {
         }
       }
 
-      // Step 4: Add recurring private lessons
+      // Step 4: Add ALL private lessons with dates in this week (not just recurring)
+      const weekEnd = addDays(dataLunedi, 6);
+      const weekEndISO = formatDateISO(weekEnd);
+      const { data: privateInWeek } = await supabase.from("lezioni_private")
+        .select("*")
+        .eq("club_id", CLUB_ID)
+        .eq("annullata", false)
+        .gte("data", dataLunediISO)
+        .lte("data", weekEndISO);
+
+      // Also add recurring private lessons that fall on this week's days
       const { data: privateRicorrenti } = await supabase.from("lezioni_private")
         .select("*")
         .eq("club_id", CLUB_ID)
         .eq("ricorrente", true)
         .or(`data_revoca.is.null,data_revoca.gt.${dataLunediISO}`);
 
-      if (privateRicorrenti?.length) {
-        const nuovePrivate = privateRicorrenti
-          .filter((p: any) => p.data && p.ora_inizio && p.ora_fine)
-          .map((p: any) => {
-            const dateObj = new Date(p.data + "T00:00:00");
-            const giornoOrig = dayIndexFromDate(dateObj);
-            const nuovaData = addDays(dataLunedi, giornoOrig);
-            return {
-              settimana_id: newSett.id,
-              lezione_privata_id: p.id,
-              data: formatDateISO(nuovaData),
-              ora_inizio: p.ora_inizio,
-              ora_fine: p.ora_fine,
-              istruttore_id: p.istruttore_id,
-            };
-          });
-        if (nuovePrivate.length) {
-          await supabase.from("planning_private_settimana").insert(nuovePrivate);
-        }
+      // Merge: use Set to avoid duplicates by id
+      const allPrivate = new Map<string, any>();
+      (privateInWeek ?? []).forEach((p: any) => allPrivate.set(p.id, p));
+      (privateRicorrenti ?? []).forEach((p: any) => {
+        if (!allPrivate.has(p.id)) allPrivate.set(p.id, p);
+      });
+
+      const privateToInsert = Array.from(allPrivate.values())
+        .filter((p: any) => p.data && p.ora_inizio && p.ora_fine)
+        .map((p: any) => {
+          const dateObj = new Date(p.data + "T00:00:00");
+          const giornoOrig = dayIndexFromDate(dateObj);
+          const isInWeek = privateInWeek?.some((pw: any) => pw.id === p.id);
+          // For non-recurring lessons already in the week, use their actual date
+          const finalData = isInWeek ? p.data : formatDateISO(addDays(dataLunedi, giornoOrig));
+          return {
+            settimana_id: newSett.id,
+            lezione_privata_id: p.id,
+            data: finalData,
+            ora_inizio: p.ora_inizio,
+            ora_fine: p.ora_fine,
+            istruttore_id: p.istruttore_id,
+          };
+        });
+      if (privateToInsert.length) {
+        await supabase.from("planning_private_settimana").insert(privateToInsert);
       }
 
       // Step 5: Update copiata_da if from previous

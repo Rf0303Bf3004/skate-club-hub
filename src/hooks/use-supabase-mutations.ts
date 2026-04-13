@@ -513,6 +513,30 @@ export function use_crea_lezione_privata() {
         .single();
       if (error) throw error;
       await insert_lezioni_private_atlete(lezione ? [lezione] : [], data.atleti_ids || [], data.costo_totale || 0);
+
+      // Also create a corsi record so the lesson appears in Planning
+      const is_semi = (data.atleti_ids?.length || 0) > 1;
+      const nomi = data.atleti_nomi?.length ? data.atleti_nomi : data.atleti_ids || [];
+      const corso_nome = `${is_semi ? "Semi" : "Privata"} · ${nomi.join(", ")}`;
+      const { data: new_corso } = await supabase.from("corsi").insert({
+        club_id: cid(),
+        nome: corso_nome,
+        tipo: "privata",
+        livello_richiesto: "tutti",
+        costo_mensile: data.costo_totale || 0,
+        note: data.note || "",
+        giorno: null as any,
+        ora_inizio: null as any,
+        ora_fine: null as any,
+      }).select("id").single();
+      if (new_corso && data.istruttore_id) {
+        await supabase.from("corsi_istruttori").insert({
+          corso_id: new_corso.id,
+          istruttore_id: data.istruttore_id,
+        });
+      }
+      qc.invalidateQueries({ queryKey: ["corsi"] });
+
       return lezione;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["lezioni_private"] }),
