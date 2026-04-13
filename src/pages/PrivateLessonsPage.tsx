@@ -782,7 +782,7 @@ const LezioniPrivatePage: React.FC = () => {
       };
     }
     return result;
-  }, [istruttore, cal_year, cal_month, lezioni, corso_busy_by_day, dispSlots, slot_minuti]);
+  }, [istruttore, cal_year, cal_month, lezioni, corso_busy_by_day, dispSlots, slot_minuti, ghiaccio_disp]);
 
   const cal_days = useMemo(() => {
     const first = new Date(cal_year, cal_month, 1);
