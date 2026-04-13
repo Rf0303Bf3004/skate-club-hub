@@ -849,6 +849,11 @@ const LezioniPrivatePage: React.FC = () => {
     }
     set_saving(true);
     try {
+      // Build athlete names for the corso record
+      const atleti_nomi = (form_data.atleti_ids || []).map((aid: string) => {
+        const a = atleti.find((x: any) => x.id === aid);
+        return a ? a.nome : "?";
+      });
       await crea_lezione.mutateAsync({
         istruttore_id: form_data.istruttore_id,
         data: form_data.data,
@@ -856,6 +861,7 @@ const LezioniPrivatePage: React.FC = () => {
         ora_fine: form_data.ora_fine,
         durata_minuti: form_data.durata_minuti,
         atleti_ids: form_data.atleti_ids,
+        atleti_nomi,
         ricorrente: form_data.ricorrente,
         costo_totale: form_data.costo_totale || 0,
         note: form_data.note || "",
