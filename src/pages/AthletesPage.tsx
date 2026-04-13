@@ -484,6 +484,7 @@ const AtletaModal: React.FC<{
 
 const AthletesPage: React.FC = () => {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const { data: atleti = [], isLoading } = use_atleti();
   const upsert = use_upsert_atleta();
   const elimina = use_elimina_atleta();
@@ -495,6 +496,32 @@ const AthletesPage: React.FC = () => {
   const [scheda_id, set_scheda_id] = useState<string | null>(null);
   const [invito_atleta, set_invito_atleta] = useState<any>(null);
   const { data: club } = use_club();
+
+  // Banner: atleti senza iscrizioni nella stagione corrente
+  const { data: non_iscritti_count = 0 } = useQuery({
+    queryKey: ["atleti-non-iscritti", get_current_club_id()],
+    queryFn: async () => {
+      const club_id = get_current_club_id();
+      // Get active season
+      const { data: stagione } = await supabase
+        .from("stagioni").select("id").eq("club_id", club_id).eq("attiva", true).maybeSingle();
+      if (!stagione) return 0;
+      // Get active athletes
+      const { data: attivi } = await supabase
+        .from("atleti").select("id").eq("club_id", club_id).eq("attivo", true);
+      if (!attivi?.length) return 0;
+      // Get courses of this season
+      const { data: corsi } = await supabase
+        .from("corsi").select("id").eq("club_id", club_id).eq("stagione_id", stagione.id);
+      if (!corsi?.length) return attivi.length;
+      const corsi_ids = corsi.map((c: any) => c.id);
+      // Get athletes with at least one active enrollment in those courses
+      const { data: iscrizioni } = await supabase
+        .from("iscrizioni_corsi").select("atleta_id").in("corso_id", corsi_ids).eq("attiva", true);
+      const iscritti = new Set((iscrizioni || []).map((i: any) => i.atleta_id));
+      return attivi.filter((a: any) => !iscritti.has(a.id)).length;
+    },
+  });
 
   const filtered = atleti.filter((a: any) => {
     const name_match = `${a.nome} ${a.cognome}`.toLowerCase().includes(search.toLowerCase());
