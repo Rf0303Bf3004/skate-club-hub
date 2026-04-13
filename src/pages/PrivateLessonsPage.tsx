@@ -744,20 +744,26 @@ const LezioniPrivatePage: React.FC = () => {
     const giorno = GIORNI[day_of_week === 0 ? 6 : day_of_week - 1];
     const dayDispSlots = dispSlots.filter((ds: any) => ds.giorno === giorno);
     const avail_istruttore = dayDispSlots.map((ds) => ({ start: time_to_min(ds.ora_inizio), end: time_to_min(ds.ora_fine) }));
-    // Intersect with ice availability for this day
     const ice_slots = ghiaccio_disp.filter((g: any) => g.giorno === giorno);
     const ice_intervals = ice_slots.map((g: any) => ({ start: time_to_min(g.ora_inizio), end: time_to_min(g.ora_fine) }));
-    const avail = ice_intervals.length > 0
+    const busy_corsi = corso_busy_by_day[giorno] || [];
+    // Slots with ice
+    const avail_with_ice = ice_intervals.length > 0
       ? intersect_intervals(avail_istruttore, ice_intervals)
       : avail_istruttore;
-    const busy_corsi = corso_busy_by_day[giorno] || [];
-    const free = subtract_intervals(avail, busy_corsi);
-    const free_times = new Set<number>();
-    for (const interval of free) {
-      for (let m = interval.start; m + slot_minuti <= interval.end; m += slot_minuti) free_times.add(m);
+    const free_with_ice = subtract_intervals(avail_with_ice, busy_corsi);
+    const ice_times = new Set<number>();
+    for (const interval of free_with_ice) {
+      for (let m = interval.start; m + slot_minuti <= interval.end; m += slot_minuti) ice_times.add(m);
+    }
+    // All instructor slots (including off-ice)
+    const free_all = subtract_intervals(avail_istruttore, busy_corsi);
+    const all_free_times = new Set<number>();
+    for (const interval of free_all) {
+      for (let m = interval.start; m + slot_minuti <= interval.end; m += slot_minuti) all_free_times.add(m);
     }
     const day_lessons = lezioni.filter((l: any) => l.istruttore_id === selected_istruttore && l.data === date_str);
-    const all_times = new Set(free_times);
+    const all_times = new Set(all_free_times);
     for (const l of day_lessons) all_times.add(time_to_min(l.ora_inizio));
     return Array.from(all_times)
       .sort((a, b) => a - b)
@@ -765,7 +771,8 @@ const LezioniPrivatePage: React.FC = () => {
         const time = min_to_time(m);
         const lesson = day_lessons.find((l: any) => time_to_min(l.ora_inizio) === m);
         const tipo = lesson ? get_tipo_lezione(lesson.atleti_ids || []) : null;
-        return { time, end_time: min_to_time(m + slot_minuti), status: lesson ? "occupato" : "libero", lesson, tipo };
+        const has_ice = ice_times.has(m);
+        return { time, end_time: min_to_time(m + slot_minuti), status: lesson ? "occupato" : "libero", lesson, tipo, has_ice };
       });
   };
 
@@ -1123,6 +1130,7 @@ const LezioniPrivatePage: React.FC = () => {
                     const is_semiprivata = slot.tipo === "semiprivata";
                     const is_past_date = selected_date < today;
                     const is_free = slot.status === "libero";
+                    const is_off_ice = is_free && !slot.has_ice;
                     const is_past_time = is_today && time_to_min(slot.time) <= now_minutes;
                     // Hide free slots on past dates or past times today
                     if (is_free && (is_past_date || is_past_time)) return null;
@@ -1134,16 +1142,25 @@ const LezioniPrivatePage: React.FC = () => {
                         }
                         className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all
                           ${is_free && is_past_date ? "opacity-40 cursor-default" : "cursor-pointer"}
-                          ${is_free ? "bg-success/10 hover:bg-success/20 border border-success/20" : is_semiprivata ? "bg-orange-500/10 hover:bg-orange-500/15 border border-orange-500/20" : "bg-destructive/10 hover:bg-destructive/15 border border-destructive/20"}`}
+                          ${is_off_ice
+                            ? "bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20"
+                            : is_free
+                              ? "bg-success/10 hover:bg-success/20 border border-success/20"
+                              : is_semiprivata
+                                ? "bg-orange-500/10 hover:bg-orange-500/15 border border-orange-500/20"
+                                : "bg-destructive/10 hover:bg-destructive/15 border border-destructive/20"}`}
                       >
                         <div className="flex items-center gap-3">
                           <div
-                            className={`w-2 h-2 rounded-full flex-shrink-0 ${is_free ? "bg-success" : is_semiprivata ? "bg-orange-500" : "bg-destructive"}`}
+                            className={`w-2 h-2 rounded-full flex-shrink-0 ${is_off_ice ? "bg-sky-500" : is_free ? "bg-success" : is_semiprivata ? "bg-orange-500" : "bg-destructive"}`}
                           />
                           <div>
                             <p className="text-sm font-semibold text-foreground tabular-nums">
                               {slot.time} – {slot.end_time}
                             </p>
+                            {is_off_ice && (
+                              <p className="text-xs text-sky-600 mt-0.5">⛸️ Fuori ghiaccio</p>
+                            )}
                             {slot.status === "occupato" && slot.lesson && (
                               <p className="text-xs text-muted-foreground mt-0.5">
                                 {slot.lesson.atleti_ids?.length
@@ -1154,9 +1171,9 @@ const LezioniPrivatePage: React.FC = () => {
                           </div>
                         </div>
                         <span
-                          className={`text-xs font-bold px-2 py-0.5 rounded-full ${is_free ? "bg-success/20 text-success" : is_semiprivata ? "bg-orange-500/20 text-orange-600" : "bg-destructive/20 text-destructive"}`}
+                          className={`text-xs font-bold px-2 py-0.5 rounded-full ${is_off_ice ? "bg-sky-500/20 text-sky-600" : is_free ? "bg-success/20 text-success" : is_semiprivata ? "bg-orange-500/20 text-orange-600" : "bg-destructive/20 text-destructive"}`}
                         >
-                          {is_free ? "+ Prenota" : is_semiprivata ? "👥 Semi" : "Dettagli"}
+                          {is_off_ice ? "🏋️ Off-Ice" : is_free ? "+ Prenota" : is_semiprivata ? "👥 Semi" : "Dettagli"}
                         </span>
                       </div>
                     );
@@ -1165,7 +1182,10 @@ const LezioniPrivatePage: React.FC = () => {
               )}
               <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground flex-wrap">
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-success" /> Libero
+                  <div className="w-2 h-2 rounded-full bg-success" /> Libero (ghiaccio)
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-sky-500" /> Fuori ghiaccio
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-2 h-2 rounded-full bg-destructive" /> Privata
