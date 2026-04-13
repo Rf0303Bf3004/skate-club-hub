@@ -815,7 +815,7 @@ const LezioniPrivatePage: React.FC = () => {
     } else set_cal_month((m) => m + 1);
   };
 
-  const open_slot = (time: string, end_time: string) => {
+  const open_slot = (time: string, end_time: string, has_ice: boolean) => {
     const costo = (istruttore?.costo_minuto_lezione_privata || 0) * slot_minuti;
     set_form_data({
       istruttore_id: selected_istruttore,
@@ -827,6 +827,7 @@ const LezioniPrivatePage: React.FC = () => {
       ricorrente: false,
       costo_totale: costo,
       note: "",
+      has_ice,
     });
     set_form_open(true);
   };
@@ -902,6 +903,7 @@ const LezioniPrivatePage: React.FC = () => {
         ricorrente: form_data.ricorrente,
         costo_totale: form_data.costo_totale || 0,
         note: form_data.note || "",
+        has_ice: form_data.has_ice !== false,
       });
       set_form_open(false);
       toast({
@@ -1138,7 +1140,7 @@ const LezioniPrivatePage: React.FC = () => {
                       <div
                         key={i}
                         onClick={() =>
-                          is_free && !is_past_date ? open_slot(slot.time, slot.end_time) : !is_free ? set_detail_slot(slot) : undefined
+                          is_free && !is_past_date ? open_slot(slot.time, slot.end_time, slot.has_ice) : !is_free ? set_detail_slot(slot) : undefined
                         }
                         className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all
                           ${is_free && is_past_date ? "opacity-40 cursor-default" : "cursor-pointer"}
