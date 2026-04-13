@@ -1561,26 +1561,71 @@ function ConfirmPlaceDialog({ confirm, saving, on_confirm, on_cancel }: {
 function DetailPanel({ corso, istr_map, atleti, build_mode, on_close, on_remove, on_edit }: {
   corso: any; istr_map: Record<string, any>; atleti: any[]; build_mode: boolean;
   on_close: () => void; on_remove: () => void; on_edit: () => void;
-}) {
+) {
+  const is_private = (corso.tipo || "").toLowerCase() === "privata";
   const corso_id_for_query = corso.corso_id || corso.id;
+
+  // Standard course enrollments
   const { data: iscrizioni } = useQuery({
     queryKey: ["iscrizioni_corsi", corso_id_for_query],
     queryFn: async () => {
       const { data } = await supabase.from("iscrizioni_corsi").select("*").eq("corso_id", corso_id_for_query).eq("attiva", true);
       return data ?? [];
     },
+    enabled: !is_private,
+  });
+
+  // Private lesson athletes – query lezioni_private to find the lesson, then its athletes
+  const { data: private_atlete } = useQuery({
+    queryKey: ["lezioni_private_atlete_detail", corso_id_for_query],
+    queryFn: async () => {
+      // The corso record for a private lesson has a linked lezione_privata; find via corsi table or directly
+      // First try to find lezioni_private_atlete via lezione_id matching lezioni_private that generated this corso
+      // The private lesson corso name contains the lesson info; we need to find the lezione_privata that created this corso
+      // lezioni_private are linked to corsi by sharing the same istruttore, giorno, ora_inizio, ora_fine
+      // But the simplest approach: query all lezioni_private for this club/istruttore/time, then get atlete
+      // Actually, let's check if there's a direct link. The corso_id_for_query is the corsi.id.
+      // From memory: private lessons create a corso record. We need to find the lezione_privata matching this corso's schedule.
+      
+      // Get the corso details to match
+      const { data: lp_list } = await supabase
+        .from("lezioni_private")
+        .select("id")
+        .eq("club_id", corso.club_id)
+        .eq("istruttore_id", corso.istruttori_ids?.[0] || "")
+        .eq("ora_inizio", corso.ora_inizio)
+        .eq("ora_fine", corso.ora_fine);
+      
+      if (!lp_list || lp_list.length === 0) return [];
+      
+      const lp_ids = lp_list.map((l: any) => l.id);
+      const { data: atlete } = await supabase
+        .from("lezioni_private_atlete")
+        .select("*, atleti(nome, cognome)")
+        .in("lezione_id", lp_ids);
+      
+      return atlete ?? [];
+    },
+    enabled: is_private,
   });
 
   const istr_ids: string[] = corso.istruttori_ids ?? [];
   const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
 
   const enrolled = useMemo(() => {
+    if (is_private) {
+      if (!private_atlete) return [];
+      return private_atlete.map((pa: any) => {
+        const a = pa.atleti;
+        return a ? { id: pa.atleta_id, nome: `${a.nome} ${a.cognome}` } : { id: pa.atleta_id, nome: "?" };
+      });
+    }
     if (!iscrizioni) return [];
     return iscrizioni.map((i: any) => {
       const a = atleti.find((at: any) => at.id === i.atleta_id);
       return a ? { id: a.id, nome: `${a.nome} ${a.cognome}` } : { id: i.atleta_id, nome: "?" };
     });
-  }, [iscrizioni, atleti]);
+  }, [is_private, iscrizioni, private_atlete, atleti]);
 
   return (
     <div className="w-[260px] flex-shrink-0 border-l border-border overflow-y-auto p-4 bg-card space-y-3">
@@ -1604,7 +1649,7 @@ function DetailPanel({ corso, istr_map, atleti, build_mode, on_close, on_remove,
 
       {/* Enrolled */}
       <div>
-        <p className="text-xs font-bold text-foreground mb-1">Iscritti ({enrolled.length})</p>
+        <p className="text-xs font-bold text-foreground mb-1">{is_private ? "Atlete" : "Iscritti"} ({enrolled.length})</p>
         <div className="space-y-0.5 max-h-40 overflow-y-auto">
           {enrolled.map((a) => (
             <div key={a.id} className="flex items-center gap-1.5 text-xs text-foreground">
