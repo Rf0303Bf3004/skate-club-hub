@@ -88,7 +88,7 @@ function PlanningPageWrapper() {
 }
 
 // ── Constants ──
-const CLUB_ID = "d33e590e-73ef-4ead-ad0e-5e321854ef50";
+const getClubId = () => get_current_club_id();
 
 const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"] as const;
 const GIORNI_SHORT = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
@@ -211,9 +211,9 @@ function calcola_ore_istruttore({
 // ── Data hooks ──
 function use_config_ghiaccio() {
   return useQuery({
-    queryKey: ["configurazione_ghiaccio", CLUB_ID],
+    queryKey: ["configurazione_ghiaccio", getClubId()],
     queryFn: async () => {
-      const { data } = await supabase.from("configurazione_ghiaccio").select("*").eq("club_id", CLUB_ID).maybeSingle();
+      const { data } = await supabase.from("configurazione_ghiaccio").select("*").eq("club_id", getClubId()).maybeSingle();
       return data;
     },
   });
@@ -221,9 +221,9 @@ function use_config_ghiaccio() {
 
 function use_disponibilita_ghiaccio() {
   return useQuery({
-    queryKey: ["disponibilita_ghiaccio", CLUB_ID],
+    queryKey: ["disponibilita_ghiaccio", getClubId()],
     queryFn: async () => {
-      const { data, error } = await supabase.from("disponibilita_ghiaccio").select("*").eq("club_id", CLUB_ID);
+      const { data, error } = await supabase.from("disponibilita_ghiaccio").select("*").eq("club_id", getClubId());
       if (error) throw error;
       return data ?? [];
     },
@@ -232,9 +232,9 @@ function use_disponibilita_ghiaccio() {
 
 function use_disponibilita_istruttori() {
   return useQuery({
-    queryKey: ["disponibilita_istruttori", CLUB_ID],
+    queryKey: ["disponibilita_istruttori", getClubId()],
     queryFn: async () => {
-      const { data, error } = await supabase.from("disponibilita_istruttori").select("*").eq("club_id", CLUB_ID);
+      const { data, error } = await supabase.from("disponibilita_istruttori").select("*").eq("club_id", getClubId());
       if (error) throw error;
       return data ?? [];
     },
@@ -242,17 +242,20 @@ function use_disponibilita_istruttori() {
 }
 
 // ── Planning settimane hooks ──
-function use_planning_settimana(data_lunedi: string) {
+function use_planning_settimana(data_lunedi: string, stagione_id: string | null) {
   return useQuery({
-    queryKey: ["planning_settimana", CLUB_ID, data_lunedi],
+    queryKey: ["planning_settimana", getClubId(), data_lunedi, stagione_id],
+    enabled: !!getClubId() && !!stagione_id,
     refetchOnMount: "always",
     staleTime: 0,
     queryFn: async () => {
+      if (!stagione_id) return null;
       const { data, error } = await supabase
         .from("planning_settimane")
         .select("*")
-        .eq("club_id", CLUB_ID)
+        .eq("club_id", getClubId())
         .eq("data_lunedi", data_lunedi)
+        .eq("stagione_id", stagione_id)
         .maybeSingle();
       if (error) throw error;
       return data ?? null;
@@ -298,7 +301,7 @@ function use_planning_private(settimana_id: string | null) {
 
 function use_private_lessons_week(data_lunedi: string, enabled: boolean) {
   return useQuery({
-    queryKey: ["lezioni_private_settimana", CLUB_ID, data_lunedi],
+    queryKey: ["lezioni_private_settimana", getClubId(), data_lunedi],
     enabled,
     refetchOnMount: "always",
     staleTime: 0,
@@ -308,7 +311,7 @@ function use_private_lessons_week(data_lunedi: string, enabled: boolean) {
       const { data, error } = await supabase
         .from("lezioni_private")
         .select("id, data, ora_inizio, ora_fine, istruttore_id")
-        .eq("club_id", CLUB_ID)
+        .eq("club_id", getClubId())
         .eq("annullata", false)
         .gte("data", data_lunedi)
         .lte("data", weekEndISO);
@@ -473,7 +476,7 @@ function PlanningPageInner() {
   const corsi_raw = corsiQuery.data ?? [];
   const istruttori_raw = istruttoriQuery.data ?? [];
   const stagioni_raw = stagioniQuery.data ?? [];
-  const stagione_id = stagioni_raw.find((s: any) => s.attiva)?.id ?? stagioni_raw[0]?.id ?? "841a5837-3382-472f-a582-557f8b5d69e9";
+  const stagione_id = stagioni_raw.find((s: any) => s.attiva)?.id ?? stagioni_raw[0]?.id ?? null;
   const atleti_raw = atletiQuery.data ?? [];
   const loadingGhiaccio = ghiaccioQuery.isLoading;
   const loadingCorsi = corsiQuery.isLoading;
@@ -484,7 +487,7 @@ function PlanningPageInner() {
   const dataLunediISO = formatDateISO(dataLunedi);
 
   // ── Planning settimana data ──
-  const settimanaQuery = use_planning_settimana(dataLunediISO);
+  const settimanaQuery = use_planning_settimana(dataLunediISO, stagione_id);
   const settimana = settimanaQuery.data ?? null;
   const settimana_id = settimana?.id ?? null;
   const planCorsiQuery = use_planning_corsi(settimana_id);
@@ -517,7 +520,7 @@ function PlanningPageInner() {
 
   const loading = loadingGhiaccio || loadingCorsi || loadingIstr;
 
-  const corsi_template = useMemo(() => (corsi_raw ?? []).filter((c: any) => c.attivo !== false && (!c.stagione_id || c.stagione_id === stagione_id)), [corsi_raw, stagione_id]);
+  const corsi_template = useMemo(() => (corsi_raw ?? []).filter((c: any) => c.attivo !== false && (stagione_id ? c.stagione_id === stagione_id : !c.stagione_id)), [corsi_raw, stagione_id]);
   const corsi_template_non_privati = useMemo(
     () => corsi_template.filter((c: any) => !is_private_type(c.tipo)),
     [corsi_template],
@@ -623,7 +626,7 @@ function PlanningPageInner() {
           return {
             id: pc.id, // use planning row id for operations
             corso_id: pc.corso_id,
-            club_id: template?.club_id || CLUB_ID,
+            club_id: template?.club_id || getClubId(),
             nome: template?.nome || "?",
             tipo: template?.tipo || "",
             giorno: GIORNI[dayIdx],
@@ -652,7 +655,7 @@ function PlanningPageInner() {
           id: pp.id,
           corso_id: pp.lezione_privata_id,
           lezione_privata_id: pp.lezione_privata_id,
-          club_id: CLUB_ID,
+          club_id: getClubId(),
           nome: private_meta?.nome || "Privata",
           tipo: "privata",
           giorno: GIORNI[dayIdx],
@@ -818,18 +821,23 @@ function PlanningPageInner() {
 
   // ── Refetch helpers ──
   const refetchSettimana = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ["planning_settimana", CLUB_ID, dataLunediISO] });
+    queryClient.invalidateQueries({ queryKey: ["planning_settimana", getClubId(), dataLunediISO, stagione_id] });
     queryClient.invalidateQueries({ queryKey: ["planning_corsi_settimana"] });
     queryClient.invalidateQueries({ queryKey: ["planning_private_settimana"] });
-  }, [queryClient, dataLunediISO]);
+  }, [queryClient, dataLunediISO, stagione_id]);
 
   // ── Genera settimana ──
   const generaSettimana = async () => {
+    if (!stagione_id) {
+      toast.error("Nessuna stagione attiva trovata.");
+      return;
+    }
+
     set_generating(true);
     try {
       // Step 1: Create week row
       const { data: newSett, error: e1 } = await supabase.from("planning_settimane").insert({
-        club_id: CLUB_ID,
+        club_id: getClubId(),
         stagione_id: stagione_id,
         data_lunedi: dataLunediISO,
         stato: "bozza",
@@ -839,7 +847,8 @@ function PlanningPageInner() {
       // Step 2: Find previous week
       const { data: ultimaSett } = await supabase.from("planning_settimane")
         .select("*")
-        .eq("club_id", CLUB_ID)
+        .eq("club_id", getClubId())
+        .eq("stagione_id", stagione_id)
         .lt("data_lunedi", dataLunediISO)
         .order("data_lunedi", { ascending: false })
         .limit(1)
@@ -918,7 +927,7 @@ function PlanningPageInner() {
       const weekEndISO = formatDateISO(weekEnd);
       const { data: privateInWeek } = await supabase.from("lezioni_private")
         .select("*")
-        .eq("club_id", CLUB_ID)
+        .eq("club_id", getClubId())
         .eq("annullata", false)
         .gte("data", dataLunediISO)
         .lte("data", weekEndISO);
@@ -926,7 +935,7 @@ function PlanningPageInner() {
       // Also add recurring private lessons that fall on this week's days
       const { data: privateRicorrenti } = await supabase.from("lezioni_private")
         .select("*")
-        .eq("club_id", CLUB_ID)
+        .eq("club_id", getClubId())
         .eq("ricorrente", true)
         .or(`data_revoca.is.null,data_revoca.gt.${dataLunediISO}`);
 
@@ -1943,7 +1952,7 @@ function SlotManagerPanel({ giorno, slots, istruttori, disp_istr, on_close, quer
     set_saving(true);
     try {
       const { error } = await supabase.from("disponibilita_ghiaccio").insert({
-        club_id: CLUB_ID, giorno, tipo: new_tipo, ora_inizio: new_start, ora_fine: new_end,
+        club_id: getClubId(), giorno, tipo: new_tipo, ora_inizio: new_start, ora_fine: new_end,
       });
       if (error) throw error;
       await queryClient.invalidateQueries({ queryKey: ["disponibilita_ghiaccio"] });
@@ -2131,7 +2140,7 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti }
       let lezione_id: string | null = null;
       if (tipo === "privata") {
         const { data: lp, error: lp_err } = await supabase.from("lezioni_private").insert({
-          club_id: CLUB_ID,
+          club_id: getClubId(),
           istruttore_id: istr_id || null,
           data: null,
           ora_inizio: null,
@@ -2158,7 +2167,7 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti }
       }
 
       const { data: new_corso, error } = await supabase.from("corsi").insert({
-        club_id: CLUB_ID, nome: final_nome, tipo: tipo === "privata" ? "privata" : corso_tipo,
+        club_id: getClubId(), nome: final_nome, tipo: tipo === "privata" ? "privata" : corso_tipo,
         livello_richiesto: livello,
         costo_mensile: tipo === "privata" ? costo_totale : (parseFloat(String(costo)) || 0),
         note,
