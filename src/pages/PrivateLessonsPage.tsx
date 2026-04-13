@@ -1093,7 +1093,7 @@ const LezioniPrivatePage: React.FC = () => {
                     const is_semiprivata = slot.tipo === "semiprivata";
                     const is_past_date = selected_date < today;
                     const is_free = slot.status === "libero";
-                    const is_past_time = is_today && time_to_min(slot.end_time) <= now_minutes;
+                    const is_past_time = is_today && time_to_min(slot.start_time) <= now_minutes;
                     // Hide free slots on past dates or past times today
                     if (is_free && (is_past_date || is_past_time)) return null;
                     return (
