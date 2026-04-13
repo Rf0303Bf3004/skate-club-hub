@@ -1032,12 +1032,15 @@ const LezioniPrivatePage: React.FC = () => {
                   const info = month_info[date_str] || { liberi: 0, occupati: 0 };
                   const is_selected = date_str === selected_date;
                   const is_today = date_str === today;
+                  const is_past = date_str < today;
                   const has_slots = info.liberi > 0 || info.occupati > 0;
                   return (
                     <button
                       key={i}
                       onClick={() => set_selected_date(date_str)}
+                      disabled={is_past && !has_slots}
                       className={`relative flex flex-col items-center justify-center rounded-xl py-2 text-sm font-medium transition-all
+                        ${is_past ? "opacity-40 cursor-default" : ""}
                         ${is_selected ? "bg-primary text-primary-foreground shadow-md" : is_today ? "ring-2 ring-primary text-primary" : has_slots ? "hover:bg-muted/50 text-foreground" : "text-muted-foreground/40 cursor-default"}`}
                     >
                       {day}
@@ -1048,7 +1051,7 @@ const LezioniPrivatePage: React.FC = () => {
                               className={`w-1.5 h-1.5 rounded-full ${is_selected ? "bg-white/70" : "bg-destructive/70"}`}
                             />
                           )}
-                          {info.liberi > 0 && (
+                          {info.liberi > 0 && !is_past && (
                             <div className={`w-1.5 h-1.5 rounded-full ${is_selected ? "bg-white" : "bg-success"}`} />
                           )}
                         </div>
