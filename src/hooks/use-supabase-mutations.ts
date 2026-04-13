@@ -107,7 +107,7 @@ async function elimina_lezione_singola(id: string) {
       if (private_corso_ids.length > 0) {
         const { error: planning_corsi_error } = await supabase
           .from("planning_corsi_settimana")
-          .update({ annullato: true })
+          .delete()
           .in("corso_id", private_corso_ids)
           .eq("data", lezione.data)
           .eq("ora_inizio", lezione.ora_inizio)
