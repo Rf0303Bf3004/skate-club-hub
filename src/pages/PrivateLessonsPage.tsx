@@ -890,7 +890,7 @@ const LezioniPrivatePage: React.FC = () => {
       // Build athlete names for the corso record
       const atleti_nomi = (form_data.atleti_ids || []).map((aid: string) => {
         const a = atleti.find((x: any) => x.id === aid);
-        return a ? a.nome : "?";
+        return a ? `${a.cognome} ${a.nome}`.trim() : "?";
       });
       await crea_lezione.mutateAsync({
         istruttore_id: form_data.istruttore_id,
