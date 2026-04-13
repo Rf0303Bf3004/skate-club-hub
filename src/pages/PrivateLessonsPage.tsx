@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { use_lezioni_private, use_istruttori, use_atleti, use_corsi, use_setup_club } from "@/hooks/use-supabase-data";
+import { useQuery } from "@tanstack/react-query";
 import {
   use_crea_lezione_privata,
   use_annulla_lezione,
@@ -48,6 +49,21 @@ function subtract_intervals(
       }
     }
     result = next;
+  }
+  return result;
+}
+
+function intersect_intervals(
+  a: { start: number; end: number }[],
+  b: { start: number; end: number }[],
+): { start: number; end: number }[] {
+  const result: { start: number; end: number }[] = [];
+  for (const ia of a) {
+    for (const ib of b) {
+      const start = Math.max(ia.start, ib.start);
+      const end = Math.min(ia.end, ib.end);
+      if (start < end) result.push({ start, end });
+    }
   }
   return result;
 }
@@ -663,6 +679,14 @@ const LezioniPrivatePage: React.FC = () => {
   const { data: atleti = [] } = use_atleti();
   const { data: corsi = [] } = use_corsi();
   const { data: setup } = use_setup_club();
+  const { data: ghiaccio_disp = [] } = useQuery({
+    queryKey: ["disponibilita_ghiaccio"],
+    queryFn: async () => {
+      const club_id = await get_current_club_id();
+      const { data } = await supabase.from("disponibilita_ghiaccio").select("*").eq("club_id", club_id).eq("tipo", "ghiaccio");
+      return data || [];
+    },
+  });
   const qc = useQueryClient();
 
   const crea_lezione = use_crea_lezione_privata();
@@ -719,7 +743,13 @@ const LezioniPrivatePage: React.FC = () => {
     const day_of_week = date.getDay();
     const giorno = GIORNI[day_of_week === 0 ? 6 : day_of_week - 1];
     const dayDispSlots = dispSlots.filter((ds: any) => ds.giorno === giorno);
-    const avail = dayDispSlots.map((ds) => ({ start: time_to_min(ds.ora_inizio), end: time_to_min(ds.ora_fine) }));
+    const avail_istruttore = dayDispSlots.map((ds) => ({ start: time_to_min(ds.ora_inizio), end: time_to_min(ds.ora_fine) }));
+    // Intersect with ice availability for this day
+    const ice_slots = ghiaccio_disp.filter((g: any) => g.giorno === giorno);
+    const ice_intervals = ice_slots.map((g: any) => ({ start: time_to_min(g.ora_inizio), end: time_to_min(g.ora_fine) }));
+    const avail = ice_intervals.length > 0
+      ? intersect_intervals(avail_istruttore, ice_intervals)
+      : avail_istruttore;
     const busy_corsi = corso_busy_by_day[giorno] || [];
     const free = subtract_intervals(avail, busy_corsi);
     const free_times = new Set<number>();
@@ -752,7 +782,7 @@ const LezioniPrivatePage: React.FC = () => {
       };
     }
     return result;
-  }, [istruttore, cal_year, cal_month, lezioni, corso_busy_by_day, dispSlots, slot_minuti]);
+  }, [istruttore, cal_year, cal_month, lezioni, corso_busy_by_day, dispSlots, slot_minuti, ghiaccio_disp]);
 
   const cal_days = useMemo(() => {
     const first = new Date(cal_year, cal_month, 1);
