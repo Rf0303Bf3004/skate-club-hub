@@ -517,7 +517,7 @@ function PlanningPageInner() {
 
   const loading = loadingGhiaccio || loadingCorsi || loadingIstr;
 
-  const corsi_template = useMemo(() => (corsi_raw ?? []).filter((c: any) => c.attivo !== false), [corsi_raw]);
+  const corsi_template = useMemo(() => (corsi_raw ?? []).filter((c: any) => c.attivo !== false && (!c.stagione_id || c.stagione_id === stagione_id)), [corsi_raw, stagione_id]);
   const corsi_template_non_privati = useMemo(
     () => corsi_template.filter((c: any) => !is_private_type(c.tipo)),
     [corsi_template],
