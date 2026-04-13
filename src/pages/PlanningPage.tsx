@@ -1061,16 +1061,16 @@ function PlanningPageInner() {
                           >
                             {is_private ? (
                               <div className="flex flex-col gap-0.5 px-1 py-0.5 overflow-hidden">
-                                <span className="truncate" style={{ background: "rgba(255,255,255,0.92)", color: "#1a1a1a", padding: "1px 4px", borderRadius: 3, position: "relative", zIndex: 1, fontSize: 11, fontWeight: 700, display: "inline-block" }}>
+                                <span className="truncate" style={{ background: "rgba(255,255,255,0.9)", color: "#1a1a1a", padding: "1px 4px", borderRadius: 3, position: "relative", zIndex: 1, fontSize: 11, fontWeight: 700, display: "inline-block" }}>
                                   {c.nome}
                                 </span>
                                 {w_px > 70 && first_istr && (
-                                  <span className="truncate" style={{ background: "rgba(255,255,255,0.92)", color: "#1a1a1a", padding: "1px 4px", borderRadius: 3, position: "relative", zIndex: 1, fontSize: 10, fontWeight: 700, display: "inline-block" }}>
+                                  <span className="truncate" style={{ background: "rgba(255,255,255,0.9)", color: "#1a1a1a", padding: "1px 4px", borderRadius: 3, position: "relative", zIndex: 1, fontSize: 10, fontWeight: 700, display: "inline-block" }}>
                                     {first_istr.nome} {first_istr.cognome}
                                   </span>
                                 )}
                                 {w_px > 90 && c.livello_richiesto && (
-                                  <span className="truncate" style={{ background: "rgba(255,255,255,0.92)", color: "#1a1a1a", padding: "1px 4px", borderRadius: 3, position: "relative", zIndex: 1, fontSize: 9, fontWeight: 700, display: "inline-block" }}>
+                                  <span className="truncate" style={{ background: "rgba(255,255,255,0.9)", color: "#1a1a1a", padding: "1px 4px", borderRadius: 3, position: "relative", zIndex: 1, fontSize: 9, fontWeight: 700, display: "inline-block" }}>
                                     {c.livello_richiesto}
                                   </span>
                                 )}
