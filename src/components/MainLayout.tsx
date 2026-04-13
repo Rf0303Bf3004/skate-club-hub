@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { use_club } from "@/hooks/use-supabase-data";
 import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
-import { LayoutDashboard, Users, BookOpen, Trophy, CreditCard, MessageSquare, Settings, Calendar, UserCheck, Tent, GraduationCap, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, Lock, ClipboardList } from "lucide-react";
+import { LayoutDashboard, Users, BookOpen, Trophy, CreditCard, MessageSquare, Settings, Calendar, UserCheck, Tent, GraduationCap, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, Lock, ClipboardList, ClipboardCheck } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 
@@ -15,6 +15,7 @@ const all_nav_items = [
   { key: "istruttori", sezione: "istruttori", path: "/istruttori", icon: UserCheck },
   { key: "corsi", sezione: "corsi", path: "/corsi", icon: BookOpen },
   { key: "gare", sezione: "gare", path: "/gare", icon: Trophy },
+  { key: "test_livello", sezione: "gare", path: "/test", icon: ClipboardCheck },
   { key: "lezioni_private", sezione: "lezioni_private", path: "/lezioni-private", icon: GraduationCap },
   { key: "fatture", sezione: "fatture", path: "/fatture", icon: CreditCard },
   { key: "comunicazioni", sezione: "comunicazioni", path: "/comunicazioni", icon: MessageSquare },
