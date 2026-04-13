@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useI18n } from "@/lib/i18n";
+import { useNavigate } from "react-router-dom";
 import {
   use_atleti,
   use_corsi,
@@ -11,6 +12,7 @@ import {
   use_presenze,
   use_lezioni_private,
   use_atleti_monitori,
+  use_setup_club,
   get_istruttore_name_from_list,
 } from "@/hooks/use-supabase-data";
 import { use_segna_presenza, use_elimina_presenza, use_crea_comunicazione } from "@/hooks/use-supabase-mutations";
