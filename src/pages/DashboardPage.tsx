@@ -228,7 +228,7 @@ const CorsoCard: React.FC<{
                   {stato_corso === "in_corso" && <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700">In corso</span>}
                   {stato_corso === "presto" && <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Inizia fra {min_inizio - min_ora} min</span>}
                   {stato_corso === "futuro" && <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Inizia alle {corso.ora_inizio?.slice(0,5)}</span>}
-                  {stato_corso === "terminato" && <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-600">Terminato</span>}
+                  {stato_corso === "terminato" && <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">Terminato</span>}
                 </p>          <div className="flex items-center gap-2 mt-0.5">
             <Badge variant="secondary" className="text-[10px]">
               {corso.tipo || "Corso"}
