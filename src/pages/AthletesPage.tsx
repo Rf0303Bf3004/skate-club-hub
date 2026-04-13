@@ -729,6 +729,17 @@ const AthletesPage: React.FC = () => {
       )}
 
       <div className="space-y-6 animate-fade-in">
+        {non_iscritti_count > 0 && (
+          <div className="flex items-center gap-3 rounded-lg border border-yellow-300 bg-yellow-50 dark:bg-yellow-950/30 dark:border-yellow-700 px-4 py-3">
+            <AlertTriangle className="w-5 h-5 text-yellow-600 shrink-0" />
+            <p className="flex-1 text-sm font-medium text-yellow-800 dark:text-yellow-200">
+              {non_iscritti_count} atleti non ancora iscritti alla stagione corrente
+            </p>
+            <Button size="sm" variant="outline" onClick={() => navigate("/richieste-iscrizione")} className="shrink-0">
+              Gestisci iscrizioni
+            </Button>
+          </div>
+        )}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <h1 className="text-xl font-bold tracking-tight text-foreground">{t("atleti")}</h1>
           <Button
