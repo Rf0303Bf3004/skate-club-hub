@@ -679,6 +679,14 @@ const LezioniPrivatePage: React.FC = () => {
   const { data: atleti = [] } = use_atleti();
   const { data: corsi = [] } = use_corsi();
   const { data: setup } = use_setup_club();
+  const { data: ghiaccio_disp = [] } = useQuery({
+    queryKey: ["disponibilita_ghiaccio"],
+    queryFn: async () => {
+      const club_id = await get_current_club_id();
+      const { data } = await supabase.from("disponibilita_ghiaccio").select("*").eq("club_id", club_id).eq("tipo", "ghiaccio");
+      return data || [];
+    },
+  });
   const qc = useQueryClient();
 
   const crea_lezione = use_crea_lezione_privata();
