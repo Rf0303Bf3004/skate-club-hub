@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Calendar } from "lucide-react";
 import InvitoGenitoreModal from "@/components/InvitoGenitoreModal";
 import { useI18n } from "@/lib/i18n";
 import {
@@ -103,6 +105,146 @@ const NumInput: React.FC<{
       }}
       className={`${input_cls} ${className}`}
     />
+  );
+};
+
+// ─── Calendario Atleta ─────────────────────────────────────
+type CalEvent = { date: string; time: string; title: string; type: string };
+
+const EVENT_BADGE: Record<string, string> = {
+  corso: "bg-blue-100 text-blue-800",
+  lezione: "bg-green-100 text-green-800",
+  gara: "bg-red-100 text-red-800",
+  test: "bg-yellow-100 text-yellow-800",
+  campo: "bg-orange-100 text-orange-800",
+};
+const EVENT_LABEL: Record<string, string> = {
+  corso: "Corso", lezione: "Lezione privata", gara: "Gara", test: "Test livello", campo: "Campo estivo",
+};
+
+const CalendarioAtleta: React.FC<{ atletaId: string; clubId: string }> = ({ atletaId, clubId }) => {
+  const today = new Date().toISOString().slice(0, 10);
+
+  const { data: corsi_events = [] } = useQuery({
+    queryKey: ["cal-corsi", atletaId],
+    queryFn: async () => {
+      const { data: iscrizioni } = await supabase
+        .from("iscrizioni_corsi").select("corso_id").eq("atleta_id", atletaId).eq("attiva", true);
+      if (!iscrizioni?.length) return [];
+      const ids = iscrizioni.map((i: any) => i.corso_id);
+      const { data: corsi } = await supabase.from("corsi").select("*").in("id", ids).eq("club_id", clubId);
+      // Courses are recurring weekly — show next occurrence
+      const days_it = ["Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato"];
+      const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+      const events: CalEvent[] = [];
+      const now = new Date();
+      (corsi || []).forEach((c: any) => {
+        const target_idx = days_it.findIndex((d) => norm(d) === norm(c.giorno || ""));
+        if (target_idx < 0) return;
+        const current_day = now.getDay();
+        let diff = target_idx - current_day;
+        if (diff < 0) diff += 7;
+        const next = new Date(now);
+        next.setDate(now.getDate() + diff);
+        events.push({ date: next.toISOString().slice(0, 10), time: (c.ora_inizio || "").slice(0, 5), title: c.nome, type: "corso" });
+      });
+      return events;
+    },
+  });
+
+  const { data: lezioni_events = [] } = useQuery({
+    queryKey: ["cal-lezioni", atletaId],
+    queryFn: async () => {
+      const { data: lpa } = await supabase.from("lezioni_private_atlete").select("lezione_id").eq("atleta_id", atletaId);
+      if (!lpa?.length) return [];
+      const ids = lpa.map((l: any) => l.lezione_id);
+      const { data: lezioni } = await supabase.from("lezioni_private").select("*").in("id", ids).gte("data", today).eq("annullata", false);
+      return (lezioni || []).map((l: any) => ({
+        date: l.data, time: (l.ora_inizio || "").slice(0, 5), title: "Lezione privata", type: "lezione",
+      }));
+    },
+  });
+
+  const { data: gare_events = [] } = useQuery({
+    queryKey: ["cal-gare", atletaId],
+    queryFn: async () => {
+      const { data: isc } = await supabase.from("iscrizioni_gare").select("gara_id").eq("atleta_id", atletaId);
+      if (!isc?.length) return [];
+      const ids = isc.map((i: any) => i.gara_id);
+      const { data: gare } = await supabase.from("gare_calendario").select("*").in("id", ids).gte("data", today);
+      return (gare || []).map((g: any) => ({
+        date: g.data, time: "", title: g.nome, type: "gara",
+      }));
+    },
+  });
+
+  const { data: test_events = [] } = useQuery({
+    queryKey: ["cal-test", atletaId],
+    queryFn: async () => {
+      const { data: ta } = await supabase.from("test_livello_atleti").select("test_id").eq("atleta_id", atletaId).eq("esito", "in_attesa");
+      if (!ta?.length) return [];
+      const ids = ta.map((t: any) => t.test_id);
+      const { data: tests } = await supabase.from("test_livello").select("*").in("id", ids).gte("data", today);
+      return (tests || []).map((t: any) => ({
+        date: t.data, time: (t.ora || "").slice(0, 5), title: t.nome, type: "test",
+      }));
+    },
+  });
+
+  const { data: campi_events = [] } = useQuery({
+    queryKey: ["cal-campi", atletaId],
+    queryFn: async () => {
+      const { data: isc } = await supabase.from("iscrizioni_campo").select("campo_id").eq("atleta_id", atletaId);
+      if (!isc?.length) return [];
+      const ids = isc.map((i: any) => i.campo_id);
+      const { data: campi } = await supabase.from("campi_allenamento").select("*").in("id", ids).gte("data_inizio", today);
+      return (campi || []).map((c: any) => ({
+        date: c.data_inizio, time: "", title: c.nome, type: "campo",
+      }));
+    },
+  });
+
+  const all_events = useMemo(() =>
+    [...corsi_events, ...lezioni_events, ...gare_events, ...test_events, ...campi_events]
+      .filter((e) => e.date >= today)
+      .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time)),
+    [corsi_events, lezioni_events, gare_events, test_events, campi_events]
+  );
+
+  if (!all_events.length) {
+    return (
+      <div className="bg-card rounded-xl shadow-card p-8 text-center text-muted-foreground">
+        <Calendar className="w-10 h-10 mx-auto mb-3 opacity-40" />
+        <p>Nessun appuntamento in programma</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-card rounded-xl shadow-card divide-y divide-border">
+      {all_events.map((ev, i) => (
+        <div key={i} className="flex items-center gap-4 px-5 py-3">
+          <div className="text-center min-w-[52px]">
+            <div className="text-xs text-muted-foreground uppercase">
+              {new Date(ev.date + "T00:00:00").toLocaleDateString("it-CH", { weekday: "short" })}
+            </div>
+            <div className="text-lg font-bold text-foreground leading-tight">
+              {new Date(ev.date + "T00:00:00").getDate()}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {new Date(ev.date + "T00:00:00").toLocaleDateString("it-CH", { month: "short" })}
+            </div>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-foreground truncate">{ev.title}</p>
+            {ev.time && <p className="text-xs text-muted-foreground">{ev.time}</p>}
+          </div>
+          <Badge className={`${EVENT_BADGE[ev.type] || ""} border-0 text-xs shrink-0`}>
+            {EVENT_LABEL[ev.type] || ev.type}
+          </Badge>
+        </div>
+      ))}
+    </div>
   );
 };
 
@@ -504,6 +646,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
             <TabsTrigger value="genitori">{t("genitori")}</TabsTrigger>
             <TabsTrigger value="fatture">{t("fatture")}</TabsTrigger>
             <TabsTrigger value="lezioni">{t("lezioni")}</TabsTrigger>
+            <TabsTrigger value="calendario">Calendario</TabsTrigger>
           </TabsList>
 
           {/* ── Anagrafica ── */}
@@ -1030,6 +1173,11 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                 </tbody>
               </table>
             </div>
+          </TabsContent>
+
+          {/* ── Calendario ── */}
+          <TabsContent value="calendario" className="mt-6">
+            <CalendarioAtleta atletaId={a.id} clubId={get_current_club_id()} />
           </TabsContent>
         </Tabs>
       </div>
