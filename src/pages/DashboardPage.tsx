@@ -33,7 +33,8 @@ import {
   AlertTriangle,
   Send,
   MessageCircle,
-} from "lucide-react";
+  ChevronLeft,
+  ChevronRight,
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
