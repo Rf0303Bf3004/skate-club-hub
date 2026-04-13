@@ -154,7 +154,7 @@ const ClubSetupPage: React.FC = () => {
       const setup_fields = [
         "max_lezioni_private_contemporanee", "max_atlete_lezione_condivisa",
         "slot_lezione_privata_minuti", "iban", "intestatario_conto", "banca", "indirizzo_banca", "twint_paylink",
-        "data_fine_stagione",
+        "data_inizio_stagione", "data_fine_stagione",
       ];
       for (const f of setup_fields) {
         if (f in form) setup_payload[f] = form[f];
@@ -443,10 +443,17 @@ const ClubSetupPage: React.FC = () => {
 
         <Separator />
 
-        {/* Data fine stagione */}
+        {/* Date stagione */}
         <section className="space-y-4">
           <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">📅 Stagione</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="Data inizio stagione" icon={<Calendar className="w-3.5 h-3.5" />}>
+              <Input
+                type="date"
+                value={get_val("data_inizio_stagione", "")}
+                onChange={(e) => set_val("data_inizio_stagione", e.target.value || null)}
+              />
+            </Field>
             <Field label="Data fine stagione" icon={<Calendar className="w-3.5 h-3.5" />}>
               <Input
                 type="date"
