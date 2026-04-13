@@ -1044,7 +1044,7 @@ const DashboardPage: React.FC = () => {
                 ? `La stagione è terminata il ${data_fmt}. È ora di pianificare la nuova stagione.`
                 : `La stagione termina il ${data_fmt}. È ora di pianificare la nuova stagione.`}
             </p>
-            <Button size="sm" variant="outline" className="border-amber-500/40 text-amber-700 hover:bg-amber-500/10 flex-shrink-0" onClick={() => navigate("/nuova-stagione")}>>
+            <Button size="sm" variant="outline" className="border-amber-500/40 text-amber-700 hover:bg-amber-500/10 flex-shrink-0" <Button size="sm" variant="outline" className="border-amber-500/40 text-amber-700 hover:bg-amber-500/10 flex-shrink-0" onClick={() => navigate("/nuova-stagione")}>>
               Avvia Nuova Stagione
             </Button>
           </div>
