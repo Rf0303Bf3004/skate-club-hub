@@ -928,6 +928,8 @@ const LezioniPrivatePage: React.FC = () => {
   const today = fmt(new Date());
   const selected_slots = get_slots_for_date(selected_date);
   const selected_date_obj = new Date(selected_date + "T00:00:00");
+  const is_today = selected_date === today;
+  const now_minutes = (() => { const n = new Date(); return n.getHours() * 60 + n.getMinutes(); })();
   const selected_label = selected_date_obj.toLocaleDateString("it-CH", {
     weekday: "long",
     day: "numeric",
@@ -1091,8 +1093,9 @@ const LezioniPrivatePage: React.FC = () => {
                     const is_semiprivata = slot.tipo === "semiprivata";
                     const is_past_date = selected_date < today;
                     const is_free = slot.status === "libero";
-                    // Hide free slots on past dates
-                    if (is_free && is_past_date) return null;
+                    const is_past_time = is_today && time_to_min(slot.end_time) <= now_minutes;
+                    // Hide free slots on past dates or past times today
+                    if (is_free && (is_past_date || is_past_time)) return null;
                     return (
                       <div
                         key={i}
