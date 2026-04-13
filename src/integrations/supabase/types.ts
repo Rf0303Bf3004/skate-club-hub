@@ -131,6 +131,90 @@ export type Database = {
         }
         Relationships: []
       }
+      campi_allenamento: {
+        Row: {
+          club_id: string
+          costo: number | null
+          created_at: string
+          data_fine: string | null
+          data_inizio: string | null
+          id: string
+          luogo: string | null
+          nome: string
+          note: string | null
+        }
+        Insert: {
+          club_id: string
+          costo?: number | null
+          created_at?: string
+          data_fine?: string | null
+          data_inizio?: string | null
+          id?: string
+          luogo?: string | null
+          nome?: string
+          note?: string | null
+        }
+        Update: {
+          club_id?: string
+          costo?: number | null
+          created_at?: string
+          data_fine?: string | null
+          data_inizio?: string | null
+          id?: string
+          luogo?: string | null
+          nome?: string
+          note?: string | null
+        }
+        Relationships: []
+      }
+      clubs: {
+        Row: {
+          citta: string | null
+          colore_primario: string | null
+          created_at: string
+          descrizione: string | null
+          email: string | null
+          id: string
+          indirizzo: string | null
+          logo_url: string | null
+          nome: string
+          numero_tessera_federale: string | null
+          paese: string | null
+          sito_web: string | null
+          telefono: string | null
+        }
+        Insert: {
+          citta?: string | null
+          colore_primario?: string | null
+          created_at?: string
+          descrizione?: string | null
+          email?: string | null
+          id?: string
+          indirizzo?: string | null
+          logo_url?: string | null
+          nome?: string
+          numero_tessera_federale?: string | null
+          paese?: string | null
+          sito_web?: string | null
+          telefono?: string | null
+        }
+        Update: {
+          citta?: string | null
+          colore_primario?: string | null
+          created_at?: string
+          descrizione?: string | null
+          email?: string | null
+          id?: string
+          indirizzo?: string | null
+          logo_url?: string | null
+          nome?: string
+          numero_tessera_federale?: string | null
+          paese?: string | null
+          sito_web?: string | null
+          telefono?: string | null
+        }
+        Relationships: []
+      }
       comunicazioni: {
         Row: {
           atleta_id: string | null
@@ -161,6 +245,30 @@ export type Database = {
           testo?: string
           tipo_destinatari?: string
           titolo?: string
+        }
+        Relationships: []
+      }
+      comunicazioni_template: {
+        Row: {
+          club_id: string
+          created_at: string
+          id: string
+          nome: string
+          testo: string | null
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          id?: string
+          nome?: string
+          testo?: string | null
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          testo?: string | null
         }
         Relationships: []
       }
@@ -365,6 +473,75 @@ export type Database = {
         }
         Relationships: []
       }
+      fatture: {
+        Row: {
+          atleta_id: string | null
+          club_id: string
+          created_at: string
+          data_scadenza: string | null
+          descrizione: string | null
+          id: string
+          importo: number | null
+          pagata: boolean | null
+        }
+        Insert: {
+          atleta_id?: string | null
+          club_id: string
+          created_at?: string
+          data_scadenza?: string | null
+          descrizione?: string | null
+          id?: string
+          importo?: number | null
+          pagata?: boolean | null
+        }
+        Update: {
+          atleta_id?: string | null
+          club_id?: string
+          created_at?: string
+          data_scadenza?: string | null
+          descrizione?: string | null
+          id?: string
+          importo?: number | null
+          pagata?: boolean | null
+        }
+        Relationships: []
+      }
+      gare_calendario: {
+        Row: {
+          club_id: string
+          created_at: string
+          data: string | null
+          id: string
+          livello_minimo: string | null
+          luogo: string | null
+          nome: string
+          note: string | null
+          stagione_id: string | null
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          data?: string | null
+          id?: string
+          livello_minimo?: string | null
+          luogo?: string | null
+          nome?: string
+          note?: string | null
+          stagione_id?: string | null
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          data?: string | null
+          id?: string
+          livello_minimo?: string | null
+          luogo?: string | null
+          nome?: string
+          note?: string | null
+          stagione_id?: string | null
+        }
+        Relationships: []
+      }
       impostazioni_planning: {
         Row: {
           club_id: string
@@ -428,6 +605,33 @@ export type Database = {
         }
         Relationships: []
       }
+      iscrizioni_campo: {
+        Row: {
+          atleta_id: string
+          campo_id: string
+          created_at: string
+          giorni_selezionati: Json | null
+          id: string
+          tipo: string | null
+        }
+        Insert: {
+          atleta_id: string
+          campo_id: string
+          created_at?: string
+          giorni_selezionati?: Json | null
+          id?: string
+          tipo?: string | null
+        }
+        Update: {
+          atleta_id?: string
+          campo_id?: string
+          created_at?: string
+          giorni_selezionati?: Json | null
+          id?: string
+          tipo?: string | null
+        }
+        Relationships: []
+      }
       iscrizioni_corsi: {
         Row: {
           atleta_id: string
@@ -455,6 +659,96 @@ export type Database = {
           id?: string
           note_salto_livello?: string | null
           salto_livello?: boolean | null
+        }
+        Relationships: []
+      }
+      iscrizioni_gare: {
+        Row: {
+          atleta_id: string
+          carriera: string | null
+          created_at: string
+          gara_id: string
+          id: string
+          livello_atleta: string | null
+          medaglia: string | null
+          note: string | null
+          posizione: number | null
+          punteggio: number | null
+          punteggio_artistico: number | null
+          punteggio_tecnico: number | null
+          voto_giudici: number | null
+        }
+        Insert: {
+          atleta_id: string
+          carriera?: string | null
+          created_at?: string
+          gara_id: string
+          id?: string
+          livello_atleta?: string | null
+          medaglia?: string | null
+          note?: string | null
+          posizione?: number | null
+          punteggio?: number | null
+          punteggio_artistico?: number | null
+          punteggio_tecnico?: number | null
+          voto_giudici?: number | null
+        }
+        Update: {
+          atleta_id?: string
+          carriera?: string | null
+          created_at?: string
+          gara_id?: string
+          id?: string
+          livello_atleta?: string | null
+          medaglia?: string | null
+          note?: string | null
+          posizione?: number | null
+          punteggio?: number | null
+          punteggio_artistico?: number | null
+          punteggio_tecnico?: number | null
+          voto_giudici?: number | null
+        }
+        Relationships: []
+      }
+      istruttori: {
+        Row: {
+          attivo: boolean | null
+          club_id: string
+          cognome: string
+          costo_minuto_lezione_privata: number | null
+          created_at: string
+          email: string | null
+          id: string
+          nome: string
+          note: string | null
+          specialita: string | null
+          telefono: string | null
+        }
+        Insert: {
+          attivo?: boolean | null
+          club_id: string
+          cognome?: string
+          costo_minuto_lezione_privata?: number | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome?: string
+          note?: string | null
+          specialita?: string | null
+          telefono?: string | null
+        }
+        Update: {
+          attivo?: boolean | null
+          club_id?: string
+          cognome?: string
+          costo_minuto_lezione_privata?: number | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome?: string
+          note?: string | null
+          specialita?: string | null
+          telefono?: string | null
         }
         Relationships: []
       }
@@ -668,6 +962,48 @@ export type Database = {
         }
         Relationships: []
       }
+      presenze: {
+        Row: {
+          club_id: string
+          created_at: string
+          data: string
+          id: string
+          metodo: string | null
+          ora_entrata: string | null
+          ora_uscita: string | null
+          persona_id: string
+          riferimento_id: string | null
+          tipo_persona: string
+          tipo_riferimento: string | null
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          data: string
+          id?: string
+          metodo?: string | null
+          ora_entrata?: string | null
+          ora_uscita?: string | null
+          persona_id: string
+          riferimento_id?: string | null
+          tipo_persona?: string
+          tipo_riferimento?: string | null
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          data?: string
+          id?: string
+          metodo?: string | null
+          ora_entrata?: string | null
+          ora_uscita?: string | null
+          persona_id?: string
+          riferimento_id?: string | null
+          tipo_persona?: string
+          tipo_riferimento?: string | null
+        }
+        Relationships: []
+      }
       presenze_corso: {
         Row: {
           atleta_id: string
@@ -731,6 +1067,120 @@ export type Database = {
           note_richiesta?: string | null
           note_risposta?: string | null
           stato?: string
+        }
+        Relationships: []
+      }
+      setup_club: {
+        Row: {
+          banca: string | null
+          club_id: string
+          created_at: string
+          data_fine_stagione: string | null
+          data_inizio_stagione: string | null
+          iban: string | null
+          id: string
+          indirizzo_banca: string | null
+          intestatario_conto: string | null
+          max_atlete_lezione_condivisa: number | null
+          max_lezioni_private_contemporanee: number | null
+          slot_lezione_privata_minuti: number | null
+          twint_paylink: string | null
+        }
+        Insert: {
+          banca?: string | null
+          club_id: string
+          created_at?: string
+          data_fine_stagione?: string | null
+          data_inizio_stagione?: string | null
+          iban?: string | null
+          id?: string
+          indirizzo_banca?: string | null
+          intestatario_conto?: string | null
+          max_atlete_lezione_condivisa?: number | null
+          max_lezioni_private_contemporanee?: number | null
+          slot_lezione_privata_minuti?: number | null
+          twint_paylink?: string | null
+        }
+        Update: {
+          banca?: string | null
+          club_id?: string
+          created_at?: string
+          data_fine_stagione?: string | null
+          data_inizio_stagione?: string | null
+          iban?: string | null
+          id?: string
+          indirizzo_banca?: string | null
+          intestatario_conto?: string | null
+          max_atlete_lezione_condivisa?: number | null
+          max_lezioni_private_contemporanee?: number | null
+          slot_lezione_privata_minuti?: number | null
+          twint_paylink?: string | null
+        }
+        Relationships: []
+      }
+      stagioni: {
+        Row: {
+          attiva: boolean | null
+          club_id: string
+          created_at: string
+          data_fine: string
+          data_inizio: string
+          id: string
+          nome: string
+          tipo: string
+        }
+        Insert: {
+          attiva?: boolean | null
+          club_id: string
+          created_at?: string
+          data_fine: string
+          data_inizio: string
+          id?: string
+          nome?: string
+          tipo?: string
+        }
+        Update: {
+          attiva?: boolean | null
+          club_id?: string
+          created_at?: string
+          data_fine?: string
+          data_inizio?: string
+          id?: string
+          nome?: string
+          tipo?: string
+        }
+        Relationships: []
+      }
+      storico_livelli_atleta: {
+        Row: {
+          atleta_id: string
+          carriera: string | null
+          created_at: string
+          data_fine: string | null
+          data_inizio: string
+          id: string
+          livello: string
+          note: string | null
+        }
+        Insert: {
+          atleta_id: string
+          carriera?: string | null
+          created_at?: string
+          data_fine?: string | null
+          data_inizio: string
+          id?: string
+          livello: string
+          note?: string | null
+        }
+        Update: {
+          atleta_id?: string
+          carriera?: string | null
+          created_at?: string
+          data_fine?: string | null
+          data_inizio?: string
+          id?: string
+          livello?: string
+          note?: string | null
         }
         Relationships: []
       }
