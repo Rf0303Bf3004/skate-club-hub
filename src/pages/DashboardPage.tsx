@@ -33,6 +33,8 @@ import {
   AlertTriangle,
   Send,
   MessageCircle,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -140,19 +142,32 @@ const CorsoCard: React.FC<{
   }> = ({ corso, atleti, monitori, istruttori, presenze, presenze_corso, data, on_segna, on_segna_istr, loading }) => {
   const [expanded, set_expanded] = useState(false);
 
-  // Stato corso basato sull'orario corrente
-    // Calcola stato corso basato sull'orario corrente
+  // Stato corso basato sull'orario corrente (solo per oggi)
+  const is_today = data === to_date_key(new Date());
+  const is_past = data < to_date_key(new Date());
   const adesso = new Date();
   const min_ora = adesso.getHours() * 60 + adesso.getMinutes();
   const [hi, mi] = (corso.ora_inizio || "00:00").split(":").map(Number);
   const [hf, mf] = (corso.ora_fine || "23:59").split(":").map(Number);
   const min_inizio = hi * 60 + mi;
   const min_fine = hf * 60 + mf;
-  const non_iniziato = min_inizio > min_ora;
-  const terminato = min_fine <= min_ora;
-  const presto = non_iniziato && (min_inizio - min_ora) <= 30;
-  const bloccato = non_iniziato || terminato;
-  const stato_corso = terminato ? "terminato" : (!non_iniziato ? "in_corso" : presto ? "presto" : "futuro");
+
+  let stato_corso: "terminato" | "in_corso" | "presto" | "futuro";
+  let bloccato: boolean;
+
+  if (is_past) {
+    stato_corso = "terminato";
+    bloccato = true;
+  } else if (!is_today) {
+    stato_corso = "futuro";
+    bloccato = true;
+  } else {
+    const non_iniziato = min_inizio > min_ora;
+    const terminato = min_fine <= min_ora;
+    const presto = non_iniziato && (min_inizio - min_ora) <= 30;
+    bloccato = non_iniziato || terminato;
+    stato_corso = terminato ? "terminato" : (!non_iniziato ? "in_corso" : presto ? "presto" : "futuro");
+  }
   const atleti_corso = atleti.filter((a) => corso.atleti_ids?.includes(a.id));
   const presenti_atleti = atleti_corso.filter((a) =>
     presenze.some((p) => p.persona_id === a.id && p.riferimento_id === corso.id && !p.ora_uscita),
@@ -199,7 +214,7 @@ const CorsoCard: React.FC<{
   };
 
   return (
-    <div className={"rounded-xl overflow-hidden border border-border/50 border-l-4 " + (stato_corso === "in_corso" ? "border-l-green-500 bg-green-50/30" : stato_corso === "presto" ? "border-l-amber-400 bg-amber-50/20" : stato_corso === "terminato" ? "border-l-red-400 bg-red-50/20" : "border-l-gray-300")}>
+    <div className={"rounded-xl overflow-hidden border border-border/50 border-l-4 " + (stato_corso === "in_corso" ? "border-l-green-500 bg-green-50/30" : stato_corso === "presto" ? "border-l-amber-400 bg-amber-50/20" : stato_corso === "terminato" ? "border-l-gray-400 bg-muted/20" : "border-l-gray-300")}>
       <div
         className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/30 transition-colors"
         onClick={() => set_expanded((e) => !e)}
@@ -213,7 +228,7 @@ const CorsoCard: React.FC<{
                   {stato_corso === "in_corso" && <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700">In corso</span>}
                   {stato_corso === "presto" && <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Inizia fra {min_inizio - min_ora} min</span>}
                   {stato_corso === "futuro" && <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Inizia alle {corso.ora_inizio?.slice(0,5)}</span>}
-                  {stato_corso === "terminato" && <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-600">Terminato</span>}
+                  {stato_corso === "terminato" && <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">Terminato</span>}
                 </p>          <div className="flex items-center gap-2 mt-0.5">
             <Badge variant="secondary" className="text-[10px]">
               {corso.tipo || "Corso"}
@@ -868,6 +883,7 @@ const DashboardPage: React.FC = () => {
   const segna = use_segna_presenza();
   const elimina_p = use_elimina_presenza();
   const [tab_presenze, set_tab_presenze] = useState<"corsi" | "istruttori">("corsi");
+  const [agenda_offset, set_agenda_offset] = useState(0);
 
   const is_loading = loading_atleti || loading_corsi || loading_gare || loading_fatture || loading_istruttori;
 
@@ -881,31 +897,28 @@ const DashboardPage: React.FC = () => {
   const today_day_keys = ["domenica", "lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato"];
   const today_key = today_day_keys[new Date().getDay()];
 
-  // Corsi oggi + prossimi 2 giorni (con stati temporali)
+  // Corsi per il giorno selezionato
   const t2m_dash = (t: string) => { const [h,m] = (t||'').split(':').map(Number); return (h||0)*60+(m||0); };
   const oraOra = new Date().getHours() * 60 + new Date().getMinutes();
 
-  const giorni_da_mostrare = [today, add_days(today, 1), add_days(today, 2)];
-  const corsi_per_giorno = giorni_da_mostrare
-    .map((data) => {
-      const is_today = data === today;
-      const corsi_giorno = corsi
-        .filter((c) => match_giorno(c.giorno, get_giorno_key(data)) && c.stato === "attivo")
-        .map((c) => {
-          if (!is_today) return { ...c, stato_tempo: "futuro" as const };
-          const fineMin = t2m_dash(c.ora_fine);
-          const inizioMin = t2m_dash(c.ora_inizio);
-          if (fineMin + 30 < oraOra) return null; // nascosto: finito da più di 30 min
-          if (fineMin < oraOra) return { ...c, stato_tempo: "terminato" as const };
-          if (inizioMin <= oraOra && oraOra <= fineMin) return { ...c, stato_tempo: "in_corso" as const };
-          if (inizioMin - oraOra <= 120) return { ...c, stato_tempo: "prossimo" as const, traMinuti: inizioMin - oraOra };
-          return { ...c, stato_tempo: "futuro" as const };
-        })
-        .filter(Boolean)
-        .sort((a: any, b: any) => (a.ora_inizio || "").localeCompare(b.ora_inizio || ""));
-      return { data, label: format_data_breve(data), corsi: corsi_giorno };
+  const agenda_data = add_days(today, agenda_offset);
+  const agenda_is_today = agenda_offset === 0;
+  const agenda_label = agenda_is_today ? "Oggi" : format_data_breve(agenda_data);
+
+  const corsi_agenda = corsi
+    .filter((c) => match_giorno(c.giorno, get_giorno_key(agenda_data)) && c.stato === "attivo")
+    .map((c) => {
+      if (!agenda_is_today) return { ...c, stato_tempo: "futuro" as const };
+      const fineMin = t2m_dash(c.ora_fine);
+      const inizioMin = t2m_dash(c.ora_inizio);
+      if (fineMin + 30 < oraOra) return null; // nascosto: finito da più di 30 min
+      if (fineMin < oraOra) return { ...c, stato_tempo: "terminato" as const };
+      if (inizioMin <= oraOra && oraOra <= fineMin) return { ...c, stato_tempo: "in_corso" as const };
+      if (inizioMin - oraOra <= 120) return { ...c, stato_tempo: "prossimo" as const, traMinuti: inizioMin - oraOra };
+      return { ...c, stato_tempo: "futuro" as const };
     })
-    .filter((g) => g.corsi.length > 0);
+    .filter(Boolean)
+    .sort((a: any, b: any) => (a.ora_inizio || "").localeCompare(b.ora_inizio || ""));
 
   const today_lezioni = lezioni.filter((l) => l.data === today && !l.annullata);
   const totale_presenti = presenze.filter((p) => !p.ora_uscita).length;
@@ -1042,11 +1055,24 @@ const DashboardPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Colonna sinistra — corsi + presenze */}
         <div className="lg:col-span-2 space-y-5">
-          {/* Corsi oggi + 2 giorni */}
+          {/* Agenda corsi — un giorno alla volta */}
           <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Agenda corsi</h3>
-              <span className="text-xs text-muted-foreground">Oggi + 2 giorni</span>
+              <div className="flex items-center gap-1">
+                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => set_agenda_offset((o) => o - 1)}>
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <button
+                  onClick={() => set_agenda_offset(0)}
+                  className={`text-xs font-bold px-3 py-1 rounded-full transition-colors ${agenda_is_today ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+                >
+                  {agenda_label}
+                </button>
+                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => set_agenda_offset((o) => o + 1)}>
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
 
             <div className="flex gap-1 p-1 bg-muted/30 rounded-lg">
@@ -1064,44 +1090,34 @@ const DashboardPage: React.FC = () => {
 
             {tab_presenze === "corsi" && (
               <div className="space-y-5">
-                {corsi_per_giorno.length === 0 && today_lezioni.length === 0 ? (
+                {corsi_agenda.length === 0 && (agenda_is_today ? today_lezioni.length === 0 : true) ? (
                   <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
                     <Clock className="w-8 h-8 mb-2 opacity-30" />
-                    <p className="text-sm">Nessun corso nei prossimi 3 giorni</p>
+                    <p className="text-sm">Nessun corso per {agenda_label.toLowerCase()}</p>
                   </div>
                 ) : (
                   <>
-                    {corsi_per_giorno.map(({ data, label, corsi: corsi_giorno }) => (
-                      <div key={data} className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className={`text-xs font-bold px-2.5 py-1 rounded-full
-                            ${data === today ? "bg-primary text-white" : "bg-muted text-muted-foreground"}`}
-                          >
-                            {data === today ? "Oggi" : label}
-                          </div>
-                          <span className="text-xs text-muted-foreground">
-                            {corsi_giorno.length} cors{corsi_giorno.length === 1 ? "o" : "i"}
-                          </span>
-                        </div>
-                        {corsi_giorno.map((corso) => (
-                          <CorsoCard
-                            key={corso.id}
-                            corso={corso}
-                            atleti={atleti}
-                            monitori={monitori}
-                            istruttori={istruttori}
-                            presenze={presenze}
-                            presenze_corso={presenze_corso}
-                            data={data}
-                            on_segna={handle_segna_atleta}
-                            on_segna_istr={handle_segna_istruttore}
-                            loading={segna.isPending}
-                                                      />
-                        ))}
-                      </div>
-                    ))}
-                    {today_lezioni.length > 0 && (
+                    <div className="space-y-2">
+                      <span className="text-xs text-muted-foreground">
+                        {corsi_agenda.length} cors{corsi_agenda.length === 1 ? "o" : "i"}
+                      </span>
+                      {corsi_agenda.map((corso: any) => (
+                        <CorsoCard
+                          key={corso.id}
+                          corso={corso}
+                          atleti={atleti}
+                          monitori={monitori}
+                          istruttori={istruttori}
+                          presenze={presenze}
+                          presenze_corso={presenze_corso}
+                          data={agenda_data}
+                          on_segna={handle_segna_atleta}
+                          on_segna_istr={handle_segna_istruttore}
+                          loading={segna.isPending}
+                        />
+                      ))}
+                    </div>
+                    {agenda_is_today && today_lezioni.length > 0 && (
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
                           <div className="text-xs font-bold px-2.5 py-1 rounded-full bg-primary text-white">
