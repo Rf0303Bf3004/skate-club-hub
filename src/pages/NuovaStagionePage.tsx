@@ -49,7 +49,54 @@ export default function NuovaStagionePage() {
     if (submitting) return;
     set_submitting(true);
     try {
-      // (a) Inserisci nuova stagione
+      const stag_id = stagione_attiva?.id;
+
+      // (1) DELETE iscrizioni_corsi della stagione corrente
+      if (stag_id) {
+        const { data: corsi_prev } = await supabase
+          .from("corsi").select("id").eq("club_id", club_id).eq("stagione_id", stag_id);
+        if (corsi_prev?.length) {
+          const ids = corsi_prev.map((c) => c.id);
+          await supabase.from("iscrizioni_corsi").delete().in("corso_id", ids);
+          // (4) DELETE corsi_monitori della stagione corrente
+          await supabase.from("corsi_monitori").delete().in("corso_id", ids);
+        }
+      }
+
+      // (2) DELETE lezioni_private_atlete del club
+      const { data: lez_club } = await supabase
+        .from("lezioni_private").select("id").eq("club_id", club_id);
+      if (lez_club?.length) {
+        await supabase.from("lezioni_private_atlete").delete().in("lezione_id", lez_club.map((l) => l.id));
+      }
+
+      // (3) DELETE lezioni_private del club
+      await supabase.from("lezioni_private").delete().eq("club_id", club_id);
+
+      // (5-7) DELETE planning della stagione corrente
+      if (stag_id) {
+        const { data: settimane } = await supabase
+          .from("planning_settimane").select("id").eq("club_id", club_id).eq("stagione_id", stag_id);
+        if (settimane?.length) {
+          const sett_ids = settimane.map((s) => s.id);
+          await supabase.from("planning_private_settimana").delete().in("settimana_id", sett_ids);
+          await supabase.from("planning_corsi_settimana").delete().in("settimana_id", sett_ids);
+        }
+        await supabase.from("planning_settimane").delete().eq("club_id", club_id).eq("stagione_id", stag_id);
+      }
+
+      // (8) DELETE richieste_iscrizione in_attesa
+      await supabase.from("richieste_iscrizione").delete().eq("club_id", club_id).eq("stato", "in_attesa");
+
+      // (9) UPDATE adesioni_atleta → terminata
+      await supabase.from("adesioni_atleta").update({ stato: "terminata" }).eq("club_id", club_id).eq("stato", "attiva");
+
+      // (10) UPDATE stagione precedente → attiva=false
+      if (stag_id) {
+        await supabase.from("stagioni").update({ attiva: false }).eq("id", stag_id);
+      }
+
+      // (11) INSERT nuova stagione
       const { error: err_insert } = await supabase.from("stagioni").insert({
         club_id,
         nome: nome.trim(),
@@ -60,62 +107,17 @@ export default function NuovaStagionePage() {
       });
       if (err_insert) throw err_insert;
 
-      // (b) Disattiva stagione precedente
-      if (stagione_attiva?.id) {
-        await supabase
-          .from("stagioni")
-          .update({ attiva: false })
-          .eq("id", stagione_attiva.id);
-      }
-
-      // (c) Cancella iscrizioni_corsi della stagione precedente
-      if (stagione_attiva?.id) {
-        // Get corsi of previous season
-        const { data: corsi_prev } = await supabase
-          .from("corsi")
-          .select("id")
-          .eq("club_id", club_id)
-          .eq("stagione_id", stagione_attiva.id);
-        if (corsi_prev && corsi_prev.length > 0) {
-          const corso_ids = corsi_prev.map((c) => c.id);
-          await supabase
-            .from("iscrizioni_corsi")
-            .delete()
-            .in("corso_id", corso_ids);
-        }
-      }
-
-      // (d) Cancella lezioni_private_atlete del club
-      const { data: lezioni_club } = await supabase
-        .from("lezioni_private")
-        .select("id")
-        .eq("club_id", club_id);
-      if (lezioni_club && lezioni_club.length > 0) {
-        const lezione_ids = lezioni_club.map((l) => l.id);
-        await supabase
-          .from("lezioni_private_atlete")
-          .delete()
-          .in("lezione_id", lezione_ids);
-      }
-
       // Aggiorna setup_club con le nuove date
       const { data: existing } = await supabase
-        .from("setup_club")
-        .select("id")
-        .eq("club_id", club_id)
-        .maybeSingle();
+        .from("setup_club").select("id").eq("club_id", club_id).maybeSingle();
       if (existing) {
-        await supabase
-          .from("setup_club")
-          .update({ data_inizio_stagione: data_inizio, data_fine_stagione: data_fine })
-          .eq("id", existing.id);
+        await supabase.from("setup_club").update({ data_inizio_stagione: data_inizio, data_fine_stagione: data_fine }).eq("id", existing.id);
       } else {
-        await supabase
-          .from("setup_club")
-          .insert({ club_id, data_inizio_stagione: data_inizio, data_fine_stagione: data_fine });
+        await supabase.from("setup_club").insert({ club_id, data_inizio_stagione: data_inizio, data_fine_stagione: data_fine });
       }
 
-      toast.success("Nuova stagione creata con successo");
+      // (12) Toast e naviga
+      toast.success(`Nuova stagione "${nome.trim()}" creata. Gli atleti possono re-iscriversi dall'app.`);
       navigate("/", { replace: true });
     } catch (e: any) {
       toast.error("Errore: " + (e?.message || "operazione fallita"));
