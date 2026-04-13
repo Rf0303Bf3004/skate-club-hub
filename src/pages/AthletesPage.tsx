@@ -1,4 +1,7 @@
 import React, { useState, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { AlertTriangle } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { use_atleti, use_club } from "@/hooks/use-supabase-data";
 import { use_upsert_atleta, use_elimina_atleta } from "@/hooks/use-supabase-mutations";
