@@ -1083,18 +1083,23 @@ const LezioniPrivatePage: React.FC = () => {
                 <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
                   {selected_slots.map((slot, i) => {
                     const is_semiprivata = slot.tipo === "semiprivata";
+                    const is_past_date = selected_date < today;
+                    const is_free = slot.status === "libero";
+                    // Hide free slots on past dates
+                    if (is_free && is_past_date) return null;
                     return (
                       <div
                         key={i}
                         onClick={() =>
-                          slot.status === "libero" ? open_slot(slot.time, slot.end_time) : set_detail_slot(slot)
+                          is_free && !is_past_date ? open_slot(slot.time, slot.end_time) : !is_free ? set_detail_slot(slot) : undefined
                         }
-                        className={`flex items-center justify-between px-4 py-3 rounded-xl cursor-pointer transition-all
-                          ${slot.status === "libero" ? "bg-success/10 hover:bg-success/20 border border-success/20" : is_semiprivata ? "bg-orange-500/10 hover:bg-orange-500/15 border border-orange-500/20" : "bg-destructive/10 hover:bg-destructive/15 border border-destructive/20"}`}
+                        className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all
+                          ${is_free && is_past_date ? "opacity-40 cursor-default" : "cursor-pointer"}
+                          ${is_free ? "bg-success/10 hover:bg-success/20 border border-success/20" : is_semiprivata ? "bg-orange-500/10 hover:bg-orange-500/15 border border-orange-500/20" : "bg-destructive/10 hover:bg-destructive/15 border border-destructive/20"}`}
                       >
                         <div className="flex items-center gap-3">
                           <div
-                            className={`w-2 h-2 rounded-full flex-shrink-0 ${slot.status === "libero" ? "bg-success" : is_semiprivata ? "bg-orange-500" : "bg-destructive"}`}
+                            className={`w-2 h-2 rounded-full flex-shrink-0 ${is_free ? "bg-success" : is_semiprivata ? "bg-orange-500" : "bg-destructive"}`}
                           />
                           <div>
                             <p className="text-sm font-semibold text-foreground tabular-nums">
@@ -1110,9 +1115,9 @@ const LezioniPrivatePage: React.FC = () => {
                           </div>
                         </div>
                         <span
-                          className={`text-xs font-bold px-2 py-0.5 rounded-full ${slot.status === "libero" ? "bg-success/20 text-success" : is_semiprivata ? "bg-orange-500/20 text-orange-600" : "bg-destructive/20 text-destructive"}`}
+                          className={`text-xs font-bold px-2 py-0.5 rounded-full ${is_free ? "bg-success/20 text-success" : is_semiprivata ? "bg-orange-500/20 text-orange-600" : "bg-destructive/20 text-destructive"}`}
                         >
-                          {slot.status === "libero" ? "+ Prenota" : is_semiprivata ? "👥 Semi" : "Dettagli"}
+                          {is_free ? "+ Prenota" : is_semiprivata ? "👥 Semi" : "Dettagli"}
                         </span>
                       </div>
                     );
