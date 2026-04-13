@@ -99,6 +99,10 @@ const MESI_IT = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio
 
 type ViewMode = 1 | 2 | 3 | 7;
 
+function is_private_type(value?: string | null): boolean {
+  return (value ?? "").trim().toLowerCase() === "privata";
+}
+
 // ── Date helpers ──
 function getMondayOfWeek(d: Date): Date {
   const date = new Date(d);
@@ -451,6 +455,14 @@ function PlanningPageInner() {
   const loading = loadingGhiaccio || loadingCorsi || loadingIstr;
 
   const corsi_template = useMemo(() => (corsi_raw ?? []).filter((c: any) => c.attivo !== false), [corsi_raw]);
+  const corsi_template_non_privati = useMemo(
+    () => corsi_template.filter((c: any) => !is_private_type(c.tipo)),
+    [corsi_template],
+  );
+  const corsi_template_non_privati_ids = useMemo(
+    () => new Set(corsi_template_non_privati.map((c: any) => c.id)),
+    [corsi_template_non_privati],
+  );
   const istruttori: any[] = useMemo(() => istruttori_raw ?? [], [istruttori_raw]);
   const atleti: any[] = useMemo(() => atleti_raw ?? [], [atleti_raw]);
   const disp_istr = useMemo(() => disp_istr_raw ?? [], [disp_istr_raw]);
@@ -462,31 +474,34 @@ function PlanningPageInner() {
   const posizionati = useMemo(() => {
     if (is_generated) {
       // Map planning rows to display format with giorno name
-      const corsi_items = plan_corsi.map((pc: any) => {
-        const template = corsi_template.find((c: any) => c.id === pc.corso_id);
-        const dateObj = new Date(pc.data + "T00:00:00");
-        const dayIdx = dayIndexFromDate(dateObj);
-        return {
-          id: pc.id, // use planning row id for operations
-          corso_id: pc.corso_id,
-          club_id: template?.club_id || CLUB_ID,
-          nome: template?.nome || "?",
-          tipo: template?.tipo || "",
-          giorno: GIORNI[dayIdx],
-          data: pc.data,
-          ora_inizio: pc.ora_inizio,
-          ora_fine: pc.ora_fine,
-          istruttore_id: pc.istruttore_id,
-          istruttori_ids: pc.istruttore_id ? [pc.istruttore_id] : (template?.istruttori_ids ?? []),
-          atleti_ids: template?.atleti_ids ?? [],
-          livello_richiesto: template?.livello_richiesto || "",
-          costo_mensile: template?.costo_mensile || 0,
-          note: template?.note || "",
-          annullato: pc.annullato,
-          motivo: pc.motivo,
-          _is_plan_row: true,
-        };
-      }).filter((c: any) => !c.annullato);
+      const corsi_items = plan_corsi
+        .map((pc: any) => {
+          const template = corsi_template.find((c: any) => c.id === pc.corso_id);
+          if (is_private_type(template?.tipo)) return null;
+          const dateObj = new Date(pc.data + "T00:00:00");
+          const dayIdx = dayIndexFromDate(dateObj);
+          return {
+            id: pc.id, // use planning row id for operations
+            corso_id: pc.corso_id,
+            club_id: template?.club_id || CLUB_ID,
+            nome: template?.nome || "?",
+            tipo: template?.tipo || "",
+            giorno: GIORNI[dayIdx],
+            data: pc.data,
+            ora_inizio: pc.ora_inizio,
+            ora_fine: pc.ora_fine,
+            istruttore_id: pc.istruttore_id,
+            istruttori_ids: pc.istruttore_id ? [pc.istruttore_id] : (template?.istruttori_ids ?? []),
+            atleti_ids: template?.atleti_ids ?? [],
+            livello_richiesto: template?.livello_richiesto || "",
+            costo_mensile: template?.costo_mensile || 0,
+            note: template?.note || "",
+            annullato: pc.annullato,
+            motivo: pc.motivo,
+            _is_plan_row: true,
+          };
+        })
+        .filter((c: any) => c && !c.annullato) as any[];
 
       // Map private planning rows – they carry lezione_privata_id directly
       const private_items = plan_private.map((pp: any) => {
@@ -701,8 +716,9 @@ function PlanningPageInner() {
           .eq("settimana_id", ultimaSett.id)
           .eq("annullato", false);
 
-        if (corsiUltima?.length) {
-          const nuoviCorsi = corsiUltima.map((c: any) => {
+        const corsiUltimaNonPrivati = (corsiUltima ?? []).filter((c: any) => corsi_template_non_privati_ids.has(c.corso_id));
+        if (corsiUltimaNonPrivati.length) {
+          const nuoviCorsi = corsiUltimaNonPrivati.map((c: any) => {
             const dateObj = new Date(c.data + "T00:00:00");
             const giornoDaSett = dayIndexFromDate(dateObj);
             const nuovaData = addDays(dataLunedi, giornoDaSett);
@@ -742,7 +758,7 @@ function PlanningPageInner() {
         }
       } else {
         // First time: use template
-        const corsiTemplate = corsi_template.filter((c: any) => c.giorno && c.ora_inizio && c.ora_fine);
+          const corsiTemplate = corsi_template_non_privati.filter((c: any) => c.giorno && c.ora_inizio && c.ora_fine);
         if (corsiTemplate.length) {
           const nuoviCorsi = corsiTemplate.map((c: any) => {
             const offset = GIORNI.indexOf(c.giorno as any);
