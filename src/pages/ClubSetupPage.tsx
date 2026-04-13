@@ -170,6 +170,33 @@ const ClubSetupPage: React.FC = () => {
         await queryClient.invalidateQueries({ queryKey: ["setup_club", club_id] });
       }
 
+      // Auto-sync stagione "Regolare" con le date configurate
+      const data_inizio = setup_payload.data_inizio_stagione ?? (setup as any)?.data_inizio_stagione;
+      const data_fine = setup_payload.data_fine_stagione ?? (setup as any)?.data_fine_stagione;
+      if (data_inizio && data_fine) {
+        const { data: existing } = await supabase
+          .from("stagioni")
+          .select("id")
+          .eq("club_id", club_id)
+          .eq("tipo", "Regolare")
+          .eq("attiva", true)
+          .maybeSingle();
+        const stagione_payload = {
+          club_id,
+          nome: `Stagione ${new Date(data_inizio + "T00:00:00").getFullYear()}/${new Date(data_fine + "T00:00:00").getFullYear()}`,
+          tipo: "Regolare",
+          data_inizio,
+          data_fine,
+          attiva: true,
+        };
+        if (existing?.id) {
+          await supabase.from("stagioni").update(stagione_payload).eq("id", existing.id);
+        } else {
+          await supabase.from("stagioni").insert(stagione_payload);
+        }
+        await queryClient.invalidateQueries({ queryKey: ["stagioni"] });
+      }
+
       toast({ title: "✅ Configurazione salvata" });
       set_form({});
     } catch (err: any) {
