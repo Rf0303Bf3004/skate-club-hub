@@ -744,20 +744,26 @@ const LezioniPrivatePage: React.FC = () => {
     const giorno = GIORNI[day_of_week === 0 ? 6 : day_of_week - 1];
     const dayDispSlots = dispSlots.filter((ds: any) => ds.giorno === giorno);
     const avail_istruttore = dayDispSlots.map((ds) => ({ start: time_to_min(ds.ora_inizio), end: time_to_min(ds.ora_fine) }));
-    // Intersect with ice availability for this day
     const ice_slots = ghiaccio_disp.filter((g: any) => g.giorno === giorno);
     const ice_intervals = ice_slots.map((g: any) => ({ start: time_to_min(g.ora_inizio), end: time_to_min(g.ora_fine) }));
-    const avail = ice_intervals.length > 0
+    const busy_corsi = corso_busy_by_day[giorno] || [];
+    // Slots with ice
+    const avail_with_ice = ice_intervals.length > 0
       ? intersect_intervals(avail_istruttore, ice_intervals)
       : avail_istruttore;
-    const busy_corsi = corso_busy_by_day[giorno] || [];
-    const free = subtract_intervals(avail, busy_corsi);
-    const free_times = new Set<number>();
-    for (const interval of free) {
-      for (let m = interval.start; m + slot_minuti <= interval.end; m += slot_minuti) free_times.add(m);
+    const free_with_ice = subtract_intervals(avail_with_ice, busy_corsi);
+    const ice_times = new Set<number>();
+    for (const interval of free_with_ice) {
+      for (let m = interval.start; m + slot_minuti <= interval.end; m += slot_minuti) ice_times.add(m);
+    }
+    // All instructor slots (including off-ice)
+    const free_all = subtract_intervals(avail_istruttore, busy_corsi);
+    const all_free_times = new Set<number>();
+    for (const interval of free_all) {
+      for (let m = interval.start; m + slot_minuti <= interval.end; m += slot_minuti) all_free_times.add(m);
     }
     const day_lessons = lezioni.filter((l: any) => l.istruttore_id === selected_istruttore && l.data === date_str);
-    const all_times = new Set(free_times);
+    const all_times = new Set(all_free_times);
     for (const l of day_lessons) all_times.add(time_to_min(l.ora_inizio));
     return Array.from(all_times)
       .sort((a, b) => a - b)
@@ -765,7 +771,8 @@ const LezioniPrivatePage: React.FC = () => {
         const time = min_to_time(m);
         const lesson = day_lessons.find((l: any) => time_to_min(l.ora_inizio) === m);
         const tipo = lesson ? get_tipo_lezione(lesson.atleti_ids || []) : null;
-        return { time, end_time: min_to_time(m + slot_minuti), status: lesson ? "occupato" : "libero", lesson, tipo };
+        const has_ice = ice_times.has(m);
+        return { time, end_time: min_to_time(m + slot_minuti), status: lesson ? "occupato" : "libero", lesson, tipo, has_ice };
       });
   };
 
