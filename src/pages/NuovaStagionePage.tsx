@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ const STEPS = ["Nuova Stagione", "Disponibilità Ghiaccio", "Istruttori", "Catal
 
 export default function NuovaStagionePage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const club_id = get_current_club_id();
   const [step, set_step] = useState(0);
   const [nome, set_nome] = useState("");
@@ -48,8 +49,18 @@ export default function NuovaStagionePage() {
     if (submitting) return;
     set_submitting(true);
     try {
-      // Azzera disponibilità ghiaccio del club
-      await supabase.from("disponibilita_ghiaccio").delete().eq("club_id", club_id);
+      const { error: err_close_existing } = await supabase
+        .from("stagioni")
+        .update({ attiva: false })
+        .eq("club_id", club_id)
+        .eq("attiva", true);
+      if (err_close_existing) throw err_close_existing;
+
+      const { error: err_reset_ghiaccio } = await supabase
+        .from("disponibilita_ghiaccio")
+        .delete()
+        .eq("club_id", club_id);
+      if (err_reset_ghiaccio) throw err_reset_ghiaccio;
 
       // Inserisci nuova stagione
       const { error: err_insert } = await supabase.from("stagioni").insert({
@@ -70,6 +81,13 @@ export default function NuovaStagionePage() {
       } else {
         await supabase.from("setup_club").insert({ club_id, data_inizio_stagione: data_inizio, data_fine_stagione: data_fine });
       }
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["stagione_attiva", club_id] }),
+        queryClient.invalidateQueries({ queryKey: ["stagioni", club_id] }),
+        queryClient.invalidateQueries({ queryKey: ["setup_club", club_id] }),
+        queryClient.invalidateQueries({ queryKey: ["disponibilita_ghiaccio", club_id] }),
+      ]);
 
       toast.success(`Nuova stagione "${nome.trim()}" creata! Configura la disponibilità ghiaccio per iniziare.`);
       navigate("/setup-club", { replace: true });
