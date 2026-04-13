@@ -10,6 +10,8 @@ import {
   use_lezioni_private,
   use_istruttori,
   use_tutti_club,
+  use_adesioni_atleta,
+  is_atleta_attivo_oggi,
   get_istruttore_name_from_list,
 } from "@/hooks/use-supabase-data";
 import { use_upsert_atleta, use_migra_atleta } from "@/hooks/use-supabase-mutations";
@@ -413,6 +415,8 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   const { data: fatture = [] } = use_fatture();
   const { data: lezioni = [] } = use_lezioni_private();
   const { data: istruttori = [] } = use_istruttori();
+  const { data: adesioni = [] } = use_adesioni_atleta();
+  const atleta_attivo = is_atleta_attivo_oggi(adesioni, a.id);
 
   const athlete_corsi = corsi.filter((c: any) => c.atleti_ids.includes(a.id));
   const athlete_gare = gare.filter((g: any) => g.atleti_iscritti.some((ai: any) => ai.atleta_id === a.id));
@@ -618,6 +622,9 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
               {form.nome} {form.cognome}
             </h1>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <Badge className={atleta_attivo ? "bg-green-100 text-green-800 border-0 text-xs" : "bg-muted text-muted-foreground border-0 text-xs"}>
+                {atleta_attivo ? "Attivo" : "Inattivo"}
+              </Badge>
               {livello_display && <Badge variant="secondary">{livello_display}</Badge>}
               {form.carriera_artistica && (
                 <Badge className="bg-purple-100 text-purple-800 border-0 text-xs">

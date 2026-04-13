@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      adesioni_atleta: {
+        Row: {
+          atleta_id: string
+          club_id: string
+          created_at: string
+          data_fine: string
+          data_inizio: string
+          id: string
+          note: string | null
+          stagione_id: string | null
+          stato: string
+          tipo: string
+        }
+        Insert: {
+          atleta_id: string
+          club_id: string
+          created_at?: string
+          data_fine: string
+          data_inizio: string
+          id?: string
+          note?: string | null
+          stagione_id?: string | null
+          stato?: string
+          tipo?: string
+        }
+        Update: {
+          atleta_id?: string
+          club_id?: string
+          created_at?: string
+          data_fine?: string
+          data_inizio?: string
+          id?: string
+          note?: string | null
+          stagione_id?: string | null
+          stato?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "adesioni_atleta_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "adesioni_atleta_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       atleti: {
         Row: {
           atleta_federazione: boolean | null
