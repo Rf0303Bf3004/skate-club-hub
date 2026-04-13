@@ -1184,6 +1184,93 @@ export type Database = {
         }
         Relationships: []
       }
+      test_livello: {
+        Row: {
+          club_id: string
+          created_at: string
+          data: string | null
+          id: string
+          livello_successivo: string | null
+          livello_testato: string | null
+          luogo: string | null
+          nome: string
+          note: string | null
+          ora: string | null
+          stagione_id: string | null
+          tipo: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          data?: string | null
+          id?: string
+          livello_successivo?: string | null
+          livello_testato?: string | null
+          luogo?: string | null
+          nome?: string
+          note?: string | null
+          ora?: string | null
+          stagione_id?: string | null
+          tipo?: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          data?: string | null
+          id?: string
+          livello_successivo?: string | null
+          livello_testato?: string | null
+          luogo?: string | null
+          nome?: string
+          note?: string | null
+          ora?: string | null
+          stagione_id?: string | null
+          tipo?: string
+        }
+        Relationships: []
+      }
+      test_livello_atleti: {
+        Row: {
+          atleta_id: string
+          created_at: string
+          esito: string
+          id: string
+          note_istruttore: string | null
+          test_id: string
+        }
+        Insert: {
+          atleta_id: string
+          created_at?: string
+          esito?: string
+          id?: string
+          note_istruttore?: string | null
+          test_id: string
+        }
+        Update: {
+          atleta_id?: string
+          created_at?: string
+          esito?: string
+          id?: string
+          note_istruttore?: string | null
+          test_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_livello_atleti_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_livello_atleti_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "test_livello"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tipi_corso: {
         Row: {
           club_id: string
