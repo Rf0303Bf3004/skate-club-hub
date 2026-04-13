@@ -503,6 +503,14 @@ export function use_iscrivi_atleta_gara() {
 }
 
 // ─── Lezioni Private ───────────────────────────────────────
+function monday_of_week(date_str: string) {
+  const d = new Date(`${date_str}T00:00:00`);
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 export function use_crea_lezione_privata() {
   const qc = useQueryClient();
   return useMutation({
@@ -553,12 +561,11 @@ export function use_crea_lezione_privata() {
       const { data: lezione, error } = await supabase
         .from("lezioni_private")
         .insert({ ...base_payload, data: data.data })
-        .select("id")
+        .select("id, data, ora_inizio, ora_fine, istruttore_id")
         .single();
       if (error) throw error;
       await insert_lezioni_private_atlete(lezione ? [lezione] : [], data.atleti_ids || [], data.costo_totale || 0);
 
-      // Also create a corsi record so the lesson appears in Planning
       const is_semi = (data.atleti_ids?.length || 0) > 1;
       const nomi = data.atleti_nomi?.length ? data.atleti_nomi : data.atleti_ids || [];
       const corso_nome = `${is_semi ? "Semi" : "Privata"} · ${nomi.join(", ")}`;
@@ -579,11 +586,42 @@ export function use_crea_lezione_privata() {
           istruttore_id: data.istruttore_id,
         });
       }
-      qc.invalidateQueries({ queryKey: ["corsi"] });
 
+      if (lezione && data.has_ice !== false) {
+        const data_lunedi = monday_of_week(lezione.data);
+        const { data: settimana } = await supabase
+          .from("planning_settimane")
+          .select("id")
+          .eq("club_id", cid())
+          .eq("data_lunedi", data_lunedi)
+          .maybeSingle();
+
+        if (settimana?.id) {
+          const { error: planning_error } = await supabase.from("planning_private_settimana").upsert({
+            settimana_id: settimana.id,
+            lezione_privata_id: lezione.id,
+            data: lezione.data,
+            ora_inizio: lezione.ora_inizio,
+            ora_fine: lezione.ora_fine,
+            istruttore_id: lezione.istruttore_id,
+            annullato: false,
+          }, { onConflict: "settimana_id,lezione_privata_id" });
+          if (planning_error) throw planning_error;
+        }
+      }
+
+      qc.invalidateQueries({ queryKey: ["corsi"] });
       return lezione;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["lezioni_private"] }),
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["lezioni_private"] }),
+        qc.invalidateQueries({ queryKey: ["corsi"] }),
+        qc.invalidateQueries({ queryKey: ["planning_settimana"] }),
+        qc.invalidateQueries({ queryKey: ["planning_corsi_settimana"] }),
+        qc.invalidateQueries({ queryKey: ["planning_private_settimana"] }),
+      ]);
+    },
   });
 }
 
