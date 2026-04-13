@@ -883,6 +883,7 @@ const DashboardPage: React.FC = () => {
   const segna = use_segna_presenza();
   const elimina_p = use_elimina_presenza();
   const [tab_presenze, set_tab_presenze] = useState<"corsi" | "istruttori">("corsi");
+  const [agenda_offset, set_agenda_offset] = useState(0);
 
   const is_loading = loading_atleti || loading_corsi || loading_gare || loading_fatture || loading_istruttori;
 
@@ -896,31 +897,28 @@ const DashboardPage: React.FC = () => {
   const today_day_keys = ["domenica", "lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato"];
   const today_key = today_day_keys[new Date().getDay()];
 
-  // Corsi oggi + prossimi 2 giorni (con stati temporali)
+  // Corsi per il giorno selezionato
   const t2m_dash = (t: string) => { const [h,m] = (t||'').split(':').map(Number); return (h||0)*60+(m||0); };
   const oraOra = new Date().getHours() * 60 + new Date().getMinutes();
 
-  const giorni_da_mostrare = [today, add_days(today, 1), add_days(today, 2)];
-  const corsi_per_giorno = giorni_da_mostrare
-    .map((data) => {
-      const is_today = data === today;
-      const corsi_giorno = corsi
-        .filter((c) => match_giorno(c.giorno, get_giorno_key(data)) && c.stato === "attivo")
-        .map((c) => {
-          if (!is_today) return { ...c, stato_tempo: "futuro" as const };
-          const fineMin = t2m_dash(c.ora_fine);
-          const inizioMin = t2m_dash(c.ora_inizio);
-          if (fineMin + 30 < oraOra) return null; // nascosto: finito da più di 30 min
-          if (fineMin < oraOra) return { ...c, stato_tempo: "terminato" as const };
-          if (inizioMin <= oraOra && oraOra <= fineMin) return { ...c, stato_tempo: "in_corso" as const };
-          if (inizioMin - oraOra <= 120) return { ...c, stato_tempo: "prossimo" as const, traMinuti: inizioMin - oraOra };
-          return { ...c, stato_tempo: "futuro" as const };
-        })
-        .filter(Boolean)
-        .sort((a: any, b: any) => (a.ora_inizio || "").localeCompare(b.ora_inizio || ""));
-      return { data, label: format_data_breve(data), corsi: corsi_giorno };
+  const agenda_data = add_days(today, agenda_offset);
+  const agenda_is_today = agenda_offset === 0;
+  const agenda_label = agenda_is_today ? "Oggi" : format_data_breve(agenda_data);
+
+  const corsi_agenda = corsi
+    .filter((c) => match_giorno(c.giorno, get_giorno_key(agenda_data)) && c.stato === "attivo")
+    .map((c) => {
+      if (!agenda_is_today) return { ...c, stato_tempo: "futuro" as const };
+      const fineMin = t2m_dash(c.ora_fine);
+      const inizioMin = t2m_dash(c.ora_inizio);
+      if (fineMin + 30 < oraOra) return null; // nascosto: finito da più di 30 min
+      if (fineMin < oraOra) return { ...c, stato_tempo: "terminato" as const };
+      if (inizioMin <= oraOra && oraOra <= fineMin) return { ...c, stato_tempo: "in_corso" as const };
+      if (inizioMin - oraOra <= 120) return { ...c, stato_tempo: "prossimo" as const, traMinuti: inizioMin - oraOra };
+      return { ...c, stato_tempo: "futuro" as const };
     })
-    .filter((g) => g.corsi.length > 0);
+    .filter(Boolean)
+    .sort((a: any, b: any) => (a.ora_inizio || "").localeCompare(b.ora_inizio || ""));
 
   const today_lezioni = lezioni.filter((l) => l.data === today && !l.annullata);
   const totale_presenti = presenze.filter((p) => !p.ora_uscita).length;
