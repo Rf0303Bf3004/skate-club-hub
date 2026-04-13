@@ -529,23 +529,27 @@ function PlanningPageInner() {
   // Annullati for display (greyed out)
   const annullati = useMemo(() => {
     if (!is_generated) return [];
-    return plan_corsi.filter((pc: any) => pc.annullato).map((pc: any) => {
-      const template = corsi_template.find((c: any) => c.id === pc.corso_id);
-      const dateObj = new Date(pc.data + "T00:00:00");
-      const dayIdx = dayIndexFromDate(dateObj);
-      return {
-        id: pc.id,
-        corso_id: pc.corso_id,
-        nome: template?.nome || "?",
-        tipo: template?.tipo || "",
-        giorno: GIORNI[dayIdx],
-        ora_inizio: pc.ora_inizio,
-        ora_fine: pc.ora_fine,
-        istruttori_ids: pc.istruttore_id ? [pc.istruttore_id] : [],
-        annullato: true,
-        _is_plan_row: true,
-      };
-    });
+    return plan_corsi
+      .map((pc: any) => {
+        const template = corsi_template.find((c: any) => c.id === pc.corso_id);
+        const tipo = (template?.tipo || "").toLowerCase();
+        if (!pc.annullato || tipo === "privata") return null;
+        const dateObj = new Date(pc.data + "T00:00:00");
+        const dayIdx = dayIndexFromDate(dateObj);
+        return {
+          id: pc.id,
+          corso_id: pc.corso_id,
+          nome: template?.nome || "?",
+          tipo: template?.tipo || "",
+          giorno: GIORNI[dayIdx],
+          ora_inizio: pc.ora_inizio,
+          ora_fine: pc.ora_fine,
+          istruttori_ids: pc.istruttore_id ? [pc.istruttore_id] : [],
+          annullato: true,
+          _is_plan_row: true,
+        };
+      })
+      .filter(Boolean) as any[];
   }, [is_generated, plan_corsi, corsi_template]);
 
   const corsiDaPosizionare = useMemo(() => {
@@ -892,11 +896,19 @@ function PlanningPageInner() {
     set_saving(true);
     try {
       if (corso._is_plan_row) {
-        // In generated mode: mark as annullato
-        const { error } = await supabase.from("planning_corsi_settimana").update({ annullato: true }).eq("id", corso.id);
-        if (error) throw error;
-        refetchSettimana();
-        toast.info(`${corso.nome} annullato`);
+        const is_private = (corso.tipo || "").toLowerCase() === "privata";
+        if (is_private) {
+          const table = corso.lezione_privata_id ? "planning_private_settimana" : "planning_corsi_settimana";
+          const { error } = await supabase.from(table).delete().eq("id", corso.id);
+          if (error) throw error;
+          refetchSettimana();
+          toast.info(`${corso.nome} rimossa dalla settimana`);
+        } else {
+          const { error } = await supabase.from("planning_corsi_settimana").update({ annullato: true }).eq("id", corso.id);
+          if (error) throw error;
+          refetchSettimana();
+          toast.info(`${corso.nome} annullato`);
+        }
       } else {
         const { error } = await supabase.from("corsi").update({
           giorno: null as any, ora_inizio: null as any, ora_fine: null as any,

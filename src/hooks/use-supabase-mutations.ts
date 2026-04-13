@@ -74,6 +74,50 @@ async function insert_lezioni_private_atlete(lezioni: { id: string }[], atleti_i
 }
 
 async function elimina_lezione_singola(id: string) {
+  const { data: lezione, error: lezione_error } = await supabase
+    .from("lezioni_private")
+    .select("id, data, ora_inizio, ora_fine, istruttore_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (lezione_error) throw lezione_error;
+
+  const { error: planning_private_error } = await supabase
+    .from("planning_private_settimana")
+    .delete()
+    .eq("lezione_privata_id", id);
+  if (planning_private_error) throw planning_private_error;
+
+  if (lezione?.data && lezione.ora_inizio && lezione.ora_fine && lezione.istruttore_id) {
+    const { data: corso_links, error: corso_links_error } = await supabase
+      .from("corsi_istruttori")
+      .select("corso_id")
+      .eq("istruttore_id", lezione.istruttore_id);
+    if (corso_links_error) throw corso_links_error;
+
+    const corso_ids = Array.from(new Set((corso_links ?? []).map((row) => row.corso_id).filter(Boolean)));
+    if (corso_ids.length > 0) {
+      const { data: corsi_privati, error: corsi_error } = await supabase
+        .from("corsi")
+        .select("id")
+        .in("id", corso_ids)
+        .eq("tipo", "privata");
+      if (corsi_error) throw corsi_error;
+
+      const private_corso_ids = (corsi_privati ?? []).map((row) => row.id);
+      if (private_corso_ids.length > 0) {
+        const { error: planning_corsi_error } = await supabase
+          .from("planning_corsi_settimana")
+          .update({ annullato: true })
+          .in("corso_id", private_corso_ids)
+          .eq("data", lezione.data)
+          .eq("ora_inizio", lezione.ora_inizio)
+          .eq("ora_fine", lezione.ora_fine)
+          .eq("istruttore_id", lezione.istruttore_id);
+        if (planning_corsi_error) throw planning_corsi_error;
+      }
+    }
+  }
+
   const { error: e1 } = await supabase.from("lezioni_private_atlete").delete().eq("lezione_id", id);
   if (e1) throw e1;
   const { error: e2 } = await supabase.from("lezioni_private").delete().eq("id", id);
@@ -583,7 +627,15 @@ export function use_annulla_lezione() {
     mutationFn: async (lezione_id: string) => {
       await elimina_lezione_singola(lezione_id);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["lezioni_private"] }),
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["lezioni_private"] }),
+        qc.invalidateQueries({ queryKey: ["corsi"] }),
+        qc.invalidateQueries({ queryKey: ["planning_settimana"] }),
+        qc.invalidateQueries({ queryKey: ["planning_corsi_settimana"] }),
+        qc.invalidateQueries({ queryKey: ["planning_private_settimana"] }),
+      ]);
+    },
   });
 }
 
@@ -593,7 +645,15 @@ export function use_annulla_ricorrenze() {
     mutationFn: async (ids: string[]) => {
       for (const id of ids) await elimina_lezione_singola(id);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["lezioni_private"] }),
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["lezioni_private"] }),
+        qc.invalidateQueries({ queryKey: ["corsi"] }),
+        qc.invalidateQueries({ queryKey: ["planning_settimana"] }),
+        qc.invalidateQueries({ queryKey: ["planning_corsi_settimana"] }),
+        qc.invalidateQueries({ queryKey: ["planning_private_settimana"] }),
+      ]);
+    },
   });
 }
 
