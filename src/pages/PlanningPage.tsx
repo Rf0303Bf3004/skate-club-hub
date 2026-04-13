@@ -1613,8 +1613,40 @@ function DetailPanel({ corso, istr_map, atleti, build_mode, on_close, on_remove,
     enabled: !is_private,
   });
 
-  // Private lesson athletes – direct lookup by lezione_privata_id
-  const lezione_privata_id = corso.lezione_privata_id || null;
+  // Private lesson athletes – direct lookup by lezione_privata_id, with fallback via istruttore_id
+  const lezione_privata_id_direct = corso.lezione_privata_id || null;
+  const istr_id_for_private = corso.istruttori_ids?.[0] || corso.istruttore_id || null;
+
+  // If we don't have a direct lezione_privata_id, try to find the lezione_private record by istruttore
+  const { data: resolved_lezione } = useQuery({
+    queryKey: ["resolve_lezione_privata", corso_id_for_query, istr_id_for_private],
+    queryFn: async () => {
+      // Try to find a lezione_private that matches this instructor
+      const q = supabase.from("lezioni_private").select("id");
+      if (istr_id_for_private) q.eq("istruttore_id", istr_id_for_private);
+      q.eq("annullata", false);
+      const { data } = await q;
+      if (!data || data.length === 0) return null;
+      // If multiple, try to match by checking if athletes in lezioni_private_atlete match the corso name
+      if (data.length === 1) return data[0].id;
+      // Multiple matches: check which one has athletes that match the course name
+      for (const lp of data) {
+        const { data: atl } = await supabase.from("lezioni_private_atlete").select("atleta_id").eq("lezione_id", lp.id);
+        if (atl && atl.length > 0) {
+          const names = atl.map((a: any) => {
+            const found = atleti.find((at: any) => at.id === a.atleta_id);
+            return found?.nome || "";
+          }).filter(Boolean);
+          if (names.some((n: string) => corso.nome?.includes(n))) return lp.id;
+        }
+      }
+      return data[0].id;
+    },
+    enabled: is_private && !lezione_privata_id_direct && !!istr_id_for_private,
+  });
+
+  const lezione_privata_id = lezione_privata_id_direct || resolved_lezione || null;
+
   const { data: private_atlete } = useQuery({
     queryKey: ["lezioni_private_atlete_detail", lezione_privata_id],
     queryFn: async () => {
