@@ -214,7 +214,7 @@ const CorsoCard: React.FC<{
   };
 
   return (
-    <div className={"rounded-xl overflow-hidden border border-border/50 border-l-4 " + (stato_corso === "in_corso" ? "border-l-green-500 bg-green-50/30" : stato_corso === "presto" ? "border-l-amber-400 bg-amber-50/20" : stato_corso === "terminato" ? "border-l-red-400 bg-red-50/20" : "border-l-gray-300")}>
+    <div className={"rounded-xl overflow-hidden border border-border/50 border-l-4 " + (stato_corso === "in_corso" ? "border-l-green-500 bg-green-50/30" : stato_corso === "presto" ? "border-l-amber-400 bg-amber-50/20" : stato_corso === "terminato" ? "border-l-gray-400 bg-muted/20" : "border-l-gray-300")}>
       <div
         className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/30 transition-colors"
         onClick={() => set_expanded((e) => !e)}
