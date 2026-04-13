@@ -318,6 +318,23 @@ function use_private_lessons_week(data_lunedi: string, enabled: boolean) {
   });
 }
 
+function use_private_lessons_athletes(lesson_ids: string[]) {
+  return useQuery({
+    queryKey: ["lezioni_private_atlete_many", [...lesson_ids].sort().join(",")],
+    enabled: lesson_ids.length > 0,
+    refetchOnMount: "always",
+    staleTime: 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("lezioni_private_atlete")
+        .select("lezione_id, atleta_id")
+        .in("lezione_id", lesson_ids);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
 function private_lesson_has_ice(lesson: any, ghiaccio_slots: any[]) {
   if (!lesson?.data || !lesson?.ora_inizio || !lesson?.ora_fine) return false;
   const dateObj = new Date(`${lesson.data}T00:00:00`);
@@ -476,6 +493,12 @@ function PlanningPageInner() {
   const plan_corsi = planCorsiQuery.data ?? [];
   const plan_private = planPrivateQuery.data ?? [];
   const week_private_lessons = weekPrivateLessonsQuery.data ?? [];
+  const private_lesson_ids = useMemo(
+    () => Array.from(new Set(plan_private.map((item: any) => item.lezione_privata_id).filter(Boolean))),
+    [plan_private],
+  );
+  const privateLessonAthletesQuery = use_private_lessons_athletes(private_lesson_ids);
+  const private_lesson_athletes = privateLessonAthletesQuery.data ?? [];
   const is_generated = !!settimana;
 
   const [view_mode, set_view_mode] = useState<ViewMode>(7);
@@ -507,6 +530,35 @@ function PlanningPageInner() {
   const atleti: any[] = useMemo(() => atleti_raw ?? [], [atleti_raw]);
   const disp_istr = useMemo(() => disp_istr_raw ?? [], [disp_istr_raw]);
   const slots = useMemo(() => ghiaccio_slots ?? [], [ghiaccio_slots]);
+  const private_lesson_meta = useMemo(() => {
+    const athlete_ids_by_lesson = new Map<string, string[]>();
+
+    private_lesson_athletes.forEach((row: any) => {
+      if (!row?.lezione_id || !row?.atleta_id) return;
+      const athlete_ids = athlete_ids_by_lesson.get(row.lezione_id) ?? [];
+      if (!athlete_ids.includes(row.atleta_id)) athlete_ids.push(row.atleta_id);
+      athlete_ids_by_lesson.set(row.lezione_id, athlete_ids);
+    });
+
+    const grouped: Record<string, { atleti_ids: string[]; nome: string }> = {};
+    athlete_ids_by_lesson.forEach((athlete_ids, lesson_id) => {
+      const athlete_names = athlete_ids
+        .map((athlete_id) => {
+          const atleta = atleti.find((item: any) => item.id === athlete_id);
+          return atleta ? `${atleta.nome} ${atleta.cognome}`.trim() : null;
+        })
+        .filter(Boolean) as string[];
+
+      grouped[lesson_id] = {
+        atleti_ids: athlete_ids,
+        nome: athlete_names.length
+          ? `${athlete_names.length > 1 ? "Semi" : "Privata"} · ${athlete_names.join(", ")}`
+          : "Privata",
+      };
+    });
+
+    return grouped;
+  }, [private_lesson_athletes, atleti]);
   const syncing_private_ids_ref = useRef<Set<string>>(new Set());
 
   useEffect(() => {
@@ -591,21 +643,17 @@ function PlanningPageInner() {
         })
         .filter((c: any) => c && !c.annullato) as any[];
 
-      // Map private planning rows – they carry lezione_privata_id directly
+      // Map private planning rows using the athletes linked to the specific lesson
       const private_items = plan_private.map((pp: any) => {
         const dateObj = new Date(pp.data + "T00:00:00");
         const dayIdx = dayIndexFromDate(dateObj);
-        // Try to find the corsi template that matches this private lesson
-        const template = corsi_template.find((c: any) =>
-          (c.tipo || "").toLowerCase() === "privata" &&
-          (c.istruttori_ids ?? []).includes(pp.istruttore_id)
-        );
+        const private_meta = private_lesson_meta[pp.lezione_privata_id];
         return {
           id: pp.id,
           corso_id: pp.lezione_privata_id,
           lezione_privata_id: pp.lezione_privata_id,
           club_id: CLUB_ID,
-          nome: template?.nome || "Privata",
+          nome: private_meta?.nome || "Privata",
           tipo: "privata",
           giorno: GIORNI[dayIdx],
           data: pp.data,
@@ -613,7 +661,7 @@ function PlanningPageInner() {
           ora_fine: pp.ora_fine,
           istruttore_id: pp.istruttore_id,
           istruttori_ids: pp.istruttore_id ? [pp.istruttore_id] : [],
-          atleti_ids: [],
+          atleti_ids: private_meta?.atleti_ids ?? [],
           livello_richiesto: "",
           costo_mensile: 0,
           note: "",
@@ -627,7 +675,7 @@ function PlanningPageInner() {
     }
     // Template mode: show positioned courses
     return corsi_template.filter((c: any) => c.giorno && c.ora_inizio && c.ora_fine);
-  }, [is_generated, plan_corsi, plan_private, corsi_template]);
+  }, [is_generated, plan_corsi, plan_private, corsi_template, private_lesson_meta]);
 
   // Annullati for display (greyed out)
   const annullati = useMemo(() => {
