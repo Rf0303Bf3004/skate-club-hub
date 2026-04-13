@@ -1037,15 +1037,21 @@ const DashboardPage: React.FC = () => {
         const data_fmt = fine.toLocaleDateString("it-CH", { day: "numeric", month: "long", year: "numeric" });
         const is_past = diff_days < 0;
         return (
-          <div className="flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-5 py-3">
-            <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
-            <p className="text-sm text-amber-800 flex-1">
+          <div
+            className={`flex items-center gap-3 rounded-xl border px-5 py-3 ${
+              is_past
+                ? "border-destructive/50 bg-destructive/10 animate-[season-pulse_1s_ease-in-out_infinite]"
+                : "border-amber-500/30 bg-amber-500/10"
+            }`}
+          >
+            <AlertTriangle className={`w-5 h-5 flex-shrink-0 ${is_past ? "text-destructive" : "text-amber-600"}`} />
+            <p className={`text-sm flex-1 ${is_past ? "text-destructive font-semibold" : "text-amber-800"}`}>
               {is_past
-                ? `La stagione è terminata il ${data_fmt}. È ora di pianificare la nuova stagione.`
+                ? `⚠ La stagione è terminata il ${data_fmt}. Termina la stagione ora.`
                 : `La stagione termina il ${data_fmt}. È ora di pianificare la nuova stagione.`}
             </p>
-            <Button size="sm" variant="outline" onClick={() => navigate("/nuova-stagione")}>
-              Avvia Nuova Stagione
+            <Button size="sm" variant={is_past ? "destructive" : "outline"} onClick={() => navigate("/nuova-stagione")}>
+              {is_past ? "Termina Stagione" : "Avvia Nuova Stagione"}
             </Button>
           </div>
         );
