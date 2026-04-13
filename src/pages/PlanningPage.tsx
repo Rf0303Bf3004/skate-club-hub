@@ -1615,32 +1615,52 @@ function DetailPanel({ corso, istr_map, atleti, build_mode, on_close, on_remove,
 
   // Private lesson athletes – direct lookup by lezione_privata_id, with fallback
   const lezione_privata_id_direct = corso.lezione_privata_id || null;
-  const istr_id_for_private = corso.istruttori_ids?.[0] || corso.istruttore_id || null;
   const club_id_for_query = corso.club_id || null;
 
-  // Fallback: find lezione_privata by matching istruttore + athlete names in corso.nome
+  // Fallback: find lezione_privata by extracting athlete names from corso.nome
+  // and searching lezioni_private_atlete by atleta_id
   const { data: resolved_lezione } = useQuery({
-    queryKey: ["resolve_lezione_privata", corso_id_for_query, istr_id_for_private, corso.nome],
+    queryKey: ["resolve_lezione_privata_v2", corso_id_for_query, corso.nome],
     queryFn: async () => {
-      const q = supabase.from("lezioni_private").select("id, istruttore_id").eq("annullata", false);
-      if (club_id_for_query) q.eq("club_id", club_id_for_query);
-      if (istr_id_for_private) q.eq("istruttore_id", istr_id_for_private);
-      const { data } = await q;
-      if (!data || data.length === 0) return null;
-      if (data.length === 1) return data[0].id;
-      // Multiple matches: find one whose athletes match the corso name
       const nome = corso.nome || "";
-      for (const lp of data) {
-        const { data: atl } = await supabase.from("lezioni_private_atlete").select("atleta_id").eq("lezione_id", lp.id);
-        if (atl && atl.length > 0) {
-          const all_match = atl.every((a: any) => {
-            const found = atleti.find((at: any) => at.id === a.atleta_id);
-            return found && nome.includes(found.nome);
-          });
-          if (all_match) return lp.id;
+      // Extract athlete names from corso name like "Privata · Sofia Bernasconi" or "Semi · Name1, Name2"
+      const after_dot = nome.includes("·") ? nome.split("·")[1]?.trim() : "";
+      if (!after_dot) return null;
+      const athlete_names = after_dot.split(",").map((n: string) => n.trim()).filter(Boolean);
+      if (athlete_names.length === 0) return null;
+
+      // Find matching atleti by first name
+      const matched_atleti = athlete_names.map((an: string) => {
+        const first_name = an.split(" ")[0];
+        return atleti.find((a: any) =>
+          a.nome === first_name || `${a.nome} ${a.cognome}` === an
+        );
+      }).filter(Boolean);
+
+      if (matched_atleti.length === 0) return null;
+
+      // Search lezioni_private_atlete for the first matched athlete
+      const { data: lpa } = await supabase
+        .from("lezioni_private_atlete")
+        .select("lezione_id")
+        .eq("atleta_id", matched_atleti[0].id);
+      if (!lpa || lpa.length === 0) return null;
+      if (lpa.length === 1) return lpa[0].lezione_id;
+
+      // Multiple matches: verify which lezione has ALL the athletes
+      for (const row of lpa) {
+        const { data: all_atl } = await supabase
+          .from("lezioni_private_atlete")
+          .select("atleta_id")
+          .eq("lezione_id", row.lezione_id);
+        if (all_atl && all_atl.length === matched_atleti.length) {
+          const ids = all_atl.map((a: any) => a.atleta_id);
+          if (matched_atleti.every((ma: any) => ids.includes(ma.id))) {
+            return row.lezione_id;
+          }
         }
       }
-      return data[0].id;
+      return lpa[0].lezione_id;
     },
     enabled: is_private && !lezione_privata_id_direct,
   });
