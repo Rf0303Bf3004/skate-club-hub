@@ -469,6 +469,7 @@ function PlanningPageInner() {
         return {
           id: pc.id, // use planning row id for operations
           corso_id: pc.corso_id,
+          club_id: template?.club_id || CLUB_ID,
           nome: template?.nome || "?",
           tipo: template?.tipo || "",
           giorno: GIORNI[dayIdx],
