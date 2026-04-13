@@ -743,7 +743,13 @@ const LezioniPrivatePage: React.FC = () => {
     const day_of_week = date.getDay();
     const giorno = GIORNI[day_of_week === 0 ? 6 : day_of_week - 1];
     const dayDispSlots = dispSlots.filter((ds: any) => ds.giorno === giorno);
-    const avail = dayDispSlots.map((ds) => ({ start: time_to_min(ds.ora_inizio), end: time_to_min(ds.ora_fine) }));
+    const avail_istruttore = dayDispSlots.map((ds) => ({ start: time_to_min(ds.ora_inizio), end: time_to_min(ds.ora_fine) }));
+    // Intersect with ice availability for this day
+    const ice_slots = ghiaccio_disp.filter((g: any) => g.giorno === giorno);
+    const ice_intervals = ice_slots.map((g: any) => ({ start: time_to_min(g.ora_inizio), end: time_to_min(g.ora_fine) }));
+    const avail = ice_intervals.length > 0
+      ? intersect_intervals(avail_istruttore, ice_intervals)
+      : avail_istruttore;
     const busy_corsi = corso_busy_by_day[giorno] || [];
     const free = subtract_intervals(avail, busy_corsi);
     const free_times = new Set<number>();
