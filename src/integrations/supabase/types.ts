@@ -985,6 +985,7 @@ export type Database = {
       }
       planning_settimane: {
         Row: {
+          archiviato: boolean | null
           club_id: string
           copiata_da: string | null
           created_at: string
@@ -995,6 +996,7 @@ export type Database = {
           stato: string
         }
         Insert: {
+          archiviato?: boolean | null
           club_id: string
           copiata_da?: string | null
           created_at?: string
@@ -1005,6 +1007,7 @@ export type Database = {
           stato?: string
         }
         Update: {
+          archiviato?: boolean | null
           club_id?: string
           copiata_da?: string | null
           created_at?: string
@@ -1181,6 +1184,7 @@ export type Database = {
           data_inizio: string
           id: string
           nome: string
+          stato: string | null
           tipo: string
         }
         Insert: {
@@ -1191,6 +1195,7 @@ export type Database = {
           data_inizio: string
           id?: string
           nome?: string
+          stato?: string | null
           tipo?: string
         }
         Update: {
@@ -1201,6 +1206,7 @@ export type Database = {
           data_inizio?: string
           id?: string
           nome?: string
+          stato?: string | null
           tipo?: string
         }
         Relationships: []
