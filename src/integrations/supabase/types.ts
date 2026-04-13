@@ -1190,8 +1190,8 @@ export type Database = {
           created_at: string
           data: string | null
           id: string
-          livello_successivo: string | null
-          livello_testato: string | null
+          livello_accesso: string | null
+          livello_attuale: string | null
           luogo: string | null
           nome: string
           note: string | null
@@ -1204,8 +1204,8 @@ export type Database = {
           created_at?: string
           data?: string | null
           id?: string
-          livello_successivo?: string | null
-          livello_testato?: string | null
+          livello_accesso?: string | null
+          livello_attuale?: string | null
           luogo?: string | null
           nome?: string
           note?: string | null
@@ -1218,8 +1218,8 @@ export type Database = {
           created_at?: string
           data?: string | null
           id?: string
-          livello_successivo?: string | null
-          livello_testato?: string | null
+          livello_accesso?: string | null
+          livello_attuale?: string | null
           luogo?: string | null
           nome?: string
           note?: string | null

@@ -17,7 +17,7 @@ import { Plus, Eye, CheckCircle, ArrowLeft, Trash2 } from "lucide-react";
 type TestLivello = {
   id: string; club_id: string; stagione_id: string | null; nome: string;
   data: string | null; ora: string | null; luogo: string | null;
-  tipo: string; livello_testato: string | null; livello_successivo: string | null;
+  tipo: string; livello_attuale: string | null; livello_accesso: string | null;
   note: string | null; created_at: string;
 };
 
@@ -45,7 +45,7 @@ const TIPO_OPTIONS = [
 
 const empty_form = {
   nome: "", data: "", ora: "", luogo: "", tipo: "artistica",
-  livello_testato: "", livello_successivo: "", note: "",
+  livello_attuale: "", livello_accesso: "", note: "",
 };
 
 export default function TestLivelloPage() {
@@ -112,8 +112,8 @@ export default function TestLivelloPage() {
           ora: form.ora || null,
           luogo: form.luogo || null,
           tipo: form.tipo,
-          livello_testato: form.livello_testato || null,
-          livello_successivo: form.livello_successivo || null,
+          livello_attuale: form.livello_attuale || null,
+          livello_accesso: form.livello_accesso || null,
           note: form.note || null,
         } as any)
         .select()
@@ -181,11 +181,11 @@ export default function TestLivelloPage() {
           selected_test.tipo === "stile" ? "carriera_stile" : "percorso_amatori";
         await supabase
           .from("atleti")
-          .update({ [field]: selected_test.livello_successivo } as any)
+          .update({ [field]: selected_test.livello_accesso } as any)
           .eq("id", ta.atleta_id);
         await supabase.from("storico_livelli_atleta").insert({
           atleta_id: ta.atleta_id,
-          livello: selected_test.livello_successivo!,
+          livello: selected_test.livello_accesso!,
           carriera: selected_test.tipo === "amatori" ? "Amatori" :
             selected_test.tipo === "artistica" ? "Artistica" : "Stile",
           data_inizio: selected_test.data || new Date().toISOString().split("T")[0],
@@ -244,7 +244,7 @@ export default function TestLivelloPage() {
                 <CardContent className="space-y-1 text-sm text-muted-foreground">
                   {t.data && <p>📅 {new Date(t.data).toLocaleDateString("it-CH")}</p>}
                   {t.luogo && <p>📍 {t.luogo}</p>}
-                  <p>Livello: {t.livello_testato || "-"} → {t.livello_successivo || "-"}</p>
+                  <p>Livello: {t.livello_attuale || "-"} → {t.livello_accesso || "-"}</p>
                 </CardContent>
               </Card>
             ))}
@@ -293,12 +293,12 @@ export default function TestLivelloPage() {
                 <Input value={form.luogo} onChange={(e) => set_form({ ...form, luogo: e.target.value })} />
               </div>
               <div>
-                <label className="text-sm font-medium text-foreground">Livello testato</label>
-                <Input value={form.livello_testato} onChange={(e) => set_form({ ...form, livello_testato: e.target.value })} placeholder="es. Stellina 1" />
+                <label className="text-sm font-medium text-foreground">Attuale livello atleta</label>
+                <Input value={form.livello_attuale} onChange={(e) => set_form({ ...form, livello_attuale: e.target.value })} placeholder="es. Stellina 1" />
               </div>
               <div>
-                <label className="text-sm font-medium text-foreground">Livello successivo</label>
-                <Input value={form.livello_successivo} onChange={(e) => set_form({ ...form, livello_successivo: e.target.value })} placeholder="es. Stellina 2" />
+                <label className="text-sm font-medium text-foreground">Test per accedere al livello</label>
+                <Input value={form.livello_accesso} onChange={(e) => set_form({ ...form, livello_accesso: e.target.value })} placeholder="es. Stellina 2" />
               </div>
             </div>
             <div>
@@ -339,7 +339,7 @@ export default function TestLivelloPage() {
             <div><span className="text-muted-foreground">Data:</span> {selected_test.data ? new Date(selected_test.data).toLocaleDateString("it-CH") : "-"}</div>
             <div><span className="text-muted-foreground">Ora:</span> {selected_test.ora?.slice(0, 5) || "-"}</div>
             <div><span className="text-muted-foreground">Luogo:</span> {selected_test.luogo || "-"}</div>
-            <div><span className="text-muted-foreground">Livello:</span> {selected_test.livello_testato} → {selected_test.livello_successivo}</div>
+            <div><span className="text-muted-foreground">Livello:</span> {selected_test.livello_attuale} → {selected_test.livello_accesso}</div>
           </CardContent>
         </Card>
       )}
