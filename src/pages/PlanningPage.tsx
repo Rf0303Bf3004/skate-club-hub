@@ -1074,6 +1074,9 @@ function PlanningPageInner() {
                     const is_private = (c.tipo || "").toLowerCase() === "privata";
                     const is_selected = selected_corso_id === c.id;
 
+                    // Private slots need more height to fit labels without overlap
+                    const slot_h = is_private ? Math.max(ROW_H - 4, 52) : ROW_H - 12;
+
                     return (
                       <Tooltip key={c.id}>
                         <TooltipTrigger asChild>
@@ -1083,7 +1086,7 @@ function PlanningPageInner() {
                               left: (cs - f_start) * PPM_FOCUS,
                               width: w_px,
                               top: ri * ROW_H + 8,
-                              height: ROW_H - 12,
+                              height: slot_h,
                               background: is_private
                                 ? `repeating-linear-gradient(-45deg, ${colore} 0px, ${colore} 3px, transparent 3px, transparent 8px)`
                                 : colore,
@@ -1094,17 +1097,17 @@ function PlanningPageInner() {
                             onClick={() => set_selected_corso_id(c.id)}
                           >
                             {is_private ? (
-                              <div className="flex flex-col gap-0.5 px-1 py-0.5 overflow-hidden">
-                                <span className="truncate bg-white/90 px-1 rounded text-gray-900 relative z-[1] inline-block text-[11px] font-bold">
+                              <div className="flex flex-col gap-0 px-1 py-0.5 overflow-hidden">
+                                <span className="truncate rounded text-[11px] font-bold leading-tight" style={{ background: "rgba(255,255,255,0.92)", color: "#1a1a1a", padding: "1px 4px", position: "relative", zIndex: 1 }}>
                                   {c.nome}
                                 </span>
                                 {w_px > 70 && first_istr && (
-                                  <span className="truncate bg-white/90 px-1 rounded text-gray-900 relative z-[1] inline-block text-[10px] font-bold">
+                                  <span className="truncate rounded text-[10px] font-medium leading-tight" style={{ background: "rgba(255,255,255,0.92)", color: "#1a1a1a", padding: "1px 4px", position: "relative", zIndex: 1, marginTop: 1 }}>
                                     {first_istr.nome} {first_istr.cognome}
                                   </span>
                                 )}
                                 {w_px > 90 && c.livello_richiesto && (
-                                  <span className="truncate bg-white/90 px-1 rounded text-gray-900 relative z-[1] inline-block text-[9px] font-bold">
+                                  <span className="truncate rounded text-[9px] font-medium leading-tight" style={{ background: "rgba(255,255,255,0.92)", color: "#555", padding: "1px 4px", position: "relative", zIndex: 1, marginTop: 1 }}>
                                     {c.livello_richiesto}
                                   </span>
                                 )}
