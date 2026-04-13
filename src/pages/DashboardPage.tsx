@@ -1055,11 +1055,24 @@ const DashboardPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Colonna sinistra — corsi + presenze */}
         <div className="lg:col-span-2 space-y-5">
-          {/* Corsi oggi + 2 giorni */}
+          {/* Agenda corsi — un giorno alla volta */}
           <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Agenda corsi</h3>
-              <span className="text-xs text-muted-foreground">Oggi + 2 giorni</span>
+              <div className="flex items-center gap-1">
+                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => set_agenda_offset((o) => o - 1)}>
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <button
+                  onClick={() => set_agenda_offset(0)}
+                  className={`text-xs font-bold px-3 py-1 rounded-full transition-colors ${agenda_is_today ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+                >
+                  {agenda_label}
+                </button>
+                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => set_agenda_offset((o) => o + 1)}>
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
 
             <div className="flex gap-1 p-1 bg-muted/30 rounded-lg">
@@ -1077,43 +1090,33 @@ const DashboardPage: React.FC = () => {
 
             {tab_presenze === "corsi" && (
               <div className="space-y-5">
-                {corsi_per_giorno.length === 0 && today_lezioni.length === 0 ? (
+                {corsi_agenda.length === 0 && (agenda_is_today ? today_lezioni.length === 0 : true) ? (
                   <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
                     <Clock className="w-8 h-8 mb-2 opacity-30" />
-                    <p className="text-sm">Nessun corso nei prossimi 3 giorni</p>
+                    <p className="text-sm">Nessun corso per {agenda_label.toLowerCase()}</p>
                   </div>
                 ) : (
                   <>
-                    {corsi_per_giorno.map(({ data, label, corsi: corsi_giorno }) => (
-                      <div key={data} className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className={`text-xs font-bold px-2.5 py-1 rounded-full
-                            ${data === today ? "bg-primary text-white" : "bg-muted text-muted-foreground"}`}
-                          >
-                            {data === today ? "Oggi" : label}
-                          </div>
-                          <span className="text-xs text-muted-foreground">
-                            {corsi_giorno.length} cors{corsi_giorno.length === 1 ? "o" : "i"}
-                          </span>
-                        </div>
-                        {corsi_giorno.map((corso) => (
-                          <CorsoCard
-                            key={corso.id}
-                            corso={corso}
-                            atleti={atleti}
-                            monitori={monitori}
-                            istruttori={istruttori}
-                            presenze={presenze}
-                            presenze_corso={presenze_corso}
-                            data={data}
-                            on_segna={handle_segna_atleta}
-                            on_segna_istr={handle_segna_istruttore}
-                            loading={segna.isPending}
-                                                      />
-                        ))}
-                      </div>
-                    ))}
+                    <div className="space-y-2">
+                      <span className="text-xs text-muted-foreground">
+                        {corsi_agenda.length} cors{corsi_agenda.length === 1 ? "o" : "i"}
+                      </span>
+                      {corsi_agenda.map((corso: any) => (
+                        <CorsoCard
+                          key={corso.id}
+                          corso={corso}
+                          atleti={atleti}
+                          monitori={monitori}
+                          istruttori={istruttori}
+                          presenze={presenze}
+                          presenze_corso={presenze_corso}
+                          data={agenda_data}
+                          on_segna={handle_segna_atleta}
+                          on_segna_istr={handle_segna_istruttore}
+                          loading={segna.isPending}
+                        />
+                      ))}
+                    </div>
                     {today_lezioni.length > 0 && (
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
