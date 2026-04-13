@@ -140,19 +140,32 @@ const CorsoCard: React.FC<{
   }> = ({ corso, atleti, monitori, istruttori, presenze, presenze_corso, data, on_segna, on_segna_istr, loading }) => {
   const [expanded, set_expanded] = useState(false);
 
-  // Stato corso basato sull'orario corrente
-    // Calcola stato corso basato sull'orario corrente
+  // Stato corso basato sull'orario corrente (solo per oggi)
+  const is_today = data === to_date_key(new Date());
+  const is_past = data < to_date_key(new Date());
   const adesso = new Date();
   const min_ora = adesso.getHours() * 60 + adesso.getMinutes();
   const [hi, mi] = (corso.ora_inizio || "00:00").split(":").map(Number);
   const [hf, mf] = (corso.ora_fine || "23:59").split(":").map(Number);
   const min_inizio = hi * 60 + mi;
   const min_fine = hf * 60 + mf;
-  const non_iniziato = min_inizio > min_ora;
-  const terminato = min_fine <= min_ora;
-  const presto = non_iniziato && (min_inizio - min_ora) <= 30;
-  const bloccato = non_iniziato || terminato;
-  const stato_corso = terminato ? "terminato" : (!non_iniziato ? "in_corso" : presto ? "presto" : "futuro");
+
+  let stato_corso: "terminato" | "in_corso" | "presto" | "futuro";
+  let bloccato: boolean;
+
+  if (is_past) {
+    stato_corso = "terminato";
+    bloccato = true;
+  } else if (!is_today) {
+    stato_corso = "futuro";
+    bloccato = true;
+  } else {
+    const non_iniziato = min_inizio > min_ora;
+    const terminato = min_fine <= min_ora;
+    const presto = non_iniziato && (min_inizio - min_ora) <= 30;
+    bloccato = non_iniziato || terminato;
+    stato_corso = terminato ? "terminato" : (!non_iniziato ? "in_corso" : presto ? "presto" : "futuro");
+  }
   const atleti_corso = atleti.filter((a) => corso.atleti_ids?.includes(a.id));
   const presenti_atleti = atleti_corso.filter((a) =>
     presenze.some((p) => p.persona_id === a.id && p.riferimento_id === corso.id && !p.ora_uscita),
