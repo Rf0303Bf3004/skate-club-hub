@@ -1,4 +1,7 @@
 import React, { useState, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { AlertTriangle } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { use_atleti, use_club } from "@/hooks/use-supabase-data";
 import { use_upsert_atleta, use_elimina_atleta } from "@/hooks/use-supabase-mutations";
@@ -481,6 +484,7 @@ const AtletaModal: React.FC<{
 
 const AthletesPage: React.FC = () => {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const { data: atleti = [], isLoading } = use_atleti();
   const upsert = use_upsert_atleta();
   const elimina = use_elimina_atleta();
@@ -492,6 +496,32 @@ const AthletesPage: React.FC = () => {
   const [scheda_id, set_scheda_id] = useState<string | null>(null);
   const [invito_atleta, set_invito_atleta] = useState<any>(null);
   const { data: club } = use_club();
+
+  // Banner: atleti senza iscrizioni nella stagione corrente
+  const { data: non_iscritti_count = 0 } = useQuery({
+    queryKey: ["atleti-non-iscritti", get_current_club_id()],
+    queryFn: async () => {
+      const club_id = get_current_club_id();
+      // Get active season
+      const { data: stagione } = await supabase
+        .from("stagioni").select("id").eq("club_id", club_id).eq("attiva", true).maybeSingle();
+      if (!stagione) return 0;
+      // Get active athletes
+      const { data: attivi } = await supabase
+        .from("atleti").select("id").eq("club_id", club_id).eq("attivo", true);
+      if (!attivi?.length) return 0;
+      // Get courses of this season
+      const { data: corsi } = await supabase
+        .from("corsi").select("id").eq("club_id", club_id).eq("stagione_id", stagione.id);
+      if (!corsi?.length) return attivi.length;
+      const corsi_ids = corsi.map((c: any) => c.id);
+      // Get athletes with at least one active enrollment in those courses
+      const { data: iscrizioni } = await supabase
+        .from("iscrizioni_corsi").select("atleta_id").in("corso_id", corsi_ids).eq("attiva", true);
+      const iscritti = new Set((iscrizioni || []).map((i: any) => i.atleta_id));
+      return attivi.filter((a: any) => !iscritti.has(a.id)).length;
+    },
+  });
 
   const filtered = atleti.filter((a: any) => {
     const name_match = `${a.nome} ${a.cognome}`.toLowerCase().includes(search.toLowerCase());
@@ -699,6 +729,17 @@ const AthletesPage: React.FC = () => {
       )}
 
       <div className="space-y-6 animate-fade-in">
+        {non_iscritti_count > 0 && (
+          <div className="flex items-center gap-3 rounded-lg border border-yellow-300 bg-yellow-50 dark:bg-yellow-950/30 dark:border-yellow-700 px-4 py-3">
+            <AlertTriangle className="w-5 h-5 text-yellow-600 shrink-0" />
+            <p className="flex-1 text-sm font-medium text-yellow-800 dark:text-yellow-200">
+              {non_iscritti_count} atleti non ancora iscritti alla stagione corrente
+            </p>
+            <Button size="sm" variant="outline" onClick={() => navigate("/richieste-iscrizione")} className="shrink-0">
+              Gestisci iscrizioni
+            </Button>
+          </div>
+        )}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <h1 className="text-xl font-bold tracking-tight text-foreground">{t("atleti")}</h1>
           <Button
