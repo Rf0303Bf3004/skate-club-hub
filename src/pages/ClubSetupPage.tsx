@@ -154,7 +154,7 @@ const ClubSetupPage: React.FC = () => {
       const setup_fields = [
         "max_lezioni_private_contemporanee", "max_atlete_lezione_condivisa",
         "slot_lezione_privata_minuti", "iban", "intestatario_conto", "banca", "indirizzo_banca", "twint_paylink",
-        "data_fine_stagione",
+        "data_inizio_stagione", "data_fine_stagione",
       ];
       for (const f of setup_fields) {
         if (f in form) setup_payload[f] = form[f];
@@ -168,6 +168,33 @@ const ClubSetupPage: React.FC = () => {
           if (error) throw error;
         }
         await queryClient.invalidateQueries({ queryKey: ["setup_club", club_id] });
+      }
+
+      // Auto-sync stagione "Regolare" con le date configurate
+      const data_inizio = setup_payload.data_inizio_stagione ?? (setup as any)?.data_inizio_stagione;
+      const data_fine = setup_payload.data_fine_stagione ?? (setup as any)?.data_fine_stagione;
+      if (data_inizio && data_fine) {
+        const { data: existing } = await supabase
+          .from("stagioni")
+          .select("id")
+          .eq("club_id", club_id)
+          .eq("tipo", "Regolare")
+          .eq("attiva", true)
+          .maybeSingle();
+        const stagione_payload = {
+          club_id,
+          nome: `Stagione ${new Date(data_inizio + "T00:00:00").getFullYear()}/${new Date(data_fine + "T00:00:00").getFullYear()}`,
+          tipo: "Regolare",
+          data_inizio,
+          data_fine,
+          attiva: true,
+        };
+        if (existing?.id) {
+          await supabase.from("stagioni").update(stagione_payload).eq("id", existing.id);
+        } else {
+          await supabase.from("stagioni").insert(stagione_payload);
+        }
+        await queryClient.invalidateQueries({ queryKey: ["stagioni"] });
       }
 
       toast({ title: "✅ Configurazione salvata" });
@@ -443,10 +470,17 @@ const ClubSetupPage: React.FC = () => {
 
         <Separator />
 
-        {/* Data fine stagione */}
+        {/* Date stagione */}
         <section className="space-y-4">
           <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">📅 Stagione</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="Data inizio stagione" icon={<Calendar className="w-3.5 h-3.5" />}>
+              <Input
+                type="date"
+                value={get_val("data_inizio_stagione", "")}
+                onChange={(e) => set_val("data_inizio_stagione", e.target.value || null)}
+              />
+            </Field>
             <Field label="Data fine stagione" icon={<Calendar className="w-3.5 h-3.5" />}>
               <Input
                 type="date"
