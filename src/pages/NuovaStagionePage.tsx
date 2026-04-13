@@ -235,9 +235,9 @@ export default function NuovaStagionePage() {
                   <div className="text-sm text-destructive space-y-1">
                     <p className="font-semibold">ATTENZIONE</p>
                     <p>
-                      Questa operazione rimuoverà tutte le iscrizioni a corsi, pacchetti e lezioni
-                      private della stagione corrente. I dati degli atleti e lo storico vengono
-                      mantenuti. <strong>Questa azione è irreversibile.</strong>
+                      Questa operazione archivierà la stagione corrente. Tutti i dati rimangono
+                      consultabili in sola lettura. Gli atleti senza adesioni future diventeranno
+                      inattivi. <strong>Questa azione è irreversibile.</strong>
                     </p>
                   </div>
                 </div>
