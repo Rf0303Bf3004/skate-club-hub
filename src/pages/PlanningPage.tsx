@@ -1610,36 +1610,39 @@ function DetailPanel({ corso, istr_map, atleti, build_mode, on_close, on_remove,
     enabled: !is_private,
   });
 
-  // Private lesson athletes – use lezione_privata_id if available, otherwise fallback to matching
+  // Private lesson athletes – direct lookup by lezione_privata_id when available
   const lezione_privata_id = corso.lezione_privata_id || null;
   const { data: private_atlete } = useQuery({
-    queryKey: ["lezioni_private_atlete_detail", lezione_privata_id, corso_id_for_query, corso.data],
+    queryKey: ["lezioni_private_atlete_detail", lezione_privata_id, corso_id_for_query],
     queryFn: async () => {
-      let lp_ids: string[] = [];
+      let lp_id = lezione_privata_id;
 
-      if (lezione_privata_id) {
-        // Direct link available
-        lp_ids = [lezione_privata_id];
-      } else {
-        // Fallback: find by matching fields
+      // If no direct id, try broader search: any lezione_private matching club + instructor + time window
+      if (!lp_id) {
+        const istr = corso.istruttori_ids?.[0];
         let q = supabase
           .from("lezioni_private")
           .select("id")
-          .eq("club_id", corso.club_id || CLUB_ID)
-          .eq("istruttore_id", corso.istruttori_ids?.[0] || "")
-          .eq("ora_inizio", corso.ora_inizio)
-          .eq("ora_fine", corso.ora_fine);
+          .eq("club_id", corso.club_id || CLUB_ID);
+        if (istr) q = q.eq("istruttore_id", istr);
+        if (corso.ora_inizio) q = q.eq("ora_inizio", corso.ora_inizio);
+        if (corso.ora_fine) q = q.eq("ora_fine", corso.ora_fine);
         if (corso.data) q = q.eq("data", corso.data);
         const { data: lp_list } = await q;
         if (!lp_list || lp_list.length === 0) return [];
-        lp_ids = lp_list.map((l: any) => l.id);
+        // Query athletes for all matched lessons
+        const ids = lp_list.map((l: any) => l.id);
+        const { data: atlete } = await supabase
+          .from("lezioni_private_atlete")
+          .select("*")
+          .in("lezione_id", ids);
+        return atlete ?? [];
       }
 
       const { data: atlete } = await supabase
         .from("lezioni_private_atlete")
         .select("*")
-        .in("lezione_id", lp_ids);
-      
+        .eq("lezione_id", lp_id);
       return atlete ?? [];
     },
     enabled: is_private,
