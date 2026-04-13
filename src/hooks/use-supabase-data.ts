@@ -449,6 +449,32 @@ export function use_tutti_club() {
   });
 }
 
+// ─── Adesioni Atleta ───────────────────────────────────────
+export function use_adesioni_atleta() {
+  return useQuery({
+    refetchOnMount: "always",
+    staleTime: 0,
+    enabled: !!get_current_club_id(),
+    queryKey: ["adesioni_atleta", get_current_club_id()],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("adesioni_atleta")
+        .select("*")
+        .eq("club_id", get_current_club_id())
+        .eq("stato", "attiva");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+export function is_atleta_attivo_oggi(adesioni: any[], atleta_id: string): boolean {
+  const today = new Date().toISOString().slice(0, 10);
+  return adesioni.some(
+    (ad) => ad.atleta_id === atleta_id && ad.data_inizio <= today && ad.data_fine >= today
+  );
+}
+
 // ─── Helpers ──────────────────────────────────────────────
 export function get_stagione_per_data(stagioni: any[], data: string): any | null {
   return stagioni.find((s: any) => data >= s.data_inizio && data <= s.data_fine) || null;
