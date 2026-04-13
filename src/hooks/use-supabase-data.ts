@@ -25,9 +25,13 @@ export function use_setup_club() {
     enabled: !!get_current_club_id(),
     queryKey: ["setup_club", get_current_club_id()],
     queryFn: async () => {
-      const { data, error } = await supabase.from("setup_club").select("*").eq("club_id", get_current_club_id()).single();
-      if (error && error.code !== "PGRST116") throw error;
-      return data;
+      const { data, error } = await supabase
+        .from("setup_club")
+        .select("*")
+        .eq("club_id", get_current_club_id())
+        .maybeSingle();
+      if (error) throw error;
+      return data ?? null;
     },
   });
 }

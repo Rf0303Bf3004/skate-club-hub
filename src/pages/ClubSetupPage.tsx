@@ -136,6 +136,7 @@ const ClubSetupPage: React.FC = () => {
   const handle_save = async () => {
     set_saving(true);
     try {
+      const club_id = get_current_club_id();
       const club_payload: Record<string, any> = {};
       const club_fields = [
         "nome", "citta", "paese", "email", "telefono", "indirizzo",
@@ -145,7 +146,7 @@ const ClubSetupPage: React.FC = () => {
         if (f in form) club_payload[f] = form[f];
       }
       if (Object.keys(club_payload).length > 0) {
-        const { error } = await supabase.from("clubs").update(club_payload).eq("id", get_current_club_id());
+        const { error } = await supabase.from("clubs").update(club_payload).eq("id", club_id);
         if (error) throw error;
       }
 
@@ -159,8 +160,14 @@ const ClubSetupPage: React.FC = () => {
         if (f in form) setup_payload[f] = form[f];
       }
       if (Object.keys(setup_payload).length > 0) {
-        const { error } = await supabase.from("setup_club").update(setup_payload).eq("club_id", get_current_club_id());
-        if (error) throw error;
+        if ((setup as any)?.id) {
+          const { error } = await supabase.from("setup_club").update(setup_payload).eq("id", (setup as any).id);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase.from("setup_club").insert({ club_id, ...setup_payload });
+          if (error) throw error;
+        }
+        await queryClient.invalidateQueries({ queryKey: ["setup_club", club_id] });
       }
 
       toast({ title: "✅ Configurazione salvata" });
