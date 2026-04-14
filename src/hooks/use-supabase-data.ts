@@ -515,3 +515,70 @@ export function use_richieste_iscrizione() {
     },
   });
 }
+
+// ─── Disponibilità Ghiaccio ────────────────────────────────
+export function use_disponibilita_ghiaccio() {
+  return useQuery({
+    refetchOnMount: "always",
+    staleTime: 0,
+    enabled: !!get_current_club_id(),
+    queryKey: ["disponibilita_ghiaccio", get_current_club_id()],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("disponibilita_ghiaccio")
+        .select("*")
+        .eq("club_id", get_current_club_id())
+        .eq("tipo", "ghiaccio");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+// ─── Corso Completo Logic ──────────────────────────────────
+function _time_to_min(t: string): number {
+  const [h, m] = (t || "00:00").split(":").map(Number);
+  return h * 60 + (m || 0);
+}
+
+export type CorsoCompletoResult = {
+  completo: boolean;
+  motivo?: string;
+};
+
+export function check_corso_completo(corso: any, disp_ghiaccio: any[]): CorsoCompletoResult {
+  // 1. Must have giorno, ora_inizio, ora_fine
+  if (!corso.giorno || !corso.ora_inizio || !corso.ora_fine) {
+    return { completo: false, motivo: "Giorno/orario non definito" };
+  }
+
+  // 2. Check if the schedule fits within ghiaccio availability for that day
+  const slots_giorno = disp_ghiaccio.filter((s: any) => s.giorno === corso.giorno);
+  if (slots_giorno.length === 0) {
+    return { completo: false, motivo: "Nessun ghiaccio disponibile per " + corso.giorno };
+  }
+
+  const corso_start = _time_to_min(corso.ora_inizio);
+  const corso_end = _time_to_min(corso.ora_fine);
+  const coperto = slots_giorno.some(
+    (s: any) => _time_to_min(s.ora_inizio) <= corso_start && _time_to_min(s.ora_fine) >= corso_end
+  );
+
+  if (!coperto) {
+    return { completo: false, motivo: "Orario fuori disponibilità ghiaccio" };
+  }
+
+  return { completo: true };
+}
+
+/**
+ * Returns a filtered list of only complete courses + the raw check function.
+ */
+export function use_corsi_completi() {
+  const { data: corsi = [], ...rest } = use_corsi();
+  const { data: disp_ghiaccio = [] } = use_disponibilita_ghiaccio();
+
+  const corsi_completi = corsi.filter((c: any) => check_corso_completo(c, disp_ghiaccio).completo);
+
+  return { corsi_completi, corsi, disp_ghiaccio, ...rest };
+}
