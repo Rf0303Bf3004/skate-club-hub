@@ -1263,6 +1263,15 @@ const CorsoModal: React.FC<{
             </TabsTrigger>
           </TabsList>
 
+          {corso?.id && !corso_completezza.completo && (
+            <div className="flex items-start gap-2 px-3 py-2.5 mt-2 rounded-lg bg-orange-50 border border-orange-200">
+              <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-orange-700">
+                <strong>Corso incompleto:</strong> {corso_completezza.motivo}. Le iscrizioni sono disabilitate finché il corso non è completo.
+              </p>
+            </div>
+          )}
+
           <div className="overflow-y-auto flex-1">
             <TabsContent value="info" className="py-4 space-y-4">
               <Field label="Nome" required>
