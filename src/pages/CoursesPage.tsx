@@ -1964,7 +1964,6 @@ const CoursesPage: React.FC = () => {
         data_lunedi: m,
         stagione_id: stagione.id,
         stato: "confermata",
-        archiviato: false,
       }));
       const { data: inserted_weeks, error: iw_err } = await supabase
         .from("planning_settimane")
