@@ -1886,11 +1886,136 @@ const CoursesPage: React.FC = () => {
 
   const handle_save = async (data: any) => {
     try {
-      await upsert.mutateAsync({ ...data, istruttori_ids: Array.from(new Set(data.istruttori_ids || [])) });
+      const corso_id = await upsert.mutateAsync({ ...data, istruttori_ids: Array.from(new Set(data.istruttori_ids || [])) });
       set_modal_open(false);
       toast({ title: data.id ? "✅ Corso aggiornato" : "✅ Corso creato" });
+
+      // Auto-generate planning slots if posiziona_planning is active
+      if (corso_id && data.giorno && data.ora_inizio && data.ora_fine) {
+        try {
+          await generate_planning_slots(corso_id, data);
+          toast({ title: "📅 Planning aggiornato per tutta la stagione" });
+        } catch (err: any) {
+          console.error("Errore generazione planning:", err);
+          toast({ title: "⚠️ Corso salvato ma errore nel planning", description: err?.message, variant: "destructive" });
+        }
+      }
     } catch (err: any) {
       toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
+    }
+  };
+
+  const generate_planning_slots = async (corso_id: string, data: any) => {
+    const club_id = get_current_club_id();
+    if (!club_id) return;
+
+    // Get active season
+    const { data: stagioni } = await supabase
+      .from("stagioni")
+      .select("*")
+      .eq("club_id", club_id)
+      .eq("attiva", true)
+      .limit(1);
+    const stagione = stagioni?.[0];
+    if (!stagione?.data_fine) return;
+
+    const giorno_map: Record<string, number> = {
+      "Lunedì": 1, "Martedì": 2, "Mercoledì": 3, "Giovedì": 4,
+      "Venerdì": 5, "Sabato": 6, "Domenica": 0,
+    };
+    const target_day = giorno_map[data.giorno];
+    if (target_day === undefined) return;
+
+    // Get first instructor if any
+    const istruttori_ids: string[] = Array.from(new Set((data.istruttori_ids || []).filter(Boolean)));
+    const istruttore_id = istruttori_ids[0] || null;
+
+    // Calculate all Mondays from current week to season end
+    const today = new Date();
+    const current_day = today.getDay(); // 0=Sun
+    const diff_to_monday = current_day === 0 ? -6 : 1 - current_day;
+    const first_monday = new Date(today);
+    first_monday.setDate(today.getDate() + diff_to_monday);
+    first_monday.setHours(0, 0, 0, 0);
+
+    const season_end = new Date(stagione.data_fine + "T23:59:59");
+    const mondays: string[] = [];
+    const d = new Date(first_monday);
+    while (d <= season_end) {
+      mondays.push(d.toISOString().slice(0, 10));
+      d.setDate(d.getDate() + 7);
+    }
+    if (mondays.length === 0) return;
+
+    // Get existing planning_settimane for these mondays
+    const { data: existing_weeks } = await supabase
+      .from("planning_settimane")
+      .select("*")
+      .eq("club_id", club_id)
+      .in("data_lunedi", mondays);
+
+    const existing_map = new Map((existing_weeks || []).map(w => [w.data_lunedi, w]));
+
+    // Create missing weeks
+    const missing_mondays = mondays.filter(m => !existing_map.has(m));
+    if (missing_mondays.length > 0) {
+      const new_weeks = missing_mondays.map(m => ({
+        club_id,
+        data_lunedi: m,
+        stagione_id: stagione.id,
+        stato: "confermata",
+        archiviato: false,
+      }));
+      const { data: inserted_weeks, error: iw_err } = await supabase
+        .from("planning_settimane")
+        .insert(new_weeks)
+        .select("*");
+      if (iw_err) throw iw_err;
+      for (const w of inserted_weeks || []) existing_map.set(w.data_lunedi, w);
+    }
+
+    // For each week, calculate the target date and upsert planning_corsi_settimana
+    const slot_rows: any[] = [];
+    for (const monday of mondays) {
+      const week = existing_map.get(monday);
+      if (!week) continue;
+      // Calculate target date from monday
+      const mon_date = new Date(monday + "T00:00:00");
+      const offset = target_day === 0 ? 6 : target_day - 1; // Mon=0 offset
+      const target_date = new Date(mon_date);
+      target_date.setDate(mon_date.getDate() + offset);
+      const target_str = target_date.toISOString().slice(0, 10);
+
+      // Skip dates before today or after season end
+      if (target_date < new Date(today.toISOString().slice(0, 10) + "T00:00:00")) continue;
+      if (target_date > season_end) continue;
+
+      slot_rows.push({
+        settimana_id: week.id,
+        corso_id,
+        data: target_str,
+        ora_inizio: data.ora_inizio,
+        ora_fine: data.ora_fine,
+        istruttore_id,
+        annullato: false,
+      });
+    }
+
+    if (slot_rows.length === 0) return;
+
+    // Delete existing slots for this corso in all these weeks, then insert fresh
+    const week_ids = [...new Set(slot_rows.map(r => r.settimana_id))];
+    await supabase
+      .from("planning_corsi_settimana")
+      .delete()
+      .eq("corso_id", corso_id)
+      .in("settimana_id", week_ids);
+
+    // Insert in batches of 100
+    for (let i = 0; i < slot_rows.length; i += 100) {
+      const batch = slot_rows.slice(i, i + 100);
+      const { error } = await supabase.from("planning_corsi_settimana").insert(batch);
+      if (error) throw error;
     }
   };
 
