@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { Calendar } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -921,6 +922,136 @@ const TabPresenze: React.FC<{
   );
 };
 
+// ─── Mini Planning Giorno ──────────────────────────────────
+const MiniPlanningGiorno: React.FC<{ giorno: string; corso_id?: string; istruttori: any[] }> = ({ giorno, corso_id, istruttori }) => {
+  const { data: slots, isLoading } = useQuery({
+    queryKey: ["mini_planning_giorno", giorno],
+    queryFn: async () => {
+      const club_id = get_current_club_id();
+      // Find current active (non-archived) week
+      const { data: settimane } = await supabase
+        .from("planning_settimane")
+        .select("id, data_lunedi")
+        .eq("club_id", club_id)
+        .eq("archiviato", false)
+        .order("data_lunedi", { ascending: false })
+        .limit(1);
+      if (!settimane?.length) return [];
+
+      const settimana_id = settimane[0].id;
+
+      // Get all planned courses for this week
+      const { data: planning } = await supabase
+        .from("planning_corsi_settimana")
+        .select("corso_id, data, ora_inizio, ora_fine, annullato, istruttore_id")
+        .eq("settimana_id", settimana_id)
+        .eq("annullato", false);
+
+      if (!planning?.length) return [];
+
+      // Filter by day of week matching giorno
+      const giorno_map: Record<string, number> = {
+        "Lunedì": 1, "Martedì": 2, "Mercoledì": 3, "Giovedì": 4,
+        "Venerdì": 5, "Sabato": 6, "Domenica": 0,
+      };
+      const target_day = giorno_map[giorno];
+      const filtered = planning.filter((p: any) => {
+        const d = new Date(p.data + "T00:00:00");
+        return d.getDay() === target_day;
+      });
+
+      if (!filtered.length) return [];
+
+      // Get course names
+      const corso_ids = [...new Set(filtered.map((p: any) => p.corso_id))];
+      const { data: corsi_data } = await supabase
+        .from("corsi")
+        .select("id, nome, tipo")
+        .in("id", corso_ids);
+
+      const corsi_map = Object.fromEntries((corsi_data || []).map((c: any) => [c.id, c]));
+
+      return filtered
+        .map((p: any) => ({
+          ...p,
+          corso_nome: corsi_map[p.corso_id]?.nome || "—",
+          corso_tipo: corsi_map[p.corso_id]?.tipo || "",
+        }))
+        .sort((a: any, b: any) => time_to_min(a.ora_inizio) - time_to_min(b.ora_inizio));
+    },
+  });
+
+  if (isLoading) return <div className="text-xs text-muted-foreground py-2">Caricamento planning...</div>;
+
+  const items = (slots || []).filter((s: any) => s.corso_id !== corso_id);
+
+  if (items.length === 0) {
+    return (
+      <div className="bg-muted/20 border border-dashed border-border rounded-xl p-3 mt-1">
+        <div className="flex items-center gap-2 mb-1">
+          <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Planning ghiaccio — {giorno}</span>
+        </div>
+        <p className="text-xs text-muted-foreground">Nessun corso pianificato per questo giorno</p>
+      </div>
+    );
+  }
+
+  // Calculate range for visual blocks
+  const min_start = Math.min(...items.map((s: any) => time_to_min(s.ora_inizio)));
+  const max_end = Math.max(...items.map((s: any) => time_to_min(s.ora_fine)));
+  const range = max_end - min_start || 60;
+
+  return (
+    <div className="bg-muted/20 border border-border rounded-xl p-3 mt-1 space-y-2">
+      <div className="flex items-center gap-2">
+        <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Planning ghiaccio — {giorno}</span>
+        <Badge variant="secondary" className="text-[10px] ml-auto">{items.length} cors{items.length === 1 ? "o" : "i"}</Badge>
+      </div>
+      {/* Timeline bar */}
+      <div className="relative h-10 bg-background rounded-lg border border-border overflow-hidden">
+        {/* Time labels */}
+        <span className="absolute left-1 top-0 text-[9px] text-muted-foreground leading-none mt-0.5">{String(Math.floor(min_start / 60)).padStart(2, "0")}:{String(min_start % 60).padStart(2, "0")}</span>
+        <span className="absolute right-1 top-0 text-[9px] text-muted-foreground leading-none mt-0.5">{String(Math.floor(max_end / 60)).padStart(2, "0")}:{String(max_end % 60).padStart(2, "0")}</span>
+        {items.map((s: any, i: number) => {
+          const left = ((time_to_min(s.ora_inizio) - min_start) / range) * 100;
+          const width = ((time_to_min(s.ora_fine) - time_to_min(s.ora_inizio)) / range) * 100;
+          return (
+            <div
+              key={i}
+              className="absolute top-2.5 h-6 rounded bg-primary/20 border border-primary/30 flex items-center px-1 overflow-hidden"
+              style={{ left: `${left}%`, width: `${Math.max(width, 3)}%` }}
+              title={`${s.corso_nome} ${s.ora_inizio?.slice(0, 5)}–${s.ora_fine?.slice(0, 5)}`}
+            >
+              <span className="text-[9px] font-medium text-foreground truncate">{s.corso_nome}</span>
+            </div>
+          );
+        })}
+      </div>
+      {/* List */}
+      <div className="space-y-1">
+        {items.map((s: any, i: number) => {
+          const istr = s.istruttore_id ? istruttori.find((ist: any) => ist.id === s.istruttore_id) : null;
+          return (
+            <div key={i} className="flex items-center gap-2 text-xs">
+              <span className="font-mono text-muted-foreground w-[90px] flex-shrink-0">
+                {s.ora_inizio?.slice(0, 5)}–{s.ora_fine?.slice(0, 5)}
+              </span>
+              <span className="font-medium text-foreground truncate">{s.corso_nome}</span>
+              {istr && (
+                <span className="text-muted-foreground truncate ml-auto">
+                  {istr.nome} {istr.cognome}
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 // ─── Modal corso ───────────────────────────────────────────
 const CorsoModal: React.FC<{
   corso?: any;
@@ -1356,6 +1487,7 @@ const CorsoModal: React.FC<{
                       </p>
                     </div>
                   )}
+                  <MiniPlanningGiorno giorno={form.giorno} corso_id={corso?.id} istruttori={istruttori} />
                 </>
               )}
 
