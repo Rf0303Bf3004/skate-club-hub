@@ -7,6 +7,8 @@ import {
   use_atleti,
   use_atleti_monitori,
   use_presenze_corso,
+  use_disponibilita_ghiaccio,
+  check_corso_completo,
   get_istruttore_name_from_list,
 } from "@/hooks/use-supabase-data";
 import { use_upsert_corso, use_elimina_corso, use_upsert_presenza_corso } from "@/hooks/use-supabase-mutations";
@@ -948,6 +950,8 @@ const CorsoModal: React.FC<{
   deleting,
 }) => {
   const qc = useQueryClient();
+  const { data: disp_ghiaccio_modal = [] } = use_disponibilita_ghiaccio();
+  const corso_completezza = corso ? check_corso_completo(corso, disp_ghiaccio_modal) : { completo: false, motivo: "Nuovo corso" };
   const has_planning = !!(corso?.giorno && corso?.ora_inizio && corso?.ora_fine);
   const [posiziona_planning, set_posiziona_planning] = useState(corso ? has_planning : true);
   const [form, set_form] = useState({
@@ -1248,7 +1252,7 @@ const CorsoModal: React.FC<{
             <TabsTrigger value="info" className="flex-1">
               Informazioni
             </TabsTrigger>
-            <TabsTrigger value="iscrizioni" className="flex-1" disabled={!corso?.id}>
+            <TabsTrigger value="iscrizioni" className="flex-1" disabled={!corso?.id || !corso_completezza.completo}>
               Iscrizioni {corso?.id ? `(${corso.atleti_ids?.length || 0})` : ""}
             </TabsTrigger>
             <TabsTrigger value="monitori" className="flex-1" disabled={!corso?.id}>
@@ -1258,6 +1262,15 @@ const CorsoModal: React.FC<{
               Presenze
             </TabsTrigger>
           </TabsList>
+
+          {corso?.id && !corso_completezza.completo && (
+            <div className="flex items-start gap-2 px-3 py-2.5 mt-2 rounded-lg bg-orange-50 border border-orange-200">
+              <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-orange-700">
+                <strong>Corso incompleto:</strong> {corso_completezza.motivo}. Le iscrizioni sono disabilitate finché il corso non è completo.
+              </p>
+            </div>
+          )}
 
           <div className="overflow-y-auto flex-1">
             <TabsContent value="info" className="py-4 space-y-4">
@@ -1670,6 +1683,7 @@ const CoursesPage: React.FC = () => {
   const qc = useQueryClient();
   const { data: corsi = [], isLoading } = use_corsi();
   const { data: istruttori = [] } = use_istruttori();
+  const { data: disp_ghiaccio = [] } = use_disponibilita_ghiaccio();
   const { data: atleti = [] } = use_atleti();
   const { data: monitori = [] } = use_atleti_monitori();
   const { data: tipi_corso = [] } = use_tipi_corso();
@@ -1858,6 +1872,7 @@ const CoursesPage: React.FC = () => {
                   <div className="space-y-2">
                     {group.map((c: any) => {
                       const istruttori_corso = (c.istruttori_ids || []).map((id: string) => istruttori.find((i: any) => i.id === id)).filter(Boolean);
+                      const completezza = check_corso_completo(c, disp_ghiaccio);
                       return (
                         <div key={c.id} onClick={() => open_corso(c)}
                           className="flex items-center gap-4 px-4 py-3 bg-card rounded-xl border border-border/50 hover:border-primary/30 cursor-pointer transition-shadow hover:shadow-card-hover">
@@ -1870,6 +1885,11 @@ const CoursesPage: React.FC = () => {
                           <span className="text-sm text-muted-foreground truncate max-w-[140px]">
                             {istruttori_corso.map((i: any) => `${i.nome} ${i.cognome?.charAt(0)}.`).join(", ") || "—"}
                           </span>
+                          {!completezza.completo && (
+                            <Badge variant="outline" className="text-[10px] border-orange-300 bg-orange-50 text-orange-700 flex-shrink-0" title={completezza.motivo}>
+                              <AlertTriangle className="w-3 h-3 mr-1" />Incompleto
+                            </Badge>
+                          )}
                           {c.tipo && <Badge variant="secondary" className="text-xs flex-shrink-0">{c.tipo}</Badge>}
                           <span className="text-xs text-muted-foreground flex-shrink-0">{(c.atleti_ids||[]).length} iscritti</span>
                         </div>
@@ -1891,20 +1911,28 @@ const CoursesPage: React.FC = () => {
                     <span className="text-xs font-normal ml-2 text-muted-foreground">({group.length})</span>
                   </h2>
                   <div className="space-y-2">
-                    {group.sort((a: any, b: any) => GIORNI_DB.indexOf(a.giorno) - GIORNI_DB.indexOf(b.giorno) || time_to_min(a.ora_inizio) - time_to_min(b.ora_inizio)).map((c: any) => (
-                      <div key={c.id} onClick={() => open_corso(c)}
-                        className="flex items-center gap-4 px-4 py-3 bg-card rounded-xl border border-border/50 hover:border-primary/30 cursor-pointer transition-shadow hover:shadow-card-hover">
-                        <div className="w-20 text-xs font-bold text-muted-foreground flex-shrink-0">{c.giorno || "—"}</div>
-                        <div className="w-24 text-xs font-bold text-primary tabular-nums flex-shrink-0">
-                          {c.ora_inizio?.slice(0,5)}–{c.ora_fine?.slice(0,5)}
+                    {group.sort((a: any, b: any) => GIORNI_DB.indexOf(a.giorno) - GIORNI_DB.indexOf(b.giorno) || time_to_min(a.ora_inizio) - time_to_min(b.ora_inizio)).map((c: any) => {
+                      const completezza = check_corso_completo(c, disp_ghiaccio);
+                      return (
+                        <div key={c.id} onClick={() => open_corso(c)}
+                          className="flex items-center gap-4 px-4 py-3 bg-card rounded-xl border border-border/50 hover:border-primary/30 cursor-pointer transition-shadow hover:shadow-card-hover">
+                          <div className="w-20 text-xs font-bold text-muted-foreground flex-shrink-0">{c.giorno || "—"}</div>
+                          <div className="w-24 text-xs font-bold text-primary tabular-nums flex-shrink-0">
+                            {c.ora_inizio?.slice(0,5)}–{c.ora_fine?.slice(0,5)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="font-semibold text-foreground">{c.nome}</span>
+                          </div>
+                          {!completezza.completo && (
+                            <Badge variant="outline" className="text-[10px] border-orange-300 bg-orange-50 text-orange-700 flex-shrink-0" title={completezza.motivo}>
+                              <AlertTriangle className="w-3 h-3 mr-1" />Incompleto
+                            </Badge>
+                          )}
+                          {c.tipo && <Badge variant="secondary" className="text-xs flex-shrink-0">{c.tipo}</Badge>}
+                          <span className="text-xs text-muted-foreground flex-shrink-0">{(c.atleti_ids||[]).length} iscritti</span>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <span className="font-semibold text-foreground">{c.nome}</span>
-                        </div>
-                        {c.tipo && <Badge variant="secondary" className="text-xs flex-shrink-0">{c.tipo}</Badge>}
-                        <span className="text-xs text-muted-foreground flex-shrink-0">{(c.atleti_ids||[]).length} iscritti</span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               );
