@@ -341,6 +341,7 @@ export function use_upsert_corso() {
           if (im) throw im;
         }
       }
+      return corso_id;
     },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["corsi"] });
