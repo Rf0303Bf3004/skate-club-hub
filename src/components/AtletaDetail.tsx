@@ -279,28 +279,35 @@ const CalendarioAtleta: React.FC<{ atletaId: string; clubId: string }> = ({ atle
 
   return (
     <div className="bg-card rounded-xl shadow-card divide-y divide-border">
-      {all_events.map((ev, i) => (
-        <div key={i} className="flex items-center gap-4 px-5 py-3">
-          <div className="text-center min-w-[52px]">
-            <div className="text-xs text-muted-foreground uppercase">
-              {new Date(ev.date + "T00:00:00").toLocaleDateString("it-CH", { weekday: "short" })}
+      {all_events.map((ev, i) => {
+        const is_cancelled = ev.status === "cancelled";
+        const is_planned = ev.status === "planned";
+        const badge_key = is_cancelled ? "corso_cancelled" : is_planned ? "corso_planned" : ev.type;
+        const badge_label = is_cancelled ? "Annullato" : is_planned ? "Previsto" : (EVENT_LABEL[ev.type] || ev.type);
+
+        return (
+          <div key={i} className={`flex items-center gap-4 px-5 py-3 ${is_cancelled ? "opacity-50 line-through" : ""} ${is_planned ? "opacity-75" : ""}`}>
+            <div className="text-center min-w-[52px]">
+              <div className="text-xs text-muted-foreground uppercase">
+                {new Date(ev.date + "T00:00:00").toLocaleDateString("it-CH", { weekday: "short" })}
+              </div>
+              <div className={`text-lg font-bold leading-tight ${is_planned ? "text-muted-foreground" : "text-foreground"}`}>
+                {new Date(ev.date + "T00:00:00").getDate()}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {new Date(ev.date + "T00:00:00").toLocaleDateString("it-CH", { month: "short" })}
+              </div>
             </div>
-            <div className="text-lg font-bold text-foreground leading-tight">
-              {new Date(ev.date + "T00:00:00").getDate()}
+            <div className="flex-1 min-w-0">
+              <p className={`font-medium truncate ${is_cancelled ? "text-muted-foreground" : "text-foreground"}`}>{ev.title}</p>
+              {ev.time && <p className="text-xs text-muted-foreground">{ev.time}</p>}
             </div>
-            <div className="text-xs text-muted-foreground">
-              {new Date(ev.date + "T00:00:00").toLocaleDateString("it-CH", { month: "short" })}
-            </div>
+            <Badge className={`${EVENT_BADGE[badge_key] || EVENT_BADGE[ev.type] || ""} border text-xs shrink-0`}>
+              {badge_label}
+            </Badge>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-medium text-foreground truncate">{ev.title}</p>
-            {ev.time && <p className="text-xs text-muted-foreground">{ev.time}</p>}
-          </div>
-          <Badge className={`${EVENT_BADGE[ev.type] || ""} border-0 text-xs shrink-0`}>
-            {EVENT_LABEL[ev.type] || ev.type}
-          </Badge>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };
