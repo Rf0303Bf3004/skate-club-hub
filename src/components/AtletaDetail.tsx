@@ -111,18 +111,30 @@ const NumInput: React.FC<{
 };
 
 // ─── Calendario Atleta ─────────────────────────────────────
-type CalEvent = { date: string; time: string; title: string; type: string };
+type CalEvent = { date: string; time: string; title: string; type: string; status?: "planned" | "confirmed" | "cancelled" };
 
-const EVENT_BADGE: Record<string, string> = {
-  corso: "bg-blue-100 text-blue-800",
-  lezione: "bg-green-100 text-green-800",
-  gara: "bg-red-100 text-red-800",
-  test: "bg-yellow-100 text-yellow-800",
-  campo: "bg-orange-100 text-orange-800",
+const GIORNO_MAP: Record<string, number> = {
+  "Lunedì": 1, "Martedì": 2, "Mercoledì": 3, "Giovedì": 4,
+  "Venerdì": 5, "Sabato": 6, "Domenica": 0,
 };
-const EVENT_LABEL: Record<string, string> = {
-  corso: "Corso", lezione: "Lezione privata", gara: "Gara", test: "Test livello", campo: "Campo estivo",
-};
+
+function generate_recurring_dates(giorno: string, from: string, to: string): string[] {
+  const target_dow = GIORNO_MAP[giorno];
+  if (target_dow === undefined) return [];
+  const dates: string[] = [];
+  const d = new Date(from + "T00:00:00");
+  const end = new Date(to + "T00:00:00");
+  // Advance to first matching day
+  while (d.getDay() !== target_dow && d <= end) d.setDate(d.getDate() + 1);
+  while (d <= end) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    dates.push(`${y}-${m}-${dd}`);
+    d.setDate(d.getDate() + 7);
+  }
+  return dates;
+}
 
 const CalendarioAtleta: React.FC<{ atletaId: string; clubId: string }> = ({ atletaId, clubId }) => {
   const today = new Date().toISOString().slice(0, 10);
@@ -130,31 +142,57 @@ const CalendarioAtleta: React.FC<{ atletaId: string; clubId: string }> = ({ atle
   const { data: corsi_events = [] } = useQuery({
     queryKey: ["cal-corsi", atletaId],
     queryFn: async () => {
-      // Get corso IDs the athlete is enrolled in
+      // 1. Get corso IDs the athlete is enrolled in
       const { data: iscrizioni } = await supabase
         .from("iscrizioni_corsi").select("corso_id").eq("atleta_id", atletaId).eq("attiva", true);
       if (!iscrizioni?.length) return [];
       const corso_ids = iscrizioni.map((i: any) => i.corso_id);
 
-      // Get corso names for display
-      const { data: corsi_info } = await supabase.from("corsi").select("id, nome").in("id", corso_ids);
-      const nome_map: Record<string, string> = {};
-      (corsi_info || []).forEach((c: any) => { nome_map[c.id] = c.nome; });
+      // 2. Get corso details (nome, giorno, ora, stagione_id)
+      const { data: corsi_info } = await supabase
+        .from("corsi").select("id, nome, giorno, ora_inizio, ora_fine, stagione_id").in("id", corso_ids);
+      if (!corsi_info?.length) return [];
 
-      // Get real planned slots from planning_corsi_settimana
+      // 3. Get stagione end dates
+      const stagione_ids = [...new Set(corsi_info.map((c: any) => c.stagione_id).filter(Boolean))];
+      let stagione_map: Record<string, string> = {};
+      if (stagione_ids.length) {
+        const { data: stagioni } = await supabase.from("stagioni").select("id, data_fine").in("id", stagione_ids);
+        (stagioni || []).forEach((s: any) => { stagione_map[s.id] = s.data_fine; });
+      }
+
+      // 4. Get real planned slots (including cancelled ones)
       const { data: slots } = await supabase
         .from("planning_corsi_settimana")
-        .select("data, ora_inizio, ora_fine, corso_id, annullato, settimana_id")
+        .select("data, ora_inizio, ora_fine, corso_id, annullato")
         .in("corso_id", corso_ids)
-        .gte("data", today)
-        .eq("annullato", false);
+        .gte("data", today);
 
-      return (slots || []).map((s: any) => ({
-        date: s.data,
-        time: (s.ora_inizio || "").slice(0, 5),
-        title: nome_map[s.corso_id] || "Corso",
-        type: "corso",
-      }));
+      // Build a lookup: "corso_id|date" → slot
+      const slot_map: Record<string, any> = {};
+      (slots || []).forEach((s: any) => { slot_map[`${s.corso_id}|${s.data}`] = s; });
+
+      // 5. Generate recurring dates for each corso and overlay planning data
+      const events: CalEvent[] = [];
+      for (const c of corsi_info) {
+        const end_date = stagione_map[c.stagione_id] || new Date(new Date().getFullYear(), 11, 31).toISOString().slice(0, 10);
+        const dates = generate_recurring_dates(c.giorno, today, end_date);
+        const time_str = (c.ora_inizio || "").slice(0, 5);
+
+        for (const dt of dates) {
+          const key = `${c.id}|${dt}`;
+          const slot = slot_map[key];
+
+          if (slot?.annullato) {
+            events.push({ date: dt, time: time_str, title: `${c.nome} — Annullato`, type: "corso", status: "cancelled" });
+          } else if (slot) {
+            events.push({ date: dt, time: (slot.ora_inizio || "").slice(0, 5), title: c.nome, type: "corso", status: "confirmed" });
+          } else {
+            events.push({ date: dt, time: time_str, title: c.nome, type: "corso", status: "planned" });
+          }
+        }
+      }
+      return events;
     },
   });
 
