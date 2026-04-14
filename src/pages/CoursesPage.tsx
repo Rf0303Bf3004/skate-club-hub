@@ -1861,6 +1861,7 @@ const CoursesPage: React.FC = () => {
                   <div className="space-y-2">
                     {group.map((c: any) => {
                       const istruttori_corso = (c.istruttori_ids || []).map((id: string) => istruttori.find((i: any) => i.id === id)).filter(Boolean);
+                      const completezza = check_corso_completo(c, disp_ghiaccio);
                       return (
                         <div key={c.id} onClick={() => open_corso(c)}
                           className="flex items-center gap-4 px-4 py-3 bg-card rounded-xl border border-border/50 hover:border-primary/30 cursor-pointer transition-shadow hover:shadow-card-hover">
@@ -1873,6 +1874,11 @@ const CoursesPage: React.FC = () => {
                           <span className="text-sm text-muted-foreground truncate max-w-[140px]">
                             {istruttori_corso.map((i: any) => `${i.nome} ${i.cognome?.charAt(0)}.`).join(", ") || "—"}
                           </span>
+                          {!completezza.completo && (
+                            <Badge variant="outline" className="text-[10px] border-orange-300 bg-orange-50 text-orange-700 flex-shrink-0" title={completezza.motivo}>
+                              <AlertTriangle className="w-3 h-3 mr-1" />Incompleto
+                            </Badge>
+                          )}
                           {c.tipo && <Badge variant="secondary" className="text-xs flex-shrink-0">{c.tipo}</Badge>}
                           <span className="text-xs text-muted-foreground flex-shrink-0">{(c.atleti_ids||[]).length} iscritti</span>
                         </div>
