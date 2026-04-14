@@ -950,6 +950,8 @@ const CorsoModal: React.FC<{
   deleting,
 }) => {
   const qc = useQueryClient();
+  const { data: disp_ghiaccio_modal = [] } = use_disponibilita_ghiaccio();
+  const corso_completezza = corso ? check_corso_completo(corso, disp_ghiaccio_modal) : { completo: false, motivo: "Nuovo corso" };
   const has_planning = !!(corso?.giorno && corso?.ora_inizio && corso?.ora_fine);
   const [posiziona_planning, set_posiziona_planning] = useState(corso ? has_planning : true);
   const [form, set_form] = useState({
