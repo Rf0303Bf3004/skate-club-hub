@@ -539,19 +539,24 @@ const AthletesPage: React.FC = () => {
     "Oro":          { bg: "bg-amber-50",  text: "text-amber-700",  border: "border-amber-300" },
   };
 
-  // Conteggio atleti per livello separato per artistica e stile
-  const { artistica_count, stile_count } = useMemo(() => {
-    const art: Record<string, number> = {};
-    const stl: Record<string, number> = {};
-    for (const l of TUTTI_LIVELLI) { art[l] = 0; stl[l] = 0; }
-    for (const a of atleti) {
-      if (a.carriera_artistica && TUTTI_LIVELLI.includes(a.carriera_artistica)) art[a.carriera_artistica]++;
-      if (a.carriera_stile && TUTTI_LIVELLI.includes(a.carriera_stile)) stl[a.carriera_stile]++;
-    }
-    return { artistica_count: art, stile_count: stl };
-  }, [atleti]);
+  // Livello effettivo di un atleta: carriera_artistica > carriera_stile > percorso_amatori/livello_amatori
+  const get_livello = useCallback((a: any): string | null => {
+    if (a.carriera_artistica) return a.carriera_artistica;
+    if (a.carriera_stile) return a.carriera_stile;
+    return a.percorso_amatori || a.livello_amatori || null;
+  }, []);
 
-  const [card_filter, set_card_filter] = useState<{ campo: "artistica" | "stile"; livello: string } | null>(null);
+  const livello_count = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const l of TUTTI_LIVELLI) counts[l] = 0;
+    for (const a of atleti) {
+      const liv = get_livello(a);
+      if (liv && TUTTI_LIVELLI.includes(liv)) counts[liv]++;
+    }
+    return counts;
+  }, [atleti, get_livello]);
+
+  const [card_filter, set_card_filter] = useState<string | null>(null);
 
   const filtered = atleti.filter((a: any) => {
     const name_match = `${a.nome} ${a.cognome}`.toLowerCase().includes(search.toLowerCase());
