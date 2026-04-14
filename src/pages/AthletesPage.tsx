@@ -539,28 +539,31 @@ const AthletesPage: React.FC = () => {
     "Oro":          { bg: "bg-amber-50",  text: "text-amber-700",  border: "border-amber-300" },
   };
 
-  // Conteggio atleti per livello separato per artistica e stile
-  const { artistica_count, stile_count } = useMemo(() => {
-    const art: Record<string, number> = {};
-    const stl: Record<string, number> = {};
-    for (const l of TUTTI_LIVELLI) { art[l] = 0; stl[l] = 0; }
-    for (const a of atleti) {
-      if (a.carriera_artistica && TUTTI_LIVELLI.includes(a.carriera_artistica)) art[a.carriera_artistica]++;
-      if (a.carriera_stile && TUTTI_LIVELLI.includes(a.carriera_stile)) stl[a.carriera_stile]++;
-    }
-    return { artistica_count: art, stile_count: stl };
-  }, [atleti]);
+  // Livello effettivo di un atleta: carriera_artistica > carriera_stile > percorso_amatori/livello_amatori
+  const get_livello = useCallback((a: any): string | null => {
+    if (a.carriera_artistica) return a.carriera_artistica;
+    if (a.carriera_stile) return a.carriera_stile;
+    return a.percorso_amatori || a.livello_amatori || null;
+  }, []);
 
-  const [card_filter, set_card_filter] = useState<{ campo: "artistica" | "stile"; livello: string } | null>(null);
+  const livello_count = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const l of TUTTI_LIVELLI) counts[l] = 0;
+    for (const a of atleti) {
+      const liv = get_livello(a);
+      if (liv && TUTTI_LIVELLI.includes(liv)) counts[liv]++;
+    }
+    return counts;
+  }, [atleti, get_livello]);
+
+  const [card_filter, set_card_filter] = useState<string | null>(null);
 
   const filtered = atleti.filter((a: any) => {
     const name_match = `${a.nome} ${a.cognome}`.toLowerCase().includes(search.toLowerCase());
     // Card filter takes priority
     if (card_filter) {
-      const matches = card_filter.campo === "artistica"
-        ? a.carriera_artistica === card_filter.livello
-        : a.carriera_stile === card_filter.livello;
-      return name_match && matches;
+      const liv = get_livello(a);
+      return name_match && liv === card_filter;
     }
     // Dropdown filter
     if (level_filter !== "tutti") {
@@ -794,65 +797,30 @@ const AthletesPage: React.FC = () => {
           </Button>
         </div>
 
-        {/* Card livelli - Artistica */}
-        {TUTTI_LIVELLI.some(l => artistica_count[l] > 0) && (
-          <div className="space-y-1.5">
-            <p className="text-xs font-bold text-purple-600 uppercase tracking-wider">🎨 Artistica</p>
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
-              {TUTTI_LIVELLI.filter(l => artistica_count[l] > 0).map(l => {
-                const c = LIVELLO_COLORS[l] || { bg: "bg-muted", text: "text-foreground", border: "border-border" };
-                const selected = card_filter?.campo === "artistica" && card_filter?.livello === l;
-                return (
-                  <button
-                    key={l}
-                    onClick={() => {
-                      if (selected) { set_card_filter(null); } 
-                      else { set_card_filter({ campo: "artistica", livello: l }); set_level_filter("tutti"); }
-                    }}
-                    className={`shrink-0 px-3 py-2 rounded-lg border text-xs font-semibold transition-all ${
-                      selected
-                        ? "ring-2 ring-purple-400 border-purple-500 bg-purple-100 text-purple-800"
-                        : `${c.border} ${c.bg} ${c.text} hover:opacity-80`
-                    }`}
-                  >
-                    <span className="block">{l}</span>
-                    <span className="block text-[10px] font-normal opacity-70 mt-0.5">{artistica_count[l]}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Card livelli - Stile */}
-        {TUTTI_LIVELLI.some(l => stile_count[l] > 0) && (
-          <div className="space-y-1.5">
-            <p className="text-xs font-bold text-teal-600 uppercase tracking-wider">💃 Stile</p>
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
-              {TUTTI_LIVELLI.filter(l => stile_count[l] > 0).map(l => {
-                const c = LIVELLO_COLORS[l] || { bg: "bg-muted", text: "text-foreground", border: "border-border" };
-                const selected = card_filter?.campo === "stile" && card_filter?.livello === l;
-                return (
-                  <button
-                    key={l}
-                    onClick={() => {
-                      if (selected) { set_card_filter(null); }
-                      else { set_card_filter({ campo: "stile", livello: l }); set_level_filter("tutti"); }
-                    }}
-                    className={`shrink-0 px-3 py-2 rounded-lg border text-xs font-semibold transition-all ${
-                      selected
-                        ? "ring-2 ring-teal-400 border-teal-500 bg-teal-100 text-teal-800"
-                        : `${c.border} ${c.bg} ${c.text} hover:opacity-80`
-                    }`}
-                  >
-                    <span className="block">{l}</span>
-                    <span className="block text-[10px] font-normal opacity-70 mt-0.5">{stile_count[l]}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        {/* Card livelli */}
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+          {TUTTI_LIVELLI.filter(l => livello_count[l] > 0).map(l => {
+            const c = LIVELLO_COLORS[l] || { bg: "bg-muted", text: "text-foreground", border: "border-border" };
+            const selected = card_filter === l;
+            return (
+              <button
+                key={l}
+                onClick={() => {
+                  if (selected) { set_card_filter(null); }
+                  else { set_card_filter(l); set_level_filter("tutti"); }
+                }}
+                className={`shrink-0 px-3 py-2 rounded-lg border text-xs font-semibold transition-all ${
+                  selected
+                    ? "ring-2 ring-primary border-primary bg-primary/10 text-primary"
+                    : `${c.border} ${c.bg} ${c.text} hover:opacity-80`
+                }`}
+              >
+                <span className="block">{l}</span>
+                <span className="block text-[10px] font-normal opacity-70 mt-0.5">{livello_count[l]}</span>
+              </button>
+            );
+          })}
+        </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
