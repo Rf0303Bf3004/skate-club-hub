@@ -794,29 +794,74 @@ const AthletesPage: React.FC = () => {
           </Button>
         </div>
 
-        {/* Card livelli */}
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
-          {TUTTI_LIVELLI.filter(l => livello_count[l] > 0).map(l => {
-            const c = LIVELLO_COLORS[l] || { bg: "bg-muted", text: "text-foreground", border: "border-border" };
-            const selected = card_filter === l;
-            return (
-              <button
-                key={l}
-                onClick={() => {
-                  if (selected) { set_card_filter(null); }
-                  else { set_card_filter(l); set_level_filter("tutti"); }
-                }}
-                className={`shrink-0 px-3 py-2 rounded-lg border text-xs font-semibold transition-all ${
-                  selected
-                    ? "ring-2 ring-primary border-primary bg-primary/10 text-primary"
-                    : `${c.border} ${c.bg} ${c.text} hover:opacity-80`
-                }`}
-              >
-                <span className="block">{l}</span>
-                <span className="block text-[10px] font-normal opacity-70 mt-0.5">{livello_count[l]}</span>
-              </button>
-            );
-          })}
+        {/* Card livelli — 3 sezioni */}
+        <div className="space-y-2">
+          {/* BASE */}
+          {LIVELLI_COMUNI.some(l => base_count[l] > 0) && (
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-20 shrink-0">Base</span>
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {LIVELLI_COMUNI.filter(l => base_count[l] > 0).map(l => {
+                  const sel = card_filter?.sezione === "base" && card_filter.livello === l;
+                  return (
+                    <button key={l} onClick={() => {
+                      if (sel) set_card_filter(null);
+                      else { set_card_filter({ sezione: "base", livello: l }); set_level_filter("tutti"); }
+                    }} className={`shrink-0 px-4 py-3 rounded-xl shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md ${
+                      sel ? "border-2 border-blue-500 bg-blue-100" : "border border-blue-200 bg-blue-50"
+                    }`}>
+                      <span className="block text-2xl font-bold text-blue-800">{base_count[l]}</span>
+                      <span className="block text-xs text-blue-600 mt-0.5">{l}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {/* ARTISTICA */}
+          {LIVELLI_CARRIERA.some(l => artistica_count[l] > 0) && (
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-20 shrink-0">Artistica</span>
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {LIVELLI_CARRIERA.filter(l => artistica_count[l] > 0).map(l => {
+                  const sel = card_filter?.sezione === "artistica" && card_filter.livello === l;
+                  return (
+                    <button key={l} onClick={() => {
+                      if (sel) set_card_filter(null);
+                      else { set_card_filter({ sezione: "artistica", livello: l }); set_level_filter("tutti"); }
+                    }} className={`shrink-0 px-4 py-3 rounded-xl shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md ${
+                      sel ? "border-2 border-purple-500 bg-purple-100" : "border border-purple-200 bg-purple-50"
+                    }`}>
+                      <span className="block text-2xl font-bold text-purple-800">{artistica_count[l]}</span>
+                      <span className="block text-xs text-purple-600 mt-0.5">{l}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {/* STILE */}
+          {LIVELLI_CARRIERA.some(l => stile_count[l] > 0) && (
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-20 shrink-0">Stile</span>
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {LIVELLI_CARRIERA.filter(l => stile_count[l] > 0).map(l => {
+                  const sel = card_filter?.sezione === "stile" && card_filter.livello === l;
+                  return (
+                    <button key={l} onClick={() => {
+                      if (sel) set_card_filter(null);
+                      else { set_card_filter({ sezione: "stile", livello: l }); set_level_filter("tutti"); }
+                    }} className={`shrink-0 px-4 py-3 rounded-xl shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md ${
+                      sel ? "border-2 border-teal-500 bg-teal-100" : "border border-teal-200 bg-teal-50"
+                    }`}>
+                      <span className="block text-2xl font-bold text-teal-800">{stile_count[l]}</span>
+                      <span className="block text-xs text-teal-600 mt-0.5">{l}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
