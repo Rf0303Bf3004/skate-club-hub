@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { AlertTriangle } from "lucide-react";
@@ -524,11 +524,33 @@ const AthletesPage: React.FC = () => {
     },
   });
 
+  // Conteggio atleti per livello (carriera_artistica o carriera_stile)
+  const livelli_count = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const l of TUTTI_LIVELLI) counts[l] = 0;
+    for (const a of atleti) {
+      const seen = new Set<string>();
+      if (a.carriera_artistica && TUTTI_LIVELLI.includes(a.carriera_artistica)) seen.add(a.carriera_artistica);
+      if (a.carriera_stile && TUTTI_LIVELLI.includes(a.carriera_stile)) seen.add(a.carriera_stile);
+      // Include percorso_amatori for non-carriera athletes
+      if (!a.carriera_artistica && !a.carriera_stile) {
+        const p = a.percorso_amatori || a.livello_amatori || "";
+        if (TUTTI_LIVELLI.includes(p)) seen.add(p);
+      }
+      seen.forEach(l => counts[l]++);
+    }
+    return counts;
+  }, [atleti]);
+
+  const [card_filter, set_card_filter] = useState<string | null>(null);
+
   const filtered = atleti.filter((a: any) => {
     const name_match = `${a.nome} ${a.cognome}`.toLowerCase().includes(search.toLowerCase());
-    const livello = a.percorso_amatori || a.livello_amatori || "";
-    const level_match = level_filter === "tutti" || livello === level_filter;
-    return name_match && level_match;
+    const active_filter = card_filter || (level_filter !== "tutti" ? level_filter : null);
+    if (!active_filter) return name_match;
+    const matches = a.carriera_artistica === active_filter || a.carriera_stile === active_filter ||
+      (!a.carriera_artistica && !a.carriera_stile && (a.percorso_amatori || a.livello_amatori) === active_filter);
+    return name_match && matches;
   });
 
   const handle_save = async (data: any) => {
@@ -752,6 +774,32 @@ const AthletesPage: React.FC = () => {
           >
             <Plus className="w-4 h-4 mr-2" /> {t("nuovo_atleta")}
           </Button>
+        </div>
+
+        {/* Card livelli */}
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+          {TUTTI_LIVELLI.filter(l => livelli_count[l] > 0).map(l => (
+            <button
+              key={l}
+              onClick={() => {
+                if (card_filter === l) {
+                  set_card_filter(null);
+                  set_level_filter("tutti");
+                } else {
+                  set_card_filter(l);
+                  set_level_filter("tutti");
+                }
+              }}
+              className={`shrink-0 px-3 py-2 rounded-lg border text-xs font-semibold transition-all ${
+                card_filter === l
+                  ? "border-primary bg-primary/10 text-primary ring-2 ring-primary/30"
+                  : "border-border bg-card text-foreground hover:bg-muted/50"
+              }`}
+            >
+              <span className="block">{l}</span>
+              <span className="block text-[10px] font-normal text-muted-foreground mt-0.5">{livelli_count[l]} atleti</span>
+            </button>
+          ))}
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
