@@ -130,27 +130,31 @@ const CalendarioAtleta: React.FC<{ atletaId: string; clubId: string }> = ({ atle
   const { data: corsi_events = [] } = useQuery({
     queryKey: ["cal-corsi", atletaId],
     queryFn: async () => {
+      // Get corso IDs the athlete is enrolled in
       const { data: iscrizioni } = await supabase
         .from("iscrizioni_corsi").select("corso_id").eq("atleta_id", atletaId).eq("attiva", true);
       if (!iscrizioni?.length) return [];
-      const ids = iscrizioni.map((i: any) => i.corso_id);
-      const { data: corsi } = await supabase.from("corsi").select("*").in("id", ids).eq("club_id", clubId);
-      // Courses are recurring weekly — show next occurrence
-      const days_it = ["Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato"];
-      const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-      const events: CalEvent[] = [];
-      const now = new Date();
-      (corsi || []).forEach((c: any) => {
-        const target_idx = days_it.findIndex((d) => norm(d) === norm(c.giorno || ""));
-        if (target_idx < 0) return;
-        const current_day = now.getDay();
-        let diff = target_idx - current_day;
-        if (diff < 0) diff += 7;
-        const next = new Date(now);
-        next.setDate(now.getDate() + diff);
-        events.push({ date: next.toISOString().slice(0, 10), time: (c.ora_inizio || "").slice(0, 5), title: c.nome, type: "corso" });
-      });
-      return events;
+      const corso_ids = iscrizioni.map((i: any) => i.corso_id);
+
+      // Get corso names for display
+      const { data: corsi_info } = await supabase.from("corsi").select("id, nome").in("id", corso_ids);
+      const nome_map: Record<string, string> = {};
+      (corsi_info || []).forEach((c: any) => { nome_map[c.id] = c.nome; });
+
+      // Get real planned slots from planning_corsi_settimana
+      const { data: slots } = await supabase
+        .from("planning_corsi_settimana")
+        .select("data, ora_inizio, ora_fine, corso_id, annullato, settimana_id")
+        .in("corso_id", corso_ids)
+        .gte("data", today)
+        .eq("annullato", false);
+
+      return (slots || []).map((s: any) => ({
+        date: s.data,
+        time: (s.ora_inizio || "").slice(0, 5),
+        title: nome_map[s.corso_id] || "Corso",
+        type: "corso",
+      }));
     },
   });
 
