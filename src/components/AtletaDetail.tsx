@@ -111,10 +111,35 @@ const NumInput: React.FC<{
 };
 
 // ─── Calendario Atleta ─────────────────────────────────────
-type CalEvent = { date: string; time: string; title: string; type: string };
+type CalEvent = { date: string; time: string; title: string; type: string; status?: "planned" | "confirmed" | "cancelled" };
+
+const GIORNO_MAP: Record<string, number> = {
+  "Lunedì": 1, "Martedì": 2, "Mercoledì": 3, "Giovedì": 4,
+  "Venerdì": 5, "Sabato": 6, "Domenica": 0,
+};
+
+function generate_recurring_dates(giorno: string, from: string, to: string): string[] {
+  const target_dow = GIORNO_MAP[giorno];
+  if (target_dow === undefined) return [];
+  const dates: string[] = [];
+  const d = new Date(from + "T00:00:00");
+  const end = new Date(to + "T00:00:00");
+  // Advance to first matching day
+  while (d.getDay() !== target_dow && d <= end) d.setDate(d.getDate() + 1);
+  while (d <= end) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    dates.push(`${y}-${m}-${dd}`);
+    d.setDate(d.getDate() + 7);
+  }
+  return dates;
+}
 
 const EVENT_BADGE: Record<string, string> = {
   corso: "bg-blue-100 text-blue-800",
+  corso_cancelled: "bg-red-100 text-red-800",
+  corso_planned: "bg-blue-50 text-blue-500 border-dashed border-blue-300",
   lezione: "bg-green-100 text-green-800",
   gara: "bg-red-100 text-red-800",
   test: "bg-yellow-100 text-yellow-800",
@@ -130,31 +155,57 @@ const CalendarioAtleta: React.FC<{ atletaId: string; clubId: string }> = ({ atle
   const { data: corsi_events = [] } = useQuery({
     queryKey: ["cal-corsi", atletaId],
     queryFn: async () => {
-      // Get corso IDs the athlete is enrolled in
+      // 1. Get corso IDs the athlete is enrolled in
       const { data: iscrizioni } = await supabase
         .from("iscrizioni_corsi").select("corso_id").eq("atleta_id", atletaId).eq("attiva", true);
       if (!iscrizioni?.length) return [];
       const corso_ids = iscrizioni.map((i: any) => i.corso_id);
 
-      // Get corso names for display
-      const { data: corsi_info } = await supabase.from("corsi").select("id, nome").in("id", corso_ids);
-      const nome_map: Record<string, string> = {};
-      (corsi_info || []).forEach((c: any) => { nome_map[c.id] = c.nome; });
+      // 2. Get corso details (nome, giorno, ora, stagione_id)
+      const { data: corsi_info } = await supabase
+        .from("corsi").select("id, nome, giorno, ora_inizio, ora_fine, stagione_id").in("id", corso_ids);
+      if (!corsi_info?.length) return [];
 
-      // Get real planned slots from planning_corsi_settimana
+      // 3. Get stagione end dates
+      const stagione_ids = [...new Set(corsi_info.map((c: any) => c.stagione_id).filter(Boolean))];
+      let stagione_map: Record<string, string> = {};
+      if (stagione_ids.length) {
+        const { data: stagioni } = await supabase.from("stagioni").select("id, data_fine").in("id", stagione_ids);
+        (stagioni || []).forEach((s: any) => { stagione_map[s.id] = s.data_fine; });
+      }
+
+      // 4. Get real planned slots (including cancelled ones)
       const { data: slots } = await supabase
         .from("planning_corsi_settimana")
-        .select("data, ora_inizio, ora_fine, corso_id, annullato, settimana_id")
+        .select("data, ora_inizio, ora_fine, corso_id, annullato")
         .in("corso_id", corso_ids)
-        .gte("data", today)
-        .eq("annullato", false);
+        .gte("data", today);
 
-      return (slots || []).map((s: any) => ({
-        date: s.data,
-        time: (s.ora_inizio || "").slice(0, 5),
-        title: nome_map[s.corso_id] || "Corso",
-        type: "corso",
-      }));
+      // Build a lookup: "corso_id|date" → slot
+      const slot_map: Record<string, any> = {};
+      (slots || []).forEach((s: any) => { slot_map[`${s.corso_id}|${s.data}`] = s; });
+
+      // 5. Generate recurring dates for each corso and overlay planning data
+      const events: CalEvent[] = [];
+      for (const c of corsi_info) {
+        const end_date = stagione_map[c.stagione_id] || new Date(new Date().getFullYear(), 11, 31).toISOString().slice(0, 10);
+        const dates = generate_recurring_dates(c.giorno, today, end_date);
+        const time_str = (c.ora_inizio || "").slice(0, 5);
+
+        for (const dt of dates) {
+          const key = `${c.id}|${dt}`;
+          const slot = slot_map[key];
+
+          if (slot?.annullato) {
+            events.push({ date: dt, time: time_str, title: `${c.nome} — Annullato`, type: "corso", status: "cancelled" });
+          } else if (slot) {
+            events.push({ date: dt, time: (slot.ora_inizio || "").slice(0, 5), title: c.nome, type: "corso", status: "confirmed" });
+          } else {
+            events.push({ date: dt, time: time_str, title: c.nome, type: "corso", status: "planned" });
+          }
+        }
+      }
+      return events;
     },
   });
 
@@ -210,8 +261,8 @@ const CalendarioAtleta: React.FC<{ atletaId: string; clubId: string }> = ({ atle
     },
   });
 
-  const all_events = useMemo(() =>
-    [...corsi_events, ...lezioni_events, ...gare_events, ...test_events, ...campi_events]
+  const all_events: CalEvent[] = useMemo(() =>
+    ([...corsi_events, ...lezioni_events, ...gare_events, ...test_events, ...campi_events] as CalEvent[])
       .filter((e) => e.date >= today)
       .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time)),
     [corsi_events, lezioni_events, gare_events, test_events, campi_events]
@@ -228,28 +279,35 @@ const CalendarioAtleta: React.FC<{ atletaId: string; clubId: string }> = ({ atle
 
   return (
     <div className="bg-card rounded-xl shadow-card divide-y divide-border">
-      {all_events.map((ev, i) => (
-        <div key={i} className="flex items-center gap-4 px-5 py-3">
-          <div className="text-center min-w-[52px]">
-            <div className="text-xs text-muted-foreground uppercase">
-              {new Date(ev.date + "T00:00:00").toLocaleDateString("it-CH", { weekday: "short" })}
+      {all_events.map((ev, i) => {
+        const is_cancelled = ev.status === "cancelled";
+        const is_planned = ev.status === "planned";
+        const badge_key = is_cancelled ? "corso_cancelled" : is_planned ? "corso_planned" : ev.type;
+        const badge_label = is_cancelled ? "Annullato" : is_planned ? "Previsto" : (EVENT_LABEL[ev.type] || ev.type);
+
+        return (
+          <div key={i} className={`flex items-center gap-4 px-5 py-3 ${is_cancelled ? "opacity-50 line-through" : ""} ${is_planned ? "opacity-75" : ""}`}>
+            <div className="text-center min-w-[52px]">
+              <div className="text-xs text-muted-foreground uppercase">
+                {new Date(ev.date + "T00:00:00").toLocaleDateString("it-CH", { weekday: "short" })}
+              </div>
+              <div className={`text-lg font-bold leading-tight ${is_planned ? "text-muted-foreground" : "text-foreground"}`}>
+                {new Date(ev.date + "T00:00:00").getDate()}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {new Date(ev.date + "T00:00:00").toLocaleDateString("it-CH", { month: "short" })}
+              </div>
             </div>
-            <div className="text-lg font-bold text-foreground leading-tight">
-              {new Date(ev.date + "T00:00:00").getDate()}
+            <div className="flex-1 min-w-0">
+              <p className={`font-medium truncate ${is_cancelled ? "text-muted-foreground" : "text-foreground"}`}>{ev.title}</p>
+              {ev.time && <p className="text-xs text-muted-foreground">{ev.time}</p>}
             </div>
-            <div className="text-xs text-muted-foreground">
-              {new Date(ev.date + "T00:00:00").toLocaleDateString("it-CH", { month: "short" })}
-            </div>
+            <Badge className={`${EVENT_BADGE[badge_key] || EVENT_BADGE[ev.type] || ""} border text-xs shrink-0`}>
+              {badge_label}
+            </Badge>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-medium text-foreground truncate">{ev.title}</p>
-            {ev.time && <p className="text-xs text-muted-foreground">{ev.time}</p>}
-          </div>
-          <Badge className={`${EVENT_BADGE[ev.type] || ""} border-0 text-xs shrink-0`}>
-            {EVENT_LABEL[ev.type] || ev.type}
-          </Badge>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };
