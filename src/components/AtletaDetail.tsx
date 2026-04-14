@@ -261,8 +261,8 @@ const CalendarioAtleta: React.FC<{ atletaId: string; clubId: string }> = ({ atle
     },
   });
 
-  const all_events = useMemo(() =>
-    [...corsi_events, ...lezioni_events, ...gare_events, ...test_events, ...campi_events]
+  const all_events: CalEvent[] = useMemo(() =>
+    ([...corsi_events, ...lezioni_events, ...gare_events, ...test_events, ...campi_events] as CalEvent[])
       .filter((e) => e.date >= today)
       .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time)),
     [corsi_events, lezioni_events, gare_events, test_events, campi_events]
