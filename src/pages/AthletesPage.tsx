@@ -524,11 +524,33 @@ const AthletesPage: React.FC = () => {
     },
   });
 
+  // Conteggio atleti per livello (carriera_artistica o carriera_stile)
+  const livelli_count = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const l of TUTTI_LIVELLI) counts[l] = 0;
+    for (const a of atleti) {
+      const seen = new Set<string>();
+      if (a.carriera_artistica && TUTTI_LIVELLI.includes(a.carriera_artistica)) seen.add(a.carriera_artistica);
+      if (a.carriera_stile && TUTTI_LIVELLI.includes(a.carriera_stile)) seen.add(a.carriera_stile);
+      // Include percorso_amatori for non-carriera athletes
+      if (!a.carriera_artistica && !a.carriera_stile) {
+        const p = a.percorso_amatori || a.livello_amatori || "";
+        if (TUTTI_LIVELLI.includes(p)) seen.add(p);
+      }
+      seen.forEach(l => counts[l]++);
+    }
+    return counts;
+  }, [atleti]);
+
+  const [card_filter, set_card_filter] = useState<string | null>(null);
+
   const filtered = atleti.filter((a: any) => {
     const name_match = `${a.nome} ${a.cognome}`.toLowerCase().includes(search.toLowerCase());
-    const livello = a.percorso_amatori || a.livello_amatori || "";
-    const level_match = level_filter === "tutti" || livello === level_filter;
-    return name_match && level_match;
+    const active_filter = card_filter || (level_filter !== "tutti" ? level_filter : null);
+    if (!active_filter) return name_match;
+    const matches = a.carriera_artistica === active_filter || a.carriera_stile === active_filter ||
+      (!a.carriera_artistica && !a.carriera_stile && (a.percorso_amatori || a.livello_amatori) === active_filter);
+    return name_match && matches;
   });
 
   const handle_save = async (data: any) => {
