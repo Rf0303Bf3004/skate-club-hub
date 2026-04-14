@@ -1916,8 +1916,22 @@ const CoursesPage: React.FC = () => {
       .eq("club_id", club_id)
       .eq("attiva", true)
       .limit(1);
-    const stagione = stagioni?.[0];
-    if (!stagione?.data_fine) return;
+    let stagione = stagioni?.[0];
+
+    // Fallback: if no active season, try setup_club dates
+    if (!stagione?.data_fine) {
+      const { data: setup } = await supabase
+        .from("setup_club")
+        .select("data_inizio_stagione, data_fine_stagione")
+        .eq("club_id", club_id)
+        .maybeSingle();
+      if (setup?.data_fine_stagione) {
+        stagione = { id: null, data_fine: setup.data_fine_stagione, data_inizio: setup.data_inizio_stagione } as any;
+      } else {
+        toast({ title: "⚠️ Nessuna stagione attiva", description: "Configura le date della stagione per generare il planning automatico", variant: "destructive" });
+        return;
+      }
+    }
 
     const giorno_map: Record<string, number> = {
       "Lunedì": 1, "Martedì": 2, "Mercoledì": 3, "Giovedì": 4,
