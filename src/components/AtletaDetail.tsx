@@ -136,6 +136,19 @@ function generate_recurring_dates(giorno: string, from: string, to: string): str
   return dates;
 }
 
+const EVENT_BADGE: Record<string, string> = {
+  corso: "bg-blue-100 text-blue-800",
+  corso_cancelled: "bg-red-100 text-red-800",
+  corso_planned: "bg-blue-50 text-blue-500 border-dashed border-blue-300",
+  lezione: "bg-green-100 text-green-800",
+  gara: "bg-red-100 text-red-800",
+  test: "bg-yellow-100 text-yellow-800",
+  campo: "bg-orange-100 text-orange-800",
+};
+const EVENT_LABEL: Record<string, string> = {
+  corso: "Corso", lezione: "Lezione privata", gara: "Gara", test: "Test livello", campo: "Campo estivo",
+};
+
 const CalendarioAtleta: React.FC<{ atletaId: string; clubId: string }> = ({ atletaId, clubId }) => {
   const today = new Date().toISOString().slice(0, 10);
 
