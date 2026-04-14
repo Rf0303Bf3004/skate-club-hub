@@ -1487,6 +1487,7 @@ const CorsoModal: React.FC<{
                       </p>
                     </div>
                   )}
+                  <MiniPlanningGiorno giorno={form.giorno} corso_id={corso?.id} istruttori={istruttori} />
                 </>
               )}
 
