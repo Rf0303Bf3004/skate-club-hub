@@ -1252,7 +1252,7 @@ const CorsoModal: React.FC<{
             <TabsTrigger value="info" className="flex-1">
               Informazioni
             </TabsTrigger>
-            <TabsTrigger value="iscrizioni" className="flex-1" disabled={!corso?.id}>
+            <TabsTrigger value="iscrizioni" className="flex-1" disabled={!corso?.id || !corso_completezza.completo}>
               Iscrizioni {corso?.id ? `(${corso.atleti_ids?.length || 0})` : ""}
             </TabsTrigger>
             <TabsTrigger value="monitori" className="flex-1" disabled={!corso?.id}>
