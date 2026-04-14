@@ -776,7 +776,32 @@ const AthletesPage: React.FC = () => {
           </Button>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3">
+        {/* Card livelli */}
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+          {TUTTI_LIVELLI.filter(l => livelli_count[l] > 0).map(l => (
+            <button
+              key={l}
+              onClick={() => {
+                if (card_filter === l) {
+                  set_card_filter(null);
+                  set_level_filter("tutti");
+                } else {
+                  set_card_filter(l);
+                  set_level_filter("tutti");
+                }
+              }}
+              className={`shrink-0 px-3 py-2 rounded-lg border text-xs font-semibold transition-all ${
+                card_filter === l
+                  ? "border-primary bg-primary/10 text-primary ring-2 ring-primary/30"
+                  : "border-border bg-card text-foreground hover:bg-muted/50"
+              }`}
+            >
+              <span className="block">{l}</span>
+              <span className="block text-[10px] font-normal text-muted-foreground mt-0.5">{livelli_count[l]} atleti</span>
+            </button>
+          ))}
+        </div>
+
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
