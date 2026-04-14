@@ -1672,6 +1672,7 @@ const CoursesPage: React.FC = () => {
   const qc = useQueryClient();
   const { data: corsi = [], isLoading } = use_corsi();
   const { data: istruttori = [] } = use_istruttori();
+  const { data: disp_ghiaccio = [] } = use_disponibilita_ghiaccio();
   const { data: atleti = [] } = use_atleti();
   const { data: monitori = [] } = use_atleti_monitori();
   const { data: tipi_corso = [] } = use_tipi_corso();
