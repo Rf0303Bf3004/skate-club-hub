@@ -7,6 +7,8 @@ import {
   use_atleti,
   use_atleti_monitori,
   use_presenze_corso,
+  use_disponibilita_ghiaccio,
+  check_corso_completo,
   get_istruttore_name_from_list,
 } from "@/hooks/use-supabase-data";
 import { use_upsert_corso, use_elimina_corso, use_upsert_presenza_corso } from "@/hooks/use-supabase-mutations";
