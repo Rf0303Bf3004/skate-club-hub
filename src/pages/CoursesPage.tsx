@@ -1900,20 +1900,28 @@ const CoursesPage: React.FC = () => {
                     <span className="text-xs font-normal ml-2 text-muted-foreground">({group.length})</span>
                   </h2>
                   <div className="space-y-2">
-                    {group.sort((a: any, b: any) => GIORNI_DB.indexOf(a.giorno) - GIORNI_DB.indexOf(b.giorno) || time_to_min(a.ora_inizio) - time_to_min(b.ora_inizio)).map((c: any) => (
-                      <div key={c.id} onClick={() => open_corso(c)}
-                        className="flex items-center gap-4 px-4 py-3 bg-card rounded-xl border border-border/50 hover:border-primary/30 cursor-pointer transition-shadow hover:shadow-card-hover">
-                        <div className="w-20 text-xs font-bold text-muted-foreground flex-shrink-0">{c.giorno || "—"}</div>
-                        <div className="w-24 text-xs font-bold text-primary tabular-nums flex-shrink-0">
-                          {c.ora_inizio?.slice(0,5)}–{c.ora_fine?.slice(0,5)}
+                    {group.sort((a: any, b: any) => GIORNI_DB.indexOf(a.giorno) - GIORNI_DB.indexOf(b.giorno) || time_to_min(a.ora_inizio) - time_to_min(b.ora_inizio)).map((c: any) => {
+                      const completezza = check_corso_completo(c, disp_ghiaccio);
+                      return (
+                        <div key={c.id} onClick={() => open_corso(c)}
+                          className="flex items-center gap-4 px-4 py-3 bg-card rounded-xl border border-border/50 hover:border-primary/30 cursor-pointer transition-shadow hover:shadow-card-hover">
+                          <div className="w-20 text-xs font-bold text-muted-foreground flex-shrink-0">{c.giorno || "—"}</div>
+                          <div className="w-24 text-xs font-bold text-primary tabular-nums flex-shrink-0">
+                            {c.ora_inizio?.slice(0,5)}–{c.ora_fine?.slice(0,5)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="font-semibold text-foreground">{c.nome}</span>
+                          </div>
+                          {!completezza.completo && (
+                            <Badge variant="outline" className="text-[10px] border-orange-300 bg-orange-50 text-orange-700 flex-shrink-0" title={completezza.motivo}>
+                              <AlertTriangle className="w-3 h-3 mr-1" />Incompleto
+                            </Badge>
+                          )}
+                          {c.tipo && <Badge variant="secondary" className="text-xs flex-shrink-0">{c.tipo}</Badge>}
+                          <span className="text-xs text-muted-foreground flex-shrink-0">{(c.atleti_ids||[]).length} iscritti</span>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <span className="font-semibold text-foreground">{c.nome}</span>
-                        </div>
-                        {c.tipo && <Badge variant="secondary" className="text-xs flex-shrink-0">{c.tipo}</Badge>}
-                        <span className="text-xs text-muted-foreground flex-shrink-0">{(c.atleti_ids||[]).length} iscritti</span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               );
