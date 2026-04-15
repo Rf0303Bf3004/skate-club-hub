@@ -99,43 +99,15 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
       }
       const pdf_base64 = btoa(binary);
 
-      const resp = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 4000,
-          messages: [
-            {
-              role: "user",
-              content: [
-                {
-                  type: "document",
-                  source: {
-                    type: "base64",
-                    media_type: "application/pdf",
-                    data: pdf_base64,
-                  },
-                },
-                {
-                  type: "text",
-                  text: 'Extract all skaters data and return ONLY valid JSON no markdown no explanation. Format: {"categoria":"","gruppo":"","disciplina":"","atleti":[{"rank":1,"nome":"FIRSTNAME LASTNAME","club":"ABC","starting_number":3,"tot":14.13,"tes":4.79,"pcs":9.34,"deductions":0,"pcs_presentation":2.25,"pcs_skating_skills":2.42,"elementi":[{"seq":1,"nome":"USpA","base_value":0.60,"goe":0.04,"score":0.64,"info_flag":""}]}]}',
-                },
-              ],
-            },
-          ],
-        }),
+      const { data, error } = await supabase.functions.invoke('parse-gara-pdf', {
+        body: { pdfBase64: pdf_base64 },
       });
 
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => ({ error: "Errore sconosciuto" }));
-        throw new Error(err.error?.message || err.error || `HTTP ${resp.status}`);
+      if (error) {
+        throw new Error(error.message || "Errore nell'analisi del PDF");
       }
 
-      const claude_resp = await resp.json();
-      let content_text = claude_resp.content?.[0]?.text || "";
-      content_text = content_text.replace(/^```json\s*/i, "").replace(/```\s*$/i, "").trim();
-      const result: ParsedResult = JSON.parse(content_text);
+      const result: ParsedResult = data;
       set_parsed(result);
 
       if (result.atleti?.length) {
