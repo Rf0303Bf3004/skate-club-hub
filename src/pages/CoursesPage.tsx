@@ -1530,123 +1530,56 @@ const CorsoModal: React.FC<{
               </div>
               {posiziona_planning && (
                 <>
-                  <div className="grid grid-cols-3 gap-3">
-                    <Field label="Giorno">
-                      <select value={form.giorno} onChange={(e) => set_val("giorno", e.target.value)} className={input_cls}>
-                        {GIORNI_DB.map((g) => (
-                          <option key={g} value={g}>
-                            {g}
-                          </option>
-                        ))}
-                      </select>
-                    </Field>
-                    <Field label="Ora inizio">
-                      <input
-                        type="time"
-                        value={form.ora_inizio}
-                        onChange={(e) => set_val("ora_inizio", e.target.value)}
-                        className={input_cls}
-                      />
-                    </Field>
-                    <Field label="Ora fine">
-                      <input
-                        type="time"
-                        value={form.ora_fine}
-                        onChange={(e) => set_val("ora_fine", e.target.value)}
-                        className={input_cls}
-                      />
-                    </Field>
-                  </div>
-                  {no_ice_realtime && (
-                    <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-orange-50 border border-orange-200">
-                      <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
-                      <p className="text-xs text-orange-700">
-                        Nessun ghiaccio disponibile in questo orario — il corso verrà salvato ma dovrà essere riposizionato nel planning.
-                      </p>
-                    </div>
-                  )}
-                  <MiniPlanningGiorno giorno={form.giorno} corso_id={corso?.id} istruttori={istruttori} />
+                  <Field label="Giorno">
+                    <select value={form.giorno} onChange={(e) => set_val("giorno", e.target.value)} className={input_cls}>
+                      {GIORNI_DB.map((g) => (
+                        <option key={g} value={g}>{g}</option>
+                      ))}
+                    </select>
+                  </Field>
+                  <GrigliaFasceGhiaccio
+                    giorno={form.giorno}
+                    corso_id={corso?.id}
+                    istruttori={istruttori}
+                    corsi={corsi}
+                    ora_inizio_sel={form.ora_inizio}
+                    ora_fine_sel={form.ora_fine}
+                    on_select_fascia={(oi, of_) => {
+                      set_val("ora_inizio", oi);
+                      set_form(p => ({ ...p, ora_fine: of_ }));
+                    }}
+                    on_select_istruttore={toggle_istruttore}
+                    istruttori_ids_sel={form.istruttori_ids}
+                  />
                 </>
               )}
-
-              {/* ← Costi con NumInput */}
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Costo mensile">
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">
-                      CHF
-                    </span>
-                    <NumInput
-                      value={form.costo_mensile_str}
-                      onChange={(v) => set_val("costo_mensile_str", v)}
-                      className="pl-11"
-                      placeholder="0.00"
-                    />
+              {!posiziona_planning && (
+                <Field label="Istruttori">
+                  <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
+                    {istruttori_attivi.map((i) => {
+                      const selected = form.istruttori_ids.includes(i.id);
+                      const colore = i.colore || "#6B7280";
+                      return (
+                        <button
+                          key={i.id}
+                          type="button"
+                          onClick={() => toggle_istruttore(i.id)}
+                          className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium cursor-pointer transition-all border-2"
+                          style={{
+                            borderColor: selected ? colore : "hsl(var(--border))",
+                            backgroundColor: selected ? `${colore}20` : "transparent",
+                            color: selected ? colore : "hsl(var(--foreground))",
+                          }}
+                        >
+                          <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: colore }} />
+                          {i.nome} {i.cognome}
+                          {selected && <span className="text-[10px] font-bold">✓</span>}
+                        </button>
+                      );
+                    })}
                   </div>
                 </Field>
-                <Field label="Costo annuale">
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">
-                      CHF
-                    </span>
-                    <NumInput
-                      value={form.costo_annuale_str}
-                      onChange={(v) => set_val("costo_annuale_str", v)}
-                      className="pl-11"
-                      placeholder="0.00"
-                    />
-                  </div>
-                </Field>
-              </div>
-
-              <Field label="Istruttori">
-                <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
-                  {istruttori_attivi.map((i) => {
-                    const selected = form.istruttori_ids.includes(i.id);
-                    const colore = i.colore || "#6B7280";
-                    const disponibile = is_istruttore_disponibile(i, form.giorno, form.ora_inizio, form.ora_fine);
-                    const ha_conflitto = corsi.some(
-                      (c) =>
-                        c.id !== corso?.id &&
-                        c.istruttori_ids?.includes(i.id) &&
-                        c.giorno === form.giorno &&
-                        c.attivo !== false &&
-                        time_to_min(c.ora_inizio?.slice(0, 5)) < time_to_min(form.ora_fine) &&
-                        time_to_min(c.ora_fine?.slice(0, 5)) > time_to_min(form.ora_inizio),
-                    );
-                    const warning_label = selected && ha_conflitto
-                      ? "Conflitto"
-                      : selected && !disponibile
-                        ? "Non disp."
-                        : null;
-                    return (
-                      <button
-                        key={i.id}
-                        type="button"
-                        onClick={() => toggle_istruttore(i.id)}
-                        className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium cursor-pointer transition-all border-2"
-                        style={{
-                          borderColor: selected ? colore : "hsl(var(--border))",
-                          backgroundColor: selected ? `${colore}20` : "transparent",
-                          color: selected ? colore : "hsl(var(--foreground))",
-                        }}
-                      >
-                        <span
-                          className="w-3 h-3 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: colore }}
-                        />
-                        {i.nome} {i.cognome}
-                        {selected && <span className="text-[10px] font-bold">✓</span>}
-                        {warning_label && (
-                          <span className="text-[9px] font-bold text-destructive ml-0.5">
-                            ({warning_label})
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </Field>
+              )}
               <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
                 <input
                   type="checkbox"
