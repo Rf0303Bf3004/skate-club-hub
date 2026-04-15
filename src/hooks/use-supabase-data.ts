@@ -267,12 +267,14 @@ export function use_gare() {
     enabled: !!get_current_club_id(),
     queryKey: ["gare", get_current_club_id()],
     queryFn: async () => {
-      const [gare_res, isc_res] = await Promise.all([
+      const [gare_res, isc_res, ris_res] = await Promise.all([
         supabase.from("gare_calendario").select("*").eq("club_id", get_current_club_id()).order("data"),
         supabase.from("iscrizioni_gare").select("*"),
+        supabase.from("risultati_gara").select("*"),
       ]);
       if (gare_res.error) throw gare_res.error;
       const isc = isc_res.data ?? [];
+      const ris = ris_res.data ?? [];
       return (gare_res.data ?? []).map((g) => ({
         ...g,
         stagione_id: g.stagione_id || null,
@@ -291,6 +293,7 @@ export function use_gare() {
             voto_giudici: x.voto_giudici,
             note: x.note || "",
           })),
+        risultati: ris.filter((r) => r.gara_id === g.id),
       }));
     },
   });
