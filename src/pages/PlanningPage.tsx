@@ -2106,7 +2106,7 @@ function AtletaSearchPlanning({ atleti, selected_ids, on_change, max }: {
 
 function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti, stagione_id }: {
   open: boolean; on_close: () => void; istruttori: any[]; queryClient: any;
-  tipo: "corso" | "privata"; atleti?: any[]; stagione_id: string | null;
+  tipo: "corso" | "privata"; atleti?: any[]; stagione_id?: string | null;
 }) {
   const [nome, set_nome] = useState("");
   const [corso_tipo, set_corso_tipo] = useState(tipo === "privata" ? "privata" : "");
