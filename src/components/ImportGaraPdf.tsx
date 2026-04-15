@@ -100,13 +100,30 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
       }
       const pdf_base64 = btoa(binary);
 
-      const { data, error } = await supabase.functions.invoke('dynamic-api', {
-        body: {
+      const cloud_url = import.meta.env.VITE_SUPABASE_URL;
+      const cloud_key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+      const response = await fetch(`${cloud_url}/functions/v1/dynamic-api`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${cloud_key}`,
+          apikey: cloud_key,
+        },
+        body: JSON.stringify({
           action: "parse_pdf",
           systemPrompt: 'Extract all skaters from this ISU figure skating PDF and return ONLY valid JSON: {"categoria":"","gruppo":"","disciplina":"","atleti":[{"rank":1,"nome":"FIRSTNAME LASTNAME","club":"ABC","starting_number":3,"tot":14.13,"tes":4.79,"pcs":9.34,"deductions":0,"pcs_presentation":2.25,"pcs_skating_skills":2.42,"elementi":[{"seq":1,"nome":"USpA","base_value":0.60,"goe":0.04,"score":0.64,"info_flag":""}]}]}',
           pdfBase64: pdf_base64,
-        },
+        }),
       });
+
+      if (!response.ok) {
+        const err_body = await response.text();
+        throw new Error(`Edge function error ${response.status}: ${err_body}`);
+      }
+
+      const data = await response.json();
+      const error = null;
 
       if (error) {
         throw new Error(error.message || "Errore nell'analisi del PDF");
