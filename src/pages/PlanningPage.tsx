@@ -707,9 +707,8 @@ function PlanningPageInner() {
   }, [is_generated, plan_corsi, corsi_template]);
 
   const corsiDaPosizionare = useMemo(() => {
-    if (is_generated) return []; // In generated mode, all courses come from plan
-    return corsi_template.filter((c: any) => !c.giorno || !c.ora_inizio);
-  }, [is_generated, corsi_template]);
+    return corsi_template.filter((c: any) => !is_private_type(c.tipo) && (!c.giorno || !c.ora_inizio || !c.ora_fine));
+  }, [corsi_template]);
 
   // Instructor map
   const istr_map = useMemo(() => {
@@ -1410,7 +1409,7 @@ function PlanningPageInner() {
 
         {/* Modals */}
         {show_new_corso && (
-          <NewCorsoModal open={show_new_corso} on_close={() => set_show_new_corso(false)} istruttori={istruttori} queryClient={queryClient} tipo="corso" />
+          <NewCorsoModal open={show_new_corso} on_close={() => set_show_new_corso(false)} istruttori={istruttori} queryClient={queryClient} tipo="corso" stagione_id={stagione_id} />
         )}
         {show_new_privata && (
           <NewCorsoModal open={show_new_privata} on_close={() => set_show_new_privata(false)} istruttori={istruttori} queryClient={queryClient} tipo="privata" atleti={atleti} />
@@ -1738,7 +1737,7 @@ function PlanningPageInner() {
 
         {/* Modals */}
         {show_new_corso && (
-          <NewCorsoModal open={show_new_corso} on_close={() => set_show_new_corso(false)} istruttori={istruttori} queryClient={queryClient} tipo="corso" />
+          <NewCorsoModal open={show_new_corso} on_close={() => set_show_new_corso(false)} istruttori={istruttori} queryClient={queryClient} tipo="corso" stagione_id={stagione_id} />
         )}
         {show_new_privata && (
           <NewCorsoModal open={show_new_privata} on_close={() => set_show_new_privata(false)} istruttori={istruttori} queryClient={queryClient} tipo="privata" atleti={atleti} />
@@ -2105,9 +2104,9 @@ function AtletaSearchPlanning({ atleti, selected_ids, on_change, max }: {
   );
 }
 
-function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti }: {
+function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti, stagione_id }: {
   open: boolean; on_close: () => void; istruttori: any[]; queryClient: any;
-  tipo: "corso" | "privata"; atleti?: any[];
+  tipo: "corso" | "privata"; atleti?: any[]; stagione_id?: string | null;
 }) {
   const [nome, set_nome] = useState("");
   const [corso_tipo, set_corso_tipo] = useState(tipo === "privata" ? "privata" : "");
@@ -2171,6 +2170,7 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti }
         livello_richiesto: livello,
         costo_mensile: tipo === "privata" ? costo_totale : (parseFloat(String(costo)) || 0),
         note,
+        stagione_id,
         giorno: null as any, ora_inizio: null as any, ora_fine: null as any,
       }).select().single();
       if (error) throw error;
@@ -2179,7 +2179,11 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti }
         await supabase.from("corsi_istruttori").insert({ corso_id: new_corso.id, istruttore_id: istr_id });
       }
 
-      await queryClient.invalidateQueries({ queryKey: ["corsi"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["corsi"] }),
+        queryClient.invalidateQueries({ queryKey: ["planning_settimana"] }),
+        queryClient.invalidateQueries({ queryKey: ["planning_corsi_settimana"] }),
+      ]);
       toast.success(tipo === "privata" ? "Lezione privata creata" : "Corso creato");
       on_close();
       set_nome(""); set_corso_tipo(""); set_istr_id(""); set_note(""); set_costo(""); set_costo_min(""); set_atleti_ids([]);
