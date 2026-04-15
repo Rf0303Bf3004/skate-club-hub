@@ -527,6 +527,50 @@ export type Database = {
         }
         Relationships: []
       }
+      elementi_gara: {
+        Row: {
+          base_value: number | null
+          created_at: string
+          goe: number | null
+          id: string
+          info_flag: string | null
+          nome: string
+          risultato_id: string
+          score: number | null
+          seq: number
+        }
+        Insert: {
+          base_value?: number | null
+          created_at?: string
+          goe?: number | null
+          id?: string
+          info_flag?: string | null
+          nome?: string
+          risultato_id: string
+          score?: number | null
+          seq?: number
+        }
+        Update: {
+          base_value?: number | null
+          created_at?: string
+          goe?: number | null
+          id?: string
+          info_flag?: string | null
+          nome?: string
+          risultato_id?: string
+          score?: number | null
+          seq?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "elementi_gara_risultato_id_fkey"
+            columns: ["risultato_id"]
+            isOneToOne: false
+            referencedRelation: "risultati_gara"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fatture: {
         Row: {
           atleta_id: string | null
@@ -1124,6 +1168,66 @@ export type Database = {
           note_richiesta?: string | null
           note_risposta?: string | null
           stato?: string
+        }
+        Relationships: []
+      }
+      risultati_gara: {
+        Row: {
+          atleta_id: string | null
+          atleta_nome_esterno: string
+          categoria: string
+          club_esterno: string
+          created_at: string
+          deductions: number | null
+          disciplina: string
+          gara_id: string
+          gruppo: string
+          id: string
+          pcs: number | null
+          pcs_presentation: number | null
+          pcs_skating_skills: number | null
+          rank: number | null
+          starting_number: number | null
+          tes: number | null
+          tot: number | null
+        }
+        Insert: {
+          atleta_id?: string | null
+          atleta_nome_esterno?: string
+          categoria?: string
+          club_esterno?: string
+          created_at?: string
+          deductions?: number | null
+          disciplina?: string
+          gara_id: string
+          gruppo?: string
+          id?: string
+          pcs?: number | null
+          pcs_presentation?: number | null
+          pcs_skating_skills?: number | null
+          rank?: number | null
+          starting_number?: number | null
+          tes?: number | null
+          tot?: number | null
+        }
+        Update: {
+          atleta_id?: string | null
+          atleta_nome_esterno?: string
+          categoria?: string
+          club_esterno?: string
+          created_at?: string
+          deductions?: number | null
+          disciplina?: string
+          gara_id?: string
+          gruppo?: string
+          id?: string
+          pcs?: number | null
+          pcs_presentation?: number | null
+          pcs_skating_skills?: number | null
+          rank?: number | null
+          starting_number?: number | null
+          tes?: number | null
+          tot?: number | null
         }
         Relationships: []
       }
