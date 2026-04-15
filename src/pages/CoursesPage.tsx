@@ -16,6 +16,7 @@ import { use_upsert_corso, use_elimina_corso, use_upsert_presenza_corso } from "
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Plus,
@@ -1261,7 +1262,7 @@ const CorsoModal: React.FC<{
   const { data: disp_ghiaccio_modal = [] } = use_disponibilita_ghiaccio();
   const corso_completezza = corso ? check_corso_completo(corso, disp_ghiaccio_modal) : { completo: false, motivo: "Nuovo corso" };
   const has_planning = !!(corso?.giorno && corso?.ora_inizio && corso?.ora_fine);
-  const [posiziona_planning, set_posiziona_planning] = useState(corso ? has_planning : true);
+  const [posiziona_planning, set_posiziona_planning] = useState(corso ? has_planning : false);
   const [form, set_form] = useState({
     nome: corso?.nome || "",
     tipo: corso?.tipo || "",
@@ -1290,11 +1291,49 @@ const CorsoModal: React.FC<{
   const [validating_ghiaccio, set_validating_ghiaccio] = useState(false);
   const [no_ice_realtime, set_no_ice_realtime] = useState(false);
 
+  // Query fasce ghiaccio for selected day to control toggle state
+  const { data: fasce_giorno_modal = [] } = useQuery({
+    queryKey: ["fasce_ghiaccio_toggle", form.giorno],
+    queryFn: async () => {
+      const club_id = get_current_club_id();
+      const { data } = await supabase
+        .from("disponibilita_ghiaccio")
+        .select("ora_inizio, ora_fine")
+        .eq("club_id", club_id)
+        .eq("giorno", form.giorno)
+        .eq("tipo", "ghiaccio")
+        .order("ora_inizio");
+      return data || [];
+    },
+  });
+
+  // Toggle disable logic
+  const has_fasce_for_day = fasce_giorno_modal.length > 0;
+  const has_ora_fine = !!(form.ora_fine && form.ora_fine !== "");
+  const toggle_disabled = !has_fasce_for_day || !has_ora_fine;
+  const toggle_tooltip = !has_fasce_for_day
+    ? "Configura prima la disponibilità ghiaccio per questo giorno in Configurazione Club"
+    : !has_ora_fine
+      ? "Seleziona una fascia ghiaccio e scegli la durata per abilitare"
+      : "";
+
+  // Auto-disable toggle when conditions are not met
+  useEffect(() => {
+    if (toggle_disabled && posiziona_planning) {
+      set_posiziona_planning(false);
+    }
+  }, [toggle_disabled]);
+
   const set_val = (k: string, v: any) => {
     set_form((p) => ({ ...p, [k]: v }));
     if (["giorno", "ora_inizio", "ora_fine", "tipo"].includes(k)) {
       set_ghiaccio_error(null);
       set_ghiaccio_warning(null);
+    }
+    // Reset ora_fine when day changes (fascia needs re-selection)
+    if (k === "giorno") {
+      set_form((p) => ({ ...p, giorno: v, ora_inizio: "", ora_fine: "" }));
+      set_posiziona_planning(false);
     }
   };
 
@@ -1427,9 +1466,25 @@ const CorsoModal: React.FC<{
       return;
     }
 
-    // Skip ghiaccio validation when not placing in planning or when realtime check already detected no ice
-    if (!posiziona_planning || no_ice_realtime) {
+    // Skip ghiaccio validation when not placing in planning
+    if (!posiziona_planning) {
       do_save();
+      return;
+    }
+
+    // Validate that ora_inizio and ora_fine fall within a configured ice slot
+    if (form.ora_inizio && form.ora_fine) {
+      const corso_start = time_to_min(form.ora_inizio);
+      const corso_end = time_to_min(form.ora_fine);
+      const coperto = fasce_giorno_modal.some((f: any) =>
+        time_to_min(f.ora_inizio) <= corso_start && time_to_min(f.ora_fine) >= corso_end
+      );
+      if (!coperto) {
+        set_ghiaccio_error("Orario non coperto dalla disponibilità ghiaccio. Seleziona una fascia valida.");
+        return;
+      }
+    } else {
+      set_ghiaccio_error("Seleziona una fascia ghiaccio e scegli la durata prima di posizionare nel planning.");
       return;
     }
 
@@ -1622,44 +1677,58 @@ const CorsoModal: React.FC<{
               </Field>
               <div className="flex items-center justify-between px-3 py-2 bg-muted/30 rounded-lg">
                 <div className="space-y-0.5">
-                  <label htmlFor="posiziona_planning" className="text-sm font-medium text-foreground cursor-pointer">
+                  <label htmlFor="posiziona_planning" className={`text-sm font-medium cursor-pointer ${toggle_disabled ? "text-muted-foreground" : "text-foreground"}`}>
                     Posiziona subito nel planning
                   </label>
-                  {!posiziona_planning && (
+                  {!posiziona_planning && !toggle_disabled && (
                     <p className="text-xs text-muted-foreground">Il corso verrà posizionato nel planning in seguito</p>
                   )}
+                  {toggle_disabled && toggle_tooltip && (
+                    <p className="text-xs text-orange-600">{toggle_tooltip}</p>
+                  )}
                 </div>
-                <Switch
-                  id="posiziona_planning"
-                  checked={posiziona_planning}
-                  onCheckedChange={set_posiziona_planning}
-                />
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>
+                        <Switch
+                          id="posiziona_planning"
+                          checked={posiziona_planning}
+                          onCheckedChange={set_posiziona_planning}
+                          disabled={toggle_disabled}
+                        />
+                      </span>
+                    </TooltipTrigger>
+                    {toggle_disabled && toggle_tooltip && (
+                      <TooltipContent>
+                        <p className="text-xs max-w-[220px]">{toggle_tooltip}</p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
               </div>
-              {posiziona_planning && (
-                <>
-                  <Field label="Giorno">
-                    <select value={form.giorno} onChange={(e) => set_val("giorno", e.target.value)} className={input_cls}>
-                      {GIORNI_DB.map((g) => (
-                        <option key={g} value={g}>{g}</option>
-                      ))}
-                    </select>
-                  </Field>
-                  <GrigliaFasceGhiaccio
-                    giorno={form.giorno}
-                    corso_id={corso?.id}
-                    istruttori={istruttori}
-                    corsi={corsi}
-                    ora_inizio_sel={form.ora_inizio}
-                    ora_fine_sel={form.ora_fine}
-                    on_select_fascia={(oi, of_) => {
-                      set_val("ora_inizio", oi);
-                      set_form(p => ({ ...p, ora_fine: of_ }));
-                    }}
-                    on_select_istruttore={toggle_istruttore}
-                    istruttori_ids_sel={form.istruttori_ids}
-                  />
-                </>
-              )}
+              {/* Always show day selector and ice grid so user can pick a fascia */}
+              <Field label="Giorno">
+                <select value={form.giorno} onChange={(e) => set_val("giorno", e.target.value)} className={input_cls}>
+                  {GIORNI_DB.map((g) => (
+                    <option key={g} value={g}>{g}</option>
+                  ))}
+                </select>
+              </Field>
+              <GrigliaFasceGhiaccio
+                giorno={form.giorno}
+                corso_id={corso?.id}
+                istruttori={istruttori}
+                corsi={corsi}
+                ora_inizio_sel={form.ora_inizio}
+                ora_fine_sel={form.ora_fine}
+                on_select_fascia={(oi, of_) => {
+                  set_val("ora_inizio", oi);
+                  set_form(p => ({ ...p, ora_fine: of_ }));
+                }}
+                on_select_istruttore={toggle_istruttore}
+                istruttori_ids_sel={form.istruttori_ids}
+              />
               {!posiziona_planning && (
                 <Field label="Istruttori">
                   <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
