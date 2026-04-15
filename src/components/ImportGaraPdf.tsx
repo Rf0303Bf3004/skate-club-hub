@@ -99,8 +99,12 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
       }
       const pdf_base64 = btoa(binary);
 
-      const { data, error } = await supabase.functions.invoke('parse-gara-pdf', {
-        body: { pdfBase64: pdf_base64 },
+      const { data, error } = await supabase.functions.invoke('dynamic-api', {
+        body: {
+          action: "parse_pdf",
+          systemPrompt: 'Extract all skaters from this ISU figure skating PDF and return ONLY valid JSON: {"categoria":"","gruppo":"","disciplina":"","atleti":[{"rank":1,"nome":"FIRSTNAME LASTNAME","club":"ABC","starting_number":3,"tot":14.13,"tes":4.79,"pcs":9.34,"deductions":0,"pcs_presentation":2.25,"pcs_skating_skills":2.42,"elementi":[{"seq":1,"nome":"USpA","base_value":0.60,"goe":0.04,"score":0.64,"info_flag":""}]}]}',
+          pdfBase64: pdf_base64,
+        },
       });
 
       if (error) {
