@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useI18n } from "@/lib/i18n";
 import { use_gare, use_atleti, get_atleta_name_from_list } from "@/hooks/use-supabase-data";
+import ImportGaraPdf from "@/components/ImportGaraPdf";
 import { days_until } from "@/lib/mock-data";
 import { use_elimina_gara } from "@/hooks/use-supabase-mutations";
 import { Button } from "@/components/ui/button";
@@ -1091,6 +1092,11 @@ const CompetitionsPage: React.FC = () => {
             <Plus className="w-4 h-4 mr-2" /> {t("nuova_gara")}
           </Button>
         </div>
+
+        <ImportGaraPdf
+          atleti_db={atleti.map((a: any) => ({ id: a.id, nome: a.nome, cognome: a.cognome }))}
+          on_done={() => {}}
+        />
 
         <div className="bg-card rounded-xl shadow-card overflow-hidden">
           <div className="px-4 py-3 border-b border-border flex items-center justify-between">
