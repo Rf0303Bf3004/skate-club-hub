@@ -2012,6 +2012,11 @@ const CoursesPage: React.FC = () => {
       if (corso_id && data.giorno && data.ora_inizio && data.ora_fine) {
         try {
           await generate_planning_slots(corso_id, data);
+          // Invalidate planning queries so PlanningPage shows new data
+          await Promise.all([
+            qc.invalidateQueries({ queryKey: ["planning_settimana"] }),
+            qc.invalidateQueries({ queryKey: ["planning_corsi_settimana"] }),
+          ]);
           toast({ title: "📅 Planning aggiornato per tutta la stagione" });
         } catch (err: any) {
           console.error("Errore generazione planning:", err);
