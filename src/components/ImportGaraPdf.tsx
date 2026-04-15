@@ -196,9 +196,7 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
       for (const m of matches) {
         const a = m.atleta_ai;
 
-        const { data: ris_data, error: ris_err } = await supabase
-          .from("risultati_gara")
-          .insert({
+        const insert_payload: any = {
             gara_id,
             atleta_id: m.matched_id || null,
             atleta_nome_esterno: a.nome,
@@ -214,7 +212,12 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
             categoria: parsed.categoria,
             gruppo: parsed.gruppo,
             disciplina: parsed.disciplina,
-          })
+          };
+        if (segmento.trim()) insert_payload.segmento = segmento.trim();
+
+        const { data: ris_data, error: ris_err } = await supabase
+          .from("risultati_gara")
+          .insert(insert_payload)
           .select("id")
           .single();
 
@@ -254,6 +257,7 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
       set_nome_gara("");
       set_data_gara("");
       set_luogo_gara("");
+      set_segmento("");
       on_done();
     } catch (err: any) {
       toast({
