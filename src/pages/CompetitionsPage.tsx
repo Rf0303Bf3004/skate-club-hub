@@ -1093,6 +1093,11 @@ const CompetitionsPage: React.FC = () => {
           </Button>
         </div>
 
+        <ImportGaraPdf
+          atleti_db={atleti.map((a: any) => ({ id: a.id, nome: a.nome, cognome: a.cognome }))}
+          on_done={() => {}}
+        />
+
         <div className="bg-card rounded-xl shadow-card overflow-hidden">
           <div className="px-4 py-3 border-b border-border flex items-center justify-between">
             <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
