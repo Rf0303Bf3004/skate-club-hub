@@ -1466,9 +1466,25 @@ const CorsoModal: React.FC<{
       return;
     }
 
-    // Skip ghiaccio validation when not placing in planning or when realtime check already detected no ice
-    if (!posiziona_planning || no_ice_realtime) {
+    // Skip ghiaccio validation when not placing in planning
+    if (!posiziona_planning) {
       do_save();
+      return;
+    }
+
+    // Validate that ora_inizio and ora_fine fall within a configured ice slot
+    if (form.ora_inizio && form.ora_fine) {
+      const corso_start = time_to_min(form.ora_inizio);
+      const corso_end = time_to_min(form.ora_fine);
+      const coperto = fasce_giorno_modal.some((f: any) =>
+        time_to_min(f.ora_inizio) <= corso_start && time_to_min(f.ora_fine) >= corso_end
+      );
+      if (!coperto) {
+        set_ghiaccio_error("Orario non coperto dalla disponibilità ghiaccio. Seleziona una fascia valida.");
+        return;
+      }
+    } else {
+      set_ghiaccio_error("Seleziona una fascia ghiaccio e scegli la durata prima di posizionare nel planning.");
       return;
     }
 
