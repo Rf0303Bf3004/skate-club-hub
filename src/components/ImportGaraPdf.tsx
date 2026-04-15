@@ -190,8 +190,6 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
         gara_id = gara_data.id;
       }
 
-      if (gara_err) throw gara_err;
-      const gara_id = gara_data.id;
 
       // 2. Insert risultati_gara for each athlete
       let saved_count = 0;
