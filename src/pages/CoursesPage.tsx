@@ -1300,42 +1300,50 @@ const CorsoModal: React.FC<{
         : [...p.istruttori_ids, id],
     }));
 
-  const istruttori_non_disponibili = useMemo(
-    () =>
-      form.istruttori_ids
-        .map((id: string) => istruttori.find((i: any) => i.id === id))
-        .filter((i: any) => i && !is_istruttore_disponibile(i, form.giorno, form.ora_inizio, form.ora_fine))
-        .map((i: any) => `${i.nome} ${i.cognome}`),
-    [form.istruttori_ids, form.giorno, form.ora_inizio, form.ora_fine, istruttori],
-  );
+  // Fetch planning data for instructor conflict check (same source as GrigliaFasceGhiaccio)
+  const { data: planning_giorno = [] } = useQuery({
+    queryKey: ["corsi_pianificati_giorno_modal", form.giorno],
+    queryFn: async () => {
+      const club_id = get_current_club_id();
+      const { data: settimane } = await supabase
+        .from("planning_settimane")
+        .select("id")
+        .eq("club_id", club_id)
+        .eq("archiviato", false)
+        .order("data_lunedi", { ascending: false })
+        .limit(1);
+      if (!settimane?.length) return [];
+      const { data: planning } = await supabase
+        .from("planning_corsi_settimana")
+        .select("corso_id, ora_inizio, ora_fine, istruttore_id, data")
+        .eq("settimana_id", settimane[0].id)
+        .eq("annullato", false);
+      if (!planning?.length) return [];
+      const giorno_map: Record<string, number> = { "Lunedì": 1, "Martedì": 2, "Mercoledì": 3, "Giovedì": 4, "Venerdì": 5, "Sabato": 6, "Domenica": 0 };
+      return planning.filter((p: any) => new Date(p.data + "T00:00:00").getDay() === giorno_map[form.giorno]);
+    },
+  });
 
-  const conflitti_corsi = useMemo(
-    () =>
-      form.istruttori_ids.flatMap((id: string) =>
-        corsi
-          .filter(
-            (c) =>
-              c.id !== corso?.id &&
-              c.istruttori_ids?.includes(id) &&
-              c.giorno === form.giorno &&
-              c.attivo !== false &&
-              time_to_min(c.ora_inizio?.slice(0, 5)) < time_to_min(form.ora_fine) &&
-              time_to_min(c.ora_fine?.slice(0, 5)) > time_to_min(form.ora_inizio),
-          )
-          .map((c) => {
-            const istr = istruttori.find((i) => i.id === id);
-            return `${istr?.nome} ${istr?.cognome} — conflitto con "${c.nome}" (${c.ora_inizio?.slice(0, 5)}–${c.ora_fine?.slice(0, 5)})`;
-          }),
-      ),
-    [form.istruttori_ids, form.giorno, form.ora_inizio, form.ora_fine, corsi, corso, istruttori],
-  );
-
-  const tutti_avvisi = [
-    ...new Set([
-      ...istruttori_non_disponibili.map((n) => `${n} non è disponibile in questo orario`),
-      ...conflitti_corsi,
-    ]),
-  ];
+  const tutti_avvisi = useMemo(() => {
+    if (!form.ora_inizio || !form.ora_fine) return [];
+    const sel_start = time_to_min(form.ora_inizio);
+    const sel_end = time_to_min(form.ora_fine);
+    const warnings: string[] = [];
+    form.istruttori_ids.forEach((id: string) => {
+      const conflitto = planning_giorno.find((p: any) =>
+        p.corso_id !== corso?.id &&
+        p.istruttore_id === id &&
+        time_to_min(p.ora_inizio) < sel_end &&
+        time_to_min(p.ora_fine) > sel_start
+      );
+      if (conflitto) {
+        const istr = istruttori.find((i: any) => i.id === id);
+        const corso_nome = corsi.find((c: any) => c.id === conflitto.corso_id)?.nome || "altro corso";
+        warnings.push(`${istr?.nome} ${istr?.cognome} — conflitto con "${corso_nome}" (${conflitto.ora_inizio?.slice(0, 5)}–${conflitto.ora_fine?.slice(0, 5)})`);
+      }
+    });
+    return warnings;
+  }, [form.istruttori_ids, form.giorno, form.ora_inizio, form.ora_fine, planning_giorno, corso, corsi, istruttori]);
 
   const TIPI_OFF_ICE = ["danza", "off-ice", "stretching", "off ice"];
 
