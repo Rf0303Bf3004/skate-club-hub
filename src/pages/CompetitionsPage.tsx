@@ -1195,16 +1195,22 @@ const CompetitionsPage: React.FC = () => {
                       <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden sm:table-cell">
                         {t("luogo")}
                       </th>
+                      <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                        Segmenti
+                      </th>
                       <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
                         {t("iscritti")}
                       </th>
                       <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                        Risultati
+                        Risultati PDF
                       </th>
                     </tr>
                   </thead>
                   <tbody>
                     {gare_archivio.map((g: any) => {
+                      const risultati = g.risultati ?? [];
+                      const segmenti_set = new Set(risultati.map((r: any) => r.segmento || r.categoria || "—").filter(Boolean));
+                      const segmenti = Array.from(segmenti_set) as string[];
                       const con_risultati = g.atleti_iscritti?.some((ai: any) => ai.posizione || ai.medaglia);
                       return (
                         <tr
@@ -1214,15 +1220,32 @@ const CompetitionsPage: React.FC = () => {
                         >
                           <td className="px-4 py-3 font-medium text-foreground">{g.nome}</td>
                           <td className="px-4 py-3 tabular-nums text-muted-foreground">
-                            {new Date(g.data + "T00:00:00").toLocaleDateString("it-CH")}
+                            {g.data ? new Date(g.data + "T00:00:00").toLocaleDateString("it-CH") : "—"}
                           </td>
-                          <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{g.localita}</td>
+                          <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{g.luogo || "—"}</td>
+                          <td className="px-4 py-3">
+                            {segmenti.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {segmenti.map((s) => (
+                                  <Badge key={s} variant="secondary" className="text-[10px]">
+                                    {s} ({risultati.filter((r: any) => (r.segmento || r.categoria || "—") === s).length})
+                                  </Badge>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </td>
                           <td className="px-4 py-3 text-center tabular-nums text-muted-foreground">
                             {g.atleti_iscritti?.length ?? 0}
                           </td>
                           <td className="px-4 py-3 text-center">
-                            {con_risultati ? (
-                              <span className="text-xs font-bold text-success bg-success/10 px-2 py-0.5 rounded-full">
+                            {risultati.length > 0 ? (
+                              <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+                                ✓ {risultati.length} atleti
+                              </span>
+                            ) : con_risultati ? (
+                              <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
                                 ✓ Registrati
                               </span>
                             ) : (
