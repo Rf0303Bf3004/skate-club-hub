@@ -1713,8 +1713,6 @@ const CorsoModal: React.FC<{
                 on_select_istruttore={toggle_istruttore}
                 istruttori_ids_sel={form.istruttori_ids}
               />
-                </>
-              )}
               {!posiziona_planning && (
                 <Field label="Istruttori">
                   <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
