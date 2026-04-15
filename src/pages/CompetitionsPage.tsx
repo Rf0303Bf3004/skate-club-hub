@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useI18n } from "@/lib/i18n";
 import { use_gare, use_atleti, get_atleta_name_from_list } from "@/hooks/use-supabase-data";
+import ImportGaraPdf from "@/components/ImportGaraPdf";
 import { days_until } from "@/lib/mock-data";
 import { use_elimina_gara } from "@/hooks/use-supabase-mutations";
 import { Button } from "@/components/ui/button";
