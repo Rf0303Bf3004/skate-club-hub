@@ -1,0 +1,1 @@
+ALTER TABLE public.risultati_gara ADD COLUMN IF NOT EXISTS segmento text;
