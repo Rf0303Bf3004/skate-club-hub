@@ -1661,42 +1661,58 @@ const CorsoModal: React.FC<{
               </Field>
               <div className="flex items-center justify-between px-3 py-2 bg-muted/30 rounded-lg">
                 <div className="space-y-0.5">
-                  <label htmlFor="posiziona_planning" className="text-sm font-medium text-foreground cursor-pointer">
+                  <label htmlFor="posiziona_planning" className={`text-sm font-medium cursor-pointer ${toggle_disabled ? "text-muted-foreground" : "text-foreground"}`}>
                     Posiziona subito nel planning
                   </label>
-                  {!posiziona_planning && (
+                  {!posiziona_planning && !toggle_disabled && (
                     <p className="text-xs text-muted-foreground">Il corso verrà posizionato nel planning in seguito</p>
                   )}
+                  {toggle_disabled && toggle_tooltip && (
+                    <p className="text-xs text-orange-600">{toggle_tooltip}</p>
+                  )}
                 </div>
-                <Switch
-                  id="posiziona_planning"
-                  checked={posiziona_planning}
-                  onCheckedChange={set_posiziona_planning}
-                />
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>
+                        <Switch
+                          id="posiziona_planning"
+                          checked={posiziona_planning}
+                          onCheckedChange={set_posiziona_planning}
+                          disabled={toggle_disabled}
+                        />
+                      </span>
+                    </TooltipTrigger>
+                    {toggle_disabled && toggle_tooltip && (
+                      <TooltipContent>
+                        <p className="text-xs max-w-[220px]">{toggle_tooltip}</p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
               </div>
-              {posiziona_planning && (
-                <>
-                  <Field label="Giorno">
-                    <select value={form.giorno} onChange={(e) => set_val("giorno", e.target.value)} className={input_cls}>
-                      {GIORNI_DB.map((g) => (
-                        <option key={g} value={g}>{g}</option>
-                      ))}
-                    </select>
-                  </Field>
-                  <GrigliaFasceGhiaccio
-                    giorno={form.giorno}
-                    corso_id={corso?.id}
-                    istruttori={istruttori}
-                    corsi={corsi}
-                    ora_inizio_sel={form.ora_inizio}
-                    ora_fine_sel={form.ora_fine}
-                    on_select_fascia={(oi, of_) => {
-                      set_val("ora_inizio", oi);
-                      set_form(p => ({ ...p, ora_fine: of_ }));
-                    }}
-                    on_select_istruttore={toggle_istruttore}
-                    istruttori_ids_sel={form.istruttori_ids}
-                  />
+              {/* Always show day selector and ice grid so user can pick a fascia */}
+              <Field label="Giorno">
+                <select value={form.giorno} onChange={(e) => set_val("giorno", e.target.value)} className={input_cls}>
+                  {GIORNI_DB.map((g) => (
+                    <option key={g} value={g}>{g}</option>
+                  ))}
+                </select>
+              </Field>
+              <GrigliaFasceGhiaccio
+                giorno={form.giorno}
+                corso_id={corso?.id}
+                istruttori={istruttori}
+                corsi={corsi}
+                ora_inizio_sel={form.ora_inizio}
+                ora_fine_sel={form.ora_fine}
+                on_select_fascia={(oi, of_) => {
+                  set_val("ora_inizio", oi);
+                  set_form(p => ({ ...p, ora_fine: of_ }));
+                }}
+                on_select_istruttore={toggle_istruttore}
+                istruttori_ids_sel={form.istruttori_ids}
+              />
                 </>
               )}
               {!posiziona_planning && (
