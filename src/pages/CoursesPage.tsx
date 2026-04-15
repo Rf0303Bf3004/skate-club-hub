@@ -1263,22 +1263,6 @@ const CorsoModal: React.FC<{
   const corso_completezza = corso ? check_corso_completo(corso, disp_ghiaccio_modal) : { completo: false, motivo: "Nuovo corso" };
   const has_planning = !!(corso?.giorno && corso?.ora_inizio && corso?.ora_fine);
   const [posiziona_planning, set_posiziona_planning] = useState(corso ? has_planning : false);
-
-  // Query fasce ghiaccio for selected day to control toggle state
-  const { data: fasce_giorno_modal = [] } = useQuery({
-    queryKey: ["fasce_ghiaccio_toggle", form?.giorno || "Lunedì"],
-    queryFn: async () => {
-      const club_id = get_current_club_id();
-      const { data } = await supabase
-        .from("disponibilita_ghiaccio")
-        .select("ora_inizio, ora_fine")
-        .eq("club_id", club_id)
-        .eq("giorno", form?.giorno || "Lunedì")
-        .eq("tipo", "ghiaccio")
-        .order("ora_inizio");
-      return data || [];
-    },
-  });
   const [form, set_form] = useState({
     nome: corso?.nome || "",
     tipo: corso?.tipo || "",
