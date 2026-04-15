@@ -922,132 +922,210 @@ const TabPresenze: React.FC<{
   );
 };
 
-// ─── Mini Planning Giorno ──────────────────────────────────
-const MiniPlanningGiorno: React.FC<{ giorno: string; corso_id?: string; istruttori: any[] }> = ({ giorno, corso_id, istruttori }) => {
-  const { data: slots, isLoading } = useQuery({
-    queryKey: ["mini_planning_giorno", giorno],
+// ─── Griglia Fasce Ghiaccio Interattiva ────────────────────
+const GrigliaFasceGhiaccio: React.FC<{
+  giorno: string;
+  corso_id?: string;
+  istruttori: any[];
+  corsi: any[];
+  ora_inizio_sel: string;
+  ora_fine_sel: string;
+  on_select_fascia: (ora_inizio: string, ora_fine: string) => void;
+  on_select_istruttore: (id: string) => void;
+  istruttori_ids_sel: string[];
+}> = ({ giorno, corso_id, istruttori, corsi, ora_inizio_sel, ora_fine_sel, on_select_fascia, on_select_istruttore, istruttori_ids_sel }) => {
+  // Load ice availability slots for this day
+  const { data: fasce_ghiaccio = [] } = useQuery({
+    queryKey: ["fasce_ghiaccio_giorno", giorno],
     queryFn: async () => {
       const club_id = get_current_club_id();
-      // Find current active (non-archived) week
+      const { data } = await supabase
+        .from("disponibilita_ghiaccio")
+        .select("ora_inizio, ora_fine")
+        .eq("club_id", club_id)
+        .eq("giorno", giorno)
+        .eq("tipo", "ghiaccio")
+        .order("ora_inizio");
+      return data || [];
+    },
+  });
+
+  // Load planned courses for this day (current active week)
+  const { data: corsi_pianificati = [] } = useQuery({
+    queryKey: ["corsi_pianificati_giorno", giorno],
+    queryFn: async () => {
+      const club_id = get_current_club_id();
       const { data: settimane } = await supabase
         .from("planning_settimane")
-        .select("id, data_lunedi")
+        .select("id")
         .eq("club_id", club_id)
         .eq("archiviato", false)
         .order("data_lunedi", { ascending: false })
         .limit(1);
       if (!settimane?.length) return [];
-
-      const settimana_id = settimane[0].id;
-
-      // Get all planned courses for this week
       const { data: planning } = await supabase
         .from("planning_corsi_settimana")
-        .select("corso_id, data, ora_inizio, ora_fine, annullato, istruttore_id")
-        .eq("settimana_id", settimana_id)
+        .select("corso_id, ora_inizio, ora_fine, istruttore_id, data")
+        .eq("settimana_id", settimane[0].id)
         .eq("annullato", false);
-
       if (!planning?.length) return [];
-
-      // Filter by day of week matching giorno
-      const giorno_map: Record<string, number> = {
-        "Lunedì": 1, "Martedì": 2, "Mercoledì": 3, "Giovedì": 4,
-        "Venerdì": 5, "Sabato": 6, "Domenica": 0,
-      };
-      const target_day = giorno_map[giorno];
-      const filtered = planning.filter((p: any) => {
-        const d = new Date(p.data + "T00:00:00");
-        return d.getDay() === target_day;
-      });
-
-      if (!filtered.length) return [];
-
-      // Get course names
-      const corso_ids = [...new Set(filtered.map((p: any) => p.corso_id))];
-      const { data: corsi_data } = await supabase
-        .from("corsi")
-        .select("id, nome, tipo")
-        .in("id", corso_ids);
-
-      const corsi_map = Object.fromEntries((corsi_data || []).map((c: any) => [c.id, c]));
-
-      return filtered
-        .map((p: any) => ({
-          ...p,
-          corso_nome: corsi_map[p.corso_id]?.nome || "—",
-          corso_tipo: corsi_map[p.corso_id]?.tipo || "",
-        }))
-        .sort((a: any, b: any) => time_to_min(a.ora_inizio) - time_to_min(b.ora_inizio));
+      const giorno_map: Record<string, number> = { "Lunedì": 1, "Martedì": 2, "Mercoledì": 3, "Giovedì": 4, "Venerdì": 5, "Sabato": 6, "Domenica": 0 };
+      return planning.filter((p: any) => new Date(p.data + "T00:00:00").getDay() === giorno_map[giorno]);
     },
   });
 
-  if (isLoading) return <div className="text-xs text-muted-foreground py-2">Caricamento planning...</div>;
+  // Build slot status for each ice fascia
+  const fasce_with_status = useMemo(() => {
+    return fasce_ghiaccio.map((f: any) => {
+      const f_start = time_to_min(f.ora_inizio);
+      const f_end = time_to_min(f.ora_fine);
+      // Find courses that overlap this slot (excluding current course)
+      const occupanti = corsi_pianificati
+        .filter((p: any) => p.corso_id !== corso_id && time_to_min(p.ora_inizio) < f_end && time_to_min(p.ora_fine) > f_start)
+        .map((p: any) => {
+          const c = corsi.find((c: any) => c.id === p.corso_id);
+          const istr = p.istruttore_id ? istruttori.find((i: any) => i.id === p.istruttore_id) : null;
+          return {
+            nome: c?.nome || "—",
+            istruttore: istr ? `${istr.nome} ${istr.cognome}` : "",
+            ora_inizio: p.ora_inizio,
+            ora_fine: p.ora_fine,
+          };
+        });
+      const is_selected = f.ora_inizio?.slice(0, 5) === ora_inizio_sel && f.ora_fine?.slice(0, 5) === ora_fine_sel;
+      return { ...f, occupanti, libero: occupanti.length === 0, is_selected };
+    });
+  }, [fasce_ghiaccio, corsi_pianificati, corso_id, corsi, istruttori, ora_inizio_sel, ora_fine_sel]);
 
-  const items = (slots || []).filter((s: any) => s.corso_id !== corso_id);
+  // Instructor availability based on selected slot
+  const istruttori_status = useMemo(() => {
+    if (!ora_inizio_sel || !ora_fine_sel) return [];
+    const sel_start = time_to_min(ora_inizio_sel);
+    const sel_end = time_to_min(ora_fine_sel);
+    return istruttori.filter((i: any) => i.attivo).map((i: any) => {
+      // Check if occupied in another course at this time
+      const conflitto = corsi
+        .filter((c: any) => c.id !== corso_id && c.istruttori_ids?.includes(i.id) && c.giorno === giorno && c.attivo !== false)
+        .find((c: any) => time_to_min(c.ora_inizio?.slice(0, 5)) < sel_end && time_to_min(c.ora_fine?.slice(0, 5)) > sel_start);
+      return { ...i, conflitto_nome: conflitto?.nome || null, disponibile: !conflitto };
+    });
+  }, [istruttori, corsi, corso_id, giorno, ora_inizio_sel, ora_fine_sel]);
 
-  if (items.length === 0) {
+  if (fasce_ghiaccio.length === 0) {
     return (
-      <div className="bg-muted/20 border border-dashed border-border rounded-xl p-3 mt-1">
-        <div className="flex items-center gap-2 mb-1">
-          <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Planning ghiaccio — {giorno}</span>
+      <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 mt-1">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0" />
+          <p className="text-xs text-orange-700">Nessuna fascia ghiaccio configurata per {giorno}. Vai in Configurazione Club per configurarla.</p>
         </div>
-        <p className="text-xs text-muted-foreground">Nessun corso pianificato per questo giorno</p>
       </div>
     );
   }
 
-  // Calculate range for visual blocks
-  const min_start = Math.min(...items.map((s: any) => time_to_min(s.ora_inizio)));
-  const max_end = Math.max(...items.map((s: any) => time_to_min(s.ora_fine)));
-  const range = max_end - min_start || 60;
-
   return (
-    <div className="bg-muted/20 border border-border rounded-xl p-3 mt-1 space-y-2">
-      <div className="flex items-center gap-2">
-        <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Planning ghiaccio — {giorno}</span>
-        <Badge variant="secondary" className="text-[10px] ml-auto">{items.length} cors{items.length === 1 ? "o" : "i"}</Badge>
+    <div className="space-y-3 mt-1">
+      {/* Ice slot grid */}
+      <div className="space-y-1.5">
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Fasce ghiaccio — {giorno}</label>
+        <div className="space-y-2">
+          {fasce_with_status.map((f: any, idx: number) => {
+            if (f.libero) {
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => on_select_fascia(f.ora_inizio?.slice(0, 5), f.ora_fine?.slice(0, 5))}
+                  className={`w-full text-left rounded-xl border-2 p-3 transition-all ${
+                    f.is_selected
+                      ? "border-primary bg-primary/10 ring-2 ring-primary/30"
+                      : "border-green-300 bg-green-50 hover:bg-green-100 hover:border-green-400"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-sm font-semibold text-foreground">
+                        {f.ora_inizio?.slice(0, 5)} – {f.ora_fine?.slice(0, 5)}
+                      </span>
+                      {f.is_selected && <Badge className="bg-primary text-primary-foreground text-[10px]">✓ Selezionata</Badge>}
+                    </div>
+                    {!f.is_selected && (
+                      <span className="text-xs font-medium text-green-700">LIBERO — clicca per selezionare</span>
+                    )}
+                  </div>
+                </button>
+              );
+            }
+            // Occupied slot
+            return (
+              <div key={idx} className="w-full rounded-xl border-2 border-border bg-muted/40 p-3 opacity-70">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-sm font-semibold text-muted-foreground">
+                    {f.ora_inizio?.slice(0, 5)} – {f.ora_fine?.slice(0, 5)}
+                  </span>
+                  <Badge variant="secondary" className="text-[10px]">Occupata</Badge>
+                </div>
+                <div className="mt-1.5 space-y-0.5">
+                  {f.occupanti.map((o: any, j: number) => (
+                    <p key={j} className="text-xs text-muted-foreground">
+                      <span className="font-medium text-foreground">{o.nome}</span>
+                      {o.istruttore && <span> — {o.istruttore}</span>}
+                      <span className="font-mono ml-1">({o.ora_inizio?.slice(0, 5)}–{o.ora_fine?.slice(0, 5)})</span>
+                    </p>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
-      {/* Timeline bar */}
-      <div className="relative h-10 bg-background rounded-lg border border-border overflow-hidden">
-        {/* Time labels */}
-        <span className="absolute left-1 top-0 text-[9px] text-muted-foreground leading-none mt-0.5">{String(Math.floor(min_start / 60)).padStart(2, "0")}:{String(min_start % 60).padStart(2, "0")}</span>
-        <span className="absolute right-1 top-0 text-[9px] text-muted-foreground leading-none mt-0.5">{String(Math.floor(max_end / 60)).padStart(2, "0")}:{String(max_end % 60).padStart(2, "0")}</span>
-        {items.map((s: any, i: number) => {
-          const left = ((time_to_min(s.ora_inizio) - min_start) / range) * 100;
-          const width = ((time_to_min(s.ora_fine) - time_to_min(s.ora_inizio)) / range) * 100;
-          return (
-            <div
-              key={i}
-              className="absolute top-2.5 h-6 rounded bg-primary/20 border border-primary/30 flex items-center px-1 overflow-hidden"
-              style={{ left: `${left}%`, width: `${Math.max(width, 3)}%` }}
-              title={`${s.corso_nome} ${s.ora_inizio?.slice(0, 5)}–${s.ora_fine?.slice(0, 5)}`}
-            >
-              <span className="text-[9px] font-medium text-foreground truncate">{s.corso_nome}</span>
-            </div>
-          );
-        })}
-      </div>
-      {/* List */}
-      <div className="space-y-1">
-        {items.map((s: any, i: number) => {
-          const istr = s.istruttore_id ? istruttori.find((ist: any) => ist.id === s.istruttore_id) : null;
-          return (
-            <div key={i} className="flex items-center gap-2 text-xs">
-              <span className="font-mono text-muted-foreground w-[90px] flex-shrink-0">
-                {s.ora_inizio?.slice(0, 5)}–{s.ora_fine?.slice(0, 5)}
-              </span>
-              <span className="font-medium text-foreground truncate">{s.corso_nome}</span>
-              {istr && (
-                <span className="text-muted-foreground truncate ml-auto">
-                  {istr.nome} {istr.cognome}
-                </span>
-              )}
-            </div>
-          );
-        })}
-      </div>
+
+      {/* Instructor availability */}
+      {ora_inizio_sel && ora_fine_sel && (
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            Istruttori disponibili — {ora_inizio_sel}–{ora_fine_sel}
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {istruttori_status.map((i: any) => {
+              const selected = istruttori_ids_sel.includes(i.id);
+              const colore = i.colore || "#6B7280";
+              if (!i.disponibile) {
+                return (
+                  <div
+                    key={i.id}
+                    className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium border-2 border-border bg-muted/40 opacity-60 cursor-not-allowed"
+                    title={`Occupato in "${i.conflitto_nome}"`}
+                  >
+                    <span className="w-3 h-3 rounded-full flex-shrink-0 bg-muted-foreground/30" />
+                    <span className="text-muted-foreground">{i.nome} {i.cognome}</span>
+                    <span className="text-[9px] text-muted-foreground">(occupato in {i.conflitto_nome})</span>
+                  </div>
+                );
+              }
+              return (
+                <button
+                  key={i.id}
+                  type="button"
+                  onClick={() => on_select_istruttore(i.id)}
+                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium cursor-pointer transition-all border-2"
+                  style={{
+                    borderColor: selected ? colore : "hsl(var(--border))",
+                    backgroundColor: selected ? `${colore}20` : "transparent",
+                    color: selected ? colore : "hsl(var(--foreground))",
+                  }}
+                >
+                  <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: colore }} />
+                  {i.nome} {i.cognome}
+                  {selected && <span className="text-[10px] font-bold">✓</span>}
+                </button>
+              );
+            })}
+            {istruttori_status.length === 0 && (
+              <p className="text-xs text-muted-foreground">Seleziona una fascia ghiaccio per vedere la disponibilità.</p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -1452,123 +1530,56 @@ const CorsoModal: React.FC<{
               </div>
               {posiziona_planning && (
                 <>
-                  <div className="grid grid-cols-3 gap-3">
-                    <Field label="Giorno">
-                      <select value={form.giorno} onChange={(e) => set_val("giorno", e.target.value)} className={input_cls}>
-                        {GIORNI_DB.map((g) => (
-                          <option key={g} value={g}>
-                            {g}
-                          </option>
-                        ))}
-                      </select>
-                    </Field>
-                    <Field label="Ora inizio">
-                      <input
-                        type="time"
-                        value={form.ora_inizio}
-                        onChange={(e) => set_val("ora_inizio", e.target.value)}
-                        className={input_cls}
-                      />
-                    </Field>
-                    <Field label="Ora fine">
-                      <input
-                        type="time"
-                        value={form.ora_fine}
-                        onChange={(e) => set_val("ora_fine", e.target.value)}
-                        className={input_cls}
-                      />
-                    </Field>
-                  </div>
-                  {no_ice_realtime && (
-                    <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-orange-50 border border-orange-200">
-                      <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
-                      <p className="text-xs text-orange-700">
-                        Nessun ghiaccio disponibile in questo orario — il corso verrà salvato ma dovrà essere riposizionato nel planning.
-                      </p>
-                    </div>
-                  )}
-                  <MiniPlanningGiorno giorno={form.giorno} corso_id={corso?.id} istruttori={istruttori} />
+                  <Field label="Giorno">
+                    <select value={form.giorno} onChange={(e) => set_val("giorno", e.target.value)} className={input_cls}>
+                      {GIORNI_DB.map((g) => (
+                        <option key={g} value={g}>{g}</option>
+                      ))}
+                    </select>
+                  </Field>
+                  <GrigliaFasceGhiaccio
+                    giorno={form.giorno}
+                    corso_id={corso?.id}
+                    istruttori={istruttori}
+                    corsi={corsi}
+                    ora_inizio_sel={form.ora_inizio}
+                    ora_fine_sel={form.ora_fine}
+                    on_select_fascia={(oi, of_) => {
+                      set_val("ora_inizio", oi);
+                      set_form(p => ({ ...p, ora_fine: of_ }));
+                    }}
+                    on_select_istruttore={toggle_istruttore}
+                    istruttori_ids_sel={form.istruttori_ids}
+                  />
                 </>
               )}
-
-              {/* ← Costi con NumInput */}
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Costo mensile">
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">
-                      CHF
-                    </span>
-                    <NumInput
-                      value={form.costo_mensile_str}
-                      onChange={(v) => set_val("costo_mensile_str", v)}
-                      className="pl-11"
-                      placeholder="0.00"
-                    />
+              {!posiziona_planning && (
+                <Field label="Istruttori">
+                  <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
+                    {istruttori_attivi.map((i) => {
+                      const selected = form.istruttori_ids.includes(i.id);
+                      const colore = i.colore || "#6B7280";
+                      return (
+                        <button
+                          key={i.id}
+                          type="button"
+                          onClick={() => toggle_istruttore(i.id)}
+                          className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium cursor-pointer transition-all border-2"
+                          style={{
+                            borderColor: selected ? colore : "hsl(var(--border))",
+                            backgroundColor: selected ? `${colore}20` : "transparent",
+                            color: selected ? colore : "hsl(var(--foreground))",
+                          }}
+                        >
+                          <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: colore }} />
+                          {i.nome} {i.cognome}
+                          {selected && <span className="text-[10px] font-bold">✓</span>}
+                        </button>
+                      );
+                    })}
                   </div>
                 </Field>
-                <Field label="Costo annuale">
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">
-                      CHF
-                    </span>
-                    <NumInput
-                      value={form.costo_annuale_str}
-                      onChange={(v) => set_val("costo_annuale_str", v)}
-                      className="pl-11"
-                      placeholder="0.00"
-                    />
-                  </div>
-                </Field>
-              </div>
-
-              <Field label="Istruttori">
-                <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
-                  {istruttori_attivi.map((i) => {
-                    const selected = form.istruttori_ids.includes(i.id);
-                    const colore = i.colore || "#6B7280";
-                    const disponibile = is_istruttore_disponibile(i, form.giorno, form.ora_inizio, form.ora_fine);
-                    const ha_conflitto = corsi.some(
-                      (c) =>
-                        c.id !== corso?.id &&
-                        c.istruttori_ids?.includes(i.id) &&
-                        c.giorno === form.giorno &&
-                        c.attivo !== false &&
-                        time_to_min(c.ora_inizio?.slice(0, 5)) < time_to_min(form.ora_fine) &&
-                        time_to_min(c.ora_fine?.slice(0, 5)) > time_to_min(form.ora_inizio),
-                    );
-                    const warning_label = selected && ha_conflitto
-                      ? "Conflitto"
-                      : selected && !disponibile
-                        ? "Non disp."
-                        : null;
-                    return (
-                      <button
-                        key={i.id}
-                        type="button"
-                        onClick={() => toggle_istruttore(i.id)}
-                        className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium cursor-pointer transition-all border-2"
-                        style={{
-                          borderColor: selected ? colore : "hsl(var(--border))",
-                          backgroundColor: selected ? `${colore}20` : "transparent",
-                          color: selected ? colore : "hsl(var(--foreground))",
-                        }}
-                      >
-                        <span
-                          className="w-3 h-3 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: colore }}
-                        />
-                        {i.nome} {i.cognome}
-                        {selected && <span className="text-[10px] font-bold">✓</span>}
-                        {warning_label && (
-                          <span className="text-[9px] font-bold text-destructive ml-0.5">
-                            ({warning_label})
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </Field>
+              )}
               <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
                 <input
                   type="checkbox"
