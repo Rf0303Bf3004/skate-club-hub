@@ -923,6 +923,14 @@ const TabPresenze: React.FC<{
 };
 
 // ─── Griglia Fasce Ghiaccio Interattiva ────────────────────
+
+function add_minutes_to_time(time: string, minutes: number): string {
+  const total = time_to_min(time) + minutes;
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
 const GrigliaFasceGhiaccio: React.FC<{
   giorno: string;
   corso_id?: string;
@@ -934,6 +942,9 @@ const GrigliaFasceGhiaccio: React.FC<{
   on_select_istruttore: (id: string) => void;
   istruttori_ids_sel: string[];
 }> = ({ giorno, corso_id, istruttori, corsi, ora_inizio_sel, ora_fine_sel, on_select_fascia, on_select_istruttore, istruttori_ids_sel }) => {
+  // Track which fascia (ice slot) was clicked
+  const [fascia_attiva, set_fascia_attiva] = useState<{ ora_inizio: string; ora_fine: string } | null>(null);
+
   // Load ice availability slots for this day
   const { data: fasce_ghiaccio = [] } = useQuery({
     queryKey: ["fasce_ghiaccio_giorno", giorno],
@@ -950,7 +961,7 @@ const GrigliaFasceGhiaccio: React.FC<{
     },
   });
 
-  // Load planned courses for this day (current active week)
+  // Load planned courses for this day from planning_corsi_settimana (current active week)
   const { data: corsi_pianificati = [] } = useQuery({
     queryKey: ["corsi_pianificati_giorno", giorno],
     queryFn: async () => {
@@ -979,7 +990,6 @@ const GrigliaFasceGhiaccio: React.FC<{
     return fasce_ghiaccio.map((f: any) => {
       const f_start = time_to_min(f.ora_inizio);
       const f_end = time_to_min(f.ora_fine);
-      // Find courses that overlap this slot (excluding current course)
       const occupanti = corsi_pianificati
         .filter((p: any) => p.corso_id !== corso_id && time_to_min(p.ora_inizio) < f_end && time_to_min(p.ora_fine) > f_start)
         .map((p: any) => {
@@ -992,24 +1002,57 @@ const GrigliaFasceGhiaccio: React.FC<{
             ora_fine: p.ora_fine,
           };
         });
-      const is_selected = f.ora_inizio?.slice(0, 5) === ora_inizio_sel && f.ora_fine?.slice(0, 5) === ora_fine_sel;
-      return { ...f, occupanti, libero: occupanti.length === 0, is_selected };
+      const is_active = fascia_attiva?.ora_inizio === f.ora_inizio?.slice(0, 5) && fascia_attiva?.ora_fine === f.ora_fine?.slice(0, 5);
+      return { ...f, occupanti, libero: occupanti.length === 0, is_active };
     });
-  }, [fasce_ghiaccio, corsi_pianificati, corso_id, corsi, istruttori, ora_inizio_sel, ora_fine_sel]);
+  }, [fasce_ghiaccio, corsi_pianificati, corso_id, corsi, istruttori, fascia_attiva]);
 
-  // Instructor availability based on selected slot
+  // Instructor availability: check against planning_corsi_settimana (same source of truth as save)
   const istruttori_status = useMemo(() => {
     if (!ora_inizio_sel || !ora_fine_sel) return [];
     const sel_start = time_to_min(ora_inizio_sel);
     const sel_end = time_to_min(ora_fine_sel);
     return istruttori.filter((i: any) => i.attivo).map((i: any) => {
-      // Check if occupied in another course at this time
-      const conflitto = corsi
-        .filter((c: any) => c.id !== corso_id && c.istruttori_ids?.includes(i.id) && c.giorno === giorno && c.attivo !== false)
-        .find((c: any) => time_to_min(c.ora_inizio?.slice(0, 5)) < sel_end && time_to_min(c.ora_fine?.slice(0, 5)) > sel_start);
-      return { ...i, conflitto_nome: conflitto?.nome || null, disponibile: !conflitto };
+      // Check if this instructor is already assigned in planning for an overlapping slot on this day
+      const conflitto_planning = corsi_pianificati.find((p: any) =>
+        p.corso_id !== corso_id &&
+        p.istruttore_id === i.id &&
+        time_to_min(p.ora_inizio) < sel_end &&
+        time_to_min(p.ora_fine) > sel_start
+      );
+      const conflitto_nome = conflitto_planning
+        ? (corsi.find((c: any) => c.id === conflitto_planning.corso_id)?.nome || "altro corso")
+        : null;
+      return { ...i, conflitto_nome, disponibile: !conflitto_planning };
     });
-  }, [istruttori, corsi, corso_id, giorno, ora_inizio_sel, ora_fine_sel]);
+  }, [istruttori, corsi_pianificati, corsi, corso_id, giorno, ora_inizio_sel, ora_fine_sel]);
+
+  // Duration buttons
+  const durate = useMemo(() => {
+    if (!fascia_attiva || !ora_inizio_sel) return [];
+    const fascia_end = time_to_min(fascia_attiva.ora_fine);
+    const start = time_to_min(ora_inizio_sel);
+    const fascia_dur = fascia_end - start;
+    const opts: { label: string; minuti: number }[] = [];
+    if (fascia_dur >= 45) opts.push({ label: "45 min", minuti: 45 });
+    if (fascia_dur >= 60) opts.push({ label: "60 min", minuti: 60 });
+    if (fascia_dur >= 90) opts.push({ label: "90 min", minuti: 90 });
+    opts.push({ label: "Tutta la fascia", minuti: fascia_dur });
+    // Deduplicate if fascia_dur equals one of the fixed values
+    const seen = new Set<number>();
+    return opts.filter(o => { if (seen.has(o.minuti)) return false; seen.add(o.minuti); return true; });
+  }, [fascia_attiva, ora_inizio_sel]);
+
+  const handle_click_fascia = (oi: string, of_: string) => {
+    set_fascia_attiva({ ora_inizio: oi, ora_fine: of_ });
+    on_select_fascia(oi, ""); // Set ora_inizio only, clear ora_fine
+  };
+
+  const handle_durata = (minuti: number) => {
+    if (!ora_inizio_sel) return;
+    const fine = add_minutes_to_time(ora_inizio_sel, minuti);
+    on_select_fascia(ora_inizio_sel, fine);
+  };
 
   if (fasce_ghiaccio.length === 0) {
     return (
@@ -1034,9 +1077,9 @@ const GrigliaFasceGhiaccio: React.FC<{
                 <button
                   key={idx}
                   type="button"
-                  onClick={() => on_select_fascia(f.ora_inizio?.slice(0, 5), f.ora_fine?.slice(0, 5))}
+                  onClick={() => handle_click_fascia(f.ora_inizio?.slice(0, 5), f.ora_fine?.slice(0, 5))}
                   className={`w-full text-left rounded-xl border-2 p-3 transition-all ${
-                    f.is_selected
+                    f.is_active
                       ? "border-primary bg-primary/10 ring-2 ring-primary/30"
                       : "border-green-300 bg-green-50 hover:bg-green-100 hover:border-green-400"
                   }`}
@@ -1046,16 +1089,15 @@ const GrigliaFasceGhiaccio: React.FC<{
                       <span className="font-mono text-sm font-semibold text-foreground">
                         {f.ora_inizio?.slice(0, 5)} – {f.ora_fine?.slice(0, 5)}
                       </span>
-                      {f.is_selected && <Badge className="bg-primary text-primary-foreground text-[10px]">✓ Selezionata</Badge>}
+                      {f.is_active && <Badge className="bg-primary text-primary-foreground text-[10px]">✓ Selezionata</Badge>}
                     </div>
-                    {!f.is_selected && (
+                    {!f.is_active && (
                       <span className="text-xs font-medium text-green-700">LIBERO — clicca per selezionare</span>
                     )}
                   </div>
                 </button>
               );
             }
-            // Occupied slot
             return (
               <div key={idx} className="w-full rounded-xl border-2 border-border bg-muted/40 p-3 opacity-70">
                 <div className="flex items-center justify-between">
@@ -1078,6 +1120,41 @@ const GrigliaFasceGhiaccio: React.FC<{
           })}
         </div>
       </div>
+
+      {/* Duration buttons */}
+      {fascia_attiva && ora_inizio_sel && (
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            Durata — da {ora_inizio_sel}
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {durate.map((d) => {
+              const target_fine = add_minutes_to_time(ora_inizio_sel, d.minuti);
+              const is_selected = ora_fine_sel === target_fine;
+              return (
+                <button
+                  key={d.minuti}
+                  type="button"
+                  onClick={() => handle_durata(d.minuti)}
+                  className={`rounded-lg px-3 py-1.5 text-sm font-medium border-2 transition-all ${
+                    is_selected
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-card hover:bg-accent hover:border-primary/40"
+                  }`}
+                >
+                  {d.label}
+                  <span className="text-[10px] ml-1 opacity-60">→ {target_fine}</span>
+                </button>
+              );
+            })}
+          </div>
+          {ora_fine_sel && (
+            <p className="text-xs font-medium text-primary">
+              Orario selezionato: {ora_inizio_sel} – {ora_fine_sel}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Instructor availability */}
       {ora_inizio_sel && ora_fine_sel && (
