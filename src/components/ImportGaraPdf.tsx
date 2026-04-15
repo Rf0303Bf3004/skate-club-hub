@@ -71,6 +71,7 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
   const [nome_gara, set_nome_gara] = useState("");
   const [data_gara, set_data_gara] = useState("");
   const [luogo_gara, set_luogo_gara] = useState("");
+  const [segmento, set_segmento] = useState("");
   const [parsing, set_parsing] = useState(false);
   const [parsed, set_parsed] = useState<ParsedResult | null>(null);
   const [matches, set_matches] = useState<MatchState[]>([]);
@@ -160,29 +161,42 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
       const club_id = get_current_club_id();
 
       // 1. Create gara in gare_calendario
-      const { data: gara_data, error: gara_err } = await supabase
+      // Check if a gara with the same nome+data already exists for this club
+      let gara_id: string;
+      const { data: existing_gara } = await supabase
         .from("gare_calendario")
-        .insert({
-          club_id,
-          nome: nome_gara.trim(),
-          data: data_gara || null,
-          luogo: luogo_gara.trim() || null,
-          note: `Categoria: ${parsed.categoria}, Gruppo: ${parsed.gruppo}, Disciplina: ${parsed.disciplina}`,
-        })
         .select("id")
-        .single();
+        .eq("club_id", club_id)
+        .eq("nome", nome_gara.trim())
+        .eq("data", data_gara || "")
+        .maybeSingle();
 
-      if (gara_err) throw gara_err;
-      const gara_id = gara_data.id;
+      if (existing_gara) {
+        gara_id = existing_gara.id;
+      } else {
+        const { data: gara_data, error: gara_err } = await supabase
+          .from("gare_calendario")
+          .insert({
+            club_id,
+            nome: nome_gara.trim(),
+            data: data_gara || null,
+            luogo: luogo_gara.trim() || null,
+            note: `Categoria: ${parsed.categoria}, Gruppo: ${parsed.gruppo}, Disciplina: ${parsed.disciplina}`,
+          })
+          .select("id")
+          .single();
+
+        if (gara_err) throw gara_err;
+        gara_id = gara_data.id;
+      }
+
 
       // 2. Insert risultati_gara for each athlete
       let saved_count = 0;
       for (const m of matches) {
         const a = m.atleta_ai;
 
-        const { data: ris_data, error: ris_err } = await supabase
-          .from("risultati_gara")
-          .insert({
+        const insert_payload: any = {
             gara_id,
             atleta_id: m.matched_id || null,
             atleta_nome_esterno: a.nome,
@@ -198,7 +212,12 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
             categoria: parsed.categoria,
             gruppo: parsed.gruppo,
             disciplina: parsed.disciplina,
-          })
+          };
+        if (segmento.trim()) insert_payload.segmento = segmento.trim();
+
+        const { data: ris_data, error: ris_err } = await supabase
+          .from("risultati_gara")
+          .insert(insert_payload)
           .select("id")
           .single();
 
@@ -238,6 +257,7 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
       set_nome_gara("");
       set_data_gara("");
       set_luogo_gara("");
+      set_segmento("");
       on_done();
     } catch (err: any) {
       toast({
@@ -310,7 +330,7 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                 Data Gara
@@ -330,6 +350,17 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
                 value={luogo_gara}
                 onChange={(e) => set_luogo_gara(e.target.value)}
                 placeholder="es. Lugano"
+                className={input_cls}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Segmento
+              </label>
+              <input
+                value={segmento}
+                onChange={(e) => set_segmento(e.target.value)}
+                placeholder="es. Short Program, Free Skating"
                 className={input_cls}
               />
             </div>
