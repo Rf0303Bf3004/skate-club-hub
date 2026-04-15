@@ -1150,11 +1150,11 @@ const GrigliaFasceGhiaccio: React.FC<{
             {/* Manual duration input */}
             <div className="inline-flex items-center gap-1 rounded-lg border-2 border-border px-2 py-1">
               <input
+                key={`${ora_inizio_sel}-${ora_fine_sel}`}
                 type="number"
                 min={1}
                 className="w-12 text-sm font-medium text-center bg-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                value={ora_inizio_sel && ora_fine_sel ? time_to_min(ora_fine_sel) - time_to_min(ora_inizio_sel) : ""}
-                onChange={() => {}}
+                defaultValue={ora_inizio_sel && ora_fine_sel ? time_to_min(ora_fine_sel) - time_to_min(ora_inizio_sel) : ""}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     const val = parseInt((e.target as HTMLInputElement).value);
