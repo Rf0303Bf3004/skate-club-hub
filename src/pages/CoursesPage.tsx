@@ -1291,11 +1291,49 @@ const CorsoModal: React.FC<{
   const [validating_ghiaccio, set_validating_ghiaccio] = useState(false);
   const [no_ice_realtime, set_no_ice_realtime] = useState(false);
 
+  // Query fasce ghiaccio for selected day to control toggle state
+  const { data: fasce_giorno_modal = [] } = useQuery({
+    queryKey: ["fasce_ghiaccio_toggle", form.giorno],
+    queryFn: async () => {
+      const club_id = get_current_club_id();
+      const { data } = await supabase
+        .from("disponibilita_ghiaccio")
+        .select("ora_inizio, ora_fine")
+        .eq("club_id", club_id)
+        .eq("giorno", form.giorno)
+        .eq("tipo", "ghiaccio")
+        .order("ora_inizio");
+      return data || [];
+    },
+  });
+
+  // Toggle disable logic
+  const has_fasce_for_day = fasce_giorno_modal.length > 0;
+  const has_ora_fine = !!(form.ora_fine && form.ora_fine !== "");
+  const toggle_disabled = !has_fasce_for_day || !has_ora_fine;
+  const toggle_tooltip = !has_fasce_for_day
+    ? "Configura prima la disponibilità ghiaccio per questo giorno in Configurazione Club"
+    : !has_ora_fine
+      ? "Seleziona una fascia ghiaccio e scegli la durata per abilitare"
+      : "";
+
+  // Auto-disable toggle when conditions are not met
+  useEffect(() => {
+    if (toggle_disabled && posiziona_planning) {
+      set_posiziona_planning(false);
+    }
+  }, [toggle_disabled]);
+
   const set_val = (k: string, v: any) => {
     set_form((p) => ({ ...p, [k]: v }));
     if (["giorno", "ora_inizio", "ora_fine", "tipo"].includes(k)) {
       set_ghiaccio_error(null);
       set_ghiaccio_warning(null);
+    }
+    // Reset ora_fine when day changes (fascia needs re-selection)
+    if (k === "giorno") {
+      set_form((p) => ({ ...p, giorno: v, ora_inizio: "", ora_fine: "" }));
+      set_posiziona_planning(false);
     }
   };
 
