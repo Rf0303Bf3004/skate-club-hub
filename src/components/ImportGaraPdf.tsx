@@ -99,24 +99,43 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
       }
       const pdf_base64 = btoa(binary);
 
-      const resp = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parse-gara-pdf`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          body: JSON.stringify({ pdf_base64 }),
-        }
-      );
+      const resp = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 4000,
+          messages: [
+            {
+              role: "user",
+              content: [
+                {
+                  type: "document",
+                  source: {
+                    type: "base64",
+                    media_type: "application/pdf",
+                    data: pdf_base64,
+                  },
+                },
+                {
+                  type: "text",
+                  text: 'Extract all skaters data and return ONLY valid JSON no markdown no explanation. Format: {"categoria":"","gruppo":"","disciplina":"","atleti":[{"rank":1,"nome":"FIRSTNAME LASTNAME","club":"ABC","starting_number":3,"tot":14.13,"tes":4.79,"pcs":9.34,"deductions":0,"pcs_presentation":2.25,"pcs_skating_skills":2.42,"elementi":[{"seq":1,"nome":"USpA","base_value":0.60,"goe":0.04,"score":0.64,"info_flag":""}]}]}',
+                },
+              ],
+            },
+          ],
+        }),
+      });
 
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({ error: "Errore sconosciuto" }));
-        throw new Error(err.error || `HTTP ${resp.status}`);
+        throw new Error(err.error?.message || err.error || `HTTP ${resp.status}`);
       }
 
-      const result: ParsedResult = await resp.json();
+      const claude_resp = await resp.json();
+      let content_text = claude_resp.content?.[0]?.text || "";
+      content_text = content_text.replace(/^```json\s*/i, "").replace(/```\s*$/i, "").trim();
+      const result: ParsedResult = JSON.parse(content_text);
       set_parsed(result);
 
       if (result.atleti?.length) {
@@ -185,9 +204,8 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
       for (const m of matches) {
         const a = m.atleta_ai;
 
-        // Use Lovable Cloud supabase for new tables
         const { data: ris_data, error: ris_err } = await supabase
-          .from("risultati_gara" as any)
+          .from("risultati_gara")
           .insert({
             gara_id,
             atleta_id: m.matched_id || null,
@@ -226,7 +244,7 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
           }));
 
           const { error: el_err } = await supabase
-            .from("elementi_gara" as any)
+            .from("elementi_gara")
             .insert(elementi_rows);
 
           if (el_err) console.error("Error inserting elementi:", el_err);
