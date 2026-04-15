@@ -1187,6 +1187,7 @@ export type Database = {
           pcs_presentation: number | null
           pcs_skating_skills: number | null
           rank: number | null
+          segmento: string | null
           starting_number: number | null
           tes: number | null
           tot: number | null
@@ -1206,6 +1207,7 @@ export type Database = {
           pcs_presentation?: number | null
           pcs_skating_skills?: number | null
           rank?: number | null
+          segmento?: string | null
           starting_number?: number | null
           tes?: number | null
           tot?: number | null
@@ -1225,6 +1227,7 @@ export type Database = {
           pcs_presentation?: number | null
           pcs_skating_skills?: number | null
           rank?: number | null
+          segmento?: string | null
           starting_number?: number | null
           tes?: number | null
           tot?: number | null
