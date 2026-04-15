@@ -1127,7 +1127,7 @@ const GrigliaFasceGhiaccio: React.FC<{
           <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
             Durata — da {ora_inizio_sel}
           </label>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 items-center">
             {durate.map((d) => {
               const target_fine = add_minutes_to_time(ora_inizio_sel, d.minuti);
               const is_selected = ora_fine_sel === target_fine;
@@ -1147,6 +1147,28 @@ const GrigliaFasceGhiaccio: React.FC<{
                 </button>
               );
             })}
+            {/* Manual duration input */}
+            <div className="inline-flex items-center gap-1 rounded-lg border-2 border-border px-2 py-1">
+              <input
+                key={`${ora_inizio_sel}-${ora_fine_sel}`}
+                type="number"
+                min={1}
+                className="w-12 text-sm font-medium text-center bg-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                defaultValue={ora_inizio_sel && ora_fine_sel ? time_to_min(ora_fine_sel) - time_to_min(ora_inizio_sel) : ""}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    const val = parseInt((e.target as HTMLInputElement).value);
+                    if (val > 0) handle_durata(val);
+                  }
+                }}
+                onBlur={(e) => {
+                  const val = parseInt(e.target.value);
+                  if (val > 0) handle_durata(val);
+                }}
+                placeholder="—"
+              />
+              <span className="text-xs text-muted-foreground">min</span>
+            </div>
           </div>
           {ora_fine_sel && (
             <p className="text-xs font-medium text-primary">
