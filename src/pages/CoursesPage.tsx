@@ -2090,30 +2090,37 @@ const CoursesPage: React.FC = () => {
     }
     if (mondays.length === 0) return;
 
-    // Fetch ALL existing weeks for this club (unique constraint is on club_id+data_lunedi, not stagione_id)
-    const { data: existing_weeks, error: existing_weeks_error } = await supabase
-      .from("planning_settimane")
-      .select("*")
-      .eq("club_id", club_id)
-      .in("data_lunedi", mondays);
-    if (existing_weeks_error) throw existing_weeks_error;
-
-    const existing_map = new Map((existing_weeks || []).map((w: any) => [w.data_lunedi, w]));
-
-    const missing_mondays = mondays.filter((m) => !existing_map.has(m));
-    if (missing_mondays.length > 0) {
-      const new_weeks = missing_mondays.map((m) => ({
-        club_id,
-        data_lunedi: m,
-        stagione_id: stagione.id,
-        stato: "confermata",
-      }));
-      const { data: inserted_weeks, error: inserted_weeks_error } = await supabase
+    // UPSERT weeks one by one to handle unique constraint (club_id, data_lunedi)
+    const existing_map = new Map<string, any>();
+    for (const monday of mondays) {
+      // Try to find existing week first
+      const { data: found } = await supabase
         .from("planning_settimane")
-        .insert(new_weeks)
-        .select("*");
-      if (inserted_weeks_error) throw inserted_weeks_error;
-      for (const w of inserted_weeks || []) existing_map.set(w.data_lunedi, w);
+        .select("*")
+        .eq("club_id", club_id)
+        .eq("data_lunedi", monday)
+        .maybeSingle();
+
+      if (found) {
+        existing_map.set(monday, found);
+      } else {
+        // Insert new week
+        const { data: created, error: create_err } = await supabase
+          .from("planning_settimane")
+          .insert({
+            club_id,
+            data_lunedi: monday,
+            stagione_id: stagione.id,
+            stato: "confermata",
+          })
+          .select("*")
+          .single();
+        if (create_err) {
+          console.error("Errore creazione settimana planning:", create_err);
+          throw new Error(`Impossibile creare settimana ${monday}: ${create_err.message}`);
+        }
+        existing_map.set(monday, created);
+      }
     }
 
     const slot_rows = mondays.flatMap((monday) => {
@@ -2136,8 +2143,11 @@ const CoursesPage: React.FC = () => {
       }];
     });
 
-    if (slot_rows.length === 0) return;
+    if (slot_rows.length === 0) {
+      throw new Error("Nessuno slot da generare: controlla le date della stagione");
+    }
 
+    // Delete existing slots for this course in these weeks
     const week_ids = [...new Set(slot_rows.map((r) => r.settimana_id))];
     const { error: delete_error } = await supabase
       .from("planning_corsi_settimana")
@@ -2146,10 +2156,23 @@ const CoursesPage: React.FC = () => {
       .in("settimana_id", week_ids);
     if (delete_error) throw delete_error;
 
+    // Insert in batches
     for (let i = 0; i < slot_rows.length; i += 100) {
       const batch = slot_rows.slice(i, i + 100);
       const { error } = await supabase.from("planning_corsi_settimana").insert(batch);
-      if (error) throw error;
+      if (error) {
+        console.error("Errore inserimento planning_corsi_settimana:", error, "batch:", batch);
+        throw new Error(`Errore inserimento nel planning: ${error.message}`);
+      }
+    }
+
+    // Verify insertion
+    const { count } = await supabase
+      .from("planning_corsi_settimana")
+      .select("*", { count: "exact", head: true })
+      .eq("corso_id", corso_id);
+    if (!count || count === 0) {
+      throw new Error("Il corso è stato salvato ma non risulta nel planning. Riprova.");
     }
   };
 
