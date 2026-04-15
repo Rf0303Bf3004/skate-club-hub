@@ -2012,6 +2012,11 @@ const CoursesPage: React.FC = () => {
       if (corso_id && data.giorno && data.ora_inizio && data.ora_fine) {
         try {
           await generate_planning_slots(corso_id, data);
+          // Invalidate planning queries so PlanningPage shows new data
+          await Promise.all([
+            qc.invalidateQueries({ queryKey: ["planning_settimana"] }),
+            qc.invalidateQueries({ queryKey: ["planning_corsi_settimana"] }),
+          ]);
           toast({ title: "📅 Planning aggiornato per tutta la stagione" });
         } catch (err: any) {
           console.error("Errore generazione planning:", err);
@@ -2093,7 +2098,6 @@ const CoursesPage: React.FC = () => {
     // UPSERT weeks one by one to handle unique constraint (club_id, data_lunedi)
     const existing_map = new Map<string, any>();
     for (const monday of mondays) {
-      // Try to find existing week first
       const { data: found } = await supabase
         .from("planning_settimane")
         .select("*")
@@ -2102,16 +2106,23 @@ const CoursesPage: React.FC = () => {
         .maybeSingle();
 
       if (found) {
+        // Ensure stagione_id matches the active season so PlanningPage can find it
+        if (found.stagione_id !== stagione.id) {
+          await supabase
+            .from("planning_settimane")
+            .update({ stagione_id: stagione.id })
+            .eq("id", found.id);
+          found.stagione_id = stagione.id;
+        }
         existing_map.set(monday, found);
       } else {
-        // Insert new week
         const { data: created, error: create_err } = await supabase
           .from("planning_settimane")
           .insert({
             club_id,
             data_lunedi: monday,
             stagione_id: stagione.id,
-            stato: "confermata",
+            stato: "bozza",
           })
           .select("*")
           .single();
