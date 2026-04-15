@@ -2068,11 +2068,11 @@ const CoursesPage: React.FC = () => {
     }
     if (mondays.length === 0) return;
 
+    // Fetch ALL existing weeks for this club (unique constraint is on club_id+data_lunedi, not stagione_id)
     const { data: existing_weeks, error: existing_weeks_error } = await supabase
       .from("planning_settimane")
       .select("*")
       .eq("club_id", club_id)
-      .eq("stagione_id", stagione.id)
       .in("data_lunedi", mondays);
     if (existing_weeks_error) throw existing_weeks_error;
 
