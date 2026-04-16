@@ -15,6 +15,7 @@ import AtletaDetail from "@/components/AtletaDetail";
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import InvitoGenitoreModal from "@/components/InvitoGenitoreModal";
+import DateInput from "@/components/forms/DateInput";
 
 const LIVELLI_COMUNI = ["Pulcini", "Stellina 1", "Stellina 2", "Stellina 3", "Stellina 4"];
 
