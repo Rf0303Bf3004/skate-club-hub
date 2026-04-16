@@ -107,7 +107,7 @@ const AtletaModal: React.FC<{
     licenza_sis_categoria: atleta?.licenza_sis_categoria || "",
     licenza_sis_disciplina: atleta?.licenza_sis_disciplina || "",
     licenza_sis_validita_a: atleta?.licenza_sis_validita_a?.split("T")[0] || "",
-    codice_fiscale: atleta?.codice_fiscale || "",
+    
     luogo_nascita: atleta?.luogo_nascita || "",
     indirizzo: atleta?.indirizzo || "",
     telefono: atleta?.telefono || "",
@@ -325,9 +325,6 @@ const AtletaModal: React.FC<{
           <div className="pt-2 border-t border-border">
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">Dati anagrafici</p>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Codice fiscale">
-                <input value={form.codice_fiscale} onChange={(e) => set_val("codice_fiscale", e.target.value)} className={input_cls} />
-              </Field>
               <Field label="Luogo di nascita">
                 <input value={form.luogo_nascita} onChange={(e) => set_val("luogo_nascita", e.target.value)} className={input_cls} />
               </Field>
@@ -647,7 +644,7 @@ const AthletesPage: React.FC = () => {
                 <div>
                   <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Dati personali</p>
                   <div className="grid grid-cols-2 gap-2">
-                    {([["Codice fiscale", atleta.codice_fiscale], ["Luogo di nascita", atleta.luogo_nascita], ["Indirizzo", atleta.indirizzo], ["Telefono", atleta.telefono]] as [string, string | undefined][]).map(([l, v]) => (
+                    {([["Luogo di nascita", atleta.luogo_nascita], ["Indirizzo", atleta.indirizzo], ["Telefono", atleta.telefono]] as [string, string | undefined][]).map(([l, v]) => (
                       <div key={l} className="bg-muted/30 rounded-lg px-3 py-2">
                         <p className="text-xs text-muted-foreground">{l}</p>
                         <p className="text-sm font-medium text-foreground">{v || <span className="text-muted-foreground/40 italic">—</span>}</p>
