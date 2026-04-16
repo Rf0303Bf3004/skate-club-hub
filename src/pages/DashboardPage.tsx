@@ -343,14 +343,30 @@ const CorsoCard: React.FC<{
                 const presenza = presenze.find(
                   (p) => p.persona_id === a.id && p.riferimento_id === corso.id && !p.ora_uscita,
                 );
+                // Compleanno: confronta giorno+mese di data_nascita con la data del corso
+                let is_compleanno = false;
+                if (a.data_nascita) {
+                  const nasc = new Date(a.data_nascita + "T00:00:00");
+                  const ref = new Date(data + "T00:00:00");
+                  is_compleanno =
+                    nasc.getDate() === ref.getDate() && nasc.getMonth() === ref.getMonth();
+                }
                 return (
                   <div
                     key={a.id}
-                    className={`flex items-center gap-3 px-4 py-2.5 transition-colors ${presenza ? "bg-success/5" : "bg-background"}`}
+                    className={`flex items-center gap-3 px-4 py-2.5 transition-colors ${
+                      is_compleanno ? "bg-yellow-100" : presenza ? "bg-success/5" : "bg-background"
+                    }`}
                   >
                     <div className={`w-2 h-2 rounded-full flex-shrink-0 ${presenza ? "bg-success" : "bg-border"}`} />
-                    <p className="text-sm font-medium text-foreground flex-1">
-                      {a.nome} {a.cognome}
+                    <p className="text-sm font-medium text-foreground flex-1 flex items-center gap-1.5">
+                      {is_compleanno && <span title="Compleanno oggi!">🎂</span>}
+                      <span>{a.nome} {a.cognome}</span>
+                      {is_compleanno && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-yellow-300 text-yellow-900">
+                          Buon compleanno!
+                        </span>
+                      )}
                     </p>
                     <Button
                       size="sm"
