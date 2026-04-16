@@ -1420,7 +1420,8 @@ const CorsoModal: React.FC<{
 
   const validate_ghiaccio = async (): Promise<{ blocked: boolean; warning: string | null }> => {
     const tipo_lower = (form.tipo || "").toLowerCase().trim();
-    if (TIPI_OFF_ICE.includes(tipo_lower)) {
+    // Solo i corsi di tipo "Ghiaccio" richiedono il controllo della disponibilità ghiaccio
+    if (tipo_lower !== "ghiaccio") {
       return { blocked: false, warning: null };
     }
 
@@ -1483,19 +1484,24 @@ const CorsoModal: React.FC<{
     }
 
     // Validate that ora_inizio and ora_fine fall within a configured ice slot
-    if (form.ora_inizio && form.ora_fine) {
-      const corso_start = time_to_min(form.ora_inizio);
-      const corso_end = time_to_min(form.ora_fine);
-      const coperto = fasce_giorno_modal.some((f: any) =>
-        time_to_min(f.ora_inizio) <= corso_start && time_to_min(f.ora_fine) >= corso_end
-      );
-      if (!coperto) {
-        set_ghiaccio_error("Orario non coperto dalla disponibilità ghiaccio. Seleziona una fascia valida.");
+    // SOLO per i corsi di tipo "Ghiaccio". Gli altri tipi (Off-Ice, Danza, ecc.)
+    // saltano completamente il controllo ghiaccio.
+    const tipo_lower_save = (form.tipo || "").toLowerCase().trim();
+    if (tipo_lower_save === "ghiaccio") {
+      if (form.ora_inizio && form.ora_fine) {
+        const corso_start = time_to_min(form.ora_inizio);
+        const corso_end = time_to_min(form.ora_fine);
+        const coperto = fasce_giorno_modal.some((f: any) =>
+          time_to_min(f.ora_inizio) <= corso_start && time_to_min(f.ora_fine) >= corso_end
+        );
+        if (!coperto) {
+          set_ghiaccio_error("Orario non coperto dalla disponibilità ghiaccio. Seleziona una fascia valida.");
+          return;
+        }
+      } else {
+        set_ghiaccio_error("Seleziona una fascia ghiaccio e scegli la durata prima di posizionare nel planning.");
         return;
       }
-    } else {
-      set_ghiaccio_error("Seleziona una fascia ghiaccio e scegli la durata prima di posizionare nel planning.");
-      return;
     }
 
     // Validate ghiaccio availability
