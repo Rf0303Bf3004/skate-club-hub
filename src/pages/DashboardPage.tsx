@@ -1264,7 +1264,17 @@ const DashboardPage: React.FC = () => {
           </div>
 
           {/* Box comunicazione rapida */}
-          <BoxComunicazione atleti={atleti} istruttori={istruttori} monitori={monitori} corsi={corsi} gare={gare} />
+          <div id="box-comunicazione">
+            <BoxComunicazione
+              atleti={atleti}
+              istruttori={istruttori}
+              monitori={monitori}
+              corsi={corsi}
+              gare={gare}
+              preset={com_preset}
+              on_preset_consumed={() => set_com_preset(null)}
+            />
+          </div>
         </div>
 
         {/* Colonna destra — widget */}
