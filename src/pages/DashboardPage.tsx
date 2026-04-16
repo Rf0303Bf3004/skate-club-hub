@@ -389,13 +389,23 @@ const CorsoCard: React.FC<{
 };
 
 // ─── Box comunicazione rapida ──────────────────────────────
+export type BoxComunicazionePreset = {
+  tipo_dest: string;
+  persona_id?: string;
+  titolo: string;
+  testo: string;
+  marker?: string; // chiave per riapplicare lo stesso preset più volte
+};
+
 const BoxComunicazione: React.FC<{
   atleti: any[];
   istruttori: any[];
   monitori: any[];
   corsi: any[];
   gare: any[];
-}> = ({ atleti, istruttori, monitori, corsi, gare }) => {
+  preset?: BoxComunicazionePreset | null;
+  on_preset_consumed?: () => void;
+}> = ({ atleti, istruttori, monitori, corsi, gare, preset, on_preset_consumed }) => {
   const { data: templates = [] } = use_template_comunicazioni();
   const crea = use_crea_comunicazione();
 
@@ -406,6 +416,22 @@ const BoxComunicazione: React.FC<{
   const [testo, set_testo] = useState("");
   const [template_sel, set_template_sel] = useState("");
   const [sending_wa, set_sending_wa] = useState(false);
+
+  // Applica preset esterno (es. "Invia auguri" da banner compleanno)
+  const last_preset_marker = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (!preset) return;
+    const marker = preset.marker || preset.titolo + "|" + (preset.persona_id || "");
+    if (last_preset_marker.current === marker) return;
+    last_preset_marker.current = marker;
+    set_tipo_dest(preset.tipo_dest);
+    set_persona_id(preset.persona_id || "");
+    set_riferimento_id("");
+    set_titolo(preset.titolo);
+    set_testo(preset.testo);
+    set_template_sel("");
+    on_preset_consumed?.();
+  }, [preset, on_preset_consumed]);
 
   const input_cls =
     "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
@@ -509,11 +535,14 @@ const BoxComunicazione: React.FC<{
       return;
     }
     try {
+      const is_birthday = last_preset_marker.current?.startsWith("birthday:") ?? false;
+      const target_atleta_id = tipo_dest === "singolo_atleta" ? persona_id : null;
       await crea.mutateAsync({
         titolo,
         testo,
-        tipo_destinatari: tipo_dest,
+        tipo_destinatari: is_birthday ? "compleanno" : tipo_dest,
         corso_id: tipo_dest === "corso" ? riferimento_id : null,
+        atleta_id: target_atleta_id,
       });
       toast({ title: "✅ Comunicazione salvata" });
       set_titolo("");
@@ -900,6 +929,35 @@ const DashboardPage: React.FC = () => {
   const elimina_p = use_elimina_presenza();
   const [tab_presenze, set_tab_presenze] = useState<"corsi" | "istruttori">("corsi");
   const [agenda_offset, set_agenda_offset] = useState(0);
+  const [com_preset, set_com_preset] = useState<BoxComunicazionePreset | null>(null);
+
+  // Atleti con compleanno oggi
+  const compleanni_oggi = useMemo(() => {
+    const oggi = new Date();
+    const md = `${String(oggi.getMonth() + 1).padStart(2, "0")}-${String(oggi.getDate()).padStart(2, "0")}`;
+    return atleti.filter((a) => {
+      if (!a.data_nascita) return false;
+      const dn = new Date(a.data_nascita + "T00:00:00");
+      const dn_md = `${String(dn.getMonth() + 1).padStart(2, "0")}-${String(dn.getDate()).padStart(2, "0")}`;
+      return dn_md === md;
+    });
+  }, [atleti]);
+
+  const handle_invia_auguri = (atleta: any) => {
+    const nome = atleta.nome || "";
+    const preset: BoxComunicazionePreset = {
+      tipo_dest: "singolo_atleta",
+      persona_id: atleta.id,
+      titolo: `🎂 Auguri ${nome}!`,
+      testo: `🎂 Tanti auguri ${nome}! Il tuo club e i tuoi istruttori ti fanno i migliori auguri per il tuo compleanno! 🎉`,
+      marker: `birthday:${atleta.id}:${Date.now()}`,
+    };
+    set_com_preset(preset);
+    setTimeout(() => {
+      const el = document.getElementById("box-comunicazione");
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  };
 
   const is_loading = loading_atleti || loading_corsi || loading_gare || loading_fatture || loading_istruttori;
 
@@ -1040,6 +1098,47 @@ const DashboardPage: React.FC = () => {
           highlight
         />
       </div>
+
+      {/* Banner compleanni del giorno */}
+      {compleanni_oggi.length > 0 && (
+        <div className="rounded-xl border border-yellow-300 bg-gradient-to-r from-yellow-50 via-amber-50 to-pink-50 px-5 py-4 shadow-sm">
+          <div className="flex items-start gap-3 flex-wrap">
+            <div className="text-3xl leading-none">🎂</div>
+            <div className="flex-1 min-w-[220px]">
+              <p className="text-sm font-bold text-amber-900">
+                Oggi è il compleanno di{" "}
+                {compleanni_oggi.map((a, idx) => (
+                  <span key={a.id}>
+                    <span className="font-semibold">{a.nome} {a.cognome}</span>
+                    {idx < compleanni_oggi.length - 2
+                      ? ", "
+                      : idx === compleanni_oggi.length - 2
+                        ? " e "
+                        : ""}
+                  </span>
+                ))}
+                ! 🎉
+              </p>
+              <p className="text-xs text-amber-800/80 mt-0.5">
+                Mandagli gli auguri dal club: clicca "Invia auguri" e personalizza il messaggio prima di inviarlo.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {compleanni_oggi.map((a) => (
+                <Button
+                  key={a.id}
+                  size="sm"
+                  onClick={() => handle_invia_auguri(a)}
+                  className="gap-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs"
+                >
+                  <Gift className="w-3.5 h-3.5" />
+                  Invia auguri a {a.nome}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Banner fine stagione */}
       {(() => {
@@ -1206,7 +1305,17 @@ const DashboardPage: React.FC = () => {
           </div>
 
           {/* Box comunicazione rapida */}
-          <BoxComunicazione atleti={atleti} istruttori={istruttori} monitori={monitori} corsi={corsi} gare={gare} />
+          <div id="box-comunicazione">
+            <BoxComunicazione
+              atleti={atleti}
+              istruttori={istruttori}
+              monitori={monitori}
+              corsi={corsi}
+              gare={gare}
+              preset={com_preset}
+              on_preset_consumed={() => set_com_preset(null)}
+            />
+          </div>
         </div>
 
         {/* Colonna destra — widget */}
