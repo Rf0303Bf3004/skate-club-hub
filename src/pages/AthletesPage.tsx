@@ -15,6 +15,7 @@ import AtletaDetail from "@/components/AtletaDetail";
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import InvitoGenitoreModal from "@/components/InvitoGenitoreModal";
+import DateInput from "@/components/forms/DateInput";
 
 const LIVELLI_COMUNI = ["Pulcini", "Stellina 1", "Stellina 2", "Stellina 3", "Stellina 4"];
 
@@ -207,12 +208,7 @@ const AtletaModal: React.FC<{
           </div>
 
           <Field label="Data di nascita" required>
-            <input
-              type="date"
-              value={form.data_nascita}
-              onChange={(e) => set_val("data_nascita", e.target.value)}
-              className={input_cls}
-            />
+            <DateInput value={form.data_nascita} onChange={(v) => set_val("data_nascita", v)} />
           </Field>
 
           {/* Livello attuale */}
