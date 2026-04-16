@@ -535,11 +535,14 @@ const BoxComunicazione: React.FC<{
       return;
     }
     try {
+      const is_birthday = last_preset_marker.current?.startsWith("birthday:") ?? false;
+      const target_atleta_id = tipo_dest === "singolo_atleta" ? persona_id : null;
       await crea.mutateAsync({
         titolo,
         testo,
-        tipo_destinatari: tipo_dest,
+        tipo_destinatari: is_birthday ? "compleanno" : tipo_dest,
         corso_id: tipo_dest === "corso" ? riferimento_id : null,
+        atleta_id: target_atleta_id,
       });
       toast({ title: "✅ Comunicazione salvata" });
       set_titolo("");
