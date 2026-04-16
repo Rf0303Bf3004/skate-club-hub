@@ -513,7 +513,7 @@ const CalendarioAtletaInterattivo: React.FC<{ atleta_id: string }> = ({ atleta_i
   const [view, set_view] = useState<"month" | "week">("month");
   const [current_date, set_current_date] = useState(new Date());
   const [selected_event, set_selected_event] = useState<CalEvent | null>(null);
-
+  const [selected_day, set_selected_day] = useState<string | null>(null);
   const { data: all_events = [], isLoading } = use_calendar_events(atleta_id);
 
   const year = current_date.getFullYear();
@@ -617,7 +617,7 @@ const CalendarioAtletaInterattivo: React.FC<{ atleta_id: string }> = ({ atleta_i
       <div className="bg-card rounded-xl shadow-card overflow-hidden">
         {view === "month" ? (
           <div className="p-3">
-            <MonthView year={year} month={month} events={visible_events} on_event={set_selected_event} />
+            <MonthView year={year} month={month} events={visible_events} on_day_click={set_selected_day} />
           </div>
         ) : (
           <div className="p-3">
@@ -636,7 +636,8 @@ const CalendarioAtletaInterattivo: React.FC<{ atleta_id: string }> = ({ atleta_i
         <AgendaList events={visible_events} on_event={set_selected_event} />
       </div>
 
-      {/* Bottom Sheet */}
+      {/* Bottom Sheets */}
+      <DayBottomSheet date={selected_day} events={all_events} on_close={() => set_selected_day(null)} on_event={set_selected_event} />
       <EventBottomSheet event={selected_event} on_close={() => set_selected_event(null)} />
     </div>
   );
