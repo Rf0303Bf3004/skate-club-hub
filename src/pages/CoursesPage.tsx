@@ -1416,7 +1416,7 @@ const CorsoModal: React.FC<{
     return warnings;
   }, [form.istruttori_ids, form.giorno, form.ora_inizio, form.ora_fine, planning_giorno, corso, corsi, istruttori]);
 
-  const TIPI_OFF_ICE = ["danza", "off-ice", "stretching", "off ice"];
+  const TIPI_OFF_ICE = ["danza", "off-ice", "stretching"];
 
   const validate_ghiaccio = async (): Promise<{ blocked: boolean; warning: string | null }> => {
     const tipo_lower = (form.tipo || "").toLowerCase().trim();
