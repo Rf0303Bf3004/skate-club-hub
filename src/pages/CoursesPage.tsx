@@ -1351,7 +1351,7 @@ const CorsoModal: React.FC<{
   useEffect(() => {
     if (!posiziona_planning) { set_no_ice_realtime(false); return; }
     const tipo_lower = (form.tipo || "").toLowerCase().trim();
-    if (["danza", "off-ice", "stretching", "off ice"].includes(tipo_lower)) { set_no_ice_realtime(false); return; }
+    if (["danza", "off-ice", "stretching"].includes(tipo_lower)) { set_no_ice_realtime(false); return; }
     let cancelled = false;
     (async () => {
       const club_id = get_current_club_id();
@@ -1416,7 +1416,7 @@ const CorsoModal: React.FC<{
     return warnings;
   }, [form.istruttori_ids, form.giorno, form.ora_inizio, form.ora_fine, planning_giorno, corso, corsi, istruttori]);
 
-  const TIPI_OFF_ICE = ["danza", "off-ice", "stretching", "off ice"];
+  const TIPI_OFF_ICE = ["danza", "off-ice", "stretching"];
 
   const validate_ghiaccio = async (): Promise<{ blocked: boolean; warning: string | null }> => {
     const tipo_lower = (form.tipo || "").toLowerCase().trim();
