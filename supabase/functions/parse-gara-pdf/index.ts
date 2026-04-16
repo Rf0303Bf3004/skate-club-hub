@@ -11,9 +11,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { pdfBase64 } = await req.json();
-    if (!pdfBase64) {
-      return new Response(JSON.stringify({ error: "pdfBase64 is required" }), {
+    const { pdfText } = await req.json();
+    if (!pdfText || typeof pdfText !== "string") {
+      return new Response(JSON.stringify({ error: "pdfText is required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -41,16 +41,11 @@ Deno.serve(async (req) => {
             role: "user",
             content: [
               {
-                type: "document",
-                source: {
-                  type: "base64",
-                  media_type: "application/pdf",
-                  data: pdfBase64,
-                },
-              },
-              {
                 type: "text",
-                text: 'Extract all skaters data and return ONLY valid JSON no markdown no explanation. Format: {"categoria":"","gruppo":"","disciplina":"","atleti":[{"rank":1,"nome":"FIRSTNAME LASTNAME","club":"ABC","starting_number":3,"tot":14.13,"tes":4.79,"pcs":9.34,"deductions":0,"pcs_presentation":2.25,"pcs_skating_skills":2.42,"elementi":[{"seq":1,"nome":"USpA","base_value":0.60,"goe":0.04,"score":0.64,"info_flag":""}]}]}',
+                text: `Extract all skaters data from the following raw PDF text and return ONLY valid JSON with no markdown and no explanation. If a value is missing use null or an empty string. Keep numeric fields as numbers. Format: {"categoria":"","gruppo":"","disciplina":"","atleti":[{"rank":1,"nome":"FIRSTNAME LASTNAME","club":"ABC","starting_number":3,"tot":14.13,"tes":4.79,"pcs":9.34,"deductions":0,"pcs_presentation":2.25,"pcs_skating_skills":2.42,"elementi":[{"seq":1,"nome":"USpA","base_value":0.60,"goe":0.04,"score":0.64,"info_flag":""}]}]}
+
+RAW PDF TEXT:
+${pdfText}`,
               },
             ],
           },
@@ -78,6 +73,12 @@ Deno.serve(async (req) => {
     let content_text = claude_resp.content[0]?.text || "";
     content_text = content_text.replace(/^```json\s*/i, "").replace(/```\s*$/i, "").trim();
 
+    const first_brace = content_text.indexOf("{");
+    const last_brace = content_text.lastIndexOf("}");
+    if (first_brace !== -1 && last_brace !== -1 && last_brace > first_brace) {
+      content_text = content_text.slice(first_brace, last_brace + 1);
+    }
+
     if (!content_text) {
       return new Response(JSON.stringify({ error: "Claude returned empty text" }), {
         status: 502,
@@ -85,7 +86,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    const parsed = JSON.parse(content_text);
+    let parsed;
+    try {
+      parsed = JSON.parse(content_text);
+    } catch (parse_error) {
+      return new Response(JSON.stringify({ error: "JSON non bilanciato", raw: content_text.slice(0, 4000), details: String(parse_error) }), {
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     return new Response(JSON.stringify(parsed), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

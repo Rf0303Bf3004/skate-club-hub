@@ -6,6 +6,7 @@ import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { Upload, FileText, Search, CheckCircle2, AlertCircle, Loader2, X, ChevronDown, ChevronUp } from "lucide-react";
+import * as pdfjs_lib from "pdfjs-dist";
 
 const input_cls =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
@@ -88,42 +89,37 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
     }
   };
 
-  const to_base64 = (f: File): Promise<string> =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result as string;
-        const base64 = result.split(',')[1];
-        resolve(base64);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(f);
-    });
+  const extract_text_from_pdf = async (f: File): Promise<string> => {
+    const array_buffer = await f.arrayBuffer();
+    const pdf = await pdfjs_lib.getDocument({ data: array_buffer }).promise;
+
+    let text = "";
+    for (let page_index = 1; page_index <= pdf.numPages; page_index++) {
+      const page = await pdf.getPage(page_index);
+      const content = await page.getTextContent();
+      text += `${content.items.map((item: any) => item.str).join(" ")}\n`;
+    }
+
+    return text.trim();
+  };
 
   const handle_parse = async () => {
     if (!file) return;
     set_parsing(true);
     try {
-      const pdf_base64 = await to_base64(file);
-      const external_url = "https://urbctwvdlovgodjpyiib.supabase.co";
-      const external_anon_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVyYmN0d3ZkbG92Z29kanB5aWliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwNzUwMjgsImV4cCI6MjA4ODY1MTAyOH0.Fgc8ZfvMvMhtTtTgTZ8ABHM-iVky3wqTnoTTvESQq8I";
+      const pdf_text = await extract_text_from_pdf(file);
 
-      const response = await fetch(`${external_url}/functions/v1/parse-gara-pdf`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${external_anon_key}`,
-          apikey: external_anon_key,
-        },
-        body: JSON.stringify({ pdfBase64: pdf_base64 }),
-      });
-
-      if (!response.ok) {
-        const err_body = await response.text();
-        throw new Error(`Edge function ${response.status}: ${err_body}`);
+      if (!pdf_text) {
+        throw new Error("Non sono riuscito a estrarre testo dal PDF.");
       }
 
-      const data = await response.json();
+      const { data, error } = await supabase.functions.invoke("parse-gara-pdf", {
+        body: { pdfText: pdf_text },
+      });
+
+      if (error) {
+        throw new Error(error.message || "Errore chiamando la edge function");
+      }
 
       const result: ParsedResult = data;
       set_parsed(result);
