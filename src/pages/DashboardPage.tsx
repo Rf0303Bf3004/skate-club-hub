@@ -1099,6 +1099,47 @@ const DashboardPage: React.FC = () => {
         />
       </div>
 
+      {/* Banner compleanni del giorno */}
+      {compleanni_oggi.length > 0 && (
+        <div className="rounded-xl border border-yellow-300 bg-gradient-to-r from-yellow-50 via-amber-50 to-pink-50 px-5 py-4 shadow-sm">
+          <div className="flex items-start gap-3 flex-wrap">
+            <div className="text-3xl leading-none">🎂</div>
+            <div className="flex-1 min-w-[220px]">
+              <p className="text-sm font-bold text-amber-900">
+                Oggi è il compleanno di{" "}
+                {compleanni_oggi.map((a, idx) => (
+                  <span key={a.id}>
+                    <span className="font-semibold">{a.nome} {a.cognome}</span>
+                    {idx < compleanni_oggi.length - 2
+                      ? ", "
+                      : idx === compleanni_oggi.length - 2
+                        ? " e "
+                        : ""}
+                  </span>
+                ))}
+                ! 🎉
+              </p>
+              <p className="text-xs text-amber-800/80 mt-0.5">
+                Mandagli gli auguri dal club: clicca "Invia auguri" e personalizza il messaggio prima di inviarlo.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {compleanni_oggi.map((a) => (
+                <Button
+                  key={a.id}
+                  size="sm"
+                  onClick={() => handle_invia_auguri(a)}
+                  className="gap-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs"
+                >
+                  <Gift className="w-3.5 h-3.5" />
+                  Invia auguri a {a.nome}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Banner fine stagione */}
       {(() => {
         const data_fine = (setup as any)?.data_fine_stagione;
