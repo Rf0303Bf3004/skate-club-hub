@@ -1420,7 +1420,8 @@ const CorsoModal: React.FC<{
 
   const validate_ghiaccio = async (): Promise<{ blocked: boolean; warning: string | null }> => {
     const tipo_lower = (form.tipo || "").toLowerCase().trim();
-    if (TIPI_OFF_ICE.includes(tipo_lower)) {
+    // Solo i corsi di tipo "Ghiaccio" richiedono il controllo della disponibilità ghiaccio
+    if (tipo_lower !== "ghiaccio") {
       return { blocked: false, warning: null };
     }
 
