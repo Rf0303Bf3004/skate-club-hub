@@ -1085,6 +1085,7 @@ const CompetitionsPage: React.FC = () => {
               )}
             </TabsContent>
           </Tabs>
+          )}
         </div>
       </>
     );
