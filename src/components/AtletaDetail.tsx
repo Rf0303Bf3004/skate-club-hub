@@ -622,7 +622,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
           <TabsContent value="livello" className="mt-6">
             <div className="bg-card rounded-xl shadow-card p-6 space-y-5 max-w-lg">
               <div className="space-y-1.5">
-                <Label className="text-sm text-muted-foreground">Percorso comune</Label>
+                <Label className="text-sm text-muted-foreground">Livello attuale</Label>
                 <Select
                   value={form.percorso_amatori}
                   onValueChange={(v) => {
