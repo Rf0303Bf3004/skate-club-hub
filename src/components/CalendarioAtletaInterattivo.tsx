@@ -193,17 +193,78 @@ function use_calendar_events(atleta_id: string) {
   });
 }
 
-// ─── Bottom Sheet ──────────────────────────────────────────
-const EventBottomSheet: React.FC<{ event: CalEvent | null; on_close: () => void }> = ({ event, on_close }) => {
-  if (!event) return null;
-  const colors = EVENT_COLORS[event.type] ?? EVENT_COLORS.corso;
-  const status_label = event.status === "annullato" ? "Annullato" : event.status === "confermato" ? "Confermato" : "Previsto";
-  const status_color = event.status === "annullato" ? "text-[#993C1D]" : event.status === "confermato" ? "text-[#185FA5]" : "text-muted-foreground";
+// ─── Day Detail Bottom Sheet ───────────────────────────────
+const DayBottomSheet: React.FC<{
+  date: string | null;
+  events: CalEvent[];
+  on_close: () => void;
+  on_event: (e: CalEvent) => void;
+}> = ({ date, events, on_close, on_event }) => {
+  if (!date) return null;
+  const day_events = events.filter(e => e.date === date).sort((a, b) => a.time_start.localeCompare(b.time_start));
+  const label = new Date(date + "T00:00:00").toLocaleDateString("it-CH", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
   return (
     <>
       <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={on_close} />
       <div className="fixed inset-x-0 bottom-0 z-50 animate-in slide-in-from-bottom duration-300">
+        <div className="bg-card rounded-t-2xl shadow-xl max-h-[70vh] overflow-auto">
+          <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-muted" />
+          <div className="px-5 pt-4 pb-2">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-base font-bold text-foreground capitalize">{label}</h3>
+              <button onClick={on_close} className="p-1 rounded-lg hover:bg-muted text-muted-foreground">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            {day_events.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">Nessun impegno in questa giornata</p>
+            ) : (
+              <div className="divide-y divide-border">
+                {day_events.map((ev, i) => {
+                  const colors = EVENT_COLORS[ev.type] ?? EVENT_COLORS.corso;
+                  const is_cancelled = ev.type === "corso_cancelled";
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => { on_close(); on_event(ev); }}
+                      className={`w-full flex items-center gap-3 py-3 hover:bg-muted/30 transition-colors text-left ${is_cancelled ? "opacity-50" : ""}`}
+                    >
+                      <span className={`w-3 h-3 rounded-full shrink-0 ${colors.dot}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-medium truncate ${is_cancelled ? "line-through text-muted-foreground" : "text-foreground"}`}>{ev.title}</p>
+                        {ev.time_start && (
+                          <p className="text-xs text-muted-foreground">{ev.time_start}{ev.time_end ? ` — ${ev.time_end}` : ""}</p>
+                        )}
+                        {ev.instructor && <p className="text-xs text-muted-foreground">{ev.instructor}</p>}
+                      </div>
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${colors.bg} ${colors.text}`}>
+                        {EVENT_LABELS[ev.type]}
+                      </span>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          <div className="h-6" />
+        </div>
+      </div>
+    </>
+  );
+};
+
+// ─── Event Detail Bottom Sheet ─────────────────────────────
+const EventBottomSheet: React.FC<{ event: CalEvent | null; on_close: () => void }> = ({ event, on_close }) => {
+  if (!event) return null;
+  const colors = EVENT_COLORS[event.type] ?? EVENT_COLORS.corso;
+  const status_label = event.status === "annullato" ? "Annullato" : event.status === "confermato" ? "Confermato" : "Previsto";
+
+  return (
+    <>
+      <div className="fixed inset-0 z-[51] bg-black/40 backdrop-blur-sm" onClick={on_close} />
+      <div className="fixed inset-x-0 bottom-0 z-[51] animate-in slide-in-from-bottom duration-300">
         <div className="bg-card rounded-t-2xl shadow-xl max-h-[70vh] overflow-auto">
           <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-muted" />
           <div className="px-5 pt-4 pb-6 space-y-4">
