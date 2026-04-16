@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Calendar } from "lucide-react";
 import CalendarioAtletaInterattivo from "@/components/CalendarioAtletaInterattivo";
 import InvitoGenitoreModal from "@/components/InvitoGenitoreModal";
+import DateInput from "@/components/forms/DateInput";
 import { useI18n } from "@/lib/i18n";
 import {
   use_corsi,
@@ -524,12 +525,13 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
             <div className="bg-card rounded-xl shadow-card p-6 space-y-4 max-w-lg">
               <EditRow label={t("nome")} value={form.nome} onChange={(v) => upd("nome", v)} />
               <EditRow label={t("cognome")} value={form.cognome} onChange={(v) => upd("cognome", v)} />
-              <EditRow
-                label={t("data_nascita")}
-                value={form.data_nascita?.split("T")[0]}
-                onChange={(v) => upd("data_nascita", v)}
-                type="date"
-              />
+              <div className="flex justify-between items-center py-1 gap-3">
+                <span className="text-sm text-muted-foreground">{t("data_nascita")}</span>
+                <DateInput
+                  value={form.data_nascita?.split("T")[0] || ""}
+                  onChange={(v) => upd("data_nascita", v)}
+                />
+              </div>
               <div className="flex justify-between items-center py-1">
                 <span className="text-sm text-muted-foreground">{t("eta")}</span>
                 <span className="text-sm font-medium text-foreground">{calculate_age(form.data_nascita)} anni</span>
