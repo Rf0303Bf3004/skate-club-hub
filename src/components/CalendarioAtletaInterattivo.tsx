@@ -193,17 +193,78 @@ function use_calendar_events(atleta_id: string) {
   });
 }
 
-// ─── Bottom Sheet ──────────────────────────────────────────
-const EventBottomSheet: React.FC<{ event: CalEvent | null; on_close: () => void }> = ({ event, on_close }) => {
-  if (!event) return null;
-  const colors = EVENT_COLORS[event.type] ?? EVENT_COLORS.corso;
-  const status_label = event.status === "annullato" ? "Annullato" : event.status === "confermato" ? "Confermato" : "Previsto";
-  const status_color = event.status === "annullato" ? "text-[#993C1D]" : event.status === "confermato" ? "text-[#185FA5]" : "text-muted-foreground";
+// ─── Day Detail Bottom Sheet ───────────────────────────────
+const DayBottomSheet: React.FC<{
+  date: string | null;
+  events: CalEvent[];
+  on_close: () => void;
+  on_event: (e: CalEvent) => void;
+}> = ({ date, events, on_close, on_event }) => {
+  if (!date) return null;
+  const day_events = events.filter(e => e.date === date).sort((a, b) => a.time_start.localeCompare(b.time_start));
+  const label = new Date(date + "T00:00:00").toLocaleDateString("it-CH", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
   return (
     <>
       <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={on_close} />
       <div className="fixed inset-x-0 bottom-0 z-50 animate-in slide-in-from-bottom duration-300">
+        <div className="bg-card rounded-t-2xl shadow-xl max-h-[70vh] overflow-auto">
+          <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-muted" />
+          <div className="px-5 pt-4 pb-2">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-base font-bold text-foreground capitalize">{label}</h3>
+              <button onClick={on_close} className="p-1 rounded-lg hover:bg-muted text-muted-foreground">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            {day_events.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">Nessun impegno in questa giornata</p>
+            ) : (
+              <div className="divide-y divide-border">
+                {day_events.map((ev, i) => {
+                  const colors = EVENT_COLORS[ev.type] ?? EVENT_COLORS.corso;
+                  const is_cancelled = ev.type === "corso_cancelled";
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => { on_close(); on_event(ev); }}
+                      className={`w-full flex items-center gap-3 py-3 hover:bg-muted/30 transition-colors text-left ${is_cancelled ? "opacity-50" : ""}`}
+                    >
+                      <span className={`w-3 h-3 rounded-full shrink-0 ${colors.dot}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-medium truncate ${is_cancelled ? "line-through text-muted-foreground" : "text-foreground"}`}>{ev.title}</p>
+                        {ev.time_start && (
+                          <p className="text-xs text-muted-foreground">{ev.time_start}{ev.time_end ? ` — ${ev.time_end}` : ""}</p>
+                        )}
+                        {ev.instructor && <p className="text-xs text-muted-foreground">{ev.instructor}</p>}
+                      </div>
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${colors.bg} ${colors.text}`}>
+                        {EVENT_LABELS[ev.type]}
+                      </span>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          <div className="h-6" />
+        </div>
+      </div>
+    </>
+  );
+};
+
+// ─── Event Detail Bottom Sheet ─────────────────────────────
+const EventBottomSheet: React.FC<{ event: CalEvent | null; on_close: () => void }> = ({ event, on_close }) => {
+  if (!event) return null;
+  const colors = EVENT_COLORS[event.type] ?? EVENT_COLORS.corso;
+  const status_label = event.status === "annullato" ? "Annullato" : event.status === "confermato" ? "Confermato" : "Previsto";
+
+  return (
+    <>
+      <div className="fixed inset-0 z-[51] bg-black/40 backdrop-blur-sm" onClick={on_close} />
+      <div className="fixed inset-x-0 bottom-0 z-[51] animate-in slide-in-from-bottom duration-300">
         <div className="bg-card rounded-t-2xl shadow-xl max-h-[70vh] overflow-auto">
           <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-muted" />
           <div className="px-5 pt-4 pb-6 space-y-4">
@@ -264,7 +325,7 @@ const EventBottomSheet: React.FC<{ event: CalEvent | null; on_close: () => void 
 };
 
 // ─── Monthly View ──────────────────────────────────────────
-const MonthView: React.FC<{ year: number; month: number; events: CalEvent[]; on_event: (e: CalEvent) => void }> = ({ year, month, events, on_event }) => {
+const MonthView: React.FC<{ year: number; month: number; events: CalEvent[]; on_day_click: (date: string) => void }> = ({ year, month, events, on_day_click }) => {
   const days = get_month_days(year, month);
   const today = fmt_date(new Date());
 
@@ -287,25 +348,22 @@ const MonthView: React.FC<{ year: number; month: number; events: CalEvent[]; on_
         {days.map((d, i) => {
           const day_events = events_by_date[d.date] ?? [];
           const is_today = d.date === today;
+          const has_events = day_events.length > 0;
           return (
-            <div
+            <button
               key={i}
-              className={`min-h-[72px] p-1 ${d.current_month ? "bg-card" : "bg-muted/30"} ${is_today ? "ring-2 ring-inset ring-[#185FA5]/40" : ""}`}
+              onClick={() => on_day_click(d.date)}
+              className={`min-h-[72px] p-1 text-left transition-colors ${d.current_month ? "bg-card hover:bg-muted/40" : "bg-muted/30 hover:bg-muted/50"} ${is_today ? "ring-2 ring-inset ring-[#185FA5]/40" : ""} ${has_events ? "cursor-pointer" : "cursor-default"}`}
             >
               <div className={`text-xs font-medium mb-0.5 text-center ${is_today ? "bg-[#185FA5] text-white rounded-full w-6 h-6 flex items-center justify-center mx-auto" : d.current_month ? "text-foreground" : "text-muted-foreground/50"}`}>
                 {d.day}
               </div>
-              {day_events.length > 0 && (
+              {has_events && (
                 <div className="flex flex-wrap justify-center gap-0.5 mt-0.5">
                   {day_events.slice(0, 3).map((ev, j) => {
                     const c = EVENT_COLORS[ev.type] ?? EVENT_COLORS.corso;
                     return (
-                      <button
-                        key={j}
-                        onClick={() => on_event(ev)}
-                        className={`w-2 h-2 rounded-full ${c.dot} hover:ring-2 hover:ring-offset-1 hover:ring-current transition-all`}
-                        title={ev.title}
-                      />
+                      <span key={j} className={`w-2 h-2 rounded-full ${c.dot}`} />
                     );
                   })}
                   {day_events.length > 3 && (
@@ -313,7 +371,7 @@ const MonthView: React.FC<{ year: number; month: number; events: CalEvent[]; on_
                   )}
                 </div>
               )}
-            </div>
+            </button>
           );
         })}
       </div>
@@ -455,7 +513,7 @@ const CalendarioAtletaInterattivo: React.FC<{ atleta_id: string }> = ({ atleta_i
   const [view, set_view] = useState<"month" | "week">("month");
   const [current_date, set_current_date] = useState(new Date());
   const [selected_event, set_selected_event] = useState<CalEvent | null>(null);
-
+  const [selected_day, set_selected_day] = useState<string | null>(null);
   const { data: all_events = [], isLoading } = use_calendar_events(atleta_id);
 
   const year = current_date.getFullYear();
@@ -559,7 +617,7 @@ const CalendarioAtletaInterattivo: React.FC<{ atleta_id: string }> = ({ atleta_i
       <div className="bg-card rounded-xl shadow-card overflow-hidden">
         {view === "month" ? (
           <div className="p-3">
-            <MonthView year={year} month={month} events={visible_events} on_event={set_selected_event} />
+            <MonthView year={year} month={month} events={visible_events} on_day_click={set_selected_day} />
           </div>
         ) : (
           <div className="p-3">
@@ -578,7 +636,8 @@ const CalendarioAtletaInterattivo: React.FC<{ atleta_id: string }> = ({ atleta_i
         <AgendaList events={visible_events} on_event={set_selected_event} />
       </div>
 
-      {/* Bottom Sheet */}
+      {/* Bottom Sheets */}
+      <DayBottomSheet date={selected_day} events={all_events} on_close={() => set_selected_day(null)} on_event={set_selected_event} />
       <EventBottomSheet event={selected_event} on_close={() => set_selected_event(null)} />
     </div>
   );
