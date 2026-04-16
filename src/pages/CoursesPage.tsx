@@ -307,33 +307,41 @@ const TabIscrizioni: React.FC<{
   const [note_salto, set_note_salto] = useState("");
   const [show_salto_search, set_show_salto_search] = useState(false);
   const [salto_query, set_salto_query] = useState("");
+  // Optimistic: ID appena iscritti localmente, prima del refresh dal DB
+  const [iscritti_ottimistici, set_iscritti_ottimistici] = useState<string[]>([]);
 
   const ha_filtro_livello = !!livello_richiesto && livello_richiesto !== "tutti";
 
-  const atleti_iscritti = tutti_atleti.filter((a: any) => atleti_iscritti_ids.includes(a.id));
+  // Unione tra iscritti dal DB e quelli appena aggiunti localmente
+  const ids_esclusi = useMemo(
+    () => Array.from(new Set([...atleti_iscritti_ids, ...iscritti_ottimistici])),
+    [atleti_iscritti_ids, iscritti_ottimistici]
+  );
+
+  const atleti_iscritti = tutti_atleti.filter((a: any) => ids_esclusi.includes(a.id));
 
   // Lista principale: solo atleti compatibili (o tutti se livello_richiesto = 'tutti')
   const atleti_disponibili = useMemo(() => {
     const q = query.toLowerCase();
     return tutti_atleti
-      .filter((a: any) => a.stato === "attivo" && !atleti_iscritti_ids.includes(a.id))
+      .filter((a: any) => a.stato === "attivo" && !ids_esclusi.includes(a.id))
       .filter((a: any) => !ha_filtro_livello || is_livello_compatibile(a, livello_richiesto))
       .filter((a: any) => !q || `${a.nome} ${a.cognome}`.toLowerCase().includes(q))
       .sort((a, b) => (a.cognome || "").localeCompare(b.cognome || "", "it"))
       .slice(0, 30);
-  }, [tutti_atleti, atleti_iscritti_ids, query, livello_richiesto, ha_filtro_livello]);
+  }, [tutti_atleti, ids_esclusi, query, livello_richiesto, ha_filtro_livello]);
 
   // Lista salto di livello: SOLO atleti NON compatibili
   const atleti_salto = useMemo(() => {
     if (!show_salto_search || !ha_filtro_livello) return [];
     const q = salto_query.toLowerCase();
     return tutti_atleti
-      .filter((a: any) => a.stato === "attivo" && !atleti_iscritti_ids.includes(a.id))
+      .filter((a: any) => a.stato === "attivo" && !ids_esclusi.includes(a.id))
       .filter((a: any) => !is_livello_compatibile(a, livello_richiesto))
       .filter((a: any) => !q || `${a.nome} ${a.cognome}`.toLowerCase().includes(q))
       .sort((a, b) => (a.cognome || "").localeCompare(b.cognome || "", "it"))
       .slice(0, 30);
-  }, [tutti_atleti, atleti_iscritti_ids, salto_query, livello_richiesto, show_salto_search, ha_filtro_livello]);
+  }, [tutti_atleti, ids_esclusi, salto_query, livello_richiesto, show_salto_search, ha_filtro_livello]);
 
   const do_iscrivi = async (atleta_id: string, salto_livello = false, note_sl = "") => {
     set_saving(true);
@@ -347,6 +355,8 @@ const TabIscrizioni: React.FC<{
       };
       const { error } = await supabase.from("iscrizioni_corsi").insert(payload);
       if (error) throw error;
+      // Optimistic update: rimuove l'atleta dalla lista disponibili immediatamente
+      set_iscritti_ottimistici((prev) => (prev.includes(atleta_id) ? prev : [...prev, atleta_id]));
       set_query("");
       set_salto_query("");
       set_show_salto_search(false);
