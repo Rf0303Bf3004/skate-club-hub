@@ -562,12 +562,15 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                     value={form.licenza_sis_disciplina || ""}
                     onChange={(v) => upd("licenza_sis_disciplina", v)}
                   />
-                  <EditRow
-                    label="Validità fino al"
-                    value={form.licenza_sis_validita_a?.split("T")[0] || ""}
-                    onChange={(v) => upd("licenza_sis_validita_a", v)}
-                    type="date"
-                  />
+                  <div className="flex justify-between items-center py-1 gap-3">
+                    <span className="text-sm text-muted-foreground">Validità fino al</span>
+                    <DateInput
+                      value={form.licenza_sis_validita_a?.split("T")[0] || ""}
+                      onChange={(v) => upd("licenza_sis_validita_a", v)}
+                      min_year={2000}
+                      max_year={2100}
+                    />
+                  </div>
                 </div>
               </div>
 
