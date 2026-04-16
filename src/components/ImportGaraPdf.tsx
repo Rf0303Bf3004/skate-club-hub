@@ -88,17 +88,23 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
     }
   };
 
+  const to_base64 = (f: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        const base64 = result.split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(f);
+    });
+
   const handle_parse = async () => {
     if (!file) return;
     set_parsing(true);
     try {
-      const buf = await file.arrayBuffer();
-      const bytes = new Uint8Array(buf);
-      let binary = "";
-      for (let i = 0; i < bytes.length; i++) {
-        binary += String.fromCharCode(bytes[i]);
-      }
-      const pdf_base64 = btoa(binary);
+      const pdf_base64 = await to_base64(file);
       const external_url = "https://urbctwvdlovgodjpyiib.supabase.co";
       const external_anon_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVyYmN0d3ZkbG92Z29kanB5aWliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwNzUwMjgsImV4cCI6MjA4ODY1MTAyOH0.Fgc8ZfvMvMhtTtTgTZ8ABHM-iVky3wqTnoTTvESQq8I";
 
