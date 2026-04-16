@@ -560,7 +560,13 @@ export function check_corso_completo(corso: any, disp_ghiaccio: any[]): CorsoCom
     return { completo: false, motivo: "Giorno/orario non definito" };
   }
 
-  // 2. Check if the schedule fits within ghiaccio availability for that day
+  // 2. Per i corsi NON-ghiaccio (Off-Ice, Danza, Pilates, ecc.) basta avere orario definito
+  const tipo_lower = (corso.tipo || "").toLowerCase().trim();
+  if (tipo_lower !== "ghiaccio") {
+    return { completo: true };
+  }
+
+  // 3. Solo per i corsi Ghiaccio: verifica che l'orario rientri nelle fasce ghiaccio
   const slots_giorno = disp_ghiaccio.filter((s: any) => s.giorno === corso.giorno);
   if (slots_giorno.length === 0) {
     return { completo: false, motivo: "Nessun ghiaccio disponibile per " + corso.giorno };
