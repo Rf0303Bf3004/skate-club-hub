@@ -99,8 +99,12 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
         binary += String.fromCharCode(bytes[i]);
       }
       const pdf_base64 = btoa(binary);
+      const external_anon_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVyYmN0d3ZkbG92Z29kanB5aWliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwNzUwMjgsImV4cCI6MjA4ODY1MTAyOH0.Fgc8ZfvMvMhtTtTgTZ8ABHM-iVky3wqTnoTTvESQq8I";
 
       const { data, error } = await supabase.functions.invoke('parse-gara-pdf', {
+        headers: {
+          Authorization: `Bearer ${external_anon_key}`,
+        },
         body: { pdfBase64: pdf_base64 },
       });
 
