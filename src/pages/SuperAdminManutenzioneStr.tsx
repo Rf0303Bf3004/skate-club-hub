@@ -29,7 +29,7 @@ interface Operazione {
 }
 
 const TABELLE_DATI = [
-  "presenze", "lezioni_private", "iscrizioni_gare", "gare_calendario",
+  "presenze", "lezioni_private", "iscrizioni_gare", "gare",
   "iscrizioni_corsi", "corsi", "fatture", "atleti", "istruttori",
 ] as const;
 

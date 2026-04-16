@@ -585,8 +585,8 @@ const SuperAdminPage: React.FC = () => {
       icon: <Trash2 className="w-4 h-4" />,
       richiede_club: true,
       on_esegui: async () => {
-        const { data: gare } = await supabase
-          .from("gare_calendario")
+        const { data: gare } = await (supabase as any)
+          .from("gare")
           .select("id")
           .eq("club_id", selected_club!)
           .eq("archiviata", true);
@@ -597,8 +597,8 @@ const SuperAdminPage: React.FC = () => {
         for (const g of gare) {
           await supabase.from("iscrizioni_gare").delete().eq("gara_id", g.id);
         }
-        const { count } = await supabase
-          .from("gare_calendario")
+        const { count } = await (supabase as any)
+          .from("gare")
           .delete({ count: "exact" })
           .eq("club_id", selected_club!)
           .eq("archiviata", true);
@@ -631,7 +631,7 @@ const SuperAdminPage: React.FC = () => {
           "stagioni",
           "campi_allenamento",
           "corsi",
-          "gare_calendario",
+          "gare",
           "atleti",
           "istruttori",
           "setup_club",
