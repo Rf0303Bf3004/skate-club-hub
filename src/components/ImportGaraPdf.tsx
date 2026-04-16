@@ -99,18 +99,25 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
         binary += String.fromCharCode(bytes[i]);
       }
       const pdf_base64 = btoa(binary);
+      const external_url = "https://urbctwvdlovgodjpyiib.supabase.co";
       const external_anon_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVyYmN0d3ZkbG92Z29kanB5aWliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwNzUwMjgsImV4cCI6MjA4ODY1MTAyOH0.Fgc8ZfvMvMhtTtTgTZ8ABHM-iVky3wqTnoTTvESQq8I";
 
-      const { data, error } = await supabase.functions.invoke('parse-gara-pdf', {
+      const response = await fetch(`${external_url}/functions/v1/parse-gara-pdf`, {
+        method: "POST",
         headers: {
+          "Content-Type": "application/json",
           Authorization: `Bearer ${external_anon_key}`,
+          apikey: external_anon_key,
         },
-        body: { pdfBase64: pdf_base64 },
+        body: JSON.stringify({ pdfBase64: pdf_base64 }),
       });
 
-      if (error) {
-        throw new Error(error.message || "Errore nell'analisi del PDF");
+      if (!response.ok) {
+        const err_body = await response.text();
+        throw new Error(`Edge function ${response.status}: ${err_body}`);
       }
+
+      const data = await response.json();
 
       const result: ParsedResult = data;
       set_parsed(result);
