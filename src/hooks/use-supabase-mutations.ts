@@ -156,7 +156,7 @@ export function use_upsert_atleta() {
         ruolo_pista: data.ruolo_pista || "atleta",
         compenso_orario_pista: data.compenso_orario_pista || 0,
         attivo_come_monitore: data.attivo_come_monitore || false,
-        codice_fiscale: data.codice_fiscale || "",
+        
         luogo_nascita: data.luogo_nascita || "",
         indirizzo: data.indirizzo || "",
         telefono: data.telefono || "",

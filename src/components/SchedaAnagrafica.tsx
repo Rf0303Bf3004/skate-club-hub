@@ -41,7 +41,7 @@ const SchedaAnagrafica: React.FC<SchedaProps> = ({ atleta, on_back }) => {
             <div>
               <p className='text-xs font-bold text-gray-400 uppercase tracking-widest mb-2'>Dati personali</p>
               <div className='grid grid-cols-2 gap-2'>
-                {[['Codice fiscale', atleta.codice_fiscale],['Luogo di nascita', atleta.luogo_nascita],['Indirizzo', atleta.indirizzo],['Telefono', atleta.telefono]].map(([l,v]) => (
+                {[['Luogo di nascita', atleta.luogo_nascita],['Indirizzo', atleta.indirizzo],['Telefono', atleta.telefono]].map(([l,v]) => (
                   <div key={l} className='bg-gray-50 rounded-lg px-3 py-2'>
                     <p className='text-xs text-gray-400'>{l}</p>
                     <p className='text-sm font-medium text-gray-800'>{v || <span className='text-gray-300 italic'>—</span>}</p>
