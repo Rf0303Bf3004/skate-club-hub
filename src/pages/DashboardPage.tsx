@@ -929,6 +929,35 @@ const DashboardPage: React.FC = () => {
   const elimina_p = use_elimina_presenza();
   const [tab_presenze, set_tab_presenze] = useState<"corsi" | "istruttori">("corsi");
   const [agenda_offset, set_agenda_offset] = useState(0);
+  const [com_preset, set_com_preset] = useState<BoxComunicazionePreset | null>(null);
+
+  // Atleti con compleanno oggi
+  const compleanni_oggi = useMemo(() => {
+    const oggi = new Date();
+    const md = `${String(oggi.getMonth() + 1).padStart(2, "0")}-${String(oggi.getDate()).padStart(2, "0")}`;
+    return atleti.filter((a) => {
+      if (!a.data_nascita) return false;
+      const dn = new Date(a.data_nascita + "T00:00:00");
+      const dn_md = `${String(dn.getMonth() + 1).padStart(2, "0")}-${String(dn.getDate()).padStart(2, "0")}`;
+      return dn_md === md;
+    });
+  }, [atleti]);
+
+  const handle_invia_auguri = (atleta: any) => {
+    const nome = atleta.nome || "";
+    const preset: BoxComunicazionePreset = {
+      tipo_dest: "singolo_atleta",
+      persona_id: atleta.id,
+      titolo: `🎂 Auguri ${nome}!`,
+      testo: `🎂 Tanti auguri ${nome}! Il tuo club e i tuoi istruttori ti fanno i migliori auguri per il tuo compleanno! 🎉`,
+      marker: `birthday:${atleta.id}:${Date.now()}`,
+    };
+    set_com_preset(preset);
+    setTimeout(() => {
+      const el = document.getElementById("box-comunicazione");
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  };
 
   const is_loading = loading_atleti || loading_corsi || loading_gare || loading_fatture || loading_istruttori;
 
