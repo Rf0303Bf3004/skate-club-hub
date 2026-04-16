@@ -161,11 +161,55 @@ function use_calendar_events(atleta_id: string) {
       const { data: isc_gare } = await supabase.from("iscrizioni_gare").select("gara_id").eq("atleta_id", atleta_id);
       if (isc_gare?.length) {
         const ids = isc_gare.map((i: any) => i.gara_id);
-        const { data: gare } = await supabase.from("gare_calendario").select("*").in("id", ids);
+        const { data: gare } = await (supabase as any).from("gare").select("*").in("id", ids);
         (gare ?? []).forEach((g: any) => {
-          if (g.data) events.push({ date: g.data, time_start: "", time_end: "", title: g.nome, type: "gara", status: "confermato", location: g.luogo || "" });
+          if (g.data) {
+            const is_campo = g.tipo === "campo_estivo";
+            events.push({
+              date: g.data,
+              time_start: "",
+              time_end: "",
+              title: is_campo ? `Campo estivo: ${g.nome}` : g.nome,
+              type: "gara",
+              status: "confermato",
+              location: g.luogo || g.localita || "",
+            });
+          }
         });
       }
+
+      // ── Sessioni Campo Estivo (presenze atleta) ──
+      try {
+        const { data: pres } = await (supabase as any)
+          .from("presenze_campo")
+          .select("sessione_id, presente")
+          .eq("atleta_id", atleta_id)
+          .eq("presente", true);
+        if (pres?.length) {
+          const sess_ids = pres.map((p: any) => p.sessione_id);
+          const { data: sessioni } = await (supabase as any)
+            .from("sessioni_campo")
+            .select("id, data, ora_inizio, ora_fine, luogo, gara_id")
+            .in("id", sess_ids);
+          const gara_ids = [...new Set((sessioni ?? []).map((s: any) => s.gara_id).filter(Boolean))];
+          const gara_map: Record<string, string> = {};
+          if (gara_ids.length) {
+            const { data: gs } = await (supabase as any).from("gare").select("id, nome").in("id", gara_ids);
+            (gs ?? []).forEach((g: any) => { gara_map[g.id] = g.nome; });
+          }
+          (sessioni ?? []).forEach((s: any) => {
+            if (s.data) events.push({
+              date: s.data,
+              time_start: (s.ora_inizio || "").slice(0, 5),
+              time_end: (s.ora_fine || "").slice(0, 5),
+              title: `Campo estivo${gara_map[s.gara_id] ? ": " + gara_map[s.gara_id] : ""}`,
+              type: "gara",
+              status: "confermato",
+              location: s.luogo || "",
+            });
+          });
+        }
+      } catch { /* skip */ }
 
       // ── Test livello ──
       const { data: ta } = await supabase.from("test_livello_atleti").select("test_id").eq("atleta_id", atleta_id);

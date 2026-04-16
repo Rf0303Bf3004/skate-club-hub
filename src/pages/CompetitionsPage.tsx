@@ -26,6 +26,7 @@ import {
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
+import SessioniCampoEstivo from "@/components/SessioniCampoEstivo";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 const LIVELLI = [
@@ -143,6 +144,7 @@ interface GaraFormData {
   costo_iscrizione: string;
   costo_accompagnamento: string;
   note: string;
+  tipo: string;
 }
 
 const empty_form = (): GaraFormData => ({
@@ -157,6 +159,7 @@ const empty_form = (): GaraFormData => ({
   costo_iscrizione: "",
   costo_accompagnamento: "",
   note: "",
+  tipo: "gara",
 });
 
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
@@ -212,27 +215,19 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     }
     set_saving(true);
     try {
-      const { error } = await supabase
-        .from("gare_calendario")
+      const { error } = await (supabase as any)
+        .from("gare")
         .insert({
-          club_id: get_current_club_id(), // ← FIX: usa club_id dinamico
+          club_id: get_current_club_id(),
           nome: form.nome.trim(),
           data: form.data,
-          ora: form.ora || null,
-          localita: form.localita.trim(),
-          indirizzo: form.indirizzo.trim() || null,
-          club_ospitante: form.club_ospitante.trim() || null,
-          livello_minimo: form.livello_minimo,
-          carriera: form.carriera,
-          costo_iscrizione: to_num(form.costo_iscrizione),
-          costo_accompagnamento: to_num(form.costo_accompagnamento),
-          note: form.note.trim() || null,
-          archiviata: false,
+          luogo: form.localita.trim() || null,
+          tipo: form.tipo || "gara",
         })
         .select();
       if (error) throw error;
       await queryClient.invalidateQueries({ queryKey: ["gare"] });
-      toast({ title: "Gara creata con successo!" });
+      toast({ title: form.tipo === "campo_estivo" ? "Campo estivo creato!" : "Gara creata con successo!" });
       onClose();
     } catch (err: any) {
       toast({
@@ -255,12 +250,23 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           </button>
         </div>
         <div className="px-6 py-5 space-y-4">
+          <Field label="Tipo evento *">
+            <select
+              name="tipo"
+              value={form.tipo}
+              onChange={handle_change}
+              className={input_cls}
+            >
+              <option value="gara">Gara</option>
+              <option value="campo_estivo">Campo estivo</option>
+            </select>
+          </Field>
           <Field label={`${t("nome")} *`}>
             <input
               name="nome"
               value={form.nome}
               onChange={handle_change}
-              placeholder="es. Trofeo Invernale 2025"
+              placeholder={form.tipo === "campo_estivo" ? "es. Campo Estivo Lugano 2025" : "es. Trofeo Invernale 2025"}
               className={input_cls}
             />
           </Field>
@@ -802,7 +808,7 @@ const CompetitionsPage: React.FC = () => {
 
   const handle_archivia = async (id: string, archivia: boolean) => {
     try {
-      const { error } = await supabase.from("gare_calendario").update({ archiviata: archivia }).eq("id", id);
+      const { error } = await (supabase as any).from("gare").update({ archiviata: archivia }).eq("id", id);
       if (error) throw error;
       await queryClient.invalidateQueries({ queryKey: ["gare"] });
       toast({ title: archivia ? "📦 Gara archiviata" : "✅ Gara ripristinata" });
@@ -935,6 +941,9 @@ const CompetitionsPage: React.FC = () => {
             </div>
           )}
 
+          {selected.tipo === "campo_estivo" ? (
+            <SessioniCampoEstivo gara_id={selected.id} />
+          ) : (
           <Tabs defaultValue="atleti">
             <TabsList>
               <TabsTrigger value="atleti">
@@ -1076,6 +1085,7 @@ const CompetitionsPage: React.FC = () => {
               )}
             </TabsContent>
           </Tabs>
+          )}
         </div>
       </>
     );

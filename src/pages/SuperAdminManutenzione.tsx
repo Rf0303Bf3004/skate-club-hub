@@ -99,14 +99,14 @@ const SuperAdminManutenzione: React.FC = () => {
       colore: "border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30",
       richiede_club: false,
       esegui: async (cid) => {
-        let q = supabase.from("gare_calendario").select("id").eq("archiviata", true);
+        let q = (supabase as any).from("gare").select("id").eq("archiviata", true);
         if (cid) q = q.eq("club_id", cid);
         const { data: gare } = await q;
         if (!gare?.length) return "Nessuna gara archiviata trovata";
         for (const g of gare) {
           await supabase.from("iscrizioni_gare").delete().eq("gara_id", g.id);
         }
-        let dq = supabase.from("gare_calendario").delete({ count: "exact" }).eq("archiviata", true);
+        let dq = (supabase as any).from("gare").delete({ count: "exact" }).eq("archiviata", true);
         if (cid) dq = dq.eq("club_id", cid);
         const { error, count } = await dq;
         if (error) throw error;
