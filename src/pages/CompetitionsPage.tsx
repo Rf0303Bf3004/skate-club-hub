@@ -807,7 +807,7 @@ const CompetitionsPage: React.FC = () => {
 
   const handle_archivia = async (id: string, archivia: boolean) => {
     try {
-      const { error } = await supabase.from("gare_calendario").update({ archiviata: archivia }).eq("id", id);
+      const { error } = await (supabase as any).from("gare").update({ archiviata: archivia }).eq("id", id);
       if (error) throw error;
       await queryClient.invalidateQueries({ queryKey: ["gare"] });
       toast({ title: archivia ? "📦 Gara archiviata" : "✅ Gara ripristinata" });
