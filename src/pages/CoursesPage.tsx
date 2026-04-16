@@ -355,6 +355,8 @@ const TabIscrizioni: React.FC<{
       };
       const { error } = await supabase.from("iscrizioni_corsi").insert(payload);
       if (error) throw error;
+      // Optimistic update: rimuove l'atleta dalla lista disponibili immediatamente
+      set_iscritti_ottimistici((prev) => (prev.includes(atleta_id) ? prev : [...prev, atleta_id]));
       set_query("");
       set_salto_query("");
       set_show_salto_search(false);
