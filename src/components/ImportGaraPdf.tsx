@@ -174,11 +174,11 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
     try {
       const club_id = get_current_club_id();
 
-      // 1. Create gara in gare_calendario
+      // 1. Create gara in tabella `gare` (DB esterno)
       // Check if a gara with the same nome+data already exists for this club
       let gara_id: string;
-      const { data: existing_gara } = await supabase
-        .from("gare_calendario")
+      const { data: existing_gara } = await (supabase as any)
+        .from("gare")
         .select("id")
         .eq("club_id", club_id)
         .eq("nome", nome_gara.trim())
@@ -188,14 +188,17 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
       if (existing_gara) {
         gara_id = existing_gara.id;
       } else {
-        const { data: gara_data, error: gara_err } = await supabase
-          .from("gare_calendario")
+        const { data: gara_data, error: gara_err } = await (supabase as any)
+          .from("gare")
           .insert({
             club_id,
             nome: nome_gara.trim(),
             data: data_gara || null,
             luogo: luogo_gara.trim() || null,
-            note: `Categoria: ${parsed.categoria}, Gruppo: ${parsed.gruppo}, Disciplina: ${parsed.disciplina}`,
+            categoria: parsed.categoria || null,
+            gruppo: parsed.gruppo || null,
+            disciplina: parsed.disciplina || null,
+            segmento: segmento.trim() || null,
           })
           .select("id")
           .single();
