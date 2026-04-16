@@ -325,7 +325,7 @@ const EventBottomSheet: React.FC<{ event: CalEvent | null; on_close: () => void 
 };
 
 // ─── Monthly View ──────────────────────────────────────────
-const MonthView: React.FC<{ year: number; month: number; events: CalEvent[]; on_event: (e: CalEvent) => void }> = ({ year, month, events, on_event }) => {
+const MonthView: React.FC<{ year: number; month: number; events: CalEvent[]; on_day_click: (date: string) => void }> = ({ year, month, events, on_day_click }) => {
   const days = get_month_days(year, month);
   const today = fmt_date(new Date());
 
@@ -348,25 +348,22 @@ const MonthView: React.FC<{ year: number; month: number; events: CalEvent[]; on_
         {days.map((d, i) => {
           const day_events = events_by_date[d.date] ?? [];
           const is_today = d.date === today;
+          const has_events = day_events.length > 0;
           return (
-            <div
+            <button
               key={i}
-              className={`min-h-[72px] p-1 ${d.current_month ? "bg-card" : "bg-muted/30"} ${is_today ? "ring-2 ring-inset ring-[#185FA5]/40" : ""}`}
+              onClick={() => on_day_click(d.date)}
+              className={`min-h-[72px] p-1 text-left transition-colors ${d.current_month ? "bg-card hover:bg-muted/40" : "bg-muted/30 hover:bg-muted/50"} ${is_today ? "ring-2 ring-inset ring-[#185FA5]/40" : ""} ${has_events ? "cursor-pointer" : "cursor-default"}`}
             >
               <div className={`text-xs font-medium mb-0.5 text-center ${is_today ? "bg-[#185FA5] text-white rounded-full w-6 h-6 flex items-center justify-center mx-auto" : d.current_month ? "text-foreground" : "text-muted-foreground/50"}`}>
                 {d.day}
               </div>
-              {day_events.length > 0 && (
+              {has_events && (
                 <div className="flex flex-wrap justify-center gap-0.5 mt-0.5">
                   {day_events.slice(0, 3).map((ev, j) => {
                     const c = EVENT_COLORS[ev.type] ?? EVENT_COLORS.corso;
                     return (
-                      <button
-                        key={j}
-                        onClick={() => on_event(ev)}
-                        className={`w-2 h-2 rounded-full ${c.dot} hover:ring-2 hover:ring-offset-1 hover:ring-current transition-all`}
-                        title={ev.title}
-                      />
+                      <span key={j} className={`w-2 h-2 rounded-full ${c.dot}`} />
                     );
                   })}
                   {day_events.length > 3 && (
@@ -374,7 +371,7 @@ const MonthView: React.FC<{ year: number; month: number; events: CalEvent[]; on_
                   )}
                 </div>
               )}
-            </div>
+            </button>
           );
         })}
       </div>
