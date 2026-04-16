@@ -4,9 +4,11 @@ interface Props {
   value: string; // formato AAAA-MM-GG (o vuoto)
   onChange: (value: string) => void;
   className?: string;
+  min_year?: number;
+  max_year?: number;
 }
 
-const DateInput: React.FC<Props> = ({ value, onChange, className }) => {
+const DateInput: React.FC<Props> = ({ value, onChange, className, min_year = 1900, max_year = 2020 }) => {
   const [gg, set_gg] = useState("");
   const [mm, set_mm] = useState("");
   const [aaaa, set_aaaa] = useState("");
@@ -33,7 +35,7 @@ const DateInput: React.FC<Props> = ({ value, onChange, className }) => {
       const gn = parseInt(g, 10);
       const mn = parseInt(m, 10);
       const yn = parseInt(y, 10);
-      if (gn >= 1 && gn <= 31 && mn >= 1 && mn <= 12 && yn >= 1900 && yn <= 2020) {
+      if (gn >= 1 && gn <= 31 && mn >= 1 && mn <= 12 && yn >= min_year && yn <= max_year) {
         onChange(`${y}-${m}-${g}`);
         return;
       }
