@@ -389,13 +389,23 @@ const CorsoCard: React.FC<{
 };
 
 // ─── Box comunicazione rapida ──────────────────────────────
+export type BoxComunicazionePreset = {
+  tipo_dest: string;
+  persona_id?: string;
+  titolo: string;
+  testo: string;
+  marker?: string; // chiave per riapplicare lo stesso preset più volte
+};
+
 const BoxComunicazione: React.FC<{
   atleti: any[];
   istruttori: any[];
   monitori: any[];
   corsi: any[];
   gare: any[];
-}> = ({ atleti, istruttori, monitori, corsi, gare }) => {
+  preset?: BoxComunicazionePreset | null;
+  on_preset_consumed?: () => void;
+}> = ({ atleti, istruttori, monitori, corsi, gare, preset, on_preset_consumed }) => {
   const { data: templates = [] } = use_template_comunicazioni();
   const crea = use_crea_comunicazione();
 
@@ -406,6 +416,22 @@ const BoxComunicazione: React.FC<{
   const [testo, set_testo] = useState("");
   const [template_sel, set_template_sel] = useState("");
   const [sending_wa, set_sending_wa] = useState(false);
+
+  // Applica preset esterno (es. "Invia auguri" da banner compleanno)
+  const last_preset_marker = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (!preset) return;
+    const marker = preset.marker || preset.titolo + "|" + (preset.persona_id || "");
+    if (last_preset_marker.current === marker) return;
+    last_preset_marker.current = marker;
+    set_tipo_dest(preset.tipo_dest);
+    set_persona_id(preset.persona_id || "");
+    set_riferimento_id("");
+    set_titolo(preset.titolo);
+    set_testo(preset.testo);
+    set_template_sel("");
+    on_preset_consumed?.();
+  }, [preset, on_preset_consumed]);
 
   const input_cls =
     "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
