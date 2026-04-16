@@ -8,6 +8,11 @@ import { toast } from "@/hooks/use-toast";
 import { Upload, FileText, Search, CheckCircle2, AlertCircle, Loader2, X, ChevronDown, ChevronUp } from "lucide-react";
 import * as pdfjs_lib from "pdfjs-dist";
 
+pdfjs_lib.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.mjs",
+  import.meta.url,
+).toString();
+
 const input_cls =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
 
