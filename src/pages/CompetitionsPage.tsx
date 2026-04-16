@@ -143,6 +143,7 @@ interface GaraFormData {
   costo_iscrizione: string;
   costo_accompagnamento: string;
   note: string;
+  tipo: string;
 }
 
 const empty_form = (): GaraFormData => ({
@@ -157,6 +158,7 @@ const empty_form = (): GaraFormData => ({
   costo_iscrizione: "",
   costo_accompagnamento: "",
   note: "",
+  tipo: "gara",
 });
 
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
@@ -212,27 +214,19 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     }
     set_saving(true);
     try {
-      const { error } = await supabase
-        .from("gare_calendario")
+      const { error } = await (supabase as any)
+        .from("gare")
         .insert({
-          club_id: get_current_club_id(), // ← FIX: usa club_id dinamico
+          club_id: get_current_club_id(),
           nome: form.nome.trim(),
           data: form.data,
-          ora: form.ora || null,
-          localita: form.localita.trim(),
-          indirizzo: form.indirizzo.trim() || null,
-          club_ospitante: form.club_ospitante.trim() || null,
-          livello_minimo: form.livello_minimo,
-          carriera: form.carriera,
-          costo_iscrizione: to_num(form.costo_iscrizione),
-          costo_accompagnamento: to_num(form.costo_accompagnamento),
-          note: form.note.trim() || null,
-          archiviata: false,
+          luogo: form.localita.trim() || null,
+          tipo: form.tipo || "gara",
         })
         .select();
       if (error) throw error;
       await queryClient.invalidateQueries({ queryKey: ["gare"] });
-      toast({ title: "Gara creata con successo!" });
+      toast({ title: form.tipo === "campo_estivo" ? "Campo estivo creato!" : "Gara creata con successo!" });
       onClose();
     } catch (err: any) {
       toast({
