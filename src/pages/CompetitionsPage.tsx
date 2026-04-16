@@ -26,6 +26,7 @@ import {
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
+import SessioniCampoEstivo from "@/components/SessioniCampoEstivo";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 const LIVELLI = [
@@ -940,6 +941,9 @@ const CompetitionsPage: React.FC = () => {
             </div>
           )}
 
+          {selected.tipo === "campo_estivo" ? (
+            <SessioniCampoEstivo gara_id={selected.id} />
+          ) : (
           <Tabs defaultValue="atleti">
             <TabsList>
               <TabsTrigger value="atleti">
