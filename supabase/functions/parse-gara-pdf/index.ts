@@ -59,16 +59,31 @@ Deno.serve(async (req) => {
     });
 
     if (!resp.ok) {
-      const err = await resp.json().catch(() => ({ error: "Unknown error" }));
-      return new Response(JSON.stringify({ error: err.error?.message || `Claude API error: ${resp.status}` }), {
-        status: resp.status,
+      const err_text = await resp.text().catch(() => "Unknown error");
+      return new Response(JSON.stringify({ error: `Claude API error ${resp.status}: ${err_text}` }), {
+        status: 502,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const claude_resp = await resp.json();
-    let content_text = claude_resp.content?.[0]?.text || "";
+    
+    if (!claude_resp?.content || !Array.isArray(claude_resp.content) || claude_resp.content.length === 0) {
+      return new Response(JSON.stringify({ error: "Claude returned empty content", raw: JSON.stringify(claude_resp).slice(0, 500) }), {
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    let content_text = claude_resp.content[0]?.text || "";
     content_text = content_text.replace(/^```json\s*/i, "").replace(/```\s*$/i, "").trim();
+
+    if (!content_text) {
+      return new Response(JSON.stringify({ error: "Claude returned empty text" }), {
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const parsed = JSON.parse(content_text);
 
