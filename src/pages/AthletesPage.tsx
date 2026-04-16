@@ -215,8 +215,8 @@ const AtletaModal: React.FC<{
             />
           </Field>
 
-          {/* Percorso comune */}
-          <Field label="Percorso comune">
+          {/* Livello attuale */}
+          <Field label="Livello attuale">
             <select
               value={form.percorso_amatori}
               onChange={(e) => {
