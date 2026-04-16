@@ -207,12 +207,7 @@ const AtletaModal: React.FC<{
           </div>
 
           <Field label="Data di nascita" required>
-            <input
-              type="date"
-              value={form.data_nascita}
-              onChange={(e) => set_val("data_nascita", e.target.value)}
-              className={input_cls}
-            />
+            <DateInput value={form.data_nascita} onChange={(v) => set_val("data_nascita", v)} />
           </Field>
 
           {/* Livello attuale */}
