@@ -268,16 +268,21 @@ export function use_gare() {
     queryKey: ["gare", get_current_club_id()],
     queryFn: async () => {
       const [gare_res, isc_res, ris_res] = await Promise.all([
-        supabase.from("gare_calendario").select("*").eq("club_id", get_current_club_id()).order("data"),
+        (supabase as any).from("gare").select("*").eq("club_id", get_current_club_id()).order("data"),
         supabase.from("iscrizioni_gare").select("*"),
         supabase.from("risultati_gara").select("*"),
       ]);
       if (gare_res.error) throw gare_res.error;
       const isc = isc_res.data ?? [];
       const ris = ris_res.data ?? [];
-      return (gare_res.data ?? []).map((g) => ({
+      return (gare_res.data ?? []).map((g: any) => ({
         ...g,
         stagione_id: g.stagione_id || null,
+        // Compat shims: la tabella `gare` usa `luogo`, l'UI legge anche `localita`
+        localita: g.localita ?? g.luogo ?? "",
+        luogo: g.luogo ?? g.localita ?? "",
+        tipo: g.tipo || "gara",
+        archiviata: g.archiviata ?? false,
         atleti_iscritti: isc
           .filter((x) => x.gara_id === g.id)
           .map((x) => ({
