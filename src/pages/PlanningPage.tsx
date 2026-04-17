@@ -1940,6 +1940,26 @@ function DetailPanel({ corso, istr_map, atleti, build_mode, on_close, on_remove,
         </div>
       </div>
 
+      {/* Eccezioni di settimana — solo per planning rows non-private */}
+      {corso._is_plan_row && !is_private && (
+        <div className="space-y-1.5 pt-2 border-t border-border">
+          <p className="text-xs font-semibold text-muted-foreground">Eccezioni questa settimana</p>
+          {on_annulla_settimana && (
+            <Button size="sm" variant="outline" className="w-full justify-start text-xs gap-1.5 text-destructive border-destructive/40 hover:bg-destructive/10" onClick={on_annulla_settimana}>
+              <Undo2 className="h-3 w-3" /> Annulla questo corso
+            </Button>
+          )}
+          {on_sposta && (
+            <Button size="sm" variant="outline" className="w-full justify-start text-xs gap-1.5" onClick={on_sposta}>
+              <Move className="h-3 w-3" /> Sposta in altro giorno/ora
+            </Button>
+          )}
+          {corso.sostituisce_id && (
+            <p className="text-[10px] italic text-muted-foreground pt-1">↔ Spostato dal giorno originale</p>
+          )}
+        </div>
+      )}
+
       {/* Actions */}
       {build_mode && (
         <div className="space-y-1.5 pt-2 border-t border-border">
