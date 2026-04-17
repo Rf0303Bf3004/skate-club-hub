@@ -20,6 +20,9 @@ import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { toast } from "sonner";
+import AnnullaCorsoDialog from "@/components/planning/AnnullaCorsoDialog";
+import SpostaCorsoDialog from "@/components/planning/SpostaCorsoDialog";
+import AvvisaAtletiDialog from "@/components/planning/AvvisaAtletiDialog";
 
 // ── ErrorBoundary ──
 class PlanningErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
@@ -515,6 +518,13 @@ function PlanningPageInner() {
   const [show_new_corso, set_show_new_corso] = useState(false);
   const [show_new_privata, set_show_new_privata] = useState(false);
   const [show_edit_corso, set_show_edit_corso] = useState<any>(null);
+  const [annulla_dialog, set_annulla_dialog] = useState<any>(null);
+  const [sposta_dialog, set_sposta_dialog] = useState<any>(null);
+  const [avvisa_dialog, set_avvisa_dialog] = useState<{
+    tipo: "annullamento" | "spostamento";
+    planning_corso_id: string;
+    contesto: any;
+  } | null>(null);
   const [saving, set_saving] = useState(false);
   const [generating, set_generating] = useState(false);
 
@@ -641,6 +651,8 @@ function PlanningPageInner() {
             note: template?.note || "",
             annullato: pc.annullato,
             motivo: pc.motivo,
+            sostituisce_id: pc.sostituisce_id ?? null,
+            settimana_id: pc.settimana_id,
             _is_plan_row: true,
           };
         })
@@ -696,10 +708,15 @@ function PlanningPageInner() {
           nome: template?.nome || "?",
           tipo: template?.tipo || "",
           giorno: GIORNI[dayIdx],
+          data: pc.data,
           ora_inizio: pc.ora_inizio,
           ora_fine: pc.ora_fine,
           istruttori_ids: pc.istruttore_id ? [pc.istruttore_id] : [],
           annullato: true,
+          motivo: pc.motivo,
+          sostituisce_id: pc.sostituisce_id ?? null,
+          // se esiste un altro record che lo sostituisce → è stato spostato
+          sostituito_da: plan_corsi.find((p: any) => p.sostituisce_id === pc.id) || null,
           _is_plan_row: true,
         };
       })
@@ -1342,9 +1359,16 @@ function PlanningPageInner() {
                         }}>
                           <X className="h-3 w-3 text-muted-foreground mr-1 flex-shrink-0" />
                           <span className="truncate text-[10px] text-muted-foreground line-through">{c.nome}</span>
+                          {c.sostituito_da && (
+                            <span className="ml-1 text-[9px] text-primary font-bold flex-shrink-0">↔ spostato</span>
+                          )}
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent><p className="line-through">{c.nome} (annullato)</p></TooltipContent>
+                      <TooltipContent>
+                        <p className="line-through">{c.nome} (annullato)</p>
+                        {c.motivo && <p className="text-xs">Motivo: {c.motivo}</p>}
+                        {c.sostituito_da && <p className="text-xs text-primary">Spostato a {c.sostituito_da.data} {c.sostituito_da.ora_inizio?.slice(0,5)}</p>}
+                      </TooltipContent>
                     </Tooltip>
                   );
                 })}
@@ -1390,6 +1414,8 @@ function PlanningPageInner() {
                 on_close={() => set_selected_corso_id(null)}
                 on_remove={() => remove_corso(sel)}
                 on_edit={() => { set_show_edit_corso(sel); }}
+                on_annulla_settimana={() => set_annulla_dialog(sel)}
+                on_sposta={() => set_sposta_dialog(sel)}
               />
             )}
 
@@ -1420,6 +1446,32 @@ function PlanningPageInner() {
 
         {/* Confirmation dialog */}
         <ConfirmPlaceDialog confirm={confirm_place} saving={saving} on_confirm={handle_confirm_place} on_cancel={() => set_confirm_place(null)} />
+
+        {annulla_dialog && (
+          <AnnullaCorsoDialog
+            open={!!annulla_dialog} on_close={() => set_annulla_dialog(null)}
+            planning_corso_id={annulla_dialog.id} corso_nome={annulla_dialog.nome}
+            giorno={annulla_dialog.giorno} data={annulla_dialog.data}
+            ora_inizio={annulla_dialog.ora_inizio} ora_fine={annulla_dialog.ora_fine}
+            on_done={(pid, motivo) => { refetchSettimana(); set_selected_corso_id(null);
+              set_avvisa_dialog({ tipo: "annullamento", planning_corso_id: pid,
+                contesto: { corso_nome: annulla_dialog.nome, giorno: annulla_dialog.giorno, data: annulla_dialog.data, ora_inizio: annulla_dialog.ora_inizio, ora_fine: annulla_dialog.ora_fine, motivo } }); }}
+          />
+        )}
+        {sposta_dialog && settimana && (
+          <SpostaCorsoDialog
+            open={!!sposta_dialog} on_close={() => set_sposta_dialog(null)}
+            planning_corso={{ id: sposta_dialog.id, corso_id: sposta_dialog.corso_id, settimana_id: sposta_dialog.settimana_id || settimana.id, data: sposta_dialog.data, ora_inizio: sposta_dialog.ora_inizio, ora_fine: sposta_dialog.ora_fine, istruttore_id: sposta_dialog.istruttore_id, nome: sposta_dialog.nome }}
+            data_lunedi={dataLunediISO} istruttori={istruttori} ghiaccio_slots={slots}
+            on_done={(_n, original_id, new_data, new_ora) => { refetchSettimana(); set_selected_corso_id(null);
+              set_avvisa_dialog({ tipo: "spostamento", planning_corso_id: original_id,
+                contesto: { corso_nome: sposta_dialog.nome, giorno: sposta_dialog.giorno, data: sposta_dialog.data, ora_inizio: sposta_dialog.ora_inizio, ora_fine: sposta_dialog.ora_fine, nuova_data: new_data, nuova_ora: new_ora } }); }}
+          />
+        )}
+        {avvisa_dialog && (
+          <AvvisaAtletiDialog open={!!avvisa_dialog} on_close={() => set_avvisa_dialog(null)}
+            tipo={avvisa_dialog.tipo} planning_corso_id={avvisa_dialog.planning_corso_id} contesto={avvisa_dialog.contesto} />
+        )}
       </TooltipProvider>
     );
   }
@@ -1748,6 +1800,32 @@ function PlanningPageInner() {
 
         {/* Confirmation dialog */}
         <ConfirmPlaceDialog confirm={confirm_place} saving={saving} on_confirm={handle_confirm_place} on_cancel={() => set_confirm_place(null)} />
+
+        {annulla_dialog && (
+          <AnnullaCorsoDialog
+            open={!!annulla_dialog} on_close={() => set_annulla_dialog(null)}
+            planning_corso_id={annulla_dialog.id} corso_nome={annulla_dialog.nome}
+            giorno={annulla_dialog.giorno} data={annulla_dialog.data}
+            ora_inizio={annulla_dialog.ora_inizio} ora_fine={annulla_dialog.ora_fine}
+            on_done={(pid, motivo) => { refetchSettimana(); set_selected_corso_id(null);
+              set_avvisa_dialog({ tipo: "annullamento", planning_corso_id: pid,
+                contesto: { corso_nome: annulla_dialog.nome, giorno: annulla_dialog.giorno, data: annulla_dialog.data, ora_inizio: annulla_dialog.ora_inizio, ora_fine: annulla_dialog.ora_fine, motivo } }); }}
+          />
+        )}
+        {sposta_dialog && settimana && (
+          <SpostaCorsoDialog
+            open={!!sposta_dialog} on_close={() => set_sposta_dialog(null)}
+            planning_corso={{ id: sposta_dialog.id, corso_id: sposta_dialog.corso_id, settimana_id: sposta_dialog.settimana_id || settimana.id, data: sposta_dialog.data, ora_inizio: sposta_dialog.ora_inizio, ora_fine: sposta_dialog.ora_fine, istruttore_id: sposta_dialog.istruttore_id, nome: sposta_dialog.nome }}
+            data_lunedi={dataLunediISO} istruttori={istruttori} ghiaccio_slots={slots}
+            on_done={(_n, original_id, new_data, new_ora) => { refetchSettimana(); set_selected_corso_id(null);
+              set_avvisa_dialog({ tipo: "spostamento", planning_corso_id: original_id,
+                contesto: { corso_nome: sposta_dialog.nome, giorno: sposta_dialog.giorno, data: sposta_dialog.data, ora_inizio: sposta_dialog.ora_inizio, ora_fine: sposta_dialog.ora_fine, nuova_data: new_data, nuova_ora: new_ora } }); }}
+          />
+        )}
+        {avvisa_dialog && (
+          <AvvisaAtletiDialog open={!!avvisa_dialog} on_close={() => set_avvisa_dialog(null)}
+            tipo={avvisa_dialog.tipo} planning_corso_id={avvisa_dialog.planning_corso_id} contesto={avvisa_dialog.contesto} />
+        )}
       </div>
     </TooltipProvider>
   );
@@ -1785,9 +1863,10 @@ function ConfirmPlaceDialog({ confirm, saving, on_confirm, on_cancel }: {
 // ══════════════════════════════════════════════════════════════
 // DETAIL PANEL
 // ══════════════════════════════════════════════════════════════
-function DetailPanel({ corso, istr_map, atleti, build_mode, on_close, on_remove, on_edit }: {
+function DetailPanel({ corso, istr_map, atleti, build_mode, on_close, on_remove, on_edit, on_annulla_settimana, on_sposta }: {
   corso: any; istr_map: Record<string, any>; atleti: any[]; build_mode: boolean;
   on_close: () => void; on_remove: () => void; on_edit: () => void;
+  on_annulla_settimana?: () => void; on_sposta?: () => void;
 }) {
   const is_private = (corso.tipo || "").toLowerCase() === "privata";
   const corso_id_for_query = corso.corso_id || corso.id;
@@ -1919,6 +1998,26 @@ function DetailPanel({ corso, istr_map, atleti, build_mode, on_close, on_remove,
           ))}
         </div>
       </div>
+
+      {/* Eccezioni di settimana — solo per planning rows non-private */}
+      {corso._is_plan_row && !is_private && (
+        <div className="space-y-1.5 pt-2 border-t border-border">
+          <p className="text-xs font-semibold text-muted-foreground">Eccezioni questa settimana</p>
+          {on_annulla_settimana && (
+            <Button size="sm" variant="outline" className="w-full justify-start text-xs gap-1.5 text-destructive border-destructive/40 hover:bg-destructive/10" onClick={on_annulla_settimana}>
+              <Undo2 className="h-3 w-3" /> Annulla questo corso
+            </Button>
+          )}
+          {on_sposta && (
+            <Button size="sm" variant="outline" className="w-full justify-start text-xs gap-1.5" onClick={on_sposta}>
+              <Move className="h-3 w-3" /> Sposta in altro giorno/ora
+            </Button>
+          )}
+          {corso.sostituisce_id && (
+            <p className="text-[10px] italic text-muted-foreground pt-1">↔ Spostato dal giorno originale</p>
+          )}
+        </div>
+      )}
 
       {/* Actions */}
       {build_mode && (

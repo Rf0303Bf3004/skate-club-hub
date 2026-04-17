@@ -273,34 +273,108 @@ export type Database = {
         Row: {
           atleta_id: string | null
           club_id: string
+          corpo: string | null
           corso_id: string | null
+          creata_da: string | null
           created_at: string
+          deep_link: string | null
+          evento_straordinario_id: string | null
           id: string
+          inviata_at: string | null
+          planning_corso_id: string | null
+          programmata_per: string | null
+          richiede_rsvp: boolean
+          rsvp_scadenza: string | null
+          stato: string
           testo: string
+          tipo: string
           tipo_destinatari: string
           titolo: string
         }
         Insert: {
           atleta_id?: string | null
           club_id: string
+          corpo?: string | null
           corso_id?: string | null
+          creata_da?: string | null
           created_at?: string
+          deep_link?: string | null
+          evento_straordinario_id?: string | null
           id?: string
+          inviata_at?: string | null
+          planning_corso_id?: string | null
+          programmata_per?: string | null
+          richiede_rsvp?: boolean
+          rsvp_scadenza?: string | null
+          stato?: string
           testo?: string
+          tipo?: string
           tipo_destinatari?: string
           titolo?: string
         }
         Update: {
           atleta_id?: string | null
           club_id?: string
+          corpo?: string | null
           corso_id?: string | null
+          creata_da?: string | null
           created_at?: string
+          deep_link?: string | null
+          evento_straordinario_id?: string | null
           id?: string
+          inviata_at?: string | null
+          planning_corso_id?: string | null
+          programmata_per?: string | null
+          richiede_rsvp?: boolean
+          rsvp_scadenza?: string | null
+          stato?: string
           testo?: string
+          tipo?: string
           tipo_destinatari?: string
           titolo?: string
         }
         Relationships: []
+      }
+      comunicazioni_destinatari: {
+        Row: {
+          atleta_id: string
+          comunicazione_id: string
+          creato_at: string
+          id: string
+          letto_at: string | null
+          rsvp_at: string | null
+          rsvp_risposta: string | null
+          stato: string
+        }
+        Insert: {
+          atleta_id: string
+          comunicazione_id: string
+          creato_at?: string
+          id?: string
+          letto_at?: string | null
+          rsvp_at?: string | null
+          rsvp_risposta?: string | null
+          stato?: string
+        }
+        Update: {
+          atleta_id?: string
+          comunicazione_id?: string
+          creato_at?: string
+          id?: string
+          letto_at?: string | null
+          rsvp_at?: string | null
+          rsvp_risposta?: string | null
+          stato?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comunicazioni_destinatari_comunicazione_id_fkey"
+            columns: ["comunicazione_id"]
+            isOneToOne: false
+            referencedRelation: "comunicazioni"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       comunicazioni_template: {
         Row: {
@@ -461,6 +535,39 @@ export type Database = {
         }
         Relationships: []
       }
+      device_tokens: {
+        Row: {
+          atleta_id: string | null
+          attivo: boolean
+          creato_at: string
+          id: string
+          piattaforma: string
+          token: string
+          ultimo_uso_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          atleta_id?: string | null
+          attivo?: boolean
+          creato_at?: string
+          id?: string
+          piattaforma?: string
+          token: string
+          ultimo_uso_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          atleta_id?: string | null
+          attivo?: boolean
+          creato_at?: string
+          id?: string
+          piattaforma?: string
+          token?: string
+          ultimo_uso_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       disponibilita_ghiaccio: {
         Row: {
           club_id: string
@@ -570,6 +677,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      eventi_straordinari: {
+        Row: {
+          club_id: string
+          creato_at: string
+          creato_da: string | null
+          data: string
+          descrizione: string | null
+          id: string
+          luogo: string | null
+          ora_fine: string | null
+          ora_inizio: string | null
+          stagione_id: string | null
+          tipo: string
+          titolo: string
+        }
+        Insert: {
+          club_id: string
+          creato_at?: string
+          creato_da?: string | null
+          data: string
+          descrizione?: string | null
+          id?: string
+          luogo?: string | null
+          ora_fine?: string | null
+          ora_inizio?: string | null
+          stagione_id?: string | null
+          tipo?: string
+          titolo?: string
+        }
+        Update: {
+          club_id?: string
+          creato_at?: string
+          creato_da?: string | null
+          data?: string
+          descrizione?: string | null
+          id?: string
+          luogo?: string | null
+          ora_fine?: string | null
+          ora_inizio?: string | null
+          stagione_id?: string | null
+          tipo?: string
+          titolo?: string
+        }
+        Relationships: []
       }
       fatture: {
         Row: {
@@ -760,6 +912,41 @@ export type Database = {
         }
         Relationships: []
       }
+      iscrizioni_eventi: {
+        Row: {
+          atleta_id: string
+          creato_at: string
+          evento_id: string
+          id: string
+          note: string | null
+          stato: string
+        }
+        Insert: {
+          atleta_id: string
+          creato_at?: string
+          evento_id: string
+          id?: string
+          note?: string | null
+          stato?: string
+        }
+        Update: {
+          atleta_id?: string
+          creato_at?: string
+          evento_id?: string
+          id?: string
+          note?: string | null
+          stato?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "iscrizioni_eventi_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventi_straordinari"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       iscrizioni_gare: {
         Row: {
           atleta_id: string
@@ -938,37 +1125,61 @@ export type Database = {
           annullato: boolean
           corso_id: string
           created_at: string
+          creato_at: string
+          creato_da: string | null
           data: string
+          evento_straordinario_id: string | null
           id: string
+          is_evento_extra: boolean
           istruttore_id: string | null
+          modificato_at: string
           motivo: string | null
+          note_settimana: string | null
           ora_fine: string
           ora_inizio: string
           settimana_id: string
+          sostituisce_id: string | null
+          titolo_override: string | null
         }
         Insert: {
           annullato?: boolean
           corso_id: string
           created_at?: string
+          creato_at?: string
+          creato_da?: string | null
           data: string
+          evento_straordinario_id?: string | null
           id?: string
+          is_evento_extra?: boolean
           istruttore_id?: string | null
+          modificato_at?: string
           motivo?: string | null
+          note_settimana?: string | null
           ora_fine: string
           ora_inizio: string
           settimana_id: string
+          sostituisce_id?: string | null
+          titolo_override?: string | null
         }
         Update: {
           annullato?: boolean
           corso_id?: string
           created_at?: string
+          creato_at?: string
+          creato_da?: string | null
           data?: string
+          evento_straordinario_id?: string | null
           id?: string
+          is_evento_extra?: boolean
           istruttore_id?: string | null
+          modificato_at?: string
           motivo?: string | null
+          note_settimana?: string | null
           ora_fine?: string
           ora_inizio?: string
           settimana_id?: string
+          sostituisce_id?: string | null
+          titolo_override?: string | null
         }
         Relationships: [
           {
@@ -976,6 +1187,13 @@ export type Database = {
             columns: ["settimana_id"]
             isOneToOne: false
             referencedRelation: "planning_settimane"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planning_corsi_settimana_sostituisce_id_fkey"
+            columns: ["sostituisce_id"]
+            isOneToOne: false
+            referencedRelation: "planning_corsi_settimana"
             referencedColumns: ["id"]
           },
         ]
@@ -1464,7 +1682,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_atleti_impattati_da_planning: {
+        Args: { p_planning_corso_id: string }
+        Returns: {
+          atleta_id: string
+          cognome: string
+          nome: string
+          telefono: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
