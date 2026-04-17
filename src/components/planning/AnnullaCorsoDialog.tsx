@@ -41,22 +41,43 @@ const AnnullaCorsoDialog: React.FC<Props> = ({
   const [saving, set_saving] = useState(false);
 
   const handle_save = async () => {
+    console.log("[AnnullaCorsoDialog] handle_save ENTRATO", {
+      planning_corso_id,
+      motivo,
+      corso_nome,
+    });
     if (!motivo.trim()) {
+      console.warn("[AnnullaCorsoDialog] motivo vuoto, abort");
       toast.error("Il motivo è obbligatorio");
+      return;
+    }
+    if (!planning_corso_id) {
+      console.error("[AnnullaCorsoDialog] planning_corso_id MANCANTE", planning_corso_id);
+      toast.error("ID pianificazione mancante");
       return;
     }
     set_saving(true);
     try {
-      const { error } = await supabase
+      const payload = { annullato: true, motivo: motivo.trim() };
+      console.log("[AnnullaCorsoDialog] payload UPDATE", payload, "id =", planning_corso_id);
+      const { data, error, status } = await supabase
         .from("planning_corsi_settimana")
-        .update({ annullato: true, motivo: motivo.trim() })
-        .eq("id", planning_corso_id);
+        .update(payload)
+        .eq("id", planning_corso_id)
+        .select();
+      console.log("[AnnullaCorsoDialog] risposta supabase", { data, error, status });
       if (error) throw error;
+      if (!data || data.length === 0) {
+        console.warn("[AnnullaCorsoDialog] UPDATE ok ma 0 righe modificate. id non trovato?");
+        toast.error("Nessun record aggiornato (id non trovato)");
+        return;
+      }
       toast.success("Corso annullato per questa settimana");
       on_done(planning_corso_id, motivo.trim());
       set_motivo("");
       on_close();
     } catch (e: any) {
+      console.error("[AnnullaCorsoDialog] errore catch", e);
       toast.error(e.message || "Errore durante l'annullamento");
     } finally {
       set_saving(false);
