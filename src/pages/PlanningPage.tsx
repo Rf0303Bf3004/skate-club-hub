@@ -1804,9 +1804,10 @@ function ConfirmPlaceDialog({ confirm, saving, on_confirm, on_cancel }: {
 // ══════════════════════════════════════════════════════════════
 // DETAIL PANEL
 // ══════════════════════════════════════════════════════════════
-function DetailPanel({ corso, istr_map, atleti, build_mode, on_close, on_remove, on_edit }: {
+function DetailPanel({ corso, istr_map, atleti, build_mode, on_close, on_remove, on_edit, on_annulla_settimana, on_sposta }: {
   corso: any; istr_map: Record<string, any>; atleti: any[]; build_mode: boolean;
   on_close: () => void; on_remove: () => void; on_edit: () => void;
+  on_annulla_settimana?: () => void; on_sposta?: () => void;
 }) {
   const is_private = (corso.tipo || "").toLowerCase() === "privata";
   const corso_id_for_query = corso.corso_id || corso.id;
