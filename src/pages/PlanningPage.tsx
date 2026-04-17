@@ -518,6 +518,13 @@ function PlanningPageInner() {
   const [show_new_corso, set_show_new_corso] = useState(false);
   const [show_new_privata, set_show_new_privata] = useState(false);
   const [show_edit_corso, set_show_edit_corso] = useState<any>(null);
+  const [annulla_dialog, set_annulla_dialog] = useState<any>(null);
+  const [sposta_dialog, set_sposta_dialog] = useState<any>(null);
+  const [avvisa_dialog, set_avvisa_dialog] = useState<{
+    tipo: "annullamento" | "spostamento";
+    planning_corso_id: string;
+    contesto: any;
+  } | null>(null);
   const [saving, set_saving] = useState(false);
   const [generating, set_generating] = useState(false);
 
@@ -644,6 +651,8 @@ function PlanningPageInner() {
             note: template?.note || "",
             annullato: pc.annullato,
             motivo: pc.motivo,
+            sostituisce_id: pc.sostituisce_id ?? null,
+            settimana_id: pc.settimana_id,
             _is_plan_row: true,
           };
         })
@@ -699,10 +708,15 @@ function PlanningPageInner() {
           nome: template?.nome || "?",
           tipo: template?.tipo || "",
           giorno: GIORNI[dayIdx],
+          data: pc.data,
           ora_inizio: pc.ora_inizio,
           ora_fine: pc.ora_fine,
           istruttori_ids: pc.istruttore_id ? [pc.istruttore_id] : [],
           annullato: true,
+          motivo: pc.motivo,
+          sostituisce_id: pc.sostituisce_id ?? null,
+          // se esiste un altro record che lo sostituisce → è stato spostato
+          sostituito_da: plan_corsi.find((p: any) => p.sostituisce_id === pc.id) || null,
           _is_plan_row: true,
         };
       })
