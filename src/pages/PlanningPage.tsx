@@ -1359,9 +1359,16 @@ function PlanningPageInner() {
                         }}>
                           <X className="h-3 w-3 text-muted-foreground mr-1 flex-shrink-0" />
                           <span className="truncate text-[10px] text-muted-foreground line-through">{c.nome}</span>
+                          {c.sostituito_da && (
+                            <span className="ml-1 text-[9px] text-primary font-bold flex-shrink-0">↔ spostato</span>
+                          )}
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent><p className="line-through">{c.nome} (annullato)</p></TooltipContent>
+                      <TooltipContent>
+                        <p className="line-through">{c.nome} (annullato)</p>
+                        {c.motivo && <p className="text-xs">Motivo: {c.motivo}</p>}
+                        {c.sostituito_da && <p className="text-xs text-primary">Spostato a {c.sostituito_da.data} {c.sostituito_da.ora_inizio?.slice(0,5)}</p>}
+                      </TooltipContent>
                     </Tooltip>
                   );
                 })}
