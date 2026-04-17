@@ -113,7 +113,6 @@ const AvvisaAtletiDialog: React.FC<Props> = ({
         club_id,
         titolo: titolo.trim(),
         testo: corpo.trim(),
-        corpo: corpo.trim(),
         tipo,
         planning_corso_id,
         deep_link: "iceapp://atleta/calendario",
