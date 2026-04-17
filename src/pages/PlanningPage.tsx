@@ -1407,6 +1407,8 @@ function PlanningPageInner() {
                 on_close={() => set_selected_corso_id(null)}
                 on_remove={() => remove_corso(sel)}
                 on_edit={() => { set_show_edit_corso(sel); }}
+                on_annulla_settimana={() => set_annulla_dialog(sel)}
+                on_sposta={() => set_sposta_dialog(sel)}
               />
             )}
 
