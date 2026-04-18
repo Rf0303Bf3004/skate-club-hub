@@ -138,7 +138,7 @@ const AnnullaCorsoDialog: React.FC<Props> = ({
               titolo: "Corso annullato",
               testo,
               tipo: "corso_annullato",
-              tipo_destinatari: "iscritti_corso",
+              tipo_destinatari: "per_corso",
               planning_corso_id: final_id,
               corso_id: corso_id_target,
               stato: "pending",

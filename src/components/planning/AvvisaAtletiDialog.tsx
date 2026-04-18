@@ -117,7 +117,7 @@ const AvvisaAtletiDialog: React.FC<Props> = ({
         planning_corso_id,
         deep_link: "iceapp://atleta/calendario",
         stato: "pending",
-        tipo_destinatari: "planning",
+        tipo_destinatari: "per_corso",
         programmata_per: programmata || new Date().toISOString(),
       };
       const { error } = await supabase.from("comunicazioni").insert(payload);
