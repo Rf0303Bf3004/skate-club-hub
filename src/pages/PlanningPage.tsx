@@ -1437,7 +1437,12 @@ function PlanningPageInner() {
                 on_close={() => set_selected_corso_id(null)}
                 on_remove={() => remove_corso(sel)}
                 on_edit={() => { set_show_edit_corso(sel); }}
-                on_annulla_settimana={() => set_annulla_dialog(sel)}
+                on_annulla_settimana={async () => {
+                  if (sel?._is_plan_row) { set_annulla_dialog(sel); return; }
+                  const sid = await ensure_settimana();
+                  if (!sid) { toast.error("Impossibile creare la settimana"); return; }
+                  set_annulla_dialog({ ...sel, _materialize_settimana_id: sid });
+                }}
                 on_sposta={sel?._is_plan_row ? () => set_sposta_dialog(sel) : undefined}
               />
             )}
