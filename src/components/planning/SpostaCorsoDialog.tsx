@@ -195,7 +195,7 @@ const SpostaCorsoDialog: React.FC<Props> = ({
               titolo: "Corso spostato",
               testo,
               tipo: "corso_spostato",
-              tipo_destinatari: "iscritti_corso",
+              tipo_destinatari: "per_corso",
               planning_corso_id: inserted.id,
               corso_id: planning_corso.corso_id,
               stato: "pending",
