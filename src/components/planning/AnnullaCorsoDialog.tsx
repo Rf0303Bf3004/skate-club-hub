@@ -14,26 +14,24 @@ import { supabase } from "@/lib/supabase";
 import { Loader2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 
-type Mode = "update" | "insert";
-
 interface Props {
   open: boolean;
   on_close: () => void;
-  /** id riga planning_corsi_settimana se esiste (mode='update'), altrimenti vuoto */
-  planning_corso_id?: string | null;
+  /** id del record planning_corsi_settimana SE già materializzato; può coincidere col corso_id quando la settimana è in bozza */
+  planning_corso_id: string;
+  /** id del corso ricorrente originale (template). Necessario per INSERT con sostituisce_id. */
+  corso_id_originale?: string;
+  /** id della settimana planning_settimane già materializzata (passata dal chiamante dopo ensure_settimana). */
+  settimana_id?: string;
+  /** orari/istruttore originali del corso, usati in INSERT se non esiste ancora una riga. */
+  ora_inizio_orig?: string;
+  ora_fine_orig?: string;
+  istruttore_id?: string | null;
   corso_nome: string;
   giorno: string;
   data: string;
   ora_inizio: string;
   ora_fine: string;
-  /** Modalità: update se la riga esiste, insert se va materializzata (settimana in bozza) */
-  mode?: Mode;
-  /** Required quando mode='insert': id template corso, settimana, club */
-  corso_id?: string;
-  settimana_id?: string | null;
-  club_id?: string;
-  istruttore_id?: string | null;
-  /** Callback: riceve l'id della riga risultante e il motivo */
   on_done: (planning_corso_id: string, motivo: string) => void;
 }
 
@@ -41,84 +39,112 @@ const AnnullaCorsoDialog: React.FC<Props> = ({
   open,
   on_close,
   planning_corso_id,
+  corso_id_originale,
+  settimana_id,
+  ora_inizio_orig,
+  ora_fine_orig,
+  istruttore_id,
   corso_nome,
   giorno,
   data,
   ora_inizio,
   ora_fine,
-  mode = "update",
-  corso_id,
-  settimana_id,
-  club_id,
-  istruttore_id,
   on_done,
 }) => {
   const [motivo, set_motivo] = useState("");
   const [saving, set_saving] = useState(false);
 
   const handle_save = async () => {
-    console.log("[AnnullaCorsoDialog] handle_save", { mode, planning_corso_id, corso_id, settimana_id });
+    console.log("[AnnullaCorsoDialog] handle_save ENTRATO", {
+      planning_corso_id,
+      corso_id_originale,
+      settimana_id,
+      data,
+      motivo,
+      corso_nome,
+    });
     if (!motivo.trim()) {
       toast.error("Il motivo è obbligatorio");
       return;
     }
+    if (!settimana_id) {
+      console.error("[AnnullaCorsoDialog] settimana_id MANCANTE");
+      toast.error("Settimana non materializzata");
+      return;
+    }
+    const corso_id_target = corso_id_originale || planning_corso_id;
+    if (!corso_id_target) {
+      toast.error("ID corso mancante");
+      return;
+    }
     set_saving(true);
     try {
-      let result_id = planning_corso_id || "";
+      // 1) SELECT: cerca riga esistente per (settimana, data, corso o sostituisce)
+      const { data: existing, error: sel_err } = await supabase
+        .from("planning_corsi_settimana")
+        .select("id")
+        .eq("settimana_id", settimana_id)
+        .eq("data", data)
+        .or(`corso_id.eq.${corso_id_target},sostituisce_id.eq.${corso_id_target}`)
+        .limit(1)
+        .maybeSingle();
+      console.log("[AnnullaCorsoDialog] SELECT esistente", { existing, sel_err });
+      if (sel_err) throw sel_err;
 
-      if (mode === "update") {
-        if (!planning_corso_id) {
-          toast.error("ID pianificazione mancante");
-          set_saving(false);
-          return;
-        }
-        const { data: rows, error } = await supabase
+      let final_id: string;
+
+      if (existing?.id) {
+        // 2a) UPDATE
+        const { data: upd, error: upd_err } = await supabase
           .from("planning_corsi_settimana")
           .update({ annullato: true, motivo: motivo.trim() })
-          .eq("id", planning_corso_id)
-          .select();
-        if (error) throw error;
-        if (!rows || rows.length === 0) {
-          toast.error("Nessun record aggiornato");
-          set_saving(false);
+          .eq("id", existing.id)
+          .select()
+          .maybeSingle();
+        console.log("[AnnullaCorsoDialog] UPDATE", { upd, upd_err });
+        if (upd_err) throw upd_err;
+        if (!upd) {
+          toast.error("Aggiornamento fallito");
           return;
         }
+        final_id = upd.id;
       } else {
-        // INSERT: materializza l'eccezione su una settimana in bozza
-        if (!corso_id || !settimana_id) {
-          toast.error("Dati mancanti per creare l'eccezione (corso o settimana)");
-          set_saving(false);
-          return;
-        }
-        const { data: { user } } = await supabase.auth.getUser();
-        const payload: any = {
+        // 2b) INSERT con sostituisce_id
+        const { data: auth_data } = await supabase.auth.getUser();
+        const insert_payload = {
           settimana_id,
-          corso_id,
+          corso_id: corso_id_target,
+          sostituisce_id: corso_id_target,
           data,
-          ora_inizio,
-          ora_fine,
-          istruttore_id: istruttore_id || null,
+          ora_inizio: ora_inizio_orig || ora_inizio,
+          ora_fine: ora_fine_orig || ora_fine,
+          istruttore_id: istruttore_id ?? null,
+          is_evento_extra: false,
           annullato: true,
           motivo: motivo.trim(),
-          is_evento_extra: false,
-          creato_da: user?.id ?? null,
+          creato_da: auth_data?.user?.id ?? null,
         };
-        console.log("[AnnullaCorsoDialog] INSERT payload", payload);
-        const { data: inserted, error } = await supabase
+        console.log("[AnnullaCorsoDialog] INSERT payload", insert_payload);
+        const { data: ins, error: ins_err } = await supabase
           .from("planning_corsi_settimana")
-          .insert(payload)
+          .insert(insert_payload)
           .select()
-          .single();
-        if (error) throw error;
-        result_id = inserted.id;
+          .maybeSingle();
+        console.log("[AnnullaCorsoDialog] INSERT result", { ins, ins_err });
+        if (ins_err) throw ins_err;
+        if (!ins) {
+          toast.error("Inserimento fallito");
+          return;
+        }
+        final_id = ins.id;
       }
 
       toast.success("Corso annullato per questa settimana");
-      on_done(result_id, motivo.trim());
+      on_done(final_id, motivo.trim());
       set_motivo("");
       on_close();
     } catch (e: any) {
-      console.error("[AnnullaCorsoDialog] errore", e);
+      console.error("[AnnullaCorsoDialog] errore catch", e);
       toast.error(e.message || "Errore durante l'annullamento");
     } finally {
       set_saving(false);

@@ -835,35 +835,49 @@ function PlanningPageInner() {
     return result;
   }, [pick_corso, slots]);
 
+  // Crea (se serve) la riga planning_settimane per la settimana corrente e ritorna l'id
+  const ensure_settimana_id = useCallback(async (): Promise<string | null> => {
+    if (settimana_id) return settimana_id;
+    if (!stagione_id) {
+      toast.error("Nessuna stagione attiva trovata.");
+      return null;
+    }
+    // SELECT prima per evitare duplicati (race / vincoli mancanti)
+    const { data: existing, error: sel_err } = await supabase
+      .from("planning_settimane")
+      .select("id")
+      .eq("club_id", getClubId())
+      .eq("stagione_id", stagione_id)
+      .eq("data_lunedi", dataLunediISO)
+      .maybeSingle();
+    if (sel_err) {
+      toast.error(sel_err.message);
+      return null;
+    }
+    if (existing?.id) return existing.id;
+    const { data: ins, error: ins_err } = await supabase
+      .from("planning_settimane")
+      .insert({
+        club_id: getClubId(),
+        stagione_id,
+        data_lunedi: dataLunediISO,
+        stato: "bozza",
+      })
+      .select("id")
+      .maybeSingle();
+    if (ins_err) {
+      toast.error(ins_err.message);
+      return null;
+    }
+    return ins?.id ?? null;
+  }, [settimana_id, stagione_id, dataLunediISO]);
+
   // ── Refetch helpers ──
   const refetchSettimana = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ["planning_settimana", getClubId(), dataLunediISO, stagione_id] });
     queryClient.invalidateQueries({ queryKey: ["planning_corsi_settimana"] });
     queryClient.invalidateQueries({ queryKey: ["planning_private_settimana"] });
   }, [queryClient, dataLunediISO, stagione_id]);
-
-  // Garantisce che esista una riga in planning_settimane (in stato bozza) per la settimana corrente
-  const ensure_settimana = useCallback(async (): Promise<string | null> => {
-    if (settimana_id) return settimana_id;
-    const { data: existing } = await supabase
-      .from("planning_settimane")
-      .select("id")
-      .eq("club_id", getClubId())
-      .eq("data_lunedi", dataLunediISO)
-      .eq("stagione_id", stagione_id)
-      .maybeSingle();
-    if (existing?.id) return existing.id;
-    const { data: created, error } = await supabase
-      .from("planning_settimane")
-      .insert({ club_id: getClubId(), stagione_id, data_lunedi: dataLunediISO, stato: "bozza" })
-      .select("id")
-      .single();
-    if (error) {
-      console.error("[ensure_settimana] errore", error);
-      return null;
-    }
-    return created.id;
-  }, [settimana_id, dataLunediISO, stagione_id]);
 
   // ── Genera settimana ──
   const generaSettimana = async () => {
@@ -1437,12 +1451,11 @@ function PlanningPageInner() {
                 on_close={() => set_selected_corso_id(null)}
                 on_remove={() => remove_corso(sel)}
                 on_edit={() => { set_show_edit_corso(sel); }}
-                on_annulla_settimana={async () => {
-                  if (sel?._is_plan_row) { set_annulla_dialog(sel); return; }
-                  const sid = await ensure_settimana();
-                  if (!sid) { toast.error("Impossibile creare la settimana"); return; }
-                  set_annulla_dialog({ ...sel, _materialize_settimana_id: sid });
-                }}
+                on_annulla_settimana={sel?._is_plan_row ? async () => {
+                  const sid = await ensure_settimana_id();
+                  if (!sid) return;
+                  set_annulla_dialog({ ...sel, settimana_id: sid });
+                } : undefined}
                 on_sposta={sel?._is_plan_row ? () => set_sposta_dialog(sel) : undefined}
               />
             )}
@@ -1807,13 +1820,11 @@ function PlanningPageInner() {
         {annulla_dialog && (
           <AnnullaCorsoDialog
             open={!!annulla_dialog} on_close={() => set_annulla_dialog(null)}
-            mode={annulla_dialog._is_plan_row ? "update" : "insert"}
-            planning_corso_id={annulla_dialog._is_plan_row ? annulla_dialog.id : undefined}
-            corso_id={annulla_dialog._is_plan_row ? annulla_dialog.corso_id : annulla_dialog.id}
-            settimana_id={annulla_dialog._materialize_settimana_id || settimana?.id || null}
-            club_id={getClubId()}
-            istruttore_id={annulla_dialog.istruttore_id || (annulla_dialog.istruttori_ids?.[0] ?? null)}
-            corso_nome={annulla_dialog.nome}
+            planning_corso_id={annulla_dialog.id} corso_nome={annulla_dialog.nome}
+            corso_id_originale={annulla_dialog.corso_id || annulla_dialog.id}
+            settimana_id={annulla_dialog.settimana_id || settimana?.id}
+            ora_inizio_orig={annulla_dialog.ora_inizio} ora_fine_orig={annulla_dialog.ora_fine}
+            istruttore_id={annulla_dialog.istruttore_id ?? (annulla_dialog.istruttori_ids?.[0] ?? null)}
             giorno={annulla_dialog.giorno} data={annulla_dialog.data}
             ora_inizio={annulla_dialog.ora_inizio} ora_fine={annulla_dialog.ora_fine}
             on_done={(pid, motivo) => { refetchSettimana(); set_selected_corso_id(null);
