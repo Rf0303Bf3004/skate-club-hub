@@ -1451,7 +1451,11 @@ function PlanningPageInner() {
                 on_close={() => set_selected_corso_id(null)}
                 on_remove={() => remove_corso(sel)}
                 on_edit={() => { set_show_edit_corso(sel); }}
-                on_annulla_settimana={sel?._is_plan_row ? () => set_annulla_dialog(sel) : undefined}
+                on_annulla_settimana={sel?._is_plan_row ? async () => {
+                  const sid = await ensure_settimana_id();
+                  if (!sid) return;
+                  set_annulla_dialog({ ...sel, settimana_id: sid });
+                } : undefined}
                 on_sposta={sel?._is_plan_row ? () => set_sposta_dialog(sel) : undefined}
               />
             )}
