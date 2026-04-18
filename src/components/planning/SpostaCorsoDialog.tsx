@@ -110,16 +110,54 @@ const SpostaCorsoDialog: React.FC<Props> = ({
     }
     set_saving(true);
     try {
+      const { data: auth_data } = await supabase.auth.getUser();
+      const user_id = auth_data?.user?.id ?? null;
       const motivo_auto = `Spostato a ${new_data} ${ora_inizio}`;
 
-      // 1. Annulla originale
-      const { error: e1 } = await supabase
+      // 1. UPSERT annullamento dell'originale (gestisce settimana in bozza)
+      const { data: existing_orig, error: sel_err } = await supabase
         .from("planning_corsi_settimana")
-        .update({ annullato: true, motivo: motivo_auto })
-        .eq("id", planning_corso.id);
-      if (e1) throw e1;
+        .select("id")
+        .eq("settimana_id", planning_corso.settimana_id)
+        .eq("data", planning_corso.data)
+        .or(`corso_id.eq.${planning_corso.corso_id},sostituisce_id.eq.${planning_corso.corso_id}`)
+        .limit(1)
+        .maybeSingle();
+      if (sel_err) throw sel_err;
 
-      // 2. Crea nuovo record
+      let original_final_id: string;
+      if (existing_orig?.id) {
+        const { data: upd, error: e1 } = await supabase
+          .from("planning_corsi_settimana")
+          .update({ annullato: true, motivo: motivo_auto })
+          .eq("id", existing_orig.id)
+          .select("id")
+          .single();
+        if (e1) throw e1;
+        original_final_id = upd.id;
+      } else {
+        const { data: ins_orig, error: e1 } = await supabase
+          .from("planning_corsi_settimana")
+          .insert({
+            settimana_id: planning_corso.settimana_id,
+            corso_id: planning_corso.corso_id,
+            sostituisce_id: planning_corso.corso_id,
+            data: planning_corso.data,
+            ora_inizio: planning_corso.ora_inizio,
+            ora_fine: planning_corso.ora_fine,
+            istruttore_id: planning_corso.istruttore_id,
+            is_evento_extra: false,
+            annullato: true,
+            motivo: motivo_auto,
+            creato_da: user_id,
+          })
+          .select("id")
+          .single();
+        if (e1) throw e1;
+        original_final_id = ins_orig.id;
+      }
+
+      // 2. INSERT nuovo record nella nuova data/ora
       const { data: inserted, error: e2 } = await supabase
         .from("planning_corsi_settimana")
         .insert({
@@ -130,17 +168,52 @@ const SpostaCorsoDialog: React.FC<Props> = ({
           ora_fine,
           istruttore_id: istruttore_id || null,
           annullato: false,
-          sostituisce_id: planning_corso.id,
+          sostituisce_id: planning_corso.corso_id,
           is_evento_extra: false,
+          creato_da: user_id,
         } as any)
         .select("id")
         .single();
       if (e2) throw e2;
 
+      // 3. Comunicazione agli iscritti
+      try {
+        const { count } = await supabase
+          .from("iscrizioni_corsi")
+          .select("id", { count: "exact", head: true })
+          .eq("corso_id", planning_corso.corso_id)
+          .eq("attiva", true);
+
+        if ((count ?? 0) > 0) {
+          const club_id = await get_current_club_id();
+          if (club_id) {
+            const data_old_it = format_data_it(planning_corso.data);
+            const data_new_it = format_data_it(new_data);
+            const testo = `Il corso "${planning_corso.nome}" del ${data_old_it} è stato spostato al ${data_new_it} dalle ${ora_inizio} alle ${ora_fine}.`;
+            const { error: com_err } = await supabase.from("comunicazioni").insert({
+              club_id,
+              titolo: "Corso spostato",
+              testo,
+              tipo: "corso_spostato",
+              tipo_destinatari: "iscritti_corso",
+              planning_corso_id: inserted.id,
+              corso_id: planning_corso.corso_id,
+              stato: "pending",
+              programmata_per: new Date().toISOString(),
+              creata_da: user_id,
+            });
+            if (com_err) console.error("[SpostaCorsoDialog] comunicazione error", com_err);
+          }
+        }
+      } catch (com_e) {
+        console.error("[SpostaCorsoDialog] errore creazione comunicazione", com_e);
+      }
+
       toast.success("Corso spostato");
       on_done(inserted.id, planning_corso.id, new_data, ora_inizio);
       on_close();
     } catch (e: any) {
+      console.error("[SpostaCorsoDialog] errore handle_save", e);
       toast.error(e.message || "Errore durante lo spostamento");
     } finally {
       set_saving(false);
