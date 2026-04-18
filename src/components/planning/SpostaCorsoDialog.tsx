@@ -17,9 +17,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { supabase } from "@/lib/supabase";
+import { supabase, get_current_club_id } from "@/lib/supabase";
 import { Loader2, Move } from "lucide-react";
 import { toast } from "sonner";
+
+const format_data_it = (iso: string) => {
+  const [y, m, d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+};
 
 const GIORNI = [
   "Lunedì",
