@@ -1807,7 +1807,13 @@ function PlanningPageInner() {
         {annulla_dialog && (
           <AnnullaCorsoDialog
             open={!!annulla_dialog} on_close={() => set_annulla_dialog(null)}
-            planning_corso_id={annulla_dialog.id} corso_nome={annulla_dialog.nome}
+            mode={annulla_dialog._is_plan_row ? "update" : "insert"}
+            planning_corso_id={annulla_dialog._is_plan_row ? annulla_dialog.id : undefined}
+            corso_id={annulla_dialog._is_plan_row ? annulla_dialog.corso_id : annulla_dialog.id}
+            settimana_id={annulla_dialog._materialize_settimana_id || settimana?.id || null}
+            club_id={getClubId()}
+            istruttore_id={annulla_dialog.istruttore_id || (annulla_dialog.istruttori_ids?.[0] ?? null)}
+            corso_nome={annulla_dialog.nome}
             giorno={annulla_dialog.giorno} data={annulla_dialog.data}
             ora_inizio={annulla_dialog.ora_inizio} ora_fine={annulla_dialog.ora_fine}
             on_done={(pid, motivo) => { refetchSettimana(); set_selected_corso_id(null);
