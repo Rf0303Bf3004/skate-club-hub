@@ -842,6 +842,29 @@ function PlanningPageInner() {
     queryClient.invalidateQueries({ queryKey: ["planning_private_settimana"] });
   }, [queryClient, dataLunediISO, stagione_id]);
 
+  // Garantisce che esista una riga in planning_settimane (in stato bozza) per la settimana corrente
+  const ensure_settimana = useCallback(async (): Promise<string | null> => {
+    if (settimana_id) return settimana_id;
+    const { data: existing } = await supabase
+      .from("planning_settimane")
+      .select("id")
+      .eq("club_id", getClubId())
+      .eq("data_lunedi", dataLunediISO)
+      .eq("stagione_id", stagione_id)
+      .maybeSingle();
+    if (existing?.id) return existing.id;
+    const { data: created, error } = await supabase
+      .from("planning_settimane")
+      .insert({ club_id: getClubId(), stagione_id, data_lunedi: dataLunediISO, stato: "bozza" })
+      .select("id")
+      .single();
+    if (error) {
+      console.error("[ensure_settimana] errore", error);
+      return null;
+    }
+    return created.id;
+  }, [settimana_id, dataLunediISO, stagione_id]);
+
   // ── Genera settimana ──
   const generaSettimana = async () => {
     if (!stagione_id) {
