@@ -1447,31 +1447,6 @@ function PlanningPageInner() {
         {/* Confirmation dialog */}
         <ConfirmPlaceDialog confirm={confirm_place} saving={saving} on_confirm={handle_confirm_place} on_cancel={() => set_confirm_place(null)} />
 
-        {annulla_dialog && (
-          <AnnullaCorsoDialog
-            open={!!annulla_dialog} on_close={() => set_annulla_dialog(null)}
-            planning_corso_id={annulla_dialog.id} corso_nome={annulla_dialog.nome}
-            giorno={annulla_dialog.giorno} data={annulla_dialog.data}
-            ora_inizio={annulla_dialog.ora_inizio} ora_fine={annulla_dialog.ora_fine}
-            on_done={(pid, motivo) => { refetchSettimana(); set_selected_corso_id(null);
-              set_avvisa_dialog({ tipo: "annullamento", planning_corso_id: pid,
-                contesto: { corso_nome: annulla_dialog.nome, giorno: annulla_dialog.giorno, data: annulla_dialog.data, ora_inizio: annulla_dialog.ora_inizio, ora_fine: annulla_dialog.ora_fine, motivo } }); }}
-          />
-        )}
-        {sposta_dialog && settimana && (
-          <SpostaCorsoDialog
-            open={!!sposta_dialog} on_close={() => set_sposta_dialog(null)}
-            planning_corso={{ id: sposta_dialog.id, corso_id: sposta_dialog.corso_id, settimana_id: sposta_dialog.settimana_id || settimana.id, data: sposta_dialog.data, ora_inizio: sposta_dialog.ora_inizio, ora_fine: sposta_dialog.ora_fine, istruttore_id: sposta_dialog.istruttore_id, nome: sposta_dialog.nome }}
-            data_lunedi={dataLunediISO} istruttori={istruttori} ghiaccio_slots={slots}
-            on_done={(_n, original_id, new_data, new_ora) => { refetchSettimana(); set_selected_corso_id(null);
-              set_avvisa_dialog({ tipo: "spostamento", planning_corso_id: original_id,
-                contesto: { corso_nome: sposta_dialog.nome, giorno: sposta_dialog.giorno, data: sposta_dialog.data, ora_inizio: sposta_dialog.ora_inizio, ora_fine: sposta_dialog.ora_fine, nuova_data: new_data, nuova_ora: new_ora } }); }}
-          />
-        )}
-        {avvisa_dialog && (
-          <AvvisaAtletiDialog open={!!avvisa_dialog} on_close={() => set_avvisa_dialog(null)}
-            tipo={avvisa_dialog.tipo} planning_corso_id={avvisa_dialog.planning_corso_id} contesto={avvisa_dialog.contesto} />
-        )}
       </TooltipProvider>
     );
   }
