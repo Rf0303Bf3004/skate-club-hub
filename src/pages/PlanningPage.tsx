@@ -835,6 +835,43 @@ function PlanningPageInner() {
     return result;
   }, [pick_corso, slots]);
 
+  // Crea (se serve) la riga planning_settimane per la settimana corrente e ritorna l'id
+  const ensure_settimana_id = useCallback(async (): Promise<string | null> => {
+    if (settimana_id) return settimana_id;
+    if (!stagione_id) {
+      toast.error("Nessuna stagione attiva trovata.");
+      return null;
+    }
+    // SELECT prima per evitare duplicati (race / vincoli mancanti)
+    const { data: existing, error: sel_err } = await supabase
+      .from("planning_settimane")
+      .select("id")
+      .eq("club_id", getClubId())
+      .eq("stagione_id", stagione_id)
+      .eq("data_lunedi", dataLunediISO)
+      .maybeSingle();
+    if (sel_err) {
+      toast.error(sel_err.message);
+      return null;
+    }
+    if (existing?.id) return existing.id;
+    const { data: ins, error: ins_err } = await supabase
+      .from("planning_settimane")
+      .insert({
+        club_id: getClubId(),
+        stagione_id,
+        data_lunedi: dataLunediISO,
+        stato: "bozza",
+      })
+      .select("id")
+      .maybeSingle();
+    if (ins_err) {
+      toast.error(ins_err.message);
+      return null;
+    }
+    return ins?.id ?? null;
+  }, [settimana_id, stagione_id, dataLunediISO]);
+
   // ── Refetch helpers ──
   const refetchSettimana = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ["planning_settimana", getClubId(), dataLunediISO, stagione_id] });
