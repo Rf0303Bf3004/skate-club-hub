@@ -836,8 +836,8 @@ function PlanningPageInner() {
   // Visible days
   const visible_days = useMemo(() => {
     const start = day_offset;
-    return GIORNI.slice(start, Math.min(start + view_mode, 7));
-  }, [view_mode, day_offset]);
+    return GIORNI.slice(start, Math.min(start + days_count, 7));
+  }, [days_count, day_offset]);
 
   // Date for each giorno in current week
   const date_for_giorno = useMemo(() => {
@@ -850,13 +850,35 @@ function PlanningPageInner() {
 
   const set_view = (m: ViewMode) => {
     set_view_mode(m);
-    set_day_offset((prev) => Math.min(prev, 7 - m));
+    if (m !== "mese") {
+      const dc = m === "giorno" ? 1 : 7;
+      set_day_offset((prev) => Math.min(prev, 7 - dc));
+    }
   };
   const go_prev_week = () => setDataLunedi(prev => addDays(prev, -7));
   const go_next_week = () => setDataLunedi(prev => addDays(prev, 7));
   const go_today = () => setDataLunedi(getMondayOfWeek(new Date()));
-  const go_prev = () => set_day_offset((p) => Math.max(0, p - view_mode));
-  const go_next = () => set_day_offset((p) => Math.min(p + view_mode, 7 - view_mode));
+  const go_prev = () => set_day_offset((p) => Math.max(0, p - days_count));
+  const go_next = () => set_day_offset((p) => Math.min(p + days_count, 7 - days_count));
+
+  // Navigazione mese
+  const go_prev_month = () => set_mese_corrente((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  const go_next_month = () => set_mese_corrente((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  const go_today_month = () => {
+    const d = new Date();
+    set_mese_corrente(new Date(d.getFullYear(), d.getMonth(), 1));
+  };
+
+  // Click su una cella del mese: passa a vista Giorno su quella data
+  const handle_click_giorno_da_mese = (data_iso: string) => {
+    const [yyyy, mm, dd] = data_iso.split("-").map(Number);
+    const target = new Date(yyyy, mm - 1, dd);
+    const lunedi = getMondayOfWeek(target);
+    setDataLunedi(lunedi);
+    const giorno_idx = dayIndexFromDate(target);
+    set_day_offset(giorno_idx);
+    set_view_mode("giorno");
+  };
 
   // Time range from data
   const { range_start, range_end } = useMemo(() => {
