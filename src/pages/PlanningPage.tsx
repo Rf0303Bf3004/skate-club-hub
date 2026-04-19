@@ -1989,8 +1989,8 @@ function PlanningPageInner() {
                               <div className="absolute z-[2] rounded-sm" style={{
                                 left: `${((cs - range_start) / total_min) * 100}%`,
                                 width: `${((ce - cs) / total_min) * 100}%`,
-                                top: 6 + n_ice_rows * 26 + ai * 22,
-                                height: 18,
+                                top: 4 + n_ice_rows * 16 + ai * 16,
+                                height: 12,
                                 background: "#e0e0e0",
                                 border: "1px solid #bbb",
                                 opacity: 0.6,
