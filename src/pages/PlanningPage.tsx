@@ -2182,6 +2182,8 @@ function PlanningPageInner() {
                           const alarm_short = w.hard || is_conflict ? (is_conflict ? "Conflitto" : (warnings_by_id[c.id]?.hard[0] ?? "Allarme").split(" (")[0]) : (w.soft ? (warnings_by_id[c.id]?.soft[0] ?? "Attenzione").split(" (")[0] : null);
                           const sandwich_shadow = alarm_color ? `inset 0 0 0 1px #fff, 0 0 0 2px ${alarm_color}, 0 0 0 3px #fff` : undefined;
                           const pulse = is_conflict || w.hard;
+                          const exc = exceptions_by_id[c.id];
+                          const has_exc = !!exc && exc.length > 0;
                           return (
                             <Tooltip key={c.id}>
                               <TooltipTrigger asChild>
@@ -2192,9 +2194,13 @@ function PlanningPageInner() {
                                   height: 14,
                                   background: colore,
                                   boxShadow: sandwich_shadow,
+                                  borderLeft: has_exc ? "2px dashed #F59E0B" : undefined,
                                 }}>
                                   {alarm_color && (
                                     <span style={{ background: "#000", color: "#fff", borderRadius: 2, width: 12, height: 12, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9, lineHeight: 1, flexShrink: 0, border: `1px solid ${alarm_color}` }}>⚠</span>
+                                  )}
+                                  {has_exc && (
+                                    <span style={{ position: "absolute", bottom: -1, right: -1, background: "#F59E0B", color: "#fff", borderRadius: 2, width: 10, height: 10, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 7, fontWeight: 700, lineHeight: 1 }}>✎</span>
                                   )}
                                 </div>
                               </TooltipTrigger>
@@ -2206,6 +2212,14 @@ function PlanningPageInner() {
                                 {w.all.map((msg, i) => (
                                   <p key={i} className="text-xs font-semibold mt-0.5" style={{ color: w.hard && i < (warnings_by_id[c.id]?.hard.length ?? 0) ? "#DC2626" : "#CA8A04" }}>⚠ {msg}</p>
                                 ))}
+                                {has_exc && (
+                                  <div className="mt-1 pt-1 border-t border-border/40">
+                                    <p className="text-[10px] font-bold" style={{ color: "#B45309" }}>✎ Eccezione settimanale</p>
+                                    {exc!.map((d, i) => (
+                                      <p key={i} className="text-[10px]" style={{ color: "#B45309" }}>{d.label}: {d.da} → {d.a}</p>
+                                    ))}
+                                  </div>
+                                )}
                               </TooltipContent>
                             </Tooltip>
                           );
