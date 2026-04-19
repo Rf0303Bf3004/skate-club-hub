@@ -807,6 +807,43 @@ function PlanningPageInner() {
     return result;
   }, [istruttori, posizionati, slots]);
 
+  // ── Off-ice detection (DB-driven con fallback al tipo) ──
+  const is_off_ice = useCallback((c: any) => {
+    if (c?.usa_ghiaccio === false) return true;
+    if (c?.usa_ghiaccio === true) return false;
+    return OFF_ICE_TYPES.includes((c?.tipo || "").toLowerCase());
+  }, []);
+
+  // ── Conflitti istruttore: stesso istruttore, stesso giorno, orari sovrapposti ──
+  const conflict_ids = useMemo(() => {
+    const conflicts = new Set<string>();
+    // raggruppa per (istruttore_id, giorno)
+    const by_key: Record<string, any[]> = {};
+    posizionati.forEach((c: any) => {
+      const ids: string[] = c.istruttori_ids ?? [];
+      ids.forEach((iid) => {
+        if (!iid) return;
+        const k = `${iid}__${c.giorno}`;
+        if (!by_key[k]) by_key[k] = [];
+        by_key[k].push(c);
+      });
+    });
+    Object.values(by_key).forEach((arr) => {
+      for (let i = 0; i < arr.length; i++) {
+        for (let j = i + 1; j < arr.length; j++) {
+          const a = arr[i], b = arr[j];
+          const as = time_to_min(a.ora_inizio), ae = time_to_min(a.ora_fine);
+          const bs = time_to_min(b.ora_inizio), be = time_to_min(b.ora_fine);
+          if (as < be && bs < ae) {
+            conflicts.add(a.id);
+            conflicts.add(b.id);
+          }
+        }
+      }
+    });
+    return conflicts;
+  }, [posizionati]);
+
   // Selected corso
   const selected_corso = useMemo(() => {
     if (!selected_corso_id) return null;
