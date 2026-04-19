@@ -2083,6 +2083,8 @@ function PlanningPageInner() {
                           const livello = c.livello_richiesto && c.livello_richiesto !== "tutti" ? c.livello_richiesto : null;
                           const n_atlete = is_private ? (c.atleti_ids?.length ?? 0) : 0;
                           const is_shared = n_atlete > 1;
+                          const exc = exceptions_by_id[c.id];
+                          const has_exc = !!exc && exc.length > 0;
                           return (
                             <Tooltip key={c.id}>
                               <TooltipTrigger asChild>
@@ -2095,12 +2097,16 @@ function PlanningPageInner() {
                                     ? `repeating-linear-gradient(-45deg, ${colore} 0px, ${colore} 3px, transparent 3px, transparent 8px)`
                                     : colore,
                                   boxShadow: sandwich_shadow,
+                                  borderLeft: has_exc ? "2px dashed #F59E0B" : undefined,
                                 }}>
                                   {alarm_color && (
                                     <span style={{ background: "#000", color: "#fff", borderRadius: 2, width: 12, height: 12, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9, lineHeight: 1, flexShrink: 0, border: `1px solid ${alarm_color}` }}>⚠</span>
                                   )}
                                   {is_shared && !alarm_color && (
                                     <span style={{ position: "absolute", top: -2, right: -2, background: "#fff", color: colore, borderRadius: 8, minWidth: 12, height: 12, padding: "0 3px", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, lineHeight: 1, border: `1px solid ${colore}` }}>{n_atlete}</span>
+                                  )}
+                                  {has_exc && (
+                                    <span style={{ position: "absolute", bottom: -1, right: -1, background: "#F59E0B", color: "#fff", borderRadius: 2, width: 10, height: 10, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 7, fontWeight: 700, lineHeight: 1 }}>✎</span>
                                   )}
                                 </div>
                               </TooltipTrigger>
