@@ -577,29 +577,41 @@ const ClubSetupPage: React.FC = () => {
               onChange={(e) => set_ghiaccio_val("durata_pulizia_minuti", e.target.value)}
             />
           </Field>
-          <Field label="Max atleti contemporanei (alert)">
+          <Field label="Max atleti contemporanei (alert, opzionale)">
             <Input
               type="number"
               min={1}
-              value={get_ghiaccio_val("max_atleti_contemporanei", 20)}
+              placeholder="Lascia vuoto per disattivare l'allarme"
+              value={get_ghiaccio_val("max_atleti_contemporanei", config_ghiaccio?.max_atleti_contemporanei ?? "")}
               onChange={(e) => set_ghiaccio_val("max_atleti_contemporanei", e.target.value)}
             />
+            {!get_ghiaccio_val("max_atleti_contemporanei", config_ghiaccio?.max_atleti_contemporanei ?? "") && (
+              <p className="text-[11px] text-muted-foreground italic">ℹ Non configurato — gli allarmi correlati sono disattivati. Consigliamo di impostare un valore.</p>
+            )}
           </Field>
-          <Field label="Max atleti per istruttore (alert)">
+          <Field label="Max atleti per istruttore (alert, opzionale)">
             <Input
               type="number"
               min={1}
-              value={get_ghiaccio_val("max_atleti_per_istruttore", 8)}
+              placeholder="Lascia vuoto per disattivare l'allarme"
+              value={get_ghiaccio_val("max_atleti_per_istruttore", config_ghiaccio?.max_atleti_per_istruttore ?? "")}
               onChange={(e) => set_ghiaccio_val("max_atleti_per_istruttore", e.target.value)}
             />
+            {!get_ghiaccio_val("max_atleti_per_istruttore", config_ghiaccio?.max_atleti_per_istruttore ?? "") && (
+              <p className="text-[11px] text-muted-foreground italic">ℹ Non configurato — gli allarmi correlati sono disattivati. Consigliamo di impostare un valore.</p>
+            )}
           </Field>
-          <Field label="Min iscritti attivazione corso">
+          <Field label="Min iscritti attivazione corso (alert, opzionale)">
             <Input
               type="number"
               min={0}
-              value={get_ghiaccio_val("min_atleti_attivazione_corso", 3)}
-              onChange={(e) => set_ghiaccio_val("min_atleti_attivazione_corso", e.target.value)}
+              placeholder="Lascia vuoto per disattivare l'allarme"
+              value={get_ghiaccio_val("min_iscritti_attivazione_corso", (config_ghiaccio as any)?.min_iscritti_attivazione_corso ?? "")}
+              onChange={(e) => set_ghiaccio_val("min_iscritti_attivazione_corso", e.target.value)}
             />
+            {!get_ghiaccio_val("min_iscritti_attivazione_corso", (config_ghiaccio as any)?.min_iscritti_attivazione_corso ?? "") && (
+              <p className="text-[11px] text-muted-foreground italic">ℹ Non configurato — gli allarmi correlati sono disattivati. Consigliamo di impostare un valore.</p>
+            )}
           </Field>
         </div>
 
