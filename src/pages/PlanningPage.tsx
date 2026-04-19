@@ -1682,11 +1682,12 @@ function PlanningPageInner() {
         </div>
 
         {/* Legend badges */}
-        <div className="flex flex-wrap gap-2 text-xs">
-          <span className="px-2 py-0.5 rounded font-medium" style={{ background: "#EEEDFE", color: "#7F77DD", border: "1px solid #AFA9EC" }}>Ghiaccio</span>
-          <span className="px-2 py-0.5 rounded font-medium" style={{ backgroundColor: "#f0ede6", backgroundImage: "radial-gradient(#8a8780 1.2px, transparent 1.6px)", backgroundSize: "7px 7px", border: "1px solid #b0ada4" }}>Pulizia</span>
-          <span className="px-2 py-0.5 rounded font-medium" style={{ background: "#f5f4f0", border: "1px solid #ddd" }}>Off-ice</span>
-          <span className="px-2 py-0.5 rounded font-medium" style={{ background: "transparent", border: "2px dashed #6B7280" }}>Privata</span>
+        <div className="flex flex-wrap gap-2 text-xs items-center">
+          <Tooltip><TooltipTrigger asChild><span className="px-2 py-0.5 rounded font-medium cursor-help" style={{ background: "#EEEDFE", color: "#7F77DD", border: "1px solid #AFA9EC" }}>Ghiaccio</span></TooltipTrigger><TooltipContent>Ghiaccio disponibile</TooltipContent></Tooltip>
+          <Tooltip><TooltipTrigger asChild><span className="px-2 py-0.5 rounded font-medium cursor-help" style={{ backgroundColor: "#f0ede6", backgroundImage: "radial-gradient(#8a8780 1.2px, transparent 1.6px)", backgroundSize: "7px 7px", border: "1px solid #b0ada4" }}>Pulizia</span></TooltipTrigger><TooltipContent>Pulizia ghiaccio (pattern a puntini)</TooltipContent></Tooltip>
+          <Tooltip><TooltipTrigger asChild><span className="px-2 py-0.5 rounded font-medium cursor-help" style={{ background: "#F3F4F6", border: "1px dashed #9CA3AF" }}>Off-ice</span></TooltipTrigger><TooltipContent>Corso fuori ghiaccio (sezione separata)</TooltipContent></Tooltip>
+          <Tooltip><TooltipTrigger asChild><span className="px-2 py-0.5 rounded font-medium cursor-help" style={{ background: "transparent", border: "2px dashed #6B7280" }}>Privata</span></TooltipTrigger><TooltipContent>Lezione privata (pattern diagonale, colore istruttore)</TooltipContent></Tooltip>
+          <Tooltip><TooltipTrigger asChild><span className="px-2 py-0.5 rounded font-medium cursor-help inline-flex items-center gap-1" style={{ border: "2px solid #DC2626", color: "#DC2626" }}><AlertTriangle className="h-3 w-3" />Conflitto</span></TooltipTrigger><TooltipContent>Stesso istruttore in due attività sovrapposte</TooltipContent></Tooltip>
         </div>
 
         {/* Main content: sidebar + grid */}
@@ -1828,10 +1829,11 @@ function PlanningPageInner() {
                         const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
                         const colore = first_istr?.colore || "#3B82F6";
                         const is_private = (c.tipo || "").toLowerCase() === "privata";
+                        const is_conflict = conflict_ids.has(c.id);
                         return (
                           <Tooltip key={c.id}>
                             <TooltipTrigger asChild>
-                              <div className="absolute z-[3] rounded-sm" style={{
+                              <div className={`absolute z-[3] rounded-sm ${is_conflict ? "animate-pulse" : ""}`} style={{
                                 left: `${((cs - range_start) / total_min) * 100}%`,
                                 width: `${((ce - cs) / total_min) * 100}%`,
                                 top: 4 + ri * 16,
@@ -1839,13 +1841,15 @@ function PlanningPageInner() {
                                 background: is_private
                                   ? `repeating-linear-gradient(-45deg, ${colore} 0px, ${colore} 3px, transparent 3px, transparent 8px)`
                                   : colore,
-                                border: is_private ? `1px dashed ${colore}` : "none",
+                                border: is_conflict ? "2px solid #DC2626" : (is_private ? `1px dashed ${colore}` : "none"),
+                                boxShadow: is_conflict ? "0 0 0 1px rgba(220,38,38,0.4)" : undefined,
                               }} />
                             </TooltipTrigger>
                             <TooltipContent side="top">
                               <p className="font-bold">{c.nome}</p>
                               {first_istr && <p className="text-xs">{first_istr.nome} {first_istr.cognome}</p>}
                               <p className="text-xs">{c.ora_inizio?.slice(0, 5)} – {c.ora_fine?.slice(0, 5)}</p>
+                              {is_conflict && <p className="text-xs font-bold mt-1" style={{ color: "#DC2626" }}>⚠ Conflitto istruttore</p>}
                             </TooltipContent>
                           </Tooltip>
                         );
@@ -1873,22 +1877,30 @@ function PlanningPageInner() {
                       );
                     })}
 
-                    {/* Off-ice strip 6px */}
+                    {/* Off-ice strip 6px (separata: sfondo grigio dashed + colore istruttore + label) */}
                     {day_corsi_off.length > 0 && day_corsi_off.map((c: any) => {
                       const cs = time_to_min(c.ora_inizio); const ce = time_to_min(c.ora_fine);
                       const istr_ids: string[] = c.istruttori_ids ?? [];
                       const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
                       const colore = first_istr?.colore || OFF_ICE_COLORS[(c.tipo || "").toLowerCase()] || "#94A3B8";
+                      const is_conflict = conflict_ids.has(c.id);
                       return (
                         <Tooltip key={c.id}>
                           <TooltipTrigger asChild>
-                            <div className="absolute z-[2] rounded-sm" style={{
+                            <div className={`absolute z-[2] rounded-sm ${is_conflict ? "animate-pulse" : ""}`} style={{
                               left: `${((cs - range_start) / total_min) * 100}%`,
                               width: `${((ce - cs) / total_min) * 100}%`,
-                              top: 0, height: 6, background: colore,
+                              top: 0, height: 6,
+                              background: colore,
+                              borderTop: "1px dashed #6B7280",
+                              outline: is_conflict ? "1.5px solid #DC2626" : undefined,
                             }} />
                           </TooltipTrigger>
-                          <TooltipContent><p>{c.nome}</p></TooltipContent>
+                          <TooltipContent>
+                            <p className="font-bold">{c.nome} <span className="text-[10px] font-normal opacity-70">(OFF-ICE)</span></p>
+                            {first_istr && <p className="text-xs">{first_istr.nome} {first_istr.cognome}</p>}
+                            {is_conflict && <p className="text-xs font-bold mt-1" style={{ color: "#DC2626" }}>⚠ Conflitto istruttore</p>}
+                          </TooltipContent>
                         </Tooltip>
                       );
                     })}
