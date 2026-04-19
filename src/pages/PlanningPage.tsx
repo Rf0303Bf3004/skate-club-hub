@@ -2605,7 +2605,8 @@ function DetailPanel({ corso, warnings, istr_map, atleti, build_mode, exception_
                 on_sposta &&
                 (lower.startsWith("fuori ghiaccio") ||
                   lower.startsWith("durante pulizia") ||
-                  lower.startsWith("istruttore non disponibile"));
+                  lower.startsWith("istruttore non disponibile") ||
+                  lower.startsWith("conflitto istruttore"));
               return (
                 <li key={i} className="text-[11px] leading-snug flex items-start gap-1.5" style={{ color: "#7F1D1D" }}>
                   <span className="mt-1 w-1 h-1 rounded-full flex-shrink-0" style={{ background: "#7F1D1D" }} />
