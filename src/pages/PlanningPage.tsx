@@ -2359,11 +2359,14 @@ function ConfirmPlaceDialog({ confirm, saving, on_confirm, on_cancel }: {
 // ══════════════════════════════════════════════════════════════
 // DETAIL PANEL
 // ══════════════════════════════════════════════════════════════
-function DetailPanel({ corso, istr_map, atleti, build_mode, on_close, on_remove, on_edit, on_annulla_settimana, on_sposta }: {
+function DetailPanel({ corso, istr_map, atleti, build_mode, exception_diff, on_close, on_remove, on_edit, on_annulla_settimana, on_sposta, on_ripristina_template }: {
   corso: any; istr_map: Record<string, any>; atleti: any[]; build_mode: boolean;
+  exception_diff?: exception_diff_entry[];
   on_close: () => void; on_remove: () => void; on_edit: () => void;
   on_annulla_settimana?: () => void; on_sposta?: () => void;
+  on_ripristina_template?: () => void;
 }) {
+  const [confirm_restore, set_confirm_restore] = React.useState(false);
   const is_private = (corso.tipo || "").toLowerCase() === "privata";
   const corso_id_for_query = corso.corso_id || corso.id;
 
