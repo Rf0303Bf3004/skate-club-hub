@@ -2038,7 +2038,16 @@ function PlanningPageInner() {
           </div>
         )}
 
-        {/* Main content: sidebar + grid */}
+        {/* Main content: vista Mese OR (sidebar + grid) */}
+        {view_mode === "mese" ? (
+          <MeseView
+            club_id={getClubId()}
+            stagione_id={stagione_id}
+            current_month={mese_corrente}
+            istruttori={istruttori}
+            on_click_giorno={handle_click_giorno_da_mese}
+          />
+        ) : (
         <div className="flex gap-0">
           {/* Build mode sidebar */}
           {build_mode && (
