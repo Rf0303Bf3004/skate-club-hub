@@ -4,7 +4,7 @@ import { supabase, get_current_club_id } from "@/lib/supabase";
 import { use_corsi, use_istruttori, use_stagioni, use_atleti } from "@/hooks/use-supabase-data";
 import {
   X, Loader2, ChevronLeft, ChevronRight, Plus, Wrench, Eye, Check,
-  ArrowLeft, LayoutGrid, Pencil, Undo2, Mail, Move, AlertTriangle, Calendar, Zap, CheckCircle2,
+  ArrowLeft, LayoutGrid, Pencil, Undo2, Mail, Move, AlertTriangle, Calendar, Zap, CheckCircle2, Hammer,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -1891,8 +1891,23 @@ function PlanningPageInner() {
               </Badge>
             )}
             {pick_corso && <Badge variant="outline" className="border-primary text-primary text-xs">Selezionato: {pick_corso.nome}</Badge>}
-            <Button size="sm" variant={build_mode ? "default" : "outline"} onClick={() => { set_build_mode(!build_mode); set_pick_corso(null); }} className="gap-1.5">
-              {build_mode ? <><Eye className="h-4 w-4" /> Visualizzazione</> : <><Wrench className="h-4 w-4" /> Costruzione</>}
+            <Button
+              size="sm"
+              onClick={() => { set_build_mode(!build_mode); set_pick_corso(null); }}
+              className={`gap-1.5 ${build_mode
+                ? "bg-amber-500 hover:bg-amber-600 text-white border-amber-600"
+                : "bg-card hover:bg-muted text-foreground border border-input"}`}
+              title={build_mode ? "Passa a Visualizzazione" : "Passa a Costruzione"}
+            >
+              {build_mode ? <Hammer className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              <span className="hidden lg:inline">
+                {build_mode
+                  ? "Sei in Costruzione — passa a Visualizzazione"
+                  : "Sei in Visualizzazione — passa a Costruzione"}
+              </span>
+              <span className="lg:hidden">
+                Modalità: {build_mode ? "Costruzione" : "Visualizzazione"}
+              </span>
             </Button>
           </div>
         </div>
@@ -1972,6 +1987,14 @@ function PlanningPageInner() {
           <Tooltip><TooltipTrigger asChild><span className="px-2 py-0.5 rounded font-medium cursor-help" style={{ background: "#fff", border: "2px solid #DC2626" }}>⚠ Conflitto</span></TooltipTrigger><TooltipContent>Istruttore impegnato su due attività in sovrapposizione</TooltipContent></Tooltip>
           <Tooltip><TooltipTrigger asChild><span className="px-2 py-0.5 rounded font-medium cursor-help inline-flex items-center gap-1" style={{ border: "2px solid #DC2626", color: "#DC2626" }}><AlertTriangle className="h-3 w-3" />Conflitto</span></TooltipTrigger><TooltipContent>Stesso istruttore in due attività sovrapposte</TooltipContent></Tooltip>
         </div>
+
+        {/* Build mode banner — sticky in cima alla griglia */}
+        {build_mode && (
+          <div className="sticky top-0 z-30 -mx-1 flex items-center gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 shadow-sm dark:bg-amber-900/20 dark:text-amber-200 dark:border-amber-700">
+            <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+            <span><strong>Modalità Costruzione attiva.</strong> Stai modificando il planning — ogni modifica viene salvata automaticamente.</span>
+          </div>
+        )}
 
         {/* Main content: sidebar + grid */}
         <div className="flex gap-0">
