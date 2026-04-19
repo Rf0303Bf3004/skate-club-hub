@@ -506,7 +506,24 @@ function PlanningPageInner() {
   const planPrivateQuery = use_planning_private(settimana_id);
   const weekPrivateLessonsQuery = use_private_lessons_week(dataLunediISO, !!settimana_id);
   const plan_corsi = planCorsiQuery.data ?? [];
-  const plan_private = planPrivateQuery.data ?? [];
+  // Dedup difensivo: una sola riga per lezione_privata_id (la prima non annullata vince).
+  // Previene duplicazione di barre nel planning quando per qualsiasi motivo
+  // (race del sync, doppio insert, dati legacy) esistono piu' planning_private_settimana
+  // associati alla stessa lezione_privata_id nella stessa settimana.
+  const plan_private = useMemo(() => {
+    const raw = planPrivateQuery.data ?? [];
+    const seen = new Map<string, any>();
+    raw.forEach((row: any) => {
+      const key = row.lezione_privata_id;
+      if (!key) return;
+      const existing = seen.get(key);
+      // preferisci la riga non annullata
+      if (!existing || (existing.annullato && !row.annullato)) {
+        seen.set(key, row);
+      }
+    });
+    return Array.from(seen.values());
+  }, [planPrivateQuery.data]);
   const week_private_lessons = weekPrivateLessonsQuery.data ?? [];
   const private_lesson_ids = useMemo(
     () => Array.from(new Set(plan_private.map((item: any) => item.lezione_privata_id).filter(Boolean))),
@@ -1949,6 +1966,8 @@ function PlanningPageInner() {
                             : (is_private ? `inset 0 0 0 1px ${colore}` : undefined);
                           const pulse = is_conflict || w.hard;
                           const livello = c.livello_richiesto && c.livello_richiesto !== "tutti" ? c.livello_richiesto : null;
+                          const n_atlete = is_private ? (c.atleti_ids?.length ?? 0) : 0;
+                          const is_shared = n_atlete > 1;
                           return (
                             <Tooltip key={c.id}>
                               <TooltipTrigger asChild>
@@ -1965,12 +1984,18 @@ function PlanningPageInner() {
                                   {alarm_color && (
                                     <span style={{ background: "#000", color: "#fff", borderRadius: 2, width: 12, height: 12, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9, lineHeight: 1, flexShrink: 0, border: `1px solid ${alarm_color}` }}>⚠</span>
                                   )}
+                                  {is_shared && !alarm_color && (
+                                    <span style={{ position: "absolute", top: -2, right: -2, background: "#fff", color: colore, borderRadius: 8, minWidth: 12, height: 12, padding: "0 3px", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, lineHeight: 1, border: `1px solid ${colore}` }}>{n_atlete}</span>
+                                  )}
                                 </div>
                               </TooltipTrigger>
                               <TooltipContent side="top">
                                 <p className="font-bold">{c.nome}{livello ? ` · ${livello}` : ""}</p>
                                 {first_istr && <p className="text-xs">{first_istr.nome} {first_istr.cognome}</p>}
                                 <p className="text-xs">{c.ora_inizio?.slice(0, 5)} – {c.ora_fine?.slice(0, 5)}</p>
+                                {is_private && (
+                                  <p className="text-xs">{is_shared ? `Condivisa (${n_atlete} atlete)` : "Privata (1 atleta)"}</p>
+                                )}
                                 {is_conflict && <p className="text-xs font-bold mt-1" style={{ color: "#DC2626" }}>⚠ Conflitto istruttore (anche su Off-Ice)</p>}
                                 {w.all.map((msg, i) => (
                                   <p key={i} className="text-xs font-semibold mt-0.5" style={{ color: w.hard && i < (warnings_by_id[c.id]?.hard.length ?? 0) ? "#DC2626" : "#CA8A04" }}>⚠ {msg}</p>
