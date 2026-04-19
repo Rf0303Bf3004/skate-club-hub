@@ -717,7 +717,7 @@ function PlanningPageInner() {
             id: pc.id, // use planning row id for operations
             corso_id: pc.corso_id,
             club_id: template?.club_id || getClubId(),
-            nome: template?.nome || "?",
+            nome: pc.titolo_override || template?.nome || "?",
             tipo: template?.tipo || "",
             giorno: GIORNI[dayIdx],
             data: pc.data,
@@ -733,6 +733,15 @@ function PlanningPageInner() {
             motivo: pc.motivo,
             sostituisce_id: pc.sostituisce_id ?? null,
             settimana_id: pc.settimana_id,
+            titolo_override: pc.titolo_override ?? null,
+            // Snapshot del corso master per calcolare la diff "eccezione settimanale"
+            _master: template ? {
+              giorno: template.giorno,
+              ora_inizio: template.ora_inizio,
+              ora_fine: template.ora_fine,
+              nome: template.nome,
+              istruttori_ids: template.istruttori_ids ?? [],
+            } : null,
             _is_plan_row: true,
           };
         })
