@@ -1860,12 +1860,12 @@ function PlanningPageInner() {
             };
             const ice_course_rows = compute_rows(day_corsi_ice);
             const n_ice_rows = Math.max(ice_course_rows.length, 1);
-            const ice_h = n_ice_rows * 26 + 12 + (day_pick.length > 0 ? 10 : 0) + (day_annullati_list.length > 0 ? 22 : 0);
+            const ice_h = n_ice_rows * 16 + 8 + (day_pick.length > 0 ? 10 : 0) + (day_annullati_list.length > 0 ? 18 : 0);
 
             const off_course_rows = compute_rows(day_corsi_off);
             const has_off = day_corsi_off.length > 0;
             const n_off_rows = has_off ? off_course_rows.length : 0;
-            const off_h = has_off ? (n_off_rows * 26 + 12) : 14;
+            const off_h = has_off ? (n_off_rows * 16 + 8) : 14;
 
             const day_h = ice_h + off_h + 1;
 
@@ -1952,34 +1952,23 @@ function PlanningPageInner() {
                           return (
                             <Tooltip key={c.id}>
                               <TooltipTrigger asChild>
-                                <div className={`absolute z-[3] rounded-sm overflow-hidden ${pulse ? "animate-pulse" : ""} flex items-center px-1`} style={{
+                                <div className={`absolute z-[3] rounded-sm overflow-hidden ${pulse ? "animate-pulse" : ""} flex items-center justify-center`} style={{
                                   left: `${((cs - range_start) / total_min) * 100}%`,
                                   width: `${((ce - cs) / total_min) * 100}%`,
-                                  top: 6 + ri * 26,
-                                  height: 22,
+                                  top: 4 + ri * 16,
+                                  height: 14,
                                   background: is_private
                                     ? `repeating-linear-gradient(-45deg, ${colore} 0px, ${colore} 3px, transparent 3px, transparent 8px)`
                                     : colore,
                                   boxShadow: sandwich_shadow,
-                                  color: "#fff",
-                                  fontSize: 9,
-                                  fontWeight: 600,
-                                  lineHeight: 1,
-                                  gap: 3,
                                 }}>
                                   {alarm_color && (
-                                    <span style={{ background: "#000", color: "#fff", borderRadius: 2, width: 14, height: 14, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 10, flexShrink: 0, border: `1px solid ${alarm_color}` }}>⚠</span>
-                                  )}
-                                  <span className="truncate">{c.nome}{livello ? ` · ${livello}` : ""}{first_istr ? ` · ${first_istr.cognome}` : ""}</span>
-                                  {alarm_color && alarm_short && (
-                                    <span style={{ background: "#000", color: alarm_color === "#DC2626" ? "#FCA5A5" : "#FDE68A", padding: "1px 4px", borderRadius: 2, fontSize: 8, marginLeft: "auto", flexShrink: 0, fontWeight: 700, letterSpacing: 0.2, border: `1px solid ${alarm_color}` }}>
-                                      {alarm_short.toUpperCase()}
-                                    </span>
+                                    <span style={{ background: "#000", color: "#fff", borderRadius: 2, width: 12, height: 12, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9, lineHeight: 1, flexShrink: 0, border: `1px solid ${alarm_color}` }}>⚠</span>
                                   )}
                                 </div>
                               </TooltipTrigger>
                               <TooltipContent side="top">
-                                <p className="font-bold">{c.nome}</p>
+                                <p className="font-bold">{c.nome}{livello ? ` · ${livello}` : ""}</p>
                                 {first_istr && <p className="text-xs">{first_istr.nome} {first_istr.cognome}</p>}
                                 <p className="text-xs">{c.ora_inizio?.slice(0, 5)} – {c.ora_fine?.slice(0, 5)}</p>
                                 {is_conflict && <p className="text-xs font-bold mt-1" style={{ color: "#DC2626" }}>⚠ Conflitto istruttore (anche su Off-Ice)</p>}
@@ -2000,8 +1989,8 @@ function PlanningPageInner() {
                               <div className="absolute z-[2] rounded-sm" style={{
                                 left: `${((cs - range_start) / total_min) * 100}%`,
                                 width: `${((ce - cs) / total_min) * 100}%`,
-                                top: 6 + n_ice_rows * 26 + ai * 22,
-                                height: 18,
+                                top: 4 + n_ice_rows * 16 + ai * 16,
+                                height: 12,
                                 background: "#e0e0e0",
                                 border: "1px solid #bbb",
                                 opacity: 0.6,
@@ -2042,27 +2031,16 @@ function PlanningPageInner() {
                           return (
                             <Tooltip key={c.id}>
                               <TooltipTrigger asChild>
-                                <div className={`absolute z-[3] rounded-sm overflow-hidden ${pulse ? "animate-pulse" : ""} flex items-center px-1`} style={{
+                                <div className={`absolute z-[3] rounded-sm overflow-hidden ${pulse ? "animate-pulse" : ""} flex items-center justify-center`} style={{
                                   left: `${((cs - range_start) / total_min) * 100}%`,
                                   width: `${((ce - cs) / total_min) * 100}%`,
-                                  top: 6 + ri * 26,
-                                  height: 22,
+                                  top: 4 + ri * 16,
+                                  height: 14,
                                   background: colore,
                                   boxShadow: sandwich_shadow,
-                                  color: "#fff",
-                                  fontSize: 9,
-                                  fontWeight: 600,
-                                  lineHeight: 1,
-                                  gap: 3,
                                 }}>
                                   {alarm_color && (
-                                    <span style={{ background: "#000", color: "#fff", borderRadius: 2, width: 14, height: 14, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 10, flexShrink: 0, border: `1px solid ${alarm_color}` }}>⚠</span>
-                                  )}
-                                  <span className="truncate">{c.nome}{first_istr ? ` · ${first_istr.cognome}` : ""}</span>
-                                  {alarm_color && alarm_short && (
-                                    <span style={{ background: "#000", color: alarm_color === "#DC2626" ? "#FCA5A5" : "#FDE68A", padding: "1px 4px", borderRadius: 2, fontSize: 8, marginLeft: "auto", flexShrink: 0, fontWeight: 700, letterSpacing: 0.2, border: `1px solid ${alarm_color}` }}>
-                                      {alarm_short.toUpperCase()}
-                                    </span>
+                                    <span style={{ background: "#000", color: "#fff", borderRadius: 2, width: 12, height: 12, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9, lineHeight: 1, flexShrink: 0, border: `1px solid ${alarm_color}` }}>⚠</span>
                                   )}
                                 </div>
                               </TooltipTrigger>
