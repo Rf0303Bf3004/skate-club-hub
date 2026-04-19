@@ -1860,12 +1860,12 @@ function PlanningPageInner() {
             };
             const ice_course_rows = compute_rows(day_corsi_ice);
             const n_ice_rows = Math.max(ice_course_rows.length, 1);
-            const ice_h = n_ice_rows * 26 + 12 + (day_pick.length > 0 ? 10 : 0) + (day_annullati_list.length > 0 ? 22 : 0);
+            const ice_h = n_ice_rows * 16 + 8 + (day_pick.length > 0 ? 10 : 0) + (day_annullati_list.length > 0 ? 18 : 0);
 
             const off_course_rows = compute_rows(day_corsi_off);
             const has_off = day_corsi_off.length > 0;
             const n_off_rows = has_off ? off_course_rows.length : 0;
-            const off_h = has_off ? (n_off_rows * 26 + 12) : 14;
+            const off_h = has_off ? (n_off_rows * 16 + 8) : 14;
 
             const day_h = ice_h + off_h + 1;
 
