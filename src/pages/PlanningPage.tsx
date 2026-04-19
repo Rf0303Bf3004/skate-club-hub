@@ -2498,6 +2498,43 @@ function DetailPanel({ corso, istr_map, atleti, build_mode, exception_diff, on_c
         </div>
       </div>
 
+      {/* Modifiche rispetto al template (eccezione settimanale) */}
+      {corso._is_plan_row && !is_private && exception_diff && exception_diff.length > 0 && (
+        <div className="space-y-1.5 pt-2 border-t border-border">
+          <p className="text-xs font-bold flex items-center gap-1" style={{ color: "#B45309" }}>
+            <Pencil className="h-3 w-3" /> Modifiche rispetto al template
+          </p>
+          <div className="rounded border p-2 space-y-1" style={{ background: "#FFFBEB", borderColor: "#F59E0B" }}>
+            {exception_diff.map((d, i) => (
+              <div key={i} className="text-[11px]" style={{ color: "#78350F" }}>
+                <span className="font-semibold">{d.label}:</span>{" "}
+                <span className="line-through opacity-70">{d.da}</span>{" → "}
+                <span className="font-bold">{d.a}</span>
+              </div>
+            ))}
+          </div>
+          {on_ripristina_template && !corso.sostituisce_id && (
+            confirm_restore ? (
+              <div className="flex gap-1.5">
+                <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={() => set_confirm_restore(false)}>Annulla</Button>
+                <Button size="sm" className="flex-1 text-xs" style={{ background: "#F59E0B", color: "#fff" }}
+                  onClick={() => { set_confirm_restore(false); on_ripristina_template(); }}>
+                  Sì, ripristina
+                </Button>
+              </div>
+            ) : (
+              <Button size="sm" variant="outline" className="w-full justify-start text-xs gap-1.5"
+                onClick={() => set_confirm_restore(true)}>
+                <Undo2 className="h-3 w-3" /> Ripristina template
+              </Button>
+            )
+          )}
+          {corso.sostituisce_id && (
+            <p className="text-[10px] italic text-muted-foreground">Spostamento: usa Sposta per riportarlo al giorno originale</p>
+          )}
+        </div>
+      )}
+
       {/* Eccezioni di settimana — solo per planning rows non-private */}
       {corso._is_plan_row && !is_private && (
         <div className="space-y-1.5 pt-2 border-t border-border">
