@@ -2352,6 +2352,7 @@ function PlanningPageInner() {
           })}
         </div>
         </div>
+        )}
 
         {/* Modals */}
         {show_new_corso && (
