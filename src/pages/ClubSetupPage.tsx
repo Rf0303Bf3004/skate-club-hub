@@ -211,14 +211,20 @@ const ClubSetupPage: React.FC = () => {
     set_saving_ghiaccio(true);
     try {
       const club_id = get_current_club_id();
+      // Allarmi soft: se vuoto/non numerico ⇒ NULL ⇒ allarme disattivato
+      const to_int_or_null = (v: any) => {
+        if (v === "" || v === null || v === undefined) return null;
+        const n = parseInt(v);
+        return Number.isNaN(n) ? null : n;
+      };
       const payload = {
         club_id,
         ora_apertura_default: get_ghiaccio_val("ora_apertura_default", "06:00"),
         ora_chiusura_default: get_ghiaccio_val("ora_chiusura_default", "22:30"),
         durata_pulizia_minuti: parseInt(get_ghiaccio_val("durata_pulizia_minuti", 30)),
-        max_atleti_contemporanei: parseInt(get_ghiaccio_val("max_atleti_contemporanei", 30)),
-        max_atleti_per_istruttore: parseInt(get_ghiaccio_val("max_atleti_per_istruttore", 8)),
-        min_atleti_attivazione_corso: parseInt(get_ghiaccio_val("min_atleti_attivazione_corso", 3)),
+        max_atleti_contemporanei: to_int_or_null(get_ghiaccio_val("max_atleti_contemporanei", "")),
+        max_atleti_per_istruttore: to_int_or_null(get_ghiaccio_val("max_atleti_per_istruttore", "")),
+        min_iscritti_attivazione_corso: to_int_or_null(get_ghiaccio_val("min_iscritti_attivazione_corso", "")),
       };
 
       if (config_ghiaccio?.id) {
