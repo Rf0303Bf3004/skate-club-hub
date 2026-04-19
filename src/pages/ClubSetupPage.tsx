@@ -644,7 +644,7 @@ const ClubSetupPage: React.FC = () => {
                       <Plus className="w-3 h-3 mr-1" /> Slot
                     </Button>
                   </div>
-                  {slots.length === 0 && <p className="text-xs text-muted-foreground">Nessuno slot</p>}
+                  {slots.length === 0 && <p className="text-xs text-muted-foreground italic py-1">— nessuno slot — clicca <strong>+ Slot</strong> per aggiungere una fascia oraria</p>}
                   {slots.map((s, idx) => (
                     <div key={idx} className="flex items-center gap-2 mb-1">
                       <Input
@@ -694,7 +694,7 @@ const ClubSetupPage: React.FC = () => {
                       <Plus className="w-3 h-3 mr-1" /> Slot
                     </Button>
                   </div>
-                  {slots.length === 0 && <p className="text-xs text-muted-foreground">Nessuno slot</p>}
+                  {slots.length === 0 && <p className="text-xs text-muted-foreground italic py-1">— nessuno slot — clicca <strong>+ Slot</strong> per aggiungere una fascia oraria</p>}
                   {slots.map((s, idx) => (
                     <div key={idx} className="flex items-center gap-2 mb-1">
                       <Input
