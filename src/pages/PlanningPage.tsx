@@ -2121,6 +2121,14 @@ function PlanningPageInner() {
                                 {w.all.map((msg, i) => (
                                   <p key={i} className="text-xs font-semibold mt-0.5" style={{ color: w.hard && i < (warnings_by_id[c.id]?.hard.length ?? 0) ? "#DC2626" : "#CA8A04" }}>⚠ {msg}</p>
                                 ))}
+                                {has_exc && (
+                                  <div className="mt-1 pt-1 border-t border-border/40">
+                                    <p className="text-[10px] font-bold" style={{ color: "#B45309" }}>✎ Eccezione settimanale</p>
+                                    {exc!.map((d, i) => (
+                                      <p key={i} className="text-[10px]" style={{ color: "#B45309" }}>{d.label}: {d.da} → {d.a}</p>
+                                    ))}
+                                  </div>
+                                )}
                               </TooltipContent>
                             </Tooltip>
                           );
