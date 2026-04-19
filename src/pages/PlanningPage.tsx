@@ -1194,8 +1194,8 @@ function PlanningPageInner() {
   if (focus_day) {
     const day_ghiaccio = slots.filter((s: any) => s.giorno === focus_day && (s.tipo ?? "ghiaccio") === "ghiaccio");
     const day_pulizia = slots.filter((s: any) => s.giorno === focus_day && s.tipo === "pulizia");
-    const day_corsi_ice = posizionati.filter((c: any) => c.giorno === focus_day && !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
-    const day_corsi_off = posizionati.filter((c: any) => c.giorno === focus_day && OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
+    const day_corsi_ice = posizionati.filter((c: any) => c.giorno === focus_day && !is_off_ice(c));
+    const day_corsi_off = posizionati.filter((c: any) => c.giorno === focus_day && is_off_ice(c));
     const day_annullati = annullati.filter((c: any) => c.giorno === focus_day);
     const day_ice_min = day_ghiaccio.reduce((a: number, s: any) => a + time_to_min(s.ora_fine) - time_to_min(s.ora_inizio), 0);
 
@@ -1701,8 +1701,8 @@ function PlanningPageInner() {
           {visible_days.map((giorno) => {
             const day_ghiaccio = slots.filter((s: any) => s.giorno === giorno && (s.tipo ?? "ghiaccio") === "ghiaccio");
             const day_pulizia = slots.filter((s: any) => s.giorno === giorno && s.tipo === "pulizia");
-            const day_corsi_ice = posizionati.filter((c: any) => c.giorno === giorno && !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
-            const day_corsi_off = posizionati.filter((c: any) => c.giorno === giorno && OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
+            const day_corsi_ice = posizionati.filter((c: any) => c.giorno === giorno && !is_off_ice(c));
+            const day_corsi_off = posizionati.filter((c: any) => c.giorno === giorno && is_off_ice(c));
             const day_annullati_list = annullati.filter((c: any) => c.giorno === giorno);
             const day_pick = pick_corso ? (pick_slots_by_day[giorno] ?? []) : [];
             const giorno_idx = GIORNI.indexOf(giorno as any);
