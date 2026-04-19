@@ -853,6 +853,102 @@ function PlanningPageInner() {
     return conflicts;
   }, [posizionati]);
 
+  // ── Iscritti per corso (per allarmi soft) ──
+  const iscritti_per_corso = useMemo(() => {
+    const m: Record<string, number> = {};
+    iscrizioni_all.forEach((i: any) => { m[i.corso_id] = (m[i.corso_id] ?? 0) + 1; });
+    return m;
+  }, [iscrizioni_all]);
+
+  // ── Parametri soft (NULL ⇒ allarme disattivato) ──
+  const cap_max = config?.max_atleti_contemporanei ?? null;
+  const max_per_istr = config?.max_atleti_per_istruttore ?? null;
+  const min_iscritti = (config as any)?.min_iscritti_attivazione_corso ?? null;
+
+  // ── Calcolo warnings per ciascun corso posizionato ──
+  // Ritorna { hard: string[], soft: string[] } per id corso
+  const warnings_by_id = useMemo(() => {
+    const out: Record<string, { hard: string[]; soft: string[] }> = {};
+    // Indicizza fasce ghiaccio e pulizia per giorno
+    const ghiaccio_by_day: Record<string, Array<[number, number]>> = {};
+    const pulizia_by_day: Record<string, Array<[number, number]>> = {};
+    slots.forEach((s: any) => {
+      const r: [number, number] = [time_to_min(s.ora_inizio), time_to_min(s.ora_fine)];
+      const d = s.giorno;
+      if ((s.tipo ?? "ghiaccio") === "ghiaccio") {
+        (ghiaccio_by_day[d] ??= []).push(r);
+      } else if (s.tipo === "pulizia") {
+        (pulizia_by_day[d] ??= []).push(r);
+      }
+    });
+
+    posizionati.forEach((c: any) => {
+      const w = { hard: [] as string[], soft: [] as string[] };
+      const cs = time_to_min(c.ora_inizio);
+      const ce = time_to_min(c.ora_fine);
+      const off_ice = is_off_ice(c);
+
+      // HARD: solo per corsi su ghiaccio
+      if (!off_ice) {
+        // Fuori ghiaccio
+        const day_ice = ghiaccio_by_day[c.giorno] ?? [];
+        // calcola minuti coperti dalle fasce ghiaccio
+        let covered = 0;
+        day_ice.forEach(([gs, ge]) => {
+          const o = Math.max(0, Math.min(ce, ge) - Math.max(cs, gs));
+          covered += o;
+        });
+        const dur = ce - cs;
+        if (covered < dur) {
+          const fuori = dur - covered;
+          w.hard.push(`Fuori ghiaccio (${fuori} min)`);
+        }
+        // Durante pulizia
+        const day_clean = pulizia_by_day[c.giorno] ?? [];
+        const overlap_clean = day_clean.some(([ps, pe]) => cs < pe && ps < ce);
+        if (overlap_clean) w.hard.push("Durante pulizia");
+      }
+
+      // SOFT: sotto soglia iscritti (vale anche off-ice)
+      if (min_iscritti != null) {
+        const n_isc = iscritti_per_corso[c.corso_id_originale ?? c.id] ?? iscritti_per_corso[c.id] ?? 0;
+        if (n_isc < min_iscritti) w.soft.push(`Sotto soglia attivazione (${n_isc}/${min_iscritti})`);
+      }
+      // SOFT: sovraccarico istruttore (atleti / istruttori)
+      if (max_per_istr != null) {
+        const n_isc = iscritti_per_corso[c.corso_id_originale ?? c.id] ?? iscritti_per_corso[c.id] ?? 0;
+        const n_istr = Math.max(1, (c.istruttori_ids ?? []).length);
+        if (n_isc / n_istr > max_per_istr) w.soft.push(`Sovraccarico istruttore (${n_isc}/${n_istr * max_per_istr})`);
+      }
+
+      if (w.hard.length || w.soft.length) out[c.id] = w;
+    });
+
+    // SOFT: capienza pista (somma iscritti corsi ghiaccio sovrapposti, per giorno)
+    if (cap_max != null) {
+      const ice_courses = posizionati.filter((c: any) => !is_off_ice(c));
+      ice_courses.forEach((c: any) => {
+        const cs = time_to_min(c.ora_inizio); const ce = time_to_min(c.ora_fine);
+        const overlapping = ice_courses.filter((o: any) =>
+          o.giorno === c.giorno && time_to_min(o.ora_inizio) < ce && cs < time_to_min(o.ora_fine)
+        );
+        const tot_atleti = overlapping.reduce((a: number, o: any) =>
+          a + (iscritti_per_corso[o.corso_id_originale ?? o.id] ?? iscritti_per_corso[o.id] ?? 0), 0);
+        if (tot_atleti > cap_max) {
+          (out[c.id] ??= { hard: [], soft: [] }).soft.push(`Capienza superata (${tot_atleti}/${cap_max})`);
+        }
+      });
+    }
+
+    return out;
+  }, [posizionati, slots, iscritti_per_corso, cap_max, max_per_istr, min_iscritti, is_off_ice]);
+
+  const has_warning = useCallback((id: string) => {
+    const w = warnings_by_id[id];
+    return w ? { hard: w.hard.length > 0, soft: w.soft.length > 0, all: [...w.hard, ...w.soft] } : { hard: false, soft: false, all: [] };
+  }, [warnings_by_id]);
+
+
   // Selected corso
   const selected_corso = useMemo(() => {
     if (!selected_corso_id) return null;
