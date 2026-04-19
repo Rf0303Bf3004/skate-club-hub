@@ -1048,6 +1048,38 @@ function PlanningPageInner() {
     return w ? { hard: w.hard.length > 0, soft: w.soft.length > 0, all: [...w.hard, ...w.soft] } : { hard: false, soft: false, all: [] };
   }, [warnings_by_id]);
 
+  // ── Eccezioni settimanali: diff fra occorrenza e corso master ──
+  // Indicatore informativo (non warning) per slot modificati rispetto al template.
+  const exceptions_by_id = useMemo(() => {
+    const out: Record<string, exception_diff_entry[]> = {};
+    posizionati.forEach((c: any) => {
+      if (!c._is_plan_row) return;
+      if ((c.tipo || "").toLowerCase() === "privata") return; // le private non hanno "master template"
+      if (!c._master) return;
+      const diffs = compute_exception_diff({
+        occorrenza: {
+          giorno: c.giorno,
+          data: c.data,
+          ora_inizio: c.ora_inizio,
+          ora_fine: c.ora_fine,
+          istruttori_ids: c.istruttori_ids,
+          titolo_override: c.titolo_override,
+          sostituisce_id: c.sostituisce_id,
+        },
+        master: c._master,
+        istr_map,
+      });
+      if (diffs.length > 0) out[c.id] = diffs;
+    });
+    return out;
+  }, [posizionati, istr_map]);
+
+  const has_exception = useCallback((id: string) => {
+    const e = exceptions_by_id[id];
+    return e && e.length > 0;
+  }, [exceptions_by_id]);
+
+
 
   // Selected corso
   const selected_corso = useMemo(() => {
