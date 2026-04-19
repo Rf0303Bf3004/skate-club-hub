@@ -24,6 +24,7 @@ import AnnullaCorsoDialog from "@/components/planning/AnnullaCorsoDialog";
 import SpostaCorsoDialog from "@/components/planning/SpostaCorsoDialog";
 import AvvisaAtletiDialog from "@/components/planning/AvvisaAtletiDialog";
 import { istruttore_disponibile, compute_exception_diff, type exception_diff_entry } from "@/lib/availability";
+import MeseView from "@/components/planning/MeseView";
 
 // ── ErrorBoundary ──
 class PlanningErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
@@ -101,7 +102,7 @@ const OFF_ICE_COLORS: Record<string, string> = { danza: "#B83280", "off-ice": "#
 const PPM_FOCUS = 7;
 const MESI_IT = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
 
-type ViewMode = 1 | 2 | 3 | 7;
+type ViewMode = "giorno" | "settimana" | "mese";
 
 function is_private_type(value?: string | null): boolean {
   return (value ?? "").trim().toLowerCase() === "privata";
@@ -587,7 +588,15 @@ function PlanningPageInner() {
     queryClient,
   ]);
 
-  const [view_mode, set_view_mode] = useState<ViewMode>(7);
+  const [view_mode, set_view_mode] = useState<ViewMode>("settimana");
+  const [mese_corrente, set_mese_corrente] = useState<Date>(() => {
+    const d = new Date();
+    d.setDate(1);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  });
+  // Numero giorni visibili nella griglia settimanale (giorno=1, settimana=7). 'mese' usa un componente separato.
+  const days_count = view_mode === "giorno" ? 1 : 7;
   const [day_offset, set_day_offset] = useState(0);
   const [build_mode, set_build_mode] = useState(false);
   const [focus_day, set_focus_day] = useState<string | null>(null);
@@ -828,8 +837,8 @@ function PlanningPageInner() {
   // Visible days
   const visible_days = useMemo(() => {
     const start = day_offset;
-    return GIORNI.slice(start, Math.min(start + view_mode, 7));
-  }, [view_mode, day_offset]);
+    return GIORNI.slice(start, Math.min(start + days_count, 7));
+  }, [days_count, day_offset]);
 
   // Date for each giorno in current week
   const date_for_giorno = useMemo(() => {
@@ -842,13 +851,35 @@ function PlanningPageInner() {
 
   const set_view = (m: ViewMode) => {
     set_view_mode(m);
-    set_day_offset((prev) => Math.min(prev, 7 - m));
+    if (m !== "mese") {
+      const dc = m === "giorno" ? 1 : 7;
+      set_day_offset((prev) => Math.min(prev, 7 - dc));
+    }
   };
   const go_prev_week = () => setDataLunedi(prev => addDays(prev, -7));
   const go_next_week = () => setDataLunedi(prev => addDays(prev, 7));
   const go_today = () => setDataLunedi(getMondayOfWeek(new Date()));
-  const go_prev = () => set_day_offset((p) => Math.max(0, p - view_mode));
-  const go_next = () => set_day_offset((p) => Math.min(p + view_mode, 7 - view_mode));
+  const go_prev = () => set_day_offset((p) => Math.max(0, p - days_count));
+  const go_next = () => set_day_offset((p) => Math.min(p + days_count, 7 - days_count));
+
+  // Navigazione mese
+  const go_prev_month = () => set_mese_corrente((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  const go_next_month = () => set_mese_corrente((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  const go_today_month = () => {
+    const d = new Date();
+    set_mese_corrente(new Date(d.getFullYear(), d.getMonth(), 1));
+  };
+
+  // Click su una cella del mese: passa a vista Giorno su quella data
+  const handle_click_giorno_da_mese = (data_iso: string) => {
+    const [yyyy, mm, dd] = data_iso.split("-").map(Number);
+    const target = new Date(yyyy, mm - 1, dd);
+    const lunedi = getMondayOfWeek(target);
+    setDataLunedi(lunedi);
+    const giorno_idx = dayIndexFromDate(target);
+    set_day_offset(giorno_idx);
+    set_view_mode("giorno");
+  };
 
   // Time range from data
   const { range_start, range_end } = useMemo(() => {
@@ -1912,28 +1943,39 @@ function PlanningPageInner() {
           </div>
         </div>
 
-        {/* Week navigation */}
+        {/* Week / Month navigation */}
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="inline-flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={go_prev_week}><ChevronLeft className="h-4 w-4" /></Button>
-            <span className="text-sm font-semibold text-foreground min-w-[220px] text-center">{formatWeekLabel(dataLunedi)}</span>
-            <Button variant="outline" size="sm" onClick={go_next_week}><ChevronRight className="h-4 w-4" /></Button>
-            <Button variant="ghost" size="sm" onClick={go_today} className="text-xs"><Calendar className="h-3.5 w-3.5 mr-1" />Oggi</Button>
-          </div>
+          {view_mode === "mese" ? (
+            <div className="inline-flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={go_prev_month}><ChevronLeft className="h-4 w-4" /></Button>
+              <span className="text-sm font-semibold text-foreground min-w-[220px] text-center">
+                {MESI_IT[mese_corrente.getMonth()]} {mese_corrente.getFullYear()}
+              </span>
+              <Button variant="outline" size="sm" onClick={go_next_month}><ChevronRight className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="sm" onClick={go_today_month} className="text-xs"><Calendar className="h-3.5 w-3.5 mr-1" />Oggi</Button>
+            </div>
+          ) : (
+            <div className="inline-flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={go_prev_week}><ChevronLeft className="h-4 w-4" /></Button>
+              <span className="text-sm font-semibold text-foreground min-w-[220px] text-center">{formatWeekLabel(dataLunedi)}</span>
+              <Button variant="outline" size="sm" onClick={go_next_week}><ChevronRight className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="sm" onClick={go_today} className="text-xs"><Calendar className="h-3.5 w-3.5 mr-1" />Oggi</Button>
+            </div>
+          )}
           <div className="inline-flex rounded-lg border border-border overflow-hidden ml-auto">
-            {([1, 2, 3, 7] as ViewMode[]).map((m, idx) => (
+            {(["giorno", "settimana", "mese"] as ViewMode[]).map((m, idx) => (
               <button key={m} onClick={() => set_view(m)}
-                className={`px-3 py-1.5 text-sm font-medium transition-colors ${view_mode === m ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"} ${idx > 0 ? "border-l border-border" : ""}`}
+                className={`px-3 py-1.5 text-sm font-medium transition-colors capitalize ${view_mode === m ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"} ${idx > 0 ? "border-l border-border" : ""}`}
               >
-                {m === 1 ? "1g" : m === 2 ? "2g" : m === 3 ? "3g" : "7g"}
+                {m}
               </button>
             ))}
           </div>
-          {view_mode < 7 && (
+          {view_mode === "giorno" && (
             <div className="inline-flex items-center gap-1">
               <Button variant="outline" size="sm" onClick={go_prev} disabled={day_offset === 0}><ChevronLeft className="h-4 w-4" /></Button>
               <span className="text-sm font-medium text-foreground min-w-[80px] text-center">{view_label}</span>
-              <Button variant="outline" size="sm" onClick={go_next} disabled={day_offset + view_mode >= 7}><ChevronRight className="h-4 w-4" /></Button>
+              <Button variant="outline" size="sm" onClick={go_next} disabled={day_offset + days_count >= 7}><ChevronRight className="h-4 w-4" /></Button>
             </div>
           )}
         </div>
@@ -1996,7 +2038,16 @@ function PlanningPageInner() {
           </div>
         )}
 
-        {/* Main content: sidebar + grid */}
+        {/* Main content: vista Mese OR (sidebar + grid) */}
+        {view_mode === "mese" ? (
+          <MeseView
+            club_id={getClubId()}
+            stagione_id={stagione_id}
+            current_month={mese_corrente}
+            istruttori={istruttori}
+            on_click_giorno={handle_click_giorno_da_mese}
+          />
+        ) : (
         <div className="flex gap-0">
           {/* Build mode sidebar */}
           {build_mode && (
@@ -2301,6 +2352,7 @@ function PlanningPageInner() {
           })}
         </div>
         </div>
+        )}
 
         {/* Modals */}
         {show_new_corso && (
