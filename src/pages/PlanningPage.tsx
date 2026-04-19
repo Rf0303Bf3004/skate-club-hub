@@ -2435,8 +2435,8 @@ function ConfirmPlaceDialog({ confirm, saving, on_confirm, on_cancel }: {
 // ══════════════════════════════════════════════════════════════
 // DETAIL PANEL
 // ══════════════════════════════════════════════════════════════
-function DetailPanel({ corso, istr_map, atleti, build_mode, exception_diff, on_close, on_remove, on_edit, on_annulla_settimana, on_sposta, on_ripristina_template }: {
-  corso: any; istr_map: Record<string, any>; atleti: any[]; build_mode: boolean;
+function DetailPanel({ corso, warnings, istr_map, atleti, build_mode, exception_diff, on_close, on_remove, on_edit, on_annulla_settimana, on_sposta, on_ripristina_template }: {
+  corso: any; warnings?: { hard: string[]; soft: string[] }; istr_map: Record<string, any>; atleti: any[]; build_mode: boolean;
   exception_diff?: exception_diff_entry[];
   on_close: () => void; on_remove: () => void; on_edit: () => void;
   on_annulla_settimana?: () => void; on_sposta?: () => void;
