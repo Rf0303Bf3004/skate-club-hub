@@ -807,6 +807,43 @@ function PlanningPageInner() {
     return result;
   }, [istruttori, posizionati, slots]);
 
+  // ── Off-ice detection (DB-driven con fallback al tipo) ──
+  const is_off_ice = useCallback((c: any) => {
+    if (c?.usa_ghiaccio === false) return true;
+    if (c?.usa_ghiaccio === true) return false;
+    return OFF_ICE_TYPES.includes((c?.tipo || "").toLowerCase());
+  }, []);
+
+  // ── Conflitti istruttore: stesso istruttore, stesso giorno, orari sovrapposti ──
+  const conflict_ids = useMemo(() => {
+    const conflicts = new Set<string>();
+    // raggruppa per (istruttore_id, giorno)
+    const by_key: Record<string, any[]> = {};
+    posizionati.forEach((c: any) => {
+      const ids: string[] = c.istruttori_ids ?? [];
+      ids.forEach((iid) => {
+        if (!iid) return;
+        const k = `${iid}__${c.giorno}`;
+        if (!by_key[k]) by_key[k] = [];
+        by_key[k].push(c);
+      });
+    });
+    Object.values(by_key).forEach((arr) => {
+      for (let i = 0; i < arr.length; i++) {
+        for (let j = i + 1; j < arr.length; j++) {
+          const a = arr[i], b = arr[j];
+          const as = time_to_min(a.ora_inizio), ae = time_to_min(a.ora_fine);
+          const bs = time_to_min(b.ora_inizio), be = time_to_min(b.ora_fine);
+          if (as < be && bs < ae) {
+            conflicts.add(a.id);
+            conflicts.add(b.id);
+          }
+        }
+      }
+    });
+    return conflicts;
+  }, [posizionati]);
+
   // Selected corso
   const selected_corso = useMemo(() => {
     if (!selected_corso_id) return null;
@@ -1157,8 +1194,8 @@ function PlanningPageInner() {
   if (focus_day) {
     const day_ghiaccio = slots.filter((s: any) => s.giorno === focus_day && (s.tipo ?? "ghiaccio") === "ghiaccio");
     const day_pulizia = slots.filter((s: any) => s.giorno === focus_day && s.tipo === "pulizia");
-    const day_corsi_ice = posizionati.filter((c: any) => c.giorno === focus_day && !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
-    const day_corsi_off = posizionati.filter((c: any) => c.giorno === focus_day && OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
+    const day_corsi_ice = posizionati.filter((c: any) => c.giorno === focus_day && !is_off_ice(c));
+    const day_corsi_off = posizionati.filter((c: any) => c.giorno === focus_day && is_off_ice(c));
     const day_annullati = annullati.filter((c: any) => c.giorno === focus_day);
     const day_ice_min = day_ghiaccio.reduce((a: number, s: any) => a + time_to_min(s.ora_fine) - time_to_min(s.ora_inizio), 0);
 
@@ -1318,6 +1355,7 @@ function PlanningPageInner() {
                     const w_px = (ce - cs) * PPM_FOCUS;
                     const is_private = (c.tipo || "").toLowerCase() === "privata";
                     const is_selected = selected_corso_id === c.id;
+                    const is_conflict = conflict_ids.has(c.id);
 
                     // Private slots need more height to fit labels without overlap
                     const slot_h = is_private ? Math.max(ROW_H - 4, 52) : ROW_H - 12;
@@ -1326,7 +1364,7 @@ function PlanningPageInner() {
                       <Tooltip key={c.id}>
                         <TooltipTrigger asChild>
                           <div
-                            className={`absolute z-[3] rounded flex flex-col justify-center overflow-hidden cursor-pointer ${is_selected ? "ring-2 ring-primary" : ""}`}
+                            className={`absolute z-[3] rounded flex flex-col justify-center overflow-hidden cursor-pointer ${is_selected ? "ring-2 ring-primary" : ""} ${is_conflict ? "animate-pulse" : ""}`}
                             style={{
                               left: (cs - f_start) * PPM_FOCUS,
                               width: w_px,
@@ -1335,12 +1373,18 @@ function PlanningPageInner() {
                               background: is_private
                                 ? `repeating-linear-gradient(-45deg, ${colore} 0px, ${colore} 3px, transparent 3px, transparent 8px)`
                                 : colore,
-                              border: is_private ? `2px dashed ${colore}` : `1px solid rgba(0,0,0,0.15)`,
+                              border: is_conflict
+                                ? "2px solid #DC2626"
+                                : (is_private ? `2px dashed ${colore}` : `1px solid rgba(0,0,0,0.15)`),
                               borderRadius: 4,
                               color: "#fff",
+                              boxShadow: is_conflict ? "0 0 0 2px rgba(220,38,38,0.35)" : undefined,
                             }}
                             onClick={() => set_selected_corso_id(c.id)}
                           >
+                            {is_conflict && (
+                              <AlertTriangle className="absolute top-0.5 right-0.5 h-3 w-3 text-white drop-shadow" style={{ filter: "drop-shadow(0 0 1px #DC2626)" }} />
+                            )}
                             {is_private ? (
                               <div className="flex flex-col gap-0 px-1 py-0.5 overflow-hidden">
                                 <span className="truncate rounded text-[11px] font-bold leading-tight" style={{ background: "rgba(255,255,255,0.92)", color: "#1a1a1a", padding: "1px 4px", position: "relative", zIndex: 1 }}>
@@ -1374,6 +1418,9 @@ function PlanningPageInner() {
                           <p className="font-bold">{c.nome}</p>
                           {first_istr && <p className="text-xs">{first_istr.nome} {first_istr.cognome}</p>}
                           <p className="text-xs">{c.ora_inizio?.slice(0, 5)} – {c.ora_fine?.slice(0, 5)}</p>
+                          {is_conflict && (
+                            <p className="text-xs font-bold mt-1" style={{ color: "#DC2626" }}>⚠ Conflitto istruttore</p>
+                          )}
                         </TooltipContent>
                       </Tooltip>
                     );
@@ -1412,29 +1459,46 @@ function PlanningPageInner() {
                   );
                 })}
 
-                {/* Off-ice strip */}
+                {/* Off-ice section (separata dalla timeline ghiaccio) */}
                 {day_corsi_off.length > 0 && (
-                  <div className="absolute left-0 right-0" style={{ top: (course_rows.length || 1) * ROW_H + (day_annullati.length > 0 ? 34 : 4), height: 6 }}>
+                  <div className="absolute left-0 right-0" style={{ top: (course_rows.length || 1) * ROW_H + (day_annullati.length > 0 ? 34 : 4), height: 22 }}>
+                    <div className="absolute inset-0" style={{
+                      background: "#F3F4F6",
+                      border: "1px dashed #9CA3AF",
+                      borderRadius: 4,
+                    }} />
+                    <span className="absolute left-1 top-1/2 -translate-y-1/2 text-[9px] font-bold tracking-wider px-1 rounded" style={{ background: "#9CA3AF", color: "#fff", zIndex: 2 }}>OFF-ICE</span>
                     {day_corsi_off.map((c: any) => {
                       const cs = time_to_min(c.ora_inizio);
                       const ce = time_to_min(c.ora_fine);
                       const istr_ids: string[] = c.istruttori_ids ?? [];
                       const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
                       const colore = first_istr?.colore || OFF_ICE_COLORS[(c.tipo || "").toLowerCase()] || "#94A3B8";
+                      const is_conflict = conflict_ids.has(c.id);
                       return (
                         <Tooltip key={c.id}>
                           <TooltipTrigger asChild>
                             <div
-                              className="absolute top-0 h-full rounded-sm cursor-pointer"
+                              className={`absolute top-1 bottom-1 rounded-sm cursor-pointer flex items-center px-1 overflow-hidden ${is_conflict ? "animate-pulse" : ""}`}
                               style={{
                                 left: (cs - f_start) * PPM_FOCUS,
                                 width: (ce - cs) * PPM_FOCUS,
                                 background: colore,
+                                border: is_conflict ? "2px solid #DC2626" : "none",
+                                boxShadow: is_conflict ? "0 0 0 2px rgba(220,38,38,0.35)" : undefined,
                               }}
                               onClick={() => set_selected_corso_id(c.id)}
-                            />
+                            >
+                              {is_conflict && <AlertTriangle className="h-2.5 w-2.5 text-white mr-1 flex-shrink-0" />}
+                              <span className="truncate text-[10px] font-semibold" style={{ color: "#fff" }}>{c.nome}</span>
+                            </div>
                           </TooltipTrigger>
-                          <TooltipContent><p>{c.nome}</p></TooltipContent>
+                          <TooltipContent>
+                            <p className="font-bold">{c.nome}</p>
+                            {first_istr && <p className="text-xs">{first_istr.nome} {first_istr.cognome}</p>}
+                            <p className="text-xs">Off-ice · {c.ora_inizio?.slice(0,5)}–{c.ora_fine?.slice(0,5)}</p>
+                            {is_conflict && <p className="text-xs font-bold mt-1" style={{ color: "#DC2626" }}>⚠ Conflitto istruttore</p>}
+                          </TooltipContent>
                         </Tooltip>
                       );
                     })}
@@ -1618,11 +1682,12 @@ function PlanningPageInner() {
         </div>
 
         {/* Legend badges */}
-        <div className="flex flex-wrap gap-2 text-xs">
-          <span className="px-2 py-0.5 rounded font-medium" style={{ background: "#EEEDFE", color: "#7F77DD", border: "1px solid #AFA9EC" }}>Ghiaccio</span>
-          <span className="px-2 py-0.5 rounded font-medium" style={{ backgroundColor: "#f0ede6", backgroundImage: "radial-gradient(#8a8780 1.2px, transparent 1.6px)", backgroundSize: "7px 7px", border: "1px solid #b0ada4" }}>Pulizia</span>
-          <span className="px-2 py-0.5 rounded font-medium" style={{ background: "#f5f4f0", border: "1px solid #ddd" }}>Off-ice</span>
-          <span className="px-2 py-0.5 rounded font-medium" style={{ background: "transparent", border: "2px dashed #6B7280" }}>Privata</span>
+        <div className="flex flex-wrap gap-2 text-xs items-center">
+          <Tooltip><TooltipTrigger asChild><span className="px-2 py-0.5 rounded font-medium cursor-help" style={{ background: "#EEEDFE", color: "#7F77DD", border: "1px solid #AFA9EC" }}>Ghiaccio</span></TooltipTrigger><TooltipContent>Ghiaccio disponibile</TooltipContent></Tooltip>
+          <Tooltip><TooltipTrigger asChild><span className="px-2 py-0.5 rounded font-medium cursor-help" style={{ backgroundColor: "#f0ede6", backgroundImage: "radial-gradient(#8a8780 1.2px, transparent 1.6px)", backgroundSize: "7px 7px", border: "1px solid #b0ada4" }}>Pulizia</span></TooltipTrigger><TooltipContent>Pulizia ghiaccio (pattern a puntini)</TooltipContent></Tooltip>
+          <Tooltip><TooltipTrigger asChild><span className="px-2 py-0.5 rounded font-medium cursor-help" style={{ background: "#F3F4F6", border: "1px dashed #9CA3AF" }}>Off-ice</span></TooltipTrigger><TooltipContent>Corso fuori ghiaccio (sezione separata)</TooltipContent></Tooltip>
+          <Tooltip><TooltipTrigger asChild><span className="px-2 py-0.5 rounded font-medium cursor-help" style={{ background: "transparent", border: "2px dashed #6B7280" }}>Privata</span></TooltipTrigger><TooltipContent>Lezione privata (pattern diagonale, colore istruttore)</TooltipContent></Tooltip>
+          <Tooltip><TooltipTrigger asChild><span className="px-2 py-0.5 rounded font-medium cursor-help inline-flex items-center gap-1" style={{ border: "2px solid #DC2626", color: "#DC2626" }}><AlertTriangle className="h-3 w-3" />Conflitto</span></TooltipTrigger><TooltipContent>Stesso istruttore in due attività sovrapposte</TooltipContent></Tooltip>
         </div>
 
         {/* Main content: sidebar + grid */}
@@ -1664,8 +1729,8 @@ function PlanningPageInner() {
           {visible_days.map((giorno) => {
             const day_ghiaccio = slots.filter((s: any) => s.giorno === giorno && (s.tipo ?? "ghiaccio") === "ghiaccio");
             const day_pulizia = slots.filter((s: any) => s.giorno === giorno && s.tipo === "pulizia");
-            const day_corsi_ice = posizionati.filter((c: any) => c.giorno === giorno && !OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
-            const day_corsi_off = posizionati.filter((c: any) => c.giorno === giorno && OFF_ICE_TYPES.includes((c.tipo || "").toLowerCase()));
+            const day_corsi_ice = posizionati.filter((c: any) => c.giorno === giorno && !is_off_ice(c));
+            const day_corsi_off = posizionati.filter((c: any) => c.giorno === giorno && is_off_ice(c));
             const day_annullati_list = annullati.filter((c: any) => c.giorno === giorno);
             const day_pick = pick_corso ? (pick_slots_by_day[giorno] ?? []) : [];
             const giorno_idx = GIORNI.indexOf(giorno as any);
@@ -1764,10 +1829,11 @@ function PlanningPageInner() {
                         const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
                         const colore = first_istr?.colore || "#3B82F6";
                         const is_private = (c.tipo || "").toLowerCase() === "privata";
+                        const is_conflict = conflict_ids.has(c.id);
                         return (
                           <Tooltip key={c.id}>
                             <TooltipTrigger asChild>
-                              <div className="absolute z-[3] rounded-sm" style={{
+                              <div className={`absolute z-[3] rounded-sm ${is_conflict ? "animate-pulse" : ""}`} style={{
                                 left: `${((cs - range_start) / total_min) * 100}%`,
                                 width: `${((ce - cs) / total_min) * 100}%`,
                                 top: 4 + ri * 16,
@@ -1775,13 +1841,15 @@ function PlanningPageInner() {
                                 background: is_private
                                   ? `repeating-linear-gradient(-45deg, ${colore} 0px, ${colore} 3px, transparent 3px, transparent 8px)`
                                   : colore,
-                                border: is_private ? `1px dashed ${colore}` : "none",
+                                border: is_conflict ? "2px solid #DC2626" : (is_private ? `1px dashed ${colore}` : "none"),
+                                boxShadow: is_conflict ? "0 0 0 1px rgba(220,38,38,0.4)" : undefined,
                               }} />
                             </TooltipTrigger>
                             <TooltipContent side="top">
                               <p className="font-bold">{c.nome}</p>
                               {first_istr && <p className="text-xs">{first_istr.nome} {first_istr.cognome}</p>}
                               <p className="text-xs">{c.ora_inizio?.slice(0, 5)} – {c.ora_fine?.slice(0, 5)}</p>
+                              {is_conflict && <p className="text-xs font-bold mt-1" style={{ color: "#DC2626" }}>⚠ Conflitto istruttore</p>}
                             </TooltipContent>
                           </Tooltip>
                         );
@@ -1809,22 +1877,30 @@ function PlanningPageInner() {
                       );
                     })}
 
-                    {/* Off-ice strip 6px */}
+                    {/* Off-ice strip 6px (separata: sfondo grigio dashed + colore istruttore + label) */}
                     {day_corsi_off.length > 0 && day_corsi_off.map((c: any) => {
                       const cs = time_to_min(c.ora_inizio); const ce = time_to_min(c.ora_fine);
                       const istr_ids: string[] = c.istruttori_ids ?? [];
                       const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
                       const colore = first_istr?.colore || OFF_ICE_COLORS[(c.tipo || "").toLowerCase()] || "#94A3B8";
+                      const is_conflict = conflict_ids.has(c.id);
                       return (
                         <Tooltip key={c.id}>
                           <TooltipTrigger asChild>
-                            <div className="absolute z-[2] rounded-sm" style={{
+                            <div className={`absolute z-[2] rounded-sm ${is_conflict ? "animate-pulse" : ""}`} style={{
                               left: `${((cs - range_start) / total_min) * 100}%`,
                               width: `${((ce - cs) / total_min) * 100}%`,
-                              top: 0, height: 6, background: colore,
+                              top: 0, height: 6,
+                              background: colore,
+                              borderTop: "1px dashed #6B7280",
+                              outline: is_conflict ? "1.5px solid #DC2626" : undefined,
                             }} />
                           </TooltipTrigger>
-                          <TooltipContent><p>{c.nome}</p></TooltipContent>
+                          <TooltipContent>
+                            <p className="font-bold">{c.nome} <span className="text-[10px] font-normal opacity-70">(OFF-ICE)</span></p>
+                            {first_istr && <p className="text-xs">{first_istr.nome} {first_istr.cognome}</p>}
+                            {is_conflict && <p className="text-xs font-bold mt-1" style={{ color: "#DC2626" }}>⚠ Conflitto istruttore</p>}
+                          </TooltipContent>
                         </Tooltip>
                       );
                     })}

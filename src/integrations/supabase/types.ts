@@ -455,6 +455,7 @@ export type Database = {
           ora_inizio: string
           stagione_id: string | null
           tipo: string | null
+          usa_ghiaccio: boolean
         }
         Insert: {
           attivo?: boolean | null
@@ -471,6 +472,7 @@ export type Database = {
           ora_inizio?: string
           stagione_id?: string | null
           tipo?: string | null
+          usa_ghiaccio?: boolean
         }
         Update: {
           attivo?: boolean | null
@@ -487,6 +489,7 @@ export type Database = {
           ora_inizio?: string
           stagione_id?: string | null
           tipo?: string | null
+          usa_ghiaccio?: boolean
         }
         Relationships: []
       }
@@ -1000,6 +1003,7 @@ export type Database = {
           attivo: boolean | null
           club_id: string
           cognome: string
+          colore: string | null
           costo_minuto_lezione_privata: number | null
           created_at: string
           email: string | null
@@ -1013,6 +1017,7 @@ export type Database = {
           attivo?: boolean | null
           club_id: string
           cognome?: string
+          colore?: string | null
           costo_minuto_lezione_privata?: number | null
           created_at?: string
           email?: string | null
@@ -1026,6 +1031,7 @@ export type Database = {
           attivo?: boolean | null
           club_id?: string
           cognome?: string
+          colore?: string | null
           costo_minuto_lezione_privata?: number | null
           created_at?: string
           email?: string | null
