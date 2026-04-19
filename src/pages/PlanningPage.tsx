@@ -1941,9 +1941,12 @@ function PlanningPageInner() {
                           const is_private = (c.tipo || "").toLowerCase() === "privata";
                           const is_conflict = conflict_ids.has(c.id);
                           const w = has_warning(c.id);
-                          // Priorità bordo: hard (rosso) > conflict (rosso) > soft (giallo) > privata (dashed)
-                          const border_color = (w.hard || is_conflict) ? "#DC2626" : (w.soft ? "#CA8A04" : null);
-                          const border_style = border_color ? `2px solid ${border_color}` : (is_private ? `1px dashed ${colore}` : "none");
+                          // Outline "sandwich" bianco+colore+bianco — visibile su qualsiasi sfondo
+                          const alarm_color = (w.hard || is_conflict) ? "#DC2626" : (w.soft ? "#CA8A04" : null);
+                          const alarm_short = w.hard || is_conflict ? (is_conflict ? "Conflitto" : (warnings_by_id[c.id]?.hard[0] ?? "Allarme").split(" (")[0]) : (w.soft ? (warnings_by_id[c.id]?.soft[0] ?? "Attenzione").split(" (")[0] : null);
+                          const sandwich_shadow = alarm_color
+                            ? `inset 0 0 0 1px #fff, 0 0 0 2px ${alarm_color}, 0 0 0 3px #fff`
+                            : (is_private ? `inset 0 0 0 1px ${colore}` : undefined);
                           const pulse = is_conflict || w.hard;
                           const livello = c.livello_richiesto && c.livello_richiesto !== "tutti" ? c.livello_richiesto : null;
                           return (
@@ -1957,18 +1960,20 @@ function PlanningPageInner() {
                                   background: is_private
                                     ? `repeating-linear-gradient(-45deg, ${colore} 0px, ${colore} 3px, transparent 3px, transparent 8px)`
                                     : colore,
-                                  border: border_style,
-                                  boxShadow: pulse ? "0 0 0 1px rgba(220,38,38,0.4)" : (w.soft ? "0 0 0 1px rgba(202,138,4,0.35)" : undefined),
+                                  boxShadow: sandwich_shadow,
                                   color: "#fff",
                                   fontSize: 9,
                                   fontWeight: 600,
                                   lineHeight: 1,
                                   gap: 3,
                                 }}>
+                                  {alarm_color && (
+                                    <span style={{ background: "#000", color: "#fff", borderRadius: 2, width: 14, height: 14, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 10, flexShrink: 0, border: `1px solid ${alarm_color}` }}>⚠</span>
+                                  )}
                                   <span className="truncate">{c.nome}{livello ? ` · ${livello}` : ""}{first_istr ? ` · ${first_istr.cognome}` : ""}</span>
-                                  {(w.hard || w.soft) && (
-                                    <span style={{ background: w.hard ? "#DC2626" : "#CA8A04", color: "#fff", padding: "0 3px", borderRadius: 2, fontSize: 8, marginLeft: "auto", flexShrink: 0 }}>
-                                      ⚠
+                                  {alarm_color && alarm_short && (
+                                    <span style={{ background: "#000", color: alarm_color === "#DC2626" ? "#FCA5A5" : "#FDE68A", padding: "1px 4px", borderRadius: 2, fontSize: 8, marginLeft: "auto", flexShrink: 0, fontWeight: 700, letterSpacing: 0.2, border: `1px solid ${alarm_color}` }}>
+                                      {alarm_short.toUpperCase()}
                                     </span>
                                   )}
                                 </div>
@@ -2030,7 +2035,9 @@ function PlanningPageInner() {
                           const colore = first_istr?.colore || OFF_ICE_COLORS[(c.tipo || "").toLowerCase()] || "#94A3B8";
                           const is_conflict = conflict_ids.has(c.id);
                           const w = has_warning(c.id);
-                          const border_color = (w.hard || is_conflict) ? "#DC2626" : (w.soft ? "#CA8A04" : null);
+                          const alarm_color = (w.hard || is_conflict) ? "#DC2626" : (w.soft ? "#CA8A04" : null);
+                          const alarm_short = w.hard || is_conflict ? (is_conflict ? "Conflitto" : (warnings_by_id[c.id]?.hard[0] ?? "Allarme").split(" (")[0]) : (w.soft ? (warnings_by_id[c.id]?.soft[0] ?? "Attenzione").split(" (")[0] : null);
+                          const sandwich_shadow = alarm_color ? `inset 0 0 0 1px #fff, 0 0 0 2px ${alarm_color}, 0 0 0 3px #fff` : undefined;
                           const pulse = is_conflict || w.hard;
                           return (
                             <Tooltip key={c.id}>
@@ -2041,17 +2048,21 @@ function PlanningPageInner() {
                                   top: 6 + ri * 26,
                                   height: 22,
                                   background: colore,
-                                  border: border_color ? `2px solid ${border_color}` : "none",
-                                  boxShadow: pulse ? "0 0 0 1px rgba(220,38,38,0.4)" : (w.soft ? "0 0 0 1px rgba(202,138,4,0.35)" : undefined),
+                                  boxShadow: sandwich_shadow,
                                   color: "#fff",
                                   fontSize: 9,
                                   fontWeight: 600,
                                   lineHeight: 1,
                                   gap: 3,
                                 }}>
+                                  {alarm_color && (
+                                    <span style={{ background: "#000", color: "#fff", borderRadius: 2, width: 14, height: 14, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 10, flexShrink: 0, border: `1px solid ${alarm_color}` }}>⚠</span>
+                                  )}
                                   <span className="truncate">{c.nome}{first_istr ? ` · ${first_istr.cognome}` : ""}</span>
-                                  {(w.hard || w.soft) && (
-                                    <span style={{ background: w.hard ? "#DC2626" : "#CA8A04", color: "#fff", padding: "0 3px", borderRadius: 2, fontSize: 8, marginLeft: "auto", flexShrink: 0 }}>⚠</span>
+                                  {alarm_color && alarm_short && (
+                                    <span style={{ background: "#000", color: alarm_color === "#DC2626" ? "#FCA5A5" : "#FDE68A", padding: "1px 4px", borderRadius: 2, fontSize: 8, marginLeft: "auto", flexShrink: 0, fontWeight: 700, letterSpacing: 0.2, border: `1px solid ${alarm_color}` }}>
+                                      {alarm_short.toUpperCase()}
+                                    </span>
                                   )}
                                 </div>
                               </TooltipTrigger>
