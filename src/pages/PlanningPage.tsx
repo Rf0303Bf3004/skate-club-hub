@@ -2561,6 +2561,48 @@ function DetailPanel({ corso, warnings, istr_map, atleti, build_mode, exception_
         {corso.note && <p className="italic">{corso.note}</p>}
       </div>
 
+      {/* ── Box ALLARMI: problemi rilevati su questo slot ── */}
+      {warnings && (warnings.hard.length > 0 || warnings.soft.length > 0) && (
+        <div
+          className="rounded-md border-2 p-2.5 space-y-1.5"
+          style={{ background: "#FEE2E2", borderColor: "#DC2626" }}
+        >
+          <div className="flex items-center gap-1.5">
+            <AlertTriangle className="h-4 w-4 flex-shrink-0" style={{ color: "#991B1B" }} />
+            <span className="text-xs font-bold" style={{ color: "#991B1B" }}>
+              Problemi rilevati ({warnings.hard.length + warnings.soft.length})
+            </span>
+          </div>
+          <ul className="space-y-1">
+            {[...warnings.hard, ...warnings.soft].map((msg, i) => {
+              const lower = msg.toLowerCase();
+              const can_move =
+                on_sposta &&
+                (lower.startsWith("fuori ghiaccio") ||
+                  lower.startsWith("durante pulizia") ||
+                  lower.startsWith("istruttore non disponibile"));
+              return (
+                <li key={i} className="text-[11px] leading-snug flex items-start gap-1.5" style={{ color: "#7F1D1D" }}>
+                  <span className="mt-1 w-1 h-1 rounded-full flex-shrink-0" style={{ background: "#7F1D1D" }} />
+                  <div className="flex-1 min-w-0">
+                    <div>{msg}</div>
+                    {can_move && (
+                      <button
+                        onClick={on_sposta}
+                        className="mt-0.5 text-[10px] font-semibold underline hover:no-underline"
+                        style={{ color: "#991B1B" }}
+                      >
+                        → Sposta in altro orario
+                      </button>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
       {/* Enrolled */}
       <div>
         <p className="text-xs font-bold text-foreground mb-1">{is_private ? "Atlete" : "Iscritti"} ({enrolled.length})</p>
