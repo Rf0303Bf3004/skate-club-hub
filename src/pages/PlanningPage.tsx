@@ -1459,29 +1459,46 @@ function PlanningPageInner() {
                   );
                 })}
 
-                {/* Off-ice strip */}
+                {/* Off-ice section (separata dalla timeline ghiaccio) */}
                 {day_corsi_off.length > 0 && (
-                  <div className="absolute left-0 right-0" style={{ top: (course_rows.length || 1) * ROW_H + (day_annullati.length > 0 ? 34 : 4), height: 6 }}>
+                  <div className="absolute left-0 right-0" style={{ top: (course_rows.length || 1) * ROW_H + (day_annullati.length > 0 ? 34 : 4), height: 22 }}>
+                    <div className="absolute inset-0" style={{
+                      background: "#F3F4F6",
+                      border: "1px dashed #9CA3AF",
+                      borderRadius: 4,
+                    }} />
+                    <span className="absolute left-1 top-1/2 -translate-y-1/2 text-[9px] font-bold tracking-wider px-1 rounded" style={{ background: "#9CA3AF", color: "#fff", zIndex: 2 }}>OFF-ICE</span>
                     {day_corsi_off.map((c: any) => {
                       const cs = time_to_min(c.ora_inizio);
                       const ce = time_to_min(c.ora_fine);
                       const istr_ids: string[] = c.istruttori_ids ?? [];
                       const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
                       const colore = first_istr?.colore || OFF_ICE_COLORS[(c.tipo || "").toLowerCase()] || "#94A3B8";
+                      const is_conflict = conflict_ids.has(c.id);
                       return (
                         <Tooltip key={c.id}>
                           <TooltipTrigger asChild>
                             <div
-                              className="absolute top-0 h-full rounded-sm cursor-pointer"
+                              className={`absolute top-1 bottom-1 rounded-sm cursor-pointer flex items-center px-1 overflow-hidden ${is_conflict ? "animate-pulse" : ""}`}
                               style={{
                                 left: (cs - f_start) * PPM_FOCUS,
                                 width: (ce - cs) * PPM_FOCUS,
                                 background: colore,
+                                border: is_conflict ? "2px solid #DC2626" : "none",
+                                boxShadow: is_conflict ? "0 0 0 2px rgba(220,38,38,0.35)" : undefined,
                               }}
                               onClick={() => set_selected_corso_id(c.id)}
-                            />
+                            >
+                              {is_conflict && <AlertTriangle className="h-2.5 w-2.5 text-white mr-1 flex-shrink-0" />}
+                              <span className="truncate text-[10px] font-semibold" style={{ color: "#fff" }}>{c.nome}</span>
+                            </div>
                           </TooltipTrigger>
-                          <TooltipContent><p>{c.nome}</p></TooltipContent>
+                          <TooltipContent>
+                            <p className="font-bold">{c.nome}</p>
+                            {first_istr && <p className="text-xs">{first_istr.nome} {first_istr.cognome}</p>}
+                            <p className="text-xs">Off-ice · {c.ora_inizio?.slice(0,5)}–{c.ora_fine?.slice(0,5)}</p>
+                            {is_conflict && <p className="text-xs font-bold mt-1" style={{ color: "#DC2626" }}>⚠ Conflitto istruttore</p>}
+                          </TooltipContent>
                         </Tooltip>
                       );
                     })}
