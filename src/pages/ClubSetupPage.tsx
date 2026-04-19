@@ -211,14 +211,20 @@ const ClubSetupPage: React.FC = () => {
     set_saving_ghiaccio(true);
     try {
       const club_id = get_current_club_id();
+      // Allarmi soft: se vuoto/non numerico ⇒ NULL ⇒ allarme disattivato
+      const to_int_or_null = (v: any) => {
+        if (v === "" || v === null || v === undefined) return null;
+        const n = parseInt(v);
+        return Number.isNaN(n) ? null : n;
+      };
       const payload = {
         club_id,
         ora_apertura_default: get_ghiaccio_val("ora_apertura_default", "06:00"),
         ora_chiusura_default: get_ghiaccio_val("ora_chiusura_default", "22:30"),
         durata_pulizia_minuti: parseInt(get_ghiaccio_val("durata_pulizia_minuti", 30)),
-        max_atleti_contemporanei: parseInt(get_ghiaccio_val("max_atleti_contemporanei", 30)),
-        max_atleti_per_istruttore: parseInt(get_ghiaccio_val("max_atleti_per_istruttore", 8)),
-        min_atleti_attivazione_corso: parseInt(get_ghiaccio_val("min_atleti_attivazione_corso", 3)),
+        max_atleti_contemporanei: to_int_or_null(get_ghiaccio_val("max_atleti_contemporanei", "")),
+        max_atleti_per_istruttore: to_int_or_null(get_ghiaccio_val("max_atleti_per_istruttore", "")),
+        min_iscritti_attivazione_corso: to_int_or_null(get_ghiaccio_val("min_iscritti_attivazione_corso", "")),
       };
 
       if (config_ghiaccio?.id) {
@@ -571,29 +577,41 @@ const ClubSetupPage: React.FC = () => {
               onChange={(e) => set_ghiaccio_val("durata_pulizia_minuti", e.target.value)}
             />
           </Field>
-          <Field label="Max atleti contemporanei (alert)">
+          <Field label="Max atleti contemporanei (alert, opzionale)">
             <Input
               type="number"
               min={1}
-              value={get_ghiaccio_val("max_atleti_contemporanei", 20)}
+              placeholder="Lascia vuoto per disattivare l'allarme"
+              value={get_ghiaccio_val("max_atleti_contemporanei", config_ghiaccio?.max_atleti_contemporanei ?? "")}
               onChange={(e) => set_ghiaccio_val("max_atleti_contemporanei", e.target.value)}
             />
+            {!get_ghiaccio_val("max_atleti_contemporanei", config_ghiaccio?.max_atleti_contemporanei ?? "") && (
+              <p className="text-[11px] text-muted-foreground italic">ℹ Non configurato — gli allarmi correlati sono disattivati. Consigliamo di impostare un valore.</p>
+            )}
           </Field>
-          <Field label="Max atleti per istruttore (alert)">
+          <Field label="Max atleti per istruttore (alert, opzionale)">
             <Input
               type="number"
               min={1}
-              value={get_ghiaccio_val("max_atleti_per_istruttore", 8)}
+              placeholder="Lascia vuoto per disattivare l'allarme"
+              value={get_ghiaccio_val("max_atleti_per_istruttore", config_ghiaccio?.max_atleti_per_istruttore ?? "")}
               onChange={(e) => set_ghiaccio_val("max_atleti_per_istruttore", e.target.value)}
             />
+            {!get_ghiaccio_val("max_atleti_per_istruttore", config_ghiaccio?.max_atleti_per_istruttore ?? "") && (
+              <p className="text-[11px] text-muted-foreground italic">ℹ Non configurato — gli allarmi correlati sono disattivati. Consigliamo di impostare un valore.</p>
+            )}
           </Field>
-          <Field label="Min iscritti attivazione corso">
+          <Field label="Min iscritti attivazione corso (alert, opzionale)">
             <Input
               type="number"
               min={0}
-              value={get_ghiaccio_val("min_atleti_attivazione_corso", 3)}
-              onChange={(e) => set_ghiaccio_val("min_atleti_attivazione_corso", e.target.value)}
+              placeholder="Lascia vuoto per disattivare l'allarme"
+              value={get_ghiaccio_val("min_iscritti_attivazione_corso", (config_ghiaccio as any)?.min_iscritti_attivazione_corso ?? "")}
+              onChange={(e) => set_ghiaccio_val("min_iscritti_attivazione_corso", e.target.value)}
             />
+            {!get_ghiaccio_val("min_iscritti_attivazione_corso", (config_ghiaccio as any)?.min_iscritti_attivazione_corso ?? "") && (
+              <p className="text-[11px] text-muted-foreground italic">ℹ Non configurato — gli allarmi correlati sono disattivati. Consigliamo di impostare un valore.</p>
+            )}
           </Field>
         </div>
 
@@ -626,7 +644,7 @@ const ClubSetupPage: React.FC = () => {
                       <Plus className="w-3 h-3 mr-1" /> Slot
                     </Button>
                   </div>
-                  {slots.length === 0 && <p className="text-xs text-muted-foreground">Nessuno slot</p>}
+                  {slots.length === 0 && <p className="text-xs text-muted-foreground italic py-1">— nessuno slot — clicca <strong>+ Slot</strong> per aggiungere una fascia oraria</p>}
                   {slots.map((s, idx) => (
                     <div key={idx} className="flex items-center gap-2 mb-1">
                       <Input
@@ -676,7 +694,7 @@ const ClubSetupPage: React.FC = () => {
                       <Plus className="w-3 h-3 mr-1" /> Slot
                     </Button>
                   </div>
-                  {slots.length === 0 && <p className="text-xs text-muted-foreground">Nessuno slot</p>}
+                  {slots.length === 0 && <p className="text-xs text-muted-foreground italic py-1">— nessuno slot — clicca <strong>+ Slot</strong> per aggiungere una fascia oraria</p>}
                   {slots.map((s, idx) => (
                     <div key={idx} className="flex items-center gap-2 mb-1">
                       <Input

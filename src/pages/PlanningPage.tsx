@@ -472,6 +472,15 @@ function PlanningPageInner() {
   const istruttoriQuery = use_istruttori();
   const stagioniQuery = use_stagioni();
   const atletiQuery = use_atleti();
+  // Carica TUTTE le iscrizioni attive del club per calcolare allarmi soft (capienza, sovraccarico istruttore, sotto soglia)
+  const iscrizioniAllQuery = useQuery({
+    queryKey: ["iscrizioni_corsi_all", getClubId()],
+    queryFn: async () => {
+      const { data } = await supabase.from("iscrizioni_corsi").select("corso_id, atleta_id, attiva");
+      return (data ?? []).filter((i: any) => i.attiva !== false);
+    },
+  });
+  const iscrizioni_all = iscrizioniAllQuery.data ?? [];
 
   const config = configQuery.data ?? null;
   const ghiaccio_slots = ghiaccioQuery.data ?? [];
@@ -843,6 +852,102 @@ function PlanningPageInner() {
     });
     return conflicts;
   }, [posizionati]);
+
+  // ── Iscritti per corso (per allarmi soft) ──
+  const iscritti_per_corso = useMemo(() => {
+    const m: Record<string, number> = {};
+    iscrizioni_all.forEach((i: any) => { m[i.corso_id] = (m[i.corso_id] ?? 0) + 1; });
+    return m;
+  }, [iscrizioni_all]);
+
+  // ── Parametri soft (NULL ⇒ allarme disattivato) ──
+  const cap_max = config?.max_atleti_contemporanei ?? null;
+  const max_per_istr = config?.max_atleti_per_istruttore ?? null;
+  const min_iscritti = (config as any)?.min_iscritti_attivazione_corso ?? null;
+
+  // ── Calcolo warnings per ciascun corso posizionato ──
+  // Ritorna { hard: string[], soft: string[] } per id corso
+  const warnings_by_id = useMemo(() => {
+    const out: Record<string, { hard: string[]; soft: string[] }> = {};
+    // Indicizza fasce ghiaccio e pulizia per giorno
+    const ghiaccio_by_day: Record<string, Array<[number, number]>> = {};
+    const pulizia_by_day: Record<string, Array<[number, number]>> = {};
+    slots.forEach((s: any) => {
+      const r: [number, number] = [time_to_min(s.ora_inizio), time_to_min(s.ora_fine)];
+      const d = s.giorno;
+      if ((s.tipo ?? "ghiaccio") === "ghiaccio") {
+        (ghiaccio_by_day[d] ??= []).push(r);
+      } else if (s.tipo === "pulizia") {
+        (pulizia_by_day[d] ??= []).push(r);
+      }
+    });
+
+    posizionati.forEach((c: any) => {
+      const w = { hard: [] as string[], soft: [] as string[] };
+      const cs = time_to_min(c.ora_inizio);
+      const ce = time_to_min(c.ora_fine);
+      const off_ice = is_off_ice(c);
+
+      // HARD: solo per corsi su ghiaccio
+      if (!off_ice) {
+        // Fuori ghiaccio
+        const day_ice = ghiaccio_by_day[c.giorno] ?? [];
+        // calcola minuti coperti dalle fasce ghiaccio
+        let covered = 0;
+        day_ice.forEach(([gs, ge]) => {
+          const o = Math.max(0, Math.min(ce, ge) - Math.max(cs, gs));
+          covered += o;
+        });
+        const dur = ce - cs;
+        if (covered < dur) {
+          const fuori = dur - covered;
+          w.hard.push(`Fuori ghiaccio (${fuori} min)`);
+        }
+        // Durante pulizia
+        const day_clean = pulizia_by_day[c.giorno] ?? [];
+        const overlap_clean = day_clean.some(([ps, pe]) => cs < pe && ps < ce);
+        if (overlap_clean) w.hard.push("Durante pulizia");
+      }
+
+      // SOFT: sotto soglia iscritti (vale anche off-ice)
+      if (min_iscritti != null) {
+        const n_isc = iscritti_per_corso[c.corso_id_originale ?? c.id] ?? iscritti_per_corso[c.id] ?? 0;
+        if (n_isc < min_iscritti) w.soft.push(`Sotto soglia attivazione (${n_isc}/${min_iscritti})`);
+      }
+      // SOFT: sovraccarico istruttore (atleti / istruttori)
+      if (max_per_istr != null) {
+        const n_isc = iscritti_per_corso[c.corso_id_originale ?? c.id] ?? iscritti_per_corso[c.id] ?? 0;
+        const n_istr = Math.max(1, (c.istruttori_ids ?? []).length);
+        if (n_isc / n_istr > max_per_istr) w.soft.push(`Sovraccarico istruttore (${n_isc}/${n_istr * max_per_istr})`);
+      }
+
+      if (w.hard.length || w.soft.length) out[c.id] = w;
+    });
+
+    // SOFT: capienza pista (somma iscritti corsi ghiaccio sovrapposti, per giorno)
+    if (cap_max != null) {
+      const ice_courses = posizionati.filter((c: any) => !is_off_ice(c));
+      ice_courses.forEach((c: any) => {
+        const cs = time_to_min(c.ora_inizio); const ce = time_to_min(c.ora_fine);
+        const overlapping = ice_courses.filter((o: any) =>
+          o.giorno === c.giorno && time_to_min(o.ora_inizio) < ce && cs < time_to_min(o.ora_fine)
+        );
+        const tot_atleti = overlapping.reduce((a: number, o: any) =>
+          a + (iscritti_per_corso[o.corso_id_originale ?? o.id] ?? iscritti_per_corso[o.id] ?? 0), 0);
+        if (tot_atleti > cap_max) {
+          (out[c.id] ??= { hard: [], soft: [] }).soft.push(`Capienza superata (${tot_atleti}/${cap_max})`);
+        }
+      });
+    }
+
+    return out;
+  }, [posizionati, slots, iscritti_per_corso, cap_max, max_per_istr, min_iscritti, is_off_ice]);
+
+  const has_warning = useCallback((id: string) => {
+    const w = warnings_by_id[id];
+    return w ? { hard: w.hard.length > 0, soft: w.soft.length > 0, all: [...w.hard, ...w.soft] } : { hard: false, soft: false, all: [] };
+  }, [warnings_by_id]);
+
 
   // Selected corso
   const selected_corso = useMemo(() => {
@@ -1755,12 +1860,12 @@ function PlanningPageInner() {
             };
             const ice_course_rows = compute_rows(day_corsi_ice);
             const n_ice_rows = Math.max(ice_course_rows.length, 1);
-            const ice_h = n_ice_rows * 16 + 8 + (day_pick.length > 0 ? 10 : 0) + (day_annullati_list.length > 0 ? 18 : 0);
+            const ice_h = n_ice_rows * 26 + 12 + (day_pick.length > 0 ? 10 : 0) + (day_annullati_list.length > 0 ? 22 : 0);
 
             const off_course_rows = compute_rows(day_corsi_off);
             const has_off = day_corsi_off.length > 0;
             const n_off_rows = has_off ? off_course_rows.length : 0;
-            const off_h = has_off ? (n_off_rows * 16 + 8) : 14;
+            const off_h = has_off ? (n_off_rows * 26 + 12) : 14;
 
             const day_h = ice_h + off_h + 1;
 
@@ -1835,26 +1940,47 @@ function PlanningPageInner() {
                           const colore = first_istr?.colore || "#3B82F6";
                           const is_private = (c.tipo || "").toLowerCase() === "privata";
                           const is_conflict = conflict_ids.has(c.id);
+                          const w = has_warning(c.id);
+                          // Priorità bordo: hard (rosso) > conflict (rosso) > soft (giallo) > privata (dashed)
+                          const border_color = (w.hard || is_conflict) ? "#DC2626" : (w.soft ? "#CA8A04" : null);
+                          const border_style = border_color ? `2px solid ${border_color}` : (is_private ? `1px dashed ${colore}` : "none");
+                          const pulse = is_conflict || w.hard;
+                          const livello = c.livello_richiesto && c.livello_richiesto !== "tutti" ? c.livello_richiesto : null;
                           return (
                             <Tooltip key={c.id}>
                               <TooltipTrigger asChild>
-                                <div className={`absolute z-[3] rounded-sm ${is_conflict ? "animate-pulse" : ""}`} style={{
+                                <div className={`absolute z-[3] rounded-sm overflow-hidden ${pulse ? "animate-pulse" : ""} flex items-center px-1`} style={{
                                   left: `${((cs - range_start) / total_min) * 100}%`,
                                   width: `${((ce - cs) / total_min) * 100}%`,
-                                  top: 4 + ri * 16,
-                                  height: 14,
+                                  top: 6 + ri * 26,
+                                  height: 22,
                                   background: is_private
                                     ? `repeating-linear-gradient(-45deg, ${colore} 0px, ${colore} 3px, transparent 3px, transparent 8px)`
                                     : colore,
-                                  border: is_conflict ? "2px solid #DC2626" : (is_private ? `1px dashed ${colore}` : "none"),
-                                  boxShadow: is_conflict ? "0 0 0 1px rgba(220,38,38,0.4)" : undefined,
-                                }} />
+                                  border: border_style,
+                                  boxShadow: pulse ? "0 0 0 1px rgba(220,38,38,0.4)" : (w.soft ? "0 0 0 1px rgba(202,138,4,0.35)" : undefined),
+                                  color: "#fff",
+                                  fontSize: 9,
+                                  fontWeight: 600,
+                                  lineHeight: 1,
+                                  gap: 3,
+                                }}>
+                                  <span className="truncate">{c.nome}{livello ? ` · ${livello}` : ""}{first_istr ? ` · ${first_istr.cognome}` : ""}</span>
+                                  {(w.hard || w.soft) && (
+                                    <span style={{ background: w.hard ? "#DC2626" : "#CA8A04", color: "#fff", padding: "0 3px", borderRadius: 2, fontSize: 8, marginLeft: "auto", flexShrink: 0 }}>
+                                      ⚠
+                                    </span>
+                                  )}
+                                </div>
                               </TooltipTrigger>
                               <TooltipContent side="top">
                                 <p className="font-bold">{c.nome}</p>
                                 {first_istr && <p className="text-xs">{first_istr.nome} {first_istr.cognome}</p>}
                                 <p className="text-xs">{c.ora_inizio?.slice(0, 5)} – {c.ora_fine?.slice(0, 5)}</p>
                                 {is_conflict && <p className="text-xs font-bold mt-1" style={{ color: "#DC2626" }}>⚠ Conflitto istruttore (anche su Off-Ice)</p>}
+                                {w.all.map((msg, i) => (
+                                  <p key={i} className="text-xs font-semibold mt-0.5" style={{ color: w.hard && i < (warnings_by_id[c.id]?.hard.length ?? 0) ? "#DC2626" : "#CA8A04" }}>⚠ {msg}</p>
+                                ))}
                               </TooltipContent>
                             </Tooltip>
                           );
@@ -1869,8 +1995,8 @@ function PlanningPageInner() {
                               <div className="absolute z-[2] rounded-sm" style={{
                                 left: `${((cs - range_start) / total_min) * 100}%`,
                                 width: `${((ce - cs) / total_min) * 100}%`,
-                                top: 4 + n_ice_rows * 16 + ai * 16,
-                                height: 12,
+                                top: 6 + n_ice_rows * 26 + ai * 22,
+                                height: 18,
                                 background: "#e0e0e0",
                                 border: "1px solid #bbb",
                                 opacity: 0.6,
@@ -1903,24 +2029,40 @@ function PlanningPageInner() {
                           const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
                           const colore = first_istr?.colore || OFF_ICE_COLORS[(c.tipo || "").toLowerCase()] || "#94A3B8";
                           const is_conflict = conflict_ids.has(c.id);
+                          const w = has_warning(c.id);
+                          const border_color = (w.hard || is_conflict) ? "#DC2626" : (w.soft ? "#CA8A04" : null);
+                          const pulse = is_conflict || w.hard;
                           return (
                             <Tooltip key={c.id}>
                               <TooltipTrigger asChild>
-                                <div className={`absolute z-[3] rounded-sm ${is_conflict ? "animate-pulse" : ""}`} style={{
+                                <div className={`absolute z-[3] rounded-sm overflow-hidden ${pulse ? "animate-pulse" : ""} flex items-center px-1`} style={{
                                   left: `${((cs - range_start) / total_min) * 100}%`,
                                   width: `${((ce - cs) / total_min) * 100}%`,
-                                  top: 4 + ri * 16,
-                                  height: 14,
+                                  top: 6 + ri * 26,
+                                  height: 22,
                                   background: colore,
-                                  border: is_conflict ? "2px solid #DC2626" : "none",
-                                  boxShadow: is_conflict ? "0 0 0 1px rgba(220,38,38,0.4)" : undefined,
-                                }} />
+                                  border: border_color ? `2px solid ${border_color}` : "none",
+                                  boxShadow: pulse ? "0 0 0 1px rgba(220,38,38,0.4)" : (w.soft ? "0 0 0 1px rgba(202,138,4,0.35)" : undefined),
+                                  color: "#fff",
+                                  fontSize: 9,
+                                  fontWeight: 600,
+                                  lineHeight: 1,
+                                  gap: 3,
+                                }}>
+                                  <span className="truncate">{c.nome}{first_istr ? ` · ${first_istr.cognome}` : ""}</span>
+                                  {(w.hard || w.soft) && (
+                                    <span style={{ background: w.hard ? "#DC2626" : "#CA8A04", color: "#fff", padding: "0 3px", borderRadius: 2, fontSize: 8, marginLeft: "auto", flexShrink: 0 }}>⚠</span>
+                                  )}
+                                </div>
                               </TooltipTrigger>
                               <TooltipContent side="top">
                                 <p className="font-bold">{c.nome} <span className="text-[10px] font-normal opacity-70">(OFF-ICE)</span></p>
                                 {first_istr && <p className="text-xs">{first_istr.nome} {first_istr.cognome}</p>}
                                 <p className="text-xs">{c.ora_inizio?.slice(0, 5)} – {c.ora_fine?.slice(0, 5)}</p>
                                 {is_conflict && <p className="text-xs font-bold mt-1" style={{ color: "#DC2626" }}>⚠ Conflitto istruttore (anche su Ghiaccio)</p>}
+                                {w.all.map((msg, i) => (
+                                  <p key={i} className="text-xs font-semibold mt-0.5" style={{ color: w.hard && i < (warnings_by_id[c.id]?.hard.length ?? 0) ? "#DC2626" : "#CA8A04" }}>⚠ {msg}</p>
+                                ))}
                               </TooltipContent>
                             </Tooltip>
                           );
