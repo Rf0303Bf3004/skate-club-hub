@@ -1966,6 +1966,8 @@ function PlanningPageInner() {
                             : (is_private ? `inset 0 0 0 1px ${colore}` : undefined);
                           const pulse = is_conflict || w.hard;
                           const livello = c.livello_richiesto && c.livello_richiesto !== "tutti" ? c.livello_richiesto : null;
+                          const n_atlete = is_private ? (c.atleti_ids?.length ?? 0) : 0;
+                          const is_shared = n_atlete > 1;
                           return (
                             <Tooltip key={c.id}>
                               <TooltipTrigger asChild>
@@ -1982,12 +1984,18 @@ function PlanningPageInner() {
                                   {alarm_color && (
                                     <span style={{ background: "#000", color: "#fff", borderRadius: 2, width: 12, height: 12, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9, lineHeight: 1, flexShrink: 0, border: `1px solid ${alarm_color}` }}>⚠</span>
                                   )}
+                                  {is_shared && !alarm_color && (
+                                    <span style={{ position: "absolute", top: -2, right: -2, background: "#fff", color: colore, borderRadius: 8, minWidth: 12, height: 12, padding: "0 3px", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, lineHeight: 1, border: `1px solid ${colore}` }}>{n_atlete}</span>
+                                  )}
                                 </div>
                               </TooltipTrigger>
                               <TooltipContent side="top">
                                 <p className="font-bold">{c.nome}{livello ? ` · ${livello}` : ""}</p>
                                 {first_istr && <p className="text-xs">{first_istr.nome} {first_istr.cognome}</p>}
                                 <p className="text-xs">{c.ora_inizio?.slice(0, 5)} – {c.ora_fine?.slice(0, 5)}</p>
+                                {is_private && (
+                                  <p className="text-xs">{is_shared ? `Condivisa (${n_atlete} atlete)` : "Privata (1 atleta)"}</p>
+                                )}
                                 {is_conflict && <p className="text-xs font-bold mt-1" style={{ color: "#DC2626" }}>⚠ Conflitto istruttore (anche su Off-Ice)</p>}
                                 {w.all.map((msg, i) => (
                                   <p key={i} className="text-xs font-semibold mt-0.5" style={{ color: w.hard && i < (warnings_by_id[c.id]?.hard.length ?? 0) ? "#DC2626" : "#CA8A04" }}>⚠ {msg}</p>
