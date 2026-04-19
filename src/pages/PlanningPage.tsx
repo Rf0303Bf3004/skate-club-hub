@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import AnnullaCorsoDialog from "@/components/planning/AnnullaCorsoDialog";
 import SpostaCorsoDialog from "@/components/planning/SpostaCorsoDialog";
 import AvvisaAtletiDialog from "@/components/planning/AvvisaAtletiDialog";
+import { istruttore_disponibile } from "@/lib/availability";
 
 // ── ErrorBoundary ──
 class PlanningErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
@@ -979,7 +980,27 @@ function PlanningPageInner() {
         if (overlap_clean) w.hard.push("Durante pulizia");
       }
 
-      // SOFT: sotto soglia iscritti (vale anche off-ice)
+      // HARD: istruttore fuori disponibilità (vale anche off-ice e privata)
+      // Regola: lo slot deve essere completamente contenuto in una fascia di
+      // disponibilità dell'istruttore per quel giorno. Disp. parziale = allarme.
+      const istr_ids_w: string[] = c.istruttori_ids ?? [];
+      const first_istr_id = istr_ids_w[0];
+      if (first_istr_id) {
+        const ist = istr_map[first_istr_id];
+        const check = istruttore_disponibile({
+          disponibilita_per_giorno: ist?.disponibilita,
+          giorno: c.giorno,
+          ora_inizio: c.ora_inizio,
+          ora_fine: c.ora_fine,
+        });
+        if (!check.disponibile) {
+          const nome_ist = ist ? `${ist.nome ?? ""} ${ist.cognome ?? ""}`.trim() : "Istruttore";
+          const dettaglio = check.fasce_label
+            ? `disponibile ${c.giorno} ${check.fasce_label}`
+            : `nessuna disponibilità il ${c.giorno}`;
+          w.hard.push(`Istruttore non disponibile — ${nome_ist} (${dettaglio})`);
+        }
+      }
       if (min_iscritti != null) {
         const n_isc = iscritti_per_corso[c.corso_id_originale ?? c.id] ?? iscritti_per_corso[c.id] ?? 0;
         if (n_isc < min_iscritti) w.soft.push(`Sotto soglia attivazione (${n_isc}/${min_iscritti})`);
@@ -1011,7 +1032,7 @@ function PlanningPageInner() {
     }
 
     return out;
-  }, [posizionati, slots, iscritti_per_corso, cap_max, max_per_istr, min_iscritti, is_off_ice]);
+  }, [posizionati, slots, iscritti_per_corso, cap_max, max_per_istr, min_iscritti, is_off_ice, istr_map]);
 
   const has_warning = useCallback((id: string) => {
     const w = warnings_by_id[id];
