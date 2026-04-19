@@ -1,0 +1,1 @@
+ALTER TABLE public.configurazione_ghiaccio ADD COLUMN IF NOT EXISTS min_iscritti_attivazione_corso integer;
