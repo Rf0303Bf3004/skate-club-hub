@@ -1735,11 +1735,10 @@ function PlanningPageInner() {
             const day_annullati_list = annullati.filter((c: any) => c.giorno === giorno);
             const day_pick = pick_corso ? (pick_slots_by_day[giorno] ?? []) : [];
             const giorno_idx = GIORNI.indexOf(giorno as any);
-            const giorno_date = date_for_giorno[giorno];
             const giorno_date_obj = addDays(dataLunedi, giorno_idx);
             const giorno_day_num = giorno_date_obj.getDate();
 
-            // Sub-rows
+            // Lane packing
             const compute_rows = (courses: any[]): any[][] => {
               if (!courses.length) return [[]];
               const sorted = [...courses].sort((a, b) => time_to_min(a.ora_inizio) - time_to_min(b.ora_inizio));
@@ -1754,10 +1753,16 @@ function PlanningPageInner() {
               });
               return rows.length > 0 ? rows : [[]];
             };
-            const course_rows = compute_rows(day_corsi_ice);
-            const n_rows = Math.max(course_rows.length, 1);
-            const ROW_H = 40;
-            const day_h = n_rows * (14 + 2) + 8 + (day_pick.length > 0 ? 10 : 0) + (day_annullati_list.length > 0 ? 18 : 0);
+            const ice_course_rows = compute_rows(day_corsi_ice);
+            const n_ice_rows = Math.max(ice_course_rows.length, 1);
+            const ice_h = n_ice_rows * 16 + 8 + (day_pick.length > 0 ? 10 : 0) + (day_annullati_list.length > 0 ? 18 : 0);
+
+            const off_course_rows = compute_rows(day_corsi_off);
+            const has_off = day_corsi_off.length > 0;
+            const n_off_rows = has_off ? off_course_rows.length : 0;
+            const off_h = has_off ? (n_off_rows * 16 + 8) : 14;
+
+            const day_h = ice_h + off_h + 1;
 
             const day_ice_ranges = day_ghiaccio.map((g: any) => ({
               start: time_to_min(g.ora_inizio),
@@ -1765,146 +1770,163 @@ function PlanningPageInner() {
             }));
 
             return (
-              <div key={giorno} className="border-b border-border last:border-b-0 cursor-pointer hover:bg-muted/20"
+              <div key={giorno} className="border-b-2 border-border last:border-b-0 cursor-pointer hover:bg-muted/20"
                 onClick={(e) => {
                   if ((e.target as HTMLElement).closest('[data-green-slot]')) return;
                   set_focus_day(giorno);
                 }}>
                 <div className="flex">
+                  {/* Day label spans both sub-rows */}
                   <div className="flex-shrink-0 flex flex-col items-center justify-center border-r border-border bg-muted px-2"
                     style={{ width: 100, minHeight: day_h }}>
                     <span className="text-xs font-bold text-foreground">{GIORNI_SHORT[giorno_idx]}</span>
                     <span className="text-[10px] text-muted-foreground">{giorno_day_num}</span>
                   </div>
 
-                  <div className="flex-1 relative" style={{ minWidth: total_min * 1.2, height: day_h }}>
-                    {/* Default bg = grey */}
-                    <div className="absolute inset-0" style={{ background: is_generated ? "transparent" : "#f5f4f0" }} />
+                  {/* Stack: ICE on top, OFF-ICE below */}
+                  <div className="flex-1 flex flex-col" style={{ minWidth: total_min * 1.2 }}>
+                    {/* ─── SUB-ROW: GHIACCIO ─── */}
+                    <div className="relative" style={{ height: ice_h }}>
+                      <div className="absolute inset-0" style={{ background: is_generated ? "transparent" : "#f5f4f0" }} />
 
-                    {/* Ghiaccio bg */}
-                    {day_ghiaccio.map((g: any, gi: number) => {
-                      const gs = time_to_min(g.ora_inizio); const ge = time_to_min(g.ora_fine);
-                      return <div key={`g${gi}`} className="absolute" style={{
-                        left: `${((gs - range_start) / total_min) * 100}%`, width: `${((ge - gs) / total_min) * 100}%`,
-                        top: 0, bottom: 0, background: "#EEEDFE",
-                      }} />;
-                    })}
+                      {day_ghiaccio.map((g: any, gi: number) => {
+                        const gs = time_to_min(g.ora_inizio); const ge = time_to_min(g.ora_fine);
+                        return <div key={`g${gi}`} className="absolute" style={{
+                          left: `${((gs - range_start) / total_min) * 100}%`, width: `${((ge - gs) / total_min) * 100}%`,
+                          top: 0, bottom: 0, background: "#EEEDFE",
+                        }} />;
+                      })}
 
-                    {/* Pulizia bg */}
-                    {day_pulizia.map((p: any, pi: number) => {
-                      const ps_start = time_to_min(p.ora_inizio); const pe = time_to_min(p.ora_fine);
-                      return <div key={`p${pi}`} className="absolute" style={{
-                        left: `${((ps_start - range_start) / total_min) * 100}%`, width: `${((pe - ps_start) / total_min) * 100}%`,
-                        top: 0, bottom: 0,
-                        backgroundColor: "#f0ede6",
-                        backgroundImage: "radial-gradient(#8a8780 1.2px, transparent 1.6px)",
-                        backgroundSize: "7px 7px",
-                      }} />;
-                    })}
-
-                    {/* Green available zones when a course is selected */}
-                    {pick_corso && day_ice_ranges.map((range, ri) => (
-                      <div
-                        key={`green${ri}`}
-                        data-green-slot
-                        className="absolute z-[4] cursor-pointer"
-                        style={{
-                          left: `${((range.start - range_start) / total_min) * 100}%`,
-                          width: `${((range.end - range.start) / total_min) * 100}%`,
+                      {day_pulizia.map((p: any, pi: number) => {
+                        const ps_start = time_to_min(p.ora_inizio); const pe = time_to_min(p.ora_fine);
+                        return <div key={`p${pi}`} className="absolute" style={{
+                          left: `${((ps_start - range_start) / total_min) * 100}%`, width: `${((pe - ps_start) / total_min) * 100}%`,
                           top: 0, bottom: 0,
-                          background: "rgba(72,187,120,0.18)",
-                          border: "2px dashed #48BB78",
-                        }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          set_focus_day(giorno);
-                        }}
-                      />
-                    ))}
+                          backgroundColor: "#f0ede6",
+                          backgroundImage: "radial-gradient(#8a8780 1.2px, transparent 1.6px)",
+                          backgroundSize: "7px 7px",
+                        }} />;
+                      })}
 
-                    {/* Course blocks */}
-                    {course_rows.map((row, ri) =>
-                      row.map((c: any) => {
+                      {pick_corso && day_ice_ranges.map((range, ri) => (
+                        <div
+                          key={`green${ri}`}
+                          data-green-slot
+                          className="absolute z-[4] cursor-pointer"
+                          style={{
+                            left: `${((range.start - range_start) / total_min) * 100}%`,
+                            width: `${((range.end - range.start) / total_min) * 100}%`,
+                            top: 0, bottom: 0,
+                            background: "rgba(72,187,120,0.18)",
+                            border: "2px dashed #48BB78",
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            set_focus_day(giorno);
+                          }}
+                        />
+                      ))}
+
+                      {ice_course_rows.map((row, ri) =>
+                        row.map((c: any) => {
+                          const cs = time_to_min(c.ora_inizio); const ce = time_to_min(c.ora_fine);
+                          const istr_ids: string[] = c.istruttori_ids ?? [];
+                          const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
+                          const colore = first_istr?.colore || "#3B82F6";
+                          const is_private = (c.tipo || "").toLowerCase() === "privata";
+                          const is_conflict = conflict_ids.has(c.id);
+                          return (
+                            <Tooltip key={c.id}>
+                              <TooltipTrigger asChild>
+                                <div className={`absolute z-[3] rounded-sm ${is_conflict ? "animate-pulse" : ""}`} style={{
+                                  left: `${((cs - range_start) / total_min) * 100}%`,
+                                  width: `${((ce - cs) / total_min) * 100}%`,
+                                  top: 4 + ri * 16,
+                                  height: 14,
+                                  background: is_private
+                                    ? `repeating-linear-gradient(-45deg, ${colore} 0px, ${colore} 3px, transparent 3px, transparent 8px)`
+                                    : colore,
+                                  border: is_conflict ? "2px solid #DC2626" : (is_private ? `1px dashed ${colore}` : "none"),
+                                  boxShadow: is_conflict ? "0 0 0 1px rgba(220,38,38,0.4)" : undefined,
+                                }} />
+                              </TooltipTrigger>
+                              <TooltipContent side="top">
+                                <p className="font-bold">{c.nome}</p>
+                                {first_istr && <p className="text-xs">{first_istr.nome} {first_istr.cognome}</p>}
+                                <p className="text-xs">{c.ora_inizio?.slice(0, 5)} – {c.ora_fine?.slice(0, 5)}</p>
+                                {is_conflict && <p className="text-xs font-bold mt-1" style={{ color: "#DC2626" }}>⚠ Conflitto istruttore (anche su Off-Ice)</p>}
+                              </TooltipContent>
+                            </Tooltip>
+                          );
+                        })
+                      )}
+
+                      {day_annullati_list.map((c: any, ai: number) => {
                         const cs = time_to_min(c.ora_inizio); const ce = time_to_min(c.ora_fine);
-                        const istr_ids: string[] = c.istruttori_ids ?? [];
-                        const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
-                        const colore = first_istr?.colore || "#3B82F6";
-                        const is_private = (c.tipo || "").toLowerCase() === "privata";
-                        const is_conflict = conflict_ids.has(c.id);
                         return (
-                          <Tooltip key={c.id}>
+                          <Tooltip key={`ann-${c.id}`}>
                             <TooltipTrigger asChild>
-                              <div className={`absolute z-[3] rounded-sm ${is_conflict ? "animate-pulse" : ""}`} style={{
+                              <div className="absolute z-[2] rounded-sm" style={{
                                 left: `${((cs - range_start) / total_min) * 100}%`,
                                 width: `${((ce - cs) / total_min) * 100}%`,
-                                top: 4 + ri * 16,
-                                height: 14,
-                                background: is_private
-                                  ? `repeating-linear-gradient(-45deg, ${colore} 0px, ${colore} 3px, transparent 3px, transparent 8px)`
-                                  : colore,
-                                border: is_conflict ? "2px solid #DC2626" : (is_private ? `1px dashed ${colore}` : "none"),
-                                boxShadow: is_conflict ? "0 0 0 1px rgba(220,38,38,0.4)" : undefined,
+                                top: 4 + n_ice_rows * 16 + ai * 16,
+                                height: 12,
+                                background: "#e0e0e0",
+                                border: "1px solid #bbb",
+                                opacity: 0.6,
                               }} />
                             </TooltipTrigger>
-                            <TooltipContent side="top">
-                              <p className="font-bold">{c.nome}</p>
-                              {first_istr && <p className="text-xs">{first_istr.nome} {first_istr.cognome}</p>}
-                              <p className="text-xs">{c.ora_inizio?.slice(0, 5)} – {c.ora_fine?.slice(0, 5)}</p>
-                              {is_conflict && <p className="text-xs font-bold mt-1" style={{ color: "#DC2626" }}>⚠ Conflitto istruttore</p>}
-                            </TooltipContent>
+                            <TooltipContent><p className="line-through">{c.nome} (annullato)</p></TooltipContent>
                           </Tooltip>
                         );
-                      })
-                    )}
+                      })}
+                    </div>
 
-                    {/* Annullati (greyed minibar) */}
-                    {day_annullati_list.map((c: any, ai: number) => {
-                      const cs = time_to_min(c.ora_inizio); const ce = time_to_min(c.ora_fine);
-                      return (
-                        <Tooltip key={`ann-${c.id}`}>
-                          <TooltipTrigger asChild>
-                            <div className="absolute z-[2] rounded-sm" style={{
-                              left: `${((cs - range_start) / total_min) * 100}%`,
-                              width: `${((ce - cs) / total_min) * 100}%`,
-                              top: 4 + n_rows * 16 + ai * 16,
-                              height: 12,
-                              background: "#e0e0e0",
-                              border: "1px solid #bbb",
-                              opacity: 0.6,
-                            }} />
-                          </TooltipTrigger>
-                          <TooltipContent><p className="line-through">{c.nome} (annullato)</p></TooltipContent>
-                        </Tooltip>
-                      );
-                    })}
+                    {/* Inner separator */}
+                    <div style={{ height: 1, background: "hsl(var(--border))" }} />
 
-                    {/* Off-ice strip 6px (separata: sfondo grigio dashed + colore istruttore + label) */}
-                    {day_corsi_off.length > 0 && day_corsi_off.map((c: any) => {
-                      const cs = time_to_min(c.ora_inizio); const ce = time_to_min(c.ora_fine);
-                      const istr_ids: string[] = c.istruttori_ids ?? [];
-                      const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
-                      const colore = first_istr?.colore || OFF_ICE_COLORS[(c.tipo || "").toLowerCase()] || "#94A3B8";
-                      const is_conflict = conflict_ids.has(c.id);
-                      return (
-                        <Tooltip key={c.id}>
-                          <TooltipTrigger asChild>
-                            <div className={`absolute z-[2] rounded-sm ${is_conflict ? "animate-pulse" : ""}`} style={{
-                              left: `${((cs - range_start) / total_min) * 100}%`,
-                              width: `${((ce - cs) / total_min) * 100}%`,
-                              top: 0, height: 6,
-                              background: colore,
-                              borderTop: "1px dashed #6B7280",
-                              outline: is_conflict ? "1.5px solid #DC2626" : undefined,
-                            }} />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="font-bold">{c.nome} <span className="text-[10px] font-normal opacity-70">(OFF-ICE)</span></p>
-                            {first_istr && <p className="text-xs">{first_istr.nome} {first_istr.cognome}</p>}
-                            {is_conflict && <p className="text-xs font-bold mt-1" style={{ color: "#DC2626" }}>⚠ Conflitto istruttore</p>}
-                          </TooltipContent>
-                        </Tooltip>
-                      );
-                    })}
+                    {/* ─── SUB-ROW: OFF-ICE ─── */}
+                    <div className="relative" style={{ height: off_h, background: "#F5F4F0" }}>
+                      <span className="absolute left-1 top-1/2 -translate-y-1/2 text-[8px] font-bold tracking-wider px-1 rounded z-[1]"
+                        style={{ background: "#9CA3AF", color: "#fff" }}>OFF-ICE</span>
+
+                      {!has_off && (
+                        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[9px] italic text-muted-foreground">
+                          — nessun off-ice —
+                        </span>
+                      )}
+
+                      {has_off && off_course_rows.map((row, ri) =>
+                        row.map((c: any) => {
+                          const cs = time_to_min(c.ora_inizio); const ce = time_to_min(c.ora_fine);
+                          const istr_ids: string[] = c.istruttori_ids ?? [];
+                          const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
+                          const colore = first_istr?.colore || OFF_ICE_COLORS[(c.tipo || "").toLowerCase()] || "#94A3B8";
+                          const is_conflict = conflict_ids.has(c.id);
+                          return (
+                            <Tooltip key={c.id}>
+                              <TooltipTrigger asChild>
+                                <div className={`absolute z-[3] rounded-sm ${is_conflict ? "animate-pulse" : ""}`} style={{
+                                  left: `${((cs - range_start) / total_min) * 100}%`,
+                                  width: `${((ce - cs) / total_min) * 100}%`,
+                                  top: 4 + ri * 16,
+                                  height: 14,
+                                  background: colore,
+                                  border: is_conflict ? "2px solid #DC2626" : "none",
+                                  boxShadow: is_conflict ? "0 0 0 1px rgba(220,38,38,0.4)" : undefined,
+                                }} />
+                              </TooltipTrigger>
+                              <TooltipContent side="top">
+                                <p className="font-bold">{c.nome} <span className="text-[10px] font-normal opacity-70">(OFF-ICE)</span></p>
+                                {first_istr && <p className="text-xs">{first_istr.nome} {first_istr.cognome}</p>}
+                                <p className="text-xs">{c.ora_inizio?.slice(0, 5)} – {c.ora_fine?.slice(0, 5)}</p>
+                                {is_conflict && <p className="text-xs font-bold mt-1" style={{ color: "#DC2626" }}>⚠ Conflitto istruttore (anche su Ghiaccio)</p>}
+                              </TooltipContent>
+                            </Tooltip>
+                          );
+                        })
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
