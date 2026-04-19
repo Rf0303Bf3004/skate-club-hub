@@ -4,7 +4,7 @@ import { supabase, get_current_club_id } from "@/lib/supabase";
 import { use_corsi, use_istruttori, use_stagioni, use_atleti } from "@/hooks/use-supabase-data";
 import {
   X, Loader2, ChevronLeft, ChevronRight, Plus, Wrench, Eye, Check,
-  ArrowLeft, LayoutGrid, Pencil, Undo2, Mail, Move, AlertTriangle, Calendar, Zap, CheckCircle2,
+  ArrowLeft, LayoutGrid, Pencil, Undo2, Mail, Move, AlertTriangle, Calendar, Zap, CheckCircle2, Hammer,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
