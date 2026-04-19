@@ -23,7 +23,7 @@ import { toast } from "sonner";
 import AnnullaCorsoDialog from "@/components/planning/AnnullaCorsoDialog";
 import SpostaCorsoDialog from "@/components/planning/SpostaCorsoDialog";
 import AvvisaAtletiDialog from "@/components/planning/AvvisaAtletiDialog";
-import { istruttore_disponibile } from "@/lib/availability";
+import { istruttore_disponibile, compute_exception_diff, type exception_diff_entry } from "@/lib/availability";
 
 // ── ErrorBoundary ──
 class PlanningErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
@@ -717,7 +717,7 @@ function PlanningPageInner() {
             id: pc.id, // use planning row id for operations
             corso_id: pc.corso_id,
             club_id: template?.club_id || getClubId(),
-            nome: template?.nome || "?",
+            nome: pc.titolo_override || template?.nome || "?",
             tipo: template?.tipo || "",
             giorno: GIORNI[dayIdx],
             data: pc.data,
@@ -733,6 +733,15 @@ function PlanningPageInner() {
             motivo: pc.motivo,
             sostituisce_id: pc.sostituisce_id ?? null,
             settimana_id: pc.settimana_id,
+            titolo_override: pc.titolo_override ?? null,
+            // Snapshot del corso master per calcolare la diff "eccezione settimanale"
+            _master: template ? {
+              giorno: template.giorno,
+              ora_inizio: template.ora_inizio,
+              ora_fine: template.ora_fine,
+              nome: template.nome,
+              istruttori_ids: template.istruttori_ids ?? [],
+            } : null,
             _is_plan_row: true,
           };
         })
@@ -1038,6 +1047,38 @@ function PlanningPageInner() {
     const w = warnings_by_id[id];
     return w ? { hard: w.hard.length > 0, soft: w.soft.length > 0, all: [...w.hard, ...w.soft] } : { hard: false, soft: false, all: [] };
   }, [warnings_by_id]);
+
+  // ── Eccezioni settimanali: diff fra occorrenza e corso master ──
+  // Indicatore informativo (non warning) per slot modificati rispetto al template.
+  const exceptions_by_id = useMemo(() => {
+    const out: Record<string, exception_diff_entry[]> = {};
+    posizionati.forEach((c: any) => {
+      if (!c._is_plan_row) return;
+      if ((c.tipo || "").toLowerCase() === "privata") return; // le private non hanno "master template"
+      if (!c._master) return;
+      const diffs = compute_exception_diff({
+        occorrenza: {
+          giorno: c.giorno,
+          data: c.data,
+          ora_inizio: c.ora_inizio,
+          ora_fine: c.ora_fine,
+          istruttori_ids: c.istruttori_ids,
+          titolo_override: c.titolo_override,
+          sostituisce_id: c.sostituisce_id,
+        },
+        master: c._master,
+        istr_map,
+      });
+      if (diffs.length > 0) out[c.id] = diffs;
+    });
+    return out;
+  }, [posizionati, istr_map]);
+
+  const has_exception = useCallback((id: string) => {
+    const e = exceptions_by_id[id];
+    return e && e.length > 0;
+  }, [exceptions_by_id]);
+
 
 
   // Selected corso
@@ -1556,6 +1597,8 @@ function PlanningPageInner() {
                     // Private slots need more height to fit labels without overlap
                     const slot_h = is_private ? Math.max(ROW_H - 4, 52) : ROW_H - 12;
 
+                    const exc = exceptions_by_id[c.id];
+                    const has_exc = !!exc && exc.length > 0;
                     return (
                       <Tooltip key={c.id}>
                         <TooltipTrigger asChild>
@@ -1572,6 +1615,9 @@ function PlanningPageInner() {
                               border: is_conflict
                                 ? "2px solid #DC2626"
                                 : (is_private ? `2px dashed ${colore}` : `1px solid rgba(0,0,0,0.15)`),
+                              borderLeft: has_exc
+                                ? "3px dashed #F59E0B"
+                                : (is_conflict ? "2px solid #DC2626" : (is_private ? `2px dashed ${colore}` : `1px solid rgba(0,0,0,0.15)`)),
                               borderRadius: 4,
                               color: "#fff",
                               boxShadow: is_conflict ? "0 0 0 2px rgba(220,38,38,0.35)" : undefined,
@@ -1580,6 +1626,9 @@ function PlanningPageInner() {
                           >
                             {is_conflict && (
                               <AlertTriangle className="absolute top-0.5 right-0.5 h-3 w-3 text-white drop-shadow" style={{ filter: "drop-shadow(0 0 1px #DC2626)" }} />
+                            )}
+                            {has_exc && (
+                              <span title="Modificato per questa settimana" style={{ position: "absolute", bottom: 2, right: 2, background: "#F59E0B", color: "#fff", borderRadius: 3, width: 14, height: 14, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, lineHeight: 1, zIndex: 4 }}>✎</span>
                             )}
                             {is_private ? (
                               <div className="flex flex-col gap-0 px-1 py-0.5 overflow-hidden">
@@ -1616,6 +1665,14 @@ function PlanningPageInner() {
                           <p className="text-xs">{c.ora_inizio?.slice(0, 5)} – {c.ora_fine?.slice(0, 5)}</p>
                           {is_conflict && (
                             <p className="text-xs font-bold mt-1" style={{ color: "#DC2626" }}>⚠ Conflitto istruttore</p>
+                          )}
+                          {has_exc && (
+                            <div className="mt-1 pt-1 border-t border-border/40">
+                              <p className="text-[10px] font-bold" style={{ color: "#B45309" }}>✎ Eccezione settimanale</p>
+                              {exc!.map((d, i) => (
+                                <p key={i} className="text-[10px]" style={{ color: "#B45309" }}>{d.label}: {d.da} → {d.a}</p>
+                              ))}
+                            </div>
                           )}
                         </TooltipContent>
                       </Tooltip>
@@ -1710,6 +1767,7 @@ function PlanningPageInner() {
                 istr_map={istr_map}
                 atleti={atleti}
                 build_mode={build_mode}
+                exception_diff={exceptions_by_id[sel.id] ?? []}
                 on_close={() => set_selected_corso_id(null)}
                 on_remove={() => remove_corso(sel)}
                 on_edit={() => { set_show_edit_corso(sel); }}
@@ -1719,6 +1777,34 @@ function PlanningPageInner() {
                   set_annulla_dialog({ ...sel, settimana_id: sid });
                 } : undefined}
                 on_sposta={sel?._is_plan_row ? () => set_sposta_dialog(sel) : undefined}
+                on_ripristina_template={sel?._is_plan_row && sel?._master ? async () => {
+                  // Ripristino: riporta l'occorrenza ai valori del corso master.
+                  // Solo per modifiche "in-place" (NO spostamenti con sostituisce_id).
+                  if (sel.sostituisce_id) {
+                    toast.error("Questa occorrenza è uno spostamento. Usa Sposta per riportarla al giorno originale.");
+                    return;
+                  }
+                  const m = sel._master;
+                  // Calcolo data corretta (lunedi della settimana + offset giorno master)
+                  const giorni_idx: Record<string, number> = { "Lunedì": 0, "Martedì": 1, "Mercoledì": 2, "Giovedì": 3, "Venerdì": 4, "Sabato": 5, "Domenica": 6 };
+                  const offset = m.giorno != null ? giorni_idx[m.giorno] ?? null : null;
+                  const new_data = offset != null ? formatDateISO(addDays(dataLunedi, offset)) : sel.data;
+                  const first_master_istr = (m.istruttori_ids ?? [])[0] ?? null;
+                  const { error } = await supabase
+                    .from("planning_corsi_settimana")
+                    .update({
+                      data: new_data,
+                      ora_inizio: m.ora_inizio,
+                      ora_fine: m.ora_fine,
+                      istruttore_id: first_master_istr,
+                      titolo_override: null,
+                    })
+                    .eq("id", sel.id);
+                  if (error) { toast.error(error.message); return; }
+                  toast.success("Eccezione rimossa: occorrenza ripristinata dal template");
+                  await refetchSettimana();
+                  set_selected_corso_id(null);
+                } : undefined}
               />
             )}
 
@@ -2042,6 +2128,8 @@ function PlanningPageInner() {
                           const livello = c.livello_richiesto && c.livello_richiesto !== "tutti" ? c.livello_richiesto : null;
                           const n_atlete = is_private ? (c.atleti_ids?.length ?? 0) : 0;
                           const is_shared = n_atlete > 1;
+                          const exc = exceptions_by_id[c.id];
+                          const has_exc = !!exc && exc.length > 0;
                           return (
                             <Tooltip key={c.id}>
                               <TooltipTrigger asChild>
@@ -2054,12 +2142,16 @@ function PlanningPageInner() {
                                     ? `repeating-linear-gradient(-45deg, ${colore} 0px, ${colore} 3px, transparent 3px, transparent 8px)`
                                     : colore,
                                   boxShadow: sandwich_shadow,
+                                  borderLeft: has_exc ? "2px dashed #F59E0B" : undefined,
                                 }}>
                                   {alarm_color && (
                                     <span style={{ background: "#000", color: "#fff", borderRadius: 2, width: 12, height: 12, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9, lineHeight: 1, flexShrink: 0, border: `1px solid ${alarm_color}` }}>⚠</span>
                                   )}
                                   {is_shared && !alarm_color && (
                                     <span style={{ position: "absolute", top: -2, right: -2, background: "#fff", color: colore, borderRadius: 8, minWidth: 12, height: 12, padding: "0 3px", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, lineHeight: 1, border: `1px solid ${colore}` }}>{n_atlete}</span>
+                                  )}
+                                  {has_exc && (
+                                    <span style={{ position: "absolute", bottom: -1, right: -1, background: "#F59E0B", color: "#fff", borderRadius: 2, width: 10, height: 10, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 7, fontWeight: 700, lineHeight: 1 }}>✎</span>
                                   )}
                                 </div>
                               </TooltipTrigger>
@@ -2074,6 +2166,14 @@ function PlanningPageInner() {
                                 {w.all.map((msg, i) => (
                                   <p key={i} className="text-xs font-semibold mt-0.5" style={{ color: w.hard && i < (warnings_by_id[c.id]?.hard.length ?? 0) ? "#DC2626" : "#CA8A04" }}>⚠ {msg}</p>
                                 ))}
+                                {has_exc && (
+                                  <div className="mt-1 pt-1 border-t border-border/40">
+                                    <p className="text-[10px] font-bold" style={{ color: "#B45309" }}>✎ Eccezione settimanale</p>
+                                    {exc!.map((d, i) => (
+                                      <p key={i} className="text-[10px]" style={{ color: "#B45309" }}>{d.label}: {d.da} → {d.a}</p>
+                                    ))}
+                                  </div>
+                                )}
                               </TooltipContent>
                             </Tooltip>
                           );
@@ -2127,6 +2227,8 @@ function PlanningPageInner() {
                           const alarm_short = w.hard || is_conflict ? (is_conflict ? "Conflitto" : (warnings_by_id[c.id]?.hard[0] ?? "Allarme").split(" (")[0]) : (w.soft ? (warnings_by_id[c.id]?.soft[0] ?? "Attenzione").split(" (")[0] : null);
                           const sandwich_shadow = alarm_color ? `inset 0 0 0 1px #fff, 0 0 0 2px ${alarm_color}, 0 0 0 3px #fff` : undefined;
                           const pulse = is_conflict || w.hard;
+                          const exc = exceptions_by_id[c.id];
+                          const has_exc = !!exc && exc.length > 0;
                           return (
                             <Tooltip key={c.id}>
                               <TooltipTrigger asChild>
@@ -2137,9 +2239,13 @@ function PlanningPageInner() {
                                   height: 14,
                                   background: colore,
                                   boxShadow: sandwich_shadow,
+                                  borderLeft: has_exc ? "2px dashed #F59E0B" : undefined,
                                 }}>
                                   {alarm_color && (
                                     <span style={{ background: "#000", color: "#fff", borderRadius: 2, width: 12, height: 12, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9, lineHeight: 1, flexShrink: 0, border: `1px solid ${alarm_color}` }}>⚠</span>
+                                  )}
+                                  {has_exc && (
+                                    <span style={{ position: "absolute", bottom: -1, right: -1, background: "#F59E0B", color: "#fff", borderRadius: 2, width: 10, height: 10, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 7, fontWeight: 700, lineHeight: 1 }}>✎</span>
                                   )}
                                 </div>
                               </TooltipTrigger>
@@ -2151,6 +2257,14 @@ function PlanningPageInner() {
                                 {w.all.map((msg, i) => (
                                   <p key={i} className="text-xs font-semibold mt-0.5" style={{ color: w.hard && i < (warnings_by_id[c.id]?.hard.length ?? 0) ? "#DC2626" : "#CA8A04" }}>⚠ {msg}</p>
                                 ))}
+                                {has_exc && (
+                                  <div className="mt-1 pt-1 border-t border-border/40">
+                                    <p className="text-[10px] font-bold" style={{ color: "#B45309" }}>✎ Eccezione settimanale</p>
+                                    {exc!.map((d, i) => (
+                                      <p key={i} className="text-[10px]" style={{ color: "#B45309" }}>{d.label}: {d.da} → {d.a}</p>
+                                    ))}
+                                  </div>
+                                )}
                               </TooltipContent>
                             </Tooltip>
                           );
@@ -2245,11 +2359,14 @@ function ConfirmPlaceDialog({ confirm, saving, on_confirm, on_cancel }: {
 // ══════════════════════════════════════════════════════════════
 // DETAIL PANEL
 // ══════════════════════════════════════════════════════════════
-function DetailPanel({ corso, istr_map, atleti, build_mode, on_close, on_remove, on_edit, on_annulla_settimana, on_sposta }: {
+function DetailPanel({ corso, istr_map, atleti, build_mode, exception_diff, on_close, on_remove, on_edit, on_annulla_settimana, on_sposta, on_ripristina_template }: {
   corso: any; istr_map: Record<string, any>; atleti: any[]; build_mode: boolean;
+  exception_diff?: exception_diff_entry[];
   on_close: () => void; on_remove: () => void; on_edit: () => void;
   on_annulla_settimana?: () => void; on_sposta?: () => void;
+  on_ripristina_template?: () => void;
 }) {
+  const [confirm_restore, set_confirm_restore] = React.useState(false);
   const is_private = (corso.tipo || "").toLowerCase() === "privata";
   const corso_id_for_query = corso.corso_id || corso.id;
 
@@ -2380,6 +2497,43 @@ function DetailPanel({ corso, istr_map, atleti, build_mode, on_close, on_remove,
           ))}
         </div>
       </div>
+
+      {/* Modifiche rispetto al template (eccezione settimanale) */}
+      {corso._is_plan_row && !is_private && exception_diff && exception_diff.length > 0 && (
+        <div className="space-y-1.5 pt-2 border-t border-border">
+          <p className="text-xs font-bold flex items-center gap-1" style={{ color: "#B45309" }}>
+            <Pencil className="h-3 w-3" /> Modifiche rispetto al template
+          </p>
+          <div className="rounded border p-2 space-y-1" style={{ background: "#FFFBEB", borderColor: "#F59E0B" }}>
+            {exception_diff.map((d, i) => (
+              <div key={i} className="text-[11px]" style={{ color: "#78350F" }}>
+                <span className="font-semibold">{d.label}:</span>{" "}
+                <span className="line-through opacity-70">{d.da}</span>{" → "}
+                <span className="font-bold">{d.a}</span>
+              </div>
+            ))}
+          </div>
+          {on_ripristina_template && !corso.sostituisce_id && (
+            confirm_restore ? (
+              <div className="flex gap-1.5">
+                <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={() => set_confirm_restore(false)}>Annulla</Button>
+                <Button size="sm" className="flex-1 text-xs" style={{ background: "#F59E0B", color: "#fff" }}
+                  onClick={() => { set_confirm_restore(false); on_ripristina_template(); }}>
+                  Sì, ripristina
+                </Button>
+              </div>
+            ) : (
+              <Button size="sm" variant="outline" className="w-full justify-start text-xs gap-1.5"
+                onClick={() => set_confirm_restore(true)}>
+                <Undo2 className="h-3 w-3" /> Ripristina template
+              </Button>
+            )
+          )}
+          {corso.sostituisce_id && (
+            <p className="text-[10px] italic text-muted-foreground">Spostamento: usa Sposta per riportarlo al giorno originale</p>
+          )}
+        </div>
+      )}
 
       {/* Eccezioni di settimana — solo per planning rows non-private */}
       {corso._is_plan_row && !is_private && (
