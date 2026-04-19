@@ -1620,7 +1620,7 @@ function PlanningPageInner() {
         {/* Legend badges */}
         <div className="flex flex-wrap gap-2 text-xs">
           <span className="px-2 py-0.5 rounded font-medium" style={{ background: "#EEEDFE", color: "#7F77DD", border: "1px solid #AFA9EC" }}>Ghiaccio</span>
-          <span className="px-2 py-0.5 rounded font-medium" style={{ background: "repeating-linear-gradient(-45deg, #c8c4b8 0px, #c8c4b8 3px, #f0ede6 3px, #f0ede6 10px)", border: "1px solid #b0ada4" }}>Pulizia</span>
+          <span className="px-2 py-0.5 rounded font-medium" style={{ backgroundColor: "#f0ede6", backgroundImage: "radial-gradient(#8a8780 1.2px, transparent 1.6px)", backgroundSize: "7px 7px", border: "1px solid #b0ada4" }}>Pulizia</span>
           <span className="px-2 py-0.5 rounded font-medium" style={{ background: "#f5f4f0", border: "1px solid #ddd" }}>Off-ice</span>
           <span className="px-2 py-0.5 rounded font-medium" style={{ background: "transparent", border: "2px dashed #6B7280" }}>Privata</span>
         </div>
