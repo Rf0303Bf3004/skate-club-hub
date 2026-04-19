@@ -1281,7 +1281,9 @@ function PlanningPageInner() {
                     left: (time_to_min(p.ora_inizio) - f_start) * PPM_FOCUS,
                     width: (time_to_min(p.ora_fine) - time_to_min(p.ora_inizio)) * PPM_FOCUS,
                     top: 4, bottom: 4,
-                    background: "repeating-linear-gradient(-45deg, #c8c4b8 0px, #c8c4b8 3px, #f0ede6 3px, #f0ede6 10px)",
+                    backgroundColor: "#f0ede6",
+                    backgroundImage: "radial-gradient(#8a8780 1.2px, transparent 1.6px)",
+                    backgroundSize: "7px 7px",
                     borderRadius: 4, border: "1px solid #b0ada4",
                   }} />
                 ))}
