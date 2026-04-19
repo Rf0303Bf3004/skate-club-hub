@@ -1691,6 +1691,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      genera_settimana_planning: {
+        Args: { p_settimana_id: string }
+        Returns: number
+      }
       get_atleti_impattati_da_planning: {
         Args: { p_planning_corso_id: string }
         Returns: {
