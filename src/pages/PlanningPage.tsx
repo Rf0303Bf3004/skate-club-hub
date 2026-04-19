@@ -506,7 +506,24 @@ function PlanningPageInner() {
   const planPrivateQuery = use_planning_private(settimana_id);
   const weekPrivateLessonsQuery = use_private_lessons_week(dataLunediISO, !!settimana_id);
   const plan_corsi = planCorsiQuery.data ?? [];
-  const plan_private = planPrivateQuery.data ?? [];
+  // Dedup difensivo: una sola riga per lezione_privata_id (la prima non annullata vince).
+  // Previene duplicazione di barre nel planning quando per qualsiasi motivo
+  // (race del sync, doppio insert, dati legacy) esistono piu' planning_private_settimana
+  // associati alla stessa lezione_privata_id nella stessa settimana.
+  const plan_private = useMemo(() => {
+    const raw = planPrivateQuery.data ?? [];
+    const seen = new Map<string, any>();
+    raw.forEach((row: any) => {
+      const key = row.lezione_privata_id;
+      if (!key) return;
+      const existing = seen.get(key);
+      // preferisci la riga non annullata
+      if (!existing || (existing.annullato && !row.annullato)) {
+        seen.set(key, row);
+      }
+    });
+    return Array.from(seen.values());
+  }, [planPrivateQuery.data]);
   const week_private_lessons = weekPrivateLessonsQuery.data ?? [];
   const private_lesson_ids = useMemo(
     () => Array.from(new Set(plan_private.map((item: any) => item.lezione_privata_id).filter(Boolean))),
