@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import AnnullaCorsoDialog from "@/components/planning/AnnullaCorsoDialog";
 import SpostaCorsoDialog from "@/components/planning/SpostaCorsoDialog";
 import AvvisaAtletiDialog from "@/components/planning/AvvisaAtletiDialog";
+import { istruttore_disponibile } from "@/lib/availability";
 
 // ── ErrorBoundary ──
 class PlanningErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
