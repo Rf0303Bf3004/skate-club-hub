@@ -1942,28 +1942,39 @@ function PlanningPageInner() {
           </div>
         </div>
 
-        {/* Week navigation */}
+        {/* Week / Month navigation */}
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="inline-flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={go_prev_week}><ChevronLeft className="h-4 w-4" /></Button>
-            <span className="text-sm font-semibold text-foreground min-w-[220px] text-center">{formatWeekLabel(dataLunedi)}</span>
-            <Button variant="outline" size="sm" onClick={go_next_week}><ChevronRight className="h-4 w-4" /></Button>
-            <Button variant="ghost" size="sm" onClick={go_today} className="text-xs"><Calendar className="h-3.5 w-3.5 mr-1" />Oggi</Button>
-          </div>
+          {view_mode === "mese" ? (
+            <div className="inline-flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={go_prev_month}><ChevronLeft className="h-4 w-4" /></Button>
+              <span className="text-sm font-semibold text-foreground min-w-[220px] text-center">
+                {MESI_IT[mese_corrente.getMonth()]} {mese_corrente.getFullYear()}
+              </span>
+              <Button variant="outline" size="sm" onClick={go_next_month}><ChevronRight className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="sm" onClick={go_today_month} className="text-xs"><Calendar className="h-3.5 w-3.5 mr-1" />Oggi</Button>
+            </div>
+          ) : (
+            <div className="inline-flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={go_prev_week}><ChevronLeft className="h-4 w-4" /></Button>
+              <span className="text-sm font-semibold text-foreground min-w-[220px] text-center">{formatWeekLabel(dataLunedi)}</span>
+              <Button variant="outline" size="sm" onClick={go_next_week}><ChevronRight className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="sm" onClick={go_today} className="text-xs"><Calendar className="h-3.5 w-3.5 mr-1" />Oggi</Button>
+            </div>
+          )}
           <div className="inline-flex rounded-lg border border-border overflow-hidden ml-auto">
-            {([1, 2, 3, 7] as ViewMode[]).map((m, idx) => (
+            {(["giorno", "settimana", "mese"] as ViewMode[]).map((m, idx) => (
               <button key={m} onClick={() => set_view(m)}
-                className={`px-3 py-1.5 text-sm font-medium transition-colors ${view_mode === m ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"} ${idx > 0 ? "border-l border-border" : ""}`}
+                className={`px-3 py-1.5 text-sm font-medium transition-colors capitalize ${view_mode === m ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"} ${idx > 0 ? "border-l border-border" : ""}`}
               >
-                {m === 1 ? "1g" : m === 2 ? "2g" : m === 3 ? "3g" : "7g"}
+                {m}
               </button>
             ))}
           </div>
-          {view_mode < 7 && (
+          {view_mode === "giorno" && (
             <div className="inline-flex items-center gap-1">
               <Button variant="outline" size="sm" onClick={go_prev} disabled={day_offset === 0}><ChevronLeft className="h-4 w-4" /></Button>
               <span className="text-sm font-medium text-foreground min-w-[80px] text-center">{view_label}</span>
-              <Button variant="outline" size="sm" onClick={go_next} disabled={day_offset + view_mode >= 7}><ChevronRight className="h-4 w-4" /></Button>
+              <Button variant="outline" size="sm" onClick={go_next} disabled={day_offset + days_count >= 7}><ChevronRight className="h-4 w-4" /></Button>
             </div>
           )}
         </div>
