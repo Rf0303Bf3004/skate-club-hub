@@ -1597,6 +1597,8 @@ function PlanningPageInner() {
                     // Private slots need more height to fit labels without overlap
                     const slot_h = is_private ? Math.max(ROW_H - 4, 52) : ROW_H - 12;
 
+                    const exc = exceptions_by_id[c.id];
+                    const has_exc = !!exc && exc.length > 0;
                     return (
                       <Tooltip key={c.id}>
                         <TooltipTrigger asChild>
@@ -1613,6 +1615,9 @@ function PlanningPageInner() {
                               border: is_conflict
                                 ? "2px solid #DC2626"
                                 : (is_private ? `2px dashed ${colore}` : `1px solid rgba(0,0,0,0.15)`),
+                              borderLeft: has_exc
+                                ? "3px dashed #F59E0B"
+                                : (is_conflict ? "2px solid #DC2626" : (is_private ? `2px dashed ${colore}` : `1px solid rgba(0,0,0,0.15)`)),
                               borderRadius: 4,
                               color: "#fff",
                               boxShadow: is_conflict ? "0 0 0 2px rgba(220,38,38,0.35)" : undefined,
@@ -1621,6 +1626,9 @@ function PlanningPageInner() {
                           >
                             {is_conflict && (
                               <AlertTriangle className="absolute top-0.5 right-0.5 h-3 w-3 text-white drop-shadow" style={{ filter: "drop-shadow(0 0 1px #DC2626)" }} />
+                            )}
+                            {has_exc && (
+                              <span title="Modificato per questa settimana" style={{ position: "absolute", bottom: 2, right: 2, background: "#F59E0B", color: "#fff", borderRadius: 3, width: 14, height: 14, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, lineHeight: 1, zIndex: 4 }}>✎</span>
                             )}
                             {is_private ? (
                               <div className="flex flex-col gap-0 px-1 py-0.5 overflow-hidden">
@@ -1657,6 +1665,14 @@ function PlanningPageInner() {
                           <p className="text-xs">{c.ora_inizio?.slice(0, 5)} – {c.ora_fine?.slice(0, 5)}</p>
                           {is_conflict && (
                             <p className="text-xs font-bold mt-1" style={{ color: "#DC2626" }}>⚠ Conflitto istruttore</p>
+                          )}
+                          {has_exc && (
+                            <div className="mt-1 pt-1 border-t border-border/40">
+                              <p className="text-[10px] font-bold" style={{ color: "#B45309" }}>✎ Eccezione settimanale</p>
+                              {exc!.map((d, i) => (
+                                <p key={i} className="text-[10px]" style={{ color: "#B45309" }}>{d.label}: {d.da} → {d.a}</p>
+                              ))}
+                            </div>
                           )}
                         </TooltipContent>
                       </Tooltip>
