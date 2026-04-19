@@ -101,7 +101,7 @@ const OFF_ICE_COLORS: Record<string, string> = { danza: "#B83280", "off-ice": "#
 const PPM_FOCUS = 7;
 const MESI_IT = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
 
-type ViewMode = 1 | 2 | 3 | 7;
+type ViewMode = "giorno" | "settimana" | "mese";
 
 function is_private_type(value?: string | null): boolean {
   return (value ?? "").trim().toLowerCase() === "privata";
