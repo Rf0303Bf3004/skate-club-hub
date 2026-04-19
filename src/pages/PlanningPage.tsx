@@ -472,6 +472,15 @@ function PlanningPageInner() {
   const istruttoriQuery = use_istruttori();
   const stagioniQuery = use_stagioni();
   const atletiQuery = use_atleti();
+  // Carica TUTTE le iscrizioni attive del club per calcolare allarmi soft (capienza, sovraccarico istruttore, sotto soglia)
+  const iscrizioniAllQuery = useQuery({
+    queryKey: ["iscrizioni_corsi_all", getClubId()],
+    queryFn: async () => {
+      const { data } = await supabase.from("iscrizioni_corsi").select("corso_id, atleta_id, attiva");
+      return (data ?? []).filter((i: any) => i.attiva !== false);
+    },
+  });
+  const iscrizioni_all = iscrizioniAllQuery.data ?? [];
 
   const config = configQuery.data ?? null;
   const ghiaccio_slots = ghiaccioQuery.data ?? [];
