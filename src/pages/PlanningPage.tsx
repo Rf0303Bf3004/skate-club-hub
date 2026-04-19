@@ -1767,6 +1767,7 @@ function PlanningPageInner() {
                 istr_map={istr_map}
                 atleti={atleti}
                 build_mode={build_mode}
+                exception_diff={exceptions_by_id[sel.id] ?? []}
                 on_close={() => set_selected_corso_id(null)}
                 on_remove={() => remove_corso(sel)}
                 on_edit={() => { set_show_edit_corso(sel); }}
@@ -1776,6 +1777,34 @@ function PlanningPageInner() {
                   set_annulla_dialog({ ...sel, settimana_id: sid });
                 } : undefined}
                 on_sposta={sel?._is_plan_row ? () => set_sposta_dialog(sel) : undefined}
+                on_ripristina_template={sel?._is_plan_row && sel?._master ? async () => {
+                  // Ripristino: riporta l'occorrenza ai valori del corso master.
+                  // Solo per modifiche "in-place" (NO spostamenti con sostituisce_id).
+                  if (sel.sostituisce_id) {
+                    toast.error("Questa occorrenza è uno spostamento. Usa Sposta per riportarla al giorno originale.");
+                    return;
+                  }
+                  const m = sel._master;
+                  // Calcolo data corretta (lunedi della settimana + offset giorno master)
+                  const giorni_idx: Record<string, number> = { "Lunedì": 0, "Martedì": 1, "Mercoledì": 2, "Giovedì": 3, "Venerdì": 4, "Sabato": 5, "Domenica": 6 };
+                  const offset = m.giorno != null ? giorni_idx[m.giorno] ?? null : null;
+                  const new_data = offset != null ? formatDateISO(addDays(dataLunedi, offset)) : sel.data;
+                  const first_master_istr = (m.istruttori_ids ?? [])[0] ?? null;
+                  const { error } = await supabase
+                    .from("planning_corsi_settimana")
+                    .update({
+                      data: new_data,
+                      ora_inizio: m.ora_inizio,
+                      ora_fine: m.ora_fine,
+                      istruttore_id: first_master_istr,
+                      titolo_override: null,
+                    })
+                    .eq("id", sel.id);
+                  if (error) { toast.error(error.message); return; }
+                  toast.success("Eccezione rimossa: occorrenza ripristinata dal template");
+                  await refetchSettimana();
+                  set_selected_corso_id(null);
+                } : undefined}
               />
             )}
 
