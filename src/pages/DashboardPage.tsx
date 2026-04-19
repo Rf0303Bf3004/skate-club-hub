@@ -41,6 +41,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
+import IstruttoriDisponibiliWidget from "@/components/dashboard/IstruttoriDisponibiliWidget";
 
 // ─── Helpers ──────────────────────────────────────────────
 function normalize_giorno(value?: string): string {
@@ -1320,6 +1321,7 @@ const DashboardPage: React.FC = () => {
 
         {/* Colonna destra — widget */}
         <div className="space-y-5">
+          <IstruttoriDisponibiliWidget />
           <WidgetCompleanni atleti={atleti} />
           <WidgetFatture fatture={fatture} atleti={atleti} />
 

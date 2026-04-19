@@ -83,6 +83,82 @@ export function istruttore_disponibile(
 }
 
 // ─────────────────────────────────────────────────────────────
+// Calcolo aggregato delle ore impegnate da un istruttore in un giorno.
+// Somma i minuti occupati intersecati con le fasce di disponibilità
+// dichiarate (così non si conta tempo fuori disponibilità e si evitano
+// doppi conteggi su slot sovrapposti).
+// ─────────────────────────────────────────────────────────────
+
+export type slot_impegno = { ora_inizio: string; ora_fine: string };
+
+export type calcola_ore_impegnate_params = {
+  /** Fasce di disponibilità dell'istruttore per quel giorno (HH:MM o HH:MM:SS) */
+  fasce_disponibilita: fascia_disponibilita[];
+  /** Slot impegnati (corsi + private non annullati) per quel giorno */
+  slot_impegnati: slot_impegno[];
+};
+
+export type calcola_ore_impegnate_result = {
+  /** Minuti totali di disponibilità dichiarata */
+  minuti_totali: number;
+  /** Minuti effettivamente occupati (intersezione con disponibilità, no doppioni) */
+  minuti_impegnati: number;
+  /** Range string da mostrare in UI: "16:00-19:00" oppure "14:00-16:00, 18:00-20:00" */
+  range_label: string;
+};
+
+function merge_intervals(intervals: { s: number; e: number }[]): { s: number; e: number }[] {
+  if (intervals.length === 0) return [];
+  const sorted = [...intervals].sort((a, b) => a.s - b.s);
+  const out: { s: number; e: number }[] = [sorted[0]];
+  for (let i = 1; i < sorted.length; i++) {
+    const last = out[out.length - 1];
+    const cur = sorted[i];
+    if (cur.s <= last.e) last.e = Math.max(last.e, cur.e);
+    else out.push({ ...cur });
+  }
+  return out;
+}
+
+export function calcola_ore_impegnate_giorno(
+  params: calcola_ore_impegnate_params,
+): calcola_ore_impegnate_result {
+  const fasce = (params.fasce_disponibilita ?? []).map((f) => ({
+    s: time_to_min(f.ora_inizio),
+    e: time_to_min(f.ora_fine),
+  }));
+  const merged_disp = merge_intervals(fasce);
+  const minuti_totali = merged_disp.reduce((acc, f) => acc + Math.max(0, f.e - f.s), 0);
+
+  // Intersezione slot impegnati con disponibilità + merge per evitare doppioni
+  const interz: { s: number; e: number }[] = [];
+  for (const slot of params.slot_impegnati ?? []) {
+    const ss = time_to_min(slot.ora_inizio);
+    const se = time_to_min(slot.ora_fine);
+    if (se <= ss) continue;
+    for (const f of merged_disp) {
+      const s = Math.max(ss, f.s);
+      const e = Math.min(se, f.e);
+      if (e > s) interz.push({ s, e });
+    }
+  }
+  const merged_busy = merge_intervals(interz);
+  const minuti_impegnati = merged_busy.reduce((acc, f) => acc + (f.e - f.s), 0);
+
+  const range_label = merged_disp
+    .map((f) => `${fmt_hhmm(min_to_hhmm(f.s))}-${fmt_hhmm(min_to_hhmm(f.e))}`)
+    .join(", ");
+
+  return { minuti_totali, minuti_impegnati, range_label };
+}
+
+function min_to_hhmm(m: number): string {
+  const h = Math.floor(m / 60);
+  const mm = m % 60;
+  return `${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+}
+
+// ─────────────────────────────────────────────────────────────
 // Eccezioni di settimana: diff fra occorrenza (planning_corsi_settimana)
 // e corso master (tabella corsi). Serve per mostrare in UI quali campi
 // sono stati modificati per la singola settimana SENZA toccare il master.
