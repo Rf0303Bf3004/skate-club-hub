@@ -1001,9 +1001,8 @@ function PlanningPageInner() {
 
       // HARD: solo per corsi su ghiaccio
       if (!off_ice) {
-        // Fuori ghiaccio
+        // Fuori ghiaccio: messaggio descrittivo con fasce disponibili
         const day_ice = ghiaccio_by_day[c.giorno] ?? [];
-        // calcola minuti coperti dalle fasce ghiaccio
         let covered = 0;
         day_ice.forEach(([gs, ge]) => {
           const o = Math.max(0, Math.min(ce, ge) - Math.max(cs, gs));
@@ -1012,17 +1011,22 @@ function PlanningPageInner() {
         const dur = ce - cs;
         if (covered < dur) {
           const fuori = dur - covered;
-          w.hard.push(`Fuori ghiaccio (${fuori} min)`);
+          const fasce_lbl = day_ice.length > 0
+            ? day_ice.map(([gs, ge]) => `${min_to_time(gs)}–${min_to_time(ge)}`).join(", ")
+            : "nessuna fascia ghiaccio configurata";
+          w.hard.push(
+            `Fuori ghiaccio: lo slot (${min_to_time(cs)}–${min_to_time(ce)}) eccede di ${fuori} min. Ghiaccio ${c.giorno}: ${fasce_lbl}.`
+          );
         }
-        // Durante pulizia
+        // Durante pulizia: messaggio con fascia di pulizia coinvolta
         const day_clean = pulizia_by_day[c.giorno] ?? [];
-        const overlap_clean = day_clean.some(([ps, pe]) => cs < pe && ps < ce);
-        if (overlap_clean) w.hard.push("Durante pulizia");
+        const clash = day_clean.find(([ps, pe]) => cs < pe && ps < ce);
+        if (clash) {
+          w.hard.push(`Durante pulizia: lo slot si sovrappone alla fascia di pulizia ${min_to_time(clash[0])}–${min_to_time(clash[1])}.`);
+        }
       }
 
       // HARD: istruttore fuori disponibilità (vale anche off-ice e privata)
-      // Regola: lo slot deve essere completamente contenuto in una fascia di
-      // disponibilità dell'istruttore per quel giorno. Disp. parziale = allarme.
       const istr_ids_w: string[] = c.istruttori_ids ?? [];
       const first_istr_id = istr_ids_w[0];
       if (first_istr_id) {
@@ -1036,20 +1040,41 @@ function PlanningPageInner() {
         if (!check.disponibile) {
           const nome_ist = ist ? `${ist.nome ?? ""} ${ist.cognome ?? ""}`.trim() : "Istruttore";
           const dettaglio = check.fasce_label
-            ? `disponibile ${c.giorno} ${check.fasce_label}`
-            : `nessuna disponibilità il ${c.giorno}`;
-          w.hard.push(`Istruttore non disponibile — ${nome_ist} (${dettaglio})`);
+            ? `Fascia dichiarata: ${c.giorno} ${check.fasce_label}.`
+            : `Nessuna disponibilità il ${c.giorno}.`;
+          w.hard.push(`Istruttore non disponibile: ${nome_ist} non ha disponibilità il ${c.giorno} ${c.ora_inizio?.slice(0,5)}–${c.ora_fine?.slice(0,5)}. ${dettaglio}`);
         }
       }
+
+      // HARD: conflitto istruttore (stesso istruttore, stessa fascia, altro corso)
+      // Calcolato per-corso così possiamo descrivere CON CHI è il conflitto.
+      istr_ids_w.forEach((iid) => {
+        if (!iid) return;
+        const ist = istr_map[iid];
+        const nome_ist = ist ? `${ist.nome ?? ""} ${ist.cognome ?? ""}`.trim() : "Istruttore";
+        posizionati.forEach((o: any) => {
+          if (o.id === c.id) return;
+          if (o.giorno !== c.giorno) return;
+          const oids: string[] = o.istruttori_ids ?? [];
+          if (!oids.includes(iid)) return;
+          const os = time_to_min(o.ora_inizio), oe = time_to_min(o.ora_fine);
+          if (cs < oe && os < ce) {
+            w.hard.push(
+              `Conflitto istruttore: ${nome_ist} è già assegnato/a a "${o.nome}" lo stesso ${c.giorno} ${o.ora_inizio?.slice(0,5)}–${o.ora_fine?.slice(0,5)}.`
+            );
+          }
+        });
+      });
+
       if (min_iscritti != null) {
         const n_isc = iscritti_per_corso[c.corso_id_originale ?? c.id] ?? iscritti_per_corso[c.id] ?? 0;
-        if (n_isc < min_iscritti) w.soft.push(`Sotto soglia attivazione (${n_isc}/${min_iscritti})`);
+        if (n_isc < min_iscritti) w.soft.push(`Sotto soglia attivazione: il corso ha ${n_isc} iscritti, la soglia minima è ${min_iscritti}.`);
       }
       // SOFT: sovraccarico istruttore (atleti / istruttori)
       if (max_per_istr != null) {
         const n_isc = iscritti_per_corso[c.corso_id_originale ?? c.id] ?? iscritti_per_corso[c.id] ?? 0;
         const n_istr = Math.max(1, (c.istruttori_ids ?? []).length);
-        if (n_isc / n_istr > max_per_istr) w.soft.push(`Sovraccarico istruttore (${n_isc}/${n_istr * max_per_istr})`);
+        if (n_isc / n_istr > max_per_istr) w.soft.push(`Sovraccarico istruttore: ${n_isc} atlete per ${n_istr} istruttore/i, il limite configurato è ${max_per_istr} per istruttore.`);
       }
 
       if (w.hard.length || w.soft.length) out[c.id] = w;
@@ -1066,7 +1091,7 @@ function PlanningPageInner() {
         const tot_atleti = overlapping.reduce((a: number, o: any) =>
           a + (iscritti_per_corso[o.corso_id_originale ?? o.id] ?? iscritti_per_corso[o.id] ?? 0), 0);
         if (tot_atleti > cap_max) {
-          (out[c.id] ??= { hard: [], soft: [] }).soft.push(`Capienza superata (${tot_atleti}/${cap_max})`);
+          (out[c.id] ??= { hard: [], soft: [] }).soft.push(`Capienza pista superata: ${tot_atleti} atlete contemporaneamente in pista, il massimo configurato è ${cap_max}.`);
         }
       });
     }
@@ -2580,7 +2605,8 @@ function DetailPanel({ corso, warnings, istr_map, atleti, build_mode, exception_
                 on_sposta &&
                 (lower.startsWith("fuori ghiaccio") ||
                   lower.startsWith("durante pulizia") ||
-                  lower.startsWith("istruttore non disponibile"));
+                  lower.startsWith("istruttore non disponibile") ||
+                  lower.startsWith("conflitto istruttore"));
               return (
                 <li key={i} className="text-[11px] leading-snug flex items-start gap-1.5" style={{ color: "#7F1D1D" }}>
                   <span className="mt-1 w-1 h-1 rounded-full flex-shrink-0" style={{ background: "#7F1D1D" }} />
