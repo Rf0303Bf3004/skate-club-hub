@@ -1730,7 +1730,9 @@ function PlanningPageInner() {
                       return <div key={`p${pi}`} className="absolute" style={{
                         left: `${((ps_start - range_start) / total_min) * 100}%`, width: `${((pe - ps_start) / total_min) * 100}%`,
                         top: 0, bottom: 0,
-                        background: "repeating-linear-gradient(-45deg, #c8c4b8 0px, #c8c4b8 3px, #f0ede6 3px, #f0ede6 10px)",
+                        backgroundColor: "#f0ede6",
+                        backgroundImage: "radial-gradient(#8a8780 1.2px, transparent 1.6px)",
+                        backgroundSize: "7px 7px",
                       }} />;
                     })}
 
