@@ -587,7 +587,15 @@ function PlanningPageInner() {
     queryClient,
   ]);
 
-  const [view_mode, set_view_mode] = useState<ViewMode>(7);
+  const [view_mode, set_view_mode] = useState<ViewMode>("settimana");
+  const [mese_corrente, set_mese_corrente] = useState<Date>(() => {
+    const d = new Date();
+    d.setDate(1);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  });
+  // Numero giorni visibili nella griglia settimanale (giorno=1, settimana=7). 'mese' usa un componente separato.
+  const days_count = view_mode === "giorno" ? 1 : 7;
   const [day_offset, set_day_offset] = useState(0);
   const [build_mode, set_build_mode] = useState(false);
   const [focus_day, set_focus_day] = useState<string | null>(null);
