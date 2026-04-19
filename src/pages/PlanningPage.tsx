@@ -1032,7 +1032,7 @@ function PlanningPageInner() {
     }
 
     return out;
-  }, [posizionati, slots, iscritti_per_corso, cap_max, max_per_istr, min_iscritti, is_off_ice]);
+  }, [posizionati, slots, iscritti_per_corso, cap_max, max_per_istr, min_iscritti, is_off_ice, istr_map]);
 
   const has_warning = useCallback((id: string) => {
     const w = warnings_by_id[id];
