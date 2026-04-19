@@ -533,6 +533,59 @@ function PlanningPageInner() {
   const private_lesson_athletes = privateLessonAthletesQuery.data ?? [];
   const is_generated = !!settimana;
 
+  // ── Auto-generazione settimana da template ──
+  // Se la settimana esiste, e' della stagione corrente, non ha ancora occorrenze
+  // di corsi (planning_corsi_settimana vuoto) e ci sono corsi attivi nella stagione,
+  // chiama l'RPC genera_settimana_planning una sola volta per (settimana_id).
+  // Toast piccolo silenzioso. Idempotente lato DB.
+  const auto_gen_attempted_ref = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!settimana_id) return;
+    if (!stagione_id) return;
+    if (planCorsiQuery.isLoading || planCorsiQuery.isFetching) return;
+    if ((plan_corsi?.length ?? 0) > 0) return;
+    // numero di corsi attivi nella stagione (template)
+    const corsi_stagione_count = (corsi_raw ?? []).filter(
+      (c: any) => c.stagione_id === stagione_id && c.attivo !== false,
+    ).length;
+    if (corsi_stagione_count === 0) return;
+    if (auto_gen_attempted_ref.current.has(settimana_id)) return;
+    auto_gen_attempted_ref.current.add(settimana_id);
+
+    (async () => {
+      try {
+        const { data, error } = await supabase.rpc("genera_settimana_planning", {
+          p_settimana_id: settimana_id,
+        });
+        if (error) throw error;
+        const inseriti = typeof data === "number" ? data : 0;
+        if (inseriti > 0) {
+          // formato data settimana per il toast
+          const lun = new Date(`${dataLunediISO}T00:00:00`);
+          const dom = addDays(lun, 6);
+          const fmt = (d: Date) => d.toLocaleDateString("it-CH", { day: "numeric", month: "short" });
+          toast.success(`Settimana ${fmt(lun)}-${fmt(dom)} generata da template (${inseriti} corsi)`, {
+            duration: 3000,
+          });
+          queryClient.invalidateQueries({ queryKey: ["planning_corsi_settimana", settimana_id] });
+        }
+      } catch (e: any) {
+        console.error("[auto-gen settimana]", e);
+        // permette retry su errore transitorio
+        auto_gen_attempted_ref.current.delete(settimana_id);
+      }
+    })();
+  }, [
+    settimana_id,
+    stagione_id,
+    plan_corsi?.length,
+    planCorsiQuery.isLoading,
+    planCorsiQuery.isFetching,
+    corsi_raw,
+    dataLunediISO,
+    queryClient,
+  ]);
+
   const [view_mode, set_view_mode] = useState<ViewMode>(7);
   const [day_offset, set_day_offset] = useState(0);
   const [build_mode, set_build_mode] = useState(false);
