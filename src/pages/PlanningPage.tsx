@@ -1355,6 +1355,7 @@ function PlanningPageInner() {
                     const w_px = (ce - cs) * PPM_FOCUS;
                     const is_private = (c.tipo || "").toLowerCase() === "privata";
                     const is_selected = selected_corso_id === c.id;
+                    const is_conflict = conflict_ids.has(c.id);
 
                     // Private slots need more height to fit labels without overlap
                     const slot_h = is_private ? Math.max(ROW_H - 4, 52) : ROW_H - 12;
@@ -1363,7 +1364,7 @@ function PlanningPageInner() {
                       <Tooltip key={c.id}>
                         <TooltipTrigger asChild>
                           <div
-                            className={`absolute z-[3] rounded flex flex-col justify-center overflow-hidden cursor-pointer ${is_selected ? "ring-2 ring-primary" : ""}`}
+                            className={`absolute z-[3] rounded flex flex-col justify-center overflow-hidden cursor-pointer ${is_selected ? "ring-2 ring-primary" : ""} ${is_conflict ? "animate-pulse" : ""}`}
                             style={{
                               left: (cs - f_start) * PPM_FOCUS,
                               width: w_px,
@@ -1372,12 +1373,18 @@ function PlanningPageInner() {
                               background: is_private
                                 ? `repeating-linear-gradient(-45deg, ${colore} 0px, ${colore} 3px, transparent 3px, transparent 8px)`
                                 : colore,
-                              border: is_private ? `2px dashed ${colore}` : `1px solid rgba(0,0,0,0.15)`,
+                              border: is_conflict
+                                ? "2px solid #DC2626"
+                                : (is_private ? `2px dashed ${colore}` : `1px solid rgba(0,0,0,0.15)`),
                               borderRadius: 4,
                               color: "#fff",
+                              boxShadow: is_conflict ? "0 0 0 2px rgba(220,38,38,0.35)" : undefined,
                             }}
                             onClick={() => set_selected_corso_id(c.id)}
                           >
+                            {is_conflict && (
+                              <AlertTriangle className="absolute top-0.5 right-0.5 h-3 w-3 text-white drop-shadow" style={{ filter: "drop-shadow(0 0 1px #DC2626)" }} />
+                            )}
                             {is_private ? (
                               <div className="flex flex-col gap-0 px-1 py-0.5 overflow-hidden">
                                 <span className="truncate rounded text-[11px] font-bold leading-tight" style={{ background: "rgba(255,255,255,0.92)", color: "#1a1a1a", padding: "1px 4px", position: "relative", zIndex: 1 }}>
@@ -1411,6 +1418,9 @@ function PlanningPageInner() {
                           <p className="font-bold">{c.nome}</p>
                           {first_istr && <p className="text-xs">{first_istr.nome} {first_istr.cognome}</p>}
                           <p className="text-xs">{c.ora_inizio?.slice(0, 5)} – {c.ora_fine?.slice(0, 5)}</p>
+                          {is_conflict && (
+                            <p className="text-xs font-bold mt-1" style={{ color: "#DC2626" }}>⚠ Conflitto istruttore</p>
+                          )}
                         </TooltipContent>
                       </Tooltip>
                     );
