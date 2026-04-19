@@ -2029,24 +2029,40 @@ function PlanningPageInner() {
                           const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
                           const colore = first_istr?.colore || OFF_ICE_COLORS[(c.tipo || "").toLowerCase()] || "#94A3B8";
                           const is_conflict = conflict_ids.has(c.id);
+                          const w = has_warning(c.id);
+                          const border_color = (w.hard || is_conflict) ? "#DC2626" : (w.soft ? "#CA8A04" : null);
+                          const pulse = is_conflict || w.hard;
                           return (
                             <Tooltip key={c.id}>
                               <TooltipTrigger asChild>
-                                <div className={`absolute z-[3] rounded-sm ${is_conflict ? "animate-pulse" : ""}`} style={{
+                                <div className={`absolute z-[3] rounded-sm overflow-hidden ${pulse ? "animate-pulse" : ""} flex items-center px-1`} style={{
                                   left: `${((cs - range_start) / total_min) * 100}%`,
                                   width: `${((ce - cs) / total_min) * 100}%`,
-                                  top: 4 + ri * 16,
-                                  height: 14,
+                                  top: 6 + ri * 26,
+                                  height: 22,
                                   background: colore,
-                                  border: is_conflict ? "2px solid #DC2626" : "none",
-                                  boxShadow: is_conflict ? "0 0 0 1px rgba(220,38,38,0.4)" : undefined,
-                                }} />
+                                  border: border_color ? `2px solid ${border_color}` : "none",
+                                  boxShadow: pulse ? "0 0 0 1px rgba(220,38,38,0.4)" : (w.soft ? "0 0 0 1px rgba(202,138,4,0.35)" : undefined),
+                                  color: "#fff",
+                                  fontSize: 9,
+                                  fontWeight: 600,
+                                  lineHeight: 1,
+                                  gap: 3,
+                                }}>
+                                  <span className="truncate">{c.nome}{first_istr ? ` · ${first_istr.cognome}` : ""}</span>
+                                  {(w.hard || w.soft) && (
+                                    <span style={{ background: w.hard ? "#DC2626" : "#CA8A04", color: "#fff", padding: "0 3px", borderRadius: 2, fontSize: 8, marginLeft: "auto", flexShrink: 0 }}>⚠</span>
+                                  )}
+                                </div>
                               </TooltipTrigger>
                               <TooltipContent side="top">
                                 <p className="font-bold">{c.nome} <span className="text-[10px] font-normal opacity-70">(OFF-ICE)</span></p>
                                 {first_istr && <p className="text-xs">{first_istr.nome} {first_istr.cognome}</p>}
                                 <p className="text-xs">{c.ora_inizio?.slice(0, 5)} – {c.ora_fine?.slice(0, 5)}</p>
                                 {is_conflict && <p className="text-xs font-bold mt-1" style={{ color: "#DC2626" }}>⚠ Conflitto istruttore (anche su Ghiaccio)</p>}
+                                {w.all.map((msg, i) => (
+                                  <p key={i} className="text-xs font-semibold mt-0.5" style={{ color: w.hard && i < (warnings_by_id[c.id]?.hard.length ?? 0) ? "#DC2626" : "#CA8A04" }}>⚠ {msg}</p>
+                                ))}
                               </TooltipContent>
                             </Tooltip>
                           );
