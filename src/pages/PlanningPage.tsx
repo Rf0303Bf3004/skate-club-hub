@@ -1795,6 +1795,7 @@ function PlanningPageInner() {
             {sel && !slot_manager_open && (
               <DetailPanel
                 corso={sel}
+                warnings={warnings_by_id[sel.id] ?? { hard: [], soft: [] }}
                 istr_map={istr_map}
                 atleti={atleti}
                 build_mode={build_mode}
