@@ -445,6 +445,7 @@ export type Database = {
       corsi: {
         Row: {
           attivo: boolean | null
+          categoria: string | null
           club_id: string
           costo_annuale: number | null
           costo_mensile: number | null
@@ -462,6 +463,7 @@ export type Database = {
         }
         Insert: {
           attivo?: boolean | null
+          categoria?: string | null
           club_id: string
           costo_annuale?: number | null
           costo_mensile?: number | null
@@ -479,6 +481,7 @@ export type Database = {
         }
         Update: {
           attivo?: boolean | null
+          categoria?: string | null
           club_id?: string
           costo_annuale?: number | null
           costo_mensile?: number | null
