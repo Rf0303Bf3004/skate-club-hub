@@ -158,6 +158,29 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
   const [step, set_step] = useState(1);
   const [posiziona_planning, set_posiziona_planning] = useState(is_edit ? has_planning_init : true);
 
+  // Carica stagioni del club per pre-valorizzare quella attiva (fix bug stagione_id NULL)
+  const { data: stagioni_list = [] } = useQuery({
+    queryKey: ["stagioni_wizard", get_current_club_id()],
+    queryFn: async () => {
+      const cid = get_current_club_id();
+      if (!cid) return [];
+      const { data, error } = await supabase
+        .from("stagioni")
+        .select("id,nome,attiva,data_inizio,data_fine")
+        .eq("club_id", cid)
+        .order("data_inizio", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!get_current_club_id(),
+  });
+
+  const stagione_default_id = useMemo(() => {
+    if (corso?.stagione_id) return corso.stagione_id;
+    const attiva = stagioni_list.find((s: any) => s.attiva);
+    return attiva?.id || stagioni_list[0]?.id || null;
+  }, [stagioni_list, corso?.stagione_id]);
+
   const [form, set_form] = useState({
     nome: corso?.nome || "",
     tipo: corso?.tipo || "",
@@ -182,6 +205,14 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
     note: corso?.note || "",
     stagione_id: corso?.stagione_id || null,
   });
+
+  // Quando le stagioni arrivano, pre-valorizza con quella attiva (fix bug stagione_id NULL)
+  useEffect(() => {
+    if (!form.stagione_id && stagione_default_id) {
+      set_form((p) => ({ ...p, stagione_id: stagione_default_id }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stagione_default_id]);
 
   const set_val = (k: keyof typeof form, v: any) => set_form((p) => ({ ...p, [k]: v }));
 
