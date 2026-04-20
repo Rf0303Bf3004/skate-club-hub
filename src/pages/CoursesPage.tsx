@@ -1692,13 +1692,37 @@ const CorsoModal: React.FC<{
                 />
               </Field>
               <Field label="Tipo">
-                <TipoCorsoSelect
-                  value={form.tipo}
-                  on_change={(v) => set_val("tipo", v)}
-                  tipi={tipi_corso}
-                  on_add_tipo={on_add_tipo}
-                />
+                <div className="flex items-center gap-2 flex-wrap">
+                  {form.tipo === "Ghiaccio" ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200 text-sm font-medium">
+                      <span>🧊</span>
+                      <span>Ghiaccio</span>
+                    </span>
+                  ) : form.tipo === "Off-Ice" ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 text-gray-700 border border-gray-200 text-sm font-medium">
+                      <span>🏋️</span>
+                      <span>Off-Ice{form.categoria ? ` · ${form.categoria}` : ""}</span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-100 text-orange-800 border border-orange-200 text-sm font-medium">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      <span>Tipo non impostato</span>
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      set_tipo_dialog_tipo(form.tipo === "Off-Ice" ? "Off-Ice" : "Ghiaccio");
+                      set_tipo_dialog_categoria(form.categoria || "");
+                      set_tipo_dialog_open(true);
+                    }}
+                    className="text-xs text-primary hover:underline font-medium"
+                  >
+                    Cambia
+                  </button>
+                </div>
               </Field>
+
               <Field label="Livello richiesto">
                 <div className="relative">
                   <select
