@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
+import { CorsoWizard } from "@/components/corsi/CorsoWizard";
 
 const GIORNI_DB = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
 
@@ -1252,6 +1253,7 @@ const CorsoModal: React.FC<{
   on_save: (data: any) => Promise<void>;
   on_delete?: () => Promise<void>;
   on_add_tipo: (nome: string) => Promise<void>;
+  on_ridefinisci?: () => void;
   saving: boolean;
   deleting: boolean;
 }> = ({
@@ -1265,6 +1267,7 @@ const CorsoModal: React.FC<{
   on_save,
   on_delete,
   on_add_tipo,
+  on_ridefinisci,
   saving,
   deleting,
 }) => {
@@ -1553,9 +1556,23 @@ const CorsoModal: React.FC<{
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-lg flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
           <h2 className="text-base font-bold text-foreground">{corso?.id ? "Modifica corso" : "Nuovo corso"}</h2>
-          <button onClick={on_close} className="text-muted-foreground hover:text-foreground">
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {corso?.id && on_ridefinisci && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={on_ridefinisci}
+                className="h-8 gap-1.5 text-xs"
+                title="Riapri il wizard a 4 step pre-compilato per modifiche strutturali (giorno/ora/istruttore)"
+              >
+                <ArrowRightLeft className="w-3.5 h-3.5" />
+                Ridefinisci corso
+              </Button>
+            )}
+            <button onClick={on_close} className="text-muted-foreground hover:text-foreground">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Ghiaccio blocking error */}
