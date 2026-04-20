@@ -1904,6 +1904,102 @@ const CorsoModal: React.FC<{
           )}
         </div>
       </div>
+
+      {/* Mini-dialog Cambia Tipo */}
+      {tipo_dialog_open && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          onClick={() => set_tipo_dialog_open(false)}
+        >
+          <div
+            className="bg-card rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-foreground">Cambia tipo del corso</h3>
+              <button onClick={() => set_tipo_dialog_open(false)} className="text-muted-foreground hover:text-foreground">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-orange-700">
+                Cambiare il tipo impatta dove il corso viene piazzato nel planning (ghiaccio vs off-ice). Sei sicuro?
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Tipo</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => set_tipo_dialog_tipo("Ghiaccio")}
+                  className={`flex items-center justify-center gap-2 px-3 py-3 rounded-xl border-2 text-sm font-medium transition-all ${
+                    tipo_dialog_tipo === "Ghiaccio"
+                      ? "border-blue-500 bg-blue-50 text-blue-800"
+                      : "border-border bg-background text-foreground hover:bg-muted/50"
+                  }`}
+                >
+                  <span>🧊</span> Ghiaccio
+                </button>
+                <button
+                  type="button"
+                  onClick={() => set_tipo_dialog_tipo("Off-Ice")}
+                  className={`flex items-center justify-center gap-2 px-3 py-3 rounded-xl border-2 text-sm font-medium transition-all ${
+                    tipo_dialog_tipo === "Off-Ice"
+                      ? "border-gray-500 bg-gray-100 text-gray-800"
+                      : "border-border bg-background text-foreground hover:bg-muted/50"
+                  }`}
+                >
+                  <span>🏋️</span> Off-Ice
+                </button>
+              </div>
+            </div>
+
+            {tipo_dialog_tipo === "Off-Ice" && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Categoria</label>
+                <input
+                  type="text"
+                  list="categorie_off_ice"
+                  value={tipo_dialog_categoria}
+                  onChange={(e) => set_tipo_dialog_categoria(e.target.value)}
+                  placeholder="es. Danza, Stretching, Pilates..."
+                  className={input_cls}
+                />
+                <datalist id="categorie_off_ice">
+                  <option value="Danza" />
+                  <option value="Stretching" />
+                  <option value="Pilates" />
+                  <option value="Preparazione atletica" />
+                  <option value="Yoga" />
+                </datalist>
+                <p className="text-xs text-muted-foreground">Suggerimenti: Danza, Stretching, Pilates, Preparazione atletica, Yoga.</p>
+              </div>
+            )}
+
+            <div className="flex gap-2 pt-2">
+              <Button variant="outline" onClick={() => set_tipo_dialog_open(false)} className="flex-1">
+                Annulla
+              </Button>
+              <Button
+                onClick={() => {
+                  set_form((p) => ({
+                    ...p,
+                    tipo: tipo_dialog_tipo,
+                    categoria: tipo_dialog_tipo === "Off-Ice" ? tipo_dialog_categoria.trim() : "",
+                  }));
+                  set_tipo_dialog_open(false);
+                }}
+                className="flex-1 bg-primary hover:bg-primary/90"
+              >
+                Salva
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
