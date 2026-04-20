@@ -620,6 +620,13 @@ function PlanningPageInner() {
   const loading = loadingGhiaccio || loadingCorsi || loadingIstr;
 
   const corsi_template = useMemo(() => (corsi_raw ?? []).filter((c: any) => c.attivo !== false && (stagione_id ? c.stagione_id === stagione_id : !c.stagione_id)), [corsi_raw, stagione_id]);
+  // Lookup nome per QUALSIASI corso del club (anche con stagione_id NULL o di altra stagione):
+  // evita che la barra del planning mostri "?" quando il record non passa il filtro stagione.
+  const corsi_nome_lookup = useMemo(() => {
+    const m = new Map<string, any>();
+    (corsi_raw ?? []).forEach((c: any) => m.set(c.id, c));
+    return m;
+  }, [corsi_raw]);
   const corsi_template_non_privati = useMemo(
     () => corsi_template.filter((c: any) => !is_private_type(c.tipo)),
     [corsi_template],
