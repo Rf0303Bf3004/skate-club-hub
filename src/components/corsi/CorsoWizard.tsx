@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Check, ChevronLeft, ChevronRight, Snowflake, Dumbbell, AlertTriangle, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Snowflake, Dumbbell, AlertTriangle, X, CheckCircle2, Clock, Ban } from "lucide-react";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { GrigliaFasceGhiaccio, NumInput, to_num } from "@/pages/CoursesPage";
 import { toast } from "@/hooks/use-toast";
+import { istruttore_disponibile, time_to_min as tmin } from "@/lib/availability";
 
 const GIORNI_DB = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
 
