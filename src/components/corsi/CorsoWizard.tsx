@@ -181,13 +181,6 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
     return attiva?.id || stagioni_list[0]?.id || null;
   }, [stagioni_list, corso?.stagione_id]);
 
-  // Quando le stagioni arrivano, riempi il default se vuoto
-  useEffect(() => {
-    if (!form.stagione_id && stagione_default_id) {
-      set_form((p) => ({ ...p, stagione_id: stagione_default_id }));
-    }
-  }, [stagione_default_id]);
-
   const [form, set_form] = useState({
     nome: corso?.nome || "",
     tipo: corso?.tipo || "",
@@ -212,6 +205,14 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
     note: corso?.note || "",
     stagione_id: corso?.stagione_id || null,
   });
+
+  // Quando le stagioni arrivano, pre-valorizza con quella attiva (fix bug stagione_id NULL)
+  useEffect(() => {
+    if (!form.stagione_id && stagione_default_id) {
+      set_form((p) => ({ ...p, stagione_id: stagione_default_id }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stagione_default_id]);
 
   const set_val = (k: keyof typeof form, v: any) => set_form((p) => ({ ...p, [k]: v }));
 
