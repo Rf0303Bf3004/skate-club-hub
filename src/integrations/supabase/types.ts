@@ -450,13 +450,13 @@ export type Database = {
           costo_annuale: number | null
           costo_mensile: number | null
           created_at: string
-          giorno: string
+          giorno: string | null
           id: string
           livello_richiesto: string | null
           nome: string
           note: string | null
-          ora_fine: string
-          ora_inizio: string
+          ora_fine: string | null
+          ora_inizio: string | null
           stagione_id: string | null
           tipo: string | null
           usa_ghiaccio: boolean
@@ -468,13 +468,13 @@ export type Database = {
           costo_annuale?: number | null
           costo_mensile?: number | null
           created_at?: string
-          giorno?: string
+          giorno?: string | null
           id?: string
           livello_richiesto?: string | null
           nome?: string
           note?: string | null
-          ora_fine?: string
-          ora_inizio?: string
+          ora_fine?: string | null
+          ora_inizio?: string | null
           stagione_id?: string | null
           tipo?: string | null
           usa_ghiaccio?: boolean
@@ -486,13 +486,13 @@ export type Database = {
           costo_annuale?: number | null
           costo_mensile?: number | null
           created_at?: string
-          giorno?: string
+          giorno?: string | null
           id?: string
           livello_richiesto?: string | null
           nome?: string
           note?: string | null
-          ora_fine?: string
-          ora_inizio?: string
+          ora_fine?: string | null
+          ora_inizio?: string | null
           stagione_id?: string | null
           tipo?: string | null
           usa_ghiaccio?: boolean
