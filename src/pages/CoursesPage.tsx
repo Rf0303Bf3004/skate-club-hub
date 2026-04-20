@@ -2044,6 +2044,8 @@ const CoursesPage: React.FC = () => {
   const [modal_open, set_modal_open] = useState(false);
   const [selected_corso, set_selected_corso] = useState<any>(null);
   const [default_tab, set_default_tab] = useState<string | undefined>(undefined);
+  const [wizard_open, set_wizard_open] = useState(false);
+  const [wizard_corso, set_wizard_corso] = useState<any>(null);
   const [vista, set_vista] = useState<"giorno" | "istruttore">("giorno");
 
   // Filters
@@ -2320,6 +2322,20 @@ const CoursesPage: React.FC = () => {
 
   return (
     <>
+      {wizard_open && (
+        <CorsoWizard
+          corso={wizard_corso}
+          istruttori={istruttori}
+          corsi={corsi}
+          on_close={() => set_wizard_open(false)}
+          on_save={async (data) => {
+            await handle_save(data);
+            set_wizard_open(false);
+          }}
+          saving={upsert.isPending}
+        />
+      )}
+
       {modal_open && (
         <CorsoModal
           corso={selected_corso}
@@ -2332,6 +2348,15 @@ const CoursesPage: React.FC = () => {
           on_save={handle_save}
           on_delete={selected_corso?.id ? handle_delete : undefined}
           on_add_tipo={handle_add_tipo}
+          on_ridefinisci={
+            selected_corso?.id
+              ? () => {
+                  set_wizard_corso(selected_corso);
+                  set_modal_open(false);
+                  set_wizard_open(true);
+                }
+              : undefined
+          }
           saving={upsert.isPending}
           deleting={elimina.isPending}
         />
@@ -2343,9 +2368,8 @@ const CoursesPage: React.FC = () => {
           <Button
             className="bg-primary hover:bg-primary/90"
             onClick={() => {
-              set_selected_corso(null);
-              set_default_tab(undefined);
-              set_modal_open(true);
+              set_wizard_corso(null);
+              set_wizard_open(true);
             }}
           >
             <Plus className="w-4 h-4 mr-2" /> {t("nuovo_corso")}
