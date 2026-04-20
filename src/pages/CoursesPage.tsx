@@ -116,16 +116,16 @@ function use_tipi_corso() {
 }
 
 // ─── NumInput ──────────────────────────────────────────────
-function to_num(v: string | number): number {
+export function to_num(v: string | number): number {
   if (typeof v === "number") return isNaN(v) ? 0 : v;
   const n = parseFloat(String(v).replace(",", "."));
   return isNaN(n) ? 0 : n;
 }
 
-const input_cls =
+export const input_cls =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
 
-const NumInput: React.FC<{
+export const NumInput: React.FC<{
   value: string | number;
   onChange: (v: string) => void;
   className?: string;
@@ -187,7 +187,7 @@ const NumInput: React.FC<{
   );
 };
 
-const Field: React.FC<{ label: string; children: React.ReactNode; required?: boolean }> = ({
+export const Field: React.FC<{ label: string; children: React.ReactNode; required?: boolean }> = ({
   label,
   children,
   required,
@@ -942,7 +942,7 @@ function add_minutes_to_time(time: string, minutes: number): string {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
-const GrigliaFasceGhiaccio: React.FC<{
+export const GrigliaFasceGhiaccio: React.FC<{
   giorno: string;
   corso_id?: string;
   istruttori: any[];

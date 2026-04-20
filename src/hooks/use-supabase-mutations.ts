@@ -294,13 +294,33 @@ export function use_upsert_corso() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: any) => {
+      const club_id_val = cid();
+      if (!club_id_val) {
+        throw new Error("Nessun club selezionato. Effettua nuovamente il login e riprova.");
+      }
+
+      // Validazione tipo: deve essere binario "Ghiaccio" | "Off-Ice" (vincolo CHECK in DB).
+      const tipo_norm = (data.tipo || "").trim();
+      if (tipo_norm !== "Ghiaccio" && tipo_norm !== "Off-Ice") {
+        throw new Error('Il campo "Tipo" è obbligatorio e deve essere "Ghiaccio" o "Off-Ice".');
+      }
+
+      // Niente fallback silenziosi: se il form non valorizza giorno/ora, salviamo NULL.
+      const giorno_in = (data.giorno ?? "").toString().trim();
+      const giorno_val = giorno_in
+        ? GIORNI_DB.find((d) => d.toLowerCase() === giorno_in.toLowerCase()) ?? null
+        : null;
+      const ora_inizio_val = data.ora_inizio ? normalize_time(data.ora_inizio) : null;
+      const ora_fine_val = data.ora_fine ? normalize_time(data.ora_fine) : null;
+
       const payload: any = {
-        club_id: cid(),
-        nome: data.nome,
-        tipo: data.tipo || "",
-        giorno: normalize_day(data.giorno),
-        ora_inizio: normalize_time(data.ora_inizio, "08:00:00"),
-        ora_fine: normalize_time(data.ora_fine, "09:00:00"),
+        club_id: club_id_val,
+        nome: (data.nome || "").trim(),
+        tipo: tipo_norm,
+        categoria: tipo_norm === "Off-Ice" ? (data.categoria?.trim() || null) : null,
+        giorno: giorno_val,
+        ora_inizio: ora_inizio_val,
+        ora_fine: ora_fine_val,
         costo_mensile: data.costo_mensile || 0,
         costo_annuale: data.costo_annuale || 0,
         attivo: data.attivo !== false,
@@ -308,6 +328,10 @@ export function use_upsert_corso() {
       };
       if (data.livello_richiesto !== undefined) payload.livello_richiesto = data.livello_richiesto || "tutti";
       if (data.stagione_id) payload.stagione_id = data.stagione_id;
+
+      // Debug log per diagnosi salvataggio: visibile in console del browser.
+      // eslint-disable-next-line no-console
+      console.debug("[use_upsert_corso] payload:", payload, "club_id:", club_id_val);
       let corso_id = data.id;
       if (data.id) {
         const { error } = await supabase.from("corsi").update(payload).eq("id", data.id);
