@@ -1545,6 +1545,7 @@ const CorsoModal: React.FC<{
     on_save({
       ...form,
       id: corso?.id,
+      categoria: form.tipo === "Off-Ice" ? (form.categoria?.trim() || null) : null,
       giorno: place ? form.giorno : null,
       ora_inizio: place ? form.ora_inizio : null,
       ora_fine: place ? form.ora_fine : null,
