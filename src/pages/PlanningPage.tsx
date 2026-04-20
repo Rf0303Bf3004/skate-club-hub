@@ -733,7 +733,7 @@ function PlanningPageInner() {
             id: pc.id, // use planning row id for operations
             corso_id: pc.corso_id,
             club_id: template?.club_id || getClubId(),
-            nome: pc.titolo_override || template?.nome || "?",
+            nome: pc.titolo_override || template?.nome || corsi_nome_lookup.get(pc.corso_id)?.nome || "?",
             tipo: template?.tipo || "",
             giorno: GIORNI[dayIdx],
             data: pc.data,
