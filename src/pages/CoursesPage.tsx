@@ -1304,6 +1304,9 @@ const CorsoModal: React.FC<{
   const [ghiaccio_warning, set_ghiaccio_warning] = useState<string | null>(null);
   const [validating_ghiaccio, set_validating_ghiaccio] = useState(false);
   const [no_ice_realtime, set_no_ice_realtime] = useState(false);
+  const [tipo_dialog_open, set_tipo_dialog_open] = useState(false);
+  const [tipo_dialog_tipo, set_tipo_dialog_tipo] = useState<string>(corso?.tipo || "Ghiaccio");
+  const [tipo_dialog_categoria, set_tipo_dialog_categoria] = useState<string>(corso?.categoria || "");
 
   // Query fasce ghiaccio for selected day to control toggle state
   const { data: fasce_giorno_modal = [] } = useQuery({
