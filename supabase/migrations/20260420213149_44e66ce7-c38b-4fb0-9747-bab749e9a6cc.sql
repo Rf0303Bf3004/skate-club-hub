@@ -1,0 +1,1 @@
+ALTER TABLE public.corsi ADD COLUMN IF NOT EXISTS categoria text NULL;
