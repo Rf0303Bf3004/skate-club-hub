@@ -68,8 +68,13 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       )}
       <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-muted/40 flex flex-col shadow-[1px_0_0_0_hsl(var(--border))] transform transition-transform duration-200 ease-out ${sidebar_open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
         <div className="p-5 flex items-center gap-3">
-          <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center shrink-0">
-            <span className="text-primary-foreground font-bold text-lg">C</span>
+          <div
+            className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+            style={{ backgroundColor: club?.colore_primario || "hsl(var(--primary))" }}
+          >
+            <span className="text-white font-bold text-lg">
+              {(club?.nome || session?.club_nome || "C").trim().charAt(0).toUpperCase()}
+            </span>
           </div>
           <span className="font-bold tracking-tight text-primary text-lg">CPA Manager</span>
           <button className="ml-auto lg:hidden" onClick={() => set_sidebar_open(false)}>
