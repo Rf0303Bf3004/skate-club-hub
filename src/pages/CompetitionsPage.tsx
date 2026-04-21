@@ -960,6 +960,9 @@ const CompetitionsPage: React.FC = () => {
               <TabsTrigger value="atleti">
                 {t("atleti_iscritti")} ({selected.atleti_iscritti?.length ?? 0})
               </TabsTrigger>
+              <TabsTrigger value="risultati">
+                Risultati ({(selected.atleti_iscritti ?? []).filter((ai: any) => ai.posizione || ai.medaglia).length})
+              </TabsTrigger>
               <TabsTrigger value="dettagli">{t("dettagli")}</TabsTrigger>
             </TabsList>
 
