@@ -1,4 +1,4 @@
-// All mock data for the CPA Manager demo
+// All mock data for the Ice Arena Manager demo
 
 export interface club_config {
   id: string;

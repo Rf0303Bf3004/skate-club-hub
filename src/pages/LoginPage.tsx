@@ -37,7 +37,7 @@ const LoginPage: React.FC = () => {
               <span className="text-primary-foreground font-bold text-xl tracking-tight">C</span>
             </div>
             <div className="text-center">
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">CPA Manager</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-foreground">Ice Arena Manager</h1>
               <p className="text-sm text-muted-foreground mt-1">{t('benvenuto')}</p>
             </div>
           </div>
