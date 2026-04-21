@@ -573,6 +573,7 @@ const InvoicesPage: React.FC = () => {
   const segna_pagata = use_segna_fattura_pagata();
   const genera = use_genera_fatture_mensili();
   const elimina = use_elimina_fattura();
+  const invia_email = use_invia_email_fattura();
   const [status_filter, set_status_filter] = useState("tutti");
   const [selected_fattura, set_selected_fattura] = useState<any>(null);
 
@@ -613,7 +614,22 @@ const InvoicesPage: React.FC = () => {
     }
   };
 
-  if (isLoading)
+  const handle_invia_email = async () => {
+    if (!selected_fattura) return;
+    const atleta = atleti.find((a: any) => a.id === selected_fattura.atleta_id);
+    const email = atleta?.genitore1_email || atleta?.genitore2_email || "";
+    if (!email) {
+      toast({ title: "Email non disponibile", description: "Configura email genitore", variant: "destructive" });
+      return;
+    }
+    try {
+      await invia_email.mutateAsync({ fattura_id: selected_fattura.id, email });
+      toast({ title: `📧 Email registrata per ${email}` });
+      set_selected_fattura((prev: any) => prev ? { ...prev, email_inviata_at: new Date().toISOString() } : prev);
+    } catch (err: any) {
+      toast({ title: "Errore invio email", description: err?.message, variant: "destructive" });
+    }
+  };
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -635,8 +651,10 @@ const InvoicesPage: React.FC = () => {
           on_close={() => set_selected_fattura(null)}
           on_paga={handle_paga}
           on_elimina={handle_elimina}
+          on_invia_email={handle_invia_email}
           paying={segna_pagata.isPending}
           deleting={elimina.isPending}
+          sending_email={invia_email.isPending}
         />
       )}
 
