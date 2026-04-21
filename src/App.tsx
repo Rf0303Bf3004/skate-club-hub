@@ -32,6 +32,9 @@ import NuovaStagionePage from "@/pages/NuovaStagionePage";
 import TestLivelloPage from "@/pages/TestLivelloPage";
 import PortaleAtletaPage from "@/pages/PortaleAtletaPage";
 import CampiEventiPage from "@/pages/CampiEventiPage";
+import MedagliereePage from "@/pages/MedagliereePage";
+import PreSeasonPage from "@/pages/PreSeasonPage";
+import PostSeasonPage from "@/pages/PostSeasonPage";
 
 const queryClient = new QueryClient();
 
@@ -101,6 +104,9 @@ const AuthenticatedApp = () => {
           <Route path="/stagioni" element={<SeasonsPage />} />
           <Route path="/campi" element={<TrainingCampsPage />} />
           <Route path="/campi-eventi" element={<CampiEventiPage />} />
+          <Route path="/medagliere" element={<MedagliereePage />} />
+          <Route path="/pre-season" element={<PreSeasonPage />} />
+          <Route path="/post-season" element={<PostSeasonPage />} />
           <Route path="/planning" element={<PlanningPage />} />
           <Route path="/setup-club" element={<ClubSetupPage />} />
           <Route path="/gestione-avanzata" element={<AdvancedManagementPage />} />
