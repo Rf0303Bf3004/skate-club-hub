@@ -459,6 +459,11 @@ const ClubSetupPage: React.FC = () => {
             <Field label={t("nome")} icon={<Hash className="w-3.5 h-3.5" />}>
               <Input value={get_val("nome")} onChange={(e) => set_val("nome", e.target.value)} />
             </Field>
+            <Field label={t("paese")} icon={<Globe className="w-3.5 h-3.5" />}>
+              <Input value={get_val("paese")} onChange={(e) => set_val("paese", e.target.value)} placeholder="CH" />
+            </Field>
+          </div>
+          <div className="grid gap-4" style={{ gridTemplateColumns: "60% 15% 25%" }}>
             <Field label="Indirizzo *" icon={<MapPin className="w-3.5 h-3.5" />}>
               <Input required value={get_val("indirizzo")} onChange={(e) => set_val("indirizzo", e.target.value)} placeholder="Via Roma 1" />
             </Field>
@@ -468,9 +473,8 @@ const ClubSetupPage: React.FC = () => {
             <Field label="Città *" icon={<MapPin className="w-3.5 h-3.5" />}>
               <Input required value={get_val("citta")} onChange={(e) => set_val("citta", e.target.value)} placeholder="Lugano" />
             </Field>
-            <Field label={t("paese")} icon={<Globe className="w-3.5 h-3.5" />}>
-              <Input value={get_val("paese")} onChange={(e) => set_val("paese", e.target.value)} placeholder="CH" />
-            </Field>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label={t("email")} icon={<Mail className="w-3.5 h-3.5" />}>
               <Input type="email" value={get_val("email")} onChange={(e) => set_val("email", e.target.value)} />
             </Field>
