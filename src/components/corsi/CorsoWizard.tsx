@@ -919,7 +919,16 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
               </Button>
             )}
             {step === 4 && (
-              <Button onClick={handle_submit} disabled={saving} className="bg-primary hover:bg-primary/90">
+              <Button
+                onClick={handle_submit}
+                disabled={saving || istruttori_ko_selezionati.length > 0}
+                className="bg-primary hover:bg-primary/90"
+                title={
+                  istruttori_ko_selezionati.length > 0
+                    ? `Rimuovi prima gli istruttori non disponibili: ${istruttori_ko_selezionati.map((i: any) => `${i.nome} ${i.cognome}`).join(", ")}`
+                    : ""
+                }
+              >
                 {saving ? "Salvataggio..." : "💾 Salva corso"}
               </Button>
             )}
