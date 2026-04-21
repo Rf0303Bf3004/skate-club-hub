@@ -1000,6 +1000,7 @@ export type Database = {
           atleta_id: string
           carriera: string | null
           created_at: string
+          disciplina: string | null
           gara_id: string
           id: string
           livello_atleta: string | null
@@ -1015,6 +1016,7 @@ export type Database = {
           atleta_id: string
           carriera?: string | null
           created_at?: string
+          disciplina?: string | null
           gara_id: string
           id?: string
           livello_atleta?: string | null
@@ -1030,6 +1032,7 @@ export type Database = {
           atleta_id?: string
           carriera?: string | null
           created_at?: string
+          disciplina?: string | null
           gara_id?: string
           id?: string
           livello_atleta?: string | null
@@ -1519,6 +1522,7 @@ export type Database = {
           intestatario_conto: string | null
           max_atlete_lezione_condivisa: number | null
           max_lezioni_private_contemporanee: number | null
+          medagliere_punti: Json | null
           slot_lezione_privata_minuti: number | null
           twint_paylink: string | null
         }
@@ -1537,6 +1541,7 @@ export type Database = {
           intestatario_conto?: string | null
           max_atlete_lezione_condivisa?: number | null
           max_lezioni_private_contemporanee?: number | null
+          medagliere_punti?: Json | null
           slot_lezione_privata_minuti?: number | null
           twint_paylink?: string | null
         }
@@ -1555,6 +1560,7 @@ export type Database = {
           intestatario_conto?: string | null
           max_atlete_lezione_condivisa?: number | null
           max_lezioni_private_contemporanee?: number | null
+          medagliere_punti?: Json | null
           slot_lezione_privata_minuti?: number | null
           twint_paylink?: string | null
         }

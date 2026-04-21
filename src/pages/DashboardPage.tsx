@@ -42,6 +42,7 @@ import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
 import IstruttoriDisponibiliWidget from "@/components/dashboard/IstruttoriDisponibiliWidget";
+import MedagliereWidget from "@/components/MedagliereWidget";
 
 // ─── Helpers ──────────────────────────────────────────────
 function normalize_giorno(value?: string): string {
@@ -1350,6 +1351,9 @@ const DashboardPage: React.FC = () => {
               ))}
             </div>
           )}
+
+          {/* Medagliere stagione (top 5) */}
+          <MedagliereWidget compact limit={5} />
 
           {/* Ultime comunicazioni */}
           {comunicazioni.length > 0 && (

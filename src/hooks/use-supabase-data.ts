@@ -289,6 +289,7 @@ export function use_gare() {
             id: x.id,
             atleta_id: x.atleta_id,
             carriera: x.carriera || "",
+            disciplina: x.disciplina || "",
             livello_atleta: x.livello_atleta || null,
             punteggio: x.punteggio,
             punteggio_tecnico: x.punteggio_tecnico,
