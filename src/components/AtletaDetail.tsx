@@ -25,7 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Shield, Medal, Save, Upload, Music, ArrowRightLeft, X, Mail, Copy, Printer } from "lucide-react";
+import { ArrowLeft, Shield, Medal, Save, Upload, Music, ArrowRightLeft, X, Mail, Copy, Printer, Link as LinkIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
@@ -243,6 +243,8 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   const [show_migra, set_show_migra] = useState(false);
   const [show_invito_1, set_show_invito_1] = useState(false);
   const [show_invito_2, set_show_invito_2] = useState(false);
+  const [generating_portal, set_generating_portal] = useState(false);
+
 
   const [form, set_form] = useState({
     ...a,
@@ -306,6 +308,31 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
 
   const upd = (k: string, v: any) => set_form((p: any) => ({ ...p, [k]: v }));
   const is_carriera_attiva = form.percorso_amatori === "Stellina 4";
+
+  const portal_url = (form as any)?.portal_token
+    ? `${window.location.origin}/portale-atleta/${(form as any).portal_token}`
+    : null;
+
+  const handle_genera_portal = async () => {
+    set_generating_portal(true);
+    try {
+      let token = (form as any).portal_token;
+      if (!token) {
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        token = Array.from({ length: 24 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+        const { error } = await supabase.from("atleti").update({ portal_token: token } as any).eq("id", form.id);
+        if (error) throw error;
+        set_form((prev: any) => ({ ...prev, portal_token: token }));
+      }
+      const url = `${window.location.origin}/portale-atleta/${token}`;
+      await navigator.clipboard.writeText(url).catch(() => {});
+      toast({ title: "🔗 Link portale copiato", description: url });
+    } catch (err: any) {
+      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+    } finally {
+      set_generating_portal(false);
+    }
+  };
 
   const handle_foto_upload = async (file: File) => {
     set_uploading_foto(true);
@@ -443,6 +470,16 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                 <Mail className="w-3.5 h-3.5" /> Scheda genitore 2 + QR
               </Button>
             )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handle_genera_portal}
+              disabled={generating_portal}
+              className="gap-1.5 text-xs border-primary/40 text-primary hover:bg-primary/5"
+              title={portal_url ?? "Genera link portale per l'atleta"}
+            >
+              <LinkIcon className="w-3.5 h-3.5" /> {portal_url ? "Copia link portale" : "Genera link portale"}
+            </Button>
             <Button
               variant="outline"
               size="sm"

@@ -30,8 +30,24 @@ import RuoliPermessiPage from "@/pages/RuoliPermessiPage";
 import RichiesteIscrizionePage from "@/pages/RichiesteIscrizionePage";
 import NuovaStagionePage from "@/pages/NuovaStagionePage";
 import TestLivelloPage from "@/pages/TestLivelloPage";
+import PortaleAtletaPage from "@/pages/PortaleAtletaPage";
 
 const queryClient = new QueryClient();
+
+// Pagine pubbliche (no auth) gestite prima del gate di autenticazione.
+const PublicRoutes = ({ children }: { children: React.ReactNode }) => {
+  const path = typeof window !== "undefined" ? window.location.pathname : "";
+  if (path.startsWith("/portale-atleta/")) {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/portale-atleta/:token" element={<PortaleAtletaPage />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
+  return <>{children}</>;
+};
 
 const SmartHome = () => {
   const navigate = useNavigate();
@@ -131,13 +147,15 @@ const AuthenticatedApp = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <I18nProvider>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <AuthenticatedApp />
-        </TooltipProvider>
-      </AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <PublicRoutes>
+          <AuthProvider>
+            <AuthenticatedApp />
+          </AuthProvider>
+        </PublicRoutes>
+      </TooltipProvider>
     </I18nProvider>
   </QueryClientProvider>
 );
