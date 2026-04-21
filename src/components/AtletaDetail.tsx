@@ -1160,8 +1160,10 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
           </DialogHeader>
           <div id="qr-portale-print" className="space-y-4">
             <div className="text-center space-y-1">
-              <p className="text-base font-semibold text-foreground">{form.nome} {form.cognome}</p>
-              <p className="text-xs text-muted-foreground">Scansiona per accedere al portale personale</p>
+              <p className="text-sm text-muted-foreground">
+                Scansiona per accedere al portale personale di{" "}
+                <span className="font-semibold text-foreground">{form.nome} {form.cognome}</span>
+              </p>
             </div>
             <div className="flex justify-center">
               {portal_qr_src ? (
