@@ -623,7 +623,7 @@ const ClubSetupPage: React.FC = () => {
         {/* Lezioni Private */}
         <div>
           <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">
-            Lezioni Private
+            🎿 Lezioni Private
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Max atleti per lezione privata">
@@ -646,7 +646,7 @@ const ClubSetupPage: React.FC = () => {
                 </label>
                 <label className="flex items-center gap-2 text-sm cursor-pointer">
                   <RadioGroupItem value="diviso_atleti" id="mcp_diviso" />
-                  <span>Tariffa divisa tra atleti</span>
+                  <span>Diviso tra atleti</span>
                 </label>
               </RadioGroup>
             </Field>
