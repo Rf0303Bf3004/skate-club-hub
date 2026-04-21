@@ -473,6 +473,16 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
             <Button
               variant="outline"
               size="sm"
+              onClick={handle_genera_portal}
+              disabled={generating_portal}
+              className="gap-1.5 text-xs border-primary/40 text-primary hover:bg-primary/5"
+              title={portal_url ?? "Genera link portale per l'atleta"}
+            >
+              <LinkIcon className="w-3.5 h-3.5" /> {portal_url ? "Copia link portale" : "Genera link portale"}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => set_show_migra(true)}
               className="gap-1.5 text-xs border-primary/40 text-primary hover:bg-primary/5"
             >
