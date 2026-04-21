@@ -131,6 +131,7 @@ const CommunicationsPage: React.FC = () => {
       testo: final_testo,
       tipo_destinatari,
       corso_id: tipo_destinatari === 'per_corso' ? corso_id : null,
+      livello_categoria: tipo_destinatari === 'per_livello' ? livello_categoria : null,
     });
     set_modal_open(false);
   };
