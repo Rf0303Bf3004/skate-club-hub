@@ -746,31 +746,58 @@ export type Database = {
           atleta_id: string | null
           club_id: string
           created_at: string
+          data_emissione: string | null
+          data_pagamento: string | null
           data_scadenza: string | null
           descrizione: string | null
+          email_inviata_at: string | null
           id: string
           importo: number | null
+          note: string | null
+          numero: string | null
           pagata: boolean | null
+          periodo: string | null
+          riferimento_id: string | null
+          stato: string | null
+          tipo: string | null
         }
         Insert: {
           atleta_id?: string | null
           club_id: string
           created_at?: string
+          data_emissione?: string | null
+          data_pagamento?: string | null
           data_scadenza?: string | null
           descrizione?: string | null
+          email_inviata_at?: string | null
           id?: string
           importo?: number | null
+          note?: string | null
+          numero?: string | null
           pagata?: boolean | null
+          periodo?: string | null
+          riferimento_id?: string | null
+          stato?: string | null
+          tipo?: string | null
         }
         Update: {
           atleta_id?: string | null
           club_id?: string
           created_at?: string
+          data_emissione?: string | null
+          data_pagamento?: string | null
           data_scadenza?: string | null
           descrizione?: string | null
+          email_inviata_at?: string | null
           id?: string
           importo?: number | null
+          note?: string | null
+          numero?: string | null
           pagata?: boolean | null
+          periodo?: string | null
+          riferimento_id?: string | null
+          stato?: string | null
+          tipo?: string | null
         }
         Relationships: []
       }
@@ -1480,6 +1507,9 @@ export type Database = {
           created_at: string
           data_fine_stagione: string | null
           data_inizio_stagione: string | null
+          fatturazione_costo_test: number | null
+          fatturazione_giorno_mese: number | null
+          fatturazione_invio_email_auto: boolean | null
           iban: string | null
           id: string
           indirizzo_banca: string | null
@@ -1495,6 +1525,9 @@ export type Database = {
           created_at?: string
           data_fine_stagione?: string | null
           data_inizio_stagione?: string | null
+          fatturazione_costo_test?: number | null
+          fatturazione_giorno_mese?: number | null
+          fatturazione_invio_email_auto?: boolean | null
           iban?: string | null
           id?: string
           indirizzo_banca?: string | null
@@ -1510,6 +1543,9 @@ export type Database = {
           created_at?: string
           data_fine_stagione?: string | null
           data_inizio_stagione?: string | null
+          fatturazione_costo_test?: number | null
+          fatturazione_giorno_mese?: number | null
+          fatturazione_invio_email_auto?: boolean | null
           iban?: string | null
           id?: string
           indirizzo_banca?: string | null
