@@ -1130,6 +1130,44 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
           on_close={() => set_show_invito_2(false)}
         />
       )}
+      <Dialog open={show_qr_portal} onOpenChange={set_show_qr_portal}>
+        <DialogContent className="max-w-md print:max-w-full print:shadow-none">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <QrCode className="w-5 h-5 text-primary" /> QR Accesso Portale
+            </DialogTitle>
+          </DialogHeader>
+          <div id="qr-portale-print" className="space-y-4">
+            <div className="text-center space-y-1">
+              <p className="text-base font-semibold text-foreground">{form.nome} {form.cognome}</p>
+              <p className="text-xs text-muted-foreground">Scansiona per accedere al portale personale</p>
+            </div>
+            <div className="flex justify-center">
+              {portal_qr_src ? (
+                <img src={portal_qr_src} alt="QR portale atleta" className="w-64 h-64 rounded-xl border border-border bg-background p-2" />
+              ) : (
+                <div className="w-64 h-64 bg-muted rounded-xl animate-pulse" />
+              )}
+            </div>
+            <div className="space-y-1.5 print:hidden">
+              <Label className="text-xs text-muted-foreground">Link diretto</Label>
+              <div className="flex gap-2">
+                <Input readOnly value={portal_url ?? ""} className="font-mono text-xs h-9" onFocus={(e) => e.currentTarget.select()} />
+                <Button size="sm" variant="outline" onClick={handle_copy_portal_link} className="shrink-0">
+                  <Copy className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            </div>
+            <p className="text-xs text-center text-muted-foreground hidden print:block break-all">{portal_url}</p>
+          </div>
+          <div className="flex gap-2 justify-end pt-2 print:hidden">
+            <Button variant="outline" size="sm" onClick={() => window.print()}>
+              <Printer className="w-4 h-4 mr-1.5" /> Stampa
+            </Button>
+            <Button size="sm" onClick={() => set_show_qr_portal(false)}>Chiudi</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
