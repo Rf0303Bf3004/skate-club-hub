@@ -407,9 +407,11 @@ export type Database = {
           durata_pulizia_minuti: number
           id: string
           max_atleti_contemporanei: number
+          max_atleti_lezione_privata: number
           max_atleti_per_istruttore: number
           min_atleti_attivazione_corso: number
           min_iscritti_attivazione_corso: number | null
+          modalita_costo_privata: string
           ora_apertura_default: string
           ora_chiusura_default: string
           stagione_id: string | null
@@ -420,9 +422,11 @@ export type Database = {
           durata_pulizia_minuti?: number
           id?: string
           max_atleti_contemporanei?: number
+          max_atleti_lezione_privata?: number
           max_atleti_per_istruttore?: number
           min_atleti_attivazione_corso?: number
           min_iscritti_attivazione_corso?: number | null
+          modalita_costo_privata?: string
           ora_apertura_default?: string
           ora_chiusura_default?: string
           stagione_id?: string | null
@@ -433,9 +437,11 @@ export type Database = {
           durata_pulizia_minuti?: number
           id?: string
           max_atleti_contemporanei?: number
+          max_atleti_lezione_privata?: number
           max_atleti_per_istruttore?: number
           min_atleti_attivazione_corso?: number
           min_iscritti_attivazione_corso?: number | null
+          modalita_costo_privata?: string
           ora_apertura_default?: string
           ora_chiusura_default?: string
           stagione_id?: string | null

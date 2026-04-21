@@ -225,6 +225,8 @@ const ClubSetupPage: React.FC = () => {
         max_atleti_contemporanei: to_int_or_null(get_ghiaccio_val("max_atleti_contemporanei", "")),
         max_atleti_per_istruttore: to_int_or_null(get_ghiaccio_val("max_atleti_per_istruttore", "")),
         min_iscritti_attivazione_corso: to_int_or_null(get_ghiaccio_val("min_iscritti_attivazione_corso", "")),
+        max_atleti_lezione_privata: parseInt(get_ghiaccio_val("max_atleti_lezione_privata", 3)) || 3,
+        modalita_costo_privata: get_ghiaccio_val("modalita_costo_privata", "tariffa_fissa") || "tariffa_fissa",
       };
 
       if (config_ghiaccio?.id) {
@@ -613,6 +615,35 @@ const ClubSetupPage: React.FC = () => {
               <p className="text-[11px] text-muted-foreground italic">ℹ Non configurato — gli allarmi correlati sono disattivati. Consigliamo di impostare un valore.</p>
             )}
           </Field>
+        </div>
+
+        <Separator />
+
+        {/* Lezioni Private */}
+        <div>
+          <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">
+            Lezioni Private
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="Max atleti per lezione privata">
+              <Input
+                type="number"
+                min={1}
+                value={get_ghiaccio_val("max_atleti_lezione_privata", (config_ghiaccio as any)?.max_atleti_lezione_privata ?? 3)}
+                onChange={(e) => set_ghiaccio_val("max_atleti_lezione_privata", e.target.value)}
+              />
+            </Field>
+            <Field label="Modalità costo privata">
+              <select
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                value={get_ghiaccio_val("modalita_costo_privata", (config_ghiaccio as any)?.modalita_costo_privata ?? "tariffa_fissa")}
+                onChange={(e) => set_ghiaccio_val("modalita_costo_privata", e.target.value)}
+              >
+                <option value="tariffa_fissa">Tariffa fissa per atleta</option>
+                <option value="tariffa_divisa">Tariffa divisa tra atleti</option>
+              </select>
+            </Field>
+          </div>
         </div>
 
         <div className="flex justify-end">
