@@ -460,7 +460,7 @@ export default function TestLivelloPage() {
             <div className="flex justify-end mt-4">
               <Button onClick={() => conferma_esiti.mutate()} disabled={conferma_esiti.isPending}>
                 <CheckCircle className="w-4 h-4 mr-2" />
-                Conferma esiti e aggiorna livelli
+                Conferma promozioni e aggiorna livelli
               </Button>
             </div>
           )}
