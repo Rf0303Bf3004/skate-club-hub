@@ -557,7 +557,7 @@ const InvoicesPage: React.FC = () => {
 
   const handle_genera = async () => {
     try {
-      const count = await genera.mutateAsync();
+      const count = await genera.mutateAsync(undefined);
       toast({ title: `✅ ${count} fatture generate` });
     } catch (err: any) {
       toast({ title: "Errore generazione", description: err?.message, variant: "destructive" });
