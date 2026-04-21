@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Calendar } from "lucide-react";
 import CalendarioAtletaInterattivo from "@/components/CalendarioAtletaInterattivo";
 import InvitoGenitoreModal from "@/components/InvitoGenitoreModal";
+import StoricoTestAtleta from "@/components/StoricoTestAtleta";
 import DateInput from "@/components/forms/DateInput";
 import { useI18n } from "@/lib/i18n";
 import {
