@@ -12,6 +12,15 @@ import { toast } from "@/hooks/use-toast";
 import { istruttore_disponibile, time_to_min as tmin } from "@/lib/availability";
 
 const GIORNI_DB = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
+const GIORNO_TO_WEEKDAY: Record<string, number> = {
+  "Lunedì": 1,
+  "Martedì": 2,
+  "Mercoledì": 3,
+  "Giovedì": 4,
+  "Venerdì": 5,
+  "Sabato": 6,
+  "Domenica": 0,
+};
 
 const LIVELLI_CORSO = [
   "tutti", "pulcini", "stellina1", "stellina2", "stellina3", "stellina4",
@@ -207,6 +216,8 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
     stagione_id: corso?.stagione_id || null,
   });
 
+  const has_slot = posiziona_planning && !!form.giorno && !!form.ora_inizio && !!form.ora_fine;
+
   // Quando le stagioni arrivano, pre-valorizza con quella attiva (fix bug stagione_id NULL)
   useEffect(() => {
     if (!form.stagione_id && stagione_default_id) {
@@ -223,6 +234,39 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
       if (new_end !== form.ora_fine) set_form((p) => ({ ...p, ora_fine: new_end }));
     }
   }, [form.ora_inizio, form.durata]);
+
+  const { data: planning_settimana_corrente = [] } = useQuery({
+    queryKey: ["wizard_planning_settimana", get_current_club_id(), form.giorno],
+    enabled: !!get_current_club_id() && has_slot,
+    queryFn: async () => {
+      const club_id = get_current_club_id();
+      if (!club_id) return [];
+
+      const { data: settimane, error: settimane_error } = await supabase
+        .from("planning_settimane")
+        .select("id")
+        .eq("club_id", club_id)
+        .eq("archiviato", false)
+        .order("data_lunedi", { ascending: false })
+        .limit(1);
+
+      if (settimane_error) throw settimane_error;
+      if (!settimane?.length) return [];
+
+      const { data: planning, error: planning_error } = await supabase
+        .from("planning_corsi_settimana")
+        .select("corso_id, ora_inizio, ora_fine, istruttore_id, data")
+        .eq("settimana_id", settimane[0].id)
+        .eq("annullato", false);
+
+      if (planning_error) throw planning_error;
+
+      const weekday = GIORNO_TO_WEEKDAY[form.giorno];
+      return (planning ?? []).filter(
+        (p: any) => new Date(`${p.data}T00:00:00`).getDay() === weekday,
+      );
+    },
+  });
 
   const on_ora_fine_change = (v: string) => {
     if (form.ora_inizio && v && time_to_min(v) > time_to_min(form.ora_inizio)) {
@@ -262,28 +306,26 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
 
   // ── Classificazione istruttori condivisa fra Step 3 e Step 4 (Riepilogo) ──
   // Singola fonte di verità per "non disponibile" basata su availability.istruttore_disponibile.
-  const has_slot = posiziona_planning && !!form.giorno && !!form.ora_inizio && !!form.ora_fine;
   type Bucket = "ok" | "busy" | "ko";
   const conflitti_per_istr = useMemo(() => {
     const map: Record<string, string[]> = {};
     if (!has_slot) return map;
     const slot_s = tmin(form.ora_inizio);
     const slot_e = tmin(form.ora_fine);
-    for (const c of (corsi || [])) {
-      if (!c || c.id === corso?.id) continue;
-      if (c.giorno !== form.giorno) continue;
-      if (!c.ora_inizio || !c.ora_fine) continue;
-      const cs = tmin(c.ora_inizio.slice(0, 5));
-      const ce = tmin(c.ora_fine.slice(0, 5));
+    for (const p of planning_settimana_corrente) {
+      if (!p || p.corso_id === corso?.id || !p.istruttore_id) continue;
+      if (!p.ora_inizio || !p.ora_fine) continue;
+      const cs = tmin(p.ora_inizio.slice(0, 5));
+      const ce = tmin(p.ora_fine.slice(0, 5));
       if (ce <= slot_s || cs >= slot_e) continue;
-      const ids: string[] = c.istruttori_ids || [];
-      for (const iid of ids) {
-        if (!map[iid]) map[iid] = [];
-        map[iid].push(`${c.nome} (${c.ora_inizio.slice(0,5)}–${c.ora_fine.slice(0,5)})`);
-      }
+      const corso_match = (corsi || []).find((c: any) => c.id === p.corso_id);
+      if (!map[p.istruttore_id]) map[p.istruttore_id] = [];
+      map[p.istruttore_id].push(
+        `${corso_match?.nome || "altro corso"} (${p.ora_inizio.slice(0, 5)}–${p.ora_fine.slice(0, 5)})`,
+      );
     }
     return map;
-  }, [has_slot, form.giorno, form.ora_inizio, form.ora_fine, corsi, corso?.id]);
+  }, [has_slot, form.ora_inizio, form.ora_fine, planning_settimana_corrente, corsi, corso?.id]);
 
   const classify_istruttore = (i: any): { bucket: Bucket; label: string; tooltip: string } => {
     if (!has_slot) return { bucket: "ok", label: "", tooltip: "" };
