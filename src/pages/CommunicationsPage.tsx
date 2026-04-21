@@ -268,6 +268,7 @@ const CommunicationsPage: React.FC = () => {
                   <SelectContent>
                     <SelectItem value="tutti">Tutti</SelectItem>
                     <SelectItem value="per_corso">Per corso</SelectItem>
+                    <SelectItem value="per_livello">Per livello</SelectItem>
                     <SelectItem value="solo_istruttori">Solo istruttori</SelectItem>
                   </SelectContent>
                 </Select>
@@ -282,6 +283,27 @@ const CommunicationsPage: React.FC = () => {
                       {corsi.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
                     </SelectContent>
                   </Select>
+                </div>
+              )}
+
+              {tipo_destinatari === 'per_livello' && (
+                <div className="space-y-2">
+                  <div>
+                    <Label className="text-xs">Livello destinatari</Label>
+                    <Select value={livello_categoria} onValueChange={set_livello_categoria}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pulcini_only">Solo Pulcini (comunicazioni operative)</SelectItem>
+                        <SelectItem value="stellina_1_plus">Stellina 1 in su</SelectItem>
+                        <SelectItem value="bronzo_plus">Bronzo in su</SelectItem>
+                        <SelectItem value="argento_plus">Argento in su</SelectItem>
+                        <SelectItem value="oro_plus">Oro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-snug">
+                    Il filtro usa il livello tecnico massimo dell'atleta (artistico o stile). I Pulcini ricevono solo se selezioni esplicitamente "Solo Pulcini".
+                  </p>
                 </div>
               )}
 
