@@ -156,7 +156,7 @@ const ClubSetupPage: React.FC = () => {
       const setup_fields = [
         "max_lezioni_private_contemporanee", "max_atlete_lezione_condivisa",
         "slot_lezione_privata_minuti", "iban", "intestatario_conto", "banca", "indirizzo_banca", "twint_paylink",
-        "data_inizio_stagione", "data_fine_stagione",
+        "data_inizio_stagione", "data_fine_stagione", "medagliere_punti",
       ];
       for (const f of setup_fields) {
         if (f in form) setup_payload[f] = form[f];
