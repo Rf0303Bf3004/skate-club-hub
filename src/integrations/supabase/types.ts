@@ -699,6 +699,54 @@ export type Database = {
           },
         ]
       }
+      eventi_campi: {
+        Row: {
+          club_id: string
+          contatti: string | null
+          costo: number | null
+          created_at: string
+          data_fine: string | null
+          data_inizio: string | null
+          descrizione: string | null
+          id: string
+          luogo: string | null
+          modalita: string
+          nome: string
+          note: string | null
+          stagione_id: string | null
+        }
+        Insert: {
+          club_id: string
+          contatti?: string | null
+          costo?: number | null
+          created_at?: string
+          data_fine?: string | null
+          data_inizio?: string | null
+          descrizione?: string | null
+          id?: string
+          luogo?: string | null
+          modalita?: string
+          nome?: string
+          note?: string | null
+          stagione_id?: string | null
+        }
+        Update: {
+          club_id?: string
+          contatti?: string | null
+          costo?: number | null
+          created_at?: string
+          data_fine?: string | null
+          data_inizio?: string | null
+          descrizione?: string | null
+          id?: string
+          luogo?: string | null
+          modalita?: string
+          nome?: string
+          note?: string | null
+          stagione_id?: string | null
+        }
+        Relationships: []
+      }
       eventi_straordinari: {
         Row: {
           club_id: string
@@ -991,6 +1039,41 @@ export type Database = {
             columns: ["evento_id"]
             isOneToOne: false
             referencedRelation: "eventi_straordinari"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      iscrizioni_eventi_campi: {
+        Row: {
+          atleta_id: string
+          created_at: string
+          evento_campo_id: string
+          id: string
+          note: string | null
+          stato: string
+        }
+        Insert: {
+          atleta_id: string
+          created_at?: string
+          evento_campo_id: string
+          id?: string
+          note?: string | null
+          stato?: string
+        }
+        Update: {
+          atleta_id?: string
+          created_at?: string
+          evento_campo_id?: string
+          id?: string
+          note?: string | null
+          stato?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "iscrizioni_eventi_campi_evento_campo_id_fkey"
+            columns: ["evento_campo_id"]
+            isOneToOne: false
+            referencedRelation: "eventi_campi"
             referencedColumns: ["id"]
           },
         ]
@@ -1505,6 +1588,50 @@ export type Database = {
           tot?: number | null
         }
         Relationships: []
+      }
+      sessioni_campo: {
+        Row: {
+          created_at: string
+          data: string
+          evento_campo_id: string
+          id: string
+          istruttore_id: string | null
+          note: string | null
+          ora_fine: string
+          ora_inizio: string
+          titolo: string
+        }
+        Insert: {
+          created_at?: string
+          data: string
+          evento_campo_id: string
+          id?: string
+          istruttore_id?: string | null
+          note?: string | null
+          ora_fine: string
+          ora_inizio: string
+          titolo?: string
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          evento_campo_id?: string
+          id?: string
+          istruttore_id?: string | null
+          note?: string | null
+          ora_fine?: string
+          ora_inizio?: string
+          titolo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessioni_campo_evento_campo_id_fkey"
+            columns: ["evento_campo_id"]
+            isOneToOne: false
+            referencedRelation: "eventi_campi"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       setup_club: {
         Row: {
