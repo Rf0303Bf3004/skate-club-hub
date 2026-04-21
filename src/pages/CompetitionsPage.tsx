@@ -27,6 +27,7 @@ import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import SessioniCampoEstivo from "@/components/SessioniCampoEstivo";
+import MedagliereWidget from "@/components/MedagliereWidget";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 const LIVELLI = [
@@ -1182,10 +1183,17 @@ const CompetitionsPage: React.FC = () => {
           </Button>
         </div>
 
-        <ImportGaraPdf
-          atleti_db={atleti.map((a: any) => ({ id: a.id, nome: a.nome, cognome: a.cognome }))}
-          on_done={() => {}}
-        />
+        <Tabs defaultValue="elenco" className="w-full">
+          <TabsList>
+            <TabsTrigger value="elenco">Elenco gare</TabsTrigger>
+            <TabsTrigger value="medagliere">🏆 Medagliere stagione</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="elenco" className="mt-4 space-y-6">
+            <ImportGaraPdf
+              atleti_db={atleti.map((a: any) => ({ id: a.id, nome: a.nome, cognome: a.cognome }))}
+              on_done={() => {}}
+            />
 
         <div className="bg-card rounded-xl shadow-card overflow-hidden">
           <div className="px-4 py-3 border-b border-border flex items-center justify-between">
@@ -1350,6 +1358,12 @@ const CompetitionsPage: React.FC = () => {
             )}
           </div>
         )}
+          </TabsContent>
+
+          <TabsContent value="medagliere" className="mt-4">
+            <MedagliereWidget />
+          </TabsContent>
+        </Tabs>
       </div>
     </>
   );
