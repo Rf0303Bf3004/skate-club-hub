@@ -2198,22 +2198,28 @@ function PlanningPageInner() {
                       })}
 
                       {pick_corso && day_ice_ranges.map((range, ri) => (
-                        <div
-                          key={`green${ri}`}
-                          data-green-slot
-                          className="absolute z-[4] cursor-pointer"
-                          style={{
-                            left: `${((range.start - range_start) / total_min) * 100}%`,
-                            width: `${((range.end - range.start) / total_min) * 100}%`,
-                            top: 0, bottom: 0,
-                            background: "rgba(72,187,120,0.18)",
-                            border: "2px dashed #48BB78",
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            set_focus_day(giorno);
-                          }}
-                        />
+                        <Tooltip key={`green${ri}`}>
+                          <TooltipTrigger asChild>
+                            <div
+                              data-green-slot
+                              className="absolute z-[4] cursor-pointer"
+                              style={{
+                                left: `${((range.start - range_start) / total_min) * 100}%`,
+                                width: `${((range.end - range.start) / total_min) * 100}%`,
+                                top: 0, bottom: 0,
+                                background: "rgba(72,187,120,0.18)",
+                                border: "2px dashed #48BB78",
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                set_focus_day(giorno);
+                              }}
+                            />
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="text-xs">
+                            {giorno} {min_to_time(range.start)} → {min_to_time(range.end)}
+                          </TooltipContent>
+                        </Tooltip>
                       ))}
 
                       {ice_course_rows.map((row, ri) =>
