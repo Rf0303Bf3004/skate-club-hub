@@ -21,6 +21,7 @@ const all_nav_items = [
   { key: "comunicazioni", sezione: "comunicazioni", path: "/comunicazioni", icon: MessageSquare },
   
   { key: "campi", sezione: "campi", path: "/campi", icon: Tent },
+  { key: "campi_eventi", sezione: "campi", path: "/campi-eventi", icon: Sparkles },
   { key: "planning_ghiaccio", sezione: "planning_ghiaccio", path: "/planning", icon: Calendar },
   { key: "richieste_iscrizione", sezione: "richieste_iscrizione", path: "/richieste-iscrizione", icon: ClipboardList },
   { key: "setup_club", sezione: "setup_club", path: "/setup-club", icon: Settings },
