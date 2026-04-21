@@ -79,6 +79,7 @@ const CommunicationsPage: React.FC = () => {
   const [testo, set_testo] = useState('');
   const [tipo_destinatari, set_tipo_destinatari] = useState('tutti');
   const [corso_id, set_corso_id] = useState('');
+  const [livello_categoria, set_livello_categoria] = useState('stellina_1_plus');
 
   const fill_placeholders = (text: string, vals: Record<string, string>) => {
     let result = text;
