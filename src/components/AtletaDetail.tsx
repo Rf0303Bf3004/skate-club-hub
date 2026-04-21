@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Calendar } from "lucide-react";
 import CalendarioAtletaInterattivo from "@/components/CalendarioAtletaInterattivo";
 import InvitoGenitoreModal from "@/components/InvitoGenitoreModal";
+import StoricoTestAtleta from "@/components/StoricoTestAtleta";
 import DateInput from "@/components/forms/DateInput";
 import { useI18n } from "@/lib/i18n";
 import {
@@ -555,6 +556,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
             <TabsTrigger value="fatture">{t("fatture")}</TabsTrigger>
             <TabsTrigger value="lezioni">{t("lezioni")}</TabsTrigger>
             <TabsTrigger value="calendario">Calendario</TabsTrigger>
+            <TabsTrigger value="storico_test">Storico Test</TabsTrigger>
           </TabsList>
 
           {/* ── Anagrafica ── */}
@@ -1090,6 +1092,11 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
           {/* ── Calendario ── */}
           <TabsContent value="calendario" className="mt-6">
             <CalendarioAtletaInterattivo atleta_id={a.id} />
+          </TabsContent>
+
+          {/* ── Storico Test ── */}
+          <TabsContent value="storico_test" className="mt-6">
+            <StoricoTestAtleta atleta_id={a.id} />
           </TabsContent>
         </Tabs>
       </div>
