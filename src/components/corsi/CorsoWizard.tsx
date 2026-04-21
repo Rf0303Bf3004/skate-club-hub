@@ -384,6 +384,19 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
           <StepDots step={step} total={4} labels={STEP_LABELS} />
         </div>
 
+        {error_db && (
+          <div className="mx-6 mt-3 rounded-xl border border-destructive/40 bg-destructive/5 p-3 flex items-start gap-2 flex-shrink-0">
+            <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-destructive">Errore</p>
+              <p className="text-xs text-destructive/90 break-words">{error_db}</p>
+            </div>
+            <button onClick={() => set_error_db(null)} className="text-destructive/70 hover:text-destructive flex-shrink-0" aria-label="Chiudi errore">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         <div className="overflow-y-auto flex-1 px-6 py-4 space-y-5">
           {step === 1 && (
             <div className="space-y-5">
