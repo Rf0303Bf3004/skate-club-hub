@@ -400,6 +400,7 @@ const ClubSetupPage: React.FC = () => {
           <TabsTrigger value="configurazione">Configurazione</TabsTrigger>
           <TabsTrigger value="ghiaccio">Ghiaccio e Planning</TabsTrigger>
           <TabsTrigger value="catalogo">Catalogo Offerta</TabsTrigger>
+          <TabsTrigger value="fatturazione">Fatturazione</TabsTrigger>
         </TabsList>
 
         <TabsContent value="configurazione">
