@@ -1352,6 +1352,9 @@ const DashboardPage: React.FC = () => {
             </div>
           )}
 
+          {/* Medagliere stagione (top 5) */}
+          <MedagliereWidget compact limit={5} />
+
           {/* Ultime comunicazioni */}
           {comunicazioni.length > 0 && (
             <div className="bg-card rounded-xl shadow-card p-5 space-y-3">
