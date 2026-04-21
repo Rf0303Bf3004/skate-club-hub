@@ -879,12 +879,8 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
 
               {error_db && (
                 <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-3 space-y-2">
-                  <div className="flex items-start gap-2">
-                    <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
-                    <p className="text-sm font-semibold text-destructive">Salvataggio fallito</p>
-                  </div>
                   <details className="text-xs text-destructive/80">
-                    <summary className="cursor-pointer font-medium">Dettaglio tecnico</summary>
+                    <summary className="cursor-pointer font-medium">Dettaglio tecnico errore</summary>
                     <pre className="mt-2 whitespace-pre-wrap break-words bg-destructive/10 p-2 rounded">{error_db}</pre>
                   </details>
                 </div>
