@@ -581,6 +581,15 @@ const RisultatoModal: React.FC<{
               className={input_cls}
             />
           </Field>
+          <Field label="Disciplina">
+            <input
+              type="text"
+              value={form.disciplina}
+              onChange={(e) => set_val("disciplina", e.target.value)}
+              placeholder="es. Singolo, Coppia, Danza"
+              className={input_cls}
+            />
+          </Field>
           <Field label="Note prestazione">
             <textarea
               value={form.note}
