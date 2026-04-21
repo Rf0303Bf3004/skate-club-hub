@@ -481,6 +481,7 @@ const RisultatoModal: React.FC<{
     punteggio_artistico: iscrizione.punteggio_artistico ?? "",
     voto_giudici: iscrizione.voto_giudici ?? "",
     medaglia: iscrizione.medaglia ?? "",
+    disciplina: iscrizione.disciplina ?? "",
     note: iscrizione.note ?? "",
   });
   const [saving, set_saving] = useState(false);
@@ -496,6 +497,7 @@ const RisultatoModal: React.FC<{
           punteggio_artistico: form.punteggio_artistico !== "" ? Number(form.punteggio_artistico) : null,
           voto_giudici: form.voto_giudici !== "" ? Number(form.voto_giudici) : null,
           medaglia: form.medaglia || null,
+          disciplina: form.disciplina || null,
           note: form.note || null,
         })
         .eq("id", iscrizione.id);
