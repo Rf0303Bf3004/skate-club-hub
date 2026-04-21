@@ -13,11 +13,12 @@ import {
   use_segna_fattura_pagata,
   use_genera_fatture_mensili,
   use_elimina_fattura,
+  use_invia_email_fattura,
 } from "@/hooks/use-supabase-mutations";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Trash2, X, Printer } from "lucide-react";
+import { FileText, Trash2, X, Printer, Mail } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 // ─── Swiss QR ─────────────────────────────────────────────
