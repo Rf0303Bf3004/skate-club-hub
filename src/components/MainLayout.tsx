@@ -76,7 +76,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               {(club?.nome || session?.club_nome || "C").trim().charAt(0).toUpperCase()}
             </span>
           </div>
-          <span className="font-bold tracking-tight text-primary text-lg">CPA Manager</span>
+          <span className="font-bold tracking-tight text-primary text-lg">Ice Arena Manager</span>
           <button className="ml-auto lg:hidden" onClick={() => set_sidebar_open(false)}>
             <X className="w-5 h-5 text-muted-foreground" />
           </button>
@@ -150,7 +150,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => set_sidebar_open(true)}>
               <Menu className="w-5 h-5" />
             </Button>
-            <h2 className="font-semibold text-foreground text-sm lg:text-base">{club?.nome || session?.club_nome || "CPA Manager"}</h2>
+            <h2 className="font-semibold text-foreground text-sm lg:text-base">{club?.nome || session?.club_nome || "Ice Arena Manager"}</h2>
             <span className="px-2 py-0.5 rounded-full bg-muted text-[10px] uppercase tracking-wider font-bold text-muted-foreground hidden sm:inline-block">{session?.ruolo || ""}</span>
           </div>
           <div className="flex items-center gap-3">

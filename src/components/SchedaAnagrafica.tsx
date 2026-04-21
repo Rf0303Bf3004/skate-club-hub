@@ -114,7 +114,7 @@ const SchedaAnagrafica: React.FC<SchedaProps> = ({ atleta, on_back }) => {
 
         <div className='px-6 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between'>
           <p className='text-xs text-gray-400'><span className='inline-block w-2 h-2 bg-green-500 rounded-full mr-1'></span>Tessera valida · Stagione 2025/26</p>
-          <p className='text-xs text-gray-400'>Generato il {new Date().toLocaleDateString('it-IT')} · CPA Manager</p>
+          <p className='text-xs text-gray-400'>Generato il {new Date().toLocaleDateString('it-IT')} · Ice Arena Manager</p>
         </div>
       </div>
     </div>

@@ -719,7 +719,7 @@ const AthletesPage: React.FC = () => {
             {/* Footer */}
             <div className="px-6 py-3 bg-muted/30 border-t border-border flex items-center justify-between">
               <p className="text-xs text-muted-foreground"><span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-1"></span>Tessera valida · Stagione 2025/26</p>
-              <p className="text-xs text-muted-foreground">Generato il {new Date().toLocaleDateString("it-IT")} · CPA Manager</p>
+              <p className="text-xs text-muted-foreground">Generato il {new Date().toLocaleDateString("it-IT")} · Ice Arena Manager</p>
             </div>
           </div>
         </div>
