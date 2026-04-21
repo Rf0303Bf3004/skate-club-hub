@@ -79,6 +79,7 @@ const CommunicationsPage: React.FC = () => {
   const [testo, set_testo] = useState('');
   const [tipo_destinatari, set_tipo_destinatari] = useState('tutti');
   const [corso_id, set_corso_id] = useState('');
+  const [livello_categoria, set_livello_categoria] = useState('stellina_1_plus');
 
   const fill_placeholders = (text: string, vals: Record<string, string>) => {
     let result = text;
@@ -99,6 +100,7 @@ const CommunicationsPage: React.FC = () => {
     set_testo('');
     set_tipo_destinatari('tutti');
     set_corso_id('');
+    set_livello_categoria('stellina_1_plus');
     set_modal_open(true);
   };
 
@@ -129,8 +131,17 @@ const CommunicationsPage: React.FC = () => {
       testo: final_testo,
       tipo_destinatari,
       corso_id: tipo_destinatari === 'per_corso' ? corso_id : null,
+      livello_categoria: tipo_destinatari === 'per_livello' ? livello_categoria : null,
     });
     set_modal_open(false);
+  };
+
+  const LIVELLO_LABELS: Record<string, string> = {
+    pulcini_only: 'Solo Pulcini',
+    stellina_1_plus: 'Stellina 1 in su',
+    bronzo_plus: 'Bronzo in su',
+    argento_plus: 'Argento in su',
+    oro_plus: 'Oro',
   };
 
   const get_destinatari_label = (c: any) => {
@@ -140,6 +151,7 @@ const CommunicationsPage: React.FC = () => {
       const corso = corsi.find((co: any) => co.id === c.corso_id);
       return corso ? corso.nome : t('per_corso');
     }
+    if (c.tipo_destinatari === 'manuale') return 'Selezione filtrata';
     return t('per_atleta');
   };
 
@@ -256,6 +268,7 @@ const CommunicationsPage: React.FC = () => {
                   <SelectContent>
                     <SelectItem value="tutti">Tutti</SelectItem>
                     <SelectItem value="per_corso">Per corso</SelectItem>
+                    <SelectItem value="per_livello">Per livello</SelectItem>
                     <SelectItem value="solo_istruttori">Solo istruttori</SelectItem>
                   </SelectContent>
                 </Select>
@@ -270,6 +283,27 @@ const CommunicationsPage: React.FC = () => {
                       {corsi.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
                     </SelectContent>
                   </Select>
+                </div>
+              )}
+
+              {tipo_destinatari === 'per_livello' && (
+                <div className="space-y-2">
+                  <div>
+                    <Label className="text-xs">Livello destinatari</Label>
+                    <Select value={livello_categoria} onValueChange={set_livello_categoria}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pulcini_only">Solo Pulcini (comunicazioni operative)</SelectItem>
+                        <SelectItem value="stellina_1_plus">Stellina 1 in su</SelectItem>
+                        <SelectItem value="bronzo_plus">Bronzo in su</SelectItem>
+                        <SelectItem value="argento_plus">Argento in su</SelectItem>
+                        <SelectItem value="oro_plus">Oro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-snug">
+                    Il filtro usa il livello tecnico massimo dell'atleta (artistico o stile). I Pulcini ricevono solo se selezioni esplicitamente "Solo Pulcini".
+                  </p>
                 </div>
               )}
 

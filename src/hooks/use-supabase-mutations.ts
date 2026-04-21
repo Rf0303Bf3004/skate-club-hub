@@ -930,12 +930,79 @@ export function use_invia_email_fattura() {
 }
 
 // ─── Comunicazioni ─────────────────────────────────────────
+// Ordine progressione (Pulcini=0 ... Oro=10). Usato per filtri "Per livello".
+const LIVELLI_ORDER: Record<string, number> = {
+  Pulcini: 0,
+  "Stellina 1": 1,
+  "Stellina 2": 2,
+  "Stellina 3": 3,
+  "Stellina 4": 4,
+  Interbronzo: 5,
+  Bronzo: 6,
+  Interargento: 7,
+  Argento: 8,
+  Interoro: 9,
+  Oro: 10,
+};
+// Soglie minime per categoria di destinatari "Per livello".
+const SOGLIE_LIVELLO: Record<string, number> = {
+  pulcini_only: 0,      // solo Pulcini
+  stellina_1_plus: 1,   // Stellina 1 in su
+  bronzo_plus: 6,       // Bronzo in su
+  argento_plus: 8,      // Argento in su
+  oro_plus: 10,         // Oro
+};
+function livello_atleta_max(a: any): number {
+  const art = LIVELLI_ORDER[a?.carriera_artistica] ?? -1;
+  const sti = LIVELLI_ORDER[a?.carriera_stile] ?? -1;
+  if (art >= 0 || sti >= 0) return Math.max(art, sti);
+  return LIVELLI_ORDER[a?.percorso_amatori] ?? 0;
+}
+
 export function use_crea_comunicazione() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: any) => {
+      const club_id = cid();
+
+      // Filtro per livello → popoliamo manualmente i destinatari (bypass trigger "tutti").
+      if (data.tipo_destinatari === "per_livello" && data.livello_categoria) {
+        const { data: atleti, error: e_at } = await supabase
+          .from("atleti")
+          .select("id, percorso_amatori, carriera_artistica, carriera_stile")
+          .eq("club_id", club_id);
+        if (e_at) throw e_at;
+        const cat = data.livello_categoria as string;
+        const ids: string[] = (atleti ?? [])
+          .filter((a) => {
+            const liv = livello_atleta_max(a);
+            if (cat === "pulcini_only") return liv === 0;
+            return liv >= (SOGLIE_LIVELLO[cat] ?? 0);
+          })
+          .map((a) => a.id);
+
+        const { data: ins, error } = await supabase
+          .from("comunicazioni")
+          .insert({
+            club_id,
+            titolo: data.titolo,
+            testo: data.testo,
+            // 'manuale' evita che il trigger ripopoli su tutto il club.
+            tipo_destinatari: "manuale",
+          })
+          .select("id")
+          .single();
+        if (error) throw error;
+        if (ids.length > 0) {
+          const rows = ids.map((atleta_id) => ({ comunicazione_id: ins.id, atleta_id }));
+          const { error: e_dest } = await supabase.from("comunicazioni_destinatari").insert(rows);
+          if (e_dest) throw e_dest;
+        }
+        return;
+      }
+
       const { error } = await supabase.from("comunicazioni").insert({
-        club_id: cid(),
+        club_id,
         titolo: data.titolo,
         testo: data.testo,
         tipo_destinatari: data.tipo_destinatari || "tutti",
