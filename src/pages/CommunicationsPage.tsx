@@ -100,6 +100,7 @@ const CommunicationsPage: React.FC = () => {
     set_testo('');
     set_tipo_destinatari('tutti');
     set_corso_id('');
+    set_livello_categoria('stellina_1_plus');
     set_modal_open(true);
   };
 
