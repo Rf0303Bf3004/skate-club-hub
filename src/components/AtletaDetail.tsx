@@ -555,6 +555,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
             <TabsTrigger value="fatture">{t("fatture")}</TabsTrigger>
             <TabsTrigger value="lezioni">{t("lezioni")}</TabsTrigger>
             <TabsTrigger value="calendario">Calendario</TabsTrigger>
+            <TabsTrigger value="storico_test">Storico Test</TabsTrigger>
           </TabsList>
 
           {/* ── Anagrafica ── */}
