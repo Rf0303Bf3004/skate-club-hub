@@ -396,9 +396,11 @@ const FatturaModal: React.FC<{
   on_close: () => void;
   on_paga: () => void;
   on_elimina: () => void;
+  on_invia_email: () => void;
   paying: boolean;
   deleting: boolean;
-}> = ({ fattura, atleta, setup, club, corsi, lezioni, on_close, on_paga, on_elimina, paying, deleting }) => {
+  sending_email: boolean;
+}> = ({ fattura, atleta, setup, club, corsi, lezioni, on_close, on_paga, on_elimina, on_invia_email, paying, deleting, sending_email }) => {
   const [confirm_delete, set_confirm_delete] = useState(false);
   const [show_anteprima, set_show_anteprima] = useState(false);
   const print_ref = useRef<HTMLDivElement>(null);
@@ -510,6 +512,30 @@ const FatturaModal: React.FC<{
               {paying ? "..." : "✅ Segna come pagata"}
             </Button>
           )}
+          {(() => {
+            const email_destinatario =
+              atleta?.genitore1_email || atleta?.genitore2_email || "";
+            const ha_email = !!email_destinatario;
+            const inviata = !!fattura.email_inviata_at;
+            return (
+              <Button
+                variant="outline"
+                onClick={on_invia_email}
+                disabled={!ha_email || sending_email}
+                className="w-full"
+                title={ha_email ? `Invia a ${email_destinatario}` : "Nessuna email genitore configurata"}
+              >
+                <Mail className="w-4 h-4 mr-2" />
+                {sending_email
+                  ? "Invio..."
+                  : inviata
+                  ? `📧 Reinvia email (ultimo: ${new Date(fattura.email_inviata_at).toLocaleDateString("it-CH")})`
+                  : ha_email
+                  ? `Invia email a ${email_destinatario}`
+                  : "Email non disponibile"}
+              </Button>
+            );
+          })()}
           {confirm_delete ? (
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => set_confirm_delete(false)} className="flex-1">
