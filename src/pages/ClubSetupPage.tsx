@@ -465,7 +465,7 @@ const ClubSetupPage: React.FC = () => {
           </div>
           <div className="grid gap-4" style={{ gridTemplateColumns: "60% 15% 25%" }}>
             <Field label="Indirizzo *" icon={<MapPin className="w-3.5 h-3.5" />}>
-              <Input required value={get_val("indirizzo")} onChange={(e) => set_val("indirizzo", e.target.value)} placeholder="Via Roma 1" />
+              <Input required value={get_val("indirizzo")} onChange={(e) => set_val("indirizzo", e.target.value)} placeholder="Via del Ghiaccio 7" />
             </Field>
             <Field label="CAP *" icon={<MapPin className="w-3.5 h-3.5" />}>
               <Input required value={get_val("cap")} onChange={(e) => set_val("cap", e.target.value)} placeholder="6900" />
