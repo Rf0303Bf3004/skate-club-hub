@@ -640,7 +640,7 @@ const ClubSetupPage: React.FC = () => {
                 onChange={(e) => set_ghiaccio_val("modalita_costo_privata", e.target.value)}
               >
                 <option value="tariffa_fissa">Tariffa fissa per atleta</option>
-                <option value="tariffa_divisa">Tariffa divisa tra atleti</option>
+                <option value="diviso_atleti">Tariffa divisa tra atleti</option>
               </select>
             </Field>
           </div>
