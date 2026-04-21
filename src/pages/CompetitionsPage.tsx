@@ -992,6 +992,9 @@ const CompetitionsPage: React.FC = () => {
                         <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden sm:table-cell">
                           Pos.
                         </th>
+                        <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">
+                          Disciplina
+                        </th>
                         <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden md:table-cell">
                           Tecnico
                         </th>
@@ -1020,6 +1023,9 @@ const CompetitionsPage: React.FC = () => {
                           </td>
                           <td className="px-4 py-3 text-center tabular-nums text-muted-foreground hidden sm:table-cell">
                             {ai.posizione ? `${ai.posizione}°` : "—"}
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground hidden lg:table-cell">
+                            {ai.disciplina || ai.carriera || "—"}
                           </td>
                           <td className="px-4 py-3 text-center tabular-nums text-muted-foreground hidden md:table-cell">
                             {ai.punteggio_tecnico ?? "—"}
@@ -1059,6 +1065,65 @@ const CompetitionsPage: React.FC = () => {
                   </table>
                 </div>
               )}
+            </TabsContent>
+
+            <TabsContent value="risultati" className="mt-6 space-y-4">
+              {(() => {
+                const con_risultato = (selected.atleti_iscritti ?? []).filter((ai: any) => ai.posizione || ai.medaglia || ai.punteggio_tecnico != null || ai.punteggio_artistico != null);
+                if (con_risultato.length === 0) {
+                  return (
+                    <div className="bg-card rounded-xl shadow-card p-8 text-center text-muted-foreground">
+                      <Trophy className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                      <p className="text-sm">Nessun risultato registrato per questa gara.</p>
+                      <p className="text-xs mt-1">Usa il pulsante "Risultato" nella tab Atleti per inserire posizione e punteggi.</p>
+                    </div>
+                  );
+                }
+                const ordinati = [...con_risultato].sort((a, b) => {
+                  const pa = a.posizione ?? 999;
+                  const pb = b.posizione ?? 999;
+                  return pa - pb;
+                });
+                return (
+                  <div className="bg-card rounded-xl shadow-card overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border bg-muted/20">
+                          <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Pos.</th>
+                          <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Atleta</th>
+                          <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Disciplina</th>
+                          <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Punteggio</th>
+                          <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Medaglia</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {ordinati.map((ai: any) => {
+                          const tot = (ai.punteggio_tecnico != null || ai.punteggio_artistico != null)
+                            ? ((Number(ai.punteggio_tecnico) || 0) + (Number(ai.punteggio_artistico) || 0))
+                            : ai.punteggio;
+                          return (
+                            <tr key={ai.atleta_id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                              <td className="px-4 py-3 font-bold tabular-nums text-foreground">
+                                {ai.posizione ? `${ai.posizione}°` : "—"}
+                              </td>
+                              <td className="px-4 py-3 font-medium text-foreground">
+                                {get_atleta_name_from_list(atleti, ai.atleta_id)}
+                              </td>
+                              <td className="px-4 py-3 text-muted-foreground">{ai.disciplina || ai.carriera || "—"}</td>
+                              <td className="px-4 py-3 text-center tabular-nums text-muted-foreground">
+                                {tot != null ? Number(tot).toFixed(2) : "—"}
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                {ai.medaglia ? <MedalBadge tipo={ai.medaglia} /> : "—"}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })()}
             </TabsContent>
 
             <TabsContent value="dettagli" className="mt-6">
