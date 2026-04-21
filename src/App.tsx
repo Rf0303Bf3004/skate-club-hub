@@ -17,7 +17,7 @@ import PrivateLessonsPage from "@/pages/PrivateLessonsPage";
 import InvoicesPage from "@/pages/InvoicesPage";
 import CommunicationsPage from "@/pages/CommunicationsPage";
 import SeasonsPage from "@/pages/SeasonsPage";
-import TrainingCampsPage from "@/pages/TrainingCampsPage";
+
 import PlanningPage from "@/pages/PlanningPage";
 import ClubSetupPage from "@/pages/ClubSetupPage";
 import AdvancedManagementPage from "@/pages/AdvancedManagementPage";
