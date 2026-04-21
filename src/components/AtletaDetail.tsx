@@ -26,7 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Shield, Medal, Save, Upload, Music, ArrowRightLeft, X, Mail, Copy, Printer, Link as LinkIcon } from "lucide-react";
+import { ArrowLeft, Shield, Medal, Save, Upload, Music, ArrowRightLeft, X, Mail, Copy, Printer, Link as LinkIcon, QrCode } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
@@ -245,6 +245,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   const [show_invito_1, set_show_invito_1] = useState(false);
   const [show_invito_2, set_show_invito_2] = useState(false);
   const [generating_portal, set_generating_portal] = useState(false);
+  const [show_qr_portal, set_show_qr_portal] = useState(false);
 
 
   const [form, set_form] = useState({
@@ -310,8 +311,12 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   const upd = (k: string, v: any) => set_form((p: any) => ({ ...p, [k]: v }));
   const is_carriera_attiva = form.percorso_amatori === "Stellina 4";
 
+  const PORTALE_BASE_URL = "https://skate-club-hub.lovable.app/portale-atleta";
   const portal_url = (form as any)?.portal_token
-    ? `${window.location.origin}/portale-atleta/${(form as any).portal_token}`
+    ? `${PORTALE_BASE_URL}?token=${(form as any).portal_token}`
+    : null;
+  const portal_qr_src = portal_url
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=10&data=${encodeURIComponent(portal_url)}`
     : null;
 
   const handle_genera_portal = async () => {
@@ -319,19 +324,28 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
     try {
       let token = (form as any).portal_token;
       if (!token) {
-        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        token = Array.from({ length: 24 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+        token = (typeof crypto !== "undefined" && crypto.randomUUID)
+          ? crypto.randomUUID()
+          : Array.from({ length: 24 }, () => "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"[Math.floor(Math.random() * 62)]).join("");
         const { error } = await supabase.from("atleti").update({ portal_token: token } as any).eq("id", form.id);
         if (error) throw error;
         set_form((prev: any) => ({ ...prev, portal_token: token }));
       }
-      const url = `${window.location.origin}/portale-atleta/${token}`;
-      await navigator.clipboard.writeText(url).catch(() => {});
-      toast({ title: "🔗 Link portale copiato", description: url });
+      set_show_qr_portal(true);
     } catch (err: any) {
       toast({ title: "Errore", description: err?.message, variant: "destructive" });
     } finally {
       set_generating_portal(false);
+    }
+  };
+
+  const handle_copy_portal_link = async () => {
+    if (!portal_url) return;
+    try {
+      await navigator.clipboard.writeText(portal_url);
+      toast({ title: "🔗 Link copiato negli appunti" });
+    } catch {
+      toast({ title: "Impossibile copiare", variant: "destructive" });
     }
   };
 
@@ -477,9 +491,9 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
               onClick={handle_genera_portal}
               disabled={generating_portal}
               className="gap-1.5 text-xs border-primary/40 text-primary hover:bg-primary/5"
-              title={portal_url ?? "Genera link portale per l'atleta"}
+              title={portal_url ?? "Genera QR di accesso al portale"}
             >
-              <LinkIcon className="w-3.5 h-3.5" /> {portal_url ? "Copia link portale" : "Genera link portale"}
+              <QrCode className="w-3.5 h-3.5" /> 📱 QR Accesso Portale
             </Button>
             <Button
               variant="outline"
@@ -1116,6 +1130,44 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
           on_close={() => set_show_invito_2(false)}
         />
       )}
+      <Dialog open={show_qr_portal} onOpenChange={set_show_qr_portal}>
+        <DialogContent className="max-w-md print:max-w-full print:shadow-none">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <QrCode className="w-5 h-5 text-primary" /> QR Accesso Portale
+            </DialogTitle>
+          </DialogHeader>
+          <div id="qr-portale-print" className="space-y-4">
+            <div className="text-center space-y-1">
+              <p className="text-base font-semibold text-foreground">{form.nome} {form.cognome}</p>
+              <p className="text-xs text-muted-foreground">Scansiona per accedere al portale personale</p>
+            </div>
+            <div className="flex justify-center">
+              {portal_qr_src ? (
+                <img src={portal_qr_src} alt="QR portale atleta" className="w-64 h-64 rounded-xl border border-border bg-background p-2" />
+              ) : (
+                <div className="w-64 h-64 bg-muted rounded-xl animate-pulse" />
+              )}
+            </div>
+            <div className="space-y-1.5 print:hidden">
+              <Label className="text-xs text-muted-foreground">Link diretto</Label>
+              <div className="flex gap-2">
+                <Input readOnly value={portal_url ?? ""} className="font-mono text-xs h-9" onFocus={(e) => e.currentTarget.select()} />
+                <Button size="sm" variant="outline" onClick={handle_copy_portal_link} className="shrink-0">
+                  <Copy className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            </div>
+            <p className="text-xs text-center text-muted-foreground hidden print:block break-all">{portal_url}</p>
+          </div>
+          <div className="flex gap-2 justify-end pt-2 print:hidden">
+            <Button variant="outline" size="sm" onClick={() => window.print()}>
+              <Printer className="w-4 h-4 mr-1.5" /> Stampa
+            </Button>
+            <Button size="sm" onClick={() => set_show_qr_portal(false)}>Chiudi</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
