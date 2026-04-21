@@ -260,9 +260,89 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
 
   const istruttori_attivi = istruttori.filter((i: any) => i.attivo);
 
+  // ── Classificazione istruttori condivisa fra Step 3 e Step 4 (Riepilogo) ──
+  // Singola fonte di verità per "non disponibile" basata su availability.istruttore_disponibile.
+  const has_slot = posiziona_planning && !!form.giorno && !!form.ora_inizio && !!form.ora_fine;
+  type Bucket = "ok" | "busy" | "ko";
+  const conflitti_per_istr = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    if (!has_slot) return map;
+    const slot_s = tmin(form.ora_inizio);
+    const slot_e = tmin(form.ora_fine);
+    for (const c of (corsi || [])) {
+      if (!c || c.id === corso?.id) continue;
+      if (c.giorno !== form.giorno) continue;
+      if (!c.ora_inizio || !c.ora_fine) continue;
+      const cs = tmin(c.ora_inizio.slice(0, 5));
+      const ce = tmin(c.ora_fine.slice(0, 5));
+      if (ce <= slot_s || cs >= slot_e) continue;
+      const ids: string[] = c.istruttori_ids || [];
+      for (const iid of ids) {
+        if (!map[iid]) map[iid] = [];
+        map[iid].push(`${c.nome} (${c.ora_inizio.slice(0,5)}–${c.ora_fine.slice(0,5)})`);
+      }
+    }
+    return map;
+  }, [has_slot, form.giorno, form.ora_inizio, form.ora_fine, corsi, corso?.id]);
+
+  const classify_istruttore = (i: any): { bucket: Bucket; label: string; tooltip: string } => {
+    if (!has_slot) return { bucket: "ok", label: "", tooltip: "" };
+    const r = istruttore_disponibile({
+      disponibilita_per_giorno: i.disponibilita,
+      giorno: form.giorno,
+      ora_inizio: form.ora_inizio,
+      ora_fine: form.ora_fine,
+    });
+    if (!r.disponibile) {
+      return {
+        bucket: "ko",
+        label: r.fasce_label || "nessuna disponibilità dichiarata",
+        tooltip: r.motivo || "Non disponibile",
+      };
+    }
+    const conf = conflitti_per_istr[i.id];
+    if (conf && conf.length > 0) {
+      return { bucket: "busy", label: conf.join(", "), tooltip: `Già impegnato: ${conf.join(", ")}` };
+    }
+    return { bucket: "ok", label: r.fasce_label, tooltip: `Disponibile ${r.fasce_label}` };
+  };
+
+  // Debug: log classificazione per verificare che il fix sia attivo nella build live
+  useEffect(() => {
+    if (step !== 3 || !has_slot) return;
+    for (const i of istruttori_attivi) {
+      const cls = classify_istruttore(i);
+      // eslint-disable-next-line no-console
+      console.debug("istruttore_classificato", i.id, `${i.nome} ${i.cognome}`, cls.bucket, cls.tooltip);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, has_slot, form.giorno, form.ora_inizio, form.ora_fine, istruttori_attivi.length]);
+
+  // Istruttori selezionati che NON sono disponibili (per warning + blocco salva)
+  const istruttori_ko_selezionati = useMemo(() => {
+    if (!has_slot) return [];
+    return form.istruttori_ids
+      .map((id: string) => {
+        const i = istruttori.find((x: any) => x.id === id);
+        if (!i) return null;
+        const cls = classify_istruttore(i);
+        return cls.bucket === "ko" ? { ...i, _cls: cls } : null;
+      })
+      .filter(Boolean);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.istruttori_ids, has_slot, form.giorno, form.ora_inizio, form.ora_fine, istruttori]);
+
   const [error_db, set_error_db] = useState<string | null>(null);
   const handle_submit = async () => {
     set_error_db(null);
+    if (istruttori_ko_selezionati.length > 0) {
+      set_error_db(
+        `Istruttori non disponibili selezionati: ${istruttori_ko_selezionati
+          .map((i: any) => `${i.nome} ${i.cognome}`)
+          .join(", ")}. Rimuovili prima di salvare.`,
+      );
+      return;
+    }
     if (!get_current_club_id()) {
       const msg = "Nessun club selezionato. Effettua nuovamente il login e riprova.";
       set_error_db(msg);
@@ -303,6 +383,19 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
         <div className="px-6 pt-4 pb-2 flex-shrink-0">
           <StepDots step={step} total={4} labels={STEP_LABELS} />
         </div>
+
+        {error_db && (
+          <div className="mx-6 mt-3 rounded-xl border border-destructive/40 bg-destructive/5 p-3 flex items-start gap-2 flex-shrink-0">
+            <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-destructive">Errore</p>
+              <p className="text-xs text-destructive/90 break-words">{error_db}</p>
+            </div>
+            <button onClick={() => set_error_db(null)} className="text-destructive/70 hover:text-destructive flex-shrink-0" aria-label="Chiudi errore">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         <div className="overflow-y-auto flex-1 px-6 py-4 space-y-5">
           {step === 1 && (
@@ -566,79 +659,52 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
           )}
 
           {step === 3 && (() => {
-            const has_slot = posiziona_planning && !!form.giorno && !!form.ora_inizio && !!form.ora_fine;
-            // Calcolo conflitti su altri corsi (stesso giorno, fasce sovrapposte) per ogni istruttore
-            const slot_s = has_slot ? tmin(form.ora_inizio) : 0;
-            const slot_e = has_slot ? tmin(form.ora_fine) : 0;
-            const conflitti_per_istr: Record<string, string[]> = {};
-            if (has_slot) {
-              for (const c of (corsi || [])) {
-                if (!c || c.id === corso?.id) continue;
-                if (c.giorno !== form.giorno) continue;
-                if (!c.ora_inizio || !c.ora_fine) continue;
-                const cs = tmin(c.ora_inizio.slice(0, 5));
-                const ce = tmin(c.ora_fine.slice(0, 5));
-                if (ce <= slot_s || cs >= slot_e) continue; // nessuna sovrapposizione
-                const ids: string[] = c.istruttori_ids || [];
-                for (const iid of ids) {
-                  if (!conflitti_per_istr[iid]) conflitti_per_istr[iid] = [];
-                  conflitti_per_istr[iid].push(`${c.nome} (${c.ora_inizio.slice(0,5)}–${c.ora_fine.slice(0,5)})`);
-                }
-              }
-            }
-
-            type Bucket = "ok" | "busy" | "ko";
-            const classify = (i: any): { bucket: Bucket; label: string; tooltip: string } => {
-              if (!has_slot) return { bucket: "ok", label: "", tooltip: "" };
-              const r = istruttore_disponibile({
-                disponibilita_per_giorno: i.disponibilita,
-                giorno: form.giorno,
-                ora_inizio: form.ora_inizio,
-                ora_fine: form.ora_fine,
-              });
-              if (!r.disponibile) {
-                return {
-                  bucket: "ko",
-                  label: r.fasce_label || "nessuna disponibilità dichiarata",
-                  tooltip: r.motivo || "Non disponibile",
-                };
-              }
-              const conf = conflitti_per_istr[i.id];
-              if (conf && conf.length > 0) {
-                return { bucket: "busy", label: conf.join(", "), tooltip: `Già impegnato: ${conf.join(", ")}` };
-              }
-              return { bucket: "ok", label: r.fasce_label, tooltip: `Disponibile ${r.fasce_label}` };
-            };
-
             const groups: Record<Bucket, any[]> = { ok: [], busy: [], ko: [] };
             for (const i of istruttori_attivi) {
-              const cls = classify(i);
+              const cls = classify_istruttore(i);
               groups[cls.bucket].push({ ...i, _cls: cls });
             }
 
-            const render_chip = (i: any, disabled: boolean) => {
+            // Aggiungi al gruppo "ko" anche istruttori NON attivi che risultano già selezionati,
+            // così l'utente può comunque deselezionarli (chip cliccabile per togliere).
+            const known_ids = new Set(istruttori_attivi.map((i: any) => i.id));
+            for (const sel_id of form.istruttori_ids) {
+              if (known_ids.has(sel_id)) continue;
+              const i = istruttori.find((x: any) => x.id === sel_id);
+              if (!i) continue;
+              groups.ko.push({ ...i, _cls: { bucket: "ko" as Bucket, label: "non attivo o disponibilità mancante", tooltip: "Istruttore non disponibile per questo slot" } });
+            }
+
+            const render_chip = (i: any, opts: { allow_remove_only?: boolean } = {}) => {
               const selected = form.istruttori_ids.includes(i.id);
               const colore = i.colore || "#6B7280";
               const cls = i._cls;
+              const is_ko = cls?.bucket === "ko";
+              // Chip "ko":
+              //   - se NON selezionato: disabilitato (non si può aggiungere un istruttore non disponibile)
+              //   - se selezionato: cliccabile SOLO per rimuoverlo (X visibile, bordo rosso, warning)
+              const removable_ko = is_ko && selected;
+              const disabled = is_ko && !selected;
               return (
                 <button
                   key={i.id}
                   type="button"
                   onClick={() => !disabled && toggle_istruttore(i.id)}
                   disabled={disabled}
-                  title={cls.tooltip}
+                  title={cls?.tooltip || ""}
                   className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-all border-2 ${
                     disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"
-                  }`}
+                  } ${removable_ko ? "ring-2 ring-rose-300" : ""}`}
                   style={{
-                    borderColor: selected ? colore : "hsl(var(--border))",
-                    backgroundColor: selected ? `${colore}20` : "transparent",
-                    color: selected ? colore : "hsl(var(--foreground))",
+                    borderColor: removable_ko ? "#dc2626" : selected ? colore : "hsl(var(--border))",
+                    backgroundColor: removable_ko ? "#fef2f2" : selected ? `${colore}20` : "transparent",
+                    color: removable_ko ? "#b91c1c" : selected ? colore : "hsl(var(--foreground))",
                   }}
                 >
                   <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: colore }} />
                   {i.nome} {i.cognome}
-                  {selected && <span className="text-[10px] font-bold">✓</span>}
+                  {selected && !removable_ko && <span className="text-[10px] font-bold">✓</span>}
+                  {removable_ko && <X className="w-3.5 h-3.5" />}
                 </button>
               );
             };
@@ -656,6 +722,19 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                   )}
                 </div>
 
+                {istruttori_ko_selezionati.length > 0 && (
+                  <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-rose-50 border border-rose-300">
+                    <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
+                    <div className="text-xs text-rose-800">
+                      <p className="font-semibold">Hai selezionato istruttori non disponibili per questo slot:</p>
+                      <p className="mt-0.5">
+                        {istruttori_ko_selezionati.map((i: any) => `${i.nome} ${i.cognome}`).join(", ")}
+                      </p>
+                      <p className="mt-1">Clicca sul chip rosso (con ✕) per rimuoverli prima di salvare.</p>
+                    </div>
+                  </div>
+                )}
+
                 {istruttori_attivi.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Nessun istruttore attivo configurato.</p>
                 ) : !has_slot ? (
@@ -664,7 +743,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                       Senza giorno e orario non posso verificare la disponibilità. Tutti gli istruttori sono selezionabili.
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {istruttori_attivi.map((i: any) => render_chip({ ...i, _cls: { tooltip: "" } }, false))}
+                      {istruttori_attivi.map((i: any) => render_chip({ ...i, _cls: { bucket: "ok", tooltip: "" } }))}
                     </div>
                   </>
                 ) : (
@@ -677,7 +756,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                         <p className="text-[11px] text-muted-foreground italic">Nessuno completamente disponibile.</p>
                       ) : (
                         <div className="flex flex-wrap gap-2">
-                          {groups.ok.map((i) => render_chip(i, false))}
+                          {groups.ok.map((i) => render_chip(i))}
                         </div>
                       )}
                     </div>
@@ -690,7 +769,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                         <p className="text-[11px] text-muted-foreground italic">Nessuno.</p>
                       ) : (
                         <div className="flex flex-wrap gap-2">
-                          {groups.busy.map((i) => render_chip(i, false))}
+                          {groups.busy.map((i) => render_chip(i))}
                         </div>
                       )}
                     </div>
@@ -703,7 +782,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                         <p className="text-[11px] text-muted-foreground italic">Nessuno.</p>
                       ) : (
                         <div className="flex flex-wrap gap-2">
-                          {groups.ko.map((i) => render_chip(i, true))}
+                          {groups.ko.map((i) => render_chip(i))}
                         </div>
                       )}
                     </div>
@@ -711,7 +790,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                 )}
 
                 <p className="text-[11px] text-muted-foreground">
-                  Facoltativo. La classificazione usa la disponibilità dichiarata in scheda istruttore + i corsi già pianificati.
+                  Facoltativo. Gli istruttori senza disponibilità dichiarata o con conflitti restano nel gruppo "Non disponibili" e non sono selezionabili.
                 </p>
               </div>
             );
@@ -746,19 +825,49 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                       : "Da posizionare in seguito"}
                   </span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase">Istruttori</span>
-                  <span className="text-sm">
-                    {form.istruttori_ids.length === 0
-                      ? "Nessuno"
-                      : form.istruttori_ids
-                          .map((id: string) => {
-                            const i = istruttori.find((x: any) => x.id === id);
-                            return i ? `${i.nome} ${i.cognome}` : id.slice(0, 8);
-                          })
-                          .join(", ")}
-                  </span>
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase pt-1">Istruttori</span>
+                  <div className="flex flex-wrap gap-1.5 justify-end max-w-[70%]">
+                    {form.istruttori_ids.length === 0 ? (
+                      <span className="text-sm text-muted-foreground">Nessuno</span>
+                    ) : (
+                      form.istruttori_ids.map((id: string) => {
+                        const i = istruttori.find((x: any) => x.id === id);
+                        if (!i) return null;
+                        const cls = has_slot ? classify_istruttore(i) : { bucket: "ok" as Bucket, tooltip: "" };
+                        const is_ko = cls.bucket === "ko";
+                        const colore = i.colore || "#6B7280";
+                        return (
+                          <button
+                            key={id}
+                            type="button"
+                            onClick={() => toggle_istruttore(id)}
+                            title={is_ko ? `${cls.tooltip} — clicca per rimuovere` : "Clicca per rimuovere"}
+                            className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium border-2 cursor-pointer transition-all hover:opacity-80 ${
+                              is_ko ? "ring-1 ring-rose-300" : ""
+                            }`}
+                            style={{
+                              borderColor: is_ko ? "#dc2626" : colore,
+                              backgroundColor: is_ko ? "#fef2f2" : `${colore}20`,
+                              color: is_ko ? "#b91c1c" : colore,
+                            }}
+                          >
+                            {i.nome} {i.cognome}
+                            <X className="w-3 h-3" />
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
                 </div>
+                {istruttori_ko_selezionati.length > 0 && (
+                  <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-rose-50 border border-rose-300 mt-1">
+                    <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-rose-800">
+                      <strong>Salvataggio bloccato:</strong> rimuovi gli istruttori non disponibili (chip rosse con ✕) prima di salvare.
+                    </p>
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-muted-foreground uppercase">Costi</span>
                   <span className="text-sm">
@@ -770,12 +879,8 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
 
               {error_db && (
                 <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-3 space-y-2">
-                  <div className="flex items-start gap-2">
-                    <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
-                    <p className="text-sm font-semibold text-destructive">Salvataggio fallito</p>
-                  </div>
                   <details className="text-xs text-destructive/80">
-                    <summary className="cursor-pointer font-medium">Dettaglio tecnico</summary>
+                    <summary className="cursor-pointer font-medium">Dettaglio tecnico errore</summary>
                     <pre className="mt-2 whitespace-pre-wrap break-words bg-destructive/10 p-2 rounded">{error_db}</pre>
                   </details>
                 </div>
@@ -814,7 +919,16 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
               </Button>
             )}
             {step === 4 && (
-              <Button onClick={handle_submit} disabled={saving} className="bg-primary hover:bg-primary/90">
+              <Button
+                onClick={handle_submit}
+                disabled={saving || istruttori_ko_selezionati.length > 0}
+                className="bg-primary hover:bg-primary/90"
+                title={
+                  istruttori_ko_selezionati.length > 0
+                    ? `Rimuovi prima gli istruttori non disponibili: ${istruttori_ko_selezionati.map((i: any) => `${i.nome} ${i.cognome}`).join(", ")}`
+                    : ""
+                }
+              >
                 {saving ? "Salvataggio..." : "💾 Salva corso"}
               </Button>
             )}
