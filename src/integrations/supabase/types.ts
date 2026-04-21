@@ -223,6 +223,7 @@ export type Database = {
       }
       clubs: {
         Row: {
+          cap: string | null
           citta: string | null
           colore_primario: string | null
           created_at: string
@@ -238,6 +239,7 @@ export type Database = {
           telefono: string | null
         }
         Insert: {
+          cap?: string | null
           citta?: string | null
           colore_primario?: string | null
           created_at?: string
@@ -253,6 +255,7 @@ export type Database = {
           telefono?: string | null
         }
         Update: {
+          cap?: string | null
           citta?: string | null
           colore_primario?: string | null
           created_at?: string
