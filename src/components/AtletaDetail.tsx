@@ -245,30 +245,6 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   const [show_invito_2, set_show_invito_2] = useState(false);
   const [generating_portal, set_generating_portal] = useState(false);
 
-  const portal_url = (form as any)?.portal_token
-    ? `${window.location.origin}/portale-atleta/${(form as any).portal_token}`
-    : null;
-
-  const handle_genera_portal = async () => {
-    set_generating_portal(true);
-    try {
-      let token = (form as any).portal_token;
-      if (!token) {
-        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        token = Array.from({ length: 24 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-        const { error } = await supabase.from("atleti").update({ portal_token: token } as any).eq("id", form.id);
-        if (error) throw error;
-        set_form((prev: any) => ({ ...prev, portal_token: token }));
-      }
-      const url = `${window.location.origin}/portale-atleta/${token}`;
-      await navigator.clipboard.writeText(url).catch(() => {});
-      toast({ title: "🔗 Link portale copiato negli appunti", description: url });
-    } catch (err: any) {
-      toast({ title: "Errore", description: err?.message, variant: "destructive" });
-    } finally {
-      set_generating_portal(false);
-    }
-  };
 
   const [form, set_form] = useState({
     ...a,
@@ -332,6 +308,31 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
 
   const upd = (k: string, v: any) => set_form((p: any) => ({ ...p, [k]: v }));
   const is_carriera_attiva = form.percorso_amatori === "Stellina 4";
+
+  const portal_url = (form as any)?.portal_token
+    ? `${window.location.origin}/portale-atleta/${(form as any).portal_token}`
+    : null;
+
+  const handle_genera_portal = async () => {
+    set_generating_portal(true);
+    try {
+      let token = (form as any).portal_token;
+      if (!token) {
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        token = Array.from({ length: 24 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+        const { error } = await supabase.from("atleti").update({ portal_token: token } as any).eq("id", form.id);
+        if (error) throw error;
+        set_form((prev: any) => ({ ...prev, portal_token: token }));
+      }
+      const url = `${window.location.origin}/portale-atleta/${token}`;
+      await navigator.clipboard.writeText(url).catch(() => {});
+      toast({ title: "🔗 Link portale copiato", description: url });
+    } catch (err: any) {
+      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+    } finally {
+      set_generating_portal(false);
+    }
+  };
 
   const handle_foto_upload = async (file: File) => {
     set_uploading_foto(true);
