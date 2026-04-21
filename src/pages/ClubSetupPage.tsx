@@ -12,6 +12,7 @@ import { supabase, get_current_club_id } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
 import { Upload, Globe, Phone, Mail, MapPin, Hash, Users, UserCheck, Calendar, Building2, Plus, Trash2, Loader2 } from "lucide-react";
 import CatalogoOffertaTab from "@/components/CatalogoOffertaTab";
+import FatturazioneTab from "@/components/FatturazioneTab";
 
 const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"] as const;
 
@@ -820,6 +821,10 @@ const ClubSetupPage: React.FC = () => {
             club_id={club?.id || get_current_club_id() || null}
             stagione_id={stagione_attiva?.id || null}
           />
+        </TabsContent>
+
+        <TabsContent value="fatturazione">
+          <FatturazioneTab />
         </TabsContent>
       </Tabs>
     </div>
