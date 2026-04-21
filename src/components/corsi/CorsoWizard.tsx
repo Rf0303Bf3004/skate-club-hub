@@ -307,30 +307,72 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
     return { bucket: "ok", label: r.fasce_label, tooltip: `Disponibile ${r.fasce_label}` };
   };
 
-  // Debug: log classificazione per verificare che il fix sia attivo nella build live
+  // Lista istruttori SELEZIONABILI: solo realmente disponibili (regola binaria).
+  // Disponibile = ha fascia di disponibilità che copre lo slot E nessun conflitto su altri corsi.
+  const istruttori_selezionabili = useMemo(() => {
+    if (!has_slot) return istruttori_attivi;
+    return istruttori_attivi.filter((i: any) => {
+      const r = istruttore_disponibile({
+        disponibilita_per_giorno: i.disponibilita,
+        giorno: form.giorno,
+        ora_inizio: form.ora_inizio,
+        ora_fine: form.ora_fine,
+      });
+      if (!r.disponibile) return false;
+      const conf = conflitti_per_istr[i.id];
+      if (conf && conf.length > 0) return false;
+      return true;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [has_slot, form.giorno, form.ora_inizio, form.ora_fine, istruttori_attivi, conflitti_per_istr]);
+
+  // Auto-cleanup: se cambia lo slot, rimuovi dalla selezione gli istruttori non più disponibili
+  // e mostra banner arancio con i nomi rimossi.
+  const [rimossi_slot_change, set_rimossi_slot_change] = useState<string[]>([]);
+  const slot_key = `${form.giorno}|${form.ora_inizio}|${form.ora_fine}`;
+  const prev_slot_key = React.useRef(slot_key);
   useEffect(() => {
-    if (step !== 3 || !has_slot) return;
-    for (const i of istruttori_attivi) {
-      const cls = classify_istruttore(i);
-      // eslint-disable-next-line no-console
-      console.debug("istruttore_classificato", i.id, `${i.nome} ${i.cognome}`, cls.bucket, cls.tooltip);
+    if (!has_slot) return;
+    if (prev_slot_key.current === slot_key) return;
+    prev_slot_key.current = slot_key;
+    const validi = new Set(istruttori_selezionabili.map((i: any) => i.id));
+    const rimossi: string[] = [];
+    const nuovi_ids = form.istruttori_ids.filter((id: string) => {
+      if (validi.has(id)) return true;
+      const i = istruttori.find((x: any) => x.id === id);
+      if (i) rimossi.push(`${i.nome} ${i.cognome}`);
+      return false;
+    });
+    if (rimossi.length > 0) {
+      set_form((p) => ({ ...p, istruttori_ids: nuovi_ids }));
+      set_rimossi_slot_change(rimossi);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, has_slot, form.giorno, form.ora_inizio, form.ora_fine, istruttori_attivi.length]);
+  }, [slot_key, has_slot, istruttori_selezionabili]);
 
-  // Istruttori selezionati che NON sono disponibili (per warning + blocco salva)
-  const istruttori_ko_selezionati = useMemo(() => {
+  // Debug: numeri visibili nei log per verificare il fix in produzione
+  useEffect(() => {
+    if (step !== 3) return;
+    // eslint-disable-next-line no-console
+    console.debug("[CorsoWizard] step istruttori render", {
+      giorno: form.giorno,
+      ora_inizio: form.ora_inizio,
+      ora_fine: form.ora_fine,
+      totali_club: istruttori_attivi.length,
+      disponibili: istruttori_selezionabili.length,
+      conflitti: Object.keys(conflitti_per_istr).length,
+      selezionati: form.istruttori_ids.length,
+    });
+  }, [step, form.giorno, form.ora_inizio, form.ora_fine, istruttori_attivi.length, istruttori_selezionabili.length, conflitti_per_istr, form.istruttori_ids.length]);
+
+  // Mantenuto per compat con resto del file (Riepilogo non blocca più: la lista è già filtrata)
+  const istruttori_ko_selezionati: any[] = useMemo(() => {
     if (!has_slot) return [];
+    const validi = new Set(istruttori_selezionabili.map((i: any) => i.id));
     return form.istruttori_ids
-      .map((id: string) => {
-        const i = istruttori.find((x: any) => x.id === id);
-        if (!i) return null;
-        const cls = classify_istruttore(i);
-        return cls.bucket === "ko" ? { ...i, _cls: cls } : null;
-      })
+      .map((id: string) => (validi.has(id) ? null : istruttori.find((x: any) => x.id === id)))
       .filter(Boolean);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.istruttori_ids, has_slot, form.giorno, form.ora_inizio, form.ora_fine, istruttori]);
+  }, [form.istruttori_ids, has_slot, istruttori_selezionabili, istruttori]);
 
   const [error_db, set_error_db] = useState<string | null>(null);
   const handle_submit = async () => {
