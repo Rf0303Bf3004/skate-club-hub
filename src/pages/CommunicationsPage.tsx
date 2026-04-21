@@ -136,6 +136,14 @@ const CommunicationsPage: React.FC = () => {
     set_modal_open(false);
   };
 
+  const LIVELLO_LABELS: Record<string, string> = {
+    pulcini_only: 'Solo Pulcini',
+    stellina_1_plus: 'Stellina 1 in su',
+    bronzo_plus: 'Bronzo in su',
+    argento_plus: 'Argento in su',
+    oro_plus: 'Oro',
+  };
+
   const get_destinatari_label = (c: any) => {
     if (c.tipo_destinatari === 'tutti') return t('tutti');
     if (c.tipo_destinatari === 'solo_istruttori') return t('solo_istruttori');
@@ -143,6 +151,7 @@ const CommunicationsPage: React.FC = () => {
       const corso = corsi.find((co: any) => co.id === c.corso_id);
       return corso ? corso.nome : t('per_corso');
     }
+    if (c.tipo_destinatari === 'manuale') return 'Selezione filtrata';
     return t('per_atleta');
   };
 
