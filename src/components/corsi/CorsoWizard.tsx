@@ -825,19 +825,49 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                       : "Da posizionare in seguito"}
                   </span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase">Istruttori</span>
-                  <span className="text-sm">
-                    {form.istruttori_ids.length === 0
-                      ? "Nessuno"
-                      : form.istruttori_ids
-                          .map((id: string) => {
-                            const i = istruttori.find((x: any) => x.id === id);
-                            return i ? `${i.nome} ${i.cognome}` : id.slice(0, 8);
-                          })
-                          .join(", ")}
-                  </span>
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase pt-1">Istruttori</span>
+                  <div className="flex flex-wrap gap-1.5 justify-end max-w-[70%]">
+                    {form.istruttori_ids.length === 0 ? (
+                      <span className="text-sm text-muted-foreground">Nessuno</span>
+                    ) : (
+                      form.istruttori_ids.map((id: string) => {
+                        const i = istruttori.find((x: any) => x.id === id);
+                        if (!i) return null;
+                        const cls = has_slot ? classify_istruttore(i) : { bucket: "ok" as Bucket, tooltip: "" };
+                        const is_ko = cls.bucket === "ko";
+                        const colore = i.colore || "#6B7280";
+                        return (
+                          <button
+                            key={id}
+                            type="button"
+                            onClick={() => toggle_istruttore(id)}
+                            title={is_ko ? `${cls.tooltip} — clicca per rimuovere` : "Clicca per rimuovere"}
+                            className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium border-2 cursor-pointer transition-all hover:opacity-80 ${
+                              is_ko ? "ring-1 ring-rose-300" : ""
+                            }`}
+                            style={{
+                              borderColor: is_ko ? "#dc2626" : colore,
+                              backgroundColor: is_ko ? "#fef2f2" : `${colore}20`,
+                              color: is_ko ? "#b91c1c" : colore,
+                            }}
+                          >
+                            {i.nome} {i.cognome}
+                            <X className="w-3 h-3" />
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
                 </div>
+                {istruttori_ko_selezionati.length > 0 && (
+                  <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-rose-50 border border-rose-300 mt-1">
+                    <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-rose-800">
+                      <strong>Salvataggio bloccato:</strong> rimuovi gli istruttori non disponibili (chip rosse con ✕) prima di salvare.
+                    </p>
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-muted-foreground uppercase">Costi</span>
                   <span className="text-sm">
