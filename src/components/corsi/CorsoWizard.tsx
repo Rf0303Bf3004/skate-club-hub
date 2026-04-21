@@ -701,58 +701,33 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
           )}
 
           {step === 3 && (() => {
-            const groups: Record<Bucket, any[]> = { ok: [], busy: [], ko: [] };
-            for (const i of istruttori_attivi) {
-              const cls = classify_istruttore(i);
-              groups[cls.bucket].push({ ...i, _cls: cls });
-            }
-
-            // Aggiungi al gruppo "ko" anche istruttori NON attivi che risultano già selezionati,
-            // così l'utente può comunque deselezionarli (chip cliccabile per togliere).
-            const known_ids = new Set(istruttori_attivi.map((i: any) => i.id));
-            for (const sel_id of form.istruttori_ids) {
-              if (known_ids.has(sel_id)) continue;
-              const i = istruttori.find((x: any) => x.id === sel_id);
-              if (!i) continue;
-              groups.ko.push({ ...i, _cls: { bucket: "ko" as Bucket, label: "non attivo o disponibilità mancante", tooltip: "Istruttore non disponibile per questo slot" } });
-            }
-
-            const render_chip = (i: any, opts: { allow_remove_only?: boolean } = {}) => {
+            const render_chip = (i: any, opts: { removable_only?: boolean } = {}) => {
               const selected = form.istruttori_ids.includes(i.id);
               const colore = i.colore || "#6B7280";
-              const cls = i._cls;
-              const is_ko = cls?.bucket === "ko";
-              // Chip "ko":
-              //   - se NON selezionato: disabilitato (non si può aggiungere un istruttore non disponibile)
-              //   - se selezionato: cliccabile SOLO per rimuoverlo (X visibile, bordo rosso, warning)
-              const removable_ko = is_ko && selected;
-              const disabled = is_ko && !selected;
+              const removable = opts.removable_only;
               return (
                 <button
                   key={i.id}
                   type="button"
-                  onClick={() => !disabled && toggle_istruttore(i.id)}
-                  disabled={disabled}
-                  title={cls?.tooltip || ""}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-all border-2 ${
-                    disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"
-                  } ${removable_ko ? "ring-2 ring-rose-300" : ""}`}
+                  onClick={() => toggle_istruttore(i.id)}
+                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-all border-2 cursor-pointer hover:opacity-90"
                   style={{
-                    borderColor: removable_ko ? "#dc2626" : selected ? colore : "hsl(var(--border))",
-                    backgroundColor: removable_ko ? "#fef2f2" : selected ? `${colore}20` : "transparent",
-                    color: removable_ko ? "#b91c1c" : selected ? colore : "hsl(var(--foreground))",
+                    borderColor: removable ? "#dc2626" : selected ? colore : "hsl(var(--border))",
+                    backgroundColor: removable ? "#fef2f2" : selected ? `${colore}20` : "transparent",
+                    color: removable ? "#b91c1c" : selected ? colore : "hsl(var(--foreground))",
                   }}
+                  title={removable ? "Clicca per rimuovere" : selected ? "Selezionato — clicca per togliere" : "Clicca per aggiungere"}
                 >
                   <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: colore }} />
                   {i.nome} {i.cognome}
-                  {selected && !removable_ko && <span className="text-[10px] font-bold">✓</span>}
-                  {removable_ko && <X className="w-3.5 h-3.5" />}
+                  {selected && !removable && <span className="text-[10px] font-bold">✓</span>}
+                  {removable && <X className="w-3.5 h-3.5" />}
                 </button>
               );
             };
 
             return (
-              <div className="space-y-4">
+              <div className="space-y-4" onClick={() => rimossi_slot_change.length > 0 && set_rimossi_slot_change([])}>
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                     Istruttori assegnati ({form.istruttori_ids.length})
@@ -764,15 +739,15 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                   )}
                 </div>
 
-                {istruttori_ko_selezionati.length > 0 && (
-                  <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-rose-50 border border-rose-300">
-                    <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
-                    <div className="text-xs text-rose-800">
-                      <p className="font-semibold">Hai selezionato istruttori non disponibili per questo slot:</p>
+                {rimossi_slot_change.length > 0 && (
+                  <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-orange-50 border border-orange-300">
+                    <AlertTriangle className="w-4 h-4 text-orange-600 flex-shrink-0 mt-0.5" />
+                    <div className="text-xs text-orange-800">
+                      <p className="font-semibold">Lo slot è cambiato.</p>
                       <p className="mt-0.5">
-                        {istruttori_ko_selezionati.map((i: any) => `${i.nome} ${i.cognome}`).join(", ")}
+                        {rimossi_slot_change.length} istruttore/i {rimossi_slot_change.length === 1 ? "è stato rimosso" : "sono stati rimossi"} dalla selezione perché non più disponibili: <strong>{rimossi_slot_change.join(", ")}</strong>.
                       </p>
-                      <p className="mt-1">Clicca sul chip rosso (con ✕) per rimuoverli prima di salvare.</p>
+                      <p className="mt-0.5">Seleziona nuovamente da chi compare qui sotto.</p>
                     </div>
                   </div>
                 )}
@@ -785,55 +760,42 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                       Senza giorno e orario non posso verificare la disponibilità. Tutti gli istruttori sono selezionabili.
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {istruttori_attivi.map((i: any) => render_chip({ ...i, _cls: { bucket: "ok", tooltip: "" } }))}
+                      {istruttori_attivi.map((i: any) => render_chip(i))}
                     </div>
                   </>
-                ) : (
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 mb-2">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Disponibili ({groups.ok.length})
-                      </div>
-                      {groups.ok.length === 0 ? (
-                        <p className="text-[11px] text-muted-foreground italic">Nessuno completamente disponibile.</p>
-                      ) : (
-                        <div className="flex flex-wrap gap-2">
-                          {groups.ok.map((i) => render_chip(i))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
-                      <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 mb-2">
-                        <Clock className="w-3.5 h-3.5" /> Disponibili ma impegnati ({groups.busy.length})
-                      </div>
-                      {groups.busy.length === 0 ? (
-                        <p className="text-[11px] text-muted-foreground italic">Nessuno.</p>
-                      ) : (
-                        <div className="flex flex-wrap gap-2">
-                          {groups.busy.map((i) => render_chip(i))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
-                      <div className="flex items-center gap-1.5 text-xs font-semibold text-rose-700 mb-2">
-                        <Ban className="w-3.5 h-3.5" /> Non disponibili ({groups.ko.length})
-                      </div>
-                      {groups.ko.length === 0 ? (
-                        <p className="text-[11px] text-muted-foreground italic">Nessuno.</p>
-                      ) : (
-                        <div className="flex flex-wrap gap-2">
-                          {groups.ko.map((i) => render_chip(i))}
-                        </div>
-                      )}
+                ) : istruttori_selezionabili.length === 0 ? (
+                  <div className="space-y-3">
+                    <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-center space-y-2">
+                      <Ban className="w-6 h-6 text-rose-600 mx-auto" />
+                      <p className="text-sm font-semibold text-rose-800">
+                        Nessun istruttore è disponibile il {form.giorno} dalle {form.ora_inizio} alle {form.ora_fine}
+                      </p>
+                      <p className="text-xs text-rose-700">
+                        Torna allo step Collocamento e scegli un altro slot, oppure apri la pagina Istruttori per aggiungere disponibilità dichiarate.
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => set_step(2)}
+                        className="mt-2"
+                      >
+                        <ChevronLeft className="w-4 h-4 mr-1" /> Torna a Collocamento
+                      </Button>
                     </div>
                   </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Disponibili per {form.giorno} {form.ora_inizio}–{form.ora_fine} ({istruttori_selezionabili.length})
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {istruttori_selezionabili.map((i: any) => render_chip(i))}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      Sono mostrati solo gli istruttori con disponibilità dichiarata che copre questo slot e senza conflitti su altri corsi sovrapposti.
+                    </p>
+                  </>
                 )}
-
-                <p className="text-[11px] text-muted-foreground">
-                  Facoltativo. Gli istruttori senza disponibilità dichiarata o con conflitti restano nel gruppo "Non disponibili" e non sono selezionabili.
-                </p>
               </div>
             );
           })()}
