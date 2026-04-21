@@ -45,12 +45,37 @@ export type istruttore_disponibile_result = {
  * Regola (decisione confermata): allarme se lo slot non è interamente
  * dentro una fascia. Disponibilità parziale = allarme.
  */
+/** Normalizza nome giorno: minuscolo + rimozione accenti, così "Martedì" === "Martedi" === "martedì". */
+function norm_giorno(g: string | null | undefined): string {
+  return (g ?? "")
+    .toString()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+/** Cerca le fasce di disponibilità per il giorno richiesto, tollerando accenti e case. */
+function pick_fasce(
+  map: disponibilita_per_giorno | null | undefined,
+  giorno: string,
+): fascia_disponibilita[] {
+  if (!map) return [];
+  const target = norm_giorno(giorno);
+  // 1) match esatto (fast path)
+  if (map[giorno] && map[giorno].length) return map[giorno];
+  // 2) match normalizzato fra le chiavi della mappa
+  for (const k of Object.keys(map)) {
+    if (norm_giorno(k) === target) return map[k] || [];
+  }
+  return [];
+}
+
 export function istruttore_disponibile(
   params: istruttore_disponibile_params,
 ): istruttore_disponibile_result {
   const { disponibilita_per_giorno, giorno, ora_inizio, ora_fine } = params;
-  const fasce: fascia_disponibilita[] =
-    (disponibilita_per_giorno && disponibilita_per_giorno[giorno]) || [];
+  const fasce: fascia_disponibilita[] = pick_fasce(disponibilita_per_giorno, giorno);
 
   const fasce_label = fasce
     .map((f) => `${fmt_hhmm(f.ora_inizio)}-${fmt_hhmm(f.ora_fine)}`)

@@ -13,6 +13,7 @@ import {
   get_istruttore_name_from_list,
 } from "@/hooks/use-supabase-data";
 import { use_upsert_corso, use_elimina_corso, use_upsert_presenza_corso } from "@/hooks/use-supabase-mutations";
+import { istruttore_disponibile } from "@/lib/availability";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -1019,13 +1020,21 @@ export const GrigliaFasceGhiaccio: React.FC<{
     });
   }, [fasce_ghiaccio, corsi_pianificati, corso_id, corsi, istruttori, fascia_attiva]);
 
-  // Instructor availability: check against planning_corsi_settimana (same source of truth as save)
+  // Instructor availability: regola binaria condivisa con il wizard.
+  // Visibile = ha disponibilità dichiarata che copre lo slot E nessun conflitto su altri corsi/planning.
   const istruttori_status = useMemo(() => {
     if (!ora_inizio_sel || !ora_fine_sel) return [];
     const sel_start = time_to_min(ora_inizio_sel);
     const sel_end = time_to_min(ora_fine_sel);
-    return istruttori.filter((i: any) => i.attivo).map((i: any) => {
-      // Check if this instructor is already assigned in planning for an overlapping slot on this day
+    const out = istruttori.filter((i: any) => i.attivo).map((i: any) => {
+      // 1) Check disponibilità dichiarata (tabella disponibilita_istruttori, mappata in i.disponibilita)
+      const r = istruttore_disponibile({
+        disponibilita_per_giorno: i.disponibilita,
+        giorno,
+        ora_inizio: ora_inizio_sel,
+        ora_fine: ora_fine_sel,
+      });
+      // 2) Check conflitto planning (settimana attiva)
       const conflitto_planning = corsi_pianificati.find((p: any) =>
         p.corso_id !== corso_id &&
         p.istruttore_id === i.id &&
@@ -1035,8 +1044,18 @@ export const GrigliaFasceGhiaccio: React.FC<{
       const conflitto_nome = conflitto_planning
         ? (corsi.find((c: any) => c.id === conflitto_planning.corso_id)?.nome || "altro corso")
         : null;
-      return { ...i, conflitto_nome, disponibile: !conflitto_planning };
+      const disponibile = r.disponibile && !conflitto_planning;
+      return { ...i, conflitto_nome, disponibile, motivo_ko: !r.disponibile ? r.motivo : null };
     });
+    // Regola UX: nello Step 2 mostriamo SOLO chi è realmente disponibile (binario).
+    const filtrati = out.filter((x: any) => x.disponibile);
+    // eslint-disable-next-line no-console
+    console.debug("[GrigliaFasceGhiaccio] istruttori_status", {
+      giorno, ora_inizio_sel, ora_fine_sel,
+      totali: out.length, disponibili: filtrati.length,
+      esclusi: out.filter((x: any) => !x.disponibile).map((x: any) => `${x.nome} ${x.cognome}: ${x.motivo_ko || x.conflitto_nome}`),
+    });
+    return filtrati;
   }, [istruttori, corsi_pianificati, corsi, corso_id, giorno, ora_inizio_sel, ora_fine_sel]);
 
   // Duration buttons
