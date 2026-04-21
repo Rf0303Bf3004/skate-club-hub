@@ -459,13 +459,13 @@ const ClubSetupPage: React.FC = () => {
             <Field label={t("nome")} icon={<Hash className="w-3.5 h-3.5" />}>
               <Input value={get_val("nome")} onChange={(e) => set_val("nome", e.target.value)} />
             </Field>
-            <Field label={<>Indirizzo <span className="text-destructive">*</span></>} icon={<MapPin className="w-3.5 h-3.5" />}>
+            <Field label="Indirizzo *" icon={<MapPin className="w-3.5 h-3.5" />}>
               <Input required value={get_val("indirizzo")} onChange={(e) => set_val("indirizzo", e.target.value)} placeholder="Via Roma 1" />
             </Field>
-            <Field label={<>CAP <span className="text-destructive">*</span></>} icon={<MapPin className="w-3.5 h-3.5" />}>
+            <Field label="CAP *" icon={<MapPin className="w-3.5 h-3.5" />}>
               <Input required value={get_val("cap")} onChange={(e) => set_val("cap", e.target.value)} placeholder="6900" />
             </Field>
-            <Field label={<>Città <span className="text-destructive">*</span></>} icon={<MapPin className="w-3.5 h-3.5" />}>
+            <Field label="Città *" icon={<MapPin className="w-3.5 h-3.5" />}>
               <Input required value={get_val("citta")} onChange={(e) => set_val("citta", e.target.value)} placeholder="Lugano" />
             </Field>
             <Field label={t("paese")} icon={<Globe className="w-3.5 h-3.5" />}>
