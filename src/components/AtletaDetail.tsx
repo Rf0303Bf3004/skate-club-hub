@@ -1092,6 +1092,11 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
           <TabsContent value="calendario" className="mt-6">
             <CalendarioAtletaInterattivo atleta_id={a.id} />
           </TabsContent>
+
+          {/* ── Storico Test ── */}
+          <TabsContent value="storico_test" className="mt-6">
+            <StoricoTestAtleta atleta_id={a.id} />
+          </TabsContent>
         </Tabs>
       </div>
       {show_invito_1 && (
