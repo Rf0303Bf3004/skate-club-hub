@@ -103,6 +103,7 @@ export type Database = {
           note: string | null
           ore_pista_stagione: number | null
           percorso_amatori: string | null
+          portal_token: string | null
           ruolo_pista: string | null
           tag_nfc: string | null
           telefono: string | null
@@ -141,6 +142,7 @@ export type Database = {
           note?: string | null
           ore_pista_stagione?: number | null
           percorso_amatori?: string | null
+          portal_token?: string | null
           ruolo_pista?: string | null
           tag_nfc?: string | null
           telefono?: string | null
@@ -179,6 +181,7 @@ export type Database = {
           note?: string | null
           ore_pista_stagione?: number | null
           percorso_amatori?: string | null
+          portal_token?: string | null
           ruolo_pista?: string | null
           tag_nfc?: string | null
           telefono?: string | null
