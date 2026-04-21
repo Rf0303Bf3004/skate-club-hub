@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
 import { Upload, Globe, Phone, Mail, MapPin, Hash, Users, UserCheck, Calendar, Building2, Plus, Trash2, Loader2 } from "lucide-react";
@@ -634,14 +635,20 @@ const ClubSetupPage: React.FC = () => {
               />
             </Field>
             <Field label="Modalità costo privata">
-              <select
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              <RadioGroup
                 value={get_ghiaccio_val("modalita_costo_privata", (config_ghiaccio as any)?.modalita_costo_privata ?? "tariffa_fissa")}
-                onChange={(e) => set_ghiaccio_val("modalita_costo_privata", e.target.value)}
+                onValueChange={(v) => set_ghiaccio_val("modalita_costo_privata", v)}
+                className="flex flex-col gap-2 pt-2"
               >
-                <option value="tariffa_fissa">Tariffa fissa per atleta</option>
-                <option value="diviso_atleti">Tariffa divisa tra atleti</option>
-              </select>
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <RadioGroupItem value="tariffa_fissa" id="mcp_fissa" />
+                  <span>Tariffa fissa per atleta</span>
+                </label>
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <RadioGroupItem value="diviso_atleti" id="mcp_diviso" />
+                  <span>Tariffa divisa tra atleti</span>
+                </label>
+              </RadioGroup>
             </Field>
           </div>
         </div>
