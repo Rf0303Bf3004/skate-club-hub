@@ -33,9 +33,16 @@ type Atleta = {
 
 const ESITO_OPTIONS = [
   { value: "in_attesa", label: "In attesa", color: "bg-muted text-muted-foreground" },
-  { value: "superato", label: "Superato", color: "bg-green-100 text-green-800" },
-  { value: "non_superato", label: "Non superato", color: "bg-destructive/10 text-destructive" },
+  { value: "superato", label: "Promosso", color: "bg-green-100 text-green-800" },
+  { value: "non_superato", label: "Non promosso", color: "bg-destructive/10 text-destructive" },
 ];
+
+function next_livello(current: string | null | undefined): string | null {
+  if (!current) return null;
+  const idx = LIVELLI_PROGRESSIONE.indexOf(current);
+  if (idx < 0 || idx >= LIVELLI_PROGRESSIONE.length - 1) return null;
+  return LIVELLI_PROGRESSIONE[idx + 1];
+}
 
 const TIPO_OPTIONS = [
   { value: "artistica", label: "Artistica" },
@@ -178,29 +185,53 @@ export default function TestLivelloPage() {
 
   const conferma_esiti = useMutation({
     mutationFn: async () => {
-      if (!selected_test) return;
-      const superati = test_atleti.filter((ta) => ta.esito === "superato");
-      for (const ta of superati) {
-        const field =
-          selected_test.tipo === "artistica" ? "carriera_artistica" :
-          selected_test.tipo === "stile" ? "carriera_stile" : "percorso_amatori";
+      if (!selected_test) return { promossi: [] as string[] };
+      const promossi = test_atleti.filter((ta) => ta.esito === "superato");
+      const field =
+        selected_test.tipo === "artistica" ? "carriera_artistica" :
+        selected_test.tipo === "stile" ? "carriera_stile" : "percorso_amatori";
+      const carriera_label =
+        selected_test.tipo === "amatori" ? "Amatori" :
+        selected_test.tipo === "artistica" ? "Artistica" : "Stile";
+      const data_test = selected_test.data || new Date().toISOString().split("T")[0];
+      const promossi_nomi: string[] = [];
+
+      for (const ta of promossi) {
+        const atleta = atleti.find((a) => a.id === ta.atleta_id);
+        if (!atleta) continue;
+        const livello_attuale =
+          selected_test.tipo === "artistica" ? atleta.carriera_artistica :
+          selected_test.tipo === "stile" ? atleta.carriera_stile : atleta.percorso_amatori;
+        // priorità: livello_accesso esplicito del test, altrimenti next nella progressione
+        const livello_target = selected_test.livello_accesso || next_livello(livello_attuale);
+        if (!livello_target) continue;
+
         await supabase
           .from("atleti")
-          .update({ [field]: selected_test.livello_accesso } as any)
+          .update({ [field]: livello_target } as any)
           .eq("id", ta.atleta_id);
         await supabase.from("storico_livelli_atleta").insert({
           atleta_id: ta.atleta_id,
-          livello: selected_test.livello_accesso!,
-          carriera: selected_test.tipo === "amatori" ? "Amatori" :
-            selected_test.tipo === "artistica" ? "Artistica" : "Stile",
-          data_inizio: selected_test.data || new Date().toISOString().split("T")[0],
+          livello: livello_target,
+          carriera: carriera_label,
+          data_inizio: data_test,
+          note: `Promosso al test "${selected_test.nome}"`,
         } as any);
+        promossi_nomi.push(`${atleta.cognome} ${atleta.nome} → ${livello_target}`);
       }
-      return superati.length;
+      return { promossi: promossi_nomi };
     },
-    onSuccess: (n) => {
+    onSuccess: ({ promossi }) => {
       qc.invalidateQueries({ queryKey: ["atleti_test"] });
-      toast.success(`Livelli aggiornati per ${n} atlete`);
+      qc.invalidateQueries({ queryKey: ["storico_livelli_atleta"] });
+      if (promossi.length === 0) {
+        toast.info("Nessuna promozione applicata");
+      } else {
+        toast.success(`${promossi.length} ${promossi.length === 1 ? "atleta promosso" : "atlete promosse"}`, {
+          description: promossi.join(" • "),
+          duration: 6000,
+        });
+      }
     },
     onError: () => toast.error("Errore nell'aggiornamento"),
   });
