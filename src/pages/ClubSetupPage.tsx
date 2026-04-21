@@ -586,6 +586,60 @@ const ClubSetupPage: React.FC = () => {
 
         <Separator />
 
+        {/* Medagliere club — punti per posizione */}
+        <section className="space-y-4">
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">🏆 Medagliere club — Punteggio per posizione</h2>
+          <p className="text-xs text-muted-foreground">
+            Configura quanti punti vale ogni posizione finale nelle gare. I punti vengono sommati nel medagliere stagionale.
+          </p>
+          {(() => {
+            const default_punti: Record<string, number> = { "1": 10, "2": 7, "3": 5, "4": 3, "5": 2, "6": 1 };
+            const current_punti: Record<string, number> =
+              (form.medagliere_punti as any) ?? ((setup as any)?.medagliere_punti ?? default_punti);
+            const update_punti = (pos: string, val: string) => {
+              const next = { ...current_punti, [pos]: Number(val) || 0 };
+              set_val("medagliere_punti", next);
+            };
+            const remove_pos = (pos: string) => {
+              const next = { ...current_punti };
+              delete next[pos];
+              set_val("medagliere_punti", next);
+            };
+            const add_pos = () => {
+              const used = Object.keys(current_punti).map(Number).filter((n) => !isNaN(n));
+              const next_pos = String((used.length ? Math.max(...used) : 0) + 1);
+              set_val("medagliere_punti", { ...current_punti, [next_pos]: 0 });
+            };
+            const sorted = Object.keys(current_punti).sort((a, b) => Number(a) - Number(b));
+            return (
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {sorted.map((pos) => (
+                    <div key={pos} className="flex items-center gap-1 border border-border rounded-lg px-2 py-1">
+                      <span className="text-xs font-bold text-muted-foreground w-8">{pos}°</span>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={current_punti[pos]}
+                        onChange={(e) => update_punti(pos, e.target.value)}
+                        className="h-8 text-sm"
+                      />
+                      <Button variant="ghost" size="sm" onClick={() => remove_pos(pos)} className="h-7 w-7 p-0 text-destructive">
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                <Button variant="outline" size="sm" onClick={add_pos} className="gap-1">
+                  <Plus className="w-3 h-3" /> Aggiungi posizione
+                </Button>
+              </div>
+            );
+          })()}
+        </section>
+
+        <Separator />
+
         {/* Salva dati club */}
         <div className="flex justify-end">
           <Button onClick={handle_save} disabled={saving || Object.keys(form).length === 0}>
