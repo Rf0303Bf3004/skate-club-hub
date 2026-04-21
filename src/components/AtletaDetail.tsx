@@ -26,7 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Shield, Medal, Save, Upload, Music, ArrowRightLeft, X, Mail, Copy, Printer, Link as LinkIcon, QrCode } from "lucide-react";
+import { ArrowLeft, Shield, Medal, Save, Upload, Music, ArrowRightLeft, X, Mail, Copy, Printer, Link as LinkIcon, QrCode, Share2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
@@ -346,6 +346,27 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
       toast({ title: "🔗 Link copiato negli appunti" });
     } catch {
       toast({ title: "Impossibile copiare", variant: "destructive" });
+    }
+  };
+
+  const handle_share_portal_link = async () => {
+    if (!portal_url) return;
+    const share_data = {
+      title: "Portale atleta",
+      text: `Accesso portale di ${form.nome} ${form.cognome}`,
+      url: portal_url,
+    };
+    try {
+      if (typeof navigator !== "undefined" && (navigator as any).share) {
+        await (navigator as any).share(share_data);
+      } else {
+        await navigator.clipboard.writeText(portal_url);
+        toast({ title: "🔗 Link copiato", description: "Condivisione non supportata, link copiato negli appunti" });
+      }
+    } catch (err: any) {
+      if (err?.name !== "AbortError") {
+        toast({ title: "Impossibile condividere", description: err?.message, variant: "destructive" });
+      }
     }
   };
 
@@ -1160,9 +1181,12 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
             </div>
             <p className="text-xs text-center text-muted-foreground hidden print:block break-all">{portal_url}</p>
           </div>
-          <div className="flex gap-2 justify-end pt-2 print:hidden">
+          <div className="flex flex-wrap gap-2 justify-end pt-2 print:hidden">
             <Button variant="outline" size="sm" onClick={() => window.print()}>
-              <Printer className="w-4 h-4 mr-1.5" /> Stampa
+              <Printer className="w-4 h-4 mr-1.5" /> Stampa QR
+            </Button>
+            <Button variant="outline" size="sm" onClick={handle_share_portal_link}>
+              <Share2 className="w-4 h-4 mr-1.5" /> Condividi link
             </Button>
             <Button size="sm" onClick={() => set_show_qr_portal(false)}>Chiudi</Button>
           </div>
