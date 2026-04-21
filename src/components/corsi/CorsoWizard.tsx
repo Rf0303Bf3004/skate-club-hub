@@ -260,9 +260,89 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
 
   const istruttori_attivi = istruttori.filter((i: any) => i.attivo);
 
+  // ── Classificazione istruttori condivisa fra Step 3 e Step 4 (Riepilogo) ──
+  // Singola fonte di verità per "non disponibile" basata su availability.istruttore_disponibile.
+  const has_slot = posiziona_planning && !!form.giorno && !!form.ora_inizio && !!form.ora_fine;
+  type Bucket = "ok" | "busy" | "ko";
+  const conflitti_per_istr = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    if (!has_slot) return map;
+    const slot_s = tmin(form.ora_inizio);
+    const slot_e = tmin(form.ora_fine);
+    for (const c of (corsi || [])) {
+      if (!c || c.id === corso?.id) continue;
+      if (c.giorno !== form.giorno) continue;
+      if (!c.ora_inizio || !c.ora_fine) continue;
+      const cs = tmin(c.ora_inizio.slice(0, 5));
+      const ce = tmin(c.ora_fine.slice(0, 5));
+      if (ce <= slot_s || cs >= slot_e) continue;
+      const ids: string[] = c.istruttori_ids || [];
+      for (const iid of ids) {
+        if (!map[iid]) map[iid] = [];
+        map[iid].push(`${c.nome} (${c.ora_inizio.slice(0,5)}–${c.ora_fine.slice(0,5)})`);
+      }
+    }
+    return map;
+  }, [has_slot, form.giorno, form.ora_inizio, form.ora_fine, corsi, corso?.id]);
+
+  const classify_istruttore = (i: any): { bucket: Bucket; label: string; tooltip: string } => {
+    if (!has_slot) return { bucket: "ok", label: "", tooltip: "" };
+    const r = istruttore_disponibile({
+      disponibilita_per_giorno: i.disponibilita,
+      giorno: form.giorno,
+      ora_inizio: form.ora_inizio,
+      ora_fine: form.ora_fine,
+    });
+    if (!r.disponibile) {
+      return {
+        bucket: "ko",
+        label: r.fasce_label || "nessuna disponibilità dichiarata",
+        tooltip: r.motivo || "Non disponibile",
+      };
+    }
+    const conf = conflitti_per_istr[i.id];
+    if (conf && conf.length > 0) {
+      return { bucket: "busy", label: conf.join(", "), tooltip: `Già impegnato: ${conf.join(", ")}` };
+    }
+    return { bucket: "ok", label: r.fasce_label, tooltip: `Disponibile ${r.fasce_label}` };
+  };
+
+  // Debug: log classificazione per verificare che il fix sia attivo nella build live
+  useEffect(() => {
+    if (step !== 3 || !has_slot) return;
+    for (const i of istruttori_attivi) {
+      const cls = classify_istruttore(i);
+      // eslint-disable-next-line no-console
+      console.debug("istruttore_classificato", i.id, `${i.nome} ${i.cognome}`, cls.bucket, cls.tooltip);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, has_slot, form.giorno, form.ora_inizio, form.ora_fine, istruttori_attivi.length]);
+
+  // Istruttori selezionati che NON sono disponibili (per warning + blocco salva)
+  const istruttori_ko_selezionati = useMemo(() => {
+    if (!has_slot) return [];
+    return form.istruttori_ids
+      .map((id: string) => {
+        const i = istruttori.find((x: any) => x.id === id);
+        if (!i) return null;
+        const cls = classify_istruttore(i);
+        return cls.bucket === "ko" ? { ...i, _cls: cls } : null;
+      })
+      .filter(Boolean);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.istruttori_ids, has_slot, form.giorno, form.ora_inizio, form.ora_fine, istruttori]);
+
   const [error_db, set_error_db] = useState<string | null>(null);
   const handle_submit = async () => {
     set_error_db(null);
+    if (istruttori_ko_selezionati.length > 0) {
+      set_error_db(
+        `Istruttori non disponibili selezionati: ${istruttori_ko_selezionati
+          .map((i: any) => `${i.nome} ${i.cognome}`)
+          .join(", ")}. Rimuovili prima di salvare.`,
+      );
+      return;
+    }
     if (!get_current_club_id()) {
       const msg = "Nessun club selezionato. Effettua nuovamente il login e riprova.";
       set_error_db(msg);
