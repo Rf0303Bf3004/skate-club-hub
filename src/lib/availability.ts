@@ -184,6 +184,97 @@ function min_to_hhmm(m: number): string {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Helper UNICO per "lista istruttori realmente disponibili" su uno slot.
+// Usato sia da GrigliaFasceGhiaccio (Step 2 del wizard) sia da CorsoWizard
+// (Step 3). Singola fonte di verità: niente più logiche divergenti.
+//
+// Disponibile = ha fascia di disponibilità che copre interamente lo slot
+//               E non ha conflitti su altri corsi pianificati nel planning
+//               della settimana (si esclude il corso che si sta editando).
+// ─────────────────────────────────────────────────────────────
+
+export type planning_slot_per_conflitto = {
+  corso_id: string;
+  istruttore_id: string | null;
+  ora_inizio: string;
+  ora_fine: string;
+};
+
+export type istruttore_per_filtro = {
+  id: string;
+  attivo?: boolean | null;
+  disponibilita?: disponibilita_per_giorno | null;
+  [k: string]: unknown;
+};
+
+export type filtra_istruttori_disponibili_params = {
+  istruttori: istruttore_per_filtro[];
+  giorno: string;
+  ora_inizio: string;
+  ora_fine: string;
+  /** Slot del planning settimanale (solo non annullati). */
+  planning_slots: planning_slot_per_conflitto[];
+  /** id del corso in editing, da escludere dai conflitti. */
+  corso_id_corrente?: string | null;
+};
+
+export type istruttore_filtro_status = {
+  istruttore: istruttore_per_filtro;
+  disponibile: boolean;
+  motivo_ko: string | null;
+  conflitto_corso_id: string | null;
+};
+
+export function calcola_status_istruttori_per_slot(
+  params: filtra_istruttori_disponibili_params,
+): istruttore_filtro_status[] {
+  const { istruttori, giorno, ora_inizio, ora_fine, planning_slots, corso_id_corrente } = params;
+  if (!giorno || !ora_inizio || !ora_fine) {
+    return (istruttori || [])
+      .filter((i) => i.attivo !== false)
+      .map((i) => ({ istruttore: i, disponibile: false, motivo_ko: "slot_incompleto", conflitto_corso_id: null }));
+  }
+
+  const slot_s = time_to_min(ora_inizio);
+  const slot_e = time_to_min(ora_fine);
+
+  return (istruttori || [])
+    .filter((i) => i.attivo !== false)
+    .map((i) => {
+      const r = istruttore_disponibile({
+        disponibilita_per_giorno: i.disponibilita,
+        giorno,
+        ora_inizio,
+        ora_fine,
+      });
+      if (!r.disponibile) {
+        return {
+          istruttore: i,
+          disponibile: false,
+          motivo_ko: r.motivo || "no_disponibilita",
+          conflitto_corso_id: null,
+        };
+      }
+      const conflitto = (planning_slots || []).find((p) => {
+        if (!p || p.istruttore_id !== i.id) return false;
+        if (corso_id_corrente && p.corso_id === corso_id_corrente) return false;
+        const ps = time_to_min((p.ora_inizio || "").slice(0, 5));
+        const pe = time_to_min((p.ora_fine || "").slice(0, 5));
+        return ps < slot_e && pe > slot_s;
+      });
+      if (conflitto) {
+        return {
+          istruttore: i,
+          disponibile: false,
+          motivo_ko: "conflitto_planning",
+          conflitto_corso_id: conflitto.corso_id,
+        };
+      }
+      return { istruttore: i, disponibile: true, motivo_ko: null, conflitto_corso_id: null };
+    });
+}
+
+// ─────────────────────────────────────────────────────────────
 // Eccezioni di settimana: diff fra occorrenza (planning_corsi_settimana)
 // e corso master (tabella corsi). Serve per mostrare in UI quali campi
 // sono stati modificati per la singola settimana SENZA toccare il master.

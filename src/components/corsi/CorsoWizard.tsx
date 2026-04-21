@@ -9,7 +9,7 @@ import { Check, ChevronLeft, ChevronRight, Snowflake, Dumbbell, AlertTriangle, X
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { GrigliaFasceGhiaccio, NumInput, to_num } from "@/pages/CoursesPage";
 import { toast } from "@/hooks/use-toast";
-import { istruttore_disponibile, time_to_min as tmin } from "@/lib/availability";
+import { calcola_status_istruttori_per_slot } from "@/lib/availability";
 
 const GIORNI_DB = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
 const GIORNO_TO_WEEKDAY: Record<string, number> = {
@@ -304,69 +304,36 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
 
   const istruttori_attivi = istruttori.filter((i: any) => i.attivo);
 
-  // ── Classificazione istruttori condivisa fra Step 3 e Step 4 (Riepilogo) ──
-  // Singola fonte di verità per "non disponibile" basata su availability.istruttore_disponibile.
+  // ── Singola fonte di verità condivisa con GrigliaFasceGhiaccio (Step 2) ──
   type Bucket = "ok" | "busy" | "ko";
-  const conflitti_per_istr = useMemo(() => {
-    const map: Record<string, string[]> = {};
-    if (!has_slot) return map;
-    const slot_s = tmin(form.ora_inizio);
-    const slot_e = tmin(form.ora_fine);
-    for (const p of planning_settimana_corrente) {
-      if (!p || p.corso_id === corso?.id || !p.istruttore_id) continue;
-      if (!p.ora_inizio || !p.ora_fine) continue;
-      const cs = tmin(p.ora_inizio.slice(0, 5));
-      const ce = tmin(p.ora_fine.slice(0, 5));
-      if (ce <= slot_s || cs >= slot_e) continue;
-      const corso_match = (corsi || []).find((c: any) => c.id === p.corso_id);
-      if (!map[p.istruttore_id]) map[p.istruttore_id] = [];
-      map[p.istruttore_id].push(
-        `${corso_match?.nome || "altro corso"} (${p.ora_inizio.slice(0, 5)}–${p.ora_fine.slice(0, 5)})`,
-      );
-    }
-    return map;
-  }, [has_slot, form.ora_inizio, form.ora_fine, planning_settimana_corrente, corsi, corso?.id]);
-
-  const classify_istruttore = (i: any): { bucket: Bucket; label: string; tooltip: string } => {
-    if (!has_slot) return { bucket: "ok", label: "", tooltip: "" };
-    const r = istruttore_disponibile({
-      disponibilita_per_giorno: i.disponibilita,
+  const status_istruttori = useMemo(() => {
+    if (!has_slot) return [];
+    return calcola_status_istruttori_per_slot({
+      istruttori: istruttori_attivi,
       giorno: form.giorno,
       ora_inizio: form.ora_inizio,
       ora_fine: form.ora_fine,
+      planning_slots: planning_settimana_corrente as any,
+      corso_id_corrente: corso?.id ?? null,
     });
-    if (!r.disponibile) {
-      return {
-        bucket: "ko",
-        label: r.fasce_label || "nessuna disponibilità dichiarata",
-        tooltip: r.motivo || "Non disponibile",
-      };
-    }
-    const conf = conflitti_per_istr[i.id];
-    if (conf && conf.length > 0) {
-      return { bucket: "busy", label: conf.join(", "), tooltip: `Già impegnato: ${conf.join(", ")}` };
-    }
-    return { bucket: "ok", label: r.fasce_label, tooltip: `Disponibile ${r.fasce_label}` };
-  };
+  }, [has_slot, form.giorno, form.ora_inizio, form.ora_fine, istruttori_attivi, planning_settimana_corrente, corso?.id]);
 
-  // Lista istruttori SELEZIONABILI: solo realmente disponibili (regola binaria).
-  // Disponibile = ha fascia di disponibilità che copre lo slot E nessun conflitto su altri corsi.
-  const istruttori_selezionabili = useMemo(() => {
-    if (!has_slot) return istruttori_attivi;
-    return istruttori_attivi.filter((i: any) => {
-      const r = istruttore_disponibile({
-        disponibilita_per_giorno: i.disponibilita,
-        giorno: form.giorno,
-        ora_inizio: form.ora_inizio,
-        ora_fine: form.ora_fine,
-      });
-      if (!r.disponibile) return false;
-      const conf = conflitti_per_istr[i.id];
-      if (conf && conf.length > 0) return false;
-      return true;
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [has_slot, form.giorno, form.ora_inizio, form.ora_fine, istruttori_attivi, conflitti_per_istr]);
+  const istruttori_selezionabili = useMemo(
+    () => (has_slot ? status_istruttori.filter((s) => s.disponibile).map((s) => s.istruttore as any) : istruttori_attivi),
+    [has_slot, status_istruttori, istruttori_attivi],
+  );
+
+  const classify_istruttore = (i: any): { bucket: Bucket; label: string; tooltip: string } => {
+    if (!has_slot) return { bucket: "ok", label: "", tooltip: "" };
+    const s = status_istruttori.find((x) => x.istruttore.id === i.id);
+    if (!s) return { bucket: "ko", label: "non disponibile", tooltip: "Non disponibile" };
+    if (s.disponibile) return { bucket: "ok", label: "", tooltip: "Disponibile" };
+    if (s.motivo_ko === "conflitto_planning") {
+      const c = (corsi || []).find((cc: any) => cc.id === s.conflitto_corso_id);
+      return { bucket: "busy", label: c?.nome || "altro corso", tooltip: `Già impegnato: ${c?.nome || "altro corso"}` };
+    }
+    return { bucket: "ko", label: s.motivo_ko || "non disponibile", tooltip: s.motivo_ko || "Non disponibile" };
+  };
 
   // Auto-cleanup: se cambia lo slot, rimuovi dalla selezione gli istruttori non più disponibili
   // e mostra banner arancio con i nomi rimossi.
@@ -392,43 +359,25 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slot_key, has_slot, istruttori_selezionabili]);
 
-  // Debug dettagliato: per ogni istruttore mostra disponibilità trovate, motivo esclusione e config slot
+  // Debug dettagliato: usa lo stesso status condiviso con Step 2 (no logiche duplicate).
   useEffect(() => {
     if (step !== 3) return;
-    const dettaglio = istruttori_attivi.map((i: any) => {
-      const r = istruttore_disponibile({
-        disponibilita_per_giorno: i.disponibilita,
-        giorno: form.giorno,
-        ora_inizio: form.ora_inizio,
-        ora_fine: form.ora_fine,
-      });
-      const conf = conflitti_per_istr[i.id] || [];
-      const motivo = !r.disponibile
-        ? (r.motivo || "no_disp")
-        : (conf.length > 0 ? `conflitto:${conf.join("|")}` : "ok");
-      return {
-        id: (i.id || "").slice(0, 8),
-        nome: `${i.nome} ${i.cognome}`,
-        chiavi_disp: Object.keys(i.disponibilita || {}),
-        fasce_giorno: (i.disponibilita || {})[form.giorno] || null,
-        disponibile: r.disponibile,
-        motivo,
-      };
-    });
     // eslint-disable-next-line no-console
     console.debug("[CorsoWizard] step istruttori render", {
-      posiziona_planning,
       has_slot,
       giorno_effettivo: form.giorno,
       ora_inizio: form.ora_inizio,
       ora_fine: form.ora_fine,
       totali_club: istruttori_attivi.length,
       disponibili: istruttori_selezionabili.length,
-      conflitti: Object.keys(conflitti_per_istr).length,
-      selezionati: form.istruttori_ids.length,
-      dettaglio,
+      dettaglio: status_istruttori.map((s) => ({
+        id: (s.istruttore.id || "").slice(0, 8),
+        nome: `${(s.istruttore as any).nome} ${(s.istruttore as any).cognome}`,
+        disponibile: s.disponibile,
+        motivo: s.motivo_ko,
+      })),
     });
-  }, [step, form.giorno, form.ora_inizio, form.ora_fine, istruttori_attivi, istruttori_selezionabili.length, conflitti_per_istr, form.istruttori_ids.length, posiziona_planning, has_slot]);
+  }, [step, has_slot, form.giorno, form.ora_inizio, form.ora_fine, istruttori_attivi.length, istruttori_selezionabili.length, status_istruttori]);
 
   // Mantenuto per compat con resto del file (Riepilogo non blocca più: la lista è già filtrata)
   const istruttori_ko_selezionati: any[] = useMemo(() => {
