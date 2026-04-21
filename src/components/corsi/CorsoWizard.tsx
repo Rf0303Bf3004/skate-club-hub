@@ -350,20 +350,43 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slot_key, has_slot, istruttori_selezionabili]);
 
-  // Debug: numeri visibili nei log per verificare il fix in produzione
+  // Debug dettagliato: per ogni istruttore mostra disponibilità trovate, motivo esclusione e config slot
   useEffect(() => {
     if (step !== 3) return;
+    const dettaglio = istruttori_attivi.map((i: any) => {
+      const r = istruttore_disponibile({
+        disponibilita_per_giorno: i.disponibilita,
+        giorno: form.giorno,
+        ora_inizio: form.ora_inizio,
+        ora_fine: form.ora_fine,
+      });
+      const conf = conflitti_per_istr[i.id] || [];
+      const motivo = !r.disponibile
+        ? (r.motivo || "no_disp")
+        : (conf.length > 0 ? `conflitto:${conf.join("|")}` : "ok");
+      return {
+        id: (i.id || "").slice(0, 8),
+        nome: `${i.nome} ${i.cognome}`,
+        chiavi_disp: Object.keys(i.disponibilita || {}),
+        fasce_giorno: (i.disponibilita || {})[form.giorno] || null,
+        disponibile: r.disponibile,
+        motivo,
+      };
+    });
     // eslint-disable-next-line no-console
     console.debug("[CorsoWizard] step istruttori render", {
-      giorno: form.giorno,
+      posiziona_planning,
+      has_slot,
+      giorno_effettivo: form.giorno,
       ora_inizio: form.ora_inizio,
       ora_fine: form.ora_fine,
       totali_club: istruttori_attivi.length,
       disponibili: istruttori_selezionabili.length,
       conflitti: Object.keys(conflitti_per_istr).length,
       selezionati: form.istruttori_ids.length,
+      dettaglio,
     });
-  }, [step, form.giorno, form.ora_inizio, form.ora_fine, istruttori_attivi.length, istruttori_selezionabili.length, conflitti_per_istr, form.istruttori_ids.length]);
+  }, [step, form.giorno, form.ora_inizio, form.ora_fine, istruttori_attivi, istruttori_selezionabili.length, conflitti_per_istr, form.istruttori_ids.length, posiziona_planning, has_slot]);
 
   // Mantenuto per compat con resto del file (Riepilogo non blocca più: la lista è già filtrata)
   const istruttori_ko_selezionati: any[] = useMemo(() => {
