@@ -761,88 +761,169 @@ export function use_elimina_fattura() {
   });
 }
 
+// Costruisce le righe di fatture per un mese (anno, mese 1-12). Ritorna le righe pronte da inserire.
+async function build_fatture_mese(anno: number, mese: number) {
+  const mese_str = String(mese).padStart(2, "0");
+  const data_inizio_mese = `${anno}-${mese_str}-01`;
+  const data_fine_mese = new Date(anno, mese, 0).toISOString().split("T")[0];
+  const periodo = `${anno}-${mese_str}`;
+  const mese_label = new Date(anno, mese - 1, 1).toLocaleString("it-CH", { month: "long", year: "numeric" });
+  const oggi = new Date().toISOString().split("T")[0];
+
+  const { data: fe } = await supabase
+    .from("fatture")
+    .select("numero")
+    .eq("club_id", cid())
+    .order("numero", { ascending: false })
+    .limit(1);
+  let next_num = 1;
+  if (fe?.length && (fe[0] as any).numero) {
+    const match = (fe[0] as any).numero.match(/(\d+)/);
+    if (match) next_num = parseInt(match[1]) + 1;
+  }
+
+  const { data: setup } = await supabase.from("setup_club").select("*").eq("club_id", cid()).maybeSingle();
+  const costo_test = Number((setup as any)?.fatturazione_costo_test ?? 0);
+
+  const { data: esistenti } = await supabase
+    .from("fatture")
+    .select("atleta_id, tipo, riferimento_id")
+    .eq("club_id", cid())
+    .eq("periodo", periodo);
+  const dup_key = (a: string, t: string, r: string | null) => `${a}|${t}|${r ?? ""}`;
+  const dup_set = new Set((esistenti ?? []).map((e: any) => dup_key(e.atleta_id, e.tipo, e.riferimento_id)));
+
+  const fatture_da_creare: any[] = [];
+
+  const { data: corsi } = await supabase.from("corsi").select("*").eq("club_id", cid()).eq("attivo", true);
+  const { data: iscrizioni_corsi } = await supabase.from("iscrizioni_corsi").select("*").eq("attiva", true);
+  for (const isc of iscrizioni_corsi || []) {
+    const corso = (corsi || []).find((c: any) => c.id === (isc as any).corso_id);
+    if (!corso || !(corso as any).costo_mensile) continue;
+    if (dup_set.has(dup_key((isc as any).atleta_id, "Corso", corso.id))) continue;
+    fatture_da_creare.push({
+      club_id: cid(),
+      atleta_id: (isc as any).atleta_id,
+      numero: `F-${String(next_num++).padStart(4, "0")}`,
+      descrizione: `Corso ${(corso as any).nome} - ${mese_label}`,
+      importo: (corso as any).costo_mensile,
+      data_emissione: oggi,
+      data_scadenza: data_fine_mese,
+      pagata: false,
+      tipo: "Corso",
+      riferimento_id: corso.id,
+      periodo,
+    });
+  }
+
+  const { data: lezioni_mese } = await supabase
+    .from("lezioni_private")
+    .select("*, lezioni_private_atlete(*)")
+    .eq("club_id", cid())
+    .gte("data", data_inizio_mese)
+    .lte("data", data_fine_mese)
+    .eq("annullata", false);
+
+  const totale_per_atleta: Record<string, number> = {};
+  for (const lezione of lezioni_mese || []) {
+    for (const la of (lezione as any).lezioni_private_atlete || []) {
+      totale_per_atleta[la.atleta_id] = (totale_per_atleta[la.atleta_id] || 0) + (la.quota_costo || 0);
+    }
+  }
+  for (const [atleta_id, totale] of Object.entries(totale_per_atleta)) {
+    if (totale <= 0) continue;
+    if (dup_set.has(dup_key(atleta_id, "Lezione Privata", null))) continue;
+    fatture_da_creare.push({
+      club_id: cid(),
+      atleta_id,
+      numero: `F-${String(next_num++).padStart(4, "0")}`,
+      descrizione: `Lezioni private - ${mese_label}`,
+      importo: totale,
+      data_emissione: oggi,
+      data_scadenza: data_fine_mese,
+      pagata: false,
+      tipo: "Lezione Privata",
+      riferimento_id: null,
+      periodo,
+    });
+  }
+
+  if (costo_test > 0) {
+    const { data: test_mese } = await supabase
+      .from("test_livello")
+      .select("id, data, nome, test_livello_atleti(atleta_id, esito)")
+      .eq("club_id", cid())
+      .gte("data", data_inizio_mese)
+      .lte("data", data_fine_mese);
+
+    const test_per_atleta: Record<string, number> = {};
+    for (const test of test_mese || []) {
+      for (const ta of (test as any).test_livello_atleti || []) {
+        if (ta.esito === "in_attesa") continue;
+        test_per_atleta[ta.atleta_id] = (test_per_atleta[ta.atleta_id] || 0) + 1;
+      }
+    }
+    for (const [atleta_id, count] of Object.entries(test_per_atleta)) {
+      if (dup_set.has(dup_key(atleta_id, "Test Livello", null))) continue;
+      fatture_da_creare.push({
+        club_id: cid(),
+        atleta_id,
+        numero: `F-${String(next_num++).padStart(4, "0")}`,
+        descrizione: `Test di livello (${count}) - ${mese_label}`,
+        importo: costo_test * count,
+        data_emissione: oggi,
+        data_scadenza: data_fine_mese,
+        pagata: false,
+        tipo: "Test Livello",
+        riferimento_id: null,
+        periodo,
+      });
+    }
+  }
+
+  return fatture_da_creare;
+}
+
+export function use_anteprima_fatture_mese() {
+  return useMutation({
+    mutationFn: async (params?: { anno?: number; mese?: number }) => {
+      const now = new Date();
+      const anno = params?.anno ?? now.getFullYear();
+      const mese = params?.mese ?? now.getMonth() + 1;
+      return build_fatture_mese(anno, mese);
+    },
+  });
+}
+
 export function use_genera_fatture_mensili() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async () => {
+    mutationFn: async (params?: { anno?: number; mese?: number }) => {
       const now = new Date();
-      const anno = now.getFullYear();
-      const mese = now.getMonth() + 1;
-      const mese_str = String(mese).padStart(2, "0");
-      const data_inizio_mese = `${anno}-${mese_str}-01`;
-      const data_fine_mese = new Date(anno, mese, 0).toISOString().split("T")[0];
-      const mese_label = now.toLocaleString("it-CH", { month: "long", year: "numeric" });
-
-      const { data: fe } = await supabase
-        .from("fatture")
-        .select("numero")
-        .eq("club_id", cid())
-        .order("numero", { ascending: false })
-        .limit(1);
-      let next_num = 1;
-      if (fe?.length) {
-        const match = fe[0].numero?.match(/(\d+)/);
-        if (match) next_num = parseInt(match[1]) + 1;
-      }
-
-      const fatture_da_creare: any[] = [];
-
-      const { data: corsi } = await supabase.from("corsi").select("*").eq("club_id", cid()).eq("attivo", true);
-      const { data: iscrizioni_corsi } = await supabase.from("iscrizioni_corsi").select("*").eq("attiva", true);
-
-      for (const isc of iscrizioni_corsi || []) {
-        const corso = (corsi || []).find((c: any) => c.id === isc.corso_id);
-        if (!corso || !corso.costo_mensile) continue;
-        fatture_da_creare.push({
-          club_id: cid(),
-          atleta_id: isc.atleta_id,
-          numero: `F-${String(next_num++).padStart(4, "0")}`,
-          descrizione: `Corso ${corso.nome} - ${mese_label}`,
-          importo: corso.costo_mensile,
-          data_emissione: now.toISOString().split("T")[0],
-          data_scadenza: data_fine_mese,
-          pagata: false,
-          tipo: "Corso", // ← FIX: maiuscolo
-          riferimento_id: corso.id,
-        });
-      }
-
-      const { data: lezioni_mese } = await supabase
-        .from("lezioni_private")
-        .select("*, lezioni_private_atlete(*)")
-        .eq("club_id", cid())
-        .gte("data", data_inizio_mese)
-        .lte("data", data_fine_mese)
-        .eq("annullata", false);
-
-      const totale_per_atleta: Record<string, number> = {};
-      for (const lezione of lezioni_mese || []) {
-        for (const la of lezione.lezioni_private_atlete || []) {
-          totale_per_atleta[la.atleta_id] = (totale_per_atleta[la.atleta_id] || 0) + (la.quota_costo || 0);
-        }
-      }
-
-      for (const [atleta_id, totale] of Object.entries(totale_per_atleta)) {
-        if (totale <= 0) continue;
-        fatture_da_creare.push({
-          club_id: cid(),
-          atleta_id,
-          numero: `F-${String(next_num++).padStart(4, "0")}`,
-          descrizione: `Lezioni private - ${mese_label}`,
-          importo: totale,
-          data_emissione: now.toISOString().split("T")[0],
-          data_scadenza: data_fine_mese,
-          pagata: false,
-          tipo: "Lezione Privata", // ← FIX: formato corretto
-          riferimento_id: null,
-        });
-      }
-
+      const anno = params?.anno ?? now.getFullYear();
+      const mese = params?.mese ?? now.getMonth() + 1;
+      const fatture_da_creare = await build_fatture_mese(anno, mese);
       if (fatture_da_creare.length > 0) {
         const { error } = await supabase.from("fatture").insert(fatture_da_creare);
         if (error) throw error;
       }
       return fatture_da_creare.length;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["fatture"] }),
+  });
+}
+
+export function use_invia_email_fattura() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: { fattura_id: string; email: string }) => {
+      // Stub: registra timestamp di invio. L'invio reale richiede l'infrastruttura email.
+      const { error } = await supabase
+        .from("fatture")
+        .update({ email_inviata_at: new Date().toISOString() } as any)
+        .eq("id", params.fattura_id);
+      if (error) throw error;
+      return params.email;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["fatture"] }),
   });
