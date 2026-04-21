@@ -23,8 +23,7 @@ const all_nav_items = [
   { key: "lezioni_private", sezione: "lezioni_private", path: "/lezioni-private", icon: GraduationCap },
   { key: "fatture", sezione: "fatture", path: "/fatture", icon: CreditCard },
   { key: "comunicazioni", sezione: "comunicazioni", path: "/comunicazioni", icon: MessageSquare },
-  
-  { key: "campi", sezione: "campi", path: "/campi", icon: Sparkles },
+
   { key: "planning_ghiaccio", sezione: "planning_ghiaccio", path: "/planning", icon: Calendar },
   { key: "richieste_iscrizione", sezione: "richieste_iscrizione", path: "/richieste-iscrizione", icon: ClipboardList },
   { key: "setup_club", sezione: "setup_club", path: "/setup-club", icon: Settings },
