@@ -140,7 +140,7 @@ const ClubSetupPage: React.FC = () => {
       const club_id = get_current_club_id();
       const club_payload: Record<string, any> = {};
       const club_fields = [
-        "nome", "citta", "paese", "email", "telefono", "indirizzo",
+        "nome", "citta", "cap", "paese", "email", "telefono", "indirizzo",
         "sito_web", "numero_tessera_federale", "colore_primario", "descrizione", "logo_url",
       ];
       for (const f of club_fields) {
