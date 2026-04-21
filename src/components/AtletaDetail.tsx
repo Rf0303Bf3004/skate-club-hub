@@ -245,6 +245,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   const [show_invito_1, set_show_invito_1] = useState(false);
   const [show_invito_2, set_show_invito_2] = useState(false);
   const [generating_portal, set_generating_portal] = useState(false);
+  const [show_qr_portal, set_show_qr_portal] = useState(false);
 
 
   const [form, set_form] = useState({
@@ -310,8 +311,12 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   const upd = (k: string, v: any) => set_form((p: any) => ({ ...p, [k]: v }));
   const is_carriera_attiva = form.percorso_amatori === "Stellina 4";
 
+  const PORTALE_BASE_URL = "https://skate-club-hub.lovable.app/portale-atleta";
   const portal_url = (form as any)?.portal_token
-    ? `${window.location.origin}/portale-atleta/${(form as any).portal_token}`
+    ? `${PORTALE_BASE_URL}?token=${(form as any).portal_token}`
+    : null;
+  const portal_qr_src = portal_url
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=10&data=${encodeURIComponent(portal_url)}`
     : null;
 
   const handle_genera_portal = async () => {
@@ -319,19 +324,28 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
     try {
       let token = (form as any).portal_token;
       if (!token) {
-        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        token = Array.from({ length: 24 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+        token = (typeof crypto !== "undefined" && crypto.randomUUID)
+          ? crypto.randomUUID()
+          : Array.from({ length: 24 }, () => "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"[Math.floor(Math.random() * 62)]).join("");
         const { error } = await supabase.from("atleti").update({ portal_token: token } as any).eq("id", form.id);
         if (error) throw error;
         set_form((prev: any) => ({ ...prev, portal_token: token }));
       }
-      const url = `${window.location.origin}/portale-atleta/${token}`;
-      await navigator.clipboard.writeText(url).catch(() => {});
-      toast({ title: "🔗 Link portale copiato", description: url });
+      set_show_qr_portal(true);
     } catch (err: any) {
       toast({ title: "Errore", description: err?.message, variant: "destructive" });
     } finally {
       set_generating_portal(false);
+    }
+  };
+
+  const handle_copy_portal_link = async () => {
+    if (!portal_url) return;
+    try {
+      await navigator.clipboard.writeText(portal_url);
+      toast({ title: "🔗 Link copiato negli appunti" });
+    } catch {
+      toast({ title: "Impossibile copiare", variant: "destructive" });
     }
   };
 
@@ -477,9 +491,9 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
               onClick={handle_genera_portal}
               disabled={generating_portal}
               className="gap-1.5 text-xs border-primary/40 text-primary hover:bg-primary/5"
-              title={portal_url ?? "Genera link portale per l'atleta"}
+              title={portal_url ?? "Genera QR di accesso al portale"}
             >
-              <LinkIcon className="w-3.5 h-3.5" /> {portal_url ? "Copia link portale" : "Genera link portale"}
+              <QrCode className="w-3.5 h-3.5" /> 📱 QR Accesso Portale
             </Button>
             <Button
               variant="outline"
