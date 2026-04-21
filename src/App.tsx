@@ -41,10 +41,11 @@ const queryClient = new QueryClient();
 // Pagine pubbliche (no auth) gestite prima del gate di autenticazione.
 const PublicRoutes = ({ children }: { children: React.ReactNode }) => {
   const path = typeof window !== "undefined" ? window.location.pathname : "";
-  if (path.startsWith("/portale-atleta/")) {
+  if (path === "/portale-atleta" || path.startsWith("/portale-atleta/")) {
     return (
       <BrowserRouter>
         <Routes>
+          <Route path="/portale-atleta" element={<PortaleAtletaPage />} />
           <Route path="/portale-atleta/:token" element={<PortaleAtletaPage />} />
         </Routes>
       </BrowserRouter>

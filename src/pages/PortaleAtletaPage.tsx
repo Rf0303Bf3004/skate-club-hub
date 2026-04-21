@@ -1,18 +1,20 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Loader2, User, Calendar as CalIcon, FileText, Trophy, BookOpen, AlertCircle, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 
-// Portale pubblico mobile-first: l'unico identificativo è il portal_token nell'URL.
-// Sezioni: dati atleta (read-only), calendario futuro, comunicazioni (RSVP), fatture, catalogo corsi (richiesta iscrizione).
+// Portale pubblico mobile-first: l'unico identificativo è il portal_token.
+// Accetta sia /portale-atleta/:token (path) sia /portale-atleta?token=... (query).
 
 type TabKey = "dati" | "calendario" | "comunicazioni" | "fatture" | "iscrivi";
 
 const PortaleAtletaPage: React.FC = () => {
-  const { token } = useParams<{ token: string }>();
+  const { token: token_param } = useParams<{ token: string }>();
+  const [search_params] = useSearchParams();
+  const token = token_param || search_params.get("token") || "";
   const [loading, set_loading] = useState(true);
   const [atleta, set_atleta] = useState<any | null>(null);
   const [club, set_club] = useState<any | null>(null);
