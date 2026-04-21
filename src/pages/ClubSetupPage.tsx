@@ -248,6 +248,42 @@ const ClubSetupPage: React.FC = () => {
     }
   };
 
+  // Save SOLO sezione lezioni private
+  const [saving_private, set_saving_private] = useState(false);
+  const handle_save_private = async () => {
+    set_saving_private(true);
+    try {
+      const club_id = get_current_club_id();
+      const payload: any = {
+        club_id,
+        max_atleti_lezione_privata:
+          parseInt(get_ghiaccio_val("max_atleti_lezione_privata", (config_ghiaccio as any)?.max_atleti_lezione_privata ?? 3)) || 3,
+        modalita_costo_privata:
+          get_ghiaccio_val("modalita_costo_privata", (config_ghiaccio as any)?.modalita_costo_privata ?? "tariffa_fissa") || "tariffa_fissa",
+      };
+      if (config_ghiaccio?.id) {
+        const { error } = await supabase
+          .from("configurazione_ghiaccio")
+          .update(payload)
+          .eq("id", config_ghiaccio.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("configurazione_ghiaccio").insert(payload);
+        if (error) throw error;
+      }
+      toast({ title: "✅ Configurazione lezioni private salvata" });
+      set_ghiaccio_form((prev) => {
+        const { max_atleti_lezione_privata, modalita_costo_privata, ...rest } = prev;
+        return rest;
+      });
+      queryClient.invalidateQueries({ queryKey: ["configurazione_ghiaccio"] });
+    } catch (err: any) {
+      toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
+    } finally {
+      set_saving_private(false);
+    }
+  };
+
   // Disponibilità ghiaccio CRUD
   const add_slot = (giorno: string) => {
     set_disp_local((prev) => ({
@@ -650,6 +686,11 @@ const ClubSetupPage: React.FC = () => {
                 </label>
               </RadioGroup>
             </Field>
+          </div>
+          <div className="flex justify-end mt-4">
+            <Button onClick={handle_save_private} disabled={saving_private}>
+              {saving_private ? "Salvataggio..." : "Salva configurazione private"}
+            </Button>
           </div>
         </div>
 
