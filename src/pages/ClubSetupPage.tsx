@@ -140,7 +140,7 @@ const ClubSetupPage: React.FC = () => {
       const club_id = get_current_club_id();
       const club_payload: Record<string, any> = {};
       const club_fields = [
-        "nome", "citta", "paese", "email", "telefono", "indirizzo",
+        "nome", "citta", "cap", "paese", "email", "telefono", "indirizzo",
         "sito_web", "numero_tessera_federale", "colore_primario", "descrizione", "logo_url",
       ];
       for (const f of club_fields) {
@@ -459,11 +459,14 @@ const ClubSetupPage: React.FC = () => {
             <Field label={t("nome")} icon={<Hash className="w-3.5 h-3.5" />}>
               <Input value={get_val("nome")} onChange={(e) => set_val("nome", e.target.value)} />
             </Field>
-            <Field label={t("citta")} icon={<MapPin className="w-3.5 h-3.5" />}>
-              <Input value={get_val("citta")} onChange={(e) => set_val("citta", e.target.value)} />
+            <Field label="Indirizzo *" icon={<MapPin className="w-3.5 h-3.5" />}>
+              <Input required value={get_val("indirizzo")} onChange={(e) => set_val("indirizzo", e.target.value)} placeholder="Via Roma 1" />
             </Field>
-            <Field label="Indirizzo" icon={<MapPin className="w-3.5 h-3.5" />}>
-              <Input value={get_val("indirizzo")} onChange={(e) => set_val("indirizzo", e.target.value)} placeholder="Via Roma 1, Lugano" />
+            <Field label="CAP *" icon={<MapPin className="w-3.5 h-3.5" />}>
+              <Input required value={get_val("cap")} onChange={(e) => set_val("cap", e.target.value)} placeholder="6900" />
+            </Field>
+            <Field label="Città *" icon={<MapPin className="w-3.5 h-3.5" />}>
+              <Input required value={get_val("citta")} onChange={(e) => set_val("citta", e.target.value)} placeholder="Lugano" />
             </Field>
             <Field label={t("paese")} icon={<Globe className="w-3.5 h-3.5" />}>
               <Input value={get_val("paese")} onChange={(e) => set_val("paese", e.target.value)} placeholder="CH" />
