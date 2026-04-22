@@ -158,7 +158,10 @@ export function use_upsert_atleta() {
         attivo_come_monitore: data.attivo_come_monitore || false,
         
         luogo_nascita: data.luogo_nascita || "",
-        indirizzo: data.indirizzo || "",
+        indirizzo_via: data.indirizzo_via || null,
+        indirizzo_nap: data.indirizzo_nap || null,
+        indirizzo_localita: data.indirizzo_localita || null,
+        indirizzo_nazione: data.indirizzo_nazione || "CH",
         telefono: data.telefono || "",
         licenza_sis_numero: data.licenza_sis_numero || "",
         licenza_sis_categoria: data.licenza_sis_categoria || "",
