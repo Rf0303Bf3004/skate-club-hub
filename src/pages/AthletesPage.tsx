@@ -23,6 +23,17 @@ const LIVELLI_CARRIERA = ["Interbronzo", "Bronzo", "Interargento", "Argento", "I
 
 const TUTTI_LIVELLI = [...LIVELLI_COMUNI, ...LIVELLI_CARRIERA];
 
+const NAZIONI_INDIRIZZO = [
+  { value: "CH", label: "🇨🇭 Svizzera (CH)" },
+  { value: "IT", label: "🇮🇹 Italia (IT)" },
+  { value: "DE", label: "🇩🇪 Germania (DE)" },
+  { value: "FR", label: "🇫🇷 Francia (FR)" },
+  { value: "AT", label: "🇦🇹 Austria (AT)" },
+  { value: "LI", label: "🇱🇮 Liechtenstein (LI)" },
+  { value: "ES", label: "🇪🇸 Spagna (ES)" },
+  { value: "PT", label: "🇵🇹 Portogallo (PT)" },
+];
+
 // ─── Field ─────────────────────────────────────────────────
 const Field: React.FC<{ label: string; children: React.ReactNode; required?: boolean }> = ({
   label,
@@ -109,7 +120,10 @@ const AtletaModal: React.FC<{
     licenza_sis_validita_a: atleta?.licenza_sis_validita_a?.split("T")[0] || "",
     
     luogo_nascita: atleta?.luogo_nascita || "",
-    indirizzo: atleta?.indirizzo || "",
+    indirizzo_via: atleta?.indirizzo_via || "",
+    indirizzo_nap: atleta?.indirizzo_nap || "",
+    indirizzo_localita: atleta?.indirizzo_localita || "",
+    indirizzo_nazione: atleta?.indirizzo_nazione || "CH",
     telefono: atleta?.telefono || "",
   });
   const [confirm_delete, set_confirm_delete] = useState(false);
@@ -328,12 +342,50 @@ const AtletaModal: React.FC<{
               <Field label="Luogo di nascita">
                 <input value={form.luogo_nascita} onChange={(e) => set_val("luogo_nascita", e.target.value)} className={input_cls} />
               </Field>
-              <Field label="Indirizzo">
-                <input value={form.indirizzo} onChange={(e) => set_val("indirizzo", e.target.value)} className={input_cls} />
-              </Field>
               <Field label="Telefono">
                 <input value={form.telefono} onChange={(e) => set_val("telefono", e.target.value)} className={input_cls} />
               </Field>
+            </div>
+            <div className="mt-3 space-y-3">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Indirizzo di residenza</p>
+              <Field label="Via">
+                <input
+                  value={form.indirizzo_via}
+                  onChange={(e) => set_val("indirizzo_via", e.target.value)}
+                  className={input_cls}
+                />
+              </Field>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,120px)_minmax(0,1fr)_minmax(0,180px)]">
+                <Field label="NAP">
+                  <input
+                    value={form.indirizzo_nap}
+                    onChange={(e) => set_val("indirizzo_nap", e.target.value)}
+                    maxLength={10}
+                    className={input_cls}
+                  />
+                </Field>
+                <Field label="Località">
+                  <input
+                    value={form.indirizzo_localita}
+                    onChange={(e) => set_val("indirizzo_localita", e.target.value)}
+                    className={input_cls}
+                  />
+                </Field>
+                <Field label="Nazione">
+                  <Select value={form.indirizzo_nazione} onValueChange={(v) => set_val("indirizzo_nazione", v)}>
+                    <SelectTrigger className="h-10 w-full rounded-lg">
+                      <SelectValue placeholder="Seleziona nazione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {NAZIONI_INDIRIZZO.map((nazione) => (
+                        <SelectItem key={nazione.value} value={nazione.value}>
+                          {nazione.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+              </div>
             </div>
           </div>
 
