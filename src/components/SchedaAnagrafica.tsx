@@ -1,7 +1,7 @@
 import React from 'react';
 import { use_club } from '@/hooks/use-supabase-data';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Printer, QrCode } from 'lucide-react';
+import { ArrowLeft, MapPin, Printer, QrCode } from 'lucide-react';
 
 interface SchedaProps { atleta: any; on_back: () => void; }
 
@@ -41,12 +41,26 @@ const SchedaAnagrafica: React.FC<SchedaProps> = ({ atleta, on_back }) => {
             <div>
               <p className='text-xs font-bold text-gray-400 uppercase tracking-widest mb-2'>Dati personali</p>
               <div className='grid grid-cols-2 gap-2'>
-                {[['Luogo di nascita', atleta.luogo_nascita],['Indirizzo', atleta.indirizzo],['Telefono', atleta.telefono]].map(([l,v]) => (
-                  <div key={l} className='bg-gray-50 rounded-lg px-3 py-2'>
-                    <p className='text-xs text-gray-400'>{l}</p>
-                    <p className='text-sm font-medium text-gray-800'>{v || <span className='text-gray-300 italic'>—</span>}</p>
+                {[['Luogo di nascita', atleta.luogo_nascita],['Telefono', atleta.telefono]].map(([l,v]) => (
+                  <div key={l} className='rounded-lg border border-border/60 bg-muted/40 px-3 py-2'>
+                    <p className='text-xs text-muted-foreground'>{l}</p>
+                    <p className='text-sm font-medium text-foreground'>{v || <span className='italic text-muted-foreground'>—</span>}</p>
                   </div>
                 ))}
+              </div>
+
+              <div className='mt-2 rounded-lg border border-border bg-background px-3 py-3'>
+                <div className='flex items-start gap-3'>
+                  <div className='mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary'>
+                    <MapPin className='h-4 w-4' />
+                  </div>
+                  <div className='min-w-0'>
+                    <p className='text-xs font-semibold uppercase tracking-wider text-muted-foreground'>Indirizzo</p>
+                    <p className='mt-1 break-words text-sm font-medium leading-relaxed text-foreground'>
+                      {atleta.indirizzo || <span className='italic text-muted-foreground'>—</span>}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
