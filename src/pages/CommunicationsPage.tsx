@@ -150,11 +150,168 @@ const CommunicationsPage: React.FC = () => {
 
   const titolo_preview = useMemo(() => fill_placeholders(titolo, placeholders), [titolo, placeholders]);
   const testo_preview = useMemo(() => fill_placeholders(testo, placeholders), [testo, placeholders]);
+  const corsi_by_id = useMemo(() => Object.fromEntries(corsi.map((corso: any) => [corso.id, corso])), [corsi]);
+  const atleti_by_id = useMemo(() => Object.fromEntries(atleti.map((atleta: any) => [atleta.id, atleta])), [atleti]);
+  const instructor_by_id = useMemo(() => Object.fromEntries(istruttori.map((istruttore: any) => [istruttore.id, istruttore])), [istruttori]);
 
   const reset_recipient_preview = () => {
-    setRecipient_preview([]);
+    set_recipient_preview([]);
     set_selected_recipient_ids([]);
     set_preview_loaded(false);
+  };
+
+  const toggle_corso = (id: string) => {
+    reset_recipient_preview();
+    set_corsi_ids((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+  };
+
+  const level_count = useMemo(() => {
+    if (tipo_destinatari !== 'per_livello') return 0;
+    return atleti.filter((atleta: any) => {
+      const rank = get_atleta_livello_rank(atleta);
+      if (livello_categoria === 'pulcini_only') return rank === 0;
+      return rank >= (SOGLIE_LIVELLO[livello_categoria] ?? 0);
+    }).length;
+  }, [atleti, livello_categoria, tipo_destinatari]);
+
+  const static_count = tipo_destinatari === 'tutti' ? atleti.length : level_count;
+  const preview_selected_count = selected_recipient_ids.length;
+  const preview_total_count = recipient_preview.length;
+
+  const resolve_recipients = async (): Promise<RecipientPreviewRow[]> => {
+    const merge_rows = (rows: Array<{ atleta_id: string; corso_label: string }>) => {
+      const grouped = new Map<string, RecipientPreviewRow>();
+      rows.forEach(({ atleta_id, corso_label }) => {
+        const atleta = atleti_by_id[atleta_id];
+        if (!atleta) return;
+        const existing = grouped.get(atleta_id) ?? {
+          atleta_id,
+          nome: atleta.nome,
+          cognome: atleta.cognome,
+          livello: get_atleta_livello_label(atleta),
+          corsi: [],
+        };
+        if (!existing.corsi.includes(corso_label)) existing.corsi.push(corso_label);
+        grouped.set(atleta_id, existing);
+      });
+
+      return Array.from(grouped.values()).sort((a, b) => {
+        const cognome_cmp = a.cognome.localeCompare(b.cognome, 'it');
+        if (cognome_cmp !== 0) return cognome_cmp;
+        return a.nome.localeCompare(b.nome, 'it');
+      });
+    };
+
+    if (tipo_destinatari === 'per_corsi') {
+      const valid_corsi_ids = corsi_ids.filter(Boolean);
+      if (valid_corsi_ids.length === 0) return [];
+      const { data: iscrizioni, error } = await supabase
+        .from('iscrizioni_corsi')
+        .select('corso_id, atleta_id, attiva')
+        .in('corso_id', valid_corsi_ids);
+      if (error) throw error;
+
+      return merge_rows(
+        (iscrizioni ?? [])
+          .filter((item: any) => item.attiva !== false)
+          .map((item: any) => ({
+            atleta_id: item.atleta_id,
+            corso_label: corsi_by_id[item.corso_id]?.nome || 'Corso',
+          })),
+      );
+    }
+
+    if (tipo_destinatari === 'per_giorno') {
+      if (!giorno_data) return [];
+      const club_corso_ids = corsi.map((corso: any) => corso.id);
+      const [planning_corsi_res, planning_private_res] = await Promise.all([
+        supabase.from('planning_corsi_settimana').select('corso_id, data, annullato').eq('data', giorno_data).eq('annullato', false),
+        supabase.from('planning_private_settimana').select('lezione_privata_id, data, annullato').eq('data', giorno_data).eq('annullato', false),
+      ]);
+      if (planning_corsi_res.error) throw planning_corsi_res.error;
+      if (planning_private_res.error) throw planning_private_res.error;
+
+      const course_ids = Array.from(new Set((planning_corsi_res.data ?? []).map((row: any) => row.corso_id).filter((id: string) => club_corso_ids.includes(id))));
+      const private_ids = Array.from(new Set((planning_private_res.data ?? []).map((row: any) => row.lezione_privata_id).filter(Boolean)));
+
+      const [iscrizioni_res, lezioni_res, lezioni_atlete_res] = await Promise.all([
+        course_ids.length
+          ? supabase.from('iscrizioni_corsi').select('corso_id, atleta_id, attiva').in('corso_id', course_ids)
+          : Promise.resolve({ data: [], error: null } as any),
+        private_ids.length
+          ? supabase.from('lezioni_private').select('id').eq('club_id', corsi[0]?.club_id ?? '').in('id', private_ids)
+          : Promise.resolve({ data: [], error: null } as any),
+        private_ids.length
+          ? supabase.from('lezioni_private_atlete').select('lezione_id, atleta_id').in('lezione_id', private_ids)
+          : Promise.resolve({ data: [], error: null } as any),
+      ]);
+      if (iscrizioni_res.error) throw iscrizioni_res.error;
+      if (lezioni_res.error) throw lezioni_res.error;
+      if (lezioni_atlete_res.error) throw lezioni_atlete_res.error;
+
+      const valid_private_ids = new Set((lezioni_res.data ?? []).map((row: any) => row.id));
+
+      return merge_rows([
+        ...(iscrizioni_res.data ?? [])
+          .filter((item: any) => item.attiva !== false)
+          .map((item: any) => ({ atleta_id: item.atleta_id, corso_label: corsi_by_id[item.corso_id]?.nome || 'Corso' })),
+        ...(lezioni_atlete_res.data ?? [])
+          .filter((item: any) => valid_private_ids.has(item.lezione_id))
+          .map((item: any) => ({ atleta_id: item.atleta_id, corso_label: 'Lezione privata' })),
+      ]);
+    }
+
+    if (tipo_destinatari === 'per_istruttore') {
+      if (!istruttore_id || !istruttore_data) return [];
+      const club_corso_ids = corsi.filter((corso: any) => (corso.istruttori_ids ?? []).includes(istruttore_id)).map((corso: any) => corso.id);
+      const [planning_corsi_res, planning_private_res] = await Promise.all([
+        supabase
+          .from('planning_corsi_settimana')
+          .select('corso_id, data, istruttore_id, annullato')
+          .eq('data', istruttore_data)
+          .eq('istruttore_id', istruttore_id)
+          .eq('annullato', false),
+        supabase
+          .from('planning_private_settimana')
+          .select('lezione_privata_id, data, istruttore_id, annullato')
+          .eq('data', istruttore_data)
+          .eq('istruttore_id', istruttore_id)
+          .eq('annullato', false),
+      ]);
+      if (planning_corsi_res.error) throw planning_corsi_res.error;
+      if (planning_private_res.error) throw planning_private_res.error;
+
+      const course_ids = Array.from(new Set((planning_corsi_res.data ?? []).map((row: any) => row.corso_id).filter((id: string) => club_corso_ids.includes(id))));
+      const private_ids = Array.from(new Set((planning_private_res.data ?? []).map((row: any) => row.lezione_privata_id).filter(Boolean)));
+
+      const [iscrizioni_res, lezioni_res, lezioni_atlete_res] = await Promise.all([
+        course_ids.length
+          ? supabase.from('iscrizioni_corsi').select('corso_id, atleta_id, attiva').in('corso_id', course_ids)
+          : Promise.resolve({ data: [], error: null } as any),
+        private_ids.length
+          ? supabase.from('lezioni_private').select('id').eq('club_id', corsi[0]?.club_id ?? '').eq('istruttore_id', istruttore_id).in('id', private_ids)
+          : Promise.resolve({ data: [], error: null } as any),
+        private_ids.length
+          ? supabase.from('lezioni_private_atlete').select('lezione_id, atleta_id').in('lezione_id', private_ids)
+          : Promise.resolve({ data: [], error: null } as any),
+      ]);
+      if (iscrizioni_res.error) throw iscrizioni_res.error;
+      if (lezioni_res.error) throw lezioni_res.error;
+      if (lezioni_atlete_res.error) throw lezioni_atlete_res.error;
+
+      const valid_private_ids = new Set((lezioni_res.data ?? []).map((row: any) => row.id));
+
+      return merge_rows([
+        ...(iscrizioni_res.data ?? [])
+          .filter((item: any) => item.attiva !== false)
+          .map((item: any) => ({ atleta_id: item.atleta_id, corso_label: corsi_by_id[item.corso_id]?.nome || 'Corso' })),
+        ...(lezioni_atlete_res.data ?? [])
+          .filter((item: any) => valid_private_ids.has(item.lezione_id))
+          .map((item: any) => ({ atleta_id: item.atleta_id, corso_label: 'Lezione privata' })),
+      ]);
+    }
+
+    return [];
   };
 
   const open_new = () => {
@@ -164,8 +321,12 @@ const CommunicationsPage: React.FC = () => {
     set_titolo('');
     set_testo('');
     set_tipo_destinatari('tutti');
-    set_corso_id('');
+    set_corsi_ids([]);
     set_livello_categoria('stellina_1_plus');
+    set_giorno_data('');
+    set_istruttore_id('');
+    set_istruttore_data('');
+    reset_recipient_preview();
     set_modal_open(true);
   };
 
@@ -183,9 +344,25 @@ const CommunicationsPage: React.FC = () => {
     set_titolo('');
     set_testo('');
     set_tipo_destinatari('tutti');
-    set_corso_id('');
+    set_corsi_ids([]);
+    set_giorno_data('');
+    set_istruttore_id('');
+    set_istruttore_data('');
     set_placeholders({});
+    reset_recipient_preview();
     set_step('form');
+  };
+
+  const handle_preview_recipients = async () => {
+    set_is_resolving_recipients(true);
+    try {
+      const recipients = await resolve_recipients();
+      set_recipient_preview(recipients);
+      set_selected_recipient_ids(recipients.map((item) => item.atleta_id));
+      set_preview_loaded(true);
+    } finally {
+      set_is_resolving_recipients(false);
+    }
   };
 
   const handle_submit = async () => {
@@ -195,8 +372,9 @@ const CommunicationsPage: React.FC = () => {
       titolo: final_titolo,
       testo: final_testo,
       tipo_destinatari,
-      corso_id: tipo_destinatari === 'per_corso' ? corso_id : null,
+      corso_id: null,
       livello_categoria: tipo_destinatari === 'per_livello' ? livello_categoria : null,
+      atleta_ids_manuali: ['per_corsi', 'per_giorno', 'per_istruttore'].includes(tipo_destinatari) ? selected_recipient_ids : null,
     });
     set_modal_open(false);
   };
