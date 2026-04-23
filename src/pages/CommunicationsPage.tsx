@@ -71,10 +71,55 @@ const PLACEHOLDER_LABELS: Record<string, string> = {
   vecchio_orario: 'Vecchio orario',
 };
 
+const LIVELLI_ORDER: Record<string, number> = {
+  Pulcini: 0,
+  'Stellina 1': 1,
+  'Stellina 2': 2,
+  'Stellina 3': 3,
+  'Stellina 4': 4,
+  Interbronzo: 5,
+  Bronzo: 6,
+  Interargento: 7,
+  Argento: 8,
+  Interoro: 9,
+  Oro: 10,
+};
+
+const SOGLIE_LIVELLO: Record<string, number> = {
+  pulcini_only: 0,
+  stellina_1_plus: 1,
+  bronzo_plus: 6,
+  argento_plus: 8,
+  oro_plus: 10,
+};
+
+function format_date_label(value: string) {
+  if (!value) return '';
+  return new Date(`${value}T00:00:00`).toLocaleDateString('it-CH');
+}
+
+function get_atleta_livello_label(atleta: any) {
+  return atleta?.carriera_artistica || atleta?.carriera_stile || atleta?.percorso_amatori || 'Pulcini';
+}
+
+function get_atleta_livello_rank(atleta: any) {
+  return LIVELLI_ORDER[get_atleta_livello_label(atleta)] ?? 0;
+}
+
+type RecipientPreviewRow = {
+  atleta_id: string;
+  nome: string;
+  cognome: string;
+  livello: string;
+  corsi: string[];
+};
+
 const CommunicationsPage: React.FC = () => {
   const { t } = useI18n();
   const { data: comunicazioni = [], isLoading } = use_comunicazioni();
   const { data: corsi = [] } = use_corsi();
+  const { data: atleti = [] } = use_atleti();
+  const { data: istruttori = [] } = use_istruttori();
   const crea = use_crea_comunicazione();
 
   const [modal_open, set_modal_open] = useState(false);
@@ -84,8 +129,16 @@ const CommunicationsPage: React.FC = () => {
   const [titolo, set_titolo] = useState('');
   const [testo, set_testo] = useState('');
   const [tipo_destinatari, set_tipo_destinatari] = useState('tutti');
-  const [corso_id, set_corso_id] = useState('');
+  const [corsi_ids, set_corsi_ids] = useState<string[]>([]);
   const [livello_categoria, set_livello_categoria] = useState('stellina_1_plus');
+  const [giorno_data, set_giorno_data] = useState('');
+  const [istruttore_id, set_istruttore_id] = useState('');
+  const [istruttore_data, set_istruttore_data] = useState('');
+  const [corsi_popover_open, set_corsi_popover_open] = useState(false);
+  const [recipient_preview, set_recipient_preview] = useState<RecipientPreviewRow[]>([]);
+  const [selected_recipient_ids, set_selected_recipient_ids] = useState<string[]>([]);
+  const [preview_loaded, set_preview_loaded] = useState(false);
+  const [is_resolving_recipients, set_is_resolving_recipients] = useState(false);
 
   const fill_placeholders = (text: string, vals: Record<string, string>) => {
     let result = text;
@@ -97,6 +150,12 @@ const CommunicationsPage: React.FC = () => {
 
   const titolo_preview = useMemo(() => fill_placeholders(titolo, placeholders), [titolo, placeholders]);
   const testo_preview = useMemo(() => fill_placeholders(testo, placeholders), [testo, placeholders]);
+
+  const reset_recipient_preview = () => {
+    setRecipient_preview([]);
+    set_selected_recipient_ids([]);
+    set_preview_loaded(false);
+  };
 
   const open_new = () => {
     set_step('choose');
