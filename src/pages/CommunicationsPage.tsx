@@ -1,14 +1,20 @@
 import React, { useState, useMemo } from 'react';
 import { useI18n } from '@/lib/i18n';
-import { use_comunicazioni, use_corsi } from '@/hooks/use-supabase-data';
+import { use_atleti, use_comunicazioni, use_corsi, use_istruttori } from '@/hooks/use-supabase-data';
 import { use_crea_comunicazione } from '@/hooks/use-supabase-mutations';
+import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, MessageSquare, FileText, Pencil } from 'lucide-react';
+import { Plus, MessageSquare, FileText, Pencil, Check, ChevronsUpDown, CalendarIcon, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 
 const TEMPLATES = [
   {
