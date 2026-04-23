@@ -1,14 +1,20 @@
 import React, { useState, useMemo } from 'react';
 import { useI18n } from '@/lib/i18n';
-import { use_comunicazioni, use_corsi } from '@/hooks/use-supabase-data';
+import { use_atleti, use_comunicazioni, use_corsi, use_istruttori } from '@/hooks/use-supabase-data';
 import { use_crea_comunicazione } from '@/hooks/use-supabase-mutations';
+import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, MessageSquare, FileText, Pencil } from 'lucide-react';
+import { Plus, MessageSquare, FileText, Pencil, Check, ChevronsUpDown, CalendarIcon, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 
 const TEMPLATES = [
   {
@@ -65,10 +71,55 @@ const PLACEHOLDER_LABELS: Record<string, string> = {
   vecchio_orario: 'Vecchio orario',
 };
 
+const LIVELLI_ORDER: Record<string, number> = {
+  Pulcini: 0,
+  'Stellina 1': 1,
+  'Stellina 2': 2,
+  'Stellina 3': 3,
+  'Stellina 4': 4,
+  Interbronzo: 5,
+  Bronzo: 6,
+  Interargento: 7,
+  Argento: 8,
+  Interoro: 9,
+  Oro: 10,
+};
+
+const SOGLIE_LIVELLO: Record<string, number> = {
+  pulcini_only: 0,
+  stellina_1_plus: 1,
+  bronzo_plus: 6,
+  argento_plus: 8,
+  oro_plus: 10,
+};
+
+function format_date_label(value: string) {
+  if (!value) return '';
+  return new Date(`${value}T00:00:00`).toLocaleDateString('it-CH');
+}
+
+function get_atleta_livello_label(atleta: any) {
+  return atleta?.carriera_artistica || atleta?.carriera_stile || atleta?.percorso_amatori || 'Pulcini';
+}
+
+function get_atleta_livello_rank(atleta: any) {
+  return LIVELLI_ORDER[get_atleta_livello_label(atleta)] ?? 0;
+}
+
+type RecipientPreviewRow = {
+  atleta_id: string;
+  nome: string;
+  cognome: string;
+  livello: string;
+  corsi: string[];
+};
+
 const CommunicationsPage: React.FC = () => {
   const { t } = useI18n();
   const { data: comunicazioni = [], isLoading } = use_comunicazioni();
   const { data: corsi = [] } = use_corsi();
+  const { data: atleti = [] } = use_atleti();
+  const { data: istruttori = [] } = use_istruttori();
   const crea = use_crea_comunicazione();
 
   const [modal_open, set_modal_open] = useState(false);
@@ -78,8 +129,16 @@ const CommunicationsPage: React.FC = () => {
   const [titolo, set_titolo] = useState('');
   const [testo, set_testo] = useState('');
   const [tipo_destinatari, set_tipo_destinatari] = useState('tutti');
-  const [corso_id, set_corso_id] = useState('');
+  const [corsi_ids, set_corsi_ids] = useState<string[]>([]);
   const [livello_categoria, set_livello_categoria] = useState('stellina_1_plus');
+  const [giorno_data, set_giorno_data] = useState('');
+  const [istruttore_id, set_istruttore_id] = useState('');
+  const [istruttore_data, set_istruttore_data] = useState('');
+  const [corsi_popover_open, set_corsi_popover_open] = useState(false);
+  const [recipient_preview, set_recipient_preview] = useState<RecipientPreviewRow[]>([]);
+  const [selected_recipient_ids, set_selected_recipient_ids] = useState<string[]>([]);
+  const [preview_loaded, set_preview_loaded] = useState(false);
+  const [is_resolving_recipients, set_is_resolving_recipients] = useState(false);
 
   const fill_placeholders = (text: string, vals: Record<string, string>) => {
     let result = text;
@@ -91,6 +150,169 @@ const CommunicationsPage: React.FC = () => {
 
   const titolo_preview = useMemo(() => fill_placeholders(titolo, placeholders), [titolo, placeholders]);
   const testo_preview = useMemo(() => fill_placeholders(testo, placeholders), [testo, placeholders]);
+  const corsi_by_id = useMemo(() => Object.fromEntries(corsi.map((corso: any) => [corso.id, corso])), [corsi]);
+  const atleti_by_id = useMemo(() => Object.fromEntries(atleti.map((atleta: any) => [atleta.id, atleta])), [atleti]);
+  const instructor_by_id = useMemo(() => Object.fromEntries(istruttori.map((istruttore: any) => [istruttore.id, istruttore])), [istruttori]);
+
+  const reset_recipient_preview = () => {
+    set_recipient_preview([]);
+    set_selected_recipient_ids([]);
+    set_preview_loaded(false);
+  };
+
+  const toggle_corso = (id: string) => {
+    reset_recipient_preview();
+    set_corsi_ids((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+  };
+
+  const level_count = useMemo(() => {
+    if (tipo_destinatari !== 'per_livello') return 0;
+    return atleti.filter((atleta: any) => {
+      const rank = get_atleta_livello_rank(atleta);
+      if (livello_categoria === 'pulcini_only') return rank === 0;
+      return rank >= (SOGLIE_LIVELLO[livello_categoria] ?? 0);
+    }).length;
+  }, [atleti, livello_categoria, tipo_destinatari]);
+
+  const static_count = tipo_destinatari === 'tutti' ? atleti.length : level_count;
+  const preview_selected_count = selected_recipient_ids.length;
+  const preview_total_count = recipient_preview.length;
+
+  const resolve_recipients = async (): Promise<RecipientPreviewRow[]> => {
+    const merge_rows = (rows: Array<{ atleta_id: string; corso_label: string }>) => {
+      const grouped = new Map<string, RecipientPreviewRow>();
+      rows.forEach(({ atleta_id, corso_label }) => {
+        const atleta = atleti_by_id[atleta_id];
+        if (!atleta) return;
+        const existing = grouped.get(atleta_id) ?? {
+          atleta_id,
+          nome: atleta.nome,
+          cognome: atleta.cognome,
+          livello: get_atleta_livello_label(atleta),
+          corsi: [],
+        };
+        if (!existing.corsi.includes(corso_label)) existing.corsi.push(corso_label);
+        grouped.set(atleta_id, existing);
+      });
+
+      return Array.from(grouped.values()).sort((a, b) => {
+        const cognome_cmp = a.cognome.localeCompare(b.cognome, 'it');
+        if (cognome_cmp !== 0) return cognome_cmp;
+        return a.nome.localeCompare(b.nome, 'it');
+      });
+    };
+
+    if (tipo_destinatari === 'per_corsi') {
+      const valid_corsi_ids = corsi_ids.filter(Boolean);
+      if (valid_corsi_ids.length === 0) return [];
+      const { data: iscrizioni, error } = await supabase
+        .from('iscrizioni_corsi')
+        .select('corso_id, atleta_id, attiva')
+        .in('corso_id', valid_corsi_ids);
+      if (error) throw error;
+
+      return merge_rows(
+        (iscrizioni ?? [])
+          .filter((item: any) => item.attiva !== false)
+          .map((item: any) => ({
+            atleta_id: item.atleta_id,
+            corso_label: corsi_by_id[item.corso_id]?.nome || 'Corso',
+          })),
+      );
+    }
+
+    if (tipo_destinatari === 'per_giorno') {
+      if (!giorno_data) return [];
+      const club_corso_ids = corsi.map((corso: any) => corso.id);
+      const [planning_corsi_res, planning_private_res] = await Promise.all([
+        supabase.from('planning_corsi_settimana').select('corso_id, data, annullato').eq('data', giorno_data).eq('annullato', false),
+        supabase.from('planning_private_settimana').select('lezione_privata_id, data, annullato').eq('data', giorno_data).eq('annullato', false),
+      ]);
+      if (planning_corsi_res.error) throw planning_corsi_res.error;
+      if (planning_private_res.error) throw planning_private_res.error;
+
+      const course_ids = Array.from(new Set((planning_corsi_res.data ?? []).map((row: any) => row.corso_id).filter((id: string) => club_corso_ids.includes(id))));
+      const private_ids = Array.from(new Set((planning_private_res.data ?? []).map((row: any) => row.lezione_privata_id).filter(Boolean)));
+
+      const [iscrizioni_res, lezioni_res, lezioni_atlete_res] = await Promise.all([
+        course_ids.length
+          ? supabase.from('iscrizioni_corsi').select('corso_id, atleta_id, attiva').in('corso_id', course_ids)
+          : Promise.resolve({ data: [], error: null } as any),
+        private_ids.length
+          ? supabase.from('lezioni_private').select('id').eq('club_id', corsi[0]?.club_id ?? '').in('id', private_ids)
+          : Promise.resolve({ data: [], error: null } as any),
+        private_ids.length
+          ? supabase.from('lezioni_private_atlete').select('lezione_id, atleta_id').in('lezione_id', private_ids)
+          : Promise.resolve({ data: [], error: null } as any),
+      ]);
+      if (iscrizioni_res.error) throw iscrizioni_res.error;
+      if (lezioni_res.error) throw lezioni_res.error;
+      if (lezioni_atlete_res.error) throw lezioni_atlete_res.error;
+
+      const valid_private_ids = new Set((lezioni_res.data ?? []).map((row: any) => row.id));
+
+      return merge_rows([
+        ...(iscrizioni_res.data ?? [])
+          .filter((item: any) => item.attiva !== false)
+          .map((item: any) => ({ atleta_id: item.atleta_id, corso_label: corsi_by_id[item.corso_id]?.nome || 'Corso' })),
+        ...(lezioni_atlete_res.data ?? [])
+          .filter((item: any) => valid_private_ids.has(item.lezione_id))
+          .map((item: any) => ({ atleta_id: item.atleta_id, corso_label: 'Lezione privata' })),
+      ]);
+    }
+
+    if (tipo_destinatari === 'per_istruttore') {
+      if (!istruttore_id || !istruttore_data) return [];
+      const club_corso_ids = corsi.filter((corso: any) => (corso.istruttori_ids ?? []).includes(istruttore_id)).map((corso: any) => corso.id);
+      const [planning_corsi_res, planning_private_res] = await Promise.all([
+        supabase
+          .from('planning_corsi_settimana')
+          .select('corso_id, data, istruttore_id, annullato')
+          .eq('data', istruttore_data)
+          .eq('istruttore_id', istruttore_id)
+          .eq('annullato', false),
+        supabase
+          .from('planning_private_settimana')
+          .select('lezione_privata_id, data, istruttore_id, annullato')
+          .eq('data', istruttore_data)
+          .eq('istruttore_id', istruttore_id)
+          .eq('annullato', false),
+      ]);
+      if (planning_corsi_res.error) throw planning_corsi_res.error;
+      if (planning_private_res.error) throw planning_private_res.error;
+
+      const course_ids = Array.from(new Set((planning_corsi_res.data ?? []).map((row: any) => row.corso_id).filter((id: string) => club_corso_ids.includes(id))));
+      const private_ids = Array.from(new Set((planning_private_res.data ?? []).map((row: any) => row.lezione_privata_id).filter(Boolean)));
+
+      const [iscrizioni_res, lezioni_res, lezioni_atlete_res] = await Promise.all([
+        course_ids.length
+          ? supabase.from('iscrizioni_corsi').select('corso_id, atleta_id, attiva').in('corso_id', course_ids)
+          : Promise.resolve({ data: [], error: null } as any),
+        private_ids.length
+          ? supabase.from('lezioni_private').select('id').eq('club_id', corsi[0]?.club_id ?? '').eq('istruttore_id', istruttore_id).in('id', private_ids)
+          : Promise.resolve({ data: [], error: null } as any),
+        private_ids.length
+          ? supabase.from('lezioni_private_atlete').select('lezione_id, atleta_id').in('lezione_id', private_ids)
+          : Promise.resolve({ data: [], error: null } as any),
+      ]);
+      if (iscrizioni_res.error) throw iscrizioni_res.error;
+      if (lezioni_res.error) throw lezioni_res.error;
+      if (lezioni_atlete_res.error) throw lezioni_atlete_res.error;
+
+      const valid_private_ids = new Set((lezioni_res.data ?? []).map((row: any) => row.id));
+
+      return merge_rows([
+        ...(iscrizioni_res.data ?? [])
+          .filter((item: any) => item.attiva !== false)
+          .map((item: any) => ({ atleta_id: item.atleta_id, corso_label: corsi_by_id[item.corso_id]?.nome || 'Corso' })),
+        ...(lezioni_atlete_res.data ?? [])
+          .filter((item: any) => valid_private_ids.has(item.lezione_id))
+          .map((item: any) => ({ atleta_id: item.atleta_id, corso_label: 'Lezione privata' })),
+      ]);
+    }
+
+    return [];
+  };
 
   const open_new = () => {
     set_step('choose');
@@ -99,8 +321,12 @@ const CommunicationsPage: React.FC = () => {
     set_titolo('');
     set_testo('');
     set_tipo_destinatari('tutti');
-    set_corso_id('');
+    set_corsi_ids([]);
     set_livello_categoria('stellina_1_plus');
+    set_giorno_data('');
+    set_istruttore_id('');
+    set_istruttore_data('');
+    reset_recipient_preview();
     set_modal_open(true);
   };
 
@@ -118,9 +344,25 @@ const CommunicationsPage: React.FC = () => {
     set_titolo('');
     set_testo('');
     set_tipo_destinatari('tutti');
-    set_corso_id('');
+    set_corsi_ids([]);
+    set_giorno_data('');
+    set_istruttore_id('');
+    set_istruttore_data('');
     set_placeholders({});
+    reset_recipient_preview();
     set_step('form');
+  };
+
+  const handle_preview_recipients = async () => {
+    set_is_resolving_recipients(true);
+    try {
+      const recipients = await resolve_recipients();
+      set_recipient_preview(recipients);
+      set_selected_recipient_ids(recipients.map((item) => item.atleta_id));
+      set_preview_loaded(true);
+    } finally {
+      set_is_resolving_recipients(false);
+    }
   };
 
   const handle_submit = async () => {
@@ -130,8 +372,9 @@ const CommunicationsPage: React.FC = () => {
       titolo: final_titolo,
       testo: final_testo,
       tipo_destinatari,
-      corso_id: tipo_destinatari === 'per_corso' ? corso_id : null,
+      corso_id: null,
       livello_categoria: tipo_destinatari === 'per_livello' ? livello_categoria : null,
+      atleta_ids_manuali: ['per_corsi', 'per_giorno', 'per_istruttore'].includes(tipo_destinatari) ? selected_recipient_ids : null,
     });
     set_modal_open(false);
   };
@@ -261,28 +504,156 @@ const CommunicationsPage: React.FC = () => {
                 />
               </div>
 
-              <div>
-                <Label className="text-xs">Destinatari</Label>
-                <Select value={tipo_destinatari} onValueChange={set_tipo_destinatari}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="tutti">Tutti</SelectItem>
-                    <SelectItem value="per_corso">Per corso</SelectItem>
-                    <SelectItem value="per_livello">Per livello</SelectItem>
-                    <SelectItem value="solo_istruttori">Solo istruttori</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {tipo_destinatari === 'per_corso' && (
+              <div className="space-y-3">
                 <div>
-                  <Label className="text-xs">Corso</Label>
-                  <Select value={corso_id} onValueChange={set_corso_id}>
-                    <SelectTrigger><SelectValue placeholder="Seleziona corso" /></SelectTrigger>
+                  <Label className="text-xs">Destinatari</Label>
+                  <Select
+                    value={tipo_destinatari}
+                    onValueChange={(value) => {
+                      set_tipo_destinatari(value);
+                      reset_recipient_preview();
+                    }}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {corsi.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                      <SelectItem value="tutti">Tutti</SelectItem>
+                      <SelectItem value="per_corsi">Per corsi</SelectItem>
+                      <SelectItem value="per_giorno">Per giorno (data specifica)</SelectItem>
+                      <SelectItem value="per_istruttore">Per istruttore</SelectItem>
+                      <SelectItem value="per_livello">Per livello</SelectItem>
+                      <SelectItem value="solo_istruttori">Solo istruttori</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+
+                {(tipo_destinatari === 'tutti' || tipo_destinatari === 'per_livello') && (
+                  <div className="rounded-lg border border-border bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+                    <span className="font-medium text-foreground">{static_count}</span> atleti
+                  </div>
+                )}
+              </div>
+
+              {tipo_destinatari === 'per_corsi' && (
+                <div className="space-y-3 rounded-xl border border-border p-3">
+                  <div className="space-y-2">
+                    <Label className="text-xs">Per corsi</Label>
+                    <Popover open={corsi_popover_open} onOpenChange={set_corsi_popover_open}>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-full justify-between font-normal">
+                          <span className="truncate text-left">
+                            {corsi_ids.length > 0 ? `${corsi_ids.length} corsi selezionati` : 'Seleziona uno o più corsi'}
+                          </span>
+                          <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[420px] p-0" align="start">
+                        <Command>
+                          <div className="flex items-center justify-between border-b px-3 py-2">
+                            <Button type="button" variant="ghost" size="sm" onClick={() => { set_corsi_ids(corsi.map((c: any) => c.id)); reset_recipient_preview(); }}>
+                              Seleziona tutti
+                            </Button>
+                            <Button type="button" variant="ghost" size="sm" onClick={() => { set_corsi_ids([]); reset_recipient_preview(); }}>
+                              Deseleziona tutti
+                            </Button>
+                          </div>
+                          <CommandInput placeholder="Cerca corso..." />
+                          <CommandList>
+                            <CommandEmpty>Nessun corso trovato.</CommandEmpty>
+                            <CommandGroup>
+                              {corsi.map((corso: any) => {
+                                const checked = corsi_ids.includes(corso.id);
+                                return (
+                                  <CommandItem key={corso.id} value={corso.nome} onSelect={() => toggle_corso(corso.id)}>
+                                    <Checkbox checked={checked} className="mr-2" />
+                                    <span className="flex-1 truncate">{corso.nome}</span>
+                                    {checked ? <Check className="h-4 w-4 text-primary" /> : null}
+                                  </CommandItem>
+                                );
+                              })}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  {corsi_ids.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {corsi_ids.map((id) => (
+                        <Badge key={id} variant="secondary" className="gap-1 pr-1">
+                          <span>{corsi_by_id[id]?.nome || 'Corso'}</span>
+                          <button type="button" className="rounded-sm p-0.5 hover:bg-accent" onClick={() => toggle_corso(id)}>
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {tipo_destinatari === 'per_giorno' && (
+                <div className="space-y-2 rounded-xl border border-border p-3">
+                  <Label className="text-xs">Data</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn('w-full justify-start text-left font-normal', !giorno_data && 'text-muted-foreground')}>
+                        <CalendarIcon className="h-4 w-4" />
+                        {giorno_data ? format_date_label(giorno_data) : 'Seleziona data'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={giorno_data ? new Date(`${giorno_data}T00:00:00`) : undefined}
+                        onSelect={(date) => {
+                          set_giorno_data(date ? date.toISOString().split('T')[0] : '');
+                          reset_recipient_preview();
+                        }}
+                        initialFocus
+                        className={cn('p-3 pointer-events-auto')}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              )}
+
+              {tipo_destinatari === 'per_istruttore' && (
+                <div className="grid gap-3 rounded-xl border border-border p-3 md:grid-cols-2">
+                  <div>
+                    <Label className="text-xs">Istruttore</Label>
+                    <Select value={istruttore_id} onValueChange={(value) => { set_istruttore_id(value); reset_recipient_preview(); }}>
+                      <SelectTrigger><SelectValue placeholder="Seleziona istruttore" /></SelectTrigger>
+                      <SelectContent>
+                        {istruttori.map((istruttore: any) => (
+                          <SelectItem key={istruttore.id} value={istruttore.id}>{istruttore.cognome} {istruttore.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Data</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className={cn('w-full justify-start text-left font-normal', !istruttore_data && 'text-muted-foreground')}>
+                          <CalendarIcon className="h-4 w-4" />
+                          {istruttore_data ? format_date_label(istruttore_data) : 'Seleziona data'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={istruttore_data ? new Date(`${istruttore_data}T00:00:00`) : undefined}
+                          onSelect={(date) => {
+                            set_istruttore_data(date ? date.toISOString().split('T')[0] : '');
+                            reset_recipient_preview();
+                          }}
+                          initialFocus
+                          className={cn('p-3 pointer-events-auto')}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 </div>
               )}
 
@@ -307,11 +678,67 @@ const CommunicationsPage: React.FC = () => {
                 </div>
               )}
 
+              {['per_corsi', 'per_giorno', 'per_istruttore'].includes(tipo_destinatari) && preview_loaded && (
+                <div className="space-y-3 rounded-xl border border-border p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-medium text-foreground">{preview_selected_count} di {preview_total_count} atleti riceveranno la comunicazione</p>
+                    <div className="flex gap-2">
+                      <Button type="button" variant="ghost" size="sm" onClick={() => set_selected_recipient_ids(recipient_preview.map((item) => item.atleta_id))}>Tutti</Button>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => set_selected_recipient_ids([])}>Nessuno</Button>
+                    </div>
+                  </div>
+                  <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+                    {recipient_preview.map((item) => {
+                      const checked = selected_recipient_ids.includes(item.atleta_id);
+                      return (
+                        <label key={item.atleta_id} className="flex items-start gap-3 rounded-lg border border-border px-3 py-2">
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={(value) => {
+                              set_selected_recipient_ids((current) => value ? [...current, item.atleta_id] : current.filter((id) => id !== item.atleta_id));
+                            }}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-foreground">{item.cognome} {item.nome}</p>
+                            <p className="text-xs text-muted-foreground">{item.livello} · {item.corsi.join(', ')}</p>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               <DialogFooter>
                 <Button variant="outline" onClick={() => set_modal_open(false)}>Annulla</Button>
-                <Button onClick={handle_submit} disabled={crea.isPending || !titolo_preview.trim() || !testo_preview.trim()}>
-                  {crea.isPending ? '...' : 'Invia'}
-                </Button>
+                {['per_corsi', 'per_giorno', 'per_istruttore'].includes(tipo_destinatari) ? (
+                  preview_loaded ? (
+                    <Button
+                      onClick={handle_submit}
+                      disabled={crea.isPending || !titolo_preview.trim() || !testo_preview.trim() || selected_recipient_ids.length === 0}
+                    >
+                      {crea.isPending ? '...' : 'Invia ora'}
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={handle_preview_recipients}
+                      disabled={
+                        is_resolving_recipients ||
+                        !titolo_preview.trim() ||
+                        !testo_preview.trim() ||
+                        (tipo_destinatari === 'per_corsi' && corsi_ids.length === 0) ||
+                        (tipo_destinatari === 'per_giorno' && !giorno_data) ||
+                        (tipo_destinatari === 'per_istruttore' && (!istruttore_id || !istruttore_data))
+                      }
+                    >
+                      {is_resolving_recipients ? '...' : 'Vedi destinatari'}
+                    </Button>
+                  )
+                ) : (
+                  <Button onClick={handle_submit} disabled={crea.isPending || !titolo_preview.trim() || !testo_preview.trim()}>
+                    {crea.isPending ? '...' : 'Invia'}
+                  </Button>
+                )}
               </DialogFooter>
             </div>
           )}

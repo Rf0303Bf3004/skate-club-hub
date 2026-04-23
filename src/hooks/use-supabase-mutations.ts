@@ -968,6 +968,32 @@ export function use_crea_comunicazione() {
     mutationFn: async (data: any) => {
       const club_id = cid();
 
+      if (
+        Array.isArray(data.atleta_ids_manuali) &&
+        data.atleta_ids_manuali.length > 0 &&
+        ["per_corsi", "per_giorno", "per_istruttore"].includes(data.tipo_destinatari)
+      ) {
+        const { data: ins, error } = await supabase
+          .from("comunicazioni")
+          .insert({
+            club_id,
+            titolo: data.titolo,
+            testo: data.testo,
+            tipo_destinatari: "manuale",
+          })
+          .select("id")
+          .single();
+        if (error) throw error;
+
+        const rows = Array.from(new Set(data.atleta_ids_manuali)).map((atleta_id: string) => ({
+          comunicazione_id: ins.id,
+          atleta_id,
+        }));
+        const { error: e_dest } = await supabase.from("comunicazioni_destinatari").insert(rows);
+        if (e_dest) throw e_dest;
+        return;
+      }
+
       // Filtro per livello → popoliamo manualmente i destinatari (bypass trigger "tutti").
       if (data.tipo_destinatari === "per_livello" && data.livello_categoria) {
         const { data: atleti, error: e_at } = await supabase
