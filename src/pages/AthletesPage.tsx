@@ -250,6 +250,40 @@ const AtletaModal: React.FC<{
             </select>
           </Field>
 
+          {/* Status agonistico */}
+          <div className="space-y-2">
+            <div className="flex items-start gap-3 px-3 py-2 bg-muted/30 rounded-lg">
+              <input
+                type="checkbox"
+                id="ago_check"
+                checked={form.agonista || form.atleta_federazione}
+                disabled={form.atleta_federazione}
+                onChange={(e) => set_val("agonista", e.target.checked)}
+                className="w-4 h-4 mt-0.5 accent-primary disabled:opacity-60"
+              />
+              <label htmlFor="ago_check" className="cursor-pointer">
+                <span className="text-sm font-medium text-foreground">Atleta agonista</span>
+                <span className="block text-xs text-muted-foreground">Partecipa a gare federali con licenza agonistica</span>
+              </label>
+            </div>
+            <div className="flex items-start gap-3 px-3 py-2 bg-muted/30 rounded-lg">
+              <input
+                type="checkbox"
+                id="fed_check"
+                checked={form.atleta_federazione}
+                onChange={(e) => {
+                  const v = e.target.checked;
+                  set_form((p) => ({ ...p, atleta_federazione: v, agonista: v ? true : p.agonista }));
+                }}
+                className="w-4 h-4 mt-0.5 accent-primary"
+              />
+              <label htmlFor="fed_check" className="cursor-pointer">
+                <span className="text-sm font-medium text-foreground">Atleta di Federazione</span>
+                <span className="block text-xs text-muted-foreground">Rappresenta il Cantone nelle gare federali</span>
+              </label>
+            </div>
+          </div>
+
           {/* Carriera Artistica */}
           <Field label="Carriera Artistica">
             <select
