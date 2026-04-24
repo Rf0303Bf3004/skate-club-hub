@@ -343,32 +343,36 @@ const AtletaModal: React.FC<{
             />
           </Field>
 
-          <Field label="Disco in preparazione">
-            <input
-              value={form.disco_in_preparazione}
-              onChange={(e) => set_val("disco_in_preparazione", e.target.value)}
-              placeholder="es. Romeo e Giulietta - Prokofiev"
-              className={input_cls}
-            />
-          </Field>
-
-          <Field label="File disco audio">
-            <div className="flex items-center gap-3">
-              {form.disco_url && <audio controls src={form.disco_url} className="h-8 flex-1" />}
-              <label
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg border border-border cursor-pointer hover:bg-muted/30 text-sm text-muted-foreground transition-colors ${uploading_disco ? "opacity-50 pointer-events-none" : ""}`}
-              >
-                <Upload className="w-4 h-4" />
-                {uploading_disco ? "Caricamento..." : form.disco_url ? "Sostituisci" : "Carica audio"}
+          {(form.agonista || form.atleta_federazione) && (
+            <>
+              <Field label="Disco in preparazione">
                 <input
-                  type="file"
-                  accept="audio/*"
-                  className="hidden"
-                  onChange={(e) => e.target.files?.[0] && handle_disco_upload(e.target.files[0])}
+                  value={form.disco_in_preparazione}
+                  onChange={(e) => set_val("disco_in_preparazione", e.target.value)}
+                  placeholder="es. Romeo e Giulietta - Prokofiev"
+                  className={input_cls}
                 />
-              </label>
-            </div>
-          </Field>
+              </Field>
+
+              <Field label="File disco audio">
+                <div className="flex items-center gap-3">
+                  {form.disco_url && <audio controls src={form.disco_url} className="h-8 flex-1" />}
+                  <label
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border border-border cursor-pointer hover:bg-muted/30 text-sm text-muted-foreground transition-colors ${uploading_disco ? "opacity-50 pointer-events-none" : ""}`}
+                  >
+                    <Upload className="w-4 h-4" />
+                    {uploading_disco ? "Caricamento..." : form.disco_url ? "Sostituisci" : "Carica audio"}
+                    <input
+                      type="file"
+                      accept="audio/*"
+                      className="hidden"
+                      onChange={(e) => e.target.files?.[0] && handle_disco_upload(e.target.files[0])}
+                    />
+                  </label>
+                </div>
+              </Field>
+            </>
+          )}
 
           {/* Dati anagrafici extra */}
           <div className="pt-2 border-t border-border">
