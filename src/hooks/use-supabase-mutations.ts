@@ -138,6 +138,7 @@ export function use_upsert_atleta() {
         carriera_artistica: data.carriera_artistica || null,
         carriera_stile: data.carriera_stile || null,
         atleta_federazione: data.atleta_federazione || false,
+        agonista: data.agonista || data.atleta_federazione || false,
         ore_pista_stagione: data.ore_pista_stagione || 0,
         genitore1_nome: data.genitore1_nome || "",
         genitore1_cognome: data.genitore1_cognome || "",

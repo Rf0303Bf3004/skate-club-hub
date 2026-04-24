@@ -103,6 +103,7 @@ const AtletaModal: React.FC<{
     carriera_artistica: atleta?.carriera_artistica || "",
     carriera_stile: atleta?.carriera_stile || "",
     ore_pista_stagione: atleta?.ore_pista_stagione || 0,
+    agonista: atleta?.agonista || atleta?.atleta_federazione || false,
     atleta_federazione: atleta?.atleta_federazione || false,
     tag_nfc: atleta?.tag_nfc || "",
     genitore1_nome: atleta?.genitore1_nome || atleta?.genitore_1?.nome || "",
@@ -444,22 +445,38 @@ const AtletaModal: React.FC<{
             </div>
           </div>
 
-          {/* Checkboxes */}
-          <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
-            <input
-              type="checkbox"
-              id="fed_check"
-              checked={form.atleta_federazione}
-              onChange={(e) => set_val("atleta_federazione", e.target.checked)}
-              className="w-4 h-4 accent-primary"
-              disabled={!is_carriera_attiva}
-            />
-            <label
-              htmlFor="fed_check"
-              className={`text-sm font-medium cursor-pointer ${!is_carriera_attiva ? "text-muted-foreground" : "text-foreground"}`}
-            >
-              Atleta federazione
-            </label>
+          {/* Status agonistico */}
+          <div className="space-y-2">
+            <div className="flex items-start gap-3 px-3 py-2 bg-muted/30 rounded-lg">
+              <input
+                type="checkbox"
+                id="ago_check"
+                checked={form.agonista || form.atleta_federazione}
+                disabled={form.atleta_federazione}
+                onChange={(e) => set_val("agonista", e.target.checked)}
+                className="w-4 h-4 mt-0.5 accent-primary disabled:opacity-60"
+              />
+              <label htmlFor="ago_check" className="cursor-pointer">
+                <span className="text-sm font-medium text-foreground">Atleta agonista</span>
+                <span className="block text-xs text-muted-foreground">Partecipa a gare federali con licenza agonistica</span>
+              </label>
+            </div>
+            <div className="flex items-start gap-3 px-3 py-2 bg-muted/30 rounded-lg">
+              <input
+                type="checkbox"
+                id="fed_check"
+                checked={form.atleta_federazione}
+                onChange={(e) => {
+                  const v = e.target.checked;
+                  set_form((p) => ({ ...p, atleta_federazione: v, agonista: v ? true : p.agonista }));
+                }}
+                className="w-4 h-4 mt-0.5 accent-primary"
+              />
+              <label htmlFor="fed_check" className="cursor-pointer">
+                <span className="text-sm font-medium text-foreground">Atleta di Federazione</span>
+                <span className="block text-xs text-muted-foreground">Rappresenta il Cantone nelle gare federali</span>
+              </label>
+            </div>
           </div>
 
           <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
@@ -535,6 +552,7 @@ const AthletesPage: React.FC = () => {
   const elimina = use_elimina_atleta();
   const [search, set_search] = useState("");
   const [level_filter, set_level_filter] = useState("tutti");
+  const [status_filter, set_status_filter] = useState("tutti");
   const [selected_id, set_selected_id] = useState<string | null>(null);
   const [modal_open, set_modal_open] = useState(false);
   const [selected_atleta, set_selected_atleta] = useState<any>(null);
@@ -602,6 +620,12 @@ const AthletesPage: React.FC = () => {
 
   const filtered = atleti.filter((a: any) => {
     const name_match = `${a.nome} ${a.cognome}`.toLowerCase().includes(search.toLowerCase());
+    const status_match =
+      status_filter === "tutti" ||
+      (status_filter === "scuola" && !a.agonista && !a.atleta_federazione) ||
+      (status_filter === "agoniste" && (a.agonista || a.atleta_federazione)) ||
+      (status_filter === "federazione" && a.atleta_federazione);
+    if (!status_match) return false;
     if (card_filter) {
       const { sezione, livello } = card_filter;
       if (sezione === "base") return name_match && (a.percorso_amatori === livello || a.livello_amatori === livello);
@@ -932,6 +956,17 @@ const AthletesPage: React.FC = () => {
               ))}
             </SelectContent>
           </Select>
+          <Select value={status_filter} onValueChange={set_status_filter}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="tutti">Tutti</SelectItem>
+              <SelectItem value="scuola">Solo scuola</SelectItem>
+              <SelectItem value="agoniste">Solo agoniste</SelectItem>
+              <SelectItem value="federazione">Solo Federazione</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="bg-card rounded-xl shadow-card overflow-hidden">
@@ -983,15 +1018,28 @@ const AthletesPage: React.FC = () => {
                             </div>
                           )}
                           <div>
-                            <p className="font-medium text-foreground">
-                              {a.nome} {a.cognome}
-                            </p>
-                            {a.atleta_federazione && (
-                              <div className="flex items-center gap-1 mt-0.5">
-                                <Shield className="w-3 h-3 text-accent" />
-                                <span className="text-xs text-accent">{t("atleta_federazione")}</span>
-                              </div>
-                            )}
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-foreground">
+                                {a.nome} {a.cognome}
+                              </p>
+                              {a.atleta_federazione ? (
+                                <span
+                                  className="text-[10px] font-bold px-1.5 py-0.5 rounded text-white border"
+                                  style={{ backgroundColor: "#D4A74A", borderColor: "#C53030" }}
+                                  title="Atleta di Federazione"
+                                >
+                                  FED
+                                </span>
+                              ) : a.agonista ? (
+                                <span
+                                  className="text-[10px] font-bold px-1.5 py-0.5 rounded text-white"
+                                  style={{ backgroundColor: "#D4A74A" }}
+                                  title="Atleta agonista"
+                                >
+                                  AGO
+                                </span>
+                              ) : null}
+                            </div>
                           </div>
                         </div>
                       </td>
