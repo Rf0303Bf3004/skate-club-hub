@@ -103,6 +103,7 @@ const AtletaModal: React.FC<{
     carriera_artistica: atleta?.carriera_artistica || "",
     carriera_stile: atleta?.carriera_stile || "",
     ore_pista_stagione: atleta?.ore_pista_stagione || 0,
+    agonista: atleta?.agonista || atleta?.atleta_federazione || false,
     atleta_federazione: atleta?.atleta_federazione || false,
     tag_nfc: atleta?.tag_nfc || "",
     genitore1_nome: atleta?.genitore1_nome || atleta?.genitore_1?.nome || "",
