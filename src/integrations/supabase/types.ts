@@ -70,6 +70,7 @@ export type Database = {
       }
       atleti: {
         Row: {
+          agonista: boolean
           atleta_federazione: boolean | null
           attivo: boolean | null
           attivo_come_monitore: boolean | null
@@ -109,6 +110,7 @@ export type Database = {
           telefono: string | null
         }
         Insert: {
+          agonista?: boolean
           atleta_federazione?: boolean | null
           attivo?: boolean | null
           attivo_come_monitore?: boolean | null
@@ -148,6 +150,7 @@ export type Database = {
           telefono?: string | null
         }
         Update: {
+          agonista?: boolean
           atleta_federazione?: boolean | null
           attivo?: boolean | null
           attivo_come_monitore?: boolean | null
