@@ -620,6 +620,12 @@ const AthletesPage: React.FC = () => {
 
   const filtered = atleti.filter((a: any) => {
     const name_match = `${a.nome} ${a.cognome}`.toLowerCase().includes(search.toLowerCase());
+    const status_match =
+      status_filter === "tutti" ||
+      (status_filter === "scuola" && !a.agonista && !a.atleta_federazione) ||
+      (status_filter === "agoniste" && (a.agonista || a.atleta_federazione)) ||
+      (status_filter === "federazione" && a.atleta_federazione);
+    if (!status_match) return false;
     if (card_filter) {
       const { sezione, livello } = card_filter;
       if (sezione === "base") return name_match && (a.percorso_amatori === livello || a.livello_amatori === livello);
