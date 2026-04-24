@@ -552,6 +552,7 @@ const AthletesPage: React.FC = () => {
   const elimina = use_elimina_atleta();
   const [search, set_search] = useState("");
   const [level_filter, set_level_filter] = useState("tutti");
+  const [status_filter, set_status_filter] = useState("tutti");
   const [selected_id, set_selected_id] = useState<string | null>(null);
   const [modal_open, set_modal_open] = useState(false);
   const [selected_atleta, set_selected_atleta] = useState<any>(null);
