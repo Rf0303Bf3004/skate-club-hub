@@ -250,6 +250,40 @@ const AtletaModal: React.FC<{
             </select>
           </Field>
 
+          {/* Status agonistico */}
+          <div className="space-y-2">
+            <div className="flex items-start gap-3 px-3 py-2 bg-muted/30 rounded-lg">
+              <input
+                type="checkbox"
+                id="ago_check"
+                checked={form.agonista || form.atleta_federazione}
+                disabled={form.atleta_federazione}
+                onChange={(e) => set_val("agonista", e.target.checked)}
+                className="w-4 h-4 mt-0.5 accent-primary disabled:opacity-60"
+              />
+              <label htmlFor="ago_check" className="cursor-pointer">
+                <span className="text-sm font-medium text-foreground">Atleta agonista</span>
+                <span className="block text-xs text-muted-foreground">Partecipa a gare federali con licenza agonistica</span>
+              </label>
+            </div>
+            <div className="flex items-start gap-3 px-3 py-2 bg-muted/30 rounded-lg">
+              <input
+                type="checkbox"
+                id="fed_check"
+                checked={form.atleta_federazione}
+                onChange={(e) => {
+                  const v = e.target.checked;
+                  set_form((p) => ({ ...p, atleta_federazione: v, agonista: v ? true : p.agonista }));
+                }}
+                className="w-4 h-4 mt-0.5 accent-primary"
+              />
+              <label htmlFor="fed_check" className="cursor-pointer">
+                <span className="text-sm font-medium text-foreground">Atleta di Federazione</span>
+                <span className="block text-xs text-muted-foreground">Rappresenta il Cantone nelle gare federali</span>
+              </label>
+            </div>
+          </div>
+
           {/* Carriera Artistica */}
           <Field label="Carriera Artistica">
             <select
@@ -309,32 +343,36 @@ const AtletaModal: React.FC<{
             />
           </Field>
 
-          <Field label="Disco in preparazione">
-            <input
-              value={form.disco_in_preparazione}
-              onChange={(e) => set_val("disco_in_preparazione", e.target.value)}
-              placeholder="es. Romeo e Giulietta - Prokofiev"
-              className={input_cls}
-            />
-          </Field>
-
-          <Field label="File disco audio">
-            <div className="flex items-center gap-3">
-              {form.disco_url && <audio controls src={form.disco_url} className="h-8 flex-1" />}
-              <label
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg border border-border cursor-pointer hover:bg-muted/30 text-sm text-muted-foreground transition-colors ${uploading_disco ? "opacity-50 pointer-events-none" : ""}`}
-              >
-                <Upload className="w-4 h-4" />
-                {uploading_disco ? "Caricamento..." : form.disco_url ? "Sostituisci" : "Carica audio"}
+          {(form.agonista || form.atleta_federazione) && (
+            <>
+              <Field label="Disco in preparazione">
                 <input
-                  type="file"
-                  accept="audio/*"
-                  className="hidden"
-                  onChange={(e) => e.target.files?.[0] && handle_disco_upload(e.target.files[0])}
+                  value={form.disco_in_preparazione}
+                  onChange={(e) => set_val("disco_in_preparazione", e.target.value)}
+                  placeholder="es. Romeo e Giulietta - Prokofiev"
+                  className={input_cls}
                 />
-              </label>
-            </div>
-          </Field>
+              </Field>
+
+              <Field label="File disco audio">
+                <div className="flex items-center gap-3">
+                  {form.disco_url && <audio controls src={form.disco_url} className="h-8 flex-1" />}
+                  <label
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border border-border cursor-pointer hover:bg-muted/30 text-sm text-muted-foreground transition-colors ${uploading_disco ? "opacity-50 pointer-events-none" : ""}`}
+                  >
+                    <Upload className="w-4 h-4" />
+                    {uploading_disco ? "Caricamento..." : form.disco_url ? "Sostituisci" : "Carica audio"}
+                    <input
+                      type="file"
+                      accept="audio/*"
+                      className="hidden"
+                      onChange={(e) => e.target.files?.[0] && handle_disco_upload(e.target.files[0])}
+                    />
+                  </label>
+                </div>
+              </Field>
+            </>
+          )}
 
           {/* Dati anagrafici extra */}
           <div className="pt-2 border-t border-border">
@@ -442,40 +480,6 @@ const AtletaModal: React.FC<{
                   className={input_cls}
                 />
               </Field>
-            </div>
-          </div>
-
-          {/* Status agonistico */}
-          <div className="space-y-2">
-            <div className="flex items-start gap-3 px-3 py-2 bg-muted/30 rounded-lg">
-              <input
-                type="checkbox"
-                id="ago_check"
-                checked={form.agonista || form.atleta_federazione}
-                disabled={form.atleta_federazione}
-                onChange={(e) => set_val("agonista", e.target.checked)}
-                className="w-4 h-4 mt-0.5 accent-primary disabled:opacity-60"
-              />
-              <label htmlFor="ago_check" className="cursor-pointer">
-                <span className="text-sm font-medium text-foreground">Atleta agonista</span>
-                <span className="block text-xs text-muted-foreground">Partecipa a gare federali con licenza agonistica</span>
-              </label>
-            </div>
-            <div className="flex items-start gap-3 px-3 py-2 bg-muted/30 rounded-lg">
-              <input
-                type="checkbox"
-                id="fed_check"
-                checked={form.atleta_federazione}
-                onChange={(e) => {
-                  const v = e.target.checked;
-                  set_form((p) => ({ ...p, atleta_federazione: v, agonista: v ? true : p.agonista }));
-                }}
-                className="w-4 h-4 mt-0.5 accent-primary"
-              />
-              <label htmlFor="fed_check" className="cursor-pointer">
-                <span className="text-sm font-medium text-foreground">Atleta di Federazione</span>
-                <span className="block text-xs text-muted-foreground">Rappresenta il Cantone nelle gare federali</span>
-              </label>
             </div>
           </div>
 
@@ -1018,25 +1022,25 @@ const AthletesPage: React.FC = () => {
                             </div>
                           )}
                           <div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                               <p className="font-medium text-foreground">
                                 {a.nome} {a.cognome}
                               </p>
                               {a.atleta_federazione ? (
                                 <span
-                                  className="text-[10px] font-bold px-1.5 py-0.5 rounded text-white border"
+                                  className="text-[10px] font-bold px-2 py-0.5 rounded text-white border whitespace-nowrap"
                                   style={{ backgroundColor: "#D4A74A", borderColor: "#C53030" }}
                                   title="Atleta di Federazione"
                                 >
-                                  FED
+                                  Atleta di Federazione
                                 </span>
                               ) : a.agonista ? (
                                 <span
-                                  className="text-[10px] font-bold px-1.5 py-0.5 rounded text-white"
+                                  className="text-[10px] font-bold px-2 py-0.5 rounded text-white whitespace-nowrap"
                                   style={{ backgroundColor: "#D4A74A" }}
                                   title="Atleta agonista"
                                 >
-                                  AGO
+                                  Agonista
                                 </span>
                               ) : null}
                             </div>
