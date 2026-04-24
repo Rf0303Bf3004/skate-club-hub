@@ -1022,25 +1022,25 @@ const AthletesPage: React.FC = () => {
                             </div>
                           )}
                           <div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                               <p className="font-medium text-foreground">
                                 {a.nome} {a.cognome}
                               </p>
                               {a.atleta_federazione ? (
                                 <span
-                                  className="text-[10px] font-bold px-1.5 py-0.5 rounded text-white border"
+                                  className="text-[10px] font-bold px-2 py-0.5 rounded text-white border whitespace-nowrap"
                                   style={{ backgroundColor: "#D4A74A", borderColor: "#C53030" }}
                                   title="Atleta di Federazione"
                                 >
-                                  FED
+                                  Atleta di Federazione
                                 </span>
                               ) : a.agonista ? (
                                 <span
-                                  className="text-[10px] font-bold px-1.5 py-0.5 rounded text-white"
+                                  className="text-[10px] font-bold px-2 py-0.5 rounded text-white whitespace-nowrap"
                                   style={{ backgroundColor: "#D4A74A" }}
                                   title="Atleta agonista"
                                 >
-                                  AGO
+                                  Agonista
                                 </span>
                               ) : null}
                             </div>
