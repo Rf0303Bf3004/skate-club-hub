@@ -956,6 +956,17 @@ const AthletesPage: React.FC = () => {
               ))}
             </SelectContent>
           </Select>
+          <Select value={status_filter} onValueChange={set_status_filter}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="tutti">Tutti</SelectItem>
+              <SelectItem value="scuola">Solo scuola</SelectItem>
+              <SelectItem value="agoniste">Solo agoniste</SelectItem>
+              <SelectItem value="federazione">Solo Federazione</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="bg-card rounded-xl shadow-card overflow-hidden">
