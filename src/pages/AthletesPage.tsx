@@ -1018,15 +1018,28 @@ const AthletesPage: React.FC = () => {
                             </div>
                           )}
                           <div>
-                            <p className="font-medium text-foreground">
-                              {a.nome} {a.cognome}
-                            </p>
-                            {a.atleta_federazione && (
-                              <div className="flex items-center gap-1 mt-0.5">
-                                <Shield className="w-3 h-3 text-accent" />
-                                <span className="text-xs text-accent">{t("atleta_federazione")}</span>
-                              </div>
-                            )}
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-foreground">
+                                {a.nome} {a.cognome}
+                              </p>
+                              {a.atleta_federazione ? (
+                                <span
+                                  className="text-[10px] font-bold px-1.5 py-0.5 rounded text-white border"
+                                  style={{ backgroundColor: "#D4A74A", borderColor: "#C53030" }}
+                                  title="Atleta di Federazione"
+                                >
+                                  FED
+                                </span>
+                              ) : a.agonista ? (
+                                <span
+                                  className="text-[10px] font-bold px-1.5 py-0.5 rounded text-white"
+                                  style={{ backgroundColor: "#D4A74A" }}
+                                  title="Atleta agonista"
+                                >
+                                  AGO
+                                </span>
+                              ) : null}
+                            </div>
                           </div>
                         </div>
                       </td>
