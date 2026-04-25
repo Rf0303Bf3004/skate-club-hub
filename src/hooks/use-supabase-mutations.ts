@@ -129,16 +129,20 @@ export function use_upsert_atleta() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: any) => {
-      const payload = {
-        club_id: cid(),
+      const club_id = cid();
+      const livello_attuale_nuovo = data.livello_attuale || "Pulcini";
+      const payload: Record<string, any> = {
+        club_id,
         nome: data.nome,
         cognome: data.cognome,
         data_nascita: data.data_nascita,
-        percorso_amatori: data.percorso_amatori || "pulcini",
+        livello_attuale: livello_attuale_nuovo,
+        livello_in_preparazione: data.livello_in_preparazione || null,
         carriera_artistica: data.carriera_artistica || null,
         carriera_stile: data.carriera_stile || null,
-        atleta_federazione: data.atleta_federazione || false,
-        agonista: data.agonista || data.atleta_federazione || false,
+        atleta_federazione: !!data.atleta_federazione,
+        // gerarchia: federazione implica agonista
+        agonista: !!(data.agonista || data.atleta_federazione),
         ore_pista_stagione: data.ore_pista_stagione || 0,
         genitore1_nome: data.genitore1_nome || "",
         genitore1_cognome: data.genitore1_cognome || "",
@@ -157,24 +161,58 @@ export function use_upsert_atleta() {
         ruolo_pista: data.ruolo_pista || "atleta",
         compenso_orario_pista: data.compenso_orario_pista || 0,
         attivo_come_monitore: data.attivo_come_monitore || false,
-        
-        luogo_nascita: data.luogo_nascita || "",
-        indirizzo_via: data.indirizzo_via || null,
-        indirizzo_nap: data.indirizzo_nap || null,
-        indirizzo_localita: data.indirizzo_localita || null,
-        indirizzo_nazione: data.indirizzo_nazione || "CH",
         telefono: data.telefono || "",
         licenza_sis_numero: data.licenza_sis_numero || "",
         licenza_sis_categoria: data.licenza_sis_categoria || "",
         licenza_sis_disciplina: data.licenza_sis_disciplina || "",
         licenza_sis_validita_a: data.licenza_sis_validita_a || null,
       };
+
+      let atleta_id: string | undefined = data.id;
+      let livello_attuale_precedente: string | null = null;
+
       if (data.id) {
+        // Recupero livello attuale precedente per decidere se aggiornare lo storico
+        const { data: prev } = await supabase
+          .from("atleti")
+          .select("livello_attuale")
+          .eq("id", data.id)
+          .maybeSingle();
+        livello_attuale_precedente = prev?.livello_attuale ?? null;
+
         const { error } = await supabase.from("atleti").update(payload).eq("id", data.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("atleti").insert(payload);
+        const { data: inserted, error } = await supabase
+          .from("atleti")
+          .insert(payload)
+          .select("id")
+          .single();
         if (error) throw error;
+        atleta_id = inserted?.id;
+      }
+
+      // Storico livelli: chiudi la voce attiva e aprine una nuova quando livello_attuale cambia
+      // (o quando si crea un nuovo atleta).
+      const livello_cambiato =
+        !data.id || (livello_attuale_precedente && livello_attuale_precedente !== livello_attuale_nuovo);
+
+      if (livello_cambiato && atleta_id) {
+        const oggi = new Date().toISOString().slice(0, 10);
+        // Chiudi voce attiva precedente
+        await supabase
+          .from("storico_livelli_atleta")
+          .update({ data_fine: oggi })
+          .eq("atleta_id", atleta_id)
+          .is("data_fine", null);
+        // Inserisci nuova voce attiva
+        await supabase.from("storico_livelli_atleta").insert({
+          atleta_id,
+          livello: livello_attuale_nuovo,
+          carriera: "comune",
+          data_inizio: oggi,
+          data_fine: null,
+        });
       }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["atleti"] }),
