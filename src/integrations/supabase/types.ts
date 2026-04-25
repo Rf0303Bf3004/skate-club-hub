@@ -99,11 +99,11 @@ export type Database = {
           licenza_sis_disciplina: string | null
           licenza_sis_numero: string | null
           licenza_sis_validita_a: string | null
-          luogo_nascita: string | null
+          livello_attuale: string | null
+          livello_in_preparazione: string | null
           nome: string
           note: string | null
           ore_pista_stagione: number | null
-          percorso_amatori: string | null
           portal_token: string | null
           ruolo_pista: string | null
           tag_nfc: string | null
@@ -139,11 +139,11 @@ export type Database = {
           licenza_sis_disciplina?: string | null
           licenza_sis_numero?: string | null
           licenza_sis_validita_a?: string | null
-          luogo_nascita?: string | null
+          livello_attuale?: string | null
+          livello_in_preparazione?: string | null
           nome?: string
           note?: string | null
           ore_pista_stagione?: number | null
-          percorso_amatori?: string | null
           portal_token?: string | null
           ruolo_pista?: string | null
           tag_nfc?: string | null
@@ -179,11 +179,11 @@ export type Database = {
           licenza_sis_disciplina?: string | null
           licenza_sis_numero?: string | null
           licenza_sis_validita_a?: string | null
-          luogo_nascita?: string | null
+          livello_attuale?: string | null
+          livello_in_preparazione?: string | null
           nome?: string
           note?: string | null
           ore_pista_stagione?: number | null
-          percorso_amatori?: string | null
           portal_token?: string | null
           ruolo_pista?: string | null
           tag_nfc?: string | null

@@ -21,6 +21,9 @@ const LIVELLI_COMUNI = ["Pulcini", "Stellina 1", "Stellina 2", "Stellina 3", "St
 
 const LIVELLI_CARRIERA = ["Interbronzo", "Bronzo", "Interargento", "Argento", "Interoro", "Oro"];
 
+// Dropdown completo per "Livello attuale" e "Livello in preparazione"
+const LIVELLI_TUTTI = [...LIVELLI_COMUNI, ...LIVELLI_CARRIERA];
+
 const TUTTI_LIVELLI = [...LIVELLI_COMUNI, ...LIVELLI_CARRIERA];
 
 const NAZIONI_INDIRIZZO = [
@@ -77,9 +80,11 @@ const CarrieraBadge: React.FC<{ atleta: any }> = ({ atleta }) => {
 const LivelloBadge: React.FC<{ atleta: any }> = ({ atleta }) => {
   const ha_carriera = !!(atleta.carriera_artistica || atleta.carriera_stile);
   if (ha_carriera) return null;
+  const lv = atleta.livello_attuale || atleta.percorso_amatori || atleta.livello_amatori;
+  if (!lv) return <span className="text-muted-foreground/40">—</span>;
   return (
     <Badge variant="secondary" className="text-xs">
-      {atleta.percorso_amatori || atleta.livello_amatori}
+      {lv}
     </Badge>
   );
 };
@@ -93,13 +98,15 @@ const AtletaModal: React.FC<{
   saving: boolean;
   deleting: boolean;
 }> = ({ atleta, on_close, on_save, on_delete, saving, deleting }) => {
-  const carriera_attiva = atleta?.percorso_amatori === "Stellina 4" || atleta?.livello_amatori === "Stellina 4";
+  const livello_iniziale =
+    atleta?.livello_attuale || atleta?.percorso_amatori || atleta?.livello_amatori || "Pulcini";
 
   const [form, set_form] = useState({
     nome: atleta?.nome || "",
     cognome: atleta?.cognome || "",
     data_nascita: atleta?.data_nascita?.split("T")[0] || "",
-    percorso_amatori: atleta?.percorso_amatori || atleta?.livello_amatori || "Pulcini",
+    livello_attuale: livello_iniziale,
+    livello_in_preparazione: atleta?.livello_in_preparazione || "",
     carriera_artistica: atleta?.carriera_artistica || "",
     carriera_stile: atleta?.carriera_stile || "",
     ore_pista_stagione: atleta?.ore_pista_stagione || 0,
@@ -119,8 +126,6 @@ const AtletaModal: React.FC<{
     licenza_sis_categoria: atleta?.licenza_sis_categoria || "",
     licenza_sis_disciplina: atleta?.licenza_sis_disciplina || "",
     licenza_sis_validita_a: atleta?.licenza_sis_validita_a?.split("T")[0] || "",
-    
-    luogo_nascita: atleta?.luogo_nascita || "",
     indirizzo_via: atleta?.indirizzo_via || "",
     indirizzo_nap: atleta?.indirizzo_nap || "",
     indirizzo_localita: atleta?.indirizzo_localita || "",
@@ -135,7 +140,7 @@ const AtletaModal: React.FC<{
     set_form((p) => ({ ...p, [k]: v }));
   }, []);
 
-  const is_carriera_attiva = form.percorso_amatori === "Stellina 4";
+  const is_carriera_attiva = LIVELLI_CARRIERA.includes(form.livello_attuale) || form.livello_attuale === "Stellina 4";
 
   const handle_foto_upload = async (file: File) => {
     set_uploading_foto(true);
@@ -226,43 +231,71 @@ const AtletaModal: React.FC<{
             <DateInput value={form.data_nascita} onChange={(v) => set_val("data_nascita", v)} />
           </Field>
 
-          {/* Livello attuale */}
-          <Field label="Livello attuale">
-            <select
-              value={form.percorso_amatori}
-              onChange={(e) => {
-                const v = e.target.value;
-                set_form((p) => ({
-                  ...p,
-                  percorso_amatori: v,
-                  carriera_artistica: v !== "Stellina 4" ? "" : p.carriera_artistica,
-                  carriera_stile: v !== "Stellina 4" ? "" : p.carriera_stile,
-                  atleta_federazione: v !== "Stellina 4" ? false : p.atleta_federazione,
-                }));
-              }}
-              className={input_cls}
-            >
-              {LIVELLI_COMUNI.map((l) => (
-                <option key={l} value={l}>
-                  {l}
-                </option>
-              ))}
-            </select>
-          </Field>
+          {/* Livello attuale + Livello in preparazione */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <Field label="Livello attuale">
+              <select
+                value={form.livello_attuale}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  set_form((p) => ({
+                    ...p,
+                    livello_attuale: v,
+                    // Se non sblocca la carriera, ripulisci i campi correlati
+                    carriera_artistica: LIVELLI_CARRIERA.includes(v) || v === "Stellina 4" ? p.carriera_artistica : "",
+                    carriera_stile: LIVELLI_CARRIERA.includes(v) || v === "Stellina 4" ? p.carriera_stile : "",
+                  }));
+                }}
+                className={input_cls}
+              >
+                {LIVELLI_TUTTI.map((l) => (
+                  <option key={l} value={l}>{l}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Livello in preparazione">
+              <select
+                value={form.livello_in_preparazione}
+                onChange={(e) => set_val("livello_in_preparazione", e.target.value)}
+                className={input_cls}
+              >
+                <option value="">— Nessuno —</option>
+                {LIVELLI_TUTTI.map((l) => (
+                  <option key={l} value={l}>{l}</option>
+                ))}
+              </select>
+            </Field>
+          </div>
 
-          {/* Status agonistico */}
+          {/* Status atleta: 3 checkbox separati */}
           <div className="space-y-2">
+            <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
+              <input
+                type="checkbox"
+                id="attivo_check_top"
+                checked={form.attivo}
+                onChange={(e) => set_val("attivo", e.target.checked)}
+                className="w-4 h-4 accent-primary"
+              />
+              <label htmlFor="attivo_check_top" className="cursor-pointer">
+                <span className="text-sm font-medium text-foreground">Atleta attiva</span>
+                <span className="block text-xs text-muted-foreground">Iscritta e partecipa alle attività del club</span>
+              </label>
+            </div>
             <div className="flex items-start gap-3 px-3 py-2 bg-muted/30 rounded-lg">
               <input
                 type="checkbox"
                 id="ago_check"
-                checked={form.agonista || form.atleta_federazione}
-                disabled={form.atleta_federazione}
-                onChange={(e) => set_val("agonista", e.target.checked)}
-                className="w-4 h-4 mt-0.5 accent-primary disabled:opacity-60"
+                checked={form.agonista}
+                onChange={(e) => {
+                  const v = e.target.checked;
+                  // Disattivare agonista disattiva anche atleta_federazione
+                  set_form((p) => ({ ...p, agonista: v, atleta_federazione: v ? p.atleta_federazione : false }));
+                }}
+                className="w-4 h-4 mt-0.5 accent-primary"
               />
               <label htmlFor="ago_check" className="cursor-pointer">
-                <span className="text-sm font-medium text-foreground">Atleta agonista</span>
+                <span className="text-sm font-medium text-foreground">Agonista</span>
                 <span className="block text-xs text-muted-foreground">Partecipa a gare federali con licenza agonistica</span>
               </label>
             </div>
@@ -273,6 +306,7 @@ const AtletaModal: React.FC<{
                 checked={form.atleta_federazione}
                 onChange={(e) => {
                   const v = e.target.checked;
+                  // Attivare federazione attiva anche agonista
                   set_form((p) => ({ ...p, atleta_federazione: v, agonista: v ? true : p.agonista }));
                 }}
                 className="w-4 h-4 mt-0.5 accent-primary"
@@ -377,10 +411,7 @@ const AtletaModal: React.FC<{
           {/* Dati anagrafici extra */}
           <div className="pt-2 border-t border-border">
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">Dati anagrafici</p>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Luogo di nascita">
-                <input value={form.luogo_nascita} onChange={(e) => set_val("luogo_nascita", e.target.value)} className={input_cls} />
-              </Field>
+            <div className="grid grid-cols-1 gap-3">
               <Field label="Telefono">
                 <input value={form.telefono} onChange={(e) => set_val("telefono", e.target.value)} className={input_cls} />
               </Field>
@@ -483,18 +514,6 @@ const AtletaModal: React.FC<{
             </div>
           </div>
 
-          <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
-            <input
-              type="checkbox"
-              id="attivo_check"
-              checked={form.attivo}
-              onChange={(e) => set_val("attivo", e.target.checked)}
-              className="w-4 h-4 accent-primary"
-            />
-            <label htmlFor="attivo_check" className="text-sm font-medium text-foreground cursor-pointer">
-              Atleta attiva
-            </label>
-          </div>
 
           <Field label="Note">
             <textarea
@@ -724,7 +743,7 @@ const AthletesPage: React.FC = () => {
                 <div>
                   <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Dati personali</p>
                   <div className="grid grid-cols-2 gap-2">
-                    {([["Luogo di nascita", atleta.luogo_nascita], ["Indirizzo", atleta.indirizzo], ["Telefono", atleta.telefono]] as [string, string | undefined][]).map(([l, v]) => (
+                    {([["Telefono", atleta.telefono], ["Indirizzo", [atleta.indirizzo_via, atleta.indirizzo_nap, atleta.indirizzo_localita].filter(Boolean).join(" ") || atleta.indirizzo]] as [string, string | undefined][]).map(([l, v]) => (
                       <div key={l} className="bg-muted/30 rounded-lg px-3 py-2">
                         <p className="text-xs text-muted-foreground">{l}</p>
                         <p className="text-sm font-medium text-foreground">{v || <span className="text-muted-foreground/40 italic">—</span>}</p>

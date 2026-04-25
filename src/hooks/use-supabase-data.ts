@@ -64,7 +64,7 @@ const LIVELLO_ORDER: Record<string, number> = {
 };
 
 function get_livello(a: any): string {
-  return a.carriera_artistica || a.carriera_stile || a.percorso_amatori || "Pulcini";
+  return a.carriera_artistica || a.carriera_stile || a.livello_attuale || a.percorso_amatori || "Pulcini";
 }
 
 function livello_rank(a: any): number {
@@ -78,7 +78,7 @@ export function use_atleti() {
     enabled: !!get_current_club_id(),
     queryKey: ["atleti", get_current_club_id()],
     queryFn: async () => {
-      const club_id = get_current_club_id(); const { data, error } = await supabase.from("atleti").select("*").or("club_id.eq." + club_id + ",club_appartenenza.eq." + club_id);
+      const club_id = get_current_club_id(); const { data, error } = await supabase.from("atleti").select("*").eq("club_id", club_id);
       if (error) throw error;
       const mapped = (data ?? []).map(transform_atleta);
       return mapped.sort((a, b) => {
@@ -91,18 +91,23 @@ export function use_atleti() {
 }
 
 function transform_atleta(a: any) {
+  // Compat: il DB ora espone `livello_attuale`/`livello_in_preparazione`,
+  // ma diversi componenti del codebase leggono ancora `percorso_amatori`.
+  const livello_attuale = a.livello_attuale ?? a.percorso_amatori ?? "Pulcini";
   return {
     ...a,
-    // camelCase aliases per il componente
-    percorsoAmatori: a.percorso_amatori || "Pulcini",
+    livello_attuale,
+    livello_in_preparazione: a.livello_in_preparazione ?? null,
+    // alias retrocompatibili
+    percorso_amatori: livello_attuale,
+    percorsoAmatori: livello_attuale,
     carrieraArtistica: a.carriera_artistica || undefined,
     carrieraStile: a.carriera_stile || undefined,
     atletaFederazione: a.atleta_federazione || false,
     dataNascita: a.data_nascita || "",
     orePista: a.ore_pista_stagione ?? 0,
     foto: a.foto_url || undefined,
-    // snake_case originali mantenuti
-    livello_amatori: a.percorso_amatori || "Pulcini",
+    livello_amatori: livello_attuale,
     percorso_amatori_completato: !!(a.carriera_artistica || a.carriera_stile),
     stato: a.attivo ? "attivo" : "inattivo",
     ore_pista_stagione: a.ore_pista_stagione ?? 0,
@@ -459,29 +464,40 @@ export function use_tutti_club() {
 }
 
 // ─── Adesioni Atleta ───────────────────────────────────────
+// La tabella `adesioni_atleta` non viene più utilizzata: lo stato di "atleta attivo"
+// è derivato dall'esistenza di almeno una iscrizione attiva in `iscrizioni_corsi`.
 export function use_adesioni_atleta() {
   return useQuery({
     refetchOnMount: "always",
     staleTime: 0,
     enabled: !!get_current_club_id(),
-    queryKey: ["adesioni_atleta", get_current_club_id()],
+    queryKey: ["iscrizioni_corsi_attive", get_current_club_id()],
     queryFn: async () => {
+      // Recupera tutte le iscrizioni attive per i corsi del club corrente.
+      const club_id = get_current_club_id();
+      const { data: corsi, error: e1 } = await supabase
+        .from("corsi")
+        .select("id")
+        .eq("club_id", club_id);
+      if (e1) throw e1;
+      const corso_ids = (corsi ?? []).map((c: any) => c.id);
+      if (corso_ids.length === 0) return [];
       const { data, error } = await supabase
-        .from("adesioni_atleta")
-        .select("*")
-        .eq("club_id", get_current_club_id())
-        .eq("stato", "attiva");
+        .from("iscrizioni_corsi")
+        .select("atleta_id, corso_id, attiva")
+        .in("corso_id", corso_ids)
+        .eq("attiva", true);
       if (error) throw error;
       return data ?? [];
     },
   });
 }
 
-export function is_atleta_attivo_oggi(adesioni: any[], atleta_id: string): boolean {
-  const today = new Date().toISOString().slice(0, 10);
-  return adesioni.some(
-    (ad) => ad.atleta_id === atleta_id && ad.data_inizio <= today && ad.data_fine >= today
-  );
+export function is_atleta_attivo_oggi(iscrizioni: any[], atleta_id: string): boolean {
+  // Un'atleta è considerata attiva oggi se ha almeno una iscrizione attiva
+  // a un corso del club. (Il flag stagionale di start/fine è ora gestito a livello
+  // di stagione del corso e non più con la tabella adesioni_atleta.)
+  return iscrizioni.some((i) => i.atleta_id === atleta_id && i.attiva !== false);
 }
 
 // ─── Helpers ──────────────────────────────────────────────
