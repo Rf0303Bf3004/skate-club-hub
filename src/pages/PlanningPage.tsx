@@ -1569,6 +1569,8 @@ function PlanningPageInner() {
 
     const course_rows = compute_rows(day_corsi_ice);
     const ROW_H = 48;
+    // Altezza della zona ICE (per confinare sfondo ghiaccio + pulizia e impedire overflow su OFF-ICE)
+    const ice_zone_h = (course_rows.length || 1) * ROW_H + 16 + (day_annullati.length > 0 ? 30 : 0);
 
     const f_ticks: number[] = [];
     for (let m = f_start; m <= f_end; m += 60) f_ticks.push(m);
