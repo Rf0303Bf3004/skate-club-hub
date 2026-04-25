@@ -178,7 +178,7 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
       // Check if a gara with the same nome+data already exists for this club
       let gara_id: string;
       const { data: existing_gara } = await (supabase as any)
-        .from("gare")
+        .from("gare_calendario")
         .select("id")
         .eq("club_id", club_id)
         .eq("nome", nome_gara.trim())
@@ -189,7 +189,7 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
         gara_id = existing_gara.id;
       } else {
         const { data: gara_data, error: gara_err } = await (supabase as any)
-          .from("gare")
+          .from("gare_calendario")
           .insert({
             club_id,
             nome: nome_gara.trim(),
