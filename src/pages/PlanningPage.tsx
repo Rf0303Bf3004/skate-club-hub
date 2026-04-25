@@ -1516,6 +1516,12 @@ function PlanningPageInner() {
     f_end = Math.ceil(f_end / 60) * 60;
     const f_total = f_end - f_start;
     const grid_w = f_total * ppm_focus;
+    const min_ppm = 2;
+    const max_ppm = 20;
+    const change_zoom = (delta: number) => {
+      set_fit_focus(false);
+      set_ppm_focus((p) => Math.max(min_ppm, Math.min(max_ppm, +(p + delta).toFixed(2))));
+    };
 
     const compute_rows = (courses: any[]): any[][] => {
       if (!courses.length) return [];
