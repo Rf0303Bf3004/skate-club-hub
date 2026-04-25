@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useRef, useEffect, Component, ErrorInfo, ReactNode } from "react";
+import React, { useState, useMemo, useCallback, useRef, useEffect, useLayoutEffect, Component, ErrorInfo, ReactNode } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { use_corsi, use_istruttori, use_stagioni, use_atleti } from "@/hooks/use-supabase-data";
@@ -600,6 +600,9 @@ function PlanningPageInner() {
   const [day_offset, set_day_offset] = useState(0);
   const [build_mode, set_build_mode] = useState(false);
   const [focus_day, set_focus_day] = useState<string | null>(null);
+  const [ppm_focus, set_ppm_focus] = useState<number>(PPM_FOCUS);
+  const [fit_focus, set_fit_focus] = useState<boolean>(true);
+  const focus_grid_ref = React.useRef<HTMLDivElement>(null);
   const [selected_corso_id, set_selected_corso_id] = useState<string | null>(null);
   const [pick_corso, set_pick_corso] = useState<any>(null);
   const [confirm_place, set_confirm_place] = useState<{ corso: any; giorno: string; ora_inizio: string; ora_fine: string } | null>(null);
@@ -1483,6 +1486,34 @@ function PlanningPageInner() {
     set_confirm_place(null);
   };
 
+  // Reset zoom a "fit" quando cambio il giorno in focus
+  useEffect(() => {
+    if (focus_day) set_fit_focus(true);
+  }, [focus_day]);
+
+  // Calcolo "Adatta": misura larghezza container e adegua ppm_focus al range orario del giorno
+  useLayoutEffect(() => {
+    if (!focus_day || !fit_focus) return;
+    const el = focus_grid_ref.current;
+    if (!el) return;
+    const day_items = [
+      ...slots.filter((s: any) => s.giorno === focus_day),
+      ...posizionati.filter((c: any) => c.giorno === focus_day),
+    ];
+    let fs = 24 * 60, fe = 0;
+    day_items.forEach((s: any) => {
+      fs = Math.min(fs, time_to_min(s.ora_inizio));
+      fe = Math.max(fe, time_to_min(s.ora_fine));
+    });
+    if (fs >= fe) { fs = 6 * 60; fe = 22 * 60; }
+    fs = Math.floor(fs / 60) * 60;
+    fe = Math.ceil(fe / 60) * 60;
+    const total = fe - fs;
+    const avail = Math.max(200, el.clientWidth - 32);
+    const next = Math.max(2, Math.min(20, +(avail / total).toFixed(2)));
+    set_ppm_focus(next);
+  }, [focus_day, fit_focus, slots, posizionati]);
+
   // ── Loading ──
   if (loading) {
     return <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
@@ -1512,7 +1543,13 @@ function PlanningPageInner() {
     f_start = Math.floor(f_start / 60) * 60;
     f_end = Math.ceil(f_end / 60) * 60;
     const f_total = f_end - f_start;
-    const grid_w = f_total * PPM_FOCUS;
+    const grid_w = f_total * ppm_focus;
+    const min_ppm = 2;
+    const max_ppm = 20;
+    const change_zoom = (delta: number) => {
+      set_fit_focus(false);
+      set_ppm_focus((p) => Math.max(min_ppm, Math.min(max_ppm, +(p + delta).toFixed(2))));
+    };
 
     const compute_rows = (courses: any[]): any[][] => {
       if (!courses.length) return [];
@@ -1562,6 +1599,12 @@ function PlanningPageInner() {
             )}
             {pick_corso && <Badge variant="outline" className="border-primary text-primary text-xs">Selezionato: {pick_corso.nome}</Badge>}
             <span className="text-sm text-muted-foreground">{(day_ice_min / 60).toFixed(1)}h ghiaccio</span>
+            <div className="flex items-center gap-1 border border-border rounded-md px-1 py-0.5 bg-background">
+              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => change_zoom(-1)} title="Zoom -">−</Button>
+              <span className="text-xs text-muted-foreground tabular-nums w-10 text-center">{Math.round((ppm_focus / PPM_FOCUS) * 100)}%</span>
+              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => change_zoom(1)} title="Zoom +">+</Button>
+              <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => set_fit_focus(true)} title="Adatta alla finestra">Adatta</Button>
+            </div>
             {build_mode && (
               <Button size="sm" variant="outline" onClick={() => set_slot_manager_open(!slot_manager_open)}>
                 <LayoutGrid className="h-4 w-4 mr-1" /> Slot ghiaccio
@@ -1591,11 +1634,11 @@ function PlanningPageInner() {
             )}
 
             {/* Main grid */}
-            <div className="flex-1 overflow-auto p-4" data-grid>
+            <div ref={focus_grid_ref} className="flex-1 overflow-auto p-4" data-grid>
               <div className="relative" style={{ width: grid_w, minHeight: (course_rows.length || 1) * ROW_H + 60 }}>
                 {/* Hour lines */}
                 {f_ticks.map((t) => (
-                  <div key={t} className="absolute top-0 bottom-0 border-l border-border/40" style={{ left: (t - f_start) * PPM_FOCUS }}>
+                  <div key={t} className="absolute top-0 bottom-0 border-l border-border/40" style={{ left: (t - f_start) * ppm_focus }}>
                     <span className="absolute -top-5 -translate-x-1/2 text-[10px] text-muted-foreground">{min_to_time(t)}</span>
                   </div>
                 ))}
@@ -1606,8 +1649,8 @@ function PlanningPageInner() {
                 {/* Ghiaccio slots background */}
                 {day_ghiaccio.map((g: any, i: number) => (
                   <div key={`g${i}`} className="absolute" style={{
-                    left: (time_to_min(g.ora_inizio) - f_start) * PPM_FOCUS,
-                    width: (time_to_min(g.ora_fine) - time_to_min(g.ora_inizio)) * PPM_FOCUS,
+                    left: (time_to_min(g.ora_inizio) - f_start) * ppm_focus,
+                    width: (time_to_min(g.ora_fine) - time_to_min(g.ora_inizio)) * ppm_focus,
                     top: 0, bottom: 0, background: "#EEEDFE", borderRadius: 6,
                   }} />
                 ))}
@@ -1615,8 +1658,8 @@ function PlanningPageInner() {
                 {/* Pulizia slots */}
                 {day_pulizia.map((p: any, i: number) => (
                   <div key={`p${i}`} className="absolute z-[1]" style={{
-                    left: (time_to_min(p.ora_inizio) - f_start) * PPM_FOCUS,
-                    width: (time_to_min(p.ora_fine) - time_to_min(p.ora_inizio)) * PPM_FOCUS,
+                    left: (time_to_min(p.ora_inizio) - f_start) * ppm_focus,
+                    width: (time_to_min(p.ora_fine) - time_to_min(p.ora_inizio)) * ppm_focus,
                     top: 4, bottom: 4,
                     backgroundColor: "#f0ede6",
                     backgroundImage: "radial-gradient(#8a8780 1.2px, transparent 1.6px)",
@@ -1631,8 +1674,8 @@ function PlanningPageInner() {
                     key={`pick${i}`}
                     className="absolute z-[5] cursor-pointer hover:opacity-80"
                     style={{
-                      left: (ps.start - f_start) * PPM_FOCUS,
-                      width: (ps.end - ps.start) * PPM_FOCUS,
+                      left: (ps.start - f_start) * ppm_focus,
+                      width: (ps.end - ps.start) * ppm_focus,
                       top: 4, bottom: 4,
                       background: "rgba(72,187,120,0.25)",
                       border: "2px dashed #48BB78",
@@ -1652,7 +1695,7 @@ function PlanningPageInner() {
                     const istr_ids: string[] = c.istruttori_ids ?? [];
                     const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
                     const colore = first_istr?.colore || "#3B82F6";
-                    const w_px = (ce - cs) * PPM_FOCUS;
+                    const w_px = (ce - cs) * ppm_focus;
                     const is_private = (c.tipo || "").toLowerCase() === "privata";
                     const is_selected = selected_corso_id === c.id;
                     const is_conflict = conflict_ids.has(c.id);
@@ -1668,7 +1711,7 @@ function PlanningPageInner() {
                           <div
                             className={`absolute z-[3] rounded flex flex-col justify-center overflow-hidden cursor-pointer ${is_selected ? "ring-2 ring-primary" : ""} ${is_conflict ? "animate-pulse" : ""}`}
                             style={{
-                              left: (cs - f_start) * PPM_FOCUS,
+                              left: (cs - f_start) * ppm_focus,
                               width: w_px,
                               top: ri * ROW_H + 8,
                               height: slot_h,
@@ -1751,8 +1794,8 @@ function PlanningPageInner() {
                     <Tooltip key={`ann-${c.id}`}>
                       <TooltipTrigger asChild>
                         <div className="absolute z-[2] rounded flex items-center px-1 overflow-hidden" style={{
-                          left: (cs - f_start) * PPM_FOCUS,
-                          width: (ce - cs) * PPM_FOCUS,
+                          left: (cs - f_start) * ppm_focus,
+                          width: (ce - cs) * ppm_focus,
                           top: (course_rows.length) * ROW_H + 8,
                           height: 20,
                           background: "#e5e5e5",
@@ -1797,8 +1840,8 @@ function PlanningPageInner() {
                             <div
                               className={`absolute top-1 bottom-1 rounded-sm cursor-pointer flex items-center px-1 overflow-hidden ${is_conflict ? "animate-pulse" : ""}`}
                               style={{
-                                left: (cs - f_start) * PPM_FOCUS,
-                                width: (ce - cs) * PPM_FOCUS,
+                                left: (cs - f_start) * ppm_focus,
+                                width: (ce - cs) * ppm_focus,
                                 background: colore,
                                 border: is_conflict ? "2px solid #DC2626" : "none",
                                 boxShadow: is_conflict ? "0 0 0 2px rgba(220,38,38,0.35)" : undefined,
