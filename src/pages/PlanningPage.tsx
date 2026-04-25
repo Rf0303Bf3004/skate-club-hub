@@ -1569,6 +1569,8 @@ function PlanningPageInner() {
 
     const course_rows = compute_rows(day_corsi_ice);
     const ROW_H = 48;
+    // Altezza della zona ICE (per confinare sfondo ghiaccio + pulizia e impedire overflow su OFF-ICE)
+    const ice_zone_h = (course_rows.length || 1) * ROW_H + 16 + (day_annullati.length > 0 ? 30 : 0);
 
     const f_ticks: number[] = [];
     for (let m = f_start; m <= f_end; m += 60) f_ticks.push(m);
@@ -1636,7 +1638,7 @@ function PlanningPageInner() {
 
             {/* Main grid */}
             <div ref={focus_grid_ref} className="flex-1 overflow-auto p-4" data-grid>
-              <div className="relative" style={{ width: grid_w, minHeight: (course_rows.length || 1) * ROW_H + 60 }}>
+              <div className="relative" style={{ width: grid_w, minHeight: ice_zone_h + (day_corsi_off.length > 0 ? 36 : 16) }}>
                 {/* Hour lines */}
                 {f_ticks.map((t) => (
                   <div key={t} className="absolute top-0 bottom-0 border-l border-border/40" style={{ left: (t - f_start) * ppm_focus }}>
@@ -1644,24 +1646,24 @@ function PlanningPageInner() {
                   </div>
                 ))}
 
-                {/* Background: default grey */}
-                <div className="absolute inset-0" style={{ background: "#f5f4f0", borderRadius: 6 }} />
+                {/* Background: default grey (limitato alla zona ICE) */}
+                <div className="absolute left-0 right-0" style={{ top: 0, height: ice_zone_h, background: "#f5f4f0", borderRadius: 6 }} />
 
-                {/* Ghiaccio slots background */}
+                {/* Ghiaccio slots background (confinati alla zona ICE) */}
                 {day_ghiaccio.map((g: any, i: number) => (
                   <div key={`g${i}`} className="absolute" style={{
                     left: (time_to_min(g.ora_inizio) - f_start) * ppm_focus,
                     width: (time_to_min(g.ora_fine) - time_to_min(g.ora_inizio)) * ppm_focus,
-                    top: 0, bottom: 0, background: "#EEEDFE", borderRadius: 6,
+                    top: 0, height: ice_zone_h, background: "#EEEDFE", borderRadius: 6,
                   }} />
                 ))}
 
-                {/* Pulizia slots */}
+                {/* Pulizia slots (confinati alla zona ICE) */}
                 {day_pulizia.map((p: any, i: number) => (
                   <div key={`p${i}`} className="absolute z-[1]" style={{
                     left: (time_to_min(p.ora_inizio) - f_start) * ppm_focus,
                     width: (time_to_min(p.ora_fine) - time_to_min(p.ora_inizio)) * ppm_focus,
-                    top: 4, bottom: 4,
+                    top: 4, height: ice_zone_h - 8,
                     backgroundColor: "#f0ede6",
                     backgroundImage: "radial-gradient(#8a8780 1.2px, transparent 1.6px)",
                     backgroundSize: "7px 7px",
@@ -1821,7 +1823,10 @@ function PlanningPageInner() {
 
                 {/* Off-ice section (separata dalla timeline ghiaccio) */}
                 {day_corsi_off.length > 0 && (
-                  <div className="absolute left-0 right-0" style={{ top: (course_rows.length || 1) * ROW_H + (day_annullati.length > 0 ? 34 : 4), height: 22 }}>
+                  <>
+                    {/* Separatore visivo tra ICE e OFF-ICE */}
+                    <div className="absolute left-0 right-0 z-[2]" style={{ top: ice_zone_h + 2, height: 1, background: "hsl(var(--border))" }} />
+                    <div className="absolute left-0 right-0" style={{ top: ice_zone_h + 6, height: 22 }}>
                     <div className="absolute inset-0" style={{
                       background: "#F3F4F6",
                       border: "1px dashed #9CA3AF",
@@ -1862,7 +1867,8 @@ function PlanningPageInner() {
                         </Tooltip>
                       );
                     })}
-                  </div>
+                    </div>
+                  </>
                 )}
               </div>
             </div>
