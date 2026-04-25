@@ -233,19 +233,10 @@ const AtletaModal: React.FC<{
 
           {/* Livello attuale + Livello in preparazione */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <Field label="Livello attuale">
+             <Field label="Livello attuale">
               <select
                 value={form.livello_attuale}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  set_form((p) => ({
-                    ...p,
-                    livello_attuale: v,
-                    // Se non sblocca la carriera, ripulisci i campi correlati
-                    carriera_artistica: LIVELLI_CARRIERA.includes(v) || v === "Stellina 4" ? p.carriera_artistica : "",
-                    carriera_stile: LIVELLI_CARRIERA.includes(v) || v === "Stellina 4" ? p.carriera_stile : "",
-                  }));
-                }}
+                onChange={(e) => set_val("livello_attuale", e.target.value)}
                 className={input_cls}
               >
                 {LIVELLI_TUTTI.map((l) => (
