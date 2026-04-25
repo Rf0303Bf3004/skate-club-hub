@@ -600,6 +600,9 @@ function PlanningPageInner() {
   const [day_offset, set_day_offset] = useState(0);
   const [build_mode, set_build_mode] = useState(false);
   const [focus_day, set_focus_day] = useState<string | null>(null);
+  const [ppm_focus, set_ppm_focus] = useState<number>(PPM_FOCUS);
+  const [fit_focus, set_fit_focus] = useState<boolean>(true);
+  const focus_grid_ref = React.useRef<HTMLDivElement>(null);
   const [selected_corso_id, set_selected_corso_id] = useState<string | null>(null);
   const [pick_corso, set_pick_corso] = useState<any>(null);
   const [confirm_place, set_confirm_place] = useState<{ corso: any; giorno: string; ora_inizio: string; ora_fine: string } | null>(null);
