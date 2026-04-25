@@ -140,7 +140,7 @@ const AtletaModal: React.FC<{
     set_form((p) => ({ ...p, [k]: v }));
   }, []);
 
-  const is_carriera_attiva = LIVELLI_CARRIERA.includes(form.livello_attuale) || form.livello_attuale === "Stellina 4";
+  
 
   const handle_foto_upload = async (file: File) => {
     set_uploading_foto(true);
@@ -233,19 +233,10 @@ const AtletaModal: React.FC<{
 
           {/* Livello attuale + Livello in preparazione */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <Field label="Livello attuale">
+             <Field label="Livello attuale">
               <select
                 value={form.livello_attuale}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  set_form((p) => ({
-                    ...p,
-                    livello_attuale: v,
-                    // Se non sblocca la carriera, ripulisci i campi correlati
-                    carriera_artistica: LIVELLI_CARRIERA.includes(v) || v === "Stellina 4" ? p.carriera_artistica : "",
-                    carriera_stile: LIVELLI_CARRIERA.includes(v) || v === "Stellina 4" ? p.carriera_stile : "",
-                  }));
-                }}
+                onChange={(e) => set_val("livello_attuale", e.target.value)}
                 className={input_cls}
               >
                 {LIVELLI_TUTTI.map((l) => (
@@ -317,46 +308,6 @@ const AtletaModal: React.FC<{
               </label>
             </div>
           </div>
-
-          {/* Carriera Artistica */}
-          <Field label="Carriera Artistica">
-            <select
-              value={form.carriera_artistica}
-              onChange={(e) => set_val("carriera_artistica", e.target.value)}
-              disabled={!is_carriera_attiva}
-              className={`${input_cls} ${!is_carriera_attiva ? "opacity-40 cursor-not-allowed" : ""}`}
-            >
-              <option value="">Nessuna</option>
-              {LIVELLI_CARRIERA.map((l) => (
-                <option key={l} value={l}>
-                  {l}
-                </option>
-              ))}
-            </select>
-            {!is_carriera_attiva && (
-              <p className="text-xs text-muted-foreground italic mt-1">Si sblocca dopo Stellina 4</p>
-            )}
-          </Field>
-
-          {/* Carriera Stile */}
-          <Field label="Carriera Stile">
-            <select
-              value={form.carriera_stile}
-              onChange={(e) => set_val("carriera_stile", e.target.value)}
-              disabled={!is_carriera_attiva}
-              className={`${input_cls} ${!is_carriera_attiva ? "opacity-40 cursor-not-allowed" : ""}`}
-            >
-              <option value="">Nessuna</option>
-              {LIVELLI_CARRIERA.map((l) => (
-                <option key={l} value={l}>
-                  {l}
-                </option>
-              ))}
-            </select>
-            {!is_carriera_attiva && (
-              <p className="text-xs text-muted-foreground italic mt-1">Si sblocca dopo Stellina 4</p>
-            )}
-          </Field>
 
           <Field label="Ore pista stagione">
             <input
