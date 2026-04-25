@@ -4,7 +4,7 @@ import { supabase, get_current_club_id } from "@/lib/supabase";
 import { use_corsi, use_istruttori, use_stagioni, use_atleti } from "@/hooks/use-supabase-data";
 import {
   X, Loader2, ChevronLeft, ChevronRight, Plus, Wrench, Eye, Check,
-  ArrowLeft, LayoutGrid, Pencil, Undo2, Mail, Move, AlertTriangle, Calendar, Zap, CheckCircle2, Hammer,
+  ArrowLeft, LayoutGrid, Pencil, Undo2, Mail, Move, AlertTriangle, Calendar, Zap, CheckCircle2, Hammer, Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -25,6 +25,7 @@ import SpostaCorsoDialog from "@/components/planning/SpostaCorsoDialog";
 import AvvisaAtletiDialog from "@/components/planning/AvvisaAtletiDialog";
 import { istruttore_disponibile, compute_exception_diff, type exception_diff_entry } from "@/lib/availability";
 import MeseView from "@/components/planning/MeseView";
+import { use_elimina_corso } from "@/hooks/use-supabase-mutations";
 
 // ── ErrorBoundary ──
 class PlanningErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
@@ -3120,6 +3121,7 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti, 
 function EditCorsoModal({ corso, on_close, istruttori, queryClient, posizionati }: {
   corso: any; on_close: () => void; istruttori: any[]; queryClient: any; posizionati: any[];
 }) {
+  const elimina_corso = use_elimina_corso();
   const [nome, set_nome] = useState(corso.nome || "");
   const [tipo, set_tipo] = useState(corso.tipo || "");
   const [istr_id, set_istr_id] = useState((corso.istruttori_ids ?? [])[0] || "");
@@ -3130,6 +3132,19 @@ function EditCorsoModal({ corso, on_close, istruttori, queryClient, posizionati 
   const [costo, set_costo] = useState<number | string>(corso.costo_mensile ?? "");
   const [note, set_note] = useState(corso.note || "");
   const [saving, set_saving] = useState(false);
+  const [confirm_delete, set_confirm_delete] = useState(false);
+  const master_corso_id = corso.corso_id || corso.id;
+
+  const delete_course = async () => {
+    try {
+      await elimina_corso.mutateAsync(master_corso_id);
+      await queryClient.invalidateQueries({ queryKey: ["planning_corsi_settimana"] });
+      toast.success("Corso eliminato definitivamente");
+      on_close();
+    } catch (e: any) {
+      toast.error(e?.message || "Errore eliminazione corso");
+    }
+  };
 
   const save = async () => {
     set_saving(true);
@@ -3167,13 +3182,13 @@ function EditCorsoModal({ corso, on_close, istruttori, queryClient, posizionati 
           update.ora_inizio = ora_inizio;
           update.ora_fine = ora_fine;
         }
-        const { error } = await supabase.from("corsi").update(update).eq("id", corso.id);
+        const { error } = await supabase.from("corsi").update(update).eq("id", master_corso_id);
         if (error) throw error;
 
         const old_istr = (corso.istruttori_ids ?? [])[0];
         if (istr_id !== old_istr) {
-          if (old_istr) await supabase.from("corsi_istruttori").delete().eq("corso_id", corso.id);
-          if (istr_id) await supabase.from("corsi_istruttori").insert({ corso_id: corso.id, istruttore_id: istr_id });
+          if (old_istr) await supabase.from("corsi_istruttori").delete().eq("corso_id", master_corso_id);
+          if (istr_id) await supabase.from("corsi_istruttori").insert({ corso_id: master_corso_id, istruttore_id: istr_id });
         }
 
         await queryClient.invalidateQueries({ queryKey: ["corsi"] });
@@ -3240,8 +3255,27 @@ function EditCorsoModal({ corso, on_close, istruttori, queryClient, posizionati 
           <div><Label className="text-xs">Note</Label><Input value={note} onChange={(e) => set_note(e.target.value)} /></div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={on_close}>Annulla</Button>
-          <Button onClick={save} disabled={saving}>{saving && <Loader2 className="h-4 w-4 animate-spin mr-1" />}Salva</Button>
+          <div className="flex w-full flex-col gap-2">
+            {confirm_delete ? (
+              <div className="rounded-md border border-destructive/30 bg-destructive/10 p-2 space-y-2">
+                <p className="text-xs font-medium text-destructive">Eliminare definitivamente questo corso?</p>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => set_confirm_delete(false)} disabled={elimina_corso.isPending}>No</Button>
+                  <Button variant="destructive" size="sm" className="flex-1" onClick={delete_course} disabled={elimina_corso.isPending}>
+                    {elimina_corso.isPending && <Loader2 className="h-4 w-4 animate-spin mr-1" />}Elimina
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button variant="destructive" onClick={() => set_confirm_delete(true)} disabled={saving || elimina_corso.isPending} className="w-full justify-start gap-2">
+                <Trash2 className="h-4 w-4" /> Elimina corso
+              </Button>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={on_close}>Annulla</Button>
+              <Button onClick={save} disabled={saving || elimina_corso.isPending}>{saving && <Loader2 className="h-4 w-4 animate-spin mr-1" />}Salva</Button>
+            </div>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
