@@ -22,6 +22,7 @@ import {
   Clock,
   ChevronDown,
   ChevronUp,
+  Pencil,
 } from "lucide-react";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
@@ -193,10 +194,29 @@ const CountdownBadge: React.FC<{ data: string }> = ({ data }) => {
 };
 
 // ─── Modal nuova gara ──────────────────────────────────────
-const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+const GaraModal: React.FC<{ onClose: () => void; gara_iniziale?: any | null }> = ({ onClose, gara_iniziale }) => {
   const { t } = useI18n();
   const queryClient = useQueryClient();
-  const [form, set_form] = useState<GaraFormData>(empty_form());
+  const is_edit = !!gara_iniziale?.id;
+  const [form, set_form] = useState<GaraFormData>(() => {
+    if (gara_iniziale) {
+      return {
+        nome: gara_iniziale.nome ?? "",
+        data: gara_iniziale.data ?? "",
+        ora: gara_iniziale.ora ? String(gara_iniziale.ora).slice(0, 5) : "",
+        localita: gara_iniziale.luogo ?? gara_iniziale.localita ?? "",
+        indirizzo: gara_iniziale.indirizzo ?? "",
+        club_ospitante: gara_iniziale.club_ospitante ?? "",
+        livello_minimo: gara_iniziale.livello_minimo || "Pulcini",
+        carriera: gara_iniziale.carriera || "Artistica",
+        costo_iscrizione: gara_iniziale.costo_iscrizione != null ? String(gara_iniziale.costo_iscrizione) : "",
+        costo_accompagnamento: gara_iniziale.costo_accompagnamento != null ? String(gara_iniziale.costo_accompagnamento) : "",
+        note: gara_iniziale.note ?? "",
+        tipo: "gara",
+      };
+    }
+    return empty_form();
+  });
   const [saving, set_saving] = useState(false);
 
   const upd = (k: keyof GaraFormData, v: string) => set_form((p) => ({ ...p, [k]: v }));
@@ -216,18 +236,29 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     }
     set_saving(true);
     try {
-      const { error } = await (supabase as any)
-        .from("gare_calendario")
-        .insert({
-          club_id: get_current_club_id(),
-          nome: form.nome.trim(),
-          data: form.data,
-          luogo: form.localita.trim() || null,
-        })
-        .select();
+      const payload: any = {
+        nome: form.nome.trim(),
+        data: form.data,
+        ora: form.ora || null,
+        luogo: form.localita.trim() || null,
+        indirizzo: form.indirizzo.trim() || "",
+        club_ospitante: form.club_ospitante.trim() || "",
+        livello_minimo: form.livello_minimo || "",
+        carriera: form.carriera || "Entrambe",
+        costo_iscrizione: form.costo_iscrizione ? Number(form.costo_iscrizione) : 0,
+        costo_accompagnamento: form.costo_accompagnamento ? Number(form.costo_accompagnamento) : 0,
+        note: form.note ?? "",
+      };
+      let error: any = null;
+      if (is_edit) {
+        ({ error } = await (supabase as any).from("gare_calendario").update(payload).eq("id", gara_iniziale.id));
+      } else {
+        payload.club_id = get_current_club_id();
+        ({ error } = await (supabase as any).from("gare_calendario").insert(payload).select());
+      }
       if (error) throw error;
       await queryClient.invalidateQueries({ queryKey: ["gare"] });
-      toast({ title: "Gara creata con successo!" });
+      toast({ title: is_edit ? "Gara aggiornata!" : "Gara creata con successo!" });
       onClose();
     } catch (err: any) {
       toast({
@@ -771,6 +802,7 @@ const CompetitionsPage: React.FC = () => {
 
   const [selected_id, set_selected_id] = useState<string | null>(null);
   const [show_modal, set_show_modal] = useState(false);
+  const [edit_gara, set_edit_gara] = useState<any | null>(null);
   const [confirm_delete, set_confirm_delete] = useState(false);
   const [show_iscrizione, set_show_iscrizione] = useState(false);
   const [risultato_iscrizione, set_risultato_iscrizione] = useState<any>(null);
@@ -829,6 +861,7 @@ const CompetitionsPage: React.FC = () => {
     const passata = is_passata(selected.data);
     return (
       <>
+        {edit_gara && <GaraModal gara_iniziale={edit_gara} onClose={() => set_edit_gara(null)} />}
         {show_iscrizione && !passata && (
           <IscrizioneModal
             gara={selected}
@@ -866,6 +899,14 @@ const CompetitionsPage: React.FC = () => {
               <ArrowLeft className="w-4 h-4 mr-2" /> {t("gare")}
             </Button>
             <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => set_edit_gara(selected)}
+                className="text-muted-foreground hover:text-foreground gap-1.5"
+              >
+                <Pencil className="w-4 h-4" /> Modifica
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"
