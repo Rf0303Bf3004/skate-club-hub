@@ -1486,6 +1486,34 @@ function PlanningPageInner() {
     set_confirm_place(null);
   };
 
+  // Reset zoom a "fit" quando cambio il giorno in focus
+  useEffect(() => {
+    if (focus_day) set_fit_focus(true);
+  }, [focus_day]);
+
+  // Calcolo "Adatta": misura larghezza container e adegua ppm_focus al range orario del giorno
+  useLayoutEffect(() => {
+    if (!focus_day || !fit_focus) return;
+    const el = focus_grid_ref.current;
+    if (!el) return;
+    const day_items = [
+      ...slots.filter((s: any) => s.giorno === focus_day),
+      ...posizionati.filter((c: any) => c.giorno === focus_day),
+    ];
+    let fs = 24 * 60, fe = 0;
+    day_items.forEach((s: any) => {
+      fs = Math.min(fs, time_to_min(s.ora_inizio));
+      fe = Math.max(fe, time_to_min(s.ora_fine));
+    });
+    if (fs >= fe) { fs = 6 * 60; fe = 22 * 60; }
+    fs = Math.floor(fs / 60) * 60;
+    fe = Math.ceil(fe / 60) * 60;
+    const total = fe - fs;
+    const avail = Math.max(200, el.clientWidth - 32);
+    const next = Math.max(2, Math.min(20, +(avail / total).toFixed(2)));
+    set_ppm_focus(next);
+  }, [focus_day, fit_focus, slots, posizionati]);
+
   // ── Loading ──
   if (loading) {
     return <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
