@@ -1823,7 +1823,10 @@ function PlanningPageInner() {
 
                 {/* Off-ice section (separata dalla timeline ghiaccio) */}
                 {day_corsi_off.length > 0 && (
-                  <div className="absolute left-0 right-0" style={{ top: (course_rows.length || 1) * ROW_H + (day_annullati.length > 0 ? 34 : 4), height: 22 }}>
+                  <>
+                    {/* Separatore visivo tra ICE e OFF-ICE */}
+                    <div className="absolute left-0 right-0 z-[2]" style={{ top: ice_zone_h + 2, height: 1, background: "hsl(var(--border))" }} />
+                    <div className="absolute left-0 right-0" style={{ top: ice_zone_h + 6, height: 22 }}>
                     <div className="absolute inset-0" style={{
                       background: "#F3F4F6",
                       border: "1px dashed #9CA3AF",
