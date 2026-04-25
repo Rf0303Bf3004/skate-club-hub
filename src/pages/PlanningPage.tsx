@@ -4,7 +4,7 @@ import { supabase, get_current_club_id } from "@/lib/supabase";
 import { use_corsi, use_istruttori, use_stagioni, use_atleti } from "@/hooks/use-supabase-data";
 import {
   X, Loader2, ChevronLeft, ChevronRight, Plus, Wrench, Eye, Check,
-  ArrowLeft, LayoutGrid, Pencil, Undo2, Mail, Move, AlertTriangle, Calendar, Zap, CheckCircle2, Hammer,
+  ArrowLeft, LayoutGrid, Pencil, Undo2, Mail, Move, AlertTriangle, Calendar, Zap, CheckCircle2, Hammer, Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -25,6 +25,7 @@ import SpostaCorsoDialog from "@/components/planning/SpostaCorsoDialog";
 import AvvisaAtletiDialog from "@/components/planning/AvvisaAtletiDialog";
 import { istruttore_disponibile, compute_exception_diff, type exception_diff_entry } from "@/lib/availability";
 import MeseView from "@/components/planning/MeseView";
+import { use_elimina_corso } from "@/hooks/use-supabase-mutations";
 
 // ── ErrorBoundary ──
 class PlanningErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
