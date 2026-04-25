@@ -1,12 +1,16 @@
-// Re-export del client Supabase managed da Lovable Cloud.
-// NON istanziare un client diverso qui: il file src/integrations/supabase/client.ts
-// è autogenerato e punta al backend reale del progetto.
-import { supabase } from "@/integrations/supabase/client";
+import { createClient } from "@supabase/supabase-js";
 
-export { supabase };
+// Backend di Lovable Cloud (project ref: mdlfhdyyzrxppamlzepd) — questo è il
+// database reale del progetto. Il vecchio progetto cpa-ascona (urbctwvdlovgodjpyiib)
+// è stato abbandonato.
+const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL as string) ||
+  "https://mdlfhdyyzrxppamlzepd.supabase.co";
+const SUPABASE_ANON_KEY = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string) ||
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kbGZoZHl5enJ4cHBhbWx6ZXBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2OTY1MTMsImV4cCI6MjA5MDI3MjUxM30.0zNGzy8aPM0rD1qLfWSOchKU0w8RxozS0sBS-zknxoc";
+
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Club di default: "Stella del Ghiaccio ASD" (unico club seed presente nel DB).
-// In futuro il club può essere risolto dal profilo utente autenticato.
 const DEFAULT_CLUB_ID = "00030001-0000-0000-0000-000000000001";
 
 export const DEMO_CLUB_ID = "00000000-0000-0000-0000-000000000002";
