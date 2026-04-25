@@ -1867,7 +1867,8 @@ function PlanningPageInner() {
                         </Tooltip>
                       );
                     })}
-                  </div>
+                    </div>
+                  </>
                 )}
               </div>
             </div>
