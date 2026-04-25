@@ -1600,7 +1600,7 @@ function PlanningPageInner() {
             )}
 
             {/* Main grid */}
-            <div className="flex-1 overflow-auto p-4" data-grid>
+            <div ref={focus_grid_ref} className="flex-1 overflow-auto p-4" data-grid>
               <div className="relative" style={{ width: grid_w, minHeight: (course_rows.length || 1) * ROW_H + 60 }}>
                 {/* Hour lines */}
                 {f_ticks.map((t) => (
