@@ -1918,6 +1918,30 @@ function PlanningPageInner() {
                   toast.success("Eccezione rimossa: occorrenza ripristinata dal template");
                   await refetchSettimana();
                   set_selected_corso_id(null);
+                 } : undefined}
+                on_delete_privata={(sel?.tipo || "").toLowerCase() === "privata" ? async () => {
+                  const lp_id = sel.lezione_privata_id;
+                  if (!lp_id) {
+                    // Fallback: nessun riferimento, elimina solo la riga di planning
+                    await remove_corso(sel);
+                    return;
+                  }
+                  if (!window.confirm(`Eliminare definitivamente la lezione privata "${sel.nome}"? Verranno rimosse anche tutte le occorrenze settimanali e le iscrizioni atlete.`)) return;
+                  try {
+                    // Cancella tutte le occorrenze settimanali
+                    await supabase.from("planning_private_settimana").delete().eq("lezione_privata_id", lp_id);
+                    // Cancella iscrizioni atlete
+                    await supabase.from("lezioni_private_atlete").delete().eq("lezione_id", lp_id);
+                    // Cancella la lezione privata
+                    const { error } = await supabase.from("lezioni_private").delete().eq("id", lp_id);
+                    if (error) throw error;
+                    toast.success("Lezione privata eliminata definitivamente");
+                    await refetchSettimana();
+                    await queryClient.invalidateQueries({ queryKey: ["lezioni_private_settimana"] });
+                    set_selected_corso_id(null);
+                  } catch (e: any) {
+                    toast.error(e?.message || "Errore eliminazione lezione privata");
+                  }
                 } : undefined}
               />
             )}
@@ -2523,12 +2547,13 @@ function ConfirmPlaceDialog({ confirm, saving, on_confirm, on_cancel }: {
 // ══════════════════════════════════════════════════════════════
 // DETAIL PANEL
 // ══════════════════════════════════════════════════════════════
-function DetailPanel({ corso, warnings, istr_map, atleti, build_mode, exception_diff, on_close, on_remove, on_edit, on_annulla_settimana, on_sposta, on_ripristina_template }: {
+function DetailPanel({ corso, warnings, istr_map, atleti, build_mode, exception_diff, on_close, on_remove, on_edit, on_annulla_settimana, on_sposta, on_ripristina_template, on_delete_privata }: {
   corso: any; warnings?: { hard: string[]; soft: string[] }; istr_map: Record<string, any>; atleti: any[]; build_mode: boolean;
   exception_diff?: exception_diff_entry[];
   on_close: () => void; on_remove: () => void; on_edit: () => void;
   on_annulla_settimana?: () => void; on_sposta?: () => void;
   on_ripristina_template?: () => void;
+  on_delete_privata?: () => void;
 }) {
   const [confirm_restore, set_confirm_restore] = React.useState(false);
   const is_private = (corso.tipo || "").toLowerCase() === "privata";
@@ -2771,6 +2796,16 @@ function DetailPanel({ corso, warnings, istr_map, atleti, build_mode, exception_
           <Button size="sm" variant="outline" className="w-full justify-start text-xs gap-1.5 text-destructive" onClick={on_remove}>
             <Undo2 className="h-3 w-3" /> {corso._is_plan_row ? "Annulla dalla settimana" : "Rimuovi dalla griglia"}
           </Button>
+        </div>
+      )}
+
+      {/* Eliminazione definitiva lezione privata — sempre disponibile */}
+      {is_private && on_delete_privata && (
+        <div className="space-y-1.5 pt-2 border-t border-destructive/30">
+          <Button size="sm" variant="destructive" className="w-full justify-start text-xs gap-1.5" onClick={on_delete_privata}>
+            <Undo2 className="h-3 w-3" /> 🗑️ Elimina lezione privata
+          </Button>
+          <p className="text-[10px] italic text-muted-foreground">Rimuove la lezione privata e tutte le sue occorrenze in modo definitivo.</p>
         </div>
       )}
     </div>
