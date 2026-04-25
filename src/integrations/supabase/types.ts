@@ -1421,6 +1421,69 @@ export type Database = {
         }
         Relationships: []
       }
+      post_season_atlete: {
+        Row: {
+          atleta_id: string
+          club_id: string
+          costo_totale: number | null
+          created_at: string
+          data_fine: string | null
+          data_inizio: string | null
+          disciplina: string | null
+          documenti_url: string | null
+          id: string
+          note: string | null
+          quota_atleta: number | null
+          quota_club: number | null
+          stagione_id: string | null
+          stato_pagamento: string
+          struttura_citta: string | null
+          struttura_contatti: string | null
+          struttura_nome: string
+          updated_at: string
+        }
+        Insert: {
+          atleta_id: string
+          club_id: string
+          costo_totale?: number | null
+          created_at?: string
+          data_fine?: string | null
+          data_inizio?: string | null
+          disciplina?: string | null
+          documenti_url?: string | null
+          id?: string
+          note?: string | null
+          quota_atleta?: number | null
+          quota_club?: number | null
+          stagione_id?: string | null
+          stato_pagamento?: string
+          struttura_citta?: string | null
+          struttura_contatti?: string | null
+          struttura_nome?: string
+          updated_at?: string
+        }
+        Update: {
+          atleta_id?: string
+          club_id?: string
+          costo_totale?: number | null
+          created_at?: string
+          data_fine?: string | null
+          data_inizio?: string | null
+          disciplina?: string | null
+          documenti_url?: string | null
+          id?: string
+          note?: string | null
+          quota_atleta?: number | null
+          quota_club?: number | null
+          stagione_id?: string | null
+          stato_pagamento?: string
+          struttura_citta?: string | null
+          struttura_contatti?: string | null
+          struttura_nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       presenze: {
         Row: {
           club_id: string
