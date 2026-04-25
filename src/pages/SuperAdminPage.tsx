@@ -586,7 +586,7 @@ const SuperAdminPage: React.FC = () => {
       richiede_club: true,
       on_esegui: async () => {
         const { data: gare } = await (supabase as any)
-          .from("gare")
+          .from("gare_calendario")
           .select("id")
           .eq("club_id", selected_club!)
           .eq("archiviata", true);
@@ -598,7 +598,7 @@ const SuperAdminPage: React.FC = () => {
           await supabase.from("iscrizioni_gare").delete().eq("gara_id", g.id);
         }
         const { count } = await (supabase as any)
-          .from("gare")
+          .from("gare_calendario")
           .delete({ count: "exact" })
           .eq("club_id", selected_club!)
           .eq("archiviata", true);

@@ -505,10 +505,10 @@ export function use_upsert_gara() {
       };
       if (data.stagione_id) payload.stagione_id = data.stagione_id;
       if (data.id) {
-        const { error } = await (supabase as any).from("gare").update(payload).eq("id", data.id);
+        const { error } = await (supabase as any).from("gare_calendario").update(payload).eq("id", data.id);
         if (error) throw error;
       } else {
-        const { error } = await (supabase as any).from("gare").insert(payload);
+        const { error } = await (supabase as any).from("gare_calendario").insert(payload);
         if (error) throw error;
       }
     },
@@ -522,7 +522,7 @@ export function use_elimina_gara() {
     mutationFn: async (id: string) => {
       const { error: e1 } = await supabase.from("iscrizioni_gare").delete().eq("gara_id", id);
       if (e1) throw e1;
-      const { error: e2 } = await (supabase as any).from("gare").delete().eq("id", id);
+      const { error: e2 } = await (supabase as any).from("gare_calendario").delete().eq("id", id);
       if (e2) throw e2;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["gare"] }),
