@@ -419,6 +419,8 @@ export function use_elimina_corso() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
+      const { error: e0 } = await supabase.from("planning_corsi_settimana").delete().eq("corso_id", id);
+      if (e0) throw e0;
       const { error: e1 } = await supabase.from("corsi_istruttori").delete().eq("corso_id", id);
       if (e1) throw e1;
       const { error: e2 } = await supabase.from("iscrizioni_corsi").delete().eq("corso_id", id);
@@ -430,7 +432,10 @@ export function use_elimina_corso() {
       const { error: e5 } = await supabase.from("corsi").delete().eq("id", id);
       if (e5) throw e5;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["corsi"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["corsi"] });
+      qc.invalidateQueries({ queryKey: ["planning_corsi_settimana"] });
+    },
   });
 }
 
