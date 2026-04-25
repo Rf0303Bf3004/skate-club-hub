@@ -140,7 +140,7 @@ const AtletaModal: React.FC<{
     set_form((p) => ({ ...p, [k]: v }));
   }, []);
 
-  const is_carriera_attiva = LIVELLI_CARRIERA.includes(form.livello_attuale) || form.livello_attuale === "Stellina 4";
+  
 
   const handle_foto_upload = async (file: File) => {
     set_uploading_foto(true);
