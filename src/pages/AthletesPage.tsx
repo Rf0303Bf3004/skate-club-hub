@@ -80,9 +80,11 @@ const CarrieraBadge: React.FC<{ atleta: any }> = ({ atleta }) => {
 const LivelloBadge: React.FC<{ atleta: any }> = ({ atleta }) => {
   const ha_carriera = !!(atleta.carriera_artistica || atleta.carriera_stile);
   if (ha_carriera) return null;
+  const lv = atleta.livello_attuale || atleta.percorso_amatori || atleta.livello_amatori;
+  if (!lv) return <span className="text-muted-foreground/40">—</span>;
   return (
     <Badge variant="secondary" className="text-xs">
-      {atleta.percorso_amatori || atleta.livello_amatori}
+      {lv}
     </Badge>
   );
 };
