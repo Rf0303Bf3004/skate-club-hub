@@ -64,7 +64,7 @@ const LIVELLO_ORDER: Record<string, number> = {
 };
 
 function get_livello(a: any): string {
-  return a.carriera_artistica || a.carriera_stile || a.percorso_amatori || "Pulcini";
+  return a.carriera_artistica || a.carriera_stile || a.livello_attuale || a.percorso_amatori || "Pulcini";
 }
 
 function livello_rank(a: any): number {
@@ -91,18 +91,23 @@ export function use_atleti() {
 }
 
 function transform_atleta(a: any) {
+  // Compat: il DB ora espone `livello_attuale`/`livello_in_preparazione`,
+  // ma diversi componenti del codebase leggono ancora `percorso_amatori`.
+  const livello_attuale = a.livello_attuale ?? a.percorso_amatori ?? "Pulcini";
   return {
     ...a,
-    // camelCase aliases per il componente
-    percorsoAmatori: a.percorso_amatori || "Pulcini",
+    livello_attuale,
+    livello_in_preparazione: a.livello_in_preparazione ?? null,
+    // alias retrocompatibili
+    percorso_amatori: livello_attuale,
+    percorsoAmatori: livello_attuale,
     carrieraArtistica: a.carriera_artistica || undefined,
     carrieraStile: a.carriera_stile || undefined,
     atletaFederazione: a.atleta_federazione || false,
     dataNascita: a.data_nascita || "",
     orePista: a.ore_pista_stagione ?? 0,
     foto: a.foto_url || undefined,
-    // snake_case originali mantenuti
-    livello_amatori: a.percorso_amatori || "Pulcini",
+    livello_amatori: livello_attuale,
     percorso_amatori_completato: !!(a.carriera_artistica || a.carriera_stile),
     stato: a.attivo ? "attivo" : "inattivo",
     ore_pista_stagione: a.ore_pista_stagione ?? 0,
