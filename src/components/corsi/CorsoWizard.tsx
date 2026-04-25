@@ -158,14 +158,17 @@ export interface CorsoWizardProps {
   corsi: any[];
   on_close: () => void;
   on_save: (data: any) => Promise<void>;
+  on_delete?: () => Promise<void>;
   saving: boolean;
+  deleting?: boolean;
 }
 
-export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, corsi, on_close, on_save, saving }) => {
+export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, corsi, on_close, on_save, on_delete, saving, deleting }) => {
   const is_edit = !!corso?.id;
   const has_planning_init = !!(corso?.giorno && corso?.ora_inizio && corso?.ora_fine);
 
   const [step, set_step] = useState(1);
+  const [confirm_delete, set_confirm_delete] = useState(false);
   const [posiziona_planning, set_posiziona_planning] = useState(is_edit ? has_planning_init : true);
 
   // Carica stagioni del club per pre-valorizzare quella attiva (fix bug stagione_id NULL)
@@ -936,9 +939,27 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
         </div>
 
         <div className="px-6 py-4 border-t border-border flex items-center justify-between flex-shrink-0">
-          <Button variant="ghost" onClick={on_close} disabled={saving}>
-            Annulla
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" onClick={on_close} disabled={saving || !!deleting}>
+              Annulla
+            </Button>
+            {is_edit && on_delete && (
+              confirm_delete ? (
+                <>
+                  <Button variant="outline" size="sm" onClick={() => set_confirm_delete(false)} disabled={!!deleting}>
+                    No
+                  </Button>
+                  <Button variant="destructive" size="sm" onClick={async () => { await on_delete(); }} disabled={!!deleting}>
+                    {deleting ? "..." : "Elimina definitivamente"}
+                  </Button>
+                </>
+              ) : (
+                <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => set_confirm_delete(true)} disabled={saving}>
+                  🗑️ Elimina corso
+                </Button>
+              )
+            )}
+          </div>
           <div className="flex items-center gap-2">
             {step > 1 && (
               <Button variant="outline" onClick={() => set_step((s) => s - 1)} disabled={saving}>

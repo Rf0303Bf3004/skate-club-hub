@@ -2465,7 +2465,21 @@ const CoursesPage: React.FC = () => {
             await handle_save(data);
             set_wizard_open(false);
           }}
+          on_delete={
+            wizard_corso?.id
+              ? async () => {
+                  try {
+                    await elimina.mutateAsync(wizard_corso.id);
+                    set_wizard_open(false);
+                    toast({ title: "🗑️ Corso eliminato correttamente" });
+                  } catch (err: any) {
+                    toast({ title: "Errore eliminazione", description: err?.message, variant: "destructive" });
+                  }
+                }
+              : undefined
+          }
           saving={upsert.isPending}
+          deleting={elimina.isPending}
         />
       )}
 
