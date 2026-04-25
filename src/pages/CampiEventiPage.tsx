@@ -81,16 +81,14 @@ const CampiEventiPage = () => {
           <Tent className="w-8 h-8" /> Campi ed Eventi
         </h1>
         <p className="text-muted-foreground mt-1">
-          Gestisci campi interni con planning dedicato, campi esterni con comunicazioni alle famiglie, report di fine stagione e setup pre-stagione.
+          Gestisci campi interni con planning dedicato e campi esterni con comunicazioni alle famiglie.
         </p>
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className="space-y-4">
-        <TabsList className="grid grid-cols-2 lg:grid-cols-4 w-full">
+        <TabsList className="grid grid-cols-2 w-full">
           <TabsTrigger value="interno" className="gap-2"><Tent className="w-4 h-4" /> Campo Interno</TabsTrigger>
           <TabsTrigger value="esterno" className="gap-2"><MapPin className="w-4 h-4" /> Campo Esterno</TabsTrigger>
-          <TabsTrigger value="post" className="gap-2"><Award className="w-4 h-4" /> Post Season</TabsTrigger>
-          <TabsTrigger value="pre" className="gap-2"><Sparkles className="w-4 h-4" /> Pre Season</TabsTrigger>
         </TabsList>
 
         <TabsContent value="interno">
@@ -98,12 +96,6 @@ const CampiEventiPage = () => {
         </TabsContent>
         <TabsContent value="esterno">
           <CampoEsternoSection eventi={eventi_esterni} />
-        </TabsContent>
-        <TabsContent value="post">
-          <PostSeasonSection />
-        </TabsContent>
-        <TabsContent value="pre">
-          <PreSeasonSection />
         </TabsContent>
       </Tabs>
     </div>
