@@ -309,46 +309,6 @@ const AtletaModal: React.FC<{
             </div>
           </div>
 
-          {/* Carriera Artistica */}
-          <Field label="Carriera Artistica">
-            <select
-              value={form.carriera_artistica}
-              onChange={(e) => set_val("carriera_artistica", e.target.value)}
-              disabled={!is_carriera_attiva}
-              className={`${input_cls} ${!is_carriera_attiva ? "opacity-40 cursor-not-allowed" : ""}`}
-            >
-              <option value="">Nessuna</option>
-              {LIVELLI_CARRIERA.map((l) => (
-                <option key={l} value={l}>
-                  {l}
-                </option>
-              ))}
-            </select>
-            {!is_carriera_attiva && (
-              <p className="text-xs text-muted-foreground italic mt-1">Si sblocca dopo Stellina 4</p>
-            )}
-          </Field>
-
-          {/* Carriera Stile */}
-          <Field label="Carriera Stile">
-            <select
-              value={form.carriera_stile}
-              onChange={(e) => set_val("carriera_stile", e.target.value)}
-              disabled={!is_carriera_attiva}
-              className={`${input_cls} ${!is_carriera_attiva ? "opacity-40 cursor-not-allowed" : ""}`}
-            >
-              <option value="">Nessuna</option>
-              {LIVELLI_CARRIERA.map((l) => (
-                <option key={l} value={l}>
-                  {l}
-                </option>
-              ))}
-            </select>
-            {!is_carriera_attiva && (
-              <p className="text-xs text-muted-foreground italic mt-1">Si sblocca dopo Stellina 4</p>
-            )}
-          </Field>
-
           <Field label="Ore pista stagione">
             <input
               type="number"
