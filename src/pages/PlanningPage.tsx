@@ -1918,6 +1918,30 @@ function PlanningPageInner() {
                   toast.success("Eccezione rimossa: occorrenza ripristinata dal template");
                   await refetchSettimana();
                   set_selected_corso_id(null);
+                 } : undefined}
+                on_delete_privata={(sel?.tipo || "").toLowerCase() === "privata" ? async () => {
+                  const lp_id = sel.lezione_privata_id;
+                  if (!lp_id) {
+                    // Fallback: nessun riferimento, elimina solo la riga di planning
+                    await remove_corso(sel);
+                    return;
+                  }
+                  if (!window.confirm(`Eliminare definitivamente la lezione privata "${sel.nome}"? Verranno rimosse anche tutte le occorrenze settimanali e le iscrizioni atlete.`)) return;
+                  try {
+                    // Cancella tutte le occorrenze settimanali
+                    await supabase.from("planning_private_settimana").delete().eq("lezione_privata_id", lp_id);
+                    // Cancella iscrizioni atlete
+                    await supabase.from("lezioni_private_atlete").delete().eq("lezione_id", lp_id);
+                    // Cancella la lezione privata
+                    const { error } = await supabase.from("lezioni_private").delete().eq("id", lp_id);
+                    if (error) throw error;
+                    toast.success("Lezione privata eliminata definitivamente");
+                    await refetchSettimana();
+                    await queryClient.invalidateQueries({ queryKey: ["lezioni_private_settimana"] });
+                    set_selected_corso_id(null);
+                  } catch (e: any) {
+                    toast.error(e?.message || "Errore eliminazione lezione privata");
+                  }
                 } : undefined}
               />
             )}
