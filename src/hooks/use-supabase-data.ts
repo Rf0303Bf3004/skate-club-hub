@@ -78,7 +78,7 @@ export function use_atleti() {
     enabled: !!get_current_club_id(),
     queryKey: ["atleti", get_current_club_id()],
     queryFn: async () => {
-      const club_id = get_current_club_id(); const { data, error } = await supabase.from("atleti").select("*").or("club_id.eq." + club_id + ",club_appartenenza.eq." + club_id);
+      const club_id = get_current_club_id(); const { data, error } = await supabase.from("atleti").select("*").eq("club_id", club_id);
       if (error) throw error;
       const mapped = (data ?? []).map(transform_atleta);
       return mapped.sort((a, b) => {
