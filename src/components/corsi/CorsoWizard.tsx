@@ -306,6 +306,30 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
 
   // ── Singola fonte di verità condivisa con GrigliaFasceGhiaccio (Step 2) ──
   type Bucket = "ok" | "busy" | "ko";
+
+  // Slot di conflitto derivati dai CORSI MASTER dello stesso giorno (anche
+  // se non ancora pianificati nella settimana). Evita doppia assegnazione
+  // istruttore già a livello di creazione/modifica corso.
+  const conflitti_corsi_master = useMemo(() => {
+    if (!has_slot) return [] as any[];
+    const out: any[] = [];
+    for (const c of (corsi || [])) {
+      if (!c || c.id === corso?.id) continue;
+      if (c.giorno !== form.giorno) continue;
+      if (!c.ora_inizio || !c.ora_fine) continue;
+      const ids: string[] = c.istruttori_ids || [];
+      for (const iid of ids) {
+        out.push({
+          corso_id: c.id,
+          istruttore_id: iid,
+          ora_inizio: c.ora_inizio,
+          ora_fine: c.ora_fine,
+        });
+      }
+    }
+    return out;
+  }, [has_slot, corsi, corso?.id, form.giorno]);
+
   const status_istruttori = useMemo(() => {
     if (!has_slot) return [];
     return calcola_status_istruttori_per_slot({
@@ -313,10 +337,10 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
       giorno: form.giorno,
       ora_inizio: form.ora_inizio,
       ora_fine: form.ora_fine,
-      planning_slots: planning_settimana_corrente as any,
+      planning_slots: [...(planning_settimana_corrente as any[]), ...conflitti_corsi_master],
       corso_id_corrente: corso?.id ?? null,
     });
-  }, [has_slot, form.giorno, form.ora_inizio, form.ora_fine, istruttori_attivi, planning_settimana_corrente, corso?.id]);
+  }, [has_slot, form.giorno, form.ora_inizio, form.ora_fine, istruttori_attivi, planning_settimana_corrente, conflitti_corsi_master, corso?.id]);
 
   const istruttori_selezionabili = useMemo(
     () => (has_slot ? status_istruttori.filter((s) => s.disponibile).map((s) => s.istruttore as any) : istruttori_attivi),
