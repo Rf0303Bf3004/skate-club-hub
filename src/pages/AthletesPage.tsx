@@ -231,43 +231,71 @@ const AtletaModal: React.FC<{
             <DateInput value={form.data_nascita} onChange={(v) => set_val("data_nascita", v)} />
           </Field>
 
-          {/* Livello attuale */}
-          <Field label="Livello attuale">
-            <select
-              value={form.percorso_amatori}
-              onChange={(e) => {
-                const v = e.target.value;
-                set_form((p) => ({
-                  ...p,
-                  percorso_amatori: v,
-                  carriera_artistica: v !== "Stellina 4" ? "" : p.carriera_artistica,
-                  carriera_stile: v !== "Stellina 4" ? "" : p.carriera_stile,
-                  atleta_federazione: v !== "Stellina 4" ? false : p.atleta_federazione,
-                }));
-              }}
-              className={input_cls}
-            >
-              {LIVELLI_COMUNI.map((l) => (
-                <option key={l} value={l}>
-                  {l}
-                </option>
-              ))}
-            </select>
-          </Field>
+          {/* Livello attuale + Livello in preparazione */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <Field label="Livello attuale">
+              <select
+                value={form.livello_attuale}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  set_form((p) => ({
+                    ...p,
+                    livello_attuale: v,
+                    // Se non sblocca la carriera, ripulisci i campi correlati
+                    carriera_artistica: LIVELLI_CARRIERA.includes(v) || v === "Stellina 4" ? p.carriera_artistica : "",
+                    carriera_stile: LIVELLI_CARRIERA.includes(v) || v === "Stellina 4" ? p.carriera_stile : "",
+                  }));
+                }}
+                className={input_cls}
+              >
+                {LIVELLI_TUTTI.map((l) => (
+                  <option key={l} value={l}>{l}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Livello in preparazione">
+              <select
+                value={form.livello_in_preparazione}
+                onChange={(e) => set_val("livello_in_preparazione", e.target.value)}
+                className={input_cls}
+              >
+                <option value="">— Nessuno —</option>
+                {LIVELLI_TUTTI.map((l) => (
+                  <option key={l} value={l}>{l}</option>
+                ))}
+              </select>
+            </Field>
+          </div>
 
-          {/* Status agonistico */}
+          {/* Status atleta: 3 checkbox separati */}
           <div className="space-y-2">
+            <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
+              <input
+                type="checkbox"
+                id="attivo_check_top"
+                checked={form.attivo}
+                onChange={(e) => set_val("attivo", e.target.checked)}
+                className="w-4 h-4 accent-primary"
+              />
+              <label htmlFor="attivo_check_top" className="cursor-pointer">
+                <span className="text-sm font-medium text-foreground">Atleta attiva</span>
+                <span className="block text-xs text-muted-foreground">Iscritta e partecipa alle attività del club</span>
+              </label>
+            </div>
             <div className="flex items-start gap-3 px-3 py-2 bg-muted/30 rounded-lg">
               <input
                 type="checkbox"
                 id="ago_check"
-                checked={form.agonista || form.atleta_federazione}
-                disabled={form.atleta_federazione}
-                onChange={(e) => set_val("agonista", e.target.checked)}
-                className="w-4 h-4 mt-0.5 accent-primary disabled:opacity-60"
+                checked={form.agonista}
+                onChange={(e) => {
+                  const v = e.target.checked;
+                  // Disattivare agonista disattiva anche atleta_federazione
+                  set_form((p) => ({ ...p, agonista: v, atleta_federazione: v ? p.atleta_federazione : false }));
+                }}
+                className="w-4 h-4 mt-0.5 accent-primary"
               />
               <label htmlFor="ago_check" className="cursor-pointer">
-                <span className="text-sm font-medium text-foreground">Atleta agonista</span>
+                <span className="text-sm font-medium text-foreground">Agonista</span>
                 <span className="block text-xs text-muted-foreground">Partecipa a gare federali con licenza agonistica</span>
               </label>
             </div>
@@ -278,6 +306,7 @@ const AtletaModal: React.FC<{
                 checked={form.atleta_federazione}
                 onChange={(e) => {
                   const v = e.target.checked;
+                  // Attivare federazione attiva anche agonista
                   set_form((p) => ({ ...p, atleta_federazione: v, agonista: v ? true : p.agonista }));
                 }}
                 className="w-4 h-4 mt-0.5 accent-primary"
