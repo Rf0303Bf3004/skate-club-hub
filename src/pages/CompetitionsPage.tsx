@@ -223,12 +223,11 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           nome: form.nome.trim(),
           data: form.data,
           luogo: form.localita.trim() || null,
-          tipo: form.tipo || "gara",
         })
         .select();
       if (error) throw error;
       await queryClient.invalidateQueries({ queryKey: ["gare"] });
-      toast({ title: form.tipo === "campo_estivo" ? "Campo estivo creato!" : "Gara creata con successo!" });
+      toast({ title: "Gara creata con successo!" });
       onClose();
     } catch (err: any) {
       toast({
@@ -251,23 +250,12 @@ const GaraModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           </button>
         </div>
         <div className="px-6 py-5 space-y-4">
-          <Field label="Tipo evento *">
-            <select
-              name="tipo"
-              value={form.tipo}
-              onChange={handle_change}
-              className={input_cls}
-            >
-              <option value="gara">Gara</option>
-              <option value="campo_estivo">Campo estivo</option>
-            </select>
-          </Field>
           <Field label={`${t("nome")} *`}>
             <input
               name="nome"
               value={form.nome}
               onChange={handle_change}
-              placeholder={form.tipo === "campo_estivo" ? "es. Campo Estivo Lugano 2025" : "es. Trofeo Invernale 2025"}
+              placeholder="es. Trofeo Invernale 2025"
               className={input_cls}
             />
           </Field>
