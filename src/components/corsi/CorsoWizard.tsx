@@ -168,6 +168,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
   const has_planning_init = !!(corso?.giorno && corso?.ora_inizio && corso?.ora_fine);
 
   const [step, set_step] = useState(1);
+  const [confirm_delete, set_confirm_delete] = useState(false);
   const [posiziona_planning, set_posiziona_planning] = useState(is_edit ? has_planning_init : true);
 
   // Carica stagioni del club per pre-valorizzare quella attiva (fix bug stagione_id NULL)
