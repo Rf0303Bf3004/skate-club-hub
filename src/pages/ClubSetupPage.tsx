@@ -309,9 +309,18 @@ const ClubSetupPage: React.FC = () => {
 
   // Pulizia CRUD
   const add_slot_pulizia = (giorno: string) => {
+    const durata = parseInt(get_ghiaccio_val("durata_pulizia_minuti", 30)) || 30;
+    const start_h = 12;
+    const start_m = 0;
+    const end_total = start_h * 60 + start_m + durata;
+    const eh = Math.floor(end_total / 60);
+    const em = end_total % 60;
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const ora_inizio = `${pad(start_h)}:${pad(start_m)}`;
+    const ora_fine = `${pad(eh)}:${pad(em)}`;
     set_disp_pulizia_local((prev) => ({
       ...prev,
-      [giorno]: [...(prev[giorno] || []), { ora_inizio: "12:00", ora_fine: "12:30" }],
+      [giorno]: [...(prev[giorno] || []), { ora_inizio, ora_fine }],
     }));
   };
 
