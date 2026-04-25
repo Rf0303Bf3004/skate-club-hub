@@ -1184,6 +1184,7 @@ export function use_save_disponibilita() {
       istruttore_id: string;
       disponibilita: Record<string, { ora_inizio: string; ora_fine: string }[]>;
     }) => {
+      const club_id = cid();
       const { error: de } = await supabase
         .from("disponibilita_istruttori")
         .delete()
@@ -1192,7 +1193,7 @@ export function use_save_disponibilita() {
       const rows: any[] = [];
       for (const [giorno, slots] of Object.entries(data.disponibilita)) {
         for (const s of slots)
-          rows.push({ istruttore_id: data.istruttore_id, giorno, ora_inizio: s.ora_inizio, ora_fine: s.ora_fine });
+          rows.push({ club_id, istruttore_id: data.istruttore_id, giorno, ora_inizio: s.ora_inizio, ora_fine: s.ora_fine });
       }
       if (rows.length > 0) {
         const { error } = await supabase.from("disponibilita_istruttori").insert(rows);
