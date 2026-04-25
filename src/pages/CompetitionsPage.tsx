@@ -861,6 +861,7 @@ const CompetitionsPage: React.FC = () => {
     const passata = is_passata(selected.data);
     return (
       <>
+        {edit_gara && <GaraModal gara_iniziale={edit_gara} onClose={() => set_edit_gara(null)} />}
         {show_iscrizione && !passata && (
           <IscrizioneModal
             gara={selected}
