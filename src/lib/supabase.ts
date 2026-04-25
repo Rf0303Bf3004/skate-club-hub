@@ -1,16 +1,18 @@
-import { createClient } from "@supabase/supabase-js";
+// Re-export del client Supabase managed da Lovable Cloud.
+// NON istanziare un client diverso qui: il file src/integrations/supabase/client.ts
+// è autogenerato e punta al backend reale del progetto.
+import { supabase } from "@/integrations/supabase/client";
 
-const SUPABASE_URL = "https://urbctwvdlovgodjpyiib.supabase.co";
-const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVyYmN0d3ZkbG92Z29kanB5aWliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwNzUwMjgsImV4cCI6MjA4ODY1MTAyOH0.Fgc8ZfvMvMhtTtTgTZ8ABHM-iVky3wqTnoTTvESQq8I";
+export { supabase };
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Club di default: "Stella del Ghiaccio ASD" (unico club seed presente nel DB).
+// In futuro il club può essere risolto dal profilo utente autenticato.
+const DEFAULT_CLUB_ID = "00030001-0000-0000-0000-000000000001";
 
 export const DEMO_CLUB_ID = "00000000-0000-0000-0000-000000000002";
 
-// Oggetto con riferimento mutabile — le funzioni leggono sempre il valore aggiornato
 const club_state = {
-  current_id: "",
+  current_id: DEFAULT_CLUB_ID,
 };
 
 export function set_current_club_id(id: string) {
@@ -21,5 +23,4 @@ export function get_current_club_id(): string {
   return club_state.current_id;
 }
 
-// Esporta CURRENT_CLUB_ID come valore leggibile (usare get_current_club_id() per il valore aggiornato)
 export const CURRENT_CLUB_ID = club_state.current_id;
