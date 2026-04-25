@@ -1599,6 +1599,12 @@ function PlanningPageInner() {
             )}
             {pick_corso && <Badge variant="outline" className="border-primary text-primary text-xs">Selezionato: {pick_corso.nome}</Badge>}
             <span className="text-sm text-muted-foreground">{(day_ice_min / 60).toFixed(1)}h ghiaccio</span>
+            <div className="flex items-center gap-1 border border-border rounded-md px-1 py-0.5 bg-background">
+              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => change_zoom(-1)} title="Zoom -">−</Button>
+              <span className="text-xs text-muted-foreground tabular-nums w-10 text-center">{Math.round((ppm_focus / PPM_FOCUS) * 100)}%</span>
+              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => change_zoom(1)} title="Zoom +">+</Button>
+              <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => set_fit_focus(true)} title="Adatta alla finestra">Adatta</Button>
+            </div>
             {build_mode && (
               <Button size="sm" variant="outline" onClick={() => set_slot_manager_open(!slot_manager_open)}>
                 <LayoutGrid className="h-4 w-4 mr-1" /> Slot ghiaccio
