@@ -938,9 +938,27 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
         </div>
 
         <div className="px-6 py-4 border-t border-border flex items-center justify-between flex-shrink-0">
-          <Button variant="ghost" onClick={on_close} disabled={saving}>
-            Annulla
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" onClick={on_close} disabled={saving || !!deleting}>
+              Annulla
+            </Button>
+            {is_edit && on_delete && (
+              confirm_delete ? (
+                <>
+                  <Button variant="outline" size="sm" onClick={() => set_confirm_delete(false)} disabled={!!deleting}>
+                    No
+                  </Button>
+                  <Button variant="destructive" size="sm" onClick={async () => { await on_delete(); }} disabled={!!deleting}>
+                    {deleting ? "..." : "Elimina definitivamente"}
+                  </Button>
+                </>
+              ) : (
+                <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => set_confirm_delete(true)} disabled={saving}>
+                  🗑️ Elimina corso
+                </Button>
+              )
+            )}
+          </div>
           <div className="flex items-center gap-2">
             {step > 1 && (
               <Button variant="outline" onClick={() => set_step((s) => s - 1)} disabled={saving}>
