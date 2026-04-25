@@ -801,6 +801,7 @@ const CompetitionsPage: React.FC = () => {
 
   const [selected_id, set_selected_id] = useState<string | null>(null);
   const [show_modal, set_show_modal] = useState(false);
+  const [edit_gara, set_edit_gara] = useState<any | null>(null);
   const [confirm_delete, set_confirm_delete] = useState(false);
   const [show_iscrizione, set_show_iscrizione] = useState(false);
   const [risultato_iscrizione, set_risultato_iscrizione] = useState<any>(null);
@@ -896,6 +897,14 @@ const CompetitionsPage: React.FC = () => {
               <ArrowLeft className="w-4 h-4 mr-2" /> {t("gare")}
             </Button>
             <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => set_edit_gara(selected)}
+                className="text-muted-foreground hover:text-foreground gap-1.5"
+              >
+                <Pencil className="w-4 h-4" /> Modifica
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"
