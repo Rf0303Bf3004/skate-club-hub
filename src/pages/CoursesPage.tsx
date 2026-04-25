@@ -2590,6 +2590,23 @@ const CoursesPage: React.FC = () => {
                           )}
                           {c.tipo && <Badge variant="secondary" className="text-xs flex-shrink-0">{c.tipo}</Badge>}
                           <span className="text-xs text-muted-foreground flex-shrink-0">{(c.atleti_ids||[]).length} iscritti</span>
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (!window.confirm(`Eliminare il corso "${c.nome}"? Questa azione non è reversibile.`)) return;
+                              try {
+                                await elimina.mutateAsync(c.id);
+                                toast({ title: "🗑️ Corso eliminato" });
+                              } catch (err: any) {
+                                toast({ title: "Errore eliminazione", description: err?.message, variant: "destructive" });
+                              }
+                            }}
+                            className="text-muted-foreground hover:text-destructive p-1 rounded flex-shrink-0"
+                            title="Elimina corso"
+                            aria-label="Elimina corso"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       );
                     })}
