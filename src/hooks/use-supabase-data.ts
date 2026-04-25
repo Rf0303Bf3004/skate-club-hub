@@ -273,7 +273,7 @@ export function use_gare() {
     queryKey: ["gare", get_current_club_id()],
     queryFn: async () => {
       const [gare_res, isc_res, ris_res] = await Promise.all([
-        (supabase as any).from("gare").select("*").eq("club_id", get_current_club_id()).order("data"),
+        (supabase as any).from("gare_calendario").select("*").eq("club_id", get_current_club_id()).order("data"),
         supabase.from("iscrizioni_gare").select("*"),
         supabase.from("risultati_gara").select("*"),
       ]);
