@@ -2798,6 +2798,16 @@ function DetailPanel({ corso, warnings, istr_map, atleti, build_mode, exception_
           </Button>
         </div>
       )}
+
+      {/* Eliminazione definitiva lezione privata — sempre disponibile */}
+      {is_private && on_delete_privata && (
+        <div className="space-y-1.5 pt-2 border-t border-destructive/30">
+          <Button size="sm" variant="destructive" className="w-full justify-start text-xs gap-1.5" onClick={on_delete_privata}>
+            <Undo2 className="h-3 w-3" /> 🗑️ Elimina lezione privata
+          </Button>
+          <p className="text-[10px] italic text-muted-foreground">Rimuove la lezione privata e tutte le sue occorrenze in modo definitivo.</p>
+        </div>
+      )}
     </div>
   );
 }
