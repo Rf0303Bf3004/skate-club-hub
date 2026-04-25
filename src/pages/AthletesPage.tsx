@@ -411,10 +411,7 @@ const AtletaModal: React.FC<{
           {/* Dati anagrafici extra */}
           <div className="pt-2 border-t border-border">
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">Dati anagrafici</p>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Luogo di nascita">
-                <input value={form.luogo_nascita} onChange={(e) => set_val("luogo_nascita", e.target.value)} className={input_cls} />
-              </Field>
+            <div className="grid grid-cols-1 gap-3">
               <Field label="Telefono">
                 <input value={form.telefono} onChange={(e) => set_val("telefono", e.target.value)} className={input_cls} />
               </Field>
