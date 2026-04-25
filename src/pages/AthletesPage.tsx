@@ -98,13 +98,15 @@ const AtletaModal: React.FC<{
   saving: boolean;
   deleting: boolean;
 }> = ({ atleta, on_close, on_save, on_delete, saving, deleting }) => {
-  const carriera_attiva = atleta?.percorso_amatori === "Stellina 4" || atleta?.livello_amatori === "Stellina 4";
+  const livello_iniziale =
+    atleta?.livello_attuale || atleta?.percorso_amatori || atleta?.livello_amatori || "Pulcini";
 
   const [form, set_form] = useState({
     nome: atleta?.nome || "",
     cognome: atleta?.cognome || "",
     data_nascita: atleta?.data_nascita?.split("T")[0] || "",
-    percorso_amatori: atleta?.percorso_amatori || atleta?.livello_amatori || "Pulcini",
+    livello_attuale: livello_iniziale,
+    livello_in_preparazione: atleta?.livello_in_preparazione || "",
     carriera_artistica: atleta?.carriera_artistica || "",
     carriera_stile: atleta?.carriera_stile || "",
     ore_pista_stagione: atleta?.ore_pista_stagione || 0,
@@ -124,8 +126,6 @@ const AtletaModal: React.FC<{
     licenza_sis_categoria: atleta?.licenza_sis_categoria || "",
     licenza_sis_disciplina: atleta?.licenza_sis_disciplina || "",
     licenza_sis_validita_a: atleta?.licenza_sis_validita_a?.split("T")[0] || "",
-    
-    luogo_nascita: atleta?.luogo_nascita || "",
     indirizzo_via: atleta?.indirizzo_via || "",
     indirizzo_nap: atleta?.indirizzo_nap || "",
     indirizzo_localita: atleta?.indirizzo_localita || "",
@@ -140,7 +140,7 @@ const AtletaModal: React.FC<{
     set_form((p) => ({ ...p, [k]: v }));
   }, []);
 
-  const is_carriera_attiva = form.percorso_amatori === "Stellina 4";
+  const is_carriera_attiva = LIVELLI_CARRIERA.includes(form.livello_attuale) || form.livello_attuale === "Stellina 4";
 
   const handle_foto_upload = async (file: File) => {
     set_uploading_foto(true);
