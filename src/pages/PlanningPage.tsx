@@ -1638,7 +1638,7 @@ function PlanningPageInner() {
 
             {/* Main grid */}
             <div ref={focus_grid_ref} className="flex-1 overflow-auto p-4" data-grid>
-              <div className="relative" style={{ width: grid_w, minHeight: (course_rows.length || 1) * ROW_H + 60 }}>
+              <div className="relative" style={{ width: grid_w, minHeight: ice_zone_h + (day_corsi_off.length > 0 ? 36 : 16) }}>
                 {/* Hour lines */}
                 {f_ticks.map((t) => (
                   <div key={t} className="absolute top-0 bottom-0 border-l border-border/40" style={{ left: (t - f_start) * ppm_focus }}>
