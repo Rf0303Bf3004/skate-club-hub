@@ -857,36 +857,57 @@ export type Database = {
       }
       gare_calendario: {
         Row: {
+          archiviata: boolean | null
+          carriera: string | null
           club_id: string
+          club_ospitante: string | null
+          costo_accompagnamento: number | null
+          costo_iscrizione: number | null
           created_at: string
           data: string | null
           id: string
+          indirizzo: string | null
           livello_minimo: string | null
           luogo: string | null
           nome: string
           note: string | null
+          ora: string | null
           stagione_id: string | null
         }
         Insert: {
+          archiviata?: boolean | null
+          carriera?: string | null
           club_id: string
+          club_ospitante?: string | null
+          costo_accompagnamento?: number | null
+          costo_iscrizione?: number | null
           created_at?: string
           data?: string | null
           id?: string
+          indirizzo?: string | null
           livello_minimo?: string | null
           luogo?: string | null
           nome?: string
           note?: string | null
+          ora?: string | null
           stagione_id?: string | null
         }
         Update: {
+          archiviata?: boolean | null
+          carriera?: string | null
           club_id?: string
+          club_ospitante?: string | null
+          costo_accompagnamento?: number | null
+          costo_iscrizione?: number | null
           created_at?: string
           data?: string | null
           id?: string
+          indirizzo?: string | null
           livello_minimo?: string | null
           luogo?: string | null
           nome?: string
           note?: string | null
+          ora?: string | null
           stagione_id?: string | null
         }
         Relationships: []
