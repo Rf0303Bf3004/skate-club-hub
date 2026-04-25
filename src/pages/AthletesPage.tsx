@@ -514,18 +514,6 @@ const AtletaModal: React.FC<{
             </div>
           </div>
 
-          <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
-            <input
-              type="checkbox"
-              id="attivo_check"
-              checked={form.attivo}
-              onChange={(e) => set_val("attivo", e.target.checked)}
-              className="w-4 h-4 accent-primary"
-            />
-            <label htmlFor="attivo_check" className="text-sm font-medium text-foreground cursor-pointer">
-              Atleta attiva
-            </label>
-          </div>
 
           <Field label="Note">
             <textarea
