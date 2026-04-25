@@ -1598,7 +1598,7 @@ function PlanningPageInner() {
               <div className="relative" style={{ width: grid_w, minHeight: (course_rows.length || 1) * ROW_H + 60 }}>
                 {/* Hour lines */}
                 {f_ticks.map((t) => (
-                  <div key={t} className="absolute top-0 bottom-0 border-l border-border/40" style={{ left: (t - f_start) * PPM_FOCUS }}>
+                  <div key={t} className="absolute top-0 bottom-0 border-l border-border/40" style={{ left: (t - f_start) * ppm_focus }}>
                     <span className="absolute -top-5 -translate-x-1/2 text-[10px] text-muted-foreground">{min_to_time(t)}</span>
                   </div>
                 ))}
@@ -1609,8 +1609,8 @@ function PlanningPageInner() {
                 {/* Ghiaccio slots background */}
                 {day_ghiaccio.map((g: any, i: number) => (
                   <div key={`g${i}`} className="absolute" style={{
-                    left: (time_to_min(g.ora_inizio) - f_start) * PPM_FOCUS,
-                    width: (time_to_min(g.ora_fine) - time_to_min(g.ora_inizio)) * PPM_FOCUS,
+                    left: (time_to_min(g.ora_inizio) - f_start) * ppm_focus,
+                    width: (time_to_min(g.ora_fine) - time_to_min(g.ora_inizio)) * ppm_focus,
                     top: 0, bottom: 0, background: "#EEEDFE", borderRadius: 6,
                   }} />
                 ))}
@@ -1618,8 +1618,8 @@ function PlanningPageInner() {
                 {/* Pulizia slots */}
                 {day_pulizia.map((p: any, i: number) => (
                   <div key={`p${i}`} className="absolute z-[1]" style={{
-                    left: (time_to_min(p.ora_inizio) - f_start) * PPM_FOCUS,
-                    width: (time_to_min(p.ora_fine) - time_to_min(p.ora_inizio)) * PPM_FOCUS,
+                    left: (time_to_min(p.ora_inizio) - f_start) * ppm_focus,
+                    width: (time_to_min(p.ora_fine) - time_to_min(p.ora_inizio)) * ppm_focus,
                     top: 4, bottom: 4,
                     backgroundColor: "#f0ede6",
                     backgroundImage: "radial-gradient(#8a8780 1.2px, transparent 1.6px)",
@@ -1634,8 +1634,8 @@ function PlanningPageInner() {
                     key={`pick${i}`}
                     className="absolute z-[5] cursor-pointer hover:opacity-80"
                     style={{
-                      left: (ps.start - f_start) * PPM_FOCUS,
-                      width: (ps.end - ps.start) * PPM_FOCUS,
+                      left: (ps.start - f_start) * ppm_focus,
+                      width: (ps.end - ps.start) * ppm_focus,
                       top: 4, bottom: 4,
                       background: "rgba(72,187,120,0.25)",
                       border: "2px dashed #48BB78",
@@ -1655,7 +1655,7 @@ function PlanningPageInner() {
                     const istr_ids: string[] = c.istruttori_ids ?? [];
                     const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
                     const colore = first_istr?.colore || "#3B82F6";
-                    const w_px = (ce - cs) * PPM_FOCUS;
+                    const w_px = (ce - cs) * ppm_focus;
                     const is_private = (c.tipo || "").toLowerCase() === "privata";
                     const is_selected = selected_corso_id === c.id;
                     const is_conflict = conflict_ids.has(c.id);
@@ -1671,7 +1671,7 @@ function PlanningPageInner() {
                           <div
                             className={`absolute z-[3] rounded flex flex-col justify-center overflow-hidden cursor-pointer ${is_selected ? "ring-2 ring-primary" : ""} ${is_conflict ? "animate-pulse" : ""}`}
                             style={{
-                              left: (cs - f_start) * PPM_FOCUS,
+                              left: (cs - f_start) * ppm_focus,
                               width: w_px,
                               top: ri * ROW_H + 8,
                               height: slot_h,
@@ -1754,8 +1754,8 @@ function PlanningPageInner() {
                     <Tooltip key={`ann-${c.id}`}>
                       <TooltipTrigger asChild>
                         <div className="absolute z-[2] rounded flex items-center px-1 overflow-hidden" style={{
-                          left: (cs - f_start) * PPM_FOCUS,
-                          width: (ce - cs) * PPM_FOCUS,
+                          left: (cs - f_start) * ppm_focus,
+                          width: (ce - cs) * ppm_focus,
                           top: (course_rows.length) * ROW_H + 8,
                           height: 20,
                           background: "#e5e5e5",
@@ -1800,8 +1800,8 @@ function PlanningPageInner() {
                             <div
                               className={`absolute top-1 bottom-1 rounded-sm cursor-pointer flex items-center px-1 overflow-hidden ${is_conflict ? "animate-pulse" : ""}`}
                               style={{
-                                left: (cs - f_start) * PPM_FOCUS,
-                                width: (ce - cs) * PPM_FOCUS,
+                                left: (cs - f_start) * ppm_focus,
+                                width: (ce - cs) * ppm_focus,
                                 background: colore,
                                 border: is_conflict ? "2px solid #DC2626" : "none",
                                 boxShadow: is_conflict ? "0 0 0 2px rgba(220,38,38,0.35)" : undefined,
