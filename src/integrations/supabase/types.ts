@@ -1873,6 +1873,47 @@ export type Database = {
         }
         Relationships: []
       }
+      utenti_club: {
+        Row: {
+          attivo: boolean
+          club_id: string | null
+          cognome: string
+          created_at: string
+          id: string
+          nome: string
+          ruolo: string
+          user_id: string
+        }
+        Insert: {
+          attivo?: boolean
+          club_id?: string | null
+          cognome?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          ruolo?: string
+          user_id: string
+        }
+        Update: {
+          attivo?: boolean
+          club_id?: string | null
+          cognome?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          ruolo?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "utenti_club_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
