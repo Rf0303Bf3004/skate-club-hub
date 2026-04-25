@@ -158,10 +158,12 @@ export interface CorsoWizardProps {
   corsi: any[];
   on_close: () => void;
   on_save: (data: any) => Promise<void>;
+  on_delete?: () => Promise<void>;
   saving: boolean;
+  deleting?: boolean;
 }
 
-export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, corsi, on_close, on_save, saving }) => {
+export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, corsi, on_close, on_save, on_delete, saving, deleting }) => {
   const is_edit = !!corso?.id;
   const has_planning_init = !!(corso?.giorno && corso?.ora_inizio && corso?.ora_fine);
 
