@@ -141,7 +141,9 @@ const SpostaCorsoDialog: React.FC<Props> = ({
           .insert({
             settimana_id: planning_corso.settimana_id,
             corso_id: planning_corso.corso_id,
-            sostituisce_id: planning_corso.corso_id,
+            // sostituisce_id deve puntare a un'altra riga di planning_corsi_settimana,
+            // non al corso master. Per la riga "originale annullata" lasciamo null.
+            sostituisce_id: null,
             data: planning_corso.data,
             ora_inizio: planning_corso.ora_inizio,
             ora_fine: planning_corso.ora_fine,
@@ -168,7 +170,8 @@ const SpostaCorsoDialog: React.FC<Props> = ({
           ora_fine,
           istruttore_id: istruttore_id || null,
           annullato: false,
-          sostituisce_id: planning_corso.corso_id,
+          // FK → planning_corsi_settimana.id (occorrenza annullata che stiamo sostituendo)
+          sostituisce_id: original_final_id,
           is_evento_extra: false,
           creato_da: user_id,
         } as any)
