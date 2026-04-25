@@ -1515,7 +1515,7 @@ function PlanningPageInner() {
     f_start = Math.floor(f_start / 60) * 60;
     f_end = Math.ceil(f_end / 60) * 60;
     const f_total = f_end - f_start;
-    const grid_w = f_total * PPM_FOCUS;
+    const grid_w = f_total * ppm_focus;
 
     const compute_rows = (courses: any[]): any[][] => {
       if (!courses.length) return [];
