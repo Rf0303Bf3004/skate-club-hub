@@ -1646,24 +1646,24 @@ function PlanningPageInner() {
                   </div>
                 ))}
 
-                {/* Background: default grey */}
-                <div className="absolute inset-0" style={{ background: "#f5f4f0", borderRadius: 6 }} />
+                {/* Background: default grey (limitato alla zona ICE) */}
+                <div className="absolute left-0 right-0" style={{ top: 0, height: ice_zone_h, background: "#f5f4f0", borderRadius: 6 }} />
 
-                {/* Ghiaccio slots background */}
+                {/* Ghiaccio slots background (confinati alla zona ICE) */}
                 {day_ghiaccio.map((g: any, i: number) => (
                   <div key={`g${i}`} className="absolute" style={{
                     left: (time_to_min(g.ora_inizio) - f_start) * ppm_focus,
                     width: (time_to_min(g.ora_fine) - time_to_min(g.ora_inizio)) * ppm_focus,
-                    top: 0, bottom: 0, background: "#EEEDFE", borderRadius: 6,
+                    top: 0, height: ice_zone_h, background: "#EEEDFE", borderRadius: 6,
                   }} />
                 ))}
 
-                {/* Pulizia slots */}
+                {/* Pulizia slots (confinati alla zona ICE) */}
                 {day_pulizia.map((p: any, i: number) => (
                   <div key={`p${i}`} className="absolute z-[1]" style={{
                     left: (time_to_min(p.ora_inizio) - f_start) * ppm_focus,
                     width: (time_to_min(p.ora_fine) - time_to_min(p.ora_inizio)) * ppm_focus,
-                    top: 4, bottom: 4,
+                    top: 4, height: ice_zone_h - 8,
                     backgroundColor: "#f0ede6",
                     backgroundImage: "radial-gradient(#8a8780 1.2px, transparent 1.6px)",
                     backgroundSize: "7px 7px",
