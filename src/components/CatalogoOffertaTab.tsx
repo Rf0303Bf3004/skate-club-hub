@@ -249,6 +249,33 @@ const CatalogoOffertaTab: React.FC<Props> = ({ club_id, stagione_id }) => {
     set_pacchetti((prev) => prev.map((r, i) => (i === idx ? { ...r, [field]: value } : r)));
   };
 
+  // ── Aggiungi nuovo livello ──
+  const add_livello = async () => {
+    const livelli_esistenti = new Set(livelli.map((l) => l.livello));
+    const prossimo = LIVELLI_ORDINE.find((l) => !livelli_esistenti.has(l)) || "pulcini";
+    try {
+      const { error } = await (supabase as any).from("catalogo_livelli").insert({
+        club_id: resolved_club_id,
+        stagione_id: stagione_id || null,
+        livello: prossimo,
+        iscritti_attuali: 0,
+        max_atleti_pista: 30,
+        max_per_monitrice: 8,
+        lezioni_per_settimana: 1,
+        durata_minuti: 60,
+        costo_annuale: 0,
+        tipo_sessione_default: "standard",
+        atleti_per_area: 0,
+        usa_corsie: false,
+      });
+      if (error) throw error;
+      toast({ title: `✅ Livello "${LIVELLI_LABELS[prossimo] || prossimo}" aggiunto` });
+      queryClient.invalidateQueries({ queryKey: ["catalogo_livelli"] });
+    } catch (e: any) {
+      toast({ title: "Errore aggiunta livello", description: e?.message, variant: "destructive" });
+    }
+  };
+
   if (loading_livelli || loading_pacchetti) {
     return (
       <div className="flex items-center justify-center h-40">
