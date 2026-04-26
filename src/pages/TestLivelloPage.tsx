@@ -268,9 +268,9 @@ export default function TestLivelloPage() {
   const atleti_disponibili = atleti.filter((a) => !convocati_ids.has(a.id));
 
   const get_livello_attuale = (atleta: Atleta) => {
-    if (!selected_test) return "";
-    if (selected_test.tipo === "artistica") return atleta.carriera_artistica || "-";
-    if (selected_test.tipo === "stile") return atleta.carriera_stile || "-";
+    if (!selected_test) return atleta.livello_attuale || "-";
+    if (selected_test.tipo === "artistica") return atleta.carriera_artistica || atleta.livello_attuale || "-";
+    if (selected_test.tipo === "stile") return atleta.carriera_stile || atleta.livello_attuale || "-";
     return atleta.livello_attuale || "-";
   };
 
