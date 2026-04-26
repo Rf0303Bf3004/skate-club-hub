@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { use_gare, use_atleti, use_setup_club, use_stagioni } from "@/hooks/use-supabase-data";
-import { Trophy, Medal } from "lucide-react";
+import { Trophy, Medal, Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface RigaMedagliere {
   atleta_id: string;
@@ -11,6 +12,7 @@ interface RigaMedagliere {
   altre: number;
   punti: number;
   partecipazioni: number;
+  miglior_punteggio: number | null;
 }
 
 const DEFAULT_PUNTI: Record<string, number> = { "1": 10, "2": 7, "3": 5, "4": 3, "5": 2, "6": 1 };
