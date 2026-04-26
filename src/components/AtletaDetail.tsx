@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { Calendar } from "lucide-react";
 import CalendarioAtletaInterattivo from "@/components/CalendarioAtletaInterattivo";
 import InvitoGenitoreModal from "@/components/InvitoGenitoreModal";
