@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Shield, X, Trash2, Upload, ArrowLeft, Printer, Mail } from "lucide-react";
 import AtletaDetail from "@/components/AtletaDetail";
+import AthleteBadges from "@/components/AthleteBadges";
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import InvitoGenitoreModal from "@/components/InvitoGenitoreModal";
@@ -164,9 +165,9 @@ const AtletaModal: React.FC<{
     try {
       const ext = file.name.split(".").pop();
       const path = `${get_current_club_id()}/${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("dischi-audio").upload(path, file, { upsert: true });
+      const { error } = await supabase.storage.from("dischi-musicali").upload(path, file, { upsert: true });
       if (error) throw error;
-      const { data } = supabase.storage.from("dischi-audio").getPublicUrl(path);
+      const { data } = supabase.storage.from("dischi-musicali").getPublicUrl(path);
       set_val("disco_url", data.publicUrl);
       toast({ title: "✅ Disco caricato" });
     } catch (err: any) {
@@ -993,24 +994,10 @@ const AthletesPage: React.FC = () => {
                           )}
                           <div>
                             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                              <p className="font-medium text-foreground">
-                                {a.nome} {a.cognome}
+                              <p className="font-medium text-foreground inline-flex items-center gap-2">
+                                <span>{a.nome} {a.cognome}</span>
+                                <AthleteBadges agonista={a.agonista} atleta_federazione={a.atleta_federazione} />
                               </p>
-                              {a.atleta_federazione ? (
-                                <span
-                                  className="inline-block w-2 h-2 rounded-full ring-1 ring-red-500"
-                                  style={{ backgroundColor: "#D4A74A" }}
-                                  title="Atleta di Federazione"
-                                  aria-label="Atleta di Federazione"
-                                />
-                              ) : a.agonista ? (
-                                <span
-                                  className="inline-block w-2 h-2 rounded-full"
-                                  style={{ backgroundColor: "#D4A74A" }}
-                                  title="Atleta agonista"
-                                  aria-label="Agonista"
-                                />
-                              ) : null}
                             </div>
                           </div>
                         </div>
