@@ -251,6 +251,14 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
 
   const [form, set_form] = useState({
     ...a,
+    // nuovo modello (con fallback dal valore legacy in DB)
+    categoria: a.categoria || (a.carriera_artistica ? "artistica" : a.livello_amatori || /^Stellina/.test(a.livello_attuale || "") ? "amatori" : "pulcini"),
+    livello_amatori: a.livello_amatori || (a.livello_attuale && /^Stellina/.test(a.livello_attuale) ? a.livello_attuale : null),
+    livello_artistica: a.livello_artistica || a.carriera_artistica || null,
+    livello_artistica_in_preparazione: a.livello_artistica_in_preparazione || null,
+    livello_stile: a.livello_stile || a.carriera_stile || null,
+    livello_stile_in_preparazione: a.livello_stile_in_preparazione || null,
+    // legacy (mantenuti per altre tab)
     percorso_amatori: a.percorso_amatori || a.livello_amatori || "Pulcini",
     carriera_artistica: a.carriera_artistica || "",
     carriera_stile: a.carriera_stile || "",
