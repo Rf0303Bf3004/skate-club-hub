@@ -636,8 +636,18 @@ export default function TestLivelloPage() {
           <DialogHeader>
             <DialogTitle>Aggiungi atleti al test</DialogTitle>
           </DialogHeader>
+          <label className="flex items-center gap-2 px-1 pb-2 text-sm cursor-pointer">
+            <Checkbox checked={smart_filter} onCheckedChange={(v) => set_smart_filter(!!v)} />
+            <span className="text-muted-foreground">
+              Filtro intelligente — solo atlete idonee a {selected_test?.livello_accesso || "questo test"}
+            </span>
+          </label>
           {atleti_disponibili.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4">Tutti gli atleti del club sono già convocati a questo test</p>
+            <p className="text-sm text-muted-foreground py-4">
+              {smart_filter
+                ? "Nessuna atleta idonea trovata. Disattiva il filtro intelligente per vedere tutte le atlete."
+                : "Tutte le atlete del club sono già convocate a questo test"}
+            </p>
           ) : (
             <>
               <div className="space-y-1 overflow-y-auto flex-1 -mx-1 px-1">
@@ -673,6 +683,38 @@ export default function TestLivelloPage() {
                 </div>
               </div>
             </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Auto-promo confirmation dialog */}
+      <Dialog open={!!confirm_promo} onOpenChange={(o) => !o && set_confirm_promo(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Aggiornare il livello?</DialogTitle>
+          </DialogHeader>
+          {confirm_promo && (
+            <div className="space-y-4">
+              <p className="text-sm text-foreground">
+                <strong>{confirm_promo.atleta.cognome} {confirm_promo.atleta.nome}</strong> ha superato il test.
+                Vuoi aggiornare automaticamente il suo livello a{" "}
+                <strong>{confirm_promo.livello_target}</strong>?
+              </p>
+              {selected_test?.tipo === "artistica" && confirm_promo.atleta.categoria !== "artistica" && (
+                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-2">
+                  ⚠ L'atleta verrà anche promossa alla categoria <strong>Artistica</strong>.
+                </p>
+              )}
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => set_confirm_promo(null)}>
+                  Non ora
+                </Button>
+                <Button onClick={apply_single_promo}>
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Aggiorna livello
+                </Button>
+              </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>
