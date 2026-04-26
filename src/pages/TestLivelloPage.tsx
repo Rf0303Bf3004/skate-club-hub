@@ -166,19 +166,25 @@ export default function TestLivelloPage() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["test_livello"] });
-      set_view("list");
+      navigate("/test");
       toast.success("Test eliminato");
     },
   });
 
-  const add_atleta = useMutation({
-    mutationFn: async (atleta_id: string) => {
-      const { error } = await supabase
-        .from("test_livello_atleti")
-        .insert({ test_id: selected_test_id!, atleta_id, esito: "in_attesa" } as any);
+  const add_atleti_bulk = useMutation({
+    mutationFn: async (atleta_ids: string[]) => {
+      if (atleta_ids.length === 0) return;
+      const rows = atleta_ids.map((atleta_id) => ({
+        test_id: selected_test_id!, atleta_id, esito: "in_attesa",
+      }));
+      const { error } = await supabase.from("test_livello_atleti").insert(rows as any);
       if (error) throw error;
     },
-    onSuccess: () => refetch_atleti(),
+    onSuccess: (_, vars) => {
+      refetch_atleti();
+      toast.success(`${vars.length} ${vars.length === 1 ? "atleta convocato" : "atlete convocate"}`);
+    },
+    onError: () => toast.error("Errore nell'aggiunta atleti"),
   });
 
   const remove_atleta = useMutation({
@@ -186,7 +192,11 @@ export default function TestLivelloPage() {
       const { error } = await supabase.from("test_livello_atleti").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => refetch_atleti(),
+    onSuccess: () => {
+      refetch_atleti();
+      toast.success("Atleta rimosso dal test");
+    },
+    onError: () => toast.error("Errore nella rimozione"),
   });
 
   const update_esito = useMutation({
