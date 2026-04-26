@@ -406,25 +406,38 @@ const CommunicationsPage: React.FC = () => {
         <h1 className="text-xl font-bold tracking-tight text-foreground">{t('comunicazioni')}</h1>
         <Button className="bg-primary hover:bg-primary/90" onClick={open_new}><Plus className="w-4 h-4 mr-2" /> {t('nuova_comunicazione')}</Button>
       </div>
-      <div className="space-y-4">
-        {comunicazioni.map((c: any) => (
-          <div key={c.id} className="bg-card rounded-xl shadow-card p-5 hover:shadow-card-hover transition-shadow">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex gap-3">
-                <MessageSquare className="w-5 h-5 text-accent shrink-0 mt-0.5" />
-                <div>
-                  <h3 className="font-semibold text-foreground">{c.titolo}</h3>
-                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{c.testo}</p>
+      {comunicazioni.length === 0 ? (
+        <div className="bg-card rounded-xl shadow-card p-12 text-center space-y-4">
+          <MessageSquare className="w-12 h-12 text-muted-foreground/50 mx-auto" />
+          <div className="space-y-1">
+            <h3 className="text-base font-semibold text-foreground">Nessuna comunicazione</h3>
+            <p className="text-sm text-muted-foreground">Crea la tua prima comunicazione per atleti, genitori o iscritti ai corsi.</p>
+          </div>
+          <Button onClick={open_new} className="bg-primary hover:bg-primary/90">
+            <Plus className="w-4 h-4 mr-2" /> {t('nuova_comunicazione')}
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {comunicazioni.map((c: any) => (
+            <div key={c.id} className="bg-card rounded-xl shadow-card p-5 hover:shadow-card-hover transition-shadow">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex gap-3">
+                  <MessageSquare className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="font-semibold text-foreground">{c.titolo}</h3>
+                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{c.testo}</p>
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-xs tabular-nums text-muted-foreground">{c.data ? new Date(c.data + 'T00:00:00').toLocaleDateString('it-CH') : ''}</p>
+                  <Badge variant="secondary" className="text-xs mt-1">{get_destinatari_label(c)}</Badge>
                 </div>
               </div>
-              <div className="text-right shrink-0">
-                <p className="text-xs tabular-nums text-muted-foreground">{c.data ? new Date(c.data + 'T00:00:00').toLocaleDateString('it-CH') : ''}</p>
-                <Badge variant="secondary" className="text-xs mt-1">{get_destinatari_label(c)}</Badge>
-              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       <Dialog open={modal_open} onOpenChange={(o) => !o && set_modal_open(false)}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
