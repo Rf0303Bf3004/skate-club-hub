@@ -586,7 +586,7 @@ export default function TestLivelloPage() {
                       <TableCell className="font-medium">{atleta ? `${atleta.cognome} ${atleta.nome}` : "—"}</TableCell>
                       <TableCell>{atleta ? get_livello_attuale(atleta) : "-"}</TableCell>
                       <TableCell>
-                        <Select value={ta.esito} onValueChange={(v) => update_esito.mutate({ id: ta.id, esito: v })}>
+                        <Select value={ta.esito} onValueChange={(v) => handle_change_esito(ta.id, atleta, v)}>
                           <SelectTrigger className="w-36 h-8 text-xs">
                             <SelectValue />
                           </SelectTrigger>
