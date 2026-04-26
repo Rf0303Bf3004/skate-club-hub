@@ -1900,8 +1900,11 @@ export type Database = {
       test_livello: {
         Row: {
           club_id: string
+          club_ospitante: string | null
+          costo_iscrizione: number | null
           created_at: string
           data: string | null
+          gara_id: string | null
           id: string
           livello_accesso: string | null
           livello_attuale: string | null
@@ -1914,8 +1917,11 @@ export type Database = {
         }
         Insert: {
           club_id: string
+          club_ospitante?: string | null
+          costo_iscrizione?: number | null
           created_at?: string
           data?: string | null
+          gara_id?: string | null
           id?: string
           livello_accesso?: string | null
           livello_attuale?: string | null
@@ -1928,8 +1934,11 @@ export type Database = {
         }
         Update: {
           club_id?: string
+          club_ospitante?: string | null
+          costo_iscrizione?: number | null
           created_at?: string
           data?: string | null
+          gara_id?: string | null
           id?: string
           livello_accesso?: string | null
           livello_attuale?: string | null
@@ -1946,25 +1955,37 @@ export type Database = {
         Row: {
           atleta_id: string
           created_at: string
+          disciplina: string | null
           esito: string
           id: string
+          livello_accesso: string
+          livello_target: string
           note_istruttore: string | null
+          ordine: number
           test_id: string
         }
         Insert: {
           atleta_id: string
           created_at?: string
+          disciplina?: string | null
           esito?: string
           id?: string
+          livello_accesso: string
+          livello_target: string
           note_istruttore?: string | null
+          ordine?: number
           test_id: string
         }
         Update: {
           atleta_id?: string
           created_at?: string
+          disciplina?: string | null
           esito?: string
           id?: string
+          livello_accesso?: string
+          livello_target?: string
           note_istruttore?: string | null
+          ordine?: number
           test_id?: string
         }
         Relationships: [
