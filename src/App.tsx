@@ -99,6 +99,7 @@ const AuthenticatedApp = () => {
           <Route path="/gare" element={<CompetitionsPage />} />
           <Route path="/gare/:id" element={<CompetitionsPage />} />
           <Route path="/test" element={<TestLivelloPage />} />
+          <Route path="/test/:id" element={<TestLivelloPage />} />
           <Route path="/lezioni-private" element={<PrivateLessonsPage />} />
           <Route path="/fatture" element={<InvoicesPage />} />
           <Route path="/comunicazioni" element={<CommunicationsPage />} />

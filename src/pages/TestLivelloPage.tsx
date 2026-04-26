@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useI18n } from "@/lib/i18n";
@@ -28,7 +29,8 @@ type TestAtleta = {
 
 type Atleta = {
   id: string; nome: string; cognome: string; attivo: boolean | null;
-  percorso_amatori: string | null; carriera_artistica: string | null; carriera_stile: string | null;
+  livello_attuale: string | null;
+  carriera_artistica: string | null; carriera_stile: string | null;
 };
 
 const ESITO_OPTIONS = [
@@ -63,9 +65,24 @@ const empty_form = {
 export default function TestLivelloPage() {
   const club_id = get_current_club_id();
   const qc = useQueryClient();
-  const [view, set_view] = useState<"list" | "detail" | "new">("list");
-  const [selected_test_id, set_selected_test_id] = useState<string | null>(null);
+  const route_params = useParams<{ id?: string }>();
+  const navigate = useNavigate();
+  const [view, set_view] = useState<"list" | "detail" | "new">(route_params.id ? "detail" : "list");
+  const [selected_test_id, set_selected_test_id] = useState<string | null>(route_params.id ?? null);
   const [form, set_form] = useState({ ...empty_form });
+
+  // Sync URL → state
+  useEffect(() => {
+    if (route_params.id && route_params.id !== selected_test_id) {
+      set_selected_test_id(route_params.id);
+      set_view("detail");
+    }
+    if (!route_params.id && view === "detail") {
+      set_view("list");
+      set_selected_test_id(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route_params.id]);
 
   // ─── Queries ──────────────────────────────────────────
   const { data: tests = [], isLoading } = useQuery({
@@ -88,7 +105,7 @@ export default function TestLivelloPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("atleti")
-        .select("id, nome, cognome, attivo, percorso_amatori, carriera_artistica, carriera_stile")
+        .select("id, nome, cognome, attivo, livello_attuale, carriera_artistica, carriera_stile")
         .eq("club_id", club_id!)
         .eq("attivo", true)
         .order("cognome");
@@ -149,19 +166,25 @@ export default function TestLivelloPage() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["test_livello"] });
-      set_view("list");
+      navigate("/test");
       toast.success("Test eliminato");
     },
   });
 
-  const add_atleta = useMutation({
-    mutationFn: async (atleta_id: string) => {
-      const { error } = await supabase
-        .from("test_livello_atleti")
-        .insert({ test_id: selected_test_id!, atleta_id, esito: "in_attesa" } as any);
+  const add_atleti_bulk = useMutation({
+    mutationFn: async (atleta_ids: string[]) => {
+      if (atleta_ids.length === 0) return;
+      const rows = atleta_ids.map((atleta_id) => ({
+        test_id: selected_test_id!, atleta_id, esito: "in_attesa",
+      }));
+      const { error } = await supabase.from("test_livello_atleti").insert(rows as any);
       if (error) throw error;
     },
-    onSuccess: () => refetch_atleti(),
+    onSuccess: (_, vars) => {
+      refetch_atleti();
+      toast.success(`${vars.length} ${vars.length === 1 ? "atleta convocato" : "atlete convocate"}`);
+    },
+    onError: () => toast.error("Errore nell'aggiunta atleti"),
   });
 
   const remove_atleta = useMutation({
@@ -169,7 +192,11 @@ export default function TestLivelloPage() {
       const { error } = await supabase.from("test_livello_atleti").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => refetch_atleti(),
+    onSuccess: () => {
+      refetch_atleti();
+      toast.success("Atleta rimosso dal test");
+    },
+    onError: () => toast.error("Errore nella rimozione"),
   });
 
   const update_esito = useMutation({
@@ -189,7 +216,7 @@ export default function TestLivelloPage() {
       const promossi = test_atleti.filter((ta) => ta.esito === "superato");
       const field =
         selected_test.tipo === "artistica" ? "carriera_artistica" :
-        selected_test.tipo === "stile" ? "carriera_stile" : "percorso_amatori";
+        selected_test.tipo === "stile" ? "carriera_stile" : "livello_attuale";
       const carriera_label =
         selected_test.tipo === "amatori" ? "Amatori" :
         selected_test.tipo === "artistica" ? "Artistica" : "Stile";
@@ -201,7 +228,7 @@ export default function TestLivelloPage() {
         if (!atleta) continue;
         const livello_attuale =
           selected_test.tipo === "artistica" ? atleta.carriera_artistica :
-          selected_test.tipo === "stile" ? atleta.carriera_stile : atleta.percorso_amatori;
+          selected_test.tipo === "stile" ? atleta.carriera_stile : atleta.livello_attuale;
         // priorità: livello_accesso esplicito del test, altrimenti next nella progressione
         const livello_target = selected_test.livello_accesso || next_livello(livello_attuale);
         if (!livello_target) continue;
@@ -244,11 +271,20 @@ export default function TestLivelloPage() {
     if (!selected_test) return "";
     if (selected_test.tipo === "artistica") return atleta.carriera_artistica || "-";
     if (selected_test.tipo === "stile") return atleta.carriera_stile || "-";
-    return atleta.percorso_amatori || "-";
+    return atleta.livello_attuale || "-";
   };
 
   // ─── Add Athletes Dialog ─────────────────────────────
   const [show_add, set_show_add] = useState(false);
+  const [selected_for_add, set_selected_for_add] = useState<Set<string>>(new Set());
+  useEffect(() => { if (!show_add) set_selected_for_add(new Set()); }, [show_add]);
+  const toggle_add_selection = (id: string) => {
+    set_selected_for_add((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
 
   // ─── LIST VIEW ────────────────────────────────────────
   if (view === "list") {
@@ -270,7 +306,7 @@ export default function TestLivelloPage() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {tests.map((t) => (
               <Card key={t.id} className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => { set_selected_test_id(t.id); set_view("detail"); }}>
+                onClick={() => navigate(`/test/${t.id}`)}>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base flex items-center justify-between">
                     {t.nome || "Test senza nome"}
@@ -371,13 +407,15 @@ export default function TestLivelloPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 flex-wrap">
-        <Button variant="ghost" size="icon" onClick={() => set_view("list")}>
+        <Button variant="ghost" size="icon" onClick={() => navigate("/test")}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <h1 className="text-2xl font-bold text-foreground">{selected_test?.nome}</h1>
         <Badge variant="outline" className="capitalize">{selected_test?.tipo}</Badge>
         <div className="ml-auto flex gap-2">
-          <Button variant="destructive" size="sm" onClick={() => delete_test.mutate(selected_test_id!)}>
+          <Button variant="destructive" size="sm" onClick={() => {
+            if (window.confirm("Eliminare definitivamente questo test?")) delete_test.mutate(selected_test_id!);
+          }}>
             <Trash2 className="w-4 h-4 mr-1" /> Elimina
           </Button>
         </div>
@@ -446,7 +484,10 @@ export default function TestLivelloPage() {
                         />
                       </TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => remove_atleta.mutate(ta.id)}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
+                          const nome = atleta ? `${atleta.cognome} ${atleta.nome}` : "questa atleta";
+                          if (window.confirm(`Rimuovere ${nome} dal test?`)) remove_atleta.mutate(ta.id);
+                        }}>
                           <Trash2 className="w-3.5 h-3.5 text-destructive" />
                         </Button>
                       </TableCell>
@@ -469,25 +510,47 @@ export default function TestLivelloPage() {
 
       {/* Add Athletes Dialog */}
       <Dialog open={show_add} onOpenChange={set_show_add}>
-        <DialogContent className="max-w-lg max-h-[70vh] overflow-y-auto">
+        <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Aggiungi atleti al test</DialogTitle>
           </DialogHeader>
           {atleti_disponibili.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4">Tutti gli atleti sono già convocati</p>
+            <p className="text-sm text-muted-foreground py-4">Tutti gli atleti del club sono già convocati a questo test</p>
           ) : (
-            <div className="space-y-1">
-              {atleti_disponibili.map((a) => (
-                <button
-                  key={a.id}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-md hover:bg-muted text-sm transition-colors"
-                  onClick={() => add_atleta.mutate(a.id)}
-                >
-                  <span className="font-medium">{a.cognome} {a.nome}</span>
-                  <Plus className="w-4 h-4 text-muted-foreground" />
-                </button>
-              ))}
-            </div>
+            <>
+              <div className="space-y-1 overflow-y-auto flex-1 -mx-1 px-1">
+                {atleti_disponibili.map((a) => {
+                  const checked = selected_for_add.has(a.id);
+                  return (
+                    <label
+                      key={a.id}
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted text-sm cursor-pointer transition-colors"
+                    >
+                      <Checkbox checked={checked} onCheckedChange={() => toggle_add_selection(a.id)} />
+                      <span className="font-medium flex-1">{a.cognome} {a.nome}</span>
+                      <span className="text-xs text-muted-foreground">{get_livello_attuale(a)}</span>
+                    </label>
+                  );
+                })}
+              </div>
+              <div className="flex justify-between items-center pt-3 border-t">
+                <span className="text-sm text-muted-foreground">
+                  {selected_for_add.size} {selected_for_add.size === 1 ? "selezionata" : "selezionate"}
+                </span>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => set_show_add(false)}>Annulla</Button>
+                  <Button
+                    disabled={selected_for_add.size === 0 || add_atleti_bulk.isPending}
+                    onClick={async () => {
+                      await add_atleti_bulk.mutateAsync(Array.from(selected_for_add));
+                      set_show_add(false);
+                    }}
+                  >
+                    Aggiungi {selected_for_add.size > 0 ? `(${selected_for_add.size})` : ""}
+                  </Button>
+                </div>
+              </div>
+            </>
           )}
         </DialogContent>
       </Dialog>
