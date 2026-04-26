@@ -1297,7 +1297,7 @@ const CompetitionsPage: React.FC = () => {
                   gare_future.map((g: any) => (
                     <tr
                       key={g.id}
-                      onClick={() => set_selected_id(g.id)}
+                      onClick={() => navigate(`/gare/${g.id}`)}
                       className="border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors"
                     >
                       <td className="px-4 py-3 font-medium text-foreground">{g.nome}</td>
@@ -1373,7 +1373,7 @@ const CompetitionsPage: React.FC = () => {
                       return (
                         <tr
                           key={g.id}
-                          onClick={() => set_selected_id(g.id)}
+                          onClick={() => navigate(`/gare/${g.id}`)}
                           className="border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors opacity-75 hover:opacity-100"
                         >
                           <td className="px-4 py-3 font-medium text-foreground">{g.nome}</td>
