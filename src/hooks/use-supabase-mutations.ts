@@ -130,7 +130,16 @@ export function use_upsert_atleta() {
   return useMutation({
     mutationFn: async (data: any) => {
       const club_id = cid();
-      const livello_attuale_nuovo = data.livello_attuale || "Pulcini";
+      // Nuovo modello strutturato. Se categoria è valorizzata, derivo
+      // livello_attuale legacy come fallback compatibile per le pagine
+      // che ancora leggono il vecchio campo.
+      const categoria = data.categoria || undefined;
+      const derived_livello_attuale =
+        categoria === "pulcini" ? "Pulcini" :
+        categoria === "amatori" ? (data.livello_amatori || "Stellina 1") :
+        categoria === "artistica" ? (data.livello_artistica || data.livello_amatori || "Interbronzo") :
+        (data.livello_attuale || "Pulcini");
+      const livello_attuale_nuovo = derived_livello_attuale;
       const payload: Record<string, any> = {
         club_id,
         nome: data.nome,
@@ -138,8 +147,16 @@ export function use_upsert_atleta() {
         data_nascita: data.data_nascita,
         livello_attuale: livello_attuale_nuovo,
         livello_in_preparazione: data.livello_in_preparazione || null,
-        carriera_artistica: data.carriera_artistica || null,
-        carriera_stile: data.carriera_stile || null,
+        // legacy (manteniamo per backward compat solo se passati esplicitamente)
+        carriera_artistica: data.carriera_artistica ?? data.livello_artistica ?? null,
+        carriera_stile: data.carriera_stile ?? data.livello_stile ?? null,
+        // nuovo modello
+        ...(categoria !== undefined ? { categoria } : {}),
+        ...(data.livello_amatori !== undefined ? { livello_amatori: data.livello_amatori || null } : {}),
+        ...(data.livello_artistica !== undefined ? { livello_artistica: data.livello_artistica || null } : {}),
+        ...(data.livello_artistica_in_preparazione !== undefined ? { livello_artistica_in_preparazione: data.livello_artistica_in_preparazione || null } : {}),
+        ...(data.livello_stile !== undefined ? { livello_stile: data.livello_stile || null } : {}),
+        ...(data.livello_stile_in_preparazione !== undefined ? { livello_stile_in_preparazione: data.livello_stile_in_preparazione || null } : {}),
         atleta_federazione: !!data.atleta_federazione,
         // gerarchia: federazione implica agonista
         agonista: !!(data.agonista || data.atleta_federazione),
