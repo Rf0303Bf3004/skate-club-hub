@@ -287,7 +287,7 @@ export default function TestLivelloPage() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {tests.map((t) => (
               <Card key={t.id} className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => { set_selected_test_id(t.id); set_view("detail"); }}>
+                onClick={() => navigate(`/test/${t.id}`)}>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base flex items-center justify-between">
                     {t.nome || "Test senza nome"}
