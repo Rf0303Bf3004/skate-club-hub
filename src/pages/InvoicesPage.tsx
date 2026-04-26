@@ -678,8 +678,16 @@ const InvoicesPage: React.FC = () => {
           <div>
             <h1 className="text-xl font-bold tracking-tight text-foreground">{t("fatture")}</h1>
             {totale_da_pagare > 0 && (
-              <p className="text-sm text-muted-foreground mt-0.5">
+              <p
+                className="text-sm text-muted-foreground mt-0.5"
+                title={`${scadute_count} scadute / ${in_arrivo_count} in arrivo`}
+              >
                 Da incassare: <span className="font-bold text-foreground">CHF {totale_da_pagare.toFixed(2)}</span>
+                {scadute_count > 0 && (
+                  <span className="ml-2 inline-flex items-center gap-1 text-xs font-semibold text-red-700">
+                    · {scadute_count} scadute
+                  </span>
+                )}
               </p>
             )}
           </div>
