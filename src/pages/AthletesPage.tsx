@@ -892,23 +892,65 @@ const AthletesPage: React.FC = () => {
           </Button>
         </div>
 
-        {/* Card livelli — 3 sezioni */}
+        {/* Card livelli — 3 sezioni: PULCINI / AMATORI / ARTISTICA */}
         <div className="space-y-2">
-          {/* BASE */}
-          {LIVELLI_COMUNI.some(l => base_count[l] > 0) && (
+          {/* PULCINI — totale unico, niente sotto-livelli */}
+          {pulcini_count > 0 && (
             <div className="flex items-center gap-3">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-20 shrink-0">Base</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-20 shrink-0">
+                Pulcini
+              </span>
               <div className="flex gap-2 overflow-x-auto pb-1">
-                {LIVELLI_COMUNI.filter(l => base_count[l] > 0).map(l => {
-                  const sel = card_filter?.sezione === "base" && card_filter.livello === l;
+                {(() => {
+                  const sel = card_filter?.sezione === "pulcini";
                   return (
-                    <button key={l} onClick={() => {
-                      if (sel) set_card_filter(null);
-                      else { set_card_filter({ sezione: "base", livello: l }); set_level_filter("tutti"); }
-                    }} className={`shrink-0 px-4 py-3 rounded-xl shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md ${
-                      sel ? "border-2 border-blue-500 bg-blue-100" : "border border-blue-200 bg-blue-50"
-                    }`}>
-                      <span className="block text-2xl font-bold text-blue-800">{base_count[l]}</span>
+                    <button
+                      onClick={() => {
+                        if (sel) set_card_filter(null);
+                        else {
+                          set_card_filter({ sezione: "pulcini" });
+                          set_level_filter("tutti");
+                          set_categoria_filter("tutti");
+                        }
+                      }}
+                      className={`shrink-0 px-4 py-3 rounded-xl shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md ${
+                        sel ? "border-2 border-emerald-500 bg-emerald-100" : "border border-emerald-200 bg-emerald-50"
+                      }`}
+                    >
+                      <span className="block text-2xl font-bold text-emerald-800">{pulcini_count}</span>
+                      <span className="block text-xs text-emerald-600 mt-0.5">Totale</span>
+                    </button>
+                  );
+                })()}
+              </div>
+            </div>
+          )}
+
+          {/* AMATORI — breakdown Stellina 1-4 */}
+          {LIVELLI_AMATORI.some((l) => amatori_breakdown[l] > 0) && (
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-20 shrink-0">
+                Amatori
+              </span>
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {LIVELLI_AMATORI.filter((l) => amatori_breakdown[l] > 0).map((l) => {
+                  const sel = card_filter?.sezione === "amatori" && card_filter.livello === l;
+                  return (
+                    <button
+                      key={l}
+                      onClick={() => {
+                        if (sel) set_card_filter(null);
+                        else {
+                          set_card_filter({ sezione: "amatori", livello: l });
+                          set_level_filter("tutti");
+                          set_categoria_filter("tutti");
+                        }
+                      }}
+                      className={`shrink-0 px-4 py-3 rounded-xl shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md ${
+                        sel ? "border-2 border-blue-500 bg-blue-100" : "border border-blue-200 bg-blue-50"
+                      }`}
+                    >
+                      <span className="block text-2xl font-bold text-blue-800">{amatori_breakdown[l]}</span>
                       <span className="block text-xs text-blue-600 mt-0.5">{l}</span>
                     </button>
                   );
@@ -916,44 +958,33 @@ const AthletesPage: React.FC = () => {
               </div>
             </div>
           )}
-          {/* ARTISTICA */}
-          {LIVELLI_CARRIERA.some(l => artistica_count[l] > 0) && (
+
+          {/* ARTISTICA — breakdown carriera (somma artistica + stile) */}
+          {LIVELLI_CARRIERA_NUOVI.some((l) => artistica_breakdown[l] > 0) && (
             <div className="flex items-center gap-3">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-20 shrink-0">Artistica</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-20 shrink-0">
+                Artistica
+              </span>
               <div className="flex gap-2 overflow-x-auto pb-1">
-                {LIVELLI_CARRIERA.filter(l => artistica_count[l] > 0).map(l => {
+                {LIVELLI_CARRIERA_NUOVI.filter((l) => artistica_breakdown[l] > 0).map((l) => {
                   const sel = card_filter?.sezione === "artistica" && card_filter.livello === l;
                   return (
-                    <button key={l} onClick={() => {
-                      if (sel) set_card_filter(null);
-                      else { set_card_filter({ sezione: "artistica", livello: l }); set_level_filter("tutti"); }
-                    }} className={`shrink-0 px-4 py-3 rounded-xl shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md ${
-                      sel ? "border-2 border-purple-500 bg-purple-100" : "border border-purple-200 bg-purple-50"
-                    }`}>
-                      <span className="block text-2xl font-bold text-purple-800">{artistica_count[l]}</span>
+                    <button
+                      key={l}
+                      onClick={() => {
+                        if (sel) set_card_filter(null);
+                        else {
+                          set_card_filter({ sezione: "artistica", livello: l });
+                          set_level_filter("tutti");
+                          set_categoria_filter("tutti");
+                        }
+                      }}
+                      className={`shrink-0 px-4 py-3 rounded-xl shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md ${
+                        sel ? "border-2 border-purple-500 bg-purple-100" : "border border-purple-200 bg-purple-50"
+                      }`}
+                    >
+                      <span className="block text-2xl font-bold text-purple-800">{artistica_breakdown[l]}</span>
                       <span className="block text-xs text-purple-600 mt-0.5">{l}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-          {/* STILE */}
-          {LIVELLI_CARRIERA.some(l => stile_count[l] > 0) && (
-            <div className="flex items-center gap-3">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-20 shrink-0">Stile</span>
-              <div className="flex gap-2 overflow-x-auto pb-1">
-                {LIVELLI_CARRIERA.filter(l => stile_count[l] > 0).map(l => {
-                  const sel = card_filter?.sezione === "stile" && card_filter.livello === l;
-                  return (
-                    <button key={l} onClick={() => {
-                      if (sel) set_card_filter(null);
-                      else { set_card_filter({ sezione: "stile", livello: l }); set_level_filter("tutti"); }
-                    }} className={`shrink-0 px-4 py-3 rounded-xl shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md ${
-                      sel ? "border-2 border-teal-500 bg-teal-100" : "border border-teal-200 bg-teal-50"
-                    }`}>
-                      <span className="block text-2xl font-bold text-teal-800">{stile_count[l]}</span>
-                      <span className="block text-xs text-teal-600 mt-0.5">{l}</span>
                     </button>
                   );
                 })}
