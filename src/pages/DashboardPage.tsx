@@ -1104,6 +1104,11 @@ const DashboardPage: React.FC = () => {
           value={`CHF ${totale_fatture.toLocaleString()}`}
           icon={<CreditCard className="w-5 h-5" />}
           highlight
+          subtitle={
+            fatture_da_pagare.length > 0
+              ? `${fatture_scadute_count} scadute · ${fatture_in_arrivo_count} in arrivo`
+              : undefined
+          }
         />
       </div>
 
