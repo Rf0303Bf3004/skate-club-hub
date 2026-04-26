@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileText, Trash2, X, Printer, Mail } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { get_fattura_stato_ui, get_fattura_stato_label, get_fattura_stato_classes } from "@/lib/fattura-status";
 
 // ─── Swiss QR ─────────────────────────────────────────────
 function genera_swiss_qr_payload(params: {
