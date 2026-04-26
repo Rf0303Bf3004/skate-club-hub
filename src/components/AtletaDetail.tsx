@@ -5,6 +5,7 @@ import CalendarioAtletaInterattivo from "@/components/CalendarioAtletaInterattiv
 import InvitoGenitoreModal from "@/components/InvitoGenitoreModal";
 import StoricoTestAtleta from "@/components/StoricoTestAtleta";
 import DateInput from "@/components/forms/DateInput";
+import AthleteBadges from "@/components/AthleteBadges";
 import { useI18n } from "@/lib/i18n";
 import {
   use_corsi,
@@ -571,11 +572,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
               {form.carriera_stile && (
                 <Badge className="bg-blue-100 text-blue-800 border-0 text-xs">Stile: {form.carriera_stile}</Badge>
               )}
-              {form.atleta_federazione && (
-                <Badge variant="outline" className="gap-1">
-                  <Shield className="w-3 h-3" /> {t("atleta_federazione")}
-                </Badge>
-              )}
+              <AthleteBadges agonista={form.agonista} atleta_federazione={form.atleta_federazione} />
             </div>
           </div>
         </div>
