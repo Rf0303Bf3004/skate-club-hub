@@ -147,8 +147,25 @@ const MedagliereWidget: React.FC<Props> = ({ compact = false, limit }) => {
               {!compact && (
                 <th className="text-center px-2 py-2 text-[10px] font-bold text-muted-foreground uppercase">Altre</th>
               )}
-              <th className="text-right px-3 py-2 text-[10px] font-bold text-primary uppercase tracking-wider">
-                Punti
+              {!compact && (
+                <th className="text-right px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider whitespace-nowrap">
+                  Miglior Punteggio
+                </th>
+              )}
+              <th className="text-right px-3 py-2 text-[10px] font-bold text-primary uppercase tracking-wider whitespace-nowrap">
+                <span className="inline-flex items-center gap-1 justify-end">
+                  Punti Classifica
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="w-3 h-3 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs text-xs">
+                        Punteggio interno del medagliere club, calcolato dalla posizione finale: {tooltip_formula}.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </span>
               </th>
             </tr>
           </thead>
