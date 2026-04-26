@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { use_gare, use_atleti, use_setup_club, use_stagioni } from "@/hooks/use-supabase-data";
-import { Trophy, Medal } from "lucide-react";
+import { Trophy, Medal, Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface RigaMedagliere {
   atleta_id: string;
@@ -11,6 +12,7 @@ interface RigaMedagliere {
   altre: number;
   punti: number;
   partecipazioni: number;
+  miglior_punteggio: number | null;
 }
 
 const DEFAULT_PUNTI: Record<string, number> = { "1": 10, "2": 7, "3": 5, "4": 3, "5": 2, "6": 1 };
@@ -37,9 +39,17 @@ const MedagliereWidget: React.FC<Props> = ({ compact = false, limit }) => {
   const { data: stagioni = [] } = use_stagioni();
 
   const stagione_attiva = useMemo(() => stagioni.find((s: any) => s.attiva), [stagioni]);
+  const punti_table = useMemo(() => get_punti_table(setup), [setup]);
+
+  const tooltip_formula = useMemo(() => {
+    const ord = (n: string) => `${n}°`;
+    return Object.entries(punti_table)
+      .sort((a, b) => Number(a[0]) - Number(b[0]))
+      .map(([pos, pts]) => `${ord(pos)} = ${pts} pt`)
+      .join(" · ");
+  }, [punti_table]);
 
   const righe = useMemo<RigaMedagliere[]>(() => {
-    const punti_table = get_punti_table(setup);
     const map = new Map<string, RigaMedagliere>();
 
     const data_inizio = stagione_attiva?.data_inizio;
@@ -65,6 +75,7 @@ const MedagliereWidget: React.FC<Props> = ({ compact = false, limit }) => {
             altre: 0,
             punti: 0,
             partecipazioni: 0,
+            miglior_punteggio: null,
           });
         }
         const r = map.get(key)!;
@@ -77,6 +88,12 @@ const MedagliereWidget: React.FC<Props> = ({ compact = false, limit }) => {
         const pos = ai.posizione ? String(Number(ai.posizione)) : null;
         if (pos && punti_table[pos] != null) {
           r.punti += Number(punti_table[pos]) || 0;
+        }
+        const punt = ai.punteggio != null ? Number(ai.punteggio) : NaN;
+        if (!isNaN(punt) && punt > 0) {
+          if (r.miglior_punteggio == null || punt > r.miglior_punteggio) {
+            r.miglior_punteggio = punt;
+          }
         }
       }
     }
@@ -130,8 +147,25 @@ const MedagliereWidget: React.FC<Props> = ({ compact = false, limit }) => {
               {!compact && (
                 <th className="text-center px-2 py-2 text-[10px] font-bold text-muted-foreground uppercase">Altre</th>
               )}
-              <th className="text-right px-3 py-2 text-[10px] font-bold text-primary uppercase tracking-wider">
-                Punti
+              {!compact && (
+                <th className="text-right px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider whitespace-nowrap">
+                  Miglior Punteggio
+                </th>
+              )}
+              <th className="text-right px-3 py-2 text-[10px] font-bold text-primary uppercase tracking-wider whitespace-nowrap">
+                <span className="inline-flex items-center gap-1 justify-end">
+                  Punti Classifica
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="w-3 h-3 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs text-xs">
+                        Punteggio interno del medagliere club, calcolato dalla posizione finale: {tooltip_formula}.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </span>
               </th>
             </tr>
           </thead>
@@ -156,6 +190,11 @@ const MedagliereWidget: React.FC<Props> = ({ compact = false, limit }) => {
                 {!compact && (
                   <td className="px-2 py-2 text-center text-xs tabular-nums text-muted-foreground">
                     {r.altre || "—"}
+                  </td>
+                )}
+                {!compact && (
+                  <td className="px-3 py-2 text-right text-xs tabular-nums text-foreground">
+                    {r.miglior_punteggio != null ? r.miglior_punteggio.toFixed(2) : "—"}
                   </td>
                 )}
                 <td className="px-3 py-2 text-right text-xs font-bold tabular-nums text-primary">{r.punti}</td>

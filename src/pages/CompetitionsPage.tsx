@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useParams, useNavigate } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
 import { use_gare, use_atleti, get_atleta_name_from_list } from "@/hooks/use-supabase-data";
 import ImportGaraPdf from "@/components/ImportGaraPdf";
@@ -801,7 +801,20 @@ const CompetitionsPage: React.FC = () => {
   const elimina = use_elimina_gara();
   const queryClient = useQueryClient();
 
-  const [selected_id, set_selected_id] = useState<string | null>(null);
+  const route_params = useParams<{ id?: string }>();
+  const navigate = useNavigate();
+  const [selected_id, set_selected_id] = useState<string | null>(route_params.id ?? null);
+
+  useEffect(() => {
+    if (route_params.id && route_params.id !== selected_id) {
+      set_selected_id(route_params.id);
+    }
+    if (!route_params.id && selected_id) {
+      // route changed away from /gare/:id (e.g. back button)
+      set_selected_id(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route_params.id]);
   const [show_modal, set_show_modal] = useState(false);
   const [edit_gara, set_edit_gara] = useState<any | null>(null);
   const [confirm_delete, set_confirm_delete] = useState(false);
@@ -911,6 +924,7 @@ const CompetitionsPage: React.FC = () => {
               onClick={() => {
                 set_selected_id(null);
                 set_confirm_delete(false);
+                if (route_params.id) navigate("/gare", { replace: false });
               }}
               className="text-muted-foreground"
             >
@@ -1283,7 +1297,7 @@ const CompetitionsPage: React.FC = () => {
                   gare_future.map((g: any) => (
                     <tr
                       key={g.id}
-                      onClick={() => set_selected_id(g.id)}
+                      onClick={() => navigate(`/gare/${g.id}`)}
                       className="border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors"
                     >
                       <td className="px-4 py-3 font-medium text-foreground">{g.nome}</td>
@@ -1359,7 +1373,7 @@ const CompetitionsPage: React.FC = () => {
                       return (
                         <tr
                           key={g.id}
-                          onClick={() => set_selected_id(g.id)}
+                          onClick={() => navigate(`/gare/${g.id}`)}
                           className="border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors opacity-75 hover:opacity-100"
                         >
                           <td className="px-4 py-3 font-medium text-foreground">{g.nome}</td>
