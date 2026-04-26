@@ -261,7 +261,7 @@ export default function TestLivelloPage() {
     if (!selected_test) return "";
     if (selected_test.tipo === "artistica") return atleta.carriera_artistica || "-";
     if (selected_test.tipo === "stile") return atleta.carriera_stile || "-";
-    return atleta.percorso_amatori || "-";
+    return atleta.livello_attuale || "-";
   };
 
   // ─── Add Athletes Dialog ─────────────────────────────
