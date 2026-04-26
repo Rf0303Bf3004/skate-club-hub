@@ -1,6 +1,6 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { AlertTriangle } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { use_atleti, use_club, use_adesioni_atleta, is_atleta_attivo_oggi } from "@/hooks/use-supabase-data";
@@ -522,13 +522,15 @@ const AtletaModal: React.FC<{
 const AthletesPage: React.FC = () => {
   const { t } = useI18n();
   const navigate = useNavigate();
+  const params = useParams<{ id?: string }>();
   const { data: atleti = [], isLoading } = use_atleti();
   const upsert = use_upsert_atleta();
   const elimina = use_elimina_atleta();
   const [search, set_search] = useState("");
   const [level_filter, set_level_filter] = useState("tutti");
   const [status_filter, set_status_filter] = useState("tutti");
-  const [selected_id, set_selected_id] = useState<string | null>(null);
+  const [selected_id, set_selected_id] = useState<string | null>(params.id ?? null);
+  useEffect(() => { if (params.id && params.id !== selected_id) set_selected_id(params.id); }, [params.id]);
   const [modal_open, set_modal_open] = useState(false);
   const [selected_atleta, set_selected_atleta] = useState<any>(null);
   const [scheda_id, set_scheda_id] = useState<string | null>(null);
