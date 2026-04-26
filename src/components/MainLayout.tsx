@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { use_club } from "@/hooks/use-supabase-data";
 import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
-import { LayoutDashboard, Users, BookOpen, Trophy, CreditCard, MessageSquare, Settings, Calendar, UserCheck, Tent, GraduationCap, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, Lock, ClipboardList, ClipboardCheck, Sparkles, Medal, PlayCircle, Flag } from "lucide-react";
+import { LayoutDashboard, Users, BookOpen, Trophy, CreditCard, MessageSquare, Settings, Calendar, UserCheck, Tent, GraduationCap, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, Lock, ClipboardList, ClipboardCheck, Sparkles, Medal } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 
@@ -17,8 +17,6 @@ const all_nav_items = [
   { key: "gare", sezione: "gare", path: "/gare", icon: Trophy },
   { key: "campi_eventi", sezione: "campi", path: "/campi-eventi", icon: Tent },
   { key: "medagliere", sezione: "gare", path: "/medagliere", icon: Medal },
-  { key: "pre_season", sezione: "campi", path: "/pre-season", icon: PlayCircle },
-  { key: "post_season", sezione: "campi", path: "/post-season", icon: Flag },
   { key: "test_livello", sezione: "gare", path: "/test", icon: ClipboardCheck },
   { key: "lezioni_private", sezione: "lezioni_private", path: "/lezioni-private", icon: GraduationCap },
   { key: "fatture", sezione: "fatture", path: "/fatture", icon: CreditCard },

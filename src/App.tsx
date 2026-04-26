@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, useNavigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useNavigate, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -33,8 +33,6 @@ import TestLivelloPage from "@/pages/TestLivelloPage";
 import PortaleAtletaPage from "@/pages/PortaleAtletaPage";
 import CampiEventiPage from "@/pages/CampiEventiPage";
 import MedagliereePage from "@/pages/MedagliereePage";
-import PreSeasonPage from "@/pages/PreSeasonPage";
-import PostSeasonPage from "@/pages/PostSeasonPage";
 
 const queryClient = new QueryClient();
 
@@ -105,8 +103,8 @@ const AuthenticatedApp = () => {
           <Route path="/stagioni" element={<SeasonsPage />} />
           <Route path="/campi-eventi" element={<CampiEventiPage />} />
           <Route path="/medagliere" element={<MedagliereePage />} />
-          <Route path="/pre-season" element={<PreSeasonPage />} />
-          <Route path="/post-season" element={<PostSeasonPage />} />
+          <Route path="/pre-season" element={<Navigate to="/campi-eventi" replace />} />
+          <Route path="/post-season" element={<Navigate to="/campi-eventi" replace />} />
           <Route path="/planning" element={<PlanningPage />} />
           <Route path="/setup-club" element={<ClubSetupPage />} />
           <Route path="/gestione-avanzata" element={<AdvancedManagementPage />} />
