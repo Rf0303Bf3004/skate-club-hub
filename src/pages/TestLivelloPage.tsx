@@ -31,6 +31,10 @@ type Atleta = {
   id: string; nome: string; cognome: string; attivo: boolean | null;
   livello_attuale: string | null;
   carriera_artistica: string | null; carriera_stile: string | null;
+  categoria: string | null;
+  livello_amatori: string | null;
+  livello_artistica: string | null;
+  livello_stile: string | null;
 };
 
 const ESITO_OPTIONS = [
@@ -39,6 +43,10 @@ const ESITO_OPTIONS = [
   { value: "non_superato", label: "Non promosso", color: "bg-destructive/10 text-destructive" },
 ];
 
+const LIVELLI_AMATORI = ["Stellina 1", "Stellina 2", "Stellina 3", "Stellina 4"];
+const LIVELLI_CARRIERA = ["Interbronzo", "Bronzo", "Interargento", "Argento", "Interoro", "Oro"];
+const LIVELLI_PROGRESSIONE = ["Pulcini", ...LIVELLI_AMATORI, ...LIVELLI_CARRIERA];
+
 function next_livello(current: string | null | undefined): string | null {
   if (!current) return null;
   const idx = LIVELLI_PROGRESSIONE.indexOf(current);
@@ -46,15 +54,17 @@ function next_livello(current: string | null | undefined): string | null {
   return LIVELLI_PROGRESSIONE[idx + 1];
 }
 
+function prev_livello(target: string | null | undefined): string | null {
+  if (!target) return null;
+  const idx = LIVELLI_PROGRESSIONE.indexOf(target);
+  if (idx <= 0) return null;
+  return LIVELLI_PROGRESSIONE[idx - 1];
+}
+
 const TIPO_OPTIONS = [
+  { value: "base", label: "Base (Pulcini/Stelline)" },
   { value: "artistica", label: "Artistica" },
   { value: "stile", label: "Stile" },
-  { value: "amatori", label: "Amatori" },
-];
-
-const LIVELLI_PROGRESSIONE = [
-  "Pulcini", "Stellina 1", "Stellina 2", "Stellina 3", "Stellina 4",
-  "Interbronzo", "Bronzo", "Interargento", "Argento", "Interoro", "Oro",
 ];
 
 const empty_form = {
@@ -105,7 +115,7 @@ export default function TestLivelloPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("atleti")
-        .select("id, nome, cognome, attivo, livello_attuale, carriera_artistica, carriera_stile")
+        .select("id, nome, cognome, attivo, livello_attuale, carriera_artistica, carriera_stile, categoria, livello_amatori, livello_artistica, livello_stile")
         .eq("club_id", club_id!)
         .eq("attivo", true)
         .order("cognome");
@@ -214,29 +224,47 @@ export default function TestLivelloPage() {
     mutationFn: async () => {
       if (!selected_test) return { promossi: [] as string[] };
       const promossi = test_atleti.filter((ta) => ta.esito === "superato");
-      const field =
-        selected_test.tipo === "artistica" ? "carriera_artistica" :
-        selected_test.tipo === "stile" ? "carriera_stile" : "livello_attuale";
+      const tipo = selected_test.tipo;
+      // Mappa: scrivo sul nuovo campo strutturato (con fallback al legacy carriera_*)
+      const new_field =
+        tipo === "artistica" ? "livello_artistica" :
+        tipo === "stile" ? "livello_stile" :
+        "livello_amatori"; // base
+      const legacy_field =
+        tipo === "artistica" ? "carriera_artistica" :
+        tipo === "stile" ? "carriera_stile" :
+        "livello_attuale";
       const carriera_label =
-        selected_test.tipo === "amatori" ? "Amatori" :
-        selected_test.tipo === "artistica" ? "Artistica" : "Stile";
+        tipo === "artistica" ? "Artistica" :
+        tipo === "stile" ? "Stile" : "Amatori";
       const data_test = selected_test.data || new Date().toISOString().split("T")[0];
       const promossi_nomi: string[] = [];
 
       for (const ta of promossi) {
         const atleta = atleti.find((a) => a.id === ta.atleta_id);
         if (!atleta) continue;
-        const livello_attuale =
-          selected_test.tipo === "artistica" ? atleta.carriera_artistica :
-          selected_test.tipo === "stile" ? atleta.carriera_stile : atleta.livello_attuale;
-        // priorità: livello_accesso esplicito del test, altrimenti next nella progressione
-        const livello_target = selected_test.livello_accesso || next_livello(livello_attuale);
+        const current_livello =
+          tipo === "artistica" ? (atleta.livello_artistica || atleta.carriera_artistica) :
+          tipo === "stile" ? (atleta.livello_stile || atleta.carriera_stile) :
+          (atleta.livello_amatori || atleta.livello_attuale);
+        const livello_target = selected_test.livello_accesso || next_livello(current_livello);
         if (!livello_target) continue;
 
-        await supabase
-          .from("atleti")
-          .update({ [field]: livello_target } as any)
-          .eq("id", ta.atleta_id);
+        const update_payload: any = {
+          [new_field]: livello_target,
+          [legacy_field]: livello_target,
+        };
+        // Promozione automatica di categoria: se ho appena passato Interbronzo
+        // e l'atleta era ancora "amatori", diventa "artistica".
+        if (tipo === "artistica" && atleta.categoria !== "artistica") {
+          update_payload.categoria = "artistica";
+        }
+        // Se passa una Stellina, atleta è almeno "amatori"
+        if (new_field === "livello_amatori" && atleta.categoria === "pulcini") {
+          update_payload.categoria = "amatori";
+        }
+
+        await supabase.from("atleti").update(update_payload).eq("id", ta.atleta_id);
         await supabase.from("storico_livelli_atleta").insert({
           atleta_id: ta.atleta_id,
           livello: livello_target,
@@ -250,11 +278,12 @@ export default function TestLivelloPage() {
     },
     onSuccess: ({ promossi }) => {
       qc.invalidateQueries({ queryKey: ["atleti_test"] });
+      qc.invalidateQueries({ queryKey: ["atleti"] });
       qc.invalidateQueries({ queryKey: ["storico_livelli_atleta"] });
       if (promossi.length === 0) {
         toast.info("Nessuna promozione applicata");
       } else {
-        toast.success(`${promossi.length} ${promossi.length === 1 ? "atleta promosso" : "atlete promosse"}`, {
+        toast.success(`${promossi.length} ${promossi.length === 1 ? "atleta promossa" : "atlete promosse"}`, {
           description: promossi.join(" • "),
           duration: 6000,
         });
@@ -265,19 +294,52 @@ export default function TestLivelloPage() {
 
   // ─── Helpers ──────────────────────────────────────────
   const convocati_ids = new Set(test_atleti.map((ta) => ta.atleta_id));
-  const atleti_disponibili = atleti.filter((a) => !convocati_ids.has(a.id));
 
   const get_livello_attuale = (atleta: Atleta) => {
-    if (!selected_test) return atleta.livello_attuale || "-";
-    if (selected_test.tipo === "artistica") return atleta.carriera_artistica || atleta.livello_attuale || "-";
-    if (selected_test.tipo === "stile") return atleta.carriera_stile || atleta.livello_attuale || "-";
-    return atleta.livello_attuale || "-";
+    if (!selected_test) {
+      return atleta.livello_artistica || atleta.livello_amatori || atleta.livello_attuale || "-";
+    }
+    const t = selected_test.tipo;
+    if (t === "artistica") return atleta.livello_artistica || atleta.carriera_artistica || atleta.livello_amatori || "-";
+    if (t === "stile") return atleta.livello_stile || atleta.carriera_stile || "-";
+    // base / amatori
+    return atleta.livello_amatori || atleta.livello_attuale || "-";
+  };
+
+  // ─── Smart filter: candidati ideali per il test ──────
+  // Un atleta è "candidato" se il suo livello attuale per la disciplina del test
+  // è esattamente quello precedente al livello_accesso del test.
+  const is_candidato_smart = (atleta: Atleta): boolean => {
+    if (!selected_test) return true;
+    const t = selected_test.tipo;
+    const target = selected_test.livello_accesso;
+    if (!target) return true;
+    const expected_prev = prev_livello(target);
+
+    if (t === "artistica") {
+      if (atleta.categoria !== "artistica") return false;
+      const cur = atleta.livello_artistica;
+      // Caso speciale: chi accede a Interbronzo non ha ancora un livello artistica
+      if (target === "Interbronzo") return !cur;
+      return cur === expected_prev;
+    }
+    if (t === "stile") {
+      if (atleta.categoria !== "artistica") return false;
+      const cur = atleta.livello_stile;
+      if (target === "Interbronzo") return !cur;
+      return cur === expected_prev;
+    }
+    // base: pulcini→Stellina 1, oppure Stellina N → Stellina N+1
+    if (target === "Stellina 1") return atleta.categoria === "pulcini";
+    if (atleta.categoria !== "amatori") return false;
+    return atleta.livello_amatori === expected_prev;
   };
 
   // ─── Add Athletes Dialog ─────────────────────────────
   const [show_add, set_show_add] = useState(false);
+  const [smart_filter, set_smart_filter] = useState(true);
   const [selected_for_add, set_selected_for_add] = useState<Set<string>>(new Set());
-  useEffect(() => { if (!show_add) set_selected_for_add(new Set()); }, [show_add]);
+  useEffect(() => { if (!show_add) { set_selected_for_add(new Set()); set_smart_filter(true); } }, [show_add]);
   const toggle_add_selection = (id: string) => {
     set_selected_for_add((prev) => {
       const next = new Set(prev);
@@ -285,6 +347,66 @@ export default function TestLivelloPage() {
       return next;
     });
   };
+
+  const atleti_non_convocati = atleti.filter((a) => !convocati_ids.has(a.id));
+  const atleti_disponibili = smart_filter
+    ? atleti_non_convocati.filter(is_candidato_smart)
+    : atleti_non_convocati;
+
+  // ─── Conferma esito singolo (auto-promo) ─────────────
+  const [confirm_promo, set_confirm_promo] = useState<null | {
+    test_atleta_id: string;
+    atleta: Atleta;
+    livello_target: string;
+  }>(null);
+
+  const handle_change_esito = (ta_id: string, atleta: Atleta | undefined, new_esito: string) => {
+    update_esito.mutate({ id: ta_id, esito: new_esito });
+    if (new_esito !== "superato" || !atleta || !selected_test) return;
+    const t = selected_test.tipo;
+    const cur =
+      t === "artistica" ? (atleta.livello_artistica || atleta.carriera_artistica) :
+      t === "stile" ? (atleta.livello_stile || atleta.carriera_stile) :
+      (atleta.livello_amatori || atleta.livello_attuale);
+    const target = selected_test.livello_accesso || next_livello(cur);
+    if (!target) return;
+    set_confirm_promo({ test_atleta_id: ta_id, atleta, livello_target: target });
+  };
+
+  const apply_single_promo = async () => {
+    if (!confirm_promo || !selected_test) return;
+    const { atleta, livello_target } = confirm_promo;
+    const t = selected_test.tipo;
+    const new_field =
+      t === "artistica" ? "livello_artistica" :
+      t === "stile" ? "livello_stile" :
+      "livello_amatori";
+    const legacy_field =
+      t === "artistica" ? "carriera_artistica" :
+      t === "stile" ? "carriera_stile" :
+      "livello_attuale";
+    const update_payload: any = {
+      [new_field]: livello_target,
+      [legacy_field]: livello_target,
+    };
+    if (t === "artistica" && atleta.categoria !== "artistica") update_payload.categoria = "artistica";
+    if (new_field === "livello_amatori" && atleta.categoria === "pulcini") update_payload.categoria = "amatori";
+
+    const { error } = await supabase.from("atleti").update(update_payload).eq("id", atleta.id);
+    if (error) { toast.error("Errore aggiornamento livello"); return; }
+    await supabase.from("storico_livelli_atleta").insert({
+      atleta_id: atleta.id,
+      livello: livello_target,
+      carriera: t === "artistica" ? "Artistica" : t === "stile" ? "Stile" : "Amatori",
+      data_inizio: selected_test.data || new Date().toISOString().split("T")[0],
+      note: `Promosso al test "${selected_test.nome}"`,
+    } as any);
+    qc.invalidateQueries({ queryKey: ["atleti_test"] });
+    qc.invalidateQueries({ queryKey: ["atleti"] });
+    toast.success(`Livello aggiornato: ${atleta.cognome} ${atleta.nome} → ${livello_target}`);
+    set_confirm_promo(null);
+  };
+
 
   // ─── LIST VIEW ────────────────────────────────────────
   if (view === "list") {
@@ -464,7 +586,7 @@ export default function TestLivelloPage() {
                       <TableCell className="font-medium">{atleta ? `${atleta.cognome} ${atleta.nome}` : "—"}</TableCell>
                       <TableCell>{atleta ? get_livello_attuale(atleta) : "-"}</TableCell>
                       <TableCell>
-                        <Select value={ta.esito} onValueChange={(v) => update_esito.mutate({ id: ta.id, esito: v })}>
+                        <Select value={ta.esito} onValueChange={(v) => handle_change_esito(ta.id, atleta, v)}>
                           <SelectTrigger className="w-36 h-8 text-xs">
                             <SelectValue />
                           </SelectTrigger>
@@ -514,8 +636,18 @@ export default function TestLivelloPage() {
           <DialogHeader>
             <DialogTitle>Aggiungi atleti al test</DialogTitle>
           </DialogHeader>
+          <label className="flex items-center gap-2 px-1 pb-2 text-sm cursor-pointer">
+            <Checkbox checked={smart_filter} onCheckedChange={(v) => set_smart_filter(!!v)} />
+            <span className="text-muted-foreground">
+              Filtro intelligente — solo atlete idonee a {selected_test?.livello_accesso || "questo test"}
+            </span>
+          </label>
           {atleti_disponibili.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4">Tutti gli atleti del club sono già convocati a questo test</p>
+            <p className="text-sm text-muted-foreground py-4">
+              {smart_filter
+                ? "Nessuna atleta idonea trovata. Disattiva il filtro intelligente per vedere tutte le atlete."
+                : "Tutte le atlete del club sono già convocate a questo test"}
+            </p>
           ) : (
             <>
               <div className="space-y-1 overflow-y-auto flex-1 -mx-1 px-1">
@@ -551,6 +683,38 @@ export default function TestLivelloPage() {
                 </div>
               </div>
             </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Auto-promo confirmation dialog */}
+      <Dialog open={!!confirm_promo} onOpenChange={(o) => !o && set_confirm_promo(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Aggiornare il livello?</DialogTitle>
+          </DialogHeader>
+          {confirm_promo && (
+            <div className="space-y-4">
+              <p className="text-sm text-foreground">
+                <strong>{confirm_promo.atleta.cognome} {confirm_promo.atleta.nome}</strong> ha superato il test.
+                Vuoi aggiornare automaticamente il suo livello a{" "}
+                <strong>{confirm_promo.livello_target}</strong>?
+              </p>
+              {selected_test?.tipo === "artistica" && confirm_promo.atleta.categoria !== "artistica" && (
+                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-2">
+                  ⚠ L'atleta verrà anche promossa alla categoria <strong>Artistica</strong>.
+                </p>
+              )}
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => set_confirm_promo(null)}>
+                  Non ora
+                </Button>
+                <Button onClick={apply_single_promo}>
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Aggiorna livello
+                </Button>
+              </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>
