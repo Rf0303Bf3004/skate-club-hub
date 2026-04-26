@@ -276,6 +276,15 @@ export default function TestLivelloPage() {
 
   // ─── Add Athletes Dialog ─────────────────────────────
   const [show_add, set_show_add] = useState(false);
+  const [selected_for_add, set_selected_for_add] = useState<Set<string>>(new Set());
+  useEffect(() => { if (!show_add) set_selected_for_add(new Set()); }, [show_add]);
+  const toggle_add_selection = (id: string) => {
+    set_selected_for_add((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
 
   // ─── LIST VIEW ────────────────────────────────────────
   if (view === "list") {
@@ -475,7 +484,10 @@ export default function TestLivelloPage() {
                         />
                       </TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => remove_atleta.mutate(ta.id)}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
+                          const nome = atleta ? `${atleta.cognome} ${atleta.nome}` : "questa atleta";
+                          if (window.confirm(`Rimuovere ${nome} dal test?`)) remove_atleta.mutate(ta.id);
+                        }}>
                           <Trash2 className="w-3.5 h-3.5 text-destructive" />
                         </Button>
                       </TableCell>
@@ -498,25 +510,47 @@ export default function TestLivelloPage() {
 
       {/* Add Athletes Dialog */}
       <Dialog open={show_add} onOpenChange={set_show_add}>
-        <DialogContent className="max-w-lg max-h-[70vh] overflow-y-auto">
+        <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Aggiungi atleti al test</DialogTitle>
           </DialogHeader>
           {atleti_disponibili.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4">Tutti gli atleti sono già convocati</p>
+            <p className="text-sm text-muted-foreground py-4">Tutti gli atleti del club sono già convocati a questo test</p>
           ) : (
-            <div className="space-y-1">
-              {atleti_disponibili.map((a) => (
-                <button
-                  key={a.id}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-md hover:bg-muted text-sm transition-colors"
-                  onClick={() => add_atleta.mutate(a.id)}
-                >
-                  <span className="font-medium">{a.cognome} {a.nome}</span>
-                  <Plus className="w-4 h-4 text-muted-foreground" />
-                </button>
-              ))}
-            </div>
+            <>
+              <div className="space-y-1 overflow-y-auto flex-1 -mx-1 px-1">
+                {atleti_disponibili.map((a) => {
+                  const checked = selected_for_add.has(a.id);
+                  return (
+                    <label
+                      key={a.id}
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted text-sm cursor-pointer transition-colors"
+                    >
+                      <Checkbox checked={checked} onCheckedChange={() => toggle_add_selection(a.id)} />
+                      <span className="font-medium flex-1">{a.cognome} {a.nome}</span>
+                      <span className="text-xs text-muted-foreground">{get_livello_attuale(a)}</span>
+                    </label>
+                  );
+                })}
+              </div>
+              <div className="flex justify-between items-center pt-3 border-t">
+                <span className="text-sm text-muted-foreground">
+                  {selected_for_add.size} {selected_for_add.size === 1 ? "selezionata" : "selezionate"}
+                </span>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => set_show_add(false)}>Annulla</Button>
+                  <Button
+                    disabled={selected_for_add.size === 0 || add_atleti_bulk.isPending}
+                    onClick={async () => {
+                      await add_atleti_bulk.mutateAsync(Array.from(selected_for_add));
+                      set_show_add(false);
+                    }}
+                  >
+                    Aggiungi {selected_for_add.size > 0 ? `(${selected_for_add.size})` : ""}
+                  </Button>
+                </div>
+              </div>
+            </>
           )}
         </DialogContent>
       </Dialog>
