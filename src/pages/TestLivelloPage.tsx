@@ -31,6 +31,10 @@ type Atleta = {
   id: string; nome: string; cognome: string; attivo: boolean | null;
   livello_attuale: string | null;
   carriera_artistica: string | null; carriera_stile: string | null;
+  categoria: string | null;
+  livello_amatori: string | null;
+  livello_artistica: string | null;
+  livello_stile: string | null;
 };
 
 const ESITO_OPTIONS = [
@@ -39,6 +43,10 @@ const ESITO_OPTIONS = [
   { value: "non_superato", label: "Non promosso", color: "bg-destructive/10 text-destructive" },
 ];
 
+const LIVELLI_AMATORI = ["Stellina 1", "Stellina 2", "Stellina 3", "Stellina 4"];
+const LIVELLI_CARRIERA = ["Interbronzo", "Bronzo", "Interargento", "Argento", "Interoro", "Oro"];
+const LIVELLI_PROGRESSIONE = ["Pulcini", ...LIVELLI_AMATORI, ...LIVELLI_CARRIERA];
+
 function next_livello(current: string | null | undefined): string | null {
   if (!current) return null;
   const idx = LIVELLI_PROGRESSIONE.indexOf(current);
@@ -46,15 +54,17 @@ function next_livello(current: string | null | undefined): string | null {
   return LIVELLI_PROGRESSIONE[idx + 1];
 }
 
+function prev_livello(target: string | null | undefined): string | null {
+  if (!target) return null;
+  const idx = LIVELLI_PROGRESSIONE.indexOf(target);
+  if (idx <= 0) return null;
+  return LIVELLI_PROGRESSIONE[idx - 1];
+}
+
 const TIPO_OPTIONS = [
+  { value: "base", label: "Base (Pulcini/Stelline)" },
   { value: "artistica", label: "Artistica" },
   { value: "stile", label: "Stile" },
-  { value: "amatori", label: "Amatori" },
-];
-
-const LIVELLI_PROGRESSIONE = [
-  "Pulcini", "Stellina 1", "Stellina 2", "Stellina 3", "Stellina 4",
-  "Interbronzo", "Bronzo", "Interargento", "Argento", "Interoro", "Oro",
 ];
 
 const empty_form = {
