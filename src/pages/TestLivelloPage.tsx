@@ -388,13 +388,15 @@ export default function TestLivelloPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 flex-wrap">
-        <Button variant="ghost" size="icon" onClick={() => set_view("list")}>
+        <Button variant="ghost" size="icon" onClick={() => navigate("/test")}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <h1 className="text-2xl font-bold text-foreground">{selected_test?.nome}</h1>
         <Badge variant="outline" className="capitalize">{selected_test?.tipo}</Badge>
         <div className="ml-auto flex gap-2">
-          <Button variant="destructive" size="sm" onClick={() => delete_test.mutate(selected_test_id!)}>
+          <Button variant="destructive" size="sm" onClick={() => {
+            if (window.confirm("Eliminare definitivamente questo test?")) delete_test.mutate(selected_test_id!);
+          }}>
             <Trash2 className="w-4 h-4 mr-1" /> Elimina
           </Button>
         </div>
