@@ -750,6 +750,63 @@ export type Database = {
         }
         Relationships: []
       }
+      eventi_esterni: {
+        Row: {
+          club_id: string
+          costo_indicativo: number | null
+          created_at: string
+          data_fine: string | null
+          data_inizio: string | null
+          descrizione: string | null
+          disciplina: string | null
+          id: string
+          nome: string
+          note: string | null
+          stagione_id: string | null
+          struttura_citta: string | null
+          struttura_contatti: string | null
+          struttura_nome: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          club_id: string
+          costo_indicativo?: number | null
+          created_at?: string
+          data_fine?: string | null
+          data_inizio?: string | null
+          descrizione?: string | null
+          disciplina?: string | null
+          id?: string
+          nome?: string
+          note?: string | null
+          stagione_id?: string | null
+          struttura_citta?: string | null
+          struttura_contatti?: string | null
+          struttura_nome?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          club_id?: string
+          costo_indicativo?: number | null
+          created_at?: string
+          data_fine?: string | null
+          data_inizio?: string | null
+          descrizione?: string | null
+          disciplina?: string | null
+          id?: string
+          nome?: string
+          note?: string | null
+          stagione_id?: string | null
+          struttura_citta?: string | null
+          struttura_contatti?: string | null
+          struttura_nome?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       eventi_straordinari: {
         Row: {
           club_id: string
@@ -1102,6 +1159,42 @@ export type Database = {
           },
         ]
       }
+      iscrizioni_eventi_esterni: {
+        Row: {
+          atleta_id: string
+          created_at: string
+          evento_esterno_id: string
+          id: string
+          note: string | null
+          quota_atleta: number | null
+          quota_club: number | null
+          stato_pagamento: string
+          updated_at: string
+        }
+        Insert: {
+          atleta_id: string
+          created_at?: string
+          evento_esterno_id: string
+          id?: string
+          note?: string | null
+          quota_atleta?: number | null
+          quota_club?: number | null
+          stato_pagamento?: string
+          updated_at?: string
+        }
+        Update: {
+          atleta_id?: string
+          created_at?: string
+          evento_esterno_id?: string
+          id?: string
+          note?: string | null
+          quota_atleta?: number | null
+          quota_club?: number | null
+          stato_pagamento?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       iscrizioni_gare: {
         Row: {
           atleta_id: string
@@ -1439,69 +1532,6 @@ export type Database = {
           note?: string | null
           stagione_id?: string | null
           stato?: string
-        }
-        Relationships: []
-      }
-      post_season_atlete: {
-        Row: {
-          atleta_id: string
-          club_id: string
-          costo_totale: number | null
-          created_at: string
-          data_fine: string | null
-          data_inizio: string | null
-          disciplina: string | null
-          documenti_url: string | null
-          id: string
-          note: string | null
-          quota_atleta: number | null
-          quota_club: number | null
-          stagione_id: string | null
-          stato_pagamento: string
-          struttura_citta: string | null
-          struttura_contatti: string | null
-          struttura_nome: string
-          updated_at: string
-        }
-        Insert: {
-          atleta_id: string
-          club_id: string
-          costo_totale?: number | null
-          created_at?: string
-          data_fine?: string | null
-          data_inizio?: string | null
-          disciplina?: string | null
-          documenti_url?: string | null
-          id?: string
-          note?: string | null
-          quota_atleta?: number | null
-          quota_club?: number | null
-          stagione_id?: string | null
-          stato_pagamento?: string
-          struttura_citta?: string | null
-          struttura_contatti?: string | null
-          struttura_nome?: string
-          updated_at?: string
-        }
-        Update: {
-          atleta_id?: string
-          club_id?: string
-          costo_totale?: number | null
-          created_at?: string
-          data_fine?: string | null
-          data_inizio?: string | null
-          disciplina?: string | null
-          documenti_url?: string | null
-          id?: string
-          note?: string | null
-          quota_atleta?: number | null
-          quota_club?: number | null
-          stagione_id?: string | null
-          stato_pagamento?: string
-          struttura_citta?: string | null
-          struttura_contatti?: string | null
-          struttura_nome?: string
-          updated_at?: string
         }
         Relationships: []
       }
