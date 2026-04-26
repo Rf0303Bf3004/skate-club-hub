@@ -584,11 +584,16 @@ const InvoicesPage: React.FC = () => {
   const [status_filter, set_status_filter] = useState("tutti");
   const [selected_fattura, set_selected_fattura] = useState<any>(null);
 
-  const filtered = fatture.filter((f: any) => status_filter === "tutti" || f.stato === status_filter);
+  const today_iso = new Date().toISOString().split("T")[0];
+  const filtered = fatture.filter((f: any) => {
+    if (status_filter === "tutti") return true;
+    return get_fattura_stato_ui(f, today_iso) === status_filter;
+  });
 
-  const totale_da_pagare = fatture
-    .filter((f: any) => f.stato !== "pagata")
-    .reduce((s: number, f: any) => s + Number(f.importo), 0);
+  const non_pagate = fatture.filter((f: any) => f.stato !== "pagata");
+  const totale_da_pagare = non_pagate.reduce((s: number, f: any) => s + Number(f.importo), 0);
+  const scadute_count = non_pagate.filter((f: any) => get_fattura_stato_ui(f, today_iso) === "scaduta").length;
+  const in_arrivo_count = non_pagate.length - scadute_count;
 
   const handle_genera = async () => {
     try {
