@@ -1023,7 +1023,6 @@ const AthletesPage: React.FC = () => {
                       </td>
                       <td className="px-4 py-3 cursor-pointer" onClick={() => set_selected_id(a.id)}>
                         <LivelloBadge atleta={a} />
-                        <CarrieraBadge atleta={a} />
                       </td>
                       <td
                         className="px-4 py-3 text-right tabular-nums text-muted-foreground hidden lg:table-cell cursor-pointer"
