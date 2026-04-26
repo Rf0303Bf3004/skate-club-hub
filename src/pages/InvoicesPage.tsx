@@ -704,6 +704,7 @@ const InvoicesPage: React.FC = () => {
             <SelectItem value="tutti">{t("tutti")}</SelectItem>
             <SelectItem value="pagata">{t("pagata")}</SelectItem>
             <SelectItem value="da_pagare">{t("da_pagare")}</SelectItem>
+            <SelectItem value="scaduta">Scadute</SelectItem>
           </SelectContent>
         </Select>
 
