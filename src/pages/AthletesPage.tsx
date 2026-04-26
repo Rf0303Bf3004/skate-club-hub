@@ -998,20 +998,18 @@ const AthletesPage: React.FC = () => {
                               </p>
                               {a.atleta_federazione ? (
                                 <span
-                                  className="text-[10px] font-bold px-2 py-0.5 rounded text-white border whitespace-nowrap"
-                                  style={{ backgroundColor: "#D4A74A", borderColor: "#C53030" }}
+                                  className="inline-block w-2 h-2 rounded-full ring-1 ring-red-500"
+                                  style={{ backgroundColor: "#D4A74A" }}
                                   title="Atleta di Federazione"
-                                >
-                                  Atleta di Federazione
-                                </span>
+                                  aria-label="Atleta di Federazione"
+                                />
                               ) : a.agonista ? (
                                 <span
-                                  className="text-[10px] font-bold px-2 py-0.5 rounded text-white whitespace-nowrap"
+                                  className="inline-block w-2 h-2 rounded-full"
                                   style={{ backgroundColor: "#D4A74A" }}
                                   title="Atleta agonista"
-                                >
-                                  Agonista
-                                </span>
+                                  aria-label="Agonista"
+                                />
                               ) : null}
                             </div>
                           </div>
