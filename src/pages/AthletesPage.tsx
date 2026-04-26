@@ -17,6 +17,15 @@ import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import InvitoGenitoreModal from "@/components/InvitoGenitoreModal";
 import DateInput from "@/components/forms/DateInput";
+import {
+  CATEGORIE,
+  LIVELLI_AMATORI,
+  LIVELLI_CARRIERA as LIVELLI_CARRIERA_NUOVI,
+  get_categoria_label,
+  get_livello_display,
+  get_pillole_discipline,
+  type Categoria,
+} from "@/lib/atleta-livello";
 
 const LIVELLI_COMUNI = ["Pulcini", "Stellina 1", "Stellina 2", "Stellina 3", "Stellina 4"];
 
