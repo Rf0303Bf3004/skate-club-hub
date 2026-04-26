@@ -39,9 +39,17 @@ const MedagliereWidget: React.FC<Props> = ({ compact = false, limit }) => {
   const { data: stagioni = [] } = use_stagioni();
 
   const stagione_attiva = useMemo(() => stagioni.find((s: any) => s.attiva), [stagioni]);
+  const punti_table = useMemo(() => get_punti_table(setup), [setup]);
+
+  const tooltip_formula = useMemo(() => {
+    const ord = (n: string) => `${n}°`;
+    return Object.entries(punti_table)
+      .sort((a, b) => Number(a[0]) - Number(b[0]))
+      .map(([pos, pts]) => `${ord(pos)} = ${pts} pt`)
+      .join(" · ");
+  }, [punti_table]);
 
   const righe = useMemo<RigaMedagliere[]>(() => {
-    const punti_table = get_punti_table(setup);
     const map = new Map<string, RigaMedagliere>();
 
     const data_inizio = stagione_attiva?.data_inizio;
