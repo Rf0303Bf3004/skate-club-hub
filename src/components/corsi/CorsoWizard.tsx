@@ -696,12 +696,17 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                         ora_inizio_sel={form.ora_inizio}
                         ora_fine_sel={form.ora_fine}
                         on_select_fascia={(oi, of_) => {
-                          set_form((p) => ({
-                            ...p,
-                            ora_inizio: oi,
-                            ora_fine: of_,
-                            durata: diff_minutes(oi, of_),
-                          }));
+                          set_form((p) => {
+                            const has_fine = !!of_;
+                            const computed = has_fine ? diff_minutes(oi, of_) : 0;
+                            const next_durata = has_fine && computed > 0 ? computed : 60;
+                            return {
+                              ...p,
+                              ora_inizio: oi,
+                              ora_fine: of_,
+                              durata: next_durata,
+                            };
+                          });
                         }}
                         on_select_istruttore={toggle_istruttore}
                         istruttori_ids_sel={form.istruttori_ids}
