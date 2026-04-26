@@ -761,9 +761,14 @@ const InvoicesPage: React.FC = () => {
                           : "—"}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <Badge variant={f.stato === "pagata" ? "default" : "destructive"} className="text-xs">
-                          {t(f.stato)}
-                        </Badge>
+                        {(() => {
+                          const s = get_fattura_stato_ui(f, today_iso);
+                          return (
+                            <span className={`inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full ${get_fattura_stato_classes(s)}`}>
+                              {get_fattura_stato_label(s)}
+                            </span>
+                          );
+                        })()}
                       </td>
                     </tr>
                   ))
