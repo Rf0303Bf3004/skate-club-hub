@@ -2057,9 +2057,20 @@ const CorsoCard: React.FC<{
         <span className={`inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full border ${get_livello_badge_classes(livello)}`}>
           {livello_label}
         </span>
-        {corso.tipo && (
-          <Badge variant="secondary" className="text-xs">{corso.tipo}</Badge>
-        )}
+        {corso.tipo && (() => {
+          const t_lower = String(corso.tipo).toLowerCase().trim();
+          let cls = "bg-muted text-muted-foreground border border-border";
+          let icon = "";
+          if (t_lower === "ghiaccio") { cls = "bg-sky-100 text-sky-800 border border-sky-200"; icon = "🧊"; }
+          else if (t_lower === "off-ice" || t_lower === "off ice") { cls = "bg-amber-100 text-amber-800 border border-amber-200"; icon = "🏋️"; }
+          else if (t_lower === "danza") { cls = "bg-pink-100 text-pink-800 border border-pink-200"; }
+          else if (t_lower === "stretching") { cls = "bg-violet-100 text-violet-800 border border-violet-200"; }
+          return (
+            <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full ${cls}`}>
+              {icon && <span>{icon}</span>}{corso.tipo}
+            </span>
+          );
+        })()}
       </div>
 
       {istruttori_corso.length > 0 && (

@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileText, Trash2, X, Printer, Mail } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { get_fattura_stato_ui, get_fattura_stato_label, get_fattura_stato_classes } from "@/lib/fattura-status";
 
 // ─── Swiss QR ─────────────────────────────────────────────
 function genera_swiss_qr_payload(params: {
@@ -454,9 +455,15 @@ const FatturaModal: React.FC<{
 
         <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
           <div className="flex items-center justify-between">
-            <Badge variant={fattura.stato === "pagata" ? "default" : "destructive"} className="text-sm px-3 py-1">
-              {fattura.stato === "pagata" ? "✅ Pagata" : "⏳ Da pagare"}
-            </Badge>
+            {(() => {
+              const s = get_fattura_stato_ui(fattura);
+              const icon = s === "pagata" ? "✅" : s === "scaduta" ? "⚠️" : "⏳";
+              return (
+                <span className={`inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-1 rounded-full ${get_fattura_stato_classes(s)}`}>
+                  {icon} {get_fattura_stato_label(s)}
+                </span>
+              );
+            })()}
             {fattura.stato === "pagata" && fattura.data_pagamento && (
               <span className="text-xs text-muted-foreground">
                 Pagata il {new Date(fattura.data_pagamento).toLocaleDateString("it-CH")}
@@ -577,11 +584,16 @@ const InvoicesPage: React.FC = () => {
   const [status_filter, set_status_filter] = useState("tutti");
   const [selected_fattura, set_selected_fattura] = useState<any>(null);
 
-  const filtered = fatture.filter((f: any) => status_filter === "tutti" || f.stato === status_filter);
+  const today_iso = new Date().toISOString().split("T")[0];
+  const filtered = fatture.filter((f: any) => {
+    if (status_filter === "tutti") return true;
+    return get_fattura_stato_ui(f, today_iso) === status_filter;
+  });
 
-  const totale_da_pagare = fatture
-    .filter((f: any) => f.stato !== "pagata")
-    .reduce((s: number, f: any) => s + Number(f.importo), 0);
+  const non_pagate = fatture.filter((f: any) => f.stato !== "pagata");
+  const totale_da_pagare = non_pagate.reduce((s: number, f: any) => s + Number(f.importo), 0);
+  const scadute_count = non_pagate.filter((f: any) => get_fattura_stato_ui(f, today_iso) === "scaduta").length;
+  const in_arrivo_count = non_pagate.length - scadute_count;
 
   const handle_genera = async () => {
     try {
@@ -666,8 +678,16 @@ const InvoicesPage: React.FC = () => {
           <div>
             <h1 className="text-xl font-bold tracking-tight text-foreground">{t("fatture")}</h1>
             {totale_da_pagare > 0 && (
-              <p className="text-sm text-muted-foreground mt-0.5">
+              <p
+                className="text-sm text-muted-foreground mt-0.5"
+                title={`${scadute_count} scadute / ${in_arrivo_count} in arrivo`}
+              >
                 Da incassare: <span className="font-bold text-foreground">CHF {totale_da_pagare.toFixed(2)}</span>
+                {scadute_count > 0 && (
+                  <span className="ml-2 inline-flex items-center gap-1 text-xs font-semibold text-red-700">
+                    · {scadute_count} scadute
+                  </span>
+                )}
               </p>
             )}
           </div>
@@ -684,6 +704,7 @@ const InvoicesPage: React.FC = () => {
             <SelectItem value="tutti">{t("tutti")}</SelectItem>
             <SelectItem value="pagata">{t("pagata")}</SelectItem>
             <SelectItem value="da_pagare">{t("da_pagare")}</SelectItem>
+            <SelectItem value="scaduta">Scadute</SelectItem>
           </SelectContent>
         </Select>
 
@@ -740,9 +761,14 @@ const InvoicesPage: React.FC = () => {
                           : "—"}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <Badge variant={f.stato === "pagata" ? "default" : "destructive"} className="text-xs">
-                          {t(f.stato)}
-                        </Badge>
+                        {(() => {
+                          const s = get_fattura_stato_ui(f, today_iso);
+                          return (
+                            <span className={`inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full ${get_fattura_stato_classes(s)}`}>
+                              {get_fattura_stato_label(s)}
+                            </span>
+                          );
+                        })()}
                       </td>
                     </tr>
                   ))

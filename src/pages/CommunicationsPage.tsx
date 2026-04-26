@@ -388,14 +388,27 @@ const CommunicationsPage: React.FC = () => {
   };
 
   const get_destinatari_label = (c: any) => {
-    if (c.tipo_destinatari === 'tutti') return t('tutti');
-    if (c.tipo_destinatari === 'solo_istruttori') return t('solo_istruttori');
-    if (c.tipo_destinatari === 'per_corso') {
+    const td = c.tipo_destinatari;
+    if (td === 'tutti') return t('tutti');
+    if (td === 'solo_istruttori') return t('solo_istruttori');
+    if (td === 'per_corso' || td === 'corso') {
       const corso = corsi.find((co: any) => co.id === c.corso_id);
-      return corso ? corso.nome : t('per_corso');
+      return corso ? `Corso: ${corso.nome}` : t('per_corso');
     }
-    if (c.tipo_destinatari === 'manuale') return 'Selezione filtrata';
-    return t('per_atleta');
+    if (td === 'per_atleta' || td === 'atleta') return t('per_atleta');
+    if (td === 'agonisti') return 'Agonisti';
+    if (td === 'per_livello') return 'Per livello';
+    if (td === 'manuale') return 'Selezione filtrata';
+    if (td === 'per_corsi') return 'Per corsi';
+    if (td === 'per_giorno') return 'Per giorno';
+    if (td === 'per_istruttore') return 'Per istruttore';
+    return td || '—';
+  };
+
+  const get_data_label = (c: any) => {
+    const iso = (c.stato === 'inviata' && c.inviata_at) ? c.inviata_at : (c.created_at || (c.data ? c.data + 'T00:00:00' : null));
+    if (!iso) return '';
+    return new Date(iso).toLocaleDateString('it-CH');
   };
 
   if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
@@ -430,7 +443,7 @@ const CommunicationsPage: React.FC = () => {
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-xs tabular-nums text-muted-foreground">{c.data ? new Date(c.data + 'T00:00:00').toLocaleDateString('it-CH') : ''}</p>
+                  <p className="text-xs tabular-nums text-muted-foreground">{get_data_label(c)}</p>
                   <Badge variant="secondary" className="text-xs mt-1">{get_destinatari_label(c)}</Badge>
                 </div>
               </div>
