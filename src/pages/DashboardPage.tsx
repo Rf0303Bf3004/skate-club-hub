@@ -969,6 +969,12 @@ const DashboardPage: React.FC = () => {
   const next_gara = upcoming_gare.sort((a, b) => days_until(a.data) - days_until(b.data))[0];
   const fatture_da_pagare = fatture.filter((f) => f.stato === "da_pagare");
   const totale_fatture = fatture_da_pagare.reduce((s, f) => s + f.importo, 0);
+  const today_iso_kpi = new Date().toISOString().split("T")[0];
+  const fatture_scadute_count = fatture_da_pagare.filter((f) => {
+    const d = (f as any).data_scadenza || (f as any).scadenza;
+    return d && String(d) < today_iso_kpi;
+  }).length;
+  const fatture_in_arrivo_count = fatture_da_pagare.length - fatture_scadute_count;
 
   const today_day_keys = ["domenica", "lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato"];
   const today_key = today_day_keys[new Date().getDay()];
