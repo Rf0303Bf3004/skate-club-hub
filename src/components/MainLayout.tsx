@@ -16,7 +16,6 @@ const all_nav_items = [
   { key: "corsi", sezione: "corsi", path: "/corsi", icon: BookOpen },
   { key: "gare", sezione: "gare", path: "/gare", icon: Trophy },
   { key: "campi_eventi", sezione: "campi", path: "/campi-eventi", icon: Tent },
-  { key: "medagliere", sezione: "gare", path: "/medagliere", icon: Medal },
   { key: "test_livello", sezione: "gare", path: "/test", icon: ClipboardCheck },
   { key: "lezioni_private", sezione: "lezioni_private", path: "/lezioni-private", icon: GraduationCap },
   { key: "fatture", sezione: "fatture", path: "/fatture", icon: CreditCard },
