@@ -1,0 +1,1 @@
+UPDATE public.eventi_campi SET nome = 'Estate 2026 - Primo' WHERE id = '63daa738-e4cb-4542-9353-41a086132120';
