@@ -455,9 +455,15 @@ const FatturaModal: React.FC<{
 
         <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
           <div className="flex items-center justify-between">
-            <Badge variant={fattura.stato === "pagata" ? "default" : "destructive"} className="text-sm px-3 py-1">
-              {fattura.stato === "pagata" ? "✅ Pagata" : "⏳ Da pagare"}
-            </Badge>
+            {(() => {
+              const s = get_fattura_stato_ui(fattura);
+              const icon = s === "pagata" ? "✅" : s === "scaduta" ? "⚠️" : "⏳";
+              return (
+                <span className={`inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-1 rounded-full ${get_fattura_stato_classes(s)}`}>
+                  {icon} {get_fattura_stato_label(s)}
+                </span>
+              );
+            })()}
             {fattura.stato === "pagata" && fattura.data_pagamento && (
               <span className="text-xs text-muted-foreground">
                 Pagata il {new Date(fattura.data_pagamento).toLocaleDateString("it-CH")}
