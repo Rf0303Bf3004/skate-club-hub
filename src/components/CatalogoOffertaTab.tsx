@@ -288,10 +288,22 @@ const CatalogoOffertaTab: React.FC<Props> = ({ club_id, stagione_id }) => {
     <div className="space-y-8">
       {/* ═══ Sezione 1 — Parametri per livello ═══ */}
       <div className="bg-card rounded-xl shadow-card p-6 space-y-6">
-        <h2 className="text-lg font-bold text-foreground">📊 Parametri per livello</h2>
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <h2 className="text-lg font-bold text-foreground">📊 Parametri per livello</h2>
+          {livelli.length > 0 && (
+            <Button size="sm" variant="outline" onClick={add_livello}>
+              + Aggiungi livello
+            </Button>
+          )}
+        </div>
 
         {livelli.length === 0 ? (
-          <p className="text-sm text-muted-foreground italic">Nessun livello configurato</p>
+          <div className="text-center py-8 space-y-3">
+            <p className="text-sm text-muted-foreground italic">Nessun livello configurato</p>
+            <Button onClick={add_livello} className="bg-primary hover:bg-primary/90">
+              + Aggiungi livello
+            </Button>
+          </div>
         ) : (
           <>
             <div className="overflow-x-auto">
