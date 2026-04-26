@@ -1,7 +1,6 @@
 import React, { useMemo } from "react";
-import { use_gare, use_atleti, use_setup_club, use_stagioni } from "@/hooks/use-supabase-data";
-import { Trophy, Medal, Info } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { use_gare, use_atleti, use_stagioni } from "@/hooks/use-supabase-data";
+import { Trophy, Medal } from "lucide-react";
 
 interface RigaMedagliere {
   atleta_id: string;
@@ -10,21 +9,8 @@ interface RigaMedagliere {
   argento: number;
   bronzo: number;
   altre: number;
-  punti: number;
   partecipazioni: number;
   miglior_punteggio: number | null;
-}
-
-const DEFAULT_PUNTI: Record<string, number> = { "1": 10, "2": 7, "3": 5, "4": 3, "5": 2, "6": 1 };
-
-function get_punti_table(setup: any): Record<string, number> {
-  const raw = (setup as any)?.medagliere_punti;
-  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
-    const out: Record<string, number> = {};
-    for (const [k, v] of Object.entries(raw)) out[String(k)] = Number(v) || 0;
-    return Object.keys(out).length ? out : DEFAULT_PUNTI;
-  }
-  return DEFAULT_PUNTI;
 }
 
 interface Props {
@@ -35,19 +21,9 @@ interface Props {
 const MedagliereWidget: React.FC<Props> = ({ compact = false, limit }) => {
   const { data: gare = [] } = use_gare();
   const { data: atleti = [] } = use_atleti();
-  const { data: setup } = use_setup_club();
   const { data: stagioni = [] } = use_stagioni();
 
   const stagione_attiva = useMemo(() => stagioni.find((s: any) => s.attiva), [stagioni]);
-  const punti_table = useMemo(() => get_punti_table(setup), [setup]);
-
-  const tooltip_formula = useMemo(() => {
-    const ord = (n: string) => `${n}°`;
-    return Object.entries(punti_table)
-      .sort((a, b) => Number(a[0]) - Number(b[0]))
-      .map(([pos, pts]) => `${ord(pos)} = ${pts} pt`)
-      .join(" · ");
-  }, [punti_table]);
 
   const righe = useMemo<RigaMedagliere[]>(() => {
     const map = new Map<string, RigaMedagliere>();
@@ -73,7 +49,6 @@ const MedagliereWidget: React.FC<Props> = ({ compact = false, limit }) => {
             argento: 0,
             bronzo: 0,
             altre: 0,
-            punti: 0,
             partecipazioni: 0,
             miglior_punteggio: null,
           });
@@ -85,10 +60,6 @@ const MedagliereWidget: React.FC<Props> = ({ compact = false, limit }) => {
         else if (m === "argento") r.argento += 1;
         else if (m === "bronzo") r.bronzo += 1;
         else if (ai.posizione && Number(ai.posizione) > 3) r.altre += 1;
-        const pos = ai.posizione ? String(Number(ai.posizione)) : null;
-        if (pos && punti_table[pos] != null) {
-          r.punti += Number(punti_table[pos]) || 0;
-        }
         const punt = ai.punteggio != null ? Number(ai.punteggio) : NaN;
         if (!isNaN(punt) && punt > 0) {
           if (r.miglior_punteggio == null || punt > r.miglior_punteggio) {
@@ -101,13 +72,12 @@ const MedagliereWidget: React.FC<Props> = ({ compact = false, limit }) => {
     return Array.from(map.values())
       .filter((r) => r.partecipazioni > 0)
       .sort((a, b) => {
-        if (b.punti !== a.punti) return b.punti - a.punti;
         if (b.oro !== a.oro) return b.oro - a.oro;
         if (b.argento !== a.argento) return b.argento - a.argento;
         if (b.bronzo !== a.bronzo) return b.bronzo - a.bronzo;
         return a.nome.localeCompare(b.nome);
       });
-  }, [gare, atleti, setup, stagione_attiva]);
+  }, [gare, atleti, stagione_attiva]);
 
   const display = limit ? righe.slice(0, limit) : righe;
 
@@ -149,24 +119,9 @@ const MedagliereWidget: React.FC<Props> = ({ compact = false, limit }) => {
               )}
               {!compact && (
                 <th className="text-right px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider whitespace-nowrap">
-                  Miglior Punteggio
+                  Punteggio
                 </th>
               )}
-              <th className="text-right px-3 py-2 text-[10px] font-bold text-primary uppercase tracking-wider whitespace-nowrap">
-                <span className="inline-flex items-center gap-1 justify-end">
-                  Punti Classifica
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="w-3 h-3 text-muted-foreground cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-xs text-xs">
-                        Punteggio interno del medagliere club, calcolato dalla posizione finale: {tooltip_formula}.
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </span>
-              </th>
             </tr>
           </thead>
           <tbody>
@@ -197,7 +152,6 @@ const MedagliereWidget: React.FC<Props> = ({ compact = false, limit }) => {
                     {r.miglior_punteggio != null ? r.miglior_punteggio.toFixed(2) : "—"}
                   </td>
                 )}
-                <td className="px-3 py-2 text-right text-xs font-bold tabular-nums text-primary">{r.punti}</td>
               </tr>
             ))}
           </tbody>
