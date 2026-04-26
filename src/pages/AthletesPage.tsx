@@ -65,38 +65,40 @@ const Field: React.FC<{ label: string; children: React.ReactNode; required?: boo
 const input_cls =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
 
-// ─── Carriera Badge (sigle compatte: ART / STI) ────────────
+// ─── Carriera Badge — pillole ART/STI sul nuovo modello ───
 const CarrieraBadge: React.FC<{ atleta: any }> = ({ atleta }) => {
-  const ha_artistica = !!atleta.carriera_artistica;
-  const ha_stile = !!atleta.carriera_stile;
-  if (!ha_artistica && !ha_stile) return null;
+  const pillole = get_pillole_discipline(atleta);
+  if (pillole.length === 0) return null;
   const pill = "inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold ring-1 ring-inset";
   return (
-    <span className="inline-flex items-center gap-1 align-middle">
-      {ha_artistica && (
-        <span
-          className={`${pill} bg-purple-50 text-purple-700 ring-purple-200`}
-          title={`Carriera Artistica: ${atleta.carriera_artistica}`}
-        >
-          ART
-        </span>
-      )}
-      {ha_stile && (
-        <span
-          className={`${pill} bg-blue-50 text-blue-700 ring-blue-200`}
-          title={`Carriera Stile: ${atleta.carriera_stile}`}
-        >
-          STI
-        </span>
+    <span className="inline-flex items-center gap-1 align-middle flex-wrap">
+      {pillole.map((p) =>
+        p.label === "ART" ? (
+          <span
+            key={p.label}
+            className={`${pill} bg-purple-50 text-purple-700 ring-purple-200`}
+            title={`Carriera Artistica: ${p.value}`}
+          >
+            ART {p.value}
+          </span>
+        ) : (
+          <span
+            key={p.label}
+            className={`${pill} bg-blue-50 text-blue-700 ring-blue-200`}
+            title={`Carriera Stile: ${p.value}`}
+          >
+            STI {p.value}
+          </span>
+        ),
       )}
     </span>
   );
 };
 
-// ─── Livello Badge — mostra sempre il livello_attuale ──────
+// ─── Livello Badge — usa get_livello_display dal nuovo modello ───
 const LivelloBadge: React.FC<{ atleta: any }> = ({ atleta }) => {
-  const lv = atleta.livello_attuale || atleta.percorso_amatori || atleta.livello_amatori;
-  if (!lv) return <span className="text-muted-foreground/40">—</span>;
+  const lv = get_livello_display(atleta);
+  if (!lv || lv === "—") return <span className="text-muted-foreground/40">—</span>;
   return (
     <div className="flex items-center gap-1.5 flex-wrap">
       <Badge variant="secondary" className="text-xs">
