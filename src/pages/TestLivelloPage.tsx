@@ -115,7 +115,7 @@ export default function TestLivelloPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("atleti")
-        .select("id, nome, cognome, attivo, livello_attuale, carriera_artistica, carriera_stile")
+        .select("id, nome, cognome, attivo, livello_attuale, carriera_artistica, carriera_stile, categoria, livello_amatori, livello_artistica, livello_stile")
         .eq("club_id", club_id!)
         .eq("attivo", true)
         .order("cognome");
