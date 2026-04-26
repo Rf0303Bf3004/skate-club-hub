@@ -56,37 +56,45 @@ const Field: React.FC<{ label: string; children: React.ReactNode; required?: boo
 const input_cls =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
 
-// ─── Carriera Badge ────────────────────────────────────────
+// ─── Carriera Badge (sigle compatte: ART / STI) ────────────
 const CarrieraBadge: React.FC<{ atleta: any }> = ({ atleta }) => {
   const ha_artistica = !!atleta.carriera_artistica;
   const ha_stile = !!atleta.carriera_stile;
-  if (!ha_artistica && !ha_stile) return <span className="text-muted-foreground/40">—</span>;
+  if (!ha_artistica && !ha_stile) return null;
+  const pill = "inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold ring-1 ring-inset";
   return (
-    <div className="flex flex-col gap-1">
+    <span className="inline-flex items-center gap-1 align-middle">
       {ha_artistica && (
-        <Badge className="bg-purple-100 text-purple-800 text-xs font-medium border-0 w-fit">
-          Artistica: {atleta.carriera_artistica}
-        </Badge>
+        <span
+          className={`${pill} bg-purple-50 text-purple-700 ring-purple-200`}
+          title={`Carriera Artistica: ${atleta.carriera_artistica}`}
+        >
+          ART
+        </span>
       )}
       {ha_stile && (
-        <Badge className="bg-blue-100 text-blue-800 text-xs font-medium border-0 w-fit">
-          Stile: {atleta.carriera_stile}
-        </Badge>
+        <span
+          className={`${pill} bg-blue-50 text-blue-700 ring-blue-200`}
+          title={`Carriera Stile: ${atleta.carriera_stile}`}
+        >
+          STI
+        </span>
       )}
-    </div>
+    </span>
   );
 };
 
-// ─── Livello Badge ─────────────────────────────────────────
+// ─── Livello Badge — mostra sempre il livello_attuale ──────
 const LivelloBadge: React.FC<{ atleta: any }> = ({ atleta }) => {
-  const ha_carriera = !!(atleta.carriera_artistica || atleta.carriera_stile);
-  if (ha_carriera) return null;
   const lv = atleta.livello_attuale || atleta.percorso_amatori || atleta.livello_amatori;
   if (!lv) return <span className="text-muted-foreground/40">—</span>;
   return (
-    <Badge variant="secondary" className="text-xs">
-      {lv}
-    </Badge>
+    <div className="flex items-center gap-1.5 flex-wrap">
+      <Badge variant="secondary" className="text-xs">
+        {lv}
+      </Badge>
+      <CarrieraBadge atleta={atleta} />
+    </div>
   );
 };
 
