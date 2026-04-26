@@ -17,6 +17,15 @@ import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import InvitoGenitoreModal from "@/components/InvitoGenitoreModal";
 import DateInput from "@/components/forms/DateInput";
+import {
+  CATEGORIE,
+  LIVELLI_AMATORI,
+  LIVELLI_CARRIERA as LIVELLI_CARRIERA_NUOVI,
+  get_categoria_label,
+  get_livello_display,
+  get_pillole_discipline,
+  type Categoria,
+} from "@/lib/atleta-livello";
 
 const LIVELLI_COMUNI = ["Pulcini", "Stellina 1", "Stellina 2", "Stellina 3", "Stellina 4"];
 
@@ -56,38 +65,40 @@ const Field: React.FC<{ label: string; children: React.ReactNode; required?: boo
 const input_cls =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
 
-// ─── Carriera Badge (sigle compatte: ART / STI) ────────────
+// ─── Carriera Badge — pillole ART/STI sul nuovo modello ───
 const CarrieraBadge: React.FC<{ atleta: any }> = ({ atleta }) => {
-  const ha_artistica = !!atleta.carriera_artistica;
-  const ha_stile = !!atleta.carriera_stile;
-  if (!ha_artistica && !ha_stile) return null;
+  const pillole = get_pillole_discipline(atleta);
+  if (pillole.length === 0) return null;
   const pill = "inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold ring-1 ring-inset";
   return (
-    <span className="inline-flex items-center gap-1 align-middle">
-      {ha_artistica && (
-        <span
-          className={`${pill} bg-purple-50 text-purple-700 ring-purple-200`}
-          title={`Carriera Artistica: ${atleta.carriera_artistica}`}
-        >
-          ART
-        </span>
-      )}
-      {ha_stile && (
-        <span
-          className={`${pill} bg-blue-50 text-blue-700 ring-blue-200`}
-          title={`Carriera Stile: ${atleta.carriera_stile}`}
-        >
-          STI
-        </span>
+    <span className="inline-flex items-center gap-1 align-middle flex-wrap">
+      {pillole.map((p) =>
+        p.label === "ART" ? (
+          <span
+            key={p.label}
+            className={`${pill} bg-purple-50 text-purple-700 ring-purple-200`}
+            title={`Carriera Artistica: ${p.value}`}
+          >
+            ART {p.value}
+          </span>
+        ) : (
+          <span
+            key={p.label}
+            className={`${pill} bg-blue-50 text-blue-700 ring-blue-200`}
+            title={`Carriera Stile: ${p.value}`}
+          >
+            STI {p.value}
+          </span>
+        ),
       )}
     </span>
   );
 };
 
-// ─── Livello Badge — mostra sempre il livello_attuale ──────
+// ─── Livello Badge — usa get_livello_display dal nuovo modello ───
 const LivelloBadge: React.FC<{ atleta: any }> = ({ atleta }) => {
-  const lv = atleta.livello_attuale || atleta.percorso_amatori || atleta.livello_amatori;
-  if (!lv) return <span className="text-muted-foreground/40">—</span>;
+  const lv = get_livello_display(atleta);
+  if (!lv || lv === "—") return <span className="text-muted-foreground/40">—</span>;
   return (
     <div className="flex items-center gap-1.5 flex-wrap">
       <Badge variant="secondary" className="text-xs">
@@ -572,36 +583,45 @@ const AthletesPage: React.FC = () => {
     },
   });
 
-  // Conteggi per sezione
-  const base_count = useMemo(() => {
+  // Conteggi per categoria (nuovo modello)
+  const pulcini_count = useMemo(
+    () => atleti.filter((a: any) => (a.categoria ?? "pulcini") === "pulcini").length,
+    [atleti],
+  );
+
+  const amatori_breakdown = useMemo(() => {
     const counts: Record<string, number> = {};
-    for (const l of LIVELLI_COMUNI) counts[l] = 0;
+    for (const l of LIVELLI_AMATORI) counts[l] = 0;
     for (const a of atleti) {
-      const liv = a.percorso_amatori || a.livello_amatori;
-      if (liv && LIVELLI_COMUNI.includes(liv)) counts[liv]++;
+      if (a.categoria === "amatori" && a.livello_amatori && counts[a.livello_amatori] !== undefined) {
+        counts[a.livello_amatori]++;
+      }
     }
     return counts;
   }, [atleti]);
 
-  const artistica_count = useMemo(() => {
+  // Per la sezione Artistica sommiamo, per ogni livello carriera, chi ce l'ha
+  // valorizzato in livello_artistica O in livello_stile (somma logica per livello).
+  const artistica_breakdown = useMemo(() => {
     const counts: Record<string, number> = {};
-    for (const l of LIVELLI_CARRIERA) counts[l] = 0;
+    for (const l of LIVELLI_CARRIERA_NUOVI) counts[l] = 0;
     for (const a of atleti) {
-      if (a.carriera_artistica && LIVELLI_CARRIERA.includes(a.carriera_artistica)) counts[a.carriera_artistica]++;
+      if (a.categoria !== "artistica") continue;
+      if (a.livello_artistica && counts[a.livello_artistica] !== undefined) counts[a.livello_artistica]++;
+      if (a.livello_stile && counts[a.livello_stile] !== undefined) counts[a.livello_stile]++;
     }
     return counts;
   }, [atleti]);
 
-  const stile_count = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const l of LIVELLI_CARRIERA) counts[l] = 0;
-    for (const a of atleti) {
-      if (a.carriera_stile && LIVELLI_CARRIERA.includes(a.carriera_stile)) counts[a.carriera_stile]++;
-    }
-    return counts;
-  }, [atleti]);
+  const [card_filter, set_card_filter] = useState<
+    | { sezione: "pulcini" }
+    | { sezione: "amatori"; livello: string }
+    | { sezione: "artistica"; livello: string }
+    | null
+  >(null);
 
-  const [card_filter, set_card_filter] = useState<{ sezione: "base" | "artistica" | "stile"; livello: string } | null>(null);
+  // Filtro a cascata: prima categoria, poi (se categoria scelta) livello specifico
+  const [categoria_filter, set_categoria_filter] = useState<"tutti" | Categoria>("tutti");
 
   const filtered = atleti.filter((a: any) => {
     const name_match = `${a.nome} ${a.cognome}`.toLowerCase().includes(search.toLowerCase());
@@ -611,18 +631,39 @@ const AthletesPage: React.FC = () => {
       (status_filter === "agoniste" && (a.agonista || a.atleta_federazione)) ||
       (status_filter === "federazione" && a.atleta_federazione);
     if (!status_match) return false;
+    if (!name_match) return false;
+
+    // Filtro card click (precedenza alta)
     if (card_filter) {
-      const { sezione, livello } = card_filter;
-      if (sezione === "base") return name_match && (a.percorso_amatori === livello || a.livello_amatori === livello);
-      if (sezione === "artistica") return name_match && a.carriera_artistica === livello;
-      if (sezione === "stile") return name_match && a.carriera_stile === livello;
+      if (card_filter.sezione === "pulcini") {
+        return (a.categoria ?? "pulcini") === "pulcini";
+      }
+      if (card_filter.sezione === "amatori") {
+        return a.categoria === "amatori" && a.livello_amatori === card_filter.livello;
+      }
+      if (card_filter.sezione === "artistica") {
+        return (
+          a.categoria === "artistica" &&
+          (a.livello_artistica === card_filter.livello || a.livello_stile === card_filter.livello)
+        );
+      }
     }
-    if (level_filter !== "tutti") {
-      const matches = a.carriera_artistica === level_filter || a.carriera_stile === level_filter ||
-        (!a.carriera_artistica && !a.carriera_stile && (a.percorso_amatori || a.livello_amatori) === level_filter);
-      return name_match && matches;
+
+    // Filtro a cascata categoria → livello
+    if (categoria_filter !== "tutti") {
+      const cat = (a.categoria ?? "pulcini") as Categoria;
+      if (cat !== categoria_filter) return false;
+      if (level_filter !== "tutti") {
+        if (categoria_filter === "pulcini") return true; // niente sottolivelli
+        if (categoria_filter === "amatori") return a.livello_amatori === level_filter;
+        if (categoria_filter === "artistica") {
+          return a.livello_artistica === level_filter || a.livello_stile === level_filter;
+        }
+      }
+      return true;
     }
-    return name_match;
+
+    return true;
   });
 
   const handle_save = async (data: any) => {
@@ -851,23 +892,65 @@ const AthletesPage: React.FC = () => {
           </Button>
         </div>
 
-        {/* Card livelli — 3 sezioni */}
+        {/* Card livelli — 3 sezioni: PULCINI / AMATORI / ARTISTICA */}
         <div className="space-y-2">
-          {/* BASE */}
-          {LIVELLI_COMUNI.some(l => base_count[l] > 0) && (
+          {/* PULCINI — totale unico, niente sotto-livelli */}
+          {pulcini_count > 0 && (
             <div className="flex items-center gap-3">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-20 shrink-0">Base</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-20 shrink-0">
+                Pulcini
+              </span>
               <div className="flex gap-2 overflow-x-auto pb-1">
-                {LIVELLI_COMUNI.filter(l => base_count[l] > 0).map(l => {
-                  const sel = card_filter?.sezione === "base" && card_filter.livello === l;
+                {(() => {
+                  const sel = card_filter?.sezione === "pulcini";
                   return (
-                    <button key={l} onClick={() => {
-                      if (sel) set_card_filter(null);
-                      else { set_card_filter({ sezione: "base", livello: l }); set_level_filter("tutti"); }
-                    }} className={`shrink-0 px-4 py-3 rounded-xl shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md ${
-                      sel ? "border-2 border-blue-500 bg-blue-100" : "border border-blue-200 bg-blue-50"
-                    }`}>
-                      <span className="block text-2xl font-bold text-blue-800">{base_count[l]}</span>
+                    <button
+                      onClick={() => {
+                        if (sel) set_card_filter(null);
+                        else {
+                          set_card_filter({ sezione: "pulcini" });
+                          set_level_filter("tutti");
+                          set_categoria_filter("tutti");
+                        }
+                      }}
+                      className={`shrink-0 px-4 py-3 rounded-xl shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md ${
+                        sel ? "border-2 border-emerald-500 bg-emerald-100" : "border border-emerald-200 bg-emerald-50"
+                      }`}
+                    >
+                      <span className="block text-2xl font-bold text-emerald-800">{pulcini_count}</span>
+                      <span className="block text-xs text-emerald-600 mt-0.5">Totale</span>
+                    </button>
+                  );
+                })()}
+              </div>
+            </div>
+          )}
+
+          {/* AMATORI — breakdown Stellina 1-4 */}
+          {LIVELLI_AMATORI.some((l) => amatori_breakdown[l] > 0) && (
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-20 shrink-0">
+                Amatori
+              </span>
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {LIVELLI_AMATORI.filter((l) => amatori_breakdown[l] > 0).map((l) => {
+                  const sel = card_filter?.sezione === "amatori" && card_filter.livello === l;
+                  return (
+                    <button
+                      key={l}
+                      onClick={() => {
+                        if (sel) set_card_filter(null);
+                        else {
+                          set_card_filter({ sezione: "amatori", livello: l });
+                          set_level_filter("tutti");
+                          set_categoria_filter("tutti");
+                        }
+                      }}
+                      className={`shrink-0 px-4 py-3 rounded-xl shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md ${
+                        sel ? "border-2 border-blue-500 bg-blue-100" : "border border-blue-200 bg-blue-50"
+                      }`}
+                    >
+                      <span className="block text-2xl font-bold text-blue-800">{amatori_breakdown[l]}</span>
                       <span className="block text-xs text-blue-600 mt-0.5">{l}</span>
                     </button>
                   );
@@ -875,44 +958,33 @@ const AthletesPage: React.FC = () => {
               </div>
             </div>
           )}
-          {/* ARTISTICA */}
-          {LIVELLI_CARRIERA.some(l => artistica_count[l] > 0) && (
+
+          {/* ARTISTICA — breakdown carriera (somma artistica + stile) */}
+          {LIVELLI_CARRIERA_NUOVI.some((l) => artistica_breakdown[l] > 0) && (
             <div className="flex items-center gap-3">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-20 shrink-0">Artistica</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-20 shrink-0">
+                Artistica
+              </span>
               <div className="flex gap-2 overflow-x-auto pb-1">
-                {LIVELLI_CARRIERA.filter(l => artistica_count[l] > 0).map(l => {
+                {LIVELLI_CARRIERA_NUOVI.filter((l) => artistica_breakdown[l] > 0).map((l) => {
                   const sel = card_filter?.sezione === "artistica" && card_filter.livello === l;
                   return (
-                    <button key={l} onClick={() => {
-                      if (sel) set_card_filter(null);
-                      else { set_card_filter({ sezione: "artistica", livello: l }); set_level_filter("tutti"); }
-                    }} className={`shrink-0 px-4 py-3 rounded-xl shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md ${
-                      sel ? "border-2 border-purple-500 bg-purple-100" : "border border-purple-200 bg-purple-50"
-                    }`}>
-                      <span className="block text-2xl font-bold text-purple-800">{artistica_count[l]}</span>
+                    <button
+                      key={l}
+                      onClick={() => {
+                        if (sel) set_card_filter(null);
+                        else {
+                          set_card_filter({ sezione: "artistica", livello: l });
+                          set_level_filter("tutti");
+                          set_categoria_filter("tutti");
+                        }
+                      }}
+                      className={`shrink-0 px-4 py-3 rounded-xl shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md ${
+                        sel ? "border-2 border-purple-500 bg-purple-100" : "border border-purple-200 bg-purple-50"
+                      }`}
+                    >
+                      <span className="block text-2xl font-bold text-purple-800">{artistica_breakdown[l]}</span>
                       <span className="block text-xs text-purple-600 mt-0.5">{l}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-          {/* STILE */}
-          {LIVELLI_CARRIERA.some(l => stile_count[l] > 0) && (
-            <div className="flex items-center gap-3">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-20 shrink-0">Stile</span>
-              <div className="flex gap-2 overflow-x-auto pb-1">
-                {LIVELLI_CARRIERA.filter(l => stile_count[l] > 0).map(l => {
-                  const sel = card_filter?.sezione === "stile" && card_filter.livello === l;
-                  return (
-                    <button key={l} onClick={() => {
-                      if (sel) set_card_filter(null);
-                      else { set_card_filter({ sezione: "stile", livello: l }); set_level_filter("tutti"); }
-                    }} className={`shrink-0 px-4 py-3 rounded-xl shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md ${
-                      sel ? "border-2 border-teal-500 bg-teal-100" : "border border-teal-200 bg-teal-50"
-                    }`}>
-                      <span className="block text-2xl font-bold text-teal-800">{stile_count[l]}</span>
-                      <span className="block text-xs text-teal-600 mt-0.5">{l}</span>
                     </button>
                   );
                 })}
@@ -931,19 +1003,41 @@ const AthletesPage: React.FC = () => {
               className="pl-9"
             />
           </div>
-          <Select value={level_filter} onValueChange={set_level_filter}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder={t("livello")} />
+          <Select
+            value={categoria_filter}
+            onValueChange={(v) => {
+              set_categoria_filter(v as "tutti" | Categoria);
+              set_level_filter("tutti");
+              set_card_filter(null);
+            }}
+          >
+            <SelectTrigger className="w-44">
+              <SelectValue placeholder="Categoria" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="tutti">Tutti i livelli</SelectItem>
-              {TUTTI_LIVELLI.map((l) => (
-                <SelectItem key={l} value={l}>
-                  {l}
+              <SelectItem value="tutti">Tutte le categorie</SelectItem>
+              {CATEGORIE.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {get_categoria_label(c)}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+          {categoria_filter !== "tutti" && categoria_filter !== "pulcini" && (
+            <Select value={level_filter} onValueChange={set_level_filter}>
+              <SelectTrigger className="w-44">
+                <SelectValue placeholder={t("livello")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="tutti">Tutti i livelli</SelectItem>
+                {(categoria_filter === "amatori" ? LIVELLI_AMATORI : LIVELLI_CARRIERA_NUOVI).map((l) => (
+                  <SelectItem key={l} value={l}>
+                    {l}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <Select value={status_filter} onValueChange={set_status_filter}>
             <SelectTrigger className="w-48">
               <SelectValue placeholder="Status" />

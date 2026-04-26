@@ -76,6 +76,7 @@ export type Database = {
           attivo_come_monitore: boolean | null
           carriera_artistica: string | null
           carriera_stile: string | null
+          categoria: string
           club_id: string
           codice_fiscale: string | null
           cognome: string
@@ -99,8 +100,13 @@ export type Database = {
           licenza_sis_disciplina: string | null
           licenza_sis_numero: string | null
           licenza_sis_validita_a: string | null
+          livello_amatori: string | null
+          livello_artistica: string | null
+          livello_artistica_in_preparazione: string | null
           livello_attuale: string | null
           livello_in_preparazione: string | null
+          livello_stile: string | null
+          livello_stile_in_preparazione: string | null
           nome: string
           note: string | null
           ore_pista_stagione: number | null
@@ -116,6 +122,7 @@ export type Database = {
           attivo_come_monitore?: boolean | null
           carriera_artistica?: string | null
           carriera_stile?: string | null
+          categoria?: string
           club_id: string
           codice_fiscale?: string | null
           cognome?: string
@@ -139,8 +146,13 @@ export type Database = {
           licenza_sis_disciplina?: string | null
           licenza_sis_numero?: string | null
           licenza_sis_validita_a?: string | null
+          livello_amatori?: string | null
+          livello_artistica?: string | null
+          livello_artistica_in_preparazione?: string | null
           livello_attuale?: string | null
           livello_in_preparazione?: string | null
+          livello_stile?: string | null
+          livello_stile_in_preparazione?: string | null
           nome?: string
           note?: string | null
           ore_pista_stagione?: number | null
@@ -156,6 +168,7 @@ export type Database = {
           attivo_come_monitore?: boolean | null
           carriera_artistica?: string | null
           carriera_stile?: string | null
+          categoria?: string
           club_id?: string
           codice_fiscale?: string | null
           cognome?: string
@@ -179,8 +192,13 @@ export type Database = {
           licenza_sis_disciplina?: string | null
           licenza_sis_numero?: string | null
           licenza_sis_validita_a?: string | null
+          livello_amatori?: string | null
+          livello_artistica?: string | null
+          livello_artistica_in_preparazione?: string | null
           livello_attuale?: string | null
           livello_in_preparazione?: string | null
+          livello_stile?: string | null
+          livello_stile_in_preparazione?: string | null
           nome?: string
           note?: string | null
           ore_pista_stagione?: number | null
