@@ -630,11 +630,14 @@ const InvoicesPage: React.FC = () => {
       toast({ title: "Errore invio email", description: err?.message, variant: "destructive" });
     }
   };
+
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
+  }
 
   const atleta_selected = selected_fattura ? atleti.find((a: any) => a.id === selected_fattura.atleta_id) : null;
 

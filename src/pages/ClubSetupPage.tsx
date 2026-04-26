@@ -478,7 +478,7 @@ const ClubSetupPage: React.FC = () => {
             <Field label="Via / Strada *" icon={<MapPin className="w-3.5 h-3.5" />}>
               <Input required value={get_val("indirizzo")} onChange={(e) => set_val("indirizzo", e.target.value)} placeholder="Via del Ghiaccio 7" />
             </Field>
-            <Field label="CAP *" icon={<MapPin className="w-3.5 h-3.5" />}>
+            <Field label="NAP *" icon={<MapPin className="w-3.5 h-3.5" />}>
               <Input required maxLength={10} value={get_val("cap")} onChange={(e) => set_val("cap", e.target.value)} placeholder="6900" />
             </Field>
             <Field label="Città *" icon={<MapPin className="w-3.5 h-3.5" />}>

@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
 import { use_gare, use_atleti, get_atleta_name_from_list } from "@/hooks/use-supabase-data";
 import ImportGaraPdf from "@/components/ImportGaraPdf";
@@ -809,6 +810,23 @@ const CompetitionsPage: React.FC = () => {
   const [grafico_atleta, set_grafico_atleta] = useState<any>(null);
   const [show_archivio, set_show_archivio] = useState(false);
 
+  const [search_params, set_search_params] = useSearchParams();
+  const [active_tab, set_active_tab] = useState<string>(() => search_params.get("tab") || "elenco");
+
+  useEffect(() => {
+    const tab = search_params.get("tab");
+    if (tab && tab !== active_tab) set_active_tab(tab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search_params]);
+
+  const handle_tab_change = (val: string) => {
+    set_active_tab(val);
+    const next = new URLSearchParams(search_params);
+    if (val === "elenco") next.delete("tab");
+    else next.set("tab", val);
+    set_search_params(next, { replace: true });
+  };
+
   const gare_future = useMemo(
     () =>
       gare
@@ -1212,7 +1230,7 @@ const CompetitionsPage: React.FC = () => {
           </Button>
         </div>
 
-        <Tabs defaultValue="elenco" className="w-full">
+        <Tabs value={active_tab} onValueChange={handle_tab_change} className="w-full">
           <TabsList>
             <TabsTrigger value="elenco">Elenco gare</TabsTrigger>
             <TabsTrigger value="medagliere">🏆 Medagliere stagione</TabsTrigger>
