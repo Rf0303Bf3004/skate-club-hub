@@ -801,7 +801,20 @@ const CompetitionsPage: React.FC = () => {
   const elimina = use_elimina_gara();
   const queryClient = useQueryClient();
 
-  const [selected_id, set_selected_id] = useState<string | null>(null);
+  const route_params = useParams<{ id?: string }>();
+  const navigate = useNavigate();
+  const [selected_id, set_selected_id] = useState<string | null>(route_params.id ?? null);
+
+  useEffect(() => {
+    if (route_params.id && route_params.id !== selected_id) {
+      set_selected_id(route_params.id);
+    }
+    if (!route_params.id && selected_id) {
+      // route changed away from /gare/:id (e.g. back button)
+      set_selected_id(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route_params.id]);
   const [show_modal, set_show_modal] = useState(false);
   const [edit_gara, set_edit_gara] = useState<any | null>(null);
   const [confirm_delete, set_confirm_delete] = useState(false);
