@@ -1230,7 +1230,7 @@ const CompetitionsPage: React.FC = () => {
           </Button>
         </div>
 
-        <Tabs defaultValue="elenco" className="w-full">
+        <Tabs value={active_tab} onValueChange={handle_tab_change} className="w-full">
           <TabsList>
             <TabsTrigger value="elenco">Elenco gare</TabsTrigger>
             <TabsTrigger value="medagliere">🏆 Medagliere stagione</TabsTrigger>
