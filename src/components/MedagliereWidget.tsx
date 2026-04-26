@@ -67,6 +67,7 @@ const MedagliereWidget: React.FC<Props> = ({ compact = false, limit }) => {
             altre: 0,
             punti: 0,
             partecipazioni: 0,
+            miglior_punteggio: null,
           });
         }
         const r = map.get(key)!;
@@ -79,6 +80,12 @@ const MedagliereWidget: React.FC<Props> = ({ compact = false, limit }) => {
         const pos = ai.posizione ? String(Number(ai.posizione)) : null;
         if (pos && punti_table[pos] != null) {
           r.punti += Number(punti_table[pos]) || 0;
+        }
+        const punt = ai.punteggio != null ? Number(ai.punteggio) : NaN;
+        if (!isNaN(punt) && punt > 0) {
+          if (r.miglior_punteggio == null || punt > r.miglior_punteggio) {
+            r.miglior_punteggio = punt;
+          }
         }
       }
     }
