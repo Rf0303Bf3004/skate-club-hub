@@ -206,7 +206,7 @@ export default function TestLivelloPage() {
       const promossi = test_atleti.filter((ta) => ta.esito === "superato");
       const field =
         selected_test.tipo === "artistica" ? "carriera_artistica" :
-        selected_test.tipo === "stile" ? "carriera_stile" : "percorso_amatori";
+        selected_test.tipo === "stile" ? "carriera_stile" : "livello_attuale";
       const carriera_label =
         selected_test.tipo === "amatori" ? "Amatori" :
         selected_test.tipo === "artistica" ? "Artistica" : "Stile";
@@ -218,7 +218,7 @@ export default function TestLivelloPage() {
         if (!atleta) continue;
         const livello_attuale =
           selected_test.tipo === "artistica" ? atleta.carriera_artistica :
-          selected_test.tipo === "stile" ? atleta.carriera_stile : atleta.percorso_amatori;
+          selected_test.tipo === "stile" ? atleta.carriera_stile : atleta.livello_attuale;
         // priorità: livello_accesso esplicito del test, altrimenti next nella progressione
         const livello_target = selected_test.livello_accesso || next_livello(livello_attuale);
         if (!livello_target) continue;
