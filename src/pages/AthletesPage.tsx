@@ -1003,19 +1003,41 @@ const AthletesPage: React.FC = () => {
               className="pl-9"
             />
           </div>
-          <Select value={level_filter} onValueChange={set_level_filter}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder={t("livello")} />
+          <Select
+            value={categoria_filter}
+            onValueChange={(v) => {
+              set_categoria_filter(v as "tutti" | Categoria);
+              set_level_filter("tutti");
+              set_card_filter(null);
+            }}
+          >
+            <SelectTrigger className="w-44">
+              <SelectValue placeholder="Categoria" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="tutti">Tutti i livelli</SelectItem>
-              {TUTTI_LIVELLI.map((l) => (
-                <SelectItem key={l} value={l}>
-                  {l}
+              <SelectItem value="tutti">Tutte le categorie</SelectItem>
+              {CATEGORIE.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {get_categoria_label(c)}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+          {categoria_filter !== "tutti" && categoria_filter !== "pulcini" && (
+            <Select value={level_filter} onValueChange={set_level_filter}>
+              <SelectTrigger className="w-44">
+                <SelectValue placeholder={t("livello")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="tutti">Tutti i livelli</SelectItem>
+                {(categoria_filter === "amatori" ? LIVELLI_AMATORI : LIVELLI_CARRIERA_NUOVI).map((l) => (
+                  <SelectItem key={l} value={l}>
+                    {l}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <Select value={status_filter} onValueChange={set_status_filter}>
             <SelectTrigger className="w-48">
               <SelectValue placeholder="Status" />
