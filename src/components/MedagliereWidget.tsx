@@ -192,6 +192,11 @@ const MedagliereWidget: React.FC<Props> = ({ compact = false, limit }) => {
                     {r.altre || "—"}
                   </td>
                 )}
+                {!compact && (
+                  <td className="px-3 py-2 text-right text-xs tabular-nums text-foreground">
+                    {r.miglior_punteggio != null ? r.miglior_punteggio.toFixed(2) : "—"}
+                  </td>
+                )}
                 <td className="px-3 py-2 text-right text-xs font-bold tabular-nums text-primary">{r.punti}</td>
               </tr>
             ))}
