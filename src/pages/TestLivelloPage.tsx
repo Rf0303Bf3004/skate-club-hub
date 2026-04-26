@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useI18n } from "@/lib/i18n";
@@ -28,7 +29,8 @@ type TestAtleta = {
 
 type Atleta = {
   id: string; nome: string; cognome: string; attivo: boolean | null;
-  percorso_amatori: string | null; carriera_artistica: string | null; carriera_stile: string | null;
+  livello_attuale: string | null;
+  carriera_artistica: string | null; carriera_stile: string | null;
 };
 
 const ESITO_OPTIONS = [
@@ -63,9 +65,24 @@ const empty_form = {
 export default function TestLivelloPage() {
   const club_id = get_current_club_id();
   const qc = useQueryClient();
-  const [view, set_view] = useState<"list" | "detail" | "new">("list");
-  const [selected_test_id, set_selected_test_id] = useState<string | null>(null);
+  const route_params = useParams<{ id?: string }>();
+  const navigate = useNavigate();
+  const [view, set_view] = useState<"list" | "detail" | "new">(route_params.id ? "detail" : "list");
+  const [selected_test_id, set_selected_test_id] = useState<string | null>(route_params.id ?? null);
   const [form, set_form] = useState({ ...empty_form });
+
+  // Sync URL → state
+  useEffect(() => {
+    if (route_params.id && route_params.id !== selected_test_id) {
+      set_selected_test_id(route_params.id);
+      set_view("detail");
+    }
+    if (!route_params.id && view === "detail") {
+      set_view("list");
+      set_selected_test_id(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route_params.id]);
 
   // ─── Queries ──────────────────────────────────────────
   const { data: tests = [], isLoading } = useQuery({
@@ -88,7 +105,7 @@ export default function TestLivelloPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("atleti")
-        .select("id, nome, cognome, attivo, percorso_amatori, carriera_artistica, carriera_stile")
+        .select("id, nome, cognome, attivo, livello_attuale, carriera_artistica, carriera_stile")
         .eq("club_id", club_id!)
         .eq("attivo", true)
         .order("cognome");
