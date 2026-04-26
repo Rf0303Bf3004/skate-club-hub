@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
 import { use_gare, use_atleti, get_atleta_name_from_list } from "@/hooks/use-supabase-data";
 import ImportGaraPdf from "@/components/ImportGaraPdf";
