@@ -93,6 +93,7 @@ const AuthenticatedApp = () => {
         <Routes>
           <Route path="/" element={<SmartHome />} />
           <Route path="/atleti" element={<AthletesPage />} />
+          <Route path="/atleti/:id" element={<AthletesPage />} />
           <Route path="/istruttori" element={<InstructorsPage />} />
           <Route path="/corsi" element={<CoursesPage />} />
           <Route path="/gare" element={<CompetitionsPage />} />
@@ -105,6 +106,11 @@ const AuthenticatedApp = () => {
           <Route path="/medagliere" element={<MedagliereePage />} />
           <Route path="/pre-season" element={<Navigate to="/campi-eventi" replace />} />
           <Route path="/post-season" element={<Navigate to="/campi-eventi" replace />} />
+          {/* Alias rotte sidebar (varianti URL "lunghe") */}
+          <Route path="/test-livello" element={<Navigate to="/test" replace />} />
+          <Route path="/planning-ghiaccio" element={<Navigate to="/planning" replace />} />
+          <Route path="/configurazione-club" element={<Navigate to="/setup-club" replace />} />
+          <Route path="/gestione-ruoli" element={<Navigate to="/ruoli-permessi" replace />} />
           <Route path="/planning" element={<PlanningPage />} />
           <Route path="/setup-club" element={<ClubSetupPage />} />
           <Route path="/gestione-avanzata" element={<AdvancedManagementPage />} />
