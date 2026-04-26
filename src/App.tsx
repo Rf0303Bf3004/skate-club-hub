@@ -33,8 +33,6 @@ import TestLivelloPage from "@/pages/TestLivelloPage";
 import PortaleAtletaPage from "@/pages/PortaleAtletaPage";
 import CampiEventiPage from "@/pages/CampiEventiPage";
 import MedagliereePage from "@/pages/MedagliereePage";
-import PreSeasonPage from "@/pages/PreSeasonPage";
-import PostSeasonPage from "@/pages/PostSeasonPage";
 
 const queryClient = new QueryClient();
 
