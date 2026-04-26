@@ -583,36 +583,45 @@ const AthletesPage: React.FC = () => {
     },
   });
 
-  // Conteggi per sezione
-  const base_count = useMemo(() => {
+  // Conteggi per categoria (nuovo modello)
+  const pulcini_count = useMemo(
+    () => atleti.filter((a: any) => (a.categoria ?? "pulcini") === "pulcini").length,
+    [atleti],
+  );
+
+  const amatori_breakdown = useMemo(() => {
     const counts: Record<string, number> = {};
-    for (const l of LIVELLI_COMUNI) counts[l] = 0;
+    for (const l of LIVELLI_AMATORI) counts[l] = 0;
     for (const a of atleti) {
-      const liv = a.percorso_amatori || a.livello_amatori;
-      if (liv && LIVELLI_COMUNI.includes(liv)) counts[liv]++;
+      if (a.categoria === "amatori" && a.livello_amatori && counts[a.livello_amatori] !== undefined) {
+        counts[a.livello_amatori]++;
+      }
     }
     return counts;
   }, [atleti]);
 
-  const artistica_count = useMemo(() => {
+  // Per la sezione Artistica sommiamo, per ogni livello carriera, chi ce l'ha
+  // valorizzato in livello_artistica O in livello_stile (somma logica per livello).
+  const artistica_breakdown = useMemo(() => {
     const counts: Record<string, number> = {};
-    for (const l of LIVELLI_CARRIERA) counts[l] = 0;
+    for (const l of LIVELLI_CARRIERA_NUOVI) counts[l] = 0;
     for (const a of atleti) {
-      if (a.carriera_artistica && LIVELLI_CARRIERA.includes(a.carriera_artistica)) counts[a.carriera_artistica]++;
+      if (a.categoria !== "artistica") continue;
+      if (a.livello_artistica && counts[a.livello_artistica] !== undefined) counts[a.livello_artistica]++;
+      if (a.livello_stile && counts[a.livello_stile] !== undefined) counts[a.livello_stile]++;
     }
     return counts;
   }, [atleti]);
 
-  const stile_count = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const l of LIVELLI_CARRIERA) counts[l] = 0;
-    for (const a of atleti) {
-      if (a.carriera_stile && LIVELLI_CARRIERA.includes(a.carriera_stile)) counts[a.carriera_stile]++;
-    }
-    return counts;
-  }, [atleti]);
+  const [card_filter, set_card_filter] = useState<
+    | { sezione: "pulcini" }
+    | { sezione: "amatori"; livello: string }
+    | { sezione: "artistica"; livello: string }
+    | null
+  >(null);
 
-  const [card_filter, set_card_filter] = useState<{ sezione: "base" | "artistica" | "stile"; livello: string } | null>(null);
+  // Filtro a cascata: prima categoria, poi (se categoria scelta) livello specifico
+  const [categoria_filter, set_categoria_filter] = useState<"tutti" | Categoria>("tutti");
 
   const filtered = atleti.filter((a: any) => {
     const name_match = `${a.nome} ${a.cognome}`.toLowerCase().includes(search.toLowerCase());
@@ -622,18 +631,39 @@ const AthletesPage: React.FC = () => {
       (status_filter === "agoniste" && (a.agonista || a.atleta_federazione)) ||
       (status_filter === "federazione" && a.atleta_federazione);
     if (!status_match) return false;
+    if (!name_match) return false;
+
+    // Filtro card click (precedenza alta)
     if (card_filter) {
-      const { sezione, livello } = card_filter;
-      if (sezione === "base") return name_match && (a.percorso_amatori === livello || a.livello_amatori === livello);
-      if (sezione === "artistica") return name_match && a.carriera_artistica === livello;
-      if (sezione === "stile") return name_match && a.carriera_stile === livello;
+      if (card_filter.sezione === "pulcini") {
+        return (a.categoria ?? "pulcini") === "pulcini";
+      }
+      if (card_filter.sezione === "amatori") {
+        return a.categoria === "amatori" && a.livello_amatori === card_filter.livello;
+      }
+      if (card_filter.sezione === "artistica") {
+        return (
+          a.categoria === "artistica" &&
+          (a.livello_artistica === card_filter.livello || a.livello_stile === card_filter.livello)
+        );
+      }
     }
-    if (level_filter !== "tutti") {
-      const matches = a.carriera_artistica === level_filter || a.carriera_stile === level_filter ||
-        (!a.carriera_artistica && !a.carriera_stile && (a.percorso_amatori || a.livello_amatori) === level_filter);
-      return name_match && matches;
+
+    // Filtro a cascata categoria → livello
+    if (categoria_filter !== "tutti") {
+      const cat = (a.categoria ?? "pulcini") as Categoria;
+      if (cat !== categoria_filter) return false;
+      if (level_filter !== "tutti") {
+        if (categoria_filter === "pulcini") return true; // niente sottolivelli
+        if (categoria_filter === "amatori") return a.livello_amatori === level_filter;
+        if (categoria_filter === "artistica") {
+          return a.livello_artistica === level_filter || a.livello_stile === level_filter;
+        }
+      }
+      return true;
     }
-    return name_match;
+
+    return true;
   });
 
   const handle_save = async (data: any) => {
