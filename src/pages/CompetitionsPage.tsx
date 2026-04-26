@@ -924,6 +924,7 @@ const CompetitionsPage: React.FC = () => {
               onClick={() => {
                 set_selected_id(null);
                 set_confirm_delete(false);
+                if (route_params.id) navigate("/gare", { replace: false });
               }}
               className="text-muted-foreground"
             >
