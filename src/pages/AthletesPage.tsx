@@ -682,7 +682,10 @@ const AthletesPage: React.FC = () => {
                     </div>
                   )}
                   <div>
-                    <p className="text-xl font-semibold text-foreground">{atleta.nome} {atleta.cognome}</p>
+                    <p className="text-xl font-semibold text-foreground inline-flex items-center gap-2 flex-wrap">
+                      <span>{atleta.nome} {atleta.cognome}</span>
+                      <AthleteBadges agonista={atleta.agonista} atleta_federazione={atleta.atleta_federazione} />
+                    </p>
                     <p className="text-sm text-muted-foreground mt-0.5">
                       Nato/a il {atleta.data_nascita ? new Date(atleta.data_nascita).toLocaleDateString("it-IT") : "—"}
                     </p>
