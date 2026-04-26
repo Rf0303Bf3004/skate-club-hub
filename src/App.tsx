@@ -103,8 +103,8 @@ const AuthenticatedApp = () => {
           <Route path="/stagioni" element={<SeasonsPage />} />
           <Route path="/campi-eventi" element={<CampiEventiPage />} />
           <Route path="/medagliere" element={<MedagliereePage />} />
-          <Route path="/pre-season" element={<PreSeasonPage />} />
-          <Route path="/post-season" element={<PostSeasonPage />} />
+          <Route path="/pre-season" element={<Navigate to="/campi-eventi" replace />} />
+          <Route path="/post-season" element={<Navigate to="/campi-eventi" replace />} />
           <Route path="/planning" element={<PlanningPage />} />
           <Route path="/setup-club" element={<ClubSetupPage />} />
           <Route path="/gestione-avanzata" element={<AdvancedManagementPage />} />
