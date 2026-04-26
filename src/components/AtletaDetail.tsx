@@ -249,6 +249,29 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   const [generating_portal, set_generating_portal] = useState(false);
   const [show_qr_portal, set_show_qr_portal] = useState(false);
 
+  // Deep-link tab via ?tab=...
+  const VALID_TABS = ["anagrafica", "livello", "corsi", "gare", "medagliere", "genitori", "fatture", "lezioni", "calendario", "storico_test"] as const;
+  const [search_params, set_search_params] = useSearchParams();
+  const initial_tab = (() => {
+    const t = search_params.get("tab");
+    return t && (VALID_TABS as readonly string[]).includes(t) ? t : "anagrafica";
+  })();
+  const [active_tab, set_active_tab] = useState<string>(initial_tab);
+  // Sync quando l'URL cambia esternamente
+  useEffect(() => {
+    const t = search_params.get("tab");
+    if (t && (VALID_TABS as readonly string[]).includes(t) && t !== active_tab) {
+      set_active_tab(t);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search_params]);
+  const handle_tab_change = (v: string) => {
+    set_active_tab(v);
+    const next = new URLSearchParams(search_params);
+    if (v === "anagrafica") next.delete("tab"); else next.set("tab", v);
+    set_search_params(next, { replace: true });
+  };
+
 
   const [form, set_form] = useState({
     ...a,
@@ -594,7 +617,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
           </div>
         </div>
 
-        <Tabs defaultValue="anagrafica">
+        <Tabs value={active_tab} onValueChange={handle_tab_change}>
           <TabsList className="flex-wrap">
             <TabsTrigger value="anagrafica">{t("anagrafica")}</TabsTrigger>
             <TabsTrigger value="livello">{t("livello")}</TabsTrigger>
