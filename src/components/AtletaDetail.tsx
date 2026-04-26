@@ -712,114 +712,179 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
 
           {/* ── Livello ── */}
           <TabsContent value="livello" className="mt-6">
-            <div className="bg-card rounded-xl shadow-card p-6 space-y-5 max-w-lg">
-              <div className="space-y-1.5">
-                <Label className="text-sm text-muted-foreground">Livello attuale</Label>
-                <Select
-                  value={form.percorso_amatori}
-                  onValueChange={(v) => {
-                    set_form((p: any) => ({
-                      ...p,
-                      percorso_amatori: v,
-                      carriera_artistica: v !== "Stellina 4" ? "" : p.carriera_artistica,
-                      carriera_stile: v !== "Stellina 4" ? "" : p.carriera_stile,
-                      atleta_federazione: v !== "Stellina 4" ? false : p.atleta_federazione,
-                    }));
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {LIVELLI_COMUNI.map((l) => (
-                      <SelectItem key={l} value={l}>
-                        {l}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label
-                  className={`text-sm ${!is_carriera_attiva ? "text-muted-foreground/50" : "text-muted-foreground"}`}
-                >
-                  Carriera Artistica
-                </Label>
-                <Select
-                  value={form.carriera_artistica || "nessuna"}
-                  onValueChange={(v) => upd("carriera_artistica", v === "nessuna" ? "" : v)}
-                  disabled={!is_carriera_attiva}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Nessuna" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="nessuna">Nessuna</SelectItem>
-                    {LIVELLI_PROGRESSIONE.map((l) => (
-                      <SelectItem key={l} value={l}>
-                        {l}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {!is_carriera_attiva && (
-                  <p className="text-xs text-muted-foreground italic">Si sblocca dopo Stellina 4</p>
+            <div className="space-y-6 max-w-2xl">
+              {/* ─── Sezione Categoria ─── */}
+              <div className="bg-card rounded-xl shadow-card p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-foreground">Categoria</h3>
+                  <Badge variant="outline" className="capitalize">{form.categoria}</Badge>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm text-muted-foreground">Stadio della carriera</Label>
+                  <Select
+                    value={form.categoria}
+                    onValueChange={(v) => {
+                      set_form((p: any) => ({
+                        ...p,
+                        categoria: v,
+                        // applico default sensati
+                        livello_amatori: v === "amatori" && !p.livello_amatori ? "Stellina 1" : p.livello_amatori,
+                      }));
+                    }}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pulcini">Pulcini</SelectItem>
+                      <SelectItem value="amatori">Amatori</SelectItem>
+                      <SelectItem value="artistica">Artistica</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {form.categoria !== "artistica" && (
+                  <Button
+                    variant="outline"
+                    className="w-full gap-2"
+                    onClick={() => {
+                      if (form.categoria === "pulcini") {
+                        set_form((p: any) => ({ ...p, categoria: "amatori", livello_amatori: p.livello_amatori || "Stellina 1" }));
+                        toast({ title: "🎉 Promosso ad Amatori", description: "Livello iniziale: Stellina 1" });
+                      } else if (form.categoria === "amatori") {
+                        set_form((p: any) => ({ ...p, categoria: "artistica" }));
+                        toast({
+                          title: "🎉 Promosso ad Artistica",
+                          description: "Livello amatori mantenuto come fallback fino al superamento di Interbronzo",
+                        });
+                      }
+                    }}
+                  >
+                    <ArrowRightLeft className="w-4 h-4" />
+                    Promuovi a {form.categoria === "pulcini" ? "Amatori" : "Artistica"}
+                  </Button>
                 )}
               </div>
 
-              <div className="space-y-1.5">
-                <Label
-                  className={`text-sm ${!is_carriera_attiva ? "text-muted-foreground/50" : "text-muted-foreground"}`}
-                >
-                  Carriera Stile
-                </Label>
-                <Select
-                  value={form.carriera_stile || "nessuna"}
-                  onValueChange={(v) => upd("carriera_stile", v === "nessuna" ? "" : v)}
-                  disabled={!is_carriera_attiva}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Nessuna" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="nessuna">Nessuna</SelectItem>
-                    {LIVELLI_PROGRESSIONE.map((l) => (
-                      <SelectItem key={l} value={l}>
-                        {l}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {!is_carriera_attiva && (
-                  <p className="text-xs text-muted-foreground italic">Si sblocca dopo Stellina 4</p>
-                )}
-              </div>
+              {/* ─── Sezione Livelli ─── */}
+              {form.categoria !== "pulcini" && (
+                <div className="bg-card rounded-xl shadow-card p-6 space-y-4">
+                  <h3 className="text-sm font-bold text-foreground">Livelli</h3>
 
-              {is_carriera_attiva && (form.carriera_artistica || form.carriera_stile) && (
-                <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
-                  <input
-                    type="checkbox"
-                    id="fed_check"
-                    checked={form.atleta_federazione}
-                    onChange={(e) => upd("atleta_federazione", e.target.checked)}
-                    className="w-4 h-4 accent-primary"
-                  />
-                  <label htmlFor="fed_check" className="text-sm font-medium text-foreground cursor-pointer">
-                    Atleta federazione
-                  </label>
+                  {(form.categoria === "amatori" || form.categoria === "artistica") && (
+                    <div className="space-y-1.5">
+                      <Label className="text-sm text-muted-foreground">
+                        Livello amatori {form.categoria === "artistica" && <span className="italic text-xs">(fallback)</span>}
+                      </Label>
+                      <Select
+                        value={form.livello_amatori || "__none__"}
+                        onValueChange={(v) => upd("livello_amatori", v === "__none__" ? null : v)}
+                      >
+                        <SelectTrigger><SelectValue placeholder="Nessuno" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">— Nessuno —</SelectItem>
+                          {["Stellina 1", "Stellina 2", "Stellina 3", "Stellina 4"].map((l) => (
+                            <SelectItem key={l} value={l}>{l}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {form.categoria === "artistica" && (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label className="text-sm text-muted-foreground">Livello artistica</Label>
+                          <Select
+                            value={form.livello_artistica || "__none__"}
+                            onValueChange={(v) => upd("livello_artistica", v === "__none__" ? null : v)}
+                          >
+                            <SelectTrigger><SelectValue placeholder="Nessuno" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="__none__">— Nessuno —</SelectItem>
+                              {LIVELLI_CARRIERA.map((l) => (
+                                <SelectItem key={l} value={l}>{l}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-sm text-muted-foreground">In preparazione</Label>
+                          <Select
+                            value={form.livello_artistica_in_preparazione || "__none__"}
+                            onValueChange={(v) => upd("livello_artistica_in_preparazione", v === "__none__" ? null : v)}
+                          >
+                            <SelectTrigger><SelectValue placeholder="Nessuno" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="__none__">— Nessuno —</SelectItem>
+                              {LIVELLI_CARRIERA.map((l) => (
+                                <SelectItem key={l} value={l}>{l}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label className="text-sm text-muted-foreground">Livello stile</Label>
+                          <Select
+                            value={form.livello_stile || "__none__"}
+                            onValueChange={(v) => upd("livello_stile", v === "__none__" ? null : v)}
+                          >
+                            <SelectTrigger><SelectValue placeholder="Nessuno" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="__none__">— Nessuno —</SelectItem>
+                              {LIVELLI_CARRIERA.map((l) => (
+                                <SelectItem key={l} value={l}>{l}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-sm text-muted-foreground">In preparazione</Label>
+                          <Select
+                            value={form.livello_stile_in_preparazione || "__none__"}
+                            onValueChange={(v) => upd("livello_stile_in_preparazione", v === "__none__" ? null : v)}
+                          >
+                            <SelectTrigger><SelectValue placeholder="Nessuno" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="__none__">— Nessuno —</SelectItem>
+                              {LIVELLI_CARRIERA.map((l) => (
+                                <SelectItem key={l} value={l}>{l}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
+                        <input
+                          type="checkbox"
+                          id="fed_check"
+                          checked={!!form.atleta_federazione}
+                          onChange={(e) => upd("atleta_federazione", e.target.checked)}
+                          className="w-4 h-4 accent-primary"
+                        />
+                        <label htmlFor="fed_check" className="text-sm font-medium text-foreground cursor-pointer">
+                          Atleta federazione
+                        </label>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 
-              {/* Ruolo in pista */}
-              <div className="pt-4 border-t border-border space-y-3">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Ruolo in pista</p>
+              {/* ─── Storico Test ─── */}
+              <div className="bg-card rounded-xl shadow-card p-6 space-y-3">
+                <h3 className="text-sm font-bold text-foreground">Storico Test</h3>
+                <StoricoTestAtleta atleta_id={a.id} />
+              </div>
+
+              {/* ─── Ruolo in pista ─── */}
+              <div className="bg-card rounded-xl shadow-card p-6 space-y-4">
+                <h3 className="text-sm font-bold text-foreground">Ruolo in pista</h3>
                 <div className="space-y-1.5">
                   <Label className="text-sm text-muted-foreground">Ruolo</Label>
                   <Select value={form.ruolo_pista || "atleta"} onValueChange={(v) => upd("ruolo_pista", v)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="atleta">Solo atleta</SelectItem>
                       <SelectItem value="monitore">Monitore</SelectItem>
@@ -831,9 +896,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                   <div className="space-y-1.5">
                     <Label className="text-sm text-muted-foreground">Compenso orario (CHF/ora)</Label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">
-                        CHF/h
-                      </span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF/h</span>
                       <NumInput
                         value={form.compenso_orario_pista_str}
                         onChange={(v) => upd("compenso_orario_pista_str", v)}
