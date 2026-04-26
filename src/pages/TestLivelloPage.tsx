@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Eye, CheckCircle, ArrowLeft, Trash2 } from "lucide-react";
+import { get_livello_gara, get_livello_target } from "@/lib/atleta-livello";
 
 type TestLivello = {
   id: string; club_id: string; stagione_id: string | null; nome: string;
@@ -296,14 +297,9 @@ export default function TestLivelloPage() {
   const convocati_ids = new Set(test_atleti.map((ta) => ta.atleta_id));
 
   const get_livello_attuale = (atleta: Atleta) => {
-    if (!selected_test) {
-      return atleta.livello_artistica || atleta.livello_amatori || atleta.livello_attuale || "-";
-    }
-    const t = selected_test.tipo;
-    if (t === "artistica") return atleta.livello_artistica || atleta.carriera_artistica || atleta.livello_amatori || "-";
-    if (t === "stile") return atleta.livello_stile || atleta.carriera_stile || "-";
-    // base / amatori
-    return atleta.livello_amatori || atleta.livello_attuale || "-";
+    // Usa l'helper centralizzato che gestisce correttamente categoria='pulcini'
+    // (restituisce 'Pulcini') e tutti gli altri casi con i giusti fallback.
+    return get_livello_gara(atleta as any) || "-";
   };
 
   // ─── Smart filter: candidati ideali per il test ──────
@@ -438,7 +434,7 @@ export default function TestLivelloPage() {
                 <CardContent className="space-y-1 text-sm text-muted-foreground">
                   {t.data && <p>📅 {new Date(t.data).toLocaleDateString("it-CH")}</p>}
                   {t.luogo && <p>📍 {t.luogo}</p>}
-                  <p>Livello: {t.livello_attuale || "-"} → {t.livello_accesso || "-"}</p>
+                  <p>Livello: {t.livello_accesso || "-"} → {get_livello_target(t) || t.livello_attuale || "-"}</p>
                 </CardContent>
               </Card>
             ))}
@@ -549,7 +545,7 @@ export default function TestLivelloPage() {
             <div><span className="text-muted-foreground">Data:</span> {selected_test.data ? new Date(selected_test.data).toLocaleDateString("it-CH") : "-"}</div>
             <div><span className="text-muted-foreground">Ora:</span> {selected_test.ora?.slice(0, 5) || "-"}</div>
             <div><span className="text-muted-foreground">Luogo:</span> {selected_test.luogo || "-"}</div>
-            <div><span className="text-muted-foreground">Livello:</span> {selected_test.livello_attuale} → {selected_test.livello_accesso}</div>
+            <div><span className="text-muted-foreground">Livello:</span> {selected_test.livello_accesso || "-"} → {get_livello_target(selected_test) || selected_test.livello_attuale || "-"}</div>
           </CardContent>
         </Card>
       )}

@@ -89,6 +89,36 @@ export function get_livello_display(a: AtletaLivelloInput): string {
   return get_livello_gara(a);
 }
 
+/**
+ * Dato un test (con livello_accesso e tipo), calcola il "livello target"
+ * ovvero il livello che l'atleta otterrà superando il test.
+ *
+ * Regole:
+ *  - accesso 'Pulcini' (qualsiasi tipo)            → 'Stellina 1'
+ *  - accesso 'Stellina N' (1..3)                   → 'Stellina N+1'
+ *  - accesso 'Stellina 4' + tipo artistica/stile   → 'Interbronzo'
+ *  - accesso livello carriera                      → livello successivo della carriera
+ */
+export function get_livello_target(test: {
+  livello_accesso?: string | null;
+  tipo?: string | null;
+}): string | null {
+  const acc = (test?.livello_accesso || "").trim();
+  const tipo = (test?.tipo || "").trim();
+  if (!acc) return null;
+  if (acc === "Pulcini") return "Stellina 1";
+  const m = acc.match(/^Stellina\s+(\d)$/);
+  if (m) {
+    const n = parseInt(m[1], 10);
+    if (n >= 1 && n <= 3) return `Stellina ${n + 1}`;
+    if (n === 4 && (tipo === "artistica" || tipo === "stile")) return "Interbronzo";
+    return null;
+  }
+  const idx = LIVELLI_CARRIERA.indexOf(acc as LivelloCarriera);
+  if (idx >= 0 && idx < LIVELLI_CARRIERA.length - 1) return LIVELLI_CARRIERA[idx + 1];
+  return null;
+}
+
 /** Pillole secondarie da mostrare accanto al livello principale (max 2). */
 export function get_pillole_discipline(a: AtletaLivelloInput): { label: string; value: string }[] {
   const out: { label: string; value: string }[] = [];
