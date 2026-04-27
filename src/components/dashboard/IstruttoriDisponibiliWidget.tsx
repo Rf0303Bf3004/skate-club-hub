@@ -189,7 +189,7 @@ export const IstruttoriDisponibiliWidget: React.FC = () => {
               : "bg-muted text-muted-foreground hover:bg-muted/80"
           }`}
         >
-          {fmt_label(date_str)}
+          {fmt_label(date_str, locale_code)}
         </button>
         <Button
           size="sm"
