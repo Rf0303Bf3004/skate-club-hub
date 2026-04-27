@@ -385,7 +385,12 @@ export function use_upsert_corso() {
         attivo: data.attivo !== false,
         note: data.note || "",
       };
-      if (data.livello_richiesto !== undefined) payload.livello_richiesto = data.livello_richiesto || "tutti";
+      if (data.livello_richiesto !== undefined) {
+        // Valore "tutti"/stringa vuota indica nessun filtro: salviamo NULL (FK a livelli.nome).
+        const liv = data.livello_richiesto;
+        payload.livello_richiesto = liv && liv !== "tutti" ? liv : null;
+      }
+      if (data.percorso !== undefined) payload.percorso = data.percorso || null;
       if (data.stagione_id) payload.stagione_id = data.stagione_id;
 
       // Debug log per diagnosi salvataggio: visibile in console del browser.

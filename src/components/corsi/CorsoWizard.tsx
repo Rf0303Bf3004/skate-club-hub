@@ -10,6 +10,8 @@ import { supabase, get_current_club_id } from "@/lib/supabase";
 import { GrigliaFasceGhiaccio, NumInput, to_num } from "@/pages/CoursesPage";
 import { toast } from "@/hooks/use-toast";
 import { calcola_status_istruttori_per_slot } from "@/lib/availability";
+import { SelectLivello } from "@/components/ui/select-livello";
+import { use_livelli } from "@/hooks/use-supabase-data";
 
 const GIORNI_DB = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
 const GIORNO_TO_WEEKDAY: Record<string, number> = {
@@ -198,7 +200,8 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
     nome: corso?.nome || "",
     tipo: corso?.tipo || "",
     categoria: corso?.categoria || "",
-    livello_richiesto: corso?.livello_richiesto || "tutti",
+    livello_richiesto: corso?.livello_richiesto || null,
+    percorso: (corso?.percorso as null | "artistica" | "stile") ?? null,
     giorno: corso?.giorno || "Lunedì",
     ora_inizio: corso?.ora_inizio?.slice(0, 5) || "",
     ora_fine: corso?.ora_fine?.slice(0, 5) || "",
@@ -230,6 +233,22 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
   }, [stagione_default_id]);
 
   const set_val = (k: keyof typeof form, v: any) => set_form((p) => ({ ...p, [k]: v }));
+
+  const { data: livelli_master = [] } = use_livelli();
+  const fase_livello_selezionato = useMemo(() => {
+    if (!form.livello_richiesto) return null;
+    return livelli_master.find((l) => l.nome === form.livello_richiesto)?.fase ?? null;
+  }, [form.livello_richiesto, livelli_master]);
+  const is_carriera = fase_livello_selezionato === "carriera";
+
+  // Forza percorso=null se livello non è di fase carriera
+  useEffect(() => {
+    if (!is_carriera && form.percorso !== null) {
+      set_form((p) => ({ ...p, percorso: null }));
+    }
+  }, [is_carriera, form.percorso]);
+
+  const percorso_invalido = !!form.percorso && !is_carriera;
 
   useEffect(() => {
     if (form.ora_inizio && form.durata > 0) {
@@ -432,6 +451,12 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
       toast({ title: msg, variant: "destructive" });
       return;
     }
+    if (percorso_invalido) {
+      const msg = "Il percorso può essere impostato solo per livelli di carriera (Interbronzo → Oro).";
+      set_error_db(msg);
+      toast({ title: msg, variant: "destructive" });
+      return;
+    }
     try {
       await on_save({
         ...form,
@@ -441,6 +466,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
         ora_fine: posiziona_planning ? form.ora_fine : null,
         costo_mensile: to_num(form.costo_mensile_str),
         costo_annuale: to_num(form.costo_annuale_str),
+        percorso: is_carriera ? form.percorso : null,
       });
     } catch (e: any) {
       const msg = e?.message || String(e) || "Errore sconosciuto";
@@ -551,19 +577,43 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
               )}
 
               {form.tipo === "Ghiaccio" && (
-                <div>
-                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Livello richiesto</Label>
-                  <select
-                    value={form.livello_richiesto}
-                    onChange={(e) => set_val("livello_richiesto", e.target.value)}
-                    className="mt-1.5 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  >
-                    {LIVELLI_CORSO.map((l) => (
-                      <option key={l} value={l}>{LIVELLO_LABELS[l] || l}</option>
-                    ))}
-                  </select>
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Livello richiesto</Label>
+                    <div className="mt-1.5">
+                      <SelectLivello
+                        value={form.livello_richiesto}
+                        onChange={(v) => set_val("livello_richiesto", v)}
+                        fase="qualsiasi"
+                        allowNull={true}
+                        nullLabel="— Aperto a tutti i livelli —"
+                      />
+                    </div>
+                  </div>
+
+                  {is_carriera && (
+                    <div>
+                      <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Percorso</Label>
+                      <select
+                        value={form.percorso ?? ""}
+                        onChange={(e) => set_val("percorso", e.target.value || null)}
+                        className="mt-1.5 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      >
+                        <option value="">Comune (no percorso)</option>
+                        <option value="artistica">Artistica</option>
+                        <option value="stile">Stile</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {percorso_invalido && (
+                    <p className="text-xs text-destructive">
+                      Il percorso può essere impostato solo per livelli di carriera (Interbronzo → Oro).
+                    </p>
+                  )}
                 </div>
               )}
+
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -864,7 +914,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                 {form.tipo === "Ghiaccio" && (
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-muted-foreground uppercase">Livello</span>
-                    <span className="text-sm">{LIVELLO_LABELS[form.livello_richiesto] || form.livello_richiesto}</span>
+                    <span className="text-sm">{form.livello_richiesto || "Tutti i livelli"}{is_carriera && form.percorso ? ` · ${form.percorso === "artistica" ? "Artistica" : "Stile"}` : ""}</span>
                   </div>
                 )}
                 <div className="flex items-center justify-between">

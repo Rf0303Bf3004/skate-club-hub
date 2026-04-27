@@ -26,6 +26,7 @@ import {
   get_pillole_discipline,
   type Categoria,
 } from "@/lib/atleta-livello";
+import { SelectLivello } from "@/components/ui/select-livello";
 
 const LIVELLI_COMUNI = ["Pulcini", "Stellina 1", "Stellina 2", "Stellina 3", "Stellina 4"];
 
@@ -254,27 +255,21 @@ const AtletaModal: React.FC<{
           {/* Livello attuale + Livello in preparazione */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
              <Field label="Livello attuale">
-              <select
+              <SelectLivello
                 value={form.livello_attuale}
-                onChange={(e) => set_val("livello_attuale", e.target.value)}
-                className={input_cls}
-              >
-                {LIVELLI_TUTTI.map((l) => (
-                  <option key={l} value={l}>{l}</option>
-                ))}
-              </select>
+                onChange={(v) => set_val("livello_attuale", v ?? "Pulcini")}
+                fase="comune"
+                allowNull={false}
+              />
             </Field>
             <Field label="Livello in preparazione">
-              <select
-                value={form.livello_in_preparazione}
-                onChange={(e) => set_val("livello_in_preparazione", e.target.value)}
-                className={input_cls}
-              >
-                <option value="">— Nessuno —</option>
-                {LIVELLI_TUTTI.map((l) => (
-                  <option key={l} value={l}>{l}</option>
-                ))}
-              </select>
+              <SelectLivello
+                value={form.livello_in_preparazione || null}
+                onChange={(v) => set_val("livello_in_preparazione", v ?? "")}
+                fase="comune"
+                allowNull={true}
+                nullLabel="— Nessuno —"
+              />
             </Field>
           </div>
 

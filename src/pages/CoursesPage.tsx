@@ -11,7 +11,9 @@ import {
   use_disponibilita_ghiaccio,
   check_corso_completo,
   get_istruttore_name_from_list,
+  use_livelli,
 } from "@/hooks/use-supabase-data";
+import { SelectLivello } from "@/components/ui/select-livello";
 import { use_upsert_corso, use_elimina_corso, use_upsert_presenza_corso } from "@/hooks/use-supabase-mutations";
 import { istruttore_disponibile, calcola_status_istruttori_per_slot } from "@/lib/availability";
 import { Button } from "@/components/ui/button";
@@ -1288,7 +1290,8 @@ const CorsoModal: React.FC<{
     nome: corso?.nome || "",
     tipo: corso?.tipo || "",
     categoria: corso?.categoria || "",
-    livello_richiesto: corso?.livello_richiesto || "tutti",
+    livello_richiesto: corso?.livello_richiesto || null,
+    percorso: (corso?.percorso as null | "artistica" | "stile") ?? null,
     giorno: corso?.giorno || "Lunedì",
     ora_inizio: corso?.ora_inizio?.slice(0, 5) || "08:00",
     ora_fine: corso?.ora_fine?.slice(0, 5) || "09:00",
@@ -1361,6 +1364,19 @@ const CorsoModal: React.FC<{
       set_posiziona_planning(false);
     }
   };
+
+  const { data: livelli_master_modal = [] } = use_livelli();
+  const fase_livello_modal = useMemo(() => {
+    if (!form.livello_richiesto) return null;
+    return livelli_master_modal.find((l: any) => l.nome === form.livello_richiesto)?.fase ?? null;
+  }, [form.livello_richiesto, livelli_master_modal]);
+  const is_carriera_modal = fase_livello_modal === "carriera";
+  const percorso_invalido_modal = !!form.percorso && !is_carriera_modal;
+  useEffect(() => {
+    if (!is_carriera_modal && form.percorso !== null) {
+      set_form((p) => ({ ...p, percorso: null }));
+    }
+  }, [is_carriera_modal, form.percorso]);
 
   // Real-time ice availability check
   useEffect(() => {
@@ -1549,6 +1565,14 @@ const CorsoModal: React.FC<{
   };
 
   const do_save = () => {
+    if (percorso_invalido_modal) {
+      toast({
+        title: "Percorso non valido",
+        description: "Il percorso può essere impostato solo per livelli di carriera.",
+        variant: "destructive",
+      });
+      return;
+    }
     const place = posiziona_planning && !no_ice_realtime;
     on_save({
       ...form,
@@ -1559,6 +1583,7 @@ const CorsoModal: React.FC<{
       ora_fine: place ? form.ora_fine : null,
       costo_mensile: to_num(form.costo_mensile_str),
       costo_annuale: to_num(form.costo_annuale_str),
+      percorso: is_carriera_modal ? form.percorso : null,
     });
   };
 
@@ -1732,19 +1757,37 @@ const CorsoModal: React.FC<{
               </Field>
 
               <Field label="Livello richiesto">
-                <div className="relative">
-                  <select
-                    value={form.livello_richiesto}
-                    onChange={(e) => set_val("livello_richiesto", e.target.value)}
-                    className={`${input_cls} appearance-none pr-8`}
-                  >
-                    {LIVELLI_CORSO.map((l) => (
-                      <option key={l} value={l}>{LIVELLO_LABELS[l] || l}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-                </div>
+                <SelectLivello
+                  value={form.livello_richiesto}
+                  onChange={(v) => set_val("livello_richiesto", v)}
+                  fase="qualsiasi"
+                  allowNull={true}
+                  nullLabel="— Aperto a tutti i livelli —"
+                />
               </Field>
+
+              {is_carriera_modal && (
+                <Field label="Percorso">
+                  <div className="relative">
+                    <select
+                      value={form.percorso ?? ""}
+                      onChange={(e) => set_val("percorso", e.target.value || null)}
+                      className={`${input_cls} appearance-none pr-8`}
+                    >
+                      <option value="">Comune (no percorso)</option>
+                      <option value="artistica">Artistica</option>
+                      <option value="stile">Stile</option>
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
+                </Field>
+              )}
+
+              {percorso_invalido_modal && (
+                <p className="text-xs text-destructive px-1">
+                  Il percorso può essere impostato solo per livelli di carriera (Interbronzo → Oro).
+                </p>
+              )}
               <div className="flex items-center justify-between px-3 py-2 bg-muted/30 rounded-lg">
                 <div className="space-y-0.5">
                   <label htmlFor="posiziona_planning" className={`text-sm font-medium cursor-pointer ${toggle_disabled ? "text-muted-foreground" : "text-foreground"}`}>

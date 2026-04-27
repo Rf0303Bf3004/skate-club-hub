@@ -613,3 +613,32 @@ export function use_corsi_completi() {
 
   return { corsi_completi, corsi, disp_ghiaccio, ...rest };
 }
+
+// ─── Livelli (master) ──────────────────────────────────────
+export type LivelloRow = {
+  id: number;
+  nome: string;
+  fase: "comune" | "carriera" | string;
+  ordine: number;
+  attivo: boolean;
+};
+
+export function use_livelli() {
+  return useQuery({
+    queryKey: ["livelli"],
+    staleTime: 1000 * 60 * 30,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("livelli")
+        .select("*")
+        .eq("attivo", true)
+        .order("ordine");
+      if (error) throw error;
+      return (data as LivelloRow[]) ?? [];
+    },
+  });
+}
+
+// Alias camelCase per chiamate moderne
+export const useLivelli = use_livelli;
+
