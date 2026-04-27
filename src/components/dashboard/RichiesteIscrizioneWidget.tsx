@@ -4,6 +4,7 @@ import { supabase, get_current_club_id } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 import { Inbox, Check, X, UserPlus, CalendarClock } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { format_data_completa, format_data_lunga } from "@/lib/format-data";
@@ -375,7 +376,7 @@ export const RichiesteLezioniPrivateWidget: React.FC = () => {
       const nuove_note = `${note_attuale ?? ""}${note_attuale ? " | " : ""}RIFIUTATA: ${motivo}`.trim();
       const { error } = await supabase
         .from("lezioni_private")
-        .update({ annullata: true, note: nuove_note })
+        .update({ annullata: true, richiede_approvazione: false, note: nuove_note })
         .eq("id", id);
       if (error) throw error;
     },
@@ -453,12 +454,11 @@ export const RichiesteLezioniPrivateWidget: React.FC = () => {
 
                 {rifiuto_id === l.id ? (
                   <div className="space-y-2 pl-10">
-                    <input
-                      type="text"
+                    <Textarea
                       value={motivo}
                       onChange={(e) => set_motivo(e.target.value)}
                       placeholder="Motivo del rifiuto"
-                      className="w-full text-xs border border-border rounded px-2 py-1 bg-background"
+                      className="w-full min-h-[60px] text-xs border border-border rounded px-2 py-1 bg-background resize-none"
                       autoFocus
                     />
                     <div className="flex gap-2">
