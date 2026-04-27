@@ -1,0 +1,290 @@
+import React, { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase, get_current_club_id } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Inbox, Check, X, UserPlus } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { format_data_completa } from "@/lib/format-data";
+
+const REFETCH_MS = 60_000;
+
+function tempo_relativo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const s = Math.floor(diff / 1000);
+  if (s < 60) return `${s}s fa`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m} min fa`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h} h fa`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d} g fa`;
+  return format_data_completa(iso);
+}
+
+// ─── Card 1: Richieste pendenti ──────────────────────────────
+export const RichiesteIscrizioneWidget: React.FC = () => {
+  const club_id = get_current_club_id();
+  const qc = useQueryClient();
+  const [rifiuto_id, set_rifiuto_id] = useState<string | null>(null);
+  const [motivo, set_motivo] = useState("");
+
+  const { data: richieste, isLoading } = useQuery({
+    queryKey: ["richieste_pendenti", club_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("richieste_iscrizione")
+        .select("id, created_at, note_richiesta, atleta_id, corso_id")
+        .eq("club_id", club_id)
+        .eq("stato", "in_attesa")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      const rows = data ?? [];
+      if (rows.length === 0) return [];
+
+      const atl_ids = [...new Set(rows.map((r) => r.atleta_id))];
+      const cor_ids = [...new Set(rows.map((r) => r.corso_id))];
+      const [{ data: atleti }, { data: corsi }] = await Promise.all([
+        supabase.from("atleti").select("id, nome, cognome, foto_url").in("id", atl_ids),
+        supabase.from("corsi").select("id, nome").in("id", cor_ids),
+      ]);
+      const a_map = new Map((atleti ?? []).map((a: any) => [a.id, a]));
+      const c_map = new Map((corsi ?? []).map((c: any) => [c.id, c]));
+      return rows.map((r) => ({
+        ...r,
+        atleta: a_map.get(r.atleta_id),
+        corso: c_map.get(r.corso_id),
+      }));
+    },
+    refetchInterval: REFETCH_MS,
+  });
+
+  const approva = useMutation({
+    mutationFn: async (r: any) => {
+      const { data: userData } = await supabase.auth.getUser();
+      const user_id = userData?.user?.id ?? null;
+      const { error: e1 } = await supabase
+        .from("richieste_iscrizione")
+        .update({
+          stato: "approvata",
+          gestita_da: user_id,
+          gestita_il: new Date().toISOString(),
+        })
+        .eq("id", r.id);
+      if (e1) throw e1;
+      const { error: e2 } = await supabase
+        .from("iscrizioni_corsi")
+        .insert({ atleta_id: r.atleta_id, corso_id: r.corso_id, attiva: true });
+      if (e2) throw e2;
+    },
+    onSuccess: () => {
+      toast({ title: "Richiesta approvata" });
+      qc.invalidateQueries({ queryKey: ["richieste_pendenti"] });
+      qc.invalidateQueries({ queryKey: ["ultime_iscrizioni"] });
+    },
+    onError: (e: any) => toast({ title: "Errore", description: e.message, variant: "destructive" }),
+  });
+
+  const rifiuta = useMutation({
+    mutationFn: async ({ id, note }: { id: string; note: string }) => {
+      const { data: userData } = await supabase.auth.getUser();
+      const user_id = userData?.user?.id ?? null;
+      const { error } = await supabase
+        .from("richieste_iscrizione")
+        .update({
+          stato: "rifiutata",
+          note_risposta: note,
+          gestita_da: user_id,
+          gestita_il: new Date().toISOString(),
+        })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Richiesta rifiutata" });
+      set_rifiuto_id(null);
+      set_motivo("");
+      qc.invalidateQueries({ queryKey: ["richieste_pendenti"] });
+    },
+    onError: (e: any) => toast({ title: "Errore", description: e.message, variant: "destructive" }),
+  });
+
+  const count = richieste?.length ?? 0;
+
+  return (
+    <div className="bg-card rounded-xl shadow-card p-5 space-y-3">
+      <div className="flex items-center gap-2">
+        <Inbox className="w-4 h-4 text-primary" />
+        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+          Richieste pendenti
+        </h3>
+        {count > 0 && (
+          <Badge variant="default" className="ml-auto">
+            {count}
+          </Badge>
+        )}
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-2">
+          <Skeleton className="h-14 w-full" />
+          <Skeleton className="h-14 w-full" />
+        </div>
+      ) : count === 0 ? (
+        <p className="text-sm text-muted-foreground py-2">Nessuna richiesta in attesa</p>
+      ) : (
+        <div className="space-y-3">
+          {richieste!.map((r: any) => (
+            <div key={r.id} className="border border-border rounded-lg p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                {r.atleta?.foto_url ? (
+                  <img
+                    src={r.atleta.foto_url}
+                    alt=""
+                    className="w-8 h-8 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                    <UserPlus className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">
+                    {r.atleta?.nome} {r.atleta?.cognome}
+                    <span className="text-muted-foreground font-normal"> → {r.corso?.nome ?? "—"}</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground">{tempo_relativo(r.created_at)}</p>
+                </div>
+              </div>
+              {r.note_richiesta && (
+                <p className="text-xs text-muted-foreground italic pl-10">"{r.note_richiesta}"</p>
+              )}
+
+              {rifiuto_id === r.id ? (
+                <div className="space-y-2 pl-10">
+                  <input
+                    type="text"
+                    value={motivo}
+                    onChange={(e) => set_motivo(e.target.value)}
+                    placeholder="Motivo del rifiuto"
+                    className="w-full text-xs border border-border rounded px-2 py-1 bg-background"
+                    autoFocus
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      disabled={rifiuta.isPending}
+                      onClick={() => rifiuta.mutate({ id: r.id, note: motivo })}
+                    >
+                      Conferma rifiuto
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        set_rifiuto_id(null);
+                        set_motivo("");
+                      }}
+                    >
+                      Annulla
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex gap-2 pl-10">
+                  <Button
+                    size="sm"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white h-7 px-2"
+                    disabled={approva.isPending}
+                    onClick={() => approva.mutate(r)}
+                  >
+                    <Check className="w-3 h-3 mr-1" /> Approva
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="h-7 px-2"
+                    onClick={() => set_rifiuto_id(r.id)}
+                  >
+                    <X className="w-3 h-3 mr-1" /> Rifiuta
+                  </Button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── Card 2: Ultime iscrizioni dirette ───────────────────────
+export const UltimeIscrizioniWidget: React.FC = () => {
+  const club_id = get_current_club_id();
+
+  const { data: iscrizioni, isLoading } = useQuery({
+    queryKey: ["ultime_iscrizioni", club_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("iscrizioni_corsi")
+        .select("id, created_at, atleta_id, corso_id")
+        .eq("attiva", true)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      const rows = data ?? [];
+      if (rows.length === 0) return [];
+
+      const atl_ids = [...new Set(rows.map((r) => r.atleta_id))];
+      const cor_ids = [...new Set(rows.map((r) => r.corso_id))];
+      const [{ data: atleti }, { data: corsi }] = await Promise.all([
+        supabase.from("atleti").select("id, nome, cognome, club_id").in("id", atl_ids),
+        supabase.from("corsi").select("id, nome").in("id", cor_ids),
+      ]);
+      const a_map = new Map((atleti ?? []).map((a: any) => [a.id, a]));
+      const c_map = new Map((corsi ?? []).map((c: any) => [c.id, c]));
+      return rows
+        .map((r) => ({ ...r, atleta: a_map.get(r.atleta_id), corso: c_map.get(r.corso_id) }))
+        .filter((r: any) => r.atleta?.club_id === club_id)
+        .slice(0, 10);
+    },
+    refetchInterval: REFETCH_MS,
+  });
+
+  return (
+    <div className="bg-card rounded-xl shadow-card p-5 space-y-3">
+      <div className="flex items-center gap-2">
+        <UserPlus className="w-4 h-4 text-primary" />
+        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+          Ultime iscrizioni
+        </h3>
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-2">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      ) : !iscrizioni || iscrizioni.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-2">Nessuna iscrizione recente</p>
+      ) : (
+        <div className="space-y-2">
+          {iscrizioni.map((i: any) => (
+            <div key={i.id} className="text-sm">
+              <p className="text-foreground">
+                <span className="font-medium">
+                  {i.atleta?.nome} {i.atleta?.cognome}
+                </span>{" "}
+                <span className="text-muted-foreground">si è iscritto a</span>{" "}
+                <span className="font-medium">{i.corso?.nome ?? "—"}</span>
+              </p>
+              <p className="text-xs text-muted-foreground">{tempo_relativo(i.created_at)}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
