@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { Inbox, Check, X, UserPlus, CalendarClock } from "lucide-react";
+import { Inbox, Check, X, UserPlus, CalendarClock, RefreshCw } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { format_data_completa, format_data_lunga } from "@/lib/format-data";
 
@@ -31,7 +31,7 @@ export const RichiesteIscrizioneWidget: React.FC = () => {
   const [rifiuto_id, set_rifiuto_id] = useState<string | null>(null);
   const [motivo, set_motivo] = useState("");
 
-  const { data: richieste, isLoading } = useQuery({
+  const { data: richieste, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["richieste_pendenti", club_id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -121,10 +121,19 @@ export const RichiesteIscrizioneWidget: React.FC = () => {
           Richieste pendenti
         </h3>
         {count > 0 && (
-          <Badge variant="default" className="ml-auto">
+          <Badge variant="default">
             {count}
           </Badge>
         )}
+        <button
+          onClick={() => refetch()}
+          disabled={isFetching}
+          className="ml-auto p-1 rounded hover:bg-muted transition-colors disabled:opacity-50"
+          aria-label="Aggiorna"
+          title="Aggiorna"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground ${isFetching ? "animate-spin" : ""}`} />
+        </button>
       </div>
 
       {isLoading ? (
@@ -225,7 +234,7 @@ export const RichiesteIscrizioneWidget: React.FC = () => {
 export const UltimeIscrizioniWidget: React.FC = () => {
   const club_id = get_current_club_id();
 
-  const { data: iscrizioni, isLoading } = useQuery({
+  const { data: iscrizioni, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["ultime_iscrizioni", club_id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -261,6 +270,15 @@ export const UltimeIscrizioniWidget: React.FC = () => {
         <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
           Ultime iscrizioni
         </h3>
+        <button
+          onClick={() => refetch()}
+          disabled={isFetching}
+          className="ml-auto p-1 rounded hover:bg-muted transition-colors disabled:opacity-50"
+          aria-label="Aggiorna"
+          title="Aggiorna"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground ${isFetching ? "animate-spin" : ""}`} />
+        </button>
       </div>
 
       {isLoading ? (
@@ -302,7 +320,7 @@ export const RichiesteLezioniPrivateWidget: React.FC = () => {
   const [rifiuto_id, set_rifiuto_id] = useState<string | null>(null);
   const [motivo, set_motivo] = useState("");
 
-  const { data: lezioni, isLoading } = useQuery({
+  const { data: lezioni, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["richieste_lezioni_private", club_id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -399,10 +417,19 @@ export const RichiesteLezioniPrivateWidget: React.FC = () => {
           Richieste lezioni private
         </h3>
         {count > 0 && (
-          <Badge variant="default" className="ml-auto">
+          <Badge variant="default">
             {count}
           </Badge>
         )}
+        <button
+          onClick={() => refetch()}
+          disabled={isFetching}
+          className="ml-auto p-1 rounded hover:bg-muted transition-colors disabled:opacity-50"
+          aria-label="Aggiorna"
+          title="Aggiorna"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground ${isFetching ? "animate-spin" : ""}`} />
+        </button>
       </div>
 
       {isLoading ? (
