@@ -1340,6 +1340,7 @@ const DashboardPage: React.FC = () => {
         <div className="space-y-5">
           <RichiesteIscrizioneWidget />
           <UltimeIscrizioniWidget />
+          <RichiesteLezioniPrivateWidget />
           <IstruttoriDisponibiliWidget />
           <WidgetCompleanni atleti={atleti} />
           <WidgetFatture fatture={fatture} atleti={atleti} />
