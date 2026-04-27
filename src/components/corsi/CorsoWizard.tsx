@@ -234,6 +234,22 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
 
   const set_val = (k: keyof typeof form, v: any) => set_form((p) => ({ ...p, [k]: v }));
 
+  const { data: livelli_master = [] } = use_livelli();
+  const fase_livello_selezionato = useMemo(() => {
+    if (!form.livello_richiesto) return null;
+    return livelli_master.find((l) => l.nome === form.livello_richiesto)?.fase ?? null;
+  }, [form.livello_richiesto, livelli_master]);
+  const is_carriera = fase_livello_selezionato === "carriera";
+
+  // Forza percorso=null se livello non è di fase carriera
+  useEffect(() => {
+    if (!is_carriera && form.percorso !== null) {
+      set_form((p) => ({ ...p, percorso: null }));
+    }
+  }, [is_carriera, form.percorso]);
+
+  const percorso_invalido = !!form.percorso && !is_carriera;
+
   useEffect(() => {
     if (form.ora_inizio && form.durata > 0) {
       const new_end = add_minutes(form.ora_inizio, form.durata);
