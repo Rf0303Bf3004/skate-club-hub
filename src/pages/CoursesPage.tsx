@@ -1565,6 +1565,14 @@ const CorsoModal: React.FC<{
   };
 
   const do_save = () => {
+    if (percorso_invalido_modal) {
+      toast({
+        title: "Percorso non valido",
+        description: "Il percorso può essere impostato solo per livelli di carriera.",
+        variant: "destructive",
+      });
+      return;
+    }
     const place = posiziona_planning && !no_ice_realtime;
     on_save({
       ...form,
@@ -1575,6 +1583,7 @@ const CorsoModal: React.FC<{
       ora_fine: place ? form.ora_fine : null,
       costo_mensile: to_num(form.costo_mensile_str),
       costo_annuale: to_num(form.costo_annuale_str),
+      percorso: is_carriera_modal ? form.percorso : null,
     });
   };
 
