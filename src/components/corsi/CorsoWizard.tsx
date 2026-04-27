@@ -451,6 +451,12 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
       toast({ title: msg, variant: "destructive" });
       return;
     }
+    if (percorso_invalido) {
+      const msg = "Il percorso può essere impostato solo per livelli di carriera (Interbronzo → Oro).";
+      set_error_db(msg);
+      toast({ title: msg, variant: "destructive" });
+      return;
+    }
     try {
       await on_save({
         ...form,
@@ -460,6 +466,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
         ora_fine: posiziona_planning ? form.ora_fine : null,
         costo_mensile: to_num(form.costo_mensile_str),
         costo_annuale: to_num(form.costo_annuale_str),
+        percorso: is_carriera ? form.percorso : null,
       });
     } catch (e: any) {
       const msg = e?.message || String(e) || "Errore sconosciuto";
