@@ -570,19 +570,43 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
               )}
 
               {form.tipo === "Ghiaccio" && (
-                <div>
-                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Livello richiesto</Label>
-                  <select
-                    value={form.livello_richiesto}
-                    onChange={(e) => set_val("livello_richiesto", e.target.value)}
-                    className="mt-1.5 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  >
-                    {LIVELLI_CORSO.map((l) => (
-                      <option key={l} value={l}>{LIVELLO_LABELS[l] || l}</option>
-                    ))}
-                  </select>
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Livello richiesto</Label>
+                    <div className="mt-1.5">
+                      <SelectLivello
+                        value={form.livello_richiesto}
+                        onChange={(v) => set_val("livello_richiesto", v)}
+                        fase="qualsiasi"
+                        allowNull={true}
+                        nullLabel="— Aperto a tutti i livelli —"
+                      />
+                    </div>
+                  </div>
+
+                  {is_carriera && (
+                    <div>
+                      <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Percorso</Label>
+                      <select
+                        value={form.percorso ?? ""}
+                        onChange={(e) => set_val("percorso", e.target.value || null)}
+                        className="mt-1.5 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      >
+                        <option value="">Comune (no percorso)</option>
+                        <option value="artistica">Artistica</option>
+                        <option value="stile">Stile</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {percorso_invalido && (
+                    <p className="text-xs text-destructive">
+                      Il percorso può essere impostato solo per livelli di carriera (Interbronzo → Oro).
+                    </p>
+                  )}
                 </div>
               )}
+
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
