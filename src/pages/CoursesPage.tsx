@@ -1748,19 +1748,37 @@ const CorsoModal: React.FC<{
               </Field>
 
               <Field label="Livello richiesto">
-                <div className="relative">
-                  <select
-                    value={form.livello_richiesto}
-                    onChange={(e) => set_val("livello_richiesto", e.target.value)}
-                    className={`${input_cls} appearance-none pr-8`}
-                  >
-                    {LIVELLI_CORSO.map((l) => (
-                      <option key={l} value={l}>{LIVELLO_LABELS[l] || l}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-                </div>
+                <SelectLivello
+                  value={form.livello_richiesto}
+                  onChange={(v) => set_val("livello_richiesto", v)}
+                  fase="qualsiasi"
+                  allowNull={true}
+                  nullLabel="— Aperto a tutti i livelli —"
+                />
               </Field>
+
+              {is_carriera_modal && (
+                <Field label="Percorso">
+                  <div className="relative">
+                    <select
+                      value={form.percorso ?? ""}
+                      onChange={(e) => set_val("percorso", e.target.value || null)}
+                      className={`${input_cls} appearance-none pr-8`}
+                    >
+                      <option value="">Comune (no percorso)</option>
+                      <option value="artistica">Artistica</option>
+                      <option value="stile">Stile</option>
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
+                </Field>
+              )}
+
+              {percorso_invalido_modal && (
+                <p className="text-xs text-destructive px-1">
+                  Il percorso può essere impostato solo per livelli di carriera (Interbronzo → Oro).
+                </p>
+              )}
               <div className="flex items-center justify-between px-3 py-2 bg-muted/30 rounded-lg">
                 <div className="space-y-0.5">
                   <label htmlFor="posiziona_planning" className={`text-sm font-medium cursor-pointer ${toggle_disabled ? "text-muted-foreground" : "text-foreground"}`}>
