@@ -11,7 +11,9 @@ import {
   use_disponibilita_ghiaccio,
   check_corso_completo,
   get_istruttore_name_from_list,
+  use_livelli,
 } from "@/hooks/use-supabase-data";
+import { SelectLivello } from "@/components/ui/select-livello";
 import { use_upsert_corso, use_elimina_corso, use_upsert_presenza_corso } from "@/hooks/use-supabase-mutations";
 import { istruttore_disponibile, calcola_status_istruttori_per_slot } from "@/lib/availability";
 import { Button } from "@/components/ui/button";
