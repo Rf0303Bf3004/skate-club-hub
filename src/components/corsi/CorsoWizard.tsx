@@ -10,6 +10,8 @@ import { supabase, get_current_club_id } from "@/lib/supabase";
 import { GrigliaFasceGhiaccio, NumInput, to_num } from "@/pages/CoursesPage";
 import { toast } from "@/hooks/use-toast";
 import { calcola_status_istruttori_per_slot } from "@/lib/availability";
+import { SelectLivello } from "@/components/ui/select-livello";
+import { use_livelli } from "@/hooks/use-supabase-data";
 
 const GIORNI_DB = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
 const GIORNO_TO_WEEKDAY: Record<string, number> = {
