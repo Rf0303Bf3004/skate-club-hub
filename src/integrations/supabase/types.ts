@@ -2311,6 +2311,28 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      corsi_per_atleta: {
+        Args: { p_atleta_id: string }
+        Returns: {
+          attivo: boolean
+          categoria: string
+          club_id: string
+          costo_annuale: number
+          costo_mensile: number
+          created_at: string
+          giorno: string
+          id: string
+          iscrizione_requires_approval: boolean
+          livello_richiesto: string
+          nome: string
+          note: string
+          ora_fine: string
+          ora_inizio: string
+          stagione_id: string
+          tipo: string
+          usa_ghiaccio: boolean
+        }[]
+      }
       genera_settimana_planning: {
         Args: { p_settimana_id: string }
         Returns: number
