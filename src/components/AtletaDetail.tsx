@@ -28,6 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SelectLivello } from "@/components/ui/select-livello";
 import { ArrowLeft, Shield, Medal, Save, Upload, Music, ArrowRightLeft, X, Mail, Copy, Printer, Link as LinkIcon, QrCode, Share2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
@@ -817,65 +818,45 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div className="space-y-1.5">
                           <Label className="text-sm text-muted-foreground">Livello artistica</Label>
-                          <Select
-                            value={form.livello_artistica || "__none__"}
-                            onValueChange={(v) => upd("livello_artistica", v === "__none__" ? null : v)}
-                          >
-                            <SelectTrigger><SelectValue placeholder="Nessuno" /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="__none__">— Nessuno —</SelectItem>
-                              {LIVELLI_CARRIERA.map((l) => (
-                                <SelectItem key={l} value={l}>{l}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <SelectLivello
+                            value={form.livello_artistica}
+                            onChange={(v) => upd("livello_artistica", v)}
+                            fase="carriera"
+                            allowNull={true}
+                            nullLabel="— Nessuno —"
+                          />
                         </div>
                         <div className="space-y-1.5">
                           <Label className="text-sm text-muted-foreground">In preparazione</Label>
-                          <Select
-                            value={form.livello_artistica_in_preparazione || "__none__"}
-                            onValueChange={(v) => upd("livello_artistica_in_preparazione", v === "__none__" ? null : v)}
-                          >
-                            <SelectTrigger><SelectValue placeholder="Nessuno" /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="__none__">— Nessuno —</SelectItem>
-                              {LIVELLI_CARRIERA.map((l) => (
-                                <SelectItem key={l} value={l}>{l}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <SelectLivello
+                            value={form.livello_artistica_in_preparazione}
+                            onChange={(v) => upd("livello_artistica_in_preparazione", v)}
+                            fase="carriera"
+                            allowNull={true}
+                            nullLabel="— Nessuno —"
+                          />
                         </div>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div className="space-y-1.5">
                           <Label className="text-sm text-muted-foreground">Livello stile</Label>
-                          <Select
-                            value={form.livello_stile || "__none__"}
-                            onValueChange={(v) => upd("livello_stile", v === "__none__" ? null : v)}
-                          >
-                            <SelectTrigger><SelectValue placeholder="Nessuno" /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="__none__">— Nessuno —</SelectItem>
-                              {LIVELLI_CARRIERA.map((l) => (
-                                <SelectItem key={l} value={l}>{l}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <SelectLivello
+                            value={form.livello_stile}
+                            onChange={(v) => upd("livello_stile", v)}
+                            fase="carriera"
+                            allowNull={true}
+                            nullLabel="— Nessuno —"
+                          />
                         </div>
                         <div className="space-y-1.5">
                           <Label className="text-sm text-muted-foreground">In preparazione</Label>
-                          <Select
-                            value={form.livello_stile_in_preparazione || "__none__"}
-                            onValueChange={(v) => upd("livello_stile_in_preparazione", v === "__none__" ? null : v)}
-                          >
-                            <SelectTrigger><SelectValue placeholder="Nessuno" /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="__none__">— Nessuno —</SelectItem>
-                              {LIVELLI_CARRIERA.map((l) => (
-                                <SelectItem key={l} value={l}>{l}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <SelectLivello
+                            value={form.livello_stile_in_preparazione}
+                            onChange={(v) => upd("livello_stile_in_preparazione", v)}
+                            fase="carriera"
+                            allowNull={true}
+                            nullLabel="— Nessuno —"
+                          />
                         </div>
                       </div>
 
