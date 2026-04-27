@@ -534,6 +534,7 @@ export type Database = {
           note: string | null
           ora_fine: string | null
           ora_inizio: string | null
+          percorso: string | null
           stagione_id: string | null
           tipo: string | null
           usa_ghiaccio: boolean
@@ -552,6 +553,7 @@ export type Database = {
           note?: string | null
           ora_fine?: string | null
           ora_inizio?: string | null
+          percorso?: string | null
           stagione_id?: string | null
           tipo?: string | null
           usa_ghiaccio?: boolean
@@ -570,6 +572,7 @@ export type Database = {
           note?: string | null
           ora_fine?: string | null
           ora_inizio?: string | null
+          percorso?: string | null
           stagione_id?: string | null
           tipo?: string | null
           usa_ghiaccio?: boolean
@@ -581,6 +584,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "clubs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "corsi_livello_richiesto_fkey"
+            columns: ["livello_richiesto"]
+            isOneToOne: false
+            referencedRelation: "livelli"
+            referencedColumns: ["nome"]
           },
           {
             foreignKeyName: "corsi_stagione_id_fkey"
@@ -1586,6 +1596,33 @@ export type Database = {
           },
         ]
       }
+      livelli: {
+        Row: {
+          attivo: boolean
+          created_at: string
+          fase: string
+          id: number
+          nome: string
+          ordine: number
+        }
+        Insert: {
+          attivo?: boolean
+          created_at?: string
+          fase: string
+          id?: number
+          nome: string
+          ordine: number
+        }
+        Update: {
+          attivo?: boolean
+          created_at?: string
+          fase?: string
+          id?: number
+          nome?: string
+          ordine?: number
+        }
+        Relationships: []
+      }
       planning_corsi_settimana: {
         Row: {
           annullato: boolean
@@ -2315,22 +2352,19 @@ export type Database = {
         Args: { p_atleta_id: string }
         Returns: {
           attivo: boolean
-          categoria: string
           club_id: string
           costo_annuale: number
           costo_mensile: number
-          created_at: string
           giorno: string
           id: string
-          iscrizione_requires_approval: boolean
+          iscritto: boolean
           livello_richiesto: string
           nome: string
-          note: string
           ora_fine: string
           ora_inizio: string
-          stagione_id: string
+          percorso: string
+          salto_livello: boolean
           tipo: string
-          usa_ghiaccio: boolean
         }[]
       }
       genera_settimana_planning: {
