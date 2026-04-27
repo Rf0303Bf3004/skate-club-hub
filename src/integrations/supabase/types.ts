@@ -2484,6 +2484,7 @@ export type Database = {
           ora_inizio: string
           percorso: string
           richiede_approvazione: boolean
+          richiesta_in_attesa: boolean
           salto_livello: boolean
           tipo: string
         }[]
