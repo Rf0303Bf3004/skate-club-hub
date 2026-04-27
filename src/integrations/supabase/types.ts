@@ -2505,6 +2505,15 @@ export type Database = {
       is_mobile_parent: { Args: never; Returns: boolean }
       mobile_atleta_id: { Args: never; Returns: string }
       mobile_club_id: { Args: never; Returns: string }
+      slot_liberi_istruttore: {
+        Args: { p_data_a: string; p_data_da: string; p_istruttore_id: string }
+        Returns: {
+          data: string
+          durata_minuti: number
+          ora_fine: string
+          ora_inizio: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

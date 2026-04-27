@@ -46,6 +46,7 @@ import MedagliereWidget from "@/components/MedagliereWidget";
 import {
   RichiesteIscrizioneWidget,
   UltimeIscrizioniWidget,
+  RichiesteLezioniPrivateWidget,
 } from "@/components/dashboard/RichiesteIscrizioneWidget";
 
 // ─── Helpers ──────────────────────────────────────────────
@@ -1339,6 +1340,7 @@ const DashboardPage: React.FC = () => {
         <div className="space-y-5">
           <RichiesteIscrizioneWidget />
           <UltimeIscrizioniWidget />
+          <RichiesteLezioniPrivateWidget />
           <IstruttoriDisponibiliWidget />
           <WidgetCompleanni atleti={atleti} />
           <WidgetFatture fatture={fatture} atleti={atleti} />
