@@ -43,6 +43,10 @@ import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
 import IstruttoriDisponibiliWidget from "@/components/dashboard/IstruttoriDisponibiliWidget";
 import MedagliereWidget from "@/components/MedagliereWidget";
+import {
+  RichiesteIscrizioneWidget,
+  UltimeIscrizioniWidget,
+} from "@/components/dashboard/RichiesteIscrizioneWidget";
 
 // ─── Helpers ──────────────────────────────────────────────
 function normalize_giorno(value?: string): string {
