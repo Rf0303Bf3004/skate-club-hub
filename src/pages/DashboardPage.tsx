@@ -737,10 +737,24 @@ const WidgetCompleanni: React.FC<{ atleti: any[] }> = ({ atleti }) => {
     .map((a) => {
       const dn = new Date(a.data_nascita);
       const md = `${String(dn.getMonth() + 1).padStart(2, "0")}-${String(dn.getDate()).padStart(2, "0")}`;
-      const this_year = new Date(today.getFullYear(), dn.getMonth(), dn.getDate());
-      let giorni = Math.ceil((this_year.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-      if (giorni < 0) giorni += 365;
-      return { ...a, md, giorni, eta: today.getFullYear() - dn.getFullYear() + (giorni === 0 ? 0 : 1) };
+      
+      // Data del prossimo compleanno quest'anno
+      const this_year_bday = new Date(today.getFullYear(), dn.getMonth(), dn.getDate());
+      
+      // Calcola giorni rimanenti (se negativo, il compleanno è già passato → prossimo anno)
+      let giorni = Math.ceil((this_year_bday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      let next_birthday_year = today.getFullYear();
+      
+      if (giorni < 0) {
+        // Compleanno già passato quest'anno → prossimo è l'anno prossimo
+        giorni += 365;
+        next_birthday_year = today.getFullYear() + 1;
+      }
+      
+      // Età al prossimo compleanno = anno del prossimo compleanno - anno di nascita
+      const eta = next_birthday_year - dn.getFullYear();
+      
+      return { ...a, md, giorni, eta };
     })
     .filter((a) => a.giorni <= 7)
     .sort((a, b) => a.giorni - b.giorni);
