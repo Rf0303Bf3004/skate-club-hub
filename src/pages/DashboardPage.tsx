@@ -46,6 +46,7 @@ import MedagliereWidget from "@/components/MedagliereWidget";
 import {
   RichiesteIscrizioneWidget,
   UltimeIscrizioniWidget,
+  RichiesteLezioniPrivateWidget,
 } from "@/components/dashboard/RichiesteIscrizioneWidget";
 
 // ─── Helpers ──────────────────────────────────────────────
