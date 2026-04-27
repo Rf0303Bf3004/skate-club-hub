@@ -1,1 +1,4 @@
 project_id = "mdlfhdyyzrxppamlzepd"
+
+[functions.mobile-auth-login]
+verify_jwt = false
