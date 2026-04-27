@@ -60,6 +60,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "adesioni_atleta_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "adesioni_atleta_stagione_id_fkey"
             columns: ["stagione_id"]
             isOneToOne: false
@@ -207,7 +214,15 @@ export type Database = {
           tag_nfc?: string | null
           telefono?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "atleti_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       campi_allenamento: {
         Row: {
@@ -360,7 +375,29 @@ export type Database = {
           tipo_destinatari?: string
           titolo?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "comunicazioni_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comunicazioni_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comunicazioni_corso_id_fkey"
+            columns: ["corso_id"]
+            isOneToOne: false
+            referencedRelation: "corsi"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       comunicazioni_destinatari: {
         Row: {
@@ -394,6 +431,13 @@ export type Database = {
           stato?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "comunicazioni_destinatari_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "comunicazioni_destinatari_comunicazione_id_fkey"
             columns: ["comunicazione_id"]
@@ -530,7 +574,22 @@ export type Database = {
           tipo?: string | null
           usa_ghiaccio?: boolean
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "corsi_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "corsi_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       corsi_istruttori: {
         Row: {
@@ -551,7 +610,22 @@ export type Database = {
           id?: string
           istruttore_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "corsi_istruttori_corso_id_fkey"
+            columns: ["corso_id"]
+            isOneToOne: false
+            referencedRelation: "corsi"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "corsi_istruttori_istruttore_id_fkey"
+            columns: ["istruttore_id"]
+            isOneToOne: false
+            referencedRelation: "istruttori"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       corsi_monitori: {
         Row: {
@@ -928,7 +1002,22 @@ export type Database = {
           stato?: string | null
           tipo?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fatture_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fatture_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       gare_calendario: {
         Row: {
@@ -985,7 +1074,22 @@ export type Database = {
           ora?: string | null
           stagione_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "gare_calendario_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gare_calendario_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       impostazioni_planning: {
         Row: {
@@ -1048,7 +1152,22 @@ export type Database = {
           token?: string
           usato?: boolean
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "inviti_genitori_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inviti_genitori_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       iscrizioni_campo: {
         Row: {
@@ -1105,7 +1224,22 @@ export type Database = {
           note_salto_livello?: string | null
           salto_livello?: boolean | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "iscrizioni_corsi_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "iscrizioni_corsi_corso_id_fkey"
+            columns: ["corso_id"]
+            isOneToOne: false
+            referencedRelation: "corsi"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       iscrizioni_eventi: {
         Row: {
@@ -1211,7 +1345,22 @@ export type Database = {
           stato_pagamento?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "iscrizioni_eventi_esterni_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "iscrizioni_eventi_esterni_evento_esterno_id_fkey"
+            columns: ["evento_esterno_id"]
+            isOneToOne: false
+            referencedRelation: "eventi_esterni"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       iscrizioni_gare: {
         Row: {
@@ -1262,7 +1411,22 @@ export type Database = {
           punteggio_tecnico?: number | null
           voto_giudici?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "iscrizioni_gare_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "iscrizioni_gare_gara_id_fkey"
+            columns: ["gara_id"]
+            isOneToOne: false
+            referencedRelation: "gare_calendario"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       istruttori: {
         Row: {
@@ -1307,7 +1471,15 @@ export type Database = {
           specialita?: string | null
           telefono?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "istruttori_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       lezioni_private: {
         Row: {
@@ -1358,7 +1530,22 @@ export type Database = {
           ora_inizio?: string | null
           ricorrente?: boolean
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "lezioni_private_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lezioni_private_istruttore_id_fkey"
+            columns: ["istruttore_id"]
+            isOneToOne: false
+            referencedRelation: "istruttori"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       lezioni_private_atlete: {
         Row: {
@@ -1383,6 +1570,13 @@ export type Database = {
           quota_costo?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "lezioni_private_atlete_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "lezioni_private_atlete_lezione_id_fkey"
             columns: ["lezione_id"]
@@ -1722,7 +1916,22 @@ export type Database = {
           tes?: number | null
           tot?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "risultati_gara_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "risultati_gara_gara_id_fkey"
+            columns: ["gara_id"]
+            isOneToOne: false
+            referencedRelation: "gare_calendario"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sessioni_campo: {
         Row: {
@@ -1895,7 +2104,15 @@ export type Database = {
           livello?: string
           note?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "storico_livelli_atleta_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       test_livello: {
         Row: {
@@ -1949,7 +2166,29 @@ export type Database = {
           stagione_id?: string | null
           tipo?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "test_livello_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_livello_gara_id_fkey"
+            columns: ["gara_id"]
+            isOneToOne: false
+            referencedRelation: "gare_calendario"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_livello_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       test_livello_atleti: {
         Row: {
