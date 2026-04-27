@@ -26,6 +26,7 @@ import {
   get_pillole_discipline,
   type Categoria,
 } from "@/lib/atleta-livello";
+import { SelectLivello } from "@/components/ui/select-livello";
 
 const LIVELLI_COMUNI = ["Pulcini", "Stellina 1", "Stellina 2", "Stellina 3", "Stellina 4"];
 
