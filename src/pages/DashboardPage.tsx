@@ -1337,6 +1337,8 @@ const DashboardPage: React.FC = () => {
 
         {/* Colonna destra — widget */}
         <div className="space-y-5">
+          <RichiesteIscrizioneWidget />
+          <UltimeIscrizioniWidget />
           <IstruttoriDisponibiliWidget />
           <WidgetCompleanni atleti={atleti} />
           <WidgetFatture fatture={fatture} atleti={atleti} />
