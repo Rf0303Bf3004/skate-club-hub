@@ -914,7 +914,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                 {form.tipo === "Ghiaccio" && (
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-muted-foreground uppercase">Livello</span>
-                    <span className="text-sm">{LIVELLO_LABELS[form.livello_richiesto] || form.livello_richiesto}</span>
+                    <span className="text-sm">{form.livello_richiesto || "Tutti i livelli"}{is_carriera && form.percorso ? ` · ${form.percorso === "artistica" ? "Artistica" : "Stile"}` : ""}</span>
                   </div>
                 )}
                 <div className="flex items-center justify-between">
