@@ -1,8 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 
-// Backend di Lovable Cloud (project ref: mdlfhdyyzrxppamlzepd) — questo è il
-// database reale del progetto. Il vecchio progetto cpa-ascona (urbctwvdlovgodjpyiib)
-// è stato abbandonato.
+// Backend di Lovable Cloud (project ref: mdlfhdyyzrxppamlzepd) — unico database
+// reale del progetto. Tutti i moduli devono importare da `@/lib/supabase`.
 const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL as string) ||
   "https://mdlfhdyyzrxppamlzepd.supabase.co";
 const SUPABASE_ANON_KEY = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string) ||
