@@ -831,7 +831,7 @@ async function build_fatture_mese(anno: number, mese: number) {
   const data_inizio_mese = `${anno}-${mese_str}-01`;
   const data_fine_mese = new Date(anno, mese, 0).toISOString().split("T")[0];
   const periodo = `${anno}-${mese_str}`;
-  const mese_label = new Date(anno, mese - 1, 1).toLocaleString("it-CH", { month: "long", year: "numeric" });
+  const mese_label = new Date(anno, mese - 1, 1).toLocaleString("de-CH", { month: "long", year: "numeric" });
   const oggi = new Date().toISOString().split("T")[0];
 
   const { data: fe } = await supabase

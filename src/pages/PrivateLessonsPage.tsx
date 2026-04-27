@@ -272,7 +272,7 @@ const SlotModal: React.FC<{
   loading: boolean;
 }> = ({ form, atleti, slot_minuti, on_change, on_submit, on_close, loading }) => {
   const date_obj = new Date(form.data + "T00:00:00");
-  const date_label = date_obj.toLocaleDateString("it-CH", {
+  const date_label = date_obj.toLocaleDateString("de-CH", {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -969,7 +969,7 @@ const LezioniPrivatePage: React.FC = () => {
   const selected_date_obj = new Date(selected_date + "T00:00:00");
   const is_today = selected_date === today;
   const now_minutes = (() => { const n = new Date(); return n.getHours() * 60 + n.getMinutes(); })();
-  const selected_label = selected_date_obj.toLocaleDateString("it-CH", {
+  const selected_label = selected_date_obj.toLocaleDateString("de-CH", {
     weekday: "long",
     day: "numeric",
     month: "long",

@@ -765,7 +765,7 @@ const TabPresenze: React.FC<{
   const genera_wa_link = (persona: any, tipo: string) => {
     const tel = persona.genitore1_telefono || persona.telefono || "";
     if (!tel) return null;
-    const data_fmt = new Date(data_sel + "T00:00:00").toLocaleDateString("it-CH", {
+    const data_fmt = new Date(data_sel + "T00:00:00").toLocaleDateString("de-CH", {
       weekday: "long",
       day: "numeric",
       month: "long",
@@ -804,7 +804,7 @@ const TabPresenze: React.FC<{
           <div className="flex items-center justify-between">
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
               Presenze —{" "}
-              {new Date(data_sel + "T00:00:00").toLocaleDateString("it-CH", {
+              {new Date(data_sel + "T00:00:00").toLocaleDateString("de-CH", {
                 weekday: "long",
                 day: "numeric",
                 month: "long",

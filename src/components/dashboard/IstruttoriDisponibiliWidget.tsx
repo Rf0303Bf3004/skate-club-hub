@@ -28,7 +28,7 @@ function giorno_italiano(date_str: string): string {
 }
 
 function fmt_label(date_str: string): string {
-  return new Date(date_str + "T00:00:00").toLocaleDateString("it-CH", {
+  return new Date(date_str + "T00:00:00").toLocaleDateString("de-CH", {
     weekday: "long",
     day: "numeric",
     month: "long",

@@ -650,7 +650,7 @@ const GraficoAndamento: React.FC<{
         const pa = ai?.punteggio_artistico ?? null;
         const totale = pt !== null && pa !== null ? pt + pa : (ai?.punteggio ?? null);
         return {
-          gara: new Date(g.data + "T00:00:00").toLocaleDateString("it-CH", { day: "2-digit", month: "short" }),
+          gara: new Date(g.data + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "short" }),
           nome_gara: g.nome,
           punteggio: totale,
           posizione: ai?.posizione ?? null,

@@ -359,7 +359,7 @@ const PortaleAtletaPage: React.FC = () => {
                 <div key={i} className="bg-card border border-border rounded-xl p-3 shadow-card flex gap-3">
                   <div className="flex flex-col items-center justify-center bg-primary/10 text-primary rounded-lg px-3 py-2 min-w-[60px]">
                     <span className="text-xs uppercase font-bold">
-                      {new Date(e.data + "T00:00:00").toLocaleDateString("it-CH", { month: "short" })}
+                      {new Date(e.data + "T00:00:00").toLocaleDateString("de-CH", { month: "short" })}
                     </span>
                     <span className="text-xl font-black leading-none">
                       {new Date(e.data + "T00:00:00").getDate()}

@@ -101,7 +101,7 @@ const FatturaStampabile: React.FC<{
     const lezioni_atleta = lezioni.filter((l: any) => l.atleti_ids?.includes(atleta?.id) && !l.annullata);
     if (lezioni_atleta.length > 0) {
       lezioni_atleta.slice(0, 10).forEach((l: any) => {
-        const data = new Date(l.data + "T00:00:00").toLocaleDateString("it-CH", { day: "2-digit", month: "short" });
+        const data = new Date(l.data + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "short" });
         const quota = l.costo_totale / (l.atleti_ids?.length || 1);
         voci.push({
           descrizione: `Lezione privata ${data} ${l.ora_inizio?.slice(0, 5)}–${l.ora_fine?.slice(0, 5)} (${l.durata_minuti || 20} min)`,

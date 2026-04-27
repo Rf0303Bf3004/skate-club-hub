@@ -230,7 +230,7 @@ const SessioniCampoEstivo: React.FC<Props> = ({ gara_id }) => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-semibold text-foreground">
-                        {new Date(s.data + "T00:00:00").toLocaleDateString("it-CH", {
+                        {new Date(s.data + "T00:00:00").toLocaleDateString("de-CH", {
                           weekday: "short",
                           day: "numeric",
                           month: "short",
