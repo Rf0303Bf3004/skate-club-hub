@@ -1048,7 +1048,22 @@ export type Database = {
           token?: string
           usato?: boolean
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "inviti_genitori_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inviti_genitori_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       iscrizioni_campo: {
         Row: {
