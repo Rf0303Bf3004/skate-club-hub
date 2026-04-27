@@ -33,6 +33,7 @@ import TestLivelloPage from "@/pages/TestLivelloPage";
 import PortaleAtletaPage from "@/pages/PortaleAtletaPage";
 import CampiEventiPage from "@/pages/CampiEventiPage";
 import MedagliereePage from "@/pages/MedagliereePage";
+import TestMobileAuthPage from "@/pages/TestMobileAuthPage";
 
 const queryClient = new QueryClient();
 
@@ -119,6 +120,7 @@ const AuthenticatedApp = () => {
           <Route path="/richieste-iscrizione" element={<RichiesteIscrizionePage />} />
           <Route path="/ruoli-permessi" element={<RuoliPermessiPage />} />
           <Route path="/nuova-stagione" element={<NuovaStagionePage />} />
+          <Route path="/test-mobile-auth" element={<TestMobileAuthPage />} />
           <Route
             path="/superadmin"
             element={
