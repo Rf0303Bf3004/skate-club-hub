@@ -283,7 +283,7 @@ export default function TestLivelloPage() {
     onSuccess: () => refetch_atleti(),
   });
 
-  const handle_change_esito = async (id: string, nuovo: TestAtleta["esito"]) => {
+  const handle_change_esito = async (id: string, nuovo: "in_attesa" | "superato" | "non_superato" | "non_sostenuto") => {
     await update_field.mutateAsync({ id, patch: { esito: nuovo } as any });
     await apply_esito_propagation(supabase as any, id, nuovo, test_atleti as TestAtletaRow[]);
     refetch_atleti();
