@@ -260,6 +260,75 @@ export type Database = {
         }
         Relationships: []
       }
+      catalogo_pacchetti_opzionali: {
+        Row: {
+          attivo: boolean
+          club_id: string
+          costo_1_sessione: number | null
+          costo_2_sessioni: number | null
+          costo_annuale: number | null
+          costo_mensile: number | null
+          created_at: string
+          durata_minuti: number | null
+          id: string
+          nome: string
+          note: string | null
+          richiede_approvazione: boolean
+          stagione_id: string | null
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          attivo?: boolean
+          club_id: string
+          costo_1_sessione?: number | null
+          costo_2_sessioni?: number | null
+          costo_annuale?: number | null
+          costo_mensile?: number | null
+          created_at?: string
+          durata_minuti?: number | null
+          id?: string
+          nome: string
+          note?: string | null
+          richiede_approvazione?: boolean
+          stagione_id?: string | null
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          attivo?: boolean
+          club_id?: string
+          costo_1_sessione?: number | null
+          costo_2_sessioni?: number | null
+          costo_annuale?: number | null
+          costo_mensile?: number | null
+          created_at?: string
+          durata_minuti?: number | null
+          id?: string
+          nome?: string
+          note?: string | null
+          richiede_approvazione?: boolean
+          stagione_id?: string | null
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogo_pacchetti_opzionali_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalogo_pacchetti_opzionali_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clubs: {
         Row: {
           cap: string | null
@@ -535,6 +604,7 @@ export type Database = {
           ora_fine: string | null
           ora_inizio: string | null
           percorso: string | null
+          richiede_approvazione: boolean
           stagione_id: string | null
           tipo: string | null
           usa_ghiaccio: boolean
@@ -554,6 +624,7 @@ export type Database = {
           ora_fine?: string | null
           ora_inizio?: string | null
           percorso?: string | null
+          richiede_approvazione?: boolean
           stagione_id?: string | null
           tipo?: string | null
           usa_ghiaccio?: boolean
@@ -573,6 +644,7 @@ export type Database = {
           ora_fine?: string | null
           ora_inizio?: string | null
           percorso?: string | null
+          richiede_approvazione?: boolean
           stagione_id?: string | null
           tipo?: string | null
           usa_ghiaccio?: boolean
@@ -1438,6 +1510,51 @@ export type Database = {
           },
         ]
       }
+      iscrizioni_pacchetti: {
+        Row: {
+          atleta_id: string
+          attiva: boolean
+          created_at: string
+          id: string
+          note: string | null
+          numero_sessioni: number | null
+          pacchetto_id: string
+        }
+        Insert: {
+          atleta_id: string
+          attiva?: boolean
+          created_at?: string
+          id?: string
+          note?: string | null
+          numero_sessioni?: number | null
+          pacchetto_id: string
+        }
+        Update: {
+          atleta_id?: string
+          attiva?: boolean
+          created_at?: string
+          id?: string
+          note?: string | null
+          numero_sessioni?: number | null
+          pacchetto_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "iscrizioni_pacchetti_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "iscrizioni_pacchetti_pacchetto_id_fkey"
+            columns: ["pacchetto_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_pacchetti_opzionali"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       istruttori: {
         Row: {
           attivo: boolean | null
@@ -1506,6 +1623,7 @@ export type Database = {
           note: string | null
           ora_fine: string | null
           ora_inizio: string | null
+          richiede_approvazione: boolean
           ricorrente: boolean
         }
         Insert: {
@@ -1522,6 +1640,7 @@ export type Database = {
           note?: string | null
           ora_fine?: string | null
           ora_inizio?: string | null
+          richiede_approvazione?: boolean
           ricorrente?: boolean
         }
         Update: {
@@ -1538,6 +1657,7 @@ export type Database = {
           note?: string | null
           ora_fine?: string | null
           ora_inizio?: string | null
+          richiede_approvazione?: boolean
           ricorrente?: boolean
         }
         Relationships: [
@@ -2363,6 +2483,7 @@ export type Database = {
           ora_fine: string
           ora_inizio: string
           percorso: string
+          richiede_approvazione: boolean
           salto_livello: boolean
           tipo: string
         }[]
