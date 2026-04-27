@@ -635,7 +635,7 @@ const BoxComunicazione: React.FC<{
             <option value="">Seleziona gara...</option>
             {gare.map((g) => (
               <option key={g.id} value={g.id}>
-                {g.nome} — {new Date(g.data + "T00:00:00").toLocaleDateString("it-CH")}
+                {g.nome} — {new Date(g.data + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
               </option>
             ))}
           </select>

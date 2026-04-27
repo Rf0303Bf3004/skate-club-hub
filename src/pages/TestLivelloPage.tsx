@@ -417,7 +417,7 @@ export default function TestLivelloPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-1 text-sm text-muted-foreground">
-                    {t.data && <p>📅 {new Date(t.data).toLocaleDateString("it-CH")}</p>}
+                    {t.data && <p>📅 {new Date(t.data).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}</p>}
                     {t.luogo && <p>📍 {t.luogo}{t.club_ospitante ? ` · ${t.club_ospitante}` : ""}</p>}
                     <p className="text-xs">
                       {rows.length === 0
@@ -508,7 +508,7 @@ export default function TestLivelloPage() {
                         <div className="px-3 py-2 text-sm text-muted-foreground">Nessuna gara futura nel calendario</div>
                       ) : gare.map((g) => (
                         <SelectItem key={g.id} value={g.id}>
-                          {g.nome} {g.data ? `· ${new Date(g.data).toLocaleDateString("it-CH")}` : ""}
+                          {g.nome} {g.data ? `· ${new Date(g.data).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}` : ""}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -516,7 +516,7 @@ export default function TestLivelloPage() {
                 </div>
                 {gara_sel && (
                   <div className="md:col-span-2 grid gap-2 md:grid-cols-3 text-sm bg-muted/40 rounded-md p-3">
-                    <div><span className="text-muted-foreground">Data:</span> {gara_sel.data ? new Date(gara_sel.data).toLocaleDateString("it-CH") : "-"}</div>
+                    <div><span className="text-muted-foreground">Data:</span> {gara_sel.data ? new Date(gara_sel.data).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" }) : "-"}</div>
                     <div><span className="text-muted-foreground">Ora:</span> {gara_sel.ora?.slice(0, 5) || "-"}</div>
                     <div><span className="text-muted-foreground">Luogo:</span> {gara_sel.luogo || "-"}</div>
                     {gara_sel.club_ospitante && <div className="md:col-span-3"><span className="text-muted-foreground">Club ospitante:</span> {gara_sel.club_ospitante}</div>}
@@ -582,7 +582,7 @@ export default function TestLivelloPage() {
 
       <Card>
         <CardContent className="pt-4 grid gap-2 md:grid-cols-4 text-sm">
-          <div><span className="text-muted-foreground">Data:</span> {selected_test.data ? new Date(selected_test.data).toLocaleDateString("it-CH") : "-"}</div>
+          <div><span className="text-muted-foreground">Data:</span> {selected_test.data ? new Date(selected_test.data).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" }) : "-"}</div>
           <div><span className="text-muted-foreground">Ora:</span> {selected_test.ora?.slice(0, 5) || "-"}</div>
           <div><span className="text-muted-foreground">Luogo:</span> {selected_test.luogo || "-"}</div>
           <div><span className="text-muted-foreground">Club:</span> {selected_test.club_ospitante || "-"}</div>

@@ -145,7 +145,7 @@ const SuperAdminManutenzione: React.FC = () => {
         if (!cid) return "Seleziona un club specifico per l'esportazione";
         const club = clubs.find((c) => c.id === cid);
         const tables = ["atleti", "istruttori", "corsi", "fatture"] as const;
-        let all_csv = `=== BACKUP ${club?.nome?.toUpperCase()} — ${new Date().toLocaleDateString("it-CH")} ===\n\n`;
+        let all_csv = `=== BACKUP ${club?.nome?.toUpperCase()} — ${new Date().toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })} ===\n\n`;
 
         for (const table of tables) {
           const { data } = await supabase.from(table).select("*").eq("club_id", cid);

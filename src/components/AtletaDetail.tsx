@@ -1018,7 +1018,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                         <tr key={g.id} className="border-b border-border/50">
                           <td className="px-4 py-3 font-medium text-foreground">{g.nome}</td>
                           <td className="px-4 py-3 text-muted-foreground">
-                            {new Date(g.data + "T00:00:00").toLocaleDateString("it-CH")}
+                            {new Date(g.data + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
                           </td>
                           <td className="px-4 py-3 text-center tabular-nums text-muted-foreground">
                             {entry?.punteggio_tecnico ?? "—"}
@@ -1205,7 +1205,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                     athlete_lezioni.map((l: any) => (
                       <tr key={l.id} className="border-b border-border/50">
                         <td className="px-4 py-3 text-muted-foreground">
-                          {new Date(l.data + "T00:00:00").toLocaleDateString("it-CH")}
+                          {new Date(l.data + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
                         </td>
                         <td className="px-4 py-3 font-medium text-foreground">
                           {get_istruttore_name_from_list(istruttori, l.istruttore_id)}

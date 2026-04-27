@@ -441,8 +441,8 @@ const TrainingCampsPage: React.FC = () => {
                   <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <Calendar className="w-3.5 h-3.5" />
-                      {new Date(camp.data_inizio + "T00:00:00").toLocaleDateString("it-CH")} —{" "}
-                      {new Date(camp.data_fine + "T00:00:00").toLocaleDateString("it-CH")}
+                      {new Date(camp.data_inizio + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })} —{" "}
+                      {new Date(camp.data_fine + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
                     </span>
                     {camp.luogo && (
                       <span className="flex items-center gap-1">
