@@ -2324,6 +2324,9 @@ export type Database = {
           telefono: string
         }[]
       }
+      is_mobile_parent: { Args: never; Returns: boolean }
+      mobile_atleta_id: { Args: never; Returns: string }
+      mobile_club_id: { Args: never; Returns: string }
     }
     Enums: {
       [_ in never]: never
