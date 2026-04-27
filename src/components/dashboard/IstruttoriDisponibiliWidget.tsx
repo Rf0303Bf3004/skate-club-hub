@@ -97,6 +97,8 @@ function use_disponibilita_giorno(date_str: string) {
 // ── Widget ──────────────────────────────────────────────────
 export const IstruttoriDisponibiliWidget: React.FC = () => {
   const navigate = useNavigate();
+  const { locale } = useI18n();
+  const locale_code = LOCALE_BCP47[locale] ?? "it-IT";
   const [date_str, set_date_str] = useState<string>(() => to_date_key(new Date()));
   const { data, isLoading } = use_disponibilita_giorno(date_str);
 
