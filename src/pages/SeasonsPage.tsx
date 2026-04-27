@@ -276,10 +276,10 @@ const SeasonsPage: React.FC = () => {
                       </Badge>
                     </td>
                     <td className="px-4 py-3 tabular-nums text-muted-foreground hidden sm:table-cell">
-                      {new Date(s.data_inizio + "T00:00:00").toLocaleDateString("it-CH")}
+                      {new Date(s.data_inizio + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
                     </td>
                     <td className="px-4 py-3 tabular-nums text-muted-foreground hidden sm:table-cell">
-                      {new Date(s.data_fine + "T00:00:00").toLocaleDateString("it-CH")}
+                      {new Date(s.data_fine + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
                     </td>
                     <td className="px-4 py-3 text-center">
                       <Badge variant={s.attiva ? "default" : "secondary"} className="text-xs">

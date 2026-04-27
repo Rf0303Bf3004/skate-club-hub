@@ -738,7 +738,7 @@ const AthletesPage: React.FC = () => {
                       <AthleteBadges agonista={atleta.agonista} atleta_federazione={atleta.atleta_federazione} />
                     </p>
                     <p className="text-sm text-muted-foreground mt-0.5">
-                      Nato/a il {atleta.data_nascita ? new Date(atleta.data_nascita).toLocaleDateString("it-IT") : "—"}
+                      Nato/a il {atleta.data_nascita ? new Date(atleta.data_nascita).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—"}
                     </p>
                     <span className="inline-block mt-1 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-accent/10 text-accent">
                       {atleta.percorso_amatori || atleta.carriera_artistica || "—"}
@@ -774,7 +774,7 @@ const AthletesPage: React.FC = () => {
                   <div>
                     <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Licenza Swiss Ice Skating</p>
                     <div className="grid grid-cols-2 gap-2">
-                      {([["N. Licenza", atleta.licenza_sis_numero], ["Categoria", atleta.licenza_sis_categoria], ["Disciplina", atleta.licenza_sis_disciplina], ["Validità", atleta.licenza_sis_validita_a ? "fino al " + new Date(atleta.licenza_sis_validita_a).toLocaleDateString("it-IT") : null]] as [string, string | null][]).map(([l, v]) => (
+                      {([["N. Licenza", atleta.licenza_sis_numero], ["Categoria", atleta.licenza_sis_categoria], ["Disciplina", atleta.licenza_sis_disciplina], ["Validità", atleta.licenza_sis_validita_a ? "fino al " + new Date(atleta.licenza_sis_validita_a).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" }) : null]] as [string, string | null][]).map(([l, v]) => (
                         <div key={l} className="bg-blue-50 rounded-lg px-3 py-2 border border-blue-100">
                           <p className="text-xs text-blue-400">{l}</p>
                           <p className="text-sm font-medium text-blue-800">{v || "—"}</p>
@@ -824,7 +824,7 @@ const AthletesPage: React.FC = () => {
             {/* Footer */}
             <div className="px-6 py-3 bg-muted/30 border-t border-border flex items-center justify-between">
               <p className="text-xs text-muted-foreground"><span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-1"></span>Tessera valida · Stagione 2025/26</p>
-              <p className="text-xs text-muted-foreground">Generato il {new Date().toLocaleDateString("it-IT")} · Ice Arena Manager</p>
+              <p className="text-xs text-muted-foreground">Generato il {new Date().toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })} · Ice Arena Manager</p>
             </div>
           </div>
         </div>

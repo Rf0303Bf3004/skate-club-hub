@@ -106,7 +106,7 @@ const RichiesteIscrizionePage: React.FC = () => {
               <p className="text-xs text-muted-foreground mt-1 line-clamp-1">"{r.note_richiesta}"</p>
             )}
             <p className="text-xs text-muted-foreground mt-1">
-              {new Date(r.created_at).toLocaleDateString("it-CH", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+              {new Date(r.created_at).toLocaleDateString("de-CH", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
             </p>
             {r.stato !== "in_attesa" && r.note_risposta && (
               <p className="text-xs text-muted-foreground mt-1 italic">Risposta: {r.note_risposta}</p>

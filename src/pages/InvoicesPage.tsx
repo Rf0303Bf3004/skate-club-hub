@@ -101,7 +101,7 @@ const FatturaStampabile: React.FC<{
     const lezioni_atleta = lezioni.filter((l: any) => l.atleti_ids?.includes(atleta?.id) && !l.annullata);
     if (lezioni_atleta.length > 0) {
       lezioni_atleta.slice(0, 10).forEach((l: any) => {
-        const data = new Date(l.data + "T00:00:00").toLocaleDateString("it-CH", { day: "2-digit", month: "short" });
+        const data = new Date(l.data + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "short" });
         const quota = l.costo_totale / (l.atleti_ids?.length || 1);
         voci.push({
           descrizione: `Lezione privata ${data} ${l.ora_inizio?.slice(0, 5)}–${l.ora_fine?.slice(0, 5)} (${l.durata_minuti || 20} min)`,
@@ -173,12 +173,12 @@ const FatturaStampabile: React.FC<{
           <div style={{ fontSize: 22, fontWeight: 800, color: colore, letterSpacing: -0.5 }}>FATTURA</div>
           <div style={{ fontSize: 13, color: "#444", marginTop: 4 }}>{fattura.numero}</div>
           <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>
-            Emessa il: {fattura.data_emissione ? new Date(fattura.data_emissione).toLocaleDateString("it-CH") : "—"}
+            Emessa il: {fattura.data_emissione ? new Date(fattura.data_emissione).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—"}
           </div>
           <div style={{ fontSize: 11, color: "#666" }}>
             Scadenza:{" "}
             {fattura.data_scadenza || fattura.scadenza
-              ? new Date(fattura.data_scadenza || fattura.scadenza).toLocaleDateString("it-CH")
+              ? new Date(fattura.data_scadenza || fattura.scadenza).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })
               : "—"}
           </div>
           <div style={{ marginTop: 6 }}>
@@ -466,7 +466,7 @@ const FatturaModal: React.FC<{
             })()}
             {fattura.stato === "pagata" && fattura.data_pagamento && (
               <span className="text-xs text-muted-foreground">
-                Pagata il {new Date(fattura.data_pagamento).toLocaleDateString("it-CH")}
+                Pagata il {new Date(fattura.data_pagamento).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
               </span>
             )}
           </div>
@@ -491,13 +491,13 @@ const FatturaModal: React.FC<{
                 { label: "Importo", value: `CHF ${Number(fattura.importo).toFixed(2)}`, bold: true },
                 {
                   label: "Emissione",
-                  value: fattura.data_emissione ? new Date(fattura.data_emissione).toLocaleDateString("it-CH") : "—",
+                  value: fattura.data_emissione ? new Date(fattura.data_emissione).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—",
                 },
                 {
                   label: "Scadenza",
                   value:
                     fattura.data_scadenza || fattura.scadenza
-                      ? new Date(fattura.data_scadenza || fattura.scadenza).toLocaleDateString("it-CH")
+                      ? new Date(fattura.data_scadenza || fattura.scadenza).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })
                       : "—",
                 },
                 { label: "Tipo", value: fattura.tipo || "—" },
@@ -536,7 +536,7 @@ const FatturaModal: React.FC<{
                 {sending_email
                   ? "Invio..."
                   : inviata
-                  ? `📧 Reinvia email (ultimo: ${new Date(fattura.email_inviata_at).toLocaleDateString("it-CH")})`
+                  ? `📧 Reinvia email (ultimo: ${new Date(fattura.email_inviata_at).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })})`
                   : ha_email
                   ? `Invia email a ${email_destinatario}`
                   : "Email non disponibile"}
@@ -757,7 +757,7 @@ const InvoicesPage: React.FC = () => {
                       </td>
                       <td className="px-4 py-3 tabular-nums text-muted-foreground hidden sm:table-cell">
                         {f.data_scadenza || f.scadenza
-                          ? new Date(f.data_scadenza || f.scadenza).toLocaleDateString("it-CH")
+                          ? new Date(f.data_scadenza || f.scadenza).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })
                           : "—"}
                       </td>
                       <td className="px-4 py-3 text-center">

@@ -566,7 +566,7 @@ function PlanningPageInner() {
           // formato data settimana per il toast
           const lun = new Date(`${dataLunediISO}T00:00:00`);
           const dom = addDays(lun, 6);
-          const fmt = (d: Date) => d.toLocaleDateString("it-CH", { day: "numeric", month: "short" });
+          const fmt = (d: Date) => d.toLocaleDateString("de-CH", { day: "numeric", month: "short" });
           toast.success(`Settimana ${fmt(lun)}-${fmt(dom)} generata da template (${inseriti} corsi)`, {
             duration: 3000,
           });

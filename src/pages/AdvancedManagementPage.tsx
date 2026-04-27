@@ -9,7 +9,7 @@ import { toast } from "@/hooks/use-toast";
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function fmt_date(d: string) {
   const obj = new Date(d + "T00:00:00");
-  return obj.toLocaleDateString("it-CH", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+  return obj.toLocaleDateString("de-CH", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
 }
 
 function get_day_of_week(d: string) {

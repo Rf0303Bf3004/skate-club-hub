@@ -302,7 +302,7 @@ const PortaleAtletaPage: React.FC = () => {
                 <Row label="Nome">{nome_completo}</Row>
                 <Row label="Data di nascita">
                   {atleta.data_nascita
-                    ? new Date(atleta.data_nascita + "T00:00:00").toLocaleDateString("it-CH")
+                    ? new Date(atleta.data_nascita + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })
                     : "—"}
                 </Row>
                 <Row label="Luogo di nascita">{atleta.luogo_nascita || "—"}</Row>
@@ -339,7 +339,7 @@ const PortaleAtletaPage: React.FC = () => {
                   <Row label="Categoria">{atleta.licenza_sis_categoria || "—"}</Row>
                   <Row label="Validità">
                     {atleta.licenza_sis_validita_a
-                      ? new Date(atleta.licenza_sis_validita_a + "T00:00:00").toLocaleDateString("it-CH")
+                      ? new Date(atleta.licenza_sis_validita_a + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })
                       : "—"}
                   </Row>
                 </dl>
@@ -359,7 +359,7 @@ const PortaleAtletaPage: React.FC = () => {
                 <div key={i} className="bg-card border border-border rounded-xl p-3 shadow-card flex gap-3">
                   <div className="flex flex-col items-center justify-center bg-primary/10 text-primary rounded-lg px-3 py-2 min-w-[60px]">
                     <span className="text-xs uppercase font-bold">
-                      {new Date(e.data + "T00:00:00").toLocaleDateString("it-CH", { month: "short" })}
+                      {new Date(e.data + "T00:00:00").toLocaleDateString("de-CH", { month: "short" })}
                     </span>
                     <span className="text-xl font-black leading-none">
                       {new Date(e.data + "T00:00:00").getDate()}
@@ -398,7 +398,7 @@ const PortaleAtletaPage: React.FC = () => {
                     <div className="flex items-start justify-between gap-2 mb-1.5">
                       <h3 className="text-sm font-bold text-foreground">{com?.titolo}</h3>
                       <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                        {new Date(c.creato_at).toLocaleDateString("it-CH")}
+                        {new Date(c.creato_at).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap">
@@ -460,7 +460,7 @@ const PortaleAtletaPage: React.FC = () => {
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
                         {f.data_emissione
-                          ? new Date(f.data_emissione + "T00:00:00").toLocaleDateString("it-CH")
+                          ? new Date(f.data_emissione + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })
                           : ""}
                       </p>
                     </div>

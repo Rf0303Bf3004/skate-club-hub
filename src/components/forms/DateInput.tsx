@@ -64,7 +64,7 @@ const DateInput: React.FC<Props> = ({ value, onChange, className, min_year = 190
         }}
         className={`${base_cls} w-14`}
       />
-      <span className="text-muted-foreground">/</span>
+      <span className="text-muted-foreground">.</span>
       <input
         ref={ref_mm}
         type="text"
@@ -80,7 +80,7 @@ const DateInput: React.FC<Props> = ({ value, onChange, className, min_year = 190
         }}
         className={`${base_cls} w-14`}
       />
-      <span className="text-muted-foreground">/</span>
+      <span className="text-muted-foreground">.</span>
       <input
         ref={ref_aaaa}
         type="text"

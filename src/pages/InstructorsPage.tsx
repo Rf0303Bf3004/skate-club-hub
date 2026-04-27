@@ -27,7 +27,7 @@ const TIPI_CONTRATTO = [
 ];
 
 function get_mese_label(anno: number, mese: number) {
-  return new Date(anno, mese - 1, 1).toLocaleDateString("it-CH", { month: "long", year: "numeric" });
+  return new Date(anno, mese - 1, 1).toLocaleDateString("de-CH", { month: "long", year: "numeric" });
 }
 
 function time_to_min(t: string): number {

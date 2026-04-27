@@ -95,7 +95,7 @@ const SOGLIE_LIVELLO: Record<string, number> = {
 
 function format_date_label(value: string) {
   if (!value) return '';
-  return new Date(`${value}T00:00:00`).toLocaleDateString('it-CH');
+  return new Date(`${value}T00:00:00`).toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
 function get_atleta_livello_label(atleta: any) {
@@ -408,7 +408,7 @@ const CommunicationsPage: React.FC = () => {
   const get_data_label = (c: any) => {
     const iso = (c.stato === 'inviata' && c.inviata_at) ? c.inviata_at : (c.created_at || (c.data ? c.data + 'T00:00:00' : null));
     if (!iso) return '';
-    return new Date(iso).toLocaleDateString('it-CH');
+    return new Date(iso).toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
   if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;

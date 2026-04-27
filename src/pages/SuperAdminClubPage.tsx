@@ -345,7 +345,7 @@ const SuperAdminClubPage: React.FC = () => {
               )}
 
               <p className="text-[10px] text-muted-foreground">
-                Creato il {new Date(selected.created_at).toLocaleDateString("it-CH")}
+                Creato il {new Date(selected.created_at).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
               </p>
             </div>
           )}

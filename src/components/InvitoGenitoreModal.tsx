@@ -59,7 +59,7 @@ export default function InvitoGenitoreModal({ atleta, genitore_email, genitore_n
     const livello = atleta.carriera_artistica || atleta.carriera_stile || atleta.percorso_amatori || "—";
     const deep_link = `icearena://login?token=${token}`;
     const qr_url = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(deep_link)}&color=0284C7&bgcolor=F0F9FF`;
-    const data_nascita = atleta.data_nascita ? new Date(atleta.data_nascita + "T00:00:00").toLocaleDateString("it-IT", { day: "2-digit", month: "long", year: "numeric" }) : "—";
+    const data_nascita = atleta.data_nascita ? new Date(atleta.data_nascita + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "long", year: "numeric" }) : "—";
     const html = `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Invito Ice Arena</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}

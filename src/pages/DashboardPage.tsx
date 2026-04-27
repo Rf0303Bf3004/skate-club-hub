@@ -81,7 +81,7 @@ function get_giorno_key(date: string): string {
 }
 
 function format_data_breve(date: string): string {
-  return new Date(date + "T00:00:00").toLocaleDateString("it-CH", { weekday: "short", day: "numeric", month: "short" });
+  return new Date(date + "T00:00:00").toLocaleDateString("de-CH", { weekday: "short", day: "numeric", month: "short" });
 }
 
 // ─── Hook template comunicazioni ──────────────────────────
@@ -191,7 +191,7 @@ const CorsoCard: React.FC<{
     const tel = persona.genitore1_telefono || "";
     if (!tel) return null;
     const tipo = (corso.monitori || []).includes(persona.id) ? "monitore" : "aiuto monitore";
-    const data_fmt = new Date(data + "T00:00:00").toLocaleDateString("it-CH", {
+    const data_fmt = new Date(data + "T00:00:00").toLocaleDateString("de-CH", {
       weekday: "long",
       day: "numeric",
       month: "long",
@@ -635,7 +635,7 @@ const BoxComunicazione: React.FC<{
             <option value="">Seleziona gara...</option>
             {gare.map((g) => (
               <option key={g.id} value={g.id}>
-                {g.nome} — {new Date(g.data + "T00:00:00").toLocaleDateString("it-CH")}
+                {g.nome} — {new Date(g.data + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
               </option>
             ))}
           </select>
@@ -810,7 +810,7 @@ const WidgetFatture: React.FC<{ fatture: any[]; atleti: any[] }> = ({ fatture, a
             <div className="text-right">
               <p className="text-xs font-bold text-foreground">CHF {Number(f.importo).toFixed(2)}</p>
               <p className="text-xs text-orange-500">
-                {new Date(f.scadenza + "T00:00:00").toLocaleDateString("it-CH", { day: "2-digit", month: "short" })}
+                {new Date(f.scadenza + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "short" })}
               </p>
             </div>
           </div>
@@ -1078,7 +1078,7 @@ const DashboardPage: React.FC = () => {
         </div>
         <div className="ml-auto text-right">
           <p className="text-xs text-muted-foreground capitalize">
-            {new Date().toLocaleDateString("it-CH", {
+            {new Date().toLocaleDateString("de-CH", {
               weekday: "long",
               day: "numeric",
               month: "long",
@@ -1162,7 +1162,7 @@ const DashboardPage: React.FC = () => {
         oggi.setHours(0, 0, 0, 0);
         const diff_days = Math.ceil((fine.getTime() - oggi.getTime()) / (1000 * 60 * 60 * 24));
         if (diff_days > 30) return null;
-        const data_fmt = fine.toLocaleDateString("it-CH", { day: "numeric", month: "long", year: "numeric" });
+        const data_fmt = fine.toLocaleDateString("de-CH", { day: "numeric", month: "long", year: "numeric" });
         const is_past = diff_days < 0;
         return (
           <div

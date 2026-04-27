@@ -85,7 +85,7 @@ export default function StoricoTestAtleta({ atleta_id }: Props) {
             return (
               <TableRow key={r.id}>
                 <TableCell className="text-sm">
-                  {r.test?.data ? new Date(r.test.data + "T00:00:00").toLocaleDateString("it-CH") : "—"}
+                  {r.test?.data ? new Date(r.test.data + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—"}
                 </TableCell>
                 <TableCell className="font-medium text-sm">{r.test?.nome || "—"}</TableCell>
                 <TableCell className="text-sm capitalize text-muted-foreground">{r.test?.tipo || "—"}</TableCell>

@@ -49,7 +49,7 @@ type IscrizioneEvento = {
 
 const fmt_date = (d: string | null) => {
   if (!d) return "—";
-  return new Date(d + "T00:00:00").toLocaleDateString("it-CH");
+  return new Date(d + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" });
 };
 
 const CampiEventiPage = () => {
