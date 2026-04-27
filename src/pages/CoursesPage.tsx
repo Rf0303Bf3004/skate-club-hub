@@ -1365,6 +1365,19 @@ const CorsoModal: React.FC<{
     }
   };
 
+  const { data: livelli_master_modal = [] } = use_livelli();
+  const fase_livello_modal = useMemo(() => {
+    if (!form.livello_richiesto) return null;
+    return livelli_master_modal.find((l: any) => l.nome === form.livello_richiesto)?.fase ?? null;
+  }, [form.livello_richiesto, livelli_master_modal]);
+  const is_carriera_modal = fase_livello_modal === "carriera";
+  const percorso_invalido_modal = !!form.percorso && !is_carriera_modal;
+  useEffect(() => {
+    if (!is_carriera_modal && form.percorso !== null) {
+      set_form((p) => ({ ...p, percorso: null }));
+    }
+  }, [is_carriera_modal, form.percorso]);
+
   // Real-time ice availability check
   useEffect(() => {
     if (!posiziona_planning) { set_no_ice_realtime(false); return; }
