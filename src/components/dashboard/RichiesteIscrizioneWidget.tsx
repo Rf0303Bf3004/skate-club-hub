@@ -4,9 +4,9 @@ import { supabase, get_current_club_id } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Inbox, Check, X, UserPlus } from "lucide-react";
+import { Inbox, Check, X, UserPlus, CalendarClock } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { format_data_completa } from "@/lib/format-data";
+import { format_data_completa, format_data_lunga } from "@/lib/format-data";
 
 const REFETCH_MS = 60_000;
 
