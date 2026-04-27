@@ -639,7 +639,7 @@ export default function TestLivelloPage() {
                           </div>
                           <Select
                             value={step.esito}
-                            onValueChange={(v) => handle_change_esito(step.id, v as TestAtleta["esito"])}
+                            onValueChange={(v) => handle_change_esito(step.id, v as "in_attesa" | "superato" | "non_superato" | "non_sostenuto")}
                           >
                             <SelectTrigger className="w-36 h-8 text-xs">
                               <SelectValue />
