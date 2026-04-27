@@ -6,6 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { calcola_ore_impegnate_giorno } from "@/lib/availability";
+import { useI18n, type Locale } from "@/lib/i18n";
+
+const LOCALE_BCP47: Record<Locale, string> = {
+  it: "it-IT",
+  en: "en-GB",
+  fr: "fr-FR",
+  de: "de-DE",
+  rm: "rm-CH",
+};
 
 // ── Helpers data ─────────────────────────────────────────────
 function to_date_key(d: Date): string {
@@ -24,11 +33,12 @@ function add_days_str(date_str: string, days: number): string {
 const GIORNI_IT = ["Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato"];
 
 function giorno_italiano(date_str: string): string {
+  // Mantenuto in italiano: serve a fare match con la colonna `giorno` del DB (vincolo di dominio)
   return GIORNI_IT[new Date(date_str + "T00:00:00").getDay()];
 }
 
-function fmt_label(date_str: string): string {
-  return new Date(date_str + "T00:00:00").toLocaleDateString("de-CH", {
+function fmt_label(date_str: string, locale_code: string): string {
+  return new Date(date_str + "T00:00:00").toLocaleDateString(locale_code, {
     weekday: "long",
     day: "numeric",
     month: "long",
