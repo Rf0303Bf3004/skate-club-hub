@@ -11,7 +11,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, ArrowLeft, Trash2, X, CheckCircle } from "lucide-react";
+import { Plus, ArrowLeft, Trash2, X, CheckCircle, Send } from "lucide-react";
+import {
+  ComunicazioneFormSection,
+  empty_comunicazione_state,
+  invia_comunicazione_evento,
+  default_titolo_test,
+  default_testo_test,
+  type ComunicazioneFormState,
+} from "@/components/comunicazioni/ComunicazioneFormSection";
 import {
   get_livello_gara,
   TEST_BASE_PASSAGGI,
