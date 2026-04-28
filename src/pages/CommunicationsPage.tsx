@@ -856,6 +856,7 @@ const CommunicationsPage: React.FC = () => {
               )}
 
 
+              {['per_corsi', 'per_giorno', 'per_istruttore'].includes(tipo_destinatari) && preview_loaded && (
                 <div className="space-y-3 rounded-xl border border-border p-3">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-sm font-medium text-foreground">{preview_selected_count} di {preview_total_count} atleti riceveranno la comunicazione</p>
