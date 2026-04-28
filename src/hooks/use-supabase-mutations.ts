@@ -1041,6 +1041,25 @@ export function use_crea_comunicazione() {
         test_livello_id: data.test_livello_id ?? null,
       };
 
+      // Atleti specifici (selezione esplicita) → lista in atleti_ids (gestita dal trigger)
+      if (
+        data.tipo_destinatari === "atleti" &&
+        Array.isArray(data.atleta_ids_manuali) &&
+        data.atleta_ids_manuali.length > 0
+      ) {
+        const ids = Array.from(new Set(data.atleta_ids_manuali));
+        const { error } = await supabase.from("comunicazioni").insert({
+          club_id,
+          titolo: data.titolo,
+          testo: data.testo,
+          tipo_destinatari: "atleti",
+          atleti_ids: ids,
+          ...fk_evento,
+        });
+        if (error) throw error;
+        return;
+      }
+
       if (
         Array.isArray(data.atleta_ids_manuali) &&
         data.atleta_ids_manuali.length > 0 &&
