@@ -197,6 +197,18 @@ const translations: Record<Locale, Record<string, string>> = {
     comunicazioni_seleziona_gara: "Seleziona la gara",
     comunicazioni_seleziona_gala: "Seleziona il galà",
     comunicazioni_seleziona_test: "Seleziona il test",
+    // Comunicazione form section (workflow crea evento + comunicazione)
+    comunicazione_invia_subito: "Invia subito comunicazione alle famiglie",
+    comunicazione_descrizione: "La comunicazione verrà collegata all'evento: l'app mobile mostrerà il bottone \"Iscriviti\" inline.",
+    comunicazione_titolo: "Titolo comunicazione",
+    comunicazione_testo: "Testo",
+    comunicazione_destinatari_tutti: "Tutto il club",
+    comunicazione_destinatari_corso: "Per corso",
+    comunicazione_destinatari_atleta: "Per atleta",
+    comunicazione_seleziona_corso: "Seleziona un corso",
+    comunicazione_seleziona_atleta: "Seleziona un atleta",
+    comunicazione_nessun_corso: "Nessun corso disponibile",
+    comunicazione_nessun_atleta: "Nessun atleta",
   },
   de: {
     dashboard: "Dashboard",
