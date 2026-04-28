@@ -7,7 +7,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Inbox, Check, X, UserPlus, CalendarClock, RefreshCw } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { format_data_completa, format_data_lunga } from "@/lib/format-data";
+import { format_data_completa, format_data_lunga, locale_to_bcp47 } from "@/lib/format-data";
+import { useI18n } from "@/lib/i18n";
+
+function fmt_data_breve_localizzata(data_iso: string, locale_code: string): string {
+  const dt = new Date(data_iso + "T00:00:00");
+  if (isNaN(dt.getTime())) return "—";
+  return dt.toLocaleDateString(locale_code, { weekday: "short", day: "numeric", month: "short" });
+}
 
 const REFETCH_MS = 60_000;
 
@@ -317,6 +324,8 @@ function fmt_ora(t?: string | null): string {
 export const RichiesteLezioniPrivateWidget: React.FC = () => {
   const club_id = get_current_club_id();
   const qc = useQueryClient();
+  const { locale } = useI18n();
+  const locale_code = locale_to_bcp47(locale);
   const [rifiuto_id, set_rifiuto_id] = useState<string | null>(null);
   const [motivo, set_motivo] = useState("");
 
@@ -466,7 +475,7 @@ export const RichiesteLezioniPrivateWidget: React.FC = () => {
                       </span>
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {format_data_lunga(l.data, { weekday: "short", day: "numeric", month: "short" })}
+                      {fmt_data_breve_localizzata(l.data, locale_code)}
                       {" · "}
                       {fmt_ora(l.ora_inizio)}–{fmt_ora(l.ora_fine)}
                       {l.ricorrente && (
