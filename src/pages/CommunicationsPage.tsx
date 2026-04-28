@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useI18n } from '@/lib/i18n';
 import { use_atleti, use_comunicazioni, use_corsi, use_istruttori } from '@/hooks/use-supabase-data';
 import { use_crea_comunicazione } from '@/hooks/use-supabase-mutations';
-import { supabase } from '@/lib/supabase';
+import { supabase, get_current_club_id } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, MessageSquare, FileText, Pencil, Check, ChevronsUpDown, CalendarIcon, X } from 'lucide-react';
