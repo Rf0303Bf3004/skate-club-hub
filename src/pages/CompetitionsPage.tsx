@@ -24,6 +24,7 @@ import {
   ChevronDown,
   ChevronUp,
   Pencil,
+  Send,
 } from "lucide-react";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
