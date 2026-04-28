@@ -139,6 +139,8 @@ const CommunicationsPage: React.FC = () => {
   const [selected_recipient_ids, set_selected_recipient_ids] = useState<string[]>([]);
   const [preview_loaded, set_preview_loaded] = useState(false);
   const [is_resolving_recipients, set_is_resolving_recipients] = useState(false);
+  const [atleti_specifici_ids, set_atleti_specifici_ids] = useState<string[]>([]);
+  const [atleta_search, set_atleta_search] = useState('');
 
   // Evento collegato (gara | gala | test | nessuno)
   const [tipo_evento_collegato, set_tipo_evento_collegato] = useState<'nessuno' | 'gara' | 'gala' | 'test'>('nessuno');
@@ -352,6 +354,8 @@ const CommunicationsPage: React.FC = () => {
     set_tipo_evento_collegato('nessuno');
     set_evento_collegato_id('');
     reset_recipient_preview();
+    set_atleti_specifici_ids([]);
+    set_atleta_search('');
     set_modal_open(true);
   };
 
@@ -377,6 +381,8 @@ const CommunicationsPage: React.FC = () => {
     set_evento_collegato_id('');
     set_placeholders({});
     reset_recipient_preview();
+    set_atleti_specifici_ids([]);
+    set_atleta_search('');
     set_step('form');
   };
 
@@ -402,7 +408,9 @@ const CommunicationsPage: React.FC = () => {
       tipo_destinatari,
       corso_id: null,
       livello_categoria: tipo_destinatari === 'per_livello' ? livello_categoria : null,
-      atleta_ids_manuali: ['per_corsi', 'per_giorno', 'per_istruttore'].includes(tipo_destinatari) ? selected_recipient_ids : null,
+      atleta_ids_manuali: tipo_destinatari === 'atleti'
+        ? atleti_specifici_ids
+        : (['per_corsi', 'per_giorno', 'per_istruttore'].includes(tipo_destinatari) ? selected_recipient_ids : null),
       gara_id: tipo_evento_collegato === 'gara' ? evt_id : null,
       evento_straordinario_id: tipo_evento_collegato === 'gala' ? evt_id : null,
       test_livello_id: tipo_evento_collegato === 'test' ? evt_id : null,
@@ -573,11 +581,12 @@ const CommunicationsPage: React.FC = () => {
                   >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="tutti">Tutti</SelectItem>
-                      <SelectItem value="per_corsi">Per corsi</SelectItem>
+                      <SelectItem value="tutti">Tutto il club</SelectItem>
+                      <SelectItem value="per_corsi">Per corso</SelectItem>
+                      <SelectItem value="per_livello">Per livello</SelectItem>
+                      <SelectItem value="atleti">Atleti specifici</SelectItem>
                       <SelectItem value="per_giorno">Per giorno (data specifica)</SelectItem>
                       <SelectItem value="per_istruttore">Per istruttore</SelectItem>
-                      <SelectItem value="per_livello">Per livello</SelectItem>
                       <SelectItem value="solo_istruttori">Solo istruttori</SelectItem>
                     </SelectContent>
                   </Select>
@@ -800,6 +809,59 @@ const CommunicationsPage: React.FC = () => {
                 </div>
               )}
 
+              {tipo_destinatari === 'atleti' && (
+                <div className="space-y-2 rounded-xl border border-border p-3">
+                  <Label className="text-xs">Atleti specifici</Label>
+                  <Input
+                    placeholder="Cerca per nome, cognome o livello…"
+                    value={atleta_search}
+                    onChange={(e) => set_atleta_search(e.target.value)}
+                  />
+                  <div className="flex justify-between">
+                    <Button type="button" variant="ghost" size="sm" onClick={() => set_atleti_specifici_ids(atleti.map((a: any) => a.id))}>
+                      Seleziona tutti
+                    </Button>
+                    <Button type="button" variant="ghost" size="sm" onClick={() => set_atleti_specifici_ids([])}>
+                      Deseleziona
+                    </Button>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto space-y-1 border rounded-md p-2 bg-background">
+                    {(() => {
+                      const q = atleta_search.trim().toLowerCase();
+                      const lista = atleti
+                        .filter((a: any) => {
+                          if (!q) return true;
+                          const liv = get_atleta_livello_label(a).toLowerCase();
+                          return (
+                            `${a.cognome} ${a.nome}`.toLowerCase().includes(q) ||
+                            `${a.nome} ${a.cognome}`.toLowerCase().includes(q) ||
+                            liv.includes(q)
+                          );
+                        })
+                        .sort((a: any, b: any) => `${a.cognome} ${a.nome}`.localeCompare(`${b.cognome} ${b.nome}`, 'it'));
+                      if (lista.length === 0) return <p className="text-xs text-muted-foreground px-2 py-1">Nessun atleta trovato.</p>;
+                      return lista.map((a: any) => {
+                        const checked = atleti_specifici_ids.includes(a.id);
+                        return (
+                          <label key={a.id} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-muted cursor-pointer text-sm">
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={(v) => {
+                                set_atleti_specifici_ids((cur) => v ? [...cur, a.id] : cur.filter((x) => x !== a.id));
+                              }}
+                            />
+                            <span className="flex-1">{a.cognome} {a.nome}</span>
+                            <Badge variant="outline" className="text-[10px]">{get_atleta_livello_label(a)}</Badge>
+                          </label>
+                        );
+                      });
+                    })()}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">{atleti_specifici_ids.length} atleti selezionati</p>
+                </div>
+              )}
+
+
               {['per_corsi', 'per_giorno', 'per_istruttore'].includes(tipo_destinatari) && preview_loaded && (
                 <div className="space-y-3 rounded-xl border border-border p-3">
                   <div className="flex items-center justify-between gap-3">
@@ -857,7 +919,15 @@ const CommunicationsPage: React.FC = () => {
                     </Button>
                   )
                 ) : (
-                  <Button onClick={handle_submit} disabled={crea.isPending || !titolo_preview.trim() || !testo_preview.trim()}>
+                  <Button
+                    onClick={handle_submit}
+                    disabled={
+                      crea.isPending ||
+                      !titolo_preview.trim() ||
+                      !testo_preview.trim() ||
+                      (tipo_destinatari === 'atleti' && atleti_specifici_ids.length === 0)
+                    }
+                  >
                     {crea.isPending ? '...' : 'Invia'}
                   </Button>
                 )}
