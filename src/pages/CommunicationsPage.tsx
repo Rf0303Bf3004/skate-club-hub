@@ -150,11 +150,12 @@ const CommunicationsPage: React.FC = () => {
   React.useEffect(() => {
     if (!modal_open) return;
     const today_iso = new Date().toISOString().split('T')[0];
+    const club_id = get_current_club_id();
     (async () => {
       const [g_res, ev_res, tl_res] = await Promise.all([
-        supabase.from('gare_calendario').select('id, nome, data').eq('archiviata', false).gte('data', today_iso).order('data', { ascending: true }),
-        supabase.from('eventi_straordinari').select('id, titolo, data').gte('data', today_iso).order('data', { ascending: true }),
-        supabase.from('test_livello').select('id, nome, data').gte('data', today_iso).order('data', { ascending: true }),
+        supabase.from('gare_calendario').select('id, nome, data').eq('club_id', club_id).eq('archiviata', false).gte('data', today_iso).order('data', { ascending: true }),
+        supabase.from('eventi_straordinari').select('id, titolo, data').eq('club_id', club_id).gte('data', today_iso).order('data', { ascending: true }),
+        supabase.from('test_livello').select('id, nome, data').eq('club_id', club_id).gte('data', today_iso).order('data', { ascending: true }),
       ]);
       set_gare_future(g_res.data ?? []);
       set_gale_future(ev_res.data ?? []);
