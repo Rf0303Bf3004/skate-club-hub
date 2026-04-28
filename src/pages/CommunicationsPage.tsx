@@ -404,7 +404,9 @@ const CommunicationsPage: React.FC = () => {
       tipo_destinatari,
       corso_id: null,
       livello_categoria: tipo_destinatari === 'per_livello' ? livello_categoria : null,
-      atleta_ids_manuali: ['per_corsi', 'per_giorno', 'per_istruttore'].includes(tipo_destinatari) ? selected_recipient_ids : null,
+      atleta_ids_manuali: tipo_destinatari === 'atleti'
+        ? atleti_specifici_ids
+        : (['per_corsi', 'per_giorno', 'per_istruttore'].includes(tipo_destinatari) ? selected_recipient_ids : null),
       gara_id: tipo_evento_collegato === 'gara' ? evt_id : null,
       evento_straordinario_id: tipo_evento_collegato === 'gala' ? evt_id : null,
       test_livello_id: tipo_evento_collegato === 'test' ? evt_id : null,
