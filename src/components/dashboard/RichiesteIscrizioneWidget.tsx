@@ -475,7 +475,7 @@ export const RichiesteLezioniPrivateWidget: React.FC = () => {
                       </span>
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {format_data_lunga(l.data, { weekday: "short", day: "numeric", month: "short" })}
+                      {fmt_data_breve_localizzata(l.data, locale_code)}
                       {" · "}
                       {fmt_ora(l.ora_inizio)}–{fmt_ora(l.ora_fine)}
                       {l.ricorrente && (
