@@ -593,6 +593,13 @@ export default function TestLivelloPage() {
               <Textarea value={form.note} onChange={(e) => set_form({ ...form, note: e.target.value })} />
             </div>
 
+            <ComunicazioneFormSection
+              state={com_state}
+              onChange={handle_com_change}
+              corsi={corsi_lista.map((c) => ({ id: c.id, label: c.nome }))}
+              atleti={atleti.map((a) => ({ id: a.id, label: `${a.cognome} ${a.nome}` }))}
+            />
+
             <div className="flex gap-3 justify-end pt-2">
               <Button variant="outline" onClick={() => set_view("list")}>Annulla</Button>
               <Button
@@ -603,7 +610,7 @@ export default function TestLivelloPage() {
                 }
                 onClick={() => create_test.mutate()}
               >
-                Crea Test
+                {com_state.invia ? (<><Send className="w-4 h-4 mr-1" /> Crea e comunica</>) : "Crea Test"}
               </Button>
             </div>
           </CardContent>
