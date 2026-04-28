@@ -30,6 +30,14 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import SessioniCampoEstivo from "@/components/SessioniCampoEstivo";
 import MedagliereWidget from "@/components/MedagliereWidget";
+import {
+  ComunicazioneFormSection,
+  empty_comunicazione_state,
+  invia_comunicazione_evento,
+  default_titolo_gara,
+  default_testo_gara,
+  type ComunicazioneFormState,
+} from "@/components/comunicazioni/ComunicazioneFormSection";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 const LIVELLI = [
