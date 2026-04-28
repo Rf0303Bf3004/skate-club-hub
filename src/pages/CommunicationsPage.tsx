@@ -800,10 +800,61 @@ const CommunicationsPage: React.FC = () => {
                   <p className="text-[11px] text-muted-foreground leading-snug">
                     Il filtro usa il livello tecnico massimo dell'atleta (artistico o stile). I Pulcini ricevono solo se selezioni esplicitamente "Solo Pulcini".
                   </p>
+              )}
+
+              {tipo_destinatari === 'atleti' && (
+                <div className="space-y-2 rounded-xl border border-border p-3">
+                  <Label className="text-xs">Atleti specifici</Label>
+                  <Input
+                    placeholder="Cerca per nome, cognome o livello…"
+                    value={atleta_search}
+                    onChange={(e) => set_atleta_search(e.target.value)}
+                  />
+                  <div className="flex justify-between">
+                    <Button type="button" variant="ghost" size="sm" onClick={() => set_atleti_specifici_ids(atleti.map((a: any) => a.id))}>
+                      Seleziona tutti
+                    </Button>
+                    <Button type="button" variant="ghost" size="sm" onClick={() => set_atleti_specifici_ids([])}>
+                      Deseleziona
+                    </Button>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto space-y-1 border rounded-md p-2 bg-background">
+                    {(() => {
+                      const q = atleta_search.trim().toLowerCase();
+                      const lista = atleti
+                        .filter((a: any) => {
+                          if (!q) return true;
+                          const liv = get_atleta_livello_label(a).toLowerCase();
+                          return (
+                            `${a.cognome} ${a.nome}`.toLowerCase().includes(q) ||
+                            `${a.nome} ${a.cognome}`.toLowerCase().includes(q) ||
+                            liv.includes(q)
+                          );
+                        })
+                        .sort((a: any, b: any) => `${a.cognome} ${a.nome}`.localeCompare(`${b.cognome} ${b.nome}`, 'it'));
+                      if (lista.length === 0) return <p className="text-xs text-muted-foreground px-2 py-1">Nessun atleta trovato.</p>;
+                      return lista.map((a: any) => {
+                        const checked = atleti_specifici_ids.includes(a.id);
+                        return (
+                          <label key={a.id} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-muted cursor-pointer text-sm">
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={(v) => {
+                                set_atleti_specifici_ids((cur) => v ? [...cur, a.id] : cur.filter((x) => x !== a.id));
+                              }}
+                            />
+                            <span className="flex-1">{a.cognome} {a.nome}</span>
+                            <Badge variant="outline" className="text-[10px]">{get_atleta_livello_label(a)}</Badge>
+                          </label>
+                        );
+                      });
+                    })()}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">{atleti_specifici_ids.length} atleti selezionati</p>
                 </div>
               )}
 
-              {['per_corsi', 'per_giorno', 'per_istruttore'].includes(tipo_destinatari) && preview_loaded && (
+
                 <div className="space-y-3 rounded-xl border border-border p-3">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-sm font-medium text-foreground">{preview_selected_count} di {preview_total_count} atleti riceveranno la comunicazione</p>
