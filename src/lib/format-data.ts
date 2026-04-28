@@ -57,3 +57,31 @@ export function format_data(d: DateInput, opts: Intl.DateTimeFormatOptions, fall
   if (!dt) return fallback;
   return dt.toLocaleDateString(LOCALE, opts);
 }
+
+// ── i18n helpers ────────────────────────────────────────────────
+import type { Locale } from "./i18n";
+
+export const LOCALE_BCP47: Record<Locale, string> = {
+  it: "it-IT",
+  en: "en-GB",
+  fr: "fr-FR",
+  de: "de-DE",
+  rm: "rm-CH",
+};
+
+export function locale_to_bcp47(locale: Locale | undefined | null): string {
+  if (!locale) return "it-IT";
+  return LOCALE_BCP47[locale] ?? "it-IT";
+}
+
+/** Formato lungo localizzato (es. "martedì 28 aprile 2026") usando la lingua UI corrente. */
+export function fmt_date_long(d: DateInput, locale_code: string, fallback: string = "—"): string {
+  const dt = to_date(d);
+  if (!dt) return fallback;
+  return dt.toLocaleDateString(locale_code, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
