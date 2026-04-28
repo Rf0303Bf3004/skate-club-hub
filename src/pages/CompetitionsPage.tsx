@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useSearchParams, useParams, useNavigate } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
-import { use_gare, use_atleti, get_atleta_name_from_list } from "@/hooks/use-supabase-data";
+import { use_gare, use_atleti, get_atleta_name_from_list, use_corsi } from "@/hooks/use-supabase-data";
 import ImportGaraPdf from "@/components/ImportGaraPdf";
 import { days_until } from "@/lib/mock-data";
 import { use_elimina_gara } from "@/hooks/use-supabase-mutations";
@@ -24,12 +24,21 @@ import {
   ChevronDown,
   ChevronUp,
   Pencil,
+  Send,
 } from "lucide-react";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import SessioniCampoEstivo from "@/components/SessioniCampoEstivo";
 import MedagliereWidget from "@/components/MedagliereWidget";
+import {
+  ComunicazioneFormSection,
+  empty_comunicazione_state,
+  invia_comunicazione_evento,
+  default_titolo_gara,
+  default_testo_gara,
+  type ComunicazioneFormState,
+} from "@/components/comunicazioni/ComunicazioneFormSection";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 const LIVELLI = [
@@ -220,6 +229,29 @@ const GaraModal: React.FC<{ onClose: () => void; gara_iniziale?: any | null }> =
   });
   const [saving, set_saving] = useState(false);
 
+  // ─── Sezione Comunicazione ────────────────────────────────
+  const { data: atleti_lista = [] } = use_atleti();
+  const { data: corsi_lista = [] } = use_corsi();
+  const [com_state, set_com_state] = useState<ComunicazioneFormState>(() =>
+    empty_comunicazione_state({ invia: !is_edit })
+  );
+  const [com_touched, set_com_touched] = useState(false);
+
+  // Auto-sync default titolo/testo finché l'utente non li modifica manualmente
+  useEffect(() => {
+    if (com_touched || is_edit) return;
+    set_com_state((p) => ({
+      ...p,
+      titolo: default_titolo_gara(form.nome),
+      testo: default_testo_gara(form.nome, form.localita, form.data),
+    }));
+  }, [form.nome, form.localita, form.data, com_touched, is_edit]);
+
+  const handle_com_change = (next: ComunicazioneFormState) => {
+    if (next.titolo !== com_state.titolo || next.testo !== com_state.testo) set_com_touched(true);
+    set_com_state(next);
+  };
+
   const upd = (k: keyof GaraFormData, v: string) => set_form((p) => ({ ...p, [k]: v }));
 
   const handle_change = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -251,13 +283,40 @@ const GaraModal: React.FC<{ onClose: () => void; gara_iniziale?: any | null }> =
         note: form.note ?? "",
       };
       let error: any = null;
+      let nuova_gara_id: string | null = is_edit ? gara_iniziale.id : null;
       if (is_edit) {
         ({ error } = await (supabase as any).from("gare_calendario").update(payload).eq("id", gara_iniziale.id));
       } else {
         payload.club_id = get_current_club_id();
-        ({ error } = await (supabase as any).from("gare_calendario").insert(payload).select());
+        const { data: ins_data, error: ins_err } = await (supabase as any)
+          .from("gare_calendario")
+          .insert(payload)
+          .select()
+          .single();
+        error = ins_err;
+        nuova_gara_id = ins_data?.id ?? null;
       }
       if (error) throw error;
+
+      // Workflow comunicazione (solo in creazione, se attivo)
+      if (!is_edit && com_state.invia && nuova_gara_id) {
+        try {
+          const count = await invia_comunicazione_evento(supabase, {
+            club_id: get_current_club_id()!,
+            state: com_state,
+            fk: { gara_id: nuova_gara_id },
+          });
+          toast({ title: `Comunicazione inviata${count ? ` a ${count} destinatari` : ""}` });
+          await queryClient.invalidateQueries({ queryKey: ["comunicazioni"] });
+        } catch (com_err: any) {
+          toast({
+            title: "Gara creata, ma comunicazione fallita",
+            description: com_err?.message ?? "",
+            variant: "destructive",
+          });
+        }
+      }
+
       await queryClient.invalidateQueries({ queryKey: ["gare"] });
       toast({ title: is_edit ? "Gara aggiornata!" : "Gara creata con successo!" });
       onClose();
@@ -387,6 +446,15 @@ const GaraModal: React.FC<{ onClose: () => void; gara_iniziale?: any | null }> =
               className={`${input_cls} resize-none`}
             />
           </Field>
+
+          {!is_edit && (
+            <ComunicazioneFormSection
+              state={com_state}
+              onChange={handle_com_change}
+              corsi={corsi_lista.map((c: any) => ({ id: c.id, label: c.nome }))}
+              atleti={atleti_lista.map((a: any) => ({ id: a.id, label: `${a.cognome} ${a.nome}` }))}
+            />
+          )}
         </div>
         <div className="flex justify-end gap-3 px-6 py-4 border-t border-border">
           <Button variant="outline" onClick={onClose} disabled={saving}>
@@ -398,6 +466,8 @@ const GaraModal: React.FC<{ onClose: () => void; gara_iniziale?: any | null }> =
                 <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
                 {t("salvataggio")}…
               </span>
+            ) : !is_edit && com_state.invia ? (
+              <span className="flex items-center gap-2"><Send className="w-4 h-4" /> Crea e comunica</span>
             ) : (
               t("salva")
             )}

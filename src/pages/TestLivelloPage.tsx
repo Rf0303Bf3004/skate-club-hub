@@ -11,7 +11,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, ArrowLeft, Trash2, X, CheckCircle } from "lucide-react";
+import { Plus, ArrowLeft, Trash2, X, CheckCircle, Send } from "lucide-react";
+import {
+  ComunicazioneFormSection,
+  empty_comunicazione_state,
+  invia_comunicazione_evento,
+  default_titolo_test,
+  default_testo_test,
+  type ComunicazioneFormState,
+} from "@/components/comunicazioni/ComunicazioneFormSection";
 import {
   get_livello_gara,
   TEST_BASE_PASSAGGI,
@@ -125,6 +133,24 @@ export default function TestLivelloPage() {
   const [selected_test_id, set_selected_test_id] = useState<string | null>(route_params.id ?? null);
   const [form, set_form] = useState<NuovoTestForm>({ ...empty_form });
 
+  // ─── Sezione Comunicazione (form Nuovo Test) ────────────
+  const [com_state, set_com_state] = useState<ComunicazioneFormState>(() => empty_comunicazione_state());
+  const [com_touched, set_com_touched] = useState(false);
+
+  const { data: corsi_lista = [] } = useQuery({
+    queryKey: ["corsi_per_comunicazione", club_id],
+    enabled: !!club_id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("corsi")
+        .select("id, nome")
+        .eq("club_id", club_id!)
+        .order("nome");
+      if (error) throw error;
+      return (data ?? []) as { id: string; nome: string }[];
+    },
+  });
+
   useEffect(() => {
     if (route_params.id && route_params.id !== selected_test_id) {
       set_selected_test_id(route_params.id);
@@ -221,6 +247,23 @@ export default function TestLivelloPage() {
 
   const selected_test = tests.find((t) => t.id === selected_test_id);
 
+  // Auto-sync default titolo/testo per la sezione Comunicazione (form Nuovo Test)
+  useEffect(() => {
+    if (com_touched) return;
+    const gara = form.gara_id ? gare.find((g) => g.id === form.gara_id) : null;
+    const data_eff = form.tipo === "in_gara" ? (gara?.data ?? "") : (form.data || "");
+    set_com_state((p) => ({
+      ...p,
+      titolo: default_titolo_test(form.nome),
+      testo: default_testo_test(form.nome, data_eff),
+    }));
+  }, [form.nome, form.data, form.tipo, form.gara_id, gare, com_touched]);
+
+  const handle_com_change = (next: ComunicazioneFormState) => {
+    if (next.titolo !== com_state.titolo || next.testo !== com_state.testo) set_com_touched(true);
+    set_com_state(next);
+  };
+
   // ─── Mutations ──────────────────────────────────────────────────────
   const create_test = useMutation({
     mutationFn: async () => {
@@ -243,6 +286,22 @@ export default function TestLivelloPage() {
         .select()
         .single();
       if (error) throw error;
+
+      // Workflow comunicazione (se attivo)
+      if (com_state.invia && data?.id) {
+        try {
+          const count = await invia_comunicazione_evento(supabase, {
+            club_id: club_id!,
+            state: com_state,
+            fk: { test_livello_id: data.id },
+          });
+          toast.success(`Comunicazione inviata${count ? ` a ${count} destinatari` : ""}`);
+          qc.invalidateQueries({ queryKey: ["comunicazioni"] });
+        } catch (com_err: any) {
+          toast.error("Test creato, ma comunicazione fallita: " + (com_err?.message ?? ""));
+        }
+      }
+
       return data;
     },
     onSuccess: (data: any) => {
@@ -534,6 +593,13 @@ export default function TestLivelloPage() {
               <Textarea value={form.note} onChange={(e) => set_form({ ...form, note: e.target.value })} />
             </div>
 
+            <ComunicazioneFormSection
+              state={com_state}
+              onChange={handle_com_change}
+              corsi={corsi_lista.map((c) => ({ id: c.id, label: c.nome }))}
+              atleti={atleti.map((a) => ({ id: a.id, label: `${a.cognome} ${a.nome}` }))}
+            />
+
             <div className="flex gap-3 justify-end pt-2">
               <Button variant="outline" onClick={() => set_view("list")}>Annulla</Button>
               <Button
@@ -544,7 +610,7 @@ export default function TestLivelloPage() {
                 }
                 onClick={() => create_test.mutate()}
               >
-                Crea Test
+                {com_state.invia ? (<><Send className="w-4 h-4 mr-1" /> Crea e comunica</>) : "Crea Test"}
               </Button>
             </div>
           </CardContent>
