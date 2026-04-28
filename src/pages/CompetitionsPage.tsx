@@ -228,6 +228,29 @@ const GaraModal: React.FC<{ onClose: () => void; gara_iniziale?: any | null }> =
   });
   const [saving, set_saving] = useState(false);
 
+  // ─── Sezione Comunicazione ────────────────────────────────
+  const { data: atleti_lista = [] } = use_atleti();
+  const { data: corsi_lista = [] } = use_corsi();
+  const [com_state, set_com_state] = useState<ComunicazioneFormState>(() =>
+    empty_comunicazione_state({ invia: !is_edit })
+  );
+  const [com_touched, set_com_touched] = useState(false);
+
+  // Auto-sync default titolo/testo finché l'utente non li modifica manualmente
+  useEffect(() => {
+    if (com_touched || is_edit) return;
+    set_com_state((p) => ({
+      ...p,
+      titolo: default_titolo_gara(form.nome),
+      testo: default_testo_gara(form.nome, form.localita, form.data),
+    }));
+  }, [form.nome, form.localita, form.data, com_touched, is_edit]);
+
+  const handle_com_change = (next: ComunicazioneFormState) => {
+    if (next.titolo !== com_state.titolo || next.testo !== com_state.testo) set_com_touched(true);
+    set_com_state(next);
+  };
+
   const upd = (k: keyof GaraFormData, v: string) => set_form((p) => ({ ...p, [k]: v }));
 
   const handle_change = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
