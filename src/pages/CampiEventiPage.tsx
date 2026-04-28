@@ -580,7 +580,7 @@ const GalaSpettacoliSection: React.FC = () => {
     stagione_id: "", invia_comunicazione: true, tipo_destinatari: "tutti",
   });
 
-  const componi_testo_comunicazione = (e: { titolo: string; data: string; ora_inizio: string | null; luogo: string | null; descrizione: string | null }) => {
+  const componi_testo_comunicazione = (e: { titolo: string; data: string; ora_inizio: string | null; ora_fine: string | null; luogo: string | null; descrizione: string | null }) => {
     const titolo = `🎭 ${e.titolo}`;
     const testo = [
       `Vi invitiamo al nostro galà:`,
