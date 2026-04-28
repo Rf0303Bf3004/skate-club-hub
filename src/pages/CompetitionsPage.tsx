@@ -282,13 +282,40 @@ const GaraModal: React.FC<{ onClose: () => void; gara_iniziale?: any | null }> =
         note: form.note ?? "",
       };
       let error: any = null;
+      let nuova_gara_id: string | null = is_edit ? gara_iniziale.id : null;
       if (is_edit) {
         ({ error } = await (supabase as any).from("gare_calendario").update(payload).eq("id", gara_iniziale.id));
       } else {
         payload.club_id = get_current_club_id();
-        ({ error } = await (supabase as any).from("gare_calendario").insert(payload).select());
+        const { data: ins_data, error: ins_err } = await (supabase as any)
+          .from("gare_calendario")
+          .insert(payload)
+          .select()
+          .single();
+        error = ins_err;
+        nuova_gara_id = ins_data?.id ?? null;
       }
       if (error) throw error;
+
+      // Workflow comunicazione (solo in creazione, se attivo)
+      if (!is_edit && com_state.invia && nuova_gara_id) {
+        try {
+          const count = await invia_comunicazione_evento(supabase, {
+            club_id: get_current_club_id()!,
+            state: com_state,
+            fk: { gara_id: nuova_gara_id },
+          });
+          toast({ title: `Comunicazione inviata${count ? ` a ${count} destinatari` : ""}` });
+          await queryClient.invalidateQueries({ queryKey: ["comunicazioni"] });
+        } catch (com_err: any) {
+          toast({
+            title: "Gara creata, ma comunicazione fallita",
+            description: com_err?.message ?? "",
+            variant: "destructive",
+          });
+        }
+      }
+
       await queryClient.invalidateQueries({ queryKey: ["gare"] });
       toast({ title: is_edit ? "Gara aggiornata!" : "Gara creata con successo!" });
       onClose();
