@@ -800,6 +800,7 @@ const CommunicationsPage: React.FC = () => {
                   <p className="text-[11px] text-muted-foreground leading-snug">
                     Il filtro usa il livello tecnico massimo dell'atleta (artistico o stile). I Pulcini ricevono solo se selezioni esplicitamente "Solo Pulcini".
                   </p>
+                </div>
               )}
 
               {tipo_destinatari === 'atleti' && (
