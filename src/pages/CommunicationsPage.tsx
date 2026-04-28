@@ -573,11 +573,12 @@ const CommunicationsPage: React.FC = () => {
                   >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="tutti">Tutti</SelectItem>
-                      <SelectItem value="per_corsi">Per corsi</SelectItem>
+                      <SelectItem value="tutti">Tutto il club</SelectItem>
+                      <SelectItem value="per_corsi">Per corso</SelectItem>
+                      <SelectItem value="per_livello">Per livello</SelectItem>
+                      <SelectItem value="atleti">Atleti specifici</SelectItem>
                       <SelectItem value="per_giorno">Per giorno (data specifica)</SelectItem>
                       <SelectItem value="per_istruttore">Per istruttore</SelectItem>
-                      <SelectItem value="per_livello">Per livello</SelectItem>
                       <SelectItem value="solo_istruttori">Solo istruttori</SelectItem>
                     </SelectContent>
                   </Select>
