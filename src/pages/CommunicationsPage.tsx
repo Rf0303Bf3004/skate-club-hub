@@ -140,6 +140,28 @@ const CommunicationsPage: React.FC = () => {
   const [preview_loaded, set_preview_loaded] = useState(false);
   const [is_resolving_recipients, set_is_resolving_recipients] = useState(false);
 
+  // Evento collegato (gara | gala | test | nessuno)
+  const [tipo_evento_collegato, set_tipo_evento_collegato] = useState<'nessuno' | 'gara' | 'gala' | 'test'>('nessuno');
+  const [evento_collegato_id, set_evento_collegato_id] = useState<string>('');
+  const [gare_future, set_gare_future] = useState<any[]>([]);
+  const [gale_future, set_gale_future] = useState<any[]>([]);
+  const [test_futuri, set_test_futuri] = useState<any[]>([]);
+
+  React.useEffect(() => {
+    if (!modal_open) return;
+    const today_iso = new Date().toISOString().split('T')[0];
+    (async () => {
+      const [g_res, ev_res, tl_res] = await Promise.all([
+        supabase.from('gare_calendario').select('id, nome, data').eq('archiviata', false).gte('data', today_iso).order('data', { ascending: true }),
+        supabase.from('eventi_straordinari').select('id, titolo, data').gte('data', today_iso).order('data', { ascending: true }),
+        supabase.from('test_livello').select('id, nome, data').gte('data', today_iso).order('data', { ascending: true }),
+      ]);
+      set_gare_future(g_res.data ?? []);
+      set_gale_future(ev_res.data ?? []);
+      set_test_futuri(tl_res.data ?? []);
+    })();
+  }, [modal_open]);
+
   const fill_placeholders = (text: string, vals: Record<string, string>) => {
     let result = text;
     Object.entries(vals).forEach(([k, v]) => {
