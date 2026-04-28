@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Send } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 export type ComunicazioneFormState = {
   invia: boolean;
@@ -32,9 +33,9 @@ interface Props {
   onChange: (next: ComunicazioneFormState) => void;
   corsi?: Option[];
   atleti?: Option[];
-  /** label opzionale da mostrare nella checkbox */
+  /** label opzionale (override i18n) */
   label?: string;
-  /** descrizione opzionale sotto la checkbox */
+  /** descrizione opzionale (override i18n) */
   description?: string;
 }
 
@@ -47,9 +48,10 @@ export const ComunicazioneFormSection: React.FC<Props> = ({
   onChange,
   corsi = [],
   atleti = [],
-  label = "Invia subito comunicazione alle famiglie",
-  description = "La comunicazione verrà collegata all'evento: l'app mobile mostrerà il bottone \"Iscriviti\" inline.",
+  label,
+  description,
 }) => {
+  const { t } = useI18n();
   const upd = <K extends keyof ComunicazioneFormState>(k: K, v: ComunicazioneFormState[K]) =>
     onChange({ ...state, [k]: v });
 
@@ -63,20 +65,20 @@ export const ComunicazioneFormSection: React.FC<Props> = ({
         />
         <div className="flex-1">
           <Label htmlFor="comunicazione-invia" className="cursor-pointer flex items-center gap-2">
-            <Send className="w-4 h-4" /> {label}
+            <Send className="w-4 h-4" /> {label ?? t("comunicazione_invia_subito")}
           </Label>
-          <p className="text-xs text-muted-foreground">{description}</p>
+          <p className="text-xs text-muted-foreground">{description ?? t("comunicazione_descrizione")}</p>
         </div>
       </div>
 
       {state.invia && (
         <div className="space-y-3 pl-6">
           <div>
-            <Label>Titolo comunicazione</Label>
+            <Label>{t("comunicazione_titolo")}</Label>
             <Input value={state.titolo} onChange={(e) => upd("titolo", e.target.value)} />
           </div>
           <div>
-            <Label>Testo</Label>
+            <Label>{t("comunicazione_testo")}</Label>
             <Textarea
               value={state.testo}
               onChange={(e) => upd("testo", e.target.value)}
@@ -84,7 +86,7 @@ export const ComunicazioneFormSection: React.FC<Props> = ({
             />
           </div>
           <div>
-            <Label>Destinatari</Label>
+            <Label>{t("destinatari")}</Label>
             <Select
               value={state.tipo_destinatari}
               onValueChange={(v: "tutti" | "corso" | "atleta") =>
@@ -93,21 +95,21 @@ export const ComunicazioneFormSection: React.FC<Props> = ({
             >
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="tutti">Tutto il club</SelectItem>
-                <SelectItem value="corso">Per corso</SelectItem>
-                <SelectItem value="atleta">Per atleta</SelectItem>
+                <SelectItem value="tutti">{t("comunicazione_destinatari_tutti")}</SelectItem>
+                <SelectItem value="corso">{t("comunicazione_destinatari_corso")}</SelectItem>
+                <SelectItem value="atleta">{t("comunicazione_destinatari_atleta")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {state.tipo_destinatari === "corso" && (
             <div>
-              <Label>Corso</Label>
+              <Label>{t("corsi")}</Label>
               <Select value={state.corso_id} onValueChange={(v) => upd("corso_id", v)}>
-                <SelectTrigger><SelectValue placeholder="Seleziona un corso" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t("comunicazione_seleziona_corso")} /></SelectTrigger>
                 <SelectContent>
                   {corsi.length === 0 ? (
-                    <div className="px-3 py-2 text-sm text-muted-foreground">Nessun corso disponibile</div>
+                    <div className="px-3 py-2 text-sm text-muted-foreground">{t("comunicazione_nessun_corso")}</div>
                   ) : corsi.map((c) => (
                     <SelectItem key={c.id} value={c.id}>{c.label}</SelectItem>
                   ))}
@@ -118,12 +120,12 @@ export const ComunicazioneFormSection: React.FC<Props> = ({
 
           {state.tipo_destinatari === "atleta" && (
             <div>
-              <Label>Atleta</Label>
+              <Label>{t("atleti")}</Label>
               <Select value={state.atleta_id} onValueChange={(v) => upd("atleta_id", v)}>
-                <SelectTrigger><SelectValue placeholder="Seleziona un atleta" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t("comunicazione_seleziona_atleta")} /></SelectTrigger>
                 <SelectContent>
                   {atleti.length === 0 ? (
-                    <div className="px-3 py-2 text-sm text-muted-foreground">Nessun atleta</div>
+                    <div className="px-3 py-2 text-sm text-muted-foreground">{t("comunicazione_nessun_atleta")}</div>
                   ) : atleti.map((a) => (
                     <SelectItem key={a.id} value={a.id}>{a.label}</SelectItem>
                   ))}
