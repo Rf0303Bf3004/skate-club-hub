@@ -324,6 +324,8 @@ function fmt_ora(t?: string | null): string {
 export const RichiesteLezioniPrivateWidget: React.FC = () => {
   const club_id = get_current_club_id();
   const qc = useQueryClient();
+  const { locale } = useI18n();
+  const locale_code = locale_to_bcp47(locale);
   const [rifiuto_id, set_rifiuto_id] = useState<string | null>(null);
   const [motivo, set_motivo] = useState("");
 
