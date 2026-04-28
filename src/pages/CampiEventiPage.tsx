@@ -11,7 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Tent, MapPin, Calendar as CalendarIcon, Trash2, Plus, Send, ChevronRight } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Tent, MapPin, Calendar as CalendarIcon, Trash2, Plus, Send, ChevronRight, Sparkles, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 type EventoCampo = {
