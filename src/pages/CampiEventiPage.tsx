@@ -11,7 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Tent, MapPin, Calendar as CalendarIcon, Trash2, Plus, Send, ChevronRight } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Tent, MapPin, Calendar as CalendarIcon, Trash2, Plus, Send, ChevronRight, Sparkles, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 type EventoCampo = {
@@ -86,9 +87,10 @@ const CampiEventiPage = () => {
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className="space-y-4">
-        <TabsList className="grid grid-cols-2 w-full">
+        <TabsList className="grid grid-cols-3 w-full">
           <TabsTrigger value="interno" className="gap-2"><Tent className="w-4 h-4" /> Campo Interno</TabsTrigger>
           <TabsTrigger value="esterno" className="gap-2"><MapPin className="w-4 h-4" /> Campo Esterno</TabsTrigger>
+          <TabsTrigger value="gala" className="gap-2"><Sparkles className="w-4 h-4" /> Galà & Spettacoli</TabsTrigger>
         </TabsList>
 
         <TabsContent value="interno">
@@ -96,6 +98,9 @@ const CampiEventiPage = () => {
         </TabsContent>
         <TabsContent value="esterno">
           <CampoEsternoSection eventi={eventi_esterni} />
+        </TabsContent>
+        <TabsContent value="gala">
+          <GalaSpettacoliSection />
         </TabsContent>
       </Tabs>
     </div>
