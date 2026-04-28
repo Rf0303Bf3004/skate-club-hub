@@ -527,5 +527,260 @@ const CampoEsternoSection: React.FC<{ eventi: EventoCampo[] }> = ({ eventi }) =>
   );
 };
 
+// ═══════════════════════════════════════════════════════════
+// GALÀ & SPETTACOLI: eventi_straordinari (tipo='gala') + workflow unificato
+// ═══════════════════════════════════════════════════════════
+type EventoStraordinario = {
+  id: string;
+  club_id: string;
+  stagione_id: string | null;
+  titolo: string;
+  tipo: string;
+  data: string;
+  ora_inizio: string | null;
+  ora_fine: string | null;
+  luogo: string | null;
+  descrizione: string | null;
+};
+
+const GalaSpettacoliSection: React.FC = () => {
+  const club_id = get_current_club_id();
+  const qc = useQueryClient();
+  const { data: stagioni = [] } = use_stagioni();
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({
+    titolo: "",
+    data: "",
+    ora_inizio: "",
+    ora_fine: "",
+    luogo: "",
+    descrizione: "",
+    stagione_id: "",
+    invia_comunicazione: true,
+    tipo_destinatari: "tutti",
+  });
+
+  const { data: eventi = [] } = useQuery({
+    queryKey: ["eventi_straordinari_gala", club_id],
+    enabled: !!club_id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("eventi_straordinari")
+        .select("*")
+        .eq("club_id", club_id)
+        .eq("tipo", "gala")
+        .order("data", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as EventoStraordinario[];
+    },
+  });
+
+  const reset_form = () => setForm({
+    titolo: "", data: "", ora_inizio: "", ora_fine: "", luogo: "", descrizione: "",
+    stagione_id: "", invia_comunicazione: true, tipo_destinatari: "tutti",
+  });
+
+  const componi_testo_comunicazione = (e: { titolo: string; data: string; ora_inizio: string | null; luogo: string | null; descrizione: string | null }) => {
+    const titolo = `🎭 ${e.titolo}`;
+    const testo = [
+      `Vi invitiamo al nostro galà:`,
+      ``,
+      `📅 Data: ${fmt_date(e.data)}`,
+      e.ora_inizio ? `🕐 Orario: ${e.ora_inizio.slice(0, 5)}${e.ora_fine ? `–${e.ora_fine.slice(0, 5)}` : ""}` : ``,
+      e.luogo ? `📍 Luogo: ${e.luogo}` : ``,
+      ``,
+      e.descrizione || ``,
+    ].filter(Boolean).join("\n");
+    return { titolo, testo };
+  };
+
+  const create = useMutation({
+    mutationFn: async () => {
+      if (!form.titolo.trim() || !form.data) throw new Error("Titolo e data sono obbligatori");
+
+      const payload: any = {
+        club_id,
+        titolo: form.titolo.trim(),
+        tipo: "gala",
+        data: form.data,
+        ora_inizio: form.ora_inizio || null,
+        ora_fine: form.ora_fine || null,
+        luogo: form.luogo,
+        descrizione: form.descrizione,
+        stagione_id: form.stagione_id || null,
+      };
+      const { data: nuovo, error } = await supabase
+        .from("eventi_straordinari")
+        .insert(payload)
+        .select()
+        .single();
+      if (error) throw error;
+
+      if (form.invia_comunicazione && nuovo) {
+        const { titolo, testo } = componi_testo_comunicazione({
+          titolo: form.titolo, data: form.data, ora_inizio: form.ora_inizio || null,
+          luogo: form.luogo, descrizione: form.descrizione,
+        });
+        const { error: err_com } = await supabase.from("comunicazioni").insert({
+          club_id,
+          titolo,
+          testo,
+          corpo: testo,
+          tipo: "evento",
+          tipo_destinatari: form.tipo_destinatari,
+          evento_straordinario_id: (nuovo as any).id,
+          stato: "inviata",
+          inviata_at: new Date().toISOString(),
+        } as any);
+        if (err_com) throw err_com;
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["eventi_straordinari_gala"] });
+      qc.invalidateQueries({ queryKey: ["comunicazioni"] });
+      toast.success(form.invia_comunicazione ? "Galà creato e comunicazione inviata" : "Galà creato");
+      setOpen(false);
+      reset_form();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("eventi_straordinari").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["eventi_straordinari_gala"] });
+      toast.success("Galà eliminato");
+    },
+  });
+
+  const invia_comunicazione_post = useMutation({
+    mutationFn: async (e: EventoStraordinario) => {
+      const { titolo, testo } = componi_testo_comunicazione(e);
+      const { error } = await supabase.from("comunicazioni").insert({
+        club_id,
+        titolo,
+        testo,
+        corpo: testo,
+        tipo: "evento",
+        tipo_destinatari: "tutti",
+        evento_straordinario_id: e.id,
+        stato: "inviata",
+        inviata_at: new Date().toISOString(),
+      } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["comunicazioni"] });
+      toast.success("Comunicazione inviata alle famiglie");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>Galà & Spettacoli</CardTitle>
+          <CardDescription>Crea galà e spettacoli del club; opzionalmente invia subito una comunicazione collegata alle famiglie (con bottone "Iscriviti" inline sull'app mobile).</CardDescription>
+        </div>
+        <Button onClick={() => setOpen(true)}><Plus className="w-4 h-4 mr-2" /> Nuovo Galà</Button>
+      </CardHeader>
+      <CardContent>
+        {eventi.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-8 text-center">Nessun galà creato.</p>
+        ) : (
+          <div className="space-y-3">
+            {eventi.map((e) => (
+              <Card key={e.id}>
+                <CardContent className="p-4 flex flex-col md:flex-row md:items-center gap-4">
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold">{e.titolo}</h3>
+                      <Badge variant="secondary"><Sparkles className="w-3 h-3 mr-1" /> Galà</Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      <CalendarIcon className="w-3 h-3 inline mr-1" />{fmt_date(e.data)}
+                      {e.ora_inizio && <> • <Clock className="w-3 h-3 inline" /> {e.ora_inizio.slice(0, 5)}{e.ora_fine ? `–${e.ora_fine.slice(0, 5)}` : ""}</>}
+                      {e.luogo && <> • <MapPin className="w-3 h-3 inline" /> {e.luogo}</>}
+                    </p>
+                    {e.descrizione && <p className="text-sm">{e.descrizione}</p>}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => invia_comunicazione_post.mutate(e)} disabled={invia_comunicazione_post.isPending}>
+                      <Send className="w-4 h-4 mr-1" /> Comunica
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => { if (confirm("Eliminare il galà?")) remove.mutate(e.id); }}>
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </CardContent>
+
+      <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset_form(); }}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Nuovo Galà / Spettacolo</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label>Titolo *</Label><Input value={form.titolo} onChange={(e) => setForm({ ...form, titolo: e.target.value })} placeholder="Es: Galà di Natale 2026" /></div>
+            <div className="grid grid-cols-3 gap-3">
+              <div><Label>Data *</Label><Input type="date" value={form.data} onChange={(e) => setForm({ ...form, data: e.target.value })} /></div>
+              <div><Label>Ora inizio</Label><Input type="time" value={form.ora_inizio} onChange={(e) => setForm({ ...form, ora_inizio: e.target.value })} /></div>
+              <div><Label>Ora fine</Label><Input type="time" value={form.ora_fine} onChange={(e) => setForm({ ...form, ora_fine: e.target.value })} /></div>
+            </div>
+            <div><Label>Luogo</Label><Input value={form.luogo} onChange={(e) => setForm({ ...form, luogo: e.target.value })} placeholder="Es: Pista del Resega" /></div>
+            <div>
+              <Label>Stagione di riferimento</Label>
+              <Select value={form.stagione_id} onValueChange={(v) => setForm({ ...form, stagione_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Nessuna" /></SelectTrigger>
+                <SelectContent>
+                  {stagioni.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div><Label>Descrizione</Label><Textarea value={form.descrizione} onChange={(e) => setForm({ ...form, descrizione: e.target.value })} placeholder="Programma, dress code, info aggiuntive…" /></div>
+
+            <div className="border-t pt-3 space-y-3">
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  id="invia_com"
+                  checked={form.invia_comunicazione}
+                  onCheckedChange={(v) => setForm({ ...form, invia_comunicazione: !!v })}
+                />
+                <div className="flex-1">
+                  <Label htmlFor="invia_com" className="cursor-pointer">Invia subito comunicazione alle famiglie</Label>
+                  <p className="text-xs text-muted-foreground">La comunicazione verrà collegata al galà: l'app mobile mostrerà il bottone "Iscriviti" inline.</p>
+                </div>
+              </div>
+              {form.invia_comunicazione && (
+                <div>
+                  <Label>Destinatari</Label>
+                  <Select value={form.tipo_destinatari} onValueChange={(v) => setForm({ ...form, tipo_destinatari: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="tutti">Tutto il club</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>Annulla</Button>
+            <Button onClick={() => create.mutate()} disabled={create.isPending || !form.titolo.trim() || !form.data}>
+              {form.invia_comunicazione ? <><Send className="w-4 h-4 mr-1" /> Crea e comunica</> : "Crea"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+};
+
 export default CampiEventiPage;
 
