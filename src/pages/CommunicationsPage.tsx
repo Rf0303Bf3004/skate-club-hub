@@ -354,6 +354,8 @@ const CommunicationsPage: React.FC = () => {
     set_tipo_evento_collegato('nessuno');
     set_evento_collegato_id('');
     reset_recipient_preview();
+    set_atleti_specifici_ids([]);
+    set_atleta_search('');
     set_modal_open(true);
   };
 
