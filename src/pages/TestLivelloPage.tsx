@@ -133,6 +133,24 @@ export default function TestLivelloPage() {
   const [selected_test_id, set_selected_test_id] = useState<string | null>(route_params.id ?? null);
   const [form, set_form] = useState<NuovoTestForm>({ ...empty_form });
 
+  // ─── Sezione Comunicazione (form Nuovo Test) ────────────
+  const [com_state, set_com_state] = useState<ComunicazioneFormState>(() => empty_comunicazione_state());
+  const [com_touched, set_com_touched] = useState(false);
+
+  const { data: corsi_lista = [] } = useQuery({
+    queryKey: ["corsi_per_comunicazione", club_id],
+    enabled: !!club_id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("corsi")
+        .select("id, nome")
+        .eq("club_id", club_id!)
+        .order("nome");
+      if (error) throw error;
+      return (data ?? []) as { id: string; nome: string }[];
+    },
+  });
+
   useEffect(() => {
     if (route_params.id && route_params.id !== selected_test_id) {
       set_selected_test_id(route_params.id);
