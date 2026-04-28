@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useI18n } from "@/lib/i18n";
+import { fmt_date_long, locale_to_bcp47 } from "@/lib/format-data";
 import { useNavigate } from "react-router-dom";
 import {
   use_atleti,
@@ -923,7 +924,8 @@ const SezionePresenzeIstruttori: React.FC<{
 
 // ─── Main Dashboard ────────────────────────────────────────
 const DashboardPage: React.FC = () => {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  const locale_code = locale_to_bcp47(locale);
   const { data: atleti = [], isLoading: loading_atleti } = use_atleti();
   const { data: corsi = [], isLoading: loading_corsi } = use_corsi();
   const { data: gare = [], isLoading: loading_gare } = use_gare();
@@ -1097,12 +1099,7 @@ const DashboardPage: React.FC = () => {
         </div>
         <div className="ml-auto text-right">
           <p className="text-xs text-muted-foreground capitalize">
-            {new Date().toLocaleDateString("de-CH", {
-              weekday: "long",
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            })}
+            {fmt_date_long(new Date(), locale_code)}
           </p>
           <p className="text-xs font-bold text-success">{totale_presenti} presenti in pista</p>
         </div>
