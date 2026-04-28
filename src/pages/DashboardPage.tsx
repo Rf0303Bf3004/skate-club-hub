@@ -1099,12 +1099,7 @@ const DashboardPage: React.FC = () => {
         </div>
         <div className="ml-auto text-right">
           <p className="text-xs text-muted-foreground capitalize">
-            {new Date().toLocaleDateString("de-CH", {
-              weekday: "long",
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            })}
+            {fmt_date_long(new Date(), locale_code)}
           </p>
           <p className="text-xs font-bold text-success">{totale_presenti} presenti in pista</p>
         </div>
