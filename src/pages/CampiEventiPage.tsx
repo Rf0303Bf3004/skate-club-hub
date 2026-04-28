@@ -2,6 +2,14 @@ import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { use_atleti, use_istruttori, use_stagioni } from "@/hooks/use-supabase-data";
+import {
+  ComunicazioneFormSection,
+  empty_comunicazione_state,
+  invia_comunicazione_evento,
+  default_titolo_gala,
+  default_testo_gala,
+  type ComunicazioneFormState,
+} from "@/components/comunicazioni/ComunicazioneFormSection";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -543,21 +551,48 @@ type EventoStraordinario = {
   descrizione: string | null;
 };
 
+const TIPI_EVENTO = ["gala", "saggio", "spettacolo", "festa", "altro"] as const;
+const TIPI_EVENTO_LABEL: Record<string, string> = {
+  gala: "Galà",
+  saggio: "Saggio",
+  spettacolo: "Spettacolo",
+  festa: "Festa",
+  altro: "Altro",
+};
+
 const GalaSpettacoliSection: React.FC = () => {
   const club_id = get_current_club_id();
   const qc = useQueryClient();
   const { data: stagioni = [] } = use_stagioni();
+  const { data: atleti_lista = [] } = use_atleti();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     titolo: "",
+    tipo_evento: "gala" as string,
+    tipo_evento_altro: "",
     data: "",
     ora_inizio: "",
     ora_fine: "",
     luogo: "",
     descrizione: "",
     stagione_id: "",
-    invia_comunicazione: true,
-    tipo_destinatari: "tutti",
+  });
+  const [com_state, set_com_state] = useState<ComunicazioneFormState>(() => empty_comunicazione_state());
+  const [com_touched, set_com_touched] = useState(false);
+
+  const corsi_lista_q = useQuery({
+    queryKey: ["corsi_attivi_per_com", club_id],
+    enabled: !!club_id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("corsi")
+        .select("id, nome")
+        .eq("club_id", club_id)
+        .eq("attivo", true)
+        .order("nome");
+      if (error) throw error;
+      return data ?? [];
+    },
   });
 
   const { data: eventi = [] } = useQuery({
@@ -568,40 +603,49 @@ const GalaSpettacoliSection: React.FC = () => {
         .from("eventi_straordinari")
         .select("*")
         .eq("club_id", club_id)
-        .eq("tipo", "gala")
+        .in("tipo", ["gala", "saggio", "spettacolo", "festa", "altro"])
         .order("data", { ascending: false });
       if (error) throw error;
       return (data ?? []) as EventoStraordinario[];
     },
   });
 
-  const reset_form = () => setForm({
-    titolo: "", data: "", ora_inizio: "", ora_fine: "", luogo: "", descrizione: "",
-    stagione_id: "", invia_comunicazione: true, tipo_destinatari: "tutti",
-  });
+  // Auto-sync comunicazione precompilata
+  React.useEffect(() => {
+    if (com_touched) return;
+    set_com_state((p) => ({
+      ...p,
+      titolo: default_titolo_gala(form.titolo),
+      testo: default_testo_gala(form.titolo, form.data, form.ora_inizio || null, form.luogo || null),
+    }));
+  }, [form.titolo, form.data, form.ora_inizio, form.luogo, com_touched]);
 
-  const componi_testo_comunicazione = (e: { titolo: string; data: string; ora_inizio: string | null; ora_fine: string | null; luogo: string | null; descrizione: string | null }) => {
-    const titolo = `🎭 ${e.titolo}`;
-    const testo = [
-      `Vi invitiamo al nostro galà:`,
-      ``,
-      `📅 Data: ${fmt_date(e.data)}`,
-      e.ora_inizio ? `🕐 Orario: ${e.ora_inizio.slice(0, 5)}${e.ora_fine ? `–${e.ora_fine.slice(0, 5)}` : ""}` : ``,
-      e.luogo ? `📍 Luogo: ${e.luogo}` : ``,
-      ``,
-      e.descrizione || ``,
-    ].filter(Boolean).join("\n");
-    return { titolo, testo };
+  const handle_com_change = (next: ComunicazioneFormState) => {
+    if (next.titolo !== com_state.titolo || next.testo !== com_state.testo) set_com_touched(true);
+    set_com_state(next);
+  };
+
+  const reset_form = () => {
+    setForm({
+      titolo: "", tipo_evento: "gala", tipo_evento_altro: "",
+      data: "", ora_inizio: "", ora_fine: "", luogo: "", descrizione: "",
+      stagione_id: "",
+    });
+    set_com_state(empty_comunicazione_state());
+    set_com_touched(false);
   };
 
   const create = useMutation({
     mutationFn: async () => {
       if (!form.titolo.trim() || !form.data) throw new Error("Titolo e data sono obbligatori");
+      const tipo_finale = form.tipo_evento === "altro" && form.tipo_evento_altro.trim()
+        ? form.tipo_evento_altro.trim()
+        : form.tipo_evento;
 
       const payload: any = {
         club_id,
         titolo: form.titolo.trim(),
-        tipo: "gala",
+        tipo: tipo_finale,
         data: form.data,
         ora_inizio: form.ora_inizio || null,
         ora_fine: form.ora_fine || null,
@@ -616,29 +660,18 @@ const GalaSpettacoliSection: React.FC = () => {
         .single();
       if (error) throw error;
 
-      if (form.invia_comunicazione && nuovo) {
-        const { titolo, testo } = componi_testo_comunicazione({
-          titolo: form.titolo, data: form.data, ora_inizio: form.ora_inizio || null, ora_fine: form.ora_fine || null,
-          luogo: form.luogo, descrizione: form.descrizione,
+      if (com_state.invia && nuovo) {
+        await invia_comunicazione_evento(supabase, {
+          club_id: club_id!,
+          state: com_state,
+          fk: { evento_straordinario_id: (nuovo as any).id },
         });
-        const { error: err_com } = await supabase.from("comunicazioni").insert({
-          club_id,
-          titolo,
-          testo,
-          corpo: testo,
-          tipo: "evento",
-          tipo_destinatari: form.tipo_destinatari,
-          evento_straordinario_id: (nuovo as any).id,
-          stato: "inviata",
-          inviata_at: new Date().toISOString(),
-        } as any);
-        if (err_com) throw err_com;
       }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["eventi_straordinari_gala"] });
       qc.invalidateQueries({ queryKey: ["comunicazioni"] });
-      toast.success(form.invia_comunicazione ? "Galà creato e comunicazione inviata" : "Galà creato");
+      toast.success(com_state.invia ? "Evento creato e comunicazione inviata" : "Evento creato");
       setOpen(false);
       reset_form();
     },
@@ -652,13 +685,18 @@ const GalaSpettacoliSection: React.FC = () => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["eventi_straordinari_gala"] });
-      toast.success("Galà eliminato");
+      toast.success("Evento eliminato");
     },
+  });
+
+  const componi_testo_post = (e: EventoStraordinario) => ({
+    titolo: default_titolo_gala(e.titolo),
+    testo: default_testo_gala(e.titolo, e.data, e.ora_inizio, e.luogo),
   });
 
   const invia_comunicazione_post = useMutation({
     mutationFn: async (e: EventoStraordinario) => {
-      const { titolo, testo } = componi_testo_comunicazione(e);
+      const { titolo, testo } = componi_testo_post(e);
       const { error } = await supabase.from("comunicazioni").insert({
         club_id,
         titolo,
@@ -684,13 +722,13 @@ const GalaSpettacoliSection: React.FC = () => {
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
           <CardTitle>Galà & Spettacoli</CardTitle>
-          <CardDescription>Crea galà e spettacoli del club; opzionalmente invia subito una comunicazione collegata alle famiglie (con bottone "Iscriviti" inline sull'app mobile).</CardDescription>
+          <CardDescription>Crea galà, saggi, spettacoli e feste; opzionalmente invia subito una comunicazione collegata alle famiglie.</CardDescription>
         </div>
-        <Button onClick={() => setOpen(true)}><Plus className="w-4 h-4 mr-2" /> Nuovo Galà</Button>
+        <Button onClick={() => setOpen(true)}><Plus className="w-4 h-4 mr-2" /> Nuovo Evento</Button>
       </CardHeader>
       <CardContent>
         {eventi.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-8 text-center">Nessun galà creato.</p>
+          <p className="text-sm text-muted-foreground py-8 text-center">Nessun evento creato.</p>
         ) : (
           <div className="space-y-3">
             {eventi.map((e) => (
@@ -699,7 +737,7 @@ const GalaSpettacoliSection: React.FC = () => {
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center gap-2">
                       <h3 className="font-semibold">{e.titolo}</h3>
-                      <Badge variant="secondary"><Sparkles className="w-3 h-3 mr-1" /> Galà</Badge>
+                      <Badge variant="secondary"><Sparkles className="w-3 h-3 mr-1" /> {TIPI_EVENTO_LABEL[e.tipo] ?? e.tipo}</Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
                       <CalendarIcon className="w-3 h-3 inline mr-1" />{fmt_date(e.data)}
@@ -712,7 +750,7 @@ const GalaSpettacoliSection: React.FC = () => {
                     <Button size="sm" variant="outline" onClick={() => invia_comunicazione_post.mutate(e)} disabled={invia_comunicazione_post.isPending}>
                       <Send className="w-4 h-4 mr-1" /> Comunica
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => { if (confirm("Eliminare il galà?")) remove.mutate(e.id); }}>
+                    <Button size="sm" variant="ghost" onClick={() => { if (confirm("Eliminare l'evento?")) remove.mutate(e.id); }}>
                       <Trash2 className="w-4 h-4 text-destructive" />
                     </Button>
                   </div>
@@ -724,10 +762,29 @@ const GalaSpettacoliSection: React.FC = () => {
       </CardContent>
 
       <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset_form(); }}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-h-[85vh] overflow-y-auto max-w-xl">
           <DialogHeader><DialogTitle>Nuovo Galà / Spettacolo</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div><Label>Titolo *</Label><Input value={form.titolo} onChange={(e) => setForm({ ...form, titolo: e.target.value })} placeholder="Es: Galà di Natale 2026" /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Tipo evento *</Label>
+                <Select value={form.tipo_evento} onValueChange={(v) => setForm({ ...form, tipo_evento: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {TIPI_EVENTO.map((t) => (
+                      <SelectItem key={t} value={t}>{TIPI_EVENTO_LABEL[t]}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {form.tipo_evento === "altro" && (
+                <div>
+                  <Label>Specifica tipo *</Label>
+                  <Input value={form.tipo_evento_altro} onChange={(e) => setForm({ ...form, tipo_evento_altro: e.target.value })} placeholder="Es: Open day" />
+                </div>
+              )}
+            </div>
             <div className="grid grid-cols-3 gap-3">
               <div><Label>Data *</Label><Input type="date" value={form.data} onChange={(e) => setForm({ ...form, data: e.target.value })} /></div>
               <div><Label>Ora inizio</Label><Input type="time" value={form.ora_inizio} onChange={(e) => setForm({ ...form, ora_inizio: e.target.value })} /></div>
@@ -745,35 +802,24 @@ const GalaSpettacoliSection: React.FC = () => {
             </div>
             <div><Label>Descrizione</Label><Textarea value={form.descrizione} onChange={(e) => setForm({ ...form, descrizione: e.target.value })} placeholder="Programma, dress code, info aggiuntive…" /></div>
 
-            <div className="border-t pt-3 space-y-3">
-              <div className="flex items-start gap-2">
-                <Checkbox
-                  id="invia_com"
-                  checked={form.invia_comunicazione}
-                  onCheckedChange={(v) => setForm({ ...form, invia_comunicazione: !!v })}
-                />
-                <div className="flex-1">
-                  <Label htmlFor="invia_com" className="cursor-pointer">Invia subito comunicazione alle famiglie</Label>
-                  <p className="text-xs text-muted-foreground">La comunicazione verrà collegata al galà: l'app mobile mostrerà il bottone "Iscriviti" inline.</p>
-                </div>
-              </div>
-              {form.invia_comunicazione && (
-                <div>
-                  <Label>Destinatari</Label>
-                  <Select value={form.tipo_destinatari} onValueChange={(v) => setForm({ ...form, tipo_destinatari: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="tutti">Tutto il club</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </div>
+            <ComunicazioneFormSection
+              state={com_state}
+              onChange={handle_com_change}
+              corsi={(corsi_lista_q.data ?? []).map((c: any) => ({ id: c.id, label: c.nome }))}
+              atleti={atleti_lista.map((a: any) => ({
+                id: a.id,
+                label: `${a.cognome} ${a.nome}`,
+                livello: a.carriera_artistica || a.carriera_stile || a.livello_attuale || "Pulcini",
+              }))}
+            />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Annulla</Button>
-            <Button onClick={() => create.mutate()} disabled={create.isPending || !form.titolo.trim() || !form.data}>
-              {form.invia_comunicazione ? <><Send className="w-4 h-4 mr-1" /> Crea e comunica</> : "Crea"}
+            <Button
+              onClick={() => create.mutate()}
+              disabled={create.isPending || !form.titolo.trim() || !form.data || (form.tipo_evento === "altro" && !form.tipo_evento_altro.trim())}
+            >
+              {com_state.invia ? <><Send className="w-4 h-4 mr-1" /> Crea e comunica</> : "Crea"}
             </Button>
           </DialogFooter>
         </DialogContent>
