@@ -445,6 +445,15 @@ const GaraModal: React.FC<{ onClose: () => void; gara_iniziale?: any | null }> =
               className={`${input_cls} resize-none`}
             />
           </Field>
+
+          {!is_edit && (
+            <ComunicazioneFormSection
+              state={com_state}
+              onChange={handle_com_change}
+              corsi={corsi_lista.map((c: any) => ({ id: c.id, label: c.nome }))}
+              atleti={atleti_lista.map((a: any) => ({ id: a.id, label: `${a.cognome} ${a.nome}` }))}
+            />
+          )}
         </div>
         <div className="flex justify-end gap-3 px-6 py-4 border-t border-border">
           <Button variant="outline" onClick={onClose} disabled={saving}>
@@ -456,6 +465,8 @@ const GaraModal: React.FC<{ onClose: () => void; gara_iniziale?: any | null }> =
                 <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
                 {t("salvataggio")}…
               </span>
+            ) : !is_edit && com_state.invia ? (
+              <span className="flex items-center gap-2"><Send className="w-4 h-4" /> Crea e comunica</span>
             ) : (
               t("salva")
             )}
