@@ -247,6 +247,23 @@ export default function TestLivelloPage() {
 
   const selected_test = tests.find((t) => t.id === selected_test_id);
 
+  // Auto-sync default titolo/testo per la sezione Comunicazione (form Nuovo Test)
+  useEffect(() => {
+    if (com_touched) return;
+    const gara = form.gara_id ? gare.find((g) => g.id === form.gara_id) : null;
+    const data_eff = form.tipo === "in_gara" ? (gara?.data ?? "") : (form.data || "");
+    set_com_state((p) => ({
+      ...p,
+      titolo: default_titolo_test(form.nome),
+      testo: default_testo_test(form.nome, data_eff),
+    }));
+  }, [form.nome, form.data, form.tipo, form.gara_id, gare, com_touched]);
+
+  const handle_com_change = (next: ComunicazioneFormState) => {
+    if (next.titolo !== com_state.titolo || next.testo !== com_state.testo) set_com_touched(true);
+    set_com_state(next);
+  };
+
   // ─── Mutations ──────────────────────────────────────────────────────
   const create_test = useMutation({
     mutationFn: async () => {
@@ -269,6 +286,22 @@ export default function TestLivelloPage() {
         .select()
         .single();
       if (error) throw error;
+
+      // Workflow comunicazione (se attivo)
+      if (com_state.invia && data?.id) {
+        try {
+          const count = await invia_comunicazione_evento(supabase, {
+            club_id: club_id!,
+            state: com_state,
+            fk: { test_livello_id: data.id },
+          });
+          toast.success(`Comunicazione inviata${count ? ` a ${count} destinatari` : ""}`);
+          qc.invalidateQueries({ queryKey: ["comunicazioni"] });
+        } catch (com_err: any) {
+          toast.error("Test creato, ma comunicazione fallita: " + (com_err?.message ?? ""));
+        }
+      }
+
       return data;
     },
     onSuccess: (data: any) => {
