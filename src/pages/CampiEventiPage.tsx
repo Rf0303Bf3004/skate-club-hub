@@ -618,7 +618,7 @@ const GalaSpettacoliSection: React.FC = () => {
 
       if (form.invia_comunicazione && nuovo) {
         const { titolo, testo } = componi_testo_comunicazione({
-          titolo: form.titolo, data: form.data, ora_inizio: form.ora_inizio || null,
+          titolo: form.titolo, data: form.data, ora_inizio: form.ora_inizio || null, ora_fine: form.ora_fine || null,
           luogo: form.luogo, descrizione: form.descrizione,
         });
         const { error: err_com } = await supabase.from("comunicazioni").insert({
