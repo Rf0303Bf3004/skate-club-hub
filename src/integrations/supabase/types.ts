@@ -383,8 +383,10 @@ export type Database = {
       comunicazioni: {
         Row: {
           atleta_id: string | null
+          atleti_ids: string[] | null
           club_id: string
           corpo: string | null
+          corsi_ids: string[] | null
           corso_id: string | null
           creata_da: string | null
           created_at: string
@@ -393,6 +395,7 @@ export type Database = {
           gara_id: string | null
           id: string
           inviata_at: string | null
+          livelli: string[] | null
           planning_corso_id: string | null
           programmata_per: string | null
           richiede_rsvp: boolean
@@ -406,8 +409,10 @@ export type Database = {
         }
         Insert: {
           atleta_id?: string | null
+          atleti_ids?: string[] | null
           club_id: string
           corpo?: string | null
+          corsi_ids?: string[] | null
           corso_id?: string | null
           creata_da?: string | null
           created_at?: string
@@ -416,6 +421,7 @@ export type Database = {
           gara_id?: string | null
           id?: string
           inviata_at?: string | null
+          livelli?: string[] | null
           planning_corso_id?: string | null
           programmata_per?: string | null
           richiede_rsvp?: boolean
@@ -429,8 +435,10 @@ export type Database = {
         }
         Update: {
           atleta_id?: string | null
+          atleti_ids?: string[] | null
           club_id?: string
           corpo?: string | null
+          corsi_ids?: string[] | null
           corso_id?: string | null
           creata_da?: string | null
           created_at?: string
@@ -439,6 +447,7 @@ export type Database = {
           gara_id?: string | null
           id?: string
           inviata_at?: string | null
+          livelli?: string[] | null
           planning_corso_id?: string | null
           programmata_per?: string | null
           richiede_rsvp?: boolean
