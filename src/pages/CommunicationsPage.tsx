@@ -348,6 +348,8 @@ const CommunicationsPage: React.FC = () => {
     set_giorno_data('');
     set_istruttore_id('');
     set_istruttore_data('');
+    set_tipo_evento_collegato('nessuno');
+    set_evento_collegato_id('');
     reset_recipient_preview();
     set_modal_open(true);
   };
@@ -370,6 +372,8 @@ const CommunicationsPage: React.FC = () => {
     set_giorno_data('');
     set_istruttore_id('');
     set_istruttore_data('');
+    set_tipo_evento_collegato('nessuno');
+    set_evento_collegato_id('');
     set_placeholders({});
     reset_recipient_preview();
     set_step('form');
@@ -390,6 +394,7 @@ const CommunicationsPage: React.FC = () => {
   const handle_submit = async () => {
     const final_titolo = fill_placeholders(titolo, placeholders);
     const final_testo = fill_placeholders(testo, placeholders);
+    const evt_id = tipo_evento_collegato !== 'nessuno' && evento_collegato_id ? evento_collegato_id : null;
     await crea.mutateAsync({
       titolo: final_titolo,
       testo: final_testo,
@@ -397,6 +402,9 @@ const CommunicationsPage: React.FC = () => {
       corso_id: null,
       livello_categoria: tipo_destinatari === 'per_livello' ? livello_categoria : null,
       atleta_ids_manuali: ['per_corsi', 'per_giorno', 'per_istruttore'].includes(tipo_destinatari) ? selected_recipient_ids : null,
+      gara_id: tipo_evento_collegato === 'gara' ? evt_id : null,
+      evento_straordinario_id: tipo_evento_collegato === 'gala' ? evt_id : null,
+      test_livello_id: tipo_evento_collegato === 'test' ? evt_id : null,
     });
     set_modal_open(false);
   };
