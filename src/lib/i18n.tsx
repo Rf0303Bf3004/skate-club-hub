@@ -953,6 +953,17 @@ const translations: Record<Locale, Record<string, string>> = {
     comunicazioni_seleziona_gara: "Select the competition",
     comunicazioni_seleziona_gala: "Select the gala",
     comunicazioni_seleziona_test: "Select the test",
+    comunicazione_invia_subito: "Send communication to families immediately",
+    comunicazione_descrizione: "The communication will be linked to the event: the mobile app will show the inline \"Sign up\" button.",
+    comunicazione_titolo: "Communication title",
+    comunicazione_testo: "Body",
+    comunicazione_destinatari_tutti: "Whole club",
+    comunicazione_destinatari_corso: "By course",
+    comunicazione_destinatari_atleta: "By athlete",
+    comunicazione_seleziona_corso: "Select a course",
+    comunicazione_seleziona_atleta: "Select an athlete",
+    comunicazione_nessun_corso: "No course available",
+    comunicazione_nessun_atleta: "No athlete",
   },
 };
 
