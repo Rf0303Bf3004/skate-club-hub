@@ -390,6 +390,7 @@ export type Database = {
           created_at: string
           deep_link: string | null
           evento_straordinario_id: string | null
+          gara_id: string | null
           id: string
           inviata_at: string | null
           planning_corso_id: string | null
@@ -397,6 +398,7 @@ export type Database = {
           richiede_rsvp: boolean
           rsvp_scadenza: string | null
           stato: string
+          test_livello_id: string | null
           testo: string
           tipo: string
           tipo_destinatari: string
@@ -411,6 +413,7 @@ export type Database = {
           created_at?: string
           deep_link?: string | null
           evento_straordinario_id?: string | null
+          gara_id?: string | null
           id?: string
           inviata_at?: string | null
           planning_corso_id?: string | null
@@ -418,6 +421,7 @@ export type Database = {
           richiede_rsvp?: boolean
           rsvp_scadenza?: string | null
           stato?: string
+          test_livello_id?: string | null
           testo?: string
           tipo?: string
           tipo_destinatari?: string
@@ -432,6 +436,7 @@ export type Database = {
           created_at?: string
           deep_link?: string | null
           evento_straordinario_id?: string | null
+          gara_id?: string | null
           id?: string
           inviata_at?: string | null
           planning_corso_id?: string | null
@@ -439,6 +444,7 @@ export type Database = {
           richiede_rsvp?: boolean
           rsvp_scadenza?: string | null
           stato?: string
+          test_livello_id?: string | null
           testo?: string
           tipo?: string
           tipo_destinatari?: string
@@ -464,6 +470,20 @@ export type Database = {
             columns: ["corso_id"]
             isOneToOne: false
             referencedRelation: "corsi"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comunicazioni_gara_id_fkey"
+            columns: ["gara_id"]
+            isOneToOne: false
+            referencedRelation: "gare_calendario"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comunicazioni_test_livello_id_fkey"
+            columns: ["test_livello_id"]
+            isOneToOne: false
+            referencedRelation: "test_livello"
             referencedColumns: ["id"]
           },
         ]
@@ -1448,6 +1468,8 @@ export type Database = {
         Row: {
           atleta_id: string
           carriera: string | null
+          costo_accompagnamento: number | null
+          costo_iscrizione: number | null
           created_at: string
           disciplina: string | null
           gara_id: string
@@ -1464,6 +1486,8 @@ export type Database = {
         Insert: {
           atleta_id: string
           carriera?: string | null
+          costo_accompagnamento?: number | null
+          costo_iscrizione?: number | null
           created_at?: string
           disciplina?: string | null
           gara_id: string
@@ -1480,6 +1504,8 @@ export type Database = {
         Update: {
           atleta_id?: string
           carriera?: string | null
+          costo_accompagnamento?: number | null
+          costo_iscrizione?: number | null
           created_at?: string
           disciplina?: string | null
           gara_id?: string

@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useI18n } from '@/lib/i18n';
 import { use_atleti, use_comunicazioni, use_corsi, use_istruttori } from '@/hooks/use-supabase-data';
 import { use_crea_comunicazione } from '@/hooks/use-supabase-mutations';
-import { supabase } from '@/lib/supabase';
+import { supabase, get_current_club_id } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, MessageSquare, FileText, Pencil, Check, ChevronsUpDown, CalendarIcon, X } from 'lucide-react';
@@ -139,6 +139,29 @@ const CommunicationsPage: React.FC = () => {
   const [selected_recipient_ids, set_selected_recipient_ids] = useState<string[]>([]);
   const [preview_loaded, set_preview_loaded] = useState(false);
   const [is_resolving_recipients, set_is_resolving_recipients] = useState(false);
+
+  // Evento collegato (gara | gala | test | nessuno)
+  const [tipo_evento_collegato, set_tipo_evento_collegato] = useState<'nessuno' | 'gara' | 'gala' | 'test'>('nessuno');
+  const [evento_collegato_id, set_evento_collegato_id] = useState<string>('');
+  const [gare_future, set_gare_future] = useState<any[]>([]);
+  const [gale_future, set_gale_future] = useState<any[]>([]);
+  const [test_futuri, set_test_futuri] = useState<any[]>([]);
+
+  React.useEffect(() => {
+    if (!modal_open) return;
+    const today_iso = new Date().toISOString().split('T')[0];
+    const club_id = get_current_club_id();
+    (async () => {
+      const [g_res, ev_res, tl_res] = await Promise.all([
+        supabase.from('gare_calendario').select('id, nome, data').eq('club_id', club_id).eq('archiviata', false).gte('data', today_iso).order('data', { ascending: true }),
+        supabase.from('eventi_straordinari').select('id, titolo, data').eq('club_id', club_id).gte('data', today_iso).order('data', { ascending: true }),
+        supabase.from('test_livello').select('id, nome, data').eq('club_id', club_id).gte('data', today_iso).order('data', { ascending: true }),
+      ]);
+      set_gare_future(g_res.data ?? []);
+      set_gale_future(ev_res.data ?? []);
+      set_test_futuri(tl_res.data ?? []);
+    })();
+  }, [modal_open]);
 
   const fill_placeholders = (text: string, vals: Record<string, string>) => {
     let result = text;
@@ -326,6 +349,8 @@ const CommunicationsPage: React.FC = () => {
     set_giorno_data('');
     set_istruttore_id('');
     set_istruttore_data('');
+    set_tipo_evento_collegato('nessuno');
+    set_evento_collegato_id('');
     reset_recipient_preview();
     set_modal_open(true);
   };
@@ -348,6 +373,8 @@ const CommunicationsPage: React.FC = () => {
     set_giorno_data('');
     set_istruttore_id('');
     set_istruttore_data('');
+    set_tipo_evento_collegato('nessuno');
+    set_evento_collegato_id('');
     set_placeholders({});
     reset_recipient_preview();
     set_step('form');
@@ -368,6 +395,7 @@ const CommunicationsPage: React.FC = () => {
   const handle_submit = async () => {
     const final_titolo = fill_placeholders(titolo, placeholders);
     const final_testo = fill_placeholders(testo, placeholders);
+    const evt_id = tipo_evento_collegato !== 'nessuno' && evento_collegato_id ? evento_collegato_id : null;
     await crea.mutateAsync({
       titolo: final_titolo,
       testo: final_testo,
@@ -375,6 +403,9 @@ const CommunicationsPage: React.FC = () => {
       corso_id: null,
       livello_categoria: tipo_destinatari === 'per_livello' ? livello_categoria : null,
       atleta_ids_manuali: ['per_corsi', 'per_giorno', 'per_istruttore'].includes(tipo_destinatari) ? selected_recipient_ids : null,
+      gara_id: tipo_evento_collegato === 'gara' ? evt_id : null,
+      evento_straordinario_id: tipo_evento_collegato === 'gala' ? evt_id : null,
+      test_livello_id: tipo_evento_collegato === 'test' ? evt_id : null,
     });
     set_modal_open(false);
   };
@@ -556,6 +587,71 @@ const CommunicationsPage: React.FC = () => {
                   <div className="rounded-lg border border-border bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
                     <span className="font-medium text-foreground">{static_count}</span> atleti
                   </div>
+                )}
+              </div>
+
+              {/* Tipo evento collegato (gara / galà / test livello) */}
+              <div className="space-y-2 rounded-xl border border-border p-3">
+                <Label className="text-xs">{t('comunicazioni_tipo_evento_collegato')}</Label>
+                <Select
+                  value={tipo_evento_collegato}
+                  onValueChange={(value) => {
+                    set_tipo_evento_collegato(value as any);
+                    set_evento_collegato_id('');
+                  }}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="nessuno">{t('comunicazioni_evento_nessuno')}</SelectItem>
+                    <SelectItem value="gara">{t('comunicazioni_evento_gara')}</SelectItem>
+                    <SelectItem value="gala">{t('comunicazioni_evento_gala')}</SelectItem>
+                    <SelectItem value="test">{t('comunicazioni_evento_test')}</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {tipo_evento_collegato === 'gara' && (
+                  <Select value={evento_collegato_id} onValueChange={set_evento_collegato_id}>
+                    <SelectTrigger><SelectValue placeholder={t('comunicazioni_seleziona_gara')} /></SelectTrigger>
+                    <SelectContent>
+                      {gare_future.length === 0 ? (
+                        <div className="px-3 py-2 text-xs text-muted-foreground">—</div>
+                      ) : (
+                        gare_future.map((g) => (
+                          <SelectItem key={g.id} value={g.id}>{g.nome} — {format_date_label(g.data)}</SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                )}
+
+                {tipo_evento_collegato === 'gala' && (
+                  <Select value={evento_collegato_id} onValueChange={set_evento_collegato_id}>
+                    <SelectTrigger><SelectValue placeholder={t('comunicazioni_seleziona_gala')} /></SelectTrigger>
+                    <SelectContent>
+                      {gale_future.length === 0 ? (
+                        <div className="px-3 py-2 text-xs text-muted-foreground">—</div>
+                      ) : (
+                        gale_future.map((e) => (
+                          <SelectItem key={e.id} value={e.id}>{e.titolo} — {format_date_label(e.data)}</SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                )}
+
+                {tipo_evento_collegato === 'test' && (
+                  <Select value={evento_collegato_id} onValueChange={set_evento_collegato_id}>
+                    <SelectTrigger><SelectValue placeholder={t('comunicazioni_seleziona_test')} /></SelectTrigger>
+                    <SelectContent>
+                      {test_futuri.length === 0 ? (
+                        <div className="px-3 py-2 text-xs text-muted-foreground">—</div>
+                      ) : (
+                        test_futuri.map((tl) => (
+                          <SelectItem key={tl.id} value={tl.id}>{tl.nome} — {format_date_label(tl.data)}</SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
                 )}
               </div>
 
