@@ -1034,6 +1034,13 @@ export function use_crea_comunicazione() {
     mutationFn: async (data: any) => {
       const club_id = cid();
 
+      // FK opzionali per evento collegato (solo una può essere valorizzata)
+      const fk_evento = {
+        gara_id: data.gara_id ?? null,
+        evento_straordinario_id: data.evento_straordinario_id ?? null,
+        test_livello_id: data.test_livello_id ?? null,
+      };
+
       if (
         Array.isArray(data.atleta_ids_manuali) &&
         data.atleta_ids_manuali.length > 0 &&
@@ -1046,6 +1053,7 @@ export function use_crea_comunicazione() {
             titolo: data.titolo,
             testo: data.testo,
             tipo_destinatari: "manuale",
+            ...fk_evento,
           })
           .select("id")
           .single();
@@ -1084,6 +1092,7 @@ export function use_crea_comunicazione() {
             testo: data.testo,
             // 'manuale' evita che il trigger ripopoli su tutto il club.
             tipo_destinatari: "manuale",
+            ...fk_evento,
           })
           .select("id")
           .single();
@@ -1103,6 +1112,7 @@ export function use_crea_comunicazione() {
         tipo_destinatari: data.tipo_destinatari || "tutti",
         corso_id: data.corso_id || null,
         atleta_id: data.atleta_id || null,
+        ...fk_evento,
       });
       if (error) throw error;
     },
