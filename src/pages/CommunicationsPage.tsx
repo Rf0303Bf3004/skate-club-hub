@@ -919,7 +919,15 @@ const CommunicationsPage: React.FC = () => {
                     </Button>
                   )
                 ) : (
-                  <Button onClick={handle_submit} disabled={crea.isPending || !titolo_preview.trim() || !testo_preview.trim()}>
+                  <Button
+                    onClick={handle_submit}
+                    disabled={
+                      crea.isPending ||
+                      !titolo_preview.trim() ||
+                      !testo_preview.trim() ||
+                      (tipo_destinatari === 'atleti' && atleti_specifici_ids.length === 0)
+                    }
+                  >
                     {crea.isPending ? '...' : 'Invia'}
                   </Button>
                 )}
