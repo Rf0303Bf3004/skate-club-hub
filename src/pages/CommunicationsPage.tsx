@@ -589,6 +589,71 @@ const CommunicationsPage: React.FC = () => {
                 )}
               </div>
 
+              {/* Tipo evento collegato (gara / galà / test livello) */}
+              <div className="space-y-2 rounded-xl border border-border p-3">
+                <Label className="text-xs">{t('comunicazioni_tipo_evento_collegato')}</Label>
+                <Select
+                  value={tipo_evento_collegato}
+                  onValueChange={(value) => {
+                    set_tipo_evento_collegato(value as any);
+                    set_evento_collegato_id('');
+                  }}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="nessuno">{t('comunicazioni_evento_nessuno')}</SelectItem>
+                    <SelectItem value="gara">{t('comunicazioni_evento_gara')}</SelectItem>
+                    <SelectItem value="gala">{t('comunicazioni_evento_gala')}</SelectItem>
+                    <SelectItem value="test">{t('comunicazioni_evento_test')}</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {tipo_evento_collegato === 'gara' && (
+                  <Select value={evento_collegato_id} onValueChange={set_evento_collegato_id}>
+                    <SelectTrigger><SelectValue placeholder={t('comunicazioni_seleziona_gara')} /></SelectTrigger>
+                    <SelectContent>
+                      {gare_future.length === 0 ? (
+                        <div className="px-3 py-2 text-xs text-muted-foreground">—</div>
+                      ) : (
+                        gare_future.map((g) => (
+                          <SelectItem key={g.id} value={g.id}>{g.nome} — {format_date_label(g.data)}</SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                )}
+
+                {tipo_evento_collegato === 'gala' && (
+                  <Select value={evento_collegato_id} onValueChange={set_evento_collegato_id}>
+                    <SelectTrigger><SelectValue placeholder={t('comunicazioni_seleziona_gala')} /></SelectTrigger>
+                    <SelectContent>
+                      {gale_future.length === 0 ? (
+                        <div className="px-3 py-2 text-xs text-muted-foreground">—</div>
+                      ) : (
+                        gale_future.map((e) => (
+                          <SelectItem key={e.id} value={e.id}>{e.titolo} — {format_date_label(e.data)}</SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                )}
+
+                {tipo_evento_collegato === 'test' && (
+                  <Select value={evento_collegato_id} onValueChange={set_evento_collegato_id}>
+                    <SelectTrigger><SelectValue placeholder={t('comunicazioni_seleziona_test')} /></SelectTrigger>
+                    <SelectContent>
+                      {test_futuri.length === 0 ? (
+                        <div className="px-3 py-2 text-xs text-muted-foreground">—</div>
+                      ) : (
+                        test_futuri.map((tl) => (
+                          <SelectItem key={tl.id} value={tl.id}>{tl.nome} — {format_date_label(tl.data)}</SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+
               {tipo_destinatari === 'per_corsi' && (
                 <div className="space-y-3 rounded-xl border border-border p-3">
                   <div className="space-y-2">
