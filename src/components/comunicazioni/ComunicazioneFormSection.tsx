@@ -97,6 +97,25 @@ export const ComunicazioneFormSection: React.FC<Props> = ({
             <Label>{t("comunicazione_titolo")}</Label>
             <Input value={state.titolo} onChange={(e) => upd("titolo", e.target.value)} />
           </div>
+          <TooltipProvider>
+            <div className="flex items-center justify-between rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Label htmlFor="comunicazione-urgente" className="cursor-pointer flex items-center gap-2 text-sm font-medium">
+                    <AlertTriangle className="w-4 h-4 text-destructive" />
+                    Urgente
+                  </Label>
+                </TooltipTrigger>
+                <TooltipContent>Sarà mostrata come banner urgente nell'app dell'atleta</TooltipContent>
+              </Tooltip>
+              <Switch
+                id="comunicazione-urgente"
+                checked={state.urgente}
+                onCheckedChange={(v) => upd("urgente", !!v)}
+                className="data-[state=checked]:bg-destructive"
+              />
+            </div>
+          </TooltipProvider>
           <div>
             <Label>{t("comunicazione_testo")}</Label>
             <Textarea
