@@ -192,23 +192,6 @@ const CorsoCard: React.FC<{
     return p?.stato || "attesa";
   };
 
-  // WhatsApp remind per monitore
-  const genera_wa_monitore = (persona: any) => {
-    const tel = persona.genitore1_telefono || "";
-    if (!tel) return null;
-    const tipo = (corso.monitori || []).includes(persona.id) ? "monitore" : "aiuto monitore";
-    const data_fmt = new Date(data + "T00:00:00").toLocaleDateString("de-CH", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-    });
-    const msg = encodeURIComponent(
-      `Ciao ${persona.nome}! 👋\nTi ricordiamo che hai il corso *${corso.nome}* come ${tipo} il ${data_fmt} dalle ${corso.ora_inizio?.slice(0, 5)} alle ${corso.ora_fine?.slice(0, 5)}.\nConfermi la presenza? Grazie! ⛸️`,
-    );
-    const tel_clean = tel.replace(/\s+/g, "").replace(/^0/, "+41");
-    return `https://wa.me/${tel_clean}?text=${msg}`;
-  };
-
   const stato_color = (stato: string) => {
     if (stato === "confermato") return "text-success";
     if (stato === "assente") return "text-destructive";
@@ -311,7 +294,6 @@ const CorsoCard: React.FC<{
               {monitori_assegnati.map((m) => {
                 const tipo = (corso.monitori || []).includes(m.id) ? "Monitore" : "Aiuto monitore";
                 const stato = get_stato_monitore(m.id);
-                const wa = genera_wa_monitore(m);
                 return (
                   <div key={m.id} className="flex items-center justify-between py-1">
                     <div>
@@ -322,16 +304,6 @@ const CorsoCard: React.FC<{
                     </div>
                     <div className="flex items-center gap-1.5">
                       <span className={`text-xs ${stato_color(stato)}`}>{stato_label(stato)}</span>
-                      {wa && stato === "attesa" && (
-                        <a
-                          href={wa}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[10px] px-1.5 py-0.5 rounded bg-green-100 text-green-700 hover:bg-green-200 flex items-center gap-0.5"
-                        >
-                          <MessageCircle className="w-2.5 h-2.5" /> WA
-                        </a>
-                      )}
                     </div>
                   </div>
                 );
