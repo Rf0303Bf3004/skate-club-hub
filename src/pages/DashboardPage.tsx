@@ -657,7 +657,6 @@ const BoxComunicazione: React.FC<{
       {/* Azioni */}
       <div className="flex gap-2">
         <Button
-          variant="outline"
           size="sm"
           onClick={handle_salva_inapp}
           disabled={crea.isPending}
@@ -665,15 +664,6 @@ const BoxComunicazione: React.FC<{
         >
           <Send className="w-3.5 h-3.5" />
           {crea.isPending ? "..." : "Salva in-app"}
-        </Button>
-        <Button
-          size="sm"
-          onClick={handle_invia_wa}
-          disabled={sending_wa || destinatari.length === 0}
-          className="flex-1 gap-1.5 text-xs bg-green-600 hover:bg-green-700 text-white"
-        >
-          <MessageCircle className="w-3.5 h-3.5" />
-          WhatsApp ({destinatari.length})
         </Button>
       </div>
     </div>
