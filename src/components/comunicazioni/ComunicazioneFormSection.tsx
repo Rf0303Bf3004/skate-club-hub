@@ -276,6 +276,7 @@ export async function invia_comunicazione_evento(
     test_livello_id: fk.test_livello_id ?? null,
     stato: "inviata",
     inviata_at: new Date().toISOString(),
+    urgente: state.urgente === true,
   };
 
   const { error } = await supabase.from("comunicazioni").insert(payload);
