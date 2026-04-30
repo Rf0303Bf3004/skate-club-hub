@@ -406,6 +406,7 @@ export type Database = {
           tipo: string
           tipo_destinatari: string
           titolo: string
+          urgente: boolean
         }
         Insert: {
           atleta_id?: string | null
@@ -432,6 +433,7 @@ export type Database = {
           tipo?: string
           tipo_destinatari?: string
           titolo?: string
+          urgente?: boolean
         }
         Update: {
           atleta_id?: string | null
@@ -458,6 +460,7 @@ export type Database = {
           tipo?: string
           tipo_destinatari?: string
           titolo?: string
+          urgente?: boolean
         }
         Relationships: [
           {
