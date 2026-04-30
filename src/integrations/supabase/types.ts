@@ -548,6 +548,47 @@ export type Database = {
           },
         ]
       }
+      comunicazioni_destinatari_staff: {
+        Row: {
+          archiviato_at: string | null
+          club_id: string
+          comunicazione_id: string
+          creato_at: string
+          id: string
+          letto_at: string | null
+          stato: string
+          user_id: string
+        }
+        Insert: {
+          archiviato_at?: string | null
+          club_id: string
+          comunicazione_id: string
+          creato_at?: string
+          id?: string
+          letto_at?: string | null
+          stato?: string
+          user_id: string
+        }
+        Update: {
+          archiviato_at?: string | null
+          club_id?: string
+          comunicazione_id?: string
+          creato_at?: string
+          id?: string
+          letto_at?: string | null
+          stato?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comunicazioni_destinatari_staff_comunicazione_id_fkey"
+            columns: ["comunicazione_id"]
+            isOneToOne: false
+            referencedRelation: "comunicazioni"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comunicazioni_template: {
         Row: {
           club_id: string
