@@ -623,7 +623,7 @@ const BoxComunicazione: React.FC<{
 
         {destinatari.length > 0 && (
           <p className="text-xs text-primary font-medium">
-            📨 {destinatari.length} destinatar{destinatari.length === 1 ? "io" : "i"} con WhatsApp
+            📨 {destinatari.length} destinatar{destinatari.length === 1 ? "io" : "i"}
           </p>
         )}
       </div>
