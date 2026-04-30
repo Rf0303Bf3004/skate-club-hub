@@ -146,6 +146,7 @@ const CommunicationsPage: React.FC = () => {
   const [is_resolving_recipients, set_is_resolving_recipients] = useState(false);
   const [atleti_specifici_ids, set_atleti_specifici_ids] = useState<string[]>([]);
   const [atleta_search, set_atleta_search] = useState('');
+  const [urgente, set_urgente] = useState(false);
 
   // Evento collegato (gara | gala | test | nessuno)
   const [tipo_evento_collegato, set_tipo_evento_collegato] = useState<'nessuno' | 'gara' | 'gala' | 'test'>('nessuno');
