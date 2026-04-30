@@ -395,7 +395,7 @@ const BoxComunicazione: React.FC<{
   const [titolo, set_titolo] = useState("");
   const [testo, set_testo] = useState("");
   const [template_sel, set_template_sel] = useState("");
-  const [sending_wa, set_sending_wa] = useState(false);
+  
 
   // Applica preset esterno (es. "Invia auguri" da banner compleanno)
   const last_preset_marker = React.useRef<string | null>(null);
@@ -533,26 +533,6 @@ const BoxComunicazione: React.FC<{
     }
   };
 
-  const handle_invia_wa = () => {
-    if (!testo) {
-      toast({ title: "Inserisci il testo del messaggio", variant: "destructive" });
-      return;
-    }
-    if (destinatari.length === 0) {
-      toast({ title: "Nessun destinatario con numero WhatsApp", variant: "destructive" });
-      return;
-    }
-    set_sending_wa(true);
-    destinatari.forEach((d) => {
-      const tel = d.telefono.replace(/\s+/g, "").replace(/^0/, "+41");
-      const msg_personale = testo.replace("{nome}", d.nome.split(" ")[0]);
-      const msg = encodeURIComponent(msg_personale);
-      window.open(`https://wa.me/${tel}?text=${msg}`, "_blank");
-    });
-    set_sending_wa(false);
-    toast({ title: `✅ Aperte ${destinatari.length} chat WhatsApp` });
-  };
-
   return (
     <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
       <div className="flex items-center gap-2">
@@ -643,7 +623,7 @@ const BoxComunicazione: React.FC<{
 
         {destinatari.length > 0 && (
           <p className="text-xs text-primary font-medium">
-            📨 {destinatari.length} destinatar{destinatari.length === 1 ? "io" : "i"} con WhatsApp
+            📨 {destinatari.length} destinatar{destinatari.length === 1 ? "io" : "i"}
           </p>
         )}
       </div>
@@ -677,7 +657,6 @@ const BoxComunicazione: React.FC<{
       {/* Azioni */}
       <div className="flex gap-2">
         <Button
-          variant="outline"
           size="sm"
           onClick={handle_salva_inapp}
           disabled={crea.isPending}
@@ -685,15 +664,6 @@ const BoxComunicazione: React.FC<{
         >
           <Send className="w-3.5 h-3.5" />
           {crea.isPending ? "..." : "Salva in-app"}
-        </Button>
-        <Button
-          size="sm"
-          onClick={handle_invia_wa}
-          disabled={sending_wa || destinatari.length === 0}
-          className="flex-1 gap-1.5 text-xs bg-green-600 hover:bg-green-700 text-white"
-        >
-          <MessageCircle className="w-3.5 h-3.5" />
-          WhatsApp ({destinatari.length})
         </Button>
       </div>
     </div>
