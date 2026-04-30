@@ -524,11 +524,13 @@ const BoxComunicazione: React.FC<{
         tipo_destinatari: is_birthday ? "compleanno" : tipo_dest,
         corso_id: tipo_dest === "corso" ? riferimento_id : null,
         atleta_id: target_atleta_id,
+        urgente,
       });
       toast({ title: "✅ Comunicazione salvata" });
       set_titolo("");
       set_testo("");
       set_template_sel("");
+      set_urgente(false);
     } catch (err: any) {
       toast({ title: "Errore", description: err?.message, variant: "destructive" });
     }
