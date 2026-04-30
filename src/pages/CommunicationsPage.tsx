@@ -15,6 +15,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { IscrizioniAtletiNotifiche, use_count_iscrizioni_non_lette } from '@/components/comunicazioni/IscrizioniAtletiNotifiche';
+import { Bell } from 'lucide-react';
 
 const TEMPLATES = [
   {
@@ -452,44 +455,71 @@ const CommunicationsPage: React.FC = () => {
 
   if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
 
+  const non_lette_iscrizioni = use_count_iscrizioni_non_lette();
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold tracking-tight text-foreground">{t('comunicazioni')}</h1>
         <Button className="bg-primary hover:bg-primary/90" onClick={open_new}><Plus className="w-4 h-4 mr-2" /> {t('nuova_comunicazione')}</Button>
       </div>
-      {comunicazioni.length === 0 ? (
-        <div className="bg-card rounded-xl shadow-card p-12 text-center space-y-4">
-          <MessageSquare className="w-12 h-12 text-muted-foreground/50 mx-auto" />
-          <div className="space-y-1">
-            <h3 className="text-base font-semibold text-foreground">Nessuna comunicazione</h3>
-            <p className="text-sm text-muted-foreground">Crea la tua prima comunicazione per atleti, genitori o iscritti ai corsi.</p>
-          </div>
-          <Button onClick={open_new} className="bg-primary hover:bg-primary/90">
-            <Plus className="w-4 h-4 mr-2" /> {t('nuova_comunicazione')}
-          </Button>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {comunicazioni.map((c: any) => (
-            <div key={c.id} className="bg-card rounded-xl shadow-card p-5 hover:shadow-card-hover transition-shadow">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex gap-3">
-                  <MessageSquare className="w-5 h-5 text-accent shrink-0 mt-0.5" />
-                  <div>
-                    <h3 className="font-semibold text-foreground">{c.titolo}</h3>
-                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{c.testo}</p>
+
+      <Tabs defaultValue={non_lette_iscrizioni > 0 ? "iscrizioni" : "tutte"} className="w-full">
+        <TabsList>
+          <TabsTrigger value="tutte" className="gap-2">
+            <MessageSquare className="w-4 h-4" /> Tutte
+          </TabsTrigger>
+          <TabsTrigger value="iscrizioni" className="gap-2">
+            <Bell className="w-4 h-4" />
+            <span>🔔 Iscrizioni atleti</span>
+            {non_lette_iscrizioni > 0 && (
+              <Badge variant="destructive" className="h-5 min-w-5 px-1.5 text-[10px]">
+                {non_lette_iscrizioni}
+              </Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="tutte" className="mt-4">
+          {comunicazioni.length === 0 ? (
+            <div className="bg-card rounded-xl shadow-card p-12 text-center space-y-4">
+              <MessageSquare className="w-12 h-12 text-muted-foreground/50 mx-auto" />
+              <div className="space-y-1">
+                <h3 className="text-base font-semibold text-foreground">Nessuna comunicazione</h3>
+                <p className="text-sm text-muted-foreground">Crea la tua prima comunicazione per atleti, genitori o iscritti ai corsi.</p>
+              </div>
+              <Button onClick={open_new} className="bg-primary hover:bg-primary/90">
+                <Plus className="w-4 h-4 mr-2" /> {t('nuova_comunicazione')}
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {comunicazioni.filter((c: any) => c.tipo !== 'iscrizione_atleta').map((c: any) => (
+                <div key={c.id} className="bg-card rounded-xl shadow-card p-5 hover:shadow-card-hover transition-shadow">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex gap-3">
+                      <MessageSquare className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+                      <div>
+                        <h3 className="font-semibold text-foreground">{c.titolo}</h3>
+                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{c.testo}</p>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-xs tabular-nums text-muted-foreground">{get_data_label(c)}</p>
+                      <Badge variant="secondary" className="text-xs mt-1">{get_destinatari_label(c)}</Badge>
+                    </div>
                   </div>
                 </div>
-                <div className="text-right shrink-0">
-                  <p className="text-xs tabular-nums text-muted-foreground">{get_data_label(c)}</p>
-                  <Badge variant="secondary" className="text-xs mt-1">{get_destinatari_label(c)}</Badge>
-                </div>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
-      )}
+          )}
+        </TabsContent>
+
+        <TabsContent value="iscrizioni" className="mt-4">
+          <IscrizioniAtletiNotifiche />
+        </TabsContent>
+      </Tabs>
+
 
       <Dialog open={modal_open} onOpenChange={(o) => !o && set_modal_open(false)}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">

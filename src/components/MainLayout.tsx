@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { LayoutDashboard, Users, BookOpen, Trophy, CreditCard, MessageSquare, Settings, Calendar, UserCheck, Tent, GraduationCap, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, Lock, ClipboardList, ClipboardCheck, Sparkles, Medal } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { use_count_iscrizioni_non_lette } from "@/components/comunicazioni/IscrizioniAtletiNotifiche";
 
 const all_nav_items = [
   { key: "dashboard", sezione: "dashboard", path: "/", icon: LayoutDashboard },
@@ -36,6 +37,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const [sidebar_open, set_sidebar_open] = React.useState(false);
   const is_superadmin = session?.ruolo === "superadmin";
   const is_admin = session?.ruolo === "admin";
+  const non_lette_iscrizioni = use_count_iscrizioni_non_lette();
 
   const { data: permessi = [] } = useQuery({
     queryKey: ["ruoli_permessi", session?.club_id, session?.ruolo],
@@ -84,11 +86,17 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
           {!is_superadmin && nav_items.map((item) => {
             const is_active = location.pathname === item.path || (item.path !== "/" && location.pathname.startsWith(item.path));
+            const show_badge = item.key === "comunicazioni" && non_lette_iscrizioni > 0;
             return (
               <NavLink key={item.key} to={item.path} onClick={() => set_sidebar_open(false)}
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${is_active ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
                 <item.icon className="w-4 h-4 shrink-0" />
                 <span>{t(item.key)}</span>
+                {show_badge && (
+                  <span className="ml-auto inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold tabular-nums">
+                    {non_lette_iscrizioni}
+                  </span>
+                )}
               </NavLink>
             );
           })}
