@@ -499,6 +499,7 @@ export type Database = {
       }
       comunicazioni_destinatari: {
         Row: {
+          archiviato_at: string | null
           atleta_id: string
           comunicazione_id: string
           creato_at: string
@@ -509,6 +510,7 @@ export type Database = {
           stato: string
         }
         Insert: {
+          archiviato_at?: string | null
           atleta_id: string
           comunicazione_id: string
           creato_at?: string
@@ -519,6 +521,7 @@ export type Database = {
           stato?: string
         }
         Update: {
+          archiviato_at?: string | null
           atleta_id?: string
           comunicazione_id?: string
           creato_at?: string
