@@ -5,7 +5,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Send, X, Search } from "lucide-react";
+import { Send, X, Search, AlertTriangle } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useI18n } from "@/lib/i18n";
 import { use_livelli } from "@/hooks/use-supabase-data";
 
@@ -19,6 +21,7 @@ export type ComunicazioneFormState = {
   corsi_ids: string[];
   livelli: string[];
   atleti_ids: string[];
+  urgente: boolean;
 };
 
 export const empty_comunicazione_state = (defaults?: Partial<ComunicazioneFormState>): ComunicazioneFormState => ({
@@ -29,6 +32,7 @@ export const empty_comunicazione_state = (defaults?: Partial<ComunicazioneFormSt
   corsi_ids: [],
   livelli: [],
   atleti_ids: [],
+  urgente: false,
   ...defaults,
 });
 
