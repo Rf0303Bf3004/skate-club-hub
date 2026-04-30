@@ -294,7 +294,6 @@ const CorsoCard: React.FC<{
               {monitori_assegnati.map((m) => {
                 const tipo = (corso.monitori || []).includes(m.id) ? "Monitore" : "Aiuto monitore";
                 const stato = get_stato_monitore(m.id);
-                const wa = genera_wa_monitore(m);
                 return (
                   <div key={m.id} className="flex items-center justify-between py-1">
                     <div>
@@ -305,16 +304,6 @@ const CorsoCard: React.FC<{
                     </div>
                     <div className="flex items-center gap-1.5">
                       <span className={`text-xs ${stato_color(stato)}`}>{stato_label(stato)}</span>
-                      {wa && stato === "attesa" && (
-                        <a
-                          href={wa}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[10px] px-1.5 py-0.5 rounded bg-green-100 text-green-700 hover:bg-green-200 flex items-center gap-0.5"
-                        >
-                          <MessageCircle className="w-2.5 h-2.5" /> WA
-                        </a>
-                      )}
                     </div>
                   </div>
                 );
