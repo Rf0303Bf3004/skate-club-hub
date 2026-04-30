@@ -422,6 +422,7 @@ const CommunicationsPage: React.FC = () => {
       gara_id: tipo_evento_collegato === 'gara' ? evt_id : null,
       evento_straordinario_id: tipo_evento_collegato === 'gala' ? evt_id : null,
       test_livello_id: tipo_evento_collegato === 'test' ? evt_id : null,
+      urgente,
     });
     set_modal_open(false);
   };
