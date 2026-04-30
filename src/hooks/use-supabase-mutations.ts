@@ -1075,6 +1075,7 @@ export function use_crea_comunicazione() {
             titolo: data.titolo,
             testo: data.testo,
             tipo_destinatari: "manuale",
+            urgente,
             ...fk_evento,
           })
           .select("id")
