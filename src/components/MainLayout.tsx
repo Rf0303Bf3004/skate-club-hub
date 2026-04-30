@@ -37,6 +37,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const [sidebar_open, set_sidebar_open] = React.useState(false);
   const is_superadmin = session?.ruolo === "superadmin";
   const is_admin = session?.ruolo === "admin";
+  const non_lette_iscrizioni = use_count_iscrizioni_non_lette();
 
   const { data: permessi = [] } = useQuery({
     queryKey: ["ruoli_permessi", session?.club_id, session?.ruolo],
