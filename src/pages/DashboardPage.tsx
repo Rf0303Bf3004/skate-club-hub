@@ -660,6 +660,27 @@ const BoxComunicazione: React.FC<{
         </p>
       </div>
 
+      {/* Urgente */}
+      <TooltipProvider>
+        <div className="flex items-center justify-between rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Label htmlFor="dash-com-urgente" className="cursor-pointer flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-foreground">
+                <AlertTriangle className="w-4 h-4 text-destructive" />
+                Urgente
+              </Label>
+            </TooltipTrigger>
+            <TooltipContent>Sarà mostrata come banner urgente nell'app dell'atleta</TooltipContent>
+          </Tooltip>
+          <Switch
+            id="dash-com-urgente"
+            checked={urgente}
+            onCheckedChange={(v) => set_urgente(!!v)}
+            className="data-[state=checked]:bg-destructive"
+          />
+        </div>
+      </TooltipProvider>
+
       {/* Azioni */}
       <div className="flex gap-2">
         <Button
