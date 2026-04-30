@@ -38,6 +38,9 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
@@ -395,6 +398,7 @@ const BoxComunicazione: React.FC<{
   const [titolo, set_titolo] = useState("");
   const [testo, set_testo] = useState("");
   const [template_sel, set_template_sel] = useState("");
+  const [urgente, set_urgente] = useState(false);
   
 
   // Applica preset esterno (es. "Invia auguri" da banner compleanno)
@@ -523,11 +527,13 @@ const BoxComunicazione: React.FC<{
         tipo_destinatari: is_birthday ? "compleanno" : tipo_dest,
         corso_id: tipo_dest === "corso" ? riferimento_id : null,
         atleta_id: target_atleta_id,
+        urgente,
       });
       toast({ title: "✅ Comunicazione salvata" });
       set_titolo("");
       set_testo("");
       set_template_sel("");
+      set_urgente(false);
     } catch (err: any) {
       toast({ title: "Errore", description: err?.message, variant: "destructive" });
     }
@@ -653,6 +659,27 @@ const BoxComunicazione: React.FC<{
           Variabili: {"{nome}"}, {"{corso}"}, {"{gara}"}, {"{data}"}, {"{importo}"}
         </p>
       </div>
+
+      {/* Urgente */}
+      <TooltipProvider>
+        <div className="flex items-center justify-between rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Label htmlFor="dash-com-urgente" className="cursor-pointer flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-foreground">
+                <AlertTriangle className="w-4 h-4 text-destructive" />
+                Urgente
+              </Label>
+            </TooltipTrigger>
+            <TooltipContent>Sarà mostrata come banner urgente nell'app dell'atleta</TooltipContent>
+          </Tooltip>
+          <Switch
+            id="dash-com-urgente"
+            checked={urgente}
+            onCheckedChange={(v) => set_urgente(!!v)}
+            className="data-[state=checked]:bg-destructive"
+          />
+        </div>
+      </TooltipProvider>
 
       {/* Azioni */}
       <div className="flex gap-2">

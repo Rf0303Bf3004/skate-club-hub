@@ -5,7 +5,9 @@ import { use_crea_comunicazione } from '@/hooks/use-supabase-mutations';
 import { supabase, get_current_club_id } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, MessageSquare, FileText, Pencil, Check, ChevronsUpDown, CalendarIcon, X } from 'lucide-react';
+import { Plus, MessageSquare, FileText, Pencil, Check, ChevronsUpDown, CalendarIcon, X, AlertTriangle } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -144,6 +146,7 @@ const CommunicationsPage: React.FC = () => {
   const [is_resolving_recipients, set_is_resolving_recipients] = useState(false);
   const [atleti_specifici_ids, set_atleti_specifici_ids] = useState<string[]>([]);
   const [atleta_search, set_atleta_search] = useState('');
+  const [urgente, set_urgente] = useState(false);
 
   // Evento collegato (gara | gala | test | nessuno)
   const [tipo_evento_collegato, set_tipo_evento_collegato] = useState<'nessuno' | 'gara' | 'gala' | 'test'>('nessuno');
@@ -359,6 +362,7 @@ const CommunicationsPage: React.FC = () => {
     reset_recipient_preview();
     set_atleti_specifici_ids([]);
     set_atleta_search('');
+    set_urgente(false);
     set_modal_open(true);
   };
 
@@ -386,6 +390,7 @@ const CommunicationsPage: React.FC = () => {
     reset_recipient_preview();
     set_atleti_specifici_ids([]);
     set_atleta_search('');
+    set_urgente(false);
     set_step('form');
   };
 
@@ -417,6 +422,7 @@ const CommunicationsPage: React.FC = () => {
       gara_id: tipo_evento_collegato === 'gara' ? evt_id : null,
       evento_straordinario_id: tipo_evento_collegato === 'gala' ? evt_id : null,
       test_livello_id: tipo_evento_collegato === 'test' ? evt_id : null,
+      urgente,
     });
     set_modal_open(false);
   };
@@ -500,7 +506,14 @@ const CommunicationsPage: React.FC = () => {
                     <div className="flex gap-3">
                       <MessageSquare className="w-5 h-5 text-accent shrink-0 mt-0.5" />
                       <div>
-                        <h3 className="font-semibold text-foreground">{c.titolo}</h3>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {c.urgente && (
+                            <Badge variant="destructive" className="text-[10px] gap-1">
+                              <AlertTriangle className="w-3 h-3" /> URGENTE
+                            </Badge>
+                          )}
+                          <h3 className="font-semibold text-foreground">{c.titolo}</h3>
+                        </div>
                         <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{c.testo}</p>
                       </div>
                     </div>
@@ -587,6 +600,26 @@ const CommunicationsPage: React.FC = () => {
                   onChange={(e) => set_titolo(e.target.value)}
                   readOnly={!!selected_template} />
               </div>
+
+              <TooltipProvider>
+                <div className="flex items-center justify-between rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Label htmlFor="comunicazione-urgente-page" className="cursor-pointer flex items-center gap-2 text-sm font-medium">
+                        <AlertTriangle className="w-4 h-4 text-destructive" />
+                        Urgente
+                      </Label>
+                    </TooltipTrigger>
+                    <TooltipContent>Sarà mostrata come banner urgente nell'app dell'atleta</TooltipContent>
+                  </Tooltip>
+                  <Switch
+                    id="comunicazione-urgente-page"
+                    checked={urgente}
+                    onCheckedChange={(v) => set_urgente(!!v)}
+                    className="data-[state=checked]:bg-destructive"
+                  />
+                </div>
+              </TooltipProvider>
 
               <div>
                 <Label className="text-xs">Testo</Label>

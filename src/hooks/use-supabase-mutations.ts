@@ -1041,6 +1041,8 @@ export function use_crea_comunicazione() {
         test_livello_id: data.test_livello_id ?? null,
       };
 
+      const urgente = data.urgente === true;
+
       // Atleti specifici (selezione esplicita) → lista in atleti_ids (gestita dal trigger)
       if (
         data.tipo_destinatari === "atleti" &&
@@ -1054,6 +1056,7 @@ export function use_crea_comunicazione() {
           testo: data.testo,
           tipo_destinatari: "atleti",
           atleti_ids: ids,
+          urgente,
           ...fk_evento,
         });
         if (error) throw error;
@@ -1072,6 +1075,7 @@ export function use_crea_comunicazione() {
             titolo: data.titolo,
             testo: data.testo,
             tipo_destinatari: "manuale",
+            urgente,
             ...fk_evento,
           })
           .select("id")
@@ -1111,6 +1115,7 @@ export function use_crea_comunicazione() {
             testo: data.testo,
             // 'manuale' evita che il trigger ripopoli su tutto il club.
             tipo_destinatari: "manuale",
+            urgente,
             ...fk_evento,
           })
           .select("id")
@@ -1131,6 +1136,7 @@ export function use_crea_comunicazione() {
         tipo_destinatari: data.tipo_destinatari || "tutti",
         corso_id: data.corso_id || null,
         atleta_id: data.atleta_id || null,
+        urgente,
         ...fk_evento,
       });
       if (error) throw error;
