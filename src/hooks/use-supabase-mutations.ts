@@ -1041,6 +1041,8 @@ export function use_crea_comunicazione() {
         test_livello_id: data.test_livello_id ?? null,
       };
 
+      const urgente = data.urgente === true;
+
       // Atleti specifici (selezione esplicita) → lista in atleti_ids (gestita dal trigger)
       if (
         data.tipo_destinatari === "atleti" &&
@@ -1054,6 +1056,7 @@ export function use_crea_comunicazione() {
           testo: data.testo,
           tipo_destinatari: "atleti",
           atleti_ids: ids,
+          urgente,
           ...fk_evento,
         });
         if (error) throw error;
