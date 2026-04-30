@@ -390,6 +390,7 @@ const CommunicationsPage: React.FC = () => {
     reset_recipient_preview();
     set_atleti_specifici_ids([]);
     set_atleta_search('');
+    set_urgente(false);
     set_step('form');
   };
 
