@@ -533,26 +533,6 @@ const BoxComunicazione: React.FC<{
     }
   };
 
-  const handle_invia_wa = () => {
-    if (!testo) {
-      toast({ title: "Inserisci il testo del messaggio", variant: "destructive" });
-      return;
-    }
-    if (destinatari.length === 0) {
-      toast({ title: "Nessun destinatario con numero WhatsApp", variant: "destructive" });
-      return;
-    }
-    set_sending_wa(true);
-    destinatari.forEach((d) => {
-      const tel = d.telefono.replace(/\s+/g, "").replace(/^0/, "+41");
-      const msg_personale = testo.replace("{nome}", d.nome.split(" ")[0]);
-      const msg = encodeURIComponent(msg_personale);
-      window.open(`https://wa.me/${tel}?text=${msg}`, "_blank");
-    });
-    set_sending_wa(false);
-    toast({ title: `✅ Aperte ${destinatari.length} chat WhatsApp` });
-  };
-
   return (
     <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
       <div className="flex items-center gap-2">
