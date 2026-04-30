@@ -601,6 +601,26 @@ const CommunicationsPage: React.FC = () => {
                   readOnly={!!selected_template} />
               </div>
 
+              <TooltipProvider>
+                <div className="flex items-center justify-between rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Label htmlFor="comunicazione-urgente-page" className="cursor-pointer flex items-center gap-2 text-sm font-medium">
+                        <AlertTriangle className="w-4 h-4 text-destructive" />
+                        Urgente
+                      </Label>
+                    </TooltipTrigger>
+                    <TooltipContent>Sarà mostrata come banner urgente nell'app dell'atleta</TooltipContent>
+                  </Tooltip>
+                  <Switch
+                    id="comunicazione-urgente-page"
+                    checked={urgente}
+                    onCheckedChange={(v) => set_urgente(!!v)}
+                    className="data-[state=checked]:bg-destructive"
+                  />
+                </div>
+              </TooltipProvider>
+
               <div>
                 <Label className="text-xs">Testo</Label>
                 <textarea
