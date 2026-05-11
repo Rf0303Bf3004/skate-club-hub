@@ -508,6 +508,7 @@ export type Database = {
           creato_at: string
           id: string
           letto_at: string | null
+          nascosto_at: string | null
           rsvp_at: string | null
           rsvp_risposta: string | null
           stato: string
@@ -519,6 +520,7 @@ export type Database = {
           creato_at?: string
           id?: string
           letto_at?: string | null
+          nascosto_at?: string | null
           rsvp_at?: string | null
           rsvp_risposta?: string | null
           stato?: string
@@ -530,6 +532,7 @@ export type Database = {
           creato_at?: string
           id?: string
           letto_at?: string | null
+          nascosto_at?: string | null
           rsvp_at?: string | null
           rsvp_risposta?: string | null
           stato?: string
@@ -808,6 +811,47 @@ export type Database = {
           tipo?: string
         }
         Relationships: []
+      }
+      dashboard_card_permessi: {
+        Row: {
+          club_id: string
+          codice_card: string
+          created_at: string | null
+          id: string
+          ordine: number | null
+          ruolo: string
+          updated_at: string | null
+          visibile: boolean | null
+        }
+        Insert: {
+          club_id: string
+          codice_card: string
+          created_at?: string | null
+          id?: string
+          ordine?: number | null
+          ruolo: string
+          updated_at?: string | null
+          visibile?: boolean | null
+        }
+        Update: {
+          club_id?: string
+          codice_card?: string
+          created_at?: string | null
+          id?: string
+          ordine?: number | null
+          ruolo?: string
+          updated_at?: string | null
+          visibile?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dashboard_card_permessi_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       device_tokens: {
         Row: {
@@ -2218,6 +2262,7 @@ export type Database = {
       }
       setup_club: {
         Row: {
+          anno_fondazione: number | null
           banca: string | null
           club_id: string
           created_at: string
@@ -2233,10 +2278,14 @@ export type Database = {
           max_atlete_lezione_condivisa: number | null
           max_lezioni_private_contemporanee: number | null
           medagliere_punti: Json | null
+          missione: string | null
           slot_lezione_privata_minuti: number | null
+          storia_breve: string | null
           twint_paylink: string | null
+          valori: string | null
         }
         Insert: {
+          anno_fondazione?: number | null
           banca?: string | null
           club_id: string
           created_at?: string
@@ -2252,10 +2301,14 @@ export type Database = {
           max_atlete_lezione_condivisa?: number | null
           max_lezioni_private_contemporanee?: number | null
           medagliere_punti?: Json | null
+          missione?: string | null
           slot_lezione_privata_minuti?: number | null
+          storia_breve?: string | null
           twint_paylink?: string | null
+          valori?: string | null
         }
         Update: {
+          anno_fondazione?: number | null
           banca?: string | null
           club_id?: string
           created_at?: string
@@ -2271,10 +2324,75 @@ export type Database = {
           max_atlete_lezione_condivisa?: number | null
           max_lezioni_private_contemporanee?: number | null
           medagliere_punti?: Json | null
+          missione?: string | null
           slot_lezione_privata_minuti?: number | null
+          storia_breve?: string | null
           twint_paylink?: string | null
+          valori?: string | null
         }
         Relationships: []
+      }
+      sponsor: {
+        Row: {
+          attivo: boolean | null
+          categoria: string | null
+          club_id: string
+          created_at: string | null
+          data_fine: string | null
+          data_inizio: string | null
+          id: string
+          importo_annuo: number | null
+          logo_url: string | null
+          nome: string
+          note_interne: string | null
+          visibilita_banner: boolean | null
+          visibilita_gala: boolean | null
+          visibilita_maglie: boolean | null
+          visibilita_social: boolean | null
+        }
+        Insert: {
+          attivo?: boolean | null
+          categoria?: string | null
+          club_id: string
+          created_at?: string | null
+          data_fine?: string | null
+          data_inizio?: string | null
+          id?: string
+          importo_annuo?: number | null
+          logo_url?: string | null
+          nome: string
+          note_interne?: string | null
+          visibilita_banner?: boolean | null
+          visibilita_gala?: boolean | null
+          visibilita_maglie?: boolean | null
+          visibilita_social?: boolean | null
+        }
+        Update: {
+          attivo?: boolean | null
+          categoria?: string | null
+          club_id?: string
+          created_at?: string | null
+          data_fine?: string | null
+          data_inizio?: string | null
+          id?: string
+          importo_annuo?: number | null
+          logo_url?: string | null
+          nome?: string
+          note_interne?: string | null
+          visibilita_banner?: boolean | null
+          visibilita_gala?: boolean | null
+          visibilita_maglie?: boolean | null
+          visibilita_social?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsor_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stagioni: {
         Row: {
@@ -2550,6 +2668,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_archived_communications: { Args: never; Returns: number }
       corsi_per_atleta: {
         Args: { p_atleta_id: string }
         Returns: {
