@@ -37,6 +37,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const [sidebar_open, set_sidebar_open] = React.useState(false);
   const is_superadmin = session?.ruolo === "superadmin";
   const is_admin = session?.ruolo === "admin";
+  const is_presidente = (session?.ruolo as string) === "presidente";
+  const can_manage_users = is_superadmin || is_admin || is_presidente;
   const non_lette_iscrizioni = use_count_iscrizioni_non_lette();
 
   const { data: permessi = [] } = useQuery({
@@ -114,6 +116,13 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                 <span>Gestione Ruoli</span>
               </NavLink>
             </>
+          )}
+          {can_manage_users && !is_superadmin && (
+            <NavLink to="/utenti" onClick={() => set_sidebar_open(false)}
+              className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/utenti" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+              <Users className="w-4 h-4 shrink-0" />
+              <span>Utenti</span>
+            </NavLink>
           )}
           {is_superadmin && (
             <>

@@ -27,6 +27,7 @@ import SuperAdminManutenzione from "@/pages/SuperAdminManutenzione";
 import SuperAdminManutenzioneStr from "@/pages/SuperAdminManutenzioneStr";
 import NotFound from "@/pages/NotFound";
 import RuoliPermessiPage from "@/pages/RuoliPermessiPage";
+import UtentiPage from "@/pages/UtentiPage";
 import RichiesteIscrizionePage from "@/pages/RichiesteIscrizionePage";
 import NuovaStagionePage from "@/pages/NuovaStagionePage";
 import TestLivelloPage from "@/pages/TestLivelloPage";
@@ -119,6 +120,7 @@ const AuthenticatedApp = () => {
           <Route path="/gestione-avanzata" element={<AdvancedManagementPage />} />
           <Route path="/richieste-iscrizione" element={<RichiesteIscrizionePage />} />
           <Route path="/ruoli-permessi" element={<RuoliPermessiPage />} />
+          <Route path="/utenti" element={<UtentiPage />} />
           <Route path="/nuova-stagione" element={<NuovaStagionePage />} />
           <Route path="/test-mobile-auth" element={<TestMobileAuthPage />} />
           <Route

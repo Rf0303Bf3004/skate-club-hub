@@ -2631,6 +2631,7 @@ export type Database = {
           id: string
           nome: string
           ruolo: string
+          telefono: string | null
           user_id: string
         }
         Insert: {
@@ -2641,6 +2642,7 @@ export type Database = {
           id?: string
           nome?: string
           ruolo?: string
+          telefono?: string | null
           user_id: string
         }
         Update: {
@@ -2651,6 +2653,7 @@ export type Database = {
           id?: string
           nome?: string
           ruolo?: string
+          telefono?: string | null
           user_id?: string
         }
         Relationships: [
