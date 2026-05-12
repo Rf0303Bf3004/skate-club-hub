@@ -27,6 +27,7 @@ import SuperAdminManutenzione from "@/pages/SuperAdminManutenzione";
 import SuperAdminManutenzioneStr from "@/pages/SuperAdminManutenzioneStr";
 import NotFound from "@/pages/NotFound";
 import RuoliPermessiPage from "@/pages/RuoliPermessiPage";
+import UtentiPage from "@/pages/UtentiPage";
 import RichiesteIscrizionePage from "@/pages/RichiesteIscrizionePage";
 import NuovaStagionePage from "@/pages/NuovaStagionePage";
 import TestLivelloPage from "@/pages/TestLivelloPage";
