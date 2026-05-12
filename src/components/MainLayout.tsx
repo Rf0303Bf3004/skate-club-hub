@@ -5,12 +5,14 @@ import { useAuth } from "@/lib/auth";
 import { use_club } from "@/hooks/use-supabase-data";
 import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
-import { LayoutDashboard, Users, BookOpen, Trophy, CreditCard, MessageSquare, Settings, Calendar, UserCheck, Tent, GraduationCap, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, Lock, ClipboardList, ClipboardCheck, Sparkles, Medal } from "lucide-react";
+import { LayoutDashboard, Users, BookOpen, Trophy, CreditCard, MessageSquare, Settings, Calendar, UserCheck, Tent, GraduationCap, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, Lock, ClipboardList, ClipboardCheck, ChevronDown, ChevronRight } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { use_count_iscrizioni_non_lette } from "@/components/comunicazioni/IscrizioniAtletiNotifiche";
+import { MENU_PRINCIPALE, MENU_SETUP } from "@/config/menuSections";
 
-const all_nav_items = [
+// Voci legacy (admin/superadmin vedono questo menu come prima)
+const legacy_nav_items = [
   { key: "dashboard", sezione: "dashboard", path: "/", icon: LayoutDashboard },
   { key: "atleti", sezione: "atleti", path: "/atleti", icon: Users },
   { key: "istruttori", sezione: "istruttori", path: "/istruttori", icon: UserCheck },
@@ -21,11 +23,12 @@ const all_nav_items = [
   { key: "lezioni_private", sezione: "lezioni_private", path: "/lezioni-private", icon: GraduationCap },
   { key: "fatture", sezione: "fatture", path: "/fatture", icon: CreditCard },
   { key: "comunicazioni", sezione: "comunicazioni", path: "/comunicazioni", icon: MessageSquare },
-
   { key: "planning_ghiaccio", sezione: "planning_ghiaccio", path: "/planning", icon: Calendar },
   { key: "richieste_iscrizione", sezione: "richieste_iscrizione", path: "/richieste-iscrizione", icon: ClipboardList },
   { key: "setup_club", sezione: "setup_club", path: "/setup-club", icon: Settings },
 ];
+
+const RUOLI_NUOVI = ["presidente", "segreteria", "dt", "istruttore", "aiuto_monitore"];
 
 interface MainLayoutProps { children: React.ReactNode; }
 
@@ -41,29 +44,52 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const can_manage_users = is_superadmin || is_admin || is_presidente;
   const non_lette_iscrizioni = use_count_iscrizioni_non_lette();
 
-  const { data: permessi = [] } = useQuery({
-    queryKey: ["ruoli_permessi", session?.club_id, session?.ruolo],
+  const is_legacy = is_admin || is_superadmin;
+  const is_nuovo_ruolo = !is_legacy && RUOLI_NUOVI.includes(session?.ruolo as string);
+
+  const { data: permessi_sezioni = [] } = useQuery({
+    queryKey: ["ruoli_permessi_sezioni", session?.club_id, session?.ruolo],
     queryFn: async () => {
-      if (!session?.club_id || !session?.ruolo || is_admin || is_superadmin) return [];
+      if (!session?.club_id || !session?.ruolo) return [];
       const { data, error } = await supabase
-        .from("ruoli_permessi")
-        .select("sezione, abilitato")
+        .from("ruoli_permessi_sezioni" as any)
+        .select("codice_sezione, visibile")
         .eq("club_id", session.club_id)
         .eq("ruolo", session.ruolo);
       if (error) return [];
       return data ?? [];
     },
-    enabled: !!session && !is_admin && !is_superadmin,
+    enabled: is_nuovo_ruolo,
   });
 
-  const can_see = (sezione: string): boolean => {
-    if (is_superadmin || is_admin) return true;
-    if (sezione === "dashboard") return true;
-    const p = permessi.find((x: any) => x.sezione === sezione);
-    return p ? p.abilitato : false;
-  };
+  const visibile_set = React.useMemo(() => {
+    const s = new Set<string>();
+    for (const p of permessi_sezioni as any[]) if (p.visibile) s.add(p.codice_sezione);
+    return s;
+  }, [permessi_sezioni]);
 
-  const nav_items = all_nav_items.filter((item) => can_see(item.sezione));
+  const nuovo_principale = MENU_PRINCIPALE.filter((s) => visibile_set.has(s.codice));
+  const nuovo_setup = MENU_SETUP.filter((s) => visibile_set.has(s.codice));
+
+  const nav_items = legacy_nav_items;
+  const [setup_open, set_setup_open] = React.useState(true);
+
+  const render_nav_item = (path: string, Icon: any, label: string, key: string) => {
+    const is_active = location.pathname === path || (path !== "/" && location.pathname.startsWith(path));
+    const show_badge = key === "comunicazioni" && non_lette_iscrizioni > 0;
+    return (
+      <NavLink key={key} to={path} onClick={() => set_sidebar_open(false)}
+        className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${is_active ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+        <Icon className="w-4 h-4 shrink-0" />
+        <span>{label}</span>
+        {show_badge && (
+          <span className="ml-auto inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold tabular-nums">
+            {non_lette_iscrizioni}
+          </span>
+        )}
+      </NavLink>
+    );
+  };
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -86,22 +112,33 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           </button>
         </div>
         <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
-          {!is_superadmin && nav_items.map((item) => {
-            const is_active = location.pathname === item.path || (item.path !== "/" && location.pathname.startsWith(item.path));
-            const show_badge = item.key === "comunicazioni" && non_lette_iscrizioni > 0;
-            return (
-              <NavLink key={item.key} to={item.path} onClick={() => set_sidebar_open(false)}
-                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${is_active ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
-                <item.icon className="w-4 h-4 shrink-0" />
-                <span>{t(item.key)}</span>
-                {show_badge && (
-                  <span className="ml-auto inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold tabular-nums">
-                    {non_lette_iscrizioni}
-                  </span>
-                )}
-              </NavLink>
-            );
-          })}
+          {/* Admin (non superadmin): menu legacy invariato */}
+          {is_admin && !is_superadmin && nav_items.map((item) =>
+            render_nav_item(item.path, item.icon, t(item.key), item.key)
+          )}
+          {/* Nuovi ruoli: voci principali + gruppo Setup espandibile */}
+          {is_nuovo_ruolo && (
+            <>
+              {nuovo_principale.map((s) => render_nav_item(s.path, s.icon, s.label, s.codice))}
+              {nuovo_setup.length > 0 && (
+                <div className="pt-2">
+                  <button
+                    onClick={() => set_setup_open((o) => !o)}
+                    className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+                  >
+                    <Settings className="w-4 h-4 shrink-0" />
+                    <span>Setup</span>
+                    {setup_open ? <ChevronDown className="w-4 h-4 ml-auto" /> : <ChevronRight className="w-4 h-4 ml-auto" />}
+                  </button>
+                  {setup_open && (
+                    <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border pl-2">
+                      {nuovo_setup.map((s) => render_nav_item(s.path, s.icon, s.label, s.codice))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
           {is_admin && (
             <>
               <div className="pt-3 pb-1"><div className="border-t border-border" /></div>
