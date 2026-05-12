@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { Shield, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import DashboardCardsPermessi from "@/components/ruoli-permessi/DashboardCardsPermessi";
 
 const RUOLI = ["segreteria", "direttore_tecnico", "istruttore"];
 const RUOLI_LABEL: Record<string, string> = {
@@ -119,6 +120,10 @@ const RuoliPermessiPage: React.FC = () => {
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
         <p className="text-sm text-blue-700 font-medium">Nota</p>
         <p className="text-xs text-blue-600 mt-1">L'admin vede sempre tutto. La Dashboard e visibile per tutti. Le modifiche si applicano al prossimo login degli utenti.</p>
+      </div>
+
+      <div className="pt-4 border-t border-border">
+        <DashboardCardsPermessi />
       </div>
     </div>
   );
