@@ -1082,13 +1082,14 @@ const DashboardPage: React.FC = () => {
 
       {/* KPI */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title="Atleti attivi" value={String(active_atleti)} icon={<Users className="w-5 h-5" />} />
-        <KPICard title="Corsi attivi" value={String(active_corsi)} icon={<BookOpen className="w-5 h-5" />} />
+        <KPICard title="Atleti attivi" value={String(active_atleti)} icon={<Users className="w-5 h-5" />} to="/atleti?filtro=attivi" />
+        <KPICard title="Corsi attivi" value={String(active_corsi)} icon={<BookOpen className="w-5 h-5" />} to="/corsi" />
         <KPICard
           title="Prossime gare"
           value={String(upcoming_gare.length)}
           icon={<Trophy className="w-5 h-5" />}
           subtitle={next_gara ? `fra ${days_until(next_gara.data)}gg: ${next_gara.nome}` : undefined}
+          to="/gare"
         />
         <KPICard
           title="Da incassare"
@@ -1100,6 +1101,7 @@ const DashboardPage: React.FC = () => {
               ? `${fatture_scadute_count} scadute · ${fatture_in_arrivo_count} in arrivo`
               : undefined
           }
+          to="/fatture?filtro=da_pagare"
         />
       </div>
 
