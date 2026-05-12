@@ -2216,6 +2216,47 @@ export type Database = {
           },
         ]
       }
+      ruoli_permessi_sezioni: {
+        Row: {
+          club_id: string
+          codice_sezione: string
+          created_at: string
+          id: string
+          ordine: number
+          ruolo: string
+          updated_at: string
+          visibile: boolean
+        }
+        Insert: {
+          club_id: string
+          codice_sezione: string
+          created_at?: string
+          id?: string
+          ordine?: number
+          ruolo: string
+          updated_at?: string
+          visibile?: boolean
+        }
+        Update: {
+          club_id?: string
+          codice_sezione?: string
+          created_at?: string
+          id?: string
+          ordine?: number
+          ruolo?: string
+          updated_at?: string
+          visibile?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ruoli_permessi_sezioni_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sessioni_campo: {
         Row: {
           created_at: string
