@@ -37,7 +37,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const [sidebar_open, set_sidebar_open] = React.useState(false);
   const is_superadmin = session?.ruolo === "superadmin";
   const is_admin = session?.ruolo === "admin";
-  const is_presidente = session?.ruolo === "presidente";
+  const is_presidente = (session?.ruolo as string) === "presidente";
   const can_manage_users = is_superadmin || is_admin || is_presidente;
   const non_lette_iscrizioni = use_count_iscrizioni_non_lette();
 
