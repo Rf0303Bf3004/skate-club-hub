@@ -129,7 +129,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           {/* Nuovi ruoli: voci principali + gruppo Setup espandibile */}
           {is_nuovo_ruolo && (
             <>
-              {nuovo_principale.map((s) => render_nav_item(s.path, s.icon, s.label, s.codice))}
+              {nuovo_principale.map((s) => render_nav_item(s.path, s.icon, s.label, s.codice, s.non_implementato))}
               {nuovo_setup.length > 0 && (
                 <div className="pt-2">
                   <button
