@@ -120,6 +120,7 @@ const AuthenticatedApp = () => {
           <Route path="/gestione-avanzata" element={<AdvancedManagementPage />} />
           <Route path="/richieste-iscrizione" element={<RichiesteIscrizionePage />} />
           <Route path="/ruoli-permessi" element={<RuoliPermessiPage />} />
+          <Route path="/utenti" element={<UtentiPage />} />
           <Route path="/nuova-stagione" element={<NuovaStagionePage />} />
           <Route path="/test-mobile-auth" element={<TestMobileAuthPage />} />
           <Route
