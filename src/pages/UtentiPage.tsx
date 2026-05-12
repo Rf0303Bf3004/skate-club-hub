@@ -118,7 +118,24 @@ const UtentiPage: React.FC = () => {
         .eq("club_id", club_id)
         .order("cognome", { ascending: true });
       if (error) throw error;
-      return (data ?? []) as UtenteRow[];
+      const rows = (data ?? []) as UtenteRow[];
+      const user_ids = rows.map((r) => r.user_id).filter(Boolean);
+      if (user_ids.length === 0) return rows;
+      try {
+        const { data: sess_data } = await supabase.auth.getSession();
+        const r = await supabase.functions.invoke("manage-user", {
+          body: { action: "list_auth_info", club_id, user_ids },
+          headers: sess_data.session ? { Authorization: `Bearer ${sess_data.session.access_token}` } : {},
+        });
+        const map = (r.data as any)?.users ?? {};
+        return rows.map((row) => ({
+          ...row,
+          email: map[row.user_id]?.email ?? undefined,
+          last_sign_in_at: map[row.user_id]?.last_sign_in_at ?? null,
+        }));
+      } catch {
+        return rows;
+      }
     },
     enabled: !!club_id && !!allowed,
   });
