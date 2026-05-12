@@ -74,9 +74,19 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const nav_items = legacy_nav_items;
   const [setup_open, set_setup_open] = React.useState(true);
 
-  const render_nav_item = (path: string, Icon: any, label: string, key: string) => {
+  const render_nav_item = (path: string, Icon: any, label: string, key: string, disabled?: boolean) => {
     const is_active = location.pathname === path || (path !== "/" && location.pathname.startsWith(path));
     const show_badge = key === "comunicazioni" && non_lette_iscrizioni > 0;
+    if (disabled) {
+      return (
+        <div key={key} title="Prossimamente"
+          className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground/40 cursor-not-allowed select-none">
+          <Icon className="w-4 h-4 shrink-0" />
+          <span>{label}</span>
+          <span className="ml-auto text-[9px] uppercase tracking-wider opacity-70">soon</span>
+        </div>
+      );
+    }
     return (
       <NavLink key={key} to={path} onClick={() => set_sidebar_open(false)}
         className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${is_active ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
