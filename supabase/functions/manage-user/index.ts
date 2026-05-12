@@ -105,6 +105,28 @@ Deno.serve(async (req) => {
       return json({ ok: true });
     }
 
+    if (action === "list_auth_info") {
+      const { user_ids } = body;
+      if (!Array.isArray(user_ids)) return json({ error: "missing_params" }, 400);
+      const result: Record<string, { email: string | null; last_sign_in_at: string | null }> = {};
+      // paginate listUsers
+      let page = 1;
+      const set = new Set(user_ids);
+      while (set.size > 0 && page < 20) {
+        const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 });
+        if (error) break;
+        for (const u of data.users) {
+          if (set.has(u.id)) {
+            result[u.id] = { email: u.email ?? null, last_sign_in_at: u.last_sign_in_at ?? null };
+            set.delete(u.id);
+          }
+        }
+        if (data.users.length < 200) break;
+        page++;
+      }
+      return json({ ok: true, users: result });
+    }
+
     return json({ error: "unknown_action" }, 400);
   } catch (e: any) {
     return json({ error: e?.message || "internal_error" }, 500);
