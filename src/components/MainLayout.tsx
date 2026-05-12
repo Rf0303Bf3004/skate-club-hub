@@ -142,7 +142,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                   </button>
                   {setup_open && (
                     <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border pl-2">
-                      {nuovo_setup.map((s) => render_nav_item(s.path, s.icon, s.label, s.codice))}
+                      {nuovo_setup.map((s) => render_nav_item(s.path, s.icon, s.label, s.codice, s.non_implementato))}
                     </div>
                   )}
                 </div>
