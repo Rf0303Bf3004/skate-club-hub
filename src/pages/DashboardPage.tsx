@@ -117,26 +117,32 @@ const KPICard: React.FC<{
   trend?: string;
   highlight?: boolean;
   subtitle?: string;
-}> = ({ title, value, icon, trend, highlight, subtitle }) => (
-  <div
-    className={`rounded-xl shadow-card p-5 bg-card transition-shadow hover:shadow-card-hover ${highlight ? "ring-1 ring-accent/30" : ""}`}
-  >
-    <div className="flex items-start justify-between">
-      <div className="space-y-1">
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{title}</p>
-        <p className="text-2xl font-bold tracking-tight tabular-nums text-foreground">{value}</p>
-        {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+  to?: string;
+}> = ({ title, value, icon, trend, highlight, subtitle, to }) => {
+  const navigate = useNavigate();
+  const clickable = !!to;
+  return (
+    <div
+      onClick={clickable ? () => navigate(to!) : undefined}
+      className={`rounded-xl shadow-card p-5 bg-card transition-all hover:shadow-card-hover ${highlight ? "ring-1 ring-accent/30" : ""} ${clickable ? "cursor-pointer hover:scale-[1.02] hover:ring-1 hover:ring-primary/30" : ""}`}
+    >
+      <div className="flex items-start justify-between">
+        <div className="space-y-1">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{title}</p>
+          <p className="text-2xl font-bold tracking-tight tabular-nums text-foreground">{value}</p>
+          {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+        </div>
+        <div className="w-10 h-10 rounded-lg bg-primary/5 flex items-center justify-center text-primary">{icon}</div>
       </div>
-      <div className="w-10 h-10 rounded-lg bg-primary/5 flex items-center justify-center text-primary">{icon}</div>
+      {trend && (
+        <div className="mt-3 flex items-center gap-1 text-xs font-medium text-success">
+          <TrendingUp className="w-3 h-3" />
+          {trend}
+        </div>
+      )}
     </div>
-    {trend && (
-      <div className="mt-3 flex items-center gap-1 text-xs font-medium text-success">
-        <TrendingUp className="w-3 h-3" />
-        {trend}
-      </div>
-    )}
-  </div>
-);
+  );
+};
 
 // ─── Card corso del giorno ─────────────────────────────────
 const CorsoCard: React.FC<{
