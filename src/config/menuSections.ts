@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Trophy, Clock,
   Receipt, MessageSquare, Building2, Calendar, CalendarRange, MapPin,
-  ListChecks, Handshake, UserCog, ShieldCheck, Wrench,
+  ListChecks, Handshake, UserCog, ShieldCheck, Wrench, FileSpreadsheet,
 } from "lucide-react";
 
 export type MenuGruppo = "principale" | "setup";
@@ -35,7 +35,8 @@ export const MENU_SECTIONS: MenuSection[] = [
   { codice: "sponsor",           label: "Sponsor",            icon: Handshake,     path: "/sponsor",           gruppo: "setup", ordine: 6, non_implementato: true },
   { codice: "gestione_utenti",   label: "Gestione Utenti",    icon: UserCog,       path: "/utenti",            gruppo: "setup", ordine: 7 },
   { codice: "ruoli_permessi",    label: "Gestione Ruoli",     icon: ShieldCheck,   path: "/ruoli-permessi",    gruppo: "setup", ordine: 8 },
-  { codice: "gestione_avanzata", label: "Gestione Avanzata",  icon: Wrench,        path: "/gestione-avanzata", gruppo: "setup", ordine: 9 },
+  { codice: "gestione_avanzata", label: "Gestione Avanzata",  icon: Wrench,            path: "/gestione-avanzata", gruppo: "setup", ordine: 9 },
+  { codice: "import_dati",       label: "Import dati",        icon: FileSpreadsheet,   path: "/import-atleti",     gruppo: "setup", ordine: 10 },
 ];
 
 export const MENU_PRINCIPALE = MENU_SECTIONS.filter((s) => s.gruppo === "principale").sort((a, b) => a.ordine - b.ordine);
