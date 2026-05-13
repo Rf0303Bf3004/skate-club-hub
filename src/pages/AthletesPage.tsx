@@ -537,6 +537,7 @@ const AtletaModal: React.FC<{
 const AthletesPage: React.FC = () => {
   const { t } = useI18n();
   const navigate = useNavigate();
+  const { session } = useAuth();
   const params = useParams<{ id?: string }>();
   const { data: atleti = [], isLoading } = use_atleti();
   const upsert = use_upsert_atleta();
