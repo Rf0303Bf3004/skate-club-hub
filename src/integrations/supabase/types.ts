@@ -120,6 +120,7 @@ export type Database = {
           ore_pista_stagione: number | null
           portal_token: string | null
           ruolo_pista: string | null
+          sesso: string | null
           tag_nfc: string | null
           telefono: string | null
         }
@@ -167,6 +168,7 @@ export type Database = {
           ore_pista_stagione?: number | null
           portal_token?: string | null
           ruolo_pista?: string | null
+          sesso?: string | null
           tag_nfc?: string | null
           telefono?: string | null
         }
@@ -214,6 +216,7 @@ export type Database = {
           ore_pista_stagione?: number | null
           portal_token?: string | null
           ruolo_pista?: string | null
+          sesso?: string | null
           tag_nfc?: string | null
           telefono?: string | null
         }

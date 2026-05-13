@@ -21,7 +21,7 @@ const TARGET_FIELDS = [
   { key: "nome",          label: "Nome",          required: true  },
   { key: "cognome",       label: "Cognome",       required: true  },
   { key: "data_nascita",  label: "Data di nascita", required: true },
-  { key: "sesso",         label: "Sesso (M/F/X)", required: false },
+  { key: "sesso",         label: "Sesso (M/F)",     required: false },
   { key: "email",         label: "Email",         required: false },
   { key: "telefono",      label: "Telefono",      required: false },
   { key: "livello",       label: "Livello",       required: false },
@@ -108,6 +108,13 @@ function norm_string(s: any): string {
   return String(s ?? "").trim();
 }
 
+function normalize_sesso(s: any): string {
+  const v = norm_string(s).toLowerCase();
+  if (["m", "maschio", "male", "uomo", "boy"].includes(v)) return "M";
+  if (["f", "femmina", "female", "donna", "girl"].includes(v)) return "F";
+  return v.toUpperCase(); // ritorna il valore originale in maiuscolo per validazione
+}
+
 function dup_key(nome: string, cognome: string, data_nascita: string): string {
   return `${nome.toLowerCase()}|${cognome.toLowerCase()}|${data_nascita}`;
 }
@@ -181,7 +188,7 @@ const ImportAtletiPage: React.FC = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("atleti")
-        .select("id, nome, cognome, data_nascita, telefono, genitore1_email, livello_attuale")
+        .select("id, nome, cognome, data_nascita, telefono, genitore1_email, livello_attuale, sesso")
         .eq("club_id", club_id);
       return data ?? [];
     },
@@ -258,7 +265,7 @@ const ImportAtletiPage: React.FC = () => {
       const cognome = get("cognome");
       const data_raw = mapping.data_nascita ? r[mapping.data_nascita] : "";
       const data_nascita = parse_date(data_raw) || "";
-      const sesso_raw = get("sesso").toUpperCase();
+      const sesso_raw = normalize_sesso(mapping.sesso ? r[mapping.sesso] : "");
       const email = get("email").toLowerCase();
       const telefono = get("telefono");
       const livello = get("livello");
@@ -268,7 +275,7 @@ const ImportAtletiPage: React.FC = () => {
       if (!cognome) errors.push("Cognome mancante");
       if (mapping.data_nascita && !data_nascita) errors.push("Data nascita non valida");
       else if (!data_nascita) errors.push("Data nascita mancante");
-      if (sesso_raw && !["M", "F", "X"].includes(sesso_raw)) errors.push("Sesso non valido");
+      if (sesso_raw && !["M", "F"].includes(sesso_raw)) errors.push("Sesso non valido");
       if (email && !valid_email(email)) errors.push("Email malformata");
       if (livello && livelli_set.size > 0 && !livelli_set.has(livello.toLowerCase())) {
         errors.push(`Livello "${livello}" non esistente`);
@@ -319,6 +326,7 @@ const ImportAtletiPage: React.FC = () => {
           if (!existing?.telefono && row.normalized.telefono) patch.telefono = row.normalized.telefono;
           if (!existing?.genitore1_email && row.normalized.email) patch.genitore1_email = row.normalized.email;
           if (!existing?.livello_attuale && row.normalized.livello) patch.livello_attuale = row.normalized.livello;
+          if (!existing?.sesso && row.normalized.sesso) patch.sesso = row.normalized.sesso;
           if (Object.keys(patch).length > 0) {
             const { error } = await supabase.from("atleti").update(patch).eq("id", row.existing_id);
             if (error) throw error;
@@ -341,6 +349,7 @@ const ImportAtletiPage: React.FC = () => {
           if (row.normalized.telefono) insert_payload.telefono = row.normalized.telefono;
           if (row.normalized.email) insert_payload.genitore1_email = row.normalized.email;
           if (row.normalized.livello) insert_payload.livello_attuale = row.normalized.livello;
+          if (row.normalized.sesso) insert_payload.sesso = row.normalized.sesso;
           const { error } = await supabase.from("atleti").insert(insert_payload);
           if (error) throw error;
           creati++;
