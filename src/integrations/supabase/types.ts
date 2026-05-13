@@ -85,6 +85,7 @@ export type Database = {
           carriera_stile: string | null
           categoria: string
           club_id: string
+          codice_atleta: string | null
           codice_fiscale: string | null
           cognome: string
           compenso_orario_pista: number | null
@@ -131,6 +132,7 @@ export type Database = {
           carriera_stile?: string | null
           categoria?: string
           club_id: string
+          codice_atleta?: string | null
           codice_fiscale?: string | null
           cognome?: string
           compenso_orario_pista?: number | null
@@ -177,6 +179,7 @@ export type Database = {
           carriera_stile?: string | null
           categoria?: string
           club_id?: string
+          codice_atleta?: string | null
           codice_fiscale?: string | null
           cognome?: string
           compenso_orario_pista?: number | null
@@ -2734,6 +2737,7 @@ export type Database = {
           tipo: string
         }[]
       }
+      genera_codice_atleta: { Args: never; Returns: string }
       genera_settimana_planning: {
         Args: { p_settimana_id: string }
         Returns: number
