@@ -876,15 +876,25 @@ const AthletesPage: React.FC = () => {
         )}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <h1 className="text-xl font-bold tracking-tight text-foreground">{t("atleti")}</h1>
-          <Button
-            className="bg-primary hover:bg-primary/90"
-            onClick={() => {
-              set_selected_atleta(null);
-              set_modal_open(true);
-            }}
-          >
-            <Plus className="w-4 h-4 mr-2" /> {t("nuovo_atleta")}
-          </Button>
+          <div className="flex items-center gap-2">
+            {(["presidente", "segreteria", "admin", "superadmin"].includes(session?.ruolo as string)) && (
+              <Button
+                variant="outline"
+                onClick={() => navigate("/import-atleti")}
+              >
+                <Upload className="w-4 h-4 mr-2" /> Importa da Excel
+              </Button>
+            )}
+            <Button
+              className="bg-primary hover:bg-primary/90"
+              onClick={() => {
+                set_selected_atleta(null);
+                set_modal_open(true);
+              }}
+            >
+              <Plus className="w-4 h-4 mr-2" /> {t("nuovo_atleta")}
+            </Button>
+          </div>
         </div>
 
         {/* Card livelli — 3 sezioni: PULCINI / AMATORI / ARTISTICA */}
