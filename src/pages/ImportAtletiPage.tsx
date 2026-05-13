@@ -188,7 +188,7 @@ const ImportAtletiPage: React.FC = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("atleti")
-        .select("id, nome, cognome, data_nascita, telefono, genitore1_email, livello_attuale")
+        .select("id, nome, cognome, data_nascita, telefono, genitore1_email, livello_attuale, sesso")
         .eq("club_id", club_id);
       return data ?? [];
     },
