@@ -21,7 +21,7 @@ const TARGET_FIELDS = [
   { key: "nome",          label: "Nome",          required: true  },
   { key: "cognome",       label: "Cognome",       required: true  },
   { key: "data_nascita",  label: "Data di nascita", required: true },
-  { key: "sesso",         label: "Sesso (M/F/X)", required: false },
+  { key: "sesso",         label: "Sesso (M/F)",     required: false },
   { key: "email",         label: "Email",         required: false },
   { key: "telefono",      label: "Telefono",      required: false },
   { key: "livello",       label: "Livello",       required: false },
