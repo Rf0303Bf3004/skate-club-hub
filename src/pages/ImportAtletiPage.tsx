@@ -275,7 +275,7 @@ const ImportAtletiPage: React.FC = () => {
       if (!cognome) errors.push("Cognome mancante");
       if (mapping.data_nascita && !data_nascita) errors.push("Data nascita non valida");
       else if (!data_nascita) errors.push("Data nascita mancante");
-      if (sesso_raw && !["M", "F", "X"].includes(sesso_raw)) errors.push("Sesso non valido");
+      if (sesso_raw && !["M", "F"].includes(sesso_raw)) errors.push("Sesso non valido");
       if (email && !valid_email(email)) errors.push("Email malformata");
       if (livello && livelli_set.size > 0 && !livelli_set.has(livello.toLowerCase())) {
         errors.push(`Livello "${livello}" non esistente`);
