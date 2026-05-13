@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { AlertTriangle } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
+import { useAuth } from "@/lib/auth";
 import { use_atleti, use_club, use_adesioni_atleta, is_atleta_attivo_oggi } from "@/hooks/use-supabase-data";
 import { use_upsert_atleta, use_elimina_atleta } from "@/hooks/use-supabase-mutations";
 import { calculate_age } from "@/lib/mock-data";
