@@ -349,6 +349,7 @@ const ImportAtletiPage: React.FC = () => {
           if (row.normalized.telefono) insert_payload.telefono = row.normalized.telefono;
           if (row.normalized.email) insert_payload.genitore1_email = row.normalized.email;
           if (row.normalized.livello) insert_payload.livello_attuale = row.normalized.livello;
+          if (row.normalized.sesso) insert_payload.sesso = row.normalized.sesso;
           const { error } = await supabase.from("atleti").insert(insert_payload);
           if (error) throw error;
           creati++;
