@@ -265,7 +265,7 @@ const ImportAtletiPage: React.FC = () => {
       const cognome = get("cognome");
       const data_raw = mapping.data_nascita ? r[mapping.data_nascita] : "";
       const data_nascita = parse_date(data_raw) || "";
-      const sesso_raw = get("sesso").toUpperCase();
+      const sesso_raw = normalize_sesso(mapping.sesso ? r[mapping.sesso] : "");
       const email = get("email").toLowerCase();
       const telefono = get("telefono");
       const livello = get("livello");
