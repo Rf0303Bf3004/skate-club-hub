@@ -326,6 +326,7 @@ const ImportAtletiPage: React.FC = () => {
           if (!existing?.telefono && row.normalized.telefono) patch.telefono = row.normalized.telefono;
           if (!existing?.genitore1_email && row.normalized.email) patch.genitore1_email = row.normalized.email;
           if (!existing?.livello_attuale && row.normalized.livello) patch.livello_attuale = row.normalized.livello;
+          if (!existing?.sesso && row.normalized.sesso) patch.sesso = row.normalized.sesso;
           if (Object.keys(patch).length > 0) {
             const { error } = await supabase.from("atleti").update(patch).eq("id", row.existing_id);
             if (error) throw error;
