@@ -35,6 +35,7 @@ import PortaleAtletaPage from "@/pages/PortaleAtletaPage";
 import CampiEventiPage from "@/pages/CampiEventiPage";
 import MedagliereePage from "@/pages/MedagliereePage";
 import TestMobileAuthPage from "@/pages/TestMobileAuthPage";
+import ImportAtletiPage from "@/pages/ImportAtletiPage";
 
 const queryClient = new QueryClient();
 
@@ -123,6 +124,7 @@ const AuthenticatedApp = () => {
           <Route path="/utenti" element={<UtentiPage />} />
           <Route path="/nuova-stagione" element={<NuovaStagionePage />} />
           <Route path="/test-mobile-auth" element={<TestMobileAuthPage />} />
+          <Route path="/import-atleti" element={<ImportAtletiPage />} />
           <Route
             path="/superadmin"
             element={
