@@ -108,6 +108,13 @@ function norm_string(s: any): string {
   return String(s ?? "").trim();
 }
 
+function normalize_sesso(s: any): string {
+  const v = norm_string(s).toLowerCase();
+  if (["m", "maschio", "male", "uomo", "boy"].includes(v)) return "M";
+  if (["f", "femmina", "female", "donna", "girl"].includes(v)) return "F";
+  return v.toUpperCase(); // ritorna il valore originale in maiuscolo per validazione
+}
+
 function dup_key(nome: string, cognome: string, data_nascita: string): string {
   return `${nome.toLowerCase()}|${cognome.toLowerCase()}|${data_nascita}`;
 }
