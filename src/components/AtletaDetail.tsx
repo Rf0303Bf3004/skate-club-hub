@@ -695,16 +695,38 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
               <Badge className={atleta_attivo ? "bg-green-100 text-green-800 border-0 text-xs" : "bg-muted text-muted-foreground border-0 text-xs"}>
                 {atleta_attivo ? "Attivo" : "Inattivo"}
               </Badge>
-              {livello_display && <Badge variant="secondary">{livello_display}</Badge>}
-              {form.carriera_artistica && (
-                <Badge className="bg-purple-100 text-purple-800 border-0 text-xs">
-                  Artistica: {form.carriera_artistica}
-                </Badge>
+              {(() => {
+                const cat = form.categoria;
+                if (cat === "pulcini") {
+                  return <Badge className="bg-blue-100 text-blue-800 border-0 text-xs">Pulcini</Badge>;
+                }
+                if (cat === "amatori") {
+                  return form.livello_amatori ? (
+                    <Badge className="bg-teal-100 text-teal-800 border-0 text-xs">{form.livello_amatori}</Badge>
+                  ) : null;
+                }
+                if (cat === "artistica") {
+                  const order = ["Interbronzo", "Bronzo", "Interargento", "Argento", "Interoro", "Oro"];
+                  const a_idx = order.indexOf(form.livello_artistica || "");
+                  const s_idx = order.indexOf(form.livello_stile || "");
+                  const max_idx = Math.max(a_idx, s_idx);
+                  const top = max_idx >= 0 ? order[max_idx] : (form.livello_amatori || null);
+                  return top ? <Badge className="bg-amber-100 text-amber-800 border-0 text-xs">{top}</Badge> : null;
+                }
+                return null;
+              })()}
+              {form.categoria === "artistica" && form.livello_artistica && (
+                <Badge className="bg-purple-100 text-purple-800 border-0 text-xs">Percorso Artistica</Badge>
               )}
-              {form.carriera_stile && (
-                <Badge className="bg-blue-100 text-blue-800 border-0 text-xs">Stile: {form.carriera_stile}</Badge>
+              {form.categoria === "artistica" && form.livello_stile && (
+                <Badge className="bg-pink-100 text-pink-800 border-0 text-xs">Percorso Stile</Badge>
               )}
-              <AthleteBadges agonista={form.agonista} atleta_federazione={form.atleta_federazione} />
+              {form.agonista && (
+                <Badge className="bg-orange-100 text-orange-800 border-0 text-xs">Agonista</Badge>
+              )}
+              {form.atleta_federazione && (
+                <Badge className="bg-indigo-100 text-indigo-800 border-0 text-xs">Federato</Badge>
+              )}
             </div>
           </div>
         </div>
