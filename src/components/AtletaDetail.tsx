@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/lib/auth";
+import { format_data_completa } from "@/lib/format-data";
+import { CheckCircle2, AlertTriangle } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { Calendar } from "lucide-react";
 import CalendarioAtletaInterattivo from "@/components/CalendarioAtletaInterattivo";
