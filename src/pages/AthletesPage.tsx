@@ -546,6 +546,7 @@ const AthletesPage: React.FC = () => {
   const [search, set_search] = useState("");
   const [level_filter, set_level_filter] = useState("tutti");
   const [status_filter, set_status_filter] = useState("tutti");
+  const [solo_da_verificare, set_solo_da_verificare] = useState(false);
   const [selected_id, set_selected_id] = useState<string | null>(params.id ?? null);
   useEffect(() => { if (params.id && params.id !== selected_id) set_selected_id(params.id); }, [params.id]);
   const [modal_open, set_modal_open] = useState(false);
