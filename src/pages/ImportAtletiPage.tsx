@@ -319,7 +319,20 @@ const ImportAtletiPage: React.FC = () => {
       const sesso_raw = normalize_sesso(mapping.sesso ? r[mapping.sesso] : "");
       const email = get("email").toLowerCase();
       const telefono = get("telefono");
-      const livello = get("livello");
+      const livello_input = get("livello");
+
+      // Normalizzazione livello: matching permissivo contro elenco ufficiale.
+      // Se non riconosciuto → warning (non errore), livello salvato come "".
+      let livello_canonico = "";
+      let livello_warning = false;
+      if (livello_input) {
+        const matched = match_livello_canonico(livello_input, livelli_db);
+        if (matched) {
+          livello_canonico = matched;
+        } else {
+          livello_warning = true;
+        }
+      }
 
       const errors: string[] = [];
       if (!nome) errors.push("Nome mancante");
@@ -328,9 +341,6 @@ const ImportAtletiPage: React.FC = () => {
       else if (!data_nascita) errors.push("Data nascita mancante");
       if (sesso_raw && !["M", "F"].includes(sesso_raw)) errors.push("Sesso non valido");
       if (email && !valid_email(email)) errors.push("Email malformata");
-      if (livello && livelli_set.size > 0 && !livelli_set.has(livello.toLowerCase())) {
-        errors.push(`Livello "${livello}" non esistente`);
-      }
 
       const existing = (nome && cognome && data_nascita)
         ? atleti_index.get(dup_key(nome, cognome, data_nascita))
@@ -343,7 +353,9 @@ const ImportAtletiPage: React.FC = () => {
       out.push({
         idx,
         raw: r,
-        normalized: { nome, cognome, data_nascita, sesso: sesso_raw, email, telefono, livello },
+        normalized: { nome, cognome, data_nascita, sesso: sesso_raw, email, telefono, livello: livello_canonico },
+        livello_raw: livello_input || undefined,
+        livello_warning,
         errors,
         status,
         existing_id: existing?.id,
@@ -351,7 +363,7 @@ const ImportAtletiPage: React.FC = () => {
     });
     set_parsed(out);
     set_step(3);
-  }, [rows, mapping, livelli_set, atleti_index]);
+  }, [rows, mapping, livelli_db, atleti_index]);
 
   const counts = useMemo(() => ({
     nuovi: parsed.filter((p) => p.status === "nuovo").length,
