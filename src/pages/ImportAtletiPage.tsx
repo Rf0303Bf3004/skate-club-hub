@@ -44,6 +44,10 @@ type ParsedRow = {
   idx: number;
   raw: RowRecord;
   normalized: Record<TargetKey, string>;
+  /** Valore originale del livello dal file (mostrato in caso di warning). */
+  livello_raw?: string;
+  /** True se il livello del file non è stato riconosciuto: import permissivo, livello → NULL. */
+  livello_warning?: boolean;
   errors: string[];
   status: "nuovo" | "aggiornamento" | "errore";
   existing_id?: string;
