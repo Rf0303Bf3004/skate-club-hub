@@ -886,7 +886,21 @@ const AthletesPage: React.FC = () => {
         )}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <h1 className="text-xl font-bold tracking-tight text-foreground">{t("atleti")}</h1>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {da_verificare_count > 0 && (
+              <button
+                onClick={() => set_solo_da_verificare((v) => !v)}
+                className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-semibold transition-colors ${solo_da_verificare ? "border-yellow-500 bg-yellow-100 text-yellow-900" : "border-yellow-300 bg-yellow-50 text-yellow-800 hover:bg-yellow-100"}`}
+                title="Mostra solo atleti non ancora verificati"
+              >
+                <AlertCircle className="w-3.5 h-3.5" />
+                {da_verificare_count} da verificare
+              </button>
+            )}
+            <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+              <Switch checked={solo_da_verificare} onCheckedChange={set_solo_da_verificare} />
+              <span>Solo da verificare</span>
+            </label>
             {(["presidente", "segreteria", "admin", "superadmin"].includes(session?.ruolo as string)) && (
               <Button
                 variant="outline"
