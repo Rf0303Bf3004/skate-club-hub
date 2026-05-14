@@ -44,6 +44,10 @@ type ParsedRow = {
   idx: number;
   raw: RowRecord;
   normalized: Record<TargetKey, string>;
+  /** Valore originale del livello dal file (mostrato in caso di warning). */
+  livello_raw?: string;
+  /** True se il livello del file non è stato riconosciuto: import permissivo, livello → NULL. */
+  livello_warning?: boolean;
   errors: string[];
   status: "nuovo" | "aggiornamento" | "errore";
   existing_id?: string;
@@ -115,6 +119,54 @@ function normalize_sesso(s: any): string {
   return v.toUpperCase(); // ritorna il valore originale in maiuscolo per validazione
 }
 
+/**
+ * Normalizza una stringa livello per il matching:
+ *  - strip accenti, lowercase, trim
+ *  - punteggiatura → spazio
+ *  - inserisce spazio fra lettere e cifre (es. "stellina1" → "stellina 1")
+ *  - collassa spazi multipli
+ */
+function normalize_livello_key(s: any): string {
+  let v = strip_accents(String(s ?? "").toLowerCase()).trim();
+  v = v.replace(/[._\-,;:/\\]+/g, " ");
+  v = v.replace(/([a-z])(\d)/g, "$1 $2").replace(/(\d)([a-z])/g, "$1 $2");
+  v = v.replace(/\s+/g, " ").trim();
+  return v;
+}
+
+/**
+ * Trova il livello canonico ufficiale che corrisponde al valore in input.
+ * Match: uguaglianza esatta normalizzata, oppure token-prefix
+ * (es. "stell 1" → "stellina 1": ogni token input è prefisso del corrispondente canonico).
+ * Ritorna il nome canonico (case originale del DB) oppure null.
+ */
+function match_livello_canonico(input: string, ufficiali: string[]): string | null {
+  const k = normalize_livello_key(input);
+  if (!k) return null;
+  // 1) match esatto normalizzato
+  for (const u of ufficiali) {
+    if (normalize_livello_key(u) === k) return u;
+  }
+  // 2) match token-prefix
+  const in_tokens = k.split(" ");
+  for (const u of ufficiali) {
+    const u_tokens = normalize_livello_key(u).split(" ");
+    if (u_tokens.length !== in_tokens.length) continue;
+    let ok = true;
+    for (let i = 0; i < in_tokens.length; i++) {
+      const it = in_tokens[i];
+      const ut = u_tokens[i];
+      if (it === ut) continue;
+      // se entrambi numerici, devono essere uguali
+      if (/^\d+$/.test(it) || /^\d+$/.test(ut)) { ok = false; break; }
+      // altrimenti il token input dev'essere prefisso (≥3 char) del canonico
+      if (it.length < 3 || !ut.startsWith(it)) { ok = false; break; }
+    }
+    if (ok) return u;
+  }
+  return null;
+}
+
 function dup_key(nome: string, cognome: string, data_nascita: string): string {
   return `${nome.toLowerCase()}|${cognome.toLowerCase()}|${data_nascita}`;
 }
@@ -172,15 +224,14 @@ const ImportAtletiPage: React.FC = () => {
   const [drag_active, set_drag_active] = useState(false);
   const file_input_ref = useRef<HTMLInputElement>(null);
 
-  // Fetch livelli per validazione
+  // Fetch livelli ufficiali (tabella globale, senza club_id)
   const { data: livelli_db = [] } = useQuery({
     queryKey: ["livelli_import"],
     queryFn: async () => {
       const { data } = await supabase.from("livelli").select("nome").eq("attivo", true);
-      return (data ?? []).map((l: any) => norm_string(l.nome));
+      return (data ?? []).map((l: any) => norm_string(l.nome)).filter(Boolean);
     },
   });
-  const livelli_set = useMemo(() => new Set(livelli_db.map((l) => l.toLowerCase())), [livelli_db]);
 
   // Fetch atleti del club per match duplicati
   const { data: atleti_db = [] } = useQuery({
@@ -268,7 +319,20 @@ const ImportAtletiPage: React.FC = () => {
       const sesso_raw = normalize_sesso(mapping.sesso ? r[mapping.sesso] : "");
       const email = get("email").toLowerCase();
       const telefono = get("telefono");
-      const livello = get("livello");
+      const livello_input = get("livello");
+
+      // Normalizzazione livello: matching permissivo contro elenco ufficiale.
+      // Se non riconosciuto → warning (non errore), livello salvato come "".
+      let livello_canonico = "";
+      let livello_warning = false;
+      if (livello_input) {
+        const matched = match_livello_canonico(livello_input, livelli_db);
+        if (matched) {
+          livello_canonico = matched;
+        } else {
+          livello_warning = true;
+        }
+      }
 
       const errors: string[] = [];
       if (!nome) errors.push("Nome mancante");
@@ -277,9 +341,6 @@ const ImportAtletiPage: React.FC = () => {
       else if (!data_nascita) errors.push("Data nascita mancante");
       if (sesso_raw && !["M", "F"].includes(sesso_raw)) errors.push("Sesso non valido");
       if (email && !valid_email(email)) errors.push("Email malformata");
-      if (livello && livelli_set.size > 0 && !livelli_set.has(livello.toLowerCase())) {
-        errors.push(`Livello "${livello}" non esistente`);
-      }
 
       const existing = (nome && cognome && data_nascita)
         ? atleti_index.get(dup_key(nome, cognome, data_nascita))
@@ -292,7 +353,9 @@ const ImportAtletiPage: React.FC = () => {
       out.push({
         idx,
         raw: r,
-        normalized: { nome, cognome, data_nascita, sesso: sesso_raw, email, telefono, livello },
+        normalized: { nome, cognome, data_nascita, sesso: sesso_raw, email, telefono, livello: livello_canonico },
+        livello_raw: livello_input || undefined,
+        livello_warning,
         errors,
         status,
         existing_id: existing?.id,
@@ -300,12 +363,13 @@ const ImportAtletiPage: React.FC = () => {
     });
     set_parsed(out);
     set_step(3);
-  }, [rows, mapping, livelli_set, atleti_index]);
+  }, [rows, mapping, livelli_db, atleti_index]);
 
   const counts = useMemo(() => ({
     nuovi: parsed.filter((p) => p.status === "nuovo").length,
     aggiornamenti: parsed.filter((p) => p.status === "aggiornamento").length,
     errori: parsed.filter((p) => p.status === "errore").length,
+    warning_livello: parsed.filter((p) => p.livello_warning).length,
   }), [parsed]);
 
   // ── STEP 4: import ──
@@ -474,6 +538,9 @@ const ImportAtletiPage: React.FC = () => {
             <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">🟢 {counts.nuovi} nuovi</Badge>
             <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">🟡 {counts.aggiornamenti} aggiornamenti</Badge>
             <Badge className="bg-red-100 text-red-700 hover:bg-red-100">🔴 {counts.errori} errori</Badge>
+            {counts.warning_livello > 0 && (
+              <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">⚠️ {counts.warning_livello} warning livello</Badge>
+            )}
             <span className="text-xs text-muted-foreground ml-2">Totale: {parsed.length} righe</span>
           </div>
           <div className="rounded-lg border border-border overflow-x-auto max-h-[60vh] overflow-y-auto">
@@ -494,7 +561,7 @@ const ImportAtletiPage: React.FC = () => {
               </thead>
               <tbody>
                 {parsed.map((p) => (
-                  <tr key={p.idx} className="border-t border-border">
+                  <tr key={p.idx} className={`border-t border-border ${p.livello_warning && p.status !== "errore" ? "bg-yellow-50/60 dark:bg-yellow-950/10" : ""}`}>
                     <td className="px-2 py-1.5">{p.idx + 2}</td>
                     <td className="px-2 py-1.5">
                       {p.status === "nuovo" && <span title="Nuovo">🟢</span>}
@@ -507,8 +574,23 @@ const ImportAtletiPage: React.FC = () => {
                     <td className="px-2 py-1.5">{p.normalized.sesso}</td>
                     <td className="px-2 py-1.5">{p.normalized.email}</td>
                     <td className="px-2 py-1.5">{p.normalized.telefono}</td>
-                    <td className="px-2 py-1.5">{p.normalized.livello}</td>
-                    <td className="px-2 py-1.5 text-destructive">{p.errors.join("; ")}</td>
+                    <td className="px-2 py-1.5">
+                      {p.livello_warning ? (
+                        <span className="inline-flex items-center gap-1 text-yellow-700 dark:text-yellow-400" title={`Livello "${p.livello_raw}" non riconosciuto: l'atleta sarà importato senza livello`}>
+                          <span>⚠️</span>
+                          <span className="line-through opacity-70">{p.livello_raw}</span>
+                          <span className="text-muted-foreground">→ —</span>
+                        </span>
+                      ) : (
+                        p.normalized.livello
+                      )}
+                    </td>
+                    <td className="px-2 py-1.5">
+                      {p.errors.length > 0 && <span className="text-destructive">{p.errors.join("; ")}</span>}
+                      {p.errors.length === 0 && p.livello_warning && (
+                        <span className="text-yellow-700 dark:text-yellow-400">Livello "{p.livello_raw}" non riconosciuto</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
