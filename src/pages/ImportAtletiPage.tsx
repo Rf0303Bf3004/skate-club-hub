@@ -119,6 +119,54 @@ function normalize_sesso(s: any): string {
   return v.toUpperCase(); // ritorna il valore originale in maiuscolo per validazione
 }
 
+/**
+ * Normalizza una stringa livello per il matching:
+ *  - strip accenti, lowercase, trim
+ *  - punteggiatura → spazio
+ *  - inserisce spazio fra lettere e cifre (es. "stellina1" → "stellina 1")
+ *  - collassa spazi multipli
+ */
+function normalize_livello_key(s: any): string {
+  let v = strip_accents(String(s ?? "").toLowerCase()).trim();
+  v = v.replace(/[._\-,;:/\\]+/g, " ");
+  v = v.replace(/([a-z])(\d)/g, "$1 $2").replace(/(\d)([a-z])/g, "$1 $2");
+  v = v.replace(/\s+/g, " ").trim();
+  return v;
+}
+
+/**
+ * Trova il livello canonico ufficiale che corrisponde al valore in input.
+ * Match: uguaglianza esatta normalizzata, oppure token-prefix
+ * (es. "stell 1" → "stellina 1": ogni token input è prefisso del corrispondente canonico).
+ * Ritorna il nome canonico (case originale del DB) oppure null.
+ */
+function match_livello_canonico(input: string, ufficiali: string[]): string | null {
+  const k = normalize_livello_key(input);
+  if (!k) return null;
+  // 1) match esatto normalizzato
+  for (const u of ufficiali) {
+    if (normalize_livello_key(u) === k) return u;
+  }
+  // 2) match token-prefix
+  const in_tokens = k.split(" ");
+  for (const u of ufficiali) {
+    const u_tokens = normalize_livello_key(u).split(" ");
+    if (u_tokens.length !== in_tokens.length) continue;
+    let ok = true;
+    for (let i = 0; i < in_tokens.length; i++) {
+      const it = in_tokens[i];
+      const ut = u_tokens[i];
+      if (it === ut) continue;
+      // se entrambi numerici, devono essere uguali
+      if (/^\d+$/.test(it) || /^\d+$/.test(ut)) { ok = false; break; }
+      // altrimenti il token input dev'essere prefisso (≥3 char) del canonico
+      if (it.length < 3 || !ut.startsWith(it)) { ok = false; break; }
+    }
+    if (ok) return u;
+  }
+  return null;
+}
+
 function dup_key(nome: string, cognome: string, data_nascita: string): string {
   return `${nome.toLowerCase()}|${cognome.toLowerCase()}|${data_nascita}`;
 }
