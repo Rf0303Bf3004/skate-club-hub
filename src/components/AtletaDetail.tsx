@@ -462,6 +462,36 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
     }
   };
 
+  const handle_marca_verificato = async () => {
+    set_verifying(true);
+    try {
+      const { error } = await supabase
+        .from("atleti")
+        .update({
+          verificato: true,
+          verificato_da_user_id: session?.user_id ?? null,
+          verificato_at: new Date().toISOString(),
+        } as any)
+        .eq("id", a.id);
+      if (error) throw error;
+      // aggiorna form locale e cache
+      set_form((p: any) => ({
+        ...p,
+        verificato: true,
+        verificato_da_user_id: session?.user_id ?? null,
+        verificato_at: new Date().toISOString(),
+      }));
+      a.verificato = true;
+      await query_client.invalidateQueries({ queryKey: ["atleti"] });
+      toast({ title: "✅ Atleta marcato come verificato" });
+      set_confirm_verifica(false);
+    } catch (err: any) {
+      toast({ title: "Errore verifica", description: err?.message, variant: "destructive" });
+    } finally {
+      set_verifying(false);
+    }
+  };
+
   const handle_save = async () => {
     try {
       await upsert.mutateAsync({
