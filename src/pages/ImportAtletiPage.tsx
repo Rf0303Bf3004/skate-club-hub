@@ -369,6 +369,7 @@ const ImportAtletiPage: React.FC = () => {
     nuovi: parsed.filter((p) => p.status === "nuovo").length,
     aggiornamenti: parsed.filter((p) => p.status === "aggiornamento").length,
     errori: parsed.filter((p) => p.status === "errore").length,
+    warning_livello: parsed.filter((p) => p.livello_warning).length,
   }), [parsed]);
 
   // ── STEP 4: import ──
