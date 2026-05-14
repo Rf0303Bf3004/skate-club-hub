@@ -622,7 +622,13 @@ const AthletesPage: React.FC = () => {
   // Filtro a cascata: prima categoria, poi (se categoria scelta) livello specifico
   const [categoria_filter, set_categoria_filter] = useState<"tutti" | Categoria>("tutti");
 
+  const da_verificare_count = useMemo(
+    () => atleti.filter((a: any) => a.verificato === false).length,
+    [atleti],
+  );
+
   const filtered = atleti.filter((a: any) => {
+    if (solo_da_verificare && a.verificato !== false) return false;
     const name_match = `${a.nome} ${a.cognome}`.toLowerCase().includes(search.toLowerCase());
     const status_match =
       status_filter === "tutti" ||
