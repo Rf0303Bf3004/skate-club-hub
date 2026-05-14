@@ -224,15 +224,14 @@ const ImportAtletiPage: React.FC = () => {
   const [drag_active, set_drag_active] = useState(false);
   const file_input_ref = useRef<HTMLInputElement>(null);
 
-  // Fetch livelli per validazione
+  // Fetch livelli ufficiali (tabella globale, senza club_id)
   const { data: livelli_db = [] } = useQuery({
     queryKey: ["livelli_import"],
     queryFn: async () => {
       const { data } = await supabase.from("livelli").select("nome").eq("attivo", true);
-      return (data ?? []).map((l: any) => norm_string(l.nome));
+      return (data ?? []).map((l: any) => norm_string(l.nome)).filter(Boolean);
     },
   });
-  const livelli_set = useMemo(() => new Set(livelli_db.map((l) => l.toLowerCase())), [livelli_db]);
 
   // Fetch atleti del club per match duplicati
   const { data: atleti_db = [] } = useQuery({
