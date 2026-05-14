@@ -252,6 +252,27 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   const [show_invito_2, set_show_invito_2] = useState(false);
   const [generating_portal, set_generating_portal] = useState(false);
   const [show_qr_portal, set_show_qr_portal] = useState(false);
+  const [verifying, set_verifying] = useState(false);
+  const [confirm_verifica, set_confirm_verifica] = useState(false);
+  const { session } = useAuth();
+  const query_client = useQueryClient();
+  const can_verificare = session?.ruolo !== "aiuto_monitore";
+
+  // Nome utente che ha verificato (se presente)
+  const { data: verificato_da_nome } = useQuery({
+    queryKey: ["utente_verificatore", a.verificato_da_user_id],
+    queryFn: async () => {
+      if (!a.verificato_da_user_id) return null;
+      const { data } = await supabase
+        .from("utenti_club")
+        .select("nome, cognome")
+        .eq("user_id", a.verificato_da_user_id)
+        .maybeSingle();
+      if (!data) return null;
+      return `${data.nome ?? ""} ${data.cognome ?? ""}`.trim() || null;
+    },
+    enabled: !!a.verificato_da_user_id,
+  });
 
   // Deep-link tab via ?tab=...
   const VALID_TABS = ["anagrafica", "livello", "corsi", "gare", "medagliere", "genitori", "fatture", "lezioni", "calendario", "storico_test"] as const;
