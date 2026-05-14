@@ -103,6 +103,7 @@ export type Database = {
           genitore2_nome: string | null
           genitore2_telefono: string | null
           id: string
+          importato_da_excel: boolean
           indirizzo: string | null
           licenza_sis_categoria: string | null
           licenza_sis_disciplina: string | null
@@ -123,6 +124,9 @@ export type Database = {
           sesso: string | null
           tag_nfc: string | null
           telefono: string | null
+          verificato: boolean
+          verificato_at: string | null
+          verificato_da_user_id: string | null
         }
         Insert: {
           agonista?: boolean
@@ -151,6 +155,7 @@ export type Database = {
           genitore2_nome?: string | null
           genitore2_telefono?: string | null
           id?: string
+          importato_da_excel?: boolean
           indirizzo?: string | null
           licenza_sis_categoria?: string | null
           licenza_sis_disciplina?: string | null
@@ -171,6 +176,9 @@ export type Database = {
           sesso?: string | null
           tag_nfc?: string | null
           telefono?: string | null
+          verificato?: boolean
+          verificato_at?: string | null
+          verificato_da_user_id?: string | null
         }
         Update: {
           agonista?: boolean
@@ -199,6 +207,7 @@ export type Database = {
           genitore2_nome?: string | null
           genitore2_telefono?: string | null
           id?: string
+          importato_da_excel?: boolean
           indirizzo?: string | null
           licenza_sis_categoria?: string | null
           licenza_sis_disciplina?: string | null
@@ -219,6 +228,9 @@ export type Database = {
           sesso?: string | null
           tag_nfc?: string | null
           telefono?: string | null
+          verificato?: boolean
+          verificato_at?: string | null
+          verificato_da_user_id?: string | null
         }
         Relationships: [
           {

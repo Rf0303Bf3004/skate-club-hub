@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Shield, X, Trash2, Upload, ArrowLeft, Printer, Mail } from "lucide-react";
+import { Plus, Search, Shield, X, Trash2, Upload, ArrowLeft, Printer, Mail, AlertCircle } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import AtletaDetail from "@/components/AtletaDetail";
 import AthleteBadges from "@/components/AthleteBadges";
 import { toast } from "@/hooks/use-toast";
@@ -545,6 +546,7 @@ const AthletesPage: React.FC = () => {
   const [search, set_search] = useState("");
   const [level_filter, set_level_filter] = useState("tutti");
   const [status_filter, set_status_filter] = useState("tutti");
+  const [solo_da_verificare, set_solo_da_verificare] = useState(false);
   const [selected_id, set_selected_id] = useState<string | null>(params.id ?? null);
   useEffect(() => { if (params.id && params.id !== selected_id) set_selected_id(params.id); }, [params.id]);
   const [modal_open, set_modal_open] = useState(false);
@@ -620,7 +622,13 @@ const AthletesPage: React.FC = () => {
   // Filtro a cascata: prima categoria, poi (se categoria scelta) livello specifico
   const [categoria_filter, set_categoria_filter] = useState<"tutti" | Categoria>("tutti");
 
+  const da_verificare_count = useMemo(
+    () => atleti.filter((a: any) => a.verificato === false).length,
+    [atleti],
+  );
+
   const filtered = atleti.filter((a: any) => {
+    if (solo_da_verificare && a.verificato !== false) return false;
     const name_match = `${a.nome} ${a.cognome}`.toLowerCase().includes(search.toLowerCase());
     const status_match =
       status_filter === "tutti" ||
@@ -878,7 +886,21 @@ const AthletesPage: React.FC = () => {
         )}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <h1 className="text-xl font-bold tracking-tight text-foreground">{t("atleti")}</h1>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {da_verificare_count > 0 && (
+              <button
+                onClick={() => set_solo_da_verificare((v) => !v)}
+                className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-semibold transition-colors ${solo_da_verificare ? "border-yellow-500 bg-yellow-100 text-yellow-900" : "border-yellow-300 bg-yellow-50 text-yellow-800 hover:bg-yellow-100"}`}
+                title="Mostra solo atleti non ancora verificati"
+              >
+                <AlertCircle className="w-3.5 h-3.5" />
+                {da_verificare_count} da verificare
+              </button>
+            )}
+            <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+              <Switch checked={solo_da_verificare} onCheckedChange={set_solo_da_verificare} />
+              <span>Solo da verificare</span>
+            </label>
             {(["presidente", "segreteria", "admin", "superadmin"].includes(session?.ruolo as string)) && (
               <Button
                 variant="outline"
@@ -1095,7 +1117,7 @@ const AthletesPage: React.FC = () => {
                   </tr>
                 ) : (
                   filtered.map((a: any) => (
-                    <tr key={a.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                    <tr key={a.id} className={`border-b border-border/50 transition-colors ${a.verificato === false ? "bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-950/30 dark:hover:bg-yellow-950/50" : "hover:bg-muted/30"}`}>
                       <td className="px-4 py-3 cursor-pointer" onClick={() => set_selected_id(a.id)}>
                         <div className="flex items-center gap-3">
                           {a.foto_url ? (
@@ -1108,9 +1130,14 @@ const AthletesPage: React.FC = () => {
                           )}
                           <div>
                             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                              <p className="font-medium text-foreground inline-flex items-center gap-2">
+                              <p className="font-medium text-foreground inline-flex items-center gap-2 flex-wrap">
                                 <span>{a.nome} {a.cognome}</span>
                                 <AthleteBadges agonista={a.agonista} atleta_federazione={a.atleta_federazione} />
+                                {a.verificato === false && (
+                                  <span className="inline-flex items-center gap-1 rounded-md bg-yellow-100 px-1.5 py-0.5 text-[10px] font-semibold text-yellow-800 ring-1 ring-inset ring-yellow-300">
+                                    ⚠️ Da verificare
+                                  </span>
+                                )}
                               </p>
                             </div>
                           </div>

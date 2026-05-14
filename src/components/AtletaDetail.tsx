@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/lib/auth";
+import { format_data_completa } from "@/lib/format-data";
+import { CheckCircle2, AlertTriangle } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { Calendar } from "lucide-react";
 import CalendarioAtletaInterattivo from "@/components/CalendarioAtletaInterattivo";
@@ -249,6 +252,27 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   const [show_invito_2, set_show_invito_2] = useState(false);
   const [generating_portal, set_generating_portal] = useState(false);
   const [show_qr_portal, set_show_qr_portal] = useState(false);
+  const [verifying, set_verifying] = useState(false);
+  const [confirm_verifica, set_confirm_verifica] = useState(false);
+  const { session } = useAuth();
+  const query_client = useQueryClient();
+  const can_verificare = (session?.ruolo as string) !== "aiuto_monitore";
+
+  // Nome utente che ha verificato (se presente)
+  const { data: verificato_da_nome } = useQuery({
+    queryKey: ["utente_verificatore", a.verificato_da_user_id],
+    queryFn: async () => {
+      if (!a.verificato_da_user_id) return null;
+      const { data } = await supabase
+        .from("utenti_club")
+        .select("nome, cognome")
+        .eq("user_id", a.verificato_da_user_id)
+        .maybeSingle();
+      if (!data) return null;
+      return `${data.nome ?? ""} ${data.cognome ?? ""}`.trim() || null;
+    },
+    enabled: !!a.verificato_da_user_id,
+  });
 
   // Deep-link tab via ?tab=...
   const VALID_TABS = ["anagrafica", "livello", "corsi", "gare", "medagliere", "genitori", "fatture", "lezioni", "calendario", "storico_test"] as const;
@@ -438,6 +462,36 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
     }
   };
 
+  const handle_marca_verificato = async () => {
+    set_verifying(true);
+    try {
+      const { error } = await supabase
+        .from("atleti")
+        .update({
+          verificato: true,
+          verificato_da_user_id: session?.user_id ?? null,
+          verificato_at: new Date().toISOString(),
+        } as any)
+        .eq("id", a.id);
+      if (error) throw error;
+      // aggiorna form locale e cache
+      set_form((p: any) => ({
+        ...p,
+        verificato: true,
+        verificato_da_user_id: session?.user_id ?? null,
+        verificato_at: new Date().toISOString(),
+      }));
+      a.verificato = true;
+      await query_client.invalidateQueries({ queryKey: ["atleti"] });
+      toast({ title: "✅ Atleta marcato come verificato" });
+      set_confirm_verifica(false);
+    } catch (err: any) {
+      toast({ title: "Errore verifica", description: err?.message, variant: "destructive" });
+    } finally {
+      set_verifying(false);
+    }
+  };
+
   const handle_save = async () => {
     try {
       await upsert.mutateAsync({
@@ -529,6 +583,43 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
       )}
 
       <div className="space-y-6 animate-fade-in">
+        {form.verificato === false && (
+          <div className="rounded-lg border border-yellow-300 bg-yellow-50 dark:bg-yellow-950/30 dark:border-yellow-700 px-4 py-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <AlertTriangle className="w-5 h-5 text-yellow-600 shrink-0" />
+              <p className="flex-1 text-sm font-medium text-yellow-900 dark:text-yellow-100">
+                ⚠️ Atleta importato da Excel{a.created_at ? ` il ${format_data_completa(a.created_at)}` : ""}, non ancora verificato
+              </p>
+              {can_verificare && !confirm_verifica && (
+                <Button
+                  size="sm"
+                  onClick={() => set_confirm_verifica(true)}
+                  className="bg-yellow-600 hover:bg-yellow-700 text-white shrink-0"
+                >
+                  <CheckCircle2 className="w-4 h-4 mr-1.5" /> Marca come verificato
+                </Button>
+              )}
+              {can_verificare && confirm_verifica && (
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-xs text-yellow-900 dark:text-yellow-100">Tutti i dati sono stati controllati?</span>
+                  <Button size="sm" variant="outline" onClick={() => set_confirm_verifica(false)} disabled={verifying}>
+                    No
+                  </Button>
+                  <Button size="sm" onClick={handle_marca_verificato} disabled={verifying} className="bg-green-600 hover:bg-green-700 text-white">
+                    {verifying ? "..." : "Sì, conferma"}
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        {form.verificato === true && form.verificato_at && form.verificato_da_user_id && (
+          <p className="text-xs text-muted-foreground -mb-2">
+            <CheckCircle2 className="w-3 h-3 inline-block mr-1 text-green-600" />
+            Verificato il {format_data_completa(form.verificato_at)}
+            {verificato_da_nome ? ` da ${verificato_da_nome}` : ""}
+          </p>
+        )}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Button variant="ghost" onClick={on_back} className="text-muted-foreground">
             <ArrowLeft className="w-4 h-4 mr-2" /> {t("atleti")}
