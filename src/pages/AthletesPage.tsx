@@ -1117,7 +1117,7 @@ const AthletesPage: React.FC = () => {
                   </tr>
                 ) : (
                   filtered.map((a: any) => (
-                    <tr key={a.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                    <tr key={a.id} className={`border-b border-border/50 transition-colors ${a.verificato === false ? "bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-950/30 dark:hover:bg-yellow-950/50" : "hover:bg-muted/30"}`}>
                       <td className="px-4 py-3 cursor-pointer" onClick={() => set_selected_id(a.id)}>
                         <div className="flex items-center gap-3">
                           {a.foto_url ? (
@@ -1130,9 +1130,14 @@ const AthletesPage: React.FC = () => {
                           )}
                           <div>
                             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                              <p className="font-medium text-foreground inline-flex items-center gap-2">
+                              <p className="font-medium text-foreground inline-flex items-center gap-2 flex-wrap">
                                 <span>{a.nome} {a.cognome}</span>
                                 <AthleteBadges agonista={a.agonista} atleta_federazione={a.atleta_federazione} />
+                                {a.verificato === false && (
+                                  <span className="inline-flex items-center gap-1 rounded-md bg-yellow-100 px-1.5 py-0.5 text-[10px] font-semibold text-yellow-800 ring-1 ring-inset ring-yellow-300">
+                                    ⚠️ Da verificare
+                                  </span>
+                                )}
                               </p>
                             </div>
                           </div>
