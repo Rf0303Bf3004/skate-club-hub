@@ -256,7 +256,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   const [confirm_verifica, set_confirm_verifica] = useState(false);
   const { session } = useAuth();
   const query_client = useQueryClient();
-  const can_verificare = session?.ruolo !== "aiuto_monitore";
+  const can_verificare = (session?.ruolo as string) !== "aiuto_monitore";
 
   // Nome utente che ha verificato (se presente)
   const { data: verificato_da_nome } = useQuery({
