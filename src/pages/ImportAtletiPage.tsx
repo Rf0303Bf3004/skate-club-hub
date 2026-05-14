@@ -409,6 +409,8 @@ const ImportAtletiPage: React.FC = () => {
             categoria: "amatori",
             agonista: false,
             codice_atleta,
+            importato_da_excel: true,
+            verificato: false,
           };
           if (row.normalized.telefono) insert_payload.telefono = row.normalized.telefono;
           if (row.normalized.email) insert_payload.genitore1_email = row.normalized.email;
