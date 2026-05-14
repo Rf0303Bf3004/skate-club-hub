@@ -538,6 +538,9 @@ const ImportAtletiPage: React.FC = () => {
             <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">🟢 {counts.nuovi} nuovi</Badge>
             <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">🟡 {counts.aggiornamenti} aggiornamenti</Badge>
             <Badge className="bg-red-100 text-red-700 hover:bg-red-100">🔴 {counts.errori} errori</Badge>
+            {counts.warning_livello > 0 && (
+              <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">⚠️ {counts.warning_livello} warning livello</Badge>
+            )}
             <span className="text-xs text-muted-foreground ml-2">Totale: {parsed.length} righe</span>
           </div>
           <div className="rounded-lg border border-border overflow-x-auto max-h-[60vh] overflow-y-auto">
@@ -558,7 +561,7 @@ const ImportAtletiPage: React.FC = () => {
               </thead>
               <tbody>
                 {parsed.map((p) => (
-                  <tr key={p.idx} className="border-t border-border">
+                  <tr key={p.idx} className={`border-t border-border ${p.livello_warning && p.status !== "errore" ? "bg-yellow-50/60 dark:bg-yellow-950/10" : ""}`}>
                     <td className="px-2 py-1.5">{p.idx + 2}</td>
                     <td className="px-2 py-1.5">
                       {p.status === "nuovo" && <span title="Nuovo">🟢</span>}
@@ -571,8 +574,23 @@ const ImportAtletiPage: React.FC = () => {
                     <td className="px-2 py-1.5">{p.normalized.sesso}</td>
                     <td className="px-2 py-1.5">{p.normalized.email}</td>
                     <td className="px-2 py-1.5">{p.normalized.telefono}</td>
-                    <td className="px-2 py-1.5">{p.normalized.livello}</td>
-                    <td className="px-2 py-1.5 text-destructive">{p.errors.join("; ")}</td>
+                    <td className="px-2 py-1.5">
+                      {p.livello_warning ? (
+                        <span className="inline-flex items-center gap-1 text-yellow-700 dark:text-yellow-400" title={`Livello "${p.livello_raw}" non riconosciuto: l'atleta sarà importato senza livello`}>
+                          <span>⚠️</span>
+                          <span className="line-through opacity-70">{p.livello_raw}</span>
+                          <span className="text-muted-foreground">→ —</span>
+                        </span>
+                      ) : (
+                        p.normalized.livello
+                      )}
+                    </td>
+                    <td className="px-2 py-1.5">
+                      {p.errors.length > 0 && <span className="text-destructive">{p.errors.join("; ")}</span>}
+                      {p.errors.length === 0 && p.livello_warning && (
+                        <span className="text-yellow-700 dark:text-yellow-400">Livello "{p.livello_raw}" non riconosciuto</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
