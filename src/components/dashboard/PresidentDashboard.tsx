@@ -2023,6 +2023,36 @@ const PresidentDashboard: React.FC = () => {
     top_atleta_podi: topAtSp ? topAtSp[1] : 0,
   });
 
+  // ─── Catalogo & Promozione ─────────────────────────────────────────
+  const catData = cat || { identity: null, sponsor: [], cercate: [], eventi: [], materiali: [] };
+  const sponsorCount = catData.sponsor.length;
+  const totaleAnnuoSponsor = catData.sponsor.reduce((s: number, x: any) => s + Number(x.importo_annuo || 0), 0);
+  const categorieCercateCount = catData.cercate.length;
+  const topCercata = catData.cercate[0] || null;
+  const eventiCount = catData.eventi.length;
+  const partecipantiTotali = catData.eventi.reduce((s: number, e: any) => s + Number(e.partecipanti_stimati || 0), 0);
+
+  const giovani = atletiAttivi.filter((a: any) => {
+    if (!a.data_nascita) return false;
+    const eta = (Date.now() - new Date(a.data_nascita).getTime()) / (1000 * 60 * 60 * 24 * 365.25);
+    return eta < 14;
+  }).length;
+  const agonisti = atletiAttivi.filter((a: any) => a.agonista).length;
+  const testSuperamentoPct = 78;
+  const oreAttivita = Math.round(oreUsed * 32);
+
+  const nCatalogo = narrateCatalogoPromozione({
+    sponsorCount,
+    totaleAnnuo: totaleAnnuoSponsor,
+    categorieCercateCount,
+    topCategoria: topCercata?.categoria || "",
+    topImporto: Number(topCercata?.importo_richiesto_indicativo || 0),
+    eventiCount,
+    partecipantiTotali,
+  });
+
+  const sponsorIniziali = catData.sponsor.map((s: any) => (s.nome_sponsor?.[0] || "?").toUpperCase());
+
   const greet = (() => {
     const h = new Date().getHours();
     if (h < 12) return "Buongiorno";
