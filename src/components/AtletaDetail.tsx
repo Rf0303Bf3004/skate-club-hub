@@ -687,47 +687,107 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
               />
             </label>
           </div>
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-foreground">
-              {form.nome} {form.cognome}
-            </h1>
-            <div className="flex items-center gap-2 mt-1 flex-wrap">
-              <Badge className={atleta_attivo ? "bg-green-100 text-green-800 border-0 text-xs" : "bg-muted text-muted-foreground border-0 text-xs"}>
-                {atleta_attivo ? "Attivo" : "Inattivo"}
-              </Badge>
-              {(() => {
-                const cat = form.categoria;
-                if (cat === "pulcini") {
-                  return <Badge className="bg-blue-100 text-blue-800 border-0 text-xs">Pulcini</Badge>;
+          <div className="flex-1 min-w-0">
+            {(() => {
+              const is_f = form.sesso === "F";
+              const attiva = is_f ? "Attiva" : "Attivo";
+              const inattiva = is_f ? "Inattiva" : "Inattivo";
+              const federata = is_f ? "Federata" : "Federato";
+
+              const cat = form.categoria;
+              type Tile = { titolo: string; sottotitolo: string; bg: string; titolo_color: string; sub_color: string };
+              const tiles: Tile[] = [];
+              if (cat === "pulcini") {
+                tiles.push({ titolo: "Pulcini", sottotitolo: "Categoria iniziale", bg: "#E6F1FB", titolo_color: "#042C53", sub_color: "#185FA5" });
+              } else if (cat === "amatori") {
+                if (form.livello_amatori) {
+                  tiles.push({ titolo: form.livello_amatori, sottotitolo: "Categoria Amatori", bg: "#E1F5EE", titolo_color: "#04342C", sub_color: "#0F6E56" });
                 }
-                if (cat === "amatori") {
-                  return form.livello_amatori ? (
-                    <Badge className="bg-teal-100 text-teal-800 border-0 text-xs">{form.livello_amatori}</Badge>
-                  ) : null;
+              } else if (cat === "artistica") {
+                if (form.livello_artistica) {
+                  tiles.push({ titolo: form.livello_artistica, sottotitolo: "Percorso Artistica", bg: "#EEEDFE", titolo_color: "#26215C", sub_color: "#534AB7" });
                 }
-                if (cat === "artistica") {
-                  const order = ["Interbronzo", "Bronzo", "Interargento", "Argento", "Interoro", "Oro"];
-                  const a_idx = order.indexOf(form.livello_artistica || "");
-                  const s_idx = order.indexOf(form.livello_stile || "");
-                  const max_idx = Math.max(a_idx, s_idx);
-                  const top = max_idx >= 0 ? order[max_idx] : (form.livello_amatori || null);
-                  return top ? <Badge className="bg-amber-100 text-amber-800 border-0 text-xs">{top}</Badge> : null;
+                if (form.livello_stile) {
+                  tiles.push({ titolo: form.livello_stile, sottotitolo: "Percorso Stile", bg: "#FBEAF0", titolo_color: "#4B1528", sub_color: "#993556" });
                 }
-                return null;
-              })()}
-              {form.categoria === "artistica" && form.livello_artistica && (
-                <Badge className="bg-purple-100 text-purple-800 border-0 text-xs">Percorso Artistica</Badge>
-              )}
-              {form.categoria === "artistica" && form.livello_stile && (
-                <Badge className="bg-pink-100 text-pink-800 border-0 text-xs">Percorso Stile</Badge>
-              )}
-              {form.agonista && (
-                <Badge className="bg-orange-100 text-orange-800 border-0 text-xs">Agonista</Badge>
-              )}
-              {form.atleta_federazione && (
-                <Badge className="bg-indigo-100 text-indigo-800 border-0 text-xs">Federato</Badge>
-              )}
-            </div>
+              }
+
+              const has_flags = form.agonista || form.atleta_federazione || form.attivo_come_monitore;
+
+              return (
+                <div className="flex flex-col gap-2">
+                  {/* Riga 1: Nome + stato */}
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <h1 className="text-[17px] font-medium tracking-tight text-foreground leading-tight">
+                      {form.nome} {form.cognome}
+                    </h1>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span
+                        className="inline-block rounded-full"
+                        style={{ width: 7, height: 7, backgroundColor: atleta_attivo ? "#22C55E" : "#9CA3AF" }}
+                      />
+                      <span className="text-[11px] text-muted-foreground">
+                        {atleta_attivo ? attiva : inattiva}
+                      </span>
+                    </span>
+                  </div>
+
+                  {/* Riga 2: Codice atleta */}
+                  {form.codice_atleta && (
+                    <div className="font-mono text-[12px] text-muted-foreground/80">
+                      {form.codice_atleta}
+                    </div>
+                  )}
+
+                  {/* Riga 3: Tassello/i livello */}
+                  {tiles.length > 0 && (
+                    <div
+                      className={tiles.length === 2 ? "grid grid-cols-2 gap-2" : ""}
+                      style={tiles.length === 2 ? undefined : undefined}
+                    >
+                      {tiles.map((tile, i) => (
+                        <div
+                          key={i}
+                          className="rounded-md"
+                          style={{ backgroundColor: tile.bg, padding: "10px 14px" }}
+                        >
+                          <div style={{ fontSize: 19, fontWeight: 500, color: tile.titolo_color, lineHeight: 1.2 }}>
+                            {tile.titolo}
+                          </div>
+                          <div style={{ fontSize: 12, color: tile.sub_color, marginTop: 2 }}>
+                            {tile.sottotitolo}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Riga 4: flag */}
+                  {has_flags && (
+                    <div className="flex items-center gap-3 flex-wrap text-[12px] text-muted-foreground mt-0.5">
+                      {form.agonista && (
+                        <span className="inline-flex items-center gap-1">
+                          <Trophy className="w-[14px] h-[14px]" />
+                          Agonista
+                        </span>
+                      )}
+                      {form.atleta_federazione && (
+                        <span className="inline-flex items-center gap-1">
+                          <ShieldCheck className="w-[14px] h-[14px]" />
+                          {federata}
+                        </span>
+                      )}
+                      {form.attivo_come_monitore && (
+                        <span className="inline-flex items-center gap-1">
+                          <UserCog className="w-[14px] h-[14px]" />
+                          Monitore
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </div>
 
