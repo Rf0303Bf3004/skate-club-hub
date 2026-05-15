@@ -901,6 +901,10 @@ const SezionePresenzeIstruttori: React.FC<{
 
 // ─── Main Dashboard ────────────────────────────────────────
 const DashboardPage: React.FC = () => {
+  const { session } = useAuth();
+  if ((session?.ruolo as string) === "presidente") {
+    return <PresidentDashboard />;
+  }
   const { t, locale } = useI18n();
   const locale_code = locale_to_bcp47(locale);
   const { data: atleti = [], isLoading: loading_atleti } = use_atleti();
