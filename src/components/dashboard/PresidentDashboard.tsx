@@ -211,6 +211,30 @@ function use_dashboard_data(stagione_id: string | null, prev_stagione_id: string
   });
 }
 
+function use_catalogo_data() {
+  return useQuery({
+    queryKey: ["pres_catalogo", CLUB_ID],
+    staleTime: 30_000,
+    queryFn: async () => {
+      const sb: any = supabase;
+      const [identityR, sponsorR, cercateR, eventiR, materialiR] = await Promise.all([
+        sb.from("club_identity").select("*").eq("club_id", CLUB_ID).maybeSingle(),
+        sb.from("sponsor_attivi").select("*").eq("club_id", CLUB_ID).order("importo_annuo", { ascending: false }),
+        sb.from("sponsor_categorie_cercate").select("*").eq("club_id", CLUB_ID).order("importo_richiesto_indicativo", { ascending: false }),
+        sb.from("eventi_pubblici").select("*").eq("club_id", CLUB_ID),
+        sb.from("materiali_promo").select("*").eq("club_id", CLUB_ID),
+      ]);
+      return {
+        identity: identityR.data || null,
+        sponsor: sponsorR.data || [],
+        cercate: cercateR.data || [],
+        eventi: eventiR.data || [],
+        materiali: materialiR.data || [],
+      };
+    },
+  });
+}
+
 // ─── Mini UI ──────────────────────────────────────────────────────────
 const Section: React.FC<{ kicker: string; title: string; intro?: string; accent?: string; children: React.ReactNode }> = ({
   kicker,
