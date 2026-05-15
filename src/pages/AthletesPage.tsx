@@ -622,6 +622,18 @@ const AthletesPage: React.FC = () => {
     return counts;
   }, [atleti]);
 
+  // Atleti in transizione: categoria=artistica + livello_artistica=NULL + in_preparazione popolato
+  const artistica_in_prep_count = useMemo(
+    () =>
+      atleti.filter(
+        (a: any) =>
+          a.categoria === "artistica" &&
+          !a.livello_artistica &&
+          a.livello_artistica_in_preparazione,
+      ).length,
+    [atleti],
+  );
+
   const [card_filter, set_card_filter] = useState<
     | { sezione: "pulcini" }
     | { sezione: "amatori"; livello: string }
