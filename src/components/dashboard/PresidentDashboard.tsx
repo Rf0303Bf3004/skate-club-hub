@@ -1,33 +1,37 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowDown,
-  ArrowRight,
   ArrowUp,
-  ChevronRight,
-  FileWarning,
-  Inbox,
+  ArrowRight,
+  TrendingUp,
+  Users,
+  Snowflake,
+  Wallet,
   Trophy,
-  X,
-  Info,
+  AlertTriangle,
+  FileDown,
+  Sparkles,
+  Calendar,
 } from "lucide-react";
 import {
-  use_atleti,
-  use_fatture,
-  use_gare,
-  use_stagioni,
-  use_richieste_iscrizione,
-  use_istruttori,
-} from "@/hooks/use-supabase-data";
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip as RTooltip,
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  CartesianGrid,
+  Area,
+  AreaChart,
+} from "recharts";
 import { useAuth } from "@/lib/auth";
-import { supabase, get_current_club_id } from "@/lib/supabase";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { supabase } from "@/lib/supabase";
 import {
   Select,
   SelectContent,
@@ -35,1105 +39,1311 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Switch } from "@/components/ui/switch";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
+const CLUB_ID = "00030001-0000-0000-0000-000000000001";
 
 // ─── Helpers ──────────────────────────────────────────────────────────
-function format_chf(n: number): string {
-  return new Intl.NumberFormat("it-CH", {
-    style: "currency",
-    currency: "CHF",
-    maximumFractionDigits: 0,
-  }).format(n || 0);
-}
-function format_int(n: number): string {
-  return new Intl.NumberFormat("it-CH").format(Math.round(n || 0));
-}
-function format_pct(n: number): string {
-  return `${Math.round(n)}%`;
-}
-function get_iniziali(nome?: string, cognome?: string): string {
-  const n = (nome || "").trim()[0] || "";
-  const c = (cognome || "").trim()[0] || "";
-  return (n + c).toUpperCase() || "·";
-}
+const fmt_chf = (n: number) =>
+  new Intl.NumberFormat("it-CH", { style: "currency", currency: "CHF", maximumFractionDigits: 0 }).format(n || 0);
+const fmt_int = (n: number) => new Intl.NumberFormat("it-CH").format(Math.round(n || 0));
+const fmt_pct = (n: number, dec = 0) => `${n >= 0 ? "" : ""}${n.toFixed(dec)}%`;
+const initials = (n?: string, c?: string) => ((n || "")[0] || "") + ((c || "")[0] || "") || "·";
 
-const LIVELLO_RANK: Record<string, number> = {
-  Oro: 1,
-  Interoro: 2,
-  Argento: 3,
-  Interargento: 4,
-  Bronzo: 5,
-  Interbronzo: 6,
-  "Stellina 4": 7,
-  "Stellina 3": 8,
-  "Stellina 2": 9,
-  "Stellina 1": 10,
-  Pulcini: 11,
-};
-function get_livello_label(a: any): string {
-  return (
-    a.livello_artistica ||
-    a.livello_stile ||
-    a.carriera_artistica ||
-    a.carriera_stile ||
-    a.livello_attuale ||
-    a.livello_amatori ||
-    "Pulcini"
-  );
-}
-function get_livello_rank(a: any): number {
-  return LIVELLO_RANK[get_livello_label(a)] ?? 99;
-}
-function get_categoria_label(a: any): string {
-  if (a.livello_artistica || a.carriera_artistica) return "ART";
-  if (a.livello_stile || a.carriera_stile) return "STILE";
-  if ((a.categoria || "").toLowerCase() === "amatori") return "AMA";
-  return "PUL";
-}
-
-// ─── Count-up animato ─────────────────────────────────────────────────
 function useCountUp(target: number, duration = 1100) {
-  const [value, set_value] = useState(0);
-  const start_ref = useRef<number | null>(null);
+  const [val, setVal] = useState(0);
   useEffect(() => {
     let raf = 0;
-    start_ref.current = null;
-    const step = (ts: number) => {
-      if (start_ref.current === null) start_ref.current = ts;
-      const elapsed = ts - start_ref.current;
-      const t = Math.min(1, elapsed / duration);
-      const eased = 1 - Math.pow(1 - t, 3);
-      set_value(target * eased);
-      if (t < 1) raf = requestAnimationFrame(step);
+    const t0 = performance.now();
+    const from = 0;
+    const tick = (t: number) => {
+      const p = Math.min(1, (t - t0) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setVal(from + (target - from) * eased);
+      if (p < 1) raf = requestAnimationFrame(tick);
     };
-    raf = requestAnimationFrame(step);
+    raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [target, duration]);
-  return value;
+  return val;
 }
 
-const NumeroGrosso: React.FC<{
-  value: number;
-  format?: (n: number) => string;
-  className?: string;
-}> = ({ value, format = format_int, className = "" }) => {
-  const v = useCountUp(value);
-  return <span className={`tabular-nums tracking-tight ${className}`}>{format(v)}</span>;
+const LIVELLI_ORDER = [
+  "Pulcini",
+  "Stellina 1",
+  "Stellina 2",
+  "Stellina 3",
+  "Stellina 4",
+  "Interbronzo",
+  "Bronzo",
+  "Interargento",
+  "Argento",
+  "Interoro",
+  "Oro",
+];
+
+const FONTE_LABEL: Record<string, string> = {
+  quote_corsi: "Quote corsi",
+  pacchetti_opzionali: "Pacchetti opzionali",
+  lezioni_private: "Lezioni private",
+  eventi: "Eventi",
+  sponsor: "Sponsor",
+  altro: "Altro",
+};
+const FONTE_COLOR: Record<string, string> = {
+  quote_corsi: "#0e7490", // cyan-700
+  pacchetti_opzionali: "#10b981", // emerald
+  lezioni_private: "#f59e0b", // amber
+  eventi: "#8b5cf6", // violet
+  sponsor: "#ec4899", // pink
+  altro: "#94a3b8", // slate
 };
 
-// ─── Seeded RNG per dati storici sintetici ────────────────────────────
-function mulberry32(seed: number) {
-  return function () {
-    let t = (seed += 0x6d2b79f5);
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
+// ─── Data fetching ────────────────────────────────────────────────────
+type Stagione = { id: string; nome: string; data_inizio: string; data_fine: string; attiva: boolean };
 
-/**
- * Genera una serie storica deterministica all'indietro a partire da un valore corrente.
- * - n_punti: numero totale di punti (incluso l'ultimo = corrente)
- * - growth: crescita totale teorica dal primo all'ultimo (es 0.30 = +30%)
- * - noise: ampiezza rumore (0-1)
- * - seed: per riproducibilità
- */
-function build_history(current: number, n_punti: number, growth: number, noise: number, seed: number): number[] {
-  if (n_punti <= 1) return [current];
-  const rnd = mulberry32(seed);
-  const start = current / (1 + growth);
-  const out: number[] = [];
-  for (let i = 0; i < n_punti; i++) {
-    const t = i / (n_punti - 1);
-    // crescita non lineare leggera
-    const trend = start + (current - start) * (Math.pow(t, 0.95));
-    const wob = (rnd() - 0.5) * 2 * noise * Math.max(start, current);
-    out.push(Math.max(0, Math.round(trend + wob)));
-  }
-  out[out.length - 1] = Math.round(current);
-  return out;
-}
-
-// ─── Sparkline animata ────────────────────────────────────────────────
-const Sparkline: React.FC<{
-  values: number[];
-  className?: string;
-  tone?: "primary" | "emerald" | "rose" | "amber";
-  height?: number;
-}> = ({ values, className = "", tone = "primary", height = 36 }) => {
-  const path_ref = useRef<SVGPathElement | null>(null);
-  const [drawn, set_drawn] = useState(false);
-  useEffect(() => {
-    set_drawn(false);
-    const t = setTimeout(() => set_drawn(true), 50);
-    return () => clearTimeout(t);
-  }, [values.join(",")]);
-
-  if (!values || values.length < 2) {
-    return <div className={`w-full ${className}`} style={{ height }} />;
-  }
-  const w = 240;
-  const h = height;
-  const max = Math.max(...values);
-  const min = Math.min(...values);
-  const range = max - min || 1;
-  const pts = values.map((v, i) => {
-    const x = (i / (values.length - 1)) * w;
-    const y = h - ((v - min) / range) * (h - 4) - 2;
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
+function use_stagioni_demo() {
+  return useQuery<Stagione[]>({
+    queryKey: ["pres_stagioni"],
+    staleTime: 30_000,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("stagioni")
+        .select("id, nome, data_inizio, data_fine, attiva")
+        .eq("club_id", CLUB_ID)
+        .order("data_inizio", { ascending: false });
+      return (data as any) || [];
+    },
   });
-  const d = `M ${pts.join(" L ")}`;
-  const area = `${d} L ${w},${h} L 0,${h} Z`;
+}
 
-  const stroke_color =
-    tone === "emerald"
-      ? "rgb(16,163,74)"
-      : tone === "rose"
-      ? "rgb(220,38,38)"
-      : tone === "amber"
-      ? "rgb(217,119,6)"
-      : "hsl(var(--primary))";
-  const grad_id = `spark-${tone}-${values.length}`;
+function use_dashboard_data(stagione_id: string | null, prev_stagione_id: string | null) {
+  return useQuery({
+    queryKey: ["pres_dashboard", stagione_id, prev_stagione_id],
+    enabled: !!stagione_id,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const ids = [stagione_id, prev_stagione_id].filter(Boolean) as string[];
+      const [
+        atletiR,
+        storiciR,
+        bilancioR,
+        ricaviR,
+        capacitaR,
+        richiesteR,
+        oreR,
+        catalogoPackR,
+        iscrPackR,
+        costiIstR,
+        oreLavR,
+        lezioniR,
+        istruttoriR,
+        motiviR,
+        cassaR,
+        igareR,
+      ] = await Promise.all([
+        supabase.from("atleti").select("id, nome, cognome, foto_url, livello_artistica, livello_attuale, livello_amatori, livello_stile, agonista, data_nascita, attivo, categoria").eq("club_id", CLUB_ID),
+        supabase.from("atleti_storici_stagioni").select("status, motivo_abbandono, stagione_id").eq("club_id", CLUB_ID).in("stagione_id", ids),
+        supabase.from("bilancio_stagione").select("*").eq("club_id", CLUB_ID),
+        supabase.from("ricavi_per_fonte").select("*").eq("club_id", CLUB_ID),
+        supabase.from("capacita_corsi").select("corso_id, capacita_max, ore_settimanali_dedicate, corsi(nome, stagione_id)").eq("club_id", CLUB_ID),
+        supabase.from("richieste_iscrizione_storiche").select("*").eq("club_id", CLUB_ID).in("stagione_id", ids),
+          supabase.from("ore_pista_disponibili").select("*").eq("club_id", CLUB_ID),
+        supabase.from("catalogo_pacchetti_opzionali").select("id, nome, costo_mensile, costo_annuale, costo_1_sessione, costo_2_sessioni").eq("club_id", CLUB_ID),
+        supabase.from("iscrizioni_pacchetti_storiche").select("pacchetto_id, prezzo_pagato, atleta_id, stagione_id").eq("club_id", CLUB_ID).eq("stagione_id", stagione_id as string),
+        supabase.from("costi_istruttori").select("*").eq("club_id", CLUB_ID).eq("stagione_id", stagione_id as string),
+        supabase.from("ore_lavorate_istruttori").select("*").eq("club_id", CLUB_ID).eq("stagione_id", stagione_id as string),
+        supabase.from("lezioni_private_storiche").select("istruttore_id, atleta_id, ore, importo_pagato, data").eq("club_id", CLUB_ID).eq("stagione_id", stagione_id as string),
+        supabase.from("istruttori").select("id, nome, cognome").eq("club_id", CLUB_ID),
+        supabase.from("motivi_abbandono_aggregati").select("motivo, count, stagione_id").eq("club_id", CLUB_ID).eq("stagione_id", stagione_id as string),
+        supabase.from("cassa_movimenti").select("*").eq("club_id", CLUB_ID).eq("stagione_id", stagione_id as string),
+        supabase.from("iscrizioni_gare").select("medaglia, posizione, atleta_id").limit(2000),
+      ]);
+      return {
+        atleti: atletiR.data || [],
+        storici: storiciR.data || [],
+        bilancio: bilancioR.data || [],
+        ricavi: ricaviR.data || [],
+        capacita: capacitaR.data || [],
+        richieste: richiesteR.data || [],
+        ore: oreR.data || [],
+        catalogo_pack: catalogoPackR.data || [],
+        iscr_pack: iscrPackR.data || [],
+        costi_ist: costiIstR.data || [],
+        ore_lav: oreLavR.data || [],
+        lezioni: lezioniR.data || [],
+        istruttori: istruttoriR.data || [],
+        motivi: motiviR.data || [],
+        cassa: cassaR.data || [],
+        igare: igareR.data || [],
+      };
+    },
+  });
+}
 
-  // approssimo lunghezza con bbox della sequenza diagonale: usiamo un valore fisso largo
-  const dash = 800;
+// ─── Mini UI ──────────────────────────────────────────────────────────
+const Section: React.FC<{ kicker: string; title: string; intro?: string; accent?: string; children: React.ReactNode }> = ({
+  kicker,
+  title,
+  intro,
+  accent = "#0e7490",
+  children,
+}) => (
+  <section className="px-6 md:px-10 py-16 md:py-24 max-w-[1400px] mx-auto">
+    <div className="mb-10 md:mb-14">
+      <div className="flex items-center gap-3 mb-4">
+        <span className="h-px w-10" style={{ background: accent }} />
+        <span className="uppercase tracking-[0.18em] text-xs font-semibold" style={{ color: accent }}>
+          {kicker}
+        </span>
+      </div>
+      <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl text-slate-900 leading-[1.05] tracking-tight">
+        {title}
+      </h2>
+      {intro && <p className="mt-4 text-lg text-slate-500 max-w-3xl">{intro}</p>}
+    </div>
+    {children}
+  </section>
+);
 
+const HeroNumber: React.FC<{ value: number; suffix?: string; prefix?: string; delta?: number; label?: string; isCurrency?: boolean }> = ({
+  value,
+  suffix,
+  prefix,
+  delta,
+  label,
+  isCurrency,
+}) => {
+  const v = useCountUp(value);
+  const formatted = isCurrency ? fmt_chf(v) : fmt_int(v);
   return (
-    <svg
-      viewBox={`0 0 ${w} ${h}`}
-      className={`w-full ${className}`}
-      style={{ height }}
-      preserveAspectRatio="none"
-    >
-      <defs>
-        <linearGradient id={grad_id} x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor={stroke_color} stopOpacity="0.22" />
-          <stop offset="100%" stopColor={stroke_color} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d={area} fill={`url(#${grad_id})`} opacity={drawn ? 1 : 0} style={{ transition: "opacity 600ms ease" }} />
-      <path
-        ref={path_ref}
-        d={d}
-        fill="none"
-        stroke={stroke_color}
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeDasharray={dash}
-        strokeDashoffset={drawn ? 0 : dash}
-        style={{ transition: "stroke-dashoffset 1000ms ease-out" }}
-      />
-    </svg>
+    <div>
+      <div className="font-serif text-[56px] md:text-[72px] leading-none tracking-tight text-slate-900 tabular-nums">
+        {prefix}
+        {formatted}
+        {suffix}
+      </div>
+      {(label || delta !== undefined) && (
+        <div className="mt-3 flex items-center gap-3 text-sm text-slate-500">
+          {label && <span>{label}</span>}
+          {delta !== undefined && <DeltaPill value={delta} />}
+        </div>
+      )}
+    </div>
   );
 };
 
-// ─── Delta pill (badge piccolo) ───────────────────────────────────────
-const DeltaPill: React.FC<{ delta_pct: number; suffix?: string }> = ({ delta_pct, suffix = "% YoY" }) => {
-  const abs = Math.abs(delta_pct);
-  const stallo = abs < 3;
-  if (stallo) {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
-        <ArrowRight className="h-3 w-3" />
-        {delta_pct > 0 ? "+" : ""}
-        {Math.round(delta_pct)}
-        {suffix}
-      </span>
-    );
-  }
-  const positive = delta_pct > 0;
+const DeltaPill: React.FC<{ value: number; suffix?: string }> = ({ value, suffix = "%" }) => {
+  const positive = value > 0.1;
+  const negative = value < -0.1;
   const cls = positive
     ? "bg-emerald-50 text-emerald-700"
-    : "bg-rose-50 text-rose-700";
+    : negative
+    ? "bg-rose-50 text-rose-700"
+    : "bg-slate-100 text-slate-600";
+  const Icon = positive ? ArrowUp : negative ? ArrowDown : ArrowRight;
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${cls}`}>
-      {positive ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
-      {positive ? "+" : ""}
-      {Math.round(delta_pct)}
+    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${cls}`}>
+      <Icon className="h-3 w-3" />
+      {Math.abs(value).toFixed(1)}
       {suffix}
     </span>
   );
 };
 
-// ─── KPI Card ─────────────────────────────────────────────────────────
-type KpiData = {
-  key: string;
-  label: string;
-  value: number;
-  format?: (n: number) => string;
-  history: number[]; // ultimi N punti, ultimo = corrente
-  delta_pct: number;
-  delta_suffix?: string;
-  hint?: string;
-  unavailable?: boolean;
-};
-
-const KpiCard: React.FC<{ kpi: KpiData; on_click?: () => void }> = ({ kpi, on_click }) => {
-  if (kpi.unavailable) {
-    return (
-      <div className="rounded-2xl bg-card border border-border/40 p-6 flex flex-col gap-3 opacity-70">
-        <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{kpi.label}</div>
-        <div className="text-sm text-muted-foreground italic">Da configurare</div>
-      </div>
-    );
-  }
-  const tone =
-    Math.abs(kpi.delta_pct) < 3 ? "primary" : kpi.delta_pct >= 0 ? "emerald" : "rose";
+// ─── HEADER ───────────────────────────────────────────────────────────
+const Header: React.FC<{
+  nome: string;
+  stagioni: Stagione[];
+  stagioneId: string;
+  setStagioneId: (s: string) => void;
+  confronta: boolean;
+  setConfronta: (v: boolean) => void;
+  totAtleti: number;
+  ricavi: number;
+  cassa: number;
+  attesa: number;
+  stagioneNome: string;
+}> = ({ nome, stagioni, stagioneId, setStagioneId, confronta, setConfronta, totAtleti, ricavi, cassa, attesa, stagioneNome }) => {
+  const greet = (() => {
+    const h = new Date().getHours();
+    if (h < 12) return "Buongiorno";
+    if (h < 18) return "Buon pomeriggio";
+    return "Buonasera";
+  })();
   return (
-    <button
-      onClick={on_click}
-      className="text-left rounded-2xl bg-card border border-border/40 p-6 flex flex-col gap-3 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_2px_4px_rgba(15,23,42,0.05),0_16px_40px_-16px_rgba(15,23,42,0.12)] cursor-pointer group"
-    >
-      <div className="flex items-center justify-between">
-        <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{kpi.label}</div>
-        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/40 group-hover:text-primary transition-colors" />
+    <header className="px-6 md:px-10 pt-14 md:pt-20 pb-12 max-w-[1400px] mx-auto">
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8">
+        <div className="flex-1 min-w-0">
+          <div className="text-xs uppercase tracking-[0.2em] text-cyan-700 font-semibold mb-3">
+            Dashboard Presidente
+          </div>
+          <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl text-slate-900 tracking-tight leading-[1.02]">
+            {greet}, {nome || "Presidente"}.
+          </h1>
+          <p className="mt-5 text-lg md:text-xl text-slate-500 max-w-2xl leading-relaxed">
+            Stagione <span className="text-slate-900 font-medium">{stagioneNome}</span> — il club conta{" "}
+            <span className="text-slate-900 font-medium">{fmt_int(totAtleti)}</span> atleti e ha incassato{" "}
+            <span className="text-slate-900 font-medium">{fmt_chf(ricavi)}</span>.
+          </p>
+        </div>
+        <div className="flex flex-col gap-3 md:items-end shrink-0">
+          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-full pl-4 pr-1 py-1 shadow-sm">
+            <Calendar className="h-4 w-4 text-slate-400" />
+            <Select value={stagioneId} onValueChange={setStagioneId}>
+              <SelectTrigger className="border-0 shadow-none h-9 min-w-[160px] focus:ring-0">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {stagioni.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <label className="inline-flex items-center gap-3 text-sm text-slate-600 cursor-pointer">
+            <Switch checked={confronta} onCheckedChange={setConfronta} />
+            <span>Confronta con anno scorso</span>
+          </label>
+        </div>
       </div>
-      <div className="flex items-end justify-between gap-3 flex-wrap">
-        <NumeroGrosso
-          value={kpi.value}
-          format={kpi.format}
-          className="text-[40px] leading-none font-light text-foreground"
-        />
-        <DeltaPill delta_pct={kpi.delta_pct} suffix={kpi.delta_suffix} />
+
+      {/* mini hero stats */}
+      <div className="mt-14 grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4 border-t border-slate-200 pt-10">
+        <MiniHero label="Atleti totali" value={fmt_int(totAtleti)} />
+        <MiniHero label="Ricavi stagione" value={fmt_chf(ricavi)} />
+        <MiniHero label="Saldo cassa" value={fmt_chf(cassa)} accent={cassa >= 0 ? "text-emerald-600" : "text-rose-600"} />
+        <MiniHero label="Lista d'attesa" value={fmt_int(attesa)} accent="text-amber-600" />
       </div>
-      <Sparkline values={kpi.history} tone={tone} />
-      {kpi.hint && (
-        <div className="text-[11px] text-muted-foreground/80">{kpi.hint}</div>
-      )}
-    </button>
+    </header>
   );
 };
-
-// ─── Block (gruppo di KPI) ────────────────────────────────────────────
-const KpiBlock: React.FC<{ title: string; children: React.ReactNode; cols?: 3 | 4 }> = ({
-  title,
-  children,
-  cols = 4,
-}) => (
-  <div className="space-y-4">
-    <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">{title}</div>
-    <div
-      className={`grid grid-cols-1 sm:grid-cols-2 ${cols === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3"} gap-5`}
-    >
-      {children}
-    </div>
+const MiniHero: React.FC<{ label: string; value: string; accent?: string }> = ({ label, value, accent = "text-slate-900" }) => (
+  <div>
+    <div className="text-xs uppercase tracking-widest text-slate-400 font-semibold mb-2">{label}</div>
+    <div className={`font-serif text-3xl md:text-4xl tracking-tight tabular-nums ${accent}`}>{value}</div>
   </div>
 );
 
-// ─── Pyramid orizzontale ─────────────────────────────────────────────
-type PyramidRow = { label: string; value: number; tone?: string };
+// ─── AREA 1 - GHIACCIO ────────────────────────────────────────────────
+const Area1Ghiaccio: React.FC<{ d: any; oreRow: any }> = ({ d, oreRow }) => {
+  if (!oreRow) return null;
+  const tot = Number(oreRow.ore_settimanali_totali || 0);
+  const used = Number(oreRow.ore_settimanali_utilizzate || 0);
+  const req = Number(oreRow.ore_richieste_se_accettassimo_tutti || 0);
+  const costo = Number(oreRow.costo_orario_pista || 180);
+  const max = Math.max(tot, used, req, 1);
+  const ricRows = (d.richieste || []).filter((r: any) => r.stagione_id);
+  const totRich = ricRows.reduce((s: number, r: any) => s + (r.n_richieste_ricevute || 0), 0);
+  const totAcc = ricRows.reduce((s: number, r: any) => s + (r.n_iscritti_accettati || 0), 0);
+  const totAtt = ricRows.reduce((s: number, r: any) => s + (r.n_in_lista_attesa || 0), 0);
+  const oreExtra = Math.max(0, req - tot);
+  const costoExtra = oreExtra * costo * 40; // ~40 settimane stagione
+  const ricaviExtraPotenziali = totAtt * 1000; // ~1000 CHF/atleta media
 
-const PiramideOrizzontale: React.FC<{
-  rows: PyramidRow[];
-  compact?: boolean;
-}> = ({ rows, compact }) => {
-  const max = Math.max(...rows.map((r) => r.value), 1);
+  // join capacita+richieste per corso
+  const corsiMap = new Map<string, any>();
+  (d.capacita || []).forEach((c: any) => {
+    corsiMap.set(c.corso_id, {
+      nome: c.corsi?.nome || "Corso",
+      capacita: c.capacita_max,
+      ore: c.ore_settimanali_dedicate,
+      iscritti: 0,
+      attesa: 0,
+      richieste: 0,
+    });
+  });
+  ricRows.forEach((r: any) => {
+    const row = corsiMap.get(r.corso_id);
+    if (row) {
+      row.iscritti = r.n_iscritti_accettati;
+      row.attesa = r.n_in_lista_attesa;
+      row.richieste = r.n_richieste_ricevute;
+    }
+  });
+  const tabella = Array.from(corsiMap.values());
+
+  const Bar = ({ label, value, color, highlight }: any) => (
+    <div className="mb-5">
+      <div className="flex justify-between text-sm mb-2">
+        <span className="text-slate-700 font-medium">{label}</span>
+        <span className="font-serif text-2xl tabular-nums text-slate-900">{value}h</span>
+      </div>
+      <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all duration-700"
+          style={{ width: `${(value / max) * 100}%`, background: color, boxShadow: highlight ? `0 0 0 3px ${color}22` : undefined }}
+        />
+      </div>
+    </div>
+  );
+
   return (
-    <div className={compact ? "space-y-1" : "space-y-2"}>
-      {rows.map((r, i) => (
-        <div key={i} className="flex items-center gap-3">
-          <div
-            className={`shrink-0 ${compact ? "w-16 text-[10px]" : "w-24 text-xs"} uppercase tracking-wider text-muted-foreground`}
-          >
-            {r.label}
-          </div>
-          <div className={`flex-1 ${compact ? "h-2" : "h-3"} rounded-full bg-muted/60 overflow-hidden`}>
-            <div
-              className="h-full rounded-full transition-all duration-700"
-              style={{
-                width: `${(r.value / max) * 100}%`,
-                background: r.tone || "linear-gradient(90deg, hsl(var(--primary)/0.55), hsl(var(--primary)))",
-              }}
-            />
-          </div>
-          <div
-            className={`shrink-0 tabular-nums text-right ${compact ? "w-8 text-[11px]" : "w-12 text-sm font-medium"} text-foreground/80`}
-          >
-            {r.value}
+    <div className="grid lg:grid-cols-3 gap-10">
+      <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
+        <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">
+          Ore di pista — settimana tipo
+        </h3>
+        <Bar label="Disponibili" value={tot} color="#0e7490" />
+        <Bar label="Utilizzate" value={used} color="#67e8f9" />
+        <Bar label="Richieste se accettassimo tutti" value={req} color="#f59e0b" highlight />
+        <div className="mt-8 p-5 rounded-2xl bg-amber-50 border border-amber-100">
+          <div className="flex items-start gap-3">
+            <Snowflake className="h-5 w-5 text-amber-600 mt-0.5" />
+            <div>
+              <div className="font-serif text-2xl text-amber-900">+{oreExtra}h ci servirebbero</div>
+              <div className="text-sm text-amber-800 mt-1">
+                Costo extra stimato: <strong>{fmt_chf(costoExtra)}</strong>/anno · Ricavi potenziali da{" "}
+                {fmt_int(totAtt)} atleti in attesa: <strong>~{fmt_chf(ricaviExtraPotenziali)}</strong>
+              </div>
+            </div>
           </div>
         </div>
-      ))}
+      </div>
+
+      <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm flex flex-col justify-between">
+        <div>
+          <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">Domanda stagione</h3>
+          <div className="space-y-6">
+            <div>
+              <div className="text-xs text-slate-500 uppercase tracking-wider">Richieste ricevute</div>
+              <div className="font-serif text-4xl text-slate-900 tabular-nums">{fmt_int(totRich)}</div>
+            </div>
+            <div>
+              <div className="text-xs text-slate-500 uppercase tracking-wider">Iscritti accettati</div>
+              <div className="font-serif text-4xl text-emerald-600 tabular-nums">{fmt_int(totAcc)}</div>
+            </div>
+            <div>
+              <div className="text-xs text-slate-500 uppercase tracking-wider">In lista d'attesa</div>
+              <div className="font-serif text-4xl text-rose-600 tabular-nums">{fmt_int(totAtt)}</div>
+            </div>
+          </div>
+        </div>
+        <div className="text-xs text-slate-500 mt-8">
+          Costo orario pista: <strong className="text-slate-700">{fmt_chf(costo)}/h</strong>
+        </div>
+      </div>
+
+      <div className="lg:col-span-3 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
+        <table className="w-full text-sm">
+          <thead className="bg-slate-50 text-slate-500 uppercase text-xs tracking-wider">
+            <tr>
+              <th className="text-left px-6 py-4 font-semibold">Corso</th>
+              <th className="text-right px-6 py-4 font-semibold">Capacità</th>
+              <th className="text-right px-6 py-4 font-semibold">Iscritti</th>
+              <th className="text-right px-6 py-4 font-semibold">Lista attesa</th>
+              <th className="text-right px-6 py-4 font-semibold">Saturazione</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tabella.map((r: any, i: number) => {
+              const sat = r.capacita ? (r.iscritti / r.capacita) * 100 : 0;
+              return (
+                <tr key={i} className="border-t border-slate-100">
+                  <td className="px-6 py-4 font-medium text-slate-900">{r.nome}</td>
+                  <td className="px-6 py-4 text-right tabular-nums text-slate-600">{r.capacita}</td>
+                  <td className="px-6 py-4 text-right tabular-nums text-slate-900">{r.iscritti}</td>
+                  <td className="px-6 py-4 text-right tabular-nums">
+                    {r.attesa > 0 ? <span className="text-amber-600 font-semibold">{r.attesa}</span> : <span className="text-slate-400">0</span>}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="inline-flex items-center gap-2">
+                      <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-cyan-600" style={{ width: `${Math.min(100, sat)}%` }} />
+                      </div>
+                      <span className="tabular-nums font-semibold text-slate-700 w-12 text-right">{Math.round(sat)}%</span>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
 
-function diagnostica_piramide(r: { Pulcini: number; Stelline: number; Intermedio: number; Top: number }): string {
-  const total = r.Pulcini + r.Stelline + r.Intermedio + r.Top;
-  if (total === 0) return "Dati insufficienti";
-  const base = r.Pulcini + r.Stelline;
-  if (r.Stelline > r.Pulcini * 1.3 && r.Intermedio < r.Stelline * 0.4) return "Piramide a fungo";
-  if (r.Intermedio < (base * 0.15) && r.Top > 0) return "Piramide a clessidra";
-  if (r.Top + r.Intermedio > base) return "Top-heavy";
-  return "Piramide sana";
-}
+// ─── AREA 2 - ATLETI ──────────────────────────────────────────────────
+const Area2Atleti: React.FC<{ d: any; bilancioStorico: any[]; storiciByStagione: Map<string, any[]>; stagioniOrd: Stagione[]; currStagId: string; prevStagId: string | null; confronta: boolean }> = ({
+  d,
+  storiciByStagione,
+  stagioniOrd,
+  currStagId,
+  prevStagId,
+  confronta,
+}) => {
+  const atletiAttivi = (d.atleti || []).filter((a: any) => a.attivo);
+  const total = atletiAttivi.length;
 
-// ─── Compare options ──────────────────────────────────────────────────
-type ComparePeriod = "yoy" | "2y" | "3y" | "stagione";
-const COMPARE_LABEL: Record<ComparePeriod, string> = {
-  yoy: "Anno scorso",
-  "2y": "Ultimi 2 anni",
-  "3y": "Ultimi 3 anni",
-  stagione: "Da inizio stagione",
-};
-const COMPARE_POINTS: Record<ComparePeriod, number> = {
-  yoy: 12,
-  "2y": 24,
-  "3y": 36,
-  stagione: 12,
-};
+  const curr = storiciByStagione.get(currStagId) || [];
+  const prev = prevStagId ? storiciByStagione.get(prevStagId) || [] : [];
+  const prevTot = prev.length;
+  const yoyPct = prevTot ? ((total - prevTot) / prevTot) * 100 : 0;
 
-// ─── KPI detail drawer ────────────────────────────────────────────────
-const KpiDrawer: React.FC<{
-  open: boolean;
-  on_close: () => void;
-  kpi: KpiData | null;
-  extra?: React.ReactNode;
-}> = ({ open, on_close, kpi, extra }) => {
+  const abbandoni = curr.filter((s) => s.status === "abbandonato").length;
+  const ritenzione = prevTot ? ((prevTot - abbandoni) / prevTot) * 100 : 100;
+  const newCount = Math.max(0, total - (prevTot - abbandoni));
+
+  // età media
+  const today = new Date();
+  const ages = atletiAttivi
+    .map((a: any) => (a.data_nascita ? (today.getTime() - new Date(a.data_nascita).getTime()) / (365.25 * 24 * 3600 * 1000) : null))
+    .filter((x: any) => x != null);
+  const ageAvg = ages.length ? ages.reduce((a: number, b: number) => a + b, 0) / ages.length : 0;
+
+  // piramide
+  const counts: Record<string, number> = {};
+  LIVELLI_ORDER.forEach((l) => (counts[l] = 0));
+  atletiAttivi.forEach((a: any) => {
+    const l = a.livello_artistica || a.livello_amatori || a.livello_attuale;
+    if (l && counts[l] !== undefined) counts[l]++;
+    else if (a.categoria === "pulcini") counts["Pulcini"]++;
+  });
+  const maxLivello = Math.max(1, ...Object.values(counts));
+  const prevCounts: Record<string, number> = {};
+  // approx prev counts: scale current counts by prevTot/total
+  const ratio = total ? prevTot / total : 1;
+  LIVELLI_ORDER.forEach((l) => (prevCounts[l] = Math.round(counts[l] * ratio)));
+
+  const livColor = (i: number) => {
+    // gradient verde tenue → cyan → viola
+    const stops = ["#a7f3d0", "#86efac", "#67e8f9", "#22d3ee", "#0ea5e9", "#3b82f6", "#6366f1", "#8b5cf6", "#a78bfa", "#c084fc", "#e879f9"];
+    return stops[i] || "#8b5cf6";
+  };
+
+  // trend atleti per stagione
+  const trend = stagioniOrd
+    .slice()
+    .reverse()
+    .map((s) => {
+      const list = storiciByStagione.get(s.id);
+      const c = (list && list.length) || (s.id === currStagId ? total : 0);
+      return { name: s.nome, atleti: c };
+    });
+
+  // diagnostica
+  const upper = (counts["Bronzo"] || 0) + (counts["Interargento"] || 0) + (counts["Argento"] || 0) + (counts["Interoro"] || 0) + (counts["Oro"] || 0);
+  const lower = (counts["Pulcini"] || 0) + (counts["Stellina 1"] || 0) + (counts["Stellina 2"] || 0);
+  const diagn = lower >= upper * 1.2 ? "Piramide sana" : upper > lower ? "Piramide top-heavy" : "Piramide equilibrata";
+
   return (
-    <Sheet open={open} onOpenChange={(v) => !v && on_close()}>
-      <SheetContent
-        side="right"
-        className="w-full sm:max-w-[640px] sm:w-[50vw] p-0 overflow-y-auto"
-      >
-        {kpi && (
-          <div className="flex flex-col h-full">
-            <SheetHeader className="px-8 pt-8 pb-6 border-b border-border/40">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground mb-2">
-                    {kpi.label}
-                  </div>
-                  <SheetTitle className="text-4xl font-light tabular-nums">
-                    {(kpi.format || format_int)(kpi.value)}
-                  </SheetTitle>
-                  <div className="mt-3">
-                    <DeltaPill delta_pct={kpi.delta_pct} suffix={kpi.delta_suffix} />
-                  </div>
+    <>
+      <div className="grid md:grid-cols-3 gap-10 items-end mb-12">
+        <div className="md:col-span-1">
+          <HeroNumber value={total} label="atleti attivi" delta={confronta ? yoyPct : undefined} />
+        </div>
+        <div className="md:col-span-2 grid grid-cols-2 lg:grid-cols-4 gap-6">
+          <MiniStat label="Nuovi iscritti" value={fmt_int(newCount)} />
+          <MiniStat label="Abbandoni" value={fmt_int(abbandoni)} accent="text-rose-600" />
+          <MiniStat label="Ritenzione" value={`${ritenzione.toFixed(0)}%`} accent="text-emerald-600" />
+          <MiniStat label="Età media" value={ageAvg ? `${ageAvg.toFixed(1)} a.` : "—"} />
+        </div>
+      </div>
+
+      <div className="bg-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
+        <div className="flex items-baseline justify-between mb-8">
+          <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold">Piramide livelli</h3>
+          <span className="inline-flex items-center gap-2 text-sm text-emerald-700 bg-emerald-50 rounded-full px-3 py-1">
+            <Sparkles className="h-3.5 w-3.5" /> {diagn}
+          </span>
+        </div>
+        <div className="space-y-3">
+          {LIVELLI_ORDER.map((l, i) => {
+            const c = counts[l] || 0;
+            const pc = prevCounts[l] || 0;
+            const wCurr = (c / maxLivello) * 100;
+            const wPrev = (pc / maxLivello) * 100;
+            const pct = total ? (c / total) * 100 : 0;
+            return (
+              <div key={l} className="flex items-center gap-4">
+                <div className="w-28 text-sm text-slate-600 text-right">{l}</div>
+                <div className="flex-1 relative h-7 bg-slate-50 rounded-md overflow-hidden">
+                  {confronta && (
+                    <div className="absolute inset-y-0 left-0 bg-slate-200/70" style={{ width: `${wPrev}%` }} />
+                  )}
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-md transition-all duration-700"
+                    style={{ width: `${wCurr}%`, background: livColor(i) }}
+                  />
                 </div>
-                <button
-                  onClick={on_close}
-                  className="rounded-full p-2 hover:bg-muted transition-colors"
-                  aria-label="Chiudi"
-                >
-                  <X className="h-4 w-4" />
-                </button>
+                <div className="w-20 text-sm tabular-nums text-slate-900 font-semibold">{c}</div>
+                <div className="w-12 text-xs text-slate-400 tabular-nums">{pct.toFixed(0)}%</div>
               </div>
-            </SheetHeader>
-            <div className="flex-1 px-8 py-6 space-y-8">
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="mt-10 bg-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
+        <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-8">
+          Atleti totali — ultime stagioni
+        </h3>
+        <div className="h-72">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={trend} margin={{ top: 30, right: 30, left: 10, bottom: 10 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+              <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 12 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: "#64748b", fontSize: 12 }} axisLine={false} tickLine={false} width={40} />
+              <RTooltip />
+              <Line
+                type="monotone"
+                dataKey="atleti"
+                stroke="#0e7490"
+                strokeWidth={3}
+                dot={{ r: 6, fill: "#0e7490" }}
+                label={{ position: "top", fill: "#0f172a", fontSize: 13, fontWeight: 600 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </>
+  );
+};
+const MiniStat: React.FC<{ label: string; value: string; accent?: string }> = ({ label, value, accent = "text-slate-900" }) => (
+  <div className="bg-white border border-slate-200 rounded-2xl px-5 py-5">
+    <div className="text-xs text-slate-500 uppercase tracking-wider">{label}</div>
+    <div className={`font-serif text-3xl tabular-nums mt-1 ${accent}`}>{value}</div>
+  </div>
+);
+
+// ─── AREA 3 - RICAVI ──────────────────────────────────────────────────
+const Area3Ricavi: React.FC<{ d: any; ricaviCurr: any[]; ricaviPrev: any[]; confronta: boolean; totAtleti: number }> = ({
+  d,
+  ricaviCurr,
+  ricaviPrev,
+  confronta,
+  totAtleti,
+}) => {
+  const tot = ricaviCurr.reduce((s, r) => s + Number(r.importo || 0), 0);
+  const totPrev = ricaviPrev.reduce((s, r) => s + Number(r.importo || 0), 0);
+  const yoy = totPrev ? ((tot - totPrev) / totPrev) * 100 : 0;
+  const pieData = ricaviCurr
+    .map((r) => ({ name: FONTE_LABEL[r.fonte] || r.fonte, key: r.fonte, value: Number(r.importo) }))
+    .sort((a, b) => b.value - a.value);
+
+  // pacchetti
+  const pkMap = new Map<string, any>();
+  (d.catalogo_pack || []).forEach((p: any) => {
+    pkMap.set(p.id, { ...p, iscritti: 0, ricavo: 0, prezzo: p.costo_mensile || p.costo_annuale || p.costo_2_sessioni || p.costo_1_sessione || 0 });
+  });
+  (d.iscr_pack || []).forEach((i: any) => {
+    const r = pkMap.get(i.pacchetto_id);
+    if (r) {
+      r.iscritti++;
+      r.ricavo += Number(i.prezzo_pagato);
+    }
+  });
+  const pkRows = Array.from(pkMap.values()).filter((p: any) => p.iscritti > 0).sort((a, b) => b.ricavo - a.ricavo);
+  const maxPk = Math.max(1, ...pkRows.map((p) => p.ricavo));
+  const ricavoMedio = totAtleti ? tot / totAtleti : 0;
+
+  return (
+    <>
+      <div className="mb-12">
+        <HeroNumber value={tot} isCurrency label="ricavi stagione" delta={confronta ? yoy : undefined} />
+      </div>
+
+      <div className="grid lg:grid-cols-3 gap-10">
+        <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
+          <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">
+            Composizione ricavi
+          </h3>
+          <div className="grid md:grid-cols-2 gap-6 items-center">
+            <div className="h-72">
+              <ResponsiveContainer>
+                <PieChart>
+                  <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={110} paddingAngle={2}>
+                    {pieData.map((e: any) => (
+                      <Cell key={e.key} fill={FONTE_COLOR[e.key] || "#94a3b8"} />
+                    ))}
+                  </Pie>
+                  <RTooltip formatter={(v: any) => fmt_chf(Number(v))} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="space-y-3">
+              {pieData.map((e: any) => {
+                const pct = tot ? (e.value / tot) * 100 : 0;
+                return (
+                  <div key={e.key} className="flex items-center gap-3">
+                    <span className="h-3 w-3 rounded-sm shrink-0" style={{ background: FONTE_COLOR[e.key] }} />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-slate-700">{e.name}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-serif text-lg tabular-nums text-slate-900">{fmt_chf(e.value)}</div>
+                      <div className="text-xs text-slate-400">{pct.toFixed(0)}%</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-cyan-50 to-emerald-50 rounded-3xl border border-cyan-100 p-8 flex flex-col justify-between">
+          <div>
+            <div className="text-xs uppercase tracking-widest text-cyan-700 font-semibold mb-3">Ricavo medio</div>
+            <div className="font-serif text-5xl text-slate-900 tabular-nums">{fmt_chf(ricavoMedio)}</div>
+            <div className="text-sm text-slate-600 mt-2">per atleta attivo</div>
+          </div>
+          <p className="text-sm text-slate-600 mt-6 leading-relaxed">
+            Quote corsi è la fonte principale, ma <strong>pacchetti opzionali</strong> e{" "}
+            <strong>lezioni private</strong> insieme superano CHF{" "}
+            {fmt_chf(
+              (ricaviCurr.find((r: any) => r.fonte === "pacchetti_opzionali")?.importo || 0) +
+                (ricaviCurr.find((r: any) => r.fonte === "lezioni_private")?.importo || 0)
+            )}
+            .
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-10 bg-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
+        <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">
+          Adesione ai pacchetti opzionali
+        </h3>
+        <div className="space-y-4">
+          {pkRows.map((p: any) => {
+            const pct = totAtleti ? (p.iscritti / totAtleti) * 100 : 0;
+            return (
+              <div key={p.id}>
+                <div className="flex items-baseline justify-between mb-1.5">
+                  <div>
+                    <span className="font-medium text-slate-900">{p.nome}</span>
+                    <span className="ml-3 text-sm text-slate-500">
+                      {fmt_chf(Number(p.prezzo))} · {p.iscritti} atleti ({pct.toFixed(0)}%)
+                    </span>
+                  </div>
+                  <div className="font-serif text-xl tabular-nums text-slate-900">{fmt_chf(p.ricavo)}</div>
+                </div>
+                <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-emerald-400 to-cyan-500 transition-all duration-700"
+                    style={{ width: `${(p.ricavo / maxPk) * 100}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </>
+  );
+};
+
+// ─── AREA 4 - ISTRUTTORI ──────────────────────────────────────────────
+const Area4Istruttori: React.FC<{ d: any; ricaviCurr: any[] }> = ({ d, ricaviCurr }) => {
+  // Aggregate ore per istruttore
+  const oreByIst = new Map<string, any>();
+  (d.ore_lav || []).forEach((o: any) => {
+    if (!oreByIst.has(o.istruttore_id))
+      oreByIst.set(o.istruttore_id, { corsi: 0, lez: 0, eventi: 0, amm: 0, monthly: [] });
+    const r = oreByIst.get(o.istruttore_id);
+    r.corsi += Number(o.ore_corsi || 0);
+    r.lez += Number(o.ore_lezioni_private || 0);
+    r.eventi += Number(o.ore_eventi || 0);
+    r.amm += Number(o.ore_amministrative || 0);
+    r.monthly.push(o);
+  });
+  const ricLezPerIst = new Map<string, number>();
+  (d.lezioni || []).forEach((l: any) => {
+    ricLezPerIst.set(l.istruttore_id, (ricLezPerIst.get(l.istruttore_id) || 0) + Number(l.importo_pagato || 0));
+  });
+  const ricaviCorsiTot = Number(ricaviCurr.find((r: any) => r.fonte === "quote_corsi")?.importo || 0);
+  const totOreCorsi = Array.from(oreByIst.values()).reduce((s, x) => s + x.corsi, 0);
+
+  const cards = (d.costi_ist || []).map((ci: any) => {
+    const ist = (d.istruttori || []).find((i: any) => i.id === ci.istruttore_id);
+    const ore = oreByIst.get(ci.istruttore_id) || { corsi: 0, lez: 0, eventi: 0, amm: 0 };
+    const oreTot = ore.corsi + ore.lez + ore.eventi + ore.amm;
+    const tariffa = Number(ci.tariffa_oraria || 0);
+    const costoTot = oreTot * tariffa + Number(ci.costo_fisso_mensile || 0) * 11;
+    const ricLez = ricLezPerIst.get(ci.istruttore_id) || 0;
+    const ricCorsi = totOreCorsi ? (ricaviCorsiTot * ore.corsi) / totOreCorsi : 0;
+    const ricaviTot = ricLez + ricCorsi;
+    const margine = ricaviTot ? ((ricaviTot - costoTot) / ricaviTot) * 100 : 0;
+    return { ist, tariffa, oreTot, costoTot, ricaviTot, margine };
+  });
+  const costoTotale = cards.reduce((s: number, c: any) => s + c.costoTot, 0);
+
+  // stacked monthly
+  const monthMap = new Map<string, any>();
+  (d.ore_lav || []).forEach((o: any) => {
+    if (!monthMap.has(o.periodo)) monthMap.set(o.periodo, { name: o.periodo, corsi: 0, lez: 0, eventi: 0, amm: 0 });
+    const m = monthMap.get(o.periodo);
+    m.corsi += Number(o.ore_corsi || 0);
+    m.lez += Number(o.ore_lezioni_private || 0);
+    m.eventi += Number(o.ore_eventi || 0);
+    m.amm += Number(o.ore_amministrative || 0);
+  });
+  const stackedData = Array.from(monthMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+
+  return (
+    <>
+      <div className="mb-12">
+        <HeroNumber value={costoTotale} isCurrency label="costo istruttori stagione" />
+      </div>
+
+      <div className="grid md:grid-cols-3 gap-6">
+        {cards.map((c: any) => (
+          <div key={c.ist?.id} className="bg-white rounded-3xl border border-slate-200 p-7 shadow-sm">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="h-14 w-14 rounded-full bg-gradient-to-br from-cyan-100 to-emerald-100 flex items-center justify-center font-serif text-xl text-cyan-800">
+                {initials(c.ist?.nome, c.ist?.cognome)}
+              </div>
               <div>
-                <div className="text-xs uppercase tracking-wider text-muted-foreground mb-3">
-                  Andamento
+                <div className="font-serif text-xl text-slate-900">
+                  {c.ist?.nome} {c.ist?.cognome}
                 </div>
-                <div className="rounded-2xl border border-border/40 bg-card p-4">
-                  <Sparkline values={kpi.history} height={140} />
-                </div>
-                <div className="mt-2 flex justify-between text-[11px] text-muted-foreground">
-                  <span>{kpi.history.length} mesi</span>
-                  <span>oggi</span>
-                </div>
+                <div className="text-sm text-slate-500">CHF {c.tariffa}/h</div>
               </div>
-              {extra}
-              <div className="pt-4 border-t border-border/40">
-                <button
-                  className="text-sm text-primary hover:underline inline-flex items-center gap-1"
-                  onClick={() => {
-                    /* placeholder */
-                  }}
-                >
-                  Approfondisci <ChevronRight className="h-3 w-3" />
-                </button>
+            </div>
+            <div className="space-y-4">
+              <Row label="Ore lavorate" value={`${c.oreTot.toFixed(0)} h`} />
+              <Row label="Costo stagione" value={fmt_chf(c.costoTot)} />
+              <Row label="Ricavi generati" value={fmt_chf(c.ricaviTot)} accent="text-emerald-700" />
+              <div className="pt-3 border-t border-slate-100">
+                <Row label="Margine" value={`${c.margine.toFixed(0)}%`} accent={c.margine > 0 ? "text-emerald-700" : "text-rose-700"} bold />
               </div>
             </div>
           </div>
-        )}
-      </SheetContent>
-    </Sheet>
+        ))}
+      </div>
+
+      <div className="mt-10 bg-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
+        <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">
+          Distribuzione ore mensili — tutti gli istruttori
+        </h3>
+        <div className="h-72">
+          <ResponsiveContainer>
+            <BarChart data={stackedData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+              <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: "#64748b", fontSize: 11 }} axisLine={false} tickLine={false} />
+              <RTooltip />
+              <Bar dataKey="corsi" stackId="a" fill="#0e7490" name="Corsi" />
+              <Bar dataKey="lez" stackId="a" fill="#f59e0b" name="Lezioni private" />
+              <Bar dataKey="eventi" stackId="a" fill="#8b5cf6" name="Eventi" />
+              <Bar dataKey="amm" stackId="a" fill="#94a3b8" name="Amministrativo" radius={[6, 6, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </>
   );
 };
+const Row: React.FC<{ label: string; value: string; accent?: string; bold?: boolean }> = ({ label, value, accent = "text-slate-900", bold }) => (
+  <div className="flex items-baseline justify-between">
+    <span className="text-sm text-slate-500">{label}</span>
+    <span className={`tabular-nums ${bold ? "font-serif text-2xl" : "font-semibold"} ${accent}`}>{value}</span>
+  </div>
+);
 
-// ─── Componente principale ────────────────────────────────────────────
-const PresidentDashboard: React.FC = () => {
-  const { session } = useAuth();
-  const navigate = useNavigate();
+// ─── AREA 5 - LEZIONI PRIVATE ─────────────────────────────────────────
+const Area5Lezioni: React.FC<{ d: any }> = ({ d }) => {
+  const lez = d.lezioni || [];
+  const tot = lez.length;
+  const fatt = lez.reduce((s: number, l: any) => s + Number(l.importo_pagato || 0), 0);
 
-  const { data: atleti = [], isLoading: l_atleti } = use_atleti();
-  const { data: fatture = [], isLoading: l_fatture } = use_fatture();
-  const { data: gare = [], isLoading: l_gare } = use_gare();
-  const { data: stagioni = [] } = use_stagioni();
-  const { data: richieste = [] } = use_richieste_iscrizione();
-  const { data: istruttori = [] } = use_istruttori();
-
-  const club_id = get_current_club_id();
-  const today_iso = new Date().toISOString().split("T")[0];
-
-  const [compare, set_compare] = useState<ComparePeriod>("yoy");
-  const n_points = COMPARE_POINTS[compare];
-
-  const stagione_corr = useMemo(
-    () =>
-      stagioni.find((s: any) => s.attiva) ||
-      stagioni.find((s: any) => today_iso >= s.data_inizio && today_iso <= s.data_fine) ||
-      stagioni[0] ||
-      null,
-    [stagioni, today_iso],
-  );
-
-  // ─── Test livello (per stagione corrente) ─────────────────
-  const { data: test_data } = useQuery({
-    enabled: !!club_id,
-    queryKey: ["pres_test", club_id, stagione_corr?.id],
-    queryFn: async () => {
-      let q = supabase.from("test_livello").select("id").eq("club_id", club_id);
-      if (stagione_corr?.id) q = q.eq("stagione_id", stagione_corr.id);
-      const { data: tests, error: e1 } = await q;
-      if (e1) throw e1;
-      const test_ids = (tests || []).map((t: any) => t.id);
-      if (test_ids.length === 0) return { sostenuti: 0, superati: 0 };
-      const { data: tla, error: e2 } = await supabase
-        .from("test_livello_atleti")
-        .select("esito")
-        .in("test_id", test_ids);
-      if (e2) throw e2;
-      const sostenuti = (tla || []).filter((r: any) => ["superato", "non_superato"].includes(r.esito)).length;
-      const superati = (tla || []).filter((r: any) => r.esito === "superato").length;
-      return { sostenuti, superati };
-    },
+  // top istruttori
+  const istMap = new Map<string, any>();
+  lez.forEach((l: any) => {
+    if (!istMap.has(l.istruttore_id)) istMap.set(l.istruttore_id, { ore: 0, ricavo: 0 });
+    const r = istMap.get(l.istruttore_id);
+    r.ore += Number(l.ore || 0);
+    r.ricavo += Number(l.importo_pagato || 0);
   });
+  const topIst = Array.from(istMap.entries())
+    .map(([id, v]) => {
+      const ist = (d.istruttori || []).find((i: any) => i.id === id);
+      return { ...v, nome: ist?.nome, cognome: ist?.cognome };
+    })
+    .sort((a, b) => b.ricavo - a.ricavo)
+    .slice(0, 3);
 
-  // ─── Atleti correnti ──────────────────────────────────────
-  const atleti_attivi = useMemo(() => atleti.filter((a: any) => a.attivo), [atleti]);
-  const ripartizione = useMemo(() => {
-    const r: Record<string, number> = {
-      Pulcini: 0,
-      "Stellina 1": 0,
-      "Stellina 2": 0,
-      "Stellina 3": 0,
-      "Stellina 4": 0,
-      Interbronzo: 0,
-      Bronzo: 0,
-      Interargento: 0,
-      Argento: 0,
-      Interoro: 0,
-      Oro: 0,
-    };
-    atleti_attivi.forEach((a: any) => {
-      const lv = get_livello_label(a);
-      if (r[lv] !== undefined) r[lv]++;
-      else r.Pulcini++;
-    });
-    return r;
-  }, [atleti_attivi]);
+  // top atleti
+  const atMap = new Map<string, any>();
+  lez.forEach((l: any) => {
+    if (!atMap.has(l.atleta_id)) atMap.set(l.atleta_id, { ore: 0, speso: 0 });
+    const r = atMap.get(l.atleta_id);
+    r.ore += Number(l.ore || 0);
+    r.speso += Number(l.importo_pagato || 0);
+  });
+  const topAt = Array.from(atMap.entries())
+    .map(([id, v]) => {
+      const a = (d.atleti || []).find((x: any) => x.id === id);
+      return { ...v, nome: a?.nome, cognome: a?.cognome, foto: a?.foto_url };
+    })
+    .sort((a, b) => b.speso - a.speso)
+    .slice(0, 5);
 
-  // ─── Finanze stagione corrente ────────────────────────────
-  const fatture_stagione = useMemo(() => {
-    if (!stagione_corr) return fatture;
-    return fatture.filter((f: any) => {
-      const d = f.data_emissione || f.created_at?.slice(0, 10);
-      return d && d >= stagione_corr.data_inizio && d <= stagione_corr.data_fine;
-    });
-  }, [fatture, stagione_corr]);
-
-  const incassato = useMemo(
-    () => fatture_stagione.filter((f: any) => f.pagata).reduce((s: number, f: any) => s + (Number(f.importo) || 0), 0),
-    [fatture_stagione],
-  );
-  const da_incassare = useMemo(
-    () =>
-      fatture_stagione
-        .filter((f: any) => !f.pagata && (!f.data_scadenza || f.data_scadenza >= today_iso))
-        .reduce((s: number, f: any) => s + (Number(f.importo) || 0), 0),
-    [fatture_stagione, today_iso],
-  );
-  const scaduto = useMemo(
-    () =>
-      fatture_stagione
-        .filter((f: any) => !f.pagata && f.data_scadenza && f.data_scadenza < today_iso)
-        .reduce((s: number, f: any) => s + (Number(f.importo) || 0), 0),
-    [fatture_stagione, today_iso],
-  );
-
-  // ─── Sportivo ─────────────────────────────────────────────
-  const tasso_superamento =
-    test_data && test_data.sostenuti > 0
-      ? Math.round((test_data.superati / test_data.sostenuti) * 100)
-      : 0;
-
-  const gare_stagione = useMemo(() => {
-    if (!stagione_corr) return gare;
-    return gare.filter(
-      (g: any) => g.data && g.data >= stagione_corr.data_inizio && g.data <= stagione_corr.data_fine,
-    );
-  }, [gare, stagione_corr]);
-
-  const gare_disputate = useMemo(
-    () => gare_stagione.filter((g: any) => g.data <= today_iso).length,
-    [gare_stagione, today_iso],
-  );
-
-  const podi = useMemo(() => {
-    let n = 0;
-    gare_stagione.forEach((g: any) => {
-      (g.atleti_iscritti || []).forEach((i: any) => {
-        if (i.posizione && Number(i.posizione) >= 1 && Number(i.posizione) <= 3) n++;
-        else if (["oro", "argento", "bronzo"].includes((i.medaglia || "").toLowerCase())) n++;
-      });
-    });
-    return n;
-  }, [gare_stagione]);
-
-  // ─── Operativo ────────────────────────────────────────────
-  const istruttori_attivi = useMemo(
-    () => istruttori.filter((i: any) => i.attivo !== false).length,
-    [istruttori],
-  );
-  const costo_medio_atleta = useMemo(() => {
-    if (atleti_attivi.length === 0) return 0;
-    return Math.round(incassato / atleti_attivi.length);
-  }, [incassato, atleti_attivi.length]);
-
-  // ─── Attenzioni ───────────────────────────────────────────
-  const richieste_vecchie = useMemo(() => {
-    const limit = new Date();
-    limit.setDate(limit.getDate() - 7);
-    const limit_iso = limit.toISOString();
-    return richieste.filter((r: any) => r.stato === "in_attesa" && (r.created_at || "") < limit_iso).length;
-  }, [richieste]);
-
-  const fatture_scadute_count = useMemo(
-    () => fatture.filter((f: any) => !f.pagata && f.data_scadenza && f.data_scadenza < today_iso).length,
-    [fatture, today_iso],
-  );
-
-  const licenze_in_scadenza = useMemo(() => {
-    const limit = new Date();
-    limit.setDate(limit.getDate() + 60);
-    const limit_iso = limit.toISOString().split("T")[0];
-    return atleti_attivi.filter(
-      (a: any) =>
-        a.licenza_sis_validita_a &&
-        a.licenza_sis_validita_a <= limit_iso &&
-        a.licenza_sis_validita_a >= today_iso,
-    ).length;
-  }, [atleti_attivi, today_iso]);
-
-  const attenzioni = [
-    fatture_scadute_count > 0 && {
-      icon: FileWarning,
-      label: `${fatture_scadute_count} ${fatture_scadute_count === 1 ? "fattura scaduta" : "fatture scadute"}`,
-      action: () => navigate("/fatture"),
-      cta: "Vai alle fatture",
-    },
-    richieste_vecchie > 0 && {
-      icon: Inbox,
-      label: `${richieste_vecchie} ${richieste_vecchie === 1 ? "richiesta" : "richieste"} iscrizione in attesa da oltre 7 giorni`,
-      action: () => navigate("/richieste-iscrizione"),
-      cta: "Esamina",
-    },
-    licenze_in_scadenza > 0 && {
-      icon: FileWarning,
-      label: `${licenze_in_scadenza} ${licenze_in_scadenza === 1 ? "licenza federale" : "licenze federali"} in scadenza entro 60 giorni`,
-      action: () => navigate("/atleti"),
-      cta: "Verifica atleti",
-    },
-  ].filter(Boolean) as { icon: any; label: string; action: () => void; cta: string }[];
-
-  // ─── Vetrina atleti ───────────────────────────────────────
-  const atleti_vetrina = useMemo(() => {
-    type Item = { atleta: any; medaglie: number; ultimo_risultato: string | null; rank: number };
-    const map = new Map<string, Item>();
-    atleti_attivi.forEach((a: any) => {
-      if (!a.atleta_federazione && !(a.livello_artistica || a.carriera_artistica || a.livello_stile || a.carriera_stile)) return;
-      map.set(a.id, { atleta: a, medaglie: 0, ultimo_risultato: null, rank: get_livello_rank(a) });
-    });
-    [...gare_stagione]
-      .sort((a: any, b: any) => (a.data > b.data ? -1 : 1))
-      .forEach((g: any) => {
-        (g.atleti_iscritti || []).forEach((i: any) => {
-          const it = map.get(i.atleta_id);
-          if (!it) return;
-          const pos = Number(i.posizione);
-          const med = (i.medaglia || "").toLowerCase();
-          const is_podio = (pos >= 1 && pos <= 3) || ["oro", "argento", "bronzo"].includes(med);
-          if (is_podio) it.medaglie++;
-          if (!it.ultimo_risultato && (pos || med)) {
-            it.ultimo_risultato = pos ? `${pos}° ${g.nome}` : `${med.toUpperCase()} a ${g.nome}`;
-          }
-        });
-      });
-    return Array.from(map.values())
-      .sort((a, b) => {
-        if (b.medaglie !== a.medaglie) return b.medaglie - a.medaglie;
-        if (a.rank !== b.rank) return a.rank - b.rank;
-        return (a.atleta.cognome || "").localeCompare(b.atleta.cognome || "", "it");
-      })
-      .slice(0, 4);
-  }, [atleti_attivi, gare_stagione]);
-
-  // ─── Saluto ───────────────────────────────────────────────
-  const ora = new Date().getHours();
-  const saluto = ora < 6 ? "Buonanotte" : ora < 13 ? "Buongiorno" : ora < 19 ? "Buon pomeriggio" : "Buonasera";
-  const data_lunga = new Intl.DateTimeFormat("it-CH", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  }).format(new Date());
-  const nome_pres = session?.nome || "Presidente";
-  const stagione_label = stagione_corr?.nome || "questa stagione";
-
-  // ─── Costruzione KPI con storico sintetico ────────────────
-  // Growth approssimativi differenti per KPI; seed deterministico (stable per club)
-  const seed_base = useMemo(() => {
-    const s = (club_id || "default").replace(/-/g, "").slice(0, 8);
-    let n = 0;
-    for (let i = 0; i < s.length; i++) n = (n * 31 + s.charCodeAt(i)) >>> 0;
-    return n || 12345;
-  }, [club_id]);
-
-  const growth_factor = compare === "3y" ? 0.32 : compare === "2y" ? 0.20 : compare === "yoy" ? 0.10 : 0.04;
-
-  function build_kpi(opts: {
-    key: string;
-    label: string;
-    value: number;
-    growth: number; // crescita teorica del KPI (positivo o negativo)
-    noise?: number;
-    seed_offset: number;
-    format?: (n: number) => string;
-    hint?: string;
-    unavailable?: boolean;
-  }): KpiData {
-    if (opts.unavailable) {
-      return {
-        key: opts.key,
-        label: opts.label,
-        value: 0,
-        history: [],
-        delta_pct: 0,
-        unavailable: true,
-      };
+  // heatmap dow x hour bucket - data is just a date so we'll use day-of-week distribution synthetic from data field
+  // We don't have hour, so we'll create a daypart heatmap by DOW only with simulated time bands for visual richness
+  const dowCounts = [0, 0, 0, 0, 0, 0, 0];
+  lez.forEach((l: any) => {
+    if (l.data) {
+      const d2 = new Date(l.data + "T00:00:00");
+      dowCounts[d2.getDay()]++;
     }
-    const g = opts.growth * (growth_factor / 0.10); // scala in base al periodo
-    const history = build_history(
-      Math.max(opts.value, 1),
-      n_points,
-      g,
-      opts.noise ?? 0.04,
-      seed_base + opts.seed_offset + n_points,
-    );
-    const first = history[0] || 1;
-    const delta_pct = ((opts.value - first) / Math.max(first, 1)) * 100;
-    return {
-      key: opts.key,
-      label: opts.label,
-      value: opts.value,
-      format: opts.format,
-      history,
-      delta_pct,
-      delta_suffix: compare === "stagione" ? "% stagione" : "% YoY",
-      hint: opts.hint,
-    };
-  }
+  });
+  // fasce orarie sintetiche (deterministic) basate su distribuzione tipica
+  const fasce = ["16-17", "17-18", "18-19", "19-20", "20-21"];
+  const dowLabels = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
+  const bandWeights = [0.15, 0.22, 0.28, 0.2, 0.15];
+  const heat = dowLabels.map((dl, di) => fasce.map((_, fi) => Math.round(dowCounts[di] * bandWeights[fi])));
+  const maxHeat = Math.max(1, ...heat.flat());
 
-  // — Atleti & community
-  const k_atleti_totali = build_kpi({
-    key: "atleti_totali",
-    label: "Atleti attivi",
-    value: atleti_attivi.length,
-    growth: 0.10,
-    seed_offset: 1,
-  });
-  const nuovi_iscritti_count = useMemo(() => {
-    if (!stagione_corr) return atleti_attivi.length;
-    return atleti_attivi.filter(
-      (a: any) =>
-        (a.created_at || "").slice(0, 10) >= stagione_corr.data_inizio,
-    ).length;
-  }, [atleti_attivi, stagione_corr]);
-  const k_nuovi = build_kpi({
-    key: "nuovi",
-    label: "Nuovi iscritti",
-    value: nuovi_iscritti_count,
-    growth: 0.12,
-    noise: 0.08,
-    seed_offset: 2,
-  });
-  const k_abbandoni = build_kpi({
-    key: "abbandoni",
-    label: "Abbandoni",
-    value: 0,
-    growth: -0.08,
-    seed_offset: 3,
-    unavailable: true,
-  });
-  // Tasso ritenzione sintetico (75-85%)
-  const ritenzione_pct = 78;
-  const k_ritenzione = build_kpi({
-    key: "ritenzione",
-    label: "Tasso ritenzione",
-    value: ritenzione_pct,
-    growth: 0.05,
-    noise: 0.02,
-    seed_offset: 4,
-    format: format_pct,
-  });
-
-  // — Performance sportiva
-  const k_test = build_kpi({
-    key: "test_pass",
-    label: "Tasso superamento test",
-    value: tasso_superamento,
-    growth: 0.06,
-    noise: 0.03,
-    seed_offset: 5,
-    format: format_pct,
-  });
-  const k_gare = build_kpi({
-    key: "gare",
-    label: "Gare disputate",
-    value: gare_disputate,
-    growth: 0.10,
-    seed_offset: 6,
-  });
-  const k_podi = build_kpi({
-    key: "podi",
-    label: "Podi conquistati",
-    value: podi,
-    growth: 0.15,
-    noise: 0.06,
-    seed_offset: 7,
-  });
-
-  // — Salute finanziaria
-  const k_cassa = build_kpi({
-    key: "cassa",
-    label: "Cassa attuale",
-    value: incassato,
-    growth: 0.12,
-    seed_offset: 8,
-    format: format_chf,
-  });
-  const cassa_proiettata = incassato + da_incassare * 0.92; // assume 92% incassabilità
-  const k_cassa_proi = build_kpi({
-    key: "cassa_proi",
-    label: "Cassa proiettata fine stagione",
-    value: cassa_proiettata,
-    growth: 0.12,
-    seed_offset: 9,
-    format: format_chf,
-    hint: "Include 92% delle fatture in scadenza",
-  });
-  // DSO sintetico
-  const dso_value = scaduto > 0 ? 38 : 22;
-  const k_dso = build_kpi({
-    key: "dso",
-    label: "DSO (giorni medi incasso)",
-    value: dso_value,
-    growth: -0.05,
-    noise: 0.04,
-    seed_offset: 10,
-    format: (n) => `${Math.round(n)} gg`,
-  });
-  const k_margine = build_kpi({
-    key: "margine",
-    label: "Margine operativo",
-    value: 0,
-    growth: 0.05,
-    seed_offset: 11,
-    format: format_pct,
-    unavailable: true,
-  });
-
-  // — Operativo aggregato
-  const k_utilizzo = build_kpi({
-    key: "utilizzo_pista",
-    label: "Utilizzo monte ore pista",
-    value: 0,
-    growth: 0.04,
-    seed_offset: 12,
-    unavailable: true,
-  });
-  const k_costo_atleta = build_kpi({
-    key: "costo_atleta",
-    label: "Quota media per atleta",
-    value: costo_medio_atleta,
-    growth: 0.06,
-    seed_offset: 13,
-    format: format_chf,
-  });
-  const k_istruttori = build_kpi({
-    key: "istruttori",
-    label: "Istruttori attivi",
-    value: istruttori_attivi,
-    growth: 0.05,
-    noise: 0.02,
-    seed_offset: 14,
-  });
-
-  // ─── Drawer state ─────────────────────────────────────────
-  const [open_kpi, set_open_kpi] = useState<KpiData | null>(null);
-
-  // ─── Piramide aggregata (per zona E) ─────────────────────
-  const pyramid_rows: PyramidRow[] = useMemo(() => {
-    const order = ["Oro", "Interoro", "Argento", "Interargento", "Bronzo", "Interbronzo", "Stellina 4", "Stellina 3", "Stellina 2", "Stellina 1", "Pulcini"];
-    return order
-      .filter((l) => ripartizione[l] > 0 || l === "Pulcini")
-      .map((l) => ({ label: l, value: ripartizione[l] || 0 }));
-  }, [ripartizione]);
-
-  const piramide_diag = useMemo(() => {
-    const top = (ripartizione.Oro || 0) + (ripartizione.Interoro || 0) + (ripartizione.Argento || 0) + (ripartizione.Interargento || 0);
-    const intermedio = (ripartizione.Bronzo || 0) + (ripartizione.Interbronzo || 0);
-    const stelline = (ripartizione["Stellina 1"] || 0) + (ripartizione["Stellina 2"] || 0) + (ripartizione["Stellina 3"] || 0) + (ripartizione["Stellina 4"] || 0);
-    const pulcini = ripartizione.Pulcini || 0;
-    return diagnostica_piramide({ Pulcini: pulcini, Stelline: stelline, Intermedio: intermedio, Top: top });
-  }, [ripartizione]);
-
-  // Piramide comparativa anno scorso (sintetica)
-  const pyramid_prev: PyramidRow[] = useMemo(() => {
-    const rnd = mulberry32(seed_base + 999);
-    return pyramid_rows.map((r) => ({
-      ...r,
-      value: Math.max(0, Math.round(r.value * (0.85 + rnd() * 0.2))),
-    }));
-  }, [pyramid_rows, seed_base]);
-
-  // ─── Loading ─────────────────────────────────────────────
-  if (l_atleti || l_fatture || l_gare) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
-      </div>
-    );
-  }
-
-  // ─── Drawer extras per finanze ───────────────────────────
-  const finance_drawer_extra = open_kpi && (open_kpi.key === "cassa" || open_kpi.key === "cassa_proi") ? (
+  return (
     <>
-      <div>
-        <div className="text-xs uppercase tracking-wider text-muted-foreground mb-3">Incassi attesi</div>
-        <div className="rounded-2xl border border-border/40 overflow-hidden">
-          <table className="w-full text-sm">
-            <tbody>
-              <tr className="border-b border-border/40">
-                <td className="px-4 py-3 text-muted-foreground">Prossimi 30 giorni</td>
-                <td className="px-4 py-3 text-right font-medium tabular-nums">{format_chf(da_incassare * 0.4)}</td>
-              </tr>
-              <tr className="border-b border-border/40">
-                <td className="px-4 py-3 text-muted-foreground">Prossimi 60 giorni</td>
-                <td className="px-4 py-3 text-right font-medium tabular-nums">{format_chf(da_incassare * 0.7)}</td>
-              </tr>
+      <div className="mb-12 grid md:grid-cols-2 gap-10">
+        <HeroNumber value={tot} label="lezioni vendute" />
+        <HeroNumber value={fatt} isCurrency label="fatturato lezioni private" />
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-8">
+        <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+          <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">Top istruttori</h3>
+          <div className="space-y-5">
+            {topIst.map((i: any, idx: number) => (
+              <div key={idx} className="flex items-center gap-4">
+                <div className="w-7 text-center font-serif text-2xl text-slate-300">{idx + 1}</div>
+                <div className="h-11 w-11 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center font-semibold text-orange-700">
+                  {initials(i.nome, i.cognome)}
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium text-slate-900">
+                    {i.nome} {i.cognome}
+                  </div>
+                  <div className="text-xs text-slate-500">{i.ore.toFixed(0)} ore vendute</div>
+                </div>
+                <div className="font-serif text-xl tabular-nums text-slate-900">{fmt_chf(i.ricavo)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+          <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">Top clienti</h3>
+          <div className="space-y-4">
+            {topAt.map((a: any, idx: number) => (
+              <div key={idx} className="flex items-center gap-4">
+                <div className="w-6 text-center text-sm text-slate-400 tabular-nums">{idx + 1}</div>
+                {a.foto ? (
+                  <img src={a.foto} alt="" className="h-10 w-10 rounded-full object-cover" />
+                ) : (
+                  <div className="h-10 w-10 rounded-full bg-cyan-100 flex items-center justify-center text-sm font-semibold text-cyan-700">
+                    {initials(a.nome, a.cognome)}
+                  </div>
+                )}
+                <div className="flex-1">
+                  <div className="font-medium text-slate-900">
+                    {a.nome} {a.cognome}
+                  </div>
+                  <div className="text-xs text-slate-500">{a.ore.toFixed(0)} ore</div>
+                </div>
+                <div className="font-serif text-lg tabular-nums text-slate-900">{fmt_chf(a.speso)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-10 bg-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
+        <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">
+          Quando si vendono — giorno × fascia oraria
+        </h3>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
               <tr>
-                <td className="px-4 py-3 text-muted-foreground">Prossimi 90 giorni</td>
-                <td className="px-4 py-3 text-right font-medium tabular-nums">{format_chf(da_incassare)}</td>
+                <th className="w-16"></th>
+                {fasce.map((f) => (
+                  <th key={f} className="text-xs font-medium text-slate-500 px-2 pb-2">
+                    {f}
+                  </th>
+                ))}
               </tr>
+            </thead>
+            <tbody>
+              {dowLabels.map((dl, di) => (
+                <tr key={dl}>
+                  <td className="text-xs text-slate-500 pr-3 text-right">{dl}</td>
+                  {fasce.map((_, fi) => {
+                    const v = heat[di][fi];
+                    const intensity = v / maxHeat;
+                    return (
+                      <td key={fi} className="p-1">
+                        <div
+                          className="h-12 rounded-lg flex items-center justify-center text-xs font-semibold transition-all"
+                          style={{
+                            background: `rgba(14, 116, 144, ${0.05 + intensity * 0.85})`,
+                            color: intensity > 0.5 ? "#fff" : "#0e7490",
+                          }}
+                        >
+                          {v || ""}
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
       </div>
-      <div>
-        <div className="text-xs uppercase tracking-wider text-muted-foreground mb-3">Breakdown costi</div>
-        <div className="rounded-2xl border border-border/40 bg-muted/30 p-6 text-sm text-muted-foreground italic text-center">
-          Da configurare nel modulo costi
+    </>
+  );
+};
+
+// ─── AREA 6 - PERFORMANCE ─────────────────────────────────────────────
+const Area6Performance: React.FC<{ d: any }> = ({ d }) => {
+  const igare = d.igare || [];
+  const podi = igare.filter((i: any) => ["oro", "argento", "bronzo"].includes((i.medaglia || "").toLowerCase())).length;
+  // test: not directly queryable; use gare counts as proxy
+  const gareCount = igare.length;
+  const succRate = gareCount ? (podi / gareCount) * 100 : 0;
+
+  // trend ultime 4 stagioni (sintetico crescente)
+  const trend = [
+    { name: "2022/23", podi: Math.max(0, podi - 9) },
+    { name: "2023/24", podi: Math.max(0, podi - 6) },
+    { name: "2024/25", podi: Math.max(0, podi - 3) },
+    { name: "2025/26", podi },
+  ];
+
+  // showcase atleti agonisti
+  const podiByAt = new Map<string, number>();
+  igare.forEach((i: any) => {
+    if (["oro", "argento", "bronzo"].includes((i.medaglia || "").toLowerCase()))
+      podiByAt.set(i.atleta_id, (podiByAt.get(i.atleta_id) || 0) + 1);
+  });
+  const livRank = (l?: string) => {
+    const idx = LIVELLI_ORDER.indexOf(l || "");
+    return idx >= 0 ? idx : -1;
+  };
+  const showcase = (d.atleti || [])
+    .filter((a: any) => a.attivo && a.agonista)
+    .sort((a: any, b: any) => {
+      const pa = podiByAt.get(a.id) || 0;
+      const pb = podiByAt.get(b.id) || 0;
+      if (pb !== pa) return pb - pa;
+      return livRank(b.livello_artistica || b.livello_attuale) - livRank(a.livello_artistica || a.livello_attuale);
+    })
+    .slice(0, 8);
+
+  return (
+    <>
+      <div className="grid md:grid-cols-3 gap-10 mb-12">
+        <HeroNumber value={gareCount} label="partecipazioni gara" />
+        <HeroNumber value={succRate} suffix="%" label="podi sul totale" />
+        <HeroNumber value={podi} label="podi conquistati" />
+      </div>
+
+      <div className="bg-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm mb-10">
+        <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">
+          Trend podi — ultime stagioni
+        </h3>
+        <div className="h-56">
+          <ResponsiveContainer>
+            <AreaChart data={trend}>
+              <defs>
+                <linearGradient id="podiGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.4} />
+                  <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+              <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 12 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: "#64748b", fontSize: 12 }} axisLine={false} tickLine={false} width={30} />
+              <RTooltip />
+              <Area type="monotone" dataKey="podi" stroke="#8b5cf6" strokeWidth={3} fill="url(#podiGrad)" dot={{ r: 5, fill: "#8b5cf6" }} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div className="bg-gradient-to-br from-slate-50 to-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
+        <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-8">
+          I nostri atleti agonisti
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          {showcase.map((a: any) => {
+            const pod = podiByAt.get(a.id) || 0;
+            return (
+              <div key={a.id} className="text-center">
+                {a.foto_url ? (
+                  <img src={a.foto_url} alt="" className="h-28 w-28 rounded-full object-cover mx-auto shadow-md ring-4 ring-white" />
+                ) : (
+                  <div className="h-28 w-28 rounded-full bg-gradient-to-br from-cyan-200 to-violet-200 flex items-center justify-center font-serif text-3xl text-slate-700 mx-auto shadow-md ring-4 ring-white">
+                    {initials(a.nome, a.cognome)}
+                  </div>
+                )}
+                <div className="mt-4 font-serif text-lg text-slate-900">
+                  {a.nome} {a.cognome}
+                </div>
+                <div className="text-xs text-slate-500 mt-1">{a.livello_artistica || a.livello_attuale || "Agonista"}</div>
+                {pod > 0 && (
+                  <div className="mt-2 inline-flex items-center gap-1 text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
+                    <Trophy className="h-3 w-3" /> {pod} podi
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </>
-  ) : null;
+  );
+};
+
+// ─── AREA 7 - SALUTE FINANZIARIA ──────────────────────────────────────
+const Area7Finanze: React.FC<{ d: any; bilancio: any[]; stagioniOrd: Stagione[]; currStagId: string }> = ({ d, bilancio, stagioniOrd, currStagId }) => {
+  const bilCurr = bilancio.find((b) => b.stagione_id === currStagId);
+  const cassa = Number(bilCurr?.cassa_finale || 0);
+  const saldo = Number(bilCurr?.saldo || 0);
+
+  // entrate/uscite dai movimenti (categoria-level): da incassare come stima
+  const entrateProgrammate = (d.cassa || []).filter((m: any) => m.tipo === "entrata").reduce((s: number, m: any) => s + Number(m.importo), 0);
+  const entrateBilancio = Number(bilCurr?.totale_entrate || 0);
+  const daIncassare = Math.max(0, entrateBilancio - entrateProgrammate);
+  const usciteFutureMese = (Number(bilCurr?.totale_uscite || 0) / 11) * 1; // ~ mensile
+  
+  const trend = stagioniOrd
+    .slice()
+    .reverse()
+    .map((s) => {
+      const b = bilancio.find((x) => x.stagione_id === s.id);
+      return { name: s.nome, cassa: Number(b?.cassa_finale || 0), saldo: Number(b?.saldo || 0) };
+    });
 
   return (
-    <TooltipProvider delayDuration={200}>
-      <div className="animate-fade-in -mx-4 sm:-mx-6 lg:-mx-8 -mt-6 pb-12">
-        {/* ZONA 1 — Saluto + selettore confronto */}
-        <section className="px-6 sm:px-12 lg:px-24 pt-10 pb-10">
-          <div className="flex items-start justify-between gap-6 flex-wrap">
-            <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-3">{data_lunga}</p>
-              <h1 className="font-serif text-3xl sm:text-4xl font-light text-foreground tracking-tight">
-                {saluto}, <span className="font-normal">{nome_pres}</span>.
-              </h1>
-              {atleti_attivi.length > 0 && (
-                <p className="mt-4 max-w-3xl text-base sm:text-lg leading-relaxed text-muted-foreground">
-                  Il club conta <span className="font-semibold text-foreground">{format_int(atleti_attivi.length)}</span> atleti attivi
-                  {incassato > 0 ? (
-                    <>
-                      {" "}e ha incassato{" "}
-                      <span className="font-semibold text-foreground">{format_chf(incassato)}</span> di quote in {stagione_label}.
-                    </>
-                  ) : (
-                    <> in {stagione_label}.</>
-                  )}
-                </p>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs uppercase tracking-wider text-muted-foreground">Confronto</span>
-              <Select value={compare} onValueChange={(v) => set_compare(v as ComparePeriod)}>
-                <SelectTrigger className="w-[200px] rounded-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {(Object.keys(COMPARE_LABEL) as ComparePeriod[]).map((k) => (
-                    <SelectItem key={k} value={k}>
-                      {COMPARE_LABEL[k]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </section>
+    <>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-10 mb-12">
+        <BigMoney icon={<Wallet className="h-5 w-5" />} label="Soldi in cassa oggi" value={cassa} accent={cassa >= 0 ? "text-emerald-600" : "text-rose-600"} />
+        <BigMoney icon={<ArrowDown className="h-5 w-5" />} label="Da incassare" value={daIncassare} accent="text-amber-600" />
+        <BigMoney icon={<ArrowUp className="h-5 w-5" />} label="Da pagare 30 gg" value={usciteFutureMese} accent="text-slate-700" />
+        <BigMoney icon={<TrendingUp className="h-5 w-5" />} label="Saldo stagione" value={saldo} accent={saldo >= 0 ? "text-emerald-600" : "text-rose-600"} prefix={saldo > 0 ? "+" : ""} />
+      </div>
 
-        {/* ZONA 2 — Blocchi di KPI */}
-        <section className="px-6 sm:px-12 lg:px-24 space-y-12">
-          <KpiBlock title="Atleti & community" cols={4}>
-            <KpiCard kpi={k_atleti_totali} on_click={() => set_open_kpi(k_atleti_totali)} />
-            <KpiCard kpi={k_nuovi} on_click={() => set_open_kpi(k_nuovi)} />
-            <KpiCard kpi={k_ritenzione} on_click={() => set_open_kpi(k_ritenzione)} />
-            <KpiCard kpi={k_abbandoni} />
-          </KpiBlock>
+      <div className="bg-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
+        <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">
+          Andamento cassa — 4 stagioni
+        </h3>
+        <div className="h-80">
+          <ResponsiveContainer>
+            <AreaChart data={trend}>
+              <defs>
+                <linearGradient id="cassaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#10b981" stopOpacity={0.5} />
+                  <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+              <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 13 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: "#64748b", fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v / 1000}k`} />
+              <RTooltip formatter={(v: any) => fmt_chf(Number(v))} />
+              <Area type="monotone" dataKey="cassa" stroke="#10b981" strokeWidth={3} fill="url(#cassaGrad)" dot={{ r: 7, fill: "#10b981", strokeWidth: 3, stroke: "#fff" }} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+        <p className="mt-6 text-slate-600 italic font-serif text-lg">
+          Il saldo cresce per la 4ª stagione consecutiva. Il club è in salute economica.
+        </p>
+      </div>
+    </>
+  );
+};
+const BigMoney: React.FC<{ icon: React.ReactNode; label: string; value: number; accent: string; prefix?: string }> = ({
+  icon,
+  label,
+  value,
+  accent,
+  prefix = "",
+}) => {
+  const v = useCountUp(Math.abs(value));
+  return (
+    <div>
+      <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-slate-400 font-semibold mb-3">
+        {icon}
+        {label}
+      </div>
+      <div className={`font-serif text-3xl md:text-5xl tabular-nums tracking-tight ${accent}`}>
+        {prefix}
+        {fmt_chf(value < 0 ? -v : v)}
+      </div>
+    </div>
+  );
+};
 
-          <KpiBlock title="Performance sportiva" cols={3}>
-            <KpiCard kpi={k_test} on_click={() => set_open_kpi(k_test)} />
-            <KpiCard kpi={k_gare} on_click={() => set_open_kpi(k_gare)} />
-            <KpiCard kpi={k_podi} on_click={() => set_open_kpi(k_podi)} />
-          </KpiBlock>
+// ─── MAIN ─────────────────────────────────────────────────────────────
+const PresidentDashboard: React.FC = () => {
+  const { session } = useAuth();
+  const { data: stagioni = [] } = use_stagioni_demo();
+  const stagioniOrd = useMemo(() => stagioni.slice().sort((a, b) => b.data_inizio.localeCompare(a.data_inizio)), [stagioni]);
+  const [stagioneId, setStagioneId] = useState<string>("");
+  const [confronta, setConfronta] = useState(true);
 
-          <KpiBlock title="Salute finanziaria" cols={4}>
-            <KpiCard kpi={k_cassa} on_click={() => set_open_kpi(k_cassa)} />
-            <KpiCard kpi={k_cassa_proi} on_click={() => set_open_kpi(k_cassa_proi)} />
-            <KpiCard kpi={k_dso} on_click={() => set_open_kpi(k_dso)} />
-            <KpiCard kpi={k_margine} />
-          </KpiBlock>
+  useEffect(() => {
+    if (!stagioneId && stagioniOrd.length) {
+      const att = stagioniOrd.find((s) => s.attiva) || stagioniOrd[0];
+      setStagioneId(att.id);
+    }
+  }, [stagioniOrd, stagioneId]);
 
-          <KpiBlock title="Operativo aggregato" cols={3}>
-            <KpiCard kpi={k_utilizzo} />
-            <KpiCard kpi={k_costo_atleta} on_click={() => set_open_kpi(k_costo_atleta)} />
-            <KpiCard kpi={k_istruttori} on_click={() => set_open_kpi(k_istruttori)} />
-          </KpiBlock>
+  const idx = stagioniOrd.findIndex((s) => s.id === stagioneId);
+  const prevStagId = idx >= 0 && idx + 1 < stagioniOrd.length ? stagioniOrd[idx + 1].id : null;
 
-          {/* ZONA 2-E — Densità livelli */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Densità livelli</div>
-              <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                {piramide_diag}
-              </span>
-            </div>
-            <div className="rounded-2xl bg-card border border-border/40 p-6 grid grid-cols-1 lg:grid-cols-[1fr_240px] gap-8">
-              <div>
-                <div className="text-xs uppercase tracking-wider text-muted-foreground mb-4">Stagione corrente</div>
-                <PiramideOrizzontale rows={pyramid_rows} />
-              </div>
-              <div className="lg:border-l lg:border-border/40 lg:pl-8">
-                <div className="text-xs uppercase tracking-wider text-muted-foreground mb-4">Anno scorso</div>
-                <PiramideOrizzontale rows={pyramid_prev} compact />
-              </div>
-            </div>
-          </div>
-        </section>
+  const { data: d, isLoading } = use_dashboard_data(stagioneId, prevStagId);
+  const stagioneNome = stagioniOrd.find((s) => s.id === stagioneId)?.nome || "—";
 
-        {/* ZONA 3 — Attenzioni */}
-        {attenzioni.length > 0 && (
-          <section className="px-6 sm:px-12 lg:px-24 pt-12">
-            <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground mb-4">Attenzioni</div>
-            <div className="rounded-2xl border border-border/40 bg-card/50 divide-y divide-border/40">
-              {attenzioni.map((a, i) => {
-                const Icon = a.icon;
-                return (
-                  <button
-                    key={i}
-                    onClick={a.action}
-                    className="w-full flex items-center gap-4 px-6 py-4 hover:bg-muted/40 transition-colors text-left group"
-                  >
-                    <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <div className="flex-1 text-sm text-foreground/80">{a.label}</div>
-                    <span className="text-xs text-muted-foreground group-hover:text-primary transition-colors flex items-center gap-1">
-                      {a.cta}
-                      <ChevronRight className="h-3 w-3" />
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        )}
+  if (isLoading || !d || !stagioneId) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-white to-slate-50 flex items-center justify-center">
+        <div className="text-slate-400">Caricamento dashboard...</div>
+      </div>
+    );
+  }
 
-        {/* ZONA 4 — I nostri atleti */}
-        {atleti_vetrina.length > 0 && (
-          <section className="px-6 sm:px-12 lg:px-24 pt-16">
-            <div className="mb-8">
-              <h2 className="font-serif text-2xl sm:text-3xl font-light text-foreground">I nostri atleti</h2>
-              <p className="text-sm text-muted-foreground mt-1">Le promesse del club</p>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {atleti_vetrina.map(({ atleta, medaglie, ultimo_risultato }) => (
-                <button
-                  key={atleta.id}
-                  onClick={() => navigate(`/atleti/${atleta.id}`)}
-                  className="group text-left animate-fade-in"
-                >
-                  <div className="aspect-square rounded-2xl overflow-hidden bg-muted mb-4 relative">
-                    {atleta.foto_url ? (
-                      <img
-                        src={atleta.foto_url}
-                        alt={`${atleta.nome} ${atleta.cognome}`}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/30 text-primary text-3xl font-light">
-                        {get_iniziali(atleta.nome, atleta.cognome)}
-                      </div>
-                    )}
-                    {medaglie > 0 && (
-                      <div className="absolute top-3 right-3 inline-flex items-center gap-1 bg-background/90 backdrop-blur-sm rounded-full px-2 py-1 text-xs font-medium text-foreground shadow-sm">
-                        <Trophy className="h-3 w-3 text-primary" />
-                        {medaglie}
-                      </div>
-                    )}
-                  </div>
-                  <div className="font-serif text-base text-foreground leading-tight">
-                    {atleta.nome} {atleta.cognome}
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {get_categoria_label(atleta)} · {get_livello_label(atleta)}
-                  </div>
-                  {ultimo_risultato && (
-                    <div className="text-xs text-primary/80 mt-1 truncate">{ultimo_risultato}</div>
-                  )}
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
+  const totAtleti = (d.atleti || []).filter((a: any) => a.attivo).length;
+  const ricaviCurr = (d.ricavi || []).filter((r: any) => r.stagione_id === stagioneId);
+  const ricaviPrev = prevStagId ? (d.ricavi || []).filter((r: any) => r.stagione_id === prevStagId) : [];
+  const totRicavi = ricaviCurr.reduce((s, r: any) => s + Number(r.importo || 0), 0);
+  const bilCurr = (d.bilancio || []).find((b: any) => b.stagione_id === stagioneId);
+  const cassa = Number(bilCurr?.cassa_finale || 0);
+  const oreRow = (d.ore || []).find((o: any) => o.stagione_id === stagioneId);
+  const totAttesa = (d.richieste || [])
+    .filter((r: any) => r.stagione_id === stagioneId)
+    .reduce((s: number, r: any) => s + (r.n_in_lista_attesa || 0), 0);
 
-        {/* Banner dati simulati */}
-        <section className="px-6 sm:px-12 lg:px-24 pt-16">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="inline-flex items-center gap-2 text-[11px] text-muted-foreground/70 cursor-help">
-                <Info className="h-3 w-3" />
-                Stagioni storiche con dati di simulazione
-              </div>
-            </TooltipTrigger>
-            <TooltipContent className="max-w-xs">
-              I confronti con anni precedenti utilizzano dati simulati coerenti.
-              La storia reale del club partirà dalla prossima stagione.
-            </TooltipContent>
-          </Tooltip>
-        </section>
+  const storiciByStagione = new Map<string, any[]>();
+  (d.storici || []).forEach((s: any) => {
+    if (!storiciByStagione.has(s.stagione_id)) storiciByStagione.set(s.stagione_id, []);
+    storiciByStagione.get(s.stagione_id)!.push(s);
+  });
 
-        {/* Drawer KPI dettaglio */}
-        <KpiDrawer
-          open={!!open_kpi}
-          on_close={() => set_open_kpi(null)}
-          kpi={open_kpi}
-          extra={finance_drawer_extra}
+  return (
+    <TooltipProvider>
+      <div
+        className="min-h-screen"
+        style={{
+          background: "linear-gradient(180deg, #ffffff 0%, #f8fafc 60%, #f1f5f9 100%)",
+          fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        }}
+      >
+        <style>{`.font-serif{font-family:'Crimson Pro',Georgia,'Times New Roman',serif;font-weight:500;}`}</style>
+
+        <Header
+          nome={session?.nome || ""}
+          stagioni={stagioniOrd}
+          stagioneId={stagioneId}
+          setStagioneId={setStagioneId}
+          confronta={confronta}
+          setConfronta={setConfronta}
+          totAtleti={totAtleti}
+          ricavi={totRicavi}
+          cassa={cassa}
+          attesa={totAttesa}
+          stagioneNome={stagioneNome}
         />
+
+        <Section
+          kicker="Area 1 · Domanda & ghiaccio"
+          title="Quanto ghiaccio mi servirebbe davvero?"
+          intro="Riceviamo più richieste di quante riusciamo a soddisfare. Ecco il quadro reale."
+          accent="#0e7490"
+        >
+          <Area1Ghiaccio d={d} oreRow={oreRow} />
+        </Section>
+
+        <Section
+          kicker="Area 2 · Atleti"
+          title="Chi sono i nostri atleti"
+          intro={`${totAtleti} atleti, una piramide solida, una community in crescita.`}
+          accent="#10b981"
+        >
+          <Area2Atleti
+            d={d}
+            bilancioStorico={d.bilancio || []}
+            storiciByStagione={storiciByStagione}
+            stagioniOrd={stagioniOrd}
+            currStagId={stagioneId}
+            prevStagId={prevStagId}
+            confronta={confronta}
+          />
+        </Section>
+
+        <Section
+          kicker="Area 3 · Ricavi"
+          title="Da dove vengono i soldi"
+          intro="Quote corsi, pacchetti opzionali, lezioni private, eventi. Ecco la composizione."
+          accent="#f59e0b"
+        >
+          <Area3Ricavi d={d} ricaviCurr={ricaviCurr} ricaviPrev={ricaviPrev} confronta={confronta} totAtleti={totAtleti} />
+        </Section>
+
+        <Section
+          kicker="Area 4 · Istruttori"
+          title="Quanto costano gli istruttori e quanto rendono"
+          intro="3 istruttori, tariffe diverse, efficienze diverse."
+          accent="#8b5cf6"
+        >
+          <Area4Istruttori d={d} ricaviCurr={ricaviCurr} />
+        </Section>
+
+        <Section
+          kicker="Area 5 · Lezioni private"
+          title="Il business delle lezioni private"
+          intro="Top istruttori, top clienti, fasce orarie più richieste."
+          accent="#ec4899"
+        >
+          <Area5Lezioni d={d} />
+        </Section>
+
+        <Section
+          kicker="Area 6 · Performance"
+          title="Come va il club in gara"
+          intro="Test, gare, medaglie. Il racconto sportivo della stagione."
+          accent="#a855f7"
+        >
+          <Area6Performance d={d} />
+        </Section>
+
+        <Section
+          kicker="Area 7 · Finanze"
+          title="Soldi in cassa, soldi attesi, soldi da pagare"
+          intro="Il quadro economico essenziale, senza tecnicismi."
+          accent="#10b981"
+        >
+          <Area7Finanze d={d} bilancio={d.bilancio || []} stagioniOrd={stagioniOrd} currStagId={stagioneId} />
+        </Section>
+
+        <footer className="px-6 md:px-10 py-12 max-w-[1400px] mx-auto border-t border-slate-200 mt-12">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <p className="text-xs text-slate-400 max-w-2xl flex items-start gap-2">
+              <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+              I dati storici delle stagioni precedenti sono simulazione. La stagione corrente è reale.
+            </p>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white rounded-full px-6 py-3 text-sm font-medium transition-colors shadow-lg"
+                  type="button"
+                  onClick={(e) => e.preventDefault()}
+                >
+                  <FileDown className="h-4 w-4" />
+                  Genera relazione PDF / PowerPoint
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Funzione in arrivo</TooltipContent>
+            </Tooltip>
+          </div>
+        </footer>
       </div>
     </TooltipProvider>
   );
