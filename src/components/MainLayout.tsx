@@ -62,6 +62,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const is_presidente = (session?.ruolo as string) === "presidente";
   const can_manage_users = is_superadmin || is_admin || is_presidente;
   const non_lette_iscrizioni = use_count_iscrizioni_non_lette();
+  const richieste_pendenti = use_count_richieste_pendenti();
 
   const is_legacy = is_admin || is_superadmin;
   const is_nuovo_ruolo = !is_legacy && RUOLI_NUOVI.includes(session?.ruolo as string);
@@ -96,6 +97,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const render_nav_item = (path: string, Icon: any, label: string, key: string, disabled?: boolean) => {
     const is_active = location.pathname === path || (path !== "/" && location.pathname.startsWith(path));
     const show_badge = key === "comunicazioni" && non_lette_iscrizioni > 0;
+    const show_pending = key === "atleti" && richieste_pendenti > 0;
     if (disabled) {
       return (
         <div key={key} title="Prossimamente"
@@ -114,6 +116,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         {show_badge && (
           <span className="ml-auto inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold tabular-nums">
             {non_lette_iscrizioni}
+          </span>
+        )}
+        {show_pending && (
+          <span title={`${richieste_pendenti} richieste in attesa`}
+            className="ml-auto inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold tabular-nums">
+            {richieste_pendenti}
           </span>
         )}
       </NavLink>
