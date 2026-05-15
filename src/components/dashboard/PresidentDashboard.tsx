@@ -1005,37 +1005,15 @@ const Area5Lezioni: React.FC<{ d: any }> = ({ d }) => {
 const Area6Performance: React.FC<{ d: any }> = ({ d }) => {
   const igare = d.igare || [];
   const podi = igare.filter((i: any) => ["oro", "argento", "bronzo"].includes((i.medaglia || "").toLowerCase())).length;
-  // test: not directly queryable; use gare counts as proxy
   const gareCount = igare.length;
   const succRate = gareCount ? (podi / gareCount) * 100 : 0;
 
-  // trend ultime 4 stagioni (sintetico crescente)
   const trend = [
     { name: "2022/23", podi: Math.max(0, podi - 9) },
     { name: "2023/24", podi: Math.max(0, podi - 6) },
     { name: "2024/25", podi: Math.max(0, podi - 3) },
     { name: "2025/26", podi },
   ];
-
-  // showcase atleti agonisti
-  const podiByAt = new Map<string, number>();
-  igare.forEach((i: any) => {
-    if (["oro", "argento", "bronzo"].includes((i.medaglia || "").toLowerCase()))
-      podiByAt.set(i.atleta_id, (podiByAt.get(i.atleta_id) || 0) + 1);
-  });
-  const livRank = (l?: string) => {
-    const idx = LIVELLI_ORDER.indexOf(l || "");
-    return idx >= 0 ? idx : -1;
-  };
-  const showcase = (d.atleti || [])
-    .filter((a: any) => a.attivo && a.agonista)
-    .sort((a: any, b: any) => {
-      const pa = podiByAt.get(a.id) || 0;
-      const pb = podiByAt.get(b.id) || 0;
-      if (pb !== pa) return pb - pa;
-      return livRank(b.livello_artistica || b.livello_attuale) - livRank(a.livello_artistica || a.livello_attuale);
-    })
-    .slice(0, 8);
 
   return (
     <>
@@ -1045,7 +1023,7 @@ const Area6Performance: React.FC<{ d: any }> = ({ d }) => {
         <HeroNumber value={podi} label="podi conquistati" />
       </div>
 
-      <div className="bg-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm mb-10">
+      <div className="bg-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
         <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">
           Trend podi — ultime stagioni
         </h3>
@@ -1067,38 +1045,63 @@ const Area6Performance: React.FC<{ d: any }> = ({ d }) => {
           </ResponsiveContainer>
         </div>
       </div>
-
-      <div className="bg-gradient-to-br from-slate-50 to-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
-        <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-8">
-          I nostri atleti agonisti
-        </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {showcase.map((a: any) => {
-            const pod = podiByAt.get(a.id) || 0;
-            return (
-              <div key={a.id} className="text-center">
-                {a.foto_url ? (
-                  <img src={a.foto_url} alt="" className="h-28 w-28 rounded-full object-cover mx-auto shadow-md ring-4 ring-white" />
-                ) : (
-                  <div className="h-28 w-28 rounded-full bg-gradient-to-br from-cyan-200 to-violet-200 flex items-center justify-center font-serif text-3xl text-slate-700 mx-auto shadow-md ring-4 ring-white">
-                    {initials(a.nome, a.cognome)}
-                  </div>
-                )}
-                <div className="mt-4 font-serif text-lg text-slate-900">
-                  {a.nome} {a.cognome}
-                </div>
-                <div className="text-xs text-slate-500 mt-1">{a.livello_artistica || a.livello_attuale || "Agonista"}</div>
-                {pod > 0 && (
-                  <div className="mt-2 inline-flex items-center gap-1 text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
-                    <Trophy className="h-3 w-3" /> {pod} podi
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
     </>
+  );
+};
+
+// ─── ATLETI SHOWCASE (usata in tab Sintesi) ────────────────────────────
+const AtletiShowcase: React.FC<{ d: any }> = ({ d }) => {
+  const igare = d.igare || [];
+  const podiByAt = new Map<string, number>();
+  igare.forEach((i: any) => {
+    if (["oro", "argento", "bronzo"].includes((i.medaglia || "").toLowerCase()))
+      podiByAt.set(i.atleta_id, (podiByAt.get(i.atleta_id) || 0) + 1);
+  });
+  const livRank = (l?: string) => {
+    const idx = LIVELLI_ORDER.indexOf(l || "");
+    return idx >= 0 ? idx : -1;
+  };
+  const showcase = (d.atleti || [])
+    .filter((a: any) => a.attivo && a.agonista)
+    .sort((a: any, b: any) => {
+      const pa = podiByAt.get(a.id) || 0;
+      const pb = podiByAt.get(b.id) || 0;
+      if (pb !== pa) return pb - pa;
+      return livRank(b.livello_artistica || b.livello_attuale) - livRank(a.livello_artistica || a.livello_attuale);
+    })
+    .slice(0, 8);
+
+  return (
+    <div className="bg-gradient-to-br from-slate-50 to-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
+      <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-8">
+        I nostri atleti
+      </h3>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        {showcase.map((a: any) => {
+          const pod = podiByAt.get(a.id) || 0;
+          return (
+            <div key={a.id} className="text-center">
+              {a.foto_url ? (
+                <img src={a.foto_url} alt="" className="h-28 w-28 rounded-full object-cover mx-auto shadow-md ring-4 ring-white" />
+              ) : (
+                <div className="h-28 w-28 rounded-full bg-gradient-to-br from-cyan-200 to-violet-200 flex items-center justify-center font-serif text-3xl text-slate-700 mx-auto shadow-md ring-4 ring-white">
+                  {initials(a.nome, a.cognome)}
+                </div>
+              )}
+              <div className="mt-4 font-serif text-lg text-slate-900">
+                {a.nome} {a.cognome}
+              </div>
+              <div className="text-xs text-slate-500 mt-1">{a.livello_artistica || a.livello_attuale || "Agonista"}</div>
+              {pod > 0 && (
+                <div className="mt-2 inline-flex items-center gap-1 text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
+                  <Trophy className="h-3 w-3" /> {pod} podi
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 };
 
@@ -1227,6 +1230,24 @@ const PresidentDashboard: React.FC = () => {
     storiciByStagione.get(s.stagione_id)!.push(s);
   });
 
+  const greet = (() => {
+    const h = new Date().getHours();
+    if (h < 12) return "Buongiorno";
+    if (h < 18) return "Buon pomeriggio";
+    return "Buonasera";
+  })();
+  const nome = session?.nome || "Presidente";
+
+  const TABS: { id: string; label: string }[] = [
+    { id: "sintesi", label: "Sintesi" },
+    { id: "ghiaccio", label: "Domanda & Ghiaccio" },
+    { id: "atleti", label: "Atleti" },
+    { id: "economia", label: "Economia" },
+    { id: "private", label: "Lezioni private" },
+    { id: "sportivo", label: "Sportivo" },
+  ];
+  const [activeTab, setActiveTab] = useState<string>("sintesi");
+
   return (
     <TooltipProvider>
       <div
@@ -1236,114 +1257,191 @@ const PresidentDashboard: React.FC = () => {
           fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
         }}
       >
-        <style>{`.font-serif{font-family:'Crimson Pro',Georgia,'Times New Roman',serif;font-weight:500;}`}</style>
+        <style>{`
+          .font-serif{font-family:'Crimson Pro',Georgia,'Times New Roman',serif;font-weight:500;}
+          @keyframes pres-tab-fade { from { opacity: 0; transform: translateY(4px);} to { opacity: 1; transform: translateY(0);} }
+          .pres-tab-content { animation: pres-tab-fade 200ms ease-out; }
+          .pres-tabs-scroll::-webkit-scrollbar { display: none; }
+        `}</style>
 
-        <Header
-          nome={session?.nome || ""}
-          stagioni={stagioniOrd}
-          stagioneId={stagioneId}
-          setStagioneId={setStagioneId}
-          confronta={confronta}
-          setConfronta={setConfronta}
-          totAtleti={totAtleti}
-          ricavi={totRicavi}
-          cassa={cassa}
-          attesa={totAttesa}
-          stagioneNome={stagioneNome}
-        />
+        {/* Global header: brand + season selector + compare toggle */}
+        <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-200/70">
+          <div className="px-6 md:px-10 max-w-[1400px] mx-auto">
+            <div className="flex items-center justify-between gap-6 py-4">
+              <div className="text-xs uppercase tracking-[0.2em] text-cyan-700 font-semibold">
+                Dashboard Presidente
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-full pl-3 pr-1 py-1 shadow-sm">
+                  <Calendar className="h-4 w-4 text-slate-400" />
+                  <Select value={stagioneId} onValueChange={setStagioneId}>
+                    <SelectTrigger className="border-0 shadow-none h-8 min-w-[140px] focus:ring-0 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {stagioniOrd.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <label className="hidden sm:inline-flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+                  <Switch checked={confronta} onCheckedChange={setConfronta} />
+                  <span>Confronta anno scorso</span>
+                </label>
+              </div>
+            </div>
 
-        <Section
-          kicker="Area 1 · Domanda & ghiaccio"
-          title="Quanto ghiaccio mi servirebbe davvero?"
-          intro="Riceviamo più richieste di quante riusciamo a soddisfare. Ecco il quadro reale."
-          accent="#0e7490"
-        >
-          <Area1Ghiaccio d={d} oreRow={oreRow} />
-        </Section>
-
-        <Section
-          kicker="Area 2 · Atleti"
-          title="Chi sono i nostri atleti"
-          intro={`${totAtleti} atleti, una piramide solida, una community in crescita.`}
-          accent="#10b981"
-        >
-          <Area2Atleti
-            d={d}
-            bilancioStorico={d.bilancio || []}
-            storiciByStagione={storiciByStagione}
-            stagioniOrd={stagioniOrd}
-            currStagId={stagioneId}
-            prevStagId={prevStagId}
-            confronta={confronta}
-          />
-        </Section>
-
-        <Section
-          kicker="Area 3 · Ricavi"
-          title="Da dove vengono i soldi"
-          intro="Quote corsi, pacchetti opzionali, lezioni private, eventi. Ecco la composizione."
-          accent="#f59e0b"
-        >
-          <Area3Ricavi d={d} ricaviCurr={ricaviCurr} ricaviPrev={ricaviPrev} confronta={confronta} totAtleti={totAtleti} />
-        </Section>
-
-        <Section
-          kicker="Area 4 · Istruttori"
-          title="Quanto costano gli istruttori e quanto rendono"
-          intro="3 istruttori, tariffe diverse, efficienze diverse."
-          accent="#8b5cf6"
-        >
-          <Area4Istruttori d={d} ricaviCurr={ricaviCurr} />
-        </Section>
-
-        <Section
-          kicker="Area 5 · Lezioni private"
-          title="Il business delle lezioni private"
-          intro="Top istruttori, top clienti, fasce orarie più richieste."
-          accent="#ec4899"
-        >
-          <Area5Lezioni d={d} />
-        </Section>
-
-        <Section
-          kicker="Area 6 · Performance"
-          title="Come va il club in gara"
-          intro="Test, gare, medaglie. Il racconto sportivo della stagione."
-          accent="#a855f7"
-        >
-          <Area6Performance d={d} />
-        </Section>
-
-        <Section
-          kicker="Area 7 · Finanze"
-          title="Soldi in cassa, soldi attesi, soldi da pagare"
-          intro="Il quadro economico essenziale, senza tecnicismi."
-          accent="#10b981"
-        >
-          <Area7Finanze d={d} bilancio={d.bilancio || []} stagioniOrd={stagioniOrd} currStagId={stagioneId} />
-        </Section>
-
-        <footer className="px-6 md:px-10 py-12 max-w-[1400px] mx-auto border-t border-slate-200 mt-12">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-            <p className="text-xs text-slate-400 max-w-2xl flex items-start gap-2">
-              <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-              I dati storici delle stagioni precedenti sono simulazione. La stagione corrente è reale.
-            </p>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white rounded-full px-6 py-3 text-sm font-medium transition-colors shadow-lg"
-                  type="button"
-                  onClick={(e) => e.preventDefault()}
-                >
-                  <FileDown className="h-4 w-4" />
-                  Genera relazione PDF / PowerPoint
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>Funzione in arrivo</TooltipContent>
-            </Tooltip>
+            {/* Tabs */}
+            <div className="pres-tabs-scroll overflow-x-auto -mx-6 md:mx-0 px-6 md:px-0 [scrollbar-width:none]">
+              <div className="flex items-center gap-1 min-w-max">
+                {TABS.map((t) => {
+                  const active = t.id === activeTab;
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setActiveTab(t.id)}
+                      className={`relative px-4 py-3 text-sm tracking-wide whitespace-nowrap transition-colors ${
+                        active
+                          ? "text-slate-900 font-semibold"
+                          : "text-slate-500 hover:text-slate-800 hover:bg-slate-50 font-medium"
+                      }`}
+                    >
+                      {t.label}
+                      <span
+                        className={`absolute left-3 right-3 -bottom-px h-[2px] rounded-full transition-all ${
+                          active ? "bg-cyan-600 opacity-100" : "bg-cyan-600 opacity-0"
+                        }`}
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
-        </footer>
+        </div>
+
+        {/* Tab content */}
+        <div key={activeTab} className="pres-tab-content">
+          {activeTab === "sintesi" && (
+            <>
+              <header className="px-6 md:px-10 pt-14 md:pt-20 pb-12 max-w-[1400px] mx-auto">
+                <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl text-slate-900 tracking-tight leading-[1.02]">
+                  {greet}, {nome}.
+                </h1>
+                <p className="mt-5 text-lg md:text-xl text-slate-500 max-w-2xl leading-relaxed">
+                  Stagione <span className="text-slate-900 font-medium">{stagioneNome}</span> — il club conta{" "}
+                  <span className="text-slate-900 font-medium">{fmt_int(totAtleti)}</span> atleti e ha incassato{" "}
+                  <span className="text-slate-900 font-medium">{fmt_chf(totRicavi)}</span>.
+                </p>
+
+                <div className="mt-14 grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4 border-t border-slate-200 pt-10">
+                  <MiniHero label="Atleti totali" value={fmt_int(totAtleti)} />
+                  <MiniHero label="Ricavi stagione" value={fmt_chf(totRicavi)} />
+                  <MiniHero label="Saldo cassa" value={fmt_chf(cassa)} accent={cassa >= 0 ? "text-emerald-600" : "text-rose-600"} />
+                  <MiniHero label="Lista d'attesa" value={fmt_int(totAttesa)} accent="text-amber-600" />
+                </div>
+              </header>
+
+              <section className="px-6 md:px-10 pb-16 max-w-[1400px] mx-auto">
+                <AtletiShowcase d={d} />
+              </section>
+
+              <div className="px-6 md:px-10 pb-12 max-w-[1400px] mx-auto">
+                <p className="text-xs text-slate-400 flex items-start gap-2">
+                  <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                  I dati storici delle stagioni precedenti sono simulazione. La stagione corrente è reale.
+                </p>
+              </div>
+            </>
+          )}
+
+          {activeTab === "ghiaccio" && (
+            <Section kicker="Domanda & ghiaccio" title="Quanto ghiaccio mi servirebbe davvero?" intro="Riceviamo più richieste di quante riusciamo a soddisfare. Ecco il quadro reale." accent="#0e7490">
+              <Area1Ghiaccio d={d} oreRow={oreRow} />
+            </Section>
+          )}
+
+          {activeTab === "atleti" && (
+            <Section kicker="Atleti" title="Chi sono i nostri atleti" intro={`${totAtleti} atleti, una piramide solida, una community in crescita.`} accent="#10b981">
+              <Area2Atleti
+                d={d}
+                bilancioStorico={d.bilancio || []}
+                storiciByStagione={storiciByStagione}
+                stagioniOrd={stagioniOrd}
+                currStagId={stagioneId}
+                prevStagId={prevStagId}
+                confronta={confronta}
+              />
+            </Section>
+          )}
+
+          {activeTab === "economia" && (
+            <section className="px-6 md:px-10 py-16 md:py-20 max-w-[1400px] mx-auto">
+              <div className="mb-12">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="h-px w-10 bg-amber-500" />
+                  <span className="uppercase tracking-[0.18em] text-xs font-semibold text-amber-600">Economia</span>
+                </div>
+                <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl text-slate-900 leading-[1.05] tracking-tight">
+                  Il quadro economico del club
+                </h2>
+                <p className="mt-4 text-lg text-slate-500 max-w-3xl">
+                  Ricavi, costi degli istruttori, salute finanziaria. Tutto in una vista.
+                </p>
+              </div>
+
+              <div className="space-y-24 md:space-y-28">
+                <div>
+                  <div className="text-xs uppercase tracking-[0.22em] text-slate-400 font-semibold mb-8">
+                    Ricavi & Pacchetti
+                  </div>
+                  <Area3Ricavi d={d} ricaviCurr={ricaviCurr} ricaviPrev={ricaviPrev} confronta={confronta} totAtleti={totAtleti} />
+                </div>
+                <div>
+                  <div className="text-xs uppercase tracking-[0.22em] text-slate-400 font-semibold mb-8">
+                    Costi & Efficienza Istruttori
+                  </div>
+                  <Area4Istruttori d={d} ricaviCurr={ricaviCurr} />
+                </div>
+                <div>
+                  <div className="text-xs uppercase tracking-[0.22em] text-slate-400 font-semibold mb-8">
+                    Salute finanziaria
+                  </div>
+                  <Area7Finanze d={d} bilancio={d.bilancio || []} stagioniOrd={stagioniOrd} currStagId={stagioneId} />
+                </div>
+              </div>
+            </section>
+          )}
+
+          {activeTab === "private" && (
+            <Section kicker="Lezioni private" title="Il business delle lezioni private" intro="Top istruttori, top clienti, fasce orarie più richieste." accent="#ec4899">
+              <Area5Lezioni d={d} />
+            </Section>
+          )}
+
+          {activeTab === "sportivo" && (
+            <Section kicker="Sportivo" title="Come va il club in gara" intro="Test, gare, medaglie. Il racconto sportivo della stagione." accent="#a855f7">
+              <Area6Performance d={d} />
+            </Section>
+          )}
+        </div>
+
+        {/* Floating PDF button */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              className="fixed bottom-6 right-6 z-40 inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white rounded-full px-5 py-3 text-sm font-medium transition-colors shadow-xl"
+              type="button"
+              onClick={(e) => e.preventDefault()}
+            >
+              <FileDown className="h-4 w-4" />
+              <span className="hidden sm:inline">Genera relazione PDF</span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>Funzione in arrivo</TooltipContent>
+        </Tooltip>
       </div>
     </TooltipProvider>
   );
