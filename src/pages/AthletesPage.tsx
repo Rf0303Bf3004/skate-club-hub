@@ -1109,6 +1109,7 @@ const AthletesPage: React.FC = () => {
             onValueChange={(v) => {
               set_categoria_filter(v as "tutti" | Categoria);
               set_level_filter("tutti");
+              set_percorso_filter("tutti");
               set_card_filter(null);
             }}
           >
@@ -1124,6 +1125,22 @@ const AthletesPage: React.FC = () => {
               ))}
             </SelectContent>
           </Select>
+          {categoria_filter === "artistica" && (
+            <Select
+              value={percorso_filter}
+              onValueChange={(v) => set_percorso_filter(v as typeof percorso_filter)}
+            >
+              <SelectTrigger className="w-44">
+                <SelectValue placeholder="Percorso" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="tutti">Tutti i percorsi</SelectItem>
+                <SelectItem value="artistica">Solo Artistica</SelectItem>
+                <SelectItem value="stile">Solo Stile</SelectItem>
+                <SelectItem value="entrambi">Entrambi i percorsi</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
           {categoria_filter !== "tutti" && categoria_filter !== "pulcini" && (
             <Select value={level_filter} onValueChange={set_level_filter}>
               <SelectTrigger className="w-44">
