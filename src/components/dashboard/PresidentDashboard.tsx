@@ -1441,6 +1441,8 @@ const PresidentDashboard: React.FC = () => {
               <Area6Performance d={d} />
             </Section>
           )}
+            </div>
+          </div>
         </div>
 
         {/* Floating PDF button */}
