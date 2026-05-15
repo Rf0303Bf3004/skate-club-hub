@@ -17,7 +17,17 @@ import {
   Briefcase,
   Clock,
   X,
+  Megaphone,
+  Award,
+  FileText,
+  Download,
+  Copy,
+  Instagram,
+  Facebook,
+  Mail,
+  MapPin,
 } from "lucide-react";
+import { toast } from "sonner";
 import {
   Sheet,
   SheetContent,
