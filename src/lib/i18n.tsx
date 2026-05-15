@@ -10,6 +10,7 @@ const translations: Record<Locale, Record<string, string>> = {
     corsi: "Corsi",
     gare: "Gare",
     test_livello: "Test Livello",
+    eventi: "Galà ed Eventi",
     lezioni_private: "Lezioni Private",
     fatture: "Fatture",
     comunicazioni: "Comunicazioni",
