@@ -74,32 +74,34 @@ function detect_mapping(headers: string[]): Record<TargetKey, string> {
   return out as Record<TargetKey, string>;
 }
 
+function build_iso(y: number, mo: number, d: number): string | null {
+  // Validazione: data reale + range plausibile (1920..anno corrente)
+  const current_year = new Date().getFullYear();
+  if (y < 1920 || y > current_year) return null;
+  if (mo < 1 || mo > 12) return null;
+  if (d < 1 || d > 31) return null;
+  const dt = new Date(y, mo - 1, d);
+  if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) return null;
+  return `${String(y).padStart(4, "0")}-${String(mo).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
 function parse_date(value: any): string | null {
   if (value == null || value === "") return null;
   // Excel serial number
   if (typeof value === "number" && isFinite(value)) {
     const d = XLSX.SSF.parse_date_code(value);
-    if (d) {
-      const yyyy = String(d.y).padStart(4, "0");
-      const mm = String(d.m).padStart(2, "0");
-      const dd = String(d.d).padStart(2, "0");
-      return `${yyyy}-${mm}-${dd}`;
-    }
+    if (d) return build_iso(d.y, d.m, d.d);
   }
   const s = String(value).trim();
-  // ISO
-  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-  if (m) return `${m[1]}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}`;
-  // dd/mm/yyyy or dd-mm-yyyy or dd.mm.yyyy
+  // ISO aaaa-mm-gg (separatori . / -, prima parte 4 cifre)
+  let m = s.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})$/);
+  if (m) return build_iso(parseInt(m[1], 10), parseInt(m[2], 10), parseInt(m[3], 10));
+  // gg.mm.aaaa / gg/mm/aaaa / gg-mm-aaaa (formato CH/IT — giorno SEMPRE prima del mese)
   m = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
   if (m) {
     let yy = m[3];
-    if (yy.length === 2) yy = (parseInt(yy) > 30 ? "19" : "20") + yy;
-    return `${yy}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
-  }
-  const d = new Date(s);
-  if (!isNaN(d.getTime())) {
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    if (yy.length === 2) yy = (parseInt(yy, 10) > 30 ? "19" : "20") + yy;
+    return build_iso(parseInt(yy, 10), parseInt(m[2], 10), parseInt(m[1], 10));
   }
   return null;
 }
