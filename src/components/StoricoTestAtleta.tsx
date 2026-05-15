@@ -39,7 +39,7 @@ export default function StoricoTestAtleta({ atleta_id }: Props) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("test_livello_atleti")
-        .select("id, esito, note_istruttore, test_id, test:test_livello(id, nome, data, tipo, livello_attuale, livello_accesso, luogo)")
+        .select("id, esito, note_istruttore, test_id, livello_accesso, livello_target, disciplina, test:test_livello(id, nome, data, tipo, luogo)")
         .eq("atleta_id", atleta_id);
       if (error) throw error;
       const rows = (data ?? []) as unknown as Riga[];
