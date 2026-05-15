@@ -678,6 +678,13 @@ const AthletesPage: React.FC = () => {
         if (card_filter.percorso === "artistica") return a.livello_artistica === card_filter.livello;
         return a.livello_stile === card_filter.livello;
       }
+      if (card_filter.sezione === "in_prep") {
+        if (a.categoria !== "artistica") return false;
+        if (card_filter.disciplina === "artistica") {
+          return !a.livello_artistica && a.livello_artistica_in_preparazione === card_filter.livello;
+        }
+        return !a.livello_stile && a.livello_stile_in_preparazione === card_filter.livello;
+      }
     }
 
     // Filtro a cascata categoria → (percorso) → livello
