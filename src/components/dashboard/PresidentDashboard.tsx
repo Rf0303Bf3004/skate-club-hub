@@ -322,9 +322,14 @@ const Header: React.FC<{
   );
 };
 const MiniHero: React.FC<{ label: string; value: string; accent?: string }> = ({ label, value, accent = "text-slate-900" }) => (
-  <div>
-    <div className="text-xs uppercase tracking-widest text-slate-400 font-semibold mb-2">{label}</div>
-    <div className={`font-serif text-3xl md:text-4xl tracking-tight tabular-nums ${accent}`}>{value}</div>
+  <div className="min-w-0">
+    <div className="text-xs uppercase tracking-widest text-slate-400 font-semibold mb-2 truncate">{label}</div>
+    <div
+      className={`font-serif tracking-tight tabular-nums leading-none truncate ${accent}`}
+      style={{ fontSize: "clamp(1.875rem, 2.4vw, 2.25rem)", fontFeatureSettings: "'tnum'" }}
+    >
+      {value}
+    </div>
   </div>
 );
 
