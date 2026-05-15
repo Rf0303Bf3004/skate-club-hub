@@ -144,7 +144,7 @@ function use_dashboard_data(stagione_id: string | null, prev_stagione_id: string
         igareR,
       ] = await Promise.all([
         supabase.from("atleti").select("id, nome, cognome, foto_url, livello_artistica, livello_attuale, livello_amatori, livello_stile, agonista, data_nascita, attivo, categoria").eq("club_id", CLUB_ID),
-        supabase.from("atleti_storici_stagioni").select("status, motivo_abbandono, stagione_id").eq("club_id", CLUB_ID).in("stagione_id", ids),
+        supabase.from("atleti_storici_stagioni").select("status, motivo_abbandono, stagione_id, livello").eq("club_id", CLUB_ID).in("stagione_id", ids),
         supabase.from("bilancio_stagione").select("*").eq("club_id", CLUB_ID),
         supabase.from("ricavi_per_fonte").select("*").eq("club_id", CLUB_ID),
         supabase.from("capacita_corsi").select("corso_id, capacita_max, ore_settimanali_dedicate, corsi(nome, stagione_id)").eq("club_id", CLUB_ID),
