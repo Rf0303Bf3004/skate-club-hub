@@ -52,6 +52,8 @@ import {
   UltimeIscrizioniWidget,
   RichiesteLezioniPrivateWidget,
 } from "@/components/dashboard/RichiesteIscrizioneWidget";
+import PresidentDashboard from "@/components/dashboard/PresidentDashboard";
+import { useAuth } from "@/lib/auth";
 
 // ─── Helpers ──────────────────────────────────────────────
 function normalize_giorno(value?: string): string {
