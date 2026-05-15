@@ -1042,16 +1042,27 @@ const AthletesPage: React.FC = () => {
               {/* Tassello "In preparazione" — atleti già artistica ma senza livello battezzato */}
               {(() => {
                 const empty = artistica_in_prep_count === 0;
+                const sel =
+                  card_filter?.sezione === "in_prep" &&
+                  card_filter.disciplina === "artistica" &&
+                  card_filter.livello === "Interbronzo";
                 return (
                   <button
                     onClick={() => {
-                      // filtro client-side: mostra solo quelli in transizione
-                      set_card_filter(null);
-                      set_categoria_filter("artistica");
-                      set_level_filter("tutti");
-                      set_percorso_filter("artistica");
+                      if (sel) {
+                        set_card_filter(null);
+                      } else {
+                        set_card_filter({ sezione: "in_prep", disciplina: "artistica", livello: "Interbronzo" });
+                        set_categoria_filter("tutti");
+                        set_percorso_filter("tutti");
+                        set_level_filter("tutti");
+                      }
                     }}
-                    className={`shrink-0 px-4 py-3 rounded-xl shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md border border-purple-200 bg-purple-50/50 ${empty ? "opacity-60" : ""}`}
+                    className={`shrink-0 px-4 py-3 rounded-xl shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md ${
+                      sel
+                        ? "border-2 border-purple-500 bg-purple-100"
+                        : `border border-purple-200 bg-purple-50/50 ${empty ? "opacity-60" : ""}`
+                    }`}
                     title="Atleti che hanno superato Stellina 4 ma non ancora Interbronzo"
                   >
                     <span className={`block text-2xl font-bold ${empty ? "text-muted-foreground/50" : "text-purple-700"}`}>{artistica_in_prep_count}</span>
