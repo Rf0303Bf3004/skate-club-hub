@@ -362,7 +362,7 @@ export default function TestLivelloPage() {
             qc.invalidateQueries({ queryKey: ["atleti_test"] });
             qc.invalidateQueries({ queryKey: ["atleti"] });
           } else {
-            toast.info(`Promozione non applicata: ${result.skipped_motivo}`);
+            toast.info(`Promozione non applicata: ${(result as any).skipped_motivo}`);
           }
         } catch (e: any) {
           toast.error("Errore promozione: " + (e?.message ?? ""));
