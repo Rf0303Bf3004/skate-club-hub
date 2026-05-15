@@ -2328,6 +2328,18 @@ const PresidentDashboard: React.FC = () => {
               miniChart={<MiniSparkline data={trendPodi} color="#8b5cf6" />}
               onOpen={() => setOpenArea("sportivo")}
             />
+
+            <AreaCard
+              areaId="catalogo"
+              title="Catalogo & Promozione"
+              icon={<Megaphone className="h-5 w-5" />}
+              accent="#0891b2"
+              mainKpi={`${sponsorCount} sponsor`}
+              subLabel={`${fmt_chf(totaleAnnuoSponsor)} raccolti annualmente · ${categorieCercateCount} categorie aperte`}
+              narration={nCatalogo}
+              miniChart={<MiniCirclesPromo sponsorIniziali={sponsorIniziali} cercateCount={categorieCercateCount} />}
+              onOpen={() => setOpenArea("catalogo")}
+            />
           </section>
 
           {/* VETRINA atleti */}
