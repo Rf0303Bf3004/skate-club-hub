@@ -1265,8 +1265,8 @@ const PresidentDashboard: React.FC = () => {
         `}</style>
 
         {/* Global header: brand + season selector + compare toggle */}
-        <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-200/70">
-          <div className="px-6 md:px-10 max-w-[1400px] mx-auto">
+        <div className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200/70">
+          <div className="px-6 md:px-10">
             <div className="flex items-center justify-between gap-6 py-4">
               <div className="text-xs uppercase tracking-[0.2em] text-cyan-700 font-semibold">
                 Dashboard Presidente
@@ -1291,39 +1291,54 @@ const PresidentDashboard: React.FC = () => {
                 </label>
               </div>
             </div>
-
-            {/* Tabs */}
-            <div className="pres-tabs-scroll overflow-x-auto -mx-6 md:mx-0 px-6 md:px-0 [scrollbar-width:none]">
-              <div className="flex items-center gap-1 min-w-max">
-                {TABS.map((t) => {
-                  const active = t.id === activeTab;
-                  return (
-                    <button
-                      key={t.id}
-                      type="button"
-                      onClick={() => setActiveTab(t.id)}
-                      className={`relative px-4 py-3 text-sm tracking-wide whitespace-nowrap transition-colors ${
-                        active
-                          ? "text-slate-900 font-semibold"
-                          : "text-slate-500 hover:text-slate-800 hover:bg-slate-50 font-medium"
-                      }`}
-                    >
-                      {t.label}
-                      <span
-                        className={`absolute left-3 right-3 -bottom-px h-[2px] rounded-full transition-all ${
-                          active ? "bg-cyan-600 opacity-100" : "bg-cyan-600 opacity-0"
-                        }`}
-                      />
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
           </div>
         </div>
 
-        {/* Tab content */}
-        <div key={activeTab} className="pres-tab-content">
+        {/* Mobile area selector */}
+        <div className="md:hidden sticky top-[65px] z-20 bg-white border-b border-slate-200 px-4 py-2">
+          <Select value={activeTab} onValueChange={setActiveTab}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {TABS.map((t) => (
+                <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Layout: internal sidebar + content */}
+        <div className="flex">
+          {/* Internal sidebar */}
+          <aside className="hidden md:block w-[230px] shrink-0 bg-white border-r border-slate-200 sticky top-[65px] self-start" style={{ height: "calc(100vh - 65px)" }}>
+            <nav className="px-4 py-8 flex flex-col gap-1">
+              {TABS.map((t) => {
+                const active = t.id === activeTab;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setActiveTab(t.id)}
+                    className={`relative text-left rounded-md pl-5 pr-3 py-2.5 text-[14px] transition-colors ${
+                      active
+                        ? "font-semibold text-cyan-700 bg-cyan-50/70"
+                        : "font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                    }`}
+                  >
+                    {active && (
+                      <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-cyan-600" />
+                    )}
+                    {t.label}
+                  </button>
+                );
+              })}
+            </nav>
+          </aside>
+
+          {/* Content area */}
+          <div className="flex-1 min-w-0">
+            <div key={activeTab} className="pres-tab-content">
           {activeTab === "sintesi" && (
             <>
               <header className="px-6 md:px-10 pt-14 md:pt-20 pb-12 max-w-[1400px] mx-auto">
