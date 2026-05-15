@@ -315,6 +315,7 @@ export async function apply_promozione_atleta(
     }
     patch.categoria = "amatori";
     patch.livello_amatori = target;
+    patch.livello_attuale = target;
   } else if (target === "Interbronzo") {
     const cur = disciplina === "stile" ? atleta.livello_stile : atleta.livello_artistica;
     const cur_idx = cur ? LIVELLI_CARRIERA.indexOf(cur as LivelloCarriera) : -1;
@@ -326,6 +327,7 @@ export async function apply_promozione_atleta(
     patch.livello_amatori = null;
     if (disciplina === "stile") patch.livello_stile = "Interbronzo";
     else patch.livello_artistica = "Interbronzo";
+    patch.livello_attuale = "Interbronzo";
   } else if (is_carriera) {
     const t_idx = LIVELLI_CARRIERA.indexOf(target as LivelloCarriera);
     const cur = disciplina === "stile" ? atleta.livello_stile : atleta.livello_artistica;
@@ -337,6 +339,10 @@ export async function apply_promozione_atleta(
     patch.categoria = "artistica";
     if (disciplina === "stile") patch.livello_stile = target;
     else patch.livello_artistica = target;
+    // Aggiorna livello_attuale legacy: se l'altra disciplina è più avanti, mantieni il max; altrimenti usa target.
+    const altra = disciplina === "stile" ? atleta.livello_artistica : atleta.livello_stile;
+    const altra_idx = altra ? LIVELLI_CARRIERA.indexOf(altra as LivelloCarriera) : -1;
+    patch.livello_attuale = altra_idx > t_idx ? altra : target;
   } else {
     return { promosso: false, skipped_motivo: `livello target sconosciuto: ${target}` };
   }
