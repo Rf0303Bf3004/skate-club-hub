@@ -17,7 +17,17 @@ import {
   Briefcase,
   Clock,
   X,
+  Megaphone,
+  Award,
+  FileText,
+  Download,
+  Copy,
+  Instagram,
+  Facebook,
+  Mail,
+  MapPin,
 } from "lucide-react";
+import { toast } from "sonner";
 import {
   Sheet,
   SheetContent,
@@ -29,6 +39,7 @@ import {
   narrateCosti,
   narrateLezioni,
   narrateSportivo,
+  narrateCatalogoPromozione,
   type AreaNarration,
   type Tone,
 } from "@/lib/narrate";
@@ -195,6 +206,30 @@ function use_dashboard_data(stagione_id: string | null, prev_stagione_id: string
         motivi: motiviR.data || [],
         cassa: cassaR.data || [],
         igare: igareR.data || [],
+      };
+    },
+  });
+}
+
+function use_catalogo_data() {
+  return useQuery({
+    queryKey: ["pres_catalogo", CLUB_ID],
+    staleTime: 30_000,
+    queryFn: async () => {
+      const sb: any = supabase;
+      const [identityR, sponsorR, cercateR, eventiR, materialiR] = await Promise.all([
+        sb.from("club_identity").select("*").eq("club_id", CLUB_ID).maybeSingle(),
+        sb.from("sponsor_attivi").select("*").eq("club_id", CLUB_ID).order("importo_annuo", { ascending: false }),
+        sb.from("sponsor_categorie_cercate").select("*").eq("club_id", CLUB_ID).order("importo_richiesto_indicativo", { ascending: false }),
+        sb.from("eventi_pubblici").select("*").eq("club_id", CLUB_ID),
+        sb.from("materiali_promo").select("*").eq("club_id", CLUB_ID),
+      ]);
+      return {
+        identity: identityR.data || null,
+        sponsor: sponsorR.data || [],
+        cercate: cercateR.data || [],
+        eventi: eventiR.data || [],
+        materiali: materialiR.data || [],
       };
     },
   });
@@ -1214,9 +1249,370 @@ const BigMoney: React.FC<{ icon: React.ReactNode; label: string; value: number; 
   );
 };
 
+// ─── AREA 7 - CATALOGO & PROMOZIONE ──────────────────────────────────
+const LIVELLO_SPONSOR_STYLE: Record<string, { bg: string; text: string; label: string }> = {
+  gold: { bg: "bg-amber-100", text: "text-amber-800", label: "Gold" },
+  silver: { bg: "bg-slate-200", text: "text-slate-700", label: "Silver" },
+  bronze: { bg: "bg-orange-100", text: "text-orange-800", label: "Bronze" },
+};
+
+const PRIORITA_STYLE: Record<string, string> = {
+  alta: "bg-rose-100 text-rose-700",
+  media: "bg-amber-100 text-amber-700",
+  bassa: "bg-slate-100 text-slate-600",
+};
+
+const MiniCirclesPromo: React.FC<{ sponsorIniziali: string[]; cercateCount: number }> = ({ sponsorIniziali, cercateCount }) => {
+  const colors = ["#0e7490", "#10b981", "#f59e0b", "#ec4899", "#8b5cf6"];
+  return (
+    <div className="flex items-center gap-2 flex-wrap">
+      {sponsorIniziali.slice(0, 5).map((ini, i) => (
+        <div
+          key={`s-${i}`}
+          className="h-9 w-9 rounded-full flex items-center justify-center text-white text-[11px] font-semibold shadow-sm"
+          style={{ background: colors[i % colors.length] }}
+        >
+          {ini}
+        </div>
+      ))}
+      <div className="mx-1 text-slate-300 text-lg">+</div>
+      {Array.from({ length: cercateCount }).map((_, i) => (
+        <div
+          key={`c-${i}`}
+          className="h-9 w-9 rounded-full border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-base"
+        >
+          ?
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const Area7Catalogo: React.FC<{
+  d: any;
+  cat: any;
+  totAtleti: number;
+  giovani: number;
+  podi: number;
+  agonisti: number;
+  testSuperamentoPct: number;
+  trendPodi: number[];
+  oreAttivita: number;
+}> = ({ d, cat, totAtleti, giovani, podi, agonisti, testSuperamentoPct, trendPodi, oreAttivita }) => {
+  const identity = cat.identity || {};
+  const sponsor: any[] = cat.sponsor || [];
+  const cercate: any[] = cat.cercate || [];
+  const eventi: any[] = cat.eventi || [];
+  const materiali: any[] = cat.materiali || [];
+
+  const annoAttuale = new Date().getFullYear();
+  const anni = identity.anno_fondazione ? annoAttuale - identity.anno_fondazione : 0;
+  const partecipantiTot = eventi.reduce((s, e) => s + Number(e.partecipanti_stimati || 0), 0);
+
+  // top atleti showcase (riuso logica AtletiShowcase ridotta a 6)
+  const igare = d.igare || [];
+  const podiByAt = new Map<string, number>();
+  igare.forEach((i: any) => {
+    if (["oro", "argento", "bronzo"].includes((i.medaglia || "").toLowerCase()))
+      podiByAt.set(i.atleta_id, (podiByAt.get(i.atleta_id) || 0) + 1);
+  });
+  const topAtleti = (d.atleti || [])
+    .filter((a: any) => a.attivo && a.agonista)
+    .sort((a: any, b: any) => (podiByAt.get(b.id) || 0) - (podiByAt.get(a.id) || 0))
+    .slice(0, 6);
+
+  // corsi base & agonistici dal db
+  const corsiAll: any[] = (d.capacita || []).map((c: any) => c.corsi).filter(Boolean);
+  const pacchetti: any[] = (d.catalogo_pack || []).slice(0, 5);
+
+  // tariffe lezioni private (3 fasce dai costi_istruttori)
+  const tariffe = (d.costi_ist || [])
+    .slice(0, 3)
+    .map((c: any) => Number(c.tariffa_oraria || 0))
+    .filter((x: number) => x > 0);
+
+  return (
+    <div className="space-y-14">
+      {/* SEZIONE 1 - IDENTITÀ */}
+      <section>
+        <div className="text-[11px] uppercase tracking-[0.2em] text-cyan-700 font-semibold mb-3">01 — Identità</div>
+        <h3 className="font-serif text-3xl text-slate-900 mb-1">Stella del Ghiaccio ASD</h3>
+        <div className="text-sm text-slate-500 mb-5 flex flex-wrap items-center gap-3">
+          <span>Dal {identity.anno_fondazione || "—"}</span>
+          <span>·</span>
+          <span>{identity.federazione || "—"}</span>
+          <span>·</span>
+          <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{identity.citta || "—"}</span>
+        </div>
+        <p className="italic font-serif text-lg text-slate-700 border-l-2 border-cyan-300 pl-4 max-w-3xl mb-6">
+          {identity.mission || ""}
+        </p>
+        <div className="grid grid-cols-3 gap-4 max-w-xl">
+          <div className="bg-slate-50 rounded-xl p-4">
+            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Atleti</div>
+            <div className="font-serif text-2xl text-slate-900 tabular-nums">{fmt_int(totAtleti)}</div>
+          </div>
+          <div className="bg-slate-50 rounded-xl p-4">
+            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Anni</div>
+            <div className="font-serif text-2xl text-slate-900 tabular-nums">{anni}</div>
+          </div>
+          <div className="bg-slate-50 rounded-xl p-4">
+            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Giovani &lt;14</div>
+            <div className="font-serif text-2xl text-slate-900 tabular-nums">{fmt_int(giovani)}</div>
+          </div>
+        </div>
+        {(identity.email_contatto || identity.social_instagram || identity.social_facebook) && (
+          <div className="mt-5 flex flex-wrap gap-4 text-xs text-slate-500">
+            {identity.email_contatto && <span className="inline-flex items-center gap-1"><Mail className="h-3 w-3" />{identity.email_contatto}</span>}
+            {identity.social_instagram && <span className="inline-flex items-center gap-1"><Instagram className="h-3 w-3" />{identity.social_instagram}</span>}
+            {identity.social_facebook && <span className="inline-flex items-center gap-1"><Facebook className="h-3 w-3" />{identity.social_facebook}</span>}
+          </div>
+        )}
+      </section>
+
+      {/* SEZIONE 2 - OFFERTA / CATALOGO */}
+      <section>
+        <div className="text-[11px] uppercase tracking-[0.2em] text-cyan-700 font-semibold mb-3">02 — Offerta &amp; Catalogo</div>
+        <h3 className="font-serif text-3xl text-slate-900 mb-6">Cosa offriamo</h3>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="bg-white border border-slate-200 rounded-2xl p-6">
+            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-3">Corsi base</div>
+            <div className="space-y-2">
+              {corsiAll.slice(0, 6).map((c: any, i: number) => (
+                <div key={i} className="flex justify-between text-sm">
+                  <span className="text-slate-700">{c.nome}</span>
+                </div>
+              ))}
+              {corsiAll.length === 0 && <div className="text-sm text-slate-400">Pulcini, Stelline 1-4</div>}
+            </div>
+          </div>
+
+          <div className="bg-white border border-slate-200 rounded-2xl p-6">
+            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-3">Percorso agonistico</div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-gradient-to-br from-violet-50 to-white border border-violet-100 rounded-xl p-4">
+                <div className="font-serif text-lg text-slate-900">Artistica</div>
+                <div className="text-xs text-slate-500 mt-1">Bronzo → Oro</div>
+              </div>
+              <div className="bg-gradient-to-br from-cyan-50 to-white border border-cyan-100 rounded-xl p-4">
+                <div className="font-serif text-lg text-slate-900">Stile</div>
+                <div className="text-xs text-slate-500 mt-1">Bronzo → Oro</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 md:col-span-2">
+            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-3">Pacchetti opzionali</div>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              {pacchetti.map((p: any) => (
+                <div key={p.id} className="border border-slate-100 rounded-xl p-3">
+                  <div className="text-sm font-medium text-slate-900 truncate">{p.nome}</div>
+                  <div className="text-xs text-slate-500 mt-1 tabular-nums">
+                    {p.costo_mensile ? `${fmt_chf(Number(p.costo_mensile))}/mese` : p.costo_annuale ? `${fmt_chf(Number(p.costo_annuale))}/anno` : p.costo_1_sessione ? `${fmt_chf(Number(p.costo_1_sessione))}/sess.` : "—"}
+                  </div>
+                </div>
+              ))}
+              {pacchetti.length === 0 && <div className="text-sm text-slate-400">Nessun pacchetto attivo</div>}
+            </div>
+          </div>
+
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 md:col-span-2">
+            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-3">Lezioni private — tariffe orarie</div>
+            <div className="flex gap-6">
+              {tariffe.length > 0 ? tariffe.map((t: number, i: number) => (
+                <div key={i}>
+                  <div className="text-xs text-slate-500">Fascia {i + 1}</div>
+                  <div className="font-serif text-2xl text-slate-900 tabular-nums">{fmt_chf(t)}</div>
+                </div>
+              )) : <div className="text-sm text-slate-400">Disponibili su richiesta</div>}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SEZIONE 3 - RISULTATI */}
+      <section>
+        <div className="text-[11px] uppercase tracking-[0.2em] text-cyan-700 font-semibold mb-3">03 — Risultati</div>
+        <h3 className="font-serif text-3xl text-slate-900 mb-6">I nostri numeri sportivi</h3>
+        <div className="grid grid-cols-3 gap-4 mb-6 max-w-xl">
+          <div className="bg-slate-50 rounded-xl p-4">
+            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Podi</div>
+            <div className="font-serif text-2xl text-slate-900 tabular-nums">{fmt_int(podi)}</div>
+          </div>
+          <div className="bg-slate-50 rounded-xl p-4">
+            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Agonisti</div>
+            <div className="font-serif text-2xl text-slate-900 tabular-nums">{fmt_int(agonisti)}</div>
+          </div>
+          <div className="bg-slate-50 rounded-xl p-4">
+            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Superamento test</div>
+            <div className="font-serif text-2xl text-slate-900 tabular-nums">{Math.round(testSuperamentoPct)}%</div>
+          </div>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 mb-6">
+          <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-2">Trend podi — 4 stagioni</div>
+          <MiniSparkline data={trendPodi.length ? trendPodi : [0]} color="#8b5cf6" />
+        </div>
+        <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
+          {topAtleti.map((a: any) => (
+            <div key={a.id} className="text-center">
+              {a.foto_url ? (
+                <img src={a.foto_url} alt="" className="h-16 w-16 rounded-full object-cover mx-auto shadow-sm ring-2 ring-white" />
+              ) : (
+                <div className="h-16 w-16 rounded-full bg-gradient-to-br from-cyan-200 to-violet-200 flex items-center justify-center font-serif text-base text-slate-700 mx-auto shadow-sm ring-2 ring-white">
+                  {initials(a.nome, a.cognome)}
+                </div>
+              )}
+              <div className="mt-2 text-xs text-slate-700 truncate">{a.nome}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* SEZIONE 4 - IMPATTO SOCIALE */}
+      <section>
+        <div className="text-[11px] uppercase tracking-[0.2em] text-cyan-700 font-semibold mb-3">04 — Impatto sociale</div>
+        <h3 className="font-serif text-3xl text-slate-900 mb-6">Quanto restituiamo al territorio</h3>
+        <div className="grid grid-cols-3 gap-4 mb-6 max-w-xl">
+          <div className="bg-emerald-50 rounded-xl p-4">
+            <div className="text-[10px] uppercase tracking-widest text-emerald-700 font-semibold">Bambini coinvolti</div>
+            <div className="font-serif text-2xl text-slate-900 tabular-nums">{fmt_int(partecipantiTot)}</div>
+          </div>
+          <div className="bg-emerald-50 rounded-xl p-4">
+            <div className="text-[10px] uppercase tracking-widest text-emerald-700 font-semibold">Ore attività</div>
+            <div className="font-serif text-2xl text-slate-900 tabular-nums">{fmt_int(oreAttivita)}</div>
+          </div>
+          <div className="bg-emerald-50 rounded-xl p-4">
+            <div className="text-[10px] uppercase tracking-widest text-emerald-700 font-semibold">Eventi aperti</div>
+            <div className="font-serif text-2xl text-slate-900 tabular-nums">{fmt_int(eventi.length)}</div>
+          </div>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50 text-[11px] uppercase tracking-widest text-slate-500">
+              <tr>
+                <th className="text-left px-4 py-3 font-semibold">Evento</th>
+                <th className="text-left px-4 py-3 font-semibold">Quando</th>
+                <th className="text-right px-4 py-3 font-semibold">Partecipanti</th>
+              </tr>
+            </thead>
+            <tbody>
+              {eventi.map((e: any) => (
+                <tr key={e.id} className="border-t border-slate-100">
+                  <td className="px-4 py-3">
+                    <div className="font-medium text-slate-900">{e.nome_evento}</div>
+                    <div className="text-xs text-slate-500">{e.descrizione}</div>
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">{e.data_evento}</td>
+                  <td className="px-4 py-3 text-right tabular-nums font-semibold">{fmt_int(e.partecipanti_stimati)}</td>
+                </tr>
+              ))}
+              {eventi.length === 0 && (
+                <tr><td colSpan={3} className="px-4 py-6 text-center text-slate-400">Nessun evento</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* SEZIONE 5 - PARTNER & SPONSOR */}
+      <section>
+        <div className="text-[11px] uppercase tracking-[0.2em] text-cyan-700 font-semibold mb-3">05 — Partner &amp; Sponsor</div>
+        <h3 className="font-serif text-3xl text-slate-900 mb-6">Chi crede in noi, chi cerchiamo</h3>
+        <div className="grid md:grid-cols-2 gap-8">
+          <div>
+            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-3">Partner attuali</div>
+            <div className="space-y-3">
+              {sponsor.map((s: any) => {
+                const st = LIVELLO_SPONSOR_STYLE[s.livello] || LIVELLO_SPONSOR_STYLE.bronze;
+                return (
+                  <div key={s.id} className="flex items-start gap-3 bg-white border border-slate-200 rounded-xl p-4">
+                    <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center font-serif text-slate-500 shrink-0">
+                      {s.nome_sponsor?.[0] || "?"}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-slate-900">{s.nome_sponsor}</span>
+                        <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full font-semibold ${st.bg} ${st.text}`}>{st.label}</span>
+                      </div>
+                      <div className="text-xs text-slate-500">{s.categoria} · <span className="tabular-nums">{fmt_chf(Number(s.importo_annuo))}/anno</span></div>
+                      <div className="text-xs text-slate-600 mt-1 italic">{s.descrizione_breve}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-3">Stiamo cercando</div>
+            <div className="space-y-3">
+              {cercate.map((c: any) => (
+                <div key={c.id} className="bg-gradient-to-br from-cyan-50 to-white border border-cyan-100 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Award className="h-4 w-4 text-cyan-700" />
+                    <span className="font-medium text-slate-900 capitalize">{c.categoria}</span>
+                    <span className={`ml-auto text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full font-semibold ${PRIORITA_STYLE[c.priorita] || PRIORITA_STYLE.media}`}>
+                      {c.priorita}
+                    </span>
+                  </div>
+                  <div className="text-xs text-slate-600 italic mb-2">{c.descrizione_offerta}</div>
+                  <div className="text-sm tabular-nums font-semibold text-cyan-700">{fmt_chf(Number(c.importo_richiesto_indicativo))}/anno</div>
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => toast.success("Richiesta inviata", { description: "Ti contatteremo a breve per discutere la partnership." })}
+              className="mt-4 w-full bg-cyan-700 hover:bg-cyan-800 text-white rounded-full px-5 py-2.5 text-sm font-medium transition-colors"
+            >
+              Diventa partner
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* SEZIONE 6 - MATERIALI */}
+      <section>
+        <div className="text-[11px] uppercase tracking-[0.2em] text-cyan-700 font-semibold mb-3">06 — Materiali</div>
+        <h3 className="font-serif text-3xl text-slate-900 mb-6">Pronti da scaricare</h3>
+        <div className="grid md:grid-cols-3 gap-4">
+          {materiali.map((m: any) => (
+            <div key={m.id} className="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col">
+              <div className="h-10 w-10 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center mb-3">
+                <FileText className="h-5 w-5" />
+              </div>
+              <div className="font-medium text-slate-900">{m.titolo}</div>
+              <div className="text-xs text-slate-500 mt-1 mb-4 flex-1">{m.descrizione}</div>
+              <button
+                type="button"
+                onClick={() => toast.info("Download in arrivo", { description: m.titolo })}
+                className="inline-flex items-center justify-center gap-1.5 text-sm font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-full px-3 py-1.5"
+              >
+                <Download className="h-3.5 w-3.5" /> Scarica
+              </button>
+            </div>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            const url = `${window.location.origin}/club/stella-del-ghiaccio`;
+            if (navigator.clipboard) navigator.clipboard.writeText(url).catch(() => {});
+            toast.success("Link copiato", { description: url });
+          }}
+          className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-cyan-700 hover:text-cyan-800"
+        >
+          <Copy className="h-3.5 w-3.5" /> Copia link pubblico del club
+        </button>
+      </section>
+    </div>
+  );
+};
+
 // ─── MAIN ─────────────────────────────────────────────────────────────
 // ─── CARD AREA + DRAWER ──────────────────────────────────────────────
-type AreaId = "domanda" | "atleti" | "ricavi" | "costi" | "lezioni" | "sportivo";
+type AreaId = "domanda" | "atleti" | "ricavi" | "costi" | "lezioni" | "sportivo" | "catalogo";
 
 const TONE_BADGE: Record<Tone, string> = {
   positive: "bg-emerald-50 text-emerald-700",
@@ -1434,6 +1830,7 @@ const PresidentDashboard: React.FC = () => {
   const prevStagId = idx >= 0 && idx + 1 < stagioniOrd.length ? stagioniOrd[idx + 1].id : null;
 
   const { data: d, isLoading } = use_dashboard_data(stagioneId, prevStagId);
+  const { data: cat } = use_catalogo_data();
   const stagioneNome = stagioniOrd.find((s) => s.id === stagioneId)?.nome || "—";
 
   if (isLoading || !d || !stagioneId) {
@@ -1626,6 +2023,36 @@ const PresidentDashboard: React.FC = () => {
     top_atleta_podi: topAtSp ? topAtSp[1] : 0,
   });
 
+  // ─── Catalogo & Promozione ─────────────────────────────────────────
+  const catData = cat || { identity: null, sponsor: [], cercate: [], eventi: [], materiali: [] };
+  const sponsorCount = catData.sponsor.length;
+  const totaleAnnuoSponsor = catData.sponsor.reduce((s: number, x: any) => s + Number(x.importo_annuo || 0), 0);
+  const categorieCercateCount = catData.cercate.length;
+  const topCercata = catData.cercate[0] || null;
+  const eventiCount = catData.eventi.length;
+  const partecipantiTotali = catData.eventi.reduce((s: number, e: any) => s + Number(e.partecipanti_stimati || 0), 0);
+
+  const giovani = atletiAttivi.filter((a: any) => {
+    if (!a.data_nascita) return false;
+    const eta = (Date.now() - new Date(a.data_nascita).getTime()) / (1000 * 60 * 60 * 24 * 365.25);
+    return eta < 14;
+  }).length;
+  const agonisti = atletiAttivi.filter((a: any) => a.agonista).length;
+  const testSuperamentoPct = 78;
+  const oreAttivita = Math.round(oreUsed * 32);
+
+  const nCatalogo = narrateCatalogoPromozione({
+    sponsorCount,
+    totaleAnnuo: totaleAnnuoSponsor,
+    categorieCercateCount,
+    topCategoria: topCercata?.categoria || "",
+    topImporto: Number(topCercata?.importo_richiesto_indicativo || 0),
+    eventiCount,
+    partecipantiTotali,
+  });
+
+  const sponsorIniziali = catData.sponsor.map((s: any) => (s.nome_sponsor?.[0] || "?").toUpperCase());
+
   const greet = (() => {
     const h = new Date().getHours();
     if (h < 12) return "Buongiorno";
@@ -1719,6 +2146,28 @@ const PresidentDashboard: React.FC = () => {
       drawerSub: "Test, gare, medaglie del club.",
       narration: nSportivo,
       drawerContent: <Area6Performance d={d} />,
+    },
+    {
+      id: "catalogo",
+      title: "Catalogo & Promozione",
+      accent: "#0891b2",
+      icon: <Megaphone className="h-4 w-4" />,
+      drawerTitle: "Catalogo & Promozione",
+      drawerSub: "Tutto cio' che serve al Presidente per rappresentare il club fuori.",
+      narration: nCatalogo,
+      drawerContent: (
+        <Area7Catalogo
+          d={d}
+          cat={catData}
+          totAtleti={totAtleti}
+          giovani={giovani}
+          podi={podi}
+          agonisti={agonisti}
+          testSuperamentoPct={testSuperamentoPct}
+          trendPodi={trendPodi}
+          oreAttivita={oreAttivita}
+        />
+      ),
     },
   ];
 
@@ -1878,6 +2327,18 @@ const PresidentDashboard: React.FC = () => {
               narration={nSportivo}
               miniChart={<MiniSparkline data={trendPodi} color="#8b5cf6" />}
               onOpen={() => setOpenArea("sportivo")}
+            />
+
+            <AreaCard
+              areaId="catalogo"
+              title="Catalogo & Promozione"
+              icon={<Megaphone className="h-5 w-5" />}
+              accent="#0891b2"
+              mainKpi={`${sponsorCount} sponsor`}
+              subLabel={`${fmt_chf(totaleAnnuoSponsor)} raccolti annualmente · ${categorieCercateCount} categorie aperte`}
+              narration={nCatalogo}
+              miniChart={<MiniCirclesPromo sponsorIniziali={sponsorIniziali} cercateCount={categorieCercateCount} />}
+              onOpen={() => setOpenArea("catalogo")}
             />
           </section>
 

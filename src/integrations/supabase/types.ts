@@ -488,6 +488,48 @@ export type Database = {
           },
         ]
       }
+      club_identity: {
+        Row: {
+          anno_fondazione: number | null
+          citta: string | null
+          club_id: string
+          created_at: string
+          email_contatto: string | null
+          federazione: string | null
+          id: string
+          mission: string | null
+          sito_web: string | null
+          social_facebook: string | null
+          social_instagram: string | null
+        }
+        Insert: {
+          anno_fondazione?: number | null
+          citta?: string | null
+          club_id: string
+          created_at?: string
+          email_contatto?: string | null
+          federazione?: string | null
+          id?: string
+          mission?: string | null
+          sito_web?: string | null
+          social_facebook?: string | null
+          social_instagram?: string | null
+        }
+        Update: {
+          anno_fondazione?: number | null
+          citta?: string | null
+          club_id?: string
+          created_at?: string
+          email_contatto?: string | null
+          federazione?: string | null
+          id?: string
+          mission?: string | null
+          sito_web?: string | null
+          social_facebook?: string | null
+          social_instagram?: string | null
+        }
+        Relationships: []
+      }
       clubs: {
         Row: {
           cap: string | null
@@ -1293,6 +1335,42 @@ export type Database = {
           struttura_nome?: string
           tipo?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      eventi_pubblici: {
+        Row: {
+          club_id: string
+          created_at: string
+          data_evento: string | null
+          descrizione: string | null
+          id: string
+          nome_evento: string
+          partecipanti_stimati: number
+          stagione_id: string | null
+          tipo: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          data_evento?: string | null
+          descrizione?: string | null
+          id?: string
+          nome_evento?: string
+          partecipanti_stimati?: number
+          stagione_id?: string | null
+          tipo?: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          data_evento?: string | null
+          descrizione?: string | null
+          id?: string
+          nome_evento?: string
+          partecipanti_stimati?: number
+          stagione_id?: string | null
+          tipo?: string
         }
         Relationships: []
       }
@@ -2133,6 +2211,36 @@ export type Database = {
         }
         Relationships: []
       }
+      materiali_promo: {
+        Row: {
+          club_id: string
+          descrizione: string | null
+          file_url: string | null
+          id: string
+          tipo: string
+          titolo: string
+          updated_at: string
+        }
+        Insert: {
+          club_id: string
+          descrizione?: string | null
+          file_url?: string | null
+          id?: string
+          tipo?: string
+          titolo?: string
+          updated_at?: string
+        }
+        Update: {
+          club_id?: string
+          descrizione?: string | null
+          file_url?: string | null
+          id?: string
+          tipo?: string
+          titolo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       motivi_abbandono_aggregati: {
         Row: {
           club_id: string
@@ -2926,6 +3034,75 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sponsor_attivi: {
+        Row: {
+          categoria: string | null
+          club_id: string
+          created_at: string
+          descrizione_breve: string | null
+          id: string
+          importo_annuo: number
+          livello: string
+          nome_sponsor: string
+          stagione_fine: number | null
+          stagione_inizio: number | null
+        }
+        Insert: {
+          categoria?: string | null
+          club_id: string
+          created_at?: string
+          descrizione_breve?: string | null
+          id?: string
+          importo_annuo?: number
+          livello?: string
+          nome_sponsor?: string
+          stagione_fine?: number | null
+          stagione_inizio?: number | null
+        }
+        Update: {
+          categoria?: string | null
+          club_id?: string
+          created_at?: string
+          descrizione_breve?: string | null
+          id?: string
+          importo_annuo?: number
+          livello?: string
+          nome_sponsor?: string
+          stagione_fine?: number | null
+          stagione_inizio?: number | null
+        }
+        Relationships: []
+      }
+      sponsor_categorie_cercate: {
+        Row: {
+          categoria: string
+          club_id: string
+          created_at: string
+          descrizione_offerta: string | null
+          id: string
+          importo_richiesto_indicativo: number
+          priorita: string
+        }
+        Insert: {
+          categoria?: string
+          club_id: string
+          created_at?: string
+          descrizione_offerta?: string | null
+          id?: string
+          importo_richiesto_indicativo?: number
+          priorita?: string
+        }
+        Update: {
+          categoria?: string
+          club_id?: string
+          created_at?: string
+          descrizione_offerta?: string | null
+          id?: string
+          importo_richiesto_indicativo?: number
+          priorita?: string
+        }
+        Relationships: []
       }
       stagioni: {
         Row: {
