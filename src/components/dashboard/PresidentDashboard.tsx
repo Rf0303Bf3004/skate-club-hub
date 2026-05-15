@@ -1206,6 +1206,19 @@ const PresidentDashboard: React.FC = () => {
   const [stagioneId, setStagioneId] = useState<string>("");
   const [confronta, setConfronta] = useState(true);
   const [activeTab, setActiveTab] = useState<string>("sintesi");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
+
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem("president-sidebar-collapsed");
+      if (v === "true") setSidebarCollapsed(true);
+    } catch {}
+  }, []);
+  useEffect(() => {
+    try {
+      localStorage.setItem("president-sidebar-collapsed", String(sidebarCollapsed));
+    } catch {}
+  }, [sidebarCollapsed]);
 
   useEffect(() => {
     if (!stagioneId && stagioniOrd.length) {
