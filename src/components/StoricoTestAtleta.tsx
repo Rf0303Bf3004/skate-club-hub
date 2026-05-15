@@ -10,13 +10,14 @@ type Riga = {
   esito: string;
   note_istruttore: string | null;
   test_id: string;
+  livello_accesso: string | null;
+  livello_target: string | null;
+  disciplina: string | null;
   test: {
     id: string;
     nome: string;
     data: string | null;
     tipo: string;
-    livello_attuale: string | null;
-    livello_accesso: string | null;
     luogo: string | null;
   } | null;
 };
@@ -38,7 +39,7 @@ export default function StoricoTestAtleta({ atleta_id }: Props) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("test_livello_atleti")
-        .select("id, esito, note_istruttore, test_id, test:test_livello(id, nome, data, tipo, livello_attuale, livello_accesso, luogo)")
+        .select("id, esito, note_istruttore, test_id, livello_accesso, livello_target, disciplina, test:test_livello(id, nome, data, tipo, luogo)")
         .eq("atleta_id", atleta_id);
       if (error) throw error;
       const rows = (data ?? []) as unknown as Riga[];
@@ -90,7 +91,8 @@ export default function StoricoTestAtleta({ atleta_id }: Props) {
                 <TableCell className="font-medium text-sm">{r.test?.nome || "—"}</TableCell>
                 <TableCell className="text-sm capitalize text-muted-foreground">{r.test?.tipo || "—"}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">
-                  {r.test?.livello_attuale || "?"} → {r.test?.livello_accesso || "?"}
+                  {r.livello_accesso || "?"} → {r.livello_target || "?"}
+                  {r.disciplina ? <span className="ml-1 text-[10px] uppercase">({r.disciplina === "stile" ? "STI" : "ART"})</span> : null}
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline" className={`gap-1 ${esito.cls}`}>

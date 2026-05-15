@@ -280,3 +280,68 @@ export async function apply_esito_propagation(
     }
   }
 }
+
+// ─── Promozione automatica ───────────────────────────────────────────────
+//
+// Applica all'atleta il livello target derivato da uno step test_livello_atleti
+// quando l'esito viene impostato a 'superato'. Idempotente: se l'atleta è
+// già al target (o oltre, in carriera) non fa nulla.
+
+export type PromozioneResult =
+  | { promosso: true; from: string; to: string }
+  | { promosso: false; skipped_motivo: string };
+
+export type AtletaPromozioneInput = AtletaLivelloInput & { id: string };
+
+export async function apply_promozione_atleta(
+  client: { from: (t: string) => any },
+  atleta: AtletaPromozioneInput,
+  step: { livello_target?: string | null; disciplina?: Disciplina | string | null },
+): Promise<PromozioneResult> {
+  const target = (step?.livello_target || "").trim();
+  if (!target) return { promosso: false, skipped_motivo: "livello target mancante" };
+
+  const disciplina: Disciplina = step?.disciplina === "stile" ? "stile" : "artistica";
+  const patch: Record<string, any> = {};
+  let from_val = "—";
+
+  const is_amatori = (LIVELLI_AMATORI as string[]).includes(target);
+  const is_carriera = (LIVELLI_CARRIERA as string[]).includes(target);
+
+  if (is_amatori) {
+    from_val = atleta.livello_amatori || (atleta.categoria === "pulcini" ? "Pulcini" : "—");
+    if (atleta.categoria === "amatori" && atleta.livello_amatori === target) {
+      return { promosso: false, skipped_motivo: `già a ${target}` };
+    }
+    patch.categoria = "amatori";
+    patch.livello_amatori = target;
+  } else if (target === "Interbronzo") {
+    const cur = disciplina === "stile" ? atleta.livello_stile : atleta.livello_artistica;
+    const cur_idx = cur ? LIVELLI_CARRIERA.indexOf(cur as LivelloCarriera) : -1;
+    from_val = cur || atleta.livello_amatori || "—";
+    if (cur_idx >= 0) {
+      return { promosso: false, skipped_motivo: `già a ${cur} (${disciplina})` };
+    }
+    patch.categoria = "artistica";
+    patch.livello_amatori = null;
+    if (disciplina === "stile") patch.livello_stile = "Interbronzo";
+    else patch.livello_artistica = "Interbronzo";
+  } else if (is_carriera) {
+    const t_idx = LIVELLI_CARRIERA.indexOf(target as LivelloCarriera);
+    const cur = disciplina === "stile" ? atleta.livello_stile : atleta.livello_artistica;
+    const cur_idx = cur ? LIVELLI_CARRIERA.indexOf(cur as LivelloCarriera) : -1;
+    from_val = cur || "—";
+    if (cur_idx >= t_idx) {
+      return { promosso: false, skipped_motivo: `già a ${cur} (${disciplina})` };
+    }
+    patch.categoria = "artistica";
+    if (disciplina === "stile") patch.livello_stile = target;
+    else patch.livello_artistica = target;
+  } else {
+    return { promosso: false, skipped_motivo: `livello target sconosciuto: ${target}` };
+  }
+
+  const { error } = await client.from("atleti").update(patch).eq("id", atleta.id);
+  if (error) throw error;
+  return { promosso: true, from: from_val, to: target };
+}
