@@ -661,17 +661,21 @@ const AthletesPage: React.FC = () => {
         return a.categoria === "amatori" && a.livello_amatori === card_filter.livello;
       }
       if (card_filter.sezione === "artistica") {
-        return (
-          a.categoria === "artistica" &&
-          (a.livello_artistica === card_filter.livello || a.livello_stile === card_filter.livello)
-        );
+        if (a.categoria !== "artistica") return false;
+        if (card_filter.percorso === "artistica") return a.livello_artistica === card_filter.livello;
+        return a.livello_stile === card_filter.livello;
       }
     }
 
-    // Filtro a cascata categoria → livello
+    // Filtro a cascata categoria → (percorso) → livello
     if (categoria_filter !== "tutti") {
       const cat = (a.categoria ?? "pulcini") as Categoria;
       if (cat !== categoria_filter) return false;
+      if (categoria_filter === "artistica") {
+        if (percorso_filter === "artistica" && !a.livello_artistica) return false;
+        if (percorso_filter === "stile" && !a.livello_stile) return false;
+        if (percorso_filter === "entrambi" && (!a.livello_artistica || !a.livello_stile)) return false;
+      }
       if (level_filter !== "tutti") {
         if (categoria_filter === "pulcini") return true; // niente sottolivelli
         if (categoria_filter === "amatori") return a.livello_amatori === level_filter;
