@@ -1251,7 +1251,7 @@ const BigMoney: React.FC<{ icon: React.ReactNode; label: string; value: number; 
 
 // ─── MAIN ─────────────────────────────────────────────────────────────
 // ─── CARD AREA + DRAWER ──────────────────────────────────────────────
-type AreaId = "domanda" | "atleti" | "ricavi" | "costi" | "lezioni" | "sportivo";
+type AreaId = "domanda" | "atleti" | "ricavi" | "costi" | "lezioni" | "sportivo" | "catalogo";
 
 const TONE_BADGE: Record<Tone, string> = {
   positive: "bg-emerald-50 text-emerald-700",
