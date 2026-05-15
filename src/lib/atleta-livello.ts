@@ -43,6 +43,8 @@ export type AtletaLivelloInput = {
   livello_amatori?: LivelloAmatori | string | null;
   livello_artistica?: LivelloCarriera | string | null;
   livello_stile?: LivelloCarriera | string | null;
+  livello_artistica_in_preparazione?: string | null;
+  livello_stile_in_preparazione?: string | null;
   // legacy fallback
   livello_attuale?: string | null;
 };
