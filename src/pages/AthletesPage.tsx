@@ -638,6 +638,7 @@ const AthletesPage: React.FC = () => {
     | { sezione: "pulcini" }
     | { sezione: "amatori"; livello: string }
     | { sezione: "artistica"; percorso: "artistica" | "stile"; livello: string }
+    | { sezione: "in_prep"; disciplina: "artistica" | "stile"; livello: string }
     | null
   >(null);
 
@@ -676,6 +677,13 @@ const AthletesPage: React.FC = () => {
         if (a.categoria !== "artistica") return false;
         if (card_filter.percorso === "artistica") return a.livello_artistica === card_filter.livello;
         return a.livello_stile === card_filter.livello;
+      }
+      if (card_filter.sezione === "in_prep") {
+        if (a.categoria !== "artistica") return false;
+        if (card_filter.disciplina === "artistica") {
+          return !a.livello_artistica && a.livello_artistica_in_preparazione === card_filter.livello;
+        }
+        return !a.livello_stile && a.livello_stile_in_preparazione === card_filter.livello;
       }
     }
 
@@ -1034,16 +1042,27 @@ const AthletesPage: React.FC = () => {
               {/* Tassello "In preparazione" — atleti già artistica ma senza livello battezzato */}
               {(() => {
                 const empty = artistica_in_prep_count === 0;
+                const sel =
+                  card_filter?.sezione === "in_prep" &&
+                  card_filter.disciplina === "artistica" &&
+                  card_filter.livello === "Interbronzo";
                 return (
                   <button
                     onClick={() => {
-                      // filtro client-side: mostra solo quelli in transizione
-                      set_card_filter(null);
-                      set_categoria_filter("artistica");
-                      set_level_filter("tutti");
-                      set_percorso_filter("artistica");
+                      if (sel) {
+                        set_card_filter(null);
+                      } else {
+                        set_card_filter({ sezione: "in_prep", disciplina: "artistica", livello: "Interbronzo" });
+                        set_categoria_filter("tutti");
+                        set_percorso_filter("tutti");
+                        set_level_filter("tutti");
+                      }
                     }}
-                    className={`shrink-0 px-4 py-3 rounded-xl shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md border border-purple-200 bg-purple-50/50 ${empty ? "opacity-60" : ""}`}
+                    className={`shrink-0 px-4 py-3 rounded-xl shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md ${
+                      sel
+                        ? "border-2 border-purple-500 bg-purple-100"
+                        : `border border-purple-200 bg-purple-50/50 ${empty ? "opacity-60" : ""}`
+                    }`}
                     title="Atleti che hanno superato Stellina 4 ma non ancora Interbronzo"
                   >
                     <span className={`block text-2xl font-bold ${empty ? "text-muted-foreground/50" : "text-purple-700"}`}>{artistica_in_prep_count}</span>
@@ -1200,6 +1219,25 @@ const AthletesPage: React.FC = () => {
             </SelectContent>
           </Select>
         </div>
+
+        {card_filter && (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground">Filtro attivo:</span>
+            <button
+              onClick={() => set_card_filter(null)}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-100 border border-purple-300 text-xs font-semibold text-purple-800 hover:bg-purple-200 transition"
+              title="Rimuovi filtro"
+            >
+              {card_filter.sezione === "pulcini" && "Pulcini"}
+              {card_filter.sezione === "amatori" && `Amatori · ${card_filter.livello}`}
+              {card_filter.sezione === "artistica" &&
+                `${card_filter.percorso === "artistica" ? "Artistica" : "Stile"} · ${card_filter.livello}`}
+              {card_filter.sezione === "in_prep" &&
+                `In preparazione ${card_filter.livello}`}
+              <span className="text-purple-600">✕</span>
+            </button>
+          </div>
+        )}
 
         <div className="bg-card rounded-xl shadow-card overflow-hidden">
           <div className="overflow-x-auto">
