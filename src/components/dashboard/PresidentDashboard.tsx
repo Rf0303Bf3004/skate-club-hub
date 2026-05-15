@@ -1830,6 +1830,7 @@ const PresidentDashboard: React.FC = () => {
   const prevStagId = idx >= 0 && idx + 1 < stagioniOrd.length ? stagioniOrd[idx + 1].id : null;
 
   const { data: d, isLoading } = use_dashboard_data(stagioneId, prevStagId);
+  const { data: cat } = use_catalogo_data();
   const stagioneNome = stagioniOrd.find((s) => s.id === stagioneId)?.nome || "—";
 
   if (isLoading || !d || !stagioneId) {
