@@ -505,9 +505,16 @@ const Area2Atleti: React.FC<{ d: any; bilancioStorico: any[]; storiciByStagione:
   });
   const maxLivello = Math.max(1, ...Object.values(counts));
   const prevCounts: Record<string, number> = {};
-  // approx prev counts: scale current counts by prevTot/total
-  const ratio = total ? prevTot / total : 1;
-  LIVELLI_ORDER.forEach((l) => (prevCounts[l] = Math.round(counts[l] * ratio)));
+  LIVELLI_ORDER.forEach((l) => (prevCounts[l] = 0));
+  prev.forEach((s: any) => {
+    if (s.livello && prevCounts[s.livello] !== undefined) prevCounts[s.livello]++;
+  });
+  // fallback: se i livelli storici non sono popolati, scala dalla stagione corrente
+  const prevHasLevels = Object.values(prevCounts).some((v) => v > 0);
+  if (!prevHasLevels) {
+    const ratio = total ? prevTot / total : 1;
+    LIVELLI_ORDER.forEach((l) => (prevCounts[l] = Math.round(counts[l] * ratio)));
+  }
 
   const livColor = (i: number) => {
     // gradient verde tenue → cyan → viola
