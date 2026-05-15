@@ -13,6 +13,8 @@ import {
   FileDown,
   Sparkles,
   Calendar,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import {
   ResponsiveContainer,
