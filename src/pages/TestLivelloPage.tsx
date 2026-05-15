@@ -343,8 +343,33 @@ export default function TestLivelloPage() {
   });
 
   const handle_change_esito = async (id: string, nuovo: "in_attesa" | "superato" | "non_superato" | "non_sostenuto") => {
+    const prev_row = test_atleti.find((r) => r.id === id);
+    const prev_esito = prev_row?.esito;
     await update_field.mutateAsync({ id, patch: { esito: nuovo } as any });
     await apply_esito_propagation(supabase as any, id, nuovo, test_atleti as TestAtletaRow[]);
+
+    if (nuovo === "superato" && prev_esito !== "superato" && prev_row) {
+      const atleta = atleti.find((a) => a.id === prev_row.atleta_id);
+      if (atleta) {
+        try {
+          const result = await apply_promozione_atleta(supabase as any, atleta as any, {
+            livello_target: prev_row.livello_target,
+            disciplina: prev_row.disciplina ?? null,
+          });
+          if (result.promosso) {
+            toast.success(`${atleta.cognome} ${atleta.nome}: promosso da ${result.from} a ${result.to}`);
+            qc.invalidateQueries({ queryKey: ["atleti_test"] });
+            qc.invalidateQueries({ queryKey: ["atleti"] });
+          } else {
+            toast.info(`Promozione non applicata: ${result.skipped_motivo}`);
+          }
+        } catch (e: any) {
+          toast.error("Errore promozione: " + (e?.message ?? ""));
+        }
+      }
+    } else if (prev_esito === "superato" && nuovo !== "superato") {
+      toast.warning("Esito modificato — il livello dell'atleta NON è stato cambiato. Modifica manualmente la scheda atleta se necessario.");
+    }
     refetch_atleti();
   };
 
