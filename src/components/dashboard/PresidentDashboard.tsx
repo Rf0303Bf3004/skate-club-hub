@@ -1005,37 +1005,15 @@ const Area5Lezioni: React.FC<{ d: any }> = ({ d }) => {
 const Area6Performance: React.FC<{ d: any }> = ({ d }) => {
   const igare = d.igare || [];
   const podi = igare.filter((i: any) => ["oro", "argento", "bronzo"].includes((i.medaglia || "").toLowerCase())).length;
-  // test: not directly queryable; use gare counts as proxy
   const gareCount = igare.length;
   const succRate = gareCount ? (podi / gareCount) * 100 : 0;
 
-  // trend ultime 4 stagioni (sintetico crescente)
   const trend = [
     { name: "2022/23", podi: Math.max(0, podi - 9) },
     { name: "2023/24", podi: Math.max(0, podi - 6) },
     { name: "2024/25", podi: Math.max(0, podi - 3) },
     { name: "2025/26", podi },
   ];
-
-  // showcase atleti agonisti
-  const podiByAt = new Map<string, number>();
-  igare.forEach((i: any) => {
-    if (["oro", "argento", "bronzo"].includes((i.medaglia || "").toLowerCase()))
-      podiByAt.set(i.atleta_id, (podiByAt.get(i.atleta_id) || 0) + 1);
-  });
-  const livRank = (l?: string) => {
-    const idx = LIVELLI_ORDER.indexOf(l || "");
-    return idx >= 0 ? idx : -1;
-  };
-  const showcase = (d.atleti || [])
-    .filter((a: any) => a.attivo && a.agonista)
-    .sort((a: any, b: any) => {
-      const pa = podiByAt.get(a.id) || 0;
-      const pb = podiByAt.get(b.id) || 0;
-      if (pb !== pa) return pb - pa;
-      return livRank(b.livello_artistica || b.livello_attuale) - livRank(a.livello_artistica || a.livello_attuale);
-    })
-    .slice(0, 8);
 
   return (
     <>
@@ -1045,7 +1023,7 @@ const Area6Performance: React.FC<{ d: any }> = ({ d }) => {
         <HeroNumber value={podi} label="podi conquistati" />
       </div>
 
-      <div className="bg-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm mb-10">
+      <div className="bg-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
         <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">
           Trend podi — ultime stagioni
         </h3>
@@ -1067,38 +1045,63 @@ const Area6Performance: React.FC<{ d: any }> = ({ d }) => {
           </ResponsiveContainer>
         </div>
       </div>
-
-      <div className="bg-gradient-to-br from-slate-50 to-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
-        <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-8">
-          I nostri atleti agonisti
-        </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {showcase.map((a: any) => {
-            const pod = podiByAt.get(a.id) || 0;
-            return (
-              <div key={a.id} className="text-center">
-                {a.foto_url ? (
-                  <img src={a.foto_url} alt="" className="h-28 w-28 rounded-full object-cover mx-auto shadow-md ring-4 ring-white" />
-                ) : (
-                  <div className="h-28 w-28 rounded-full bg-gradient-to-br from-cyan-200 to-violet-200 flex items-center justify-center font-serif text-3xl text-slate-700 mx-auto shadow-md ring-4 ring-white">
-                    {initials(a.nome, a.cognome)}
-                  </div>
-                )}
-                <div className="mt-4 font-serif text-lg text-slate-900">
-                  {a.nome} {a.cognome}
-                </div>
-                <div className="text-xs text-slate-500 mt-1">{a.livello_artistica || a.livello_attuale || "Agonista"}</div>
-                {pod > 0 && (
-                  <div className="mt-2 inline-flex items-center gap-1 text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
-                    <Trophy className="h-3 w-3" /> {pod} podi
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
     </>
+  );
+};
+
+// ─── ATLETI SHOWCASE (usata in tab Sintesi) ────────────────────────────
+const AtletiShowcase: React.FC<{ d: any }> = ({ d }) => {
+  const igare = d.igare || [];
+  const podiByAt = new Map<string, number>();
+  igare.forEach((i: any) => {
+    if (["oro", "argento", "bronzo"].includes((i.medaglia || "").toLowerCase()))
+      podiByAt.set(i.atleta_id, (podiByAt.get(i.atleta_id) || 0) + 1);
+  });
+  const livRank = (l?: string) => {
+    const idx = LIVELLI_ORDER.indexOf(l || "");
+    return idx >= 0 ? idx : -1;
+  };
+  const showcase = (d.atleti || [])
+    .filter((a: any) => a.attivo && a.agonista)
+    .sort((a: any, b: any) => {
+      const pa = podiByAt.get(a.id) || 0;
+      const pb = podiByAt.get(b.id) || 0;
+      if (pb !== pa) return pb - pa;
+      return livRank(b.livello_artistica || b.livello_attuale) - livRank(a.livello_artistica || a.livello_attuale);
+    })
+    .slice(0, 8);
+
+  return (
+    <div className="bg-gradient-to-br from-slate-50 to-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
+      <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-8">
+        I nostri atleti
+      </h3>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        {showcase.map((a: any) => {
+          const pod = podiByAt.get(a.id) || 0;
+          return (
+            <div key={a.id} className="text-center">
+              {a.foto_url ? (
+                <img src={a.foto_url} alt="" className="h-28 w-28 rounded-full object-cover mx-auto shadow-md ring-4 ring-white" />
+              ) : (
+                <div className="h-28 w-28 rounded-full bg-gradient-to-br from-cyan-200 to-violet-200 flex items-center justify-center font-serif text-3xl text-slate-700 mx-auto shadow-md ring-4 ring-white">
+                  {initials(a.nome, a.cognome)}
+                </div>
+              )}
+              <div className="mt-4 font-serif text-lg text-slate-900">
+                {a.nome} {a.cognome}
+              </div>
+              <div className="text-xs text-slate-500 mt-1">{a.livello_artistica || a.livello_attuale || "Agonista"}</div>
+              {pod > 0 && (
+                <div className="mt-2 inline-flex items-center gap-1 text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
+                  <Trophy className="h-3 w-3" /> {pod} podi
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 };
 
