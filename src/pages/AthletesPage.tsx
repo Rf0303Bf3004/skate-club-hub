@@ -1220,6 +1220,25 @@ const AthletesPage: React.FC = () => {
           </Select>
         </div>
 
+        {card_filter && (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground">Filtro attivo:</span>
+            <button
+              onClick={() => set_card_filter(null)}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-100 border border-purple-300 text-xs font-semibold text-purple-800 hover:bg-purple-200 transition"
+              title="Rimuovi filtro"
+            >
+              {card_filter.sezione === "pulcini" && "Pulcini"}
+              {card_filter.sezione === "amatori" && `Amatori · ${card_filter.livello}`}
+              {card_filter.sezione === "artistica" &&
+                `${card_filter.percorso === "artistica" ? "Artistica" : "Stile"} · ${card_filter.livello}`}
+              {card_filter.sezione === "in_prep" &&
+                `In preparazione ${card_filter.livello}`}
+              <span className="text-purple-600">✕</span>
+            </button>
+          </div>
+        )}
+
         <div className="bg-card rounded-xl shadow-card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
