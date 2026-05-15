@@ -198,3 +198,28 @@ export function narrateSportivo(input: {
 
   return { short, long, tone };
 }
+
+// ─── 7. Catalogo & Promozione ───────────────────────────────────────
+export function narrateCatalogoPromozione(input: {
+  sponsorCount: number;
+  totaleAnnuo: number;
+  categorieCercateCount: number;
+  topCategoria: string;
+  topImporto: number;
+  eventiCount: number;
+  partecipantiTotali: number;
+}): AreaNarration {
+  const { sponsorCount, totaleAnnuo, categorieCercateCount, topCategoria, topImporto, eventiCount, partecipantiTotali } = input;
+  const tone: Tone = sponsorCount >= 5 ? "positive" : sponsorCount >= 3 ? "neutral" : "concerning";
+
+  const short =
+    `${sponsorCount} partner sostengono il club per ${fmt_chf(totaleAnnuo)}. ` +
+    (topCategoria ? `Stiamo cercando uno sponsor ${topCategoria} (${fmt_chf(topImporto)}) per coprire le ore aggiuntive.` : `Aperte ${categorieCercateCount} categorie di partnership.`);
+
+  const long =
+    `${sponsorCount} sponsor sostengono il club con ${fmt_chf(totaleAnnuo)} annui, mentre cerchiamo partner in ${categorieCercateCount} categorie strategiche. ` +
+    (topCategoria ? `La priorità è uno sponsor ${topCategoria} da ~${fmt_chf(topImporto)} per ampliare le ore di ghiaccio. ` : "") +
+    `Quest'anno abbiamo organizzato ${eventiCount} ${eventiCount === 1 ? "evento aperto" : "eventi aperti"} alla cittadinanza con oltre ${fmt_int(partecipantiTotali)} persone coinvolte.`;
+
+  return { short, long, tone };
+}
