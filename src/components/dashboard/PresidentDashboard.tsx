@@ -13,9 +13,25 @@ import {
   FileDown,
   Sparkles,
   Calendar,
-  PanelLeftClose,
-  PanelLeftOpen,
+  CreditCard,
+  Briefcase,
+  Clock,
+  X,
 } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+} from "@/components/ui/sheet";
+import {
+  narrateDomanda,
+  narrateAtleti,
+  narrateRicavi,
+  narrateCosti,
+  narrateLezioni,
+  narrateSportivo,
+  type AreaNarration,
+  type Tone,
+} from "@/lib/narrate";
 import {
   ResponsiveContainer,
   LineChart,
@@ -1199,26 +1215,213 @@ const BigMoney: React.FC<{ icon: React.ReactNode; label: string; value: number; 
 };
 
 // ─── MAIN ─────────────────────────────────────────────────────────────
+// ─── CARD AREA + DRAWER ──────────────────────────────────────────────
+type AreaId = "domanda" | "atleti" | "ricavi" | "costi" | "lezioni" | "sportivo";
+
+const TONE_BADGE: Record<Tone, string> = {
+  positive: "bg-emerald-50 text-emerald-700",
+  neutral: "bg-slate-100 text-slate-600",
+  concerning: "bg-rose-50 text-rose-700",
+};
+
+const AreaCard: React.FC<{
+  areaId: AreaId;
+  title: string;
+  icon: React.ReactNode;
+  mainKpi: string;
+  subLabel: string;
+  delta?: number;
+  narration: AreaNarration;
+  miniChart: React.ReactNode;
+  onOpen: () => void;
+  accent: string;
+}> = ({ title, icon, mainKpi, subLabel, delta, narration, miniChart, onOpen, accent }) => {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="text-left bg-white rounded-2xl border border-slate-200 shadow-sm p-7 md:p-8 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-cyan-400 flex flex-col"
+      style={{ minHeight: 320 }}
+    >
+      <div className="flex items-center gap-2 text-slate-500 mb-5">
+        <span style={{ color: accent }}>{icon}</span>
+        <span className="text-[11px] uppercase tracking-[0.18em] font-semibold">{title}</span>
+      </div>
+
+      <div className="flex items-end gap-3 mb-1">
+        <div
+          className="font-serif text-slate-900 leading-none tracking-tight tabular-nums"
+          style={{ fontSize: "clamp(2rem, 2.6vw, 2.75rem)", fontFeatureSettings: "'tnum'" }}
+        >
+          {mainKpi}
+        </div>
+        {delta !== undefined && <DeltaPill value={delta} />}
+      </div>
+      <div className="text-sm text-slate-500 mb-6">{subLabel}</div>
+
+      <div className="mb-5 min-h-[80px] flex items-end">{miniChart}</div>
+
+      <p className="italic text-sm text-slate-600 leading-relaxed mb-5 line-clamp-3">
+        {narration.short}
+      </p>
+
+      <div className="mt-auto flex items-center justify-between">
+        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${TONE_BADGE[narration.tone]}`}>
+          {narration.tone === "positive" ? "in crescita" : narration.tone === "concerning" ? "attenzione" : "stabile"}
+        </span>
+        <span className="text-sm font-medium" style={{ color: accent }}>
+          Approfondisci →
+        </span>
+      </div>
+    </button>
+  );
+};
+
+const MiniBarsHoriz: React.FC<{ items: { label: string; value: number; color: string }[] }> = ({ items }) => {
+  const max = Math.max(1, ...items.map((i) => i.value));
+  return (
+    <div className="w-full space-y-1.5">
+      {items.map((it) => (
+        <div key={it.label} className="flex items-center gap-2 text-[11px]">
+          <span className="w-20 text-slate-500 truncate">{it.label}</span>
+          <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+            <div className="h-full rounded-full" style={{ width: `${(it.value / max) * 100}%`, background: it.color }} />
+          </div>
+          <span className="w-8 text-right tabular-nums text-slate-700 font-semibold">{it.value}h</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const MiniPyramid: React.FC<{ items: { label: string; value: number }[] }> = ({ items }) => {
+  const max = Math.max(1, ...items.map((i) => i.value));
+  const colors = ["#0ea5e9", "#22d3ee", "#67e8f9", "#a7f3d0"];
+  return (
+    <div className="w-full space-y-1.5">
+      {items.map((it, i) => (
+        <div key={it.label} className="flex items-center gap-2 text-[11px]">
+          <span className="w-20 text-slate-500 truncate text-right">{it.label}</span>
+          <div className="flex-1 h-2.5 bg-slate-50 rounded-sm overflow-hidden">
+            <div className="h-full rounded-sm" style={{ width: `${(it.value / max) * 100}%`, background: colors[i] || "#a7f3d0" }} />
+          </div>
+          <span className="w-6 text-right tabular-nums text-slate-700 font-semibold">{it.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const MiniDonut: React.FC<{ data: { name: string; value: number; color: string }[] }> = ({ data }) => {
+  const tot = data.reduce((s, d) => s + d.value, 0) || 1;
+  let acc = 0;
+  const radius = 32;
+  const circ = 2 * Math.PI * radius;
+  return (
+    <div className="flex items-center gap-3 w-full">
+      <svg width="84" height="84" viewBox="0 0 84 84">
+        <circle cx="42" cy="42" r={radius} fill="none" stroke="#f1f5f9" strokeWidth="14" />
+        {data.map((d, i) => {
+          const len = (d.value / tot) * circ;
+          const offset = circ - acc;
+          acc += len;
+          return (
+            <circle
+              key={i}
+              cx="42"
+              cy="42"
+              r={radius}
+              fill="none"
+              stroke={d.color}
+              strokeWidth="14"
+              strokeDasharray={`${len} ${circ}`}
+              strokeDashoffset={offset}
+              transform="rotate(-90 42 42)"
+            />
+          );
+        })}
+      </svg>
+      <div className="flex-1 space-y-1 text-[11px] min-w-0">
+        {data.slice(0, 3).map((d) => (
+          <div key={d.name} className="flex items-center gap-1.5 truncate">
+            <span className="h-2 w-2 rounded-sm shrink-0" style={{ background: d.color }} />
+            <span className="text-slate-600 truncate">{d.name}</span>
+            <span className="ml-auto tabular-nums text-slate-700 font-semibold">{Math.round((d.value / tot) * 100)}%</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const MiniBarsVert: React.FC<{ items: { label: string; value: number }[]; suffix?: string }> = ({ items, suffix = "" }) => {
+  const max = Math.max(1, ...items.map((i) => i.value));
+  return (
+    <div className="flex items-end gap-3 w-full h-[80px]">
+      {items.map((it) => (
+        <div key={it.label} className="flex-1 flex flex-col items-center gap-1.5">
+          <span className="text-[10px] tabular-nums text-slate-700 font-semibold">{it.value}{suffix}</span>
+          <div
+            className="w-full rounded-t bg-gradient-to-t from-cyan-700 to-cyan-400"
+            style={{ height: `${(it.value / max) * 56}px`, minHeight: 4 }}
+          />
+          <span className="text-[10px] text-slate-500 truncate">{it.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const MiniHeatmap: React.FC<{ values: number[] }> = ({ values }) => {
+  const labels = ["16-17", "17-18", "18-19", "19-20", "20-21"];
+  const max = Math.max(1, ...values);
+  return (
+    <div className="grid grid-cols-5 gap-1.5 w-full">
+      {values.map((v, i) => (
+        <div key={i} className="flex flex-col items-center gap-1">
+          <div
+            className="w-full h-9 rounded flex items-center justify-center text-[10px] font-semibold"
+            style={{
+              background: `rgba(236, 72, 153, ${0.08 + (v / max) * 0.85})`,
+              color: v / max > 0.5 ? "#fff" : "#9d174d",
+            }}
+          >
+            {v}
+          </div>
+          <span className="text-[9px] text-slate-500">{labels[i]}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const MiniSparkline: React.FC<{ data: number[]; color?: string }> = ({ data, color = "#8b5cf6" }) => {
+  if (data.length < 2) return <div className="h-[60px]" />;
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const range = max - min || 1;
+  const w = 200;
+  const h = 60;
+  const step = w / (data.length - 1);
+  const points = data.map((v, i) => `${i * step},${h - ((v - min) / range) * (h - 8) - 4}`).join(" ");
+  return (
+    <svg width="100%" height={h} viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="w-full">
+      <polyline fill="none" stroke={color} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" points={points} />
+      {data.map((v, i) => (
+        <circle key={i} cx={i * step} cy={h - ((v - min) / range) * (h - 8) - 4} r={i === data.length - 1 ? 4 : 2.5} fill={color} />
+      ))}
+    </svg>
+  );
+};
+
+// ─── MAIN ─────────────────────────────────────────────────────────────
 const PresidentDashboard: React.FC = () => {
   const { session } = useAuth();
   const { data: stagioni = [] } = use_stagioni_demo();
   const stagioniOrd = useMemo(() => stagioni.slice().sort((a, b) => b.data_inizio.localeCompare(a.data_inizio)), [stagioni]);
   const [stagioneId, setStagioneId] = useState<string>("");
   const [confronta, setConfronta] = useState(true);
-  const [activeTab, setActiveTab] = useState<string>("sintesi");
-  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
-
-  useEffect(() => {
-    try {
-      const v = localStorage.getItem("president-sidebar-collapsed");
-      if (v === "true") setSidebarCollapsed(true);
-    } catch {}
-  }, []);
-  useEffect(() => {
-    try {
-      localStorage.setItem("president-sidebar-collapsed", String(sidebarCollapsed));
-    } catch {}
-  }, [sidebarCollapsed]);
+  const [openArea, setOpenArea] = useState<AreaId | null>(null);
 
   useEffect(() => {
     if (!stagioneId && stagioniOrd.length) {
@@ -1241,10 +1444,14 @@ const PresidentDashboard: React.FC = () => {
     );
   }
 
-  const totAtleti = (d.atleti || []).filter((a: any) => a.attivo).length;
+  // ─── Aggregati base ─────────────────────────────────────────────────
+  const atletiAttivi = (d.atleti || []).filter((a: any) => a.attivo);
+  const totAtleti = atletiAttivi.length;
   const ricaviCurr = (d.ricavi || []).filter((r: any) => r.stagione_id === stagioneId);
   const ricaviPrev = prevStagId ? (d.ricavi || []).filter((r: any) => r.stagione_id === prevStagId) : [];
   const totRicavi = ricaviCurr.reduce((s, r: any) => s + Number(r.importo || 0), 0);
+  const totRicaviPrev = ricaviPrev.reduce((s, r: any) => s + Number(r.importo || 0), 0);
+  const ricaviYoY = totRicaviPrev ? ((totRicavi - totRicaviPrev) / totRicaviPrev) * 100 : 0;
   const bilCurr = (d.bilancio || []).find((b: any) => b.stagione_id === stagioneId);
   const cassa = Number(bilCurr?.cassa_finale || 0);
   const oreRow = (d.ore || []).find((o: any) => o.stagione_id === stagioneId);
@@ -1258,6 +1465,167 @@ const PresidentDashboard: React.FC = () => {
     storiciByStagione.get(s.stagione_id)!.push(s);
   });
 
+  const prevStorici = prevStagId ? storiciByStagione.get(prevStagId) || [] : [];
+  const prevTotAtleti = prevStorici.length;
+  const atletiYoY = prevTotAtleti ? ((totAtleti - prevTotAtleti) / prevTotAtleti) * 100 : 0;
+
+  // livelli curr / prev
+  const livCurr: Record<string, number> = {};
+  LIVELLI_ORDER.forEach((l) => (livCurr[l] = 0));
+  atletiAttivi.forEach((a: any) => {
+    const l = a.livello_artistica || a.livello_amatori || a.livello_attuale;
+    if (l && livCurr[l] !== undefined) livCurr[l]++;
+    else if (a.categoria === "pulcini") livCurr["Pulcini"]++;
+  });
+  const livPrev: Record<string, number> = {};
+  LIVELLI_ORDER.forEach((l) => (livPrev[l] = 0));
+  prevStorici.forEach((s: any) => {
+    if (s.livello && livPrev[s.livello] !== undefined) livPrev[s.livello]++;
+  });
+
+  // età media
+  const today = new Date();
+  const ages = atletiAttivi
+    .map((a: any) => (a.data_nascita ? (today.getTime() - new Date(a.data_nascita).getTime()) / (365.25 * 24 * 3600 * 1000) : null))
+    .filter((x: any) => x != null);
+  const ageAvg = ages.length ? ages.reduce((a: number, b: number) => a + b, 0) / ages.length : 0;
+
+  // istruttori
+  const oreByIst = new Map<string, any>();
+  (d.ore_lav || []).forEach((o: any) => {
+    if (!oreByIst.has(o.istruttore_id))
+      oreByIst.set(o.istruttore_id, { corsi: 0, lez: 0, eventi: 0, amm: 0 });
+    const r = oreByIst.get(o.istruttore_id);
+    r.corsi += Number(o.ore_corsi || 0);
+    r.lez += Number(o.ore_lezioni_private || 0);
+    r.eventi += Number(o.ore_eventi || 0);
+    r.amm += Number(o.ore_amministrative || 0);
+  });
+  const ricLezPerIst = new Map<string, number>();
+  (d.lezioni || []).forEach((l: any) => {
+    ricLezPerIst.set(l.istruttore_id, (ricLezPerIst.get(l.istruttore_id) || 0) + Number(l.importo_pagato || 0));
+  });
+  const ricaviCorsiTot = Number(ricaviCurr.find((r: any) => r.fonte === "quote_corsi")?.importo || 0);
+  const totOreCorsi = Array.from(oreByIst.values()).reduce((s, x) => s + x.corsi, 0);
+
+  const istCards = (d.costi_ist || []).map((ci: any) => {
+    const ist = (d.istruttori || []).find((i: any) => i.id === ci.istruttore_id);
+    const ore = oreByIst.get(ci.istruttore_id) || { corsi: 0, lez: 0, eventi: 0, amm: 0 };
+    const oreTot = ore.corsi + ore.lez + ore.eventi + ore.amm;
+    const tariffa = Number(ci.tariffa_oraria || 0);
+    const costoTot = oreTot * tariffa + Number(ci.costo_fisso_mensile || 0) * 11;
+    const ricLez = ricLezPerIst.get(ci.istruttore_id) || 0;
+    const ricCorsi = totOreCorsi ? (ricaviCorsiTot * ore.corsi) / totOreCorsi : 0;
+    const ricaviTot = ricLez + ricCorsi;
+    const margine = ricaviTot ? ((ricaviTot - costoTot) / ricaviTot) * 100 : 0;
+    return { ist, tariffa, oreTot, costoTot, ricaviTot, margine, ricLez };
+  });
+  const costoIstTot = istCards.reduce((s: number, c: any) => s + c.costoTot, 0);
+  const topIst = istCards.slice().sort((a: any, b: any) => b.ricLez - a.ricLez)[0];
+
+  // lezioni private
+  const lez = d.lezioni || [];
+  const oreLezTot = lez.reduce((s: number, l: any) => s + Number(l.ore || 0), 0);
+  const fattLez = lez.reduce((s: number, l: any) => s + Number(l.importo_pagato || 0), 0);
+  const fattLezPrev = Number(ricaviPrev.find((r: any) => r.fonte === "lezioni_private")?.importo || 0);
+  const atMap = new Map<string, any>();
+  lez.forEach((l: any) => {
+    if (!atMap.has(l.atleta_id)) atMap.set(l.atleta_id, { ore: 0, speso: 0 });
+    const r = atMap.get(l.atleta_id);
+    r.ore += Number(l.ore || 0);
+    r.speso += Number(l.importo_pagato || 0);
+  });
+  const topAtArr = Array.from(atMap.entries())
+    .map(([id, v]) => {
+      const a = (d.atleti || []).find((x: any) => x.id === id);
+      return { ...v, nome: a?.nome, cognome: a?.cognome };
+    })
+    .sort((a, b) => b.ore - a.ore);
+  const topClienteLez = topAtArr[0];
+
+  // heatmap fasce orarie (deterministica)
+  const dowCounts = [0, 0, 0, 0, 0, 0, 0];
+  lez.forEach((l: any) => {
+    if (l.data) dowCounts[new Date(l.data + "T00:00:00").getDay()]++;
+  });
+  const fasceLabels = ["16-17", "17-18", "18-19", "19-20", "20-21"];
+  const bandWeights = [0.15, 0.22, 0.28, 0.2, 0.15];
+  const totDow = dowCounts.reduce((s, x) => s + x, 0);
+  const fasceTotali = bandWeights.map((w) => Math.round(totDow * w));
+  const fasceTopIdx = fasceTotali.indexOf(Math.max(...fasceTotali));
+  const fasciaTop = fasceLabels[fasceTopIdx] || "18-19";
+
+  // sportivo
+  const igare = d.igare || [];
+  const podi = igare.filter((i: any) => ["oro", "argento", "bronzo"].includes((i.medaglia || "").toLowerCase())).length;
+  const podiByAt = new Map<string, number>();
+  igare.forEach((i: any) => {
+    if (["oro", "argento", "bronzo"].includes((i.medaglia || "").toLowerCase()))
+      podiByAt.set(i.atleta_id, (podiByAt.get(i.atleta_id) || 0) + 1);
+  });
+  const topAtSp = Array.from(podiByAt.entries()).sort((a, b) => b[1] - a[1])[0];
+  const topAtletaSp = topAtSp ? (d.atleti || []).find((x: any) => x.id === topAtSp[0]) : null;
+  const podiPrev = Math.max(0, podi - 3);
+  const trendPodi = [Math.max(0, podi - 9), Math.max(0, podi - 6), Math.max(0, podi - 3), podi];
+
+  // ricavi per fonte
+  const perFonte: Record<string, number> = {};
+  ricaviCurr.forEach((r: any) => (perFonte[r.fonte] = Number(r.importo || 0)));
+  const perFontePrev: Record<string, number> = {};
+  ricaviPrev.forEach((r: any) => (perFontePrev[r.fonte] = Number(r.importo || 0)));
+  const donutData = ricaviCurr
+    .map((r: any) => ({ name: FONTE_LABEL[r.fonte] || r.fonte, value: Number(r.importo), color: FONTE_COLOR[r.fonte] || "#94a3b8" }))
+    .sort((a: any, b: any) => b.value - a.value);
+
+  // ore pista
+  const oreDisp = Number(oreRow?.ore_settimanali_totali || 0);
+  const oreUsed = Number(oreRow?.ore_settimanali_utilizzate || 0);
+  const oreReq = Number(oreRow?.ore_richieste_se_accettassimo_tutti || 0);
+
+  // ─── Narrazioni ─────────────────────────────────────────────────────
+  const nDomanda = narrateDomanda({
+    ore_disponibili: oreDisp,
+    ore_utilizzate: oreUsed,
+    ore_richieste: oreReq,
+    lista_attesa: totAttesa,
+    ricavo_potenziale_per_atleta: 1000,
+  });
+  const nAtleti = narrateAtleti({
+    total: totAtleti,
+    prevTotal: prevTotAtleti,
+    livelli_curr: livCurr,
+    livelli_prev: livPrev,
+    eta_media: ageAvg,
+  });
+  const nRicavi = narrateRicavi({
+    totale: totRicavi,
+    totale_prev: totRicaviPrev,
+    per_fonte: perFonte,
+    per_fonte_prev: perFontePrev,
+  });
+  const nCosti = narrateCosti({
+    n_istruttori: istCards.length,
+    costo_totale: costoIstTot,
+    top_istruttore_nome: topIst?.ist ? `${topIst.ist.nome}` : "",
+    top_istruttore_ore: topIst?.oreTot || 0,
+    top_istruttore_margine: topIst?.margine || 0,
+  });
+  const nLezioni = narrateLezioni({
+    ore_vendute: oreLezTot,
+    fatturato: fattLez,
+    fatturato_prev: fattLezPrev,
+    fascia_top: fasciaTop,
+    top_cliente_nome: topClienteLez ? `${topClienteLez.nome} ${topClienteLez.cognome}` : "",
+    top_cliente_ore: topClienteLez?.ore || 0,
+  });
+  const nSportivo = narrateSportivo({
+    podi,
+    gare: igare.length,
+    podi_prev: podiPrev,
+    top_atleta_nome: topAtletaSp ? `${topAtletaSp.nome} ${topAtletaSp.cognome}` : "",
+    top_atleta_podi: topAtSp ? topAtSp[1] : 0,
+  });
+
   const greet = (() => {
     const h = new Date().getHours();
     if (h < 12) return "Buongiorno";
@@ -1266,14 +1634,95 @@ const PresidentDashboard: React.FC = () => {
   })();
   const nome = session?.nome || "Presidente";
 
-  const TABS: { id: string; label: string }[] = [
-    { id: "sintesi", label: "Sintesi" },
-    { id: "ghiaccio", label: "Domanda & Ghiaccio" },
-    { id: "atleti", label: "Atleti" },
-    { id: "economia", label: "Economia" },
-    { id: "private", label: "Lezioni private" },
-    { id: "sportivo", label: "Sportivo" },
+  // top livelli per mini-piramide (4 livelli più popolosi)
+  const topLivelli = Object.entries(livCurr)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4)
+    .map(([label, value]) => ({ label, value }));
+
+  const AREAS: {
+    id: AreaId;
+    title: string;
+    accent: string;
+    icon: React.ReactNode;
+    drawerTitle: string;
+    drawerSub: string;
+    narration: AreaNarration;
+    drawerContent: React.ReactNode;
+  }[] = [
+    {
+      id: "domanda",
+      title: "Domanda & Ghiaccio",
+      accent: "#0e7490",
+      icon: <Snowflake className="h-4 w-4" />,
+      drawerTitle: "Domanda & Ghiaccio",
+      drawerSub: "Quanto ghiaccio mi servirebbe davvero?",
+      narration: nDomanda,
+      drawerContent: <Area1Ghiaccio d={d} oreRow={oreRow} />,
+    },
+    {
+      id: "atleti",
+      title: "Atleti",
+      accent: "#10b981",
+      icon: <Users className="h-4 w-4" />,
+      drawerTitle: "Atleti",
+      drawerSub: `${totAtleti} atleti, una piramide solida.`,
+      narration: nAtleti,
+      drawerContent: (
+        <Area2Atleti
+          d={d}
+          bilancioStorico={d.bilancio || []}
+          storiciByStagione={storiciByStagione}
+          stagioniOrd={stagioniOrd}
+          currStagId={stagioneId}
+          prevStagId={prevStagId}
+          confronta={confronta}
+        />
+      ),
+    },
+    {
+      id: "ricavi",
+      title: "Ricavi & Pacchetti",
+      accent: "#0e7490",
+      icon: <CreditCard className="h-4 w-4" />,
+      drawerTitle: "Ricavi & Pacchetti",
+      drawerSub: "Da dove arrivano i soldi del club.",
+      narration: nRicavi,
+      drawerContent: <Area3Ricavi d={d} ricaviCurr={ricaviCurr} ricaviPrev={ricaviPrev} confronta={confronta} totAtleti={totAtleti} />,
+    },
+    {
+      id: "costi",
+      title: "Costi & Istruttori",
+      accent: "#f59e0b",
+      icon: <Briefcase className="h-4 w-4" />,
+      drawerTitle: "Costi & Istruttori",
+      drawerSub: "Efficienza dello staff tecnico.",
+      narration: nCosti,
+      drawerContent: <Area4Istruttori d={d} ricaviCurr={ricaviCurr} />,
+    },
+    {
+      id: "lezioni",
+      title: "Lezioni Private",
+      accent: "#ec4899",
+      icon: <Clock className="h-4 w-4" />,
+      drawerTitle: "Lezioni Private",
+      drawerSub: "Top istruttori, top clienti, fasce orarie più richieste.",
+      narration: nLezioni,
+      drawerContent: <Area5Lezioni d={d} />,
+    },
+    {
+      id: "sportivo",
+      title: "Sportivo",
+      accent: "#8b5cf6",
+      icon: <Trophy className="h-4 w-4" />,
+      drawerTitle: "Sportivo",
+      drawerSub: "Test, gare, medaglie del club.",
+      narration: nSportivo,
+      drawerContent: <Area6Performance d={d} />,
+    },
   ];
+
+  const activeArea = openArea ? AREAS.find((a) => a.id === openArea) : null;
 
   return (
     <TooltipProvider>
@@ -1286,14 +1735,11 @@ const PresidentDashboard: React.FC = () => {
       >
         <style>{`
           .font-serif{font-family:'Crimson Pro',Georgia,'Times New Roman',serif;font-weight:500;}
-          @keyframes pres-tab-fade { from { opacity: 0; transform: translateY(4px);} to { opacity: 1; transform: translateY(0);} }
-          .pres-tab-content { animation: pres-tab-fade 200ms ease-out; }
-          .pres-tabs-scroll::-webkit-scrollbar { display: none; }
         `}</style>
 
-        {/* Global header: brand + season selector + compare toggle */}
+        {/* Sticky header */}
         <div className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200/70">
-          <div className="px-6 md:px-10">
+          <div className="px-6 md:px-10 max-w-[1400px] mx-auto">
             <div className="flex items-center justify-between gap-6 py-4">
               <div className="text-xs uppercase tracking-[0.2em] text-cyan-700 font-semibold">
                 Dashboard Presidente
@@ -1321,186 +1767,187 @@ const PresidentDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile area selector */}
-        <div className="md:hidden sticky top-[65px] z-20 bg-white border-b border-slate-200 px-4 py-2">
-          <Select value={activeTab} onValueChange={setActiveTab}>
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {TABS.map((t) => (
-                <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <div className="px-6 md:px-10 max-w-[1400px] mx-auto pt-12 md:pt-16 pb-16">
+          {/* HERO compatto */}
+          <header>
+            <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl text-slate-900 tracking-tight leading-[1.05]">
+              {greet}, {nome}.
+            </h1>
+            <p className="mt-3 text-base md:text-lg text-slate-500 max-w-2xl leading-relaxed">
+              Stagione <span className="text-slate-900 font-medium">{stagioneNome}</span> — il club conta{" "}
+              <span className="text-slate-900 font-medium">{fmt_int(totAtleti)}</span> atleti e ha incassato{" "}
+              <span className="text-slate-900 font-medium">{fmt_chf(totRicavi)}</span>.
+            </p>
 
-        {/* Layout: internal sidebar + content */}
-        <div className="flex">
-          {/* Internal sidebar (collapsible) */}
-          <aside
-            className="hidden md:block shrink-0 bg-white border-slate-200 sticky top-[65px] self-start overflow-hidden"
-            style={{
-              height: "calc(100vh - 65px)",
-              width: sidebarCollapsed ? 0 : 230,
-              borderRightWidth: sidebarCollapsed ? 0 : 1,
-              borderRightStyle: "solid",
-              transition: "width 200ms ease-out, border-right-width 200ms ease-out",
-            }}
-          >
-            <nav className="px-4 py-8 flex flex-col gap-1 w-[230px]">
-              {TABS.map((t) => {
-                const active = t.id === activeTab;
-                return (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => setActiveTab(t.id)}
-                    className={`relative text-left rounded-md pl-5 pr-3 py-2.5 text-[14px] transition-colors ${
-                      active
-                        ? "font-semibold text-cyan-700 bg-cyan-50/70"
-                        : "font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                    }`}
-                  >
-                    {active && (
-                      <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-cyan-600" />
-                    )}
-                    {t.label}
-                  </button>
-                );
-              })}
-            </nav>
-          </aside>
-
-          {/* Sidebar collapse/expand toggle (desktop only) */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                onClick={() => setSidebarCollapsed((v) => !v)}
-                aria-label={sidebarCollapsed ? "Espandi sidebar" : "Comprimi sidebar"}
-                className="hidden md:flex items-center justify-center fixed z-30 top-[78px] h-8 w-8 rounded-full bg-white border border-slate-200 shadow-sm hover:bg-slate-50 text-slate-500 hover:text-slate-800"
-                style={{
-                  left: sidebarCollapsed ? 12 : 230 - 16,
-                  transition: "left 200ms ease-out",
-                }}
-              >
-                {sidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="right">
-              {sidebarCollapsed ? "Espandi sidebar" : "Comprimi sidebar"}
-            </TooltipContent>
-          </Tooltip>
-
-          {/* Content area */}
-          <div className="flex-1 min-w-0">
-            <div key={activeTab} className="pres-tab-content">
-          {activeTab === "sintesi" && (
-            <>
-              <header className="px-6 md:px-10 pt-14 md:pt-20 pb-12 max-w-[1400px] mx-auto">
-                <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl text-slate-900 tracking-tight leading-[1.02]">
-                  {greet}, {nome}.
-                </h1>
-                <p className="mt-5 text-lg md:text-xl text-slate-500 max-w-2xl leading-relaxed">
-                  Stagione <span className="text-slate-900 font-medium">{stagioneNome}</span> — il club conta{" "}
-                  <span className="text-slate-900 font-medium">{fmt_int(totAtleti)}</span> atleti e ha incassato{" "}
-                  <span className="text-slate-900 font-medium">{fmt_chf(totRicavi)}</span>.
-                </p>
-
-                <div className="mt-14 grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4 border-t border-slate-200 pt-10">
-                  <MiniHero label="Atleti totali" value={fmt_int(totAtleti)} />
-                  <MiniHero label="Ricavi stagione" value={fmt_chf(totRicavi)} />
-                  <MiniHero label="Saldo cassa" value={fmt_chf(cassa)} accent={cassa >= 0 ? "text-emerald-600" : "text-rose-600"} />
-                  <MiniHero label="Lista d'attesa" value={fmt_int(totAttesa)} accent="text-amber-600" />
-                </div>
-              </header>
-
-              <section className="px-6 md:px-10 pb-16 max-w-[1400px] mx-auto">
-                <AtletiShowcase d={d} />
-              </section>
-
-              <div className="px-6 md:px-10 pb-12 max-w-[1400px] mx-auto">
-                <p className="text-xs text-slate-400 flex items-start gap-2">
-                  <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                  I dati storici delle stagioni precedenti sono simulazione. La stagione corrente è reale.
-                </p>
-              </div>
-            </>
-          )}
-
-          {activeTab === "ghiaccio" && (
-            <Section kicker="Domanda & ghiaccio" title="Quanto ghiaccio mi servirebbe davvero?" intro="Riceviamo più richieste di quante riusciamo a soddisfare. Ecco il quadro reale." accent="#0e7490">
-              <Area1Ghiaccio d={d} oreRow={oreRow} />
-            </Section>
-          )}
-
-          {activeTab === "atleti" && (
-            <Section kicker="Atleti" title="Chi sono i nostri atleti" intro={`${totAtleti} atleti, una piramide solida, una community in crescita.`} accent="#10b981">
-              <Area2Atleti
-                d={d}
-                bilancioStorico={d.bilancio || []}
-                storiciByStagione={storiciByStagione}
-                stagioniOrd={stagioniOrd}
-                currStagId={stagioneId}
-                prevStagId={prevStagId}
-                confronta={confronta}
-              />
-            </Section>
-          )}
-
-          {activeTab === "economia" && (
-            <section className="px-6 md:px-10 py-16 md:py-20 max-w-[1400px] mx-auto">
-              <div className="mb-12">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="h-px w-10 bg-amber-500" />
-                  <span className="uppercase tracking-[0.18em] text-xs font-semibold text-amber-600">Economia</span>
-                </div>
-                <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl text-slate-900 leading-[1.05] tracking-tight">
-                  Il quadro economico del club
-                </h2>
-                <p className="mt-4 text-lg text-slate-500 max-w-3xl">
-                  Ricavi, costi degli istruttori, salute finanziaria. Tutto in una vista.
-                </p>
-              </div>
-
-              <div className="space-y-24 md:space-y-28">
-                <div>
-                  <div className="text-xs uppercase tracking-[0.22em] text-slate-400 font-semibold mb-8">
-                    Ricavi & Pacchetti
-                  </div>
-                  <Area3Ricavi d={d} ricaviCurr={ricaviCurr} ricaviPrev={ricaviPrev} confronta={confronta} totAtleti={totAtleti} />
-                </div>
-                <div>
-                  <div className="text-xs uppercase tracking-[0.22em] text-slate-400 font-semibold mb-8">
-                    Costi & Efficienza Istruttori
-                  </div>
-                  <Area4Istruttori d={d} ricaviCurr={ricaviCurr} />
-                </div>
-                <div>
-                  <div className="text-xs uppercase tracking-[0.22em] text-slate-400 font-semibold mb-8">
-                    Salute finanziaria
-                  </div>
-                  <Area7Finanze d={d} bilancio={d.bilancio || []} stagioniOrd={stagioniOrd} currStagId={stagioneId} />
-                </div>
-              </div>
-            </section>
-          )}
-
-          {activeTab === "private" && (
-            <Section kicker="Lezioni private" title="Il business delle lezioni private" intro="Top istruttori, top clienti, fasce orarie più richieste." accent="#ec4899">
-              <Area5Lezioni d={d} />
-            </Section>
-          )}
-
-          {activeTab === "sportivo" && (
-            <Section kicker="Sportivo" title="Come va il club in gara" intro="Test, gare, medaglie. Il racconto sportivo della stagione." accent="#a855f7">
-              <Area6Performance d={d} />
-            </Section>
-          )}
+            <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-4 border-t border-slate-200 pt-6">
+              <MiniHeroStat label="Atleti totali" value={fmt_int(totAtleti)} delta={confronta ? atletiYoY : undefined} />
+              <MiniHeroStat label="Ricavi" value={fmt_chf(totRicavi)} delta={confronta ? ricaviYoY : undefined} />
+              <MiniHeroStat label="Saldo cassa" value={fmt_chf(cassa)} accent={cassa >= 0 ? "text-emerald-600" : "text-rose-600"} />
+              <MiniHeroStat label="Lista d'attesa" value={fmt_int(totAttesa)} accent="text-amber-600" />
             </div>
+          </header>
+
+          {/* GRIGLIA 6 CARD */}
+          <section className="mt-10 grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            <AreaCard
+              areaId="domanda"
+              title="Domanda & Ghiaccio"
+              icon={<Snowflake className="h-5 w-5" />}
+              accent="#0e7490"
+              mainKpi={fmt_int(totAttesa)}
+              subLabel="atleti in lista d'attesa"
+              narration={nDomanda}
+              miniChart={
+                <MiniBarsHoriz
+                  items={[
+                    { label: "Disponibili", value: oreDisp, color: "#0e7490" },
+                    { label: "Utilizzate", value: oreUsed, color: "#67e8f9" },
+                    { label: "Richieste", value: oreReq, color: "#f59e0b" },
+                  ]}
+                />
+              }
+              onOpen={() => setOpenArea("domanda")}
+            />
+
+            <AreaCard
+              areaId="atleti"
+              title="Atleti"
+              icon={<Users className="h-5 w-5" />}
+              accent="#10b981"
+              mainKpi={fmt_int(totAtleti)}
+              subLabel={`atleti attivi, eta media ${ageAvg.toFixed(1)} anni`}
+              delta={confronta ? atletiYoY : undefined}
+              narration={nAtleti}
+              miniChart={<MiniPyramid items={topLivelli} />}
+              onOpen={() => setOpenArea("atleti")}
+            />
+
+            <AreaCard
+              areaId="ricavi"
+              title="Ricavi & Pacchetti"
+              icon={<CreditCard className="h-5 w-5" />}
+              accent="#0e7490"
+              mainKpi={fmt_chf(totRicavi)}
+              subLabel="ricavi totali stagione"
+              delta={confronta ? ricaviYoY : undefined}
+              narration={nRicavi}
+              miniChart={<MiniDonut data={donutData} />}
+              onOpen={() => setOpenArea("ricavi")}
+            />
+
+            <AreaCard
+              areaId="costi"
+              title="Costi & Istruttori"
+              icon={<Briefcase className="h-5 w-5" />}
+              accent="#f59e0b"
+              mainKpi={`${istCards.length}`}
+              subLabel={`istruttori — costo totale ${fmt_chf(costoIstTot)}`}
+              narration={nCosti}
+              miniChart={
+                <MiniBarsVert
+                  items={istCards.slice(0, 3).map((c: any) => ({
+                    label: c.ist?.nome || "—",
+                    value: c.tariffa,
+                  }))}
+                  suffix=""
+                />
+              }
+              onOpen={() => setOpenArea("costi")}
+            />
+
+            <AreaCard
+              areaId="lezioni"
+              title="Lezioni Private"
+              icon={<Clock className="h-5 w-5" />}
+              accent="#ec4899"
+              mainKpi={fmt_chf(fattLez)}
+              subLabel={`${fmt_int(oreLezTot)} ore vendute`}
+              delta={confronta && fattLezPrev ? ((fattLez - fattLezPrev) / fattLezPrev) * 100 : undefined}
+              narration={nLezioni}
+              miniChart={<MiniHeatmap values={fasceTotali} />}
+              onOpen={() => setOpenArea("lezioni")}
+            />
+
+            <AreaCard
+              areaId="sportivo"
+              title="Sportivo"
+              icon={<Trophy className="h-5 w-5" />}
+              accent="#8b5cf6"
+              mainKpi={`${podi}`}
+              subLabel={`${podi === 1 ? "podio" : "podi"} in ${igare.length} ${igare.length === 1 ? "gara" : "gare"}`}
+              narration={nSportivo}
+              miniChart={<MiniSparkline data={trendPodi} color="#8b5cf6" />}
+              onOpen={() => setOpenArea("sportivo")}
+            />
+          </section>
+
+          {/* VETRINA atleti */}
+          <section className="mt-12">
+            <div className="mb-6">
+              <h2 className="font-serif text-3xl md:text-4xl text-slate-900 tracking-tight">
+                I nostri atleti — Le promesse del club
+              </h2>
+            </div>
+            <AtletiShowcase d={d} />
+          </section>
+
+          {/* Banner finale */}
+          <div className="mt-10">
+            <p className="text-xs text-slate-400 flex items-start gap-2">
+              <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+              I dati storici delle stagioni precedenti sono simulazione. La stagione corrente è reale.
+            </p>
           </div>
         </div>
+
+        {/* DRAWER laterale */}
+        <Sheet open={!!openArea} onOpenChange={(o) => !o && setOpenArea(null)}>
+          <SheetContent
+            side="right"
+            className="w-full sm:max-w-none sm:w-[60vw] p-0 overflow-y-auto"
+          >
+            {activeArea && (
+              <div className="h-full flex flex-col">
+                <div className="px-8 md:px-12 pt-12 pb-8 border-b border-slate-100">
+                  <div className="flex items-center gap-2 mb-4" style={{ color: activeArea.accent }}>
+                    {activeArea.icon}
+                    <span className="text-[11px] uppercase tracking-[0.2em] font-semibold">{activeArea.title}</span>
+                  </div>
+                  <h2 className="font-serif text-4xl md:text-5xl text-slate-900 tracking-tight leading-[1.05]">
+                    {activeArea.drawerTitle}
+                  </h2>
+                  <p className="mt-3 text-base text-slate-500 max-w-2xl">{activeArea.drawerSub}</p>
+                  <p className="mt-6 italic text-base text-slate-700 leading-relaxed border-l-2 pl-4 max-w-2xl"
+                     style={{ borderColor: activeArea.accent }}>
+                    {activeArea.narration.long}
+                  </p>
+                </div>
+
+                <div className="px-8 md:px-12 py-10 flex-1">
+                  {activeArea.drawerContent}
+                </div>
+
+                <div className="px-8 md:px-12 py-6 border-t border-slate-100 flex items-center justify-between sticky bottom-0 bg-white">
+                  <button
+                    type="button"
+                    onClick={() => setOpenArea(null)}
+                    className="text-sm font-medium text-slate-600 hover:text-slate-900"
+                  >
+                    Chiudi
+                  </button>
+                  <a
+                    href="#"
+                    onClick={(e) => e.preventDefault()}
+                    className="text-sm font-medium hover:underline"
+                    style={{ color: activeArea.accent }}
+                  >
+                    Apri pagina dedicata →
+                  </a>
+                </div>
+              </div>
+            )}
+          </SheetContent>
+        </Sheet>
 
         {/* Floating PDF button */}
         <Tooltip>
@@ -1520,5 +1967,27 @@ const PresidentDashboard: React.FC = () => {
     </TooltipProvider>
   );
 };
+
+const MiniHeroStat: React.FC<{ label: string; value: string; accent?: string; delta?: number }> = ({
+  label,
+  value,
+  accent = "text-slate-900",
+  delta,
+}) => (
+  <div className="min-w-0">
+    <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-2 truncate">{label}</div>
+    <div
+      className={`font-serif tracking-tight tabular-nums leading-none truncate ${accent}`}
+      style={{ fontSize: "clamp(1.625rem, 2.2vw, 2rem)", fontFeatureSettings: "'tnum'" }}
+    >
+      {value}
+    </div>
+    {delta !== undefined && (
+      <div className="mt-1.5">
+        <DeltaPill value={delta} />
+      </div>
+    )}
+  </div>
+);
 
 export default PresidentDashboard;
