@@ -242,6 +242,78 @@ export type Database = {
           },
         ]
       }
+      atleti_storici_stagioni: {
+        Row: {
+          atleta_id: string | null
+          club_id: string
+          created_at: string
+          data_abbandono: string | null
+          data_iscrizione: string | null
+          id: string
+          motivo_abbandono: string | null
+          stagione_id: string
+          status: string
+        }
+        Insert: {
+          atleta_id?: string | null
+          club_id: string
+          created_at?: string
+          data_abbandono?: string | null
+          data_iscrizione?: string | null
+          id?: string
+          motivo_abbandono?: string | null
+          stagione_id: string
+          status?: string
+        }
+        Update: {
+          atleta_id?: string | null
+          club_id?: string
+          created_at?: string
+          data_abbandono?: string | null
+          data_iscrizione?: string | null
+          id?: string
+          motivo_abbandono?: string | null
+          stagione_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      bilancio_stagione: {
+        Row: {
+          cassa_finale: number
+          cassa_iniziale: number
+          club_id: string
+          created_at: string
+          id: string
+          saldo: number
+          stagione_id: string
+          totale_entrate: number
+          totale_uscite: number
+        }
+        Insert: {
+          cassa_finale?: number
+          cassa_iniziale?: number
+          club_id: string
+          created_at?: string
+          id?: string
+          saldo?: number
+          stagione_id: string
+          totale_entrate?: number
+          totale_uscite?: number
+        }
+        Update: {
+          cassa_finale?: number
+          cassa_iniziale?: number
+          club_id?: string
+          created_at?: string
+          id?: string
+          saldo?: number
+          stagione_id?: string
+          totale_entrate?: number
+          totale_uscite?: number
+        }
+        Relationships: []
+      }
       campi_allenamento: {
         Row: {
           club_id: string
@@ -275,6 +347,72 @@ export type Database = {
           luogo?: string | null
           nome?: string
           note?: string | null
+        }
+        Relationships: []
+      }
+      capacita_corsi: {
+        Row: {
+          capacita_max: number
+          club_id: string
+          corso_id: string
+          created_at: string
+          id: string
+          note: string | null
+          ore_settimanali_dedicate: number
+        }
+        Insert: {
+          capacita_max?: number
+          club_id: string
+          corso_id: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          ore_settimanali_dedicate?: number
+        }
+        Update: {
+          capacita_max?: number
+          club_id?: string
+          corso_id?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          ore_settimanali_dedicate?: number
+        }
+        Relationships: []
+      }
+      cassa_movimenti: {
+        Row: {
+          categoria: string
+          club_id: string
+          created_at: string
+          data: string
+          descrizione: string | null
+          id: string
+          importo: number
+          stagione_id: string
+          tipo: string
+        }
+        Insert: {
+          categoria: string
+          club_id: string
+          created_at?: string
+          data: string
+          descrizione?: string | null
+          id?: string
+          importo?: number
+          stagione_id: string
+          tipo: string
+        }
+        Update: {
+          categoria?: string
+          club_id?: string
+          created_at?: string
+          data?: string
+          descrizione?: string | null
+          id?: string
+          importo?: number
+          stagione_id?: string
+          tipo?: string
         }
         Relationships: []
       }
@@ -827,6 +965,42 @@ export type Database = {
           id?: string
           persona_id?: string
           tipo?: string
+        }
+        Relationships: []
+      }
+      costi_istruttori: {
+        Row: {
+          club_id: string
+          contratto_tipo: string
+          costo_fisso_mensile: number | null
+          created_at: string
+          id: string
+          istruttore_id: string
+          ore_concordate_settimanali: number | null
+          stagione_id: string
+          tariffa_oraria: number
+        }
+        Insert: {
+          club_id: string
+          contratto_tipo?: string
+          costo_fisso_mensile?: number | null
+          created_at?: string
+          id?: string
+          istruttore_id: string
+          ore_concordate_settimanali?: number | null
+          stagione_id: string
+          tariffa_oraria?: number
+        }
+        Update: {
+          club_id?: string
+          contratto_tipo?: string
+          costo_fisso_mensile?: number | null
+          created_at?: string
+          id?: string
+          istruttore_id?: string
+          ore_concordate_settimanali?: number | null
+          stagione_id?: string
+          tariffa_oraria?: number
         }
         Relationships: []
       }
@@ -1699,6 +1873,39 @@ export type Database = {
           },
         ]
       }
+      iscrizioni_pacchetti_storiche: {
+        Row: {
+          atleta_id: string | null
+          club_id: string
+          created_at: string
+          data_iscrizione: string | null
+          id: string
+          pacchetto_id: string
+          prezzo_pagato: number
+          stagione_id: string | null
+        }
+        Insert: {
+          atleta_id?: string | null
+          club_id: string
+          created_at?: string
+          data_iscrizione?: string | null
+          id?: string
+          pacchetto_id: string
+          prezzo_pagato?: number
+          stagione_id?: string | null
+        }
+        Update: {
+          atleta_id?: string | null
+          club_id?: string
+          created_at?: string
+          data_iscrizione?: string | null
+          id?: string
+          pacchetto_id?: string
+          prezzo_pagato?: number
+          stagione_id?: string | null
+        }
+        Relationships: []
+      }
       istruttori: {
         Row: {
           attivo: boolean | null
@@ -1860,6 +2067,42 @@ export type Database = {
           },
         ]
       }
+      lezioni_private_storiche: {
+        Row: {
+          atleta_id: string | null
+          club_id: string
+          created_at: string
+          data: string
+          id: string
+          importo_pagato: number
+          istruttore_id: string | null
+          ore: number
+          stagione_id: string
+        }
+        Insert: {
+          atleta_id?: string | null
+          club_id: string
+          created_at?: string
+          data: string
+          id?: string
+          importo_pagato?: number
+          istruttore_id?: string | null
+          ore?: number
+          stagione_id: string
+        }
+        Update: {
+          atleta_id?: string | null
+          club_id?: string
+          created_at?: string
+          data?: string
+          id?: string
+          importo_pagato?: number
+          istruttore_id?: string | null
+          ore?: number
+          stagione_id?: string
+        }
+        Relationships: []
+      }
       livelli: {
         Row: {
           attivo: boolean
@@ -1884,6 +2127,141 @@ export type Database = {
           id?: number
           nome?: string
           ordine?: number
+        }
+        Relationships: []
+      }
+      motivi_abbandono_aggregati: {
+        Row: {
+          club_id: string
+          count: number
+          id: string
+          motivo: string
+          stagione_id: string
+        }
+        Insert: {
+          club_id: string
+          count?: number
+          id?: string
+          motivo: string
+          stagione_id: string
+        }
+        Update: {
+          club_id?: string
+          count?: number
+          id?: string
+          motivo?: string
+          stagione_id?: string
+        }
+        Relationships: []
+      }
+      ore_lavorate_istruttori: {
+        Row: {
+          club_id: string
+          created_at: string
+          id: string
+          istruttore_id: string
+          ore_amministrative: number | null
+          ore_corsi: number | null
+          ore_eventi: number | null
+          ore_lezioni_private: number | null
+          periodo: string
+          stagione_id: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          id?: string
+          istruttore_id: string
+          ore_amministrative?: number | null
+          ore_corsi?: number | null
+          ore_eventi?: number | null
+          ore_lezioni_private?: number | null
+          periodo: string
+          stagione_id: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          id?: string
+          istruttore_id?: string
+          ore_amministrative?: number | null
+          ore_corsi?: number | null
+          ore_eventi?: number | null
+          ore_lezioni_private?: number | null
+          periodo?: string
+          stagione_id?: string
+        }
+        Relationships: []
+      }
+      ore_pista_disponibili: {
+        Row: {
+          club_id: string
+          costo_orario_pista: number
+          created_at: string
+          id: string
+          ore_richieste_se_accettassimo_tutti: number
+          ore_settimanali_totali: number
+          ore_settimanali_utilizzate: number
+          stagione_id: string | null
+        }
+        Insert: {
+          club_id: string
+          costo_orario_pista?: number
+          created_at?: string
+          id?: string
+          ore_richieste_se_accettassimo_tutti?: number
+          ore_settimanali_totali?: number
+          ore_settimanali_utilizzate?: number
+          stagione_id?: string | null
+        }
+        Update: {
+          club_id?: string
+          costo_orario_pista?: number
+          created_at?: string
+          id?: string
+          ore_richieste_se_accettassimo_tutti?: number
+          ore_settimanali_totali?: number
+          ore_settimanali_utilizzate?: number
+          stagione_id?: string | null
+        }
+        Relationships: []
+      }
+      pacchetti_opzionali: {
+        Row: {
+          attivo: boolean
+          club_id: string
+          created_at: string
+          descrizione: string | null
+          durata_settimane: number | null
+          id: string
+          max_partecipanti: number | null
+          nome: string
+          prezzo: number
+          tipo: string
+        }
+        Insert: {
+          attivo?: boolean
+          club_id: string
+          created_at?: string
+          descrizione?: string | null
+          durata_settimane?: number | null
+          id?: string
+          max_partecipanti?: number | null
+          nome: string
+          prezzo?: number
+          tipo?: string
+        }
+        Update: {
+          attivo?: boolean
+          club_id?: string
+          created_at?: string
+          descrizione?: string | null
+          durata_settimane?: number | null
+          id?: string
+          max_partecipanti?: number | null
+          nome?: string
+          prezzo?: number
+          tipo?: string
         }
         Relationships: []
       }
@@ -2117,6 +2495,33 @@ export type Database = {
         }
         Relationships: []
       }
+      ricavi_per_fonte: {
+        Row: {
+          club_id: string
+          created_at: string
+          fonte: string
+          id: string
+          importo: number
+          stagione_id: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          fonte: string
+          id?: string
+          importo?: number
+          stagione_id: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          fonte?: string
+          id?: string
+          importo?: number
+          stagione_id?: string
+        }
+        Relationships: []
+      }
       richieste_iscrizione: {
         Row: {
           atleta_id: string
@@ -2153,6 +2558,42 @@ export type Database = {
           note_richiesta?: string | null
           note_risposta?: string | null
           stato?: string
+        }
+        Relationships: []
+      }
+      richieste_iscrizione_storiche: {
+        Row: {
+          club_id: string
+          corso_id: string | null
+          created_at: string
+          id: string
+          n_in_lista_attesa: number
+          n_iscritti_accettati: number
+          n_richieste_ricevute: number
+          periodo: string | null
+          stagione_id: string | null
+        }
+        Insert: {
+          club_id: string
+          corso_id?: string | null
+          created_at?: string
+          id?: string
+          n_in_lista_attesa?: number
+          n_iscritti_accettati?: number
+          n_richieste_ricevute?: number
+          periodo?: string | null
+          stagione_id?: string | null
+        }
+        Update: {
+          club_id?: string
+          corso_id?: string | null
+          created_at?: string
+          id?: string
+          n_in_lista_attesa?: number
+          n_iscritti_accettati?: number
+          n_richieste_ricevute?: number
+          periodo?: string | null
+          stagione_id?: string | null
         }
         Relationships: []
       }
