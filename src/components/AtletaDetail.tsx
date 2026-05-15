@@ -695,7 +695,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
               const federata = is_f ? "Federata" : "Federato";
 
               const cat = form.categoria;
-              type Tile = { titolo: string; sottotitolo: string; bg: string; titolo_color: string; sub_color: string };
+              type Tile = { titolo: string; sottotitolo: string; bg: string; titolo_color: string; sub_color: string; extra?: string };
               const tiles: Tile[] = [];
               if (cat === "pulcini") {
                 tiles.push({ titolo: "Pulcini", sottotitolo: "Categoria iniziale", bg: "#E6F1FB", titolo_color: "#042C53", sub_color: "#185FA5" });
@@ -705,7 +705,23 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                 }
               } else if (cat === "artistica") {
                 if (form.livello_artistica) {
-                  tiles.push({ titolo: form.livello_artistica, sottotitolo: "Percorso Artistica", bg: "#EEEDFE", titolo_color: "#26215C", sub_color: "#534AB7" });
+                  tiles.push({
+                    titolo: form.livello_artistica,
+                    sottotitolo: "Percorso Artistica",
+                    bg: "#EEEDFE",
+                    titolo_color: "#26215C",
+                    sub_color: "#534AB7",
+                    extra: form.livello_artistica_in_preparazione ? `Prepara ${form.livello_artistica_in_preparazione}` : undefined,
+                  });
+                } else if (form.livello_artistica_in_preparazione) {
+                  // Stato di transizione: ha superato Stellina 4 ma non ancora Interbronzo
+                  tiles.push({
+                    titolo: `In preparazione ${form.livello_artistica_in_preparazione}`,
+                    sottotitolo: "Artistica · In preparazione del primo test",
+                    bg: "#F6F5FE",
+                    titolo_color: "#534AB7",
+                    sub_color: "#7B73C9",
+                  });
                 }
                 if (form.livello_stile) {
                   tiles.push({ titolo: form.livello_stile, sottotitolo: "Percorso Stile", bg: "#FBEAF0", titolo_color: "#4B1528", sub_color: "#993556" });
