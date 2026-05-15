@@ -773,6 +773,11 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                           <div style={{ fontSize: 12, color: tile.sub_color, marginTop: 2 }}>
                             {tile.sottotitolo}
                           </div>
+                          {tile.extra && (
+                            <div style={{ fontSize: 11, color: tile.sub_color, marginTop: 4, opacity: 0.85, fontStyle: "italic" }}>
+                              {tile.extra}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
