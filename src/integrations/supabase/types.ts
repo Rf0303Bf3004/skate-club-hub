@@ -250,6 +250,7 @@ export type Database = {
           data_abbandono: string | null
           data_iscrizione: string | null
           id: string
+          livello: string | null
           motivo_abbandono: string | null
           stagione_id: string
           status: string
@@ -261,6 +262,7 @@ export type Database = {
           data_abbandono?: string | null
           data_iscrizione?: string | null
           id?: string
+          livello?: string | null
           motivo_abbandono?: string | null
           stagione_id: string
           status?: string
@@ -272,6 +274,7 @@ export type Database = {
           data_abbandono?: string | null
           data_iscrizione?: string | null
           id?: string
+          livello?: string | null
           motivo_abbandono?: string | null
           stagione_id?: string
           status?: string
@@ -2675,6 +2678,36 @@ export type Database = {
           },
         ]
       }
+      risultati_storici_stagioni: {
+        Row: {
+          atleti_gareggianti: number
+          club_id: string
+          created_at: string
+          gare_disputate: number
+          id: string
+          podi_conquistati: number
+          stagione_id: string
+        }
+        Insert: {
+          atleti_gareggianti?: number
+          club_id: string
+          created_at?: string
+          gare_disputate?: number
+          id?: string
+          podi_conquistati?: number
+          stagione_id: string
+        }
+        Update: {
+          atleti_gareggianti?: number
+          club_id?: string
+          created_at?: string
+          gare_disputate?: number
+          id?: string
+          podi_conquistati?: number
+          stagione_id?: string
+        }
+        Relationships: []
+      }
       ruoli_permessi_sezioni: {
         Row: {
           club_id: string
@@ -3100,6 +3133,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      test_storici_stagioni: {
+        Row: {
+          club_id: string
+          created_at: string
+          id: string
+          sostenuti: number
+          stagione_id: string
+          superati: number
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          id?: string
+          sostenuti?: number
+          stagione_id: string
+          superati?: number
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          id?: string
+          sostenuti?: number
+          stagione_id?: string
+          superati?: number
+        }
+        Relationships: []
       }
       tipi_corso: {
         Row: {
