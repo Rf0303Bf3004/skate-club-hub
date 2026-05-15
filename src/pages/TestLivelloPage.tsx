@@ -26,6 +26,7 @@ import {
   TEST_CARRIERA_PASSAGGI,
   get_passaggi_validi_per_atleta,
   apply_esito_propagation,
+  apply_promozione_atleta,
   type Disciplina,
   type Passaggio,
   type TestAtletaRow,
