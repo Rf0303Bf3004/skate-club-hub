@@ -75,9 +75,12 @@ export function get_livello_gara(a: AtletaLivelloInput): string {
   if (cat === "pulcini") return "Pulcini";
   if (cat === "amatori") return a?.livello_amatori || a?.livello_attuale || "—";
   if (cat === "artistica") {
-    return (
-      a?.livello_artistica || a?.livello_amatori || a?.livello_attuale || "—"
-    );
+    // Artistica già "battezzata"
+    if (a?.livello_artistica) return a.livello_artistica;
+    if (a?.livello_stile) return a.livello_stile;
+    // Transizione: ha superato Stellina 4 ma non ancora Interbronzo
+    if (a?.livello_artistica_in_preparazione) return a?.livello_attuale || "Stellina 4";
+    return a?.livello_amatori || a?.livello_attuale || "—";
   }
   return a?.livello_attuale || "—";
 }
