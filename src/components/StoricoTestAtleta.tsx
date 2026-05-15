@@ -10,13 +10,14 @@ type Riga = {
   esito: string;
   note_istruttore: string | null;
   test_id: string;
+  livello_accesso: string | null;
+  livello_target: string | null;
+  disciplina: string | null;
   test: {
     id: string;
     nome: string;
     data: string | null;
     tipo: string;
-    livello_attuale: string | null;
-    livello_accesso: string | null;
     luogo: string | null;
   } | null;
 };
