@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { use_club } from "@/hooks/use-supabase-data";
 import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
-import { LayoutDashboard, Users, BookOpen, Trophy, CreditCard, MessageSquare, Settings, Calendar, UserCheck, Tent, GraduationCap, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, Lock, ClipboardList, ClipboardCheck, ChevronDown, ChevronRight } from "lucide-react";
+import { LayoutDashboard, Users, BookOpen, Trophy, CreditCard, MessageSquare, Settings, Calendar, UserCheck, Tent, GraduationCap, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, Lock, ClipboardList, ClipboardCheck, Sparkles, ChevronDown, ChevronRight } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { use_count_iscrizioni_non_lette } from "@/components/comunicazioni/IscrizioniAtletiNotifiche";
@@ -18,8 +18,9 @@ const legacy_nav_items = [
   { key: "istruttori", sezione: "istruttori", path: "/istruttori", icon: UserCheck },
   { key: "corsi", sezione: "corsi", path: "/corsi", icon: BookOpen },
   { key: "gare", sezione: "gare", path: "/gare", icon: Trophy },
-  { key: "campi_eventi", sezione: "campi", path: "/campi-eventi", icon: Tent },
   { key: "test_livello", sezione: "gare", path: "/test", icon: ClipboardCheck },
+  { key: "eventi", sezione: "eventi", path: "/eventi", icon: Sparkles },
+  { key: "campi_eventi", sezione: "campi", path: "/campi-eventi", icon: Tent },
   { key: "lezioni_private", sezione: "lezioni_private", path: "/lezioni-private", icon: GraduationCap },
   { key: "fatture", sezione: "fatture", path: "/fatture", icon: CreditCard },
   { key: "comunicazioni", sezione: "comunicazioni", path: "/comunicazioni", icon: MessageSquare },
@@ -27,6 +28,24 @@ const legacy_nav_items = [
   { key: "richieste_iscrizione", sezione: "richieste_iscrizione", path: "/richieste-iscrizione", icon: ClipboardList },
   { key: "setup_club", sezione: "setup_club", path: "/setup-club", icon: Settings },
 ];
+
+function use_count_richieste_pendenti() {
+  const { session } = useAuth();
+  const { data = 0 } = useQuery({
+    queryKey: ["richieste_iscrizione_pendenti_count", session?.club_id],
+    enabled: !!session?.club_id,
+    refetchInterval: 60000,
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("richieste_iscrizione")
+        .select("id", { count: "exact", head: true })
+        .eq("club_id", session!.club_id)
+        .eq("stato", "in_attesa");
+      return count ?? 0;
+    },
+  });
+  return data;
+}
 
 const RUOLI_NUOVI = ["presidente", "segreteria", "dt", "istruttore", "aiuto_monitore"];
 
@@ -43,6 +62,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const is_presidente = (session?.ruolo as string) === "presidente";
   const can_manage_users = is_superadmin || is_admin || is_presidente;
   const non_lette_iscrizioni = use_count_iscrizioni_non_lette();
+  const richieste_pendenti = use_count_richieste_pendenti();
 
   const is_legacy = is_admin || is_superadmin;
   const is_nuovo_ruolo = !is_legacy && RUOLI_NUOVI.includes(session?.ruolo as string);
@@ -77,6 +97,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const render_nav_item = (path: string, Icon: any, label: string, key: string, disabled?: boolean) => {
     const is_active = location.pathname === path || (path !== "/" && location.pathname.startsWith(path));
     const show_badge = key === "comunicazioni" && non_lette_iscrizioni > 0;
+    const show_pending = key === "atleti" && richieste_pendenti > 0;
     if (disabled) {
       return (
         <div key={key} title="Prossimamente"
@@ -95,6 +116,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         {show_badge && (
           <span className="ml-auto inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold tabular-nums">
             {non_lette_iscrizioni}
+          </span>
+        )}
+        {show_pending && (
+          <span title={`${richieste_pendenti} richieste in attesa`}
+            className="ml-auto inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold tabular-nums">
+            {richieste_pendenti}
           </span>
         )}
       </NavLink>
