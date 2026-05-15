@@ -638,6 +638,7 @@ const AthletesPage: React.FC = () => {
     | { sezione: "pulcini" }
     | { sezione: "amatori"; livello: string }
     | { sezione: "artistica"; percorso: "artistica" | "stile"; livello: string }
+    | { sezione: "in_prep"; disciplina: "artistica" | "stile"; livello: string }
     | null
   >(null);
 
