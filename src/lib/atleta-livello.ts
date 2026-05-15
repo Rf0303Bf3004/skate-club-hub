@@ -43,6 +43,8 @@ export type AtletaLivelloInput = {
   livello_amatori?: LivelloAmatori | string | null;
   livello_artistica?: LivelloCarriera | string | null;
   livello_stile?: LivelloCarriera | string | null;
+  livello_artistica_in_preparazione?: string | null;
+  livello_stile_in_preparazione?: string | null;
   // legacy fallback
   livello_attuale?: string | null;
 };
@@ -73,9 +75,12 @@ export function get_livello_gara(a: AtletaLivelloInput): string {
   if (cat === "pulcini") return "Pulcini";
   if (cat === "amatori") return a?.livello_amatori || a?.livello_attuale || "—";
   if (cat === "artistica") {
-    return (
-      a?.livello_artistica || a?.livello_amatori || a?.livello_attuale || "—"
-    );
+    // Artistica già "battezzata"
+    if (a?.livello_artistica) return a.livello_artistica;
+    if (a?.livello_stile) return a.livello_stile;
+    // Transizione: ha superato Stellina 4 ma non ancora Interbronzo
+    if (a?.livello_artistica_in_preparazione) return a?.livello_attuale || "Stellina 4";
+    return a?.livello_amatori || a?.livello_attuale || "—";
   }
   return a?.livello_attuale || "—";
 }
@@ -308,7 +313,25 @@ export async function apply_promozione_atleta(
   const is_amatori = (LIVELLI_AMATORI as string[]).includes(target);
   const is_carriera = (LIVELLI_CARRIERA as string[]).includes(target);
 
-  if (is_amatori) {
+  // ── CASO speciale: Stellina 4 → transizione immediata ad Artistica
+  // L'atleta è ancora amatori (Stellina 3 tipicamente), ma supera Stellina 4.
+  // Diventa SUBITO artistica con livello_artistica=NULL e in_preparazione='Interbronzo'.
+  if (target === "Stellina 4") {
+    from_val = atleta.livello_amatori || "—";
+    if (
+      atleta.categoria === "artistica" &&
+      !atleta.livello_artistica &&
+      atleta.livello_artistica_in_preparazione === "Interbronzo"
+    ) {
+      return { promosso: false, skipped_motivo: `già a Stellina 4 (artistica in preparazione)` };
+    }
+    patch.categoria = "artistica";
+    patch.livello_amatori = null;
+    patch.livello_artistica = null;
+    patch.livello_artistica_in_preparazione = "Interbronzo";
+    patch.livello_attuale = "Stellina 4";
+  } else if (is_amatori) {
+    // Stellina 1, 2, 3
     from_val = atleta.livello_amatori || (atleta.categoria === "pulcini" ? "Pulcini" : "—");
     if (atleta.categoria === "amatori" && atleta.livello_amatori === target) {
       return { promosso: false, skipped_motivo: `già a ${target}` };
@@ -319,14 +342,18 @@ export async function apply_promozione_atleta(
   } else if (target === "Interbronzo") {
     const cur = disciplina === "stile" ? atleta.livello_stile : atleta.livello_artistica;
     const cur_idx = cur ? LIVELLI_CARRIERA.indexOf(cur as LivelloCarriera) : -1;
-    from_val = cur || atleta.livello_amatori || "—";
+    from_val = cur || atleta.livello_amatori || (atleta.livello_attuale === "Stellina 4" ? "Stellina 4" : "—");
     if (cur_idx >= 0) {
       return { promosso: false, skipped_motivo: `già a ${cur} (${disciplina})` };
     }
     patch.categoria = "artistica";
     patch.livello_amatori = null;
-    if (disciplina === "stile") patch.livello_stile = "Interbronzo";
-    else patch.livello_artistica = "Interbronzo";
+    if (disciplina === "stile") {
+      patch.livello_stile = "Interbronzo";
+    } else {
+      patch.livello_artistica = "Interbronzo";
+      patch.livello_artistica_in_preparazione = "Bronzo";
+    }
     patch.livello_attuale = "Interbronzo";
   } else if (is_carriera) {
     const t_idx = LIVELLI_CARRIERA.indexOf(target as LivelloCarriera);
@@ -337,9 +364,15 @@ export async function apply_promozione_atleta(
       return { promosso: false, skipped_motivo: `già a ${cur} (${disciplina})` };
     }
     patch.categoria = "artistica";
-    if (disciplina === "stile") patch.livello_stile = target;
-    else patch.livello_artistica = target;
-    // Aggiorna livello_attuale legacy: se l'altra disciplina è più avanti, mantieni il max; altrimenti usa target.
+    if (disciplina === "stile") {
+      patch.livello_stile = target;
+    } else {
+      patch.livello_artistica = target;
+      // popola in_preparazione col successivo, NULL se Oro
+      const next = LIVELLI_CARRIERA[t_idx + 1] || null;
+      patch.livello_artistica_in_preparazione = next;
+    }
+    // legacy: se l'altra disciplina è più avanti, mantieni il max; altrimenti usa target.
     const altra = disciplina === "stile" ? atleta.livello_artistica : atleta.livello_stile;
     const altra_idx = altra ? LIVELLI_CARRIERA.indexOf(altra as LivelloCarriera) : -1;
     patch.livello_attuale = altra_idx > t_idx ? altra : target;
