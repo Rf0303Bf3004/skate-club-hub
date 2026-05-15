@@ -2,6 +2,7 @@ import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Trophy, Clock,
   Receipt, MessageSquare, Building2, Calendar, CalendarRange, MapPin,
   ListChecks, Handshake, UserCog, ShieldCheck, Wrench, FileSpreadsheet,
+  ClipboardCheck, Sparkles,
 } from "lucide-react";
 
 export type MenuGruppo = "principale" | "setup";
@@ -23,9 +24,11 @@ export const MENU_SECTIONS: MenuSection[] = [
   { codice: "istruttori",      label: "Istruttori",      icon: GraduationCap,   path: "/istruttori",      gruppo: "principale", ordine: 3 },
   { codice: "corsi",           label: "Corsi",           icon: BookOpen,        path: "/corsi",           gruppo: "principale", ordine: 4 },
   { codice: "gare",            label: "Gare",            icon: Trophy,          path: "/gare",            gruppo: "principale", ordine: 5 },
-  { codice: "lezioni_private", label: "Lezioni Private", icon: Clock,           path: "/lezioni-private", gruppo: "principale", ordine: 6 },
-  { codice: "fatture",         label: "Fatture",         icon: Receipt,         path: "/fatture",         gruppo: "principale", ordine: 7 },
-  { codice: "comunicazioni",   label: "Comunicazioni",   icon: MessageSquare,   path: "/comunicazioni",   gruppo: "principale", ordine: 8 },
+  { codice: "test_livello",    label: "Test Livello",    icon: ClipboardCheck,  path: "/test",            gruppo: "principale", ordine: 6 },
+  { codice: "eventi",          label: "Galà ed Eventi",  icon: Sparkles,        path: "/eventi",          gruppo: "principale", ordine: 7 },
+  { codice: "lezioni_private", label: "Lezioni Private", icon: Clock,           path: "/lezioni-private", gruppo: "principale", ordine: 8 },
+  { codice: "fatture",         label: "Fatture",         icon: Receipt,         path: "/fatture",         gruppo: "principale", ordine: 9 },
+  { codice: "comunicazioni",   label: "Comunicazioni",   icon: MessageSquare,   path: "/comunicazioni",   gruppo: "principale", ordine: 10 },
   // SETUP
   { codice: "setup_club",        label: "Setup del Club",     icon: Building2,     path: "/setup-club",        gruppo: "setup", ordine: 1 },
   { codice: "stagioni",          label: "Stagioni",           icon: Calendar,      path: "/stagioni",          gruppo: "setup", ordine: 2 },
