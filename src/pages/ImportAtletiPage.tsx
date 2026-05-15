@@ -297,7 +297,7 @@ const ImportAtletiPage: React.FC = () => {
   const download_template = () => {
     const ws = XLSX.utils.aoa_to_sheet([
       ["nome", "cognome", "data_nascita", "sesso", "email", "telefono", "livello"],
-      ["Mario", "Rossi", "2010-05-12", "M", "mario@example.com", "+41791234567", "Stellina 2"],
+      ["Mario", "Rossi", "12.05.2010", "M", "mario@example.com", "+41791234567", "Stellina 2"],
     ]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Atleti");
