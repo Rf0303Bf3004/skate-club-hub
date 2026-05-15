@@ -359,8 +359,15 @@ export default function TestLivelloPage() {
           });
           if (result.promosso) {
             toast.success(`${atleta.cognome} ${atleta.nome}: promosso da ${result.from} a ${result.to}`);
-            qc.invalidateQueries({ queryKey: ["atleti_test"] });
-            qc.invalidateQueries({ queryKey: ["atleti"] });
+            const aid = prev_row.atleta_id;
+            await Promise.all([
+              qc.invalidateQueries({ queryKey: ["atleti_test"], refetchType: "all" }),
+              qc.invalidateQueries({ queryKey: ["atleti"], refetchType: "all" }),
+              qc.invalidateQueries({ queryKey: ["atleta", aid], refetchType: "all" }),
+              qc.invalidateQueries({ queryKey: ["storico_test_atleta", aid], refetchType: "all" }),
+              qc.invalidateQueries({ queryKey: ["storico_livelli", aid], refetchType: "all" }),
+              qc.invalidateQueries({ queryKey: ["calendario-interattivo", aid], refetchType: "all" }),
+            ]);
           } else {
             toast.info(`Promozione non applicata: ${(result as any).skipped_motivo}`);
           }
