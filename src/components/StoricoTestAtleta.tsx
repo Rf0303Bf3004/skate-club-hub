@@ -91,7 +91,8 @@ export default function StoricoTestAtleta({ atleta_id }: Props) {
                 <TableCell className="font-medium text-sm">{r.test?.nome || "—"}</TableCell>
                 <TableCell className="text-sm capitalize text-muted-foreground">{r.test?.tipo || "—"}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">
-                  {r.test?.livello_attuale || "?"} → {r.test?.livello_accesso || "?"}
+                  {r.livello_accesso || "?"} → {r.livello_target || "?"}
+                  {r.disciplina ? <span className="ml-1 text-[10px] uppercase">({r.disciplina === "stile" ? "STI" : "ART"})</span> : null}
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline" className={`gap-1 ${esito.cls}`}>
