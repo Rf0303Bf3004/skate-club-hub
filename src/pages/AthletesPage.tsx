@@ -1031,6 +1031,26 @@ const AthletesPage: React.FC = () => {
               Art. · Artistica
             </span>
             <div className="flex gap-2 overflow-x-auto pb-1">
+              {/* Tassello "In preparazione" — atleti già artistica ma senza livello battezzato */}
+              {(() => {
+                const empty = artistica_in_prep_count === 0;
+                return (
+                  <button
+                    onClick={() => {
+                      // filtro client-side: mostra solo quelli in transizione
+                      set_card_filter(null);
+                      set_categoria_filter("artistica");
+                      set_level_filter("tutti");
+                      set_percorso_filter("artistica");
+                    }}
+                    className={`shrink-0 px-4 py-3 rounded-xl shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md border border-purple-200 bg-purple-50/50 ${empty ? "opacity-60" : ""}`}
+                    title="Atleti che hanno superato Stellina 4 ma non ancora Interbronzo"
+                  >
+                    <span className={`block text-2xl font-bold ${empty ? "text-muted-foreground/50" : "text-purple-700"}`}>{artistica_in_prep_count}</span>
+                    <span className={`block text-[11px] mt-0.5 italic ${empty ? "text-muted-foreground/50" : "text-purple-600"}`}>In prep. Interbronzo</span>
+                  </button>
+                );
+              })()}
               {LIVELLI_CARRIERA_NUOVI.map((l) => {
                 const sel =
                   card_filter?.sezione === "artistica" &&
