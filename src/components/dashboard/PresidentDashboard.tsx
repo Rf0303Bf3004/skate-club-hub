@@ -1191,6 +1191,7 @@ const PresidentDashboard: React.FC = () => {
   const stagioniOrd = useMemo(() => stagioni.slice().sort((a, b) => b.data_inizio.localeCompare(a.data_inizio)), [stagioni]);
   const [stagioneId, setStagioneId] = useState<string>("");
   const [confronta, setConfronta] = useState(true);
+  const [activeTab, setActiveTab] = useState<string>("sintesi");
 
   useEffect(() => {
     if (!stagioneId && stagioniOrd.length) {
@@ -1246,7 +1247,6 @@ const PresidentDashboard: React.FC = () => {
     { id: "private", label: "Lezioni private" },
     { id: "sportivo", label: "Sportivo" },
   ];
-  const [activeTab, setActiveTab] = useState<string>("sintesi");
 
   return (
     <TooltipProvider>
