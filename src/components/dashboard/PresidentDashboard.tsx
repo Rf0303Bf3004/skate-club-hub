@@ -39,6 +39,7 @@ import {
   narrateCosti,
   narrateLezioni,
   narrateSportivo,
+  narrateCatalogoPromozione,
   type AreaNarration,
   type Tone,
 } from "@/lib/narrate";
