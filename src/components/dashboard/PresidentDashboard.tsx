@@ -2147,6 +2147,28 @@ const PresidentDashboard: React.FC = () => {
       narration: nSportivo,
       drawerContent: <Area6Performance d={d} />,
     },
+    {
+      id: "catalogo",
+      title: "Catalogo & Promozione",
+      accent: "#0891b2",
+      icon: <Megaphone className="h-4 w-4" />,
+      drawerTitle: "Catalogo & Promozione",
+      drawerSub: "Tutto cio' che serve al Presidente per rappresentare il club fuori.",
+      narration: nCatalogo,
+      drawerContent: (
+        <Area7Catalogo
+          d={d}
+          cat={catData}
+          totAtleti={totAtleti}
+          giovani={giovani}
+          podi={podi}
+          agonisti={agonisti}
+          testSuperamentoPct={testSuperamentoPct}
+          trendPodi={trendPodi}
+          oreAttivita={oreAttivita}
+        />
+      ),
+    },
   ];
 
   const activeArea = openArea ? AREAS.find((a) => a.id === openArea) : null;
