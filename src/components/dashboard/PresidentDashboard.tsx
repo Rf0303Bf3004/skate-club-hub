@@ -13,9 +13,25 @@ import {
   FileDown,
   Sparkles,
   Calendar,
-  PanelLeftClose,
-  PanelLeftOpen,
+  CreditCard,
+  Briefcase,
+  Clock,
+  X,
 } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+} from "@/components/ui/sheet";
+import {
+  narrateDomanda,
+  narrateAtleti,
+  narrateRicavi,
+  narrateCosti,
+  narrateLezioni,
+  narrateSportivo,
+  type AreaNarration,
+  type Tone,
+} from "@/lib/narrate";
 import {
   ResponsiveContainer,
   LineChart,
