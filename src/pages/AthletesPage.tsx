@@ -599,14 +599,24 @@ const AthletesPage: React.FC = () => {
     return counts;
   }, [atleti]);
 
-  // Per la sezione Artistica sommiamo, per ogni livello carriera, chi ce l'ha
-  // valorizzato in livello_artistica O in livello_stile (somma logica per livello).
-  const artistica_breakdown = useMemo(() => {
+  // Per la sezione Artistica calcoliamo due breakdown distinti per percorso:
+  // - art[l]: numero di atleti con livello_artistica = l (indipendentemente da stile)
+  // - sti[l]: numero di atleti con livello_stile     = l (indipendentemente da artistica)
+  const artistica_breakdown_art = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const l of LIVELLI_CARRIERA_NUOVI) counts[l] = 0;
     for (const a of atleti) {
       if (a.categoria !== "artistica") continue;
       if (a.livello_artistica && counts[a.livello_artistica] !== undefined) counts[a.livello_artistica]++;
+    }
+    return counts;
+  }, [atleti]);
+
+  const artistica_breakdown_sti = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const l of LIVELLI_CARRIERA_NUOVI) counts[l] = 0;
+    for (const a of atleti) {
+      if (a.categoria !== "artistica") continue;
       if (a.livello_stile && counts[a.livello_stile] !== undefined) counts[a.livello_stile]++;
     }
     return counts;
@@ -615,12 +625,16 @@ const AthletesPage: React.FC = () => {
   const [card_filter, set_card_filter] = useState<
     | { sezione: "pulcini" }
     | { sezione: "amatori"; livello: string }
-    | { sezione: "artistica"; livello: string }
+    | { sezione: "artistica"; percorso: "artistica" | "stile"; livello: string }
     | null
   >(null);
 
   // Filtro a cascata: prima categoria, poi (se categoria scelta) livello specifico
   const [categoria_filter, set_categoria_filter] = useState<"tutti" | Categoria>("tutti");
+  // Filtro Percorso visibile solo quando categoria = artistica
+  const [percorso_filter, set_percorso_filter] = useState<
+    "tutti" | "artistica" | "stile" | "entrambi"
+  >("tutti");
 
   const da_verificare_count = useMemo(
     () => atleti.filter((a: any) => a.verificato === false).length,
