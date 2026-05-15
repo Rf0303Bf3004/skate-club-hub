@@ -1337,9 +1337,18 @@ const PresidentDashboard: React.FC = () => {
 
         {/* Layout: internal sidebar + content */}
         <div className="flex">
-          {/* Internal sidebar */}
-          <aside className="hidden md:block w-[230px] shrink-0 bg-white border-r border-slate-200 sticky top-[65px] self-start" style={{ height: "calc(100vh - 65px)" }}>
-            <nav className="px-4 py-8 flex flex-col gap-1">
+          {/* Internal sidebar (collapsible) */}
+          <aside
+            className="hidden md:block shrink-0 bg-white border-slate-200 sticky top-[65px] self-start overflow-hidden"
+            style={{
+              height: "calc(100vh - 65px)",
+              width: sidebarCollapsed ? 0 : 230,
+              borderRightWidth: sidebarCollapsed ? 0 : 1,
+              borderRightStyle: "solid",
+              transition: "width 200ms ease-out, border-right-width 200ms ease-out",
+            }}
+          >
+            <nav className="px-4 py-8 flex flex-col gap-1 w-[230px]">
               {TABS.map((t) => {
                 const active = t.id === activeTab;
                 return (
@@ -1362,6 +1371,27 @@ const PresidentDashboard: React.FC = () => {
               })}
             </nav>
           </aside>
+
+          {/* Sidebar collapse/expand toggle (desktop only) */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={() => setSidebarCollapsed((v) => !v)}
+                aria-label={sidebarCollapsed ? "Espandi sidebar" : "Comprimi sidebar"}
+                className="hidden md:flex items-center justify-center fixed z-30 top-[78px] h-8 w-8 rounded-full bg-white border border-slate-200 shadow-sm hover:bg-slate-50 text-slate-500 hover:text-slate-800"
+                style={{
+                  left: sidebarCollapsed ? 12 : 230 - 16,
+                  transition: "left 200ms ease-out",
+                }}
+              >
+                {sidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              {sidebarCollapsed ? "Espandi sidebar" : "Comprimi sidebar"}
+            </TooltipContent>
+          </Tooltip>
 
           {/* Content area */}
           <div className="flex-1 min-w-0">
