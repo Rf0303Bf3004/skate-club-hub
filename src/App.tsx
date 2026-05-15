@@ -36,6 +36,7 @@ import CampiEventiPage from "@/pages/CampiEventiPage";
 import MedagliereePage from "@/pages/MedagliereePage";
 import TestMobileAuthPage from "@/pages/TestMobileAuthPage";
 import ImportAtletiPage from "@/pages/ImportAtletiPage";
+import EventiPage from "@/pages/EventiPage";
 
 const queryClient = new QueryClient();
 
@@ -104,6 +105,8 @@ const AuthenticatedApp = () => {
           <Route path="/test" element={<TestLivelloPage />} />
           <Route path="/test/:id" element={<TestLivelloPage />} />
           <Route path="/lezioni-private" element={<PrivateLessonsPage />} />
+          <Route path="/eventi" element={<EventiPage />} />
+          <Route path="/eventi/:id" element={<EventiPage />} />
           <Route path="/fatture" element={<InvoicesPage />} />
           <Route path="/comunicazioni" element={<CommunicationsPage />} />
           <Route path="/stagioni" element={<SeasonsPage />} />
