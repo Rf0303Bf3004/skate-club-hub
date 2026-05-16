@@ -244,7 +244,10 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
         if (error) throw error;
       }
     },
+    onMutate: () => { saving_store.begin(); },
+    onError: (e: any) => { saving_store.error(e?.message ?? "Errore"); },
     onSuccess: () => {
+      saving_store.success();
       qc.invalidateQueries({ queryKey: ["relazione_prefs", club_id, stagione_id] });
       qc.invalidateQueries({ queryKey: ["relazione_comp_blocchi", club_id, stagione_id] });
       qc.invalidateQueries({ queryKey: ["relazione_comp_allegati", club_id, stagione_id] });
@@ -253,17 +256,33 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
 
   const m_reset = useMutation({
     mutationFn: async () => {
-      // restore default ordini + attivo true for sistema/area
       for (const p of DEFAULT_PREFS) {
         await supabase.from("relazione_preferenze" as any).update({ ordine: p.ordine, attivo: true })
           .eq("club_id", club_id).eq("stagione_id", stagione_id).eq("sezione_id", p.sezione_id);
       }
     },
+    onMutate: () => { saving_store.begin(); },
+    onError: (e: any) => { saving_store.error(e?.message ?? "Errore"); },
     onSuccess: () => {
+      saving_store.success();
       toast.success("Ordine ripristinato");
       qc.invalidateQueries({ queryKey: ["relazione_prefs", club_id, stagione_id] });
     },
   });
+
+  const handle_save_all = async () => {
+    if (saving.pending > 0) {
+      toast.info("Salvataggio in corso, attendi...");
+      return;
+    }
+    await Promise.all([
+      qc.invalidateQueries({ queryKey: ["relazione_prefs", club_id, stagione_id] }),
+      qc.invalidateQueries({ queryKey: ["relazione_comp_blocchi", club_id, stagione_id] }),
+      qc.invalidateQueries({ queryKey: ["relazione_comp_allegati", club_id, stagione_id] }),
+    ]);
+    saving_store.success();
+    toast.success("Tutto salvato!");
+  };
 
   const select = (id: string) => {
     set_selected_id(id);
