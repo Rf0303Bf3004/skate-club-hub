@@ -628,7 +628,7 @@ export async function generateRelazionePDF(params: GenerateRelazioneParams): Pro
       let pages = 1;
       if (b.type === "copertina") title = "Copertina";
       else if (b.type === "indice") { title = "Sommario"; pages = b.placeholderPages; }
-      else if (b.type === "area") title = `${AREA_INFO[b.sezione_id]?.numero ?? ""}. ${AREA_INFO[b.sezione_id]?.titolo ?? b.title}`;
+      else if (b.type === "area") { title = `${AREA_INFO[b.sezione_id]?.numero ?? ""}. ${AREA_INFO[b.sezione_id]?.titolo ?? b.title}`; pages = b.pages; }
       else if (b.type === "blocco") title = b.title;
       else if (b.type === "allegato_real") { title = `${b.title} (allegato)`; pages = b.pages; }
       else if (b.type === "allegato_placeholder") title = `${b.title} (allegato)`;
