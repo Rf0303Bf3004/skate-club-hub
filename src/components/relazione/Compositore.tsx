@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { formatBytes } from "@/lib/utils";
 import IndiceComponibile from "./IndiceComponibile";
 import AnteprimaPDF from "./AnteprimaPDF";
 import { CompositoreItem, SISTEMA_LABELS } from "./types-compositore";
@@ -8,7 +9,7 @@ import { AREA_DEFINITIONS } from "./MockSezionePDF";
 import { cat_blocco, cat_allegato } from "./categorie";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { FileDown, Loader2, Save } from "lucide-react";
+import { FileText, Loader2, Save } from "lucide-react";
 import { saveAs } from "file-saver";
 import { generateRelazionePDF, buildRelazioneFilename } from "@/lib/pdfGenerator";
 import { saving_store, useSavingState } from "@/stores/savingState";
