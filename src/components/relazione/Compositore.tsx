@@ -227,6 +227,14 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[38%_62%] gap-6 h-[calc(100vh-220px)] min-h-[600px]">
       <div className="border border-border rounded-md bg-card p-4 overflow-hidden flex flex-col">
+        <Button
+          onClick={handle_generate}
+          disabled={generating || items.filter((i) => i.attivo).length === 0}
+          className="mb-3 gap-2 w-full"
+        >
+          {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+          {generating ? "Generazione in corso..." : "Genera PDF"}
+        </Button>
         <IndiceComponibile
           items={items}
           on_reorder={(ids) => m_reorder.mutate(ids)}
