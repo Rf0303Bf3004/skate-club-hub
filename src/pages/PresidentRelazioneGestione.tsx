@@ -18,6 +18,11 @@ export default function PresidentRelazioneGestione() {
   const { data: stagioni = [] } = use_stagioni();
   const stagione_attiva = (stagioni as any[]).find((s) => s.attiva) || (stagioni as any[])[0];
   const [stagione_id, set_stagione_id] = useState<string | undefined>(undefined);
+  const [search_params, set_search_params] = useSearchParams();
+  const tab_param = search_params.get("tab");
+  const tab_attivo = tab_param === "paragrafi" || tab_param === "allegati" || tab_param === "blocchi"
+    ? tab_param
+    : "blocchi";
 
   React.useEffect(() => {
     if (!stagione_id && stagione_attiva) set_stagione_id(stagione_attiva.id);
