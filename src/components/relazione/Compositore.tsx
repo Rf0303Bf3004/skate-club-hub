@@ -7,6 +7,10 @@ import { CompositoreItem, SISTEMA_LABELS } from "./types-compositore";
 import { AREA_DEFINITIONS } from "./MockSezionePDF";
 import { cat_blocco, cat_allegato } from "./categorie";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { FileDown, Loader2 } from "lucide-react";
+import { saveAs } from "file-saver";
+import { generateRelazionePDF, buildRelazioneFilename } from "@/lib/pdfGenerator";
 
 interface Props {
   club_id: string;
@@ -32,6 +36,31 @@ const DEFAULT_PREFS: Array<{ sezione_tipo: string; sezione_id: string; ordine: n
 export default function Compositore({ club_id, stagione_id, club, presidente, stagione_nome }: Props) {
   const qc = useQueryClient();
   const [selected_id, set_selected_id] = useState<string | null>(null);
+  const [generating, set_generating] = useState(false);
+
+  const handle_generate = async () => {
+    set_generating(true);
+    try {
+      const attivi = items.filter((i) => i.attivo);
+      const { blob, pages } = await generateRelazionePDF({
+        club,
+        presidente,
+        stagione_nome,
+        items: attivi.map((i) => ({
+          id: i.id, kind: i.kind, sezione_id: i.sezione_id,
+          titolo: i.titolo, payload: i.payload,
+        })),
+      });
+      const filename = buildRelazioneFilename(club?.nome ?? "Club", stagione_nome);
+      saveAs(blob, filename);
+      toast.success(`Relazione PDF generata (${pages} pagine)`);
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Errore generazione PDF: " + (e?.message ?? "sconosciuto"));
+    } finally {
+      set_generating(false);
+    }
+  };
 
   const { data: prefs = [] } = useQuery({
     queryKey: ["relazione_prefs", club_id, stagione_id],
@@ -198,6 +227,14 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[38%_62%] gap-6 h-[calc(100vh-220px)] min-h-[600px]">
       <div className="border border-border rounded-md bg-card p-4 overflow-hidden flex flex-col">
+        <Button
+          onClick={handle_generate}
+          disabled={generating || items.filter((i) => i.attivo).length === 0}
+          className="mb-3 gap-2 w-full"
+        >
+          {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+          {generating ? "Generazione in corso..." : "Genera PDF"}
+        </Button>
         <IndiceComponibile
           items={items}
           on_reorder={(ids) => m_reorder.mutate(ids)}
