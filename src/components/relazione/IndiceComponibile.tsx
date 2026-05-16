@@ -126,6 +126,51 @@ export default function IndiceComponibile({ items, on_reorder, on_toggle, on_sel
     </div>
   );
 }
+function ParagrafiNarrativiSub({ area_id }: { area_id: string }) {
+  const ORDINI = [
+    { ordine: 1, label: "Apertura empatica" },
+    { ordine: 2, label: "Numeri narrati" },
+    { ordine: 3, label: "Interpretazione" },
+    { ordine: 4, label: "Ponte alla sezione successiva" },
+  ];
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="rounded-md border border-slate-200 bg-[#f8fafc] p-2 text-[11px] text-[#475569] select-none cursor-default">
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <span className="flex items-center gap-1 font-medium text-slate-600">
+                <ArrowRight className="w-3 h-3 rotate-90" />
+                4 paragrafi del Racconto dei dati
+              </span>
+              <Link
+                to={`/presidente/relazione/contenuti?tab=paragrafi&area=${area_id}`}
+                className="text-teal-700 hover:text-teal-900 hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Modifica i paragrafi
+              </Link>
+            </div>
+            <ul className="pl-4 space-y-0.5 list-none">
+              {ORDINI.map((o) => (
+                <li key={o.ordine} className="flex items-center gap-1.5">
+                  <span className="inline-flex items-center justify-center w-4 h-4 rounded bg-slate-200 text-[9px] font-semibold text-slate-600">
+                    {o.ordine}
+                  </span>
+                  <span>{o.label}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-xs text-xs">
+          Questi 4 paragrafi vengono inseriti automaticamente nella pagina del PDF.
+          Li puoi modificare nella tab Contenuti &gt; Racconto dei dati.
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
 
 function ItemRow({ item, selected, on_toggle, on_select }: { item: CompositoreItem; selected: boolean; on_toggle: (v: boolean) => void; on_select: () => void }) {
   const Icon = icon_for(item.kind, item.sezione_id);
