@@ -205,56 +205,55 @@ function drawCopertina(page: PDFPage, fonts: Fonts, club: any, presidente: strin
   page.drawText(`Generato il ${dateStr}`, { x: PAGE_W - M_RIGHT - 140, y: 50, size: 8, font: fonts.sans, color: MUTED });
 }
 
-function drawAreaPage(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum: number, paras?: Record<number, string>) {
-  drawPageFrame(page, pageNum, fonts);
-  const info = AREA_INFO[sezione_id];
-  if (!info) return;
+interface AreaCharts {
+  primary?: PDFImage;   // mostrata sotto P2 in pagina 1
+  primaryW?: number;
+  primaryH?: number;
+  secondary?: PDFImage; // mostrata in cima a pagina 2 (solo lezioni)
+  secondaryW?: number;
+  secondaryH?: number;
+}
 
-  let y = PAGE_H - M_TOP - 10;
-
-  // Header area
+function drawAreaHeader(page: PDFPage, fonts: Fonts, info: { numero: number; titolo: string }, startY: number): number {
+  let y = startY;
   const header = `AREA ${info.numero}`;
   page.drawText(header, { x: M_LEFT, y, size: 8, font: fonts.sansBold, color: TEAL });
   y -= 22;
-
-  // Titolo
   const titleLines = wrapText(info.titolo, fonts.serifBold, 24, CONTENT_W);
   for (const ln of titleLines) {
     page.drawText(ln, { x: M_LEFT, y, size: 24, font: fonts.serifBold, color: INK });
     y -= 26;
   }
   y -= 4;
-
-  // Linea
   page.drawLine({ start: { x: M_LEFT, y }, end: { x: M_LEFT + 50, y }, thickness: 1.5, color: TEAL });
   y -= 18;
+  return y;
+}
 
-  // Paragrafo 1: apertura (corsivo grigio)
-  const p1 = paras?.[1];
-  if (p1) {
-    const ls = wrapText(p1, fonts.serifItalic, 11, CONTENT_W);
-    for (const ln of ls) {
-      if (y < M_BOTTOM + 30) break;
-      page.drawText(ln, { x: M_LEFT, y, size: 11, font: fonts.serifItalic, color: rgb(0.3, 0.3, 0.32) });
-      y -= 15;
+function drawParagraph(page: PDFPage, fonts: Fonts, text: string, y: number, opts: {
+  font: PDFFont; size: number; color: any; lineH: number; indent?: number; align?: "left" | "right";
+}): number {
+  const indent = opts.indent ?? 0;
+  const align = opts.align ?? "left";
+  const w = CONTENT_W - indent;
+  const lines = wrapText(text, opts.font, opts.size, w);
+  for (const ln of lines) {
+    if (y < M_BOTTOM + 20) break;
+    let x = M_LEFT + indent;
+    if (align === "right") {
+      const lw = opts.font.widthOfTextAtSize(ln, opts.size);
+      x = M_LEFT + CONTENT_W - lw;
     }
-    y -= 10;
-  } else {
-    // fallback insight
-    const insightLines = wrapText(info.insight, fonts.serifItalic, 11, CONTENT_W);
-    for (const ln of insightLines) {
-      page.drawText(ln, { x: M_LEFT, y, size: 11, font: fonts.serifItalic, color: rgb(0.3, 0.3, 0.32) });
-      y -= 15;
-    }
-    y -= 10;
+    page.drawText(ln, { x, y, size: opts.size, font: opts.font, color: opts.color });
+    y -= opts.lineH;
   }
+  return y;
+}
 
-  // KPI in riga (hero)
-  if (y < M_BOTTOM + 200) return;
-  const kpiCount = info.kpi.length;
-  const kpiW = CONTENT_W / kpiCount;
-  for (let i = 0; i < kpiCount; i++) {
-    const parts = info.kpi[i].split(" ");
+function drawKpiRow(page: PDFPage, fonts: Fonts, kpi: string[], y: number): number {
+  const kpiW = CONTENT_W / kpi.length;
+  for (let i = 0; i < kpi.length; i++) {
+    const parts = kpi[i].split(" ");
     const mid = Math.ceil(parts.length / 2);
     const numLine = parts.slice(0, mid).join(" ");
     const lblLine = parts.slice(mid).join(" ");
@@ -268,43 +267,80 @@ function drawAreaPage(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum: 
   }
   y -= 36;
   page.drawLine({ start: { x: M_LEFT, y }, end: { x: M_LEFT + CONTENT_W, y }, thickness: 0.4, color: LIGHT_BORDER });
-  y -= 14;
+  return y - 14;
+}
 
-  // Paragrafo 2: numeri (normale)
+function drawChart(page: PDFPage, img: PDFImage, w: number, h: number, y: number): number {
+  // centrato orizzontalmente
+  const x = M_LEFT + (CONTENT_W - w) / 2;
+  page.drawImage(img, { x, y: y - h, width: w, height: h });
+  return y - h - 14;
+}
+
+// Disegna la pagina principale di un'area. Restituisce true se serve una pagina di continuazione (P3+P4 e/o chart secondaria).
+function drawAreaMain(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum: number, paras: Record<number, string> | undefined, charts: AreaCharts): { needContinuation: boolean } {
+  drawPageFrame(page, pageNum, fonts);
+  const info = AREA_INFO[sezione_id];
+  if (!info) return { needContinuation: false };
+
+  let y = PAGE_H - M_TOP - 10;
+  y = drawAreaHeader(page, fonts, info, y);
+
+  // P1 apertura corsivo grigio (oppure fallback insight)
+  const p1 = paras?.[1] ?? info.insight;
+  y = drawParagraph(page, fonts, p1, y, { font: fonts.serifItalic, size: 11, color: rgb(0.3, 0.3, 0.32), lineH: 15 });
+  y -= 6;
+
+  // KPI hero
+  y = drawKpiRow(page, fonts, info.kpi, y);
+
+  // P2 numeri
   const p2 = paras?.[2];
-  if (p2 && y > M_BOTTOM + 60) {
-    const ls = wrapText(p2, fonts.serif, 11, CONTENT_W);
-    for (const ln of ls) {
-      if (y < M_BOTTOM + 30) break;
-      page.drawText(ln, { x: M_LEFT, y, size: 11, font: fonts.serif, color: INK });
-      y -= 14;
-    }
-    y -= 8;
+  if (p2) {
+    y = drawParagraph(page, fonts, p2, y, { font: fonts.serif, size: 11, color: INK, lineH: 14 });
+    y -= 6;
   }
 
-  // Paragrafo 3: interpretazione (indentato 20pt, leggermente piu' chiaro)
+  // Grafico primario
+  if (charts.primary && charts.primaryW && charts.primaryH) {
+    if (y - charts.primaryH < M_BOTTOM + 20) {
+      // non c'è spazio: lo metteremo nella pagina di continuazione
+      return { needContinuation: true };
+    }
+    y = drawChart(page, charts.primary, charts.primaryW, charts.primaryH, y);
+  }
+
+  const hasMoreText = !!(paras?.[3] || paras?.[4]);
+  const hasSecondary = !!charts.secondary;
+  return { needContinuation: hasMoreText || hasSecondary };
+}
+
+function drawAreaContinuation(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum: number, paras: Record<number, string> | undefined, charts: AreaCharts) {
+  drawPageFrame(page, pageNum, fonts);
+  const info = AREA_INFO[sezione_id];
+  if (!info) return;
+
+  let y = PAGE_H - M_TOP - 10;
+  // header ridotto (continua)
+  const header = `AREA ${info.numero} · ${sanitize(info.titolo)} (segue)`;
+  page.drawText(header, { x: M_LEFT, y, size: 8, font: fonts.sansBold, color: TEAL });
+  y -= 22;
+  page.drawLine({ start: { x: M_LEFT, y }, end: { x: M_LEFT + 50, y }, thickness: 1.2, color: TEAL });
+  y -= 18;
+
+  // Grafico secondario in alto se presente
+  if (charts.secondary && charts.secondaryW && charts.secondaryH) {
+    y = drawChart(page, charts.secondary, charts.secondaryW, charts.secondaryH, y);
+  }
+
   const p3 = paras?.[3];
-  if (p3 && y > M_BOTTOM + 60) {
-    const indent = 20;
-    const ls = wrapText(p3, fonts.serif, 11, CONTENT_W - indent);
-    for (const ln of ls) {
-      if (y < M_BOTTOM + 30) break;
-      page.drawText(ln, { x: M_LEFT + indent, y, size: 11, font: fonts.serif, color: rgb(0.18, 0.18, 0.2) });
-      y -= 14;
-    }
-    y -= 8;
+  if (p3) {
+    y = drawParagraph(page, fonts, p3, y, { font: fonts.serif, size: 11, color: rgb(0.18, 0.18, 0.2), lineH: 14, indent: 20 });
+    y -= 6;
   }
-
-  // Paragrafo 4: ponte (corsivo allineato destra, grigio)
   const p4 = paras?.[4];
-  if (p4 && y > M_BOTTOM + 30) {
-    const ls = wrapText(p4, fonts.serifItalic, 10, CONTENT_W);
-    for (const ln of ls) {
-      if (y < M_BOTTOM + 20) break;
-      const w = fonts.serifItalic.widthOfTextAtSize(ln, 10);
-      page.drawText(ln, { x: M_LEFT + CONTENT_W - w, y, size: 10, font: fonts.serifItalic, color: MUTED });
-      y -= 13;
-    }
+  if (p4) {
+    drawParagraph(page, fonts, p4, y, { font: fonts.serifItalic, size: 10, color: MUTED, lineH: 13, align: "right" });
   }
 }
 
