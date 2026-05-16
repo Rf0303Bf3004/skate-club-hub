@@ -137,7 +137,7 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
         titolo: b.titolo,
         sottotitolo: `Blocco · ${cat_blocco(b.categoria).label}`,
         attivo: !!b.attivo,
-        ordine: 100 + (b.ordine ?? 0), // push blocchi after areas by default
+        ordine: b.ordine ?? 0,
         payload: b,
       });
     }
@@ -149,36 +149,80 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
         titolo: a.titolo,
         sottotitolo: `Allegato · ${cat_allegato(a.categoria).label}`,
         attivo: a.attivo !== false,
-        ordine: 500 + (a.ordine ?? 0),
+        ordine: a.ordine ?? 0,
         payload: a,
       });
     }
-    return list.sort((x, y) => x.ordine - y.ordine);
+    const ordine_counts = list.reduce((acc, it) => acc.set(it.ordine, (acc.get(it.ordine) ?? 0) + 1), new Map<number, number>());
+    const legacy_offsets = list.some((it) => (ordine_counts.get(it.ordine) ?? 0) > 1);
+    return list
+      .map((it) => ({
+        ...it,
+        ordine: legacy_offsets
+          ? it.kind === "blocco"
+            ? 100 + it.ordine
+            : it.kind === "allegato"
+              ? 500 + it.ordine
+              : it.ordine
+          : it.ordine,
+      }))
+      .sort((x, y) => x.ordine - y.ordine);
   }, [prefs, blocchi, allegati]);
 
   const m_reorder = useMutation({
     mutationFn: async (ordered_ids: string[]) => {
-      const ops = ordered_ids.map((id, idx) => {
-        const new_ord = (idx + 1) * 10;
+      await Promise.all(ordered_ids.map(async (id, idx) => {
+        const new_ord = idx * 10;
         const it = items.find((i) => i.id === id);
-        if (!it) return null;
+        if (!it) return;
         if (it.kind === "sistema" || it.kind === "area") {
-          return supabase.from("relazione_preferenze" as any).update({ ordine: new_ord })
-            .eq("club_id", club_id).eq("stagione_id", stagione_id).eq("sezione_id", it.sezione_id!);
+          const query = supabase.from("relazione_preferenze" as any).update({ ordine: new_ord });
+          const { error } = it.payload?.id
+            ? await query.eq("id", it.payload.id)
+            : await query.eq("club_id", club_id).eq("stagione_id", stagione_id).eq("sezione_id", it.sezione_id!);
+          if (error) throw error;
         } else if (it.kind === "blocco") {
-          return supabase.from("relazioni_blocchi_testo" as any).update({ ordine: new_ord }).eq("id", it.ref_id!);
+          const { error } = await supabase.from("relazioni_blocchi_testo" as any).update({ ordine: new_ord }).eq("id", it.ref_id!);
+          if (error) throw error;
         } else if (it.kind === "allegato") {
-          return supabase.from("relazioni_allegati" as any).update({ ordine: new_ord }).eq("id", it.ref_id!);
+          const { error } = await supabase.from("relazioni_allegati" as any).update({ ordine: new_ord }).eq("id", it.ref_id!);
+          if (error) throw error;
         }
-        return null;
-      }).filter(Boolean) as unknown as Promise<any>[];
-      await Promise.all(ops);
+      }));
     },
-    onError: () => toast.error("Riordino non salvato"),
+    onMutate: async (ordered_ids) => {
+      const query_keys = [
+        ["relazione_prefs", club_id, stagione_id],
+        ["relazione_comp_blocchi", club_id, stagione_id],
+        ["relazione_comp_allegati", club_id, stagione_id],
+        ["relazioni_blocchi", club_id, stagione_id],
+        ["relazioni_allegati", club_id, stagione_id],
+      ];
+      await Promise.all(query_keys.map((queryKey) => qc.cancelQueries({ queryKey })));
+      const previous = query_keys.map((queryKey) => ({ queryKey, data: qc.getQueryData(queryKey) }));
+      const ordine_by_id = new Map(ordered_ids.map((id, idx) => [id, idx * 10]));
+      const sort_by_ordine = (rows: any[]) => [...rows].sort((a, b) => (a.ordine ?? 0) - (b.ordine ?? 0));
+
+      qc.setQueryData(["relazione_prefs", club_id, stagione_id], (old: any[] | undefined) => old ? sort_by_ordine(old.map((row) => {
+        const key = `${row.sezione_tipo === "sistema" ? "sis" : "area"}:${row.sezione_id}`;
+        return ordine_by_id.has(key) ? { ...row, ordine: ordine_by_id.get(key) } : row;
+      })) : old);
+      qc.setQueryData(["relazione_comp_blocchi", club_id, stagione_id], (old: any[] | undefined) => old ? sort_by_ordine(old.map((row) => ordine_by_id.has(`blo:${row.id}`) ? { ...row, ordine: ordine_by_id.get(`blo:${row.id}`) } : row)) : old);
+      qc.setQueryData(["relazione_comp_allegati", club_id, stagione_id], (old: any[] | undefined) => old ? sort_by_ordine(old.map((row) => ordine_by_id.has(`all:${row.id}`) ? { ...row, ordine: ordine_by_id.get(`all:${row.id}`) } : row)) : old);
+
+      return { previous };
+    },
+    onError: (_error, _ids, context) => {
+      context?.previous.forEach(({ queryKey, data }) => qc.setQueryData(queryKey, data));
+      toast.error("Riordino non salvato");
+    },
+    onSuccess: () => toast.success("Ordine salvato"),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["relazione_prefs", club_id, stagione_id] });
       qc.invalidateQueries({ queryKey: ["relazione_comp_blocchi", club_id, stagione_id] });
       qc.invalidateQueries({ queryKey: ["relazione_comp_allegati", club_id, stagione_id] });
+      qc.invalidateQueries({ queryKey: ["relazioni_blocchi", club_id, stagione_id] });
+      qc.invalidateQueries({ queryKey: ["relazioni_allegati", club_id, stagione_id] });
     },
   });
 

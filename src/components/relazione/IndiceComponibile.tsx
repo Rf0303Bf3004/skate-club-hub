@@ -34,8 +34,8 @@ export default function IndiceComponibile({ items, on_reorder, on_toggle, on_sel
   const [active_id, set_active_id] = React.useState<string | null>(null);
   const [optimistic_ids, set_optimistic_ids] = React.useState<string[] | null>(null);
 
-  // Reset optimistic order when the underlying items set changes
-  const items_key = React.useMemo(() => items.map((i) => i.id).join("|"), [items]);
+  // Reset optimistic order when the underlying cached order changes, including rollback cases.
+  const items_key = React.useMemo(() => items.map((i) => `${i.id}:${i.ordine}:${i.attivo}`).join("|"), [items]);
   React.useEffect(() => { set_optimistic_ids(null); }, [items_key]);
 
   const displayed = React.useMemo(() => {
