@@ -96,14 +96,21 @@ export default function IndiceComponibile({ items, on_reorder, on_toggle, on_sel
         <SortableContext items={displayed.map((i) => i.id)} strategy={verticalListSortingStrategy}>
           <div className="space-y-1.5 overflow-y-auto pr-2 flex-1">
             {displayed.map((it) => (
-              <SortableItem key={it.id} id={it.id} disabled={it.locked}>
-                <ItemRow
-                  item={it}
-                  selected={selected_id === it.id}
-                  on_toggle={(v) => on_toggle(it, v)}
-                  on_select={() => on_select(it.id)}
-                />
-              </SortableItem>
+              <React.Fragment key={it.id}>
+                <SortableItem id={it.id} disabled={it.locked}>
+                  <ItemRow
+                    item={it}
+                    selected={selected_id === it.id}
+                    on_toggle={(v) => on_toggle(it, v)}
+                    on_select={() => on_select(it.id)}
+                  />
+                </SortableItem>
+                {it.kind === "area" && it.attivo && (
+                  <div className="pl-8 mt-1">
+                    <ParagrafiNarrativiSub area_id={it.sezione_id!} />
+                  </div>
+                )}
+              </React.Fragment>
             ))}
           </div>
         </SortableContext>
