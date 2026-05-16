@@ -360,6 +360,9 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
           on_select={select}
           selected_id={selected_id}
           on_reset={() => m_reset.mutate()}
+          club_id={club_id}
+          stagione_id={stagione_id}
+          tono={tono}
         />
       </div>
       <div className="border border-border rounded-md bg-stone-100 overflow-y-auto">

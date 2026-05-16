@@ -1,19 +1,16 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { DndContext, PointerSensor, KeyboardSensor, useSensor, useSensors, closestCenter, DragEndEvent, DragOverlay, DragStartEvent } from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  TooltipProvider,
-} from "@/components/ui/tooltip";
-import { FileText, BarChart3, Paperclip, BookOpen, ListTree, Flag, RotateCcw, GripVertical, ArrowRight } from "lucide-react";
+import { FileText, BarChart3, Paperclip, BookOpen, ListTree, Flag, RotateCcw, GripVertical } from "lucide-react";
 import SortableItem from "./SortableItem";
 import { CompositoreItem } from "./types-compositore";
+import { supabase } from "@/lib/supabase";
+import type { Tono } from "@/lib/paragraphGenerator";
 
 interface Props {
   items: CompositoreItem[];
@@ -22,7 +19,12 @@ interface Props {
   on_select: (id: string) => void;
   selected_id: string | null;
   on_reset: () => void;
+  club_id: string;
+  stagione_id: string;
+  tono: Tono;
 }
+
+type ParagrafoPreview = { area_id: string; paragrafo_ordine: number; contenuto: string };
 
 function icon_for(kind: CompositoreItem["kind"], sezione_id?: string) {
   if (kind === "blocco") return FileText;
@@ -33,53 +35,40 @@ function icon_for(kind: CompositoreItem["kind"], sezione_id?: string) {
   return Flag;
 }
 
-function ParagrafiNarrativiSub({ area_id }: { area_id: string }) {
-  const ORDINI = [
-    { ordine: 1, label: "Apertura empatica" },
-    { ordine: 2, label: "Numeri narrati" },
-    { ordine: 3, label: "Interpretazione" },
-    { ordine: 4, label: "Ponte alla sezione successiva" },
-  ];
+function ParagrafiNarrativiSub({ area_id, paragrafi }: { area_id: string; paragrafi: ParagrafoPreview[] | undefined }) {
+  const by_ord = new Map<number, string>();
+  (paragrafi ?? []).forEach((p) => by_ord.set(p.paragrafo_ordine, p.contenuto));
+  const trunc = (s: string) => (s.length > 75 ? s.substring(0, 75) + "..." : s);
   return (
-    <TooltipProvider delayDuration={200}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className="rounded-md border border-slate-200 bg-[#f8fafc] p-2 text-[11px] text-[#475569] select-none cursor-default">
-            <div className="flex items-center justify-between gap-2 mb-1">
-              <span className="flex items-center gap-1 font-medium text-slate-600">
-                <ArrowRight className="w-3 h-3 rotate-90" />
-                4 paragrafi del Racconto dei dati
-              </span>
-              <Link
-                to={`/presidente/relazione/contenuti?tab=paragrafi&area=${area_id}`}
-                className="text-teal-700 hover:text-teal-900 hover:underline"
-                onClick={(e) => e.stopPropagation()}
-              >
-                Modifica i paragrafi
-              </Link>
-            </div>
-            <ul className="pl-4 space-y-0.5 list-none">
-              {ORDINI.map((o) => (
-                <li key={o.ordine} className="flex items-center gap-1.5">
-                  <span className="inline-flex items-center justify-center w-4 h-4 rounded bg-slate-200 text-[9px] font-semibold text-slate-600">
-                    {o.ordine}
-                  </span>
-                  <span>{o.label}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-xs text-xs">
-          Questi 4 paragrafi vengono inseriti automaticamente nella pagina del PDF.
-          Li puoi modificare nella tab Contenuti &gt; Racconto dei dati.
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <div className="rounded-md border border-slate-200 bg-[#f8fafc] p-2 select-none cursor-default">
+      <ul className="space-y-1 list-none">
+        {[1, 2, 3, 4].map((ord) => {
+          const c = by_ord.get(ord);
+          return (
+            <li key={ord} className="text-[11px] leading-snug text-[#475569]">
+              {c ? (
+                <span>&ldquo;{trunc(c)}&rdquo;</span>
+              ) : (
+                <span className="italic text-slate-400">Paragrafo non ancora generato</span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      <div className="mt-1.5 text-right">
+        <Link
+          to={`/presidente/relazione/contenuti?tab=paragrafi&area=${area_id}`}
+          className="text-[11px] text-teal-700 hover:text-teal-900 hover:underline"
+          onClick={(e) => e.stopPropagation()}
+        >
+          Modifica i paragrafi
+        </Link>
+      </div>
+    </div>
   );
 }
 
-export default function IndiceComponibile({ items, on_reorder, on_toggle, on_select, selected_id, on_reset }: Props) {
+export default function IndiceComponibile({ items, on_reorder, on_toggle, on_select, selected_id, on_reset, club_id, stagione_id, tono }: Props) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -118,15 +107,38 @@ export default function IndiceComponibile({ items, on_reorder, on_toggle, on_sel
 
   const active = displayed.find((i) => i.id === active_id);
 
+  const { data: paragrafi_rows = [] } = useQuery({
+    queryKey: ["paragrafi-anteprima", club_id, stagione_id, tono],
+    enabled: !!club_id && !!stagione_id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("relazioni_paragrafi_auto" as any)
+        .select("area_id,paragrafo_ordine,contenuto")
+        .eq("club_id", club_id)
+        .eq("stagione_id", stagione_id)
+        .eq("tono", tono);
+      if (error) throw error;
+      return (data ?? []) as unknown as ParagrafoPreview[];
+    },
+  });
+  const paragrafi_by_area = React.useMemo(() => {
+    const m = new Map<string, ParagrafoPreview[]>();
+    for (const p of paragrafi_rows) {
+      const arr = m.get(p.area_id) ?? [];
+      arr.push(p);
+      m.set(p.area_id, arr);
+    }
+    for (const arr of m.values()) arr.sort((a, b) => a.paragrafo_ordine - b.paragrafo_ordine);
+    return m;
+  }, [paragrafi_rows]);
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-start justify-between mb-3">
         <div>
           <h3 className="font-serif text-lg text-foreground">Struttura relazione</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">Trascina per riordinare. Disattiva per escludere dal PDF.</p>
-          <p className="text-xs text-slate-500 mt-1 mb-1">
-            Le aree dashboard includono automaticamente i paragrafi narrativi che vedi qui sotto.
-            Puoi modificarli nella tab Contenuti &gt; Racconto dei dati.
+          <p className="text-xs text-slate-500 mt-1">
+            Trascina per riordinare. Disattiva per escludere dal PDF. Sotto ogni area vedi i paragrafi che verranno inclusi.
           </p>
         </div>
         <Button variant="ghost" size="sm" onClick={on_reset} className="gap-1.5 text-xs h-7">
@@ -153,7 +165,7 @@ export default function IndiceComponibile({ items, on_reorder, on_toggle, on_sel
                 </SortableItem>
                 {it.kind === "area" && it.attivo && (
                   <div className="pl-8 mt-1">
-                    <ParagrafiNarrativiSub area_id={it.sezione_id!} />
+                    <ParagrafiNarrativiSub area_id={it.sezione_id!} paragrafi={paragrafi_by_area.get(it.sezione_id!)} />
                   </div>
                 )}
               </React.Fragment>
