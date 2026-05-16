@@ -2,6 +2,8 @@
 // Tutte le funzioni restituiscono una stringa SVG completa (con <?xml ?>).
 // La palette e la tipografia sono coerenti con il resto del PDF (serif Times-Roman, teal/slate/ambra).
 
+import { supabase } from "@/lib/supabase";
+
 // ============================================================
 // Palette
 // ============================================================
