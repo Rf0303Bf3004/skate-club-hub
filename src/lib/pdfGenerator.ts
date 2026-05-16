@@ -671,8 +671,14 @@ export async function generateRelazionePDF(params: GenerateRelazioneParams): Pro
         drawIndice(page, fonts, slice, pageCursor + i);
       }
     } else if (b.type === "area") {
+      const paras = paragrafiMap[b.sezione_id];
+      const charts = areaCharts[b.sezione_id] ?? {};
       const page = pdf.addPage([PAGE_W, PAGE_H]);
-      drawAreaPage(page, fonts, b.sezione_id, pageCursor, paragrafiMap[b.sezione_id]);
+      const res = drawAreaMain(page, fonts, b.sezione_id, pageCursor, paras, charts);
+      if (b.pages > 1 || res.needContinuation) {
+        const page2 = pdf.addPage([PAGE_W, PAGE_H]);
+        drawAreaContinuation(page2, fonts, b.sezione_id, pageCursor + 1, paras, charts);
+      }
     } else if (b.type === "blocco") {
       const page = pdf.addPage([PAGE_W, PAGE_H]);
       drawBloccoPage(page, fonts, b.payload, pageCursor);
