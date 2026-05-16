@@ -10,6 +10,7 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/comp
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileDown, Maximize2 } from "lucide-react";
 import Compositore from "@/components/relazione/Compositore";
+import SavingIndicator from "@/components/relazione/SavingIndicator";
 import PresidentRelazioneGestione from "./PresidentRelazioneGestione";
 
 export default function PresidentRelazione() {
