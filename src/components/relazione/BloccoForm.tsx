@@ -22,7 +22,7 @@ interface Props {
 
 export default function BloccoForm({ open, on_close, club_id, stagione_id, blocco, default_ordine }: Props) {
   const qc = useQueryClient();
-  const [categoria, set_categoria] = useState("apertura");
+  const [categoria, set_categoria] = useState<string>("staff");
   const [titolo, set_titolo] = useState("");
   const [contenuto, set_contenuto] = useState("");
   const [ordine, set_ordine] = useState<number>(default_ordine);
