@@ -579,7 +579,7 @@ export async function generateRelazionePDF(params: GenerateRelazioneParams): Pro
       }
     } else if (b.type === "area") {
       const page = pdf.addPage([PAGE_W, PAGE_H]);
-      drawAreaPage(page, fonts, b.sezione_id, pageCursor);
+      drawAreaPage(page, fonts, b.sezione_id, pageCursor, paragrafiMap[b.sezione_id]);
     } else if (b.type === "blocco") {
       const page = pdf.addPage([PAGE_W, PAGE_H]);
       drawBloccoPage(page, fonts, b.payload, pageCursor);
