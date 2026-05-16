@@ -22,6 +22,8 @@ export default function BlocchiTestoTab({ club_id, stagione_id }: Props) {
   const qc = useQueryClient();
   const [editing, set_editing] = useState<any | null>(null);
   const [open_form, set_open_form] = useState(false);
+  const [open_migration, set_open_migration] = useState(false);
+  const [migrating, set_migrating] = useState(false);
 
   const { data: blocchi = [], isLoading } = useQuery({
     queryKey: ["relazioni_blocchi", club_id, stagione_id],
