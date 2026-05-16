@@ -42,6 +42,7 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
   const saving = useSavingState();
 
   const handle_generate = async () => {
+    if (generating) return;
     set_generating(true);
     try {
       const attivi = items.filter((i) => i.attivo);
@@ -56,10 +57,11 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
       });
       const filename = buildRelazioneFilename(club?.nome ?? "Club", stagione_nome);
       saveAs(blob, filename);
-      toast.success(`Relazione PDF generata (${pages} pagine)`);
+      const sizeStr = formatBytes(blob.size);
+      toast.success(`Relazione PDF generata (${pages} pagine, ${sizeStr}). File scaricato come '${filename}'`);
     } catch (e: any) {
       console.error(e);
-      toast.error("Errore generazione PDF: " + (e?.message ?? "sconosciuto"));
+      toast.error("Errore nella generazione del PDF. Riprova tra qualche secondo.");
     } finally {
       set_generating(false);
     }
