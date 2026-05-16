@@ -109,6 +109,11 @@ export default function AllegatiTab({ club_id, stagione_id }: Props) {
 
   return (
     <div className="space-y-4">
+      <TabHeaderInfo
+        icon={FileText}
+        titolo="Documenti PDF allegati"
+        testo="Carica qui i documenti PDF che devono essere inclusi in coda alla relazione: bilancio civilistico, scheda federale FISG, contratti sponsor, certificazioni, verbali assemblea."
+      />
       <div className="flex justify-end">
         <Button onClick={() => { set_editing(null); set_open_form(true); }} className="gap-2">
           <Plus className="w-4 h-4" />Carica nuovo allegato
