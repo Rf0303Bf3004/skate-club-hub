@@ -2606,6 +2606,42 @@ export type Database = {
         }
         Relationships: []
       }
+      relazione_preferenze: {
+        Row: {
+          attivo: boolean
+          club_id: string
+          created_at: string
+          id: string
+          ordine: number
+          sezione_id: string
+          sezione_tipo: string
+          stagione_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          attivo?: boolean
+          club_id: string
+          created_at?: string
+          id?: string
+          ordine?: number
+          sezione_id: string
+          sezione_tipo: string
+          stagione_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attivo?: boolean
+          club_id?: string
+          created_at?: string
+          id?: string
+          ordine?: number
+          sezione_id?: string
+          sezione_tipo?: string
+          stagione_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       relazioni_allegati: {
         Row: {
           attivo: boolean

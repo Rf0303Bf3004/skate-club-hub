@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { ArrowUp, ArrowDown, Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
@@ -16,11 +16,9 @@ interface Props {
   on_toggle: (attivo: boolean) => void;
   on_edit: () => void;
   on_delete: () => void;
-  on_up: () => void;
-  on_down: () => void;
 }
 
-export default function BloccoCard({ blocco, on_toggle, on_edit, on_delete, on_up, on_down }: Props) {
+export default function BloccoCard({ blocco, on_toggle, on_edit, on_delete }: Props) {
   const cat = cat_blocco(blocco.categoria);
   const preview = (blocco.contenuto ?? "").slice(0, 200);
   const truncated = (blocco.contenuto ?? "").length > 200;
@@ -28,10 +26,6 @@ export default function BloccoCard({ blocco, on_toggle, on_edit, on_delete, on_u
   return (
     <Card className={`p-4 ${blocco.attivo ? "" : "opacity-60"}`}>
       <div className="flex items-start gap-4">
-        <div className="flex flex-col gap-1">
-          <Button size="icon" variant="ghost" className="h-6 w-6" onClick={on_up}><ArrowUp className="w-3.5 h-3.5" /></Button>
-          <Button size="icon" variant="ghost" className="h-6 w-6" onClick={on_down}><ArrowDown className="w-3.5 h-3.5" /></Button>
-        </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <Badge variant="outline" className={cat.color}>{cat.label}</Badge>

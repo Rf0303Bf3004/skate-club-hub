@@ -38,6 +38,7 @@ import TestMobileAuthPage from "@/pages/TestMobileAuthPage";
 import ImportAtletiPage from "@/pages/ImportAtletiPage";
 import EventiPage from "@/pages/EventiPage";
 import PresidentRelazioneGestione from "@/pages/PresidentRelazioneGestione";
+import PresidentRelazione from "@/pages/PresidentRelazione";
 
 const queryClient = new QueryClient();
 
@@ -129,7 +130,9 @@ const AuthenticatedApp = () => {
           <Route path="/nuova-stagione" element={<NuovaStagionePage />} />
           <Route path="/test-mobile-auth" element={<TestMobileAuthPage />} />
           <Route path="/import-atleti" element={<ImportAtletiPage />} />
-          <Route path="/presidente/gestione-relazione" element={<PresidentRelazioneGestione />} />
+          <Route path="/presidente/relazione" element={<PresidentRelazione />} />
+          <Route path="/presidente/relazione/contenuti" element={<PresidentRelazione />} />
+          <Route path="/presidente/gestione-relazione" element={<Navigate to="/presidente/relazione/contenuti" replace />} />
           <Route
             path="/superadmin"
             element={
