@@ -137,7 +137,7 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
         titolo: b.titolo,
         sottotitolo: `Blocco · ${cat_blocco(b.categoria).label}`,
         attivo: !!b.attivo,
-        ordine: 100 + (b.ordine ?? 0), // push blocchi after areas by default
+        ordine: b.ordine ?? 0,
         payload: b,
       });
     }
@@ -149,7 +149,7 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
         titolo: a.titolo,
         sottotitolo: `Allegato · ${cat_allegato(a.categoria).label}`,
         attivo: a.attivo !== false,
-        ordine: 500 + (a.ordine ?? 0),
+        ordine: a.ordine ?? 0,
         payload: a,
       });
     }
@@ -171,7 +171,6 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
 
   const m_reorder = useMutation({
     mutationFn: async (ordered_ids: string[]) => {
-      const by_id = new Map(items.map((i) => [i.id, i]));
       await Promise.all(ordered_ids.map(async (id, idx) => {
         const new_ord = idx * 10;
         const it = items.find((i) => i.id === id);
@@ -222,6 +221,8 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
       qc.invalidateQueries({ queryKey: ["relazione_prefs", club_id, stagione_id] });
       qc.invalidateQueries({ queryKey: ["relazione_comp_blocchi", club_id, stagione_id] });
       qc.invalidateQueries({ queryKey: ["relazione_comp_allegati", club_id, stagione_id] });
+      qc.invalidateQueries({ queryKey: ["relazioni_blocchi", club_id, stagione_id] });
+      qc.invalidateQueries({ queryKey: ["relazioni_allegati", club_id, stagione_id] });
     },
   });
 
