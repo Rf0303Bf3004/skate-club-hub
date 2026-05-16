@@ -52,11 +52,38 @@ export default function BlocchiTestoTab({ club_id, stagione_id }: Props) {
 
   const m_reorder = useMutation({
     mutationFn: async (ordered_ids: string[]) => {
-      for (let i = 0; i < ordered_ids.length; i++) {
-        await supabase.from("relazioni_blocchi_testo" as any).update({ ordine: (i + 1) * 10 }).eq("id", ordered_ids[i]);
-      }
+      await Promise.all(ordered_ids.map(async (id, index) => {
+        const { error } = await supabase
+          .from("relazioni_blocchi_testo" as any)
+          .update({ ordine: index * 10 })
+          .eq("id", id);
+        if (error) throw error;
+      }));
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["relazioni_blocchi", club_id, stagione_id] }),
+    onMutate: async (ordered_ids) => {
+      const query_keys = [
+        ["relazioni_blocchi", club_id, stagione_id],
+        ["relazione_comp_blocchi", club_id, stagione_id],
+      ];
+      await Promise.all(query_keys.map((queryKey) => qc.cancelQueries({ queryKey })));
+      const previous = query_keys.map((queryKey) => ({ queryKey, data: qc.getQueryData(queryKey) }));
+      const ordine_by_id = new Map(ordered_ids.map((id, index) => [id, index * 10]));
+      const update_rows = (old: any[] | undefined) => old
+        ? [...old.map((row) => ordine_by_id.has(row.id) ? { ...row, ordine: ordine_by_id.get(row.id) } : row)]
+          .sort((a, b) => (a.ordine ?? 0) - (b.ordine ?? 0))
+        : old;
+      query_keys.forEach((queryKey) => qc.setQueryData(queryKey, update_rows));
+      return { previous };
+    },
+    onError: (_error, _ids, context) => {
+      context?.previous.forEach(({ queryKey, data }) => qc.setQueryData(queryKey, data));
+      toast.error("Riordino non salvato");
+    },
+    onSuccess: () => toast.success("Ordine salvato"),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["relazioni_blocchi", club_id, stagione_id] });
+      qc.invalidateQueries({ queryKey: ["relazione_comp_blocchi", club_id, stagione_id] });
+    },
   });
 
   const sensors = useSensors(
