@@ -9,6 +9,7 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/comp
 import { FileDown } from "lucide-react";
 import BlocchiTestoTab from "@/components/relazione/BlocchiTestoTab";
 import AllegatiTab from "@/components/relazione/AllegatiTab";
+import ParagrafiTab from "@/components/relazione/ParagrafiTab";
 
 export default function PresidentRelazioneGestione() {
   const { session } = useAuth();
