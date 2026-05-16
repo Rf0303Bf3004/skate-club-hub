@@ -164,7 +164,7 @@ function drawCopertina(page: PDFPage, fonts: Fonts, club: any, presidente: strin
   const citta = sanitize((club?.citta ?? "").toUpperCase());
   if (citta) {
     const cw = fonts.sans.widthOfTextAtSize(citta, 10);
-    page.drawText(citta, { x: cx - cw / 2, y: PAGE_H - 285, size: 10, font: fonts.sans, color: MUTED, characterSpacing: 3 });
+    page.drawText(citta, { x: cx - cw / 2, y: PAGE_H - 285, size: 10, font: fonts.sans, color: MUTED });
   }
 
   // Linea
@@ -181,7 +181,7 @@ function drawCopertina(page: PDFPage, fonts: Fonts, club: any, presidente: strin
   // Presidente
   const lbl = "PRESIDENTE";
   const lw = fonts.sans.widthOfTextAtSize(lbl, 8);
-  page.drawText(lbl, { x: cx - lw / 2, y: 200, size: 8, font: fonts.sansBold, color: MUTED, characterSpacing: 2 });
+  page.drawText(lbl, { x: cx - lw / 2, y: 200, size: 8, font: fonts.sansBold, color: MUTED });
 
   const pn = sanitize(presidente);
   const pw = fonts.serif.widthOfTextAtSize(pn, 13);
@@ -200,7 +200,7 @@ function drawAreaPage(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum: 
 
   // Header area
   const header = `AREA ${info.numero}`;
-  page.drawText(header, { x: M_LEFT, y, size: 8, font: fonts.sansBold, color: TEAL, characterSpacing: 2 });
+  page.drawText(header, { x: M_LEFT, y, size: 8, font: fonts.sansBold, color: TEAL });
   y -= 25;
 
   // Titolo
@@ -236,14 +236,14 @@ function drawAreaPage(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum: 
     page.drawText(sanitize(numLine), { x: x0 + (kpiW - nw) / 2, y, size: 16, font: fonts.serifBold, color: INK });
     if (lblLine) {
       const lw = fonts.sans.widthOfTextAtSize(lblLine.toUpperCase(), 8);
-      page.drawText(sanitize(lblLine.toUpperCase()), { x: x0 + (kpiW - lw) / 2, y: y - 14, size: 8, font: fonts.sans, color: MUTED, characterSpacing: 1.5 });
+      page.drawText(sanitize(lblLine.toUpperCase()), { x: x0 + (kpiW - lw) / 2, y: y - 14, size: 8, font: fonts.sans, color: MUTED });
     }
   }
   y -= 50;
 
   // Box riepilogo dati
   page.drawRectangle({ x: M_LEFT, y: y - 100, width: CONTENT_W, height: 100, borderColor: LIGHT_BORDER, borderWidth: 0.8 });
-  page.drawText("DATI DI DETTAGLIO", { x: M_LEFT + 12, y: y - 18, size: 8, font: fonts.sansBold, color: MUTED, characterSpacing: 1.5 });
+  page.drawText("DATI DI DETTAGLIO", { x: M_LEFT + 12, y: y - 18, size: 8, font: fonts.sansBold, color: MUTED });
   const note = "I dati di dettaglio sono consultabili nella dashboard del Presidente. Le metriche principali sono riportate sopra; la versione estesa con grafici sara' disponibile nelle prossime revisioni del documento.";
   const noteLines = wrapText(note, fonts.serif, 10, CONTENT_W - 24);
   let ny = y - 36;
@@ -338,7 +338,7 @@ function drawAllegatoPlaceholder(page: PDFPage, fonts: Fonts, allegato: any, pag
 function drawIndice(page: PDFPage, fonts: Fonts, entries: { titolo: string; pagina: number }[], pageNum: number) {
   drawPageFrame(page, pageNum, fonts);
   let y = PAGE_H - M_TOP - 10;
-  page.drawText("INDICE", { x: M_LEFT, y, size: 8, font: fonts.sansBold, color: TEAL, characterSpacing: 2 });
+  page.drawText("INDICE", { x: M_LEFT, y, size: 8, font: fonts.sansBold, color: TEAL });
   y -= 25;
   page.drawText("Sommario", { x: M_LEFT, y: y - 18, size: 24, font: fonts.serifBold, color: INK });
   y -= 60;
