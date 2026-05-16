@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { use_stagioni } from "@/hooks/use-supabase-data";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -12,6 +12,8 @@ import AllegatiTab from "@/components/relazione/AllegatiTab";
 
 export default function PresidentRelazioneGestione() {
   const { session } = useAuth();
+  const loc = useLocation();
+  const embedded = loc.pathname.startsWith("/presidente/relazione");
   const { data: stagioni = [] } = use_stagioni();
   const stagione_attiva = (stagioni as any[]).find((s) => s.attiva) || (stagioni as any[])[0];
   const [stagione_id, set_stagione_id] = useState<string | undefined>(undefined);
