@@ -7,6 +7,10 @@ import { CompositoreItem, SISTEMA_LABELS } from "./types-compositore";
 import { AREA_DEFINITIONS } from "./MockSezionePDF";
 import { cat_blocco, cat_allegato } from "./categorie";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { FileDown, Loader2 } from "lucide-react";
+import { saveAs } from "file-saver";
+import { generateRelazionePDF, buildRelazioneFilename } from "@/lib/pdfGenerator";
 
 interface Props {
   club_id: string;
