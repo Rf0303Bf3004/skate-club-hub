@@ -165,7 +165,7 @@ export default function IndiceComponibile({ items, on_reorder, on_toggle, on_sel
                 </SortableItem>
                 {it.kind === "area" && it.attivo && (
                   <div className="pl-8 mt-1">
-                    <ParagrafiNarrativiSub area_id={it.sezione_id!} />
+                    <ParagrafiNarrativiSub area_id={it.sezione_id!} paragrafi={paragrafi_by_area.get(it.sezione_id!)} />
                   </div>
                 )}
               </React.Fragment>
