@@ -78,6 +78,10 @@ export default function IndiceComponibile({ items, on_reorder, on_toggle, on_sel
         <div>
           <h3 className="font-serif text-lg text-foreground">Struttura relazione</h3>
           <p className="text-xs text-muted-foreground mt-0.5">Trascina per riordinare. Disattiva per escludere dal PDF.</p>
+          <p className="text-xs text-slate-500 mt-1 mb-1">
+            Le aree dashboard includono automaticamente i paragrafi narrativi che vedi qui sotto.
+            Puoi modificarli nella tab Contenuti &gt; Racconto dei dati.
+          </p>
         </div>
         <Button variant="ghost" size="sm" onClick={on_reset} className="gap-1.5 text-xs h-7">
           <RotateCcw className="w-3 h-3" /> Reset
