@@ -193,6 +193,7 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
       }));
     },
     onMutate: async (ordered_ids) => {
+      saving_store.begin();
       const query_keys = [
         ["relazione_prefs", club_id, stagione_id],
         ["relazione_comp_blocchi", club_id, stagione_id],
@@ -214,11 +215,12 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
 
       return { previous };
     },
-    onError: (_error, _ids, context) => {
+    onError: (error: any, _ids, context) => {
       context?.previous.forEach(({ queryKey, data }) => qc.setQueryData(queryKey, data));
+      saving_store.error(error?.message ?? "Riordino non salvato");
       toast.error("Riordino non salvato");
     },
-    onSuccess: () => toast.success("Ordine salvato"),
+    onSuccess: () => { saving_store.success(); },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["relazione_prefs", club_id, stagione_id] });
       qc.invalidateQueries({ queryKey: ["relazione_comp_blocchi", club_id, stagione_id] });
