@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { use_club } from "@/hooks/use-supabase-data";
 import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
-import { LayoutDashboard, Users, BookOpen, Trophy, CreditCard, MessageSquare, Settings, Calendar, UserCheck, Tent, GraduationCap, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, Lock, ClipboardList, ClipboardCheck, Sparkles, ChevronDown, ChevronRight } from "lucide-react";
+import { LayoutDashboard, Users, BookOpen, Trophy, CreditCard, MessageSquare, Settings, Calendar, UserCheck, Tent, GraduationCap, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, Lock, ClipboardList, ClipboardCheck, Sparkles, ChevronDown, ChevronRight, FileText } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { use_count_iscrizioni_non_lette } from "@/components/comunicazioni/IscrizioniAtletiNotifiche";
@@ -157,6 +157,14 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           {is_nuovo_ruolo && (
             <>
               {nuovo_principale.map((s) => render_nav_item(s.path, s.icon, s.label, s.codice, s.non_implementato))}
+              {is_presidente && (
+                <NavLink to="/presidente/gestione-relazione" onClick={() => set_sidebar_open(false)}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname.startsWith("/presidente/gestione-relazione") ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+                  <FileText className="w-4 h-4 shrink-0" />
+                  <span>Relazione</span>
+                  <span className="ml-auto inline-flex items-center justify-center px-1.5 h-4 rounded-full bg-emerald-500 text-white text-[9px] font-bold tracking-wider">NEW</span>
+                </NavLink>
+              )}
               {nuovo_setup.length > 0 && (
                 <div className="pt-2">
                   <button
