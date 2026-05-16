@@ -9,10 +9,12 @@ import { AREA_DEFINITIONS } from "./MockSezionePDF";
 import { cat_blocco, cat_allegato } from "./categorie";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileText, Loader2, Save } from "lucide-react";
 import { saveAs } from "file-saver";
 import { generateRelazionePDF, buildRelazioneFilename } from "@/lib/pdfGenerator";
 import { saving_store, useSavingState } from "@/stores/savingState";
+import type { Tono } from "@/lib/paragraphGenerator";
 
 interface Props {
   club_id: string;
@@ -41,6 +43,11 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
   const [generating, set_generating] = useState(false);
   const is_generating_ref = useRef(false);
   const saving = useSavingState();
+  const [tono, set_tono] = useState<Tono>(() => {
+    const stored = typeof window !== "undefined" ? localStorage.getItem("relazione-tono-preferito") : null;
+    return (stored === "formale" ? "formale" : "soci") as Tono;
+  });
+  useEffect(() => { try { localStorage.setItem("relazione-tono-preferito", tono); } catch {} }, [tono]);
 
   const handle_generate = async () => {
     if (is_generating_ref.current) {
@@ -56,6 +63,9 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
         club,
         presidente,
         stagione_nome,
+        club_id,
+        stagione_id,
+        tono,
         items: attivi.map((i) => ({
           id: i.id, kind: i.kind, sezione_id: i.sezione_id,
           titolo: i.titolo, payload: i.payload,
@@ -309,6 +319,16 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
     <div className="grid grid-cols-1 lg:grid-cols-[38%_62%] gap-6 h-[calc(100vh-220px)] min-h-[600px]">
       <div className="border border-border rounded-md bg-card p-4 overflow-hidden flex flex-col">
         <div className="flex flex-col">
+          <div className="mb-3">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Tono relazione</label>
+            <Select value={tono} onValueChange={(v) => set_tono(v as Tono)}>
+              <SelectTrigger className="h-9 mt-1"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="soci">Per i Soci (caldo)</SelectItem>
+                <SelectItem value="formale">Per Istituzioni / Banche / Sponsor (formale)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="flex gap-2 mb-3">
             <Button
               onClick={handle_generate}

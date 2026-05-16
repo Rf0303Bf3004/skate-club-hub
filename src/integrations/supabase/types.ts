@@ -2759,6 +2759,45 @@ export type Database = {
           },
         ]
       }
+      relazioni_paragrafi_auto: {
+        Row: {
+          area_id: string
+          club_id: string
+          contenuto: string
+          generated_at: string
+          id: string
+          is_edited: boolean
+          paragrafo_ordine: number
+          stagione_id: string
+          tono: string
+          updated_at: string
+        }
+        Insert: {
+          area_id: string
+          club_id: string
+          contenuto?: string
+          generated_at?: string
+          id?: string
+          is_edited?: boolean
+          paragrafo_ordine: number
+          stagione_id: string
+          tono: string
+          updated_at?: string
+        }
+        Update: {
+          area_id?: string
+          club_id?: string
+          contenuto?: string
+          generated_at?: string
+          id?: string
+          is_edited?: boolean
+          paragrafo_ordine?: number
+          stagione_id?: string
+          tono?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ricavi_per_fonte: {
         Row: {
           club_id: string

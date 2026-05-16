@@ -1,4 +1,5 @@
 import { PDFDocument, StandardFonts, rgb, PDFFont, PDFPage, degrees } from "pdf-lib";
+import { fetchParagrafiForPdf, type Tono } from "@/lib/paragraphGenerator";
 
 // ============================================================
 // Tipi
@@ -8,6 +9,9 @@ export interface GenerateRelazioneParams {
   club: { nome?: string; citta?: string } | null;
   presidente: string;
   stagione_nome: string;
+  club_id?: string;
+  stagione_id?: string;
+  tono?: Tono;
   // Items già ordinati e filtrati (solo attivi)
   items: Array<{
     id: string;
@@ -191,7 +195,7 @@ function drawCopertina(page: PDFPage, fonts: Fonts, club: any, presidente: strin
   page.drawText(`Generato il ${dateStr}`, { x: PAGE_W - M_RIGHT - 140, y: 50, size: 8, font: fonts.sans, color: MUTED });
 }
 
-function drawAreaPage(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum: number) {
+function drawAreaPage(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum: number, paras?: Record<number, string>) {
   drawPageFrame(page, pageNum, fonts);
   const info = AREA_INFO[sezione_id];
   if (!info) return;
@@ -201,29 +205,42 @@ function drawAreaPage(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum: 
   // Header area
   const header = `AREA ${info.numero}`;
   page.drawText(header, { x: M_LEFT, y, size: 8, font: fonts.sansBold, color: TEAL });
-  y -= 25;
+  y -= 22;
 
   // Titolo
   const titleLines = wrapText(info.titolo, fonts.serifBold, 24, CONTENT_W);
   for (const ln of titleLines) {
     page.drawText(ln, { x: M_LEFT, y, size: 24, font: fonts.serifBold, color: INK });
-    y -= 28;
+    y -= 26;
   }
-  y -= 8;
+  y -= 4;
 
   // Linea
   page.drawLine({ start: { x: M_LEFT, y }, end: { x: M_LEFT + 50, y }, thickness: 1.5, color: TEAL });
-  y -= 25;
+  y -= 18;
 
-  // Insight (voce narrante)
-  const insightLines = wrapText(info.insight, fonts.serifItalic, 12, CONTENT_W);
-  for (const ln of insightLines) {
-    page.drawText(ln, { x: M_LEFT, y, size: 12, font: fonts.serifItalic, color: rgb(0.25, 0.25, 0.25) });
-    y -= 16;
+  // Paragrafo 1: apertura (corsivo grigio)
+  const p1 = paras?.[1];
+  if (p1) {
+    const ls = wrapText(p1, fonts.serifItalic, 11, CONTENT_W);
+    for (const ln of ls) {
+      if (y < M_BOTTOM + 30) break;
+      page.drawText(ln, { x: M_LEFT, y, size: 11, font: fonts.serifItalic, color: rgb(0.3, 0.3, 0.32) });
+      y -= 15;
+    }
+    y -= 10;
+  } else {
+    // fallback insight
+    const insightLines = wrapText(info.insight, fonts.serifItalic, 11, CONTENT_W);
+    for (const ln of insightLines) {
+      page.drawText(ln, { x: M_LEFT, y, size: 11, font: fonts.serifItalic, color: rgb(0.3, 0.3, 0.32) });
+      y -= 15;
+    }
+    y -= 10;
   }
-  y -= 25;
 
-  // KPI in riga
+  // KPI in riga (hero)
+  if (y < M_BOTTOM + 200) return;
   const kpiCount = info.kpi.length;
   const kpiW = CONTENT_W / kpiCount;
   for (let i = 0; i < kpiCount; i++) {
@@ -239,17 +256,45 @@ function drawAreaPage(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum: 
       page.drawText(sanitize(lblLine.toUpperCase()), { x: x0 + (kpiW - lw) / 2, y: y - 14, size: 8, font: fonts.sans, color: MUTED });
     }
   }
-  y -= 50;
+  y -= 36;
+  page.drawLine({ start: { x: M_LEFT, y }, end: { x: M_LEFT + CONTENT_W, y }, thickness: 0.4, color: LIGHT_BORDER });
+  y -= 14;
 
-  // Box riepilogo dati
-  page.drawRectangle({ x: M_LEFT, y: y - 100, width: CONTENT_W, height: 100, borderColor: LIGHT_BORDER, borderWidth: 0.8 });
-  page.drawText("DATI DI DETTAGLIO", { x: M_LEFT + 12, y: y - 18, size: 8, font: fonts.sansBold, color: MUTED });
-  const note = "I dati di dettaglio sono consultabili nella dashboard del Presidente. Le metriche principali sono riportate sopra; la versione estesa con grafici sara' disponibile nelle prossime revisioni del documento.";
-  const noteLines = wrapText(note, fonts.serif, 10, CONTENT_W - 24);
-  let ny = y - 36;
-  for (const ln of noteLines) {
-    page.drawText(ln, { x: M_LEFT + 12, y: ny, size: 10, font: fonts.serif, color: INK });
-    ny -= 13;
+  // Paragrafo 2: numeri (normale)
+  const p2 = paras?.[2];
+  if (p2 && y > M_BOTTOM + 60) {
+    const ls = wrapText(p2, fonts.serif, 11, CONTENT_W);
+    for (const ln of ls) {
+      if (y < M_BOTTOM + 30) break;
+      page.drawText(ln, { x: M_LEFT, y, size: 11, font: fonts.serif, color: INK });
+      y -= 14;
+    }
+    y -= 8;
+  }
+
+  // Paragrafo 3: interpretazione (indentato 20pt, leggermente piu' chiaro)
+  const p3 = paras?.[3];
+  if (p3 && y > M_BOTTOM + 60) {
+    const indent = 20;
+    const ls = wrapText(p3, fonts.serif, 11, CONTENT_W - indent);
+    for (const ln of ls) {
+      if (y < M_BOTTOM + 30) break;
+      page.drawText(ln, { x: M_LEFT + indent, y, size: 11, font: fonts.serif, color: rgb(0.18, 0.18, 0.2) });
+      y -= 14;
+    }
+    y -= 8;
+  }
+
+  // Paragrafo 4: ponte (corsivo allineato destra, grigio)
+  const p4 = paras?.[4];
+  if (p4 && y > M_BOTTOM + 30) {
+    const ls = wrapText(p4, fonts.serifItalic, 10, CONTENT_W);
+    for (const ln of ls) {
+      if (y < M_BOTTOM + 20) break;
+      const w = fonts.serifItalic.widthOfTextAtSize(ln, 10);
+      page.drawText(ln, { x: M_LEFT + CONTENT_W - w, y, size: 10, font: fonts.serifItalic, color: MUTED });
+      y -= 13;
+    }
   }
 }
 
@@ -397,7 +442,17 @@ export async function generateRelazionePDF(params: GenerateRelazioneParams): Pro
 
   generation_in_progress = true;
   try {
-  const { club, presidente, stagione_nome, items } = params;
+  const { club, presidente, stagione_nome, items, club_id, stagione_id, tono } = params;
+
+  // Fetch paragrafi narrativi per il tono selezionato (se disponibili)
+  let paragrafiMap: Record<string, Record<number, string>> = {};
+  if (club_id && stagione_id) {
+    try {
+      paragrafiMap = await fetchParagrafiForPdf(club_id, stagione_id, (tono ?? "soci") as Tono);
+    } catch (e) {
+      console.warn("[PDF] Impossibile caricare paragrafi narrativi:", e);
+    }
+  }
 
   const pdf = await PDFDocument.create();
   pdf.setTitle(`Relazione - ${sanitize(club?.nome ?? "")} - ${sanitize(stagione_nome)}`);
@@ -524,7 +579,7 @@ export async function generateRelazionePDF(params: GenerateRelazioneParams): Pro
       }
     } else if (b.type === "area") {
       const page = pdf.addPage([PAGE_W, PAGE_H]);
-      drawAreaPage(page, fonts, b.sezione_id, pageCursor);
+      drawAreaPage(page, fonts, b.sezione_id, pageCursor, paragrafiMap[b.sezione_id]);
     } else if (b.type === "blocco") {
       const page = pdf.addPage([PAGE_W, PAGE_H]);
       drawBloccoPage(page, fonts, b.payload, pageCursor);
