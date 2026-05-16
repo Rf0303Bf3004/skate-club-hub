@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { formatBytes } from "@/lib/utils";
@@ -39,12 +39,18 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
   const qc = useQueryClient();
   const [selected_id, set_selected_id] = useState<string | null>(null);
   const [generating, set_generating] = useState(false);
+  const is_generating_ref = useRef(false);
   const saving = useSavingState();
 
   const handle_generate = async () => {
-    if (generating) return;
+    if (is_generating_ref.current) {
+      console.log("[PDF] Generazione gia in corso, click ignorato");
+      return;
+    }
+    is_generating_ref.current = true;
     set_generating(true);
     try {
+      console.log("[PDF] Generazione avviata");
       const attivi = items.filter((i) => i.attivo);
       const { blob, pages } = await generateRelazionePDF({
         club,
@@ -63,6 +69,7 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
       console.error(e);
       toast.error("Errore nella generazione del PDF. Riprova tra qualche secondo.");
     } finally {
+      is_generating_ref.current = false;
       set_generating(false);
     }
   };
@@ -302,7 +309,7 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
             <Button
               onClick={handle_generate}
               disabled={generating || items.filter((i) => i.attivo).length === 0}
-              className="gap-2 flex-1"
+              className={`gap-2 flex-1 ${generating ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
               <span className="hidden sm:inline">{generating ? "Generazione in corso..." : "Genera PDF"}</span>
