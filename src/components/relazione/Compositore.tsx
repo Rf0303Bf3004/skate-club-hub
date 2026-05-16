@@ -66,6 +66,10 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
       const sizeStr = formatBytes(blob.size);
       toast.success(`Relazione PDF generata (${pages} pagine, ${sizeStr}). File scaricato come '${filename}'`);
     } catch (e: any) {
+      if (e?.message === "Generazione gia in corso. Attendi il completamento.") {
+        console.log("[PDF] Generazione gia in corso, click ignorato");
+        return;
+      }
       console.error(e);
       toast.error("Errore nella generazione del PDF. Riprova tra qualche secondo.");
     } finally {
