@@ -38,6 +38,7 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
   const qc = useQueryClient();
   const [selected_id, set_selected_id] = useState<string | null>(null);
   const [generating, set_generating] = useState(false);
+  const saving = useSavingState();
 
   const handle_generate = async () => {
     set_generating(true);
