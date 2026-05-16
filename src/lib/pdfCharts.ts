@@ -371,3 +371,173 @@ export async function svgToPngBytes(svgString: string, width: number, height: nu
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
   return bytes;
 }
+
+// ============================================================
+// Fetch dati per i grafici (con fallback su valori esempio)
+// ============================================================
+export interface ChartData {
+  piramide: PiramideAtletiData;
+  donut: DonutRicaviData;
+  sparkline: SparklinePodiData;
+  heatmap: HeatmapFasceData;
+  bartariffe: BarTariffeData;
+}
+
+const DEFAULT_CHART_DATA: ChartData = {
+  piramide: { pulcini: 32, stellina: 28, interbronzo: 24, bronzo: 22, interargento: 18, argento: 12, interoro: 6, oro: 3 },
+  donut: { quote_corsi: 118000, pacchetti: 42000, lezioni_private: 48000, altro: 10400 },
+  sparkline: { stagioni: [
+    { nome: "2022/23", podi: 14 },
+    { nome: "2023/24", podi: 19 },
+    { nome: "2024/25", podi: 22 },
+    { nome: "2025/26", podi: 27 },
+  ]},
+  heatmap: { fasce: [
+    { ora: "15-16", vendute: 32 },
+    { ora: "16-17", vendute: 58 },
+    { ora: "17-18", vendute: 74 },
+    { ora: "18-19", vendute: 81 },
+    { ora: "19-20", vendute: 62 },
+    { ora: "20-21", vendute: 41 },
+  ]},
+  bartariffe: { istruttori: [
+    { nome: "Marta",   tariffa: 60, ore_vendute: 168 },
+    { nome: "Davide",  tariffa: 45, ore_vendute: 142 },
+    { nome: "Barbara", tariffa: 35, ore_vendute: 102 },
+  ]},
+};
+
+function levelCategory(livello: string | null | undefined): keyof PiramideAtletiData | null {
+  if (!livello) return "pulcini";
+  const l = String(livello).toLowerCase();
+  if (l.includes("oro") && l.includes("inter")) return "interoro";
+  if (l.includes("oro")) return "oro";
+  if (l.includes("argento") && l.includes("inter")) return "interargento";
+  if (l.includes("argento")) return "argento";
+  if (l.includes("bronzo") && l.includes("inter")) return "interbronzo";
+  if (l.includes("bronzo")) return "bronzo";
+  if (l.includes("stellin")) return "stellina";
+  if (l.includes("pulcin")) return "pulcini";
+  return "pulcini";
+}
+
+export async function fetchChartData(club_id: string, stagione_id: string): Promise<ChartData> {
+  const out: ChartData = JSON.parse(JSON.stringify(DEFAULT_CHART_DATA));
+
+  try {
+    // PIRAMIDE: atleti per livello
+    const { data: atleti } = await supabase
+      .from("atleti").select("livello_attuale,attivo").eq("club_id", club_id).eq("attivo", true);
+    if (atleti && atleti.length) {
+      const p: PiramideAtletiData = { pulcini: 0, stellina: 0, interbronzo: 0, bronzo: 0, interargento: 0, argento: 0, interoro: 0, oro: 0 };
+      for (const a of atleti as any[]) {
+        const k = levelCategory(a.livello_attuale);
+        if (k) p[k] += 1;
+      }
+      out.piramide = p;
+    }
+  } catch (e) { console.warn("[charts] piramide:", e); }
+
+  try {
+    // DONUT: cassa_movimenti tipo entrata
+    const { data: mov } = await supabase
+      .from("cassa_movimenti").select("tipo,importo,categoria").eq("club_id", club_id).eq("stagione_id", stagione_id);
+    if (mov && mov.length) {
+      let quote = 0, pacc = 0, lez = 0, altro = 0;
+      for (const m of mov as any[]) {
+        if (m.tipo !== "entrata") continue;
+        const imp = Number(m.importo) || 0;
+        const cat = String(m.categoria ?? "").toLowerCase();
+        if (cat.includes("quota") || cat.includes("corso")) quote += imp;
+        else if (cat.includes("pacch")) pacc += imp;
+        else if (cat.includes("lezion")) lez += imp;
+        else altro += imp;
+      }
+      const total = quote + pacc + lez + altro;
+      if (total > 0) out.donut = { quote_corsi: quote, pacchetti: pacc, lezioni_private: lez, altro };
+    }
+  } catch (e) { console.warn("[charts] donut:", e); }
+
+  try {
+    // SPARKLINE: podi per stagione (ultime 4)
+    const { data: stags } = await supabase
+      .from("stagioni" as any).select("id,nome").eq("club_id", club_id).order("nome");
+    if (stags && stags.length) {
+      const lastFour = (stags as any[]).slice(-4);
+      const ids = lastFour.map((s: any) => s.id);
+      const { data: gare } = await supabase
+        .from("gare_calendario").select("id,stagione_id").eq("club_id", club_id).in("stagione_id", ids);
+      const gareByStag: Record<string, string[]> = {};
+      for (const g of (gare as any[] ?? [])) {
+        (gareByStag[g.stagione_id] ||= []).push(g.id);
+      }
+      const allGareIds = Object.values(gareByStag).flat();
+      const podiByStag: Record<string, number> = {};
+      if (allGareIds.length) {
+        const { data: isc } = await supabase
+          .from("iscrizioni_gare").select("medaglia,gara_id").in("gara_id", allGareIds);
+        const gToS: Record<string, string> = {};
+        for (const sid of ids) for (const gid of gareByStag[sid] ?? []) gToS[gid] = sid;
+        for (const i of (isc as any[] ?? [])) {
+          if (!i.medaglia) continue;
+          const sid = gToS[i.gara_id]; if (!sid) continue;
+          podiByStag[sid] = (podiByStag[sid] || 0) + 1;
+        }
+      }
+      out.sparkline = { stagioni: lastFour.map((s: any) => ({ nome: s.nome, podi: podiByStag[s.id] || 0 })) };
+    }
+  } catch (e) { console.warn("[charts] sparkline:", e); }
+
+  try {
+    // HEATMAP: lezioni_private per fascia oraria (campo orario_inizio o data_ora)
+    const { data: lez } = await supabase
+      .from("lezioni_private").select("ora_inizio,durata_minuti,annullata").eq("club_id", club_id);
+    if (lez && lez.length) {
+      const buckets = ["15-16","16-17","17-18","18-19","19-20","20-21"];
+      const counts: Record<string, number> = Object.fromEntries(buckets.map(b => [b, 0]));
+      for (const l of lez as any[]) {
+        if (l.annullata) continue;
+        const t = String(l.ora_inizio ?? "");
+        const h = parseInt(t.slice(0, 2), 10);
+        if (isNaN(h)) continue;
+        const ore = (Number(l.durata_minuti) || 60) / 60;
+        const key = `${h}-${h+1}`;
+        if (key in counts) counts[key] += ore;
+      }
+      const total = Object.values(counts).reduce((s, v) => s + v, 0);
+      if (total > 0) out.heatmap = { fasce: buckets.map(b => ({ ora: b, vendute: Math.round(counts[b]) })) };
+    }
+  } catch (e) { console.warn("[charts] heatmap:", e); }
+
+  try {
+    // BAR TARIFFE: istruttori top con tariffa media e ore vendute
+    const { data: lez2 } = await supabase
+      .from("lezioni_private").select("istruttore_id,durata_minuti,annullata,prezzo").eq("club_id", club_id);
+    if (lez2 && lez2.length) {
+      const agg: Record<string, { ore: number; ricavi: number }> = {};
+      for (const l of lez2 as any[]) {
+        if (l.annullata || !l.istruttore_id) continue;
+        const ore = (Number(l.durata_minuti) || 60) / 60;
+        const a = (agg[l.istruttore_id] ||= { ore: 0, ricavi: 0 });
+        a.ore += ore;
+        a.ricavi += Number(l.prezzo) || 0;
+      }
+      const top = Object.entries(agg).sort((a, b) => b[1].ore - a[1].ore).slice(0, 3);
+      if (top.length) {
+        const ids = top.map(([id]) => id);
+        const { data: istr } = await supabase.from("istruttori").select("id,nome,cognome").in("id", ids);
+        const nameOf = (id: string) => {
+          const r = (istr as any[] ?? []).find(x => x.id === id);
+          return r ? (r.nome || r.cognome || "—") : "—";
+        };
+        out.bartariffe = { istruttori: top.map(([id, v]) => ({
+          nome: nameOf(id),
+          tariffa: Math.round(v.ore > 0 ? v.ricavi / v.ore : 0) || 40,
+          ore_vendute: Math.round(v.ore),
+        }))};
+      }
+    }
+  } catch (e) { console.warn("[charts] bartariffe:", e); }
+
+  return out;
+}
