@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate, useLocation, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { use_stagioni } from "@/hooks/use-supabase-data";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -18,6 +18,11 @@ export default function PresidentRelazioneGestione() {
   const { data: stagioni = [] } = use_stagioni();
   const stagione_attiva = (stagioni as any[]).find((s) => s.attiva) || (stagioni as any[])[0];
   const [stagione_id, set_stagione_id] = useState<string | undefined>(undefined);
+  const [search_params, set_search_params] = useSearchParams();
+  const tab_param = search_params.get("tab");
+  const tab_attivo = tab_param === "paragrafi" || tab_param === "allegati" || tab_param === "blocchi"
+    ? tab_param
+    : "blocchi";
 
   React.useEffect(() => {
     if (!stagione_id && stagione_attiva) set_stagione_id(stagione_attiva.id);
@@ -64,20 +69,28 @@ export default function PresidentRelazioneGestione() {
       )}
 
       {stagione_id && session?.club_id && (
-        <Tabs defaultValue="blocchi" className="w-full">
+        <Tabs
+          value={tab_attivo}
+          onValueChange={(v) => {
+            const next = new URLSearchParams(search_params);
+            next.set("tab", v);
+            set_search_params(next, { replace: true });
+          }}
+          className="w-full"
+        >
           <TabsList>
-            <TabsTrigger value="blocchi">Blocchi di testo</TabsTrigger>
-            <TabsTrigger value="allegati">Allegati</TabsTrigger>
-            <TabsTrigger value="paragrafi">Paragrafi</TabsTrigger>
+            <TabsTrigger value="blocchi">Notizie del Presidente</TabsTrigger>
+            <TabsTrigger value="paragrafi">Racconto dei dati</TabsTrigger>
+            <TabsTrigger value="allegati">Documenti allegati</TabsTrigger>
           </TabsList>
           <TabsContent value="blocchi" className="mt-4">
             <BlocchiTestoTab club_id={session.club_id} stagione_id={stagione_id} />
           </TabsContent>
-          <TabsContent value="allegati" className="mt-4">
-            <AllegatiTab club_id={session.club_id} stagione_id={stagione_id} />
-          </TabsContent>
           <TabsContent value="paragrafi" className="mt-4">
             <ParagrafiTab club_id={session.club_id} stagione_id={stagione_id} />
+          </TabsContent>
+          <TabsContent value="allegati" className="mt-4">
+            <AllegatiTab club_id={session.club_id} stagione_id={stagione_id} />
           </TabsContent>
         </Tabs>
       )}
