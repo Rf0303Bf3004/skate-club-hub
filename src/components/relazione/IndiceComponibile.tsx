@@ -1,10 +1,17 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { DndContext, PointerSensor, KeyboardSensor, useSensor, useSensors, closestCenter, DragEndEvent, DragOverlay, DragStartEvent } from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { FileText, BarChart3, Paperclip, BookOpen, ListTree, Flag, RotateCcw, GripVertical } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
+import { FileText, BarChart3, Paperclip, BookOpen, ListTree, Flag, RotateCcw, GripVertical, ArrowRight } from "lucide-react";
 import SortableItem from "./SortableItem";
 import { CompositoreItem } from "./types-compositore";
 
@@ -24,6 +31,52 @@ function icon_for(kind: CompositoreItem["kind"], sezione_id?: string) {
   if (sezione_id === "copertina") return BookOpen;
   if (sezione_id === "indice") return ListTree;
   return Flag;
+}
+
+function ParagrafiNarrativiSub({ area_id }: { area_id: string }) {
+  const ORDINI = [
+    { ordine: 1, label: "Apertura empatica" },
+    { ordine: 2, label: "Numeri narrati" },
+    { ordine: 3, label: "Interpretazione" },
+    { ordine: 4, label: "Ponte alla sezione successiva" },
+  ];
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="rounded-md border border-slate-200 bg-[#f8fafc] p-2 text-[11px] text-[#475569] select-none cursor-default">
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <span className="flex items-center gap-1 font-medium text-slate-600">
+                <ArrowRight className="w-3 h-3 rotate-90" />
+                4 paragrafi del Racconto dei dati
+              </span>
+              <Link
+                to={`/presidente/relazione/contenuti?tab=paragrafi&area=${area_id}`}
+                className="text-teal-700 hover:text-teal-900 hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Modifica i paragrafi
+              </Link>
+            </div>
+            <ul className="pl-4 space-y-0.5 list-none">
+              {ORDINI.map((o) => (
+                <li key={o.ordine} className="flex items-center gap-1.5">
+                  <span className="inline-flex items-center justify-center w-4 h-4 rounded bg-slate-200 text-[9px] font-semibold text-slate-600">
+                    {o.ordine}
+                  </span>
+                  <span>{o.label}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-xs text-xs">
+          Questi 4 paragrafi vengono inseriti automaticamente nella pagina del PDF.
+          Li puoi modificare nella tab Contenuti &gt; Racconto dei dati.
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 }
 
 export default function IndiceComponibile({ items, on_reorder, on_toggle, on_select, selected_id, on_reset }: Props) {
@@ -71,6 +124,10 @@ export default function IndiceComponibile({ items, on_reorder, on_toggle, on_sel
         <div>
           <h3 className="font-serif text-lg text-foreground">Struttura relazione</h3>
           <p className="text-xs text-muted-foreground mt-0.5">Trascina per riordinare. Disattiva per escludere dal PDF.</p>
+          <p className="text-xs text-slate-500 mt-1 mb-1">
+            Le aree dashboard includono automaticamente i paragrafi narrativi che vedi qui sotto.
+            Puoi modificarli nella tab Contenuti &gt; Racconto dei dati.
+          </p>
         </div>
         <Button variant="ghost" size="sm" onClick={on_reset} className="gap-1.5 text-xs h-7">
           <RotateCcw className="w-3 h-3" /> Reset
@@ -85,14 +142,21 @@ export default function IndiceComponibile({ items, on_reorder, on_toggle, on_sel
         <SortableContext items={displayed.map((i) => i.id)} strategy={verticalListSortingStrategy}>
           <div className="space-y-1.5 overflow-y-auto pr-2 flex-1">
             {displayed.map((it) => (
-              <SortableItem key={it.id} id={it.id} disabled={it.locked}>
-                <ItemRow
-                  item={it}
-                  selected={selected_id === it.id}
-                  on_toggle={(v) => on_toggle(it, v)}
-                  on_select={() => on_select(it.id)}
-                />
-              </SortableItem>
+              <React.Fragment key={it.id}>
+                <SortableItem id={it.id} disabled={it.locked}>
+                  <ItemRow
+                    item={it}
+                    selected={selected_id === it.id}
+                    on_toggle={(v) => on_toggle(it, v)}
+                    on_select={() => on_select(it.id)}
+                  />
+                </SortableItem>
+                {it.kind === "area" && it.attivo && (
+                  <div className="pl-8 mt-1">
+                    <ParagrafiNarrativiSub area_id={it.sezione_id!} />
+                  </div>
+                )}
+              </React.Fragment>
             ))}
           </div>
         </SortableContext>
