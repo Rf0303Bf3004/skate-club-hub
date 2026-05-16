@@ -442,7 +442,17 @@ export async function generateRelazionePDF(params: GenerateRelazioneParams): Pro
 
   generation_in_progress = true;
   try {
-  const { club, presidente, stagione_nome, items } = params;
+  const { club, presidente, stagione_nome, items, club_id, stagione_id, tono } = params;
+
+  // Fetch paragrafi narrativi per il tono selezionato (se disponibili)
+  let paragrafiMap: Record<string, Record<number, string>> = {};
+  if (club_id && stagione_id) {
+    try {
+      paragrafiMap = await fetchParagrafiForPdf(club_id, stagione_id, (tono ?? "soci") as Tono);
+    } catch (e) {
+      console.warn("[PDF] Impossibile caricare paragrafi narrativi:", e);
+    }
+  }
 
   const pdf = await PDFDocument.create();
   pdf.setTitle(`Relazione - ${sanitize(club?.nome ?? "")} - ${sanitize(stagione_nome)}`);
