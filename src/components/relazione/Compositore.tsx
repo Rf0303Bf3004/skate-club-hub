@@ -36,6 +36,31 @@ const DEFAULT_PREFS: Array<{ sezione_tipo: string; sezione_id: string; ordine: n
 export default function Compositore({ club_id, stagione_id, club, presidente, stagione_nome }: Props) {
   const qc = useQueryClient();
   const [selected_id, set_selected_id] = useState<string | null>(null);
+  const [generating, set_generating] = useState(false);
+
+  const handle_generate = async () => {
+    set_generating(true);
+    try {
+      const attivi = items.filter((i) => i.attivo);
+      const { blob, pages } = await generateRelazionePDF({
+        club,
+        presidente,
+        stagione_nome,
+        items: attivi.map((i) => ({
+          id: i.id, kind: i.kind, sezione_id: i.sezione_id,
+          titolo: i.titolo, payload: i.payload,
+        })),
+      });
+      const filename = buildRelazioneFilename(club?.nome ?? "Club", stagione_nome);
+      saveAs(blob, filename);
+      toast.success(`Relazione PDF generata (${pages} pagine)`);
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Errore generazione PDF: " + (e?.message ?? "sconosciuto"));
+    } finally {
+      set_generating(false);
+    }
+  };
 
   const { data: prefs = [] } = useQuery({
     queryKey: ["relazione_prefs", club_id, stagione_id],
