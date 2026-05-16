@@ -1,19 +1,16 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { DndContext, PointerSensor, KeyboardSensor, useSensor, useSensors, closestCenter, DragEndEvent, DragOverlay, DragStartEvent } from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  TooltipProvider,
-} from "@/components/ui/tooltip";
-import { FileText, BarChart3, Paperclip, BookOpen, ListTree, Flag, RotateCcw, GripVertical, ArrowRight } from "lucide-react";
+import { FileText, BarChart3, Paperclip, BookOpen, ListTree, Flag, RotateCcw, GripVertical } from "lucide-react";
 import SortableItem from "./SortableItem";
 import { CompositoreItem } from "./types-compositore";
+import { supabase } from "@/lib/supabase";
+import type { Tono } from "@/lib/paragraphGenerator";
 
 interface Props {
   items: CompositoreItem[];
@@ -22,7 +19,12 @@ interface Props {
   on_select: (id: string) => void;
   selected_id: string | null;
   on_reset: () => void;
+  club_id: string;
+  stagione_id: string;
+  tono: Tono;
 }
+
+type ParagrafoPreview = { area_id: string; paragrafo_ordine: number; contenuto: string };
 
 function icon_for(kind: CompositoreItem["kind"], sezione_id?: string) {
   if (kind === "blocco") return FileText;
