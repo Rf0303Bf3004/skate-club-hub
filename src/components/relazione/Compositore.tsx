@@ -297,25 +297,30 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[38%_62%] gap-6 h-[calc(100vh-220px)] min-h-[600px]">
       <div className="border border-border rounded-md bg-card p-4 overflow-hidden flex flex-col">
-        <div className="flex gap-2 mb-3">
-          <Button
-            onClick={handle_generate}
-            disabled={generating || items.filter((i) => i.attivo).length === 0}
-            className="gap-2 flex-1"
-          >
-            {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
-            <span className="hidden sm:inline">{generating ? "Generazione..." : "Genera PDF"}</span>
-          </Button>
-          <Button
-            variant="outline"
-            onClick={handle_save_all}
-            disabled={saving.pending > 0}
-            className="gap-2"
-            title="Salva modifiche"
-          >
-            {saving.pending > 0 ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            <span className="hidden sm:inline">Salva modifiche</span>
-          </Button>
+        <div className="flex flex-col">
+          <div className="flex gap-2 mb-3">
+            <Button
+              onClick={handle_generate}
+              disabled={generating || items.filter((i) => i.attivo).length === 0}
+              className="gap-2 flex-1"
+            >
+              {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+              <span className="hidden sm:inline">{generating ? "Generazione in corso..." : "Genera PDF"}</span>
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handle_save_all}
+              disabled={saving.pending > 0}
+              className="gap-2"
+              title="Salva modifiche"
+            >
+              {saving.pending > 0 ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              <span className="hidden sm:inline">Salva modifiche</span>
+            </Button>
+          </div>
+          <p className="text-xs text-slate-500 text-center">
+            La generazione richiede 2-3 secondi. Aspetta il completamento prima di cliccare di nuovo.
+          </p>
         </div>
         <IndiceComponibile
           items={items}
