@@ -64,19 +64,9 @@ export default function PresidentRelazione() {
           <Button variant="outline" size="sm" className="gap-2 h-9" onClick={() => set_fullscreen((f) => !f)}>
             <Maximize2 className="w-4 h-4" />{fullscreen ? "Esci fullscreen" : "Fullscreen"}
           </Button>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span>
-                  <Button disabled className="gap-2 h-9">
-                    <FileDown className="w-4 h-4" />Genera PDF
-                  </Button>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>Funzione PDF disponibile nel prossimo step</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
+          <span className="text-xs text-muted-foreground hidden md:inline">
+            Usa il bottone "Genera PDF" nel compositore
+          </span>
       </header>
 
       <Tabs value={is_contenuti ? "contenuti" : "compositore"} onValueChange={(v) => {
