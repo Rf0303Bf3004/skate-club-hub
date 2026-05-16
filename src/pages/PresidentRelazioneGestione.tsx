@@ -69,20 +69,28 @@ export default function PresidentRelazioneGestione() {
       )}
 
       {stagione_id && session?.club_id && (
-        <Tabs defaultValue="blocchi" className="w-full">
+        <Tabs
+          value={tab_attivo}
+          onValueChange={(v) => {
+            const next = new URLSearchParams(search_params);
+            next.set("tab", v);
+            set_search_params(next, { replace: true });
+          }}
+          className="w-full"
+        >
           <TabsList>
-            <TabsTrigger value="blocchi">Blocchi di testo</TabsTrigger>
-            <TabsTrigger value="allegati">Allegati</TabsTrigger>
-            <TabsTrigger value="paragrafi">Paragrafi</TabsTrigger>
+            <TabsTrigger value="blocchi">Notizie del Presidente</TabsTrigger>
+            <TabsTrigger value="paragrafi">Racconto dei dati</TabsTrigger>
+            <TabsTrigger value="allegati">Documenti allegati</TabsTrigger>
           </TabsList>
           <TabsContent value="blocchi" className="mt-4">
             <BlocchiTestoTab club_id={session.club_id} stagione_id={stagione_id} />
           </TabsContent>
-          <TabsContent value="allegati" className="mt-4">
-            <AllegatiTab club_id={session.club_id} stagione_id={stagione_id} />
-          </TabsContent>
           <TabsContent value="paragrafi" className="mt-4">
             <ParagrafiTab club_id={session.club_id} stagione_id={stagione_id} />
+          </TabsContent>
+          <TabsContent value="allegati" className="mt-4">
+            <AllegatiTab club_id={session.club_id} stagione_id={stagione_id} />
           </TabsContent>
         </Tabs>
       )}
