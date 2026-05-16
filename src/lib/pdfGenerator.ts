@@ -541,7 +541,7 @@ export async function generateRelazionePDF(params: GenerateRelazioneParams): Pro
   }
 
   const bytes = await pdf.save();
-  const blob = new Blob([bytes], { type: "application/pdf" });
+  const blob = new Blob([bytes as BlobPart], { type: "application/pdf" });
   return { blob, pages: pdf.getPageCount() };
 }
 
