@@ -1,10 +1,17 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { DndContext, PointerSensor, KeyboardSensor, useSensor, useSensors, closestCenter, DragEndEvent, DragOverlay, DragStartEvent } from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { FileText, BarChart3, Paperclip, BookOpen, ListTree, Flag, RotateCcw, GripVertical } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
+import { FileText, BarChart3, Paperclip, BookOpen, ListTree, Flag, RotateCcw, GripVertical, ArrowRight } from "lucide-react";
 import SortableItem from "./SortableItem";
 import { CompositoreItem } from "./types-compositore";
 
