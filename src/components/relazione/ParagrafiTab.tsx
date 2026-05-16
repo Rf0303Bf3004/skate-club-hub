@@ -123,6 +123,25 @@ export default function ParagrafiTab({ club_id, stagione_id }: Props) {
 
   return (
     <div className="space-y-4">
+      <TabHeaderInfo
+        icon={Sparkles}
+        titolo="Racconto automatico dei dati"
+        testo="Questi paragrafi sono il racconto generato automaticamente dai dati della tua dashboard, organizzati per le 9 sezioni della relazione. Sono gia' pronti, ma puoi modificarli quando vuoi cambiare un'espressione o aggiungere un dettaglio. Le tue modifiche vengono rispettate quando ricrei i paragrafi dai dati."
+        collapsible_label="Quando modificare un paragrafo?"
+      >
+        <div className="space-y-2">
+          <p>Modifica un paragrafo quando:</p>
+          <ul className="list-disc pl-5 space-y-1">
+            <li>Vuoi cambiare il tono di una frase</li>
+            <li>Vuoi aggiungere una sfumatura che i dati non possono cogliere</li>
+            <li>Vuoi correggere un'interpretazione automatica</li>
+          </ul>
+          <p className="pt-2">
+            <strong>NON modificare paragrafi</strong> quando si tratta di notizie completamente nuove
+            (es. cambio staff): in quel caso vai nella tab <em>Notizie del Presidente</em>.
+          </p>
+        </div>
+      </TabHeaderInfo>
       <div className="flex flex-wrap items-center justify-between gap-3 p-4 border border-border rounded-md bg-card">
         <div className="flex items-center gap-3">
           <span className="text-sm font-medium text-foreground">Mostra tono:</span>
