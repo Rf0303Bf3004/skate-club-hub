@@ -39,6 +39,45 @@ export default function BlocchiTestoTab({ club_id, stagione_id }: Props) {
     },
   });
 
+  const blocchi_legacy = (blocchi as any[]).filter(
+    (b) => b.categoria === "apertura" || b.categoria === "conclusioni",
+  );
+
+  useEffect(() => {
+    if (blocchi_legacy.length > 0 && !migrating) set_open_migration(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blocchi_legacy.length]);
+
+  const run_migration = async (azione: "sposta" | "elimina") => {
+    set_migrating(true);
+    try {
+      if (azione === "sposta") {
+        const { error } = await supabase
+          .from("relazioni_blocchi_testo" as any)
+          .update({ categoria: "altro" })
+          .eq("club_id", club_id)
+          .in("categoria", ["apertura", "conclusioni"]);
+        if (error) throw error;
+        toast.success(`${blocchi_legacy.length} blocchi spostati nella categoria "Altro"`);
+      } else {
+        const { error } = await supabase
+          .from("relazioni_blocchi_testo" as any)
+          .delete()
+          .eq("club_id", club_id)
+          .in("categoria", ["apertura", "conclusioni"]);
+        if (error) throw error;
+        toast.success(`${blocchi_legacy.length} blocchi eliminati`);
+      }
+      await qc.invalidateQueries({ queryKey: ["relazioni_blocchi", club_id, stagione_id] });
+      await qc.invalidateQueries({ queryKey: ["relazione_comp_blocchi", club_id, stagione_id] });
+      set_open_migration(false);
+    } catch (e: any) {
+      toast.error(e.message ?? "Errore durante la migrazione");
+    } finally {
+      set_migrating(false);
+    }
+  };
+
   const m_toggle = useMutation({
     mutationFn: async ({ id, attivo }: { id: string; attivo: boolean }) => {
       const { error } = await supabase.from("relazioni_blocchi_testo" as any).update({ attivo }).eq("id", id);
