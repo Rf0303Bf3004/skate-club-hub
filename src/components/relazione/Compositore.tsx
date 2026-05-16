@@ -142,7 +142,7 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
           return supabase.from("relazioni_allegati" as any).update({ ordine: new_ord }).eq("id", it.ref_id!);
         }
         return null;
-      }).filter(Boolean) as Promise<any>[];
+      }).filter(Boolean) as unknown as Promise<any>[];
       await Promise.all(ops);
     },
     onError: () => toast.error("Riordino non salvato"),
