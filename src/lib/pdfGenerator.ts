@@ -388,7 +388,15 @@ function drawChiusura(page: PDFPage, fonts: Fonts, club: any, stagione: string, 
 // Generatore principale
 // ============================================================
 
+let generation_in_progress = false;
+
 export async function generateRelazionePDF(params: GenerateRelazioneParams): Promise<{ blob: Blob; pages: number }> {
+  if (generation_in_progress) {
+    throw new Error("Generazione gia in corso. Attendi il completamento.");
+  }
+
+  generation_in_progress = true;
+  try {
   const { club, presidente, stagione_nome, items } = params;
 
   const pdf = await PDFDocument.create();
@@ -543,6 +551,9 @@ export async function generateRelazionePDF(params: GenerateRelazioneParams): Pro
   const bytes = await pdf.save();
   const blob = new Blob([bytes as BlobPart], { type: "application/pdf" });
   return { blob, pages: pdf.getPageCount() };
+  } finally {
+    generation_in_progress = false;
+  }
 }
 
 export function slugifyClubName(nome: string): string {
