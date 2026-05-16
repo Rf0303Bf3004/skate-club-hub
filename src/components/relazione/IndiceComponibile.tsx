@@ -35,53 +35,40 @@ function icon_for(kind: CompositoreItem["kind"], sezione_id?: string) {
   return Flag;
 }
 
-function ParagrafiNarrativiSub({ area_id }: { area_id: string }) {
-  const ORDINI = [
-    { ordine: 1, label: "Apertura empatica" },
-    { ordine: 2, label: "Numeri narrati" },
-    { ordine: 3, label: "Interpretazione" },
-    { ordine: 4, label: "Ponte alla sezione successiva" },
-  ];
+function ParagrafiNarrativiSub({ area_id, paragrafi }: { area_id: string; paragrafi: ParagrafoPreview[] | undefined }) {
+  const by_ord = new Map<number, string>();
+  (paragrafi ?? []).forEach((p) => by_ord.set(p.paragrafo_ordine, p.contenuto));
+  const trunc = (s: string) => (s.length > 75 ? s.substring(0, 75) + "..." : s);
   return (
-    <TooltipProvider delayDuration={200}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className="rounded-md border border-slate-200 bg-[#f8fafc] p-2 text-[11px] text-[#475569] select-none cursor-default">
-            <div className="flex items-center justify-between gap-2 mb-1">
-              <span className="flex items-center gap-1 font-medium text-slate-600">
-                <ArrowRight className="w-3 h-3 rotate-90" />
-                4 paragrafi del Racconto dei dati
-              </span>
-              <Link
-                to={`/presidente/relazione/contenuti?tab=paragrafi&area=${area_id}`}
-                className="text-teal-700 hover:text-teal-900 hover:underline"
-                onClick={(e) => e.stopPropagation()}
-              >
-                Modifica i paragrafi
-              </Link>
-            </div>
-            <ul className="pl-4 space-y-0.5 list-none">
-              {ORDINI.map((o) => (
-                <li key={o.ordine} className="flex items-center gap-1.5">
-                  <span className="inline-flex items-center justify-center w-4 h-4 rounded bg-slate-200 text-[9px] font-semibold text-slate-600">
-                    {o.ordine}
-                  </span>
-                  <span>{o.label}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-xs text-xs">
-          Questi 4 paragrafi vengono inseriti automaticamente nella pagina del PDF.
-          Li puoi modificare nella tab Contenuti &gt; Racconto dei dati.
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <div className="rounded-md border border-slate-200 bg-[#f8fafc] p-2 select-none cursor-default">
+      <ul className="space-y-1 list-none">
+        {[1, 2, 3, 4].map((ord) => {
+          const c = by_ord.get(ord);
+          return (
+            <li key={ord} className="text-[11px] leading-snug text-[#475569]">
+              {c ? (
+                <span>&ldquo;{trunc(c)}&rdquo;</span>
+              ) : (
+                <span className="italic text-slate-400">Paragrafo non ancora generato</span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      <div className="mt-1.5 text-right">
+        <Link
+          to={`/presidente/relazione/contenuti?tab=paragrafi&area=${area_id}`}
+          className="text-[11px] text-teal-700 hover:text-teal-900 hover:underline"
+          onClick={(e) => e.stopPropagation()}
+        >
+          Modifica i paragrafi
+        </Link>
+      </div>
+    </div>
   );
 }
 
-export default function IndiceComponibile({ items, on_reorder, on_toggle, on_select, selected_id, on_reset }: Props) {
+export default function IndiceComponibile({ items, on_reorder, on_toggle, on_select, selected_id, on_reset, club_id, stagione_id, tono }: Props) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
