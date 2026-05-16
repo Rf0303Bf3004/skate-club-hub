@@ -570,7 +570,7 @@ export async function generateRelazionePDF(params: GenerateRelazioneParams): Pro
   type Block =
     | { type: "copertina" }
     | { type: "indice"; placeholderPages: number }
-    | { type: "area"; sezione_id: string; title: string }
+    | { type: "area"; sezione_id: string; title: string; pages: number }
     | { type: "blocco"; payload: any; title: string }
     | { type: "allegato_real"; bytes: ArrayBuffer; pages: number; title: string }
     | { type: "allegato_placeholder"; payload: any; title: string }
