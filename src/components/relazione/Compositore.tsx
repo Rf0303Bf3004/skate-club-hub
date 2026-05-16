@@ -8,9 +8,10 @@ import { AREA_DEFINITIONS } from "./MockSezionePDF";
 import { cat_blocco, cat_allegato } from "./categorie";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { FileDown, Loader2 } from "lucide-react";
+import { FileDown, Loader2, Save } from "lucide-react";
 import { saveAs } from "file-saver";
 import { generateRelazionePDF, buildRelazioneFilename } from "@/lib/pdfGenerator";
+import { saving_store, useSavingState } from "@/stores/savingState";
 
 interface Props {
   club_id: string;
@@ -37,6 +38,7 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
   const qc = useQueryClient();
   const [selected_id, set_selected_id] = useState<string | null>(null);
   const [generating, set_generating] = useState(false);
+  const saving = useSavingState();
 
   const handle_generate = async () => {
     set_generating(true);
@@ -191,6 +193,7 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
       }));
     },
     onMutate: async (ordered_ids) => {
+      saving_store.begin();
       const query_keys = [
         ["relazione_prefs", club_id, stagione_id],
         ["relazione_comp_blocchi", club_id, stagione_id],
@@ -212,11 +215,12 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
 
       return { previous };
     },
-    onError: (_error, _ids, context) => {
+    onError: (error: any, _ids, context) => {
       context?.previous.forEach(({ queryKey, data }) => qc.setQueryData(queryKey, data));
+      saving_store.error(error?.message ?? "Riordino non salvato");
       toast.error("Riordino non salvato");
     },
-    onSuccess: () => toast.success("Ordine salvato"),
+    onSuccess: () => { saving_store.success(); },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["relazione_prefs", club_id, stagione_id] });
       qc.invalidateQueries({ queryKey: ["relazione_comp_blocchi", club_id, stagione_id] });
@@ -240,7 +244,10 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
         if (error) throw error;
       }
     },
+    onMutate: () => { saving_store.begin(); },
+    onError: (e: any) => { saving_store.error(e?.message ?? "Errore"); },
     onSuccess: () => {
+      saving_store.success();
       qc.invalidateQueries({ queryKey: ["relazione_prefs", club_id, stagione_id] });
       qc.invalidateQueries({ queryKey: ["relazione_comp_blocchi", club_id, stagione_id] });
       qc.invalidateQueries({ queryKey: ["relazione_comp_allegati", club_id, stagione_id] });
@@ -249,17 +256,33 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
 
   const m_reset = useMutation({
     mutationFn: async () => {
-      // restore default ordini + attivo true for sistema/area
       for (const p of DEFAULT_PREFS) {
         await supabase.from("relazione_preferenze" as any).update({ ordine: p.ordine, attivo: true })
           .eq("club_id", club_id).eq("stagione_id", stagione_id).eq("sezione_id", p.sezione_id);
       }
     },
+    onMutate: () => { saving_store.begin(); },
+    onError: (e: any) => { saving_store.error(e?.message ?? "Errore"); },
     onSuccess: () => {
+      saving_store.success();
       toast.success("Ordine ripristinato");
       qc.invalidateQueries({ queryKey: ["relazione_prefs", club_id, stagione_id] });
     },
   });
+
+  const handle_save_all = async () => {
+    if (saving.pending > 0) {
+      toast.info("Salvataggio in corso, attendi...");
+      return;
+    }
+    await Promise.all([
+      qc.invalidateQueries({ queryKey: ["relazione_prefs", club_id, stagione_id] }),
+      qc.invalidateQueries({ queryKey: ["relazione_comp_blocchi", club_id, stagione_id] }),
+      qc.invalidateQueries({ queryKey: ["relazione_comp_allegati", club_id, stagione_id] }),
+    ]);
+    saving_store.success();
+    toast.success("Tutto salvato!");
+  };
 
   const select = (id: string) => {
     set_selected_id(id);
@@ -271,14 +294,26 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[38%_62%] gap-6 h-[calc(100vh-220px)] min-h-[600px]">
       <div className="border border-border rounded-md bg-card p-4 overflow-hidden flex flex-col">
-        <Button
-          onClick={handle_generate}
-          disabled={generating || items.filter((i) => i.attivo).length === 0}
-          className="mb-3 gap-2 w-full"
-        >
-          {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
-          {generating ? "Generazione in corso..." : "Genera PDF"}
-        </Button>
+        <div className="flex gap-2 mb-3">
+          <Button
+            onClick={handle_generate}
+            disabled={generating || items.filter((i) => i.attivo).length === 0}
+            className="gap-2 flex-1"
+          >
+            {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+            <span className="hidden sm:inline">{generating ? "Generazione..." : "Genera PDF"}</span>
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handle_save_all}
+            disabled={saving.pending > 0}
+            className="gap-2"
+            title="Salva modifiche"
+          >
+            {saving.pending > 0 ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            <span className="hidden sm:inline">Salva modifiche</span>
+          </Button>
+        </div>
         <IndiceComponibile
           items={items}
           on_reorder={(ids) => m_reorder.mutate(ids)}

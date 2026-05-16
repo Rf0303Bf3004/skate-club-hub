@@ -10,6 +10,7 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/comp
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileDown, Maximize2 } from "lucide-react";
 import Compositore from "@/components/relazione/Compositore";
+import SavingIndicator from "@/components/relazione/SavingIndicator";
 import PresidentRelazioneGestione from "./PresidentRelazioneGestione";
 
 export default function PresidentRelazione() {
@@ -52,7 +53,8 @@ export default function PresidentRelazione() {
             Componi visualmente la relazione PDF che andrà ai soci e agli stakeholder.
           </p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap">
+          <SavingIndicator />
           <Select value={stagione_id} onValueChange={set_stagione_id}>
             <SelectTrigger className="w-44 h-9 text-sm"><SelectValue placeholder="Stagione" /></SelectTrigger>
             <SelectContent>
@@ -64,9 +66,6 @@ export default function PresidentRelazione() {
           <Button variant="outline" size="sm" className="gap-2 h-9" onClick={() => set_fullscreen((f) => !f)}>
             <Maximize2 className="w-4 h-4" />{fullscreen ? "Esci fullscreen" : "Fullscreen"}
           </Button>
-          <span className="text-xs text-muted-foreground hidden md:inline">
-            Usa il bottone "Genera PDF" nel compositore
-          </span>
         </div>
       </header>
 
