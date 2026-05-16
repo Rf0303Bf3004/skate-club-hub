@@ -2606,6 +2606,123 @@ export type Database = {
         }
         Relationships: []
       }
+      relazioni_allegati: {
+        Row: {
+          attivo: boolean
+          categoria: string
+          club_id: string
+          created_at: string
+          descrizione: string | null
+          file_size_bytes: number | null
+          file_url: string
+          id: string
+          mime_type: string
+          ordine: number
+          stagione_id: string | null
+          titolo: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          attivo?: boolean
+          categoria: string
+          club_id: string
+          created_at?: string
+          descrizione?: string | null
+          file_size_bytes?: number | null
+          file_url: string
+          id?: string
+          mime_type?: string
+          ordine?: number
+          stagione_id?: string | null
+          titolo: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          attivo?: boolean
+          categoria?: string
+          club_id?: string
+          created_at?: string
+          descrizione?: string | null
+          file_size_bytes?: number | null
+          file_url?: string
+          id?: string
+          mime_type?: string
+          ordine?: number
+          stagione_id?: string | null
+          titolo?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relazioni_allegati_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relazioni_allegati_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      relazioni_blocchi_testo: {
+        Row: {
+          attivo: boolean
+          categoria: string
+          club_id: string
+          contenuto: string
+          created_at: string
+          id: string
+          ordine: number
+          stagione_id: string | null
+          titolo: string
+          updated_at: string
+        }
+        Insert: {
+          attivo?: boolean
+          categoria: string
+          club_id: string
+          contenuto?: string
+          created_at?: string
+          id?: string
+          ordine?: number
+          stagione_id?: string | null
+          titolo: string
+          updated_at?: string
+        }
+        Update: {
+          attivo?: boolean
+          categoria?: string
+          club_id?: string
+          contenuto?: string
+          created_at?: string
+          id?: string
+          ordine?: number
+          stagione_id?: string | null
+          titolo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relazioni_blocchi_testo_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relazioni_blocchi_testo_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ricavi_per_fonte: {
         Row: {
           club_id: string
