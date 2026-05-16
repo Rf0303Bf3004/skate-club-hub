@@ -1,5 +1,15 @@
-import { PDFDocument, StandardFonts, rgb, PDFFont, PDFPage, degrees } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb, PDFFont, PDFPage, PDFImage, degrees } from "pdf-lib";
 import { fetchParagrafiForPdf, type Tono } from "@/lib/paragraphGenerator";
+import {
+  fetchChartData,
+  generatePiramideAtletiSVG,
+  generateDonutRicaviSVG,
+  generateSparklinePodiSVG,
+  generateHeatmapFasceSVG,
+  generateBarTariffeSVG,
+  svgToPngBytes,
+  type ChartData,
+} from "@/lib/pdfCharts";
 
 // ============================================================
 // Tipi
