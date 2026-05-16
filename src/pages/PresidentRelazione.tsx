@@ -90,14 +90,14 @@ export default function PresidentRelazione() {
       </Tabs>
 
       {is_contenuti ? (
-        <PresidentRelazioneGestione embedded />
+        <PresidentRelazioneGestione />
       ) : (
         stagione_id && session?.club_id && (
           <Compositore
             club_id={session.club_id}
             stagione_id={stagione_id}
             club={club}
-            presidente={session.nome_completo || session.email || "Presidente"}
+            presidente={`${session.nome ?? ""} ${session.cognome ?? ""}`.trim() || session.email || "Presidente"}
             stagione_nome={stagione_nome}
           />
         )

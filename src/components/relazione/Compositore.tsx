@@ -129,24 +129,20 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
 
   const m_reorder = useMutation({
     mutationFn: async (ordered_ids: string[]) => {
-      // Reassign sequential ordini (10, 20, 30…) per source
-      const updates: Promise<any>[] = [];
-      ordered_ids.forEach((id, idx) => {
+      for (let idx = 0; idx < ordered_ids.length; idx++) {
+        const id = ordered_ids[idx];
         const new_ord = (idx + 1) * 10;
         const it = items.find((i) => i.id === id);
-        if (!it) return;
+        if (!it) continue;
         if (it.kind === "sistema" || it.kind === "area") {
-          updates.push(
-            supabase.from("relazione_preferenze" as any).update({ ordine: new_ord })
-              .eq("club_id", club_id).eq("stagione_id", stagione_id).eq("sezione_id", it.sezione_id!),
-          );
+          await supabase.from("relazione_preferenze" as any).update({ ordine: new_ord })
+            .eq("club_id", club_id).eq("stagione_id", stagione_id).eq("sezione_id", it.sezione_id!);
         } else if (it.kind === "blocco") {
-          updates.push(supabase.from("relazioni_blocchi_testo" as any).update({ ordine: new_ord }).eq("id", it.ref_id!));
+          await supabase.from("relazioni_blocchi_testo" as any).update({ ordine: new_ord }).eq("id", it.ref_id!);
         } else if (it.kind === "allegato") {
-          updates.push(supabase.from("relazioni_allegati" as any).update({ ordine: new_ord }).eq("id", it.ref_id!));
+          await supabase.from("relazioni_allegati" as any).update({ ordine: new_ord }).eq("id", it.ref_id!);
         }
-      });
-      await Promise.all(updates);
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["relazione_prefs", club_id, stagione_id] });
