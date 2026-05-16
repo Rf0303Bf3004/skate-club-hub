@@ -107,15 +107,38 @@ export default function IndiceComponibile({ items, on_reorder, on_toggle, on_sel
 
   const active = displayed.find((i) => i.id === active_id);
 
+  const { data: paragrafi_rows = [] } = useQuery({
+    queryKey: ["paragrafi-anteprima", club_id, stagione_id, tono],
+    enabled: !!club_id && !!stagione_id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("relazioni_paragrafi_auto" as any)
+        .select("area_id,paragrafo_ordine,contenuto")
+        .eq("club_id", club_id)
+        .eq("stagione_id", stagione_id)
+        .eq("tono", tono);
+      if (error) throw error;
+      return (data ?? []) as unknown as ParagrafoPreview[];
+    },
+  });
+  const paragrafi_by_area = React.useMemo(() => {
+    const m = new Map<string, ParagrafoPreview[]>();
+    for (const p of paragrafi_rows) {
+      const arr = m.get(p.area_id) ?? [];
+      arr.push(p);
+      m.set(p.area_id, arr);
+    }
+    for (const arr of m.values()) arr.sort((a, b) => a.paragrafo_ordine - b.paragrafo_ordine);
+    return m;
+  }, [paragrafi_rows]);
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-start justify-between mb-3">
         <div>
           <h3 className="font-serif text-lg text-foreground">Struttura relazione</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">Trascina per riordinare. Disattiva per escludere dal PDF.</p>
-          <p className="text-xs text-slate-500 mt-1 mb-1">
-            Le aree dashboard includono automaticamente i paragrafi narrativi che vedi qui sotto.
-            Puoi modificarli nella tab Contenuti &gt; Racconto dei dati.
+          <p className="text-xs text-slate-500 mt-1">
+            Trascina per riordinare. Disattiva per escludere dal PDF. Sotto ogni area vedi i paragrafi che verranno inclusi.
           </p>
         </div>
         <Button variant="ghost" size="sm" onClick={on_reset} className="gap-1.5 text-xs h-7">
