@@ -527,6 +527,38 @@ export async function generateRelazionePDF(params: GenerateRelazioneParams): Pro
   const today = new Date();
   const dateStr = `${String(today.getDate()).padStart(2, "0")}/${String(today.getMonth() + 1).padStart(2, "0")}/${today.getFullYear()}`;
 
+  // Embed grafici come PNG (una volta sola). Resizing 2x per qualita' retina.
+  const areaCharts: Record<string, AreaCharts> = {};
+  if (chartData) {
+    async function embedSvg(svg: string, w: number, h: number): Promise<{ img: PDFImage; w: number; h: number } | null> {
+      try {
+        const bytes = await svgToPngBytes(svg, w, h, 2);
+        const img = await pdf.embedPng(bytes);
+        return { img, w, h };
+      } catch (e) {
+        console.warn("[PDF] embed grafico fallito:", e);
+        return null;
+      }
+    }
+    const [pir, donut, spark, heat, bar] = await Promise.all([
+      embedSvg(generatePiramideAtletiSVG(chartData.piramide), 400, 300),
+      embedSvg(generateDonutRicaviSVG(chartData.donut), 400, 300),
+      embedSvg(generateSparklinePodiSVG(chartData.sparkline), 400, 150),
+      embedSvg(generateHeatmapFasceSVG(chartData.heatmap), 400, 200),
+      embedSvg(generateBarTariffeSVG(chartData.bartariffe), 400, 250),
+    ]);
+    if (pir)   areaCharts["atleti"]   = { primary: pir.img,   primaryW: pir.w,   primaryH: pir.h };
+    if (donut) areaCharts["economia"] = { primary: donut.img, primaryW: donut.w, primaryH: donut.h };
+    if (spark) areaCharts["sportivo"] = { primary: spark.img, primaryW: spark.w, primaryH: spark.h };
+    if (heat || bar) {
+      areaCharts["lezioni"] = {
+        primary: heat?.img, primaryW: heat?.w, primaryH: heat?.h,
+        secondary: bar?.img, secondaryW: bar?.w, secondaryH: bar?.h,
+      };
+    }
+  }
+
+
   // Pre-calcola la mappa pagine: ogni item -> pagina iniziale.
   // Per gli allegati con file_url HTTP(S) reale tentiamo il merge (puo' avere piu' pagine).
   // Per stimare il numero pagine dell'indice, primo passaggio: assumiamo 1 pagina per item, eccezione: merge allegati.
