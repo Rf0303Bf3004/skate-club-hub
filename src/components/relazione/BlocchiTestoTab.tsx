@@ -6,6 +6,9 @@ import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import BloccoCard from "./BloccoCard";
 import BloccoForm from "./BloccoForm";
+import SortableItem from "./SortableItem";
+import { DndContext, PointerSensor, KeyboardSensor, useSensor, useSensors, closestCenter, DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 
 interface Props { club_id: string; stagione_id: string; }
 
@@ -22,7 +25,6 @@ export default function BlocchiTestoTab({ club_id, stagione_id }: Props) {
         .select("*")
         .eq("club_id", club_id)
         .or(`stagione_id.eq.${stagione_id},stagione_id.is.null`)
-        .order("categoria")
         .order("ordine");
       if (error) throw error;
       return data ?? [];
@@ -49,25 +51,30 @@ export default function BlocchiTestoTab({ club_id, stagione_id }: Props) {
   });
 
   const m_reorder = useMutation({
-    mutationFn: async ({ id, ordine }: { id: string; ordine: number }) => {
-      const { error } = await supabase.from("relazioni_blocchi_testo" as any).update({ ordine }).eq("id", id);
-      if (error) throw error;
+    mutationFn: async (ordered_ids: string[]) => {
+      for (let i = 0; i < ordered_ids.length; i++) {
+        await supabase.from("relazioni_blocchi_testo" as any).update({ ordine: (i + 1) * 10 }).eq("id", ordered_ids[i]);
+      }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["relazioni_blocchi", club_id, stagione_id] }),
   });
 
-  const move = (b: any, dir: -1 | 1) => {
-    m_reorder.mutate({ id: b.id, ordine: (b.ordine ?? 0) + dir * 5 });
-  };
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
-  const handle_new = () => {
-    set_editing(null);
-    set_open_form(true);
-  };
-
-  const handle_edit = (b: any) => {
-    set_editing(b);
-    set_open_form(true);
+  const on_drag_end = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const ids = (blocchi as any[]).map((b) => b.id);
+    const o = ids.indexOf(String(active.id));
+    const n = ids.indexOf(String(over.id));
+    if (o < 0 || n < 0) return;
+    const next = [...ids];
+    const [m] = next.splice(o, 1);
+    next.splice(n, 0, m);
+    m_reorder.mutate(next);
   };
 
   const max_ordine = (blocchi as any[]).reduce((m, b) => Math.max(m, b.ordine ?? 0), 0);
@@ -75,7 +82,9 @@ export default function BlocchiTestoTab({ club_id, stagione_id }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button onClick={handle_new} className="gap-2"><Plus className="w-4 h-4" />Nuovo blocco</Button>
+        <Button onClick={() => { set_editing(null); set_open_form(true); }} className="gap-2">
+          <Plus className="w-4 h-4" />Nuovo blocco
+        </Button>
       </div>
 
       {isLoading && <p className="text-sm text-muted-foreground">Caricamento...</p>}
@@ -85,19 +94,22 @@ export default function BlocchiTestoTab({ club_id, stagione_id }: Props) {
         </p>
       )}
 
-      <div className="space-y-3">
-        {(blocchi as any[]).map((b) => (
-          <BloccoCard
-            key={b.id}
-            blocco={b}
-            on_toggle={(attivo) => m_toggle.mutate({ id: b.id, attivo })}
-            on_edit={() => handle_edit(b)}
-            on_delete={() => m_delete.mutate(b.id)}
-            on_up={() => move(b, -1)}
-            on_down={() => move(b, 1)}
-          />
-        ))}
-      </div>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={on_drag_end}>
+        <SortableContext items={(blocchi as any[]).map((b) => b.id)} strategy={verticalListSortingStrategy}>
+          <div className="space-y-3">
+            {(blocchi as any[]).map((b) => (
+              <SortableItem key={b.id} id={b.id}>
+                <BloccoCard
+                  blocco={b}
+                  on_toggle={(attivo) => m_toggle.mutate({ id: b.id, attivo })}
+                  on_edit={() => { set_editing(b); set_open_form(true); }}
+                  on_delete={() => m_delete.mutate(b.id)}
+                />
+              </SortableItem>
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
 
       <BloccoForm
         open={open_form}

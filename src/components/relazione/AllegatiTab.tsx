@@ -6,6 +6,9 @@ import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import AllegatoCard from "./AllegatoCard";
 import AllegatoForm from "./AllegatoForm";
+import SortableItem from "./SortableItem";
+import { DndContext, PointerSensor, KeyboardSensor, useSensor, useSensors, closestCenter, DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 
 interface Props { club_id: string; stagione_id: string; }
 
@@ -40,22 +43,40 @@ export default function AllegatiTab({ club_id, stagione_id }: Props) {
   });
 
   const m_reorder = useMutation({
-    mutationFn: async ({ id, ordine }: { id: string; ordine: number }) => {
-      const { error } = await supabase.from("relazioni_allegati" as any).update({ ordine }).eq("id", id);
-      if (error) throw error;
+    mutationFn: async (ordered_ids: string[]) => {
+      for (let i = 0; i < ordered_ids.length; i++) {
+        await supabase.from("relazioni_allegati" as any).update({ ordine: (i + 1) * 10 }).eq("id", ordered_ids[i]);
+      }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["relazioni_allegati", club_id, stagione_id] }),
   });
 
-  const handle_new = () => { set_editing(null); set_open_form(true); };
-  const handle_edit = (a: any) => { set_editing(a); set_open_form(true); };
-  const move = (a: any, dir: -1 | 1) => m_reorder.mutate({ id: a.id, ordine: (a.ordine ?? 0) + dir * 5 });
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const on_drag_end = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const ids = (allegati as any[]).map((a) => a.id);
+    const o = ids.indexOf(String(active.id));
+    const n = ids.indexOf(String(over.id));
+    if (o < 0 || n < 0) return;
+    const next = [...ids];
+    const [m] = next.splice(o, 1);
+    next.splice(n, 0, m);
+    m_reorder.mutate(next);
+  };
+
   const max_ordine = (allegati as any[]).reduce((m, a) => Math.max(m, a.ordine ?? 0), 0);
 
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button onClick={handle_new} className="gap-2"><Plus className="w-4 h-4" />Carica nuovo allegato</Button>
+        <Button onClick={() => { set_editing(null); set_open_form(true); }} className="gap-2">
+          <Plus className="w-4 h-4" />Carica nuovo allegato
+        </Button>
       </div>
 
       {isLoading && <p className="text-sm text-muted-foreground">Caricamento...</p>}
@@ -65,18 +86,21 @@ export default function AllegatiTab({ club_id, stagione_id }: Props) {
         </p>
       )}
 
-      <div className="space-y-3">
-        {(allegati as any[]).map((a) => (
-          <AllegatoCard
-            key={a.id}
-            allegato={a}
-            on_edit={() => handle_edit(a)}
-            on_delete={() => m_delete.mutate(a.id)}
-            on_up={() => move(a, -1)}
-            on_down={() => move(a, 1)}
-          />
-        ))}
-      </div>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={on_drag_end}>
+        <SortableContext items={(allegati as any[]).map((a) => a.id)} strategy={verticalListSortingStrategy}>
+          <div className="space-y-3">
+            {(allegati as any[]).map((a) => (
+              <SortableItem key={a.id} id={a.id}>
+                <AllegatoCard
+                  allegato={a}
+                  on_edit={() => { set_editing(a); set_open_form(true); }}
+                  on_delete={() => m_delete.mutate(a.id)}
+                />
+              </SortableItem>
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
 
       <AllegatoForm
         open={open_form}

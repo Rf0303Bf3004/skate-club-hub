@@ -2,7 +2,7 @@ import React from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowUp, ArrowDown, Pencil, Trash2, FileText, Upload } from "lucide-react";
+import { Pencil, Trash2, FileText, Upload } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
@@ -14,21 +14,15 @@ interface Props {
   allegato: any;
   on_edit: () => void;
   on_delete: () => void;
-  on_up: () => void;
-  on_down: () => void;
 }
 
-export default function AllegatoCard({ allegato, on_edit, on_delete, on_up, on_down }: Props) {
+export default function AllegatoCard({ allegato, on_edit, on_delete }: Props) {
   const cat = cat_allegato(allegato.categoria);
   const is_placeholder = (allegato.file_url ?? "").startsWith("placeholder://");
 
   return (
     <Card className="p-4">
       <div className="flex items-start gap-4">
-        <div className="flex flex-col gap-1">
-          <Button size="icon" variant="ghost" className="h-6 w-6" onClick={on_up}><ArrowUp className="w-3.5 h-3.5" /></Button>
-          <Button size="icon" variant="ghost" className="h-6 w-6" onClick={on_down}><ArrowDown className="w-3.5 h-3.5" /></Button>
-        </div>
         <div className="shrink-0 w-10 h-10 rounded-md bg-muted flex items-center justify-center">
           <FileText className="w-5 h-5 text-muted-foreground" />
         </div>
