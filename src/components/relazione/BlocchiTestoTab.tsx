@@ -52,10 +52,14 @@ export default function BlocchiTestoTab({ club_id, stagione_id }: Props) {
 
   const m_reorder = useMutation({
     mutationFn: async (ordered_ids: string[]) => {
+      const ordini_correnti = (blocchi as any[])
+        .filter((b) => ordered_ids.includes(b.id))
+        .map((b) => b.ordine ?? 0)
+        .sort((a, b) => a - b);
       await Promise.all(ordered_ids.map(async (id, index) => {
         const { error } = await supabase
           .from("relazioni_blocchi_testo" as any)
-          .update({ ordine: index * 10 })
+          .update({ ordine: ordini_correnti[index] ?? index * 10 })
           .eq("id", id);
         if (error) throw error;
       }));
@@ -67,7 +71,11 @@ export default function BlocchiTestoTab({ club_id, stagione_id }: Props) {
       ];
       await Promise.all(query_keys.map((queryKey) => qc.cancelQueries({ queryKey })));
       const previous = query_keys.map((queryKey) => ({ queryKey, data: qc.getQueryData(queryKey) }));
-      const ordine_by_id = new Map(ordered_ids.map((id, index) => [id, index * 10]));
+      const ordini_correnti = (blocchi as any[])
+        .filter((b) => ordered_ids.includes(b.id))
+        .map((b) => b.ordine ?? 0)
+        .sort((a, b) => a - b);
+      const ordine_by_id = new Map(ordered_ids.map((id, index) => [id, ordini_correnti[index] ?? index * 10]));
       const update_rows = (old: any[] | undefined) => old
         ? [...old.map((row) => ordine_by_id.has(row.id) ? { ...row, ordine: ordine_by_id.get(row.id) } : row)]
           .sort((a, b) => (a.ordine ?? 0) - (b.ordine ?? 0))
