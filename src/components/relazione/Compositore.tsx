@@ -319,6 +319,16 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
     <div className="grid grid-cols-1 lg:grid-cols-[38%_62%] gap-6 h-[calc(100vh-220px)] min-h-[600px]">
       <div className="border border-border rounded-md bg-card p-4 overflow-hidden flex flex-col">
         <div className="flex flex-col">
+          <div className="mb-3">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Tono relazione</label>
+            <Select value={tono} onValueChange={(v) => set_tono(v as Tono)}>
+              <SelectTrigger className="h-9 mt-1"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="soci">Per i Soci (caldo)</SelectItem>
+                <SelectItem value="formale">Per Istituzioni / Banche / Sponsor (formale)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="flex gap-2 mb-3">
             <Button
               onClick={handle_generate}
