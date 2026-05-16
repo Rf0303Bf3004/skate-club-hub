@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { formatBytes } from "@/lib/utils";
 import IndiceComponibile from "./IndiceComponibile";
 import AnteprimaPDF from "./AnteprimaPDF";
 import { CompositoreItem, SISTEMA_LABELS } from "./types-compositore";
@@ -8,7 +9,7 @@ import { AREA_DEFINITIONS } from "./MockSezionePDF";
 import { cat_blocco, cat_allegato } from "./categorie";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { FileDown, Loader2, Save } from "lucide-react";
+import { FileText, Loader2, Save } from "lucide-react";
 import { saveAs } from "file-saver";
 import { generateRelazionePDF, buildRelazioneFilename } from "@/lib/pdfGenerator";
 import { saving_store, useSavingState } from "@/stores/savingState";
@@ -41,6 +42,7 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
   const saving = useSavingState();
 
   const handle_generate = async () => {
+    if (generating) return;
     set_generating(true);
     try {
       const attivi = items.filter((i) => i.attivo);
@@ -55,10 +57,11 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
       });
       const filename = buildRelazioneFilename(club?.nome ?? "Club", stagione_nome);
       saveAs(blob, filename);
-      toast.success(`Relazione PDF generata (${pages} pagine)`);
+      const sizeStr = formatBytes(blob.size);
+      toast.success(`Relazione PDF generata (${pages} pagine, ${sizeStr}). File scaricato come '${filename}'`);
     } catch (e: any) {
       console.error(e);
-      toast.error("Errore generazione PDF: " + (e?.message ?? "sconosciuto"));
+      toast.error("Errore nella generazione del PDF. Riprova tra qualche secondo.");
     } finally {
       set_generating(false);
     }
@@ -294,25 +297,30 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[38%_62%] gap-6 h-[calc(100vh-220px)] min-h-[600px]">
       <div className="border border-border rounded-md bg-card p-4 overflow-hidden flex flex-col">
-        <div className="flex gap-2 mb-3">
-          <Button
-            onClick={handle_generate}
-            disabled={generating || items.filter((i) => i.attivo).length === 0}
-            className="gap-2 flex-1"
-          >
-            {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
-            <span className="hidden sm:inline">{generating ? "Generazione..." : "Genera PDF"}</span>
-          </Button>
-          <Button
-            variant="outline"
-            onClick={handle_save_all}
-            disabled={saving.pending > 0}
-            className="gap-2"
-            title="Salva modifiche"
-          >
-            {saving.pending > 0 ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            <span className="hidden sm:inline">Salva modifiche</span>
-          </Button>
+        <div className="flex flex-col">
+          <div className="flex gap-2 mb-3">
+            <Button
+              onClick={handle_generate}
+              disabled={generating || items.filter((i) => i.attivo).length === 0}
+              className="gap-2 flex-1"
+            >
+              {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+              <span className="hidden sm:inline">{generating ? "Generazione in corso..." : "Genera PDF"}</span>
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handle_save_all}
+              disabled={saving.pending > 0}
+              className="gap-2"
+              title="Salva modifiche"
+            >
+              {saving.pending > 0 ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              <span className="hidden sm:inline">Salva modifiche</span>
+            </Button>
+          </div>
+          <p className="text-xs text-slate-500 text-center">
+            La generazione richiede 2-3 secondi. Aspetta il completamento prima di cliccare di nuovo.
+          </p>
         </div>
         <IndiceComponibile
           items={items}
