@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { ChevronDown, RotateCw, Sparkles, Save, X, Pencil } from "lucide-react";
+import TabHeaderInfo from "./TabHeaderInfo";
 import {
   AREE_ORDINATE, AREA_LABELS, ORDINE_LABELS,
   generateAllParagraphs, type Tono, type AreaId,
