@@ -32,22 +32,38 @@ export default function IndiceComponibile({ items, on_reorder, on_toggle, on_sel
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
   const [active_id, set_active_id] = React.useState<string | null>(null);
+  const [optimistic_ids, set_optimistic_ids] = React.useState<string[] | null>(null);
+
+  // Reset optimistic order when the underlying items set changes
+  const items_key = React.useMemo(() => items.map((i) => i.id).join("|"), [items]);
+  React.useEffect(() => { set_optimistic_ids(null); }, [items_key]);
+
+  const displayed = React.useMemo(() => {
+    if (!optimistic_ids) return items;
+    const map = new Map(items.map((i) => [i.id, i]));
+    const ordered: typeof items = [];
+    for (const id of optimistic_ids) { const it = map.get(id); if (it) ordered.push(it); }
+    // append any items not in optimistic list (safety)
+    for (const it of items) if (!optimistic_ids.includes(it.id)) ordered.push(it);
+    return ordered;
+  }, [items, optimistic_ids]);
 
   const handle_end = (e: DragEndEvent) => {
     set_active_id(null);
     const { active, over } = e;
     if (!over || active.id === over.id) return;
-    const ids = items.map((i) => i.id);
+    const ids = displayed.map((i) => i.id);
     const old_index = ids.indexOf(String(active.id));
     const new_index = ids.indexOf(String(over.id));
     if (old_index === -1 || new_index === -1) return;
     const next = [...ids];
     const [moved] = next.splice(old_index, 1);
     next.splice(new_index, 0, moved);
+    set_optimistic_ids(next); // immediate visual reorder
     on_reorder(next);
   };
 
-  const active = items.find((i) => i.id === active_id);
+  const active = displayed.find((i) => i.id === active_id);
 
   return (
     <div className="flex flex-col h-full">
@@ -66,9 +82,9 @@ export default function IndiceComponibile({ items, on_reorder, on_toggle, on_sel
         onDragEnd={handle_end}
         onDragCancel={() => set_active_id(null)}
       >
-        <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+        <SortableContext items={displayed.map((i) => i.id)} strategy={verticalListSortingStrategy}>
           <div className="space-y-1.5 overflow-y-auto pr-2 flex-1">
-            {items.map((it) => (
+            {displayed.map((it) => (
               <SortableItem key={it.id} id={it.id} disabled={it.locked}>
                 <ItemRow
                   item={it}
