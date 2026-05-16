@@ -63,6 +63,9 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
         club,
         presidente,
         stagione_nome,
+        club_id,
+        stagione_id,
+        tono,
         items: attivi.map((i) => ({
           id: i.id, kind: i.kind, sezione_id: i.sezione_id,
           titolo: i.titolo, payload: i.payload,
