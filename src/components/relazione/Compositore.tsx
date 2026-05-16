@@ -129,22 +129,24 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
 
   const m_reorder = useMutation({
     mutationFn: async (ordered_ids: string[]) => {
-      for (let idx = 0; idx < ordered_ids.length; idx++) {
-        const id = ordered_ids[idx];
+      const ops = ordered_ids.map((id, idx) => {
         const new_ord = (idx + 1) * 10;
         const it = items.find((i) => i.id === id);
-        if (!it) continue;
+        if (!it) return null;
         if (it.kind === "sistema" || it.kind === "area") {
-          await supabase.from("relazione_preferenze" as any).update({ ordine: new_ord })
+          return supabase.from("relazione_preferenze" as any).update({ ordine: new_ord })
             .eq("club_id", club_id).eq("stagione_id", stagione_id).eq("sezione_id", it.sezione_id!);
         } else if (it.kind === "blocco") {
-          await supabase.from("relazioni_blocchi_testo" as any).update({ ordine: new_ord }).eq("id", it.ref_id!);
+          return supabase.from("relazioni_blocchi_testo" as any).update({ ordine: new_ord }).eq("id", it.ref_id!);
         } else if (it.kind === "allegato") {
-          await supabase.from("relazioni_allegati" as any).update({ ordine: new_ord }).eq("id", it.ref_id!);
+          return supabase.from("relazioni_allegati" as any).update({ ordine: new_ord }).eq("id", it.ref_id!);
         }
-      }
+        return null;
+      }).filter(Boolean) as Promise<any>[];
+      await Promise.all(ops);
     },
-    onSuccess: () => {
+    onError: () => toast.error("Riordino non salvato"),
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ["relazione_prefs", club_id, stagione_id] });
       qc.invalidateQueries({ queryKey: ["relazione_comp_blocchi", club_id, stagione_id] });
       qc.invalidateQueries({ queryKey: ["relazione_comp_allegati", club_id, stagione_id] });
