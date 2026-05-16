@@ -67,6 +67,7 @@ export default function PresidentRelazione() {
           <span className="text-xs text-muted-foreground hidden md:inline">
             Usa il bottone "Genera PDF" nel compositore
           </span>
+        </div>
       </header>
 
       <Tabs value={is_contenuti ? "contenuti" : "compositore"} onValueChange={(v) => {
