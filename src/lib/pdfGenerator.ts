@@ -500,6 +500,20 @@ export async function generateRelazionePDF(params: GenerateRelazioneParams): Pro
     }
   }
 
+  // Fetch dati grafici + render SVG -> PNG embedded (una sola volta)
+  const areaCharts: Record<string, AreaCharts> = {};
+  if (club_id && stagione_id) {
+    try {
+      const chartData: ChartData = await fetchChartData(club_id, stagione_id);
+      const pdfTmp = await PDFDocument.create(); void pdfTmp; // placeholder, ignored
+      // helper inline per embedare in pdf finale (creato sotto)
+      // creiamo prima il pdf finale poi facciamo embed
+      // -> spostiamo l'embed dopo la creazione di pdf
+      (params as any).__chartData = chartData;
+    } catch (e) {
+      console.warn("[PDF] Errore fetch dati grafici:", e);
+    }
+
   const pdf = await PDFDocument.create();
   pdf.setTitle(`Relazione - ${sanitize(club?.nome ?? "")} - ${sanitize(stagione_nome)}`);
   pdf.setAuthor(sanitize(presidente));
