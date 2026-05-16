@@ -68,12 +68,16 @@ export default function PresidentRelazioneGestione() {
           <TabsList>
             <TabsTrigger value="blocchi">Blocchi di testo</TabsTrigger>
             <TabsTrigger value="allegati">Allegati</TabsTrigger>
+            <TabsTrigger value="paragrafi">Paragrafi</TabsTrigger>
           </TabsList>
           <TabsContent value="blocchi" className="mt-4">
             <BlocchiTestoTab club_id={session.club_id} stagione_id={stagione_id} />
           </TabsContent>
           <TabsContent value="allegati" className="mt-4">
             <AllegatiTab club_id={session.club_id} stagione_id={stagione_id} />
+          </TabsContent>
+          <TabsContent value="paragrafi" className="mt-4">
+            <ParagrafiTab club_id={session.club_id} stagione_id={stagione_id} />
           </TabsContent>
         </Tabs>
       )}
