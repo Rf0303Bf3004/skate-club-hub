@@ -43,6 +43,11 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
   const [generating, set_generating] = useState(false);
   const is_generating_ref = useRef(false);
   const saving = useSavingState();
+  const [tono, set_tono] = useState<Tono>(() => {
+    const stored = typeof window !== "undefined" ? localStorage.getItem("relazione-tono-preferito") : null;
+    return (stored === "formale" ? "formale" : "soci") as Tono;
+  });
+  useEffect(() => { try { localStorage.setItem("relazione-tono-preferito", tono); } catch {} }, [tono]);
 
   const handle_generate = async () => {
     if (is_generating_ref.current) {
