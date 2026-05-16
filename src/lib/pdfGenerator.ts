@@ -587,7 +587,12 @@ export async function generateRelazionePDF(params: GenerateRelazioneParams): Pro
         blocks.push({ type: "indice", placeholderPages: 1 });
       } else if (it.sezione_id === "chiusura") blocks.push({ type: "chiusura" });
     } else if (it.kind === "area") {
-      blocks.push({ type: "area", sezione_id: it.sezione_id!, title: it.titolo });
+      const sid = it.sezione_id!;
+      const hasChart = !!areaCharts[sid];
+      const hasP3orP4 = !!(paragrafiMap[sid]?.[3] || paragrafiMap[sid]?.[4]);
+      const hasSecondary = !!areaCharts[sid]?.secondary;
+      const pages = (hasChart && (hasP3orP4 || hasSecondary)) ? 2 : 1;
+      blocks.push({ type: "area", sezione_id: sid, title: it.titolo, pages });
     } else if (it.kind === "blocco") {
       blocks.push({ type: "blocco", payload: it.payload, title: it.titolo });
     } else if (it.kind === "allegato") {
