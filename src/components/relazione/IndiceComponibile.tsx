@@ -82,9 +82,9 @@ export default function IndiceComponibile({ items, on_reorder, on_toggle, on_sel
         onDragEnd={handle_end}
         onDragCancel={() => set_active_id(null)}
       >
-        <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+        <SortableContext items={displayed.map((i) => i.id)} strategy={verticalListSortingStrategy}>
           <div className="space-y-1.5 overflow-y-auto pr-2 flex-1">
-            {items.map((it) => (
+            {displayed.map((it) => (
               <SortableItem key={it.id} id={it.id} disabled={it.locked}>
                 <ItemRow
                   item={it}
