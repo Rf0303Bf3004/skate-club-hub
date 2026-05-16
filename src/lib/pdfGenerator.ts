@@ -1,4 +1,5 @@
 import { PDFDocument, StandardFonts, rgb, PDFFont, PDFPage, degrees } from "pdf-lib";
+import { fetchParagrafiForPdf, type Tono } from "@/lib/paragraphGenerator";
 
 // ============================================================
 // Tipi
@@ -8,6 +9,9 @@ export interface GenerateRelazioneParams {
   club: { nome?: string; citta?: string } | null;
   presidente: string;
   stagione_nome: string;
+  club_id?: string;
+  stagione_id?: string;
+  tono?: Tono;
   // Items già ordinati e filtrati (solo attivi)
   items: Array<{
     id: string;
