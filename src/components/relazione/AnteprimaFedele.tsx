@@ -114,13 +114,8 @@ export default function AnteprimaFedele({
           </Button>
         </div>
       )}
-      <div className="flex-1 px-3 pb-2 min-h-0">
-        <iframe
-          src={url}
-          title="Anteprima PDF"
-          className="w-full h-full border border-slate-200 rounded bg-white"
-          style={{ minHeight: 500 }}
-        />
+      <div className="flex-1 min-h-0">
+        {blob && <PdfViewer blob={blob} on_download={download} />}
       </div>
       <div className="flex gap-2 p-3 border-t border-slate-200 bg-white">
         <Button variant="outline" size="sm" onClick={generate} disabled={loading} className="gap-2 rounded-full">
