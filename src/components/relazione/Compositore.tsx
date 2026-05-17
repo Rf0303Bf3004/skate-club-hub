@@ -367,14 +367,36 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
           tono={tono}
         />
       </div>
-      <div className="border border-border rounded-md bg-stone-100 overflow-y-auto">
-        <AnteprimaPDF
-          items={items}
-          club={club}
-          presidente={presidente}
-          stagione_nome={stagione_nome}
-          selected_id={selected_id}
-        />
+      <div className="border border-border rounded-md bg-stone-100 overflow-hidden flex flex-col">
+        <Tabs defaultValue="rapida" className="flex flex-col h-full">
+          <div className="px-3 pt-3">
+            <TabsList className="rounded-full">
+              <TabsTrigger value="rapida" className="rounded-full text-xs">Anteprima rapida</TabsTrigger>
+              <TabsTrigger value="fedele" className="rounded-full text-xs">Anteprima fedele (PDF)</TabsTrigger>
+            </TabsList>
+          </div>
+          <TabsContent value="rapida" className="flex-1 overflow-y-auto mt-2">
+            <AnteprimaPDF
+              items={items}
+              club={club}
+              presidente={presidente}
+              stagione_nome={stagione_nome}
+              selected_id={selected_id}
+            />
+          </TabsContent>
+          <TabsContent value="fedele" className="flex-1 overflow-hidden mt-2 data-[state=active]:flex flex-col">
+            <AnteprimaFedele
+              items={items}
+              club={club}
+              presidente={presidente}
+              stagione_nome={stagione_nome}
+              club_id={club_id}
+              stagione_id={stagione_id}
+              tono={tono}
+              structural_signature={structural_signature}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
