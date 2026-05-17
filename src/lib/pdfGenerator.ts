@@ -698,7 +698,16 @@ export async function generateRelazionePDF(params: GenerateRelazioneParams): Pro
     }
   }
 
-  // Pre-fetch dati grafici (l'embed PNG avverra' dopo aver creato pdf-lib doc)
+  // Fetch KPI hero veri (Prompt D - stessa fonte dei paragrafi)
+  let kpiData: KpiData = {};
+  if (club_id && stagione_id) {
+    try {
+      kpiData = await fetchKpiData(club_id, stagione_id);
+    } catch (e) {
+      console.warn("[PDF] Errore fetch KPI:", e);
+    }
+  }
+
   let chartData: ChartData | null = null;
   if (club_id && stagione_id) {
     try {
