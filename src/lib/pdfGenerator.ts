@@ -47,9 +47,11 @@ const CONTENT_W = PAGE_W - M_LEFT - M_RIGHT;
 
 const CREAM = rgb(0xfe / 255, 0xfc / 255, 0xf7 / 255);
 const INK = rgb(0.1, 0.1, 0.1);
-const MUTED = rgb(0x6b / 255, 0x72 / 255, 0x80 / 255);
+const MUTED = rgb(0x47 / 255, 0x55 / 255, 0x69 / 255);
+const MUTED_SOFT = rgb(0x6b / 255, 0x72 / 255, 0x80 / 255);
 const TEAL = rgb(0x14 / 255, 0xb8 / 255, 0xa6 / 255);
-const LIGHT_BORDER = rgb(0.86, 0.84, 0.8);
+const LIGHT_BORDER = rgb(0.9, 0.88, 0.85);
+const HAIR = rgb(0xe5 / 255, 0xe7 / 255, 0xeb / 255);
 const WHITE = rgb(1, 1, 1);
 
 const CAT_COLORS: Record<string, [number, number, number]> = {
