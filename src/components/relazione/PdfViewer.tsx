@@ -1,14 +1,48 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as pdfjsLib from "pdfjs-dist";
+import pdfjsWorker from "pdfjs-dist/build/pdf.worker.mjs?url";
 import { Button } from "@/components/ui/button";
-import { Loader2, ZoomIn, ZoomOut, Download, AlertTriangle } from "lucide-react";
+import { Loader2, ZoomIn, ZoomOut, Download, AlertTriangle, ExternalLink } from "lucide-react";
 
-// Configura worker da CDN per evitare problemi di bundling
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+
+type PdfDocumentProxy = Awaited<ReturnType<typeof pdfjsLib.getDocument>["promise"]>;
 
 interface Props {
   blob: Blob;
   on_download?: () => void;
+}
+
+async function load_pdf_from_blob(blob: Blob) {
+  try {
+    console.log(`[PdfViewer] Blob ricevuto: size=${blob.size} type=${blob.type}`);
+    const array_buffer = await blob.arrayBuffer();
+    console.log(`[PdfViewer] ArrayBuffer creato: bytes=${array_buffer.byteLength}`);
+    const loading_task = pdfjsLib.getDocument({
+      data: new Uint8Array(array_buffer),
+      cMapUrl: `//cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/cmaps/`,
+      cMapPacked: true,
+    });
+    const pdf_document = await loading_task.promise;
+    console.log(`[PdfViewer] PDF document caricato: pagine=${pdf_document.numPages}`);
+    return pdf_document;
+  } catch (error: any) {
+    console.error("[PdfViewer] Errore caricamento PDF:", error);
+    console.error("[PdfViewer] Stack:", error?.stack);
+    console.error("[PdfViewer] Blob size:", blob.size, "type:", blob.type);
+    throw error;
+  }
+}
+
+async function render_page(pdf: PdfDocumentProxy, page_num: number, canvas: HTMLCanvasElement, scale = 1.5) {
+  const page = await pdf.getPage(page_num);
+  const viewport = page.getViewport({ scale });
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas context non disponibile");
+  const render_task = page.render({ canvasContext: ctx, viewport });
+  await render_task.promise;
 }
 
 export default function PdfViewer({ blob, on_download }: Props) {
