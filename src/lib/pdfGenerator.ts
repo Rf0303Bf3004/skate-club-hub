@@ -882,9 +882,9 @@ export async function generateRelazionePDF(params: GenerateRelazioneParams): Pro
       const layout = areaLayouts[b.sezione_id] ?? planAreaLayout(b.sezione_id, paras, charts, fonts);
       const page = pdf.addPage([PAGE_W, PAGE_H]);
       if (layout.totalPages === 1) {
-        drawAreaSingle(page, fonts, b.sezione_id, pageCursor, paras, charts, layout);
+        drawAreaSingle(page, fonts, b.sezione_id, pageCursor, paras, charts, layout, kpiData);
       } else {
-        drawAreaMain(page, fonts, b.sezione_id, pageCursor, paras, charts, layout);
+        drawAreaMain(page, fonts, b.sezione_id, pageCursor, paras, charts, layout, kpiData);
         const page2 = pdf.addPage([PAGE_W, PAGE_H]);
         drawAreaContinuation(page2, fonts, b.sezione_id, pageCursor + 1, paras, charts, layout);
       }
