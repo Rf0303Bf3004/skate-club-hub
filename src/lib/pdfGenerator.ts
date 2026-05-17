@@ -1,5 +1,6 @@
 import { PDFDocument, StandardFonts, rgb, PDFFont, PDFPage, PDFImage, degrees } from "pdf-lib";
 import { fetchParagrafiForPdf, type Tono } from "@/lib/paragraphGenerator";
+import { fetchKpiData, type KpiData, type KpiCell } from "@/lib/kpiData";
 import {
   fetchChartData,
   generatePiramideAtletiSVG,
