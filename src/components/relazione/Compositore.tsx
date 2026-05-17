@@ -317,7 +317,30 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
     }, 50);
   };
 
-  return (
+  // Watch paragrafi updated_at so structural signature reflects narrative edits
+  const { data: paragrafi_meta } = useQuery({
+    queryKey: ["relazione_paragrafi_meta", club_id, stagione_id, tono],
+    enabled: !!club_id && !!stagione_id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("relazioni_paragrafi_auto" as any)
+        .select("updated_at")
+        .eq("club_id", club_id).eq("stagione_id", stagione_id).eq("tono", tono)
+        .order("updated_at", { ascending: false })
+        .limit(1);
+      if (error) throw error;
+      return ((data ?? [])[0] as any)?.updated_at ?? null;
+    },
+  });
+
+  const structural_signature = useMemo(() => {
+    const items_sig = items
+      .map((i) => `${i.id}:${i.attivo ? 1 : 0}:${i.ordine}`)
+      .join("|");
+    return `${tono}::${items_sig}::${paragrafi_meta ?? ""}`;
+  }, [items, tono, paragrafi_meta]);
+
+
     <div className="grid grid-cols-1 lg:grid-cols-[38%_62%] gap-6 h-[calc(100vh-220px)] min-h-[600px]">
       <div className="border border-border rounded-md bg-card p-4 overflow-hidden flex flex-col">
         <div className="flex flex-col">
