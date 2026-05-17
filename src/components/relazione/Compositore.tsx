@@ -4,6 +4,8 @@ import { supabase } from "@/lib/supabase";
 import { formatBytes } from "@/lib/utils";
 import IndiceComponibile from "./IndiceComponibile";
 import AnteprimaPDF from "./AnteprimaPDF";
+import AnteprimaFedele from "./AnteprimaFedele";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CompositoreItem, SISTEMA_LABELS } from "./types-compositore";
 import { AREA_DEFINITIONS } from "./MockSezionePDF";
 import { cat_blocco, cat_allegato } from "./categorie";
