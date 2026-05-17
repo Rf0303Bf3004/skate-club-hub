@@ -277,58 +277,198 @@ function drawChart(page: PDFPage, img: PDFImage, w: number, h: number, y: number
   return y - h - 14;
 }
 
-// Disegna la pagina principale di un'area. Restituisce true se serve una pagina di continuazione (P3+P4 e/o chart secondaria).
-function drawAreaMain(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum: number, paras: Record<number, string> | undefined, charts: AreaCharts): { needContinuation: boolean } {
+// ============================================================
+// Layout dinamico aree (Prompt C - magazine intelligente)
+// ============================================================
+
+function estimateLines(text: string, font: PDFFont, size: number, maxW: number): number {
+  if (!text) return 0;
+  return wrapText(text, font, size, maxW).length;
+}
+
+interface AreaLayout {
+  totalPages: 1 | 2;
+  chartScaledW?: number;
+  chartScaledH?: number;
+  decoration?: { kind: "A" | "B" | "C"; quote?: string; kpi?: string };
+}
+
+function pickDecoration(p3: string, info: { kpi: string[] }): AreaLayout["decoration"] {
+  if (p3) {
+    const sentences = p3.split(/(?<=[.!?])\s+/);
+    const short = sentences.find((s) => s.length >= 20 && s.length <= 80);
+    if (short) return { kind: "A", quote: short.trim() };
+  }
+  if (info.kpi.length > 1) return { kind: "B", kpi: info.kpi[1] };
+  return { kind: "C" };
+}
+
+const HEADER_CONSUMED = 70;
+const KPI_BLOCK_H = 50;
+const PARA_SPACING = 6;
+const CHART_SPACING = 14;
+const AREA_AVAIL = PAGE_H - M_TOP - M_BOTTOM - 20; // ~702pt
+
+function planAreaLayout(sezione_id: string, paras: Record<number, string> | undefined, charts: AreaCharts, fonts: Fonts): AreaLayout {
+  const info = AREA_INFO[sezione_id];
+  if (!info) return { totalPages: 1 };
+  const p1 = paras?.[1] ?? info.insight;
+  const p2 = paras?.[2] ?? "";
+  const p3 = paras?.[3] ?? "";
+  const p4 = paras?.[4] ?? "";
+
+  const h_p1 = estimateLines(p1, fonts.serifItalic, 11, CONTENT_W) * 15 + (p1 ? PARA_SPACING : 0);
+  const h_p2 = estimateLines(p2, fonts.serif, 11, CONTENT_W) * 14 + (p2 ? PARA_SPACING : 0);
+  const h_p3 = estimateLines(p3, fonts.serif, 11, CONTENT_W - 20) * 14 + (p3 ? PARA_SPACING : 0);
+  const h_p4 = estimateLines(p4, fonts.serifItalic, 10, CONTENT_W) * 13 + (p4 ? PARA_SPACING : 0);
+  const h_chart_orig = charts.primary && charts.primaryH ? charts.primaryH + CHART_SPACING : 0;
+  const hasSecondary = !!(charts.secondary && charts.secondaryH);
+
+  // Se c'e' grafico secondario serve sempre la seconda pagina (lezioni)
+  if (hasSecondary) {
+    const p2used = HEADER_CONSUMED + (charts.secondaryH ?? 0) + CHART_SPACING + h_p3 + h_p4;
+    const empty = AREA_AVAIL - p2used;
+    const decoration = empty > 150 ? pickDecoration(p3, info) : undefined;
+    return { totalPages: 2, chartScaledW: charts.primaryW, chartScaledH: charts.primaryH, decoration };
+  }
+
+  const usedAll = HEADER_CONSUMED + h_p1 + KPI_BLOCK_H + h_p2 + h_chart_orig + h_p3 + h_p4;
+
+  if (usedAll <= AREA_AVAIL * 0.95) {
+    // Entra tutto in 1 pagina; ridimensiona il grafico per riempire armoniosamente
+    let cW = charts.primaryW;
+    let cH = charts.primaryH;
+    if (h_chart_orig > 0 && cW && cH) {
+      const aspect = cW / cH;
+      const otherH = HEADER_CONSUMED + h_p1 + KPI_BLOCK_H + h_p2 + h_p3 + h_p4;
+      const availChart = AREA_AVAIL - otherH - CHART_SPACING - 30; // margine respiro
+      if (availChart < 200) {
+        cH = 200; cW = 200 * aspect;
+      } else if (availChart > 350) {
+        cH = 350; cW = 350 * aspect;
+      } else {
+        cH = availChart; cW = cH * aspect;
+      }
+      // se cW eccede CONTENT_W, riscala
+      if (cW > CONTENT_W) {
+        cW = CONTENT_W;
+        cH = cW / aspect;
+      }
+    }
+    const finalChartH = cH ? cH + CHART_SPACING : 0;
+    const finalUsed = HEADER_CONSUMED + h_p1 + KPI_BLOCK_H + h_p2 + finalChartH + h_p3 + h_p4;
+    const empty = AREA_AVAIL - finalUsed;
+    const decoration = empty > 150 ? pickDecoration(p3, info) : undefined;
+    return { totalPages: 1, chartScaledW: cW, chartScaledH: cH, decoration };
+  }
+
+  // 2 pagine: P1+KPI+P2+chart sulla prima, P3+P4 sulla seconda
+  const p2used = HEADER_CONSUMED + h_p3 + h_p4;
+  const empty = AREA_AVAIL - p2used;
+  const decoration = empty > 150 ? pickDecoration(p3, info) : undefined;
+  return { totalPages: 2, chartScaledW: charts.primaryW, chartScaledH: charts.primaryH, decoration };
+}
+
+function drawDecoration(page: PDFPage, fonts: Fonts, deco: NonNullable<AreaLayout["decoration"]>, yTop: number, yBottomLimit: number) {
+  const cx = PAGE_W / 2;
+  const yCenter = Math.max(yBottomLimit + 60, (yTop + yBottomLimit) / 2);
+  if (deco.kind === "A" && deco.quote) {
+    const q = `"${sanitize(deco.quote)}"`;
+    const lines = wrapText(q, fonts.serifItalic, 16, CONTENT_W - 80);
+    let y = yCenter + (lines.length - 1) * 11;
+    for (const ln of lines) {
+      const w = fonts.serifItalic.widthOfTextAtSize(ln, 16);
+      page.drawText(ln, { x: cx - w / 2, y, size: 16, font: fonts.serifItalic, color: rgb(0.3, 0.3, 0.32) });
+      y -= 22;
+    }
+  } else if (deco.kind === "B" && deco.kpi) {
+    const txt = sanitize(deco.kpi);
+    const w = fonts.sans.widthOfTextAtSize(txt, 14);
+    page.drawText(txt, { x: M_LEFT + CONTENT_W - w, y: yCenter, size: 14, font: fonts.sans, color: MUTED });
+  } else {
+    page.drawLine({ start: { x: cx - 50, y: yCenter }, end: { x: cx + 50, y: yCenter }, thickness: 1, color: TEAL });
+  }
+}
+
+// Singola pagina: tutto in una.
+function drawAreaSingle(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum: number, paras: Record<number, string> | undefined, charts: AreaCharts, layout: AreaLayout) {
   drawPageFrame(page, pageNum, fonts);
   const info = AREA_INFO[sezione_id];
-  if (!info) return { needContinuation: false };
-
+  if (!info) return;
   let y = PAGE_H - M_TOP - 10;
   y = drawAreaHeader(page, fonts, info, y);
 
-  // P1 apertura corsivo grigio (oppure fallback insight)
   const p1 = paras?.[1] ?? info.insight;
   y = drawParagraph(page, fonts, p1, y, { font: fonts.serifItalic, size: 11, color: rgb(0.3, 0.3, 0.32), lineH: 15 });
   y -= 6;
 
-  // KPI hero
   y = drawKpiRow(page, fonts, info.kpi, y);
 
-  // P2 numeri
   const p2 = paras?.[2];
   if (p2) {
     y = drawParagraph(page, fonts, p2, y, { font: fonts.serif, size: 11, color: INK, lineH: 14 });
     y -= 6;
   }
 
-  // Grafico primario
-  if (charts.primary && charts.primaryW && charts.primaryH) {
-    if (y - charts.primaryH < M_BOTTOM + 20) {
-      // non c'è spazio: lo metteremo nella pagina di continuazione
-      return { needContinuation: true };
-    }
-    y = drawChart(page, charts.primary, charts.primaryW, charts.primaryH, y);
+  if (charts.primary && layout.chartScaledW && layout.chartScaledH) {
+    y = drawChart(page, charts.primary, layout.chartScaledW, layout.chartScaledH, y);
   }
 
-  const hasMoreText = !!(paras?.[3] || paras?.[4]);
-  const hasSecondary = !!charts.secondary;
-  return { needContinuation: hasMoreText || hasSecondary };
+  const p3 = paras?.[3];
+  if (p3) {
+    y = drawParagraph(page, fonts, p3, y, { font: fonts.serif, size: 11, color: rgb(0.18, 0.18, 0.2), lineH: 14, indent: 20 });
+    y -= 6;
+  }
+  const p4 = paras?.[4];
+  if (p4) {
+    y = drawParagraph(page, fonts, p4, y, { font: fonts.serifItalic, size: 10, color: MUTED, lineH: 13, align: "right" });
+  }
+
+  if (layout.decoration) {
+    drawDecoration(page, fonts, layout.decoration, y, M_BOTTOM + 30);
+  }
 }
 
-function drawAreaContinuation(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum: number, paras: Record<number, string> | undefined, charts: AreaCharts) {
+// Pagina 1 di 2: header + P1 + KPI + P2 + chart primario
+function drawAreaMain(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum: number, paras: Record<number, string> | undefined, charts: AreaCharts, layout: AreaLayout) {
+  drawPageFrame(page, pageNum, fonts);
+  const info = AREA_INFO[sezione_id];
+  if (!info) return;
+  let y = PAGE_H - M_TOP - 10;
+  y = drawAreaHeader(page, fonts, info, y);
+
+  const p1 = paras?.[1] ?? info.insight;
+  y = drawParagraph(page, fonts, p1, y, { font: fonts.serifItalic, size: 11, color: rgb(0.3, 0.3, 0.32), lineH: 15 });
+  y -= 6;
+
+  y = drawKpiRow(page, fonts, info.kpi, y);
+
+  const p2 = paras?.[2];
+  if (p2) {
+    y = drawParagraph(page, fonts, p2, y, { font: fonts.serif, size: 11, color: INK, lineH: 14 });
+    y -= 6;
+  }
+
+  if (charts.primary && layout.chartScaledW && layout.chartScaledH) {
+    if (y - layout.chartScaledH >= M_BOTTOM + 20) {
+      drawChart(page, charts.primary, layout.chartScaledW, layout.chartScaledH, y);
+    }
+  }
+}
+
+// Pagina 2 di 2: P3, P4 + eventuale chart secondario + decorazione
+function drawAreaContinuation(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum: number, paras: Record<number, string> | undefined, charts: AreaCharts, layout: AreaLayout) {
   drawPageFrame(page, pageNum, fonts);
   const info = AREA_INFO[sezione_id];
   if (!info) return;
 
   let y = PAGE_H - M_TOP - 10;
-  // header ridotto (continua)
   const header = `AREA ${info.numero} · ${sanitize(info.titolo)} (segue)`;
   page.drawText(header, { x: M_LEFT, y, size: 8, font: fonts.sansBold, color: TEAL });
   y -= 22;
   page.drawLine({ start: { x: M_LEFT, y }, end: { x: M_LEFT + 50, y }, thickness: 1.2, color: TEAL });
   y -= 18;
 
-  // Grafico secondario in alto se presente
   if (charts.secondary && charts.secondaryW && charts.secondaryH) {
     y = drawChart(page, charts.secondary, charts.secondaryW, charts.secondaryH, y);
   }
@@ -340,7 +480,11 @@ function drawAreaContinuation(page: PDFPage, fonts: Fonts, sezione_id: string, p
   }
   const p4 = paras?.[4];
   if (p4) {
-    drawParagraph(page, fonts, p4, y, { font: fonts.serifItalic, size: 10, color: MUTED, lineH: 13, align: "right" });
+    y = drawParagraph(page, fonts, p4, y, { font: fonts.serifItalic, size: 10, color: MUTED, lineH: 13, align: "right" });
+  }
+
+  if (layout.decoration) {
+    drawDecoration(page, fonts, layout.decoration, y, M_BOTTOM + 30);
   }
 }
 
