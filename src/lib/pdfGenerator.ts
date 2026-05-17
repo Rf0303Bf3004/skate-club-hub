@@ -829,11 +829,14 @@ export async function generateRelazionePDF(params: GenerateRelazioneParams): Pro
     } else if (b.type === "area") {
       const paras = paragrafiMap[b.sezione_id];
       const charts = areaCharts[b.sezione_id] ?? {};
+      const layout = areaLayouts[b.sezione_id] ?? planAreaLayout(b.sezione_id, paras, charts, fonts);
       const page = pdf.addPage([PAGE_W, PAGE_H]);
-      const res = drawAreaMain(page, fonts, b.sezione_id, pageCursor, paras, charts);
-      if (b.pages > 1 || res.needContinuation) {
+      if (layout.totalPages === 1) {
+        drawAreaSingle(page, fonts, b.sezione_id, pageCursor, paras, charts, layout);
+      } else {
+        drawAreaMain(page, fonts, b.sezione_id, pageCursor, paras, charts, layout);
         const page2 = pdf.addPage([PAGE_W, PAGE_H]);
-        drawAreaContinuation(page2, fonts, b.sezione_id, pageCursor + 1, paras, charts);
+        drawAreaContinuation(page2, fonts, b.sezione_id, pageCursor + 1, paras, charts, layout);
       }
     } else if (b.type === "blocco") {
       const page = pdf.addPage([PAGE_W, PAGE_H]);
