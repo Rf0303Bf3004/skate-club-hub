@@ -1,5 +1,6 @@
 import { PDFDocument, StandardFonts, rgb, PDFFont, PDFPage, PDFImage, degrees } from "pdf-lib";
 import { fetchParagrafiForPdf, type Tono } from "@/lib/paragraphGenerator";
+import { fetchKpiData, type KpiData, type KpiCell } from "@/lib/kpiData";
 import {
   fetchChartData,
   generatePiramideAtletiSVG,
@@ -46,9 +47,11 @@ const CONTENT_W = PAGE_W - M_LEFT - M_RIGHT;
 
 const CREAM = rgb(0xfe / 255, 0xfc / 255, 0xf7 / 255);
 const INK = rgb(0.1, 0.1, 0.1);
-const MUTED = rgb(0x6b / 255, 0x72 / 255, 0x80 / 255);
+const MUTED = rgb(0x47 / 255, 0x55 / 255, 0x69 / 255);
+const MUTED_SOFT = rgb(0x6b / 255, 0x72 / 255, 0x80 / 255);
 const TEAL = rgb(0x14 / 255, 0xb8 / 255, 0xa6 / 255);
-const LIGHT_BORDER = rgb(0.86, 0.84, 0.8);
+const LIGHT_BORDER = rgb(0.9, 0.88, 0.85);
+const HAIR = rgb(0xe5 / 255, 0xe7 / 255, 0xeb / 255);
 const WHITE = rgb(1, 1, 1);
 
 const CAT_COLORS: Record<string, [number, number, number]> = {
@@ -66,42 +69,43 @@ const CAT_COLORS: Record<string, [number, number, number]> = {
   verbale: [0xe1, 0x1d, 0x48],
 };
 
-const AREA_INFO: Record<string, { numero: number; titolo: string; insight: string; kpi: string[] }> = {
+const AREA_INFO: Record<string, { numero: number; titolo: string; insight: string }> = {
   sintesi: {
     numero: 1, titolo: "Sintesi della stagione",
     insight: "La stagione mostra crescita della domanda e tenuta economica; le aree critiche sono presidiate.",
-    kpi: ["Crescita domanda", "Cassa positiva", "Risultati sportivi record"],
   },
   domanda: {
     numero: 2, titolo: "Domanda & Ghiaccio",
-    insight: "La domanda supera la capacità: una fascia oraria aggiuntiva consentirebbe di assorbire la lista d'attesa.",
-    kpi: ["92% saturazione", "14 in lista d'attesa", "+3 ore richieste"],
+    insight: "La domanda supera la capacita': una fascia oraria aggiuntiva consentirebbe di assorbire la lista d'attesa.",
   },
   atleti: {
     numero: 3, titolo: "Atleti",
     insight: "Pulcini in calo, Interbronzo in crescita: i ragazzi avanzano verso l'agonismo.",
-    kpi: ["145 atleti attivi", "-2% YoY", "9 livelli coperti"],
   },
   economia: {
     numero: 4, titolo: "Economia",
-    insight: "Margine positivo del 6%, generato in particolare da corsi base e pacchetti opzionali.",
-    kpi: ["CHF 218'400 ricavi", "CHF 41'200 cassa", "+6% margine"],
+    insight: "Margine positivo, generato in particolare da corsi base e pacchetti opzionali.",
   },
   lezioni: {
     numero: 5, titolo: "Lezioni private",
     insight: "Le lezioni private trainano i ricavi e fidelizzano gli agonisti.",
-    kpi: ["412 ore erogate", "+18% YoY", "24 atleti coinvolti"],
   },
   sportivo: {
     numero: 6, titolo: "Risultati sportivi",
-    insight: "Stagione record: la maturazione del gruppo Argento porta i suoi frutti in gara.",
-    kpi: ["27 podi", "9 ori", "12 gare disputate"],
+    insight: "Stagione di crescita: la maturazione del gruppo agonistico si riflette in gara.",
   },
   catalogo: {
     numero: 7, titolo: "Catalogo & Promozione",
-    insight: "Cinque partner sostengono il club; cerchiamo uno sponsor pista per coprire le ore aggiuntive.",
-    kpi: ["5 sponsor attivi", "CHF 19'000", "3 eventi promozionali"],
+    insight: "I partner sostengono il club; cerchiamo nuove collaborazioni per coprire le ore aggiuntive.",
   },
+};
+
+// Didascalia grafico per area (Sezione C - cornice)
+const CHART_CAPTIONS: Record<string, string> = {
+  atleti: "FIG. 1 - PIRAMIDE LIVELLI ATLETI",
+  economia: "FIG. 2 - COMPOSIZIONE RICAVI",
+  sportivo: "FIG. 3 - PODI STAGIONE",
+  lezioni: "FIG. 4 - DISTRIBUZIONE FASCE ORARIE",
 };
 
 // ============================================================
@@ -159,50 +163,42 @@ function drawCategoryBadge(page: PDFPage, x: number, y: number, label: string, c
 // Pagine
 // ============================================================
 
-function drawCopertina(page: PDFPage, fonts: Fonts, club: any, presidente: string, stagione: string, pageNum: number, dateStr: string) {
-  drawPageFrame(page, pageNum, fonts);
-  const cx = PAGE_W / 2;
+// Copertina editoriale (Sezione A): banda teal 60% top + sezione crema 40% bottom
+function drawCopertina(page: PDFPage, fonts: Fonts, club: any, presidente: string, stagione: string, _pageNum: number, dateStr: string) {
+  // Sfondo crema integrale
+  page.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: CREAM });
+  // Banda teal alta 60%
+  const bandH = PAGE_H * 0.6;
+  page.drawRectangle({ x: 0, y: PAGE_H - bandH, width: PAGE_W, height: bandH, color: TEAL });
 
-  // Logo cerchio
-  const initial = sanitize((club?.nome ?? "C").charAt(0).toUpperCase());
-  page.drawCircle({ x: cx, y: PAGE_H - 180, size: 28, borderColor: TEAL, borderWidth: 1.5 });
-  const iw = fonts.serif.widthOfTextAtSize(initial, 24);
-  page.drawText(initial, { x: cx - iw / 2, y: PAGE_H - 188, size: 24, font: fonts.serif, color: INK });
+  // Etichetta in alto a sinistra
+  const kicker = sanitize(`RELAZIONE DI FINE STAGIONE - ${stagione}`).toUpperCase();
+  page.drawText(kicker, { x: M_LEFT, y: PAGE_H - 80, size: 9, font: fonts.sansBold, color: WHITE });
+  page.drawLine({ start: { x: M_LEFT, y: PAGE_H - 90 }, end: { x: M_LEFT + 60, y: PAGE_H - 90 }, thickness: 0.6, color: WHITE });
 
-  // Nome club
+  // Nome club centrato nella banda, 48pt serif bianco, su 2 righe se serve
   const nome = sanitize(club?.nome ?? "Club");
-  const nw = fonts.serifBold.widthOfTextAtSize(nome, 30);
-  page.drawText(nome, { x: cx - nw / 2, y: PAGE_H - 260, size: 30, font: fonts.serifBold, color: INK });
-
-  // Citta'
+  const nameLines = wrapText(nome, fonts.serifBold, 48, PAGE_W - 100);
+  const centerY = PAGE_H - bandH / 2 + ((nameLines.length - 1) * 26);
+  let ny = centerY;
+  for (const ln of nameLines.slice(0, 2)) {
+    const w = fonts.serifBold.widthOfTextAtSize(ln, 48);
+    page.drawText(ln, { x: (PAGE_W - w) / 2, y: ny, size: 48, font: fonts.serifBold, color: WHITE });
+    ny -= 52;
+  }
   const citta = sanitize((club?.citta ?? "").toUpperCase());
   if (citta) {
-    const cw = fonts.sans.widthOfTextAtSize(citta, 10);
-    page.drawText(citta, { x: cx - cw / 2, y: PAGE_H - 285, size: 10, font: fonts.sans, color: MUTED });
+    const cw = fonts.sansBold.widthOfTextAtSize(citta, 10);
+    page.drawText(citta, { x: (PAGE_W - cw) / 2, y: ny - 16, size: 10, font: fonts.sansBold, color: WHITE });
   }
 
-  // Linea
-  page.drawLine({ start: { x: cx - 40, y: PAGE_H - 330 }, end: { x: cx + 40, y: PAGE_H - 330 }, thickness: 0.8, color: TEAL });
-
-  // Titolo relazione
-  const t1 = "Relazione di fine stagione";
-  const t1w = fonts.serif.widthOfTextAtSize(t1, 20);
-  page.drawText(t1, { x: cx - t1w / 2, y: PAGE_H - 380, size: 20, font: fonts.serif, color: INK });
-
-  const t2w = fonts.serif.widthOfTextAtSize(stagione, 16);
-  page.drawText(sanitize(stagione), { x: cx - t2w / 2, y: PAGE_H - 410, size: 16, font: fonts.serif, color: MUTED });
-
-  // Presidente
-  const lbl = "PRESIDENTE";
-  const lw = fonts.sans.widthOfTextAtSize(lbl, 8);
-  page.drawText(lbl, { x: cx - lw / 2, y: 200, size: 8, font: fonts.sansBold, color: MUTED });
-
-  const pn = sanitize(presidente);
-  const pw = fonts.serif.widthOfTextAtSize(pn, 13);
-  page.drawText(pn, { x: cx - pw / 2, y: 180, size: 13, font: fonts.serif, color: INK });
-
-  // Data generazione
-  page.drawText(`Generato il ${dateStr}`, { x: PAGE_W - M_RIGHT - 140, y: 50, size: 8, font: fonts.sans, color: MUTED });
+  // Sezione inferiore crema
+  const bottomTop = PAGE_H - bandH - 40;
+  page.drawText("PRESENTATA DA", { x: M_LEFT, y: bottomTop, size: 9, font: fonts.sansBold, color: MUTED });
+  const pn = sanitize(presidente || "Il Presidente");
+  page.drawText(pn, { x: M_LEFT, y: bottomTop - 32, size: 22, font: fonts.serifBold, color: INK });
+  page.drawLine({ start: { x: M_LEFT, y: bottomTop - 48 }, end: { x: M_LEFT + 60, y: bottomTop - 48 }, thickness: 0.8, color: TEAL });
+  page.drawText(`Generato il ${dateStr}`, { x: M_LEFT, y: 60, size: 10, font: fonts.sans, color: MUTED });
 }
 
 interface AreaCharts {
@@ -214,28 +210,29 @@ interface AreaCharts {
   secondaryH?: number;
 }
 
+// Header pagina area (Sezione C): kicker uppercase + linea teal 100pt + titolo 32pt left
 function drawAreaHeader(page: PDFPage, fonts: Fonts, info: { numero: number; titolo: string }, startY: number): number {
   let y = startY;
-  const header = `AREA ${info.numero}`;
-  page.drawText(header, { x: M_LEFT, y, size: 8, font: fonts.sansBold, color: TEAL });
-  y -= 22;
-  const titleLines = wrapText(info.titolo, fonts.serifBold, 24, CONTENT_W);
-  for (const ln of titleLines) {
-    page.drawText(ln, { x: M_LEFT, y, size: 24, font: fonts.serifBold, color: INK });
-    y -= 26;
+  const kicker = `CAPITOLO ${info.numero} - ${sanitize(info.titolo.toUpperCase())}`;
+  page.drawText(kicker, { x: M_LEFT, y, size: 8, font: fonts.sansBold, color: TEAL });
+  y -= 8;
+  page.drawLine({ start: { x: M_LEFT, y }, end: { x: M_LEFT + 100, y }, thickness: 0.7, color: TEAL });
+  y -= 28;
+  const titleLines = wrapText(info.titolo, fonts.serifBold, 32, CONTENT_W);
+  for (const ln of titleLines.slice(0, 2)) {
+    page.drawText(ln, { x: M_LEFT, y, size: 32, font: fonts.serifBold, color: INK });
+    y -= 36;
   }
-  y -= 4;
-  page.drawLine({ start: { x: M_LEFT, y }, end: { x: M_LEFT + 50, y }, thickness: 1.5, color: TEAL });
-  y -= 18;
+  y -= 10;
   return y;
 }
 
 function drawParagraph(page: PDFPage, fonts: Fonts, text: string, y: number, opts: {
-  font: PDFFont; size: number; color: any; lineH: number; indent?: number; align?: "left" | "right";
+  font: PDFFont; size: number; color: any; lineH: number; indent?: number; align?: "left" | "right"; maxW?: number;
 }): number {
   const indent = opts.indent ?? 0;
   const align = opts.align ?? "left";
-  const w = CONTENT_W - indent;
+  const w = (opts.maxW ?? CONTENT_W) - indent;
   const lines = wrapText(text, opts.font, opts.size, w);
   for (const ln of lines) {
     if (y < M_BOTTOM + 20) break;
@@ -250,31 +247,66 @@ function drawParagraph(page: PDFPage, fonts: Fonts, text: string, y: number, opt
   return y;
 }
 
-function drawKpiRow(page: PDFPage, fonts: Fonts, kpi: string[], y: number): number {
-  const kpiW = CONTENT_W / kpi.length;
-  for (let i = 0; i < kpi.length; i++) {
-    const parts = kpi[i].split(" ");
-    const mid = Math.ceil(parts.length / 2);
-    const numLine = parts.slice(0, mid).join(" ");
-    const lblLine = parts.slice(mid).join(" ");
-    const x0 = M_LEFT + i * kpiW;
-    const nw = fonts.serifBold.widthOfTextAtSize(numLine, 16);
-    page.drawText(sanitize(numLine), { x: x0 + (kpiW - nw) / 2, y, size: 16, font: fonts.serifBold, color: INK });
-    if (lblLine) {
-      const lw = fonts.sans.widthOfTextAtSize(lblLine.toUpperCase(), 8);
-      page.drawText(sanitize(lblLine.toUpperCase()), { x: x0 + (kpiW - lw) / 2, y: y - 14, size: 8, font: fonts.sans, color: MUTED });
+// KPI mosaico 3 colonne (Sezione C): 3 celle 90pt cream + bordo hair, num serif 36 teal, label sans 8 tracking
+function drawKpiMosaic(page: PDFPage, fonts: Fonts, kpis: KpiCell[] | undefined, y: number): number {
+  if (!kpis || kpis.length === 0) return y;
+  const cells = kpis.slice(0, 3);
+  const totalW = Math.min(480, CONTENT_W);
+  const x0 = M_LEFT + (CONTENT_W - totalW) / 2;
+  const cellW = totalW / cells.length;
+  const cellH = 90;
+  const yTop = y - cellH;
+
+  // sfondo unico + bordo esterno
+  page.drawRectangle({ x: x0, y: yTop, width: totalW, height: cellH, color: CREAM, borderColor: HAIR, borderWidth: 0.5 });
+
+  for (let i = 0; i < cells.length; i++) {
+    const cx = x0 + i * cellW + cellW / 2;
+    const k = cells[i];
+    // separatori verticali
+    if (i > 0) {
+      page.drawLine({
+        start: { x: x0 + i * cellW, y: yTop + 12 },
+        end: { x: x0 + i * cellW, y: yTop + cellH - 12 },
+        thickness: 0.4, color: HAIR,
+      });
     }
+    // numero serif bold 28 teal centrato (36 era troppo per stringhe lunghe tipo CHF)
+    let nSize = 28;
+    let txt = sanitize(k.value);
+    let nw = fonts.serifBold.widthOfTextAtSize(txt, nSize);
+    while (nw > cellW - 16 && nSize > 14) {
+      nSize -= 1;
+      nw = fonts.serifBold.widthOfTextAtSize(txt, nSize);
+    }
+    page.drawText(txt, { x: cx - nw / 2, y: yTop + 46, size: nSize, font: fonts.serifBold, color: TEAL });
+    // label sans uppercase 8 tracking
+    const lbl = sanitize(k.label.toUpperCase());
+    const lw = fonts.sansBold.widthOfTextAtSize(lbl, 8) + (lbl.length - 1) * 1.5;
+    page.drawText(lbl, { x: cx - lw / 2, y: yTop + 22, size: 8, font: fonts.sansBold, color: MUTED });
   }
-  y -= 36;
-  page.drawLine({ start: { x: M_LEFT, y }, end: { x: M_LEFT + CONTENT_W, y }, thickness: 0.4, color: LIGHT_BORDER });
-  return y - 14;
+  return yTop - 18;
 }
 
-function drawChart(page: PDFPage, img: PDFImage, w: number, h: number, y: number): number {
-  // centrato orizzontalmente
-  const x = M_LEFT + (CONTENT_W - w) / 2;
-  page.drawImage(img, { x, y: y - h, width: w, height: h });
-  return y - h - 14;
+function drawChart(page: PDFPage, fonts: Fonts, img: PDFImage, w: number, h: number, y: number, caption?: string): number {
+  // Cornice teal 0.5 attorno + didascalia sans uppercase sopra
+  const pad = 12;
+  const frameW = w + pad * 2;
+  const frameH = h + pad * 2;
+  const fx = M_LEFT + (CONTENT_W - frameW) / 2;
+  let topY = y;
+  if (caption) {
+    const cap = sanitize(caption);
+    const capw = fonts.sansBold.widthOfTextAtSize(cap, 8) + (cap.length - 1) * 1.5;
+    page.drawText(cap, { x: M_LEFT + (CONTENT_W - capw) / 2, y: topY, size: 8, font: fonts.sansBold, color: MUTED });
+    topY -= 14;
+  }
+  page.drawRectangle({
+    x: fx, y: topY - frameH, width: frameW, height: frameH,
+    borderColor: TEAL, borderWidth: 0.5,
+  });
+  page.drawImage(img, { x: fx + pad, y: topY - frameH + pad, width: w, height: h });
+  return topY - frameH - 14;
 }
 
 // ============================================================
@@ -290,16 +322,17 @@ interface AreaLayout {
   totalPages: 1 | 2;
   chartScaledW?: number;
   chartScaledH?: number;
-  decoration?: { kind: "A" | "B" | "C"; quote?: string; kpi?: string };
+  decoration?: { kind: "A" | "C"; quote?: string };
 }
 
-function pickDecoration(p3: string, info: { kpi: string[] }): AreaLayout["decoration"] {
+// Solo decorazioni A (citazione) e C (linea con rombo). I callout "B" (mini-KPI fluttuante)
+// sono stati rimossi (Prompt D): i numeri sono gia' nei KPI hero e nei paragrafi.
+function pickDecoration(p3: string): AreaLayout["decoration"] {
   if (p3) {
     const sentences = p3.split(/(?<=[.!?])\s+/);
     const short = sentences.find((s) => s.length >= 20 && s.length <= 80);
     if (short) return { kind: "A", quote: short.trim() };
   }
-  if (info.kpi.length > 1) return { kind: "B", kpi: info.kpi[1] };
   return { kind: "C" };
 }
 
@@ -328,7 +361,7 @@ function planAreaLayout(sezione_id: string, paras: Record<number, string> | unde
   if (hasSecondary) {
     const p2used = HEADER_CONSUMED + (charts.secondaryH ?? 0) + CHART_SPACING + h_p3 + h_p4;
     const empty = AREA_AVAIL - p2used;
-    const decoration = empty > 150 ? pickDecoration(p3, info) : undefined;
+    const decoration = empty > 150 ? pickDecoration(p3) : undefined;
     return { totalPages: 2, chartScaledW: charts.primaryW, chartScaledH: charts.primaryH, decoration };
   }
 
@@ -358,14 +391,14 @@ function planAreaLayout(sezione_id: string, paras: Record<number, string> | unde
     const finalChartH = cH ? cH + CHART_SPACING : 0;
     const finalUsed = HEADER_CONSUMED + h_p1 + KPI_BLOCK_H + h_p2 + finalChartH + h_p3 + h_p4;
     const empty = AREA_AVAIL - finalUsed;
-    const decoration = empty > 150 ? pickDecoration(p3, info) : undefined;
+    const decoration = empty > 150 ? pickDecoration(p3) : undefined;
     return { totalPages: 1, chartScaledW: cW, chartScaledH: cH, decoration };
   }
 
   // 2 pagine: P1+KPI+P2+chart sulla prima, P3+P4 sulla seconda
   const p2used = HEADER_CONSUMED + h_p3 + h_p4;
   const empty = AREA_AVAIL - p2used;
-  const decoration = empty > 150 ? pickDecoration(p3, info) : undefined;
+  const decoration = empty > 150 ? pickDecoration(p3) : undefined;
   return { totalPages: 2, chartScaledW: charts.primaryW, chartScaledH: charts.primaryH, decoration };
 }
 
@@ -381,17 +414,19 @@ function drawDecoration(page: PDFPage, fonts: Fonts, deco: NonNullable<AreaLayou
       page.drawText(ln, { x: cx - w / 2, y, size: 16, font: fonts.serifItalic, color: rgb(0.3, 0.3, 0.32) });
       y -= 22;
     }
-  } else if (deco.kind === "B" && deco.kpi) {
-    const txt = sanitize(deco.kpi);
-    const w = fonts.sans.widthOfTextAtSize(txt, 14);
-    page.drawText(txt, { x: M_LEFT + CONTENT_W - w, y: yCenter, size: 14, font: fonts.sans, color: MUTED });
   } else {
-    page.drawLine({ start: { x: cx - 50, y: yCenter }, end: { x: cx + 50, y: yCenter }, thickness: 1, color: TEAL });
+    // Linea decorativa con piccolo rombo centrale teal
+    page.drawLine({ start: { x: cx - 50, y: yCenter }, end: { x: cx - 6, y: yCenter }, thickness: 0.6, color: TEAL });
+    page.drawLine({ start: { x: cx + 6, y: yCenter }, end: { x: cx + 50, y: yCenter }, thickness: 0.6, color: TEAL });
+    page.drawLine({ start: { x: cx, y: yCenter + 3 }, end: { x: cx + 3, y: yCenter }, thickness: 0.8, color: TEAL });
+    page.drawLine({ start: { x: cx + 3, y: yCenter }, end: { x: cx, y: yCenter - 3 }, thickness: 0.8, color: TEAL });
+    page.drawLine({ start: { x: cx, y: yCenter - 3 }, end: { x: cx - 3, y: yCenter }, thickness: 0.8, color: TEAL });
+    page.drawLine({ start: { x: cx - 3, y: yCenter }, end: { x: cx, y: yCenter + 3 }, thickness: 0.8, color: TEAL });
   }
 }
 
-// Singola pagina: tutto in una.
-function drawAreaSingle(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum: number, paras: Record<number, string> | undefined, charts: AreaCharts, layout: AreaLayout) {
+// Singola pagina area
+function drawAreaSingle(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum: number, paras: Record<number, string> | undefined, charts: AreaCharts, layout: AreaLayout, kpiData: KpiData) {
   drawPageFrame(page, pageNum, fonts);
   const info = AREA_INFO[sezione_id];
   if (!info) return;
@@ -399,29 +434,29 @@ function drawAreaSingle(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum
   y = drawAreaHeader(page, fonts, info, y);
 
   const p1 = paras?.[1] ?? info.insight;
-  y = drawParagraph(page, fonts, p1, y, { font: fonts.serifItalic, size: 11, color: rgb(0.3, 0.3, 0.32), lineH: 15 });
-  y -= 6;
+  y = drawParagraph(page, fonts, p1, y, { font: fonts.serifItalic, size: 12, color: rgb(0.3, 0.3, 0.32), lineH: 17, maxW: CONTENT_W - 20 });
+  y -= 10;
 
-  y = drawKpiRow(page, fonts, info.kpi, y);
+  y = drawKpiMosaic(page, fonts, kpiData[sezione_id], y);
 
   const p2 = paras?.[2];
   if (p2) {
-    y = drawParagraph(page, fonts, p2, y, { font: fonts.serif, size: 11, color: INK, lineH: 14 });
+    y = drawParagraph(page, fonts, p2, y, { font: fonts.serif, size: 11, color: INK, lineH: 16 });
     y -= 6;
   }
 
   if (charts.primary && layout.chartScaledW && layout.chartScaledH) {
-    y = drawChart(page, charts.primary, layout.chartScaledW, layout.chartScaledH, y);
+    y = drawChart(page, fonts, charts.primary, layout.chartScaledW, layout.chartScaledH, y, CHART_CAPTIONS[sezione_id]);
   }
 
   const p3 = paras?.[3];
   if (p3) {
-    y = drawParagraph(page, fonts, p3, y, { font: fonts.serif, size: 11, color: rgb(0.18, 0.18, 0.2), lineH: 14, indent: 20 });
+    y = drawParagraph(page, fonts, p3, y, { font: fonts.serif, size: 11, color: rgb(0.18, 0.18, 0.2), lineH: 16, indent: 20 });
     y -= 6;
   }
   const p4 = paras?.[4];
   if (p4) {
-    y = drawParagraph(page, fonts, p4, y, { font: fonts.serifItalic, size: 10, color: MUTED, lineH: 13, align: "right" });
+    y = drawParagraph(page, fonts, p4, y, { font: fonts.serifItalic, size: 10, color: MUTED, lineH: 14, align: "right" });
   }
 
   if (layout.decoration) {
@@ -429,8 +464,7 @@ function drawAreaSingle(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum
   }
 }
 
-// Pagina 1 di 2: header + P1 + KPI + P2 + chart primario
-function drawAreaMain(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum: number, paras: Record<number, string> | undefined, charts: AreaCharts, layout: AreaLayout) {
+function drawAreaMain(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum: number, paras: Record<number, string> | undefined, charts: AreaCharts, layout: AreaLayout, kpiData: KpiData) {
   drawPageFrame(page, pageNum, fonts);
   const info = AREA_INFO[sezione_id];
   if (!info) return;
@@ -438,49 +472,48 @@ function drawAreaMain(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum: 
   y = drawAreaHeader(page, fonts, info, y);
 
   const p1 = paras?.[1] ?? info.insight;
-  y = drawParagraph(page, fonts, p1, y, { font: fonts.serifItalic, size: 11, color: rgb(0.3, 0.3, 0.32), lineH: 15 });
-  y -= 6;
+  y = drawParagraph(page, fonts, p1, y, { font: fonts.serifItalic, size: 12, color: rgb(0.3, 0.3, 0.32), lineH: 17, maxW: CONTENT_W - 20 });
+  y -= 10;
 
-  y = drawKpiRow(page, fonts, info.kpi, y);
+  y = drawKpiMosaic(page, fonts, kpiData[sezione_id], y);
 
   const p2 = paras?.[2];
   if (p2) {
-    y = drawParagraph(page, fonts, p2, y, { font: fonts.serif, size: 11, color: INK, lineH: 14 });
+    y = drawParagraph(page, fonts, p2, y, { font: fonts.serif, size: 11, color: INK, lineH: 16 });
     y -= 6;
   }
 
   if (charts.primary && layout.chartScaledW && layout.chartScaledH) {
-    if (y - layout.chartScaledH >= M_BOTTOM + 20) {
-      drawChart(page, charts.primary, layout.chartScaledW, layout.chartScaledH, y);
+    if (y - layout.chartScaledH - 38 >= M_BOTTOM + 20) {
+      drawChart(page, fonts, charts.primary, layout.chartScaledW, layout.chartScaledH, y, CHART_CAPTIONS[sezione_id]);
     }
   }
 }
 
-// Pagina 2 di 2: P3, P4 + eventuale chart secondario + decorazione
 function drawAreaContinuation(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum: number, paras: Record<number, string> | undefined, charts: AreaCharts, layout: AreaLayout) {
   drawPageFrame(page, pageNum, fonts);
   const info = AREA_INFO[sezione_id];
   if (!info) return;
 
   let y = PAGE_H - M_TOP - 10;
-  const header = `AREA ${info.numero} · ${sanitize(info.titolo)} (segue)`;
+  const header = `CAPITOLO ${info.numero} - ${sanitize(info.titolo.toUpperCase())} (SEGUE)`;
   page.drawText(header, { x: M_LEFT, y, size: 8, font: fonts.sansBold, color: TEAL });
-  y -= 22;
-  page.drawLine({ start: { x: M_LEFT, y }, end: { x: M_LEFT + 50, y }, thickness: 1.2, color: TEAL });
-  y -= 18;
+  y -= 8;
+  page.drawLine({ start: { x: M_LEFT, y }, end: { x: M_LEFT + 100, y }, thickness: 0.7, color: TEAL });
+  y -= 28;
 
   if (charts.secondary && charts.secondaryW && charts.secondaryH) {
-    y = drawChart(page, charts.secondary, charts.secondaryW, charts.secondaryH, y);
+    y = drawChart(page, fonts, charts.secondary, charts.secondaryW, charts.secondaryH, y, CHART_CAPTIONS[sezione_id]);
   }
 
   const p3 = paras?.[3];
   if (p3) {
-    y = drawParagraph(page, fonts, p3, y, { font: fonts.serif, size: 11, color: rgb(0.18, 0.18, 0.2), lineH: 14, indent: 20 });
+    y = drawParagraph(page, fonts, p3, y, { font: fonts.serif, size: 11, color: rgb(0.18, 0.18, 0.2), lineH: 16, indent: 20 });
     y -= 6;
   }
   const p4 = paras?.[4];
   if (p4) {
-    y = drawParagraph(page, fonts, p4, y, { font: fonts.serifItalic, size: 10, color: MUTED, lineH: 13, align: "right" });
+    y = drawParagraph(page, fonts, p4, y, { font: fonts.serifItalic, size: 10, color: MUTED, lineH: 14, align: "right" });
   }
 
   if (layout.decoration) {
@@ -488,148 +521,266 @@ function drawAreaContinuation(page: PDFPage, fonts: Fonts, sezione_id: string, p
   }
 }
 
+// Sezione D: pagine blocchi testo con drop cap + pull-quote opzionale
 function drawBloccoPage(page: PDFPage, fonts: Fonts, blocco: any, pageNum: number) {
   drawPageFrame(page, pageNum, fonts);
+  const info = AREA_INFO_BLOCCO(blocco);
   let y = PAGE_H - M_TOP - 10;
 
-  const cat = blocco?.categoria ?? "altro";
-  drawCategoryBadge(page, M_LEFT, y - 6, cat.replace(/_/g, " "), cat, fonts);
-  y -= 36;
+  // Header pagina (kicker + linea teal)
+  page.drawText(info.kicker, { x: M_LEFT, y, size: 8, font: fonts.sansBold, color: TEAL });
+  y -= 8;
+  page.drawLine({ start: { x: M_LEFT, y }, end: { x: M_LEFT + 100, y }, thickness: 0.7, color: TEAL });
+  y -= 28;
 
-  const titleLines = wrapText(blocco?.titolo ?? "Blocco", fonts.serifBold, 22, CONTENT_W);
-  for (const ln of titleLines) {
-    page.drawText(ln, { x: M_LEFT, y, size: 22, font: fonts.serifBold, color: INK });
-    y -= 26;
+  // Titolo 32pt serif
+  const titleLines = wrapText(blocco?.titolo ?? "Blocco", fonts.serifBold, 32, CONTENT_W);
+  for (const ln of titleLines.slice(0, 2)) {
+    page.drawText(ln, { x: M_LEFT, y, size: 32, font: fonts.serifBold, color: INK });
+    y -= 36;
   }
-  y -= 10;
+  y -= 16;
 
-  page.drawLine({ start: { x: M_LEFT, y }, end: { x: M_LEFT + 50, y }, thickness: 1.2, color: TEAL });
-  y -= 22;
+  // Corpo testo
+  const rawContent = (blocco?.contenuto ?? "").replace(/\*\*/g, "").replace(/\*/g, "");
+  const fullText = rawContent.replace(/\n+/g, " ").trim();
+  const wordCount = fullText.split(/\s+/).length;
 
-  const paragraphs = (blocco?.contenuto ?? "").split(/\n\s*\n/);
-  const size = 11;
-  const lh = 16;
-  for (const para of paragraphs) {
-    const clean = para.replace(/\*\*/g, "").replace(/\*/g, "").replace(/\n/g, " ");
-    const lines = wrapText(clean, fonts.serif, size, CONTENT_W);
-    for (const ln of lines) {
-      if (y < M_BOTTOM + 30) break;
-      page.drawText(ln, { x: M_LEFT, y, size, font: fonts.serif, color: INK });
-      y -= lh;
+  // Pull-quote: se > 80 parole, la frase piu' corta tra le ultime 3
+  let pullQuote = "";
+  let bodyText = fullText;
+  if (wordCount > 80) {
+    const sentences = fullText.split(/(?<=[.!?])\s+/).filter((s) => s.length > 15);
+    if (sentences.length >= 3) {
+      const last3 = sentences.slice(-3);
+      pullQuote = last3.reduce((a, b) => (a.length <= b.length ? a : b));
+      if (pullQuote.length > 140) pullQuote = "";
     }
-    y -= 8;
-    if (y < M_BOTTOM + 30) break;
   }
 
-  // Decorazione finale (Parte 4-C) se la pagina ha > 150pt vuoti in basso
-  if (y > M_BOTTOM + 180) {
-    const yCenter = (y + M_BOTTOM + 30) / 2;
+  const bodySize = 12;
+  const bodyLH = 18;
+  // maxWidth ridotta se c'e' pull-quote a destra (sotto le prime ~6 righe)
+  const QUOTE_W = 200;
+  const QUOTE_TOP_LINES = 6;
+  const fullBodyW = CONTENT_W;
+  const narrowBodyW = CONTENT_W - QUOTE_W - 24;
+
+  // Drop cap: prima lettera grande
+  const firstChar = sanitize(bodyText.charAt(0) || "•");
+  const dropSize = 56;
+  const dropAscent = fonts.serifBold.heightAtSize(dropSize);
+  const dropW = fonts.serifBold.widthOfTextAtSize(firstChar, dropSize);
+  const dropX = M_LEFT;
+  const dropY = y - dropAscent * 0.78;
+  page.drawText(firstChar, { x: dropX, y: dropY, size: dropSize, font: fonts.serifBold, color: TEAL });
+
+  // Avvolge il testo: prime 3 righe rientrate di dropW+8
+  const restText = sanitize(bodyText.slice(1).trimStart());
+  const indentWrapW = fullBodyW - dropW - 8;
+  // First-pass: split text in lines using indent for first 3, then full width
+  const wrappedFirst = wrapText(restText, fonts.serif, bodySize, indentWrapW);
+  const dropLines = wrappedFirst.slice(0, 3);
+  const remainder = wrappedFirst.slice(3).join(" ");
+  const wrappedRest = remainder ? wrapText(remainder, fonts.serif, bodySize, fullBodyW) : [];
+
+  let textY = y;
+  for (const ln of dropLines) {
+    page.drawText(ln, { x: M_LEFT + dropW + 8, y: textY, size: bodySize, font: fonts.serif, color: INK });
+    textY -= bodyLH;
+  }
+  // Linee successive: se c'e' pull-quote, riduce la larghezza dopo le prime QUOTE_TOP_LINES totali
+  let written = dropLines.length;
+  let remainingLines = wrappedRest;
+
+  // Se c'e' pull-quote, ri-wrappo la parte centrale a narrowBodyW
+  if (pullQuote && remainingLines.length > 0) {
+    const fullRest = remainingLines.join(" ");
+    const narrowLines = wrapText(fullRest, fonts.serif, bodySize, narrowBodyW);
+    remainingLines = narrowLines;
+  }
+
+  const startQuoteY = textY;
+  for (const ln of remainingLines) {
+    if (textY < M_BOTTOM + 40) break;
+    page.drawText(ln, { x: M_LEFT, y: textY, size: bodySize, font: fonts.serif, color: INK });
+    textY -= bodyLH;
+    written++;
+  }
+
+  // Pull-quote a destra con bordo sinistro teal
+  if (pullQuote) {
+    const qx = M_LEFT + CONTENT_W - QUOTE_W;
+    const qLines = wrapText(`<<${pullQuote}>>`, fonts.serifItalic, 18, QUOTE_W - 16);
+    const qH = qLines.length * 24;
+    const qTop = startQuoteY + 6;
+    page.drawLine({ start: { x: qx, y: qTop - qH - 8 }, end: { x: qx, y: qTop + 4 }, thickness: 2, color: TEAL });
+    let qy = qTop - 16;
+    for (const ln of qLines) {
+      page.drawText(ln, { x: qx + 12, y: qy, size: 18, font: fonts.serifItalic, color: TEAL });
+      qy -= 24;
+    }
+  }
+
+  // Decorazione finale se > 150pt vuoti
+  if (textY > M_BOTTOM + 180) {
+    const yCenter = (textY + M_BOTTOM + 30) / 2;
     const cx = PAGE_W / 2;
-    page.drawLine({ start: { x: cx - 50, y: yCenter }, end: { x: cx + 50, y: yCenter }, thickness: 1, color: TEAL });
+    page.drawLine({ start: { x: cx - 50, y: yCenter }, end: { x: cx - 6, y: yCenter }, thickness: 0.6, color: TEAL });
+    page.drawLine({ start: { x: cx + 6, y: yCenter }, end: { x: cx + 50, y: yCenter }, thickness: 0.6, color: TEAL });
+    page.drawRectangle({ x: cx - 2.5, y: yCenter - 2.5, width: 5, height: 5, color: TEAL, rotate: degrees(45) });
   }
 }
 
+function AREA_INFO_BLOCCO(blocco: any): { kicker: string } {
+  const cat = (blocco?.categoria ?? "altro").replace(/_/g, " ").toUpperCase();
+  return { kicker: sanitize(`SEZIONE - ${cat}`) };
+}
+
+// Sezione E: allegati con cornice teal e icona PDF disegnata
 function drawAllegatoPlaceholder(page: PDFPage, fonts: Fonts, allegato: any, pageNum: number) {
   drawPageFrame(page, pageNum, fonts);
   const cx = PAGE_W / 2;
+
+  // Cornice esterna teal con margini 50pt
+  const fx = 50;
+  const fy = 50;
+  const fw = PAGE_W - 100;
+  const fh = PAGE_H - 100;
+  page.drawRectangle({ x: fx, y: fy, width: fw, height: fh, borderColor: TEAL, borderWidth: 0.5 });
+
+  // Centro verticale del contenuto
   const cy = PAGE_H / 2;
 
-  // Cornice decorativa centrata
-  const boxW = CONTENT_W - 40;
-  const boxH = 320;
-  const boxX = (PAGE_W - boxW) / 2;
-  const boxY = cy - boxH / 2;
-  page.drawRectangle({ x: boxX, y: boxY, width: boxW, height: boxH, borderColor: LIGHT_BORDER, borderWidth: 1 });
+  // Etichetta sopra
+  const tag = "DOCUMENTO ALLEGATO";
+  const tagW = fonts.sansBold.widthOfTextAtSize(tag, 8);
+  page.drawText(tag, { x: cx - tagW / 2, y: cy + 130, size: 8, font: fonts.sansBold, color: TEAL });
 
-  // Icona PDF centrata verticalmente nel box
-  const iconH = 90;
-  const iy = boxY + boxH - 50 - iconH;
-  const ix = cx - 35;
-  page.drawRectangle({ x: ix, y: iy, width: 70, height: iconH, borderColor: LIGHT_BORDER, borderWidth: 1.5 });
-  const pdfTxt = "PDF";
-  const pw = fonts.serifBold.widthOfTextAtSize(pdfTxt, 22);
-  page.drawText(pdfTxt, { x: cx - pw / 2, y: iy + 35, size: 22, font: fonts.serifBold, color: MUTED });
+  // Icona PDF disegnata (rettangolo + piega d'angolo)
+  const iw = 60, ih = 78;
+  const ix = cx - iw / 2;
+  const iy = cy + 30;
+  page.drawRectangle({ x: ix, y: iy, width: iw, height: ih, borderColor: MUTED, borderWidth: 1 });
+  // Piega d'angolo (triangolo in alto a destra)
+  page.drawLine({ start: { x: ix + iw - 14, y: iy + ih }, end: { x: ix + iw, y: iy + ih - 14 }, thickness: 1, color: MUTED });
+  page.drawLine({ start: { x: ix + iw - 14, y: iy + ih }, end: { x: ix + iw - 14, y: iy + ih - 14 }, thickness: 1, color: MUTED });
+  page.drawLine({ start: { x: ix + iw - 14, y: iy + ih - 14 }, end: { x: ix + iw, y: iy + ih - 14 }, thickness: 1, color: MUTED });
+  // Etichetta "PDF" al centro
+  const ptxt = "PDF";
+  const pw = fonts.sansBold.widthOfTextAtSize(ptxt, 14);
+  page.drawText(ptxt, { x: cx - pw / 2, y: iy + ih / 2 - 6, size: 14, font: fonts.sansBold, color: MUTED });
 
-  const cat = allegato?.categoria ?? "altro";
-  const lbl = sanitize(cat.replace(/_/g, " ").toUpperCase());
-  const lw = fonts.sansBold.widthOfTextAtSize(lbl, 8);
-  const c = CAT_COLORS[cat] || CAT_COLORS.altro;
-  const color = rgb(c[0] / 255, c[1] / 255, c[2] / 255);
-  page.drawRectangle({ x: cx - (lw + 14) / 2, y: iy - 30, width: lw + 14, height: 16, color });
-  page.drawText(lbl, { x: cx - lw / 2, y: iy - 26, size: 8, font: fonts.sansBold, color: WHITE });
-
+  // Titolo allegato
   const tit = sanitize(allegato?.titolo ?? "Allegato");
-  const tw = fonts.serifBold.widthOfTextAtSize(tit, 20);
-  page.drawText(tit, { x: cx - tw / 2, y: iy - 70, size: 20, font: fonts.serifBold, color: INK });
+  const tlines = wrapText(tit, fonts.serifBold, 24, fw - 60);
+  let ty = cy - 10;
+  for (const ln of tlines.slice(0, 2)) {
+    const lw = fonts.serifBold.widthOfTextAtSize(ln, 24);
+    page.drawText(ln, { x: cx - lw / 2, y: ty, size: 24, font: fonts.serifBold, color: INK });
+    ty -= 28;
+  }
 
-  let dy = iy - 100;
+  // Descrizione sans 11
   if (allegato?.descrizione) {
-    const lines = wrapText(allegato.descrizione, fonts.serifItalic, 11, CONTENT_W - 80);
-    for (const ln of lines) {
-      const lnw = fonts.serifItalic.widthOfTextAtSize(ln, 11);
-      page.drawText(ln, { x: cx - lnw / 2, y: dy, size: 11, font: fonts.serifItalic, color: MUTED });
+    const dlines = wrapText(allegato.descrizione, fonts.sans, 11, fw - 80);
+    let dy = ty - 12;
+    for (const ln of dlines.slice(0, 4)) {
+      const lw = fonts.sans.widthOfTextAtSize(ln, 11);
+      page.drawText(ln, { x: cx - lw / 2, y: dy, size: 11, font: fonts.sans, color: MUTED });
       dy -= 14;
     }
   }
 
-  // Micro-descrizione
-  const microNote = "Il documento completo segue nelle pagine successive del PDF.";
-  const mnLines = wrapText(microNote, fonts.sans, 9, CONTENT_W - 100);
-  let my = dy - 8;
-  for (const ln of mnLines) {
-    const w = fonts.sans.widthOfTextAtSize(ln, 9);
-    page.drawText(ln, { x: cx - w / 2, y: my, size: 9, font: fonts.sans, color: MUTED });
-    my -= 12;
-  }
+  // Nota in fondo cornice
+  const note = "Il documento completo segue nelle pagine successive.";
+  const nw = fonts.serifItalic.widthOfTextAtSize(note, 10);
+  page.drawText(note, { x: cx - nw / 2, y: fy + 30, size: 10, font: fonts.serifItalic, color: MUTED });
 }
 
+// Sezione B: indice riprogettato con header + leader dots + nota finale
 function drawIndice(page: PDFPage, fonts: Fonts, entries: { titolo: string; pagina: number }[], pageNum: number) {
   drawPageFrame(page, pageNum, fonts);
   let y = PAGE_H - M_TOP - 10;
-  page.drawText("INDICE", { x: M_LEFT, y, size: 8, font: fonts.sansBold, color: TEAL });
-  y -= 25;
-  page.drawText("Sommario", { x: M_LEFT, y: y - 18, size: 24, font: fonts.serifBold, color: INK });
-  y -= 60;
+  page.drawText("INDICE", { x: M_LEFT, y, size: 9, font: fonts.sansBold, color: TEAL });
+  y -= 8;
+  page.drawLine({ start: { x: M_LEFT, y }, end: { x: M_LEFT + CONTENT_W, y }, thickness: 0.4, color: TEAL });
+  y -= 36;
 
-  const size = 11;
+  const titleSize = 14;
+  const numSize = 14;
+  const numColW = 28;
   for (const e of entries) {
-    if (y < M_BOTTOM + 30) break;
+    if (y < M_BOTTOM + 60) break;
     const tit = sanitize(e.titolo);
     const num = String(e.pagina);
-    const titW = fonts.serif.widthOfTextAtSize(tit, size);
-    const numW = fonts.sans.widthOfTextAtSize(num, size);
-    page.drawText(tit, { x: M_LEFT, y, size, font: fonts.serif, color: INK });
-    page.drawText(num, { x: M_LEFT + CONTENT_W - numW, y, size, font: fonts.sans, color: MUTED });
-    // Puntini
-    const dotsStart = M_LEFT + titW + 6;
-    const dotsEnd = M_LEFT + CONTENT_W - numW - 6;
+
+    // Numero capitolo a sinistra (estratto se inizia con "N. ...")
+    let chapter = "";
+    let titleClean = tit;
+    const m = tit.match(/^(\d+)\.\s*(.+)$/);
+    if (m) { chapter = m[1]; titleClean = m[2]; }
+
+    if (chapter) {
+      page.drawText(chapter, { x: M_LEFT, y, size: titleSize, font: fonts.serifBold, color: TEAL });
+    }
+    const titleX = M_LEFT + 28;
+    const titW = fonts.serif.widthOfTextAtSize(titleClean, titleSize);
+    page.drawText(titleClean, { x: titleX, y, size: titleSize, font: fonts.serif, color: INK });
+
+    const numW = fonts.serif.widthOfTextAtSize(num, numSize);
+    const numX = M_LEFT + CONTENT_W - numW;
+    page.drawText(num, { x: numX, y, size: numSize, font: fonts.serif, color: INK });
+
+    // Leader dots
+    const dotsStart = titleX + titW + 8;
+    const dotsEnd = numX - 8;
     let dx = dotsStart;
     while (dx < dotsEnd) {
-      page.drawText(".", { x: dx, y, size, font: fonts.sans, color: rgb(0.7, 0.68, 0.65) });
-      dx += 3.5;
+      page.drawText(".", { x: dx, y, size: titleSize, font: fonts.sans, color: rgb(0.78, 0.76, 0.73) });
+      dx += 4;
     }
-    y -= 20;
+
+    y -= 22;
   }
+
+  // Nota finale corsivo
+  const today = new Date();
+  const ds = `${String(today.getDate()).padStart(2, "0")}/${String(today.getMonth() + 1).padStart(2, "0")}/${today.getFullYear()}`;
+  const note = sanitize(`Documento generato il ${ds}`);
+  page.drawText(note, { x: M_LEFT, y: M_BOTTOM + 20, size: 9, font: fonts.serifItalic, color: MUTED });
 }
 
-function drawChiusura(page: PDFPage, fonts: Fonts, club: any, stagione: string, pageNum: number, dateStr: string) {
-  drawPageFrame(page, pageNum, fonts);
+// Sezione F: chiusura con monogramma + banda teal in fondo
+function drawChiusura(page: PDFPage, fonts: Fonts, club: any, stagione: string, _pageNum: number, dateStr: string) {
+  // Sfondo crema, niente numero pagina visibile (banda copre il footer)
+  page.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: CREAM });
   const cx = PAGE_W / 2;
-  const cy = PAGE_H / 2;
 
+  // Banda teal 30% in fondo
+  const bandH = PAGE_H * 0.3;
+  page.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: bandH, color: TEAL });
+
+  // Monogramma cerchio outline teal diametro 80pt
+  const monoY = bandH + 220;
+  page.drawCircle({ x: cx, y: monoY, size: 40, borderColor: TEAL, borderWidth: 1 });
   const nome = sanitize(club?.nome ?? "Club");
-  const nw = fonts.serifBold.widthOfTextAtSize(nome, 22);
-  page.drawText(nome, { x: cx - nw / 2, y: cy + 20, size: 22, font: fonts.serifBold, color: INK });
+  const inits = nome.split(/\s+/).map((w: string) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase() || "C";
+  const iw = fonts.serifBold.widthOfTextAtSize(inits, 36);
+  page.drawText(inits, { x: cx - iw / 2, y: monoY - 12, size: 36, font: fonts.serifBold, color: TEAL });
 
-  const sub = sanitize(`Relazione del Presidente - Stagione ${stagione}`);
-  const sw = fonts.serifItalic.widthOfTextAtSize(sub, 12);
-  page.drawText(sub, { x: cx - sw / 2, y: cy - 5, size: 12, font: fonts.serifItalic, color: MUTED });
+  // Nome club + sottotitolo
+  const nw = fonts.serifBold.widthOfTextAtSize(nome, 18);
+  page.drawText(nome, { x: cx - nw / 2, y: monoY - 80, size: 18, font: fonts.serifBold, color: INK });
 
-  page.drawLine({ start: { x: cx - 30, y: cy - 25 }, end: { x: cx + 30, y: cy - 25 }, thickness: 0.8, color: TEAL });
+  const sub = sanitize(`RELAZIONE DEL PRESIDENTE - STAGIONE ${stagione}`).toUpperCase();
+  const sw = fonts.sansBold.widthOfTextAtSize(sub, 9);
+  page.drawText(sub, { x: cx - sw / 2, y: monoY - 100, size: 9, font: fonts.sansBold, color: MUTED });
 
-  const dt = `Documento generato il ${dateStr}`;
-  const dw = fonts.sans.widthOfTextAtSize(dt, 9);
-  page.drawText(dt, { x: cx - dw / 2, y: 80, size: 9, font: fonts.sans, color: MUTED });
+  // Nella banda teal: data generazione bianca
+  const dt = sanitize(`DOCUMENTO GENERATO IL ${dateStr}`).toUpperCase();
+  const dw = fonts.sansBold.widthOfTextAtSize(dt, 9);
+  page.drawText(dt, { x: cx - dw / 2, y: bandH / 2 - 4, size: 9, font: fonts.sansBold, color: WHITE });
 }
 
 // ============================================================
@@ -657,7 +808,16 @@ export async function generateRelazionePDF(params: GenerateRelazioneParams): Pro
     }
   }
 
-  // Pre-fetch dati grafici (l'embed PNG avverra' dopo aver creato pdf-lib doc)
+  // Fetch KPI hero veri (Prompt D - stessa fonte dei paragrafi)
+  let kpiData: KpiData = {};
+  if (club_id && stagione_id) {
+    try {
+      kpiData = await fetchKpiData(club_id, stagione_id);
+    } catch (e) {
+      console.warn("[PDF] Errore fetch KPI:", e);
+    }
+  }
+
   let chartData: ChartData | null = null;
   if (club_id && stagione_id) {
     try {
@@ -832,9 +992,9 @@ export async function generateRelazionePDF(params: GenerateRelazioneParams): Pro
       const layout = areaLayouts[b.sezione_id] ?? planAreaLayout(b.sezione_id, paras, charts, fonts);
       const page = pdf.addPage([PAGE_W, PAGE_H]);
       if (layout.totalPages === 1) {
-        drawAreaSingle(page, fonts, b.sezione_id, pageCursor, paras, charts, layout);
+        drawAreaSingle(page, fonts, b.sezione_id, pageCursor, paras, charts, layout, kpiData);
       } else {
-        drawAreaMain(page, fonts, b.sezione_id, pageCursor, paras, charts, layout);
+        drawAreaMain(page, fonts, b.sezione_id, pageCursor, paras, charts, layout, kpiData);
         const page2 = pdf.addPage([PAGE_W, PAGE_H]);
         drawAreaContinuation(page2, fonts, b.sezione_id, pageCursor + 1, paras, charts, layout);
       }
