@@ -340,7 +340,7 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
     return `${tono}::${items_sig}::${paragrafi_meta ?? ""}`;
   }, [items, tono, paragrafi_meta]);
 
-
+  return (
     <div className="grid grid-cols-1 lg:grid-cols-[38%_62%] gap-6 h-[calc(100vh-220px)] min-h-[600px]">
       <div className="border border-border rounded-md bg-card p-4 overflow-hidden flex flex-col">
         <div className="flex flex-col">
