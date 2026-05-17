@@ -6,6 +6,7 @@ import { saveAs } from "file-saver";
 import { toast } from "sonner";
 import type { Tono } from "@/lib/paragraphGenerator";
 import { CompositoreItem } from "./types-compositore";
+import PdfViewer from "./PdfViewer";
 
 interface Props {
   items: CompositoreItem[];
