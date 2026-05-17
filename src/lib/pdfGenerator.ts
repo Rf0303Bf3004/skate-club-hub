@@ -433,9 +433,6 @@ function drawDecoration(page: PDFPage, fonts: Fonts, deco: NonNullable<AreaLayou
   }
 }
 
-// Singola pagina: tutto in una.
-function drawAreaSingle(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum: number, paras: Record<number, string> | undefined, charts: AreaCharts, layout: AreaLayout) {
-  drawPageFrame(page, pageNum, fonts);
 // Singola pagina area
 function drawAreaSingle(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum: number, paras: Record<number, string> | undefined, charts: AreaCharts, layout: AreaLayout, kpiData: KpiData) {
   drawPageFrame(page, pageNum, fonts);
