@@ -436,35 +436,38 @@ function drawDecoration(page: PDFPage, fonts: Fonts, deco: NonNullable<AreaLayou
 // Singola pagina: tutto in una.
 function drawAreaSingle(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum: number, paras: Record<number, string> | undefined, charts: AreaCharts, layout: AreaLayout) {
   drawPageFrame(page, pageNum, fonts);
+// Singola pagina area
+function drawAreaSingle(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum: number, paras: Record<number, string> | undefined, charts: AreaCharts, layout: AreaLayout, kpiData: KpiData) {
+  drawPageFrame(page, pageNum, fonts);
   const info = AREA_INFO[sezione_id];
   if (!info) return;
   let y = PAGE_H - M_TOP - 10;
   y = drawAreaHeader(page, fonts, info, y);
 
   const p1 = paras?.[1] ?? info.insight;
-  y = drawParagraph(page, fonts, p1, y, { font: fonts.serifItalic, size: 11, color: rgb(0.3, 0.3, 0.32), lineH: 15 });
-  y -= 6;
+  y = drawParagraph(page, fonts, p1, y, { font: fonts.serifItalic, size: 12, color: rgb(0.3, 0.3, 0.32), lineH: 17, maxW: CONTENT_W - 20 });
+  y -= 10;
 
-  y = drawKpiRow(page, fonts, info.kpi, y);
+  y = drawKpiMosaic(page, fonts, kpiData[sezione_id], y);
 
   const p2 = paras?.[2];
   if (p2) {
-    y = drawParagraph(page, fonts, p2, y, { font: fonts.serif, size: 11, color: INK, lineH: 14 });
+    y = drawParagraph(page, fonts, p2, y, { font: fonts.serif, size: 11, color: INK, lineH: 16 });
     y -= 6;
   }
 
   if (charts.primary && layout.chartScaledW && layout.chartScaledH) {
-    y = drawChart(page, charts.primary, layout.chartScaledW, layout.chartScaledH, y);
+    y = drawChart(page, fonts, charts.primary, layout.chartScaledW, layout.chartScaledH, y, CHART_CAPTIONS[sezione_id]);
   }
 
   const p3 = paras?.[3];
   if (p3) {
-    y = drawParagraph(page, fonts, p3, y, { font: fonts.serif, size: 11, color: rgb(0.18, 0.18, 0.2), lineH: 14, indent: 20 });
+    y = drawParagraph(page, fonts, p3, y, { font: fonts.serif, size: 11, color: rgb(0.18, 0.18, 0.2), lineH: 16, indent: 20 });
     y -= 6;
   }
   const p4 = paras?.[4];
   if (p4) {
-    y = drawParagraph(page, fonts, p4, y, { font: fonts.serifItalic, size: 10, color: MUTED, lineH: 13, align: "right" });
+    y = drawParagraph(page, fonts, p4, y, { font: fonts.serifItalic, size: 10, color: MUTED, lineH: 14, align: "right" });
   }
 
   if (layout.decoration) {
@@ -472,8 +475,7 @@ function drawAreaSingle(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum
   }
 }
 
-// Pagina 1 di 2: header + P1 + KPI + P2 + chart primario
-function drawAreaMain(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum: number, paras: Record<number, string> | undefined, charts: AreaCharts, layout: AreaLayout) {
+function drawAreaMain(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum: number, paras: Record<number, string> | undefined, charts: AreaCharts, layout: AreaLayout, kpiData: KpiData) {
   drawPageFrame(page, pageNum, fonts);
   const info = AREA_INFO[sezione_id];
   if (!info) return;
@@ -481,49 +483,48 @@ function drawAreaMain(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum: 
   y = drawAreaHeader(page, fonts, info, y);
 
   const p1 = paras?.[1] ?? info.insight;
-  y = drawParagraph(page, fonts, p1, y, { font: fonts.serifItalic, size: 11, color: rgb(0.3, 0.3, 0.32), lineH: 15 });
-  y -= 6;
+  y = drawParagraph(page, fonts, p1, y, { font: fonts.serifItalic, size: 12, color: rgb(0.3, 0.3, 0.32), lineH: 17, maxW: CONTENT_W - 20 });
+  y -= 10;
 
-  y = drawKpiRow(page, fonts, info.kpi, y);
+  y = drawKpiMosaic(page, fonts, kpiData[sezione_id], y);
 
   const p2 = paras?.[2];
   if (p2) {
-    y = drawParagraph(page, fonts, p2, y, { font: fonts.serif, size: 11, color: INK, lineH: 14 });
+    y = drawParagraph(page, fonts, p2, y, { font: fonts.serif, size: 11, color: INK, lineH: 16 });
     y -= 6;
   }
 
   if (charts.primary && layout.chartScaledW && layout.chartScaledH) {
-    if (y - layout.chartScaledH >= M_BOTTOM + 20) {
-      drawChart(page, charts.primary, layout.chartScaledW, layout.chartScaledH, y);
+    if (y - layout.chartScaledH - 38 >= M_BOTTOM + 20) {
+      drawChart(page, fonts, charts.primary, layout.chartScaledW, layout.chartScaledH, y, CHART_CAPTIONS[sezione_id]);
     }
   }
 }
 
-// Pagina 2 di 2: P3, P4 + eventuale chart secondario + decorazione
 function drawAreaContinuation(page: PDFPage, fonts: Fonts, sezione_id: string, pageNum: number, paras: Record<number, string> | undefined, charts: AreaCharts, layout: AreaLayout) {
   drawPageFrame(page, pageNum, fonts);
   const info = AREA_INFO[sezione_id];
   if (!info) return;
 
   let y = PAGE_H - M_TOP - 10;
-  const header = `AREA ${info.numero} · ${sanitize(info.titolo)} (segue)`;
+  const header = `CAPITOLO ${info.numero} - ${sanitize(info.titolo.toUpperCase())} (SEGUE)`;
   page.drawText(header, { x: M_LEFT, y, size: 8, font: fonts.sansBold, color: TEAL });
-  y -= 22;
-  page.drawLine({ start: { x: M_LEFT, y }, end: { x: M_LEFT + 50, y }, thickness: 1.2, color: TEAL });
-  y -= 18;
+  y -= 8;
+  page.drawLine({ start: { x: M_LEFT, y }, end: { x: M_LEFT + 100, y }, thickness: 0.7, color: TEAL });
+  y -= 28;
 
   if (charts.secondary && charts.secondaryW && charts.secondaryH) {
-    y = drawChart(page, charts.secondary, charts.secondaryW, charts.secondaryH, y);
+    y = drawChart(page, fonts, charts.secondary, charts.secondaryW, charts.secondaryH, y, CHART_CAPTIONS[sezione_id]);
   }
 
   const p3 = paras?.[3];
   if (p3) {
-    y = drawParagraph(page, fonts, p3, y, { font: fonts.serif, size: 11, color: rgb(0.18, 0.18, 0.2), lineH: 14, indent: 20 });
+    y = drawParagraph(page, fonts, p3, y, { font: fonts.serif, size: 11, color: rgb(0.18, 0.18, 0.2), lineH: 16, indent: 20 });
     y -= 6;
   }
   const p4 = paras?.[4];
   if (p4) {
-    y = drawParagraph(page, fonts, p4, y, { font: fonts.serifItalic, size: 10, color: MUTED, lineH: 13, align: "right" });
+    y = drawParagraph(page, fonts, p4, y, { font: fonts.serifItalic, size: 10, color: MUTED, lineH: 14, align: "right" });
   }
 
   if (layout.decoration) {
