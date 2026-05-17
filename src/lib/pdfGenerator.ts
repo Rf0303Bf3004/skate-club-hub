@@ -163,50 +163,42 @@ function drawCategoryBadge(page: PDFPage, x: number, y: number, label: string, c
 // Pagine
 // ============================================================
 
-function drawCopertina(page: PDFPage, fonts: Fonts, club: any, presidente: string, stagione: string, pageNum: number, dateStr: string) {
-  drawPageFrame(page, pageNum, fonts);
-  const cx = PAGE_W / 2;
+// Copertina editoriale (Sezione A): banda teal 60% top + sezione crema 40% bottom
+function drawCopertina(page: PDFPage, fonts: Fonts, club: any, presidente: string, stagione: string, _pageNum: number, dateStr: string) {
+  // Sfondo crema integrale
+  page.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: CREAM });
+  // Banda teal alta 60%
+  const bandH = PAGE_H * 0.6;
+  page.drawRectangle({ x: 0, y: PAGE_H - bandH, width: PAGE_W, height: bandH, color: TEAL });
 
-  // Logo cerchio
-  const initial = sanitize((club?.nome ?? "C").charAt(0).toUpperCase());
-  page.drawCircle({ x: cx, y: PAGE_H - 180, size: 28, borderColor: TEAL, borderWidth: 1.5 });
-  const iw = fonts.serif.widthOfTextAtSize(initial, 24);
-  page.drawText(initial, { x: cx - iw / 2, y: PAGE_H - 188, size: 24, font: fonts.serif, color: INK });
+  // Etichetta in alto a sinistra
+  const kicker = sanitize(`RELAZIONE DI FINE STAGIONE - ${stagione}`).toUpperCase();
+  page.drawText(kicker, { x: M_LEFT, y: PAGE_H - 80, size: 9, font: fonts.sansBold, color: WHITE });
+  page.drawLine({ start: { x: M_LEFT, y: PAGE_H - 90 }, end: { x: M_LEFT + 60, y: PAGE_H - 90 }, thickness: 0.6, color: WHITE });
 
-  // Nome club
+  // Nome club centrato nella banda, 48pt serif bianco, su 2 righe se serve
   const nome = sanitize(club?.nome ?? "Club");
-  const nw = fonts.serifBold.widthOfTextAtSize(nome, 30);
-  page.drawText(nome, { x: cx - nw / 2, y: PAGE_H - 260, size: 30, font: fonts.serifBold, color: INK });
-
-  // Citta'
+  const nameLines = wrapText(nome, fonts.serifBold, 48, PAGE_W - 100);
+  const centerY = PAGE_H - bandH / 2 + ((nameLines.length - 1) * 26);
+  let ny = centerY;
+  for (const ln of nameLines.slice(0, 2)) {
+    const w = fonts.serifBold.widthOfTextAtSize(ln, 48);
+    page.drawText(ln, { x: (PAGE_W - w) / 2, y: ny, size: 48, font: fonts.serifBold, color: WHITE });
+    ny -= 52;
+  }
   const citta = sanitize((club?.citta ?? "").toUpperCase());
   if (citta) {
-    const cw = fonts.sans.widthOfTextAtSize(citta, 10);
-    page.drawText(citta, { x: cx - cw / 2, y: PAGE_H - 285, size: 10, font: fonts.sans, color: MUTED });
+    const cw = fonts.sansBold.widthOfTextAtSize(citta, 10);
+    page.drawText(citta, { x: (PAGE_W - cw) / 2, y: ny - 16, size: 10, font: fonts.sansBold, color: WHITE });
   }
 
-  // Linea
-  page.drawLine({ start: { x: cx - 40, y: PAGE_H - 330 }, end: { x: cx + 40, y: PAGE_H - 330 }, thickness: 0.8, color: TEAL });
-
-  // Titolo relazione
-  const t1 = "Relazione di fine stagione";
-  const t1w = fonts.serif.widthOfTextAtSize(t1, 20);
-  page.drawText(t1, { x: cx - t1w / 2, y: PAGE_H - 380, size: 20, font: fonts.serif, color: INK });
-
-  const t2w = fonts.serif.widthOfTextAtSize(stagione, 16);
-  page.drawText(sanitize(stagione), { x: cx - t2w / 2, y: PAGE_H - 410, size: 16, font: fonts.serif, color: MUTED });
-
-  // Presidente
-  const lbl = "PRESIDENTE";
-  const lw = fonts.sans.widthOfTextAtSize(lbl, 8);
-  page.drawText(lbl, { x: cx - lw / 2, y: 200, size: 8, font: fonts.sansBold, color: MUTED });
-
-  const pn = sanitize(presidente);
-  const pw = fonts.serif.widthOfTextAtSize(pn, 13);
-  page.drawText(pn, { x: cx - pw / 2, y: 180, size: 13, font: fonts.serif, color: INK });
-
-  // Data generazione
-  page.drawText(`Generato il ${dateStr}`, { x: PAGE_W - M_RIGHT - 140, y: 50, size: 8, font: fonts.sans, color: MUTED });
+  // Sezione inferiore crema
+  const bottomTop = PAGE_H - bandH - 40;
+  page.drawText("PRESENTATA DA", { x: M_LEFT, y: bottomTop, size: 9, font: fonts.sansBold, color: MUTED });
+  const pn = sanitize(presidente || "Il Presidente");
+  page.drawText(pn, { x: M_LEFT, y: bottomTop - 32, size: 22, font: fonts.serifBold, color: INK });
+  page.drawLine({ start: { x: M_LEFT, y: bottomTop - 48 }, end: { x: M_LEFT + 60, y: bottomTop - 48 }, thickness: 0.8, color: TEAL });
+  page.drawText(`Generato il ${dateStr}`, { x: M_LEFT, y: 60, size: 10, font: fonts.sans, color: MUTED });
 }
 
 interface AreaCharts {
