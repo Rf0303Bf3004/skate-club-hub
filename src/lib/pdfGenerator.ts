@@ -69,42 +69,43 @@ const CAT_COLORS: Record<string, [number, number, number]> = {
   verbale: [0xe1, 0x1d, 0x48],
 };
 
-const AREA_INFO: Record<string, { numero: number; titolo: string; insight: string; kpi: string[] }> = {
+const AREA_INFO: Record<string, { numero: number; titolo: string; insight: string }> = {
   sintesi: {
     numero: 1, titolo: "Sintesi della stagione",
     insight: "La stagione mostra crescita della domanda e tenuta economica; le aree critiche sono presidiate.",
-    kpi: ["Crescita domanda", "Cassa positiva", "Risultati sportivi record"],
   },
   domanda: {
     numero: 2, titolo: "Domanda & Ghiaccio",
-    insight: "La domanda supera la capacità: una fascia oraria aggiuntiva consentirebbe di assorbire la lista d'attesa.",
-    kpi: ["92% saturazione", "14 in lista d'attesa", "+3 ore richieste"],
+    insight: "La domanda supera la capacita': una fascia oraria aggiuntiva consentirebbe di assorbire la lista d'attesa.",
   },
   atleti: {
     numero: 3, titolo: "Atleti",
     insight: "Pulcini in calo, Interbronzo in crescita: i ragazzi avanzano verso l'agonismo.",
-    kpi: ["145 atleti attivi", "-2% YoY", "9 livelli coperti"],
   },
   economia: {
     numero: 4, titolo: "Economia",
-    insight: "Margine positivo del 6%, generato in particolare da corsi base e pacchetti opzionali.",
-    kpi: ["CHF 218'400 ricavi", "CHF 41'200 cassa", "+6% margine"],
+    insight: "Margine positivo, generato in particolare da corsi base e pacchetti opzionali.",
   },
   lezioni: {
     numero: 5, titolo: "Lezioni private",
     insight: "Le lezioni private trainano i ricavi e fidelizzano gli agonisti.",
-    kpi: ["412 ore erogate", "+18% YoY", "24 atleti coinvolti"],
   },
   sportivo: {
     numero: 6, titolo: "Risultati sportivi",
-    insight: "Stagione record: la maturazione del gruppo Argento porta i suoi frutti in gara.",
-    kpi: ["27 podi", "9 ori", "12 gare disputate"],
+    insight: "Stagione di crescita: la maturazione del gruppo agonistico si riflette in gara.",
   },
   catalogo: {
     numero: 7, titolo: "Catalogo & Promozione",
-    insight: "Cinque partner sostengono il club; cerchiamo uno sponsor pista per coprire le ore aggiuntive.",
-    kpi: ["5 sponsor attivi", "CHF 19'000", "3 eventi promozionali"],
+    insight: "I partner sostengono il club; cerchiamo nuove collaborazioni per coprire le ore aggiuntive.",
   },
+};
+
+// Didascalia grafico per area (Sezione C - cornice)
+const CHART_CAPTIONS: Record<string, string> = {
+  atleti: "FIG. 1 - PIRAMIDE LIVELLI ATLETI",
+  economia: "FIG. 2 - COMPOSIZIONE RICAVI",
+  sportivo: "FIG. 3 - PODI STAGIONE",
+  lezioni: "FIG. 4 - DISTRIBUZIONE FASCE ORARIE",
 };
 
 // ============================================================
