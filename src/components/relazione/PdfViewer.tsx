@@ -1,85 +1,139 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import * as pdfjsLib from "pdfjs-dist";
+import pdfjsWorker from "pdfjs-dist/build/pdf.worker.mjs?url";
+import type { PDFDocumentProxy } from "pdfjs-dist/types/src/pdf";
 import { Button } from "@/components/ui/button";
-import { Loader2, ZoomIn, ZoomOut, Download, AlertTriangle } from "lucide-react";
+import { Loader2, ZoomIn, ZoomOut, Download, AlertTriangle, ExternalLink } from "lucide-react";
+import "pdfjs-dist/web/pdf_viewer.css";
 
-// Configura worker da CDN per evitare problemi di bundling
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 interface Props {
   blob: Blob;
   on_download?: () => void;
 }
 
-export default function PdfViewer({ blob, on_download }: Props) {
-  const [scale, set_scale] = useState(1.3);
-  const [total_pages, set_total_pages] = useState(0);
-  const [current_page, set_current_page] = useState(1);
-  const [is_loading, set_is_loading] = useState(true);
-  const [error, set_error] = useState<string | null>(null);
-  const container_ref = useRef<HTMLDivElement | null>(null);
-  const pdf_doc_ref = useRef<any>(null);
+interface PdfPageCanvasProps {
+  pdf: PDFDocumentProxy;
+  page_num: number;
+  total_pages: number;
+  scale: number;
+}
+
+async function load_pdf_from_blob(blob: Blob) {
+  try {
+    console.log(`[PdfViewer] Blob ricevuto: size=${blob.size} type=${blob.type}`);
+    const array_buffer = await blob.arrayBuffer();
+    console.log(`[PdfViewer] ArrayBuffer creato: bytes=${array_buffer.byteLength}`);
+    const loading_task = pdfjsLib.getDocument({
+      data: new Uint8Array(array_buffer),
+      cMapUrl: `//cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/cmaps/`,
+      cMapPacked: true,
+    });
+    const pdf_document = await loading_task.promise;
+    console.log(`[PdfViewer] PDF document caricato: pagine=${pdf_document.numPages}`);
+    return pdf_document;
+  } catch (error: any) {
+    console.error("[PdfViewer] Errore caricamento PDF:", error);
+    console.error("[PdfViewer] Stack:", error?.stack);
+    console.error("[PdfViewer] Blob size:", blob.size, "type:", blob.type);
+    throw error;
+  }
+}
+
+async function render_page(pdf: PDFDocumentProxy, page_num: number, canvas: HTMLCanvasElement, scale = 1.5) {
+  const page = await pdf.getPage(page_num);
+  const viewport = page.getViewport({ scale });
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas context non disponibile");
+  const render_task = page.render({ canvasContext: ctx, viewport });
+  await render_task.promise;
+}
+
+function PdfPageCanvas({ pdf, page_num, total_pages, scale }: PdfPageCanvasProps) {
+  const canvas_ref = useRef<HTMLCanvasElement | null>(null);
+  const [page_width, set_page_width] = useState<number | null>(null);
   const render_token_ref = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
     const token = ++render_token_ref.current;
-    set_is_loading(true);
-    set_error(null);
 
     (async () => {
       try {
-        const buf = await blob.arrayBuffer();
-        if (cancelled) return;
-
-        // Distruggi documento precedente
-        if (pdf_doc_ref.current) {
-          try { await pdf_doc_ref.current.destroy(); } catch {}
-          pdf_doc_ref.current = null;
+        const canvas = canvas_ref.current;
+        if (!canvas) return;
+        const page = await pdf.getPage(page_num);
+        const viewport = page.getViewport({ scale });
+        set_page_width(viewport.width);
+        await render_page(pdf, page_num, canvas, scale);
+        if (!cancelled && token === render_token_ref.current) {
+          console.log(`[PdfViewer] Render pagina ${page_num}/${total_pages} completato`);
         }
+      } catch (error: any) {
+        if (!cancelled) {
+          console.error(`[PdfViewer] Errore render pagina ${page_num}:`, error);
+          console.error("[PdfViewer] Stack:", error?.stack);
+        }
+      }
+    })();
 
-        const loading_task = pdfjsLib.getDocument({ data: buf });
-        const pdf = await loading_task.promise;
+    return () => {
+      cancelled = true;
+      render_token_ref.current++;
+    };
+  }, [pdf, page_num, scale, total_pages]);
+
+  return (
+    <div
+      className="bg-background shadow-md mx-auto mb-3"
+      data-page-number={page_num}
+      style={page_width ? { width: `${page_width}px` } : undefined}
+    >
+      <canvas ref={canvas_ref} className="block max-w-full" />
+    </div>
+  );
+}
+
+export default function PdfViewer({ blob, on_download }: Props) {
+  const [scale, set_scale] = useState(1.3);
+  const [pdf_doc, set_pdf_doc] = useState<PDFDocumentProxy | null>(null);
+  const [total_pages, set_total_pages] = useState(0);
+  const [current_page, set_current_page] = useState(1);
+  const [is_loading, set_is_loading] = useState(true);
+  const [error, set_error] = useState<string | null>(null);
+  const container_ref = useRef<HTMLDivElement | null>(null);
+  const fallback_url_ref = useRef<string | null>(null);
+  const render_token_ref = useRef(0);
+
+  const pages = useMemo(() => Array.from({ length: total_pages }, (_, index) => index + 1), [total_pages]);
+
+  useEffect(() => {
+    let cancelled = false;
+    let current_pdf: PDFDocumentProxy | null = null;
+    const token = ++render_token_ref.current;
+    set_is_loading(true);
+    set_error(null);
+    set_pdf_doc(null);
+    set_total_pages(0);
+    set_current_page(1);
+
+    (async () => {
+      try {
+        const pdf = await load_pdf_from_blob(blob);
+        current_pdf = pdf;
         if (cancelled || token !== render_token_ref.current) {
-          try { await pdf.destroy(); } catch {}
+          await pdf.destroy();
           return;
         }
-        pdf_doc_ref.current = pdf;
+        set_pdf_doc(pdf);
         set_total_pages(pdf.numPages);
-
-        const container = container_ref.current;
-        if (!container) return;
-        container.innerHTML = "";
-
-        for (let i = 1; i <= pdf.numPages; i++) {
-          if (cancelled || token !== render_token_ref.current) return;
-          const page = await pdf.getPage(i);
-          const viewport = page.getViewport({ scale });
-
-          const wrapper = document.createElement("div");
-          wrapper.className = "bg-white shadow-md mx-auto";
-          wrapper.style.marginBottom = "12px";
-          wrapper.style.width = `${viewport.width}px`;
-          wrapper.dataset.pageNumber = String(i);
-
-          const canvas = document.createElement("canvas");
-          canvas.width = viewport.width;
-          canvas.height = viewport.height;
-          canvas.style.display = "block";
-          wrapper.appendChild(canvas);
-          container.appendChild(wrapper);
-
-          const ctx = canvas.getContext("2d");
-          if (!ctx) continue;
-          await page.render({ canvasContext: ctx, viewport, canvas }).promise;
-        }
-
-        if (!cancelled && token === render_token_ref.current) {
-          set_is_loading(false);
-        }
+        set_is_loading(false);
       } catch (e: any) {
         if (!cancelled) {
-          console.error("[PdfViewer] errore caricamento", e);
+          console.error("[PdfViewer] Errore:", e);
           set_error(e?.message ?? "Errore caricamento PDF");
           set_is_loading(false);
         }
@@ -88,51 +142,57 @@ export default function PdfViewer({ blob, on_download }: Props) {
 
     return () => {
       cancelled = true;
-    };
-  }, [blob, scale]);
-
-  // Cleanup finale
-  useEffect(() => {
-    return () => {
       render_token_ref.current++;
-      if (pdf_doc_ref.current) {
-        try { pdf_doc_ref.current.destroy(); } catch {}
-        pdf_doc_ref.current = null;
+      if (current_pdf) {
+        try {
+          current_pdf.destroy();
+        } catch (destroy_error) {
+          console.error("[PdfViewer] Errore cleanup PDF:", destroy_error);
+        }
+      }
+      if (fallback_url_ref.current) {
+        URL.revokeObjectURL(fallback_url_ref.current);
+        fallback_url_ref.current = null;
       }
     };
-  }, []);
+  }, [blob]);
 
-  // Track scroll → current page
   useEffect(() => {
-    const container = container_ref.current?.parentElement;
+    const container = container_ref.current;
     if (!container) return;
-    const handle = () => {
-      const children = Array.from(container_ref.current?.children ?? []) as HTMLElement[];
+    const handle_scroll = () => {
+      const children = Array.from(container.children) as HTMLElement[];
       const scroll_top = container.scrollTop;
       let best = 1;
-      for (const c of children) {
-        if (c.offsetTop - 80 <= scroll_top) best = Number(c.dataset.pageNumber ?? best);
+      for (const child of children) {
+        if (child.offsetTop - 80 <= scroll_top) best = Number(child.dataset.pageNumber ?? best);
       }
       set_current_page(best);
     };
-    container.addEventListener("scroll", handle);
-    return () => container.removeEventListener("scroll", handle);
+    container.addEventListener("scroll", handle_scroll);
+    return () => container.removeEventListener("scroll", handle_scroll);
   }, [total_pages]);
 
   const zoom_in = () => set_scale((s) => Math.min(2.5, +(s + 0.2).toFixed(2)));
   const zoom_out = () => set_scale((s) => Math.max(0.6, +(s - 0.2).toFixed(2)));
+  const open_in_new_tab = () => {
+    if (fallback_url_ref.current) URL.revokeObjectURL(fallback_url_ref.current);
+    const url = URL.createObjectURL(blob);
+    fallback_url_ref.current = url;
+    window.open(url, "_blank");
+  };
 
   return (
-    <div className="flex flex-col h-full bg-slate-100">
-      <div className="sticky top-0 z-10 flex items-center justify-between gap-2 h-12 px-3 bg-white border-b border-slate-200">
-        <div className="text-xs text-slate-600 font-medium">
+    <div className="flex flex-col h-full bg-muted">
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-2 h-12 px-3 bg-background border-b border-border">
+        <div className="text-xs text-muted-foreground font-medium">
           {total_pages > 0 ? `Pagina ${current_page} di ${total_pages}` : "Caricamento..."}
         </div>
         <div className="flex items-center gap-1">
           <Button size="sm" variant="ghost" onClick={zoom_out} disabled={scale <= 0.6} className="h-8 w-8 p-0">
             <ZoomOut className="w-4 h-4" />
           </Button>
-          <span className="text-xs text-slate-500 w-12 text-center">{Math.round(scale * 100)}%</span>
+          <span className="text-xs text-muted-foreground w-12 text-center">{Math.round(scale * 100)}%</span>
           <Button size="sm" variant="ghost" onClick={zoom_in} disabled={scale >= 2.5} className="h-8 w-8 p-0">
             <ZoomIn className="w-4 h-4" />
           </Button>
@@ -144,11 +204,11 @@ export default function PdfViewer({ blob, on_download }: Props) {
           )}
         </div>
       </div>
-      <div className="flex-1 overflow-auto py-3 relative">
+      <div ref={container_ref} className="flex-1 overflow-auto py-3 relative px-3">
         {is_loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-slate-100/80 z-20">
-            <div className="flex flex-col items-center gap-2 text-slate-500">
-              <Loader2 className="w-6 h-6 animate-spin text-teal-600" />
+          <div className="absolute inset-0 flex items-center justify-center bg-muted/80 z-20">
+            <div className="flex flex-col items-center gap-2 text-muted-foreground">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
               <p className="text-xs">Caricamento anteprima...</p>
             </div>
           </div>
@@ -157,16 +217,23 @@ export default function PdfViewer({ blob, on_download }: Props) {
           <div className="mx-auto max-w-md p-4 bg-amber-50 border border-amber-200 rounded-md flex items-start gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
             <div className="flex-1 text-xs text-amber-900">
-              Impossibile visualizzare l'anteprima. Scarica il PDF per vederlo.
-              {on_download && (
-                <Button size="sm" variant="outline" onClick={on_download} className="mt-2 gap-1 h-7 text-xs">
-                  <Download className="w-3 h-3" /> Scarica PDF
+              <p>Errore visualizzatore PDF: {error}. Puoi comunque scaricare il file.</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {on_download && (
+                  <Button size="sm" variant="outline" onClick={on_download} className="gap-1 h-8 text-xs">
+                    <Download className="w-3 h-3" /> Scarica PDF
+                  </Button>
+                )}
+                <Button size="sm" variant="secondary" onClick={open_in_new_tab} className="gap-1 h-8 text-xs">
+                  <ExternalLink className="w-3 h-3" /> Apri in nuova scheda
                 </Button>
-              )}
+              </div>
             </div>
           </div>
         )}
-        <div ref={container_ref} className="px-3" />
+        {!error && pdf_doc && pages.map((page_num) => (
+          <PdfPageCanvas key={`${page_num}-${scale}`} pdf={pdf_doc} page_num={page_num} total_pages={total_pages} scale={scale} />
+        ))}
       </div>
     </div>
   );
