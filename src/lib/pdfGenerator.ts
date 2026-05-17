@@ -532,16 +532,25 @@ function drawBloccoPage(page: PDFPage, fonts: Fonts, blocco: any, pageNum: numbe
 function drawAllegatoPlaceholder(page: PDFPage, fonts: Fonts, allegato: any, pageNum: number) {
   drawPageFrame(page, pageNum, fonts);
   const cx = PAGE_W / 2;
+  const cy = PAGE_H / 2;
 
-  // Icona PDF
-  const ix = cx - 35, iy = PAGE_H - 280;
-  page.drawRectangle({ x: ix, y: iy, width: 70, height: 90, borderColor: LIGHT_BORDER, borderWidth: 1.5 });
+  // Cornice decorativa centrata
+  const boxW = CONTENT_W - 40;
+  const boxH = 320;
+  const boxX = (PAGE_W - boxW) / 2;
+  const boxY = cy - boxH / 2;
+  page.drawRectangle({ x: boxX, y: boxY, width: boxW, height: boxH, borderColor: LIGHT_BORDER, borderWidth: 1 });
+
+  // Icona PDF centrata verticalmente nel box
+  const iconH = 90;
+  const iy = boxY + boxH - 50 - iconH;
+  const ix = cx - 35;
+  page.drawRectangle({ x: ix, y: iy, width: 70, height: iconH, borderColor: LIGHT_BORDER, borderWidth: 1.5 });
   const pdfTxt = "PDF";
   const pw = fonts.serifBold.widthOfTextAtSize(pdfTxt, 22);
   page.drawText(pdfTxt, { x: cx - pw / 2, y: iy + 35, size: 22, font: fonts.serifBold, color: MUTED });
 
   const cat = allegato?.categoria ?? "altro";
-  // badge centrato
   const lbl = sanitize(cat.replace(/_/g, " ").toUpperCase());
   const lw = fonts.sansBold.widthOfTextAtSize(lbl, 8);
   const c = CAT_COLORS[cat] || CAT_COLORS.altro;
@@ -549,15 +558,13 @@ function drawAllegatoPlaceholder(page: PDFPage, fonts: Fonts, allegato: any, pag
   page.drawRectangle({ x: cx - (lw + 14) / 2, y: iy - 30, width: lw + 14, height: 16, color });
   page.drawText(lbl, { x: cx - lw / 2, y: iy - 26, size: 8, font: fonts.sansBold, color: WHITE });
 
-  // Titolo
   const tit = sanitize(allegato?.titolo ?? "Allegato");
   const tw = fonts.serifBold.widthOfTextAtSize(tit, 20);
   page.drawText(tit, { x: cx - tw / 2, y: iy - 70, size: 20, font: fonts.serifBold, color: INK });
 
-  // Descrizione
+  let dy = iy - 100;
   if (allegato?.descrizione) {
-    const lines = wrapText(allegato.descrizione, fonts.serifItalic, 11, CONTENT_W - 60);
-    let dy = iy - 100;
+    const lines = wrapText(allegato.descrizione, fonts.serifItalic, 11, CONTENT_W - 80);
     for (const ln of lines) {
       const lnw = fonts.serifItalic.widthOfTextAtSize(ln, 11);
       page.drawText(ln, { x: cx - lnw / 2, y: dy, size: 11, font: fonts.serifItalic, color: MUTED });
@@ -565,14 +572,14 @@ function drawAllegatoPlaceholder(page: PDFPage, fonts: Fonts, allegato: any, pag
     }
   }
 
-  // Nota
-  const note = "Allegato non ancora caricato in Storage - sara' incluso quando il file sara' disponibile.";
-  const noteLines = wrapText(note, fonts.sans, 9, CONTENT_W - 80);
-  let dy = 200;
-  for (const ln of noteLines) {
-    const lnw = fonts.sans.widthOfTextAtSize(ln, 9);
-    page.drawText(ln, { x: cx - lnw / 2, y: dy, size: 9, font: fonts.sans, color: MUTED });
-    dy -= 12;
+  // Micro-descrizione
+  const microNote = "Il documento completo segue nelle pagine successive del PDF.";
+  const mnLines = wrapText(microNote, fonts.sans, 9, CONTENT_W - 100);
+  let my = dy - 8;
+  for (const ln of mnLines) {
+    const w = fonts.sans.widthOfTextAtSize(ln, 9);
+    page.drawText(ln, { x: cx - w / 2, y: my, size: 9, font: fonts.sans, color: MUTED });
+    my -= 12;
   }
 }
 
