@@ -4,6 +4,7 @@ import pdfjsWorker from "pdfjs-dist/build/pdf.worker.mjs?url";
 import type { PDFDocumentProxy } from "pdfjs-dist/types/src/pdf";
 import { Button } from "@/components/ui/button";
 import { Loader2, ZoomIn, ZoomOut, Download, AlertTriangle, ExternalLink } from "lucide-react";
+import "pdfjs-dist/web/pdf_viewer.css";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
