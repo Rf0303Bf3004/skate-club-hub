@@ -510,7 +510,6 @@ function drawBloccoPage(page: PDFPage, fonts: Fonts, blocco: any, pageNum: numbe
   const size = 11;
   const lh = 16;
   for (const para of paragraphs) {
-    // strip markdown bold/italic markers per semplicita'
     const clean = para.replace(/\*\*/g, "").replace(/\*/g, "").replace(/\n/g, " ");
     const lines = wrapText(clean, fonts.serif, size, CONTENT_W);
     for (const ln of lines) {
@@ -520,6 +519,13 @@ function drawBloccoPage(page: PDFPage, fonts: Fonts, blocco: any, pageNum: numbe
     }
     y -= 8;
     if (y < M_BOTTOM + 30) break;
+  }
+
+  // Decorazione finale (Parte 4-C) se la pagina ha > 150pt vuoti in basso
+  if (y > M_BOTTOM + 180) {
+    const yCenter = (y + M_BOTTOM + 30) / 2;
+    const cx = PAGE_W / 2;
+    page.drawLine({ start: { x: cx - 50, y: yCenter }, end: { x: cx + 50, y: yCenter }, thickness: 1, color: TEAL });
   }
 }
 
