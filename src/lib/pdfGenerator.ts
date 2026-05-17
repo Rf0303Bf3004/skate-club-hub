@@ -222,7 +222,7 @@ interface AreaCharts {
 function drawAreaHeader(page: PDFPage, fonts: Fonts, info: { numero: number; titolo: string }, startY: number): number {
   let y = startY;
   const kicker = `CAPITOLO ${info.numero} - ${sanitize(info.titolo.toUpperCase())}`;
-  page.drawText(kicker, { x: M_LEFT, y, size: 8, font: fonts.sansBold, color: TEAL, characterSpacing: 1.6 });
+  page.drawText(kicker, { x: M_LEFT, y, size: 8, font: fonts.sansBold, color: TEAL });
   y -= 8;
   page.drawLine({ start: { x: M_LEFT, y }, end: { x: M_LEFT + 100, y }, thickness: 0.7, color: TEAL });
   y -= 28;
@@ -291,7 +291,7 @@ function drawKpiMosaic(page: PDFPage, fonts: Fonts, kpis: KpiCell[] | undefined,
     // label sans uppercase 8 tracking
     const lbl = sanitize(k.label.toUpperCase());
     const lw = fonts.sansBold.widthOfTextAtSize(lbl, 8) + (lbl.length - 1) * 1.5;
-    page.drawText(lbl, { x: cx - lw / 2, y: yTop + 22, size: 8, font: fonts.sansBold, color: MUTED, characterSpacing: 1.5 });
+    page.drawText(lbl, { x: cx - lw / 2, y: yTop + 22, size: 8, font: fonts.sansBold, color: MUTED });
   }
   return yTop - 18;
 }
@@ -306,7 +306,7 @@ function drawChart(page: PDFPage, fonts: Fonts, img: PDFImage, w: number, h: num
   if (caption) {
     const cap = sanitize(caption);
     const capw = fonts.sansBold.widthOfTextAtSize(cap, 8) + (cap.length - 1) * 1.5;
-    page.drawText(cap, { x: M_LEFT + (CONTENT_W - capw) / 2, y: topY, size: 8, font: fonts.sansBold, color: MUTED, characterSpacing: 1.5 });
+    page.drawText(cap, { x: M_LEFT + (CONTENT_W - capw) / 2, y: topY, size: 8, font: fonts.sansBold, color: MUTED });
     topY -= 14;
   }
   page.drawRectangle({
