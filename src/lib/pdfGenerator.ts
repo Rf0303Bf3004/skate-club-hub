@@ -734,6 +734,7 @@ export async function generateRelazionePDF(params: GenerateRelazioneParams): Pro
     | { type: "chiusura" };
 
   const blocks: Block[] = [];
+  const areaLayouts: Record<string, AreaLayout> = {};
   let hasIndice = false;
 
   for (const it of items) {
