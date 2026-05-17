@@ -218,28 +218,29 @@ interface AreaCharts {
   secondaryH?: number;
 }
 
+// Header pagina area (Sezione C): kicker uppercase + linea teal 100pt + titolo 32pt left
 function drawAreaHeader(page: PDFPage, fonts: Fonts, info: { numero: number; titolo: string }, startY: number): number {
   let y = startY;
-  const header = `AREA ${info.numero}`;
-  page.drawText(header, { x: M_LEFT, y, size: 8, font: fonts.sansBold, color: TEAL });
-  y -= 22;
-  const titleLines = wrapText(info.titolo, fonts.serifBold, 24, CONTENT_W);
-  for (const ln of titleLines) {
-    page.drawText(ln, { x: M_LEFT, y, size: 24, font: fonts.serifBold, color: INK });
-    y -= 26;
+  const kicker = `CAPITOLO ${info.numero} - ${sanitize(info.titolo.toUpperCase())}`;
+  page.drawText(kicker, { x: M_LEFT, y, size: 8, font: fonts.sansBold, color: TEAL, characterSpacing: 1.6 });
+  y -= 8;
+  page.drawLine({ start: { x: M_LEFT, y }, end: { x: M_LEFT + 100, y }, thickness: 0.7, color: TEAL });
+  y -= 28;
+  const titleLines = wrapText(info.titolo, fonts.serifBold, 32, CONTENT_W);
+  for (const ln of titleLines.slice(0, 2)) {
+    page.drawText(ln, { x: M_LEFT, y, size: 32, font: fonts.serifBold, color: INK });
+    y -= 36;
   }
-  y -= 4;
-  page.drawLine({ start: { x: M_LEFT, y }, end: { x: M_LEFT + 50, y }, thickness: 1.5, color: TEAL });
-  y -= 18;
+  y -= 10;
   return y;
 }
 
 function drawParagraph(page: PDFPage, fonts: Fonts, text: string, y: number, opts: {
-  font: PDFFont; size: number; color: any; lineH: number; indent?: number; align?: "left" | "right";
+  font: PDFFont; size: number; color: any; lineH: number; indent?: number; align?: "left" | "right"; maxW?: number;
 }): number {
   const indent = opts.indent ?? 0;
   const align = opts.align ?? "left";
-  const w = CONTENT_W - indent;
+  const w = (opts.maxW ?? CONTENT_W) - indent;
   const lines = wrapText(text, opts.font, opts.size, w);
   for (const ln of lines) {
     if (y < M_BOTTOM + 20) break;
@@ -254,31 +255,66 @@ function drawParagraph(page: PDFPage, fonts: Fonts, text: string, y: number, opt
   return y;
 }
 
-function drawKpiRow(page: PDFPage, fonts: Fonts, kpi: string[], y: number): number {
-  const kpiW = CONTENT_W / kpi.length;
-  for (let i = 0; i < kpi.length; i++) {
-    const parts = kpi[i].split(" ");
-    const mid = Math.ceil(parts.length / 2);
-    const numLine = parts.slice(0, mid).join(" ");
-    const lblLine = parts.slice(mid).join(" ");
-    const x0 = M_LEFT + i * kpiW;
-    const nw = fonts.serifBold.widthOfTextAtSize(numLine, 16);
-    page.drawText(sanitize(numLine), { x: x0 + (kpiW - nw) / 2, y, size: 16, font: fonts.serifBold, color: INK });
-    if (lblLine) {
-      const lw = fonts.sans.widthOfTextAtSize(lblLine.toUpperCase(), 8);
-      page.drawText(sanitize(lblLine.toUpperCase()), { x: x0 + (kpiW - lw) / 2, y: y - 14, size: 8, font: fonts.sans, color: MUTED });
+// KPI mosaico 3 colonne (Sezione C): 3 celle 90pt cream + bordo hair, num serif 36 teal, label sans 8 tracking
+function drawKpiMosaic(page: PDFPage, fonts: Fonts, kpis: KpiCell[] | undefined, y: number): number {
+  if (!kpis || kpis.length === 0) return y;
+  const cells = kpis.slice(0, 3);
+  const totalW = Math.min(480, CONTENT_W);
+  const x0 = M_LEFT + (CONTENT_W - totalW) / 2;
+  const cellW = totalW / cells.length;
+  const cellH = 90;
+  const yTop = y - cellH;
+
+  // sfondo unico + bordo esterno
+  page.drawRectangle({ x: x0, y: yTop, width: totalW, height: cellH, color: CREAM, borderColor: HAIR, borderWidth: 0.5 });
+
+  for (let i = 0; i < cells.length; i++) {
+    const cx = x0 + i * cellW + cellW / 2;
+    const k = cells[i];
+    // separatori verticali
+    if (i > 0) {
+      page.drawLine({
+        start: { x: x0 + i * cellW, y: yTop + 12 },
+        end: { x: x0 + i * cellW, y: yTop + cellH - 12 },
+        thickness: 0.4, color: HAIR,
+      });
     }
+    // numero serif bold 28 teal centrato (36 era troppo per stringhe lunghe tipo CHF)
+    let nSize = 28;
+    let txt = sanitize(k.value);
+    let nw = fonts.serifBold.widthOfTextAtSize(txt, nSize);
+    while (nw > cellW - 16 && nSize > 14) {
+      nSize -= 1;
+      nw = fonts.serifBold.widthOfTextAtSize(txt, nSize);
+    }
+    page.drawText(txt, { x: cx - nw / 2, y: yTop + 46, size: nSize, font: fonts.serifBold, color: TEAL });
+    // label sans uppercase 8 tracking
+    const lbl = sanitize(k.label.toUpperCase());
+    const lw = fonts.sansBold.widthOfTextAtSize(lbl, 8) + (lbl.length - 1) * 1.5;
+    page.drawText(lbl, { x: cx - lw / 2, y: yTop + 22, size: 8, font: fonts.sansBold, color: MUTED, characterSpacing: 1.5 });
   }
-  y -= 36;
-  page.drawLine({ start: { x: M_LEFT, y }, end: { x: M_LEFT + CONTENT_W, y }, thickness: 0.4, color: LIGHT_BORDER });
-  return y - 14;
+  return yTop - 18;
 }
 
-function drawChart(page: PDFPage, img: PDFImage, w: number, h: number, y: number): number {
-  // centrato orizzontalmente
-  const x = M_LEFT + (CONTENT_W - w) / 2;
-  page.drawImage(img, { x, y: y - h, width: w, height: h });
-  return y - h - 14;
+function drawChart(page: PDFPage, fonts: Fonts, img: PDFImage, w: number, h: number, y: number, caption?: string): number {
+  // Cornice teal 0.5 attorno + didascalia sans uppercase sopra
+  const pad = 12;
+  const frameW = w + pad * 2;
+  const frameH = h + pad * 2;
+  const fx = M_LEFT + (CONTENT_W - frameW) / 2;
+  let topY = y;
+  if (caption) {
+    const cap = sanitize(caption);
+    const capw = fonts.sansBold.widthOfTextAtSize(cap, 8) + (cap.length - 1) * 1.5;
+    page.drawText(cap, { x: M_LEFT + (CONTENT_W - capw) / 2, y: topY, size: 8, font: fonts.sansBold, color: MUTED, characterSpacing: 1.5 });
+    topY -= 14;
+  }
+  page.drawRectangle({
+    x: fx, y: topY - frameH, width: frameW, height: frameH,
+    borderColor: TEAL, borderWidth: 0.5,
+  });
+  page.drawImage(img, { x: fx + pad, y: topY - frameH + pad, width: w, height: h });
+  return topY - frameH - 14;
 }
 
 // ============================================================
