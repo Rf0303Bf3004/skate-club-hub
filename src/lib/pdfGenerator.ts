@@ -330,16 +330,17 @@ interface AreaLayout {
   totalPages: 1 | 2;
   chartScaledW?: number;
   chartScaledH?: number;
-  decoration?: { kind: "A" | "B" | "C"; quote?: string; kpi?: string };
+  decoration?: { kind: "A" | "C"; quote?: string };
 }
 
-function pickDecoration(p3: string, info: { kpi: string[] }): AreaLayout["decoration"] {
+// Solo decorazioni A (citazione) e C (linea con rombo). I callout "B" (mini-KPI fluttuante)
+// sono stati rimossi (Prompt D): i numeri sono gia' nei KPI hero e nei paragrafi.
+function pickDecoration(p3: string): AreaLayout["decoration"] {
   if (p3) {
     const sentences = p3.split(/(?<=[.!?])\s+/);
     const short = sentences.find((s) => s.length >= 20 && s.length <= 80);
     if (short) return { kind: "A", quote: short.trim() };
   }
-  if (info.kpi.length > 1) return { kind: "B", kpi: info.kpi[1] };
   return { kind: "C" };
 }
 
