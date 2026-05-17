@@ -422,12 +422,14 @@ function drawDecoration(page: PDFPage, fonts: Fonts, deco: NonNullable<AreaLayou
       page.drawText(ln, { x: cx - w / 2, y, size: 16, font: fonts.serifItalic, color: rgb(0.3, 0.3, 0.32) });
       y -= 22;
     }
-  } else if (deco.kind === "B" && deco.kpi) {
-    const txt = sanitize(deco.kpi);
-    const w = fonts.sans.widthOfTextAtSize(txt, 14);
-    page.drawText(txt, { x: M_LEFT + CONTENT_W - w, y: yCenter, size: 14, font: fonts.sans, color: MUTED });
   } else {
-    page.drawLine({ start: { x: cx - 50, y: yCenter }, end: { x: cx + 50, y: yCenter }, thickness: 1, color: TEAL });
+    // Linea decorativa con piccolo rombo centrale teal
+    page.drawLine({ start: { x: cx - 50, y: yCenter }, end: { x: cx - 6, y: yCenter }, thickness: 0.6, color: TEAL });
+    page.drawLine({ start: { x: cx + 6, y: yCenter }, end: { x: cx + 50, y: yCenter }, thickness: 0.6, color: TEAL });
+    page.drawLine({ start: { x: cx, y: yCenter + 3 }, end: { x: cx + 3, y: yCenter }, thickness: 0.8, color: TEAL });
+    page.drawLine({ start: { x: cx + 3, y: yCenter }, end: { x: cx, y: yCenter - 3 }, thickness: 0.8, color: TEAL });
+    page.drawLine({ start: { x: cx, y: yCenter - 3 }, end: { x: cx - 3, y: yCenter }, thickness: 0.8, color: TEAL });
+    page.drawLine({ start: { x: cx - 3, y: yCenter }, end: { x: cx, y: yCenter + 3 }, thickness: 0.8, color: TEAL });
   }
 }
 
