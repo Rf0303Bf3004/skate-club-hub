@@ -4,6 +4,8 @@ import { supabase } from "@/lib/supabase";
 import { formatBytes } from "@/lib/utils";
 import IndiceComponibile from "./IndiceComponibile";
 import AnteprimaPDF from "./AnteprimaPDF";
+import AnteprimaFedele from "./AnteprimaFedele";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CompositoreItem, SISTEMA_LABELS } from "./types-compositore";
 import { AREA_DEFINITIONS } from "./MockSezionePDF";
 import { cat_blocco, cat_allegato } from "./categorie";
@@ -315,6 +317,29 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
     }, 50);
   };
 
+  // Watch paragrafi updated_at so structural signature reflects narrative edits
+  const { data: paragrafi_meta } = useQuery({
+    queryKey: ["relazione_paragrafi_meta", club_id, stagione_id, tono],
+    enabled: !!club_id && !!stagione_id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("relazioni_paragrafi_auto" as any)
+        .select("updated_at")
+        .eq("club_id", club_id).eq("stagione_id", stagione_id).eq("tono", tono)
+        .order("updated_at", { ascending: false })
+        .limit(1);
+      if (error) throw error;
+      return ((data ?? [])[0] as any)?.updated_at ?? null;
+    },
+  });
+
+  const structural_signature = useMemo(() => {
+    const items_sig = items
+      .map((i) => `${i.id}:${i.attivo ? 1 : 0}:${i.ordine}`)
+      .join("|");
+    return `${tono}::${items_sig}::${paragrafi_meta ?? ""}`;
+  }, [items, tono, paragrafi_meta]);
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[38%_62%] gap-6 h-[calc(100vh-220px)] min-h-[600px]">
       <div className="border border-border rounded-md bg-card p-4 overflow-hidden flex flex-col">
@@ -365,14 +390,36 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
           tono={tono}
         />
       </div>
-      <div className="border border-border rounded-md bg-stone-100 overflow-y-auto">
-        <AnteprimaPDF
-          items={items}
-          club={club}
-          presidente={presidente}
-          stagione_nome={stagione_nome}
-          selected_id={selected_id}
-        />
+      <div className="border border-border rounded-md bg-stone-100 overflow-hidden flex flex-col">
+        <Tabs defaultValue="rapida" className="flex flex-col h-full">
+          <div className="px-3 pt-3">
+            <TabsList className="rounded-full">
+              <TabsTrigger value="rapida" className="rounded-full text-xs">Anteprima rapida</TabsTrigger>
+              <TabsTrigger value="fedele" className="rounded-full text-xs">Anteprima fedele (PDF)</TabsTrigger>
+            </TabsList>
+          </div>
+          <TabsContent value="rapida" className="flex-1 overflow-y-auto mt-2">
+            <AnteprimaPDF
+              items={items}
+              club={club}
+              presidente={presidente}
+              stagione_nome={stagione_nome}
+              selected_id={selected_id}
+            />
+          </TabsContent>
+          <TabsContent value="fedele" className="flex-1 overflow-hidden mt-2 data-[state=active]:flex flex-col">
+            <AnteprimaFedele
+              items={items}
+              club={club}
+              presidente={presidente}
+              stagione_nome={stagione_nome}
+              club_id={club_id}
+              stagione_id={stagione_id}
+              tono={tono}
+              structural_signature={structural_signature}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
