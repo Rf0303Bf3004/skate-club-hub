@@ -745,11 +745,9 @@ export async function generateRelazionePDF(params: GenerateRelazioneParams): Pro
       } else if (it.sezione_id === "chiusura") blocks.push({ type: "chiusura" });
     } else if (it.kind === "area") {
       const sid = it.sezione_id!;
-      const hasChart = !!areaCharts[sid];
-      const hasP3orP4 = !!(paragrafiMap[sid]?.[3] || paragrafiMap[sid]?.[4]);
-      const hasSecondary = !!areaCharts[sid]?.secondary;
-      const pages = (hasChart && (hasP3orP4 || hasSecondary)) ? 2 : 1;
-      blocks.push({ type: "area", sezione_id: sid, title: it.titolo, pages });
+      const layout = planAreaLayout(sid, paragrafiMap[sid], areaCharts[sid] ?? {}, fonts);
+      areaLayouts[sid] = layout;
+      blocks.push({ type: "area", sezione_id: sid, title: it.titolo, pages: layout.totalPages });
     } else if (it.kind === "blocco") {
       blocks.push({ type: "blocco", payload: it.payload, title: it.titolo });
     } else if (it.kind === "allegato") {
