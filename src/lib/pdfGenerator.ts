@@ -369,7 +369,7 @@ function planAreaLayout(sezione_id: string, paras: Record<number, string> | unde
   if (hasSecondary) {
     const p2used = HEADER_CONSUMED + (charts.secondaryH ?? 0) + CHART_SPACING + h_p3 + h_p4;
     const empty = AREA_AVAIL - p2used;
-    const decoration = empty > 150 ? pickDecoration(p3, info) : undefined;
+    const decoration = empty > 150 ? pickDecoration(p3) : undefined;
     return { totalPages: 2, chartScaledW: charts.primaryW, chartScaledH: charts.primaryH, decoration };
   }
 
@@ -399,14 +399,14 @@ function planAreaLayout(sezione_id: string, paras: Record<number, string> | unde
     const finalChartH = cH ? cH + CHART_SPACING : 0;
     const finalUsed = HEADER_CONSUMED + h_p1 + KPI_BLOCK_H + h_p2 + finalChartH + h_p3 + h_p4;
     const empty = AREA_AVAIL - finalUsed;
-    const decoration = empty > 150 ? pickDecoration(p3, info) : undefined;
+    const decoration = empty > 150 ? pickDecoration(p3) : undefined;
     return { totalPages: 1, chartScaledW: cW, chartScaledH: cH, decoration };
   }
 
   // 2 pagine: P1+KPI+P2+chart sulla prima, P3+P4 sulla seconda
   const p2used = HEADER_CONSUMED + h_p3 + h_p4;
   const empty = AREA_AVAIL - p2used;
-  const decoration = empty > 150 ? pickDecoration(p3, info) : undefined;
+  const decoration = empty > 150 ? pickDecoration(p3) : undefined;
   return { totalPages: 2, chartScaledW: charts.primaryW, chartScaledH: charts.primaryH, decoration };
 }
 
