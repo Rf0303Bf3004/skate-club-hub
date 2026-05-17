@@ -521,148 +521,266 @@ function drawAreaContinuation(page: PDFPage, fonts: Fonts, sezione_id: string, p
   }
 }
 
+// Sezione D: pagine blocchi testo con drop cap + pull-quote opzionale
 function drawBloccoPage(page: PDFPage, fonts: Fonts, blocco: any, pageNum: number) {
   drawPageFrame(page, pageNum, fonts);
+  const info = AREA_INFO_BLOCCO(blocco);
   let y = PAGE_H - M_TOP - 10;
 
-  const cat = blocco?.categoria ?? "altro";
-  drawCategoryBadge(page, M_LEFT, y - 6, cat.replace(/_/g, " "), cat, fonts);
-  y -= 36;
+  // Header pagina (kicker + linea teal)
+  page.drawText(info.kicker, { x: M_LEFT, y, size: 8, font: fonts.sansBold, color: TEAL });
+  y -= 8;
+  page.drawLine({ start: { x: M_LEFT, y }, end: { x: M_LEFT + 100, y }, thickness: 0.7, color: TEAL });
+  y -= 28;
 
-  const titleLines = wrapText(blocco?.titolo ?? "Blocco", fonts.serifBold, 22, CONTENT_W);
-  for (const ln of titleLines) {
-    page.drawText(ln, { x: M_LEFT, y, size: 22, font: fonts.serifBold, color: INK });
-    y -= 26;
+  // Titolo 32pt serif
+  const titleLines = wrapText(blocco?.titolo ?? "Blocco", fonts.serifBold, 32, CONTENT_W);
+  for (const ln of titleLines.slice(0, 2)) {
+    page.drawText(ln, { x: M_LEFT, y, size: 32, font: fonts.serifBold, color: INK });
+    y -= 36;
   }
-  y -= 10;
+  y -= 16;
 
-  page.drawLine({ start: { x: M_LEFT, y }, end: { x: M_LEFT + 50, y }, thickness: 1.2, color: TEAL });
-  y -= 22;
+  // Corpo testo
+  const rawContent = (blocco?.contenuto ?? "").replace(/\*\*/g, "").replace(/\*/g, "");
+  const fullText = rawContent.replace(/\n+/g, " ").trim();
+  const wordCount = fullText.split(/\s+/).length;
 
-  const paragraphs = (blocco?.contenuto ?? "").split(/\n\s*\n/);
-  const size = 11;
-  const lh = 16;
-  for (const para of paragraphs) {
-    const clean = para.replace(/\*\*/g, "").replace(/\*/g, "").replace(/\n/g, " ");
-    const lines = wrapText(clean, fonts.serif, size, CONTENT_W);
-    for (const ln of lines) {
-      if (y < M_BOTTOM + 30) break;
-      page.drawText(ln, { x: M_LEFT, y, size, font: fonts.serif, color: INK });
-      y -= lh;
+  // Pull-quote: se > 80 parole, la frase piu' corta tra le ultime 3
+  let pullQuote = "";
+  let bodyText = fullText;
+  if (wordCount > 80) {
+    const sentences = fullText.split(/(?<=[.!?])\s+/).filter((s) => s.length > 15);
+    if (sentences.length >= 3) {
+      const last3 = sentences.slice(-3);
+      pullQuote = last3.reduce((a, b) => (a.length <= b.length ? a : b));
+      if (pullQuote.length > 140) pullQuote = "";
     }
-    y -= 8;
-    if (y < M_BOTTOM + 30) break;
   }
 
-  // Decorazione finale (Parte 4-C) se la pagina ha > 150pt vuoti in basso
-  if (y > M_BOTTOM + 180) {
-    const yCenter = (y + M_BOTTOM + 30) / 2;
+  const bodySize = 12;
+  const bodyLH = 18;
+  // maxWidth ridotta se c'e' pull-quote a destra (sotto le prime ~6 righe)
+  const QUOTE_W = 200;
+  const QUOTE_TOP_LINES = 6;
+  const fullBodyW = CONTENT_W;
+  const narrowBodyW = CONTENT_W - QUOTE_W - 24;
+
+  // Drop cap: prima lettera grande
+  const firstChar = sanitize(bodyText.charAt(0) || "•");
+  const dropSize = 56;
+  const dropAscent = fonts.serifBold.heightAtSize(dropSize);
+  const dropW = fonts.serifBold.widthOfTextAtSize(firstChar, dropSize);
+  const dropX = M_LEFT;
+  const dropY = y - dropAscent * 0.78;
+  page.drawText(firstChar, { x: dropX, y: dropY, size: dropSize, font: fonts.serifBold, color: TEAL });
+
+  // Avvolge il testo: prime 3 righe rientrate di dropW+8
+  const restText = sanitize(bodyText.slice(1).trimStart());
+  const indentWrapW = fullBodyW - dropW - 8;
+  // First-pass: split text in lines using indent for first 3, then full width
+  const wrappedFirst = wrapText(restText, fonts.serif, bodySize, indentWrapW);
+  const dropLines = wrappedFirst.slice(0, 3);
+  const remainder = wrappedFirst.slice(3).join(" ");
+  const wrappedRest = remainder ? wrapText(remainder, fonts.serif, bodySize, fullBodyW) : [];
+
+  let textY = y;
+  for (const ln of dropLines) {
+    page.drawText(ln, { x: M_LEFT + dropW + 8, y: textY, size: bodySize, font: fonts.serif, color: INK });
+    textY -= bodyLH;
+  }
+  // Linee successive: se c'e' pull-quote, riduce la larghezza dopo le prime QUOTE_TOP_LINES totali
+  let written = dropLines.length;
+  let remainingLines = wrappedRest;
+
+  // Se c'e' pull-quote, ri-wrappo la parte centrale a narrowBodyW
+  if (pullQuote && remainingLines.length > 0) {
+    const fullRest = remainingLines.join(" ");
+    const narrowLines = wrapText(fullRest, fonts.serif, bodySize, narrowBodyW);
+    remainingLines = narrowLines;
+  }
+
+  const startQuoteY = textY;
+  for (const ln of remainingLines) {
+    if (textY < M_BOTTOM + 40) break;
+    page.drawText(ln, { x: M_LEFT, y: textY, size: bodySize, font: fonts.serif, color: INK });
+    textY -= bodyLH;
+    written++;
+  }
+
+  // Pull-quote a destra con bordo sinistro teal
+  if (pullQuote) {
+    const qx = M_LEFT + CONTENT_W - QUOTE_W;
+    const qLines = wrapText(`<<${pullQuote}>>`, fonts.serifItalic, 18, QUOTE_W - 16);
+    const qH = qLines.length * 24;
+    const qTop = startQuoteY + 6;
+    page.drawLine({ start: { x: qx, y: qTop - qH - 8 }, end: { x: qx, y: qTop + 4 }, thickness: 2, color: TEAL });
+    let qy = qTop - 16;
+    for (const ln of qLines) {
+      page.drawText(ln, { x: qx + 12, y: qy, size: 18, font: fonts.serifItalic, color: TEAL });
+      qy -= 24;
+    }
+  }
+
+  // Decorazione finale se > 150pt vuoti
+  if (textY > M_BOTTOM + 180) {
+    const yCenter = (textY + M_BOTTOM + 30) / 2;
     const cx = PAGE_W / 2;
-    page.drawLine({ start: { x: cx - 50, y: yCenter }, end: { x: cx + 50, y: yCenter }, thickness: 1, color: TEAL });
+    page.drawLine({ start: { x: cx - 50, y: yCenter }, end: { x: cx - 6, y: yCenter }, thickness: 0.6, color: TEAL });
+    page.drawLine({ start: { x: cx + 6, y: yCenter }, end: { x: cx + 50, y: yCenter }, thickness: 0.6, color: TEAL });
+    page.drawRectangle({ x: cx - 2.5, y: yCenter - 2.5, width: 5, height: 5, color: TEAL, rotate: degrees(45) });
   }
 }
 
+function AREA_INFO_BLOCCO(blocco: any): { kicker: string } {
+  const cat = (blocco?.categoria ?? "altro").replace(/_/g, " ").toUpperCase();
+  return { kicker: sanitize(`SEZIONE - ${cat}`) };
+}
+
+// Sezione E: allegati con cornice teal e icona PDF disegnata
 function drawAllegatoPlaceholder(page: PDFPage, fonts: Fonts, allegato: any, pageNum: number) {
   drawPageFrame(page, pageNum, fonts);
   const cx = PAGE_W / 2;
+
+  // Cornice esterna teal con margini 50pt
+  const fx = 50;
+  const fy = 50;
+  const fw = PAGE_W - 100;
+  const fh = PAGE_H - 100;
+  page.drawRectangle({ x: fx, y: fy, width: fw, height: fh, borderColor: TEAL, borderWidth: 0.5 });
+
+  // Centro verticale del contenuto
   const cy = PAGE_H / 2;
 
-  // Cornice decorativa centrata
-  const boxW = CONTENT_W - 40;
-  const boxH = 320;
-  const boxX = (PAGE_W - boxW) / 2;
-  const boxY = cy - boxH / 2;
-  page.drawRectangle({ x: boxX, y: boxY, width: boxW, height: boxH, borderColor: LIGHT_BORDER, borderWidth: 1 });
+  // Etichetta sopra
+  const tag = "DOCUMENTO ALLEGATO";
+  const tagW = fonts.sansBold.widthOfTextAtSize(tag, 8);
+  page.drawText(tag, { x: cx - tagW / 2, y: cy + 130, size: 8, font: fonts.sansBold, color: TEAL });
 
-  // Icona PDF centrata verticalmente nel box
-  const iconH = 90;
-  const iy = boxY + boxH - 50 - iconH;
-  const ix = cx - 35;
-  page.drawRectangle({ x: ix, y: iy, width: 70, height: iconH, borderColor: LIGHT_BORDER, borderWidth: 1.5 });
-  const pdfTxt = "PDF";
-  const pw = fonts.serifBold.widthOfTextAtSize(pdfTxt, 22);
-  page.drawText(pdfTxt, { x: cx - pw / 2, y: iy + 35, size: 22, font: fonts.serifBold, color: MUTED });
+  // Icona PDF disegnata (rettangolo + piega d'angolo)
+  const iw = 60, ih = 78;
+  const ix = cx - iw / 2;
+  const iy = cy + 30;
+  page.drawRectangle({ x: ix, y: iy, width: iw, height: ih, borderColor: MUTED, borderWidth: 1 });
+  // Piega d'angolo (triangolo in alto a destra)
+  page.drawLine({ start: { x: ix + iw - 14, y: iy + ih }, end: { x: ix + iw, y: iy + ih - 14 }, thickness: 1, color: MUTED });
+  page.drawLine({ start: { x: ix + iw - 14, y: iy + ih }, end: { x: ix + iw - 14, y: iy + ih - 14 }, thickness: 1, color: MUTED });
+  page.drawLine({ start: { x: ix + iw - 14, y: iy + ih - 14 }, end: { x: ix + iw, y: iy + ih - 14 }, thickness: 1, color: MUTED });
+  // Etichetta "PDF" al centro
+  const ptxt = "PDF";
+  const pw = fonts.sansBold.widthOfTextAtSize(ptxt, 14);
+  page.drawText(ptxt, { x: cx - pw / 2, y: iy + ih / 2 - 6, size: 14, font: fonts.sansBold, color: MUTED });
 
-  const cat = allegato?.categoria ?? "altro";
-  const lbl = sanitize(cat.replace(/_/g, " ").toUpperCase());
-  const lw = fonts.sansBold.widthOfTextAtSize(lbl, 8);
-  const c = CAT_COLORS[cat] || CAT_COLORS.altro;
-  const color = rgb(c[0] / 255, c[1] / 255, c[2] / 255);
-  page.drawRectangle({ x: cx - (lw + 14) / 2, y: iy - 30, width: lw + 14, height: 16, color });
-  page.drawText(lbl, { x: cx - lw / 2, y: iy - 26, size: 8, font: fonts.sansBold, color: WHITE });
-
+  // Titolo allegato
   const tit = sanitize(allegato?.titolo ?? "Allegato");
-  const tw = fonts.serifBold.widthOfTextAtSize(tit, 20);
-  page.drawText(tit, { x: cx - tw / 2, y: iy - 70, size: 20, font: fonts.serifBold, color: INK });
+  const tlines = wrapText(tit, fonts.serifBold, 24, fw - 60);
+  let ty = cy - 10;
+  for (const ln of tlines.slice(0, 2)) {
+    const lw = fonts.serifBold.widthOfTextAtSize(ln, 24);
+    page.drawText(ln, { x: cx - lw / 2, y: ty, size: 24, font: fonts.serifBold, color: INK });
+    ty -= 28;
+  }
 
-  let dy = iy - 100;
+  // Descrizione sans 11
   if (allegato?.descrizione) {
-    const lines = wrapText(allegato.descrizione, fonts.serifItalic, 11, CONTENT_W - 80);
-    for (const ln of lines) {
-      const lnw = fonts.serifItalic.widthOfTextAtSize(ln, 11);
-      page.drawText(ln, { x: cx - lnw / 2, y: dy, size: 11, font: fonts.serifItalic, color: MUTED });
+    const dlines = wrapText(allegato.descrizione, fonts.sans, 11, fw - 80);
+    let dy = ty - 12;
+    for (const ln of dlines.slice(0, 4)) {
+      const lw = fonts.sans.widthOfTextAtSize(ln, 11);
+      page.drawText(ln, { x: cx - lw / 2, y: dy, size: 11, font: fonts.sans, color: MUTED });
       dy -= 14;
     }
   }
 
-  // Micro-descrizione
-  const microNote = "Il documento completo segue nelle pagine successive del PDF.";
-  const mnLines = wrapText(microNote, fonts.sans, 9, CONTENT_W - 100);
-  let my = dy - 8;
-  for (const ln of mnLines) {
-    const w = fonts.sans.widthOfTextAtSize(ln, 9);
-    page.drawText(ln, { x: cx - w / 2, y: my, size: 9, font: fonts.sans, color: MUTED });
-    my -= 12;
-  }
+  // Nota in fondo cornice
+  const note = "Il documento completo segue nelle pagine successive.";
+  const nw = fonts.serifItalic.widthOfTextAtSize(note, 10);
+  page.drawText(note, { x: cx - nw / 2, y: fy + 30, size: 10, font: fonts.serifItalic, color: MUTED });
 }
 
+// Sezione B: indice riprogettato con header + leader dots + nota finale
 function drawIndice(page: PDFPage, fonts: Fonts, entries: { titolo: string; pagina: number }[], pageNum: number) {
   drawPageFrame(page, pageNum, fonts);
   let y = PAGE_H - M_TOP - 10;
-  page.drawText("INDICE", { x: M_LEFT, y, size: 8, font: fonts.sansBold, color: TEAL });
-  y -= 25;
-  page.drawText("Sommario", { x: M_LEFT, y: y - 18, size: 24, font: fonts.serifBold, color: INK });
-  y -= 60;
+  page.drawText("INDICE", { x: M_LEFT, y, size: 9, font: fonts.sansBold, color: TEAL });
+  y -= 8;
+  page.drawLine({ start: { x: M_LEFT, y }, end: { x: M_LEFT + CONTENT_W, y }, thickness: 0.4, color: TEAL });
+  y -= 36;
 
-  const size = 11;
+  const titleSize = 14;
+  const numSize = 14;
+  const numColW = 28;
   for (const e of entries) {
-    if (y < M_BOTTOM + 30) break;
+    if (y < M_BOTTOM + 60) break;
     const tit = sanitize(e.titolo);
     const num = String(e.pagina);
-    const titW = fonts.serif.widthOfTextAtSize(tit, size);
-    const numW = fonts.sans.widthOfTextAtSize(num, size);
-    page.drawText(tit, { x: M_LEFT, y, size, font: fonts.serif, color: INK });
-    page.drawText(num, { x: M_LEFT + CONTENT_W - numW, y, size, font: fonts.sans, color: MUTED });
-    // Puntini
-    const dotsStart = M_LEFT + titW + 6;
-    const dotsEnd = M_LEFT + CONTENT_W - numW - 6;
+
+    // Numero capitolo a sinistra (estratto se inizia con "N. ...")
+    let chapter = "";
+    let titleClean = tit;
+    const m = tit.match(/^(\d+)\.\s*(.+)$/);
+    if (m) { chapter = m[1]; titleClean = m[2]; }
+
+    if (chapter) {
+      page.drawText(chapter, { x: M_LEFT, y, size: titleSize, font: fonts.serifBold, color: TEAL });
+    }
+    const titleX = M_LEFT + 28;
+    const titW = fonts.serif.widthOfTextAtSize(titleClean, titleSize);
+    page.drawText(titleClean, { x: titleX, y, size: titleSize, font: fonts.serif, color: INK });
+
+    const numW = fonts.serif.widthOfTextAtSize(num, numSize);
+    const numX = M_LEFT + CONTENT_W - numW;
+    page.drawText(num, { x: numX, y, size: numSize, font: fonts.serif, color: INK });
+
+    // Leader dots
+    const dotsStart = titleX + titW + 8;
+    const dotsEnd = numX - 8;
     let dx = dotsStart;
     while (dx < dotsEnd) {
-      page.drawText(".", { x: dx, y, size, font: fonts.sans, color: rgb(0.7, 0.68, 0.65) });
-      dx += 3.5;
+      page.drawText(".", { x: dx, y, size: titleSize, font: fonts.sans, color: rgb(0.78, 0.76, 0.73) });
+      dx += 4;
     }
-    y -= 20;
+
+    y -= 22;
   }
+
+  // Nota finale corsivo
+  const today = new Date();
+  const ds = `${String(today.getDate()).padStart(2, "0")}/${String(today.getMonth() + 1).padStart(2, "0")}/${today.getFullYear()}`;
+  const note = sanitize(`Documento generato il ${ds}`);
+  page.drawText(note, { x: M_LEFT, y: M_BOTTOM + 20, size: 9, font: fonts.serifItalic, color: MUTED });
 }
 
-function drawChiusura(page: PDFPage, fonts: Fonts, club: any, stagione: string, pageNum: number, dateStr: string) {
-  drawPageFrame(page, pageNum, fonts);
+// Sezione F: chiusura con monogramma + banda teal in fondo
+function drawChiusura(page: PDFPage, fonts: Fonts, club: any, stagione: string, _pageNum: number, dateStr: string) {
+  // Sfondo crema, niente numero pagina visibile (banda copre il footer)
+  page.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: CREAM });
   const cx = PAGE_W / 2;
-  const cy = PAGE_H / 2;
 
+  // Banda teal 30% in fondo
+  const bandH = PAGE_H * 0.3;
+  page.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: bandH, color: TEAL });
+
+  // Monogramma cerchio outline teal diametro 80pt
+  const monoY = bandH + 220;
+  page.drawCircle({ x: cx, y: monoY, size: 40, borderColor: TEAL, borderWidth: 1 });
   const nome = sanitize(club?.nome ?? "Club");
-  const nw = fonts.serifBold.widthOfTextAtSize(nome, 22);
-  page.drawText(nome, { x: cx - nw / 2, y: cy + 20, size: 22, font: fonts.serifBold, color: INK });
+  const inits = nome.split(/\s+/).map((w: string) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase() || "C";
+  const iw = fonts.serifBold.widthOfTextAtSize(inits, 36);
+  page.drawText(inits, { x: cx - iw / 2, y: monoY - 12, size: 36, font: fonts.serifBold, color: TEAL });
 
-  const sub = sanitize(`Relazione del Presidente - Stagione ${stagione}`);
-  const sw = fonts.serifItalic.widthOfTextAtSize(sub, 12);
-  page.drawText(sub, { x: cx - sw / 2, y: cy - 5, size: 12, font: fonts.serifItalic, color: MUTED });
+  // Nome club + sottotitolo
+  const nw = fonts.serifBold.widthOfTextAtSize(nome, 18);
+  page.drawText(nome, { x: cx - nw / 2, y: monoY - 80, size: 18, font: fonts.serifBold, color: INK });
 
-  page.drawLine({ start: { x: cx - 30, y: cy - 25 }, end: { x: cx + 30, y: cy - 25 }, thickness: 0.8, color: TEAL });
+  const sub = sanitize(`RELAZIONE DEL PRESIDENTE - STAGIONE ${stagione}`).toUpperCase();
+  const sw = fonts.sansBold.widthOfTextAtSize(sub, 9);
+  page.drawText(sub, { x: cx - sw / 2, y: monoY - 100, size: 9, font: fonts.sansBold, color: MUTED });
 
-  const dt = `Documento generato il ${dateStr}`;
-  const dw = fonts.sans.widthOfTextAtSize(dt, 9);
-  page.drawText(dt, { x: cx - dw / 2, y: 80, size: 9, font: fonts.sans, color: MUTED });
+  // Nella banda teal: data generazione bianca
+  const dt = sanitize(`DOCUMENTO GENERATO IL ${dateStr}`).toUpperCase();
+  const dw = fonts.sansBold.widthOfTextAtSize(dt, 9);
+  page.drawText(dt, { x: cx - dw / 2, y: bandH / 2 - 4, size: 9, font: fonts.sansBold, color: WHITE });
 }
 
 // ============================================================
