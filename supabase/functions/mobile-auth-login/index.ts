@@ -164,7 +164,7 @@ Deno.serve(async (req) => {
           }
         } else {
           console.error("[mobile-auth-login] createUser error", create_err);
-          return json({ error: "auth_create_failed", detail: create_err.message }, 500);
+          return json({ error: "auth_failed" }, 500);
         }
       } else if (created?.user) {
         signin = await auth_client.auth.signInWithPassword({ email, password });
