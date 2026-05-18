@@ -995,8 +995,8 @@ const DashboardPage: React.FC = () => {
       if (!agenda_is_today) return { ...c, stato_tempo: "futuro" as const };
       const fineMin = t2m_dash(c.ora_fine);
       const inizioMin = t2m_dash(c.ora_inizio);
-      if (fineMin + 30 < oraOra) return null; // nascosto: finito da più di 30 min
-      if (fineMin < oraOra) return { ...c, stato_tempo: "terminato" as const };
+      // Nascondi i corsi già terminati (ora_fine <= now)
+      if (fineMin <= oraOra) return null;
       if (inizioMin <= oraOra && oraOra <= fineMin) return { ...c, stato_tempo: "in_corso" as const };
       if (inizioMin - oraOra <= 120) return { ...c, stato_tempo: "prossimo" as const, traMinuti: inizioMin - oraOra };
       return { ...c, stato_tempo: "futuro" as const };
