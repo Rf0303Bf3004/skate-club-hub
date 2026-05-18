@@ -164,7 +164,7 @@ Deno.serve(async (req) => {
           }
         } else {
           console.error("[mobile-auth-login] createUser error", create_err);
-          return json({ error: "auth_create_failed", detail: create_err.message }, 500);
+          return json({ error: "auth_failed" }, 500);
         }
       } else if (created?.user) {
         signin = await auth_client.auth.signInWithPassword({ email, password });
@@ -178,7 +178,7 @@ Deno.serve(async (req) => {
 
     if (signin.error || !signin.data.session) {
       console.error("[mobile-auth-login] signin failed", signin.error);
-      return json({ error: "auth_signin_failed", detail: signin.error?.message }, 500);
+      return json({ error: "auth_failed" }, 500);
     }
 
     return json({
@@ -196,6 +196,6 @@ Deno.serve(async (req) => {
     });
   } catch (e) {
     console.error("[mobile-auth-login] unhandled", e);
-    return json({ error: "internal_error", detail: String(e) }, 500);
+    return json({ error: "internal_error" }, 500);
   }
 });

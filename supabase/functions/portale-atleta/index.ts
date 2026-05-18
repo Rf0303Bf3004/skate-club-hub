@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
       .select("*")
       .eq("portal_token", token)
       .maybeSingle();
-    if (atl_err) return json({ error: "db_error", detail: atl_err.message }, 500);
+    if (atl_err) { console.error("[portale-atleta] atl_err", atl_err); return json({ error: "db_error" }, 500); }
     if (!atleta) return json({ error: "invalid_token" }, 404);
 
     const atleta_id = atleta.id;
@@ -138,7 +138,7 @@ Deno.serve(async (req) => {
         .from("comunicazioni_destinatari")
         .update({ rsvp_risposta: risposta, rsvp_at: now, letto_at: now })
         .eq("id", destinatario_id);
-      if (error) return json({ error: "db_error", detail: error.message }, 500);
+      if (error) { console.error("[portale-atleta] rsvp err", error); return json({ error: "db_error" }, 500); }
       return json({ ok: true });
     }
 
@@ -152,13 +152,13 @@ Deno.serve(async (req) => {
         club_id, atleta_id, corso_id, stato: "in_attesa",
         note_richiesta: `Richiesta inviata dal portale per ${atleta.nome} ${atleta.cognome}`,
       });
-      if (error) return json({ error: "db_error", detail: error.message }, 500);
+      if (error) { console.error("[portale-atleta] richiesta err", error); return json({ error: "db_error" }, 500); }
       return json({ ok: true });
     }
 
     return json({ error: "unknown_action" }, 400);
   } catch (e) {
     console.error("[portale-atleta]", e);
-    return json({ error: "internal_error", detail: String(e) }, 500);
+    return json({ error: "internal_error" }, 500);
   }
 });
