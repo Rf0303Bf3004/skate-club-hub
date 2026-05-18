@@ -179,12 +179,12 @@ const CorsoCard: React.FC<{
     bloccato = true;
   } else if (!is_today) {
     stato_corso = "futuro";
-    bloccato = true;
+    bloccato = false; // future days editable
   } else {
     const non_iniziato = min_inizio > min_ora;
     const terminato = min_fine <= min_ora;
     const presto = non_iniziato && (min_inizio - min_ora) <= 30;
-    bloccato = non_iniziato || terminato;
+    bloccato = false; // sempre cliccabile oggi
     stato_corso = terminato ? "terminato" : (!non_iniziato ? "in_corso" : presto ? "presto" : "futuro");
   }
   const atleti_corso = atleti.filter((a) => corso.atleti_ids?.includes(a.id));
@@ -366,7 +366,7 @@ const CorsoCard: React.FC<{
                       disabled={loading || bloccato}
                       className={`h-7 text-xs ${presenza ? "text-success border-success/40" : bloccato ? "opacity-40 cursor-not-allowed bg-muted text-muted-foreground" : "bg-success hover:bg-success/90 text-white"}`}
                     >
-                      {presenza ? "✓ Presente" : "Segna"}
+                      {presenza ? "✓ Presente" : "Presente"}
                     </Button>
                   </div>
                 );
@@ -995,8 +995,8 @@ const DashboardPage: React.FC = () => {
       if (!agenda_is_today) return { ...c, stato_tempo: "futuro" as const };
       const fineMin = t2m_dash(c.ora_fine);
       const inizioMin = t2m_dash(c.ora_inizio);
-      if (fineMin + 30 < oraOra) return null; // nascosto: finito da più di 30 min
-      if (fineMin < oraOra) return { ...c, stato_tempo: "terminato" as const };
+      // Nascondi i corsi già terminati (ora_fine <= now)
+      if (fineMin <= oraOra) return null;
       if (inizioMin <= oraOra && oraOra <= fineMin) return { ...c, stato_tempo: "in_corso" as const };
       if (inizioMin - oraOra <= 120) return { ...c, stato_tempo: "prossimo" as const, traMinuti: inizioMin - oraOra };
       return { ...c, stato_tempo: "futuro" as const };
@@ -1289,7 +1289,7 @@ const DashboardPage: React.FC = () => {
                                       disabled={segna.isPending}
                                       className={`h-6 text-xs ${presenza ? "text-success border-success/40" : "bg-success hover:bg-success/90 text-white"}`}
                                     >
-                                      {presenza ? "✓" : "Segna"}
+                                      {presenza ? "✓ Presente" : "Presente"}
                                     </Button>
                                   </div>
                                 );

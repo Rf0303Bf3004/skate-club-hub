@@ -1307,7 +1307,6 @@ export function use_segna_presenza() {
           data: data.data,
           ora_entrata: data.ora_entrata || new Date().toTimeString().slice(0, 5),
           metodo: data.metodo,
-          note: data.note || null,
           riferimento_id: data.riferimento_id || null,
           tipo_riferimento: data.tipo_riferimento || null,
         });
