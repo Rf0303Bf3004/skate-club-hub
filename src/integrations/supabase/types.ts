@@ -93,6 +93,8 @@ export type Database = {
           data_nascita: string | null
           disco_in_preparazione: string | null
           disco_url: string | null
+          e_aiuto_monitrice: boolean
+          e_monitrice: boolean
           foto_url: string | null
           genitore1_cognome: string | null
           genitore1_email: string | null
@@ -145,6 +147,8 @@ export type Database = {
           data_nascita?: string | null
           disco_in_preparazione?: string | null
           disco_url?: string | null
+          e_aiuto_monitrice?: boolean
+          e_monitrice?: boolean
           foto_url?: string | null
           genitore1_cognome?: string | null
           genitore1_email?: string | null
@@ -197,6 +201,8 @@ export type Database = {
           data_nascita?: string | null
           disco_in_preparazione?: string | null
           disco_url?: string | null
+          e_aiuto_monitrice?: boolean
+          e_monitrice?: boolean
           foto_url?: string | null
           genitore1_cognome?: string | null
           genitore1_email?: string | null
@@ -1997,9 +2003,12 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
+          linked_atleta_id: string | null
+          livello_istruttore: Database["public"]["Enums"]["livello_istruttore_enum"]
           nome: string
           note: string | null
           specialita: string | null
+          stato_staff: Database["public"]["Enums"]["stato_staff_enum"]
           telefono: string | null
         }
         Insert: {
@@ -2011,9 +2020,12 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          linked_atleta_id?: string | null
+          livello_istruttore?: Database["public"]["Enums"]["livello_istruttore_enum"]
           nome?: string
           note?: string | null
           specialita?: string | null
+          stato_staff?: Database["public"]["Enums"]["stato_staff_enum"]
           telefono?: string | null
         }
         Update: {
@@ -2025,9 +2037,12 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          linked_atleta_id?: string | null
+          livello_istruttore?: Database["public"]["Enums"]["livello_istruttore_enum"]
           nome?: string
           note?: string | null
           specialita?: string | null
+          stato_staff?: Database["public"]["Enums"]["stato_staff_enum"]
           telefono?: string | null
         }
         Relationships: [
@@ -2036,6 +2051,13 @@ export type Database = {
             columns: ["club_id"]
             isOneToOne: false
             referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "istruttori_linked_atleta_id_fkey"
+            columns: ["linked_atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti"
             referencedColumns: ["id"]
           },
         ]
@@ -3648,9 +3670,11 @@ export type Database = {
           ora_inizio: string
         }[]
       }
+      sync_atleta_to_staff: { Args: { p_atleta_id: string }; Returns: string }
     }
     Enums: {
-      [_ in never]: never
+      livello_istruttore_enum: "istruttore" | "monitrice" | "aiuto_monitrice"
+      stato_staff_enum: "attivo" | "sospeso"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3777,6 +3801,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      livello_istruttore_enum: ["istruttore", "monitrice", "aiuto_monitrice"],
+      stato_staff_enum: ["attivo", "sospeso"],
+    },
   },
 } as const
