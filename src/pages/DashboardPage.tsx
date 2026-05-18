@@ -366,7 +366,7 @@ const CorsoCard: React.FC<{
                       disabled={loading || bloccato}
                       className={`h-7 text-xs ${presenza ? "text-success border-success/40" : bloccato ? "opacity-40 cursor-not-allowed bg-muted text-muted-foreground" : "bg-success hover:bg-success/90 text-white"}`}
                     >
-                      {presenza ? "✓ Presente" : "Segna"}
+                      {presenza ? "✓ Presente" : "Presente"}
                     </Button>
                   </div>
                 );
