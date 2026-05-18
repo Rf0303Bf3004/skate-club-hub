@@ -1289,7 +1289,7 @@ const DashboardPage: React.FC = () => {
                                       disabled={segna.isPending}
                                       className={`h-6 text-xs ${presenza ? "text-success border-success/40" : "bg-success hover:bg-success/90 text-white"}`}
                                     >
-                                      {presenza ? "✓" : "Segna"}
+                                      {presenza ? "✓ Presente" : "Presente"}
                                     </Button>
                                   </div>
                                 );
