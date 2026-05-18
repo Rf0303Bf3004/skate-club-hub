@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
       .select("*")
       .eq("portal_token", token)
       .maybeSingle();
-    if (atl_err) return json({ error: "db_error", detail: atl_err.message }, 500);
+    if (atl_err) { console.error("[portale-atleta] atl_err", atl_err); return json({ error: "db_error" }, 500); }
     if (!atleta) return json({ error: "invalid_token" }, 404);
 
     const atleta_id = atleta.id;
