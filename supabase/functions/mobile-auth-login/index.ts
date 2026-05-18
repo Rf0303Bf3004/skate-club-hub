@@ -108,10 +108,14 @@ Deno.serve(async (req) => {
     const email = `atleta-${atleta.id}@portal.local`;
     const password = await derive_password(token, salt);
 
-    const user_metadata = {
+    // app_metadata: claims sicuri (solo service-role può modificarli)
+    // user_metadata: solo dati cosmetici (nome/cognome)
+    const app_metadata = {
       atleta_id: atleta.id,
       club_id: atleta.club_id,
       role: "mobile_parent",
+    };
+    const user_metadata = {
       nome: atleta.nome,
       cognome: atleta.cognome,
     };
@@ -137,13 +141,12 @@ Deno.serve(async (req) => {
           password,
           email_confirm: true,
           user_metadata,
+          app_metadata,
         });
 
       if (create_err) {
-        // Se esiste ma password sbagliata (es. salt cambiato): aggiorna password
         const msg = (create_err.message || "").toLowerCase();
         if (msg.includes("already") || msg.includes("registered") || msg.includes("exists")) {
-          // Trova user via getUserById non possibile senza id: usa listUsers paginato
           let found_id: string | null = null;
           for (let page = 1; page <= 50 && !found_id; page++) {
             const { data: pg } = await admin.auth.admin.listUsers({ page, perPage: 200 });
@@ -155,6 +158,7 @@ Deno.serve(async (req) => {
             await admin.auth.admin.updateUserById(found_id, {
               password,
               user_metadata,
+              app_metadata,
             });
             signin = await auth_client.auth.signInWithPassword({ email, password });
           }
@@ -166,9 +170,9 @@ Deno.serve(async (req) => {
         signin = await auth_client.auth.signInWithPassword({ email, password });
       }
     } else {
-      // Aggiorna user_metadata se è cambiato (nome/cognome atleta)
+      // Mantieni metadata aggiornati e blinda app_metadata (anti-escalation)
       if (signin.data.user?.id) {
-        await admin.auth.admin.updateUserById(signin.data.user.id, { user_metadata });
+        await admin.auth.admin.updateUserById(signin.data.user.id, { user_metadata, app_metadata });
       }
     }
 
