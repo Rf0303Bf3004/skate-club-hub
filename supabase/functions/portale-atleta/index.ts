@@ -152,7 +152,7 @@ Deno.serve(async (req) => {
         club_id, atleta_id, corso_id, stato: "in_attesa",
         note_richiesta: `Richiesta inviata dal portale per ${atleta.nome} ${atleta.cognome}`,
       });
-      if (error) return json({ error: "db_error", detail: error.message }, 500);
+      if (error) { console.error("[portale-atleta] richiesta err", error); return json({ error: "db_error" }, 500); }
       return json({ ok: true });
     }
 
