@@ -10,6 +10,16 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  // Solo cron job interno: richiede service-role key come Bearer token
+  const auth = req.headers.get("authorization") || "";
+  const expected = `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`;
+  if (auth !== expected) {
+    return new Response(JSON.stringify({ error: "forbidden" }), {
+      status: 403,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   try {
     const supabase_url = Deno.env.get("SUPABASE_URL")!;
     const service_key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
