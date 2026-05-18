@@ -5,9 +5,40 @@ const corsHeaders = {
 
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
+  }
+
+  // Auth: richiede un JWT Supabase valido (evita abuso API costose)
+  const auth_header = req.headers.get("Authorization") || "";
+  if (!auth_header.startsWith("Bearer ")) {
+    return new Response(JSON.stringify({ error: "unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  try {
+    const auth_client = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: auth_header } } },
+    );
+    const token = auth_header.replace("Bearer ", "");
+    const { data: claims_data, error: claims_err } = await auth_client.auth.getClaims(token);
+    if (claims_err || !claims_data?.claims?.sub) {
+      return new Response(JSON.stringify({ error: "unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+  } catch {
+    return new Response(JSON.stringify({ error: "unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   try {
@@ -15,6 +46,13 @@ Deno.serve(async (req) => {
     if (!pdfText || typeof pdfText !== "string") {
       return new Response(JSON.stringify({ error: "pdfText is required" }), {
         status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    // Limita la dimensione del testo per prevenire abusi di token Claude
+    if (pdfText.length > 200_000) {
+      return new Response(JSON.stringify({ error: "pdfText too large (max 200k chars)" }), {
+        status: 413,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
