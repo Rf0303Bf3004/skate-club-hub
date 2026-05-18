@@ -196,6 +196,6 @@ Deno.serve(async (req) => {
     });
   } catch (e) {
     console.error("[mobile-auth-login] unhandled", e);
-    return json({ error: "internal_error", detail: String(e) }, 500);
+    return json({ error: "internal_error" }, 500);
   }
 });
