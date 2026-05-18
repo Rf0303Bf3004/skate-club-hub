@@ -108,10 +108,14 @@ Deno.serve(async (req) => {
     const email = `atleta-${atleta.id}@portal.local`;
     const password = await derive_password(token, salt);
 
-    const user_metadata = {
+    // app_metadata: claims sicuri (solo service-role può modificarli)
+    // user_metadata: solo dati cosmetici (nome/cognome)
+    const app_metadata = {
       atleta_id: atleta.id,
       club_id: atleta.club_id,
       role: "mobile_parent",
+    };
+    const user_metadata = {
       nome: atleta.nome,
       cognome: atleta.cognome,
     };
