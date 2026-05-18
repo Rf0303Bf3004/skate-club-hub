@@ -138,7 +138,7 @@ Deno.serve(async (req) => {
         .from("comunicazioni_destinatari")
         .update({ rsvp_risposta: risposta, rsvp_at: now, letto_at: now })
         .eq("id", destinatario_id);
-      if (error) return json({ error: "db_error", detail: error.message }, 500);
+      if (error) { console.error("[portale-atleta] rsvp err", error); return json({ error: "db_error" }, 500); }
       return json({ ok: true });
     }
 
