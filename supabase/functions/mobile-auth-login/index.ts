@@ -178,7 +178,7 @@ Deno.serve(async (req) => {
 
     if (signin.error || !signin.data.session) {
       console.error("[mobile-auth-login] signin failed", signin.error);
-      return json({ error: "auth_signin_failed", detail: signin.error?.message }, 500);
+      return json({ error: "auth_failed" }, 500);
     }
 
     return json({
