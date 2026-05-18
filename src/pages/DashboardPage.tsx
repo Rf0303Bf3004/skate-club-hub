@@ -179,12 +179,12 @@ const CorsoCard: React.FC<{
     bloccato = true;
   } else if (!is_today) {
     stato_corso = "futuro";
-    bloccato = true;
+    bloccato = false; // future days editable
   } else {
     const non_iniziato = min_inizio > min_ora;
     const terminato = min_fine <= min_ora;
     const presto = non_iniziato && (min_inizio - min_ora) <= 30;
-    bloccato = non_iniziato || terminato;
+    bloccato = false; // sempre cliccabile oggi
     stato_corso = terminato ? "terminato" : (!non_iniziato ? "in_corso" : presto ? "presto" : "futuro");
   }
   const atleti_corso = atleti.filter((a) => corso.atleti_ids?.includes(a.id));
