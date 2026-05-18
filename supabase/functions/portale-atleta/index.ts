@@ -159,6 +159,6 @@ Deno.serve(async (req) => {
     return json({ error: "unknown_action" }, 400);
   } catch (e) {
     console.error("[portale-atleta]", e);
-    return json({ error: "internal_error", detail: String(e) }, 500);
+    return json({ error: "internal_error" }, 500);
   }
 });
