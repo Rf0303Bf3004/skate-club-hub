@@ -1,15 +1,28 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
 import { Loader2, User, Calendar as CalIcon, FileText, Trophy, BookOpen, AlertCircle, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 
 // Portale pubblico mobile-first: l'unico identificativo è il portal_token.
-// Accetta sia /portale-atleta/:token (path) sia /portale-atleta?token=... (query).
+// Tutti i dati passano dall'edge function `portale-atleta` (service role + scoping per token).
 
 type TabKey = "dati" | "calendario" | "comunicazioni" | "fatture" | "iscrivi";
+
+const FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/portale-atleta`;
+const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+
+async function call_portale(token: string, action: string, extra: Record<string, unknown> = {}) {
+  const res = await fetch(FN_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` },
+    body: JSON.stringify({ token, action, ...extra }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+  return data;
+}
 
 const PortaleAtletaPage: React.FC = () => {
   const { token: token_param } = useParams<{ token: string }>();
@@ -21,7 +34,6 @@ const PortaleAtletaPage: React.FC = () => {
   const [errore, set_errore] = useState<string | null>(null);
   const [tab, set_tab] = useState<TabKey>("dati");
 
-  // Dati per ogni tab
   const [eventi_calendario, set_eventi_calendario] = useState<any[]>([]);
   const [comunicazioni, set_comunicazioni] = useState<any[]>([]);
   const [fatture, set_fatture] = useState<any[]>([]);
@@ -30,7 +42,6 @@ const PortaleAtletaPage: React.FC = () => {
   const [richieste_inviate, set_richieste_inviate] = useState<Set<string>>(new Set());
   const [busy_id, set_busy_id] = useState<string | null>(null);
 
-  // ── Caricamento iniziale: trova atleta dal token ──
   useEffect(() => {
     (async () => {
       if (!token) {
@@ -39,146 +50,46 @@ const PortaleAtletaPage: React.FC = () => {
         return;
       }
       try {
-        const { data: a, error } = await supabase
-          .from("atleti")
-          .select("*")
-          .eq("portal_token", token)
-          .maybeSingle();
-        if (error) throw error;
-        if (!a) {
-          set_errore("Link non valido o scaduto");
-          set_loading(false);
-          return;
-        }
-        set_atleta(a);
-        const { data: c } = await supabase.from("clubs").select("*").eq("id", a.club_id).maybeSingle();
-        set_club(c);
+        const data = await call_portale(token, "init");
+        set_atleta(data.atleta);
+        set_club(data.club);
       } catch (err: any) {
-        set_errore(err?.message || "Errore di caricamento");
+        set_errore(err?.message === "invalid_token" ? "Link non valido o scaduto" : "Errore di caricamento");
       } finally {
         set_loading(false);
       }
     })();
   }, [token]);
 
-  // ── Caricamento dati per tab attivo ──
   useEffect(() => {
     if (!atleta) return;
     (async () => {
       try {
         if (tab === "calendario") {
-          const oggi = new Date().toISOString().split("T")[0];
-          // Lezioni private
-          const { data: lp } = await supabase
-            .from("lezioni_private_atlete")
-            .select("lezione_id, lezioni_private(*)")
-            .eq("atleta_id", atleta.id);
-          const lezioni = (lp ?? [])
-            .map((x: any) => x.lezioni_private)
-            .filter((l: any) => l && !l.annullata && l.data >= oggi)
-            .map((l: any) => ({
-              tipo: "Lezione privata",
-              data: l.data,
-              ora_inizio: l.ora_inizio,
-              ora_fine: l.ora_fine,
-              titolo: "Lezione privata",
-            }));
-          // Gare
-          const { data: ig } = await supabase
-            .from("iscrizioni_gare")
-            .select("gara_id, gare_calendario(*)")
-            .eq("atleta_id", atleta.id);
-          const gare = (ig ?? [])
-            .map((x: any) => x.gare_calendario)
-            .filter((g: any) => g && g.data >= oggi)
-            .map((g: any) => ({
-              tipo: "Gara",
-              data: g.data,
-              ora_inizio: null,
-              ora_fine: null,
-              titolo: g.nome,
-              luogo: g.luogo,
-            }));
-          // Eventi straordinari iscritti
-          const { data: ie } = await supabase
-            .from("iscrizioni_eventi")
-            .select("evento_id, eventi_straordinari(*)")
-            .eq("atleta_id", atleta.id);
-          const eventi = (ie ?? [])
-            .map((x: any) => x.eventi_straordinari)
-            .filter((e: any) => e && e.data >= oggi)
-            .map((e: any) => ({
-              tipo: e.tipo || "Evento",
-              data: e.data,
-              ora_inizio: e.ora_inizio,
-              ora_fine: e.ora_fine,
-              titolo: e.titolo,
-              luogo: e.luogo,
-            }));
-          const tutti = [...lezioni, ...gare, ...eventi].sort((a, b) =>
-            (a.data + (a.ora_inizio ?? "")).localeCompare(b.data + (b.ora_inizio ?? "")),
-          );
-          set_eventi_calendario(tutti);
-        }
-
-        if (tab === "comunicazioni") {
-          const { data: cd } = await supabase
-            .from("comunicazioni_destinatari")
-            .select("*, comunicazioni(*)")
-            .eq("atleta_id", atleta.id)
-            .order("creato_at", { ascending: false });
-          set_comunicazioni((cd ?? []).filter((x: any) => x.comunicazioni));
-        }
-
-        if (tab === "fatture") {
-          const { data: f } = await supabase
-            .from("fatture")
-            .select("*")
-            .eq("atleta_id", atleta.id)
-            .order("data_emissione", { ascending: false });
-          set_fatture(f ?? []);
-        }
-
-        if (tab === "iscrivi") {
-          const { data: corsi } = await supabase
-            .from("corsi")
-            .select("*")
-            .eq("club_id", atleta.club_id)
-            .eq("attivo", true)
-            .order("nome");
-          set_corsi_disponibili(corsi ?? []);
-          const { data: isc } = await supabase
-            .from("iscrizioni_corsi")
-            .select("corso_id, attiva")
-            .eq("atleta_id", atleta.id);
-          set_iscrizioni_attive(
-            new Set((isc ?? []).filter((x: any) => x.attiva !== false).map((x: any) => x.corso_id)),
-          );
-          const { data: ric } = await supabase
-            .from("richieste_iscrizione")
-            .select("corso_id, stato")
-            .eq("atleta_id", atleta.id)
-            .eq("stato", "in_attesa");
-          set_richieste_inviate(new Set((ric ?? []).map((x: any) => x.corso_id)));
+          const d = await call_portale(token, "calendario");
+          set_eventi_calendario(d.eventi ?? []);
+        } else if (tab === "comunicazioni") {
+          const d = await call_portale(token, "comunicazioni");
+          set_comunicazioni(d.comunicazioni ?? []);
+        } else if (tab === "fatture") {
+          const d = await call_portale(token, "fatture");
+          set_fatture(d.fatture ?? []);
+        } else if (tab === "iscrivi") {
+          const d = await call_portale(token, "corsi");
+          set_corsi_disponibili(d.corsi ?? []);
+          set_iscrizioni_attive(new Set(d.iscrizioni_attive ?? []));
+          set_richieste_inviate(new Set(d.richieste ?? []));
         }
       } catch (err) {
         console.error("Errore caricamento tab", err);
       }
     })();
-  }, [tab, atleta]);
+  }, [tab, atleta, token]);
 
   const handle_rsvp = async (destinatario_id: string, risposta: "si" | "no") => {
     set_busy_id(destinatario_id);
     try {
-      const { error } = await supabase
-        .from("comunicazioni_destinatari")
-        .update({
-          rsvp_risposta: risposta,
-          rsvp_at: new Date().toISOString(),
-          letto_at: new Date().toISOString(),
-        })
-        .eq("id", destinatario_id);
-      if (error) throw error;
+      await call_portale(token, "rsvp", { destinatario_id, risposta });
       set_comunicazioni((prev) =>
         prev.map((c) =>
           c.id === destinatario_id
@@ -197,14 +108,7 @@ const PortaleAtletaPage: React.FC = () => {
   const handle_richiedi_iscrizione = async (corso: any) => {
     set_busy_id(corso.id);
     try {
-      const { error } = await supabase.from("richieste_iscrizione").insert({
-        club_id: atleta.club_id,
-        atleta_id: atleta.id,
-        corso_id: corso.id,
-        stato: "in_attesa",
-        note_richiesta: `Richiesta inviata dal portale genitore per ${atleta.nome} ${atleta.cognome}`,
-      });
-      if (error) throw error;
+      await call_portale(token, "richiedi_iscrizione", { corso_id: corso.id });
       set_richieste_inviate((prev) => new Set([...prev, corso.id]));
       toast({ title: "📨 Richiesta inviata", description: `${corso.nome} — l'admin la valuterà` });
     } catch (err: any) {
@@ -214,7 +118,6 @@ const PortaleAtletaPage: React.FC = () => {
     }
   };
 
-  // ── Render ──
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -237,8 +140,6 @@ const PortaleAtletaPage: React.FC = () => {
     );
   }
 
-  const livello =
-    atleta.carriera_artistica || atleta.carriera_stile || atleta.percorso_amatori || "—";
   const nome_completo = `${atleta.nome} ${atleta.cognome}`.trim();
   const iniziali = `${atleta.nome?.[0] ?? ""}${atleta.cognome?.[0] ?? ""}`.toUpperCase();
 
@@ -252,7 +153,6 @@ const PortaleAtletaPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* Header */}
       <header className="bg-primary text-primary-foreground px-4 py-5 sm:px-6">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
           <div className="w-12 h-12 rounded-full bg-primary-foreground/15 flex items-center justify-center text-lg font-bold">
@@ -261,14 +161,11 @@ const PortaleAtletaPage: React.FC = () => {
           <div className="flex-1 min-w-0">
             <p className="text-xs uppercase tracking-wider text-primary-foreground/70">Portale atleta</p>
             <h1 className="text-base sm:text-lg font-bold truncate">{nome_completo}</h1>
-            {club?.nome && (
-              <p className="text-xs text-primary-foreground/80 truncate">{club.nome}</p>
-            )}
+            {club?.nome && <p className="text-xs text-primary-foreground/80 truncate">{club.nome}</p>}
           </div>
         </div>
       </header>
 
-      {/* Tab bar — orizzontale scrollabile su mobile */}
       <nav className="sticky top-0 z-10 bg-card border-b border-border overflow-x-auto">
         <div className="max-w-2xl mx-auto flex">
           {tabs.map((t) => {
@@ -293,7 +190,6 @@ const PortaleAtletaPage: React.FC = () => {
       </nav>
 
       <main className="max-w-2xl mx-auto px-4 py-5 sm:px-6 space-y-4">
-        {/* ─── DATI ATLETA ─── */}
         {tab === "dati" && (
           <div className="space-y-4">
             <div className="bg-card border border-border rounded-xl p-4 shadow-card">
@@ -315,15 +211,9 @@ const PortaleAtletaPage: React.FC = () => {
             <div className="bg-card border border-border rounded-xl p-4 shadow-card">
               <h2 className="text-sm font-bold text-foreground mb-3">Livello tecnico</h2>
               <div className="flex flex-wrap gap-2">
-                {atleta.percorso_amatori && (
-                  <Badge variant="outline">Amatori: {atleta.percorso_amatori}</Badge>
-                )}
-                {atleta.carriera_artistica && (
-                  <Badge variant="outline">Artistica: {atleta.carriera_artistica}</Badge>
-                )}
-                {atleta.carriera_stile && (
-                  <Badge variant="outline">Stile: {atleta.carriera_stile}</Badge>
-                )}
+                {atleta.percorso_amatori && <Badge variant="outline">Amatori: {atleta.percorso_amatori}</Badge>}
+                {atleta.carriera_artistica && <Badge variant="outline">Artistica: {atleta.carriera_artistica}</Badge>}
+                {atleta.carriera_stile && <Badge variant="outline">Stile: {atleta.carriera_stile}</Badge>}
                 {!atleta.percorso_amatori && !atleta.carriera_artistica && !atleta.carriera_stile && (
                   <p className="text-sm text-muted-foreground">Nessun livello assegnato</p>
                 )}
@@ -348,7 +238,6 @@ const PortaleAtletaPage: React.FC = () => {
           </div>
         )}
 
-        {/* ─── CALENDARIO ─── */}
         {tab === "calendario" && (
           <div className="space-y-3">
             <h2 className="text-sm font-bold text-foreground">Prossimi impegni</h2>
@@ -372,9 +261,7 @@ const PortaleAtletaPage: React.FC = () => {
                       {e.ora_inizio && ` · ${e.ora_inizio.slice(0, 5)}`}
                       {e.ora_fine && ` - ${e.ora_fine.slice(0, 5)}`}
                     </p>
-                    {e.luogo && (
-                      <p className="text-xs text-muted-foreground mt-0.5 truncate">📍 {e.luogo}</p>
-                    )}
+                    {e.luogo && <p className="text-xs text-muted-foreground mt-0.5 truncate">📍 {e.luogo}</p>}
                   </div>
                 </div>
               ))
@@ -382,7 +269,6 @@ const PortaleAtletaPage: React.FC = () => {
           </div>
         )}
 
-        {/* ─── COMUNICAZIONI ─── */}
         {tab === "comunicazioni" && (
           <div className="space-y-3">
             <h2 className="text-sm font-bold text-foreground">Avvisi dal club</h2>
@@ -415,21 +301,10 @@ const PortaleAtletaPage: React.FC = () => {
                           </div>
                         ) : (
                           <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              className="flex-1 bg-success hover:bg-success/90 text-white"
-                              onClick={() => handle_rsvp(c.id, "si")}
-                              disabled={busy_id === c.id}
-                            >
+                            <Button size="sm" className="flex-1 bg-success hover:bg-success/90 text-white" onClick={() => handle_rsvp(c.id, "si")} disabled={busy_id === c.id}>
                               ✅ Sì, partecipo
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="flex-1"
-                              onClick={() => handle_rsvp(c.id, "no")}
-                              disabled={busy_id === c.id}
-                            >
+                            <Button size="sm" variant="outline" className="flex-1" onClick={() => handle_rsvp(c.id, "no")} disabled={busy_id === c.id}>
                               ❌ No
                             </Button>
                           </div>
@@ -443,7 +318,6 @@ const PortaleAtletaPage: React.FC = () => {
           </div>
         )}
 
-        {/* ─── FATTURE ─── */}
         {tab === "fatture" && (
           <div className="space-y-3">
             <h2 className="text-sm font-bold text-foreground">Le tue fatture</h2>
@@ -455,9 +329,7 @@ const PortaleAtletaPage: React.FC = () => {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-muted-foreground">{f.numero || "Fattura"}</p>
-                      <p className="text-sm font-semibold text-foreground truncate">
-                        {f.descrizione || f.tipo}
-                      </p>
+                      <p className="text-sm font-semibold text-foreground truncate">{f.descrizione || f.tipo}</p>
                       <p className="text-xs text-muted-foreground mt-1">
                         {f.data_emissione
                           ? new Date(f.data_emissione + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })
@@ -465,17 +337,8 @@ const PortaleAtletaPage: React.FC = () => {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-base font-bold text-foreground tabular-nums">
-                        CHF {Number(f.importo || 0).toFixed(2)}
-                      </p>
-                      <Badge
-                        className={
-                          f.pagata
-                            ? "bg-success/15 text-success border-success/30"
-                            : "bg-warning/15 text-warning border-warning/30"
-                        }
-                        variant="outline"
-                      >
+                      <p className="text-base font-bold text-foreground tabular-nums">CHF {Number(f.importo || 0).toFixed(2)}</p>
+                      <Badge className={f.pagata ? "bg-success/15 text-success border-success/30" : "bg-warning/15 text-warning border-warning/30"} variant="outline">
                         {f.pagata ? "Pagata" : "Da pagare"}
                       </Badge>
                     </div>
@@ -486,7 +349,6 @@ const PortaleAtletaPage: React.FC = () => {
           </div>
         )}
 
-        {/* ─── ISCRIVITI A NUOVI CORSI ─── */}
         {tab === "iscrivi" && (
           <div className="space-y-3">
             <h2 className="text-sm font-bold text-foreground">Corsi disponibili</h2>
@@ -510,15 +372,11 @@ const PortaleAtletaPage: React.FC = () => {
                           {corso.ora_fine && ` - ${corso.ora_fine.slice(0, 5)}`}
                         </p>
                         {corso.livello_richiesto && corso.livello_richiesto !== "tutti" && (
-                          <Badge variant="outline" className="mt-2 text-[10px]">
-                            Livello: {corso.livello_richiesto}
-                          </Badge>
+                          <Badge variant="outline" className="mt-2 text-[10px]">Livello: {corso.livello_richiesto}</Badge>
                         )}
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-bold text-primary tabular-nums">
-                          CHF {Number(corso.costo_mensile || 0).toFixed(2)}
-                        </p>
+                        <p className="text-sm font-bold text-primary tabular-nums">CHF {Number(corso.costo_mensile || 0).toFixed(2)}</p>
                         <p className="text-[10px] text-muted-foreground">/mese</p>
                       </div>
                     </div>
@@ -527,16 +385,9 @@ const PortaleAtletaPage: React.FC = () => {
                         <Check className="w-4 h-4 mr-1" /> Già iscritto
                       </Button>
                     ) : richiesta ? (
-                      <Button disabled variant="outline" className="w-full" size="sm">
-                        ⏳ Richiesta in attesa
-                      </Button>
+                      <Button disabled variant="outline" className="w-full" size="sm">⏳ Richiesta in attesa</Button>
                     ) : (
-                      <Button
-                        className="w-full"
-                        size="sm"
-                        onClick={() => handle_richiedi_iscrizione(corso)}
-                        disabled={busy_id === corso.id}
-                      >
+                      <Button className="w-full" size="sm" onClick={() => handle_richiedi_iscrizione(corso)} disabled={busy_id === corso.id}>
                         {busy_id === corso.id ? <Loader2 className="w-4 h-4 animate-spin" /> : "📨 Richiedi iscrizione"}
                       </Button>
                     )}
