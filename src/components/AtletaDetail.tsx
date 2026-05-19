@@ -629,6 +629,20 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
         />
       )}
 
+      {pending_compenso && (
+        <CompensoStaffModal
+          open
+          atleta={{ id: a.id, nome: form.nome, cognome: form.cognome }}
+          livello={pending_compenso.livello}
+          on_saved={() => {
+            set_pending_compenso(null);
+            query_client.invalidateQueries({ queryKey: ["istruttori"] });
+          }}
+          on_cancel={handle_rollback_flag}
+        />
+      )}
+
+
       <div className="space-y-6 animate-fade-in">
         {form.verificato === false && (
           <div className="rounded-lg border border-yellow-300 bg-yellow-50 dark:bg-yellow-950/30 dark:border-yellow-700 px-4 py-3">
