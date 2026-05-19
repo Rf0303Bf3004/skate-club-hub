@@ -504,6 +504,12 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   };
 
   const handle_save = async () => {
+    // Snapshot delle flag staff PRIMA del save per capire se abbiamo appena attivato un ruolo
+    const flag_attivata: "monitrice" | "aiuto_monitrice" | null =
+      !a.e_monitrice && form.e_monitrice ? "monitrice" :
+      !a.e_aiuto_monitrice && form.e_aiuto_monitrice ? "aiuto_monitrice" :
+      null;
+
     try {
       await upsert.mutateAsync({
         id: a.id,
@@ -545,10 +551,40 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
         ruolo_pista: form.ruolo_pista || "atleta",
         compenso_orario_pista: to_num(form.compenso_orario_pista_str),
         attivo_come_monitore: form.attivo_come_monitore || false,
+        e_aiuto_monitrice: !!form.e_aiuto_monitrice,
+        e_monitrice: !!form.e_monitrice,
       });
       toast({ title: "✅ Atleta salvata" });
+      // Aggiorna lo snapshot locale così che un secondo save non riapra il modale
+      a.e_aiuto_monitrice = !!form.e_aiuto_monitrice;
+      a.e_monitrice = !!form.e_monitrice;
+      // Apri modale compenso obbligatorio se abbiamo attivato un ruolo staff
+      if (flag_attivata) {
+        set_pending_compenso({
+          livello: flag_attivata,
+          rollback_field: flag_attivata === "monitrice" ? "e_monitrice" : "e_aiuto_monitrice",
+        });
+      }
     } catch (err: any) {
       toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
+    }
+  };
+
+  const handle_rollback_flag = async () => {
+    if (!pending_compenso) return;
+    const field = pending_compenso.rollback_field;
+    try {
+      const { error } = await supabase.from("atleti").update({ [field]: false } as any).eq("id", a.id);
+      if (error) throw error;
+      set_form((p: any) => ({ ...p, [field]: false }));
+      (a as any)[field] = false;
+      await query_client.invalidateQueries({ queryKey: ["atleti"] });
+      await query_client.invalidateQueries({ queryKey: ["istruttori"] });
+      toast({ title: "Ruolo rimosso" });
+    } catch (err: any) {
+      toast({ title: "Errore rollback", description: err?.message, variant: "destructive" });
+    } finally {
+      set_pending_compenso(null);
     }
   };
 
