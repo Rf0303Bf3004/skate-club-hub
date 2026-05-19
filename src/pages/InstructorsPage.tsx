@@ -1115,8 +1115,10 @@ const MonitoreDetail: React.FC<{
 // ─── Main Page ─────────────────────────────────────────────
 const InstructorsPage: React.FC = () => {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const { data: istruttori = [], isLoading } = use_istruttori();
   const { data: monitori_atleti = [] } = use_atleti_monitori();
+  const { data: atleti_all = [] } = use_atleti();
   const { data: lezioni = [] } = use_lezioni_private();
   const { data: corsi = [] } = use_corsi();
   const { data: campi = [] } = use_campi();
@@ -1129,8 +1131,40 @@ const InstructorsPage: React.FC = () => {
   const [selected_monitore_id, set_selected_monitore_id] = useState<string | null>(null);
   const [disp_local, set_disp_local] = useState<Record<string, { ora_inizio: string; ora_fine: string }[]>>({});
   const [saving_contratto, set_saving_contratto] = useState(false);
+  const [active_filter, set_active_filter] = useState<"tutti" | "istruttore" | "monitrice" | "aiuto_monitrice">("tutti");
 
-  const istruttori_veri = istruttori.filter((i: any) => !i.ruolo || i.ruolo === "istruttore");
+  // Lookup atleti by id per resolver dei linked_atleta_id
+  const atleti_by_id = useMemo(() => {
+    const m = new Map<string, any>();
+    atleti_all.forEach((a: any) => m.set(a.id, a));
+    return m;
+  }, [atleti_all]);
+
+  // Tutti gli istruttori (incluso monitrici/aiuto auto-create dal trigger)
+  const istruttori_veri = istruttori;
+  const counts = useMemo(() => {
+    const c = { tutti: istruttori.length, istruttore: 0, monitrice: 0, aiuto_monitrice: 0 };
+    istruttori.forEach((i: any) => {
+      const liv = i.livello_istruttore || "istruttore";
+      if (liv in c) (c as any)[liv]++;
+    });
+    return c;
+  }, [istruttori]);
+
+  const istruttori_filtrati = useMemo(() => {
+    let list = istruttori.slice();
+    if (active_filter !== "tutti") {
+      list = list.filter((i: any) => (i.livello_istruttore || "istruttore") === active_filter);
+    }
+    // Sospesi in fondo
+    list.sort((a: any, b: any) => {
+      const sa = a.stato_staff === "sospeso" ? 1 : 0;
+      const sb = b.stato_staff === "sospeso" ? 1 : 0;
+      if (sa !== sb) return sa - sb;
+      return (a.cognome || "").localeCompare(b.cognome || "");
+    });
+    return list;
+  }, [istruttori, active_filter]);
   const monitori = monitori_atleti.filter((a: any) => a.ruolo_pista === "monitore");
   const aiuto_monitori = monitori_atleti.filter((a: any) => a.ruolo_pista === "aiuto_monitore");
 
