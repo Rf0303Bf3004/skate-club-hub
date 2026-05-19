@@ -1292,9 +1292,31 @@ const InstructorsPage: React.FC = () => {
                 <h1 className="text-xl font-bold text-foreground">
                   {selected.nome} {selected.cognome}
                 </h1>
-                <Badge variant="secondary" className="text-xs">
-                  Istruttore/Istruttrice
-                </Badge>
+                <div className="flex items-center gap-2 mt-1">
+                  {(() => {
+                    const liv = selected.livello_istruttore || "istruttore";
+                    const cls =
+                      liv === "monitrice"
+                        ? "bg-purple-100 text-purple-700 border-purple-200"
+                        : liv === "aiuto_monitrice"
+                          ? "bg-orange-100 text-orange-700 border-orange-200"
+                          : "bg-blue-100 text-blue-700 border-blue-200";
+                    const lbl = liv === "monitrice" ? "Monitrice" : liv === "aiuto_monitrice" ? "Aiuto monitrice" : "Istruttore";
+                    return (
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${cls}`}>
+                        {lbl}
+                      </span>
+                    );
+                  })()}
+                  {selected.linked_atleta_id && (
+                    <button
+                      onClick={() => navigate(`/atleti?id=${selected.linked_atleta_id}`)}
+                      className="text-xs text-primary hover:underline"
+                    >
+                      Vedi scheda atleta →
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
             <Button
@@ -1309,6 +1331,12 @@ const InstructorsPage: React.FC = () => {
               {t("modifica")}
             </Button>
           </div>
+
+          {selected.stato_staff === "sospeso" && (
+            <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
+              ⚠️ Questa persona ha smesso di lavorare in pista. Storico ore visibile.
+            </div>
+          )}
 
           <Tabs defaultValue="info">
             <TabsList>
