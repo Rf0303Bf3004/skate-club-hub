@@ -36,6 +36,7 @@ import { ArrowLeft, Shield, Medal, Save, Upload, Music, ArrowRightLeft, X, Mail,
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
+import CompensoStaffModal from "@/components/CompensoStaffModal";
 
 interface Props {
   atleta: any;
@@ -300,6 +301,8 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
 
   const [form, set_form] = useState({
     ...a,
+    e_aiuto_monitrice: !!a.e_aiuto_monitrice,
+    e_monitrice: !!a.e_monitrice,
     // nuovo modello (con fallback dal valore legacy in DB)
     categoria: a.categoria || (a.carriera_artistica ? "artistica" : a.livello_amatori || /^Stellina/.test(a.livello_attuale || "") ? "amatori" : "pulcini"),
     livello_amatori: a.livello_amatori || (a.livello_attuale && /^Stellina/.test(a.livello_attuale) ? a.livello_attuale : null),
@@ -332,6 +335,14 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
       return n === 0 ? "" : String(n);
     })(),
   });
+
+  // Compenso staff modal state (apre dopo save se un flag staff è stato appena attivato)
+  const [pending_compenso, set_pending_compenso] = useState<null | {
+    livello: "monitrice" | "aiuto_monitrice";
+    rollback_field: "e_aiuto_monitrice" | "e_monitrice";
+  }>(null);
+  const eta_atleta = useMemo(() => calculate_age(a.data_nascita), [a.data_nascita]);
+  const staff_disabled = eta_atleta < 12;
 
   const [uploading_foto, set_uploading_foto] = useState(false);
   const [uploading_disco, set_uploading_disco] = useState(false);
@@ -493,6 +504,12 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   };
 
   const handle_save = async () => {
+    // Snapshot delle flag staff PRIMA del save per capire se abbiamo appena attivato un ruolo
+    const flag_attivata: "monitrice" | "aiuto_monitrice" | null =
+      !a.e_monitrice && form.e_monitrice ? "monitrice" :
+      !a.e_aiuto_monitrice && form.e_aiuto_monitrice ? "aiuto_monitrice" :
+      null;
+
     try {
       await upsert.mutateAsync({
         id: a.id,
@@ -534,10 +551,40 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
         ruolo_pista: form.ruolo_pista || "atleta",
         compenso_orario_pista: to_num(form.compenso_orario_pista_str),
         attivo_come_monitore: form.attivo_come_monitore || false,
+        e_aiuto_monitrice: !!form.e_aiuto_monitrice,
+        e_monitrice: !!form.e_monitrice,
       });
       toast({ title: "✅ Atleta salvata" });
+      // Aggiorna lo snapshot locale così che un secondo save non riapra il modale
+      a.e_aiuto_monitrice = !!form.e_aiuto_monitrice;
+      a.e_monitrice = !!form.e_monitrice;
+      // Apri modale compenso obbligatorio se abbiamo attivato un ruolo staff
+      if (flag_attivata) {
+        set_pending_compenso({
+          livello: flag_attivata,
+          rollback_field: flag_attivata === "monitrice" ? "e_monitrice" : "e_aiuto_monitrice",
+        });
+      }
     } catch (err: any) {
       toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
+    }
+  };
+
+  const handle_rollback_flag = async () => {
+    if (!pending_compenso) return;
+    const field = pending_compenso.rollback_field;
+    try {
+      const { error } = await supabase.from("atleti").update({ [field]: false } as any).eq("id", a.id);
+      if (error) throw error;
+      set_form((p: any) => ({ ...p, [field]: false }));
+      (a as any)[field] = false;
+      await query_client.invalidateQueries({ queryKey: ["atleti"] });
+      await query_client.invalidateQueries({ queryKey: ["istruttori"] });
+      toast({ title: "Ruolo rimosso" });
+    } catch (err: any) {
+      toast({ title: "Errore rollback", description: err?.message, variant: "destructive" });
+    } finally {
+      set_pending_compenso(null);
     }
   };
 
@@ -581,6 +628,20 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
           saving={migra.isPending}
         />
       )}
+
+      {pending_compenso && (
+        <CompensoStaffModal
+          open
+          atleta={{ id: a.id, nome: form.nome, cognome: form.cognome }}
+          livello={pending_compenso.livello}
+          on_saved={() => {
+            set_pending_compenso(null);
+            query_client.invalidateQueries({ queryKey: ["istruttori"] });
+          }}
+          on_cancel={handle_rollback_flag}
+        />
+      )}
+
 
       <div className="space-y-6 animate-fade-in">
         {form.verificato === false && (
@@ -1079,31 +1140,52 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
 
               {/* ─── Ruolo in pista ─── */}
               <div className="bg-card rounded-xl shadow-card p-6 space-y-4">
-                <h3 className="text-sm font-bold text-foreground">Ruolo in pista</h3>
-                <div className="space-y-1.5">
-                  <Label className="text-sm text-muted-foreground">Ruolo</Label>
-                  <Select value={form.ruolo_pista || "atleta"} onValueChange={(v) => upd("ruolo_pista", v)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="atleta">Solo atleta</SelectItem>
-                      <SelectItem value="monitore">Monitore</SelectItem>
-                      <SelectItem value="aiuto_monitore">Aiuto monitore</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-foreground">Ruolo in pista</h3>
+                  {staff_disabled && (
+                    <span className="text-[10px] text-muted-foreground">Disponibile dai 12 anni</span>
+                  )}
                 </div>
-                {(form.ruolo_pista === "monitore" || form.ruolo_pista === "aiuto_monitore") && (
-                  <div className="space-y-1.5">
-                    <Label className="text-sm text-muted-foreground">Compenso orario (CHF/ora)</Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF/h</span>
-                      <NumInput
-                        value={form.compenso_orario_pista_str}
-                        onChange={(v) => upd("compenso_orario_pista_str", v)}
-                        className="pl-14 h-9"
-                        placeholder="es. 15.50"
-                      />
-                    </div>
-                  </div>
+                <div className="space-y-2">
+                  <label
+                    className={`flex items-center gap-2 p-2 rounded-lg border ${staff_disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:bg-muted/30"}`}
+                    title={staff_disabled ? "Disponibile dai 12 anni di età" : ""}
+                  >
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 accent-orange-500"
+                      disabled={staff_disabled}
+                      checked={!!form.e_aiuto_monitrice}
+                      onChange={(e) => {
+                        const v = e.target.checked;
+                        set_form((p: any) => ({ ...p, e_aiuto_monitrice: v, e_monitrice: v ? false : p.e_monitrice }));
+                      }}
+                    />
+                    <span className="text-sm">Aiuto monitrice</span>
+                    <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700">aiuto</span>
+                  </label>
+                  <label
+                    className={`flex items-center gap-2 p-2 rounded-lg border ${staff_disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:bg-muted/30"}`}
+                    title={staff_disabled ? "Disponibile dai 12 anni di età" : ""}
+                  >
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 accent-purple-500"
+                      disabled={staff_disabled}
+                      checked={!!form.e_monitrice}
+                      onChange={(e) => {
+                        const v = e.target.checked;
+                        set_form((p: any) => ({ ...p, e_monitrice: v, e_aiuto_monitrice: v ? false : p.e_aiuto_monitrice }));
+                      }}
+                    />
+                    <span className="text-sm">Monitrice</span>
+                    <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700">monitrice</span>
+                  </label>
+                </div>
+                {(form.e_monitrice || form.e_aiuto_monitrice) && (
+                  <p className="text-[11px] text-muted-foreground">
+                    Dopo il salvataggio si aprirà il modulo per impostare il compenso.
+                  </p>
                 )}
               </div>
             </div>

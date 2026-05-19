@@ -178,6 +178,8 @@ export function use_upsert_atleta() {
         ruolo_pista: data.ruolo_pista || "atleta",
         compenso_orario_pista: data.compenso_orario_pista || 0,
         attivo_come_monitore: data.attivo_come_monitore || false,
+        ...(data.e_aiuto_monitrice !== undefined ? { e_aiuto_monitrice: !!data.e_aiuto_monitrice } : {}),
+        ...(data.e_monitrice !== undefined ? { e_monitrice: !!data.e_monitrice } : {}),
         telefono: data.telefono || "",
         licenza_sis_numero: data.licenza_sis_numero || "",
         licenza_sis_categoria: data.licenza_sis_categoria || "",
