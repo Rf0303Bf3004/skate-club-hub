@@ -333,9 +333,6 @@ const CorsoCard: React.FC<{
               })}
             </div>
           )}
-              })}
-            </div>
-          )}
 
           {/* Atleti */}
           <div className="divide-y divide-border/30">
