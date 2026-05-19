@@ -300,6 +300,8 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
 
   const [form, set_form] = useState({
     ...a,
+    e_aiuto_monitrice: !!a.e_aiuto_monitrice,
+    e_monitrice: !!a.e_monitrice,
     // nuovo modello (con fallback dal valore legacy in DB)
     categoria: a.categoria || (a.carriera_artistica ? "artistica" : a.livello_amatori || /^Stellina/.test(a.livello_attuale || "") ? "amatori" : "pulcini"),
     livello_amatori: a.livello_amatori || (a.livello_attuale && /^Stellina/.test(a.livello_attuale) ? a.livello_attuale : null),
@@ -332,6 +334,14 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
       return n === 0 ? "" : String(n);
     })(),
   });
+
+  // Compenso staff modal state (apre dopo save se un flag staff è stato appena attivato)
+  const [pending_compenso, set_pending_compenso] = useState<null | {
+    livello: "monitrice" | "aiuto_monitrice";
+    rollback_field: "e_aiuto_monitrice" | "e_monitrice";
+  }>(null);
+  const eta_atleta = useMemo(() => calculate_age(a.data_nascita), [a.data_nascita]);
+  const staff_disabled = eta_atleta < 12;
 
   const [uploading_foto, set_uploading_foto] = useState(false);
   const [uploading_disco, set_uploading_disco] = useState(false);
