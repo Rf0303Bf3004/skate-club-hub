@@ -36,6 +36,7 @@ import { ArrowLeft, Shield, Medal, Save, Upload, Music, ArrowRightLeft, X, Mail,
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
+import CompensoStaffModal from "@/components/CompensoStaffModal";
 
 interface Props {
   atleta: any;
