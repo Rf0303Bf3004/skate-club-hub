@@ -1126,31 +1126,52 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
 
               {/* ─── Ruolo in pista ─── */}
               <div className="bg-card rounded-xl shadow-card p-6 space-y-4">
-                <h3 className="text-sm font-bold text-foreground">Ruolo in pista</h3>
-                <div className="space-y-1.5">
-                  <Label className="text-sm text-muted-foreground">Ruolo</Label>
-                  <Select value={form.ruolo_pista || "atleta"} onValueChange={(v) => upd("ruolo_pista", v)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="atleta">Solo atleta</SelectItem>
-                      <SelectItem value="monitore">Monitore</SelectItem>
-                      <SelectItem value="aiuto_monitore">Aiuto monitore</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-foreground">Ruolo in pista</h3>
+                  {staff_disabled && (
+                    <span className="text-[10px] text-muted-foreground">Disponibile dai 12 anni</span>
+                  )}
                 </div>
-                {(form.ruolo_pista === "monitore" || form.ruolo_pista === "aiuto_monitore") && (
-                  <div className="space-y-1.5">
-                    <Label className="text-sm text-muted-foreground">Compenso orario (CHF/ora)</Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF/h</span>
-                      <NumInput
-                        value={form.compenso_orario_pista_str}
-                        onChange={(v) => upd("compenso_orario_pista_str", v)}
-                        className="pl-14 h-9"
-                        placeholder="es. 15.50"
-                      />
-                    </div>
-                  </div>
+                <div className="space-y-2">
+                  <label
+                    className={`flex items-center gap-2 p-2 rounded-lg border ${staff_disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:bg-muted/30"}`}
+                    title={staff_disabled ? "Disponibile dai 12 anni di età" : ""}
+                  >
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 accent-orange-500"
+                      disabled={staff_disabled}
+                      checked={!!form.e_aiuto_monitrice}
+                      onChange={(e) => {
+                        const v = e.target.checked;
+                        set_form((p: any) => ({ ...p, e_aiuto_monitrice: v, e_monitrice: v ? false : p.e_monitrice }));
+                      }}
+                    />
+                    <span className="text-sm">Aiuto monitrice</span>
+                    <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700">aiuto</span>
+                  </label>
+                  <label
+                    className={`flex items-center gap-2 p-2 rounded-lg border ${staff_disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:bg-muted/30"}`}
+                    title={staff_disabled ? "Disponibile dai 12 anni di età" : ""}
+                  >
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 accent-purple-500"
+                      disabled={staff_disabled}
+                      checked={!!form.e_monitrice}
+                      onChange={(e) => {
+                        const v = e.target.checked;
+                        set_form((p: any) => ({ ...p, e_monitrice: v, e_aiuto_monitrice: v ? false : p.e_aiuto_monitrice }));
+                      }}
+                    />
+                    <span className="text-sm">Monitrice</span>
+                    <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700">monitrice</span>
+                  </label>
+                </div>
+                {(form.e_monitrice || form.e_aiuto_monitrice) && (
+                  <p className="text-[11px] text-muted-foreground">
+                    Dopo il salvataggio si aprirà il modulo per impostare il compenso.
+                  </p>
                 )}
               </div>
             </div>
