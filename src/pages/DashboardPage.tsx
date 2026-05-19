@@ -296,15 +296,16 @@ const CorsoCard: React.FC<{
             </div>
           )}
 
-          {/* Monitori */}
+          {/* Monitori & aiuto monitori */}
           {monitori_assegnati.length > 0 && (
             <div className="px-4 py-2 bg-primary/3 border-t border-border/30">
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-1">
-                Monitori & Aiuto monitori
+                Monitrici & Aiuto monitrici
               </p>
               {monitori_assegnati.map((m) => {
-                const tipo = (corso.monitori || []).includes(m.id) ? "Monitore" : "Aiuto monitore";
+                const tipo = (corso.monitori || []).includes(m.id) ? "Monitrice" : "Aiuto monitrice";
                 const stato = get_stato_monitore(m.id);
+                const presenza = presenze.find((p) => p.persona_id === m.id && !p.ora_uscita);
                 return (
                   <div key={m.id} className="flex items-center justify-between py-1">
                     <div>
@@ -315,9 +316,23 @@ const CorsoCard: React.FC<{
                     </div>
                     <div className="flex items-center gap-1.5">
                       <span className={`text-xs ${stato_color(stato)}`}>{stato_label(stato)}</span>
+                      <span className={`text-[10px] ${presenza ? "text-success" : "text-muted-foreground"}`}>
+                        {presenza ? "✅ Presente" : "⏳ Atteso"}
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => on_segna_istr(m.id)}
+                        className="h-6 text-[10px] px-2"
+                      >
+                        {presenza ? "Uscita" : "Entrata"}
+                      </Button>
                     </div>
                   </div>
                 );
+              })}
+            </div>
+          )}
               })}
             </div>
           )}
