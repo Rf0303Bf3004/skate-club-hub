@@ -1447,39 +1447,91 @@ const InstructorsPage: React.FC = () => {
           </Button>
         </div>
 
-        {/* Istruttori */}
-        {istruttori_veri.length > 0 && (
-          <div>
-            <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
-              Istruttori/Istruttrice ({istruttori_veri.length})
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {istruttori_veri.map((i: any) => (
+        {/* Tabs filtro per livello */}
+        <div className="flex flex-wrap gap-2 border-b border-border pb-3">
+          {[
+            { key: "tutti", label: `Tutti (${counts.tutti})` },
+            { key: "istruttore", label: `Istruttori (${counts.istruttore})` },
+            { key: "monitrice", label: `Monitrici (${counts.monitrice})` },
+            { key: "aiuto_monitrice", label: `Aiuto monitrici (${counts.aiuto_monitrice})` },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => set_active_filter(tab.key as any)}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-colors ${
+                active_filter === tab.key
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/70"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {istruttori_filtrati.length === 0 ? (
+          <div className="bg-card rounded-xl shadow-card p-12 text-center text-muted-foreground">
+            <p className="text-sm">Nessuno in questa categoria.</p>
+            <p className="text-xs mt-1">
+              Crea un nuovo istruttore con il bottone in alto, o vai in <strong>Atleti</strong> e spunta "Monitrice" / "Aiuto monitrice".
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {istruttori_filtrati.map((i: any) => {
+              const liv = i.livello_istruttore || "istruttore";
+              const sospeso = i.stato_staff === "sospeso";
+              const linked_atleta = i.linked_atleta_id ? atleti_by_id.get(i.linked_atleta_id) : null;
+              const badge_cls =
+                liv === "monitrice"
+                  ? "bg-purple-100 text-purple-700 border-purple-200"
+                  : liv === "aiuto_monitrice"
+                    ? "bg-orange-100 text-orange-700 border-orange-200"
+                    : "bg-blue-100 text-blue-700 border-blue-200";
+              const badge_label =
+                liv === "monitrice" ? "Monitrice" : liv === "aiuto_monitrice" ? "Aiuto monitrice" : "Istruttore";
+              return (
                 <div
                   key={i.id}
                   onClick={() => open_detail(i)}
-                  className="bg-card rounded-xl shadow-card p-5 hover:shadow-card-hover transition-shadow cursor-pointer"
+                  className={`bg-card rounded-xl shadow-card p-5 hover:shadow-card-hover transition-shadow cursor-pointer ${sospeso ? "opacity-60" : ""}`}
                 >
-                  <div className="flex items-center gap-3 mb-4">
+                  <div className="flex items-center gap-3 mb-3">
                     {i.foto_url ? (
                       <img src={i.foto_url} alt={i.nome} className="w-11 h-11 rounded-full object-cover" />
                     ) : (
                       <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                        {i.nome[0]}
-                        {i.cognome[0]}
+                        {i.nome?.[0]}
+                        {i.cognome?.[0]}
                       </div>
                     )}
-                    <div>
-                      <p className="font-semibold text-foreground">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-foreground truncate">
                         {i.nome} {i.cognome}
+                        {sospeso && <span className="ml-1 text-xs text-muted-foreground">(sospeso)</span>}
                       </p>
-                      <p className="text-xs text-muted-foreground">{i.email}</p>
+                      {linked_atleta && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/atleti?id=${linked_atleta.id}`);
+                          }}
+                          className="text-[11px] text-primary hover:underline"
+                        >
+                          ↗ Anche atleta del club
+                        </button>
+                      )}
+                      {!linked_atleta && i.email && (
+                        <p className="text-xs text-muted-foreground truncate">{i.email}</p>
+                      )}
                     </div>
                     <span
-                      className={`ml-auto inline-block w-2 h-2 rounded-full ${i.stato === "attivo" ? "bg-success" : "bg-muted-foreground"}`}
-                    />
+                      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${badge_cls}`}
+                    >
+                      {badge_label}
+                    </span>
                   </div>
-                  <div className="space-y-2 text-sm">
+                  <div className="space-y-1.5 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Vendita/min</span>
                       <span className="text-foreground tabular-nums">CHF {(i.costo_minuto || 0).toFixed(2)}</span>
@@ -1491,143 +1543,13 @@ const InstructorsPage: React.FC = () => {
                         {(i.costo_orario_corsi || 0).toFixed(2)}
                       </span>
                     </div>
-                    {i.tag_nfc && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">NFC</span>
-                        <span className="text-xs font-mono bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                          📡 {i.tag_nfc}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="mt-4">
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
-                      {t("disponibilita")}
-                    </p>
-                    <div className="flex flex-wrap gap-1">
-                      {GIORNI.map((d) => (
-                        <Badge
-                          key={d}
-                          variant={i.disponibilita[d]?.length > 0 ? "default" : "secondary"}
-                          className="text-[10px] px-1.5"
-                        >
-                          {d.slice(0, 3)}
-                        </Badge>
-                      ))}
-                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
         )}
 
-        {/* Monitori */}
-        {monitori.length > 0 && (
-          <div>
-            <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
-              Monitori/Monitrici ({monitori.length})
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {monitori.map((m: any) => (
-                <div
-                  key={m.id}
-                  onClick={() => set_selected_monitore_id(m.id)}
-                  className="bg-card rounded-xl shadow-card p-5 hover:shadow-card-hover transition-shadow cursor-pointer"
-                >
-                  <div className="flex items-center gap-3 mb-3">
-                    {m.foto_url ? (
-                      <img src={m.foto_url} alt={m.nome} className="w-11 h-11 rounded-full object-cover" />
-                    ) : (
-                      <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                        {m.nome[0]}
-                        {m.cognome[0]}
-                      </div>
-                    )}
-                    <div>
-                      <p className="font-semibold text-foreground">
-                        {m.nome} {m.cognome}
-                      </p>
-                      <p className="text-xs text-muted-foreground">{m.percorso_amatori || m.livello_amatori}</p>
-                    </div>
-                    <span
-                      className={`ml-auto inline-block w-2 h-2 rounded-full ${m.attivo ? "bg-success" : "bg-muted-foreground"}`}
-                    />
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Compenso orario</span>
-                    <span className="text-foreground tabular-nums">
-                      CHF {(m.compenso_orario_pista || 0).toFixed(2)}/h
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Aiuto Monitori */}
-        {aiuto_monitori.length > 0 && (
-          <div>
-            <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">
-              Aiuto Monitori/Monitrici ({aiuto_monitori.length})
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {aiuto_monitori.map((m: any) => (
-                <div
-                  key={m.id}
-                  onClick={() => set_selected_monitore_id(m.id)}
-                  className="bg-card rounded-xl shadow-card p-5 hover:shadow-card-hover transition-shadow cursor-pointer"
-                >
-                  <div className="flex items-center gap-3 mb-3">
-                    {m.foto_url ? (
-                      <img src={m.foto_url} alt={m.nome} className="w-11 h-11 rounded-full object-cover" />
-                    ) : (
-                      <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                        {m.nome[0]}
-                        {m.cognome[0]}
-                      </div>
-                    )}
-                    <div>
-                      <p className="font-semibold text-foreground">
-                        {m.nome} {m.cognome}
-                      </p>
-                      <p className="text-xs text-muted-foreground">{m.percorso_amatori || m.livello_amatori}</p>
-                    </div>
-                    <span
-                      className={`ml-auto inline-block w-2 h-2 rounded-full ${m.attivo ? "bg-success" : "bg-muted-foreground"}`}
-                    />
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Compenso orario</span>
-                    <span className="text-foreground tabular-nums">
-                      CHF {(m.compenso_orario_pista || 0).toFixed(2)}/h
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {istruttori_veri.length === 0 && monitori.length === 0 && aiuto_monitori.length === 0 && (
-          <div className="bg-card rounded-xl shadow-card p-12 text-center text-muted-foreground">
-            <p className="text-sm">Nessun istruttore o monitore registrato.</p>
-            <p className="text-xs mt-1">
-              Clicca "Nuovo istruttore" per aggiungerne uno, oppure vai in Atleti per impostare il ruolo pista.
-            </p>
-          </div>
-        )}
-
-        {monitori.length === 0 && aiuto_monitori.length === 0 && istruttori_veri.length > 0 && (
-          <div className="flex items-start gap-2 p-4 bg-muted/30 rounded-xl border border-border">
-            <Info className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-            <p className="text-xs text-muted-foreground">
-              Per aggiungere monitori o aiuto monitori, vai nella scheda <strong>Atleti</strong> e imposta il campo{" "}
-              <strong>Ruolo in pista</strong> su "Monitore" o "Aiuto monitore".
-            </p>
-          </div>
-        )}
       </div>
     </>
   );
