@@ -14,6 +14,7 @@ import { toast } from "@/hooks/use-toast";
 import { Upload, Globe, Phone, Mail, MapPin, Hash, Users, UserCheck, Calendar, Building2, Plus, Trash2, Loader2 } from "lucide-react";
 import CatalogoOffertaTab from "@/components/CatalogoOffertaTab";
 import FatturazioneTab from "@/components/FatturazioneTab";
+import { RegoleComunicazioniSection } from "@/components/comunicazioni/RegoleComunicazioniSection";
 
 const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"] as const;
 
@@ -702,6 +703,17 @@ const ClubSetupPage: React.FC = () => {
               </select>
             </Field>
           </div>
+        </section>
+
+        <Separator />
+
+        {/* Regole comunicazioni intelligenti */}
+        <section className="space-y-4">
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">🧠 Comunicazioni intelligenti</h2>
+          <p className="text-xs text-muted-foreground">
+            Il sistema monitora pattern (assenze, rifiuti, saturazione) e quando rileva un trigger emette automaticamente comunicazioni.
+          </p>
+          <RegoleComunicazioniSection club_id={club?.id || get_current_club_id() || null} />
         </section>
 
         <Separator />
