@@ -115,6 +115,7 @@ export const CompensoStaffModal: React.FC<Props> = ({ open, atleta, livello, on_
     setter: (v: string) => void,
     placeholder?: string,
     step = "0.01",
+    required = true,
   ) => {
     if (!show) {
       return (
@@ -128,7 +129,9 @@ export const CompensoStaffModal: React.FC<Props> = ({ open, atleta, livello, on_
     }
     return (
       <div className="space-y-1.5">
-        <Label className="text-xs">{label} *</Label>
+        <Label className="text-xs">
+          {label} {required ? "*" : <span className="text-muted-foreground font-normal">(opzionale)</span>}
+        </Label>
         <input
           type="number"
           step={step}
