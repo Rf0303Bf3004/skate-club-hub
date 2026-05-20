@@ -143,6 +143,7 @@ const ClubSetupPage: React.FC = () => {
       const club_fields = [
         "nome", "citta", "cap", "paese", "email", "telefono", "indirizzo",
         "sito_web", "numero_tessera_federale", "colore_primario", "descrizione", "logo_url",
+        "reminder_allenamenti_attivo", "reminder_staff_attivo", "reminder_orario_invio", "reminder_anticipo_giorni",
       ];
       for (const f of club_fields) {
         if (f in form) club_payload[f] = form[f];
@@ -645,6 +646,61 @@ const ClubSetupPage: React.FC = () => {
               </div>
             );
           })()}
+        </section>
+
+        <Separator />
+
+        {/* Reminder automatici */}
+        <section className="space-y-4">
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">🔔 Reminder automatici</h2>
+          <p className="text-xs text-muted-foreground">
+            Invio giornaliero automatico: gli atleti ricevono il reminder allenamento, lo staff riceve il turno. Possono confermare o segnalare assenza.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="Reminder allenamenti atleta">
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={get_val("reminder_allenamenti_attivo", club?.reminder_allenamenti_attivo ?? true)}
+                  onCheckedChange={(v) => set_val("reminder_allenamenti_attivo", v)}
+                />
+                <span className="text-xs text-muted-foreground">
+                  {get_val("reminder_allenamenti_attivo", club?.reminder_allenamenti_attivo ?? true) ? "Attivo" : "Disattivo"}
+                </span>
+              </div>
+            </Field>
+            <Field label="Reminder turno staff">
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={get_val("reminder_staff_attivo", club?.reminder_staff_attivo ?? true)}
+                  onCheckedChange={(v) => set_val("reminder_staff_attivo", v)}
+                />
+                <span className="text-xs text-muted-foreground">
+                  {get_val("reminder_staff_attivo", club?.reminder_staff_attivo ?? true) ? "Attivo" : "Disattivo"}
+                </span>
+              </div>
+            </Field>
+            <Field label="Orario invio (Europe/Zurich)">
+              <select
+                className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                value={String(get_val("reminder_orario_invio", club?.reminder_orario_invio ?? 18))}
+                onChange={(e) => set_val("reminder_orario_invio", Number(e.target.value))}
+              >
+                {[16, 17, 18, 19, 20].map((h) => (
+                  <option key={h} value={h}>{h}:00</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Anticipo">
+              <select
+                className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                value={String(get_val("reminder_anticipo_giorni", club?.reminder_anticipo_giorni ?? 1))}
+                onChange={(e) => set_val("reminder_anticipo_giorni", Number(e.target.value))}
+              >
+                <option value="1">1 giorno prima</option>
+                <option value="2">2 giorni prima</option>
+              </select>
+            </Field>
+          </div>
         </section>
 
         <Separator />
