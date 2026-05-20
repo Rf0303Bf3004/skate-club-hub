@@ -1999,11 +1999,11 @@ export type Database = {
           club_id: string
           cognome: string
           colore: string | null
-          compenso_fisso_corsi: number
-          compenso_fisso_mensile: number
+          compenso_fisso_corsi: number | null
+          compenso_fisso_mensile: number | null
           costo_minuto_lezione_privata: number | null
-          costo_orario_corsi: number
-          costo_orario_lezioni: number
+          costo_orario_corsi: number | null
+          costo_orario_lezioni: number | null
           created_at: string
           email: string | null
           id: string
@@ -2021,11 +2021,11 @@ export type Database = {
           club_id: string
           cognome?: string
           colore?: string | null
-          compenso_fisso_corsi?: number
-          compenso_fisso_mensile?: number
+          compenso_fisso_corsi?: number | null
+          compenso_fisso_mensile?: number | null
           costo_minuto_lezione_privata?: number | null
-          costo_orario_corsi?: number
-          costo_orario_lezioni?: number
+          costo_orario_corsi?: number | null
+          costo_orario_lezioni?: number | null
           created_at?: string
           email?: string | null
           id?: string
@@ -2043,11 +2043,11 @@ export type Database = {
           club_id?: string
           cognome?: string
           colore?: string | null
-          compenso_fisso_corsi?: number
-          compenso_fisso_mensile?: number
+          compenso_fisso_corsi?: number | null
+          compenso_fisso_mensile?: number | null
           costo_minuto_lezione_privata?: number | null
-          costo_orario_corsi?: number
-          costo_orario_lezioni?: number
+          costo_orario_corsi?: number | null
+          costo_orario_lezioni?: number | null
           created_at?: string
           email?: string | null
           id?: string
