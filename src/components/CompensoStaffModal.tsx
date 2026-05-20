@@ -76,7 +76,7 @@ export const CompensoStaffModal: React.FC<Props> = ({ open, atleta, livello, on_
       // Salva NULL per campi non applicabili alla modalità scelta
       const payload: Record<string, unknown> = {
         tipo_contratto: tipo,
-        costo_minuto_lezione_privata: req.prezzo_min ? to_num(prezzo_min) : null,
+        costo_minuto_lezione_privata: show_prezzo_min ? to_num(prezzo_min) : null,
         costo_orario_corsi: req.costo_corsi ? to_num(costo_corsi) : null,
         costo_orario_lezioni: req.costo_lezioni ? to_num(costo_lezioni) : null,
         compenso_fisso_mensile: req.fisso_mensile ? to_num(fisso_mensile) : null,
