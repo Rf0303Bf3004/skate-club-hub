@@ -323,7 +323,107 @@ const IstruttoreModal: React.FC<{
   );
 };
 
-// ─── Tab Ore Lavoro ────────────────────────────────────────
+// ─── Tab Ore Lavoro (F3: presenze reali + override DT) ─────
+type SlotRiga = {
+  id: string;
+  data: string;
+  ora_inizio: string;
+  ora_fine: string;
+  corso_nome: string;
+  ore_previste: number;
+  ore_effettive: number;
+  stato: "presenza" | "override" | "mancante";
+  motivo?: string;
+  confermato_da_nome?: string;
+  confermato_at?: string;
+  source: { dettaglio_id?: string; presenza_id?: string };
+};
+
+const time_diff_h = (a?: string | null, b?: string | null): number => {
+  if (!a || !b) return 0;
+  return Math.max(0, (time_to_min(b.slice(0, 5)) - time_to_min(a.slice(0, 5))) / 60);
+};
+
+const StatoBadge: React.FC<{ stato: SlotRiga["stato"] }> = ({ stato }) => {
+  if (stato === "presenza")
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700 border border-green-200">
+        <CheckCircle2 className="w-3 h-3" /> Presenza
+      </span>
+    );
+  if (stato === "override")
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-700 border border-sky-200">
+        <ShieldCheck className="w-3 h-3" /> Confermato
+      </span>
+    );
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200">
+      <AlertTriangle className="w-3 h-3" /> Mancante
+    </span>
+  );
+};
+
+const ConfermaModal: React.FC<{
+  slot: SlotRiga;
+  onClose: () => void;
+  onConfirm: (ore: number, motivo: string) => Promise<void>;
+}> = ({ slot, onClose, onConfirm }) => {
+  const [ore, set_ore] = useState(String(slot.ore_previste.toFixed(2)));
+  const [motivo, set_motivo] = useState("");
+  const [busy, set_busy] = useState(false);
+  const can_save = motivo.trim().length >= 3 && to_num(ore) > 0;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-card rounded-2xl shadow-xl w-full max-w-md">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-border">
+          <h3 className="text-sm font-bold text-foreground">Conferma manualmente</h3>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="px-5 py-4 space-y-3">
+          <p className="text-xs text-muted-foreground">
+            {slot.data} · {slot.ora_inizio.slice(0, 5)}–{slot.ora_fine.slice(0, 5)} · {slot.corso_nome}
+          </p>
+          <Field label="Ore confermate">
+            <NumInput value={ore} onChange={set_ore} placeholder="es. 1.5" />
+          </Field>
+          <Field label="Motivo *">
+            <textarea
+              value={motivo}
+              onChange={(e) => set_motivo(e.target.value)}
+              rows={2}
+              placeholder="es. Presente, dimenticato di registrare l'entrata"
+              className={`${input_cls} resize-none`}
+            />
+          </Field>
+        </div>
+        <div className="px-5 py-3 border-t border-border flex gap-2">
+          <Button variant="outline" onClick={onClose} disabled={busy} className="flex-1">
+            Annulla
+          </Button>
+          <Button
+            onClick={async () => {
+              set_busy(true);
+              try {
+                await onConfirm(to_num(ore), motivo.trim());
+                onClose();
+              } finally {
+                set_busy(false);
+              }
+            }}
+            disabled={!can_save || busy}
+            className="flex-1 bg-primary hover:bg-primary/90"
+          >
+            {busy ? "..." : "Conferma"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const TabOreLavoro: React.FC<{
   istruttore: any;
   lezioni: any[];
@@ -331,6 +431,8 @@ const TabOreLavoro: React.FC<{
   campi: any[];
 }> = ({ istruttore, lezioni, corsi, campi }) => {
   const qc = useQueryClient();
+  const { session } = useAuth();
+  const can_override = can_override_ore_lavoro(session?.ruolo);
   const now = new Date();
   const [anno, set_anno] = useState(now.getFullYear());
   const [mese, set_mese] = useState(now.getMonth() + 1);
@@ -338,71 +440,161 @@ const TabOreLavoro: React.FC<{
   const [note_extra, set_note_extra] = useState("");
   const [ore_gare_manual, set_ore_gare_manual] = useState<string>("");
   const [saving, set_saving] = useState(false);
+  const [modal_slot, set_modal_slot] = useState<SlotRiga | null>(null);
 
+  const data_da = `${anno}-${String(mese).padStart(2, "0")}-01`;
+  const data_a_dt = new Date(anno, mese, 0);
+  const data_a = `${data_a_dt.getFullYear()}-${String(data_a_dt.getMonth() + 1).padStart(2, "0")}-${String(data_a_dt.getDate()).padStart(2, "0")}`;
+  const club_id = get_current_club_id();
+
+  // Cache mensile (ore extra, gare, note)
   useEffect(() => {
     const load = async () => {
       const { data } = await supabase
-        .from("ore_lavoro_istruttori")
-        .select("*")
+        .from("ore_lavorate_istruttori")
+        .select("ore_extra, ore_gare, note_extra")
         .eq("istruttore_id", istruttore.id)
         .eq("anno", anno)
         .eq("mese", mese)
         .maybeSingle();
       set_ore_extra(data?.ore_extra != null ? String(data.ore_extra) : "");
-      set_note_extra(data?.note_extra ?? "");
+      set_note_extra((data as any)?.note_extra ?? "");
       set_ore_gare_manual(data?.ore_gare != null ? String(data.ore_gare) : "");
     };
     load();
   }, [istruttore.id, anno, mese]);
 
+  // Planning slots del mese (per istruttore principale o N:N)
+  const slots_query = useQuery({
+    queryKey: ["ore_planning_slots", istruttore.id, club_id, anno, mese],
+    queryFn: async () => {
+      const { data: planning } = await supabase
+        .from("planning_corsi_settimana")
+        .select("id, corso_id, data, ora_inizio, ora_fine, istruttore_id, annullato")
+        .gte("data", data_da)
+        .lte("data", data_a)
+        .eq("annullato", false);
+      const { data: ci } = await supabase
+        .from("corsi_istruttori")
+        .select("corso_id, istruttore_id")
+        .eq("istruttore_id", istruttore.id);
+      const corsi_ids_diretti = new Set((ci ?? []).map((r) => r.corso_id));
+      let corsi_ids_monitore = new Set<string>();
+      if (istruttore.linked_atleta_id) {
+        const { data: cm } = await supabase
+          .from("corsi_monitori")
+          .select("corso_id, persona_id")
+          .eq("persona_id", istruttore.linked_atleta_id);
+        corsi_ids_monitore = new Set((cm ?? []).map((r) => r.corso_id));
+      }
+      return (planning ?? []).filter(
+        (p: any) =>
+          p.istruttore_id === istruttore.id ||
+          corsi_ids_diretti.has(p.corso_id) ||
+          corsi_ids_monitore.has(p.corso_id),
+      );
+    },
+  });
+
+  const presenze_query = useQuery({
+    queryKey: ["ore_presenze_istruttore", istruttore.id, anno, mese],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("presenze")
+        .select("id, data, ora_entrata, ora_uscita, riferimento_id")
+        .eq("persona_id", istruttore.id)
+        .eq("tipo_persona", "istruttore")
+        .gte("data", data_da)
+        .lte("data", data_a);
+      return data ?? [];
+    },
+  });
+
+  const dettaglio_query = useQuery({
+    queryKey: ["ore_dettaglio", istruttore.id, anno, mese],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("ore_lavorate_dettaglio")
+        .select("*")
+        .eq("istruttore_id", istruttore.id)
+        .gte("data", data_da)
+        .lte("data", data_a);
+      return data ?? [];
+    },
+  });
+
+  const corsi_by_id = useMemo(() => {
+    const m = new Map<string, any>();
+    for (const c of corsi) m.set(c.id, c);
+    return m;
+  }, [corsi]);
+
+  const slot_righe: SlotRiga[] = useMemo(() => {
+    const planning = slots_query.data ?? [];
+    const presenze = presenze_query.data ?? [];
+    const dettaglio = (dettaglio_query.data ?? []) as any[];
+    return planning
+      .map((p: any) => {
+        const ore_previste = time_diff_h(p.ora_inizio, p.ora_fine);
+        const det = dettaglio.find((d) => d.planning_corso_id === p.id);
+        const pres = presenze.find((pr) => pr.riferimento_id === p.id && pr.ora_entrata);
+        let stato: SlotRiga["stato"] = "mancante";
+        let ore_effettive = 0;
+        let motivo = "";
+        if (det?.tipo === "override_manuale") {
+          stato = "override";
+          ore_effettive = Number(det.ore_calcolate) || 0;
+          motivo = det.motivo || "";
+        } else if (pres || det?.tipo === "presenza_reale") {
+          stato = "presenza";
+          ore_effettive =
+            pres?.ora_entrata && pres?.ora_uscita
+              ? time_diff_h(pres.ora_entrata, pres.ora_uscita)
+              : Number(det?.ore_calcolate) || ore_previste;
+        }
+        const corso = corsi_by_id.get(p.corso_id);
+        return {
+          id: p.id,
+          data: p.data,
+          ora_inizio: p.ora_inizio,
+          ora_fine: p.ora_fine,
+          corso_nome: corso?.nome || "Corso",
+          ore_previste,
+          ore_effettive,
+          stato,
+          motivo,
+          source: { dettaglio_id: det?.id, presenza_id: pres?.id },
+        } as SlotRiga;
+      })
+      .sort((a, b) => a.data.localeCompare(b.data) || a.ora_inizio.localeCompare(b.ora_inizio));
+  }, [slots_query.data, presenze_query.data, dettaglio_query.data, corsi_by_id]);
+
+  const ore_previste_totali = slot_righe.reduce((s, r) => s + r.ore_previste, 0);
+  const ore_effettive_totali = slot_righe.reduce((s, r) => s + r.ore_effettive, 0);
+  const ore_mancanti = slot_righe.filter((r) => r.stato === "mancante").reduce((s, r) => s + r.ore_previste, 0);
+  const slot_mancanti_count = slot_righe.filter((r) => r.stato === "mancante").length;
+  const slot_override_count = slot_righe.filter((r) => r.stato === "override").length;
+
+  // Lezioni private (sempre reali, già registrate)
   const lezioni_mese = useMemo(
     () =>
       lezioni.filter((l) => {
-        if (l.istruttore_id !== istruttore.id || !l.data) return false;
+        if (l.istruttore_id !== istruttore.id || !l.data || l.annullata) return false;
         const d = new Date(l.data + "T00:00:00");
         return d.getFullYear() === anno && d.getMonth() + 1 === mese;
       }),
     [lezioni, istruttore.id, anno, mese],
   );
-
   const minuti_lezioni = lezioni_mese.reduce((s, l: any) => s + (l.durata_minuti || 20), 0);
   const ore_lezioni = minuti_lezioni / 60;
-
-  const corsi_istruttore = useMemo(
-    () => corsi.filter((c: any) => c.istruttori_ids?.includes(istruttore.id) && c.attivo),
-    [corsi, istruttore.id],
-  );
-
-  const settimane_mese = useMemo(() => {
-    const giorni_in_mese = new Date(anno, mese, 0).getDate();
-    const conteggio: Record<string, number> = {};
-    for (let d = 1; d <= giorni_in_mese; d++) {
-      const dow = new Date(anno, mese - 1, d).getDay();
-      const nome = ["Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato"][dow];
-      conteggio[nome] = (conteggio[nome] || 0) + 1;
-    }
-    return conteggio;
-  }, [anno, mese]);
-
-  const minuti_corsi = useMemo(
-    () =>
-      corsi_istruttore.reduce((s: number, c: any) => {
-        const durata =
-          time_to_min(c.ora_fine?.slice(0, 5) || "00:00") - time_to_min(c.ora_inizio?.slice(0, 5) || "00:00");
-        return s + durata * (settimane_mese[c.giorno] || 4);
-      }, 0),
-    [corsi_istruttore, settimane_mese],
-  );
-
-  const ore_corsi = minuti_corsi / 60;
 
   const ore_campi = useMemo(() => {
     let totale = 0;
     for (const campo of campi) {
       if (!campo.data_inizio || !campo.data_fine) continue;
       const inizio = new Date(campo.data_inizio + "T00:00:00");
-      const fine = new Date(campo.data_fine + "T00:00:00");
       if (inizio.getFullYear() === anno && inizio.getMonth() + 1 === mese) {
+        const fine = new Date(campo.data_fine + "T00:00:00");
         const giorni = Math.ceil((fine.getTime() - inizio.getTime()) / (1000 * 60 * 60 * 24)) + 1;
         totale += giorni * 8;
       }
@@ -412,32 +604,65 @@ const TabOreLavoro: React.FC<{
 
   const ore_gare_num = to_num(ore_gare_manual);
   const ore_extra_num = to_num(ore_extra);
-  const ore_totali = ore_lezioni + ore_corsi + ore_campi + ore_gare_num + ore_extra_num;
+  const ore_totali_pagabili = ore_effettive_totali + ore_lezioni + ore_campi + ore_gare_num + ore_extra_num;
   const costo_lezioni = ore_lezioni * (istruttore.costo_orario_lezioni || 0);
-  const costo_corsi = ore_corsi * (istruttore.costo_orario_corsi || 0);
+  const costo_corsi = ore_effettive_totali * (istruttore.costo_orario_corsi || 0);
   const costo_totale_club = costo_lezioni + costo_corsi;
 
-  const handle_save = async () => {
+  const refresh_all = () => {
+    qc.invalidateQueries({ queryKey: ["ore_planning_slots", istruttore.id] });
+    qc.invalidateQueries({ queryKey: ["ore_dettaglio", istruttore.id] });
+    qc.invalidateQueries({ queryKey: ["ore_presenze_istruttore", istruttore.id] });
+  };
+
+  const handle_conferma = async (slot: SlotRiga, ore: number, motivo: string) => {
+    if (!session?.user_id || !club_id) return;
+    const payload = {
+      club_id,
+      istruttore_id: istruttore.id,
+      planning_corso_id: slot.id,
+      data: slot.data,
+      ora_inizio: slot.ora_inizio,
+      ora_fine: slot.ora_fine,
+      ore_calcolate: ore,
+      tipo: "override_manuale",
+      motivo,
+      confermato_da: session.user_id,
+      confermato_at: new Date().toISOString(),
+    };
+    const { error } = await supabase
+      .from("ore_lavorate_dettaglio")
+      .upsert(payload, { onConflict: "planning_corso_id,istruttore_id" });
+    if (error) {
+      toast({ title: "Errore conferma", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "✅ Ore confermate", description: `${ore.toFixed(2)}h registrate per ${slot.data}` });
+    refresh_all();
+  };
+
+  const handle_save_cache = async () => {
     set_saving(true);
     try {
-      const { error } = await supabase.from("ore_lavoro_istruttori").upsert(
+      const { error } = await supabase.from("ore_lavorate_istruttori").upsert(
         {
+          club_id,
           istruttore_id: istruttore.id,
           anno,
           mese,
-          ore_corsi,
+          periodo: `${anno}-${String(mese).padStart(2, "0")}`,
+          ore_corsi: ore_effettive_totali,
           ore_lezioni_private: ore_lezioni,
           ore_campi,
           ore_gare: ore_gare_num,
           ore_extra: ore_extra_num,
           note_extra,
           updated_at: new Date().toISOString(),
-        },
-        { onConflict: "istruttore_id,anno,mese" },
+        } as any,
+        { onConflict: "istruttore_id,anno,mese" } as any,
       );
       if (error) throw error;
-      await qc.invalidateQueries({ queryKey: ["ore_lavoro"] });
-      toast({ title: "✅ Ore lavoro salvate" });
+      toast({ title: "✅ Cache mensile salvata" });
     } catch (err: any) {
       toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
     } finally {
@@ -445,31 +670,17 @@ const TabOreLavoro: React.FC<{
     }
   };
 
-  const handle_export_csv = () => {
-    const rows = [
-      ["Istruttore", `${istruttore.nome} ${istruttore.cognome}`],
-      ["Mese", get_mese_label(anno, mese)],
-      [""],
-      ["Categoria", "Ore", "Costo (CHF)"],
-      ["Lezioni private", ore_lezioni.toFixed(2), costo_lezioni.toFixed(2)],
-      ["Corsi", ore_corsi.toFixed(2), costo_corsi.toFixed(2)],
-      ["Campi allenamento", ore_campi.toFixed(2), ""],
-      ["Accompagnamento gare", ore_gare_num.toFixed(2), ""],
-      ["Extra/Altro", ore_extra_num.toFixed(2), ""],
-      ["TOTALE", ore_totali.toFixed(2), costo_totale_club.toFixed(2)],
-    ];
-    const csv = rows.map((r) => r.join(";")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `ore_${istruttore.cognome}_${anno}_${String(mese).padStart(2, "0")}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
   return (
     <div className="space-y-5">
+      {modal_slot && (
+        <ConfermaModal
+          slot={modal_slot}
+          onClose={() => set_modal_slot(null)}
+          onConfirm={(ore, motivo) => handle_conferma(modal_slot, ore, motivo)}
+        />
+      )}
+
+      {/* Selettore mese */}
       <div className="flex items-center justify-between">
         <button
           onClick={() => {
@@ -478,7 +689,7 @@ const TabOreLavoro: React.FC<{
               set_mese(12);
             } else set_mese((m) => m - 1);
           }}
-          className="p-2 rounded-lg hover:bg-muted/50 transition-colors text-muted-foreground"
+          className="p-2 rounded-lg hover:bg-muted/50 text-muted-foreground"
         >
           ←
         </button>
@@ -490,54 +701,138 @@ const TabOreLavoro: React.FC<{
               set_mese(1);
             } else set_mese((m) => m + 1);
           }}
-          className="p-2 rounded-lg hover:bg-muted/50 transition-colors text-muted-foreground"
+          className="p-2 rounded-lg hover:bg-muted/50 text-muted-foreground"
         >
           →
         </button>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {[
-          { label: "Lezioni private", ore: ore_lezioni, color: "text-primary" },
-          { label: "Corsi", ore: ore_corsi, color: "text-orange-500" },
-          { label: "Ore totali", ore: ore_totali, color: "text-success" },
-        ].map((kpi, i) => (
-          <div key={i} className="bg-card rounded-xl shadow-card p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <Clock className={`w-3.5 h-3.5 ${kpi.color}`} />
-              <p className="text-xs text-muted-foreground">{kpi.label}</p>
-            </div>
-            <p className={`text-lg font-bold tabular-nums ${kpi.color}`}>{ore_fmt(kpi.ore)}</p>
-          </div>
-        ))}
+      {/* KPI */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="bg-card rounded-xl shadow-card p-4">
+          <p className="text-xs text-muted-foreground">Ore pianificate</p>
+          <p className="text-lg font-bold tabular-nums text-foreground">{ore_fmt(ore_previste_totali)}</p>
+        </div>
+        <div className="bg-card rounded-xl shadow-card p-4">
+          <p className="text-xs text-muted-foreground">Ore effettive (corsi)</p>
+          <p className="text-lg font-bold tabular-nums text-green-600">{ore_fmt(ore_effettive_totali)}</p>
+        </div>
+        <div className="bg-card rounded-xl shadow-card p-4">
+          <p className="text-xs text-muted-foreground">Da confermare</p>
+          <p className="text-lg font-bold tabular-nums text-amber-600">
+            {ore_fmt(ore_mancanti)}
+            <span className="text-xs font-normal text-muted-foreground ml-1">({slot_mancanti_count})</span>
+          </p>
+        </div>
+        <div className="bg-card rounded-xl shadow-card p-4">
+          <p className="text-xs text-muted-foreground">Confermate manualmente</p>
+          <p className="text-lg font-bold tabular-nums text-sky-600">{slot_override_count}</p>
+        </div>
       </div>
 
+      {/* Tabella slot */}
       <div className="bg-card rounded-xl shadow-card overflow-hidden">
         <div className="px-5 py-3 border-b border-border flex items-center justify-between">
-          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Dettaglio ore mensili</h3>
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={handle_export_csv} className="h-7 text-xs gap-1.5">
-              <Download className="w-3 h-3" /> CSV
-            </Button>
-            <Button
-              size="sm"
-              onClick={handle_save}
-              disabled={saving}
-              className="h-7 text-xs bg-primary hover:bg-primary/90"
-            >
-              {saving ? "..." : "💾 Salva"}
-            </Button>
+          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+            Dettaglio slot corso ({slot_righe.length})
+          </h3>
+          {!can_override && (
+            <span className="text-[10px] text-muted-foreground italic">
+              Conferma manuale riservata a Admin / DT / Presidente
+            </span>
+          )}
+        </div>
+        {slot_righe.length === 0 ? (
+          <div className="px-5 py-8 text-center text-sm text-muted-foreground">
+            Nessuno slot pianificato per questo mese.
           </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-muted/20 text-xs text-muted-foreground">
+                  <th className="text-left px-4 py-2 font-bold">Data</th>
+                  <th className="text-left px-4 py-2 font-bold">Corso</th>
+                  <th className="text-left px-4 py-2 font-bold">Orario</th>
+                  <th className="text-right px-4 py-2 font-bold">Previste</th>
+                  <th className="text-right px-4 py-2 font-bold">Effettive</th>
+                  <th className="text-center px-4 py-2 font-bold">Stato</th>
+                  <th className="text-right px-4 py-2 font-bold">Azione</th>
+                </tr>
+              </thead>
+              <tbody>
+                {slot_righe.map((r) => {
+                  const tooltip =
+                    r.stato === "override"
+                      ? `Confermato manualmente. Motivo: ${r.motivo || "—"}`
+                      : r.stato === "presenza"
+                        ? "Presenza registrata dal Dashboard"
+                        : "Nessuna presenza registrata né conferma manuale";
+                  return (
+                    <tr
+                      key={r.id}
+                      className={`border-b border-border/50 ${r.stato === "mancante" ? "bg-amber-50/40" : r.stato === "override" ? "bg-sky-50/40" : ""}`}
+                      title={tooltip}
+                    >
+                      <td className="px-4 py-2 tabular-nums">{r.data.slice(8)}</td>
+                      <td className="px-4 py-2 text-foreground truncate max-w-[160px]">{r.corso_nome}</td>
+                      <td className="px-4 py-2 text-muted-foreground tabular-nums">
+                        {r.ora_inizio.slice(0, 5)}–{r.ora_fine.slice(0, 5)}
+                      </td>
+                      <td className="px-4 py-2 text-right tabular-nums text-muted-foreground">
+                        {ore_fmt(r.ore_previste)}
+                      </td>
+                      <td className="px-4 py-2 text-right tabular-nums font-medium">
+                        {r.stato === "mancante" ? "—" : ore_fmt(r.ore_effettive)}
+                      </td>
+                      <td className="px-4 py-2 text-center">
+                        <StatoBadge stato={r.stato} />
+                      </td>
+                      <td className="px-4 py-2 text-right">
+                        {r.stato === "mancante" && can_override && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs"
+                            onClick={() => set_modal_slot(r)}
+                          >
+                            ✍️ Conferma
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+                <tr className="bg-muted/20 font-bold">
+                  <td className="px-4 py-2" colSpan={3}>
+                    TOTALE CORSI
+                  </td>
+                  <td className="px-4 py-2 text-right tabular-nums">{ore_fmt(ore_previste_totali)}</td>
+                  <td className="px-4 py-2 text-right tabular-nums text-green-600">
+                    {ore_fmt(ore_effettive_totali)}
+                  </td>
+                  <td colSpan={2} />
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Altre voci + totale pagabile */}
+      <div className="bg-card rounded-xl shadow-card overflow-hidden">
+        <div className="px-5 py-3 border-b border-border flex items-center justify-between">
+          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Altre voci</h3>
+          <Button
+            size="sm"
+            onClick={handle_save_cache}
+            disabled={saving}
+            className="h-7 text-xs bg-primary hover:bg-primary/90"
+          >
+            {saving ? "..." : "💾 Salva cache"}
+          </Button>
         </div>
         <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border bg-muted/20">
-              <th className="text-left px-4 py-2.5 text-xs font-bold text-muted-foreground">Categoria</th>
-              <th className="text-right px-4 py-2.5 text-xs font-bold text-muted-foreground">Ore</th>
-              <th className="text-right px-4 py-2.5 text-xs font-bold text-muted-foreground">Costo/h club</th>
-              <th className="text-right px-4 py-2.5 text-xs font-bold text-muted-foreground">Totale</th>
-            </tr>
-          </thead>
           <tbody>
             <tr className="border-b border-border/50">
               <td className="px-4 py-3">
@@ -550,19 +845,6 @@ const TabOreLavoro: React.FC<{
               </td>
               <td className="px-4 py-3 text-right tabular-nums font-semibold text-primary">
                 CHF {costo_lezioni.toFixed(2)}
-              </td>
-            </tr>
-            <tr className="border-b border-border/50">
-              <td className="px-4 py-3">
-                <p className="font-medium text-foreground">Corsi</p>
-                <p className="text-xs text-muted-foreground">{corsi_istruttore.length} corsi attivi · automatico</p>
-              </td>
-              <td className="px-4 py-3 text-right tabular-nums font-medium">{ore_fmt(ore_corsi)}</td>
-              <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
-                CHF {(istruttore.costo_orario_corsi || 0).toFixed(2)}
-              </td>
-              <td className="px-4 py-3 text-right tabular-nums font-semibold text-primary">
-                CHF {costo_corsi.toFixed(2)}
               </td>
             </tr>
             <tr className="border-b border-border/50">
@@ -584,7 +866,6 @@ const TabOreLavoro: React.FC<{
                   value={ore_gare_manual}
                   onChange={(v) => set_ore_gare_manual(v)}
                   className="w-20 px-2 py-1 text-right"
-                  placeholder="0"
                 />
               </td>
               <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">—</td>
@@ -598,7 +879,7 @@ const TabOreLavoro: React.FC<{
                   value={note_extra}
                   onChange={(e) => set_note_extra(e.target.value)}
                   placeholder="Note (opzionale)..."
-                  className="w-full rounded-lg border border-border bg-background px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  className="w-full rounded-lg border border-border bg-background px-2 py-1 text-xs"
                 />
               </td>
               <td className="px-4 py-3 text-right">
@@ -606,15 +887,16 @@ const TabOreLavoro: React.FC<{
                   value={ore_extra}
                   onChange={(v) => set_ore_extra(v)}
                   className="w-20 px-2 py-1 text-right"
-                  placeholder="0"
                 />
               </td>
               <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">—</td>
               <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">—</td>
             </tr>
             <tr className="bg-muted/20">
-              <td className="px-4 py-3 font-bold text-foreground">TOTALE</td>
-              <td className="px-4 py-3 text-right tabular-nums font-bold text-foreground">{ore_fmt(ore_totali)}</td>
+              <td className="px-4 py-3 font-bold text-foreground">TOTALE PAGABILE</td>
+              <td className="px-4 py-3 text-right tabular-nums font-bold text-foreground">
+                {ore_fmt(ore_totali_pagabili)}
+              </td>
               <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">—</td>
               <td className="px-4 py-3 text-right tabular-nums font-bold text-primary">
                 CHF {costo_totale_club.toFixed(2)}
@@ -626,6 +908,7 @@ const TabOreLavoro: React.FC<{
     </div>
   );
 };
+
 
 // ─── Tab Compenso ──────────────────────────────────────────
 const TabCompenso: React.FC<{
