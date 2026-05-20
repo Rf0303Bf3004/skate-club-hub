@@ -14,10 +14,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, ArrowLeft, Euro, Clock, TrendingUp, Download, Upload, X, Info } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Euro, Clock, TrendingUp, Download, Upload, X, Info, CheckCircle2, AlertTriangle, ShieldCheck } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/lib/auth";
+import { can_override_ore_lavoro } from "@/lib/roles";
 
 const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
 
