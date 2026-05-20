@@ -53,7 +53,14 @@ export const CompensoStaffModal: React.FC<Props> = ({ open, atleta, livello, on_
   const [confirm_cancel, set_confirm_cancel] = useState(false);
 
   const livello_label = livello === "monitrice" ? "Monitrice" : "Aiuto monitrice";
-  const req = REQUIRED[tipo];
+  const base_req = REQUIRED[tipo];
+  // Le aiuto-monitrici di solito affiancano in lezioni collettive senza prezzo di vendita al minuto:
+  // rendiamo prezzo_min sempre opzionale per loro (resta visibile, ma non blocca il salvataggio).
+  const req = {
+    ...base_req,
+    prezzo_min: livello === "aiuto_monitrice" ? false : base_req.prezzo_min,
+  };
+  const show_prezzo_min = base_req.prezzo_min; // visibilità invariata in base alla modalità
 
   const can_save = useMemo(() => {
     if (req.prezzo_min && !(to_num(prezzo_min) ?? 0) ) return false;
