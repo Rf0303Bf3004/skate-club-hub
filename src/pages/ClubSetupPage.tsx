@@ -14,6 +14,7 @@ import { toast } from "@/hooks/use-toast";
 import { Upload, Globe, Phone, Mail, MapPin, Hash, Users, UserCheck, Calendar, Building2, Plus, Trash2, Loader2 } from "lucide-react";
 import CatalogoOffertaTab from "@/components/CatalogoOffertaTab";
 import FatturazioneTab from "@/components/FatturazioneTab";
+import { RegoleComunicazioniSection } from "@/components/comunicazioni/RegoleComunicazioniSection";
 
 const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"] as const;
 
