@@ -10,7 +10,8 @@ import { toast } from "@/hooks/use-toast";
 // Tab "I miei reminder" — mostra a istruttori/staff i reminder turno del giorno successivo
 // con bottoni Sarò presente / Sarò assente. I trigger DB gestiscono le conseguenze.
 export const MieiReminderStaffTab: React.FC = () => {
-  const { user } = useAuth();
+  const { session } = useAuth();
+  const user_id = session?.user_id;
   const club_id = get_current_club_id();
   const qc = useQueryClient();
   const [busy_id, set_busy_id] = React.useState<string | null>(null);
