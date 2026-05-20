@@ -53,7 +53,14 @@ export const CompensoStaffModal: React.FC<Props> = ({ open, atleta, livello, on_
   const [confirm_cancel, set_confirm_cancel] = useState(false);
 
   const livello_label = livello === "monitrice" ? "Monitrice" : "Aiuto monitrice";
-  const req = REQUIRED[tipo];
+  const base_req = REQUIRED[tipo];
+  // Le aiuto-monitrici di solito affiancano in lezioni collettive senza prezzo di vendita al minuto:
+  // rendiamo prezzo_min sempre opzionale per loro (resta visibile, ma non blocca il salvataggio).
+  const req = {
+    ...base_req,
+    prezzo_min: livello === "aiuto_monitrice" ? false : base_req.prezzo_min,
+  };
+  const show_prezzo_min = base_req.prezzo_min; // visibilità invariata in base alla modalità
 
   const can_save = useMemo(() => {
     if (req.prezzo_min && !(to_num(prezzo_min) ?? 0) ) return false;
@@ -69,7 +76,7 @@ export const CompensoStaffModal: React.FC<Props> = ({ open, atleta, livello, on_
       // Salva NULL per campi non applicabili alla modalità scelta
       const payload: Record<string, unknown> = {
         tipo_contratto: tipo,
-        costo_minuto_lezione_privata: req.prezzo_min ? to_num(prezzo_min) : null,
+        costo_minuto_lezione_privata: show_prezzo_min ? to_num(prezzo_min) : null,
         costo_orario_corsi: req.costo_corsi ? to_num(costo_corsi) : null,
         costo_orario_lezioni: req.costo_lezioni ? to_num(costo_lezioni) : null,
         compenso_fisso_mensile: req.fisso_mensile ? to_num(fisso_mensile) : null,
@@ -108,6 +115,7 @@ export const CompensoStaffModal: React.FC<Props> = ({ open, atleta, livello, on_
     setter: (v: string) => void,
     placeholder?: string,
     step = "0.01",
+    required = true,
   ) => {
     if (!show) {
       return (
@@ -121,7 +129,9 @@ export const CompensoStaffModal: React.FC<Props> = ({ open, atleta, livello, on_
     }
     return (
       <div className="space-y-1.5">
-        <Label className="text-xs">{label} *</Label>
+        <Label className="text-xs">
+          {label} {required ? "*" : <span className="text-muted-foreground font-normal">(opzionale)</span>}
+        </Label>
         <input
           type="number"
           step={step}
@@ -184,7 +194,7 @@ export const CompensoStaffModal: React.FC<Props> = ({ open, atleta, livello, on_
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              {renderField(req.prezzo_min, "Prezzo vendita (CHF/min)", prezzo_min, set_prezzo_min, "es. 0.50")}
+              {renderField(show_prezzo_min, "Prezzo vendita (CHF/min)", prezzo_min, set_prezzo_min, "es. 0.50", "0.01", req.prezzo_min)}
               {renderField(req.fisso_mensile, "Compenso fisso mensile (CHF)", fisso_mensile, set_fisso_mensile, "es. 800", "1")}
               {renderField(req.costo_corsi, "Costo interno corsi (CHF/h)", costo_corsi, set_costo_corsi, "es. 18", "0.5")}
               {renderField(req.costo_lezioni, "Costo interno lezioni private (CHF/h)", costo_lezioni, set_costo_lezioni, "es. 20", "0.5")}
