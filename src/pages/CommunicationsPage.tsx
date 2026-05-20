@@ -3,9 +3,11 @@ import { useI18n } from '@/lib/i18n';
 import { use_atleti, use_comunicazioni, use_corsi, use_istruttori } from '@/hooks/use-supabase-data';
 import { use_crea_comunicazione } from '@/hooks/use-supabase-mutations';
 import { supabase, get_current_club_id } from '@/lib/supabase';
+import { useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, MessageSquare, FileText, Pencil, Check, ChevronsUpDown, CalendarIcon, X, AlertTriangle } from 'lucide-react';
+import { Plus, MessageSquare, FileText, Pencil, Check, ChevronsUpDown, CalendarIcon, X, AlertTriangle, Send, Inbox, Archive, Search } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -18,7 +20,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { IscrizioniAtletiNotifiche, use_count_iscrizioni_non_lette } from '@/components/comunicazioni/IscrizioniAtletiNotifiche';
+import { ConversazioniTab } from '@/components/comunicazioni/ConversazioniTab';
 import { Bell } from 'lucide-react';
 
 const TEMPLATES = [
