@@ -21,6 +21,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ConversazioniTab } from '@/components/comunicazioni/ConversazioniTab';
+import { MieiReminderStaffTab } from '@/components/comunicazioni/MieiReminderStaffTab';
 import { Bell } from 'lucide-react';
 
 const TEMPLATES = [
@@ -563,6 +564,9 @@ const CommunicationsPage: React.FC = () => {
               <Badge variant="destructive" className="ml-1 h-5 min-w-5 px-1.5 text-[10px]">{non_lette_count} non lette</Badge>
             )}
           </TabsTrigger>
+          <TabsTrigger value="miei_reminder" className="gap-2">
+            <Bell className="w-4 h-4" /> 🔔 I miei reminder
+          </TabsTrigger>
           {can_see_all && (
             <TabsTrigger value="conversazioni" className="gap-2">
               <MessageSquare className="w-4 h-4" /> 🔁 Conversazioni
@@ -586,6 +590,10 @@ const CommunicationsPage: React.FC = () => {
           {ricevute.length === 0
             ? empty_state('Nessun messaggio ricevuto.', <Inbox className="w-12 h-12" />)
             : <div className="space-y-4">{ricevute.map((c: any) => render_card(c, { highlight_unread: true }))}</div>}
+        </TabsContent>
+
+        <TabsContent value="miei_reminder" className="mt-4">
+          <MieiReminderStaffTab />
         </TabsContent>
 
         {can_see_all && (
