@@ -550,6 +550,11 @@ export type Database = {
           nome: string
           numero_tessera_federale: string | null
           paese: string | null
+          reminder_allenamenti_attivo: boolean
+          reminder_anticipo_giorni: number
+          reminder_last_run_date: string | null
+          reminder_orario_invio: number
+          reminder_staff_attivo: boolean
           sito_web: string | null
           telefono: string | null
         }
@@ -566,6 +571,11 @@ export type Database = {
           nome?: string
           numero_tessera_federale?: string | null
           paese?: string | null
+          reminder_allenamenti_attivo?: boolean
+          reminder_anticipo_giorni?: number
+          reminder_last_run_date?: string | null
+          reminder_orario_invio?: number
+          reminder_staff_attivo?: boolean
           sito_web?: string | null
           telefono?: string | null
         }
@@ -582,6 +592,11 @@ export type Database = {
           nome?: string
           numero_tessera_federale?: string | null
           paese?: string | null
+          reminder_allenamenti_attivo?: boolean
+          reminder_anticipo_giorni?: number
+          reminder_last_run_date?: string | null
+          reminder_orario_invio?: number
+          reminder_staff_attivo?: boolean
           sito_web?: string | null
           telefono?: string | null
         }
@@ -599,6 +614,7 @@ export type Database = {
           corso_id: string | null
           creata_da: string | null
           created_at: string
+          data_evento: string | null
           deep_link: string | null
           evento_straordinario_id: string | null
           gara_id: string | null
@@ -610,6 +626,7 @@ export type Database = {
           programmata_per: string | null
           richiede_rsvp: boolean
           rsvp_scadenza: string | null
+          sotto_tipo: string | null
           stato: string
           test_livello_id: string | null
           testo: string
@@ -629,6 +646,7 @@ export type Database = {
           corso_id?: string | null
           creata_da?: string | null
           created_at?: string
+          data_evento?: string | null
           deep_link?: string | null
           evento_straordinario_id?: string | null
           gara_id?: string | null
@@ -640,6 +658,7 @@ export type Database = {
           programmata_per?: string | null
           richiede_rsvp?: boolean
           rsvp_scadenza?: string | null
+          sotto_tipo?: string | null
           stato?: string
           test_livello_id?: string | null
           testo?: string
@@ -659,6 +678,7 @@ export type Database = {
           corso_id?: string | null
           creata_da?: string | null
           created_at?: string
+          data_evento?: string | null
           deep_link?: string | null
           evento_straordinario_id?: string | null
           gara_id?: string | null
@@ -670,6 +690,7 @@ export type Database = {
           programmata_per?: string | null
           richiede_rsvp?: boolean
           rsvp_scadenza?: string | null
+          sotto_tipo?: string | null
           stato?: string
           test_livello_id?: string | null
           testo?: string
@@ -778,6 +799,8 @@ export type Database = {
           creato_at: string
           id: string
           letto_at: string | null
+          rsvp_at: string | null
+          rsvp_risposta: string | null
           stato: string
           user_id: string
         }
@@ -788,6 +811,8 @@ export type Database = {
           creato_at?: string
           id?: string
           letto_at?: string | null
+          rsvp_at?: string | null
+          rsvp_risposta?: string | null
           stato?: string
           user_id: string
         }
@@ -798,6 +823,8 @@ export type Database = {
           creato_at?: string
           id?: string
           letto_at?: string | null
+          rsvp_at?: string | null
+          rsvp_risposta?: string | null
           stato?: string
           user_id?: string
         }
@@ -3748,6 +3775,7 @@ export type Database = {
         }[]
       }
       genera_codice_atleta: { Args: never; Returns: string }
+      genera_reminder_giornalieri: { Args: never; Returns: number }
       genera_settimana_planning: {
         Args: { p_settimana_id: string }
         Returns: number
