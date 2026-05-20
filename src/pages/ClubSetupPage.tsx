@@ -707,6 +707,17 @@ const ClubSetupPage: React.FC = () => {
 
         <Separator />
 
+        {/* Regole comunicazioni intelligenti */}
+        <section className="space-y-4">
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">🧠 Comunicazioni intelligenti</h2>
+          <p className="text-xs text-muted-foreground">
+            Il sistema monitora pattern (assenze, rifiuti, saturazione) e quando rileva un trigger emette automaticamente comunicazioni.
+          </p>
+          <RegoleComunicazioniSection club_id={club?.id || get_current_club_id() || null} />
+        </section>
+
+        <Separator />
+
         {/* Salva dati club */}
         <div className="flex justify-end">
           <Button onClick={handle_save} disabled={saving || Object.keys(form).length === 0}>
