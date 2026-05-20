@@ -1,12 +1,13 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase, set_current_club_id } from "./supabase";
+import type { RuoloUtente } from "./roles";
 
 export interface UserSession {
   user_id: string;
   email: string;
   club_id: string;
   club_nome: string;
-  ruolo: "superadmin" | "admin" | "staff";
+  ruolo: RuoloUtente;
   nome: string;
   cognome: string;
 }
@@ -50,7 +51,7 @@ async function fetch_session(): Promise<UserSession | null> {
     email: session.user.email || "",
     club_id,
     club_nome: (utente.clubs as any)?.nome || "",
-    ruolo: utente.ruolo,
+    ruolo: utente.ruolo as RuoloUtente,
     nome: utente.nome || "",
     cognome: utente.cognome || "",
   };
