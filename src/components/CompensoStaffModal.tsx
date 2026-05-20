@@ -194,7 +194,7 @@ export const CompensoStaffModal: React.FC<Props> = ({ open, atleta, livello, on_
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              {renderField(req.prezzo_min, "Prezzo vendita (CHF/min)", prezzo_min, set_prezzo_min, "es. 0.50")}
+              {renderField(show_prezzo_min, "Prezzo vendita (CHF/min)", prezzo_min, set_prezzo_min, "es. 0.50", "0.01", req.prezzo_min)}
               {renderField(req.fisso_mensile, "Compenso fisso mensile (CHF)", fisso_mensile, set_fisso_mensile, "es. 800", "1")}
               {renderField(req.costo_corsi, "Costo interno corsi (CHF/h)", costo_corsi, set_costo_corsi, "es. 18", "0.5")}
               {renderField(req.costo_lezioni, "Costo interno lezioni private (CHF/h)", costo_lezioni, set_costo_lezioni, "es. 20", "0.5")}
