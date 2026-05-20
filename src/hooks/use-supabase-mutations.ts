@@ -152,7 +152,7 @@ export function use_upsert_atleta() {
         carriera_stile: data.carriera_stile ?? data.livello_stile ?? null,
         // nuovo modello
         ...(categoria !== undefined ? { categoria } : {}),
-        ...(data.livello_amatori !== undefined ? { livello_amatori: data.livello_amatori || null } : {}),
+        ...(data.livello_amatori !== undefined ? { livello_amatori: (["Stellina 1","Stellina 2","Stellina 3","Stellina 4"].includes(data.livello_amatori) ? data.livello_amatori : null) } : {}),
         ...(data.livello_artistica !== undefined ? { livello_artistica: data.livello_artistica || null } : {}),
         ...(data.livello_artistica_in_preparazione !== undefined ? { livello_artistica_in_preparazione: data.livello_artistica_in_preparazione || null } : {}),
         ...(data.livello_stile !== undefined ? { livello_stile: data.livello_stile || null } : {}),
