@@ -77,6 +77,8 @@ export type Database = {
       }
       atleti: {
         Row: {
+          a_rischio: boolean
+          a_rischio_da: string | null
           agonista: boolean
           atleta_federazione: boolean | null
           attivo: boolean | null
@@ -131,6 +133,8 @@ export type Database = {
           verificato_da_user_id: string | null
         }
         Insert: {
+          a_rischio?: boolean
+          a_rischio_da?: string | null
           agonista?: boolean
           atleta_federazione?: boolean | null
           attivo?: boolean | null
@@ -185,6 +189,8 @@ export type Database = {
           verificato_da_user_id?: string | null
         }
         Update: {
+          a_rischio?: boolean
+          a_rischio_da?: string | null
           agonista?: boolean
           atleta_federazione?: boolean | null
           attivo?: boolean | null
@@ -2757,6 +2763,39 @@ export type Database = {
         }
         Relationships: []
       }
+      regole_comunicazioni_club: {
+        Row: {
+          attiva: boolean
+          club_id: string
+          codice: string
+          created_at: string
+          destinatario_notifica: string
+          id: string
+          parametri: Json
+          updated_at: string
+        }
+        Insert: {
+          attiva?: boolean
+          club_id: string
+          codice: string
+          created_at?: string
+          destinatario_notifica?: string
+          id?: string
+          parametri?: Json
+          updated_at?: string
+        }
+        Update: {
+          attiva?: boolean
+          club_id?: string
+          codice?: string
+          created_at?: string
+          destinatario_notifica?: string
+          id?: string
+          parametri?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       relazione_preferenze: {
         Row: {
           attivo: boolean
@@ -3753,6 +3792,7 @@ export type Database = {
     Functions: {
       archivia_comunicazioni_vecchie: { Args: never; Returns: number }
       cleanup_archived_communications: { Args: never; Returns: number }
+      controlla_saturazione_corsi: { Args: never; Returns: number }
       corsi_per_atleta: {
         Args: { p_atleta_id: string }
         Returns: {
