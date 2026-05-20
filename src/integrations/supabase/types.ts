@@ -589,8 +589,10 @@ export type Database = {
       }
       comunicazioni: {
         Row: {
+          archiviata: boolean
           atleta_id: string | null
           atleti_ids: string[] | null
+          categoria: string
           club_id: string
           corpo: string | null
           corsi_ids: string[] | null
@@ -602,6 +604,7 @@ export type Database = {
           gara_id: string | null
           id: string
           inviata_at: string | null
+          letta: boolean
           livelli: string[] | null
           planning_corso_id: string | null
           programmata_per: string | null
@@ -616,8 +619,10 @@ export type Database = {
           urgente: boolean
         }
         Insert: {
+          archiviata?: boolean
           atleta_id?: string | null
           atleti_ids?: string[] | null
+          categoria?: string
           club_id: string
           corpo?: string | null
           corsi_ids?: string[] | null
@@ -629,6 +634,7 @@ export type Database = {
           gara_id?: string | null
           id?: string
           inviata_at?: string | null
+          letta?: boolean
           livelli?: string[] | null
           planning_corso_id?: string | null
           programmata_per?: string | null
@@ -643,8 +649,10 @@ export type Database = {
           urgente?: boolean
         }
         Update: {
+          archiviata?: boolean
           atleta_id?: string | null
           atleti_ids?: string[] | null
+          categoria?: string
           club_id?: string
           corpo?: string | null
           corsi_ids?: string[] | null
@@ -656,6 +664,7 @@ export type Database = {
           gara_id?: string | null
           id?: string
           inviata_at?: string | null
+          letta?: boolean
           livelli?: string[] | null
           planning_corso_id?: string | null
           programmata_per?: string | null
@@ -3715,6 +3724,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      archivia_comunicazioni_vecchie: { Args: never; Returns: number }
       cleanup_archived_communications: { Args: never; Returns: number }
       corsi_per_atleta: {
         Args: { p_atleta_id: string }
