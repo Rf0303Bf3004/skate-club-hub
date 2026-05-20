@@ -48,7 +48,7 @@ async function render_page(pdf: PDFDocumentProxy, page_num: number, canvas: HTML
   canvas.height = viewport.height;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas context non disponibile");
-  const render_task = page.render({ canvasContext: ctx, viewport });
+  const render_task = page.render({ canvasContext: ctx, viewport, canvas });
   await render_task.promise;
 }
 
