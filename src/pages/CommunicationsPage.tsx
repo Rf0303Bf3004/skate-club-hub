@@ -3,9 +3,11 @@ import { useI18n } from '@/lib/i18n';
 import { use_atleti, use_comunicazioni, use_corsi, use_istruttori } from '@/hooks/use-supabase-data';
 import { use_crea_comunicazione } from '@/hooks/use-supabase-mutations';
 import { supabase, get_current_club_id } from '@/lib/supabase';
+import { useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, MessageSquare, FileText, Pencil, Check, ChevronsUpDown, CalendarIcon, X, AlertTriangle } from 'lucide-react';
+import { Plus, MessageSquare, FileText, Pencil, Check, ChevronsUpDown, CalendarIcon, X, AlertTriangle, Send, Inbox, Archive, Search } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -18,7 +20,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { IscrizioniAtletiNotifiche, use_count_iscrizioni_non_lette } from '@/components/comunicazioni/IscrizioniAtletiNotifiche';
+import { ConversazioniTab } from '@/components/comunicazioni/ConversazioniTab';
 import { Bell } from 'lucide-react';
 
 const TEMPLATES = [
@@ -459,7 +461,85 @@ const CommunicationsPage: React.FC = () => {
     return new Date(iso).toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
-  const non_lette_iscrizioni = use_count_iscrizioni_non_lette();
+  const { session } = useAuth();
+  const qc = useQueryClient();
+  const ruolo = session?.ruolo;
+  const can_see_all = ruolo === 'superadmin' || ruolo === 'admin';
+
+  const [archive_search, set_archive_search] = useState('');
+
+  const com_visible = useMemo(
+    () => comunicazioni.filter((c: any) => c.tipo !== 'iscrizione_atleta'),
+    [comunicazioni],
+  );
+  const inviate = useMemo(
+    () => com_visible.filter((c: any) => c.categoria !== 'ricevuta' && !c.archiviata),
+    [com_visible],
+  );
+  const ricevute = useMemo(
+    () => com_visible.filter((c: any) => c.categoria === 'ricevuta' && !c.archiviata),
+    [com_visible],
+  );
+  const archivio = useMemo(() => {
+    const arch = com_visible.filter((c: any) => c.archiviata);
+    const q = archive_search.trim().toLowerCase();
+    if (!q) return arch;
+    return arch.filter((c: any) =>
+      (c.titolo || '').toLowerCase().includes(q) ||
+      (c.testo || '').toLowerCase().includes(q) ||
+      (c.corpo || '').toLowerCase().includes(q),
+    );
+  }, [com_visible, archive_search]);
+
+  const non_lette_count = ricevute.filter((c: any) => !c.letta).length;
+
+  const mark_letta = async (id: string) => {
+    await supabase.from('comunicazioni').update({ letta: true }).eq('id', id);
+    qc.invalidateQueries({ queryKey: ['comunicazioni'] });
+  };
+
+  const render_card = (c: any, opts: { highlight_unread?: boolean } = {}) => {
+    const unread = opts.highlight_unread && !c.letta;
+    return (
+      <div
+        key={c.id}
+        onClick={() => { if (c.categoria === 'ricevuta' && !c.letta) void mark_letta(c.id); }}
+        className={cn(
+          'bg-card rounded-xl shadow-card p-5 hover:shadow-card-hover transition-shadow cursor-pointer',
+          unread && 'bg-warning/5 border-l-4 border-l-destructive',
+        )}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex gap-3 min-w-0">
+            <MessageSquare className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                {c.urgente && (
+                  <Badge variant="destructive" className="text-[10px] gap-1">
+                    <AlertTriangle className="w-3 h-3" /> URGENTE
+                  </Badge>
+                )}
+                {unread && <Badge variant="destructive" className="text-[10px]">NUOVO</Badge>}
+                <h3 className="font-semibold text-foreground">{c.titolo}</h3>
+              </div>
+              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{c.testo}</p>
+            </div>
+          </div>
+          <div className="text-right shrink-0">
+            <p className="text-xs tabular-nums text-muted-foreground">{get_data_label(c)}</p>
+            <Badge variant="secondary" className="text-xs mt-1">{get_destinatari_label(c)}</Badge>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const empty_state = (text: string, icon: React.ReactNode) => (
+    <div className="bg-card rounded-xl shadow-card p-12 text-center space-y-3">
+      <div className="flex justify-center text-muted-foreground/40">{icon}</div>
+      <p className="text-sm text-muted-foreground">{text}</p>
+    </div>
+  );
 
   if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
 
@@ -470,68 +550,69 @@ const CommunicationsPage: React.FC = () => {
         <Button className="bg-primary hover:bg-primary/90" onClick={open_new}><Plus className="w-4 h-4 mr-2" /> {t('nuova_comunicazione')}</Button>
       </div>
 
-      <Tabs defaultValue={non_lette_iscrizioni > 0 ? "iscrizioni" : "tutte"} className="w-full">
-        <TabsList>
-          <TabsTrigger value="tutte" className="gap-2">
-            <MessageSquare className="w-4 h-4" /> Tutte
+      <Tabs defaultValue={non_lette_count > 0 ? 'ricevute' : 'inviate'} className="w-full">
+        <TabsList className="flex-wrap h-auto">
+          <TabsTrigger value="inviate" className="gap-2">
+            <Send className="w-4 h-4" /> ✉️ Inviate
+            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">{inviate.length}</Badge>
           </TabsTrigger>
-          <TabsTrigger value="iscrizioni" className="gap-2">
-            <Bell className="w-4 h-4" />
-            <span>🔔 Iscrizioni atleti</span>
-            {non_lette_iscrizioni > 0 && (
-              <Badge variant="destructive" className="h-5 min-w-5 px-1.5 text-[10px]">
-                {non_lette_iscrizioni}
-              </Badge>
+          <TabsTrigger value="ricevute" className="gap-2">
+            <Inbox className="w-4 h-4" /> 📥 Ricevute
+            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">{ricevute.length}</Badge>
+            {non_lette_count > 0 && (
+              <Badge variant="destructive" className="ml-1 h-5 min-w-5 px-1.5 text-[10px]">{non_lette_count} non lette</Badge>
             )}
           </TabsTrigger>
+          {can_see_all && (
+            <TabsTrigger value="conversazioni" className="gap-2">
+              <MessageSquare className="w-4 h-4" /> 🔁 Conversazioni
+            </TabsTrigger>
+          )}
+          {can_see_all && (
+            <TabsTrigger value="archivio" className="gap-2">
+              <Archive className="w-4 h-4" /> 📦 Archivio
+              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">{archivio.length}</Badge>
+            </TabsTrigger>
+          )}
         </TabsList>
 
-        <TabsContent value="tutte" className="mt-4">
-          {comunicazioni.length === 0 ? (
-            <div className="bg-card rounded-xl shadow-card p-12 text-center space-y-4">
-              <MessageSquare className="w-12 h-12 text-muted-foreground/50 mx-auto" />
-              <div className="space-y-1">
-                <h3 className="text-base font-semibold text-foreground">Nessuna comunicazione</h3>
-                <p className="text-sm text-muted-foreground">Crea la tua prima comunicazione per atleti, genitori o iscritti ai corsi.</p>
-              </div>
-              <Button onClick={open_new} className="bg-primary hover:bg-primary/90">
-                <Plus className="w-4 h-4 mr-2" /> {t('nuova_comunicazione')}
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {comunicazioni.filter((c: any) => c.tipo !== 'iscrizione_atleta').map((c: any) => (
-                <div key={c.id} className="bg-card rounded-xl shadow-card p-5 hover:shadow-card-hover transition-shadow">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex gap-3">
-                      <MessageSquare className="w-5 h-5 text-accent shrink-0 mt-0.5" />
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {c.urgente && (
-                            <Badge variant="destructive" className="text-[10px] gap-1">
-                              <AlertTriangle className="w-3 h-3" /> URGENTE
-                            </Badge>
-                          )}
-                          <h3 className="font-semibold text-foreground">{c.titolo}</h3>
-                        </div>
-                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{c.testo}</p>
-                      </div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-xs tabular-nums text-muted-foreground">{get_data_label(c)}</p>
-                      <Badge variant="secondary" className="text-xs mt-1">{get_destinatari_label(c)}</Badge>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+        <TabsContent value="inviate" className="mt-4">
+          {inviate.length === 0
+            ? empty_state('Nessun messaggio inviato.', <Send className="w-12 h-12" />)
+            : <div className="space-y-4">{inviate.map((c: any) => render_card(c))}</div>}
         </TabsContent>
 
-        <TabsContent value="iscrizioni" className="mt-4">
-          <IscrizioniAtletiNotifiche />
+        <TabsContent value="ricevute" className="mt-4">
+          {ricevute.length === 0
+            ? empty_state('Nessun messaggio ricevuto.', <Inbox className="w-12 h-12" />)
+            : <div className="space-y-4">{ricevute.map((c: any) => render_card(c, { highlight_unread: true }))}</div>}
         </TabsContent>
+
+        {can_see_all && (
+          <TabsContent value="conversazioni" className="mt-4">
+            <ConversazioniTab />
+          </TabsContent>
+        )}
+
+        {can_see_all && (
+          <TabsContent value="archivio" className="mt-4 space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                value={archive_search}
+                onChange={(e) => set_archive_search(e.target.value)}
+                placeholder="Cerca nei messaggi archiviati…"
+                className="pl-9"
+              />
+            </div>
+            {archivio.length === 0
+              ? empty_state(archive_search ? 'Nessun risultato.' : 'Nessun messaggio in archivio.', <Archive className="w-12 h-12" />)
+              : <div className="space-y-4">{archivio.map((c: any) => render_card(c))}</div>}
+          </TabsContent>
+        )}
       </Tabs>
+
+
 
 
       <Dialog open={modal_open} onOpenChange={(o) => !o && set_modal_open(false)}>
