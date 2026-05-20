@@ -17,13 +17,13 @@ export const MieiReminderStaffTab: React.FC = () => {
   const [busy_id, set_busy_id] = React.useState<string | null>(null);
 
   const { data: reminders = [], isLoading } = useQuery({
-    queryKey: ["miei_reminder_staff", user?.id, club_id],
-    enabled: !!user?.id && !!club_id,
+    queryKey: ["miei_reminder_staff", user_id, club_id],
+    enabled: !!user_id && !!club_id,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("comunicazioni_destinatari_staff")
         .select("id, stato, rsvp_risposta, rsvp_at, creato_at, comunicazione_id, comunicazioni!inner(id, titolo, testo, sotto_tipo, data_evento, urgente)")
-        .eq("user_id", user!.id)
+        .eq("user_id", user_id!)
         .eq("club_id", club_id)
         .eq("comunicazioni.sotto_tipo", "reminder_staff")
         .order("creato_at", { ascending: false })
