@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -6,16 +6,32 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
 
-const TIPI = [
-  { value: "orario", label: "A ore (costo al minuto)" },
+type TipoContratto = "orario" | "fisso_mensile" | "fisso_corsi" | "misto";
+
+const TIPI: { value: TipoContratto; label: string }[] = [
+  { value: "orario", label: "A ore" },
   { value: "fisso_mensile", label: "Fisso mensile" },
   { value: "fisso_corsi", label: "Fisso corsi + variabile lezioni private" },
   { value: "misto", label: "Fisso mensile + variabile lezioni private" },
 ];
 
-function to_num(v: string): number {
+// Mappa obbligatorietà campi per modalità
+const REQUIRED: Record<TipoContratto, {
+  prezzo_min: boolean;
+  costo_corsi: boolean;
+  costo_lezioni: boolean;
+  fisso_mensile: boolean;
+}> = {
+  orario:        { prezzo_min: true,  costo_corsi: true,  costo_lezioni: false, fisso_mensile: false },
+  fisso_mensile: { prezzo_min: false, costo_corsi: false, costo_lezioni: false, fisso_mensile: true  },
+  fisso_corsi:   { prezzo_min: true,  costo_corsi: true,  costo_lezioni: true,  fisso_mensile: false },
+  misto:         { prezzo_min: true,  costo_corsi: false, costo_lezioni: true,  fisso_mensile: true  },
+};
+
+function to_num(v: string): number | null {
+  if (v === "" || v == null) return null;
   const n = parseFloat(String(v).replace(",", "."));
-  return isNaN(n) ? 0 : n;
+  return isNaN(n) ? null : n;
 }
 
 interface Props {
@@ -27,42 +43,41 @@ interface Props {
 }
 
 export const CompensoStaffModal: React.FC<Props> = ({ open, atleta, livello, on_saved, on_cancel }) => {
-  const [tipo, set_tipo] = useState("orario");
+  const [tipo, set_tipo] = useState<TipoContratto>("orario");
   const [prezzo_min, set_prezzo_min] = useState("");
   const [costo_lezioni, set_costo_lezioni] = useState("");
   const [costo_corsi, set_costo_corsi] = useState("");
   const [fisso_mensile, set_fisso_mensile] = useState("");
-  const [fisso_corsi, set_fisso_corsi] = useState("");
   const [saving, set_saving] = useState(false);
   const [cancelling, set_cancelling] = useState(false);
   const [confirm_cancel, set_confirm_cancel] = useState(false);
 
   const livello_label = livello === "monitrice" ? "Monitrice" : "Aiuto monitrice";
+  const req = REQUIRED[tipo];
 
-  // Validazione: campi minimi obbligatori per modalità
-  const needs_prezzo_min = tipo === "orario" || tipo === "fisso_corsi" || tipo === "misto";
-  const needs_fisso_mensile = tipo === "fisso_mensile" || tipo === "misto";
-  const needs_fisso_corsi = tipo === "fisso_corsi";
-
-  const can_save =
-    (!needs_prezzo_min || to_num(prezzo_min) > 0) &&
-    (!needs_fisso_mensile || to_num(fisso_mensile) > 0) &&
-    (!needs_fisso_corsi || to_num(fisso_corsi) > 0) &&
-    (to_num(costo_lezioni) > 0 || to_num(costo_corsi) > 0);
+  const can_save = useMemo(() => {
+    if (req.prezzo_min && !(to_num(prezzo_min) ?? 0) ) return false;
+    if (req.costo_corsi && !(to_num(costo_corsi) ?? 0)) return false;
+    if (req.costo_lezioni && !(to_num(costo_lezioni) ?? 0)) return false;
+    if (req.fisso_mensile && !(to_num(fisso_mensile) ?? 0)) return false;
+    return true;
+  }, [req, prezzo_min, costo_corsi, costo_lezioni, fisso_mensile]);
 
   const handle_save = async () => {
     set_saving(true);
     try {
+      // Salva NULL per campi non applicabili alla modalità scelta
+      const payload: Record<string, unknown> = {
+        tipo_contratto: tipo,
+        costo_minuto_lezione_privata: req.prezzo_min ? to_num(prezzo_min) : null,
+        costo_orario_corsi: req.costo_corsi ? to_num(costo_corsi) : null,
+        costo_orario_lezioni: req.costo_lezioni ? to_num(costo_lezioni) : null,
+        compenso_fisso_mensile: req.fisso_mensile ? to_num(fisso_mensile) : null,
+        compenso_fisso_corsi: null,
+      };
       const { error } = await supabase
         .from("istruttori")
-        .update({
-          tipo_contratto: tipo,
-          costo_minuto_lezione_privata: to_num(prezzo_min),
-          costo_orario_lezioni: to_num(costo_lezioni),
-          costo_orario_corsi: to_num(costo_corsi),
-          compenso_fisso_mensile: to_num(fisso_mensile),
-          compenso_fisso_corsi: to_num(fisso_corsi),
-        } as any)
+        .update(payload as any)
         .eq("linked_atleta_id", atleta.id);
       if (error) throw error;
       toast({ title: "✅ Compenso salvato" });
@@ -85,6 +100,40 @@ export const CompensoStaffModal: React.FC<Props> = ({ open, atleta, livello, on_
 
   const input_cls =
     "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
+
+  const renderField = (
+    show: boolean,
+    label: string,
+    value: string,
+    setter: (v: string) => void,
+    placeholder?: string,
+    step = "0.01",
+  ) => {
+    if (!show) {
+      return (
+        <div className="space-y-1.5 opacity-50">
+          <Label className="text-xs">{label}</Label>
+          <div className="rounded-lg border border-dashed border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground italic">
+            non applicabile per questa modalità
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className="space-y-1.5">
+        <Label className="text-xs">{label} *</Label>
+        <input
+          type="number"
+          step={step}
+          min="0"
+          value={value}
+          onChange={(e) => setter(e.target.value)}
+          className={input_cls}
+          placeholder={placeholder}
+        />
+      </div>
+    );
+  };
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
@@ -122,7 +171,7 @@ export const CompensoStaffModal: React.FC<Props> = ({ open, atleta, livello, on_
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Modalità compenso</Label>
-              <RadioGroup value={tipo} onValueChange={set_tipo}>
+              <RadioGroup value={tipo} onValueChange={(v) => set_tipo(v as TipoContratto)}>
                 {TIPI.map((t) => (
                   <div key={t.value} className="flex items-center gap-2">
                     <RadioGroupItem value={t.value} id={`tipo_${t.value}`} />
@@ -135,74 +184,14 @@ export const CompensoStaffModal: React.FC<Props> = ({ open, atleta, livello, on_
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              {needs_prezzo_min && (
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Prezzo vendita (CHF/min) *</Label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={prezzo_min}
-                    onChange={(e) => set_prezzo_min(e.target.value)}
-                    className={input_cls}
-                    placeholder="es. 0.50"
-                  />
-                </div>
-              )}
-              {needs_fisso_mensile && (
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Compenso fisso mensile (CHF) *</Label>
-                  <input
-                    type="number"
-                    step="1"
-                    min="0"
-                    value={fisso_mensile}
-                    onChange={(e) => set_fisso_mensile(e.target.value)}
-                    className={input_cls}
-                  />
-                </div>
-              )}
-              {needs_fisso_corsi && (
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Compenso fisso corsi (CHF) *</Label>
-                  <input
-                    type="number"
-                    step="1"
-                    min="0"
-                    value={fisso_corsi}
-                    onChange={(e) => set_fisso_corsi(e.target.value)}
-                    className={input_cls}
-                  />
-                </div>
-              )}
-              <div className="space-y-1.5">
-                <Label className="text-xs">Costo interno lezioni private (CHF/h)</Label>
-                <input
-                  type="number"
-                  step="0.5"
-                  min="0"
-                  value={costo_lezioni}
-                  onChange={(e) => set_costo_lezioni(e.target.value)}
-                  className={input_cls}
-                  placeholder="es. 20"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Costo interno corsi e altro (CHF/h)</Label>
-                <input
-                  type="number"
-                  step="0.5"
-                  min="0"
-                  value={costo_corsi}
-                  onChange={(e) => set_costo_corsi(e.target.value)}
-                  className={input_cls}
-                  placeholder="es. 18"
-                />
-              </div>
+              {renderField(req.prezzo_min, "Prezzo vendita (CHF/min)", prezzo_min, set_prezzo_min, "es. 0.50")}
+              {renderField(req.fisso_mensile, "Compenso fisso mensile (CHF)", fisso_mensile, set_fisso_mensile, "es. 800", "1")}
+              {renderField(req.costo_corsi, "Costo interno corsi (CHF/h)", costo_corsi, set_costo_corsi, "es. 18", "0.5")}
+              {renderField(req.costo_lezioni, "Costo interno lezioni private (CHF/h)", costo_lezioni, set_costo_lezioni, "es. 20", "0.5")}
             </div>
 
             <p className="text-xs text-muted-foreground">
-              * Almeno un costo orario interno (lezioni o corsi) deve essere &gt; 0
+              Solo i campi contrassegnati con * per la modalità scelta sono obbligatori. Gli altri vengono salvati come NULL.
             </p>
 
             <div className="flex justify-between gap-2 pt-2">
