@@ -2302,42 +2302,120 @@ export type Database = {
         }
         Relationships: []
       }
+      ore_lavorate_dettaglio: {
+        Row: {
+          club_id: string
+          confermato_at: string | null
+          confermato_da: string | null
+          created_at: string
+          data: string
+          id: string
+          istruttore_id: string
+          motivo: string | null
+          note: string | null
+          ora_fine: string | null
+          ora_inizio: string | null
+          ore_calcolate: number
+          planning_corso_id: string | null
+          source_presenza_id: string | null
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          club_id: string
+          confermato_at?: string | null
+          confermato_da?: string | null
+          created_at?: string
+          data: string
+          id?: string
+          istruttore_id: string
+          motivo?: string | null
+          note?: string | null
+          ora_fine?: string | null
+          ora_inizio?: string | null
+          ore_calcolate?: number
+          planning_corso_id?: string | null
+          source_presenza_id?: string | null
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          club_id?: string
+          confermato_at?: string | null
+          confermato_da?: string | null
+          created_at?: string
+          data?: string
+          id?: string
+          istruttore_id?: string
+          motivo?: string | null
+          note?: string | null
+          ora_fine?: string | null
+          ora_inizio?: string | null
+          ore_calcolate?: number
+          planning_corso_id?: string | null
+          source_presenza_id?: string | null
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ore_lavorate_istruttori: {
         Row: {
+          anno: number | null
           club_id: string
           created_at: string
           id: string
           istruttore_id: string
+          mese: number | null
+          note_extra: string | null
           ore_amministrative: number | null
+          ore_campi: number | null
           ore_corsi: number | null
           ore_eventi: number | null
+          ore_extra: number | null
+          ore_gare: number | null
           ore_lezioni_private: number | null
           periodo: string
           stagione_id: string
+          updated_at: string
         }
         Insert: {
+          anno?: number | null
           club_id: string
           created_at?: string
           id?: string
           istruttore_id: string
+          mese?: number | null
+          note_extra?: string | null
           ore_amministrative?: number | null
+          ore_campi?: number | null
           ore_corsi?: number | null
           ore_eventi?: number | null
+          ore_extra?: number | null
+          ore_gare?: number | null
           ore_lezioni_private?: number | null
           periodo: string
           stagione_id: string
+          updated_at?: string
         }
         Update: {
+          anno?: number | null
           club_id?: string
           created_at?: string
           id?: string
           istruttore_id?: string
+          mese?: number | null
+          note_extra?: string | null
           ore_amministrative?: number | null
+          ore_campi?: number | null
           ore_corsi?: number | null
           ore_eventi?: number | null
+          ore_extra?: number | null
+          ore_gare?: number | null
           ore_lezioni_private?: number | null
           periodo?: string
           stagione_id?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -3676,6 +3754,10 @@ export type Database = {
       is_mobile_parent: { Args: never; Returns: boolean }
       mobile_atleta_id: { Args: never; Returns: string }
       mobile_club_id: { Args: never; Returns: string }
+      ricalcola_cache_ore_mensile: {
+        Args: { p_anno: number; p_istruttore_id: string; p_mese: number }
+        Returns: undefined
+      }
       slot_liberi_istruttore: {
         Args: { p_data_a: string; p_data_da: string; p_istruttore_id: string }
         Returns: {
