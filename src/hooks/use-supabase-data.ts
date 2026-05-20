@@ -107,7 +107,10 @@ function transform_atleta(a: any) {
     dataNascita: a.data_nascita || "",
     orePista: a.ore_pista_stagione ?? 0,
     foto: a.foto_url || undefined,
-    livello_amatori: livello_attuale,
+    // NON sovrascrivere livello_amatori: deve restare il valore reale del DB
+    // (NULL oppure uno tra "Stellina 1..4") per rispettare il CHECK constraint
+    // al salvataggio. Per un riassunto del livello usare `livello_attuale`.
+    livello_amatori: a.livello_amatori ?? null,
     percorso_amatori_completato: !!(a.carriera_artistica || a.carriera_stile),
     stato: a.attivo ? "attivo" : "inattivo",
     ore_pista_stagione: a.ore_pista_stagione ?? 0,
