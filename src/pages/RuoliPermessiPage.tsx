@@ -124,7 +124,6 @@ const RuoliPermessiPage: React.FC = () => {
               {RUOLI.map((r) => (
                 <th key={r.codice} className="text-center px-3 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wide">
                   {r.label}
-                  {r.forced && <div className="text-[9px] font-normal normal-case text-primary mt-0.5">vede tutto</div>}
                 </th>
               ))}
             </tr>
@@ -148,15 +147,38 @@ const RuoliPermessiPage: React.FC = () => {
                         <input
                           type="checkbox"
                           checked={matrix[r.codice]?.[sezione.codice] ?? false}
-                          disabled={r.forced}
                           onChange={() => toggle(r.codice, sezione.codice)}
-                          className="w-4 h-4 rounded border-gray-300 text-primary cursor-pointer accent-primary disabled:opacity-60 disabled:cursor-not-allowed"
+                          className="w-4 h-4 rounded border-gray-300 text-primary cursor-pointer accent-primary"
                         />
                       </td>
                     ))}
                   </tr>
                 ))}
               </React.Fragment>
+            ))}
+            {/* Permessi extra (sezioni interne, non in menu) */}
+            <tr className="bg-muted/20 border-b border-border">
+              <td colSpan={1 + RUOLI.length} className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                Permessi sensibili
+              </td>
+            </tr>
+            {PERMESSI_EXTRA.map((sezione, idx) => (
+              <tr key={sezione.codice} className={`border-b border-border/50 ${idx % 2 === 0 ? "bg-background" : "bg-muted/10"}`}>
+                <td className="px-4 py-3 text-sm font-medium text-foreground flex items-center gap-2">
+                  <sezione.icon className="w-4 h-4 text-muted-foreground" />
+                  {sezione.label}
+                </td>
+                {RUOLI.map((r) => (
+                  <td key={r.codice} className="px-3 py-3 text-center">
+                    <input
+                      type="checkbox"
+                      checked={matrix[r.codice]?.[sezione.codice] ?? false}
+                      onChange={() => toggle(r.codice, sezione.codice)}
+                      className="w-4 h-4 rounded border-gray-300 text-primary cursor-pointer accent-primary"
+                    />
+                  </td>
+                ))}
+              </tr>
             ))}
           </tbody>
         </table>
