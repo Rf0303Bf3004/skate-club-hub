@@ -36,6 +36,11 @@ const RuoliPermessiPage: React.FC = () => {
   const [saving, set_saving] = useState(false);
   const [matrix, set_matrix] = useState<Record<string, Record<string, boolean>>>({});
 
+  // Solo admin/superadmin possono accedere a questa pagina
+  if (session && !is_admin_like(session.ruolo)) {
+    return <Navigate to="/" replace />;
+  }
+
   const { isLoading } = useQuery({
     queryKey: ["ruoli_permessi_sezioni_admin", club_id],
     queryFn: async () => {
@@ -48,13 +53,9 @@ const RuoliPermessiPage: React.FC = () => {
       const m: Record<string, Record<string, boolean>> = {};
       for (const r of RUOLI) {
         m[r.codice] = {};
-        for (const s of MENU_SECTIONS) {
-          if (r.forced) {
-            m[r.codice][s.codice] = true;
-          } else {
-            const p = (data ?? []).find((x: any) => x.ruolo === r.codice && x.codice_sezione === s.codice);
-            m[r.codice][s.codice] = p ? p.visibile : false;
-          }
+        for (const codice of ALL_PERMESSI_CODES) {
+          const p = (data ?? []).find((x: any) => x.ruolo === r.codice && x.codice_sezione === codice);
+          m[r.codice][codice] = p ? p.visibile : false;
         }
       }
       set_matrix(m);
@@ -73,12 +74,12 @@ const RuoliPermessiPage: React.FC = () => {
     try {
       const rows: any[] = [];
       for (const r of RUOLI) {
-        for (const s of MENU_SECTIONS) {
+        for (const codice of ALL_PERMESSI_CODES) {
           rows.push({
             club_id,
             ruolo: r.codice,
-            codice_sezione: s.codice,
-            visibile: r.forced ? true : (matrix[r.codice]?.[s.codice] ?? false),
+            codice_sezione: codice,
+            visibile: matrix[r.codice]?.[codice] ?? false,
           });
         }
       }
