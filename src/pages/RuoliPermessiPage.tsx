@@ -3,17 +3,30 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
-import { Shield, Save } from "lucide-react";
+import { Navigate } from "react-router-dom";
+import { Shield, Save, Clock, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DashboardCardsPermessi from "@/components/ruoli-permessi/DashboardCardsPermessi";
 import { MENU_SECTIONS } from "@/config/menuSections";
+import { is_admin_like } from "@/lib/roles";
 
 const RUOLI = [
-  { codice: "presidente", label: "Presidente", forced: true },
+  { codice: "presidente", label: "Presidente", forced: false },
   { codice: "segreteria", label: "Segreteria", forced: false },
   { codice: "dt", label: "Direttore Tecnico", forced: false },
   { codice: "istruttore", label: "Istruttore", forced: false },
   { codice: "aiuto_monitore", label: "Aiuto Monitore", forced: false },
+];
+
+// Permessi extra non legati a una voce di menu (ma a sezioni interne)
+const PERMESSI_EXTRA = [
+  { codice: "ore_lavorate",     label: "Ore lavorate",     icon: Clock },
+  { codice: "costi_istruttori", label: "Costi istruttori", icon: DollarSign },
+];
+
+const ALL_PERMESSI_CODES = [
+  ...MENU_SECTIONS.map((s) => s.codice),
+  ...PERMESSI_EXTRA.map((s) => s.codice),
 ];
 
 const RuoliPermessiPage: React.FC = () => {
