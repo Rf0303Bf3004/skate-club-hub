@@ -287,7 +287,11 @@ const GestoreUtenti: React.FC<{ club_id: string; club_nome: string }> = ({ club_
         />
         <select value={nuovo_ruolo} onChange={(e) => set_nuovo_ruolo(e.target.value)} className={input_cls}>
           <option value="admin">Admin</option>
-          <option value="staff">Staff</option>
+          <option value="presidente">Presidente</option>
+          <option value="dt">Direttore Tecnico</option>
+          <option value="segreteria">Segreteria</option>
+          <option value="istruttore">Istruttore</option>
+          <option value="aiuto_monitore">Aiuto Monitore</option>
         </select>
         <Button onClick={handle_aggiungi_utente} disabled={adding} className="w-full">
           {adding ? "..." : "➕ Aggiungi utente"}

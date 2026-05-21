@@ -164,8 +164,11 @@ export function RegoleComunicazioniSection({ club_id }: { club_id: string | null
                 disabled={saving_id === r.id}
                 onChange={(e) => update_regola(r, { destinatario_notifica: e.target.value })}
               >
-                <option value="admin">Admin (DT)</option>
-                <option value="staff">Staff</option>
+                <option value="admin">Admin</option>
+                <option value="dt">Direttore Tecnico</option>
+                <option value="presidente">Presidente</option>
+                <option value="segreteria">Segreteria</option>
+                <option value="staff">Staff (tutti)</option>
                 <option value="entrambi">Entrambi</option>
               </select>
             </div>

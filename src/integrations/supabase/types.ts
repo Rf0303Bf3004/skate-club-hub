@@ -3846,6 +3846,9 @@ export type Database = {
         }[]
       }
       sync_atleta_to_staff: { Args: { p_atleta_id: string }; Returns: string }
+      user_club_id: { Args: never; Returns: string }
+      user_has_ruolo: { Args: { _ruolo: string }; Returns: boolean }
+      user_is_admin_like: { Args: never; Returns: boolean }
     }
     Enums: {
       livello_istruttore_enum: "istruttore" | "monitrice" | "aiuto_monitrice"
