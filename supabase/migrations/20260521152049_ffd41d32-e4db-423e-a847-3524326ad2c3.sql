@@ -1,0 +1,1 @@
+ALTER VIEW public.kpi_pitch_sponsor SET (security_invoker = true);
