@@ -212,9 +212,10 @@ function use_dashboard_data(CLUB_ID: string | undefined, stagione_id: string | n
   });
 }
 
-function use_catalogo_data() {
+function use_catalogo_data(CLUB_ID: string | undefined) {
   return useQuery({
     queryKey: ["pres_catalogo", CLUB_ID],
+    enabled: !!CLUB_ID,
     staleTime: 30_000,
     queryFn: async () => {
       const sb: any = supabase;
