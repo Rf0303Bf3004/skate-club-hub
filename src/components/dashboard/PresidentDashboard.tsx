@@ -1815,7 +1815,8 @@ const MiniSparkline: React.FC<{ data: number[]; color?: string }> = ({ data, col
 // ─── MAIN ─────────────────────────────────────────────────────────────
 const PresidentDashboard: React.FC = () => {
   const { session } = useAuth();
-  const { data: stagioni = [] } = use_stagioni_demo();
+  const club_id = session?.club_id;
+  const { data: stagioni = [] } = use_stagioni_demo(club_id);
   const stagioniOrd = useMemo(() => stagioni.slice().sort((a, b) => b.data_inizio.localeCompare(a.data_inizio)), [stagioni]);
   const [stagioneId, setStagioneId] = useState<string>("");
   const [confronta, setConfronta] = useState(true);
@@ -1831,8 +1832,8 @@ const PresidentDashboard: React.FC = () => {
   const idx = stagioniOrd.findIndex((s) => s.id === stagioneId);
   const prevStagId = idx >= 0 && idx + 1 < stagioniOrd.length ? stagioniOrd[idx + 1].id : null;
 
-  const { data: d, isLoading } = use_dashboard_data(stagioneId, prevStagId);
-  const { data: cat } = use_catalogo_data();
+  const { data: d, isLoading } = use_dashboard_data(club_id, stagioneId, prevStagId);
+  const { data: cat } = use_catalogo_data(club_id);
   const stagioneNome = stagioniOrd.find((s) => s.id === stagioneId)?.nome || "—";
 
   if (isLoading || !d || !stagioneId) {
