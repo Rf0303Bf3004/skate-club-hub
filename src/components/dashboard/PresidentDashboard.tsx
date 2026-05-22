@@ -71,7 +71,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-const CLUB_ID = "00030001-0000-0000-0000-000000000001";
+
 
 // ─── Helpers ──────────────────────────────────────────────────────────
 const fmt_chf = (n: number) =>
