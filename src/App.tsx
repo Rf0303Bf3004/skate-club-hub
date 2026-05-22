@@ -42,6 +42,7 @@ import PresidentRelazione from "@/pages/PresidentRelazione";
 import PacchettiSponsorPage from "@/pages/PacchettiSponsorPage";
 import RegisterClubPage from "@/pages/RegisterClubPage";
 import OnboardingPage from "@/pages/OnboardingPage";
+import LegalPlaceholderPage from "@/pages/LegalPlaceholderPage";
 
 const queryClient = new QueryClient();
 
