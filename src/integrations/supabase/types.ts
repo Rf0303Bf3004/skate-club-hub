@@ -565,6 +565,8 @@ export type Database = {
       }
       clubs: {
         Row: {
+          attivo: boolean
+          cantone: string | null
           cap: string | null
           citta: string | null
           colore_primario: string | null
@@ -576,16 +578,20 @@ export type Database = {
           logo_url: string | null
           nome: string
           numero_tessera_federale: string | null
+          onboarding_completato: boolean
           paese: string | null
           reminder_allenamenti_attivo: boolean
           reminder_anticipo_giorni: number
           reminder_last_run_date: string | null
           reminder_orario_invio: number
           reminder_staff_attivo: boolean
+          sigla: string | null
           sito_web: string | null
           telefono: string | null
         }
         Insert: {
+          attivo?: boolean
+          cantone?: string | null
           cap?: string | null
           citta?: string | null
           colore_primario?: string | null
@@ -597,16 +603,20 @@ export type Database = {
           logo_url?: string | null
           nome?: string
           numero_tessera_federale?: string | null
+          onboarding_completato?: boolean
           paese?: string | null
           reminder_allenamenti_attivo?: boolean
           reminder_anticipo_giorni?: number
           reminder_last_run_date?: string | null
           reminder_orario_invio?: number
           reminder_staff_attivo?: boolean
+          sigla?: string | null
           sito_web?: string | null
           telefono?: string | null
         }
         Update: {
+          attivo?: boolean
+          cantone?: string | null
           cap?: string | null
           citta?: string | null
           colore_primario?: string | null
@@ -618,12 +628,14 @@ export type Database = {
           logo_url?: string | null
           nome?: string
           numero_tessera_federale?: string | null
+          onboarding_completato?: boolean
           paese?: string | null
           reminder_allenamenti_attivo?: boolean
           reminder_anticipo_giorni?: number
           reminder_last_run_date?: string | null
           reminder_orario_invio?: number
           reminder_staff_attivo?: boolean
+          sigla?: string | null
           sito_web?: string | null
           telefono?: string | null
         }
@@ -4048,6 +4060,7 @@ export type Database = {
         Args: { p_club_id: string }
         Returns: undefined
       }
+      seed_permessi_default: { Args: { p_club_id: string }; Returns: undefined }
       slot_liberi_istruttore: {
         Args: { p_data_a: string; p_data_da: string; p_istruttore_id: string }
         Returns: {

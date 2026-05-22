@@ -40,6 +40,8 @@ import EventiPage from "@/pages/EventiPage";
 import PresidentRelazioneGestione from "@/pages/PresidentRelazioneGestione";
 import PresidentRelazione from "@/pages/PresidentRelazione";
 import PacchettiSponsorPage from "@/pages/PacchettiSponsorPage";
+import RegisterClubPage from "@/pages/RegisterClubPage";
+import OnboardingPage from "@/pages/OnboardingPage";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +54,15 @@ const PublicRoutes = ({ children }: { children: React.ReactNode }) => {
         <Routes>
           <Route path="/portale-atleta" element={<PortaleAtletaPage />} />
           <Route path="/portale-atleta/:token" element={<PortaleAtletaPage />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
+  if (path === "/registrati") {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/registrati" element={<RegisterClubPage />} />
         </Routes>
       </BrowserRouter>
     );
@@ -132,6 +143,7 @@ const AuthenticatedApp = () => {
           <Route path="/test-mobile-auth" element={<TestMobileAuthPage />} />
           <Route path="/import-atleti" element={<ImportAtletiPage />} />
           <Route path="/pacchetti-sponsor" element={<PacchettiSponsorPage />} />
+          <Route path="/onboarding" element={<OnboardingPage />} />
           <Route path="/presidente/relazione" element={<PresidentRelazione />} />
           <Route path="/presidente/relazione/contenuti" element={<PresidentRelazione />} />
           <Route path="/presidente/gestione-relazione" element={<Navigate to="/presidente/relazione/contenuti" replace />} />

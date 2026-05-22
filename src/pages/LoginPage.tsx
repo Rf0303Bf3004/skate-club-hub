@@ -86,7 +86,9 @@ const LoginPage: React.FC = () => {
             </Button>
           </form>
 
-          
+          <p className="mt-6 text-center text-sm text-muted-foreground">
+            Nuovo club? <a href="/registrati" className="text-primary underline">Registrati</a>
+          </p>
         </div>
       </div>
     </div>
