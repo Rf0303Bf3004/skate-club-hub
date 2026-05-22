@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -12,15 +13,21 @@ const CANTONI = [
   "SG","SH","SO","SZ","TG","TI","UR","VD","VS","ZG","ZH",
 ];
 
+const FEDERAZIONI = ["FSP", "ISU", "altro", "nessuna"];
+
 export default function RegisterClubPage() {
   const [loading, setLoading] = useState(false);
+  const [accettaTermini, setAccettaTermini] = useState(false);
   const [form, setForm] = useState({
     nome_club: "",
     sigla: "",
     cantone: "",
     citta: "",
+    federazione: "",
+    federazione_altro: "",
     email_presidente: "",
     password: "",
+    password_conferma: "",
     nome_presidente: "",
     cognome_presidente: "",
     telefono: "",
@@ -30,28 +37,45 @@ export default function RegisterClubPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (form.password.length < 8) {
-      toast.error("Password minimo 8 caratteri");
-      return;
+    if (!form.citta.trim()) { toast.error("La città è obbligatoria"); return; }
+    if (!form.federazione) { toast.error("Seleziona la federazione (o 'nessuna')"); return; }
+    if (form.federazione === "altro" && !form.federazione_altro.trim()) {
+      toast.error("Specifica il nome della federazione"); return;
     }
+    if (form.password.length < 8) { toast.error("Password minimo 8 caratteri"); return; }
+    if (form.password !== form.password_conferma) { toast.error("Le due password non coincidono"); return; }
+    if (!accettaTermini) { toast.error("Devi accettare termini e privacy per continuare"); return; }
+
+    const federazione_finale =
+      form.federazione === "altro" ? form.federazione_altro.trim() :
+      form.federazione === "nessuna" ? "" : form.federazione;
+
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("register-club", { body: form });
+      const { data, error } = await supabase.functions.invoke("register-club", {
+        body: {
+          nome_club: form.nome_club,
+          sigla: form.sigla,
+          cantone: form.cantone,
+          citta: form.citta,
+          federazione: federazione_finale,
+          email_presidente: form.email_presidente,
+          password: form.password,
+          nome_presidente: form.nome_presidente,
+          cognome_presidente: form.cognome_presidente,
+          telefono: form.telefono,
+        },
+      });
       if (error || (data as any)?.error) {
         toast.error((data as any)?.error || error?.message || "Errore registrazione");
         setLoading(false);
         return;
       }
-      // Auto-login
       const { error: loginErr } = await supabase.auth.signInWithPassword({
         email: form.email_presidente.trim().toLowerCase(),
         password: form.password,
       });
-      if (loginErr) {
-        toast.error(loginErr.message);
-        setLoading(false);
-        return;
-      }
+      if (loginErr) { toast.error(loginErr.message); setLoading(false); return; }
       toast.success("Club creato! Benvenuto.");
       window.location.href = "/onboarding";
     } catch (err) {
@@ -91,10 +115,32 @@ export default function RegisterClubPage() {
                   {CANTONI.map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
-              <div className="md:col-span-2">
-                <Label>Città</Label>
-                <Input value={form.citta} onChange={(e) => update("citta", e.target.value)} />
+              <div>
+                <Label>Città *</Label>
+                <Input required value={form.citta} onChange={(e) => update("citta", e.target.value)} />
               </div>
+              <div>
+                <Label>Federazione *</Label>
+                <select
+                  required
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={form.federazione}
+                  onChange={(e) => update("federazione", e.target.value)}
+                >
+                  <option value="">— Seleziona —</option>
+                  {FEDERAZIONI.map((f) => <option key={f} value={f}>{f}</option>)}
+                </select>
+              </div>
+              {form.federazione === "altro" && (
+                <div className="md:col-span-2">
+                  <Label>Specifica federazione *</Label>
+                  <Input
+                    required
+                    value={form.federazione_altro}
+                    onChange={(e) => update("federazione_altro", e.target.value)}
+                  />
+                </div>
+              )}
               <hr className="md:col-span-2 my-2" />
               <div>
                 <Label>Nome presidente *</Label>
@@ -112,11 +158,28 @@ export default function RegisterClubPage() {
                 <Label>Telefono</Label>
                 <Input value={form.telefono} onChange={(e) => update("telefono", e.target.value)} />
               </div>
-              <div className="md:col-span-2">
-                <Label>Password * (min 8 caratteri)</Label>
+              <div>
+                <Label>Password * (min 8)</Label>
                 <Input type="password" required minLength={8} value={form.password} onChange={(e) => update("password", e.target.value)} />
               </div>
+              <div>
+                <Label>Conferma password *</Label>
+                <Input type="password" required minLength={8} value={form.password_conferma} onChange={(e) => update("password_conferma", e.target.value)} />
+              </div>
             </div>
+
+            <div className="flex items-start gap-2 pt-2">
+              <Checkbox
+                id="termini"
+                checked={accettaTermini}
+                onCheckedChange={(v) => setAccettaTermini(v === true)}
+              />
+              <label htmlFor="termini" className="text-sm text-muted-foreground leading-tight cursor-pointer">
+                Accetto i <a className="text-primary underline" href="/termini" target="_blank" rel="noreferrer">Termini</a>{" "}
+                e l'<a className="text-primary underline" href="/privacy" target="_blank" rel="noreferrer">Informativa Privacy</a>.
+              </label>
+            </div>
+
             <Button type="submit" disabled={loading} className="w-full">
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Crea club e accedi
