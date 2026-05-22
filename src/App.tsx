@@ -143,6 +143,7 @@ const AuthenticatedApp = () => {
           <Route path="/test-mobile-auth" element={<TestMobileAuthPage />} />
           <Route path="/import-atleti" element={<ImportAtletiPage />} />
           <Route path="/pacchetti-sponsor" element={<PacchettiSponsorPage />} />
+          <Route path="/onboarding" element={<OnboardingPage />} />
           <Route path="/presidente/relazione" element={<PresidentRelazione />} />
           <Route path="/presidente/relazione/contenuti" element={<PresidentRelazione />} />
           <Route path="/presidente/gestione-relazione" element={<Navigate to="/presidente/relazione/contenuti" replace />} />
