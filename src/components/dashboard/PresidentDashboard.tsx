@@ -132,15 +132,16 @@ const FONTE_COLOR: Record<string, string> = {
 // ─── Data fetching ────────────────────────────────────────────────────
 type Stagione = { id: string; nome: string; data_inizio: string; data_fine: string; attiva: boolean };
 
-function use_stagioni_demo() {
+function use_stagioni_demo(CLUB_ID: string | undefined) {
   return useQuery<Stagione[]>({
-    queryKey: ["pres_stagioni"],
+    queryKey: ["pres_stagioni", CLUB_ID],
+    enabled: !!CLUB_ID,
     staleTime: 30_000,
     queryFn: async () => {
       const { data } = await supabase
         .from("stagioni")
         .select("id, nome, data_inizio, data_fine, attiva")
-        .eq("club_id", CLUB_ID)
+        .eq("club_id", CLUB_ID as string)
         .order("data_inizio", { ascending: false });
       return (data as any) || [];
     },
