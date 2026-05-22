@@ -71,7 +71,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-const CLUB_ID = "00030001-0000-0000-0000-000000000001";
+
 
 // ─── Helpers ──────────────────────────────────────────────────────────
 const fmt_chf = (n: number) =>
@@ -132,25 +132,26 @@ const FONTE_COLOR: Record<string, string> = {
 // ─── Data fetching ────────────────────────────────────────────────────
 type Stagione = { id: string; nome: string; data_inizio: string; data_fine: string; attiva: boolean };
 
-function use_stagioni_demo() {
+function use_stagioni_demo(CLUB_ID: string | undefined) {
   return useQuery<Stagione[]>({
-    queryKey: ["pres_stagioni"],
+    queryKey: ["pres_stagioni", CLUB_ID],
+    enabled: !!CLUB_ID,
     staleTime: 30_000,
     queryFn: async () => {
       const { data } = await supabase
         .from("stagioni")
         .select("id, nome, data_inizio, data_fine, attiva")
-        .eq("club_id", CLUB_ID)
+        .eq("club_id", CLUB_ID as string)
         .order("data_inizio", { ascending: false });
       return (data as any) || [];
     },
   });
 }
 
-function use_dashboard_data(stagione_id: string | null, prev_stagione_id: string | null) {
+function use_dashboard_data(CLUB_ID: string | undefined, stagione_id: string | null, prev_stagione_id: string | null) {
   return useQuery({
-    queryKey: ["pres_dashboard", stagione_id, prev_stagione_id],
-    enabled: !!stagione_id,
+    queryKey: ["pres_dashboard", CLUB_ID, stagione_id, prev_stagione_id],
+    enabled: !!CLUB_ID && !!stagione_id,
     staleTime: 30_000,
     queryFn: async () => {
       const ids = [stagione_id, prev_stagione_id].filter(Boolean) as string[];
@@ -211,9 +212,10 @@ function use_dashboard_data(stagione_id: string | null, prev_stagione_id: string
   });
 }
 
-function use_catalogo_data() {
+function use_catalogo_data(CLUB_ID: string | undefined) {
   return useQuery({
     queryKey: ["pres_catalogo", CLUB_ID],
+    enabled: !!CLUB_ID,
     staleTime: 30_000,
     queryFn: async () => {
       const sb: any = supabase;
@@ -1813,7 +1815,8 @@ const MiniSparkline: React.FC<{ data: number[]; color?: string }> = ({ data, col
 // ─── MAIN ─────────────────────────────────────────────────────────────
 const PresidentDashboard: React.FC = () => {
   const { session } = useAuth();
-  const { data: stagioni = [] } = use_stagioni_demo();
+  const club_id = session?.club_id;
+  const { data: stagioni = [] } = use_stagioni_demo(club_id);
   const stagioniOrd = useMemo(() => stagioni.slice().sort((a, b) => b.data_inizio.localeCompare(a.data_inizio)), [stagioni]);
   const [stagioneId, setStagioneId] = useState<string>("");
   const [confronta, setConfronta] = useState(true);
@@ -1829,8 +1832,8 @@ const PresidentDashboard: React.FC = () => {
   const idx = stagioniOrd.findIndex((s) => s.id === stagioneId);
   const prevStagId = idx >= 0 && idx + 1 < stagioniOrd.length ? stagioniOrd[idx + 1].id : null;
 
-  const { data: d, isLoading } = use_dashboard_data(stagioneId, prevStagId);
-  const { data: cat } = use_catalogo_data();
+  const { data: d, isLoading } = use_dashboard_data(club_id, stagioneId, prevStagId);
+  const { data: cat } = use_catalogo_data(club_id);
   const stagioneNome = stagioniOrd.find((s) => s.id === stagioneId)?.nome || "—";
 
   if (isLoading || !d || !stagioneId) {
