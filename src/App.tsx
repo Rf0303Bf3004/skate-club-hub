@@ -58,6 +58,15 @@ const PublicRoutes = ({ children }: { children: React.ReactNode }) => {
       </BrowserRouter>
     );
   }
+  if (path === "/registrati") {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/registrati" element={<RegisterClubPage />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
   return <>{children}</>;
 };
 
