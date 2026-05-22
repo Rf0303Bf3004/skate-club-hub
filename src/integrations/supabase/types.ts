@@ -566,6 +566,7 @@ export type Database = {
       clubs: {
         Row: {
           attivo: boolean
+          banner_onboarding_chiuso: boolean
           cantone: string | null
           cap: string | null
           citta: string | null
@@ -591,6 +592,7 @@ export type Database = {
         }
         Insert: {
           attivo?: boolean
+          banner_onboarding_chiuso?: boolean
           cantone?: string | null
           cap?: string | null
           citta?: string | null
@@ -616,6 +618,7 @@ export type Database = {
         }
         Update: {
           attivo?: boolean
+          banner_onboarding_chiuso?: boolean
           cantone?: string | null
           cap?: string | null
           citta?: string | null
@@ -959,6 +962,7 @@ export type Database = {
       corsi: {
         Row: {
           attivo: boolean | null
+          capienza_max: number | null
           categoria: string | null
           club_id: string
           costo_annuale: number | null
@@ -979,6 +983,7 @@ export type Database = {
         }
         Insert: {
           attivo?: boolean | null
+          capienza_max?: number | null
           categoria?: string | null
           club_id: string
           costo_annuale?: number | null
@@ -999,6 +1004,7 @@ export type Database = {
         }
         Update: {
           attivo?: boolean | null
+          capienza_max?: number | null
           categoria?: string | null
           club_id?: string
           costo_annuale?: number | null
