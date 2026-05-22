@@ -466,6 +466,7 @@ const CommunicationsPage: React.FC = () => {
   const qc = useQueryClient();
   const ruolo = session?.ruolo;
   const can_see_all = ruolo === 'superadmin' || ruolo === 'admin';
+  const can_see_miei_reminder_staff = ruolo === 'istruttore' || ruolo === 'aiuto_monitore';
 
   const [archive_search, set_archive_search] = useState('');
 
