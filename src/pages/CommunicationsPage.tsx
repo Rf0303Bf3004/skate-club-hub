@@ -466,6 +466,7 @@ const CommunicationsPage: React.FC = () => {
   const qc = useQueryClient();
   const ruolo = session?.ruolo;
   const can_see_all = ruolo === 'superadmin' || ruolo === 'admin';
+  const can_see_miei_reminder_staff = ruolo === 'istruttore' || ruolo === 'aiuto_monitore';
 
   const [archive_search, set_archive_search] = useState('');
 
@@ -564,9 +565,11 @@ const CommunicationsPage: React.FC = () => {
               <Badge variant="destructive" className="ml-1 h-5 min-w-5 px-1.5 text-[10px]">{non_lette_count} non lette</Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="miei_reminder" className="gap-2">
-            <Bell className="w-4 h-4" /> 🔔 I miei reminder
-          </TabsTrigger>
+          {can_see_miei_reminder_staff && (
+            <TabsTrigger value="miei_reminder" className="gap-2">
+              <Bell className="w-4 h-4" /> 🔔 I miei reminder
+            </TabsTrigger>
+          )}
           {can_see_all && (
             <TabsTrigger value="conversazioni" className="gap-2">
               <MessageSquare className="w-4 h-4" /> 🔁 Conversazioni
@@ -592,9 +595,11 @@ const CommunicationsPage: React.FC = () => {
             : <div className="space-y-4">{ricevute.map((c: any) => render_card(c, { highlight_unread: true }))}</div>}
         </TabsContent>
 
-        <TabsContent value="miei_reminder" className="mt-4">
-          <MieiReminderStaffTab />
-        </TabsContent>
+        {can_see_miei_reminder_staff && (
+          <TabsContent value="miei_reminder" className="mt-4">
+            <MieiReminderStaffTab />
+          </TabsContent>
+        )}
 
         {can_see_all && (
           <TabsContent value="conversazioni" className="mt-4">
