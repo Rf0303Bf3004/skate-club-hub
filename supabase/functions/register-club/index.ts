@@ -115,7 +115,6 @@ Deno.serve(async (req) => {
       nome: body.nome_presidente.trim(),
       cognome: body.cognome_presidente.trim(),
       telefono: body.telefono?.trim() || null,
-      email: body.email_presidente.trim().toLowerCase(),
       attivo: true,
     });
     if (ucErr) {
