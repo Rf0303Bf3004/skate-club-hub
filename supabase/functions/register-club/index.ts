@@ -14,6 +14,7 @@ interface Payload {
   sigla?: string;
   cantone?: string;
   citta?: string;
+  federazione?: string;
   email_presidente: string;
   password: string;
   nome_presidente: string;
