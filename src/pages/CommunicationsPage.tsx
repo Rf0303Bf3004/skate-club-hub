@@ -564,9 +564,11 @@ const CommunicationsPage: React.FC = () => {
               <Badge variant="destructive" className="ml-1 h-5 min-w-5 px-1.5 text-[10px]">{non_lette_count} non lette</Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="miei_reminder" className="gap-2">
-            <Bell className="w-4 h-4" /> 🔔 I miei reminder
-          </TabsTrigger>
+          {can_see_miei_reminder_staff && (
+            <TabsTrigger value="miei_reminder" className="gap-2">
+              <Bell className="w-4 h-4" /> 🔔 I miei reminder
+            </TabsTrigger>
+          )}
           {can_see_all && (
             <TabsTrigger value="conversazioni" className="gap-2">
               <MessageSquare className="w-4 h-4" /> 🔁 Conversazioni
