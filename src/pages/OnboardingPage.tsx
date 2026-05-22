@@ -7,22 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2, ArrowLeft, ArrowRight, Plus, Trash2, Upload } from "lucide-react";
+import { Loader2, ArrowLeft, ArrowRight, Plus, Trash2, Upload, BookOpen, UserPlus, Users, LayoutDashboard } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-interface CorsoDraft {
-  nome: string;
-  livello_richiesto: string;
-  costo_mensile: string;
-  capienza_max: string;
-}
-
-interface StaffDraft {
-  nome: string;
-  cognome: string;
-  email: string;
-  ruolo: "istruttore" | "segreteria" | "dt";
-}
 
 interface SlotGhiaccio {
   giorno: string;
@@ -31,6 +17,7 @@ interface SlotGhiaccio {
 }
 
 const GIORNI = ["Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato","Domenica"];
+const TOTAL_STEPS = 3;
 
 export default function OnboardingPage() {
   const { session } = useAuth();
@@ -38,6 +25,7 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [done, setDone] = useState(false);
 
   // Step 1: identity + brand
   const [identity, setIdentity] = useState({
@@ -58,15 +46,7 @@ export default function OnboardingPage() {
     data_fine: "",
   });
 
-  // Step 3: corsi
-  const [corsi, setCorsi] = useState<CorsoDraft[]>([
-    { nome: "", livello_richiesto: "", costo_mensile: "", capienza_max: "" },
-  ]);
-
-  // Step 4: staff
-  const [staff, setStaff] = useState<StaffDraft[]>([]);
-
-  // Step 5: disponibilità ghiaccio
+  // Step 3: disponibilità ghiaccio
   const [slots, setSlots] = useState<SlotGhiaccio[]>([
     { giorno: "Lunedì", ora_inizio: "17:00", ora_fine: "20:00" },
   ]);
@@ -155,58 +135,8 @@ export default function OnboardingPage() {
   };
 
   const saveStep3 = async () => {
-    const valid = corsi.filter((c) => c.nome.trim());
-    if (valid.length === 0) return true;
-    setLoading(true);
-    const { data: stag } = await supabase
-      .from("stagioni").select("id").eq("club_id", session.club_id).eq("attiva", true).maybeSingle();
-    const payload = valid.map((c) => ({
-      club_id: session.club_id,
-      stagione_id: stag?.id ?? null,
-      nome: c.nome.trim(),
-      livello_richiesto: c.livello_richiesto.trim() || null,
-      costo_mensile: c.costo_mensile ? parseFloat(c.costo_mensile) : 0,
-      capienza_max: c.capienza_max ? parseInt(c.capienza_max) : null,
-      attivo: true,
-      tipo: "corso",
-    }));
-    const { error } = await supabase.from("corsi").insert(payload);
-    setLoading(false);
-    if (error) { toast.error(error.message); return false; }
-    toast.success(`${valid.length} corsi creati`);
-    return true;
-  };
-
-  const saveStep4 = async () => {
-    const valid = staff.filter((s) => s.email.trim() && s.nome.trim() && s.cognome.trim());
-    if (valid.length === 0) return true;
-    setLoading(true);
-    let ok = 0, fail = 0;
-    for (const s of valid) {
-      const { data, error } = await supabase.functions.invoke("invite-staff", {
-        body: {
-          club_id: session.club_id,
-          email: s.email.trim().toLowerCase(),
-          nome: s.nome.trim(),
-          cognome: s.cognome.trim(),
-          ruolo: s.ruolo,
-        },
-      });
-      if (error || (data as any)?.error) fail++;
-      else ok++;
-    }
-    setLoading(false);
-    if (ok) toast.success(`${ok} inviti inviati`);
-    if (fail) toast.error(`${fail} inviti falliti`);
-    return true;
-  };
-
-  const saveStep5 = async () => {
     const valid = slots.filter((s) => s.giorno && s.ora_inizio && s.ora_fine && s.ora_inizio < s.ora_fine);
-    if (valid.length === 0) {
-      // niente da salvare, OK
-      return true;
-    }
+    if (valid.length === 0) return true;
     setLoading(true);
     const { data: stag } = await supabase
       .from("stagioni").select("id").eq("club_id", session.club_id).eq("attiva", true).maybeSingle();
@@ -225,9 +155,18 @@ export default function OnboardingPage() {
     return true;
   };
 
-  const finalize = async () => {
-    const ok5 = await saveStep5();
-    if (!ok5) return;
+  const next = async () => {
+    let ok = true;
+    if (step === 1) ok = await saveStep1();
+    else if (step === 2) ok = await saveStep2();
+    else if (step === 3) {
+      ok = await saveStep3();
+      if (ok) { setDone(true); return; }
+    }
+    if (ok) setStep(step + 1);
+  };
+
+  const completeAndGo = async (to: string) => {
     setLoading(true);
     const { error } = await supabase
       .from("clubs")
@@ -235,28 +174,67 @@ export default function OnboardingPage() {
       .eq("id", session.club_id);
     setLoading(false);
     if (error) { toast.error(error.message); return; }
-    toast.success("Onboarding completato! Benvenuto nella tua dashboard.", { duration: 5000 });
-    navigate("/", { replace: true });
-    window.location.reload();
+    toast.success("Configurazione iniziale completata!");
+    navigate(to, { replace: true });
+    if (to === "/") window.location.reload();
   };
 
-  const next = async () => {
-    let ok = true;
-    if (step === 1) ok = await saveStep1();
-    else if (step === 2) ok = await saveStep2();
-    else if (step === 3) ok = await saveStep3();
-    else if (step === 4) ok = await saveStep4();
-    if (ok) setStep(step + 1);
-  };
+  if (done) {
+    return (
+      <div className="min-h-screen bg-background p-4 md:p-8">
+        <div className="max-w-3xl mx-auto">
+          <div className="mb-6 text-center">
+            <h1 className="text-3xl font-bold">Pronto! Il club è configurato 🎉</h1>
+            <p className="text-muted-foreground mt-2">Scegli da dove iniziare. Potrai sempre tornare a queste sezioni dalla dashboard.</p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-4">
+            <button onClick={() => completeAndGo("/corsi")} disabled={loading} className="text-left">
+              <Card className="h-full hover:border-primary transition-colors cursor-pointer">
+                <CardHeader>
+                  <BookOpen className="h-8 w-8 text-primary mb-2" />
+                  <CardTitle className="text-lg">Crea il tuo primo corso</CardTitle>
+                  <CardDescription>Definisci nome, livello, capienza e prezzo.</CardDescription>
+                </CardHeader>
+              </Card>
+            </button>
+            <button onClick={() => completeAndGo("/utenti")} disabled={loading} className="text-left">
+              <Card className="h-full hover:border-primary transition-colors cursor-pointer">
+                <CardHeader>
+                  <UserPlus className="h-8 w-8 text-primary mb-2" />
+                  <CardTitle className="text-lg">Invita il tuo primo istruttore</CardTitle>
+                  <CardDescription>Aggiungi staff e assegna i ruoli.</CardDescription>
+                </CardHeader>
+              </Card>
+            </button>
+            <button onClick={() => completeAndGo("/import-atleti")} disabled={loading} className="text-left">
+              <Card className="h-full hover:border-primary transition-colors cursor-pointer">
+                <CardHeader>
+                  <Users className="h-8 w-8 text-primary mb-2" />
+                  <CardTitle className="text-lg">Importa atleti</CardTitle>
+                  <CardDescription>Carica la lista atleti da CSV/Excel.</CardDescription>
+                </CardHeader>
+              </Card>
+            </button>
+          </div>
+          <div className="mt-6 flex justify-center">
+            <Button variant="outline" onClick={() => completeAndGo("/")} disabled={loading}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <LayoutDashboard className="h-4 w-4 mr-2" /> Vai alla Dashboard
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-3xl mx-auto">
         <div className="mb-6">
           <h1 className="text-2xl font-bold">Benvenuto in Ice Arena</h1>
-          <p className="text-muted-foreground">Step {step} di 5</p>
+          <p className="text-muted-foreground">Step {step} di {TOTAL_STEPS}</p>
           <div className="mt-3 flex gap-1">
-            {[1,2,3,4,5].map((i) => (
+            {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((i) => (
               <div key={i} className={`h-2 flex-1 rounded ${i <= step ? "bg-primary" : "bg-muted"}`} />
             ))}
           </div>
@@ -362,108 +340,6 @@ export default function OnboardingPage() {
           {step === 3 && (
             <>
               <CardHeader>
-                <CardTitle>Primi corsi</CardTitle>
-                <CardDescription>Aggiungi i corsi principali. Capienza e prezzo modificabili dopo.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {corsi.map((c, i) => (
-                  <div key={i} className="grid grid-cols-12 gap-2 items-end">
-                    <div className="col-span-4">
-                      <Label className={i === 0 ? "" : "sr-only"}>Nome</Label>
-                      <Input value={c.nome} onChange={(e) => {
-                        const next = [...corsi]; next[i].nome = e.target.value; setCorsi(next);
-                      }} />
-                    </div>
-                    <div className="col-span-3">
-                      <Label className={i === 0 ? "" : "sr-only"}>Livello</Label>
-                      <Input value={c.livello_richiesto} onChange={(e) => {
-                        const next = [...corsi]; next[i].livello_richiesto = e.target.value; setCorsi(next);
-                      }} />
-                    </div>
-                    <div className="col-span-2">
-                      <Label className={i === 0 ? "" : "sr-only"}>CHF/mese</Label>
-                      <Input type="number" value={c.costo_mensile} onChange={(e) => {
-                        const next = [...corsi]; next[i].costo_mensile = e.target.value; setCorsi(next);
-                      }} />
-                    </div>
-                    <div className="col-span-2">
-                      <Label className={i === 0 ? "" : "sr-only"}>Capienza</Label>
-                      <Input type="number" placeholder="max" value={c.capienza_max} onChange={(e) => {
-                        const next = [...corsi]; next[i].capienza_max = e.target.value; setCorsi(next);
-                      }} />
-                    </div>
-                    <div className="col-span-1">
-                      <Button variant="ghost" size="icon" onClick={() => setCorsi(corsi.filter((_, j) => j !== i))}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-                <Button variant="outline" size="sm" onClick={() => setCorsi([...corsi, { nome: "", livello_richiesto: "", costo_mensile: "", capienza_max: "" }])}>
-                  <Plus className="h-4 w-4 mr-1" /> Aggiungi corso
-                </Button>
-              </CardContent>
-            </>
-          )}
-
-          {step === 4 && (
-            <>
-              <CardHeader>
-                <CardTitle>Invita lo staff</CardTitle>
-                <CardDescription>Riceveranno un'email con password temporanea per accedere. Puoi saltare e invitarli dopo da "Utenti".</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {staff.map((s, i) => (
-                  <div key={i} className="grid grid-cols-12 gap-2 items-end">
-                    <div className="col-span-3">
-                      <Label className={i === 0 ? "" : "sr-only"}>Nome</Label>
-                      <Input value={s.nome} onChange={(e) => {
-                        const next = [...staff]; next[i].nome = e.target.value; setStaff(next);
-                      }} />
-                    </div>
-                    <div className="col-span-3">
-                      <Label className={i === 0 ? "" : "sr-only"}>Cognome</Label>
-                      <Input value={s.cognome} onChange={(e) => {
-                        const next = [...staff]; next[i].cognome = e.target.value; setStaff(next);
-                      }} />
-                    </div>
-                    <div className="col-span-3">
-                      <Label className={i === 0 ? "" : "sr-only"}>Email</Label>
-                      <Input type="email" value={s.email} onChange={(e) => {
-                        const next = [...staff]; next[i].email = e.target.value; setStaff(next);
-                      }} />
-                    </div>
-                    <div className="col-span-2">
-                      <Label className={i === 0 ? "" : "sr-only"}>Ruolo</Label>
-                      <select
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                        value={s.ruolo}
-                        onChange={(e) => {
-                          const next = [...staff]; next[i].ruolo = e.target.value as StaffDraft["ruolo"]; setStaff(next);
-                        }}
-                      >
-                        <option value="istruttore">Istruttore</option>
-                        <option value="segreteria">Segreteria</option>
-                        <option value="dt">Direttore Tecnico</option>
-                      </select>
-                    </div>
-                    <div className="col-span-1">
-                      <Button variant="ghost" size="icon" onClick={() => setStaff(staff.filter((_, j) => j !== i))}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-                <Button variant="outline" size="sm" onClick={() => setStaff([...staff, { nome: "", cognome: "", email: "", ruolo: "istruttore" }])}>
-                  <Plus className="h-4 w-4 mr-1" /> Aggiungi membro
-                </Button>
-              </CardContent>
-            </>
-          )}
-
-          {step === 5 && (
-            <>
-              <CardHeader>
                 <CardTitle>Disponibilità ghiaccio settimanale</CardTitle>
                 <CardDescription>Indica gli slot ricorrenti di disponibilità della pista. Modificabili da Configurazione Club.</CardDescription>
               </CardHeader>
@@ -515,17 +391,10 @@ export default function OnboardingPage() {
             <Button variant="outline" disabled={step === 1 || loading} onClick={() => setStep(step - 1)}>
               <ArrowLeft className="h-4 w-4 mr-1" /> Indietro
             </Button>
-            {step < 5 ? (
-              <Button onClick={next} disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Avanti <ArrowRight className="h-4 w-4 ml-1" />
-              </Button>
-            ) : (
-              <Button onClick={finalize} disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Completa onboarding
-              </Button>
-            )}
+            <Button onClick={next} disabled={loading}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {step < TOTAL_STEPS ? <>Avanti <ArrowRight className="h-4 w-4 ml-1" /></> : "Completa"}
+            </Button>
           </div>
         </Card>
       </div>
