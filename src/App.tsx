@@ -40,6 +40,8 @@ import EventiPage from "@/pages/EventiPage";
 import PresidentRelazioneGestione from "@/pages/PresidentRelazioneGestione";
 import PresidentRelazione from "@/pages/PresidentRelazione";
 import PacchettiSponsorPage from "@/pages/PacchettiSponsorPage";
+import RegisterClubPage from "@/pages/RegisterClubPage";
+import OnboardingPage from "@/pages/OnboardingPage";
 
 const queryClient = new QueryClient();
 
