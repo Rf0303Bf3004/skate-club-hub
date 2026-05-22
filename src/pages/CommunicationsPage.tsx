@@ -594,9 +594,11 @@ const CommunicationsPage: React.FC = () => {
             : <div className="space-y-4">{ricevute.map((c: any) => render_card(c, { highlight_unread: true }))}</div>}
         </TabsContent>
 
-        <TabsContent value="miei_reminder" className="mt-4">
-          <MieiReminderStaffTab />
-        </TabsContent>
+        {can_see_miei_reminder_staff && (
+          <TabsContent value="miei_reminder" className="mt-4">
+            <MieiReminderStaffTab />
+          </TabsContent>
+        )}
 
         {can_see_all && (
           <TabsContent value="conversazioni" className="mt-4">
