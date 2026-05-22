@@ -148,10 +148,10 @@ function use_stagioni_demo(CLUB_ID: string | undefined) {
   });
 }
 
-function use_dashboard_data(stagione_id: string | null, prev_stagione_id: string | null) {
+function use_dashboard_data(CLUB_ID: string | undefined, stagione_id: string | null, prev_stagione_id: string | null) {
   return useQuery({
-    queryKey: ["pres_dashboard", stagione_id, prev_stagione_id],
-    enabled: !!stagione_id,
+    queryKey: ["pres_dashboard", CLUB_ID, stagione_id, prev_stagione_id],
+    enabled: !!CLUB_ID && !!stagione_id,
     staleTime: 30_000,
     queryFn: async () => {
       const ids = [stagione_id, prev_stagione_id].filter(Boolean) as string[];
