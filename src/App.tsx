@@ -42,6 +42,7 @@ import PresidentRelazione from "@/pages/PresidentRelazione";
 import PacchettiSponsorPage from "@/pages/PacchettiSponsorPage";
 import RegisterClubPage from "@/pages/RegisterClubPage";
 import OnboardingPage from "@/pages/OnboardingPage";
+import LegalPlaceholderPage from "@/pages/LegalPlaceholderPage";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +64,16 @@ const PublicRoutes = ({ children }: { children: React.ReactNode }) => {
       <BrowserRouter>
         <Routes>
           <Route path="/registrati" element={<RegisterClubPage />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
+  if (path === "/termini" || path === "/privacy") {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/termini" element={<LegalPlaceholderPage titolo="Termini e Condizioni" />} />
+          <Route path="/privacy" element={<LegalPlaceholderPage titolo="Informativa Privacy" />} />
         </Routes>
       </BrowserRouter>
     );

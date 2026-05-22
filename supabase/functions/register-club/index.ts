@@ -14,6 +14,7 @@ interface Payload {
   sigla?: string;
   cantone?: string;
   citta?: string;
+  federazione?: string;
   email_presidente: string;
   password: string;
   nome_presidente: string;
@@ -92,6 +93,7 @@ Deno.serve(async (req) => {
       club_id,
       citta: body.citta?.trim() || null,
       email_contatto: body.email_presidente.trim().toLowerCase(),
+      federazione: body.federazione?.trim() || "",
     });
 
     // 4. Stagione di default (settembre-giugno)
