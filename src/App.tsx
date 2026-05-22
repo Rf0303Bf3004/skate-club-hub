@@ -68,6 +68,16 @@ const PublicRoutes = ({ children }: { children: React.ReactNode }) => {
       </BrowserRouter>
     );
   }
+  if (path === "/termini" || path === "/privacy") {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/termini" element={<LegalPlaceholderPage titolo="Termini e Condizioni" />} />
+          <Route path="/privacy" element={<LegalPlaceholderPage titolo="Informativa Privacy" />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
   return <>{children}</>;
 };
 
