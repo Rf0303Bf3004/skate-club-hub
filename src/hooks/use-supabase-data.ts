@@ -165,7 +165,10 @@ export function use_istruttori() {
     queryKey: ["istruttori", get_current_club_id()],
     queryFn: async () => {
       const [ist_res, disp_res] = await Promise.all([
-        supabase.from("istruttori").select("*").eq("club_id", get_current_club_id()).order("cognome"),
+        // NB: i campi di costo (costo_orario_*, compenso_fisso_*, costo_minuto_lezione_privata) sono
+        // hidden via column-level REVOKE; vengono recuperati separatamente con la RPC get_istruttori_costi
+        // e fusi solo se l'utente ha i ruoli finanziari.
+        supabase.from("istruttori").select("id,club_id,nome,cognome,email,telefono,colore,attivo,created_at,linked_atleta_id,livello_istruttore,stato_staff,note,contratto_tipo,ore_concordate_settimanali,disco_url,codice_fiscale,indirizzo,data_nascita,sesso").eq("club_id", get_current_club_id()).order("cognome"),
         supabase.from("disponibilita_istruttori").select("*"),
       ]);
       if (ist_res.error) throw ist_res.error;
