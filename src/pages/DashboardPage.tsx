@@ -764,7 +764,7 @@ const WidgetCompleanni: React.FC<{ atleti: any[] }> = ({ atleti }) => {
     <div className="bg-card rounded-xl shadow-card p-5 space-y-3">
       <div className="flex items-center gap-2">
         <Gift className="w-4 h-4 text-pink-500" />
-        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Compleanni</h3>
+        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{td("widgets.birthdays")}</h3>
       </div>
       {compleanni.map((a) => (
         <div key={a.id} className="flex items-center justify-between">
@@ -777,11 +777,12 @@ const WidgetCompleanni: React.FC<{ atleti: any[] }> = ({ atleti }) => {
               <p className="text-sm font-medium text-foreground">
                 {a.nome} {a.cognome}
               </p>
-              <p className="text-xs text-muted-foreground">compie {a.eta} anni</p>
+              <p className="text-xs text-muted-foreground">{td("widgets.turns_age", { eta: a.eta })}</p>
             </div>
           </div>
           <Badge variant={a.giorni === 0 ? "default" : "secondary"} className="text-xs">
-            {a.giorni === 0 ? "🎂 Oggi!" : a.giorni === 1 ? "Domani" : `fra ${a.giorni}gg`}
+            {a.giorni === 0 ? td("widgets.today_excl") : a.giorni === 1 ? td("widgets.tomorrow") : td("widgets.in_days", { count: a.giorni })}
+
           </Badge>
         </div>
       ))}
