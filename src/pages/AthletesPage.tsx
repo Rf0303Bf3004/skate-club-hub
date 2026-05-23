@@ -22,7 +22,6 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 import DateInput from "@/components/forms/DateInput";
 import {
-  CATEGORIE,
   LIVELLI_AMATORI,
   LIVELLI_CARRIERA as LIVELLI_CARRIERA_NUOVI,
   get_categoria_label,
