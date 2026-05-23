@@ -68,10 +68,10 @@ const FormDialog: React.FC<Props> = ({
           <div className="bg-destructive/5 border border-destructive/20 rounded-xl px-4 py-4 space-y-3">
             <div className="flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0" />
-              <p className="text-sm font-semibold text-destructive">Conferma eliminazione</p>
+              <p className="text-sm font-semibold text-destructive">{t('confirm_delete_title')}</p>
             </div>
             <p className="text-xs text-muted-foreground">
-              Questa operazione è irreversibile. Tutti i dati collegati verranno eliminati.
+              {t('irreversible_warning')}
             </p>
             <div className="flex gap-2">
               <Button
@@ -81,7 +81,7 @@ const FormDialog: React.FC<Props> = ({
                 onClick={() => set_confirm_delete(false)}
                 className="flex-1"
               >
-                Annulla
+                {t('actions.cancel')}
               </Button>
               <Button
                 type="button"
@@ -91,7 +91,7 @@ const FormDialog: React.FC<Props> = ({
                 disabled={delete_loading}
                 className="flex-1"
               >
-                {delete_loading ? "..." : "🗑️ Elimina definitivamente"}
+                {delete_loading ? "..." : `🗑️ ${t('actions.delete_definitely')}`}
               </Button>
             </div>
           </div>
