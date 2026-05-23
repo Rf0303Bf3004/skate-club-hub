@@ -1265,8 +1265,9 @@ const DashboardPage: React.FC = () => {
                   <>
                     <div className="space-y-2">
                       <span className="text-xs text-muted-foreground">
-                        {corsi_agenda.length} cors{corsi_agenda.length === 1 ? "o" : "i"}
+                        {td("agenda.courses_count", { count: corsi_agenda.length })}
                       </span>
+
                       {corsi_agenda.map((corso: any) => (
                         <CorsoCard
                           key={corso.id}
@@ -1287,7 +1288,7 @@ const DashboardPage: React.FC = () => {
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
                           <div className="text-xs font-bold px-2.5 py-1 rounded-full bg-primary text-white">
-                            Lezioni private oggi
+                            {td("agenda.private_lessons_today")}
                           </div>
                         </div>
                         {today_lezioni.map((lezione) => {
@@ -1300,7 +1301,7 @@ const DashboardPage: React.FC = () => {
                                   {lezione.ora_inizio?.slice(0, 5)}
                                 </span>
                                 <div>
-                                  <p className="text-sm font-semibold text-foreground">Lezione privata</p>
+                                  <p className="text-sm font-semibold text-foreground">{td("agenda.private_lesson")}</p>
                                   <p className="text-xs text-muted-foreground">
                                     {istr ? `${istr.nome} ${istr.cognome}` : "—"}
                                   </p>
@@ -1322,7 +1323,8 @@ const DashboardPage: React.FC = () => {
                                       disabled={segna.isPending}
                                       className={`h-6 text-xs ${presenza ? "text-success border-success/40" : "bg-success hover:bg-success/90 text-white"}`}
                                     >
-                                      {presenza ? "✓ Presente" : "Presente"}
+                                      {presenza ? td("course_row.present_checked") : td("course_row.present")}
+
                                     </Button>
                                   </div>
                                 );
@@ -1377,7 +1379,7 @@ const DashboardPage: React.FC = () => {
             <div className="bg-card rounded-xl shadow-card p-5 space-y-3">
               <div className="flex items-center gap-2">
                 <Trophy className="w-4 h-4 text-primary" />
-                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Prossime gare</h3>
+                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{td("widgets.competitions")}</h3>
               </div>
               {upcoming_gare.slice(0, 3).map((g) => (
                 <div key={g.id} className="flex items-center gap-3">
@@ -1390,8 +1392,9 @@ const DashboardPage: React.FC = () => {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{g.nome}</p>
                     <p className="text-xs text-muted-foreground">
-                      {g.localita} · {g.atleti_iscritti?.length || 0} atleti
+                      {td("widgets.gara_subtitle", { localita: g.localita, count: g.atleti_iscritti?.length || 0 })}
                     </p>
+
                   </div>
                 </div>
               ))}
@@ -1406,7 +1409,7 @@ const DashboardPage: React.FC = () => {
             <div className="bg-card rounded-xl shadow-card p-5 space-y-3">
               <div className="flex items-center gap-2">
                 <MessageSquare className="w-4 h-4 text-primary" />
-                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Comunicazioni</h3>
+                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{td("widgets.communications")}</h3>
               </div>
               {comunicazioni.slice(0, 3).map((c) => (
                 <div key={c.id} className="space-y-0.5">
