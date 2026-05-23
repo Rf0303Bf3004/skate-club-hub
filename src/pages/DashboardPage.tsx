@@ -1038,9 +1038,9 @@ const DashboardPage: React.FC = () => {
         riferimento_id,
         tipo_riferimento: "corso",
       } as any);
-      toast({ title: result.tipo === "entrata" ? "✅ Presenza registrata" : "🚪 Uscita registrata" });
+      toast({ title: result.tipo === "entrata" ? td("toast.presence_registered") : td("toast.exit_registered") });
     } catch (err: any) {
-      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+      toast({ title: td("toast.error"), description: err?.message, variant: "destructive" });
     }
   };
 
@@ -1052,20 +1052,21 @@ const DashboardPage: React.FC = () => {
         data: today,
         metodo: "manuale",
       });
-      toast({ title: result.tipo === "entrata" ? "✅ Entrata registrata" : "🚪 Uscita registrata" });
+      toast({ title: result.tipo === "entrata" ? td("toast.entry_registered") : td("toast.exit_registered") });
     } catch (err: any) {
-      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+      toast({ title: td("toast.error"), description: err?.message, variant: "destructive" });
     }
   };
 
   const handle_elimina = async (id: string) => {
     try {
       await elimina_p.mutateAsync(id);
-      toast({ title: "🗑️ Presenza rimossa" });
+      toast({ title: td("toast.presence_removed") });
     } catch (err: any) {
-      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+      toast({ title: td("toast.error"), description: err?.message, variant: "destructive" });
     }
   };
+
 
   if (is_loading) {
     return (
