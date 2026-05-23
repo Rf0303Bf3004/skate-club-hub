@@ -349,7 +349,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   const { data: lezioni = [] } = use_lezioni_private();
   const { data: istruttori = [] } = use_istruttori();
   const { data: adesioni = [] } = use_adesioni_atleta();
-  const atleta_attivo = is_atleta_attivo_oggi(adesioni, a.id);
+  const atleta_attivo = a.attivo !== false;
 
   const athlete_corsi = corsi.filter((c: any) => c.atleti_ids.includes(a.id));
   const athlete_gare = gare.filter((g: any) => g.atleti_iscritti.some((ai: any) => ai.atleta_id === a.id));

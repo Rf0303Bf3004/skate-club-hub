@@ -513,10 +513,13 @@ export function use_adesioni_atleta() {
   });
 }
 
+/**
+ * @deprecated Usa `atleta.attivo !== false` come fonte di verità anagrafica.
+ * Questa funzione legge dalla tabella `adesioni_atleta` (oggi vuota per la maggior
+ * parte dei club). Verrà riabilitata quando i clienti reali popoleranno adesioni
+ * stagionali e servirà distinguere "attivo anagrafico" vs "iscritto nella stagione".
+ */
 export function is_atleta_attivo_oggi(iscrizioni: any[], atleta_id: string): boolean {
-  // Un'atleta è considerata attiva oggi se ha almeno una iscrizione attiva
-  // a un corso del club. (Il flag stagionale di start/fine è ora gestito a livello
-  // di stagione del corso e non più con la tabella adesioni_atleta.)
   return iscrizioni.some((i) => i.atleta_id === atleta_id && i.attiva !== false);
 }
 
