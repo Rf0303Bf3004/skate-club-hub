@@ -1410,7 +1410,7 @@ const AthletesPage: React.FC = () => {
                         onClick={() => set_selected_id(a.id)}
                       >
                         <span
-                          className={`inline-block w-2 h-2 rounded-full ${is_atleta_attivo_oggi(adesioni, a.id) ? "bg-success" : "bg-muted-foreground"}`}
+                          className={`inline-block w-2 h-2 rounded-full ${a.attivo !== false ? "bg-success" : "bg-muted-foreground"}`}
                         />
                       </td>
                       <td className="px-4 py-3 text-right space-x-1">
