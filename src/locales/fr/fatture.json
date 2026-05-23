@@ -1,0 +1,36 @@
+{
+  "list": {
+    "title": "Factures",
+    "generate_monthly": "Générer les factures mensuelles",
+    "search_placeholder": "Rechercher par athlète ou n° de facture...",
+    "no_results": "Aucune facture trouvée",
+    "filters": {
+      "status": "Statut",
+      "all": "Toutes",
+      "paid": "Payées",
+      "unpaid": "À payer",
+      "overdue": "Échues"
+    }
+  },
+  "columns": {
+    "number": "N° facture",
+    "athlete": "Athlète",
+    "description": "Description",
+    "amount": "Montant",
+    "due_date": "Échéance",
+    "status": "Statut",
+    "actions": "Actions"
+  },
+  "status": {
+    "paid": "Payée",
+    "unpaid": "À payer",
+    "overdue": "Échue",
+    "draft": "Brouillon"
+  },
+  "actions": {
+    "mark_paid": "Marquer comme payée",
+    "send_reminder": "Envoyer un rappel",
+    "download_pdf": "Télécharger le PDF",
+    "view_details": "Détails"
+  }
+}

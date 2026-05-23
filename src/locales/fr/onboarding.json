@@ -1,0 +1,56 @@
+{
+  "login": {
+    "title": "Ice Arena Manager",
+    "welcome": "Bienvenue sur Ice Arena Manager",
+    "email_placeholder": "E-mail",
+    "password_placeholder": "Mot de passe",
+    "sign_in": "Se connecter",
+    "sign_in_failed": "Échec de la connexion",
+    "new_club_question": "Nouveau club ?",
+    "register_here": "S'inscrire"
+  },
+  "register": {
+    "title": "Inscrivez votre club",
+    "subtitle": "Créez votre espace Ice Arena en quelques minutes. Le président devient l'administrateur principal.",
+    "fields": {
+      "club_name": "Nom du club",
+      "club_sigla": "Sigle (max 10)",
+      "canton": "Canton",
+      "city": "Ville",
+      "federation": "Fédération",
+      "federation_other": "Préciser la fédération",
+      "federation_select_hint": "— Sélectionner —",
+      "president_name": "Prénom du président",
+      "president_surname": "Nom du président",
+      "email": "E-mail",
+      "phone": "Téléphone",
+      "password": "Mot de passe (min 8)",
+      "password_confirm": "Confirmer le mot de passe"
+    },
+    "accept_terms_prefix": "J'accepte les",
+    "accept_terms_link": "Conditions",
+    "accept_terms_middle": "et la",
+    "accept_privacy_link": "Politique de confidentialité",
+    "submit": "Créer le club et se connecter",
+    "already_have_account": "Vous avez déjà un compte ?",
+    "sign_in": "Se connecter",
+    "errors": {
+      "city_required": "La ville est obligatoire",
+      "federation_required": "Sélectionnez la fédération (ou 'aucune')",
+      "federation_other_required": "Précisez le nom de la fédération",
+      "password_min": "Mot de passe : 8 caractères minimum",
+      "passwords_mismatch": "Les deux mots de passe ne correspondent pas",
+      "terms_required": "Vous devez accepter les conditions et la politique de confidentialité pour continuer",
+      "register_failed": "Erreur lors de l'inscription"
+    },
+    "success_created": "Club créé ! Bienvenue."
+  },
+  "wizard": {
+    "title": "Configuration initiale",
+    "step": "Étape {{current}} sur {{total}}",
+    "next": "Suivant",
+    "back": "Précédent",
+    "finish": "Terminer la configuration",
+    "skip": "Passer pour le moment"
+  }
+}

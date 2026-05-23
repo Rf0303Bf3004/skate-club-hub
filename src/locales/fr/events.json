@@ -1,0 +1,33 @@
+{
+  "competitions": {
+    "title": "Compétitions",
+    "new": "Nouvelle compétition",
+    "host_club": "Club hôte",
+    "min_level": "Niveau minimum",
+    "registration_cost": "Coût d'inscription",
+    "companion_cost": "Coût accompagnement",
+    "registered_athletes": "Athlètes inscrits",
+    "score": "Score",
+    "position": "Position",
+    "medal": "Médaille"
+  },
+  "level_tests": {
+    "title": "Tests de niveau",
+    "new": "Nouveau test",
+    "passed": "Réussi",
+    "failed": "Non réussi"
+  },
+  "events": {
+    "title": "Galas et événements",
+    "new": "Nouvel événement"
+  },
+  "training_camps": {
+    "title": "Stages d'entraînement",
+    "new": "Nouveau stage",
+    "day_cost": "Coût en journée",
+    "full_cost": "Coût complet (avec hébergement)",
+    "day_only": "En journée",
+    "full": "Complet",
+    "partial": "Partiel"
+  }
+}

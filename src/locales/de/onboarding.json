@@ -1,0 +1,56 @@
+{
+  "login": {
+    "title": "Ice Arena Manager",
+    "welcome": "Willkommen bei Ice Arena Manager",
+    "email_placeholder": "E-Mail",
+    "password_placeholder": "Passwort",
+    "sign_in": "Anmelden",
+    "sign_in_failed": "Anmeldung fehlgeschlagen",
+    "new_club_question": "Neuer Club?",
+    "register_here": "Registrieren"
+  },
+  "register": {
+    "title": "Registrieren Sie Ihren Club",
+    "subtitle": "Erstellen Sie Ihren Ice Arena-Bereich in wenigen Minuten. Der Präsident wird zum Hauptadministrator.",
+    "fields": {
+      "club_name": "Clubname",
+      "club_sigla": "Kürzel (max. 10)",
+      "canton": "Kanton",
+      "city": "Stadt",
+      "federation": "Verband",
+      "federation_other": "Verband angeben",
+      "federation_select_hint": "— Auswählen —",
+      "president_name": "Vorname des Präsidenten",
+      "president_surname": "Nachname des Präsidenten",
+      "email": "E-Mail",
+      "phone": "Telefon",
+      "password": "Passwort (min. 8)",
+      "password_confirm": "Passwort bestätigen"
+    },
+    "accept_terms_prefix": "Ich akzeptiere die",
+    "accept_terms_link": "Bedingungen",
+    "accept_terms_middle": "und die",
+    "accept_privacy_link": "Datenschutzerklärung",
+    "submit": "Club erstellen und anmelden",
+    "already_have_account": "Sie haben bereits ein Konto?",
+    "sign_in": "Anmelden",
+    "errors": {
+      "city_required": "Die Stadt ist obligatorisch",
+      "federation_required": "Wählen Sie den Verband (oder 'keiner')",
+      "federation_other_required": "Geben Sie den Verbandsnamen an",
+      "password_min": "Passwort: mindestens 8 Zeichen",
+      "passwords_mismatch": "Die beiden Passwörter stimmen nicht überein",
+      "terms_required": "Sie müssen die Bedingungen und Datenschutzerklärung akzeptieren, um fortzufahren",
+      "register_failed": "Registrierungsfehler"
+    },
+    "success_created": "Club erstellt! Willkommen."
+  },
+  "wizard": {
+    "title": "Erstkonfiguration",
+    "step": "Schritt {{current}} von {{total}}",
+    "next": "Weiter",
+    "back": "Zurück",
+    "finish": "Konfiguration abschliessen",
+    "skip": "Vorerst überspringen"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "title": "Mitteilungen",
+  "new": "Neue Mitteilung",
+  "tabs": {
+    "list": "Mitteilungen",
+    "conversations": "Konversationen",
+    "reminders": "Meine Erinnerungen",
+    "rules": "Automatische Regeln"
+  },
+  "form": {
+    "title": "Titel",
+    "body": "Text",
+    "recipients": "Empfänger",
+    "linked_event_type": "Verknüpfter Event-Typ",
+    "send_now": "Mitteilung sofort an die Familien senden",
+    "linked_event_hint": "Die Mitteilung wird mit dem Event verknüpft: Die mobile App zeigt den Button \"Anmelden\" inline an."
+  },
+  "recipients": {
+    "all_club": "Ganzer Club",
+    "by_course": "Pro Kurs",
+    "by_athlete": "Pro Athlet",
+    "instructors_only": "Nur Trainer",
+    "select_course": "Kurs auswählen",
+    "select_athlete": "Athlet auswählen",
+    "no_course": "Kein Kurs verfügbar",
+    "no_athlete": "Kein Athlet"
+  },
+  "event_types": {
+    "none": "Keiner",
+    "competition": "Wettkampf",
+    "gala": "Gala / Sonderveranstaltung",
+    "level_test": "Niveau-Test"
+  }
+}

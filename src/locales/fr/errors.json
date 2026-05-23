@@ -1,0 +1,14 @@
+{
+  "generic": "Une erreur s'est produite",
+  "network": "Erreur de connexion. Réessayez.",
+  "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action",
+  "not_found": "Ressource introuvable",
+  "save_failed": "Échec de l'enregistrement",
+  "delete_failed": "Échec de la suppression",
+  "load_failed": "Échec du chargement",
+  "session_expired": "Session expirée. Reconnectez-vous.",
+  "server_error": "Erreur serveur. Réessayez plus tard.",
+  "validation_failed": "Certains champs ne sont pas valides",
+  "duplicate": "Un élément avec ces données existe déjà",
+  "operation_in_progress": "Opération en cours, veuillez patienter..."
+}

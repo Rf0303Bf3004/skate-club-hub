@@ -1,0 +1,62 @@
+{
+  "list": {
+    "title": "Athletes",
+    "new_athlete": "New athlete",
+    "search_placeholder": "Search by first or last name...",
+    "results_count_one": "{{count}} of {{total}} result",
+    "results_count_other": "{{count}} of {{total}} results",
+    "no_results": "No athlete found",
+    "filters": {
+      "category": "Category",
+      "level": "Level",
+      "status": "Status",
+      "agonista": "Competitive",
+      "active": "State",
+      "age": "Age",
+      "all": "All",
+      "only_active": "Active",
+      "only_inactive": "Inactive"
+    }
+  },
+  "detail": {
+    "tabs": {
+      "anagrafica": "Personal info",
+      "courses": "Courses",
+      "calendar": "Calendar",
+      "billing": "Billing",
+      "tests": "Level tests",
+      "medals": "Medals",
+      "documents": "Documents",
+      "parents": "Parents"
+    },
+    "edit": "Edit profile",
+    "open_web_portal": "Open web portal",
+    "deactivate": "Deactivate athlete",
+    "reactivate": "Reactivate athlete",
+    "delete": "Delete athlete",
+    "athlete_code": "Athlete code",
+    "swiss_license": "Swiss license",
+    "nfc_tag": "NFC tag"
+  },
+  "form": {
+    "name": "First name",
+    "surname": "Surname",
+    "birth_date": "Date of birth",
+    "category": "Category",
+    "level": "Level",
+    "agonista": "Competitive",
+    "federation": "Atleta di Federazione",
+    "photo": "Photo",
+    "notes": "Notes",
+    "parent_1": "Parent 1",
+    "parent_2": "Parent 2 (optional)",
+    "email": "Email",
+    "phone": "Phone"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "agonista": "Competitive",
+    "amatoriale": "Amateur"
+  }
+}

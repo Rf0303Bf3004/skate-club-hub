@@ -1,0 +1,29 @@
+{
+  "title": "Dashboard",
+  "welcome": "Good morning, {{nome}}",
+  "kpi": {
+    "active_athletes": "Active athletes",
+    "courses_week": "Weekly courses",
+    "next_competitions": "Next competitions",
+    "due_invoices": "Invoices due"
+  },
+  "agenda": {
+    "title": "Course agenda",
+    "tabs": {
+      "courses": "Courses & attendance",
+      "instructors": "Instructors"
+    },
+    "today": "Today",
+    "no_courses_today": "No course today",
+    "no_instructors_today": "No instructor available today"
+  },
+  "widgets": {
+    "today_on_ice": "Today on the ice",
+    "latest_athletes": "Recently added athletes",
+    "upcoming_events": "Upcoming events",
+    "latest_communications": "Latest messages",
+    "available_instructors": "Instructors available today",
+    "subscription_requests": "Registration requests"
+  },
+  "countdown_days": "Countdown: {{count}}d"
+}

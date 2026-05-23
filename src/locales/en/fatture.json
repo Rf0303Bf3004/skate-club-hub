@@ -1,0 +1,36 @@
+{
+  "list": {
+    "title": "Invoices",
+    "generate_monthly": "Generate monthly invoices",
+    "search_placeholder": "Search by athlete or invoice number...",
+    "no_results": "No invoice found",
+    "filters": {
+      "status": "Status",
+      "all": "All",
+      "paid": "Paid",
+      "unpaid": "To pay",
+      "overdue": "Overdue"
+    }
+  },
+  "columns": {
+    "number": "Invoice no.",
+    "athlete": "Athlete",
+    "description": "Description",
+    "amount": "Amount",
+    "due_date": "Due date",
+    "status": "Status",
+    "actions": "Actions"
+  },
+  "status": {
+    "paid": "Paid",
+    "unpaid": "To pay",
+    "overdue": "Overdue",
+    "draft": "Draft"
+  },
+  "actions": {
+    "mark_paid": "Mark as paid",
+    "send_reminder": "Send reminder",
+    "download_pdf": "Download PDF",
+    "view_details": "Details"
+  }
+}

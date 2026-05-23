@@ -1,0 +1,29 @@
+{
+  "title": "Dashboard",
+  "welcome": "Guten Tag, {{nome}}",
+  "kpi": {
+    "active_athletes": "Aktive Athleten",
+    "courses_week": "Kurse der Woche",
+    "next_competitions": "Nächste Wettkämpfe",
+    "due_invoices": "Fällige Rechnungen"
+  },
+  "agenda": {
+    "title": "Kursagenda",
+    "tabs": {
+      "courses": "Kurse und Anwesenheit",
+      "instructors": "Trainer"
+    },
+    "today": "Heute",
+    "no_courses_today": "Heute kein Kurs",
+    "no_instructors_today": "Heute kein Trainer verfügbar"
+  },
+  "widgets": {
+    "today_on_ice": "Heute auf dem Eis",
+    "latest_athletes": "Zuletzt hinzugefügte Athleten",
+    "upcoming_events": "Nächste Events",
+    "latest_communications": "Letzte Mitteilungen",
+    "available_instructors": "Heute verfügbare Trainer",
+    "subscription_requests": "Anmeldeanfragen"
+  },
+  "countdown_days": "Countdown: {{count}} T"
+}

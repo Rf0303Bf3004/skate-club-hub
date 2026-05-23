@@ -1,0 +1,36 @@
+{
+  "list": {
+    "title": "Rechnungen",
+    "generate_monthly": "Monatliche Rechnungen erstellen",
+    "search_placeholder": "Nach Athlet oder Rechnungsnummer suchen...",
+    "no_results": "Keine Rechnung gefunden",
+    "filters": {
+      "status": "Status",
+      "all": "Alle",
+      "paid": "Bezahlt",
+      "unpaid": "Offen",
+      "overdue": "Überfällig"
+    }
+  },
+  "columns": {
+    "number": "Rechnungs-Nr.",
+    "athlete": "Athlet",
+    "description": "Beschreibung",
+    "amount": "Betrag",
+    "due_date": "Fälligkeit",
+    "status": "Status",
+    "actions": "Aktionen"
+  },
+  "status": {
+    "paid": "Bezahlt",
+    "unpaid": "Offen",
+    "overdue": "Überfällig",
+    "draft": "Entwurf"
+  },
+  "actions": {
+    "mark_paid": "Als bezahlt markieren",
+    "send_reminder": "Mahnung senden",
+    "download_pdf": "PDF herunterladen",
+    "view_details": "Details"
+  }
+}
