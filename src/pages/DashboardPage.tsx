@@ -1104,34 +1104,35 @@ const DashboardPage: React.FC = () => {
           <p className="text-xs text-muted-foreground capitalize">
             {fmt_date_long(new Date(), locale_code)}
           </p>
-          <p className="text-xs font-bold text-success">{totale_presenti} presenti in pista</p>
+          <p className="text-xs font-bold text-success">{td("presenti_in_pista", { count: totale_presenti })}</p>
         </div>
       </div>
 
       {/* KPI */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title="Atleti attivi" value={String(active_atleti)} icon={<Users className="w-5 h-5" />} to="/atleti?filtro=attivi" />
-        <KPICard title="Corsi attivi" value={String(active_corsi)} icon={<BookOpen className="w-5 h-5" />} to="/corsi" />
+        <KPICard title={td("kpi.active_athletes")} value={String(active_atleti)} icon={<Users className="w-5 h-5" />} to="/atleti?filtro=attivi" />
+        <KPICard title={td("kpi.active_courses")} value={String(active_corsi)} icon={<BookOpen className="w-5 h-5" />} to="/corsi" />
         <KPICard
-          title="Prossime gare"
+          title={td("kpi.next_competitions")}
           value={String(upcoming_gare.length)}
           icon={<Trophy className="w-5 h-5" />}
-          subtitle={next_gara ? `fra ${days_until(next_gara.data)}gg: ${next_gara.nome}` : undefined}
+          subtitle={next_gara ? td("kpi.next_competition_in", { days: days_until(next_gara.data), nome: next_gara.nome }) : undefined}
           to="/gare"
         />
         <KPICard
-          title="Da incassare"
+          title={td("kpi.amount_to_collect")}
           value={`CHF ${totale_fatture.toLocaleString()}`}
           icon={<CreditCard className="w-5 h-5" />}
           highlight
           subtitle={
             fatture_da_pagare.length > 0
-              ? `${fatture_scadute_count} scadute · ${fatture_in_arrivo_count} in arrivo`
+              ? td("kpi.invoices_status", { scadute: fatture_scadute_count, arrivo: fatture_in_arrivo_count })
               : undefined
           }
           to="/fatture?filtro=da_pagare"
         />
       </div>
+
 
       {/* Banner compleanni del giorno */}
       {compleanni_oggi.length > 0 && (
@@ -1140,7 +1141,7 @@ const DashboardPage: React.FC = () => {
             <div className="text-3xl leading-none">🎂</div>
             <div className="flex-1 min-w-[220px]">
               <p className="text-sm font-bold text-amber-900">
-                Oggi è il compleanno di{" "}
+                {td("birthday_banner.today_is")}{" "}
                 {compleanni_oggi.map((a, idx) => (
                   <span key={a.id}>
                     <span className="font-semibold">{a.nome} {a.cognome}</span>
@@ -1154,7 +1155,7 @@ const DashboardPage: React.FC = () => {
                 ! 🎉
               </p>
               <p className="text-xs text-amber-800/80 mt-0.5">
-                Mandagli gli auguri dal club: clicca "Invia auguri" e personalizza il messaggio prima di inviarlo.
+                {td("birthday_banner.send_wishes_hint")}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -1166,13 +1167,14 @@ const DashboardPage: React.FC = () => {
                   className="gap-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs"
                 >
                   <Gift className="w-3.5 h-3.5" />
-                  Invia auguri a {a.nome}
+                  {td("birthday_banner.send_wishes_to", { nome: a.nome })}
                 </Button>
               ))}
             </div>
           </div>
         </div>
       )}
+
 
       {/* Banner fine stagione */}
       {(() => {
@@ -1196,13 +1198,14 @@ const DashboardPage: React.FC = () => {
             <AlertTriangle className={`w-5 h-5 flex-shrink-0 ${is_past ? "text-destructive" : "text-amber-600"}`} />
             <p className={`text-sm flex-1 ${is_past ? "text-destructive font-semibold" : "text-amber-800"}`}>
               {is_past
-                ? `⚠ La stagione è terminata il ${data_fmt}. Termina la stagione ora.`
-                : `La stagione termina il ${data_fmt}. È ora di pianificare la nuova stagione.`}
+                ? td("season_banner.ended", { data: data_fmt })
+                : td("season_banner.ending", { data: data_fmt })}
             </p>
             <Button size="sm" variant={is_past ? "destructive" : "outline"} onClick={() => navigate("/nuova-stagione")}>
-              {is_past ? "Termina Stagione" : "Avvia Nuova Stagione"}
+              {is_past ? td("season_banner.end_now") : td("season_banner.start_new")}
             </Button>
           </div>
+
         );
       })()}
 
@@ -1213,7 +1216,7 @@ const DashboardPage: React.FC = () => {
           {/* Agenda corsi — un giorno alla volta */}
           <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Agenda corsi</h3>
+              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{td("agenda.title")}</h3>
               <div className="flex items-center gap-1">
                 <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => set_agenda_offset((o) => o - 1)}>
                   <ChevronLeft className="w-4 h-4" />
@@ -1230,7 +1233,7 @@ const DashboardPage: React.FC = () => {
               </div>
             </div>
 
-            <div role="tablist" aria-label="Agenda corsi" className="flex gap-2 border-b border-border">
+            <div role="tablist" aria-label={td("agenda.title")} className="flex gap-2 border-b border-border">
               {(["corsi", "istruttori"] as const).map((tab) => {
                 const is_active = tab_presenze === tab;
                 return (
@@ -1244,18 +1247,19 @@ const DashboardPage: React.FC = () => {
                         ? "font-bold text-primary after:content-[''] after:absolute after:left-0 after:right-0 after:-bottom-px after:h-0.5 after:bg-primary"
                         : "font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-t-md"}`}
                   >
-                    {tab === "corsi" ? "📋 Corsi & Appello" : "👨‍🏫 Istruttori"}
+                    {tab === "corsi" ? `📋 ${td("agenda.tabs.courses")}` : `👨‍🏫 ${td("agenda.tabs.instructors")}`}
                   </button>
                 );
               })}
             </div>
+
 
             {tab_presenze === "corsi" && (
               <div className="space-y-5">
                 {corsi_agenda.length === 0 && (agenda_is_today ? today_lezioni.length === 0 : true) ? (
                   <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
                     <Clock className="w-8 h-8 mb-2 opacity-30" />
-                    <p className="text-sm">Nessun corso per {agenda_label.toLowerCase()}</p>
+                    <p className="text-sm">{td("agenda.no_courses_for", { label: agenda_label.toLowerCase() })}</p>
                   </div>
                 ) : (
                   <>
