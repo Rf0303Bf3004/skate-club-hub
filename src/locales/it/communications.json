@@ -1,0 +1,34 @@
+{
+  "title": "Comunicazioni",
+  "new": "Nuova Comunicazione",
+  "tabs": {
+    "list": "Comunicazioni",
+    "conversations": "Conversazioni",
+    "reminders": "I miei reminder",
+    "rules": "Regole automatiche"
+  },
+  "form": {
+    "title": "Titolo",
+    "body": "Testo",
+    "recipients": "Destinatari",
+    "linked_event_type": "Tipo evento collegato",
+    "send_now": "Invia subito comunicazione alle famiglie",
+    "linked_event_hint": "La comunicazione verrà collegata all'evento: l'app mobile mostrerà il bottone \"Iscriviti\" inline."
+  },
+  "recipients": {
+    "all_club": "Tutto il club",
+    "by_course": "Per corso",
+    "by_athlete": "Per atleta",
+    "instructors_only": "Solo Istruttori",
+    "select_course": "Seleziona un corso",
+    "select_athlete": "Seleziona un atleta",
+    "no_course": "Nessun corso disponibile",
+    "no_athlete": "Nessun atleta"
+  },
+  "event_types": {
+    "none": "Nessuno",
+    "competition": "Gara",
+    "gala": "Galà / Evento straordinario",
+    "level_test": "Test livello"
+  }
+}

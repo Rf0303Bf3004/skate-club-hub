@@ -1,0 +1,27 @@
+{
+  "club": {
+    "title": "Configurazione Club",
+    "data_section": "Dati Club",
+    "season_params": "Parametri Stagione",
+    "lessons_params": "Parametri Lezioni Private",
+    "save_changes": "Salva Modifiche"
+  },
+  "seasons": {
+    "title": "Stagioni",
+    "new": "Nuova Stagione",
+    "regular": "Regolare",
+    "pre_season": "Pre Season",
+    "post_season": "Post Season"
+  },
+  "roles": {
+    "title": "Ruoli e Permessi",
+    "new_role": "Nuovo Ruolo",
+    "permissions": "Permessi"
+  },
+  "users": {
+    "title": "Utenti",
+    "invite": "Invita utente",
+    "role": "Ruolo",
+    "last_access": "Ultimo accesso"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "list": {
+    "title": "Fatture",
+    "generate_monthly": "Genera Fatture Mensili",
+    "search_placeholder": "Cerca per atleta o numero fattura...",
+    "no_results": "Nessuna fattura trovata",
+    "filters": {
+      "status": "Stato",
+      "all": "Tutte",
+      "paid": "Pagate",
+      "unpaid": "Da pagare",
+      "overdue": "Scadute"
+    }
+  },
+  "columns": {
+    "number": "N. Fattura",
+    "athlete": "Atleta",
+    "description": "Descrizione",
+    "amount": "Importo",
+    "due_date": "Scadenza",
+    "status": "Stato",
+    "actions": "Azioni"
+  },
+  "status": {
+    "paid": "Pagata",
+    "unpaid": "Da pagare",
+    "overdue": "Scaduta",
+    "draft": "Bozza"
+  },
+  "actions": {
+    "mark_paid": "Segna come pagata",
+    "send_reminder": "Invia sollecito",
+    "download_pdf": "Scarica PDF",
+    "view_details": "Dettagli"
+  }
+}

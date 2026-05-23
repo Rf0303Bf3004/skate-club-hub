@@ -283,7 +283,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {(Object.keys(LOCALE_LABELS) as Locale[]).map((l) => (
+                {/* Step 1 i18n: solo IT esposto. FR/DE/EN/RM verranno abilitati a Step 3 dopo l'import delle traduzioni. */}
+                {(['it'] as Locale[]).map((l) => (
                   <SelectItem key={l} value={l}>{LOCALE_LABELS[l]}</SelectItem>
                 ))}
               </SelectContent>

@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -6,12 +7,13 @@ import { Button } from "@/components/ui/button";
 
 export type SezionePitch = "intro" | "storia" | "audience" | "call_to_action" | "contatti";
 
-const LABELS: Record<SezionePitch, string> = {
-  intro: "Introduzione",
-  storia: "La nostra storia",
-  audience: "La nostra audience",
-  call_to_action: "Call to action",
-  contatti: "Contatti",
+// Mappa sezioni → chiave di traduzione (non DB enum). Le label visibili passano per i18n.
+const SECTION_KEYS: Record<SezionePitch, string> = {
+  intro: "pitch.sections.intro",
+  storia: "pitch.sections.storia",
+  audience: "pitch.sections.audience",
+  call_to_action: "pitch.sections.call_to_action",
+  contatti: "pitch.sections.contatti",
 };
 
 interface Props {
@@ -22,7 +24,18 @@ interface Props {
   saving?: boolean;
 }
 
+// Etichette inline localizzate (non ancora in JSON namespace dedicato: testi specifici area sponsor).
+// Il refactor completo del namespace 'sponsor' è tracciato in I18N_TODO.md.
+const FALLBACK_LABELS: Record<SezionePitch, string> = {
+  intro: "Introduzione",
+  storia: "La nostra storia",
+  audience: "La nostra audience",
+  call_to_action: "Call to action",
+  contatti: "Contatti",
+};
+
 export const PitchTextEditorDialog: React.FC<Props> = ({ open, on_open_change, initial, on_save, saving }) => {
+  const { t } = useTranslation('common');
   const [v, set_v] = React.useState<Record<SezionePitch, string>>(initial);
   React.useEffect(() => { set_v(initial); }, [initial, open]);
 
@@ -33,9 +46,9 @@ export const PitchTextEditorDialog: React.FC<Props> = ({ open, on_open_change, i
           <DialogTitle>Modifica testo Pitch</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          {(Object.keys(LABELS) as SezionePitch[]).map((k) => (
+          {(Object.keys(SECTION_KEYS) as SezionePitch[]).map((k) => (
             <div key={k}>
-              <Label>{LABELS[k]}</Label>
+              <Label>{FALLBACK_LABELS[k]}</Label>
               <Textarea
                 rows={4}
                 value={v[k] ?? ""}
@@ -46,8 +59,8 @@ export const PitchTextEditorDialog: React.FC<Props> = ({ open, on_open_change, i
           ))}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => on_open_change(false)}>Annulla</Button>
-          <Button onClick={() => on_save(v)} disabled={saving}>Salva</Button>
+          <Button variant="outline" onClick={() => on_open_change(false)}>{t('actions.cancel')}</Button>
+          <Button onClick={() => on_save(v)} disabled={saving}>{t('actions.save')}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
