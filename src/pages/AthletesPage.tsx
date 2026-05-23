@@ -797,7 +797,7 @@ const AthletesPage: React.FC = () => {
                 <p className="text-primary-foreground/50 text-xs">Scheda anagrafica atleta</p>
               </div>
               <span className="ml-auto text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider bg-accent/20 text-accent">
-                {is_atleta_attivo_oggi(adesioni, atleta.id) ? "Attivo" : "Inattivo"}
+                {atleta.attivo !== false ? "Attivo" : "Inattivo"}
               </span>
             </div>
 
