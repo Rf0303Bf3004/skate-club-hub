@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ const CANTONI = [
 const FEDERAZIONI = ["FSP", "ISU", "altro", "nessuna"];
 
 export default function RegisterClubPage() {
+  const { t } = useTranslation(['onboarding', 'common']);
   const [loading, setLoading] = useState(false);
   const [accettaTermini, setAccettaTermini] = useState(false);
   const [form, setForm] = useState({
@@ -37,14 +39,14 @@ export default function RegisterClubPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.citta.trim()) { toast.error("La città è obbligatoria"); return; }
-    if (!form.federazione) { toast.error("Seleziona la federazione (o 'nessuna')"); return; }
+    if (!form.citta.trim()) { toast.error(t('register.errors.city_required')); return; }
+    if (!form.federazione) { toast.error(t('register.errors.federation_required')); return; }
     if (form.federazione === "altro" && !form.federazione_altro.trim()) {
-      toast.error("Specifica il nome della federazione"); return;
+      toast.error(t('register.errors.federation_other_required')); return;
     }
-    if (form.password.length < 8) { toast.error("Password minimo 8 caratteri"); return; }
-    if (form.password !== form.password_conferma) { toast.error("Le due password non coincidono"); return; }
-    if (!accettaTermini) { toast.error("Devi accettare termini e privacy per continuare"); return; }
+    if (form.password.length < 8) { toast.error(t('register.errors.password_min')); return; }
+    if (form.password !== form.password_conferma) { toast.error(t('register.errors.passwords_mismatch')); return; }
+    if (!accettaTermini) { toast.error(t('register.errors.terms_required')); return; }
 
     const federazione_finale =
       form.federazione === "altro" ? form.federazione_altro.trim() :
@@ -67,7 +69,7 @@ export default function RegisterClubPage() {
         },
       });
       if (error || (data as any)?.error) {
-        toast.error((data as any)?.error || error?.message || "Errore registrazione");
+        toast.error((data as any)?.error || error?.message || t('register.errors.register_failed'));
         setLoading(false);
         return;
       }
@@ -76,7 +78,7 @@ export default function RegisterClubPage() {
         password: form.password,
       });
       if (loginErr) { toast.error(loginErr.message); setLoading(false); return; }
-      toast.success("Club creato! Benvenuto.");
+      toast.success(t('register.success_created'));
       window.location.href = "/onboarding";
     } catch (err) {
       toast.error(String(err));
@@ -84,28 +86,29 @@ export default function RegisterClubPage() {
     }
   };
 
+  // Helper per label "campo *"
+  const lbl = (key: string, required = false) => `${t(`register.fields.${key}`)}${required ? ' *' : ''}`;
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-2xl">
         <CardHeader>
-          <CardTitle>Registra il tuo club</CardTitle>
-          <CardDescription>
-            Crea il tuo spazio Ice Arena in pochi minuti. Il presidente diventa l'amministratore principale.
-          </CardDescription>
+          <CardTitle>{t('register.title')}</CardTitle>
+          <CardDescription>{t('register.subtitle')}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
-                <Label>Nome club *</Label>
+                <Label>{lbl('club_name', true)}</Label>
                 <Input required value={form.nome_club} onChange={(e) => update("nome_club", e.target.value)} />
               </div>
               <div>
-                <Label>Sigla (max 10)</Label>
+                <Label>{lbl('club_sigla')}</Label>
                 <Input maxLength={10} value={form.sigla} onChange={(e) => update("sigla", e.target.value)} />
               </div>
               <div>
-                <Label>Cantone</Label>
+                <Label>{lbl('canton')}</Label>
                 <select
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   value={form.cantone}
@@ -116,24 +119,24 @@ export default function RegisterClubPage() {
                 </select>
               </div>
               <div>
-                <Label>Città *</Label>
+                <Label>{lbl('city', true)}</Label>
                 <Input required value={form.citta} onChange={(e) => update("citta", e.target.value)} />
               </div>
               <div>
-                <Label>Federazione *</Label>
+                <Label>{lbl('federation', true)}</Label>
                 <select
                   required
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   value={form.federazione}
                   onChange={(e) => update("federazione", e.target.value)}
                 >
-                  <option value="">— Seleziona —</option>
+                  <option value="">{t('register.fields.federation_select_hint')}</option>
                   {FEDERAZIONI.map((f) => <option key={f} value={f}>{f}</option>)}
                 </select>
               </div>
               {form.federazione === "altro" && (
                 <div className="md:col-span-2">
-                  <Label>Specifica federazione *</Label>
+                  <Label>{lbl('federation_other', true)}</Label>
                   <Input
                     required
                     value={form.federazione_altro}
@@ -143,27 +146,27 @@ export default function RegisterClubPage() {
               )}
               <hr className="md:col-span-2 my-2" />
               <div>
-                <Label>Nome presidente *</Label>
+                <Label>{lbl('president_name', true)}</Label>
                 <Input required value={form.nome_presidente} onChange={(e) => update("nome_presidente", e.target.value)} />
               </div>
               <div>
-                <Label>Cognome presidente *</Label>
+                <Label>{lbl('president_surname', true)}</Label>
                 <Input required value={form.cognome_presidente} onChange={(e) => update("cognome_presidente", e.target.value)} />
               </div>
               <div>
-                <Label>Email *</Label>
+                <Label>{lbl('email', true)}</Label>
                 <Input type="email" required value={form.email_presidente} onChange={(e) => update("email_presidente", e.target.value)} />
               </div>
               <div>
-                <Label>Telefono</Label>
+                <Label>{lbl('phone')}</Label>
                 <Input value={form.telefono} onChange={(e) => update("telefono", e.target.value)} />
               </div>
               <div>
-                <Label>Password * (min 8)</Label>
+                <Label>{lbl('password', true)}</Label>
                 <Input type="password" required minLength={8} value={form.password} onChange={(e) => update("password", e.target.value)} />
               </div>
               <div>
-                <Label>Conferma password *</Label>
+                <Label>{lbl('password_confirm', true)}</Label>
                 <Input type="password" required minLength={8} value={form.password_conferma} onChange={(e) => update("password_conferma", e.target.value)} />
               </div>
             </div>
@@ -175,17 +178,19 @@ export default function RegisterClubPage() {
                 onCheckedChange={(v) => setAccettaTermini(v === true)}
               />
               <label htmlFor="termini" className="text-sm text-muted-foreground leading-tight cursor-pointer">
-                Accetto i <a className="text-primary underline" href="/termini" target="_blank" rel="noreferrer">Termini</a>{" "}
-                e l'<a className="text-primary underline" href="/privacy" target="_blank" rel="noreferrer">Informativa Privacy</a>.
+                {t('register.accept_terms_prefix')}{' '}
+                <a className="text-primary underline" href="/termini" target="_blank" rel="noreferrer">{t('register.accept_terms_link')}</a>{' '}
+                {t('register.accept_terms_middle')}
+                <a className="text-primary underline" href="/privacy" target="_blank" rel="noreferrer">{t('register.accept_privacy_link')}</a>.
               </label>
             </div>
 
             <Button type="submit" disabled={loading} className="w-full">
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Crea club e accedi
+              {t('register.submit')}
             </Button>
             <p className="text-center text-sm text-muted-foreground">
-              Hai già un account? <a href="/" className="text-primary underline">Accedi</a>
+              {t('register.already_have_account')} <a href="/" className="text-primary underline">{t('register.sign_in')}</a>
             </p>
           </form>
         </CardContent>

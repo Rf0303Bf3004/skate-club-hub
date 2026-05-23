@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useI18n, LOCALE_LABELS, Locale } from '@/lib/i18n';
+import { useTranslation } from 'react-i18next';
+import { LOCALE_LABELS, Locale, useI18n } from '@/lib/i18n';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +9,8 @@ import { Lock, Mail, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 
 const LoginPage: React.FC = () => {
-  const { t, locale, set_locale } = useI18n();
+  const { t } = useTranslation('onboarding');
+  const { locale, set_locale } = useI18n();
   const { login } = useAuth();
   const [email, set_email] = useState('');
   const [password, set_password] = useState('');
@@ -21,7 +23,7 @@ const LoginPage: React.FC = () => {
     try {
       await login(email, password);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Login non riuscito';
+      const message = error instanceof Error ? error.message : t('login.sign_in_failed');
       toast.error(message);
     } finally {
       set_is_submitting(false);
@@ -37,8 +39,8 @@ const LoginPage: React.FC = () => {
               <span className="text-primary-foreground font-bold text-xl tracking-tight">C</span>
             </div>
             <div className="text-center">
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">Ice Arena Manager</h1>
-              <p className="text-sm text-muted-foreground mt-1">{t('benvenuto')}</p>
+              <h1 className="text-2xl font-bold tracking-tight text-foreground">{t('login.title')}</h1>
+              <p className="text-sm text-muted-foreground mt-1">{t('login.welcome')}</p>
             </div>
           </div>
 
@@ -63,7 +65,7 @@ const LoginPage: React.FC = () => {
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   type="email"
-                  placeholder={t('email')}
+                  placeholder={t('login.email_placeholder')}
                   value={email}
                   onChange={(e) => set_email(e.target.value)}
                   className="pl-10"
@@ -75,7 +77,7 @@ const LoginPage: React.FC = () => {
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   type="password"
-                  placeholder={t('password')}
+                  placeholder={t('login.password_placeholder')}
                   value={password}
                   onChange={(e) => set_password(e.target.value)}
                   className="pl-10"
@@ -83,12 +85,12 @@ const LoginPage: React.FC = () => {
               </div>
             </div>
             <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={is_submitting}>
-              {is_submitting ? '...' : t('accedi')}
+              {is_submitting ? '...' : t('login.sign_in')}
             </Button>
           </form>
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            Nuovo club? <a href="/registrati" className="text-primary underline">Registrati</a>
+            {t('login.new_club_question')} <a href="/registrati" className="text-primary underline">{t('login.register_here')}</a>
           </p>
         </div>
       </div>
