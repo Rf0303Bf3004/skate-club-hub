@@ -54,18 +54,18 @@ export default function TestMobileAuthPage() {
     <div className="p-6 max-w-4xl mx-auto space-y-4">
       <h1 className="text-2xl font-bold">Test Mobile Auth Login</h1>
       <p className="text-sm text-muted-foreground">
-        Scambia un token QR (tabella <code>inviti_genitori.token</code>) con una sessione Supabase autenticata.
+        Scambia un <code>codice_atleta</code> permanente (formato <code>AT-XXXX-XXXX</code>) con una sessione Supabase autenticata.
         Endpoint: <code>{fn_url}</code>
       </p>
 
       <Card className="p-4 space-y-3">
         <div>
-          <Label htmlFor="token">QR Token</Label>
+          <Label htmlFor="token">Codice atleta</Label>
           <Input
             id="token"
             value={token}
             onChange={(e) => set_token(e.target.value)}
-            placeholder="es. ASGXBQJFNAMY"
+            placeholder="es. AT-7A2K-9B3N"
             className="font-mono"
           />
         </div>
