@@ -738,17 +738,55 @@ const InvoicesPage: React.FC = () => {
           </Button>
         </div>
 
-        <Select value={status_filter} onValueChange={set_status_filter}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder={t("stato")} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="tutti">{t("tutti")}</SelectItem>
-            <SelectItem value="pagata">{t("pagata")}</SelectItem>
-            <SelectItem value="da_pagare">{t("da_pagare")}</SelectItem>
-            <SelectItem value="scaduta">Scadute</SelectItem>
-          </SelectContent>
-        </Select>
+        <SearchableListLayout
+          search={search_raw}
+          on_search_change={set_search_raw}
+          search_placeholder="Cerca per numero, descrizione, nome atleta…"
+          filters={[
+            {
+              key: "stato", label: "Stato", value: status_filter,
+              options: [
+                { value: "tutti", label: t("tutti") },
+                { value: "pagata", label: t("pagata") },
+                { value: "da_pagare", label: t("da_pagare") },
+                { value: "scaduta", label: "Scadute" },
+              ],
+              onChange: set_status_filter,
+            },
+            {
+              key: "periodo", label: "Periodo", value: periodo_filter,
+              options: [
+                { value: "tutti", label: "Tutti" },
+                { value: "mese", label: "Questo mese" },
+                { value: "trimestre", label: "Ultimo trimestre" },
+                { value: "anno", label: "Anno corrente" },
+              ],
+              onChange: (v: string) => set_periodo_filter(v as any),
+            },
+          ]}
+          sort={{
+            value: sort_by,
+            onChange: (v) => set_sort_by(v as any),
+            options: [
+              { value: "data_desc", label: "Data emissione ↓" },
+              { value: "scadenza", label: "Scadenza ↑" },
+              { value: "importo_desc", label: "Importo ↓" },
+            ],
+          }}
+          count_filtered={filtered.length}
+          count_total={fatture.length}
+          extra_summary={
+            <span className="font-semibold text-foreground">
+              Totale: CHF {totale_filtrato.toFixed(2)}
+              {totale_filtrato_scadute > 0 && (
+                <span className="ml-2 text-red-700">· scadute CHF {totale_filtrato_scadute.toFixed(2)}</span>
+              )}
+            </span>
+          }
+        >
+          <div />
+        </SearchableListLayout>
+
 
         <div className="bg-card rounded-xl shadow-card overflow-hidden">
           <div className="overflow-x-auto">
