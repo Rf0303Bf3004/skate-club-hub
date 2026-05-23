@@ -1,6 +1,7 @@
 import React from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useI18n, LOCALE_LABELS, Locale } from "@/lib/i18n";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/auth";
 import { use_club } from "@/hooks/use-supabase-data";
 import { supabase } from "@/lib/supabase";
@@ -11,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { use_count_iscrizioni_non_lette } from "@/components/comunicazioni/IscrizioniAtletiNotifiche";
 import { MENU_PRINCIPALE, MENU_SETUP } from "@/config/menuSections";
+
 
 // Voci legacy (admin/superadmin vedono questo menu come prima)
 const legacy_nav_items = [
@@ -54,7 +56,10 @@ interface MainLayoutProps { children: React.ReactNode; }
 
 const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const { t, locale, set_locale } = useI18n();
+  const { t: tc } = useTranslation("common");
+  const menu_label = (codice: string, fallback: string) => tc(`menu.${codice}`, { defaultValue: fallback });
   const { session, logout } = useAuth();
+
   const { data: club } = use_club();
   const location = useLocation();
   const [sidebar_open, set_sidebar_open] = React.useState(false);
