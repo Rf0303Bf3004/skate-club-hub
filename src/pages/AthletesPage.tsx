@@ -678,7 +678,8 @@ const AthletesPage: React.FC = () => {
       if (agonista_filter === "si" && !a.agonista) return false;
       if (agonista_filter === "no" && a.agonista) return false;
       if (attivo_filter !== "tutti") {
-        const att = is_atleta_attivo_oggi(adesioni, a.id);
+        // Stato atleta deriva dalla colonna boolean atleti.attivo (fonte di verità anagrafica)
+        const att = a.attivo !== false;
         if (attivo_filter === "attivi" && !att) return false;
         if (attivo_filter === "inattivi" && att) return false;
       }
