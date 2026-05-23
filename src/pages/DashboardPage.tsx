@@ -411,8 +411,10 @@ const BoxComunicazione: React.FC<{
   preset?: BoxComunicazionePreset | null;
   on_preset_consumed?: () => void;
 }> = ({ atleti, istruttori, monitori, corsi, gare, preset, on_preset_consumed }) => {
+  const { t: td } = useTranslation("dashboard");
   const { data: templates = [] } = use_template_comunicazioni();
   const crea = use_crea_comunicazione();
+
 
   const [tipo_dest, set_tipo_dest] = useState("tutti");
   const [riferimento_id, set_riferimento_id] = useState("");
@@ -537,9 +539,10 @@ const BoxComunicazione: React.FC<{
 
   const handle_salva_inapp = async () => {
     if (!titolo || !testo) {
-      toast({ title: "Inserisci titolo e testo", variant: "destructive" });
+      toast({ title: td("quick_comm.missing_title_text"), variant: "destructive" });
       return;
     }
+
     try {
       const is_birthday = last_preset_marker.current?.startsWith("birthday:") ?? false;
       const target_atleta_id = tipo_dest === "singolo_atleta" ? persona_id : null;
@@ -551,28 +554,29 @@ const BoxComunicazione: React.FC<{
         atleta_id: target_atleta_id,
         urgente,
       });
-      toast({ title: "✅ Comunicazione salvata" });
+      toast({ title: td("quick_comm.saved_toast") });
       set_titolo("");
       set_testo("");
       set_template_sel("");
       set_urgente(false);
     } catch (err: any) {
-      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+      toast({ title: td("toast.error"), description: err?.message, variant: "destructive" });
     }
   };
+
 
   return (
     <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
       <div className="flex items-center gap-2">
         <MessageSquare className="w-4 h-4 text-primary" />
-        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Comunicazione rapida</h3>
+        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{td("quick_comm.title")}</h3>
       </div>
 
       {/* Template */}
       <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Template</label>
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{td("quick_comm.template")}</label>
         <select value={template_sel} onChange={(e) => handle_template(e.target.value)} className={input_cls}>
-          <option value="">Scegli template...</option>
+          <option value="">{td("quick_comm.choose_template")}</option>
           {templates.map((t: any) => (
             <option key={t.id} value={t.id}>
               {t.nome}
@@ -583,7 +587,7 @@ const BoxComunicazione: React.FC<{
 
       {/* Destinatari */}
       <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Destinatari</label>
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{td("quick_comm.recipients")}</label>
         <select
           value={tipo_dest}
           onChange={(e) => {
@@ -593,20 +597,20 @@ const BoxComunicazione: React.FC<{
           }}
           className={input_cls}
         >
-          <option value="tutti">Tutti (club intero)</option>
-          <option value="atleti_attivi">Tutti gli atleti attivi</option>
-          <option value="istruttori">Tutti gli istruttori</option>
-          <option value="monitori">Tutti i monitori</option>
-          <option value="aiuto_monitori">Tutti gli aiuto monitori</option>
-          <option value="corso">Iscritti a un corso</option>
-          <option value="gara">Iscritti a una gara</option>
-          <option value="singolo_atleta">Singolo atleta</option>
-          <option value="singolo_istruttore">Singolo istruttore/monitore</option>
+          <option value="tutti">{td("quick_comm.recipient_options.tutti")}</option>
+          <option value="atleti_attivi">{td("quick_comm.recipient_options.atleti_attivi")}</option>
+          <option value="istruttori">{td("quick_comm.recipient_options.istruttori")}</option>
+          <option value="monitori">{td("quick_comm.recipient_options.monitori")}</option>
+          <option value="aiuto_monitori">{td("quick_comm.recipient_options.aiuto_monitori")}</option>
+          <option value="corso">{td("quick_comm.recipient_options.corso")}</option>
+          <option value="gara">{td("quick_comm.recipient_options.gara")}</option>
+          <option value="singolo_atleta">{td("quick_comm.recipient_options.singolo_atleta")}</option>
+          <option value="singolo_istruttore">{td("quick_comm.recipient_options.singolo_istruttore")}</option>
         </select>
 
         {tipo_dest === "corso" && (
           <select value={riferimento_id} onChange={(e) => set_riferimento_id(e.target.value)} className={input_cls}>
-            <option value="">Seleziona corso...</option>
+            <option value="">{td("quick_comm.select_corso")}</option>
             {corsi
               .filter((c) => c.stato === "attivo")
               .map((c) => (
@@ -618,7 +622,7 @@ const BoxComunicazione: React.FC<{
         )}
         {tipo_dest === "gara" && (
           <select value={riferimento_id} onChange={(e) => set_riferimento_id(e.target.value)} className={input_cls}>
-            <option value="">Seleziona gara...</option>
+            <option value="">{td("quick_comm.select_gara")}</option>
             {gare.map((g) => (
               <option key={g.id} value={g.id}>
                 {g.nome} — {new Date(g.data + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
@@ -628,7 +632,7 @@ const BoxComunicazione: React.FC<{
         )}
         {tipo_dest === "singolo_atleta" && (
           <select value={persona_id} onChange={(e) => set_persona_id(e.target.value)} className={input_cls}>
-            <option value="">Seleziona atleta...</option>
+            <option value="">{td("quick_comm.select_atleta")}</option>
             {atleti
               .filter((a) => a.stato === "attivo")
               .map((a) => (
@@ -640,7 +644,7 @@ const BoxComunicazione: React.FC<{
         )}
         {tipo_dest === "singolo_istruttore" && (
           <select value={persona_id} onChange={(e) => set_persona_id(e.target.value)} className={input_cls}>
-            <option value="">Seleziona persona...</option>
+            <option value="">{td("quick_comm.select_persona")}</option>
             {[...istruttori, ...monitori].map((i) => (
               <option key={i.id} value={i.id}>
                 {i.nome} {i.cognome}
@@ -651,34 +655,34 @@ const BoxComunicazione: React.FC<{
 
         {destinatari.length > 0 && (
           <p className="text-xs text-primary font-medium">
-            📨 {destinatari.length} destinatar{destinatari.length === 1 ? "io" : "i"}
+            {td("quick_comm.recipients_count", { count: destinatari.length })}
           </p>
         )}
       </div>
 
       {/* Titolo */}
       <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Titolo</label>
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{td("quick_comm.title_field")}</label>
         <input
           value={titolo}
           onChange={(e) => set_titolo(e.target.value)}
-          placeholder="Oggetto comunicazione..."
+          placeholder={td("quick_comm.title_placeholder")}
           className={input_cls}
         />
       </div>
 
       {/* Testo */}
       <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Messaggio</label>
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{td("quick_comm.message")}</label>
         <textarea
           value={testo}
           onChange={(e) => set_testo(e.target.value)}
           rows={4}
-          placeholder="Scrivi il messaggio... Usa {nome} per personalizzarlo"
+          placeholder={td("quick_comm.message_placeholder")}
           className={`${input_cls} resize-none`}
         />
         <p className="text-[10px] text-muted-foreground">
-          Variabili: {"{nome}"}, {"{corso}"}, {"{gara}"}, {"{data}"}, {"{importo}"}
+          {td("quick_comm.variables_hint")}
         </p>
       </div>
 
@@ -689,10 +693,10 @@ const BoxComunicazione: React.FC<{
             <TooltipTrigger asChild>
               <Label htmlFor="dash-com-urgente" className="cursor-pointer flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-foreground">
                 <AlertTriangle className="w-4 h-4 text-destructive" />
-                Urgente
+                {td("quick_comm.urgent")}
               </Label>
             </TooltipTrigger>
-            <TooltipContent>Sarà mostrata come banner urgente nell'app dell'atleta</TooltipContent>
+            <TooltipContent>{td("quick_comm.urgent_tooltip")}</TooltipContent>
           </Tooltip>
           <Switch
             id="dash-com-urgente"
@@ -712,12 +716,13 @@ const BoxComunicazione: React.FC<{
           className="flex-1 gap-1.5 text-xs"
         >
           <Send className="w-3.5 h-3.5" />
-          {crea.isPending ? "..." : "Salva in-app"}
+          {crea.isPending ? "..." : td("quick_comm.save_inapp")}
         </Button>
       </div>
     </div>
   );
 };
+
 
 // ─── Widget compleanni ─────────────────────────────────────
 const WidgetCompleanni: React.FC<{ atleti: any[] }> = ({ atleti }) => {
