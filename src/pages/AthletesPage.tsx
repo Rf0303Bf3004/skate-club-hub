@@ -17,7 +17,7 @@ import AtletaDetail from "@/components/AtletaDetail";
 import AthleteBadges from "@/components/AthleteBadges";
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
-import InvitoGenitoreModal from "@/components/InvitoGenitoreModal";
+
 import DateInput from "@/components/forms/DateInput";
 import {
   CATEGORIE,
@@ -552,7 +552,7 @@ const AthletesPage: React.FC = () => {
   const [modal_open, set_modal_open] = useState(false);
   const [selected_atleta, set_selected_atleta] = useState<any>(null);
   const [scheda_id, set_scheda_id] = useState<string | null>(null);
-  const [invito_atleta, set_invito_atleta] = useState<any>(null);
+  
   const { data: club } = use_club();
   const { data: adesioni = [] } = use_adesioni_atleta();
 
@@ -741,11 +741,6 @@ const AthletesPage: React.FC = () => {
             <Button variant="ghost" size="sm" onClick={() => set_scheda_id(null)}>
               <ArrowLeft className="w-4 h-4 mr-1" /> Indietro
             </Button>
-            {atleta.genitore1_email && (
-              <Button size="sm" variant="outline" onClick={() => set_invito_atleta(atleta)}>
-                <Mail className="w-4 h-4 mr-2" /> Genera invito genitore
-              </Button>
-            )}
             <Button size="sm" onClick={() => window.print()} className="ml-auto">
               <Printer className="w-4 h-4 mr-2" /> Stampa / Salva PDF
             </Button>
@@ -890,14 +885,6 @@ const AthletesPage: React.FC = () => {
 
   return (
     <>
-      {invito_atleta && (
-        <InvitoGenitoreModal
-          atleta={invito_atleta}
-          genitore_email={invito_atleta.genitore1_email}
-          genitore_nome={`${invito_atleta.genitore1_nome} ${invito_atleta.genitore1_cognome}`.trim()}
-          on_close={() => set_invito_atleta(null)}
-        />
-      )}
       {modal_open && (
         <AtletaModal
           key={selected_atleta?.id || "nuovo"}

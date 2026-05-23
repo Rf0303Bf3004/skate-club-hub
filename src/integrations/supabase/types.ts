@@ -1718,61 +1718,6 @@ export type Database = {
         }
         Relationships: []
       }
-      inviti_genitori: {
-        Row: {
-          atleta_id: string
-          club_id: string
-          created_at: string
-          email: string
-          expires_at: string
-          id: string
-          token: string
-          usato: boolean
-        }
-        Insert: {
-          atleta_id: string
-          club_id: string
-          created_at?: string
-          email: string
-          expires_at: string
-          id?: string
-          token: string
-          usato?: boolean
-        }
-        Update: {
-          atleta_id?: string
-          club_id?: string
-          created_at?: string
-          email?: string
-          expires_at?: string
-          id?: string
-          token?: string
-          usato?: boolean
-        }
-        Relationships: [
-          {
-            foreignKeyName: "inviti_genitori_atleta_id_fkey"
-            columns: ["atleta_id"]
-            isOneToOne: false
-            referencedRelation: "atleti"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inviti_genitori_club_id_fkey"
-            columns: ["club_id"]
-            isOneToOne: false
-            referencedRelation: "clubs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "inviti_genitori_club_id_fkey"
-            columns: ["club_id"]
-            isOneToOne: false
-            referencedRelation: "kpi_pitch_sponsor"
-            referencedColumns: ["club_id"]
-          },
-        ]
-      }
       iscrizioni_campo: {
         Row: {
           atleta_id: string

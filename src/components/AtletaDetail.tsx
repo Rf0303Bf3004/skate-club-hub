@@ -6,7 +6,7 @@ import { CheckCircle2, AlertTriangle } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { Calendar } from "lucide-react";
 import CalendarioAtletaInterattivo from "@/components/CalendarioAtletaInterattivo";
-import InvitoGenitoreModal from "@/components/InvitoGenitoreModal";
+import CodiceAtletaCard from "@/components/CodiceAtletaCard";
 import StoricoTestAtleta from "@/components/StoricoTestAtleta";
 import DateInput from "@/components/forms/DateInput";
 import AthleteBadges from "@/components/AthleteBadges";
@@ -249,8 +249,6 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   const upsert = use_upsert_atleta();
   const migra = use_migra_atleta();
   const [show_migra, set_show_migra] = useState(false);
-  const [show_invito_1, set_show_invito_1] = useState(false);
-  const [show_invito_2, set_show_invito_2] = useState(false);
   const [generating_portal, set_generating_portal] = useState(false);
   const [show_qr_portal, set_show_qr_portal] = useState(false);
   const [verifying, set_verifying] = useState(false);
@@ -686,20 +684,6 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
             <ArrowLeft className="w-4 h-4 mr-2" /> {t("atleti")}
           </Button>
           <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
-            {form.genitore1_email ? (
-              <Button variant="outline" size="sm" onClick={() => set_show_invito_1(true)} className="gap-1.5 text-xs">
-                <Mail className="w-3.5 h-3.5" /> Scheda genitore 1 + QR
-              </Button>
-            ) : !form.genitore2_email ? (
-              <Button variant="outline" size="sm" disabled className="gap-1.5 text-xs">
-                <Mail className="w-3.5 h-3.5" /> Inserisci email genitore per QR
-              </Button>
-            ) : null}
-            {form.genitore2_email && (
-              <Button variant="outline" size="sm" onClick={() => set_show_invito_2(true)} className="gap-1.5 text-xs">
-                <Mail className="w-3.5 h-3.5" /> Scheda genitore 2 + QR
-              </Button>
-            )}
             <Button
               variant="outline"
               size="sm"
@@ -1342,7 +1326,11 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
           </TabsContent>
 
           {/* ── Genitori ── */}
-          <TabsContent value="genitori" className="mt-6">
+          <TabsContent value="genitori" className="mt-6 space-y-6">
+            <CodiceAtletaCard
+              atleta={form}
+              on_updated={(nuovo) => upd("codice_atleta", nuovo)}
+            />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {[
                 { label: t("genitore_1"), prefix: "genitore1" },
@@ -1361,26 +1349,9 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                       />
                     </div>
                   ))}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => (prefix === "genitore1" ? set_show_invito_1(true) : set_show_invito_2(true))}
-                    disabled={!form[`${prefix}_email`]}
-                    className="w-full gap-1.5 mt-2"
-                  >
-                    <Mail className="w-4 h-4" />
-                    {form[`${prefix}_email`] ? "Scheda atleta + QR per app" : "Inserisci email per generare la scheda"}
-                  </Button>
-                  {!form[`${prefix}_email`] && (
-                    <p className="text-xs text-muted-foreground">
-                      Aggiungi l'email del genitore per generare QR code e accesso dedicato nell'app mobile.
-                    </p>
-                  )}
                 </div>
               ))}
             </div>
-
           </TabsContent>
 
           {/* ── Fatture ── */}
@@ -1492,22 +1463,6 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
           </TabsContent>
         </Tabs>
       </div>
-      {show_invito_1 && (
-        <InvitoGenitoreModal
-          atleta={form}
-          genitore_email={form.genitore1_email}
-          genitore_nome={`${form.genitore1_nome} ${form.genitore1_cognome}`}
-          on_close={() => set_show_invito_1(false)}
-        />
-      )}
-      {show_invito_2 && (
-        <InvitoGenitoreModal
-          atleta={form}
-          genitore_email={form.genitore2_email}
-          genitore_nome={`${form.genitore2_nome} ${form.genitore2_cognome}`}
-          on_close={() => set_show_invito_2(false)}
-        />
-      )}
       <Dialog open={show_qr_portal} onOpenChange={set_show_qr_portal}>
         <DialogContent className="max-w-md print:max-w-full print:shadow-none">
           <DialogHeader>
