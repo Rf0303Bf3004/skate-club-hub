@@ -661,60 +661,95 @@ const AthletesPage: React.FC = () => {
     [atleti],
   );
 
-  const filtered = atleti.filter((a: any) => {
-    if (solo_da_verificare && a.verificato !== false) return false;
-    const name_match = `${a.nome} ${a.cognome}`.toLowerCase().includes(search.toLowerCase());
-    const status_match =
-      status_filter === "tutti" ||
-      (status_filter === "scuola" && !a.agonista && !a.atleta_federazione) ||
-      (status_filter === "agoniste" && (a.agonista || a.atleta_federazione)) ||
-      (status_filter === "federazione" && a.atleta_federazione);
-    if (!status_match) return false;
-    if (!name_match) return false;
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const list = atleti.filter((a: any) => {
+      if (solo_da_verificare && a.verificato !== false) return false;
+      if (q) {
+        const hay = [a.nome, a.cognome, a.codice_atleta, a.genitore1_email, a.genitore2_email]
+          .filter(Boolean).join(" ").toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      const status_match =
+        status_filter === "tutti" ||
+        (status_filter === "scuola" && !a.agonista && !a.atleta_federazione) ||
+        (status_filter === "agoniste" && (a.agonista || a.atleta_federazione)) ||
+        (status_filter === "federazione" && a.atleta_federazione);
+      if (!status_match) return false;
+      if (agonista_filter === "si" && !a.agonista) return false;
+      if (agonista_filter === "no" && a.agonista) return false;
+      if (attivo_filter !== "tutti") {
+        const att = is_atleta_attivo_oggi(adesioni, a.id);
+        if (attivo_filter === "attivi" && !att) return false;
+        if (attivo_filter === "inattivi" && att) return false;
+      }
+      if (eta_filter !== "tutti") {
+        const eta = calculate_age(a.data_nascita) ?? -1;
+        if (eta_filter === "5-8" && (eta < 5 || eta > 8)) return false;
+        if (eta_filter === "9-12" && (eta < 9 || eta > 12)) return false;
+        if (eta_filter === "13+" && eta < 13) return false;
+      }
 
-    // Filtro card click (precedenza alta)
-    if (card_filter) {
-      if (card_filter.sezione === "pulcini") {
-        return (a.categoria ?? "pulcini") === "pulcini";
-      }
-      if (card_filter.sezione === "amatori") {
-        return a.categoria === "amatori" && a.livello_amatori === card_filter.livello;
-      }
-      if (card_filter.sezione === "artistica") {
-        if (a.categoria !== "artistica") return false;
-        if (card_filter.percorso === "artistica") return a.livello_artistica === card_filter.livello;
-        return a.livello_stile === card_filter.livello;
-      }
-      if (card_filter.sezione === "in_prep") {
-        if (a.categoria !== "artistica") return false;
-        if (card_filter.disciplina === "artistica") {
-          return !a.livello_artistica && a.livello_artistica_in_preparazione === card_filter.livello;
+      if (card_filter) {
+        if (card_filter.sezione === "pulcini") {
+          return (a.categoria ?? "pulcini") === "pulcini";
         }
-        return !a.livello_stile && a.livello_stile_in_preparazione === card_filter.livello;
+        if (card_filter.sezione === "amatori") {
+          return a.categoria === "amatori" && a.livello_amatori === card_filter.livello;
+        }
+        if (card_filter.sezione === "artistica") {
+          if (a.categoria !== "artistica") return false;
+          if (card_filter.percorso === "artistica") return a.livello_artistica === card_filter.livello;
+          return a.livello_stile === card_filter.livello;
+        }
+        if (card_filter.sezione === "in_prep") {
+          if (a.categoria !== "artistica") return false;
+          if (card_filter.disciplina === "artistica") {
+            return !a.livello_artistica && a.livello_artistica_in_preparazione === card_filter.livello;
+          }
+          return !a.livello_stile && a.livello_stile_in_preparazione === card_filter.livello;
+        }
       }
-    }
 
-    // Filtro a cascata categoria → (percorso) → livello
-    if (categoria_filter !== "tutti") {
-      const cat = (a.categoria ?? "pulcini") as Categoria;
-      if (cat !== categoria_filter) return false;
-      if (categoria_filter === "artistica") {
-        if (percorso_filter === "artistica" && !a.livello_artistica) return false;
-        if (percorso_filter === "stile" && !a.livello_stile) return false;
-        if (percorso_filter === "entrambi" && (!a.livello_artistica || !a.livello_stile)) return false;
-      }
-      if (level_filter !== "tutti") {
-        if (categoria_filter === "pulcini") return true; // niente sottolivelli
-        if (categoria_filter === "amatori") return a.livello_amatori === level_filter;
+      if (categoria_filter !== "tutti") {
+        const cat = (a.categoria ?? "pulcini") as Categoria;
+        if (cat !== categoria_filter) return false;
         if (categoria_filter === "artistica") {
-          return a.livello_artistica === level_filter || a.livello_stile === level_filter;
+          if (percorso_filter === "artistica" && !a.livello_artistica) return false;
+          if (percorso_filter === "stile" && !a.livello_stile) return false;
+          if (percorso_filter === "entrambi" && (!a.livello_artistica || !a.livello_stile)) return false;
         }
+        if (level_filter !== "tutti") {
+          if (categoria_filter === "pulcini") return true;
+          if (categoria_filter === "amatori") return a.livello_amatori === level_filter;
+          if (categoria_filter === "artistica") {
+            return a.livello_artistica === level_filter || a.livello_stile === level_filter;
+          }
+        }
+        return true;
       }
-      return true;
-    }
 
-    return true;
-  });
+      return true;
+    });
+
+    // Sort
+    const livello_rank = (a: any) => {
+      const order = ["oro", "argento", "bronzo", "stella3", "stella2", "stella1", "ghiaccio", "pulcini"];
+      const lv = (a.livello_artistica || a.livello_stile || a.livello_amatori || a.categoria || "").toLowerCase();
+      const idx = order.findIndex((o) => lv.includes(o));
+      return idx === -1 ? 999 : idx;
+    };
+    const sorted = [...list].sort((a: any, b: any) => {
+      if (sort_by === "cognome") return (a.cognome ?? "").localeCompare(b.cognome ?? "");
+      if (sort_by === "codice") return (a.codice_atleta ?? "").localeCompare(b.codice_atleta ?? "");
+      if (sort_by === "eta") return (calculate_age(b.data_nascita) ?? 0) - (calculate_age(a.data_nascita) ?? 0);
+      if (sort_by === "recente") return (b.created_at ?? "").localeCompare(a.created_at ?? "");
+      if (sort_by === "livello") return livello_rank(a) - livello_rank(b);
+      return 0;
+    });
+    return sorted;
+  }, [atleti, search, solo_da_verificare, status_filter, agonista_filter, attivo_filter, eta_filter, card_filter, categoria_filter, percorso_filter, level_filter, sort_by, adesioni]);
+
 
   const handle_save = async (data: any) => {
     try {
