@@ -3991,6 +3991,10 @@ export type Database = {
         Args: { p_settimana_id: string }
         Returns: number
       }
+      get_atleta_portal_token: {
+        Args: { p_atleta_id: string }
+        Returns: string
+      }
       get_atleti_impattati_da_planning: {
         Args: { p_planning_corso_id: string }
         Returns: {
@@ -3998,6 +4002,17 @@ export type Database = {
           cognome: string
           nome: string
           telefono: string
+        }[]
+      }
+      get_istruttori_costi: {
+        Args: { p_club_id: string }
+        Returns: {
+          compenso_fisso_corsi: number
+          compenso_fisso_mensile: number
+          costo_minuto_lezione_privata: number
+          costo_orario_corsi: number
+          costo_orario_lezioni: number
+          id: string
         }[]
       }
       get_utente_club_display_name: {
@@ -4026,6 +4041,7 @@ export type Database = {
         }[]
       }
       sync_atleta_to_staff: { Args: { p_atleta_id: string }; Returns: string }
+      user_can_see_finance: { Args: never; Returns: boolean }
       user_club_id: { Args: never; Returns: string }
       user_has_ruolo: { Args: { _ruolo: string }; Returns: boolean }
       user_is_admin_like: { Args: never; Returns: boolean }

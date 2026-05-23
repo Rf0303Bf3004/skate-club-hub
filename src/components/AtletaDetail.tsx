@@ -377,8 +377,9 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   const is_carriera_attiva = form.percorso_amatori === "Stellina 4";
 
   const PORTALE_BASE_URL = "https://skate-club-hub.lovable.app/portale-atleta";
-  const portal_url = (form as any)?.portal_token
-    ? `${PORTALE_BASE_URL}?token=${(form as any).portal_token}`
+  const [portal_token_value, set_portal_token_value] = useState<string | null>(null);
+  const portal_url = portal_token_value
+    ? `${PORTALE_BASE_URL}?token=${portal_token_value}`
     : null;
   const portal_qr_src = portal_url
     ? `https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=10&data=${encodeURIComponent(portal_url)}`
@@ -387,15 +388,16 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   const handle_genera_portal = async () => {
     set_generating_portal(true);
     try {
-      let token = (form as any).portal_token;
+      // Il portal_token è hidden via column-level REVOKE: lo recuperiamo solo on-demand
+      // tramite RPC SECURITY DEFINER (riservata ad admin del club).
+      const { data, error } = await supabase.rpc("get_atleta_portal_token", { p_atleta_id: form.id } as any);
+      if (error) throw error;
+      const token = (data as any) ?? null;
       if (!token) {
-        token = (typeof crypto !== "undefined" && crypto.randomUUID)
-          ? crypto.randomUUID()
-          : Array.from({ length: 24 }, () => "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"[Math.floor(Math.random() * 62)]).join("");
-        const { error } = await supabase.from("atleti").update({ portal_token: token } as any).eq("id", form.id);
-        if (error) throw error;
-        set_form((prev: any) => ({ ...prev, portal_token: token }));
+        toast({ title: "Token non disponibile", description: "Solo gli admin del club possono generare il QR del portale.", variant: "destructive" });
+        return;
       }
+      set_portal_token_value(token);
       set_show_qr_portal(true);
     } catch (err: any) {
       toast({ title: "Errore", description: err?.message, variant: "destructive" });
@@ -403,6 +405,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
       set_generating_portal(false);
     }
   };
+
 
   const handle_copy_portal_link = async () => {
     if (!portal_url) return;

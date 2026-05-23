@@ -78,7 +78,10 @@ export function use_atleti() {
     enabled: !!get_current_club_id(),
     queryKey: ["atleti", get_current_club_id()],
     queryFn: async () => {
-      const club_id = get_current_club_id(); const { data, error } = await supabase.from("atleti").select("*").eq("club_id", club_id);
+      const club_id = get_current_club_id();
+      // NB: portal_token è volutamente escluso (column-level REVOKE per sicurezza, recuperato via RPC quando serve)
+      const atleti_cols = "id,club_id,nome,cognome,data_nascita,sesso,telefono,indirizzo,codice_fiscale,foto_url,disco_url,disco_in_preparazione,tag_nfc,note,attivo,categoria,agonista,atleta_federazione,livello_attuale,livello_in_preparazione,livello_artistica,livello_artistica_in_preparazione,livello_stile,livello_stile_in_preparazione,livello_amatori,carriera_artistica,carriera_stile,licenza_sis_numero,licenza_sis_categoria,licenza_sis_disciplina,licenza_sis_validita_a,genitore1_nome,genitore1_cognome,genitore1_telefono,genitore1_email,genitore2_nome,genitore2_cognome,genitore2_telefono,genitore2_email,ruolo_pista,compenso_orario_pista,ore_pista_stagione,e_monitrice,e_aiuto_monitrice,attivo_come_monitore,a_rischio,a_rischio_da,verificato,verificato_at,verificato_da_user_id,importato_da_excel,codice_atleta,created_at";
+      const { data, error } = await supabase.from("atleti").select(atleti_cols).eq("club_id", club_id);
       if (error) throw error;
       const mapped = (data ?? []).map(transform_atleta);
       return mapped.sort((a, b) => {
@@ -161,14 +164,22 @@ export function use_istruttori() {
     enabled: !!get_current_club_id(),
     queryKey: ["istruttori", get_current_club_id()],
     queryFn: async () => {
-      const [ist_res, disp_res] = await Promise.all([
-        supabase.from("istruttori").select("*").eq("club_id", get_current_club_id()).order("cognome"),
+      const [ist_res, disp_res, costi_res] = await Promise.all([
+        // NB: i campi di costo (costo_orario_*, compenso_fisso_*, costo_minuto_lezione_privata) sono
+        // hidden via column-level REVOKE; vengono recuperati separatamente con la RPC get_istruttori_costi
+        // e fusi solo se l'utente ha i ruoli finanziari.
+        supabase.from("istruttori").select("id,club_id,nome,cognome,email,telefono,colore,attivo,created_at,linked_atleta_id,livello_istruttore,stato_staff,note,tipo_contratto,specialita").eq("club_id", get_current_club_id()).order("cognome"),
         supabase.from("disponibilita_istruttori").select("*"),
+        supabase.rpc("get_istruttori_costi", { p_club_id: get_current_club_id() } as any),
       ]);
       if (ist_res.error) throw ist_res.error;
       if (disp_res.error) throw disp_res.error;
       const disp_all = disp_res.data ?? [];
-      return (ist_res.data ?? []).map((i) => {
+      const costi_map = new Map<string, any>();
+      if (!costi_res.error && Array.isArray(costi_res.data)) {
+        (costi_res.data as any[]).forEach((c) => costi_map.set(c.id ?? c.istruttore_id, c));
+      }
+      return ((ist_res.data ?? []) as any[]).map((i: any) => {
         const disp_map: Record<string, { ora_inizio: string; ora_fine: string }[]> = {};
         disp_all
           .filter((d) => d.istruttore_id === i.id)
@@ -176,9 +187,15 @@ export function use_istruttori() {
             if (!disp_map[d.giorno]) disp_map[d.giorno] = [];
             disp_map[d.giorno].push({ ora_inizio: d.ora_inizio, ora_fine: d.ora_fine });
           });
+        const c = costi_map.get(i.id) ?? {};
         return {
           ...i,
-          costo_minuto: i.costo_minuto_lezione_privata ?? 0,
+          costo_orario_lezioni: c.costo_orario_lezioni ?? null,
+          costo_orario_corsi: c.costo_orario_corsi ?? null,
+          compenso_fisso_mensile: c.compenso_fisso_mensile ?? null,
+          compenso_fisso_corsi: c.compenso_fisso_corsi ?? null,
+          costo_minuto_lezione_privata: c.costo_minuto_lezione_privata ?? null,
+          costo_minuto: c.costo_minuto_lezione_privata ?? 0,
           stato: i.attivo ? "attivo" : "inattivo",
           disponibilita: disp_map,
         };
