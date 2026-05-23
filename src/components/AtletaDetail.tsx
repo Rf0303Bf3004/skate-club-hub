@@ -377,9 +377,11 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   const is_carriera_attiva = form.percorso_amatori === "Stellina 4";
 
   const PORTALE_BASE_URL = "https://skate-club-hub.lovable.app/portale-atleta";
-  const [portal_token_value, set_portal_token_value] = useState<string | null>(null);
-  const portal_url = portal_token_value
-    ? `${PORTALE_BASE_URL}?token=${portal_token_value}`
+  // L'identificatore del portale web è ora il codice_atleta (AT-XXXX-XXXX),
+  // lo stesso usato dall'app mobile genitori. Niente più portal_token separato.
+  const codice_atleta_value: string | null = (form as any)?.codice_atleta ?? null;
+  const portal_url = codice_atleta_value
+    ? `${PORTALE_BASE_URL}/${encodeURIComponent(codice_atleta_value)}`
     : null;
   const portal_qr_src = portal_url
     ? `https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=10&data=${encodeURIComponent(portal_url)}`
@@ -388,16 +390,10 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   const handle_genera_portal = async () => {
     set_generating_portal(true);
     try {
-      // Il portal_token è hidden via column-level REVOKE: lo recuperiamo solo on-demand
-      // tramite RPC SECURITY DEFINER (riservata ad admin del club).
-      const { data, error } = await supabase.rpc("get_atleta_portal_token", { p_atleta_id: form.id } as any);
-      if (error) throw error;
-      const token = (data as any) ?? null;
-      if (!token) {
-        toast({ title: "Token non disponibile", description: "Solo gli admin del club possono generare il QR del portale.", variant: "destructive" });
+      if (!codice_atleta_value) {
+        toast({ title: "Codice atleta mancante", description: "Salva l'atleta per generare il codice di accesso.", variant: "destructive" });
         return;
       }
-      set_portal_token_value(token);
       set_show_qr_portal(true);
     } catch (err: any) {
       toast({ title: "Errore", description: err?.message, variant: "destructive" });
@@ -405,6 +401,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
       set_generating_portal(false);
     }
   };
+
 
 
   const handle_copy_portal_link = async () => {
