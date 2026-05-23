@@ -4000,6 +4000,10 @@ export type Database = {
           telefono: string
         }[]
       }
+      get_utente_club_display_name: {
+        Args: { _user_id: string }
+        Returns: string
+      }
       is_mobile_parent: { Args: never; Returns: boolean }
       mobile_atleta_id: { Args: never; Returns: string }
       mobile_club_id: { Args: never; Returns: string }
