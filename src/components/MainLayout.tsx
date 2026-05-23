@@ -265,7 +265,18 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             <h2 className="font-semibold text-foreground text-sm lg:text-base">{club?.nome || session?.club_nome || "Ice Arena Manager"}</h2>
             <span className="px-2 py-0.5 rounded-full bg-muted text-[10px] uppercase tracking-wider font-bold text-muted-foreground hidden sm:inline-block">{session?.ruolo || ""}</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => set_search_open(true)}
+              className="h-8 gap-2 text-muted-foreground hover:text-foreground"
+              aria-label="Ricerca globale (Cmd+K)"
+            >
+              <Search className="w-4 h-4" />
+              <span className="hidden md:inline text-xs">Cerca</span>
+              <kbd className="hidden md:inline-flex items-center px-1.5 py-0.5 rounded border border-border bg-muted text-[10px] font-mono">⌘K</kbd>
+            </Button>
             <Select value={locale} onValueChange={(v) => set_locale(v as Locale)}>
               <SelectTrigger className="w-32 h-8 text-xs">
                 <Globe className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
