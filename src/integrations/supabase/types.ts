@@ -130,6 +130,7 @@ export type Database = {
           nome: string
           note: string | null
           ore_pista_stagione: number | null
+          portal_token: string | null
           ruolo_pista: string | null
           sesso: string | null
           tag_nfc: string | null
@@ -185,6 +186,7 @@ export type Database = {
           nome?: string
           note?: string | null
           ore_pista_stagione?: number | null
+          portal_token?: string | null
           ruolo_pista?: string | null
           sesso?: string | null
           tag_nfc?: string | null
@@ -240,6 +242,7 @@ export type Database = {
           nome?: string
           note?: string | null
           ore_pista_stagione?: number | null
+          portal_token?: string | null
           ruolo_pista?: string | null
           sesso?: string | null
           tag_nfc?: string | null
@@ -3987,6 +3990,10 @@ export type Database = {
       genera_settimana_planning: {
         Args: { p_settimana_id: string }
         Returns: number
+      }
+      get_atleta_portal_token: {
+        Args: { p_atleta_id: string }
+        Returns: string
       }
       get_atleti_impattati_da_planning: {
         Args: { p_planning_corso_id: string }
