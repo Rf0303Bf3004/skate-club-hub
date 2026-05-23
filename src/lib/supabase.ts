@@ -9,21 +9,19 @@ const SUPABASE_ANON_KEY = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as stri
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Club di default: "Stella del Ghiaccio ASD" (unico club seed presente nel DB).
-const DEFAULT_CLUB_ID = "00030001-0000-0000-0000-000000000001";
-
 export const DEMO_CLUB_ID = "00000000-0000-0000-0000-000000000002";
 
+// Il club corrente viene impostato da auth dopo il login. Resta "" finché
+// auth.uid() non è disponibile: gli hook con `enabled: !!get_current_club_id()`
+// rimangono disabilitati e non eseguono query con club_id fittizio.
 const club_state = {
-  current_id: DEFAULT_CLUB_ID,
+  current_id: "",
 };
 
 export function set_current_club_id(id: string) {
-  club_state.current_id = id;
+  club_state.current_id = id ?? "";
 }
 
 export function get_current_club_id(): string {
   return club_state.current_id;
 }
-
-export const CURRENT_CLUB_ID = club_state.current_id;
