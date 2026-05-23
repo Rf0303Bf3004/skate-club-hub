@@ -51,8 +51,7 @@ const LoginPage: React.FC = () => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {/* Step 1 i18n: solo IT esposto. */}
-                {(['it'] as Locale[]).map((l) => (
+                {(['it', 'fr', 'de', 'en'] as Locale[]).map((l) => (
                   <SelectItem key={l} value={l}>{LOCALE_LABELS[l]}</SelectItem>
                 ))}
               </SelectContent>
