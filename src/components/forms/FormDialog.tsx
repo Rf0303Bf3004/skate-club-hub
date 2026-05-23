@@ -43,7 +43,7 @@ const FormDialog: React.FC<Props> = ({
   delete_loading,
   loading,
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation('common');
   const [confirm_delete, set_confirm_delete] = useState(false);
 
   const handle_close = () => {
