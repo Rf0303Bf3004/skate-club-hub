@@ -1,0 +1,14 @@
+{
+  "generic": "Ein Fehler ist aufgetreten",
+  "network": "Verbindungsfehler. Erneut versuchen.",
+  "unauthorized": "Sie sind nicht berechtigt, diese Aktion auszuführen",
+  "not_found": "Ressource nicht gefunden",
+  "save_failed": "Speichern fehlgeschlagen",
+  "delete_failed": "Löschen fehlgeschlagen",
+  "load_failed": "Laden fehlgeschlagen",
+  "session_expired": "Sitzung abgelaufen. Bitte erneut anmelden.",
+  "server_error": "Serverfehler. Bitte später erneut versuchen.",
+  "validation_failed": "Einige Felder sind nicht gültig",
+  "duplicate": "Ein Element mit diesen Daten existiert bereits",
+  "operation_in_progress": "Vorgang läuft, bitte warten..."
+}

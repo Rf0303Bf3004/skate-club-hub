@@ -1,0 +1,17 @@
+{
+  "portal": {
+    "title": "My profile",
+    "loading": "Loading your profile...",
+    "not_found": "Profile not found",
+    "invalid_link": "Invalid or expired link",
+    "logout": "Sign out",
+    "welcome": "Welcome, {{nome}}"
+  },
+  "tabs": {
+    "profile": "Profile",
+    "courses": "Courses",
+    "calendar": "Calendar",
+    "communications": "Messages",
+    "billing": "Invoices"
+  }
+}

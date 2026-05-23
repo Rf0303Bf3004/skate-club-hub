@@ -1,0 +1,29 @@
+{
+  "title": "Tableau de bord",
+  "welcome": "Bonjour, {{nome}}",
+  "kpi": {
+    "active_athletes": "Athlètes actifs",
+    "courses_week": "Cours de la semaine",
+    "next_competitions": "Prochaines compétitions",
+    "due_invoices": "Factures à échéance"
+  },
+  "agenda": {
+    "title": "Agenda des cours",
+    "tabs": {
+      "courses": "Cours et présences",
+      "instructors": "Instructeurs"
+    },
+    "today": "Aujourd'hui",
+    "no_courses_today": "Aucun cours aujourd'hui",
+    "no_instructors_today": "Aucun instructeur disponible aujourd'hui"
+  },
+  "widgets": {
+    "today_on_ice": "Aujourd'hui sur la glace",
+    "latest_athletes": "Derniers athlètes ajoutés",
+    "upcoming_events": "Prochains événements",
+    "latest_communications": "Dernières communications",
+    "available_instructors": "Instructeurs disponibles aujourd'hui",
+    "subscription_requests": "Demandes d'inscription"
+  },
+  "countdown_days": "Compte à rebours : {{count}} j"
+}

@@ -1,0 +1,56 @@
+{
+  "login": {
+    "title": "Ice Arena Manager",
+    "welcome": "Welcome to Ice Arena Manager",
+    "email_placeholder": "Email",
+    "password_placeholder": "Password",
+    "sign_in": "Sign in",
+    "sign_in_failed": "Sign-in failed",
+    "new_club_question": "New club?",
+    "register_here": "Register"
+  },
+  "register": {
+    "title": "Register your club",
+    "subtitle": "Create your Ice Arena workspace in a few minutes. The president becomes the main administrator.",
+    "fields": {
+      "club_name": "Club name",
+      "club_sigla": "Acronym (max 10)",
+      "canton": "Canton",
+      "city": "City",
+      "federation": "Federation",
+      "federation_other": "Specify federation",
+      "federation_select_hint": "— Select —",
+      "president_name": "President first name",
+      "president_surname": "President surname",
+      "email": "Email",
+      "phone": "Phone",
+      "password": "Password (min 8)",
+      "password_confirm": "Confirm password"
+    },
+    "accept_terms_prefix": "I accept the",
+    "accept_terms_link": "Terms",
+    "accept_terms_middle": "and the",
+    "accept_privacy_link": "Privacy Policy",
+    "submit": "Create club and sign in",
+    "already_have_account": "Already have an account?",
+    "sign_in": "Sign in",
+    "errors": {
+      "city_required": "City is required",
+      "federation_required": "Select the federation (or 'none')",
+      "federation_other_required": "Specify the federation name",
+      "password_min": "Password: 8 characters minimum",
+      "passwords_mismatch": "The two passwords don't match",
+      "terms_required": "You must accept the terms and privacy policy to continue",
+      "register_failed": "Registration error"
+    },
+    "success_created": "Club created! Welcome."
+  },
+  "wizard": {
+    "title": "Initial setup",
+    "step": "Step {{current}} of {{total}}",
+    "next": "Next",
+    "back": "Back",
+    "finish": "Finish setup",
+    "skip": "Skip for now"
+  }
+}

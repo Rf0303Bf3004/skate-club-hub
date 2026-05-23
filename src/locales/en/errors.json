@@ -1,0 +1,14 @@
+{
+  "generic": "An error occurred",
+  "network": "Connection error. Try again.",
+  "unauthorized": "You are not authorized to perform this action",
+  "not_found": "Resource not found",
+  "save_failed": "Save failed",
+  "delete_failed": "Delete failed",
+  "load_failed": "Load failed",
+  "session_expired": "Session expired. Please sign in again.",
+  "server_error": "Server error. Please try again later.",
+  "validation_failed": "Some fields are not valid",
+  "duplicate": "An item with this data already exists",
+  "operation_in_progress": "Operation in progress, please wait..."
+}

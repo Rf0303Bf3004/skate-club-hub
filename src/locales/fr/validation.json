@@ -1,0 +1,16 @@
+{
+  "required": "Champ obligatoire",
+  "email_invalid": "E-mail invalide",
+  "min_length": "Minimum {{count}} caractères",
+  "max_length": "Maximum {{count}} caractères",
+  "number_invalid": "Nombre invalide",
+  "date_invalid": "Date invalide",
+  "passwords_mismatch": "Les mots de passe ne correspondent pas",
+  "phone_invalid": "Numéro de téléphone invalide",
+  "iban_invalid": "IBAN invalide",
+  "url_invalid": "URL invalide",
+  "value_too_low": "Valeur trop faible (min {{min}})",
+  "value_too_high": "Valeur trop élevée (max {{max}})",
+  "select_at_least_one": "Sélectionnez au moins un élément",
+  "type_to_confirm": "Tapez {{word}} pour confirmer"
+}

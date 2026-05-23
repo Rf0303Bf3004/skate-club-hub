@@ -1,0 +1,33 @@
+{
+  "competitions": {
+    "title": "Competitions",
+    "new": "New competition",
+    "host_club": "Host club",
+    "min_level": "Minimum level",
+    "registration_cost": "Registration fee",
+    "companion_cost": "Chaperone cost",
+    "registered_athletes": "Registered athletes",
+    "score": "Score",
+    "position": "Position",
+    "medal": "Medal"
+  },
+  "level_tests": {
+    "title": "Level tests",
+    "new": "New test",
+    "passed": "Passed",
+    "failed": "Not passed"
+  },
+  "events": {
+    "title": "Galas and events",
+    "new": "New event"
+  },
+  "training_camps": {
+    "title": "Training camps",
+    "new": "New camp",
+    "day_cost": "Day cost",
+    "full_cost": "Full cost (overnight)",
+    "day_only": "Day only",
+    "full": "Full",
+    "partial": "Partial"
+  }
+}

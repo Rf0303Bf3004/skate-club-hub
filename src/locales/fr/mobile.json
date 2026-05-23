@@ -1,0 +1,17 @@
+{
+  "portal": {
+    "title": "Mon profil",
+    "loading": "Chargement de votre profil...",
+    "not_found": "Profil introuvable",
+    "invalid_link": "Lien invalide ou expiré",
+    "logout": "Déconnexion",
+    "welcome": "Bienvenue, {{nome}}"
+  },
+  "tabs": {
+    "profile": "Profil",
+    "courses": "Cours",
+    "calendar": "Calendrier",
+    "communications": "Communications",
+    "billing": "Factures"
+  }
+}

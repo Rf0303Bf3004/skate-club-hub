@@ -1,0 +1,16 @@
+{
+  "required": "Required field",
+  "email_invalid": "Invalid email",
+  "min_length": "Minimum {{count}} characters",
+  "max_length": "Maximum {{count}} characters",
+  "number_invalid": "Invalid number",
+  "date_invalid": "Invalid date",
+  "passwords_mismatch": "Passwords don't match",
+  "phone_invalid": "Invalid phone number",
+  "iban_invalid": "Invalid IBAN",
+  "url_invalid": "Invalid URL",
+  "value_too_low": "Value too low (min {{min}})",
+  "value_too_high": "Value too high (max {{max}})",
+  "select_at_least_one": "Select at least one item",
+  "type_to_confirm": "Type {{word}} to confirm"
+}

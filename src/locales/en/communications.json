@@ -1,0 +1,34 @@
+{
+  "title": "Messages",
+  "new": "New message",
+  "tabs": {
+    "list": "Messages",
+    "conversations": "Conversations",
+    "reminders": "My reminders",
+    "rules": "Automatic rules"
+  },
+  "form": {
+    "title": "Title",
+    "body": "Text",
+    "recipients": "Recipients",
+    "linked_event_type": "Linked event type",
+    "send_now": "Send message to families now",
+    "linked_event_hint": "The message will be linked to the event: the mobile app will show the inline \"Register\" button."
+  },
+  "recipients": {
+    "all_club": "Whole club",
+    "by_course": "By course",
+    "by_athlete": "By athlete",
+    "instructors_only": "Instructors only",
+    "select_course": "Select a course",
+    "select_athlete": "Select an athlete",
+    "no_course": "No course available",
+    "no_athlete": "No athlete"
+  },
+  "event_types": {
+    "none": "None",
+    "competition": "Competition",
+    "gala": "Gala / Special event",
+    "level_test": "Level test"
+  }
+}
