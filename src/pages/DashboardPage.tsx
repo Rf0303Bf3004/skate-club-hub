@@ -1008,7 +1008,7 @@ const DashboardPage: React.FC = () => {
 
   const agenda_data = add_days(today, agenda_offset);
   const agenda_is_today = agenda_offset === 0;
-  const agenda_label = agenda_is_today ? "Oggi" : format_data_breve(agenda_data);
+  const agenda_label = agenda_is_today ? td("agenda.today") : format_data_breve(agenda_data);
 
   const corsi_agenda = corsi
     .filter((c) => match_giorno(c.giorno, get_giorno_key(agenda_data)) && c.stato === "attivo")
