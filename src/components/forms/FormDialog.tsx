@@ -183,7 +183,7 @@ const FormDialog: React.FC<Props> = ({
                 className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-1.5"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                Elimina
+                {t('actions.delete')}
               </Button>
             ) : (
               <div />
