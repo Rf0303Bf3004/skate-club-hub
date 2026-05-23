@@ -262,13 +262,11 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
     queryKey: ["utente_verificatore", a.verificato_da_user_id],
     queryFn: async () => {
       if (!a.verificato_da_user_id) return null;
-      const { data } = await supabase
-        .from("utenti_club")
-        .select("nome, cognome")
-        .eq("user_id", a.verificato_da_user_id)
-        .maybeSingle();
-      if (!data) return null;
-      return `${data.nome ?? ""} ${data.cognome ?? ""}`.trim() || null;
+      const { data } = await supabase.rpc("get_utente_club_display_name", {
+        _user_id: a.verificato_da_user_id,
+      });
+      const s = (data as string | null) ?? "";
+      return s.trim() || null;
     },
     enabled: !!a.verificato_da_user_id,
   });
