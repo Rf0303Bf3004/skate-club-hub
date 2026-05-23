@@ -925,7 +925,9 @@ const DashboardPage: React.FC = () => {
     return <PresidentDashboard />;
   }
   const { t, locale } = useI18n();
+  const { t: td } = useTranslation("dashboard");
   const locale_code = locale_to_bcp47(locale);
+
   const { data: atleti = [], isLoading: loading_atleti } = use_atleti();
   const { data: corsi = [], isLoading: loading_corsi } = use_corsi();
   const { data: gare = [], isLoading: loading_gare } = use_gare();
