@@ -164,17 +164,22 @@ export function use_istruttori() {
     enabled: !!get_current_club_id(),
     queryKey: ["istruttori", get_current_club_id()],
     queryFn: async () => {
-      const [ist_res, disp_res] = await Promise.all([
+      const [ist_res, disp_res, costi_res] = await Promise.all([
         // NB: i campi di costo (costo_orario_*, compenso_fisso_*, costo_minuto_lezione_privata) sono
         // hidden via column-level REVOKE; vengono recuperati separatamente con la RPC get_istruttori_costi
         // e fusi solo se l'utente ha i ruoli finanziari.
-        supabase.from("istruttori").select("id,club_id,nome,cognome,email,telefono,colore,attivo,created_at,linked_atleta_id,livello_istruttore,stato_staff,note,contratto_tipo,ore_concordate_settimanali,disco_url,codice_fiscale,indirizzo,data_nascita,sesso").eq("club_id", get_current_club_id()).order("cognome"),
+        supabase.from("istruttori").select("id,club_id,nome,cognome,email,telefono,colore,attivo,created_at,linked_atleta_id,livello_istruttore,stato_staff,note,tipo_contratto,specialita").eq("club_id", get_current_club_id()).order("cognome"),
         supabase.from("disponibilita_istruttori").select("*"),
+        supabase.rpc("get_istruttori_costi", { p_club_id: get_current_club_id() } as any),
       ]);
       if (ist_res.error) throw ist_res.error;
       if (disp_res.error) throw disp_res.error;
       const disp_all = disp_res.data ?? [];
-      return (ist_res.data ?? []).map((i) => {
+      const costi_map = new Map<string, any>();
+      if (!costi_res.error && Array.isArray(costi_res.data)) {
+        (costi_res.data as any[]).forEach((c) => costi_map.set(c.id ?? c.istruttore_id, c));
+      }
+      return ((ist_res.data ?? []) as any[]).map((i: any) => {
         const disp_map: Record<string, { ora_inizio: string; ora_fine: string }[]> = {};
         disp_all
           .filter((d) => d.istruttore_id === i.id)
@@ -182,9 +187,15 @@ export function use_istruttori() {
             if (!disp_map[d.giorno]) disp_map[d.giorno] = [];
             disp_map[d.giorno].push({ ora_inizio: d.ora_inizio, ora_fine: d.ora_fine });
           });
+        const c = costi_map.get(i.id) ?? {};
         return {
           ...i,
-          costo_minuto: i.costo_minuto_lezione_privata ?? 0,
+          costo_orario_lezioni: c.costo_orario_lezioni ?? null,
+          costo_orario_corsi: c.costo_orario_corsi ?? null,
+          compenso_fisso_mensile: c.compenso_fisso_mensile ?? null,
+          compenso_fisso_corsi: c.compenso_fisso_corsi ?? null,
+          costo_minuto_lezione_privata: c.costo_minuto_lezione_privata ?? null,
+          costo_minuto: c.costo_minuto_lezione_privata ?? 0,
           stato: i.attivo ? "attivo" : "inattivo",
           disponibilita: disp_map,
         };
