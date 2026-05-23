@@ -78,7 +78,10 @@ export function use_atleti() {
     enabled: !!get_current_club_id(),
     queryKey: ["atleti", get_current_club_id()],
     queryFn: async () => {
-      const club_id = get_current_club_id(); const { data, error } = await supabase.from("atleti").select("*").eq("club_id", club_id);
+      const club_id = get_current_club_id();
+      // NB: portal_token è volutamente escluso (column-level REVOKE per sicurezza, recuperato via RPC quando serve)
+      const atleti_cols = "id,club_id,nome,cognome,data_nascita,sesso,telefono,indirizzo,codice_fiscale,foto_url,disco_url,disco_in_preparazione,tag_nfc,note,attivo,categoria,agonista,atleta_federazione,livello_attuale,livello_in_preparazione,livello_artistica,livello_artistica_in_preparazione,livello_stile,livello_stile_in_preparazione,livello_amatori,carriera_artistica,carriera_stile,licenza_sis_numero,licenza_sis_categoria,licenza_sis_disciplina,licenza_sis_validita_a,genitore1_nome,genitore1_cognome,genitore1_telefono,genitore1_email,genitore2_nome,genitore2_cognome,genitore2_telefono,genitore2_email,ruolo_pista,compenso_orario_pista,ore_pista_stagione,e_monitrice,e_aiuto_monitrice,attivo_come_monitore,a_rischio,a_rischio_da,verificato,verificato_at,verificato_da_user_id,importato_da_excel,codice_atleta,created_at";
+      const { data, error } = await supabase.from("atleti").select(atleti_cols).eq("club_id", club_id);
       if (error) throw error;
       const mapped = (data ?? []).map(transform_atleta);
       return mapped.sort((a, b) => {
