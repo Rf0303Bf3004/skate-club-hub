@@ -1,7 +1,7 @@
 // Edge Function: portale-atleta
-// Endpoint pubblico (token-scoped) per il Portale Atleta.
-// Sostituisce le policy RLS pubbliche su atleti/fatture/comunicazioni/lezioni/etc.
-// Tutte le query sono server-side con service role e filtrate per portal_token.
+// Endpoint pubblico (codice-scoped) per il Portale Atleta.
+// Lookup unico su atleti.codice_atleta (formato AT-XXXX-XXXX) — stesso identificativo
+// usato dall'app mobile genitori. Le query sono server-side con service role.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
@@ -18,6 +18,14 @@ function json(body: unknown, status = 200) {
   });
 }
 
+// Normalizza l'input: accetta "AT-K7H9-X2M4", "atk7h9x2m4", "AT K7H9 X2M4", ecc.
+// Restituisce la forma canonica "AT-XXXX-XXXX" se valida, altrimenti null.
+function normalizza_codice(raw: string): string | null {
+  const pulito = raw.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+  if (pulito.length !== 10 || !pulito.startsWith("AT")) return null;
+  return `AT-${pulito.slice(2, 6)}-${pulito.slice(6, 10)}`;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
@@ -30,15 +38,18 @@ Deno.serve(async (req) => {
     );
 
     const body = await req.json().catch(() => ({}));
-    const token = String(body?.token ?? "").trim();
+    // Manteniamo "token" come nome del campo per retro-compatibilità del client,
+    // ma il valore atteso è ora un codice atleta (AT-XXXX-XXXX).
+    const raw = String(body?.token ?? body?.codice ?? "").trim();
     const action = String(body?.action ?? "init");
-    if (!token || token.length < 8) return json({ error: "invalid_token" }, 400);
+    const codice = normalizza_codice(raw);
+    if (!codice) return json({ error: "invalid_token" }, 400);
 
-    // Risolvi atleta dal token (server-side, solo questa riga)
+    // Risolvi atleta dal codice_atleta (server-side, solo questa riga)
     const { data: atleta, error: atl_err } = await admin
       .from("atleti")
       .select("*")
-      .eq("portal_token", token)
+      .eq("codice_atleta", codice)
       .maybeSingle();
     if (atl_err) { console.error("[portale-atleta] atl_err", atl_err); return json({ error: "db_error" }, 500); }
     if (!atleta) return json({ error: "invalid_token" }, 404);
