@@ -1,4 +1,6 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo } from "react";
+import SearchableListLayout from "@/components/common/SearchableListLayout";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useI18n } from "@/lib/i18n";
 import {
   use_fatture,
@@ -582,18 +584,58 @@ const InvoicesPage: React.FC = () => {
   const elimina = use_elimina_fattura();
   const invia_email = use_invia_email_fattura();
   const [status_filter, set_status_filter] = useState("tutti");
+  const [search_raw, set_search_raw] = useState("");
+  const search = useDebouncedValue(search_raw, 200);
+  const [periodo_filter, set_periodo_filter] = useState<"tutti" | "mese" | "trimestre" | "anno">("tutti");
+  const [sort_by, set_sort_by] = useState<"data_desc" | "importo_desc" | "scadenza">("data_desc");
   const [selected_fattura, set_selected_fattura] = useState<any>(null);
 
   const today_iso = new Date().toISOString().split("T")[0];
-  const filtered = fatture.filter((f: any) => {
-    if (status_filter === "tutti") return true;
-    return get_fattura_stato_ui(f, today_iso) === status_filter;
-  });
+
+  const get_atleta_name = (id: string) => {
+    const a = atleti.find((x: any) => x.id === id);
+    return a ? `${a.nome ?? ""} ${a.cognome ?? ""}`.trim().toLowerCase() : "";
+  };
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const today = new Date();
+    const periodo_threshold = (() => {
+      if (periodo_filter === "mese") return new Date(today.getFullYear(), today.getMonth(), 1);
+      if (periodo_filter === "trimestre") return new Date(today.getFullYear(), today.getMonth() - 3, 1);
+      if (periodo_filter === "anno") return new Date(today.getFullYear(), 0, 1);
+      return null;
+    })();
+    const list = fatture.filter((f: any) => {
+      if (status_filter !== "tutti" && get_fattura_stato_ui(f, today_iso) !== status_filter) return false;
+      if (q) {
+        const hay = [f.numero, f.descrizione, get_atleta_name(f.atleta_id)].filter(Boolean).join(" ");
+        if (!hay.includes(q)) return false;
+      }
+      if (periodo_threshold && f.data_emissione) {
+        const d = new Date(f.data_emissione + "T00:00:00");
+        if (d < periodo_threshold) return false;
+      }
+      return true;
+    });
+    const sorted = [...list].sort((a: any, b: any) => {
+      if (sort_by === "importo_desc") return Number(b.importo) - Number(a.importo);
+      if (sort_by === "scadenza") return (a.data_scadenza ?? "").localeCompare(b.data_scadenza ?? "");
+      return (b.data_emissione ?? "").localeCompare(a.data_emissione ?? "");
+    });
+    return sorted;
+  }, [fatture, status_filter, search, periodo_filter, sort_by, today_iso, atleti]);
 
   const non_pagate = fatture.filter((f: any) => f.stato !== "pagata");
   const totale_da_pagare = non_pagate.reduce((s: number, f: any) => s + Number(f.importo), 0);
   const scadute_count = non_pagate.filter((f: any) => get_fattura_stato_ui(f, today_iso) === "scaduta").length;
   const in_arrivo_count = non_pagate.length - scadute_count;
+
+  // Totali dinamici sulla lista filtrata
+  const totale_filtrato = filtered.reduce((s: number, f: any) => s + Number(f.importo ?? 0), 0);
+  const totale_filtrato_scadute = filtered
+    .filter((f: any) => get_fattura_stato_ui(f, today_iso) === "scaduta")
+    .reduce((s: number, f: any) => s + Number(f.importo ?? 0), 0);
 
   const handle_genera = async () => {
     try {
@@ -696,17 +738,55 @@ const InvoicesPage: React.FC = () => {
           </Button>
         </div>
 
-        <Select value={status_filter} onValueChange={set_status_filter}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder={t("stato")} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="tutti">{t("tutti")}</SelectItem>
-            <SelectItem value="pagata">{t("pagata")}</SelectItem>
-            <SelectItem value="da_pagare">{t("da_pagare")}</SelectItem>
-            <SelectItem value="scaduta">Scadute</SelectItem>
-          </SelectContent>
-        </Select>
+        <SearchableListLayout
+          search={search_raw}
+          on_search_change={set_search_raw}
+          search_placeholder="Cerca per numero, descrizione, nome atleta…"
+          filters={[
+            {
+              key: "stato", label: "Stato", value: status_filter,
+              options: [
+                { value: "tutti", label: t("tutti") },
+                { value: "pagata", label: t("pagata") },
+                { value: "da_pagare", label: t("da_pagare") },
+                { value: "scaduta", label: "Scadute" },
+              ],
+              onChange: set_status_filter,
+            },
+            {
+              key: "periodo", label: "Periodo", value: periodo_filter,
+              options: [
+                { value: "tutti", label: "Tutti" },
+                { value: "mese", label: "Questo mese" },
+                { value: "trimestre", label: "Ultimo trimestre" },
+                { value: "anno", label: "Anno corrente" },
+              ],
+              onChange: (v: string) => set_periodo_filter(v as any),
+            },
+          ]}
+          sort={{
+            value: sort_by,
+            onChange: (v) => set_sort_by(v as any),
+            options: [
+              { value: "data_desc", label: "Data emissione ↓" },
+              { value: "scadenza", label: "Scadenza ↑" },
+              { value: "importo_desc", label: "Importo ↓" },
+            ],
+          }}
+          count_filtered={filtered.length}
+          count_total={fatture.length}
+          extra_summary={
+            <span className="font-semibold text-foreground">
+              Totale: CHF {totale_filtrato.toFixed(2)}
+              {totale_filtrato_scadute > 0 && (
+                <span className="ml-2 text-red-700">· scadute CHF {totale_filtrato_scadute.toFixed(2)}</span>
+              )}
+            </span>
+          }
+        >
+          <div />
+        </SearchableListLayout>
+
 
         <div className="bg-card rounded-xl shadow-card overflow-hidden">
           <div className="overflow-x-auto">

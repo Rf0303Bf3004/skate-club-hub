@@ -17,6 +17,8 @@ import AtletaDetail from "@/components/AtletaDetail";
 import AthleteBadges from "@/components/AthleteBadges";
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
+import SearchableListLayout from "@/components/common/SearchableListLayout";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 import DateInput from "@/components/forms/DateInput";
 import {
@@ -543,9 +545,14 @@ const AthletesPage: React.FC = () => {
   const { data: atleti = [], isLoading } = use_atleti();
   const upsert = use_upsert_atleta();
   const elimina = use_elimina_atleta();
-  const [search, set_search] = useState("");
+  const [search_raw, set_search_raw] = useState("");
+  const search = useDebouncedValue(search_raw, 200);
   const [level_filter, set_level_filter] = useState("tutti");
   const [status_filter, set_status_filter] = useState("tutti");
+  const [agonista_filter, set_agonista_filter] = useState<"tutti" | "si" | "no">("tutti");
+  const [attivo_filter, set_attivo_filter] = useState<"tutti" | "attivi" | "inattivi">("tutti");
+  const [eta_filter, set_eta_filter] = useState<"tutti" | "5-8" | "9-12" | "13+">("tutti");
+  const [sort_by, set_sort_by] = useState<"cognome" | "livello" | "eta" | "recente" | "codice">("cognome");
   const [solo_da_verificare, set_solo_da_verificare] = useState(false);
   const [selected_id, set_selected_id] = useState<string | null>(params.id ?? null);
   useEffect(() => { if (params.id && params.id !== selected_id) set_selected_id(params.id); }, [params.id]);
@@ -654,60 +661,95 @@ const AthletesPage: React.FC = () => {
     [atleti],
   );
 
-  const filtered = atleti.filter((a: any) => {
-    if (solo_da_verificare && a.verificato !== false) return false;
-    const name_match = `${a.nome} ${a.cognome}`.toLowerCase().includes(search.toLowerCase());
-    const status_match =
-      status_filter === "tutti" ||
-      (status_filter === "scuola" && !a.agonista && !a.atleta_federazione) ||
-      (status_filter === "agoniste" && (a.agonista || a.atleta_federazione)) ||
-      (status_filter === "federazione" && a.atleta_federazione);
-    if (!status_match) return false;
-    if (!name_match) return false;
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const list = atleti.filter((a: any) => {
+      if (solo_da_verificare && a.verificato !== false) return false;
+      if (q) {
+        const hay = [a.nome, a.cognome, a.codice_atleta, a.genitore1_email, a.genitore2_email]
+          .filter(Boolean).join(" ").toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      const status_match =
+        status_filter === "tutti" ||
+        (status_filter === "scuola" && !a.agonista && !a.atleta_federazione) ||
+        (status_filter === "agoniste" && (a.agonista || a.atleta_federazione)) ||
+        (status_filter === "federazione" && a.atleta_federazione);
+      if (!status_match) return false;
+      if (agonista_filter === "si" && !a.agonista) return false;
+      if (agonista_filter === "no" && a.agonista) return false;
+      if (attivo_filter !== "tutti") {
+        const att = is_atleta_attivo_oggi(adesioni, a.id);
+        if (attivo_filter === "attivi" && !att) return false;
+        if (attivo_filter === "inattivi" && att) return false;
+      }
+      if (eta_filter !== "tutti") {
+        const eta = calculate_age(a.data_nascita) ?? -1;
+        if (eta_filter === "5-8" && (eta < 5 || eta > 8)) return false;
+        if (eta_filter === "9-12" && (eta < 9 || eta > 12)) return false;
+        if (eta_filter === "13+" && eta < 13) return false;
+      }
 
-    // Filtro card click (precedenza alta)
-    if (card_filter) {
-      if (card_filter.sezione === "pulcini") {
-        return (a.categoria ?? "pulcini") === "pulcini";
-      }
-      if (card_filter.sezione === "amatori") {
-        return a.categoria === "amatori" && a.livello_amatori === card_filter.livello;
-      }
-      if (card_filter.sezione === "artistica") {
-        if (a.categoria !== "artistica") return false;
-        if (card_filter.percorso === "artistica") return a.livello_artistica === card_filter.livello;
-        return a.livello_stile === card_filter.livello;
-      }
-      if (card_filter.sezione === "in_prep") {
-        if (a.categoria !== "artistica") return false;
-        if (card_filter.disciplina === "artistica") {
-          return !a.livello_artistica && a.livello_artistica_in_preparazione === card_filter.livello;
+      if (card_filter) {
+        if (card_filter.sezione === "pulcini") {
+          return (a.categoria ?? "pulcini") === "pulcini";
         }
-        return !a.livello_stile && a.livello_stile_in_preparazione === card_filter.livello;
+        if (card_filter.sezione === "amatori") {
+          return a.categoria === "amatori" && a.livello_amatori === card_filter.livello;
+        }
+        if (card_filter.sezione === "artistica") {
+          if (a.categoria !== "artistica") return false;
+          if (card_filter.percorso === "artistica") return a.livello_artistica === card_filter.livello;
+          return a.livello_stile === card_filter.livello;
+        }
+        if (card_filter.sezione === "in_prep") {
+          if (a.categoria !== "artistica") return false;
+          if (card_filter.disciplina === "artistica") {
+            return !a.livello_artistica && a.livello_artistica_in_preparazione === card_filter.livello;
+          }
+          return !a.livello_stile && a.livello_stile_in_preparazione === card_filter.livello;
+        }
       }
-    }
 
-    // Filtro a cascata categoria → (percorso) → livello
-    if (categoria_filter !== "tutti") {
-      const cat = (a.categoria ?? "pulcini") as Categoria;
-      if (cat !== categoria_filter) return false;
-      if (categoria_filter === "artistica") {
-        if (percorso_filter === "artistica" && !a.livello_artistica) return false;
-        if (percorso_filter === "stile" && !a.livello_stile) return false;
-        if (percorso_filter === "entrambi" && (!a.livello_artistica || !a.livello_stile)) return false;
-      }
-      if (level_filter !== "tutti") {
-        if (categoria_filter === "pulcini") return true; // niente sottolivelli
-        if (categoria_filter === "amatori") return a.livello_amatori === level_filter;
+      if (categoria_filter !== "tutti") {
+        const cat = (a.categoria ?? "pulcini") as Categoria;
+        if (cat !== categoria_filter) return false;
         if (categoria_filter === "artistica") {
-          return a.livello_artistica === level_filter || a.livello_stile === level_filter;
+          if (percorso_filter === "artistica" && !a.livello_artistica) return false;
+          if (percorso_filter === "stile" && !a.livello_stile) return false;
+          if (percorso_filter === "entrambi" && (!a.livello_artistica || !a.livello_stile)) return false;
         }
+        if (level_filter !== "tutti") {
+          if (categoria_filter === "pulcini") return true;
+          if (categoria_filter === "amatori") return a.livello_amatori === level_filter;
+          if (categoria_filter === "artistica") {
+            return a.livello_artistica === level_filter || a.livello_stile === level_filter;
+          }
+        }
+        return true;
       }
-      return true;
-    }
 
-    return true;
-  });
+      return true;
+    });
+
+    // Sort
+    const livello_rank = (a: any) => {
+      const order = ["oro", "argento", "bronzo", "stella3", "stella2", "stella1", "ghiaccio", "pulcini"];
+      const lv = (a.livello_artistica || a.livello_stile || a.livello_amatori || a.categoria || "").toLowerCase();
+      const idx = order.findIndex((o) => lv.includes(o));
+      return idx === -1 ? 999 : idx;
+    };
+    const sorted = [...list].sort((a: any, b: any) => {
+      if (sort_by === "cognome") return (a.cognome ?? "").localeCompare(b.cognome ?? "");
+      if (sort_by === "codice") return (a.codice_atleta ?? "").localeCompare(b.codice_atleta ?? "");
+      if (sort_by === "eta") return (calculate_age(b.data_nascita) ?? 0) - (calculate_age(a.data_nascita) ?? 0);
+      if (sort_by === "recente") return (b.created_at ?? "").localeCompare(a.created_at ?? "");
+      if (sort_by === "livello") return livello_rank(a) - livello_rank(b);
+      return 0;
+    });
+    return sorted;
+  }, [atleti, search, solo_da_verificare, status_filter, agonista_filter, attivo_filter, eta_filter, card_filter, categoria_filter, percorso_filter, level_filter, sort_by, adesioni]);
+
 
   const handle_save = async (data: any) => {
     try {
@@ -1132,99 +1174,121 @@ const AthletesPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder={t("cerca")}
-              value={search}
-              onChange={(e) => set_search(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-          <Select
-            value={categoria_filter}
-            onValueChange={(v) => {
-              set_categoria_filter(v as "tutti" | Categoria);
-              set_level_filter("tutti");
-              set_percorso_filter("tutti");
-              set_card_filter(null);
-            }}
-          >
-            <SelectTrigger className="w-44">
-              <SelectValue placeholder="Categoria" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="tutti">Tutte le categorie</SelectItem>
-              {CATEGORIE.map((c) => (
-                <SelectItem key={c} value={c}>
-                  {get_categoria_label(c)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {categoria_filter === "artistica" && (
-            <Select
-              value={percorso_filter}
-              onValueChange={(v) => set_percorso_filter(v as typeof percorso_filter)}
+        {(() => {
+          const cat_options = [
+            { value: "tutti", label: "Tutte le categorie" },
+            ...CATEGORIE.map((c) => ({ value: c, label: get_categoria_label(c) })),
+          ];
+          const liv_options = [
+            { value: "tutti", label: "Tutti i livelli" },
+            ...(categoria_filter === "amatori" ? LIVELLI_AMATORI : LIVELLI_CARRIERA_NUOVI).map((l) => ({ value: l, label: l })),
+          ];
+          const filtri: any[] = [
+            {
+              key: "categoria", label: "Categoria", value: categoria_filter, options: cat_options,
+              onChange: (v: string) => {
+                set_categoria_filter(v as any);
+                set_level_filter("tutti");
+                set_percorso_filter("tutti");
+                set_card_filter(null);
+              },
+            },
+          ];
+          if (categoria_filter === "artistica") {
+            filtri.push({
+              key: "percorso", label: "Percorso", value: percorso_filter,
+              options: [
+                { value: "tutti", label: "Tutti i percorsi" },
+                { value: "artistica", label: "Solo Artistica" },
+                { value: "stile", label: "Solo Stile" },
+                { value: "entrambi", label: "Entrambi" },
+              ],
+              onChange: (v: string) => set_percorso_filter(v as any),
+            });
+          }
+          if (categoria_filter !== "tutti" && categoria_filter !== "pulcini") {
+            filtri.push({
+              key: "livello", label: "Livello", value: level_filter, options: liv_options,
+              onChange: set_level_filter,
+            });
+          }
+          filtri.push(
+            {
+              key: "status", label: "Status", value: status_filter,
+              options: [
+                { value: "tutti", label: "Tutti" },
+                { value: "scuola", label: "Solo scuola" },
+                { value: "agoniste", label: "Solo agoniste" },
+                { value: "federazione", label: "Solo Federazione" },
+              ],
+              onChange: set_status_filter,
+            },
+            {
+              key: "agonista", label: "Agonista", value: agonista_filter,
+              options: [
+                { value: "tutti", label: "Tutti" },
+                { value: "si", label: "Sì" },
+                { value: "no", label: "No" },
+              ],
+              onChange: (v: string) => set_agonista_filter(v as any),
+            },
+            {
+              key: "attivo", label: "Stato", value: attivo_filter,
+              options: [
+                { value: "tutti", label: "Tutti" },
+                { value: "attivi", label: "Attivi" },
+                { value: "inattivi", label: "Inattivi" },
+              ],
+              onChange: (v: string) => set_attivo_filter(v as any),
+            },
+            {
+              key: "eta", label: "Età", value: eta_filter,
+              options: [
+                { value: "tutti", label: "Tutte" },
+                { value: "5-8", label: "5–8" },
+                { value: "9-12", label: "9–12" },
+                { value: "13+", label: "13+" },
+              ],
+              onChange: (v: string) => set_eta_filter(v as any),
+            },
+          );
+          return (
+            <SearchableListLayout
+              search={search_raw}
+              on_search_change={set_search_raw}
+              search_placeholder="Cerca per nome, cognome, codice atleta, email genitori…"
+              filters={filtri}
+              sort={{
+                value: sort_by,
+                onChange: (v) => set_sort_by(v as any),
+                options: [
+                  { value: "cognome", label: "Cognome A-Z" },
+                  { value: "livello", label: "Livello" },
+                  { value: "eta", label: "Età ↓" },
+                  { value: "recente", label: "Iscrizione recente" },
+                  { value: "codice", label: "Codice atleta" },
+                ],
+              }}
+              count_filtered={filtered.length}
+              count_total={atleti.length}
+              extra_summary={card_filter ? (
+                <button
+                  onClick={() => set_card_filter(null)}
+                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 border border-primary/30 text-[11px] font-semibold text-primary hover:bg-primary/20"
+                >
+                  {card_filter.sezione === "pulcini" && "Pulcini"}
+                  {card_filter.sezione === "amatori" && `Amatori · ${card_filter.livello}`}
+                  {card_filter.sezione === "artistica" && `${card_filter.percorso === "artistica" ? "Artistica" : "Stile"} · ${card_filter.livello}`}
+                  {card_filter.sezione === "in_prep" && `In prep · ${card_filter.livello}`}
+                  <span>✕</span>
+                </button>
+              ) : null}
             >
-              <SelectTrigger className="w-44">
-                <SelectValue placeholder="Percorso" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="tutti">Tutti i percorsi</SelectItem>
-                <SelectItem value="artistica">Solo Artistica</SelectItem>
-                <SelectItem value="stile">Solo Stile</SelectItem>
-                <SelectItem value="entrambi">Entrambi i percorsi</SelectItem>
-              </SelectContent>
-            </Select>
-          )}
-          {categoria_filter !== "tutti" && categoria_filter !== "pulcini" && (
-            <Select value={level_filter} onValueChange={set_level_filter}>
-              <SelectTrigger className="w-44">
-                <SelectValue placeholder={t("livello")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="tutti">Tutti i livelli</SelectItem>
-                {(categoria_filter === "amatori" ? LIVELLI_AMATORI : LIVELLI_CARRIERA_NUOVI).map((l) => (
-                  <SelectItem key={l} value={l}>
-                    {l}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-          <Select value={status_filter} onValueChange={set_status_filter}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="tutti">Tutti</SelectItem>
-              <SelectItem value="scuola">Solo scuola</SelectItem>
-              <SelectItem value="agoniste">Solo agoniste</SelectItem>
-              <SelectItem value="federazione">Solo Federazione</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+              <div />
+            </SearchableListLayout>
+          );
+        })()}
 
-        {card_filter && (
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-muted-foreground">Filtro attivo:</span>
-            <button
-              onClick={() => set_card_filter(null)}
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-100 border border-purple-300 text-xs font-semibold text-purple-800 hover:bg-purple-200 transition"
-              title="Rimuovi filtro"
-            >
-              {card_filter.sezione === "pulcini" && "Pulcini"}
-              {card_filter.sezione === "amatori" && `Amatori · ${card_filter.livello}`}
-              {card_filter.sezione === "artistica" &&
-                `${card_filter.percorso === "artistica" ? "Artistica" : "Stile"} · ${card_filter.livello}`}
-              {card_filter.sezione === "in_prep" &&
-                `In preparazione ${card_filter.livello}`}
-              <span className="text-purple-600">✕</span>
-            </button>
-          </div>
-        )}
 
         <div className="bg-card rounded-xl shadow-card overflow-hidden">
           <div className="overflow-x-auto">

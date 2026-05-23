@@ -5,7 +5,8 @@ import { useAuth } from "@/lib/auth";
 import { use_club } from "@/hooks/use-supabase-data";
 import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
-import { LayoutDashboard, Users, BookOpen, Trophy, CreditCard, MessageSquare, Settings, Calendar, UserCheck, Tent, GraduationCap, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, Lock, ClipboardList, ClipboardCheck, Sparkles, ChevronDown, ChevronRight, FileText } from "lucide-react";
+import { LayoutDashboard, Users, BookOpen, Trophy, CreditCard, MessageSquare, Settings, Calendar, UserCheck, Tent, GraduationCap, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, Lock, ClipboardList, ClipboardCheck, Sparkles, ChevronDown, ChevronRight, FileText, Search } from "lucide-react";
+import GlobalSearchPalette from "@/components/common/GlobalSearchPalette";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { use_count_iscrizioni_non_lette } from "@/components/comunicazioni/IscrizioniAtletiNotifiche";
@@ -63,6 +64,18 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const can_manage_users = is_superadmin || is_admin || is_presidente;
   const non_lette_iscrizioni = use_count_iscrizioni_non_lette();
   const richieste_pendenti = use_count_richieste_pendenti();
+  const [search_open, set_search_open] = React.useState(false);
+
+  React.useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        set_search_open((o) => !o);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   const is_legacy = is_admin || is_superadmin;
   const is_nuovo_ruolo = !is_legacy && RUOLI_NUOVI.includes(session?.ruolo as string);
@@ -252,7 +265,18 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             <h2 className="font-semibold text-foreground text-sm lg:text-base">{club?.nome || session?.club_nome || "Ice Arena Manager"}</h2>
             <span className="px-2 py-0.5 rounded-full bg-muted text-[10px] uppercase tracking-wider font-bold text-muted-foreground hidden sm:inline-block">{session?.ruolo || ""}</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => set_search_open(true)}
+              className="h-8 gap-2 text-muted-foreground hover:text-foreground"
+              aria-label="Ricerca globale (Cmd+K)"
+            >
+              <Search className="w-4 h-4" />
+              <span className="hidden md:inline text-xs">Cerca</span>
+              <kbd className="hidden md:inline-flex items-center px-1.5 py-0.5 rounded border border-border bg-muted text-[10px] font-mono">⌘K</kbd>
+            </Button>
             <Select value={locale} onValueChange={(v) => set_locale(v as Locale)}>
               <SelectTrigger className="w-32 h-8 text-xs">
                 <Globe className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
@@ -271,6 +295,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         </header>
         <main className="flex-1 p-4 lg:p-8 max-w-7xl mx-auto w-full">{children}</main>
       </div>
+      <GlobalSearchPalette open={search_open} on_open_change={set_search_open} />
     </div>
   );
 };
