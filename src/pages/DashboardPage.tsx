@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from "react";
 import { useI18n } from "@/lib/i18n";
+import { useTranslation } from "react-i18next";
 import { fmt_date_long, locale_to_bcp47 } from "@/lib/format-data";
+
 import { useNavigate } from "react-router-dom";
 import {
   use_atleti,
@@ -409,8 +411,10 @@ const BoxComunicazione: React.FC<{
   preset?: BoxComunicazionePreset | null;
   on_preset_consumed?: () => void;
 }> = ({ atleti, istruttori, monitori, corsi, gare, preset, on_preset_consumed }) => {
+  const { t: td } = useTranslation("dashboard");
   const { data: templates = [] } = use_template_comunicazioni();
   const crea = use_crea_comunicazione();
+
 
   const [tipo_dest, set_tipo_dest] = useState("tutti");
   const [riferimento_id, set_riferimento_id] = useState("");
@@ -535,9 +539,10 @@ const BoxComunicazione: React.FC<{
 
   const handle_salva_inapp = async () => {
     if (!titolo || !testo) {
-      toast({ title: "Inserisci titolo e testo", variant: "destructive" });
+      toast({ title: td("quick_comm.missing_title_text"), variant: "destructive" });
       return;
     }
+
     try {
       const is_birthday = last_preset_marker.current?.startsWith("birthday:") ?? false;
       const target_atleta_id = tipo_dest === "singolo_atleta" ? persona_id : null;
@@ -549,28 +554,29 @@ const BoxComunicazione: React.FC<{
         atleta_id: target_atleta_id,
         urgente,
       });
-      toast({ title: "✅ Comunicazione salvata" });
+      toast({ title: td("quick_comm.saved_toast") });
       set_titolo("");
       set_testo("");
       set_template_sel("");
       set_urgente(false);
     } catch (err: any) {
-      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+      toast({ title: td("toast.error"), description: err?.message, variant: "destructive" });
     }
   };
+
 
   return (
     <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
       <div className="flex items-center gap-2">
         <MessageSquare className="w-4 h-4 text-primary" />
-        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Comunicazione rapida</h3>
+        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{td("quick_comm.title")}</h3>
       </div>
 
       {/* Template */}
       <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Template</label>
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{td("quick_comm.template")}</label>
         <select value={template_sel} onChange={(e) => handle_template(e.target.value)} className={input_cls}>
-          <option value="">Scegli template...</option>
+          <option value="">{td("quick_comm.choose_template")}</option>
           {templates.map((t: any) => (
             <option key={t.id} value={t.id}>
               {t.nome}
@@ -581,7 +587,7 @@ const BoxComunicazione: React.FC<{
 
       {/* Destinatari */}
       <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Destinatari</label>
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{td("quick_comm.recipients")}</label>
         <select
           value={tipo_dest}
           onChange={(e) => {
@@ -591,20 +597,20 @@ const BoxComunicazione: React.FC<{
           }}
           className={input_cls}
         >
-          <option value="tutti">Tutti (club intero)</option>
-          <option value="atleti_attivi">Tutti gli atleti attivi</option>
-          <option value="istruttori">Tutti gli istruttori</option>
-          <option value="monitori">Tutti i monitori</option>
-          <option value="aiuto_monitori">Tutti gli aiuto monitori</option>
-          <option value="corso">Iscritti a un corso</option>
-          <option value="gara">Iscritti a una gara</option>
-          <option value="singolo_atleta">Singolo atleta</option>
-          <option value="singolo_istruttore">Singolo istruttore/monitore</option>
+          <option value="tutti">{td("quick_comm.recipient_options.tutti")}</option>
+          <option value="atleti_attivi">{td("quick_comm.recipient_options.atleti_attivi")}</option>
+          <option value="istruttori">{td("quick_comm.recipient_options.istruttori")}</option>
+          <option value="monitori">{td("quick_comm.recipient_options.monitori")}</option>
+          <option value="aiuto_monitori">{td("quick_comm.recipient_options.aiuto_monitori")}</option>
+          <option value="corso">{td("quick_comm.recipient_options.corso")}</option>
+          <option value="gara">{td("quick_comm.recipient_options.gara")}</option>
+          <option value="singolo_atleta">{td("quick_comm.recipient_options.singolo_atleta")}</option>
+          <option value="singolo_istruttore">{td("quick_comm.recipient_options.singolo_istruttore")}</option>
         </select>
 
         {tipo_dest === "corso" && (
           <select value={riferimento_id} onChange={(e) => set_riferimento_id(e.target.value)} className={input_cls}>
-            <option value="">Seleziona corso...</option>
+            <option value="">{td("quick_comm.select_corso")}</option>
             {corsi
               .filter((c) => c.stato === "attivo")
               .map((c) => (
@@ -616,7 +622,7 @@ const BoxComunicazione: React.FC<{
         )}
         {tipo_dest === "gara" && (
           <select value={riferimento_id} onChange={(e) => set_riferimento_id(e.target.value)} className={input_cls}>
-            <option value="">Seleziona gara...</option>
+            <option value="">{td("quick_comm.select_gara")}</option>
             {gare.map((g) => (
               <option key={g.id} value={g.id}>
                 {g.nome} — {new Date(g.data + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
@@ -626,7 +632,7 @@ const BoxComunicazione: React.FC<{
         )}
         {tipo_dest === "singolo_atleta" && (
           <select value={persona_id} onChange={(e) => set_persona_id(e.target.value)} className={input_cls}>
-            <option value="">Seleziona atleta...</option>
+            <option value="">{td("quick_comm.select_atleta")}</option>
             {atleti
               .filter((a) => a.stato === "attivo")
               .map((a) => (
@@ -638,7 +644,7 @@ const BoxComunicazione: React.FC<{
         )}
         {tipo_dest === "singolo_istruttore" && (
           <select value={persona_id} onChange={(e) => set_persona_id(e.target.value)} className={input_cls}>
-            <option value="">Seleziona persona...</option>
+            <option value="">{td("quick_comm.select_persona")}</option>
             {[...istruttori, ...monitori].map((i) => (
               <option key={i.id} value={i.id}>
                 {i.nome} {i.cognome}
@@ -649,34 +655,34 @@ const BoxComunicazione: React.FC<{
 
         {destinatari.length > 0 && (
           <p className="text-xs text-primary font-medium">
-            📨 {destinatari.length} destinatar{destinatari.length === 1 ? "io" : "i"}
+            {td("quick_comm.recipients_count", { count: destinatari.length })}
           </p>
         )}
       </div>
 
       {/* Titolo */}
       <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Titolo</label>
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{td("quick_comm.title_field")}</label>
         <input
           value={titolo}
           onChange={(e) => set_titolo(e.target.value)}
-          placeholder="Oggetto comunicazione..."
+          placeholder={td("quick_comm.title_placeholder")}
           className={input_cls}
         />
       </div>
 
       {/* Testo */}
       <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Messaggio</label>
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{td("quick_comm.message")}</label>
         <textarea
           value={testo}
           onChange={(e) => set_testo(e.target.value)}
           rows={4}
-          placeholder="Scrivi il messaggio... Usa {nome} per personalizzarlo"
+          placeholder={td("quick_comm.message_placeholder")}
           className={`${input_cls} resize-none`}
         />
         <p className="text-[10px] text-muted-foreground">
-          Variabili: {"{nome}"}, {"{corso}"}, {"{gara}"}, {"{data}"}, {"{importo}"}
+          {td("quick_comm.variables_hint")}
         </p>
       </div>
 
@@ -687,10 +693,10 @@ const BoxComunicazione: React.FC<{
             <TooltipTrigger asChild>
               <Label htmlFor="dash-com-urgente" className="cursor-pointer flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-foreground">
                 <AlertTriangle className="w-4 h-4 text-destructive" />
-                Urgente
+                {td("quick_comm.urgent")}
               </Label>
             </TooltipTrigger>
-            <TooltipContent>Sarà mostrata come banner urgente nell'app dell'atleta</TooltipContent>
+            <TooltipContent>{td("quick_comm.urgent_tooltip")}</TooltipContent>
           </Tooltip>
           <Switch
             id="dash-com-urgente"
@@ -710,15 +716,18 @@ const BoxComunicazione: React.FC<{
           className="flex-1 gap-1.5 text-xs"
         >
           <Send className="w-3.5 h-3.5" />
-          {crea.isPending ? "..." : "Salva in-app"}
+          {crea.isPending ? "..." : td("quick_comm.save_inapp")}
         </Button>
       </div>
     </div>
   );
 };
 
+
 // ─── Widget compleanni ─────────────────────────────────────
 const WidgetCompleanni: React.FC<{ atleti: any[] }> = ({ atleti }) => {
+  const { t: td } = useTranslation("dashboard");
+
   const today = new Date();
   const today_md = `${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
@@ -755,7 +764,7 @@ const WidgetCompleanni: React.FC<{ atleti: any[] }> = ({ atleti }) => {
     <div className="bg-card rounded-xl shadow-card p-5 space-y-3">
       <div className="flex items-center gap-2">
         <Gift className="w-4 h-4 text-pink-500" />
-        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Compleanni</h3>
+        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{td("widgets.birthdays")}</h3>
       </div>
       {compleanni.map((a) => (
         <div key={a.id} className="flex items-center justify-between">
@@ -768,11 +777,12 @@ const WidgetCompleanni: React.FC<{ atleti: any[] }> = ({ atleti }) => {
               <p className="text-sm font-medium text-foreground">
                 {a.nome} {a.cognome}
               </p>
-              <p className="text-xs text-muted-foreground">compie {a.eta} anni</p>
+              <p className="text-xs text-muted-foreground">{td("widgets.turns_age", { eta: a.eta })}</p>
             </div>
           </div>
           <Badge variant={a.giorni === 0 ? "default" : "secondary"} className="text-xs">
-            {a.giorni === 0 ? "🎂 Oggi!" : a.giorni === 1 ? "Domani" : `fra ${a.giorni}gg`}
+            {a.giorni === 0 ? td("widgets.today_excl") : a.giorni === 1 ? td("widgets.tomorrow") : td("widgets.in_days", { count: a.giorni })}
+
           </Badge>
         </div>
       ))}
@@ -782,6 +792,7 @@ const WidgetCompleanni: React.FC<{ atleti: any[] }> = ({ atleti }) => {
 
 // ─── Widget fatture in scadenza ────────────────────────────
 const WidgetFatture: React.FC<{ fatture: any[]; atleti: any[] }> = ({ fatture, atleti }) => {
+  const { t: td } = useTranslation("dashboard");
   const today = new Date().toISOString().split("T")[0];
   const tra_7 = add_days(today, 7);
 
@@ -798,16 +809,17 @@ const WidgetFatture: React.FC<{ fatture: any[]; atleti: any[] }> = ({ fatture, a
     <div className="bg-card rounded-xl shadow-card p-5 space-y-3">
       <div className="flex items-center gap-2">
         <AlertTriangle className="w-4 h-4 text-orange-500" />
-        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Fatture</h3>
+        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{td("widgets.invoices")}</h3>
       </div>
       {scadute.length > 0 && (
         <div className="bg-destructive/5 border border-destructive/20 rounded-lg px-3 py-2">
-          <p className="text-xs font-bold text-destructive">{scadute.length} fatture scadute</p>
+          <p className="text-xs font-bold text-destructive">{td("widgets.expired_invoices", { count: scadute.length })}</p>
           <p className="text-xs text-muted-foreground">
-            CHF {scadute.reduce((s, f) => s + f.importo, 0).toFixed(2)} da incassare
+            {td("widgets.expired_total_to_collect", { importo: scadute.reduce((s, f) => s + f.importo, 0).toFixed(2) })}
           </p>
         </div>
       )}
+
       {in_scadenza.map((f) => {
         const atleta = atleti.find((a) => a.id === f.atleta_id);
         return (
@@ -838,6 +850,8 @@ const SezionePresenzeIstruttori: React.FC<{
   on_elimina: (id: string) => void;
   loading: boolean;
 }> = ({ istruttori, today_key, presenze, on_segna, on_elimina, loading }) => {
+  const { t: td } = useTranslation("dashboard");
+
   const today_istruttori = istruttori.filter((i) => {
     if (i.stato !== "attivo") return false;
     return get_slots_giorno(i.disponibilita || {}, today_key).length > 0;
@@ -846,7 +860,7 @@ const SezionePresenzeIstruttori: React.FC<{
   return (
     <div className="space-y-2">
       {today_istruttori.length === 0 ? (
-        <p className="text-xs text-muted-foreground text-center py-4">Nessun istruttore previsto oggi</p>
+        <p className="text-xs text-muted-foreground text-center py-4">{td("agenda.no_instructors_planned")}</p>
       ) : (
         today_istruttori.map((i) => {
           const presenza = presenze.find((p) => p.persona_id === i.id);
@@ -887,11 +901,12 @@ const SezionePresenzeIstruttori: React.FC<{
                     disabled={loading}
                     className={`h-7 text-xs ${is_present ? "" : "bg-success hover:bg-success/90 text-white"}`}
                   >
-                    {is_present ? "🚪 Uscita" : "✅ Entrata"}
+                    {is_present ? `🚪 ${td("course_row.exit")}` : `✅ ${td("course_row.entry")}`}
                   </Button>
                 ) : (
-                  <span className="text-xs text-muted-foreground">Uscito</span>
+                  <span className="text-xs text-muted-foreground">{td("course_row.exited")}</span>
                 )}
+
                 {presenza && (
                   <Button
                     size="sm"
@@ -918,7 +933,9 @@ const DashboardPage: React.FC = () => {
     return <PresidentDashboard />;
   }
   const { t, locale } = useI18n();
+  const { t: td } = useTranslation("dashboard");
   const locale_code = locale_to_bcp47(locale);
+
   const { data: atleti = [], isLoading: loading_atleti } = use_atleti();
   const { data: corsi = [], isLoading: loading_corsi } = use_corsi();
   const { data: gare = [], isLoading: loading_gare } = use_gare();
@@ -999,7 +1016,7 @@ const DashboardPage: React.FC = () => {
 
   const agenda_data = add_days(today, agenda_offset);
   const agenda_is_today = agenda_offset === 0;
-  const agenda_label = agenda_is_today ? "Oggi" : format_data_breve(agenda_data);
+  const agenda_label = agenda_is_today ? td("agenda.today") : format_data_breve(agenda_data);
 
   const corsi_agenda = corsi
     .filter((c) => match_giorno(c.giorno, get_giorno_key(agenda_data)) && c.stato === "attivo")
@@ -1029,9 +1046,9 @@ const DashboardPage: React.FC = () => {
         riferimento_id,
         tipo_riferimento: "corso",
       } as any);
-      toast({ title: result.tipo === "entrata" ? "✅ Presenza registrata" : "🚪 Uscita registrata" });
+      toast({ title: result.tipo === "entrata" ? td("toast.presence_registered") : td("toast.exit_registered") });
     } catch (err: any) {
-      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+      toast({ title: td("toast.error"), description: err?.message, variant: "destructive" });
     }
   };
 
@@ -1043,20 +1060,21 @@ const DashboardPage: React.FC = () => {
         data: today,
         metodo: "manuale",
       });
-      toast({ title: result.tipo === "entrata" ? "✅ Entrata registrata" : "🚪 Uscita registrata" });
+      toast({ title: result.tipo === "entrata" ? td("toast.entry_registered") : td("toast.exit_registered") });
     } catch (err: any) {
-      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+      toast({ title: td("toast.error"), description: err?.message, variant: "destructive" });
     }
   };
 
   const handle_elimina = async (id: string) => {
     try {
       await elimina_p.mutateAsync(id);
-      toast({ title: "🗑️ Presenza rimossa" });
+      toast({ title: td("toast.presence_removed") });
     } catch (err: any) {
-      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+      toast({ title: td("toast.error"), description: err?.message, variant: "destructive" });
     }
   };
+
 
   if (is_loading) {
     return (
@@ -1094,34 +1112,35 @@ const DashboardPage: React.FC = () => {
           <p className="text-xs text-muted-foreground capitalize">
             {fmt_date_long(new Date(), locale_code)}
           </p>
-          <p className="text-xs font-bold text-success">{totale_presenti} presenti in pista</p>
+          <p className="text-xs font-bold text-success">{td("presenti_in_pista", { count: totale_presenti })}</p>
         </div>
       </div>
 
       {/* KPI */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title="Atleti attivi" value={String(active_atleti)} icon={<Users className="w-5 h-5" />} to="/atleti?filtro=attivi" />
-        <KPICard title="Corsi attivi" value={String(active_corsi)} icon={<BookOpen className="w-5 h-5" />} to="/corsi" />
+        <KPICard title={td("kpi.active_athletes")} value={String(active_atleti)} icon={<Users className="w-5 h-5" />} to="/atleti?filtro=attivi" />
+        <KPICard title={td("kpi.active_courses")} value={String(active_corsi)} icon={<BookOpen className="w-5 h-5" />} to="/corsi" />
         <KPICard
-          title="Prossime gare"
+          title={td("kpi.next_competitions")}
           value={String(upcoming_gare.length)}
           icon={<Trophy className="w-5 h-5" />}
-          subtitle={next_gara ? `fra ${days_until(next_gara.data)}gg: ${next_gara.nome}` : undefined}
+          subtitle={next_gara ? td("kpi.next_competition_in", { days: days_until(next_gara.data), nome: next_gara.nome }) : undefined}
           to="/gare"
         />
         <KPICard
-          title="Da incassare"
+          title={td("kpi.amount_to_collect")}
           value={`CHF ${totale_fatture.toLocaleString()}`}
           icon={<CreditCard className="w-5 h-5" />}
           highlight
           subtitle={
             fatture_da_pagare.length > 0
-              ? `${fatture_scadute_count} scadute · ${fatture_in_arrivo_count} in arrivo`
+              ? td("kpi.invoices_status", { scadute: fatture_scadute_count, arrivo: fatture_in_arrivo_count })
               : undefined
           }
           to="/fatture?filtro=da_pagare"
         />
       </div>
+
 
       {/* Banner compleanni del giorno */}
       {compleanni_oggi.length > 0 && (
@@ -1130,7 +1149,7 @@ const DashboardPage: React.FC = () => {
             <div className="text-3xl leading-none">🎂</div>
             <div className="flex-1 min-w-[220px]">
               <p className="text-sm font-bold text-amber-900">
-                Oggi è il compleanno di{" "}
+                {td("birthday_banner.today_is")}{" "}
                 {compleanni_oggi.map((a, idx) => (
                   <span key={a.id}>
                     <span className="font-semibold">{a.nome} {a.cognome}</span>
@@ -1144,7 +1163,7 @@ const DashboardPage: React.FC = () => {
                 ! 🎉
               </p>
               <p className="text-xs text-amber-800/80 mt-0.5">
-                Mandagli gli auguri dal club: clicca "Invia auguri" e personalizza il messaggio prima di inviarlo.
+                {td("birthday_banner.send_wishes_hint")}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -1156,13 +1175,14 @@ const DashboardPage: React.FC = () => {
                   className="gap-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs"
                 >
                   <Gift className="w-3.5 h-3.5" />
-                  Invia auguri a {a.nome}
+                  {td("birthday_banner.send_wishes_to", { nome: a.nome })}
                 </Button>
               ))}
             </div>
           </div>
         </div>
       )}
+
 
       {/* Banner fine stagione */}
       {(() => {
@@ -1186,13 +1206,14 @@ const DashboardPage: React.FC = () => {
             <AlertTriangle className={`w-5 h-5 flex-shrink-0 ${is_past ? "text-destructive" : "text-amber-600"}`} />
             <p className={`text-sm flex-1 ${is_past ? "text-destructive font-semibold" : "text-amber-800"}`}>
               {is_past
-                ? `⚠ La stagione è terminata il ${data_fmt}. Termina la stagione ora.`
-                : `La stagione termina il ${data_fmt}. È ora di pianificare la nuova stagione.`}
+                ? td("season_banner.ended", { data: data_fmt })
+                : td("season_banner.ending", { data: data_fmt })}
             </p>
             <Button size="sm" variant={is_past ? "destructive" : "outline"} onClick={() => navigate("/nuova-stagione")}>
-              {is_past ? "Termina Stagione" : "Avvia Nuova Stagione"}
+              {is_past ? td("season_banner.end_now") : td("season_banner.start_new")}
             </Button>
           </div>
+
         );
       })()}
 
@@ -1203,7 +1224,7 @@ const DashboardPage: React.FC = () => {
           {/* Agenda corsi — un giorno alla volta */}
           <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Agenda corsi</h3>
+              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{td("agenda.title")}</h3>
               <div className="flex items-center gap-1">
                 <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => set_agenda_offset((o) => o - 1)}>
                   <ChevronLeft className="w-4 h-4" />
@@ -1220,7 +1241,7 @@ const DashboardPage: React.FC = () => {
               </div>
             </div>
 
-            <div role="tablist" aria-label="Agenda corsi" className="flex gap-2 border-b border-border">
+            <div role="tablist" aria-label={td("agenda.title")} className="flex gap-2 border-b border-border">
               {(["corsi", "istruttori"] as const).map((tab) => {
                 const is_active = tab_presenze === tab;
                 return (
@@ -1234,25 +1255,27 @@ const DashboardPage: React.FC = () => {
                         ? "font-bold text-primary after:content-[''] after:absolute after:left-0 after:right-0 after:-bottom-px after:h-0.5 after:bg-primary"
                         : "font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-t-md"}`}
                   >
-                    {tab === "corsi" ? "📋 Corsi & Appello" : "👨‍🏫 Istruttori"}
+                    {tab === "corsi" ? `📋 ${td("agenda.tabs.courses")}` : `👨‍🏫 ${td("agenda.tabs.instructors")}`}
                   </button>
                 );
               })}
             </div>
+
 
             {tab_presenze === "corsi" && (
               <div className="space-y-5">
                 {corsi_agenda.length === 0 && (agenda_is_today ? today_lezioni.length === 0 : true) ? (
                   <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
                     <Clock className="w-8 h-8 mb-2 opacity-30" />
-                    <p className="text-sm">Nessun corso per {agenda_label.toLowerCase()}</p>
+                    <p className="text-sm">{td("agenda.no_courses_for", { label: agenda_label.toLowerCase() })}</p>
                   </div>
                 ) : (
                   <>
                     <div className="space-y-2">
                       <span className="text-xs text-muted-foreground">
-                        {corsi_agenda.length} cors{corsi_agenda.length === 1 ? "o" : "i"}
+                        {td("agenda.courses_count", { count: corsi_agenda.length })}
                       </span>
+
                       {corsi_agenda.map((corso: any) => (
                         <CorsoCard
                           key={corso.id}
@@ -1273,7 +1296,7 @@ const DashboardPage: React.FC = () => {
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
                           <div className="text-xs font-bold px-2.5 py-1 rounded-full bg-primary text-white">
-                            Lezioni private oggi
+                            {td("agenda.private_lessons_today")}
                           </div>
                         </div>
                         {today_lezioni.map((lezione) => {
@@ -1286,7 +1309,7 @@ const DashboardPage: React.FC = () => {
                                   {lezione.ora_inizio?.slice(0, 5)}
                                 </span>
                                 <div>
-                                  <p className="text-sm font-semibold text-foreground">Lezione privata</p>
+                                  <p className="text-sm font-semibold text-foreground">{td("agenda.private_lesson")}</p>
                                   <p className="text-xs text-muted-foreground">
                                     {istr ? `${istr.nome} ${istr.cognome}` : "—"}
                                   </p>
@@ -1308,7 +1331,8 @@ const DashboardPage: React.FC = () => {
                                       disabled={segna.isPending}
                                       className={`h-6 text-xs ${presenza ? "text-success border-success/40" : "bg-success hover:bg-success/90 text-white"}`}
                                     >
-                                      {presenza ? "✓ Presente" : "Presente"}
+                                      {presenza ? td("course_row.present_checked") : td("course_row.present")}
+
                                     </Button>
                                   </div>
                                 );
@@ -1363,7 +1387,7 @@ const DashboardPage: React.FC = () => {
             <div className="bg-card rounded-xl shadow-card p-5 space-y-3">
               <div className="flex items-center gap-2">
                 <Trophy className="w-4 h-4 text-primary" />
-                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Prossime gare</h3>
+                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{td("widgets.competitions")}</h3>
               </div>
               {upcoming_gare.slice(0, 3).map((g) => (
                 <div key={g.id} className="flex items-center gap-3">
@@ -1376,8 +1400,9 @@ const DashboardPage: React.FC = () => {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{g.nome}</p>
                     <p className="text-xs text-muted-foreground">
-                      {g.localita} · {g.atleti_iscritti?.length || 0} atleti
+                      {td("widgets.gara_subtitle", { localita: g.localita, count: g.atleti_iscritti?.length || 0 })}
                     </p>
+
                   </div>
                 </div>
               ))}
@@ -1392,7 +1417,7 @@ const DashboardPage: React.FC = () => {
             <div className="bg-card rounded-xl shadow-card p-5 space-y-3">
               <div className="flex items-center gap-2">
                 <MessageSquare className="w-4 h-4 text-primary" />
-                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Comunicazioni</h3>
+                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{td("widgets.communications")}</h3>
               </div>
               {comunicazioni.slice(0, 3).map((c) => (
                 <div key={c.id} className="space-y-0.5">

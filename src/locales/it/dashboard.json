@@ -3,9 +3,13 @@
   "welcome": "Buongiorno, {{nome}}",
   "kpi": {
     "active_athletes": "Atleti Attivi",
+    "active_courses": "Corsi Attivi",
     "courses_week": "Corsi Settimana",
     "next_competitions": "Prossime Gare",
-    "due_invoices": "Fatture in Scadenza"
+    "next_competition_in": "fra {{days}}gg: {{nome}}",
+    "due_invoices": "Fatture in Scadenza",
+    "amount_to_collect": "Da Incassare",
+    "invoices_status": "{{scadute}} scadute · {{arrivo}} in arrivo"
   },
   "agenda": {
     "title": "Agenda Corsi",
@@ -15,7 +19,82 @@
     },
     "today": "Oggi",
     "no_courses_today": "Nessun corso oggi",
-    "no_instructors_today": "Nessun istruttore disponibile oggi"
+    "no_courses_for": "Nessun corso per {{label}}",
+    "no_instructors_today": "Nessun istruttore disponibile oggi",
+    "no_instructors_planned": "Nessun istruttore previsto oggi",
+    "courses_count_one": "{{count}} corso",
+    "courses_count_other": "{{count}} corsi",
+    "private_lessons_today": "Lezioni private oggi",
+    "private_lesson": "Lezione privata"
+  },
+  "presenti_in_pista_one": "{{count}} presente in pista",
+  "presenti_in_pista_other": "{{count}} presenti in pista",
+  "course_status": {
+    "in_progress": "In corso",
+    "starts_in_min": "Inizia fra {{min}} min",
+    "starts_at": "Inizia alle {{ora}}",
+    "ended": "Terminato"
+  },
+  "course_row": {
+    "instructors": "Istruttori",
+    "monitors": "Monitrici & Aiuto monitrici",
+    "monitor": "Monitrice",
+    "helper_monitor": "Aiuto monitrice",
+    "athletes_count": "Atleti ({{count}})",
+    "no_athletes": "Nessuna atleta iscritta.",
+    "present": "Presente",
+    "present_checked": "✓ Presente",
+    "attended": "✅ Presente",
+    "waiting": "⏳ Atteso",
+    "entry": "Entrata",
+    "exit": "Uscita",
+    "exited": "Uscito",
+    "birthday_tip": "Compleanno oggi!",
+    "happy_birthday": "Buon compleanno!"
+  },
+  "quick_comm": {
+    "title": "Comunicazione Rapida",
+    "template": "Template",
+    "choose_template": "Scegli template...",
+    "recipients": "Destinatari",
+    "recipient_options": {
+      "tutti": "Tutti (club intero)",
+      "atleti_attivi": "Tutti gli atleti attivi",
+      "istruttori": "Tutti gli istruttori",
+      "monitori": "Tutti i monitori",
+      "aiuto_monitori": "Tutti gli aiuto monitori",
+      "corso": "Iscritti a un corso",
+      "gara": "Iscritti a una gara",
+      "singolo_atleta": "Singolo atleta",
+      "singolo_istruttore": "Singolo istruttore/monitore"
+    },
+    "select_corso": "Seleziona corso...",
+    "select_gara": "Seleziona gara...",
+    "select_atleta": "Seleziona atleta...",
+    "select_persona": "Seleziona persona...",
+    "recipients_count_one": "📨 {{count}} destinatario",
+    "recipients_count_other": "📨 {{count}} destinatari",
+    "title_field": "Titolo",
+    "title_placeholder": "Oggetto comunicazione...",
+    "message": "Messaggio",
+    "message_placeholder": "Scrivi il messaggio... Usa {nome} per personalizzarlo",
+    "variables_hint": "Variabili: {nome}, {corso}, {gara}, {data}, {importo}",
+    "urgent": "Urgente",
+    "urgent_tooltip": "Sarà mostrata come banner urgente nell'app dell'atleta",
+    "save_inapp": "Salva in-app",
+    "saved_toast": "✅ Comunicazione salvata",
+    "missing_title_text": "Inserisci titolo e testo"
+  },
+  "birthday_banner": {
+    "today_is": "Oggi è il compleanno di",
+    "send_wishes_hint": "Mandagli gli auguri dal club: clicca \"Invia auguri\" e personalizza il messaggio prima di inviarlo.",
+    "send_wishes_to": "Invia auguri a {{nome}}"
+  },
+  "season_banner": {
+    "ended": "⚠ La stagione è terminata il {{data}}. Termina la stagione ora.",
+    "ending": "La stagione termina il {{data}}. È ora di pianificare la nuova stagione.",
+    "end_now": "Termina Stagione",
+    "start_new": "Avvia Nuova Stagione"
   },
   "widgets": {
     "today_on_ice": "Oggi in Pista",
@@ -23,7 +102,29 @@
     "upcoming_events": "Prossimi Eventi",
     "latest_communications": "Ultime Comunicazioni",
     "available_instructors": "Istruttori Disponibili Oggi",
-    "subscription_requests": "Richieste Iscrizione"
+    "subscription_requests": "Richieste Iscrizione",
+    "birthdays": "Compleanni",
+    "invoices": "Fatture",
+    "competitions": "Prossime Gare",
+    "communications": "Comunicazioni",
+    "expired_invoices": "{{count}} fatture scadute",
+    "expired_total_to_collect": "CHF {{importo}} da incassare",
+    "turns_age": "compie {{eta}} anni",
+    "today_excl": "🎂 Oggi!",
+    "tomorrow": "Domani",
+    "in_days": "fra {{count}}gg",
+    "gara_subtitle": "{{localita}} · {{count}} atleti",
+    "pending_requests": "Richieste Pendenti",
+    "no_pending_requests": "Nessuna richiesta in attesa",
+    "latest_subscriptions": "Ultime Iscrizioni",
+    "subscribed_to": "{{atleta}} si è iscritto a {{corso}}"
   },
-  "countdown_days": "Countdown: {{count}}gg"
+  "countdown_days": "Countdown: {{count}}gg",
+  "toast": {
+    "presence_registered": "✅ Presenza registrata",
+    "exit_registered": "🚪 Uscita registrata",
+    "entry_registered": "✅ Entrata registrata",
+    "presence_removed": "🗑️ Presenza rimossa",
+    "error": "Errore"
+  }
 }

@@ -1,6 +1,7 @@
 import React from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useI18n, LOCALE_LABELS, Locale } from "@/lib/i18n";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/auth";
 import { use_club } from "@/hooks/use-supabase-data";
 import { supabase } from "@/lib/supabase";
@@ -11,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { use_count_iscrizioni_non_lette } from "@/components/comunicazioni/IscrizioniAtletiNotifiche";
 import { MENU_PRINCIPALE, MENU_SETUP } from "@/config/menuSections";
+
 
 // Voci legacy (admin/superadmin vedono questo menu come prima)
 const legacy_nav_items = [
@@ -54,7 +56,10 @@ interface MainLayoutProps { children: React.ReactNode; }
 
 const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const { t, locale, set_locale } = useI18n();
+  const { t: tc } = useTranslation("common");
+  const menu_label = (codice: string, fallback: string) => tc(`menu.${codice}`, { defaultValue: fallback });
   const { session, logout } = useAuth();
+
   const { data: club } = use_club();
   const location = useLocation();
   const [sidebar_open, set_sidebar_open] = React.useState(false);
@@ -113,11 +118,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     const show_pending = key === "atleti" && richieste_pendenti > 0;
     if (disabled) {
       return (
-        <div key={key} title="Prossimamente"
+        <div key={key} title={tc("coming_soon")}
           className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground/40 cursor-not-allowed select-none">
           <Icon className="w-4 h-4 shrink-0" />
           <span>{label}</span>
-          <span className="ml-auto text-[9px] uppercase tracking-wider opacity-70">soon</span>
+          <span className="ml-auto text-[9px] uppercase tracking-wider opacity-70">{tc("soon")}</span>
         </div>
       );
     }
@@ -132,7 +137,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           </span>
         )}
         {show_pending && (
-          <span title={`${richieste_pendenti} richieste in attesa`}
+          <span title={tc("pending_requests_tooltip", { count: richieste_pendenti })}
             className="ml-auto inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold tabular-nums">
             {richieste_pendenti}
           </span>
@@ -140,6 +145,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       </NavLink>
     );
   };
+
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -169,12 +175,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           {/* Nuovi ruoli: voci principali + gruppo Setup espandibile */}
           {is_nuovo_ruolo && (
             <>
-              {nuovo_principale.map((s) => render_nav_item(s.path, s.icon, s.label, s.codice, s.non_implementato))}
+              {nuovo_principale.map((s) => render_nav_item(s.path, s.icon, menu_label(s.codice, s.label), s.codice, s.non_implementato))}
               {is_presidente && (
                 <NavLink to="/presidente/relazione" onClick={() => set_sidebar_open(false)}
                   className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname.startsWith("/presidente/relazione") ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
                   <FileText className="w-4 h-4 shrink-0" />
-                  <span>Relazione</span>
+                  <span>{tc("relazione")}</span>
                   <span className="ml-auto inline-flex items-center justify-center px-1.5 h-4 rounded-full bg-emerald-500 text-white text-[9px] font-bold tracking-wider">NEW</span>
                 </NavLink>
               )}
@@ -185,30 +191,31 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                     className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
                   >
                     <Settings className="w-4 h-4 shrink-0" />
-                    <span>Setup</span>
+                    <span>{tc("setup")}</span>
                     {setup_open ? <ChevronDown className="w-4 h-4 ml-auto" /> : <ChevronRight className="w-4 h-4 ml-auto" />}
                   </button>
                   {setup_open && (
                     <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border pl-2">
-                      {nuovo_setup.map((s) => render_nav_item(s.path, s.icon, s.label, s.codice, s.non_implementato))}
+                      {nuovo_setup.map((s) => render_nav_item(s.path, s.icon, menu_label(s.codice, s.label), s.codice, s.non_implementato))}
                     </div>
                   )}
                 </div>
               )}
             </>
           )}
+
           {is_admin && (
             <>
               <div className="pt-3 pb-1"><div className="border-t border-border" /></div>
               <NavLink to="/gestione-avanzata" onClick={() => set_sidebar_open(false)}
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/gestione-avanzata" ? "bg-destructive text-destructive-foreground shadow-sm" : "text-destructive/70 hover:bg-destructive/10 hover:text-destructive"}`}>
                 <ShieldAlert className="w-4 h-4 shrink-0" />
-                <span>Gestione Avanzata</span>
+                <span>{tc("menu.gestione_avanzata")}</span>
               </NavLink>
               <NavLink to="/ruoli-permessi" onClick={() => set_sidebar_open(false)}
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/ruoli-permessi" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
                 <Lock className="w-4 h-4 shrink-0" />
-                <span>Gestione Ruoli</span>
+                <span>{tc("menu.gestione_ruoli")}</span>
               </NavLink>
             </>
           )}
@@ -216,32 +223,33 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             <NavLink to="/utenti" onClick={() => set_sidebar_open(false)}
               className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/utenti" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
               <Users className="w-4 h-4 shrink-0" />
-              <span>Utenti</span>
+              <span>{tc("menu.utenti")}</span>
             </NavLink>
           )}
           {is_superadmin && (
             <>
               <div className="pt-2 pb-1">
-                <p className="px-3 text-[10px] font-bold uppercase tracking-widest text-purple-400 mb-1">SuperAdmin</p>
+                <p className="px-3 text-[10px] font-bold uppercase tracking-widest text-purple-400 mb-1">{tc("menu.superadmin_section")}</p>
               </div>
               <NavLink to="/superadmin" onClick={() => set_sidebar_open(false)}
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/superadmin" ? "bg-purple-600 text-white shadow-sm" : "text-purple-500 hover:bg-purple-100 hover:text-purple-700"}`}>
-                <ShieldCheck className="w-4 h-4 shrink-0" /><span>Dashboard</span>
+                <ShieldCheck className="w-4 h-4 shrink-0" /><span>{tc("menu.superadmin_dashboard")}</span>
               </NavLink>
               <NavLink to="/superadmin/club" onClick={() => set_sidebar_open(false)}
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/superadmin/club" ? "bg-purple-600 text-white shadow-sm" : "text-purple-500 hover:bg-purple-100 hover:text-purple-700"}`}>
-                <Users className="w-4 h-4 shrink-0" /><span>Gestione Club</span>
+                <Users className="w-4 h-4 shrink-0" /><span>{tc("menu.superadmin_club")}</span>
               </NavLink>
               <NavLink to="/superadmin/manutenzione" onClick={() => set_sidebar_open(false)}
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/superadmin/manutenzione" ? "bg-purple-600 text-white shadow-sm" : "text-purple-500 hover:bg-purple-100 hover:text-purple-700"}`}>
-                <Settings className="w-4 h-4 shrink-0" /><span>Manutenzione Ordinaria</span>
+                <Settings className="w-4 h-4 shrink-0" /><span>{tc("menu.superadmin_manutenzione")}</span>
               </NavLink>
               <NavLink to="/superadmin/manutenzione-straordinaria" onClick={() => set_sidebar_open(false)}
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/superadmin/manutenzione-straordinaria" ? "bg-red-600 text-white shadow-sm" : "text-red-400 hover:bg-red-50 hover:text-red-600"}`}>
-                <ShieldAlert className="w-4 h-4 shrink-0" /><span>Manutenzione Straordinaria</span>
+                <ShieldAlert className="w-4 h-4 shrink-0" /><span>{tc("menu.superadmin_manutenzione_str")}</span>
               </NavLink>
             </>
           )}
+
         </nav>
         <div className="p-3 border-t border-border space-y-1">
           {session && (
@@ -271,12 +279,13 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               size="sm"
               onClick={() => set_search_open(true)}
               className="h-8 gap-2 text-muted-foreground hover:text-foreground"
-              aria-label="Ricerca globale (Cmd+K)"
+              aria-label={tc("search_aria")}
             >
               <Search className="w-4 h-4" />
-              <span className="hidden md:inline text-xs">Cerca</span>
+              <span className="hidden md:inline text-xs">{tc("search")}</span>
               <kbd className="hidden md:inline-flex items-center px-1.5 py-0.5 rounded border border-border bg-muted text-[10px] font-mono">⌘K</kbd>
             </Button>
+
             <Select value={locale} onValueChange={(v) => set_locale(v as Locale)}>
               <SelectTrigger className="w-32 h-8 text-xs">
                 <Globe className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
