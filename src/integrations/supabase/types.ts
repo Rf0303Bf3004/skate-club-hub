@@ -4024,6 +4024,8 @@ export type Database = {
         Returns: undefined
       }
       seed_permessi_default: { Args: { p_club_id: string }; Returns: undefined }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       slot_liberi_istruttore: {
         Args: { p_data_a: string; p_data_da: string; p_istruttore_id: string }
         Returns: {
