@@ -1220,17 +1220,24 @@ const DashboardPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex gap-1 p-1 bg-muted/30 rounded-lg">
-              {(["corsi", "istruttori"] as const).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => set_tab_presenze(tab)}
-                  className={`flex-1 text-xs font-medium py-1.5 rounded-md transition-all
-                    ${tab_presenze === tab ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                >
-                  {tab === "corsi" ? "📋 Corsi & Appello" : "👨‍🏫 Istruttori"}
-                </button>
-              ))}
+            <div role="tablist" aria-label="Agenda corsi" className="flex gap-2 border-b border-border">
+              {(["corsi", "istruttori"] as const).map((tab) => {
+                const is_active = tab_presenze === tab;
+                return (
+                  <button
+                    key={tab}
+                    role="tab"
+                    aria-selected={is_active}
+                    onClick={() => set_tab_presenze(tab)}
+                    className={`relative px-4 py-2 text-sm transition-colors -mb-px
+                      ${is_active
+                        ? "font-bold text-primary after:content-[''] after:absolute after:left-0 after:right-0 after:-bottom-px after:h-0.5 after:bg-primary"
+                        : "font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-t-md"}`}
+                  >
+                    {tab === "corsi" ? "📋 Corsi & Appello" : "👨‍🏫 Istruttori"}
+                  </button>
+                );
+              })}
             </div>
 
             {tab_presenze === "corsi" && (
