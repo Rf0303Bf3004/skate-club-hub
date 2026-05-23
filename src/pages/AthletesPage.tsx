@@ -17,6 +17,8 @@ import AtletaDetail from "@/components/AtletaDetail";
 import AthleteBadges from "@/components/AthleteBadges";
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
+import SearchableListLayout from "@/components/common/SearchableListLayout";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 import DateInput from "@/components/forms/DateInput";
 import {
