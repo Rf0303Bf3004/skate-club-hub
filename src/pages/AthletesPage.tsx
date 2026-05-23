@@ -543,9 +543,14 @@ const AthletesPage: React.FC = () => {
   const { data: atleti = [], isLoading } = use_atleti();
   const upsert = use_upsert_atleta();
   const elimina = use_elimina_atleta();
-  const [search, set_search] = useState("");
+  const [search_raw, set_search_raw] = useState("");
+  const search = useDebouncedValue(search_raw, 200);
   const [level_filter, set_level_filter] = useState("tutti");
   const [status_filter, set_status_filter] = useState("tutti");
+  const [agonista_filter, set_agonista_filter] = useState<"tutti" | "si" | "no">("tutti");
+  const [attivo_filter, set_attivo_filter] = useState<"tutti" | "attivi" | "inattivi">("tutti");
+  const [eta_filter, set_eta_filter] = useState<"tutti" | "5-8" | "9-12" | "13+">("tutti");
+  const [sort_by, set_sort_by] = useState<"cognome" | "livello" | "eta" | "recente" | "codice">("cognome");
   const [solo_da_verificare, set_solo_da_verificare] = useState(false);
   const [selected_id, set_selected_id] = useState<string | null>(params.id ?? null);
   useEffect(() => { if (params.id && params.id !== selected_id) set_selected_id(params.id); }, [params.id]);
