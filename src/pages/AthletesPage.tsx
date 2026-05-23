@@ -1174,99 +1174,121 @@ const AthletesPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder={t("cerca")}
-              value={search}
-              onChange={(e) => set_search(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-          <Select
-            value={categoria_filter}
-            onValueChange={(v) => {
-              set_categoria_filter(v as "tutti" | Categoria);
-              set_level_filter("tutti");
-              set_percorso_filter("tutti");
-              set_card_filter(null);
-            }}
-          >
-            <SelectTrigger className="w-44">
-              <SelectValue placeholder="Categoria" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="tutti">Tutte le categorie</SelectItem>
-              {CATEGORIE.map((c) => (
-                <SelectItem key={c} value={c}>
-                  {get_categoria_label(c)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {categoria_filter === "artistica" && (
-            <Select
-              value={percorso_filter}
-              onValueChange={(v) => set_percorso_filter(v as typeof percorso_filter)}
+        {(() => {
+          const cat_options = [
+            { value: "tutti", label: "Tutte le categorie" },
+            ...CATEGORIE.map((c) => ({ value: c, label: get_categoria_label(c) })),
+          ];
+          const liv_options = [
+            { value: "tutti", label: "Tutti i livelli" },
+            ...(categoria_filter === "amatori" ? LIVELLI_AMATORI : LIVELLI_CARRIERA_NUOVI).map((l) => ({ value: l, label: l })),
+          ];
+          const filtri: any[] = [
+            {
+              key: "categoria", label: "Categoria", value: categoria_filter, options: cat_options,
+              onChange: (v: string) => {
+                set_categoria_filter(v as any);
+                set_level_filter("tutti");
+                set_percorso_filter("tutti");
+                set_card_filter(null);
+              },
+            },
+          ];
+          if (categoria_filter === "artistica") {
+            filtri.push({
+              key: "percorso", label: "Percorso", value: percorso_filter,
+              options: [
+                { value: "tutti", label: "Tutti i percorsi" },
+                { value: "artistica", label: "Solo Artistica" },
+                { value: "stile", label: "Solo Stile" },
+                { value: "entrambi", label: "Entrambi" },
+              ],
+              onChange: (v: string) => set_percorso_filter(v as any),
+            });
+          }
+          if (categoria_filter !== "tutti" && categoria_filter !== "pulcini") {
+            filtri.push({
+              key: "livello", label: "Livello", value: level_filter, options: liv_options,
+              onChange: set_level_filter,
+            });
+          }
+          filtri.push(
+            {
+              key: "status", label: "Status", value: status_filter,
+              options: [
+                { value: "tutti", label: "Tutti" },
+                { value: "scuola", label: "Solo scuola" },
+                { value: "agoniste", label: "Solo agoniste" },
+                { value: "federazione", label: "Solo Federazione" },
+              ],
+              onChange: set_status_filter,
+            },
+            {
+              key: "agonista", label: "Agonista", value: agonista_filter,
+              options: [
+                { value: "tutti", label: "Tutti" },
+                { value: "si", label: "Sì" },
+                { value: "no", label: "No" },
+              ],
+              onChange: (v: string) => set_agonista_filter(v as any),
+            },
+            {
+              key: "attivo", label: "Stato", value: attivo_filter,
+              options: [
+                { value: "tutti", label: "Tutti" },
+                { value: "attivi", label: "Attivi" },
+                { value: "inattivi", label: "Inattivi" },
+              ],
+              onChange: (v: string) => set_attivo_filter(v as any),
+            },
+            {
+              key: "eta", label: "Età", value: eta_filter,
+              options: [
+                { value: "tutti", label: "Tutte" },
+                { value: "5-8", label: "5–8" },
+                { value: "9-12", label: "9–12" },
+                { value: "13+", label: "13+" },
+              ],
+              onChange: (v: string) => set_eta_filter(v as any),
+            },
+          );
+          return (
+            <SearchableListLayout
+              search={search_raw}
+              on_search_change={set_search_raw}
+              search_placeholder="Cerca per nome, cognome, codice atleta, email genitori…"
+              filters={filtri}
+              sort={{
+                value: sort_by,
+                onChange: (v) => set_sort_by(v as any),
+                options: [
+                  { value: "cognome", label: "Cognome A-Z" },
+                  { value: "livello", label: "Livello" },
+                  { value: "eta", label: "Età ↓" },
+                  { value: "recente", label: "Iscrizione recente" },
+                  { value: "codice", label: "Codice atleta" },
+                ],
+              }}
+              count_filtered={filtered.length}
+              count_total={atleti.length}
+              extra_summary={card_filter ? (
+                <button
+                  onClick={() => set_card_filter(null)}
+                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 border border-primary/30 text-[11px] font-semibold text-primary hover:bg-primary/20"
+                >
+                  {card_filter.sezione === "pulcini" && "Pulcini"}
+                  {card_filter.sezione === "amatori" && `Amatori · ${card_filter.livello}`}
+                  {card_filter.sezione === "artistica" && `${card_filter.percorso === "artistica" ? "Artistica" : "Stile"} · ${card_filter.livello}`}
+                  {card_filter.sezione === "in_prep" && `In prep · ${card_filter.livello}`}
+                  <span>✕</span>
+                </button>
+              ) : null}
             >
-              <SelectTrigger className="w-44">
-                <SelectValue placeholder="Percorso" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="tutti">Tutti i percorsi</SelectItem>
-                <SelectItem value="artistica">Solo Artistica</SelectItem>
-                <SelectItem value="stile">Solo Stile</SelectItem>
-                <SelectItem value="entrambi">Entrambi i percorsi</SelectItem>
-              </SelectContent>
-            </Select>
-          )}
-          {categoria_filter !== "tutti" && categoria_filter !== "pulcini" && (
-            <Select value={level_filter} onValueChange={set_level_filter}>
-              <SelectTrigger className="w-44">
-                <SelectValue placeholder={t("livello")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="tutti">Tutti i livelli</SelectItem>
-                {(categoria_filter === "amatori" ? LIVELLI_AMATORI : LIVELLI_CARRIERA_NUOVI).map((l) => (
-                  <SelectItem key={l} value={l}>
-                    {l}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-          <Select value={status_filter} onValueChange={set_status_filter}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="tutti">Tutti</SelectItem>
-              <SelectItem value="scuola">Solo scuola</SelectItem>
-              <SelectItem value="agoniste">Solo agoniste</SelectItem>
-              <SelectItem value="federazione">Solo Federazione</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+              <div />
+            </SearchableListLayout>
+          );
+        })()}
 
-        {card_filter && (
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-muted-foreground">Filtro attivo:</span>
-            <button
-              onClick={() => set_card_filter(null)}
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-100 border border-purple-300 text-xs font-semibold text-purple-800 hover:bg-purple-200 transition"
-              title="Rimuovi filtro"
-            >
-              {card_filter.sezione === "pulcini" && "Pulcini"}
-              {card_filter.sezione === "amatori" && `Amatori · ${card_filter.livello}`}
-              {card_filter.sezione === "artistica" &&
-                `${card_filter.percorso === "artistica" ? "Artistica" : "Stile"} · ${card_filter.livello}`}
-              {card_filter.sezione === "in_prep" &&
-                `In preparazione ${card_filter.livello}`}
-              <span className="text-purple-600">✕</span>
-            </button>
-          </div>
-        )}
 
         <div className="bg-card rounded-xl shadow-card overflow-hidden">
           <div className="overflow-x-auto">
