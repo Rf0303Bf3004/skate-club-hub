@@ -1,0 +1,62 @@
+{
+  "list": {
+    "title": "Atleti",
+    "new_athlete": "Nuovo Atleta",
+    "search_placeholder": "Cerca per nome o cognome...",
+    "results_count_one": "{{count}} di {{total}} risultato",
+    "results_count_other": "{{count}} di {{total}} risultati",
+    "no_results": "Nessun atleta trovato",
+    "filters": {
+      "category": "Categoria",
+      "level": "Livello",
+      "status": "Status",
+      "agonista": "Agonista",
+      "active": "Stato",
+      "age": "Età",
+      "all": "Tutti",
+      "only_active": "Attivi",
+      "only_inactive": "Inattivi"
+    }
+  },
+  "detail": {
+    "tabs": {
+      "anagrafica": "Anagrafica",
+      "courses": "Corsi",
+      "calendar": "Calendario",
+      "billing": "Fatturazione",
+      "tests": "Test Livello",
+      "medals": "Medagliere",
+      "documents": "Documenti",
+      "parents": "Genitori"
+    },
+    "edit": "Modifica scheda",
+    "open_web_portal": "Apri portale web",
+    "deactivate": "Disattiva atleta",
+    "reactivate": "Riattiva atleta",
+    "delete": "Elimina atleta",
+    "athlete_code": "Codice atleta",
+    "swiss_license": "Licenza svizzera",
+    "nfc_tag": "Tag NFC"
+  },
+  "form": {
+    "name": "Nome",
+    "surname": "Cognome",
+    "birth_date": "Data di nascita",
+    "category": "Categoria",
+    "level": "Livello",
+    "agonista": "Agonista",
+    "federation": "Atleta di Federazione",
+    "photo": "Foto",
+    "notes": "Note",
+    "parent_1": "Genitore 1",
+    "parent_2": "Genitore 2 (opzionale)",
+    "email": "Email",
+    "phone": "Telefono"
+  },
+  "status": {
+    "active": "Attivo",
+    "inactive": "Inattivo",
+    "agonista": "Agonista",
+    "amatoriale": "Amatoriale"
+  }
+}

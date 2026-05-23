@@ -1,0 +1,14 @@
+{
+  "generic": "Si è verificato un errore",
+  "network": "Errore di connessione. Riprova.",
+  "unauthorized": "Non sei autorizzato a eseguire questa azione",
+  "not_found": "Risorsa non trovata",
+  "save_failed": "Salvataggio non riuscito",
+  "delete_failed": "Eliminazione non riuscita",
+  "load_failed": "Caricamento non riuscito",
+  "session_expired": "Sessione scaduta. Effettua nuovamente l'accesso.",
+  "server_error": "Errore del server. Riprova più tardi.",
+  "validation_failed": "Alcuni campi non sono validi",
+  "duplicate": "Esiste già un elemento con questi dati",
+  "operation_in_progress": "Operazione in corso, attendi..."
+}

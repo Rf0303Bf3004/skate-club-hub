@@ -1,0 +1,29 @@
+{
+  "title": "Dashboard",
+  "welcome": "Buongiorno, {{nome}}",
+  "kpi": {
+    "active_athletes": "Atleti Attivi",
+    "courses_week": "Corsi Settimana",
+    "next_competitions": "Prossime Gare",
+    "due_invoices": "Fatture in Scadenza"
+  },
+  "agenda": {
+    "title": "Agenda Corsi",
+    "tabs": {
+      "courses": "Corsi & Appello",
+      "instructors": "Istruttori"
+    },
+    "today": "Oggi",
+    "no_courses_today": "Nessun corso oggi",
+    "no_instructors_today": "Nessun istruttore disponibile oggi"
+  },
+  "widgets": {
+    "today_on_ice": "Oggi in Pista",
+    "latest_athletes": "Ultimi Atleti Aggiunti",
+    "upcoming_events": "Prossimi Eventi",
+    "latest_communications": "Ultime Comunicazioni",
+    "available_instructors": "Istruttori Disponibili Oggi",
+    "subscription_requests": "Richieste Iscrizione"
+  },
+  "countdown_days": "Countdown: {{count}}gg"
+}

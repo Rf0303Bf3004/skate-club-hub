@@ -1,0 +1,56 @@
+{
+  "login": {
+    "title": "Ice Arena Manager",
+    "welcome": "Benvenuto in Ice Arena Manager",
+    "email_placeholder": "Email",
+    "password_placeholder": "Password",
+    "sign_in": "Accedi",
+    "sign_in_failed": "Login non riuscito",
+    "new_club_question": "Nuovo club?",
+    "register_here": "Registrati"
+  },
+  "register": {
+    "title": "Registra il tuo club",
+    "subtitle": "Crea il tuo spazio Ice Arena in pochi minuti. Il presidente diventa l'amministratore principale.",
+    "fields": {
+      "club_name": "Nome club",
+      "club_sigla": "Sigla (max 10)",
+      "canton": "Cantone",
+      "city": "Città",
+      "federation": "Federazione",
+      "federation_other": "Specifica federazione",
+      "federation_select_hint": "— Seleziona —",
+      "president_name": "Nome presidente",
+      "president_surname": "Cognome presidente",
+      "email": "Email",
+      "phone": "Telefono",
+      "password": "Password (min 8)",
+      "password_confirm": "Conferma password"
+    },
+    "accept_terms_prefix": "Accetto i",
+    "accept_terms_link": "Termini",
+    "accept_terms_middle": "e l'",
+    "accept_privacy_link": "Informativa Privacy",
+    "submit": "Crea club e accedi",
+    "already_have_account": "Hai già un account?",
+    "sign_in": "Accedi",
+    "errors": {
+      "city_required": "La città è obbligatoria",
+      "federation_required": "Seleziona la federazione (o 'nessuna')",
+      "federation_other_required": "Specifica il nome della federazione",
+      "password_min": "Password minimo 8 caratteri",
+      "passwords_mismatch": "Le due password non coincidono",
+      "terms_required": "Devi accettare termini e privacy per continuare",
+      "register_failed": "Errore registrazione"
+    },
+    "success_created": "Club creato! Benvenuto."
+  },
+  "wizard": {
+    "title": "Configurazione iniziale",
+    "step": "Passo {{current}} di {{total}}",
+    "next": "Avanti",
+    "back": "Indietro",
+    "finish": "Completa configurazione",
+    "skip": "Salta per ora"
+  }
+}

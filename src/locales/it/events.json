@@ -1,0 +1,33 @@
+{
+  "competitions": {
+    "title": "Gare",
+    "new": "Nuova Gara",
+    "host_club": "Club Ospitante",
+    "min_level": "Livello Minimo",
+    "registration_cost": "Costo Iscrizione",
+    "companion_cost": "Costo Accompagnamento",
+    "registered_athletes": "Atleti Iscritti",
+    "score": "Punteggio",
+    "position": "Posizione",
+    "medal": "Medaglia"
+  },
+  "level_tests": {
+    "title": "Test Livello",
+    "new": "Nuovo Test",
+    "passed": "Superato",
+    "failed": "Non superato"
+  },
+  "events": {
+    "title": "Galà ed Eventi",
+    "new": "Nuovo Evento"
+  },
+  "training_camps": {
+    "title": "Campi di Allenamento",
+    "new": "Nuovo Campo",
+    "day_cost": "Costo Diurno",
+    "full_cost": "Costo Completo (pernottamento)",
+    "day_only": "Diurno",
+    "full": "Completo",
+    "partial": "Parziale"
+  }
+}
