@@ -1175,16 +1175,44 @@ const AthletesPage: React.FC = () => {
         </div>
 
         {(() => {
+          // Filtri data-driven: i valori delle option derivano sempre dai
+          // record realmente presenti nel club corrente (atleti già filtrato da RLS).
+          const distinct_categorie = Array.from(
+            new Set(
+              atleti
+                .map((a: any) => (a?.categoria ?? null))
+                .filter((v: any) => v !== null && v !== undefined && String(v).trim() !== "")
+            )
+          ).sort() as string[];
           const cat_options = [
             { value: "tutti", label: "Tutte le categorie" },
-            ...CATEGORIE.map((c) => ({ value: c, label: get_categoria_label(c) })),
+            ...distinct_categorie.map((c) => ({ value: c, label: get_categoria_label(c) })),
           ];
+          // Per il livello, distinct sulla colonna corretta in base alla categoria scelta.
+          const liv_column =
+            categoria_filter === "amatori"
+              ? "livello_amatori"
+              : categoria_filter === "artistica"
+                ? "livello_artistica"
+                : null;
+          const distinct_livelli = liv_column
+            ? (Array.from(
+                new Set(
+                  atleti
+                    .filter((a: any) => (a?.categoria ?? null) === categoria_filter)
+                    .map((a: any) => a?.[liv_column])
+                    .filter((v: any) => v !== null && v !== undefined && String(v).trim() !== "")
+                )
+              ) as string[]).sort()
+            : [];
           const liv_options = [
             { value: "tutti", label: "Tutti i livelli" },
-            ...(categoria_filter === "amatori" ? LIVELLI_AMATORI : LIVELLI_CARRIERA_NUOVI).map((l) => ({ value: l, label: l })),
+            ...distinct_livelli.map((l) => ({ value: l, label: l })),
           ];
-          const filtri: any[] = [
-            {
+          const filtri: any[] = [];
+          // Mostro il filtro categoria solo se ci sono almeno 2 valori distinti.
+          if (distinct_categorie.length > 1) {
+            filtri.push({
               key: "categoria", label: "Categoria", value: categoria_filter, options: cat_options,
               onChange: (v: string) => {
                 set_categoria_filter(v as any);
@@ -1192,8 +1220,8 @@ const AthletesPage: React.FC = () => {
                 set_percorso_filter("tutti");
                 set_card_filter(null);
               },
-            },
-          ];
+            });
+          }
           if (categoria_filter === "artistica") {
             filtri.push({
               key: "percorso", label: "Percorso", value: percorso_filter,
@@ -1206,7 +1234,7 @@ const AthletesPage: React.FC = () => {
               onChange: (v: string) => set_percorso_filter(v as any),
             });
           }
-          if (categoria_filter !== "tutti" && categoria_filter !== "pulcini") {
+          if (liv_column && distinct_livelli.length > 1) {
             filtri.push({
               key: "livello", label: "Livello", value: level_filter, options: liv_options,
               onChange: set_level_filter,
