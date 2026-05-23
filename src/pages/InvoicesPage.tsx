@@ -742,18 +742,35 @@ const InvoicesPage: React.FC = () => {
           search={search_raw}
           on_search_change={set_search_raw}
           search_placeholder="Cerca per numero, descrizione, nome atleta…"
-          filters={[
-            {
-              key: "stato", label: "Stato", value: status_filter,
-              options: [
-                { value: "tutti", label: t("tutti") },
-                { value: "pagata", label: t("pagata") },
-                { value: "da_pagare", label: t("da_pagare") },
-                { value: "scaduta", label: "Scadute" },
-              ],
-              onChange: set_status_filter,
-            },
-            {
+          filters={(() => {
+            // Stato data-driven: leggiamo i valori reali presenti nelle fatture
+            // del club + l'eventuale stato "scaduta" calcolato a runtime.
+            const distinct_stati_db = Array.from(
+              new Set(
+                fatture
+                  .map((f: any) => f?.stato)
+                  .filter((v: any) => v !== null && v !== undefined && String(v).trim() !== "")
+              )
+            ) as string[];
+            const ha_scadute = fatture.some(
+              (f: any) => get_fattura_stato_ui(f, today_iso) === "scaduta"
+            );
+            const stato_options = [
+              { value: "tutti", label: t("tutti") },
+              ...distinct_stati_db
+                .sort()
+                .map((s) => ({ value: s, label: get_fattura_stato_label(s as any) })),
+              ...(ha_scadute ? [{ value: "scaduta", label: "Scadute" }] : []),
+            ];
+            const filtri: any[] = [];
+            if (distinct_stati_db.length + (ha_scadute ? 1 : 0) > 1) {
+              filtri.push({
+                key: "stato", label: "Stato", value: status_filter,
+                options: stato_options,
+                onChange: set_status_filter,
+              });
+            }
+            filtri.push({
               key: "periodo", label: "Periodo", value: periodo_filter,
               options: [
                 { value: "tutti", label: "Tutti" },
@@ -762,8 +779,9 @@ const InvoicesPage: React.FC = () => {
                 { value: "anno", label: "Anno corrente" },
               ],
               onChange: (v: string) => set_periodo_filter(v as any),
-            },
-          ]}
+            });
+            return filtri;
+          })()}
           sort={{
             value: sort_by,
             onChange: (v) => set_sort_by(v as any),
