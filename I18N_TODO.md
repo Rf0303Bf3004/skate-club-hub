@@ -1,66 +1,75 @@
 # I18N TODO — Estrazione stringhe rimanenti
 
-Step 1 ha portato l'architettura `react-i18next` con 11 namespace IT in `src/locales/it/`.
-Lo shim `useI18n()` / `t()` in `src/lib/i18n.tsx` continua a funzionare per i 20 file
-pre-esistenti che usavano l'API legacy: **nessuna stringa visibile è cambiata**.
+Stato attuale: Step 1 + Step 1.5a parziale.
+- Step 1: architettura `react-i18next` + 11 namespace IT/FR/DE/EN.
+- Step 1.5a (questo turno): Dashboard admin (visibile a `/`) + sidebar `MainLayout`.
 
-I file qui sotto contengono ancora stringhe italiane hard-coded da estrarre in turni successivi.
-Ogni file va aperto, importato `useTranslation('<namespace>')` e le stringhe spostate nel
-JSON appropriato sotto `src/locales/it/`.
+Lo shim `useI18n()` / `t()` in `src/lib/i18n.tsx` continua a funzionare per i file legacy.
 
-## File già migrati a Step 1
+## File coperti finora (Step 1 + 1.5a)
+
+### Step 1
 - `src/pages/LoginPage.tsx` → `onboarding.login.*`
 - `src/pages/RegisterClubPage.tsx` → `onboarding.register.*`
-- `src/components/forms/FormDialog.tsx` → `common.actions.*`, `common.confirm_delete_title`
-- `src/components/sponsor/PitchTextEditorDialog.tsx` (parziale) → `common.actions.*`
-- `src/components/MainLayout.tsx` (selettore lingua) → mostra solo IT
+- `src/components/forms/FormDialog.tsx` → `common.actions.*`
+- `src/components/sponsor/PitchTextEditorDialog.tsx` (parziale)
+- `src/components/MainLayout.tsx` (selettore lingua)
 
-## File che usano già lo shim legacy `useI18n()` (NESSUNA azione richiesta — funzionano via shim)
-Coprono tutti gli usi di `t('salva')`, `t('atleti')`, ecc. Mappati al namespace `common`.
-Refactor "soft" futuro: migrare a `useTranslation('common')` e usare le chiavi gerarchiche
-`common.actions.save` invece di `t('salva')`. Bassa priorità.
+### Step 1.5a (turno corrente)
+- `src/components/MainLayout.tsx` (sidebar legacy + nuovi ruoli + superadmin + voci "Gestione Avanzata", "Gestione Ruoli", "Utenti", "Setup", "Relazione", "Cerca", tooltip "Prossimamente") → `common.menu.*`, `common.search*`, `common.coming_soon`, `common.relazione`, `common.setup`
+- `src/pages/DashboardPage.tsx` (admin dashboard `/`): header "presenti in pista", 4 KPI cards, banner compleanni, banner fine stagione, header agenda + tab "Corsi & Appello"/"Istruttori", empty state agenda, "Lezioni private oggi", "Lezione privata", widget Compleanni, widget Fatture, widget Prossime gare, widget Comunicazioni, BoxComunicazione (template/destinatari/titolo/messaggio/urgente/save), tutti i toast → `dashboard.*`
 
-## File da rifattorizzare — pagine (priorità ALTA)
+### Chiavi nuove aggiunte
+- `src/locales/it/common.json`: +~40 chiavi (`menu.*`, `search`, `search_aria`, `coming_soon`, `soon`, `setup`, `relazione`, `pending_requests_tooltip_one/_other`)
+- `src/locales/it/dashboard.json`: ~80 chiavi totali (kpi, agenda, presenti_in_pista plurale, course_status, course_row, quick_comm.*, birthday_banner, season_banner, widgets, toast)
 
-### Pagine principali (utente-visibili, alto traffico)
-- [ ] `src/pages/DashboardPage.tsx` → namespace `dashboard`
-- [ ] `src/pages/AthletesPage.tsx` → namespace `atleti` (parte già usa shim)
-- [ ] `src/pages/InvoicesPage.tsx` → namespace `fatture` (parte già usa shim)
-- [ ] `src/pages/CommunicationsPage.tsx` → namespace `communications`
-- [ ] `src/pages/CompetitionsPage.tsx` → namespace `events.competitions`
-- [ ] `src/pages/CoursesPage.tsx` → namespace `common` + nuovo `corsi`
-- [ ] `src/pages/PrivateLessonsPage.tsx` → namespace nuovo `lezioni`
-- [ ] `src/pages/EventiPage.tsx` → namespace `events.events`
-- [ ] `src/pages/TestLivelloPage.tsx` → namespace `events.level_tests`
-- [ ] `src/pages/TrainingCampsPage.tsx` → namespace `events.training_camps`
-- [ ] `src/pages/InstructorsPage.tsx` → namespace nuovo `istruttori`
-- [ ] `src/pages/SeasonsPage.tsx` → namespace `settings.seasons`
-- [ ] `src/pages/ClubSetupPage.tsx` → namespace `settings.club`
-- [ ] `src/pages/RuoliPermessiPage.tsx` → namespace `settings.roles`
-- [ ] `src/pages/UtentiPage.tsx` → namespace `settings.users`
-- [ ] `src/pages/OnboardingPage.tsx` → namespace `onboarding.wizard`
-- [ ] `src/pages/PortaleAtletaPage.tsx` → namespace `mobile`
-- [ ] `src/pages/RichiesteIscrizionePage.tsx` → namespace nuovo `iscrizioni`
-- [ ] `src/pages/PlanningPage.tsx` → namespace nuovo `planning`
-- [ ] `src/pages/NuovaStagionePage.tsx` → namespace `settings.seasons`
-- [ ] `src/pages/MedagliereePage.tsx` → namespace `events.competitions`
-- [ ] `src/pages/CampiEventiPage.tsx` → namespace `events.training_camps`
+**IMPORTANTE**: le traduzioni FR/DE/EN per queste nuove chiavi NON sono state aggiunte. Il fallback i18next va automaticamente su IT. Roberto le tradurrà offline in fase 1.5b prima di Step 3.
 
-### Pagine secondarie / superadmin (priorità MEDIA)
+## File ancora hard-coded (priorità ALTA)
+
+### Pagine principali
+- [ ] `src/pages/AthletesPage.tsx` (parte già usa shim)
+- [ ] `src/pages/InvoicesPage.tsx` (parte già usa shim)
+- [ ] `src/pages/CommunicationsPage.tsx`
+- [ ] `src/pages/CompetitionsPage.tsx`
+- [ ] `src/pages/CoursesPage.tsx`
+- [ ] `src/pages/PrivateLessonsPage.tsx`
+- [ ] `src/pages/EventiPage.tsx`
+- [ ] `src/pages/TestLivelloPage.tsx`
+- [ ] `src/pages/TrainingCampsPage.tsx`
+- [ ] `src/pages/InstructorsPage.tsx`
+- [ ] `src/pages/SeasonsPage.tsx`
+- [ ] `src/pages/ClubSetupPage.tsx`
+- [ ] `src/pages/RuoliPermessiPage.tsx`
+- [ ] `src/pages/UtentiPage.tsx`
+- [ ] `src/pages/OnboardingPage.tsx`
+- [ ] `src/pages/PortaleAtletaPage.tsx`
+- [ ] `src/pages/RichiesteIscrizionePage.tsx`
+- [ ] `src/pages/PlanningPage.tsx`
+- [ ] `src/pages/NuovaStagionePage.tsx`
+- [ ] `src/pages/MedagliereePage.tsx`
+- [ ] `src/pages/CampiEventiPage.tsx`
+
+### Dashboard presidente (componente XXL — ~2500 righe, da spezzare in più turni)
+- [ ] `src/components/dashboard/PresidentDashboard.tsx`
+
+### Widget dashboard (visibili nella colonna destra)
+- [ ] `src/components/dashboard/RichiesteIscrizioneWidget.tsx` (header "RICHIESTE PENDENTI", "Nessuna richiesta in attesa", "ULTIME ISCRIZIONI", template stringa "{atleta} si è iscritto a {corso}")
+- [ ] `src/components/dashboard/IstruttoriDisponibiliWidget.tsx`
+- [ ] `src/components/MedagliereWidget.tsx`
+
+### Pagine secondarie / superadmin
 - [ ] `src/pages/AdvancedManagementPage.tsx`
 - [ ] `src/pages/SuperAdminPage.tsx`
 - [ ] `src/pages/SuperAdminClubPage.tsx`
 - [ ] `src/pages/SuperAdminManutenzione.tsx`
 - [ ] `src/pages/SuperAdminManutenzioneStr.tsx`
 - [ ] `src/pages/ImportAtletiPage.tsx`
-- [ ] `src/pages/PacchettiSponsorPage.tsx` → namespace nuovo `sponsor`
-- [ ] `src/pages/PresidentRelazione.tsx` → namespace nuovo `relazione`
-- [ ] `src/pages/PresidentRelazioneGestione.tsx` → namespace nuovo `relazione`
+- [ ] `src/pages/PacchettiSponsorPage.tsx`
+- [ ] `src/pages/PresidentRelazione.tsx`
+- [ ] `src/pages/PresidentRelazioneGestione.tsx`
 - [ ] `src/pages/LegalPlaceholderPage.tsx`
-- [ ] `src/pages/NotFound.tsx` → namespace `errors`
-- [ ] `src/pages/TestMobileAuthPage.tsx` (pagina debug, bassa priorità)
-
-## File da rifattorizzare — componenti (priorità ALTA)
+- [ ] `src/pages/NotFound.tsx`
 
 ### Componenti atleti
 - [ ] `src/components/AtletaDetail.tsx` (~50 chiavi)
@@ -68,11 +77,9 @@ Refactor "soft" futuro: migrare a `useTranslation('common')` e usare le chiavi g
 - [ ] `src/components/SchedaAnagrafica.tsx`
 - [ ] `src/components/CodiceAtletaCard.tsx`
 - [ ] `src/components/CalendarioAtletaInterattivo.tsx`
-- [ ] `src/components/MedagliereWidget.tsx`
 - [ ] `src/components/StoricoTestAtleta.tsx`
 
-### Componenti dashboard / search / shared
-- [ ] `src/components/dashboard/PresidentDashboard.tsx`
+### Componenti dashboard / shared
 - [ ] `src/components/common/GlobalSearchPalette.tsx`
 - [ ] `src/components/common/SearchableListLayout.tsx`
 - [ ] `src/components/NavLink.tsx`
@@ -84,6 +91,7 @@ Refactor "soft" futuro: migrare a `useTranslation('common')` e usare le chiavi g
 - [ ] `src/components/forms/DateInput.tsx`
 
 ### Componenti comunicazioni
+- [ ] `src/components/comunicazioni/ComunicazioneFormSection.tsx`
 - [ ] `src/components/comunicazioni/ConversazioniTab.tsx`
 - [ ] `src/components/comunicazioni/IscrizioniAtletiNotifiche.tsx`
 - [ ] `src/components/comunicazioni/MieiReminderStaffTab.tsx`
@@ -96,8 +104,8 @@ Refactor "soft" futuro: migrare a `useTranslation('common')` e usare le chiavi g
 - [ ] `src/components/planning/MeseView.tsx`
 - [ ] `src/components/planning/SpostaCorsoDialog.tsx`
 
-### Componenti relazione (area presidente)
-- [ ] `src/components/relazione/*.tsx` (15 file) → namespace nuovo `relazione`
+### Componenti relazione (~15 file)
+- [ ] `src/components/relazione/*.tsx`
 
 ### Componenti sponsor / ruoli
 - [ ] `src/components/sponsor/PacchettoFormDialog.tsx`
@@ -105,60 +113,27 @@ Refactor "soft" futuro: migrare a `useTranslation('common')` e usare le chiavi g
 - [ ] `src/components/ruoli-permessi/DashboardCardsPermessi.tsx`
 
 ## File esclusi (NON tradurre)
+- `src/components/ui/*` (primitive shadcn)
+- User content (DB-driven: clubs.mission, comunicazioni.titolo/testo, corsi.descrizione, ecc.)
+- Codici tecnici (UUID, enum DB 'pulcini'/'artistica', codice_atleta AT-XXXX-XXXX)
 
-### `src/components/ui/*` (51 file)
-Sono primitive shadcn/ui. Non contengono testo italiano da tradurre — solo wrapper Radix.
-Saltare integralmente.
+## Procedura per Step 1.5b (traduzioni manuali Roberto)
 
-### User content (DB-driven, gestito dal cliente, NON tradurre)
-- `clubs.mission`, `clubs.nome`, `clubs.descrizione`
-- `comunicazioni.titolo`, `comunicazioni.testo`
-- `comunicazioni_template.titolo`, `comunicazioni_template.testo`
-- `corsi.descrizione`, `corsi.nome`
-- `eventi.descrizione`, `eventi.note`
-- `gare.note`, `gare.luogo`
-- `relazione.blocchi.testo`
-- `pacchetti_sponsor.descrizione`
+Roberto:
+1. Dump dei nuovi file IT modificati in questo turno:
+   - `src/locales/it/common.json` (chiavi aggiunte: `menu.*`, `search`, `search_aria`, `coming_soon`, `soon`, `setup`, `relazione`, `pending_requests_tooltip_one/_other`)
+   - `src/locales/it/dashboard.json` (~80 chiavi)
+2. Traduzione offline in FR/DE/EN dei soli NUOVI valori (mantenendo le chiavi invariate).
+3. Reimport dei JSON nei tre namespace già esistenti `src/locales/{fr,de,en}/{common,dashboard}.json`.
 
-Saranno mantenuti come testo libero del cliente. Se in futuro un club vorrà la propria
-gestione multilingua per questi campi, andrà introdotto uno schema `<table>_translations`
-dedicato.
+## Procedura per Step 1.5a-bis (prossimo turno Lovable)
 
-### Codici tecnici (mai estratti)
-- UUID, ID, codici fattura, `codice_atleta` (AT-XXXX-XXXX)
-- Valori enum DB: `'pulcini'`, `'artistica'`, `'amatori'`, `'agonista'`, `'monitore'`, ecc.
-  Le label tradotte vivono già in `get_categoria_label()` / `atleta-livello.ts`.
-- Nomi propri (atleti, club, città)
-- URL e path
-- Date formattate (`Intl.DateTimeFormat` con locale dinamico — già i18n-ready)
-
-## Procedura per Step 2 (traduzione FR/DE/EN)
-
-1. Copia la cartella IT in tre cartelle gemelle:
-   ```bash
-   cp -r src/locales/it src/locales/fr
-   cp -r src/locales/it src/locales/de
-   cp -r src/locales/it src/locales/en
-   ```
-2. Apri ogni file JSON in ciascuna cartella e traduci i **values** (lasciando le **keys** invariate).
-   Strumento consigliato: ChatGPT/Claude o traduttore madrelingua.
-3. Reimporta i file tradotti nel progetto Lovable.
-4. Aggiorna `src/i18n/index.ts` aggiungendo i resource per `fr`, `de`, `en`:
-   ```ts
-   import fr_common from '@/locales/fr/common.json';
-   // ...idem per ogni namespace
-   resources.fr = { common: fr_common, atleti: fr_atleti, /* ... */ };
-   ```
-5. In `src/components/MainLayout.tsx` e `src/pages/LoginPage.tsx` riabilita le opzioni:
-   ```tsx
-   {(['it','fr','de','en'] as Locale[]).map((l) => (...))}
-   ```
+Continuare estrazione partendo da:
+1. `src/components/dashboard/RichiesteIscrizioneWidget.tsx` + `IstruttoriDisponibiliWidget.tsx` (visibili in dashboard admin)
+2. `src/components/dashboard/PresidentDashboard.tsx` (file XXL — fare per sezioni)
+3. Pagine principali in ordine `I18N_TODO.md`
 
 ## Note finali
-
-- Lo Step 1 mantiene il selettore con sola opzione **Italiano**: cambiare lingua
-  ora non avrebbe effetti visibili perché i resource FR/DE/EN sono vuoti.
-- Il locale **Romancio (rm)** è mantenuto come slot nel config i18n (fallback automatico a IT)
-  per retrocompatibilità con codice eventualmente già scritto, ma NON sarà tradotto per ora.
-- Lo shim `src/lib/i18n.tsx` può essere rimosso definitivamente quando tutti i 20 file
-  legacy saranno stati migrati a `useTranslation()` diretto.
+- Selettore lingua attivo con IT/FR/DE/EN; le chiavi non tradotte fanno fallback automatico a IT.
+- Locale `rm` mantenuto come slot vuoto (fallback IT).
+- Shim `src/lib/i18n.tsx` ancora attivo per i file legacy.
