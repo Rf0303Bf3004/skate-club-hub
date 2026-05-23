@@ -726,6 +726,8 @@ const BoxComunicazione: React.FC<{
 
 // ─── Widget compleanni ─────────────────────────────────────
 const WidgetCompleanni: React.FC<{ atleti: any[] }> = ({ atleti }) => {
+  const { t: td } = useTranslation("dashboard");
+
   const today = new Date();
   const today_md = `${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
