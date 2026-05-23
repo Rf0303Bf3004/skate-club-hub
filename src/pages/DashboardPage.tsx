@@ -792,6 +792,7 @@ const WidgetCompleanni: React.FC<{ atleti: any[] }> = ({ atleti }) => {
 
 // ─── Widget fatture in scadenza ────────────────────────────
 const WidgetFatture: React.FC<{ fatture: any[]; atleti: any[] }> = ({ fatture, atleti }) => {
+  const { t: td } = useTranslation("dashboard");
   const today = new Date().toISOString().split("T")[0];
   const tra_7 = add_days(today, 7);
 
@@ -808,16 +809,17 @@ const WidgetFatture: React.FC<{ fatture: any[]; atleti: any[] }> = ({ fatture, a
     <div className="bg-card rounded-xl shadow-card p-5 space-y-3">
       <div className="flex items-center gap-2">
         <AlertTriangle className="w-4 h-4 text-orange-500" />
-        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Fatture</h3>
+        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{td("widgets.invoices")}</h3>
       </div>
       {scadute.length > 0 && (
         <div className="bg-destructive/5 border border-destructive/20 rounded-lg px-3 py-2">
-          <p className="text-xs font-bold text-destructive">{scadute.length} fatture scadute</p>
+          <p className="text-xs font-bold text-destructive">{td("widgets.expired_invoices", { count: scadute.length })}</p>
           <p className="text-xs text-muted-foreground">
-            CHF {scadute.reduce((s, f) => s + f.importo, 0).toFixed(2)} da incassare
+            {td("widgets.expired_total_to_collect", { importo: scadute.reduce((s, f) => s + f.importo, 0).toFixed(2) })}
           </p>
         </div>
       )}
+
       {in_scadenza.map((f) => {
         const atleta = atleti.find((a) => a.id === f.atleta_id);
         return (
@@ -848,6 +850,8 @@ const SezionePresenzeIstruttori: React.FC<{
   on_elimina: (id: string) => void;
   loading: boolean;
 }> = ({ istruttori, today_key, presenze, on_segna, on_elimina, loading }) => {
+  const { t: td } = useTranslation("dashboard");
+
   const today_istruttori = istruttori.filter((i) => {
     if (i.stato !== "attivo") return false;
     return get_slots_giorno(i.disponibilita || {}, today_key).length > 0;
@@ -856,7 +860,7 @@ const SezionePresenzeIstruttori: React.FC<{
   return (
     <div className="space-y-2">
       {today_istruttori.length === 0 ? (
-        <p className="text-xs text-muted-foreground text-center py-4">Nessun istruttore previsto oggi</p>
+        <p className="text-xs text-muted-foreground text-center py-4">{td("agenda.no_instructors_planned")}</p>
       ) : (
         today_istruttori.map((i) => {
           const presenza = presenze.find((p) => p.persona_id === i.id);
@@ -897,11 +901,12 @@ const SezionePresenzeIstruttori: React.FC<{
                     disabled={loading}
                     className={`h-7 text-xs ${is_present ? "" : "bg-success hover:bg-success/90 text-white"}`}
                   >
-                    {is_present ? "🚪 Uscita" : "✅ Entrata"}
+                    {is_present ? `🚪 ${td("course_row.exit")}` : `✅ ${td("course_row.entry")}`}
                   </Button>
                 ) : (
-                  <span className="text-xs text-muted-foreground">Uscito</span>
+                  <span className="text-xs text-muted-foreground">{td("course_row.exited")}</span>
                 )}
+
                 {presenza && (
                   <Button
                     size="sm"
