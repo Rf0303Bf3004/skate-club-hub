@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 
-// Portale pubblico mobile-first: l'unico identificativo è il portal_token.
-// Tutti i dati passano dall'edge function `portale-atleta` (service role + scoping per token).
+// Portale pubblico mobile-first: l'identificativo è il `codice_atleta` (AT-XXXX-XXXX),
+// lo stesso usato dall'app mobile genitori. Tutte le query passano dall'edge function `portale-atleta`.
+
 
 type TabKey = "dati" | "calendario" | "comunicazioni" | "fatture" | "iscrivi";
 
