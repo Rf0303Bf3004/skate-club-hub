@@ -1,0 +1,2 @@
+ALTER TABLE public.clubs ADD COLUMN IF NOT EXISTS fee_fissa_chf numeric(8,2) NOT NULL DEFAULT 50.00;
+ALTER TABLE public.fatture_clubs ADD COLUMN IF NOT EXISTS fee_fissa_chf numeric(8,2) NOT NULL DEFAULT 0;
