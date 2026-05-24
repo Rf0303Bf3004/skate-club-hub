@@ -369,7 +369,7 @@ const SegreteriaFatturePage: React.FC = () => {
                         </td>
                       );
                     })}
-                    <td className="sticky right-0 z-10 bg-card border-l border-border px-3 py-2 text-right tabular-nums">
+                    <td className="border-l border-border px-3 py-2 text-right tabular-nums">
                       <div className="flex gap-3 justify-end">
                         <span className="font-medium text-foreground min-w-[70px]">{fmt(tot.fatturato)}</span>
                         <span className="text-emerald-700 min-w-[70px]">{fmt(tot.pagato)}</span>
