@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
 
     const { data: clubs, error: e_clubs } = await sb
       .from("clubs")
-      .select("id, nome, prezzo_per_atleta_chf")
+      .select("id, nome, prezzo_per_atleta_chf, fee_fissa_chf")
       .eq("attivo", true);
     if (e_clubs) throw e_clubs;
 
@@ -64,7 +64,8 @@ Deno.serve(async (req) => {
 
       const n_atleti = count ?? 0;
       const prezzo = Number(c.prezzo_per_atleta_chf ?? 5);
-      const importo = Number((n_atleti * prezzo).toFixed(2));
+      const fee_fissa = Number((c as any).fee_fissa_chf ?? 50);
+      const importo = Number((fee_fissa + n_atleti * prezzo).toFixed(2));
 
       const { error: e_ins } = await sb.from("fatture_clubs").upsert(
         {
@@ -72,6 +73,7 @@ Deno.serve(async (req) => {
           periodo,
           n_atleti,
           prezzo_per_atleta_chf: prezzo,
+          fee_fissa_chf: fee_fissa,
           importo_chf: importo,
           data_emissione: oggi,
           data_scadenza: scadenza,
