@@ -177,6 +177,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           {is_nuovo_ruolo && (
             <>
               {nuovo_principale.map((s) => render_nav_item(s.path, s.icon, menu_label(s.codice, s.label), s.codice, s.non_implementato))}
+              {visibile_set.has("fatture") && render_nav_item("/segreteria/fatture", LayoutGrid, tc("menu.segreteria_fatture", { defaultValue: "Tabellone Fatture" }), "segreteria_fatture")}
               {is_presidente && (
                 <NavLink to="/presidente/relazione" onClick={() => set_sidebar_open(false)}
                   className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname.startsWith("/presidente/relazione") ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
