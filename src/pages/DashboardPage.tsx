@@ -1241,7 +1241,7 @@ const DashboardPage: React.FC = () => {
               </div>
             </div>
 
-            <div role="tablist" aria-label={td("agenda.title")} className="flex gap-2 border-b border-border">
+            <div role="tablist" aria-label={td("agenda.title")} className="inline-flex items-center gap-1 rounded-lg bg-muted p-1">
               {(["corsi", "istruttori"] as const).map((tab) => {
                 const is_active = tab_presenze === tab;
                 return (
@@ -1249,11 +1249,12 @@ const DashboardPage: React.FC = () => {
                     key={tab}
                     role="tab"
                     aria-selected={is_active}
+                    tabIndex={is_active ? 0 : -1}
                     onClick={() => set_tab_presenze(tab)}
-                    className={`relative px-4 py-2 text-sm transition-colors -mb-px
+                    className={`px-4 py-1.5 text-sm rounded-md transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
                       ${is_active
-                        ? "font-bold text-primary after:content-[''] after:absolute after:left-0 after:right-0 after:-bottom-px after:h-0.5 after:bg-primary"
-                        : "font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-t-md"}`}
+                        ? "bg-primary text-primary-foreground font-bold shadow-sm"
+                        : "font-medium text-muted-foreground hover:bg-background/60 hover:text-foreground"}`}
                   >
                     {tab === "corsi" ? `📋 ${td("agenda.tabs.courses")}` : `👨‍🏫 ${td("agenda.tabs.instructors")}`}
                   </button>
