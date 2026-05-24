@@ -70,6 +70,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import OnboardingBanner from "@/components/dashboard/OnboardingBanner";
 
 
 
@@ -2220,6 +2221,9 @@ const PresidentDashboard: React.FC = () => {
         </div>
 
         <div className="px-6 md:px-10 max-w-[1400px] mx-auto pt-12 md:pt-16 pb-16">
+          <div className="mb-8">
+            <OnboardingBanner />
+          </div>
           {/* HERO compatto */}
           <header>
             <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl text-slate-900 tracking-tight leading-[1.05]">

@@ -55,6 +55,7 @@ import {
   RichiesteLezioniPrivateWidget,
 } from "@/components/dashboard/RichiesteIscrizioneWidget";
 import PresidentDashboard from "@/components/dashboard/PresidentDashboard";
+import OnboardingBanner from "@/components/dashboard/OnboardingBanner";
 import { useAuth } from "@/lib/auth";
 
 // ─── Helpers ──────────────────────────────────────────────
@@ -1086,6 +1087,7 @@ const DashboardPage: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      <OnboardingBanner />
       {/* Header */}
       <div className="flex items-center gap-4">
         {club?.logo_url ? (
