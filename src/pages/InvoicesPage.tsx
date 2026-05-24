@@ -1,4 +1,5 @@
-import React, { useState, useRef, useMemo } from "react";
+import React, { useState, useRef, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import SearchableListLayout from "@/components/common/SearchableListLayout";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useI18n } from "@/lib/i18n";
