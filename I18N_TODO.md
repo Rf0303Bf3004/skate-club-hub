@@ -137,3 +137,6 @@ Continuare estrazione partendo da:
 - Selettore lingua attivo con IT/FR/DE/EN; le chiavi non tradotte fanno fallback automatico a IT.
 - Locale `rm` mantenuto come slot vuoto (fallback IT).
 - Shim `src/lib/i18n.tsx` ancora attivo per i file legacy.
+
+## Da estrarre — Banner onboarding
+- src/components/dashboard/OnboardingBanner.tsx (titolo, sottotitolo, 3 CTA, toast)
