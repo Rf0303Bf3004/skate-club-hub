@@ -88,9 +88,19 @@ const LoginPage: React.FC = () => {
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-muted-foreground">
-            {t('login.new_club_question')} <a href="/registrati" className="text-primary underline">{t('login.register_here')}</a>
-          </p>
+          <div className="space-y-2 text-center">
+            <a href="/portale-recovery" className="text-xs text-muted-foreground hover:text-primary hover:underline block">
+              Password dimenticata?
+            </a>
+            <p className="text-sm text-muted-foreground">
+              {t('login.new_club_question')} <a href="/registrati" className="text-primary underline">{t('login.register_here')}</a>
+            </p>
+            <div className="pt-2 border-t border-border">
+              <a href="/portale" className="text-sm text-sky-600 hover:underline font-medium">
+                🎿 Accesso Atleti / Genitori
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </div>

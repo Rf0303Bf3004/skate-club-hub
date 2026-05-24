@@ -1,0 +1,82 @@
+{
+  "login": {
+    "title": "Portale Atleta",
+    "subtitle": "Accedi con il tuo codice atleta",
+    "codice_label": "Codice atleta",
+    "codice_placeholder": "AT-XXXX-XXXX",
+    "codice_help": "Il codice si trova sulla tessera o nelle comunicazioni del club.",
+    "entra": "Entra",
+    "loading": "Verifica in corso…",
+    "errore_generico": "Errore di accesso, riprova",
+    "logout": "Esci"
+  },
+  "menu": {
+    "home": "Home",
+    "calendario": "Calendario",
+    "eventi": "Eventi",
+    "notizie": "Notizie",
+    "profilo": "Profilo",
+    "atleta": "Atleta",
+    "corsi": "Corsi",
+    "fatture": "Fatture",
+    "convenzioni": "Convenzioni"
+  },
+  "home": {
+    "benvenuto": "Benvenuto",
+    "rapido": "Accesso rapido",
+    "in_evidenza": "In evidenza",
+    "nessuna_news": "Nessuna notizia in evidenza"
+  },
+  "calendario": {
+    "titolo": "Il tuo calendario",
+    "settimana_corrente": "Settimana",
+    "nessun_impegno": "Nessun impegno questa settimana"
+  },
+  "eventi": {
+    "titolo": "Eventi del club",
+    "gare": "Gare",
+    "campi": "Campi",
+    "gala": "Galà",
+    "iscriviti": "Iscriviti",
+    "iscritto": "Iscritto",
+    "nessun_evento": "Nessun evento disponibile"
+  },
+  "notizie": {
+    "titolo": "Notizie",
+    "attive": "Attive",
+    "archivio": "Archivio",
+    "archivia": "Archivia",
+    "ripristina": "Ripristina",
+    "nessuna": "Nessuna notizia"
+  },
+  "profilo": {
+    "titolo": "Il mio profilo",
+    "tab_atleta": "Dati atleta",
+    "tab_corsi": "Corsi",
+    "tab_fatture": "Fatture",
+    "tab_convenzioni": "Convenzioni"
+  },
+  "corsi": {
+    "miei": "Miei",
+    "disponibili": "Disponibili",
+    "lezioni_private": "Lezioni private",
+    "nessuno": "Nessun corso",
+    "iscritto": "Iscritto",
+    "richiesta_inviata": "Richiesta inviata",
+    "richiedi": "Richiedi iscrizione"
+  },
+  "fatture": {
+    "filtro_tutte": "Tutte",
+    "filtro_da_pagare": "Da pagare",
+    "filtro_pagate": "Pagate",
+    "nessuna": "Nessuna fattura",
+    "paga_ora": "Paga ora",
+    "iban": "Bonifico (IBAN)",
+    "twint": "TWINT",
+    "chiudi": "Chiudi"
+  },
+  "convenzioni": {
+    "titolo": "Convenzioni e sponsor",
+    "nessuna": "Nessuna convenzione attiva"
+  }
+}
