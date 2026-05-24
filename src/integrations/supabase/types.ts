@@ -778,6 +778,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "comunicazioni_gara_id_fkey"
+            columns: ["gara_id"]
+            isOneToOne: false
+            referencedRelation: "gare_calendario_mobile"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "comunicazioni_test_livello_id_fkey"
             columns: ["test_livello_id"]
             isOneToOne: false
@@ -2039,6 +2046,13 @@ export type Database = {
             columns: ["gara_id"]
             isOneToOne: false
             referencedRelation: "gare_calendario"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "iscrizioni_gare_gara_id_fkey"
+            columns: ["gara_id"]
+            isOneToOne: false
+            referencedRelation: "gare_calendario_mobile"
             referencedColumns: ["id"]
           },
         ]
@@ -3394,6 +3408,13 @@ export type Database = {
             referencedRelation: "gare_calendario"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "risultati_gara_gara_id_fkey"
+            columns: ["gara_id"]
+            isOneToOne: false
+            referencedRelation: "gare_calendario_mobile"
+            referencedColumns: ["id"]
+          },
         ]
       }
       risultati_storici_stagioni: {
@@ -3883,6 +3904,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "test_livello_gara_id_fkey"
+            columns: ["gara_id"]
+            isOneToOne: false
+            referencedRelation: "gare_calendario_mobile"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "test_livello_stagione_id_fkey"
             columns: ["stagione_id"]
             isOneToOne: false
@@ -4046,6 +4074,79 @@ export type Database = {
       }
     }
     Views: {
+      gare_calendario_mobile: {
+        Row: {
+          archiviata: boolean | null
+          carriera: string | null
+          club_id: string | null
+          club_ospitante: string | null
+          created_at: string | null
+          data: string | null
+          id: string | null
+          indirizzo: string | null
+          livello_minimo: string | null
+          luogo: string | null
+          nome: string | null
+          note: string | null
+          ora: string | null
+          stagione_id: string | null
+        }
+        Insert: {
+          archiviata?: boolean | null
+          carriera?: string | null
+          club_id?: string | null
+          club_ospitante?: string | null
+          created_at?: string | null
+          data?: string | null
+          id?: string | null
+          indirizzo?: string | null
+          livello_minimo?: string | null
+          luogo?: string | null
+          nome?: string | null
+          note?: string | null
+          ora?: string | null
+          stagione_id?: string | null
+        }
+        Update: {
+          archiviata?: boolean | null
+          carriera?: string | null
+          club_id?: string | null
+          club_ospitante?: string | null
+          created_at?: string | null
+          data?: string | null
+          id?: string | null
+          indirizzo?: string | null
+          livello_minimo?: string | null
+          luogo?: string | null
+          nome?: string | null
+          note?: string | null
+          ora?: string | null
+          stagione_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gare_calendario_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gare_calendario_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "kpi_pitch_sponsor"
+            referencedColumns: ["club_id"]
+          },
+          {
+            foreignKeyName: "gare_calendario_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kpi_pitch_sponsor: {
         Row: {
           atleti_agonisti: number | null
