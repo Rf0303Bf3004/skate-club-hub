@@ -2149,6 +2149,48 @@ export type Database = {
           },
         ]
       }
+      letture_comunicazioni: {
+        Row: {
+          archiviata_at: string | null
+          atleta_id: string
+          comunicazione_id: string
+          created_at: string
+          id: string
+          letta_at: string | null
+        }
+        Insert: {
+          archiviata_at?: string | null
+          atleta_id: string
+          comunicazione_id: string
+          created_at?: string
+          id?: string
+          letta_at?: string | null
+        }
+        Update: {
+          archiviata_at?: string | null
+          atleta_id?: string
+          comunicazione_id?: string
+          created_at?: string
+          id?: string
+          letta_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "letture_comunicazioni_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "letture_comunicazioni_comunicazione_id_fkey"
+            columns: ["comunicazione_id"]
+            isOneToOne: false
+            referencedRelation: "comunicazioni"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lezioni_private: {
         Row: {
           annullata: boolean
