@@ -26,6 +26,10 @@ import SuperAdminPage from "@/pages/SuperAdminPage";
 import SuperAdminClubPage from "@/pages/SuperAdminClubPage";
 import SuperAdminManutenzione from "@/pages/SuperAdminManutenzione";
 import SuperAdminManutenzioneStr from "@/pages/SuperAdminManutenzioneStr";
+import SuperAdminBillingDashboardPage from "@/pages/SuperAdminBillingDashboardPage";
+import SuperAdminTabelloneFatturePage from "@/pages/SuperAdminTabelloneFatturePage";
+import SuperAdminListinoPage from "@/pages/SuperAdminListinoPage";
+import SuperAdminClubDetailPage from "@/pages/SuperAdminClubDetailPage";
 import NotFound from "@/pages/NotFound";
 import RuoliPermessiPage from "@/pages/RuoliPermessiPage";
 import UtentiPage from "@/pages/UtentiPage";
@@ -164,9 +168,25 @@ const AuthenticatedApp = () => {
             path="/superadmin"
             element={
               <ProtectedSuperAdmin>
-                <SuperAdminPage />
+                <SuperAdminBillingDashboardPage />
               </ProtectedSuperAdmin>
             }
+          />
+          <Route
+            path="/superadmin/tabellone"
+            element={<ProtectedSuperAdmin><SuperAdminTabelloneFatturePage /></ProtectedSuperAdmin>}
+          />
+          <Route
+            path="/superadmin/listino"
+            element={<ProtectedSuperAdmin><SuperAdminListinoPage /></ProtectedSuperAdmin>}
+          />
+          <Route
+            path="/superadmin/clubs/:id"
+            element={<ProtectedSuperAdmin><SuperAdminClubDetailPage /></ProtectedSuperAdmin>}
+          />
+          <Route
+            path="/superadmin/operazioni"
+            element={<ProtectedSuperAdmin><SuperAdminPage /></ProtectedSuperAdmin>}
           />
           <Route
             path="/superadmin/club"
