@@ -571,6 +571,7 @@ export type Database = {
           created_at: string
           descrizione: string | null
           email: string | null
+          fee_fissa_chf: number
           id: string
           indirizzo: string | null
           logo_url: string | null
@@ -598,6 +599,7 @@ export type Database = {
           created_at?: string
           descrizione?: string | null
           email?: string | null
+          fee_fissa_chf?: number
           id?: string
           indirizzo?: string | null
           logo_url?: string | null
@@ -625,6 +627,7 @@ export type Database = {
           created_at?: string
           descrizione?: string | null
           email?: string | null
+          fee_fissa_chf?: number
           id?: string
           indirizzo?: string | null
           logo_url?: string | null
@@ -1623,6 +1626,7 @@ export type Database = {
           data_emissione: string
           data_pagamento: string | null
           data_scadenza: string
+          fee_fissa_chf: number
           id: string
           importo_chf: number
           n_atleti: number
@@ -1637,6 +1641,7 @@ export type Database = {
           data_emissione?: string
           data_pagamento?: string | null
           data_scadenza: string
+          fee_fissa_chf?: number
           id?: string
           importo_chf: number
           n_atleti: number
@@ -1651,6 +1656,7 @@ export type Database = {
           data_emissione?: string
           data_pagamento?: string | null
           data_scadenza?: string
+          fee_fissa_chf?: number
           id?: string
           importo_chf?: number
           n_atleti?: number

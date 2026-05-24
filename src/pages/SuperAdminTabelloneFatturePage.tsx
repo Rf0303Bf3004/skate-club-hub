@@ -13,7 +13,7 @@ import { toast } from "@/hooks/use-toast";
 type FatturaClubRow = {
   id: string; club_id: string; periodo: string; importo_chf: number;
   pagata: boolean; data_scadenza: string; data_pagamento: string | null;
-  n_atleti: number; prezzo_per_atleta_chf: number;
+  n_atleti: number; prezzo_per_atleta_chf: number; fee_fissa_chf: number;
 };
 type ClubRow = { id: string; nome: string; prezzo_per_atleta_chf: number };
 
@@ -40,7 +40,7 @@ const SuperAdminTabelloneFatturePage: React.FC = () => {
     queryKey: ["sa_fatture_clubs_anno", anno],
     queryFn: async () => {
       const { data, error } = await supabase.from("fatture_clubs" as any)
-        .select("id, club_id, periodo, importo_chf, pagata, data_scadenza, data_pagamento, n_atleti, prezzo_per_atleta_chf")
+        .select("id, club_id, periodo, importo_chf, pagata, data_scadenza, data_pagamento, n_atleti, prezzo_per_atleta_chf, fee_fissa_chf")
         .gte("periodo", `${anno}-01`).lte("periodo", `${anno}-12`);
       if (error) throw error;
       return (data ?? []) as unknown as FatturaClubRow[];
@@ -173,8 +173,9 @@ const SuperAdminTabelloneFatturePage: React.FC = () => {
           <DialogHeader><DialogTitle>Fattura {selected?.periodo}</DialogTitle></DialogHeader>
           {selected && (
             <div className="space-y-2 text-sm">
-              <div>Atleti: <b>{selected.n_atleti}</b> × CHF {Number(selected.prezzo_per_atleta_chf).toFixed(2)}</div>
-              <div>Importo: <b>CHF {Number(selected.importo_chf).toFixed(2)}</b></div>
+              <div>Canone base: <b>CHF {Number(selected.fee_fissa_chf ?? 0).toFixed(2)}</b></div>
+              <div>Atleti: <b>{selected.n_atleti}</b> × CHF {Number(selected.prezzo_per_atleta_chf).toFixed(2)} = CHF {(selected.n_atleti * Number(selected.prezzo_per_atleta_chf)).toFixed(2)}</div>
+              <div className="pt-1 border-t">Totale: <b>CHF {Number(selected.importo_chf).toFixed(2)}</b></div>
               <div>Scadenza: {selected.data_scadenza}</div>
               <div>Stato: {selected.pagata ? `Pagata il ${selected.data_pagamento}` : "Da pagare"}</div>
             </div>

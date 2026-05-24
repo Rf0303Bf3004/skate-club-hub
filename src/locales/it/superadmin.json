@@ -33,6 +33,7 @@
       "nome": "Club",
       "presidente": "Presidente",
       "atleti": "Atleti attivi",
+      "canone_base": "Canone base",
       "prezzo": "CHF/atleta",
       "importo": "Importo mese",
       "stato": "Ultima fattura",
@@ -70,7 +71,10 @@
   "club_detail": {
     "title": "Dettaglio club",
     "anagrafica": "Anagrafica",
+    "tariffazione": "Tariffazione mensile",
+    "fee_fissa_label": "Canone base mensile (CHF)",
     "prezzo_label": "Prezzo per atleta (CHF/mese)",
+    "riepilogo": "Importo previsto",
     "storico": "Storico fatture",
     "marca_pagata": "Contrassegna come pagata",
     "annulla_pagamento": "Annulla pagamento",
