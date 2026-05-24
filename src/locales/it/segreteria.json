@@ -1,0 +1,38 @@
+{
+  "tabellone": {
+    "title": "Tabellone Fatture",
+    "subtitle": "Vista annuale dello stato pagamenti per atleta",
+    "anno": "Anno",
+    "categoria": "Categoria",
+    "categoria_tutte": "Tutte",
+    "solo_non_pagati": "Solo non pagati",
+    "ricerca_placeholder": "Cerca atleta…",
+    "esporta_csv": "Esporta CSV",
+    "atleta": "Atleta",
+    "totale_fatturato": "Fatturato",
+    "totale_pagato": "Pagato",
+    "residuo": "Residuo",
+    "riga_totali": "Totali",
+    "saldo_percento": "Saldo %",
+    "nessun_atleta": "Nessun atleta trovato",
+    "mesi_short": ["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"],
+    "modal": {
+      "titolo": "Dettaglio fatture",
+      "numero": "Numero",
+      "descrizione": "Descrizione",
+      "importo": "Importo",
+      "scadenza": "Scadenza",
+      "stato": "Stato",
+      "marca_pagata": "Marca pagata",
+      "invia_reminder": "Invia reminder",
+      "apri_fattura": "Apri fattura",
+      "chiudi": "Chiudi"
+    },
+    "stato": {
+      "pagata": "Pagata",
+      "scaduta": "Scaduta",
+      "da_pagare": "Da pagare",
+      "nessuna": "Nessuna fattura"
+    }
+  }
+}
