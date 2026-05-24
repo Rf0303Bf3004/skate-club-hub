@@ -20,6 +20,7 @@ type ClubRow = {
   nome: string;
   citta: string | null;
   prezzo_per_atleta_chf: number;
+  fee_fissa_chf: number;
   attivo: boolean;
 };
 type FatturaClubRow = {
@@ -45,7 +46,7 @@ const SuperAdminBillingDashboardPage: React.FC = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("clubs")
-        .select("id, nome, citta, prezzo_per_atleta_chf, attivo")
+        .select("id, nome, citta, prezzo_per_atleta_chf, fee_fissa_chf, attivo")
         .order("nome");
       if (error) throw error;
       return (data ?? []) as ClubRow[];
@@ -88,8 +89,12 @@ const SuperAdminBillingDashboardPage: React.FC = () => {
     const club_attivi = clubs.filter((c) => c.attivo).length;
     const atleti_totali = Object.values(atleti_counts).reduce((a, b) => a + b, 0);
     const mese = fatture.filter((f) => f.periodo === periodo);
-    const mrr_previsto = mese.reduce((a, f) => a + Number(f.importo_chf), 0);
     const mrr_incassato = mese.filter((f) => f.pagata).reduce((a, f) => a + Number(f.importo_chf), 0);
+    // MRR previsto = somma calcolata su fee_fissa + n_atleti * prezzo per ogni club attivo
+    const mrr_previsto = clubs.filter((c) => c.attivo).reduce((a, c) => {
+      const n = atleti_counts[c.id] ?? 0;
+      return a + Number(c.fee_fissa_chf ?? 50) + n * Number(c.prezzo_per_atleta_chf ?? 5);
+    }, 0);
     return { club_attivi, atleti_totali, mrr_previsto, mrr_incassato };
   }, [clubs, atleti_counts, fatture, periodo]);
 
@@ -169,6 +174,7 @@ const SuperAdminBillingDashboardPage: React.FC = () => {
                 <tr className="border-b text-left text-xs uppercase text-muted-foreground">
                   <th className="py-2 px-3">{t("dashboard.col.nome")}</th>
                   <th className="py-2 px-3 text-right">{t("dashboard.col.atleti")}</th>
+                  <th className="py-2 px-3 text-right">{t("dashboard.col.canone_base")}</th>
                   <th className="py-2 px-3 text-right">{t("dashboard.col.prezzo")}</th>
                   <th className="py-2 px-3 text-right">{t("dashboard.col.importo")}</th>
                   <th className="py-2 px-3">{t("dashboard.col.stato")}</th>
@@ -179,7 +185,8 @@ const SuperAdminBillingDashboardPage: React.FC = () => {
                 {filtrati.map((c) => {
                   const n = atleti_counts[c.id] ?? 0;
                   const prezzo = Number(c.prezzo_per_atleta_chf ?? 5);
-                  const importo = n * prezzo;
+                  const fee = Number(c.fee_fissa_chf ?? 50);
+                  const importo = fee + n * prezzo;
                   const st = stato_ultima(c.id);
                   return (
                     <tr key={c.id} className="border-b hover:bg-muted/40 cursor-pointer"
@@ -189,6 +196,7 @@ const SuperAdminBillingDashboardPage: React.FC = () => {
                         <div className="text-xs text-muted-foreground">{c.citta || "—"}</div>
                       </td>
                       <td className="py-2 px-3 text-right tabular-nums">{n}</td>
+                      <td className="py-2 px-3 text-right tabular-nums">{fee.toFixed(2)}</td>
                       <td className="py-2 px-3 text-right tabular-nums">{prezzo.toFixed(2)}</td>
                       <td className="py-2 px-3 text-right tabular-nums font-semibold">CHF {importo.toFixed(2)}</td>
                       <td className="py-2 px-3"><Badge className={st.cls}>{st.label}</Badge></td>
@@ -197,7 +205,7 @@ const SuperAdminBillingDashboardPage: React.FC = () => {
                   );
                 })}
                 {filtrati.length === 0 && (
-                  <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">—</td></tr>
+                  <tr><td colSpan={7} className="py-8 text-center text-muted-foreground">—</td></tr>
                 )}
               </tbody>
             </table>
