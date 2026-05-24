@@ -5,8 +5,18 @@
     "club": "Gestione Club",
     "tabellone": "Tabellone Fatture Club",
     "listino": "Listino Prezzi",
+    "utenti": "Utenti",
     "manutenzione": "Manutenzione",
     "manutenzione_str": "Manutenzione Str."
+  },
+  "utenti": {
+    "titolo": "Gestione Utenti",
+    "sottotitolo": "Tutti gli utenti del sistema",
+    "nuovo_superadmin": "Nuovo superadmin"
+  },
+  "recovery": {
+    "titolo": "Recupero password",
+    "invia": "Invia link di reset"
   },
   "dashboard": {
     "title": "Dashboard Superadmin",

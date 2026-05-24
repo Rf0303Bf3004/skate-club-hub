@@ -15,6 +15,7 @@ import it_validation from '@/locales/it/validation.json';
 import it_errors from '@/locales/it/errors.json';
 import it_segreteria from '@/locales/it/segreteria.json';
 import it_superadmin from '@/locales/it/superadmin.json';
+import it_portale from '@/locales/it/portale.json';
 
 import fr_common from '@/locales/fr/common.json';
 import fr_atleti from '@/locales/fr/atleti.json';
@@ -66,6 +67,7 @@ export const NAMESPACES = [
   'errors',
   'segreteria',
   'superadmin',
+  'portale',
 ] as const;
 
 export const SUPPORTED_LOCALES = ['it', 'de', 'fr', 'rm', 'en'] as const;
@@ -76,7 +78,7 @@ const resources = {
     common: it_common, atleti: it_atleti, fatture: it_fatture, dashboard: it_dashboard,
     onboarding: it_onboarding, settings: it_settings, communications: it_communications,
     events: it_events, mobile: it_mobile, validation: it_validation, errors: it_errors,
-    segreteria: it_segreteria, superadmin: it_superadmin,
+    segreteria: it_segreteria, superadmin: it_superadmin, portale: it_portale,
   },
   fr: {
     common: fr_common, atleti: fr_atleti, fatture: fr_fatture, dashboard: fr_dashboard,
