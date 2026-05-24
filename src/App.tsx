@@ -222,6 +222,10 @@ const AuthenticatedApp = () => {
             element={<ProtectedSuperAdmin><SuperAdminClubDetailPage /></ProtectedSuperAdmin>}
           />
           <Route
+            path="/superadmin/utenti"
+            element={<ProtectedSuperAdmin><SuperAdminUtentiPage /></ProtectedSuperAdmin>}
+          />
+          <Route
             path="/superadmin/operazioni"
             element={<ProtectedSuperAdmin><SuperAdminPage /></ProtectedSuperAdmin>}
           />
