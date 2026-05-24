@@ -233,13 +233,21 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               <div className="pt-2 pb-1">
                 <p className="px-3 text-[10px] font-bold uppercase tracking-widest text-purple-400 mb-1">{tc("menu.superadmin_section")}</p>
               </div>
-              <NavLink to="/superadmin" onClick={() => set_sidebar_open(false)}
+              <NavLink to="/superadmin" end onClick={() => set_sidebar_open(false)}
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/superadmin" ? "bg-purple-600 text-white shadow-sm" : "text-purple-500 hover:bg-purple-100 hover:text-purple-700"}`}>
                 <ShieldCheck className="w-4 h-4 shrink-0" /><span>{tc("menu.superadmin_dashboard")}</span>
               </NavLink>
               <NavLink to="/superadmin/club" onClick={() => set_sidebar_open(false)}
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/superadmin/club" ? "bg-purple-600 text-white shadow-sm" : "text-purple-500 hover:bg-purple-100 hover:text-purple-700"}`}>
                 <Users className="w-4 h-4 shrink-0" /><span>{tc("menu.superadmin_club")}</span>
+              </NavLink>
+              <NavLink to="/superadmin/tabellone" onClick={() => set_sidebar_open(false)}
+                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/superadmin/tabellone" ? "bg-purple-600 text-white shadow-sm" : "text-purple-500 hover:bg-purple-100 hover:text-purple-700"}`}>
+                <Settings className="w-4 h-4 shrink-0" /><span>Tabellone Fatture</span>
+              </NavLink>
+              <NavLink to="/superadmin/listino" onClick={() => set_sidebar_open(false)}
+                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/superadmin/listino" ? "bg-purple-600 text-white shadow-sm" : "text-purple-500 hover:bg-purple-100 hover:text-purple-700"}`}>
+                <Settings className="w-4 h-4 shrink-0" /><span>Listino Prezzi</span>
               </NavLink>
               <NavLink to="/superadmin/manutenzione" onClick={() => set_sidebar_open(false)}
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/superadmin/manutenzione" ? "bg-purple-600 text-white shadow-sm" : "text-purple-500 hover:bg-purple-100 hover:text-purple-700"}`}>

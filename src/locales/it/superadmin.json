@@ -1,0 +1,69 @@
+{
+  "menu": {
+    "section": "Superadmin",
+    "dashboard": "Dashboard B2B",
+    "club": "Gestione Club",
+    "tabellone": "Tabellone Fatture Club",
+    "listino": "Listino Prezzi",
+    "manutenzione": "Manutenzione",
+    "manutenzione_str": "Manutenzione Str."
+  },
+  "dashboard": {
+    "title": "Dashboard Superadmin",
+    "subtitle": "MRR, atleti totali e stato pagamenti dei club",
+    "kpi": {
+      "club_attivi": "Club attivi",
+      "atleti_totali": "Atleti attivi totali",
+      "mrr_previsto": "MRR previsto (mese)",
+      "mrr_incassato": "MRR incassato (mese)"
+    },
+    "lista_club": "Club",
+    "cerca": "Cerca club…",
+    "col": {
+      "nome": "Club",
+      "presidente": "Presidente",
+      "atleti": "Atleti attivi",
+      "prezzo": "CHF/atleta",
+      "importo": "Importo mese",
+      "stato": "Ultima fattura",
+      "ultima_pagata": "Ultimo pagamento"
+    },
+    "stato": {
+      "pagata": "Pagata",
+      "scaduta": "Scaduta",
+      "da_pagare": "In attesa",
+      "nessuna": "Nessuna"
+    },
+    "azioni": {
+      "genera_ora": "Genera fatture mese corrente",
+      "generazione_ok": "Fatture generate",
+      "generazione_err": "Errore generazione fatture"
+    }
+  },
+  "tabellone": {
+    "title": "Tabellone Fatture Club",
+    "subtitle": "Stato fatture B2B per club × mese",
+    "anno": "Anno",
+    "mesi_short": ["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"],
+    "solo_non_pagati": "Solo non pagati",
+    "esporta_csv": "Esporta CSV",
+    "totale": "Totale anno",
+    "nessuna": "Nessuna fattura"
+  },
+  "listino": {
+    "title": "Listino prezzi",
+    "subtitle": "CHF per atleta al mese — override per club",
+    "salva": "Salva",
+    "salvato": "Listino aggiornato",
+    "errore": "Errore aggiornamento"
+  },
+  "club_detail": {
+    "title": "Dettaglio club",
+    "anagrafica": "Anagrafica",
+    "prezzo_label": "Prezzo per atleta (CHF/mese)",
+    "storico": "Storico fatture",
+    "marca_pagata": "Contrassegna come pagata",
+    "annulla_pagamento": "Annulla pagamento",
+    "torna": "Torna alla lista"
+  }
+}
