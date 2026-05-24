@@ -1,4 +1,5 @@
-import React, { useState, useRef, useMemo } from "react";
+import React, { useState, useRef, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import SearchableListLayout from "@/components/common/SearchableListLayout";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useI18n } from "@/lib/i18n";
@@ -589,6 +590,15 @@ const InvoicesPage: React.FC = () => {
   const [periodo_filter, set_periodo_filter] = useState<"tutti" | "mese" | "trimestre" | "anno">("tutti");
   const [sort_by, set_sort_by] = useState<"data_desc" | "importo_desc" | "scadenza">("data_desc");
   const [selected_fattura, set_selected_fattura] = useState<any>(null);
+  const [search_params, set_search_params] = useSearchParams();
+
+  useEffect(() => {
+    const id = search_params.get("id");
+    if (id && fatture.length > 0) {
+      const f = fatture.find((x: any) => x.id === id);
+      if (f) set_selected_fattura(f);
+    }
+  }, [search_params, fatture]);
 
   const today_iso = new Date().toISOString().split("T")[0];
 

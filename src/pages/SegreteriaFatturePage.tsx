@@ -329,7 +329,7 @@ const SegreteriaFatturePage: React.FC = () => {
                 {mesi_short.map((m, i) => (
                   <th key={i} className="px-2 py-2 text-center font-semibold text-foreground min-w-[90px]">{m}</th>
                 ))}
-                <th className="sticky right-0 z-20 bg-muted/60 border-l border-border px-3 py-2 text-right font-semibold text-foreground min-w-[260px]">
+                <th className="border-l border-border px-3 py-2 text-right font-semibold text-foreground min-w-[260px]">
                   <div className="flex gap-3 justify-end">
                     <span>{t("tabellone.totale_fatturato")}</span>
                     <span>{t("tabellone.totale_pagato")}</span>
@@ -369,7 +369,7 @@ const SegreteriaFatturePage: React.FC = () => {
                         </td>
                       );
                     })}
-                    <td className="sticky right-0 z-10 bg-card border-l border-border px-3 py-2 text-right tabular-nums">
+                    <td className="border-l border-border px-3 py-2 text-right tabular-nums">
                       <div className="flex gap-3 justify-end">
                         <span className="font-medium text-foreground min-w-[70px]">{fmt(tot.fatturato)}</span>
                         <span className="text-emerald-700 min-w-[70px]">{fmt(tot.pagato)}</span>
@@ -395,7 +395,7 @@ const SegreteriaFatturePage: React.FC = () => {
                     </td>
                   );
                 })}
-                <td className="sticky right-0 bg-muted/60 border-l border-border px-3 py-2 text-right">
+                <td className="bg-muted/60 border-l border-border px-3 py-2 text-right">
                   <div className="flex gap-3 justify-end tabular-nums">
                     <span className="font-bold text-foreground min-w-[70px]">{fmt(totali_generali.fatturato)}</span>
                     <span className="font-bold text-emerald-700 min-w-[70px]">{fmt(totali_generali.pagato)}</span>
@@ -457,26 +457,28 @@ const SegreteriaFatturePage: React.FC = () => {
                           {t("tabellone.modal.marca_pagata")}
                         </Button>
                       )}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={async () => {
-                          try {
-                            await invia_email.mutateAsync({ fattura_id: f.id, email: "" });
-                            toast({ title: t("tabellone.modal.invia_reminder") as string });
-                          } catch (e: any) {
-                            toast({ title: "Errore", description: e?.message, variant: "destructive" });
-                          }
-                        }}
-                      >
-                        {t("tabellone.modal.invia_reminder")}
-                      </Button>
+                      {stato !== "pagata" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={async () => {
+                            try {
+                              await invia_email.mutateAsync({ fattura_id: f.id, email: "" });
+                              toast({ title: t("tabellone.modal.invia_reminder") as string });
+                            } catch (e: any) {
+                              toast({ title: "Errore", description: e?.message, variant: "destructive" });
+                            }
+                          }}
+                        >
+                          {t("tabellone.modal.invia_reminder")}
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => {
                           set_modal_cella(null);
-                          navigate("/fatture");
+                          navigate(`/fatture?id=${f.id}`);
                         }}
                       >
                         {t("tabellone.modal.apri_fattura")}

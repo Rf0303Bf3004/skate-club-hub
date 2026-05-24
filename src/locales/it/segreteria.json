@@ -23,7 +23,7 @@
       "importo": "Importo",
       "scadenza": "Scadenza",
       "stato": "Stato",
-      "marca_pagata": "Marca pagata",
+      "marca_pagata": "Contrassegna come pagata",
       "invia_reminder": "Invia reminder",
       "apri_fattura": "Apri fattura",
       "chiudi": "Chiudi"
