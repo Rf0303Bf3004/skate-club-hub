@@ -55,6 +55,7 @@ import {
   RichiesteLezioniPrivateWidget,
 } from "@/components/dashboard/RichiesteIscrizioneWidget";
 import PresidentDashboard from "@/components/dashboard/PresidentDashboard";
+import OnboardingBanner from "@/components/dashboard/OnboardingBanner";
 import { useAuth } from "@/lib/auth";
 
 // ─── Helpers ──────────────────────────────────────────────
