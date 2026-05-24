@@ -15,6 +15,7 @@ import CoursesPage from "@/pages/CoursesPage";
 import CompetitionsPage from "@/pages/CompetitionsPage";
 import PrivateLessonsPage from "@/pages/PrivateLessonsPage";
 import InvoicesPage from "@/pages/InvoicesPage";
+import SegreteriaFatturePage from "@/pages/SegreteriaFatturePage";
 import CommunicationsPage from "@/pages/CommunicationsPage";
 import SeasonsPage from "@/pages/SeasonsPage";
 
@@ -133,6 +134,7 @@ const AuthenticatedApp = () => {
           <Route path="/eventi" element={<EventiPage />} />
           <Route path="/eventi/:id" element={<EventiPage />} />
           <Route path="/fatture" element={<InvoicesPage />} />
+          <Route path="/segreteria/fatture" element={<SegreteriaFatturePage />} />
           <Route path="/comunicazioni" element={<CommunicationsPage />} />
           <Route path="/stagioni" element={<SeasonsPage />} />
           <Route path="/campi-eventi" element={<CampiEventiPage />} />

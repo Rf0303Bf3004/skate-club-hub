@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS idx_fatture_atleta_emissione ON public.fatture (atleta_id, data_emissione DESC);

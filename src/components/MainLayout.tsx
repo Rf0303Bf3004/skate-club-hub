@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { use_club } from "@/hooks/use-supabase-data";
 import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
-import { LayoutDashboard, Users, BookOpen, Trophy, CreditCard, MessageSquare, Settings, Calendar, UserCheck, Tent, GraduationCap, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, Lock, ClipboardList, ClipboardCheck, Sparkles, ChevronDown, ChevronRight, FileText, Search } from "lucide-react";
+import { LayoutDashboard, Users, BookOpen, Trophy, CreditCard, MessageSquare, Settings, Calendar, UserCheck, Tent, GraduationCap, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, Lock, ClipboardList, ClipboardCheck, Sparkles, ChevronDown, ChevronRight, FileText, Search, LayoutGrid } from "lucide-react";
 import GlobalSearchPalette from "@/components/common/GlobalSearchPalette";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ const legacy_nav_items = [
   { key: "campi_eventi", sezione: "campi", path: "/campi-eventi", icon: Tent },
   { key: "lezioni_private", sezione: "lezioni_private", path: "/lezioni-private", icon: GraduationCap },
   { key: "fatture", sezione: "fatture", path: "/fatture", icon: CreditCard },
+  { key: "segreteria_fatture", sezione: "fatture", path: "/segreteria/fatture", icon: LayoutGrid },
   { key: "comunicazioni", sezione: "comunicazioni", path: "/comunicazioni", icon: MessageSquare },
   { key: "planning_ghiaccio", sezione: "planning_ghiaccio", path: "/planning", icon: Calendar },
   { key: "richieste_iscrizione", sezione: "richieste_iscrizione", path: "/richieste-iscrizione", icon: ClipboardList },
@@ -176,6 +177,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           {is_nuovo_ruolo && (
             <>
               {nuovo_principale.map((s) => render_nav_item(s.path, s.icon, menu_label(s.codice, s.label), s.codice, s.non_implementato))}
+              {visibile_set.has("fatture") && render_nav_item("/segreteria/fatture", LayoutGrid, tc("menu.segreteria_fatture", { defaultValue: "Tabellone Fatture" }), "segreteria_fatture")}
               {is_presidente && (
                 <NavLink to="/presidente/relazione" onClick={() => set_sidebar_open(false)}
                   className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname.startsWith("/presidente/relazione") ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
