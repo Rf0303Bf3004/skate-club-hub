@@ -457,26 +457,28 @@ const SegreteriaFatturePage: React.FC = () => {
                           {t("tabellone.modal.marca_pagata")}
                         </Button>
                       )}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={async () => {
-                          try {
-                            await invia_email.mutateAsync({ fattura_id: f.id, email: "" });
-                            toast({ title: t("tabellone.modal.invia_reminder") as string });
-                          } catch (e: any) {
-                            toast({ title: "Errore", description: e?.message, variant: "destructive" });
-                          }
-                        }}
-                      >
-                        {t("tabellone.modal.invia_reminder")}
-                      </Button>
+                      {stato !== "pagata" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={async () => {
+                            try {
+                              await invia_email.mutateAsync({ fattura_id: f.id, email: "" });
+                              toast({ title: t("tabellone.modal.invia_reminder") as string });
+                            } catch (e: any) {
+                              toast({ title: "Errore", description: e?.message, variant: "destructive" });
+                            }
+                          }}
+                        >
+                          {t("tabellone.modal.invia_reminder")}
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => {
                           set_modal_cella(null);
-                          navigate("/fatture");
+                          navigate(`/fatture?id=${f.id}`);
                         }}
                       >
                         {t("tabellone.modal.apri_fattura")}
