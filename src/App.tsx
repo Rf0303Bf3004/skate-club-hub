@@ -48,6 +48,20 @@ import PacchettiSponsorPage from "@/pages/PacchettiSponsorPage";
 import RegisterClubPage from "@/pages/RegisterClubPage";
 import OnboardingPage from "@/pages/OnboardingPage";
 import LegalPlaceholderPage from "@/pages/LegalPlaceholderPage";
+import RecoveryPage from "@/pages/RecoveryPage";
+import ResetPasswordPage from "@/pages/ResetPasswordPage";
+import SuperAdminUtentiPage from "@/pages/SuperAdminUtentiPage";
+import PortaleLoginPage from "@/pages/portale/PortaleLoginPage";
+import PortaleLayout from "@/pages/portale/PortaleLayout";
+import PortaleHomePage from "@/pages/portale/PortaleHomePage";
+import PortaleCalendarioPage from "@/pages/portale/PortaleCalendarioPage";
+import PortaleEventiPage from "@/pages/portale/PortaleEventiPage";
+import PortaleNotiziePage from "@/pages/portale/PortaleNotiziePage";
+import PortaleProfiloPage from "@/pages/portale/PortaleProfiloPage";
+import AtletaTab from "@/pages/portale/profilo/AtletaTab";
+import CorsiTab from "@/pages/portale/profilo/CorsiTab";
+import FattureTab from "@/pages/portale/profilo/FattureTab";
+import ConvenzioniTab from "@/pages/portale/profilo/ConvenzioniTab";
 
 const queryClient = new QueryClient();
 
@@ -60,6 +74,29 @@ const PublicRoutes = ({ children }: { children: React.ReactNode }) => {
         <Routes>
           <Route path="/portale-atleta" element={<PortaleAtletaPage />} />
           <Route path="/portale-atleta/:token" element={<PortaleAtletaPage />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
+  if (path === "/portale" || path.startsWith("/portale/") || path === "/portale-recovery" || path === "/reset-password") {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/portale" element={<PortaleLoginPage />} />
+          <Route path="/portale-recovery" element={<RecoveryPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/portale" element={<PortaleLayout />}>
+            <Route path="home" element={<PortaleHomePage />} />
+            <Route path="calendario" element={<PortaleCalendarioPage />} />
+            <Route path="eventi" element={<PortaleEventiPage />} />
+            <Route path="notizie" element={<PortaleNotiziePage />} />
+            <Route path="profilo" element={<PortaleProfiloPage />}>
+              <Route path="atleta" element={<AtletaTab />} />
+              <Route path="corsi" element={<CorsiTab />} />
+              <Route path="fatture" element={<FattureTab />} />
+              <Route path="convenzioni" element={<ConvenzioniTab />} />
+            </Route>
+          </Route>
         </Routes>
       </BrowserRouter>
     );
