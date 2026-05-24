@@ -329,7 +329,7 @@ const SegreteriaFatturePage: React.FC = () => {
                 {mesi_short.map((m, i) => (
                   <th key={i} className="px-2 py-2 text-center font-semibold text-foreground min-w-[90px]">{m}</th>
                 ))}
-                <th className="sticky right-0 z-20 bg-muted/60 border-l border-border px-3 py-2 text-right font-semibold text-foreground min-w-[260px]">
+                <th className="border-l border-border px-3 py-2 text-right font-semibold text-foreground min-w-[260px]">
                   <div className="flex gap-3 justify-end">
                     <span>{t("tabellone.totale_fatturato")}</span>
                     <span>{t("tabellone.totale_pagato")}</span>
