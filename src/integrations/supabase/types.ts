@@ -578,6 +578,7 @@ export type Database = {
           numero_tessera_federale: string | null
           onboarding_completato: boolean
           paese: string | null
+          prezzo_per_atleta_chf: number
           reminder_allenamenti_attivo: boolean
           reminder_anticipo_giorni: number
           reminder_last_run_date: string | null
@@ -604,6 +605,7 @@ export type Database = {
           numero_tessera_federale?: string | null
           onboarding_completato?: boolean
           paese?: string | null
+          prezzo_per_atleta_chf?: number
           reminder_allenamenti_attivo?: boolean
           reminder_anticipo_giorni?: number
           reminder_last_run_date?: string | null
@@ -630,6 +632,7 @@ export type Database = {
           numero_tessera_federale?: string | null
           onboarding_completato?: boolean
           paese?: string | null
+          prezzo_per_atleta_chf?: number
           reminder_allenamenti_attivo?: boolean
           reminder_anticipo_giorni?: number
           reminder_last_run_date?: string | null
@@ -1599,6 +1602,66 @@ export type Database = {
           },
           {
             foreignKeyName: "fatture_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "kpi_pitch_sponsor"
+            referencedColumns: ["club_id"]
+          },
+        ]
+      }
+      fatture_clubs: {
+        Row: {
+          club_id: string
+          created_at: string
+          data_emissione: string
+          data_pagamento: string | null
+          data_scadenza: string
+          id: string
+          importo_chf: number
+          n_atleti: number
+          note: string | null
+          pagata: boolean
+          periodo: string
+          prezzo_per_atleta_chf: number
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          data_emissione?: string
+          data_pagamento?: string | null
+          data_scadenza: string
+          id?: string
+          importo_chf: number
+          n_atleti: number
+          note?: string | null
+          pagata?: boolean
+          periodo: string
+          prezzo_per_atleta_chf: number
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          data_emissione?: string
+          data_pagamento?: string | null
+          data_scadenza?: string
+          id?: string
+          importo_chf?: number
+          n_atleti?: number
+          note?: string | null
+          pagata?: boolean
+          periodo?: string
+          prezzo_per_atleta_chf?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fatture_clubs_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fatture_clubs_club_id_fkey"
             columns: ["club_id"]
             isOneToOne: false
             referencedRelation: "kpi_pitch_sponsor"
