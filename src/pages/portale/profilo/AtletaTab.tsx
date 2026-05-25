@@ -95,8 +95,15 @@ const AtletaTab: React.FC = () => {
     ? new Date(atleta.data_nascita + "T00:00:00").toLocaleDateString("it-CH", { day: "2-digit", month: "long", year: "numeric" })
     : "—";
 
+  const indirizzo_atleta = [
+    atleta.indirizzo,
+    [atleta.cap, atleta.citta].filter(Boolean).join(" "),
+    atleta.cantone,
+  ].filter(Boolean).join(", ") || "—";
+
   const has_g1 = atleta.genitore1_nome || atleta.genitore1_email || atleta.genitore1_telefono;
   const has_g2 = atleta.genitore2_nome || atleta.genitore2_email || atleta.genitore2_telefono;
+
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
