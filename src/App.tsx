@@ -191,6 +191,7 @@ const AuthenticatedApp = () => {
       <MainLayout>
         <Routes>
           <Route path="/" element={<SmartHome />} />
+          <Route path="/staff" element={<Navigate to="/" replace />} />
           <Route path="/atleti" element={<AthletesPage />} />
           <Route path="/atleti/:id" element={<AthletesPage />} />
           <Route path="/istruttori" element={<InstructorsPage />} />
