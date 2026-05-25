@@ -1351,6 +1351,57 @@ export type Database = {
           },
         ]
       }
+      eventi_calendario: {
+        Row: {
+          atleta_id: string
+          club_id: string
+          created_at: string
+          data: string
+          id: string
+          luogo: string | null
+          nome_evento: string | null
+          note: string | null
+          ora_fine: string | null
+          ora_inizio: string
+          riferimento_id: string | null
+          stato: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          atleta_id: string
+          club_id: string
+          created_at?: string
+          data: string
+          id?: string
+          luogo?: string | null
+          nome_evento?: string | null
+          note?: string | null
+          ora_fine?: string | null
+          ora_inizio: string
+          riferimento_id?: string | null
+          stato?: string
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          atleta_id?: string
+          club_id?: string
+          created_at?: string
+          data?: string
+          id?: string
+          luogo?: string | null
+          nome_evento?: string | null
+          note?: string | null
+          ora_fine?: string | null
+          ora_inizio?: string
+          riferimento_id?: string | null
+          stato?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       eventi_campi: {
         Row: {
           club_id: string
@@ -4171,6 +4222,10 @@ export type Database = {
     }
     Functions: {
       archivia_comunicazioni_vecchie: { Args: never; Returns: number }
+      cancel_corso_atleta: {
+        Args: { p_atleta_id: string; p_corso_id: string }
+        Returns: undefined
+      }
       cleanup_archived_communications: { Args: never; Returns: number }
       controlla_saturazione_corsi: { Args: never; Returns: number }
       corsi_per_atleta: {
@@ -4227,6 +4282,7 @@ export type Database = {
       is_mobile_parent: { Args: never; Returns: boolean }
       mobile_atleta_id: { Args: never; Returns: string }
       mobile_club_id: { Args: never; Returns: string }
+      normalize_label: { Args: { input: string }; Returns: string }
       ricalcola_cache_ore_mensile: {
         Args: { p_anno: number; p_istruttore_id: string; p_mese: number }
         Returns: undefined
@@ -4246,6 +4302,10 @@ export type Database = {
           ora_fine: string
           ora_inizio: string
         }[]
+      }
+      spawn_corso_atleta: {
+        Args: { p_atleta_id: string; p_corso_id: string }
+        Returns: undefined
       }
       sync_atleta_to_staff: { Args: { p_atleta_id: string }; Returns: string }
       user_can_see_finance: { Args: never; Returns: boolean }
