@@ -19,6 +19,14 @@ const SuperAdminClubDetailPage: React.FC = () => {
   const today = new Date().toISOString().slice(0, 10);
   const [prezzo, set_prezzo] = useState<number>(5);
   const [fee, set_fee] = useState<number>(50);
+  const [anag, set_anag] = useState<Record<string, string>>({});
+  const set_a = (k: string, v: string) => set_anag((p) => ({ ...p, [k]: v }));
+
+  const CANTONI_CH = ["AG","AI","AR","BE","BL","BS","FR","GE","GL","GR","JU","LU","NE","NW","OW","SG","SH","SO","SZ","TG","TI","UR","VD","VS","ZG","ZH"];
+  const iva_re = /^CHE-\d{3}\.\d{3}\.\d{3}( (MWST|IVA|TVA))?$/;
+  const iva_valido = !anag.numero_iva_chf || iva_re.test((anag.numero_iva_chf || "").trim());
+  const iban_clean = (anag.iban || "").replace(/\s/g, "");
+  const iban_valido = !iban_clean || (iban_clean.startsWith("CH") && iban_clean.length === 21);
 
   const { data: club } = useQuery({
     queryKey: ["sa_club_detail", id],
