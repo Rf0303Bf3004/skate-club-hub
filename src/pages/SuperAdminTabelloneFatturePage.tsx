@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
@@ -7,8 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
+import { Send } from "lucide-react";
+import { pdf } from "@react-pdf/renderer";
+import { FatturaClubDocument, type FatturaClubData, type FatturaRiga } from "@/lib/fattura-club-pdf";
 
 type FatturaClubRow = {
   id: string; club_id: string; periodo: string; importo_chf: number;
