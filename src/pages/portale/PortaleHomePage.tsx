@@ -19,9 +19,10 @@ const PortaleHomePage: React.FC = () => {
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       <section className="bg-gradient-to-r from-sky-500 to-indigo-600 text-white rounded-3xl p-6 lg:p-8 shadow-lg">
-        <p className="text-sm opacity-90">{t("home.benvenuto")}</p>
-        <h1 className="text-2xl lg:text-3xl font-bold mt-1">{session.atleta.nome} {session.atleta.cognome}</h1>
-        {session.club?.nome && <p className="text-sm opacity-90 mt-2">{session.club.nome}</p>}
+        <h1 className="text-3xl lg:text-4xl font-bold tracking-tight">
+          Ciao {session.atleta.nome}!
+        </h1>
+        {session.club?.nome && <p className="text-sm lg:text-base opacity-90 mt-2">{session.club.nome}</p>}
       </section>
 
       <section>
