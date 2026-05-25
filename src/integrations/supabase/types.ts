@@ -980,6 +980,7 @@ export type Database = {
           created_at: string
           giorno: string | null
           id: string
+          livello_id: string | null
           livello_richiesto: string | null
           nome: string
           note: string | null
@@ -1001,6 +1002,7 @@ export type Database = {
           created_at?: string
           giorno?: string | null
           id?: string
+          livello_id?: string | null
           livello_richiesto?: string | null
           nome?: string
           note?: string | null
@@ -1022,6 +1024,7 @@ export type Database = {
           created_at?: string
           giorno?: string | null
           id?: string
+          livello_id?: string | null
           livello_richiesto?: string | null
           nome?: string
           note?: string | null
@@ -1047,6 +1050,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "kpi_pitch_sponsor"
             referencedColumns: ["club_id"]
+          },
+          {
+            foreignKeyName: "corsi_livello_id_fkey"
+            columns: ["livello_id"]
+            isOneToOne: false
+            referencedRelation: "livelli_catalogo"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "corsi_livello_richiesto_fkey"
@@ -2503,6 +2513,36 @@ export type Database = {
         }
         Relationships: []
       }
+      livelli_catalogo: {
+        Row: {
+          attivo: boolean
+          categoria: string
+          created_at: string
+          id: string
+          nome: string
+          ordine: number
+          paese: string
+        }
+        Insert: {
+          attivo?: boolean
+          categoria: string
+          created_at?: string
+          id?: string
+          nome: string
+          ordine: number
+          paese?: string
+        }
+        Update: {
+          attivo?: boolean
+          categoria?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          ordine?: number
+          paese?: string
+        }
+        Relationships: []
+      }
       materiali_promo: {
         Row: {
           club_id: string
@@ -2790,6 +2830,64 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      percorsi_atleta: {
+        Row: {
+          atleta_id: string
+          attivo: boolean
+          created_at: string
+          id: string
+          livelli_extra_autorizzati_ids: string[]
+          livello_attuale_id: string | null
+          livello_in_preparazione_id: string | null
+          percorso: string
+          updated_at: string
+        }
+        Insert: {
+          atleta_id: string
+          attivo?: boolean
+          created_at?: string
+          id?: string
+          livelli_extra_autorizzati_ids?: string[]
+          livello_attuale_id?: string | null
+          livello_in_preparazione_id?: string | null
+          percorso: string
+          updated_at?: string
+        }
+        Update: {
+          atleta_id?: string
+          attivo?: boolean
+          created_at?: string
+          id?: string
+          livelli_extra_autorizzati_ids?: string[]
+          livello_attuale_id?: string | null
+          livello_in_preparazione_id?: string | null
+          percorso?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "percorsi_atleta_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "percorsi_atleta_livello_attuale_id_fkey"
+            columns: ["livello_attuale_id"]
+            isOneToOne: false
+            referencedRelation: "livelli_catalogo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "percorsi_atleta_livello_in_preparazione_id_fkey"
+            columns: ["livello_in_preparazione_id"]
+            isOneToOne: false
+            referencedRelation: "livelli_catalogo"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pitch_template_overrides: {
         Row: {
@@ -4280,6 +4378,10 @@ export type Database = {
         Returns: string
       }
       is_mobile_parent: { Args: never; Returns: boolean }
+      migra_atleta_livello: {
+        Args: { p_atleta_id: string }
+        Returns: undefined
+      }
       mobile_atleta_id: { Args: never; Returns: string }
       mobile_club_id: { Args: never; Returns: string }
       normalize_label: { Args: { input: string }; Returns: string }
