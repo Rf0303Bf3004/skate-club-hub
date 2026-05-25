@@ -125,7 +125,7 @@ const SuperAdminTabelloneFatturePage: React.FC = () => {
       ? (f.righe_custom as FatturaRiga[])
       : [
           ...(Number(f.fee_fissa_chf ?? 0) > 0 ? [{ descrizione: "Canone base mensile", importo: Number(f.fee_fissa_chf) }] : []),
-          ...(Number(f.n_atleti ?? 0) > 0 ? [{ descrizione: `${f.n_atleti} atleti × CHF ${Number(f.prezzo_per_atleta_chf).toFixed(2)}/mese`, importo: Number(f.importo_atleti_chf ?? (f.n_atleti * Number(f.prezzo_per_atleta_chf))) }] : []),
+          ...(Number(f.n_atleti ?? 0) > 0 ? [{ descrizione: `${f.n_atleti} atleti × CHF ${Number(f.prezzo_per_atleta_chf).toFixed(2)}/mese`, importo: Number(f.importo_atleti_chf) > 0 ? Number(f.importo_atleti_chf) : Number(f.n_atleti) * Number(f.prezzo_per_atleta_chf) }] : []),
           ...(Number(f.importo_setup_chf ?? 0) > 0 ? [{ descrizione: "Costo setup iniziale", importo: Number(f.importo_setup_chf) }] : []),
         ];
     const totale = righe.reduce((a, r) => a + r.importo, 0);
