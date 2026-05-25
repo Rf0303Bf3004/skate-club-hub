@@ -115,7 +115,15 @@ const SuperAdminClubDetailPage: React.FC = () => {
   const salva_prezzi = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("clubs")
-        .update({ prezzo_per_atleta_chf: prezzo, fee_fissa_chf: fee } as any)
+        .update({
+          prezzo_per_atleta_chf: prezzo,
+          fee_fissa_chf: fee,
+          mesi_fatturazione_fee: mesi_fee,
+          mesi_fatturazione_atleti: mesi_atleti,
+          mese_inizio_fatturazione: mese_inizio,
+          costo_setup_chf: costo_setup,
+          setup_fatturato: setup_fatt,
+        } as any)
         .eq("id", id!);
       if (error) throw error;
     },
