@@ -19,6 +19,11 @@ const SuperAdminClubDetailPage: React.FC = () => {
   const today = new Date().toISOString().slice(0, 10);
   const [prezzo, set_prezzo] = useState<number>(5);
   const [fee, set_fee] = useState<number>(50);
+  const [mesi_fee, set_mesi_fee] = useState<number>(12);
+  const [mesi_atleti, set_mesi_atleti] = useState<number>(12);
+  const [mese_inizio, set_mese_inizio] = useState<number>(1);
+  const [costo_setup, set_costo_setup] = useState<number>(0);
+  const [setup_fatt, set_setup_fatt] = useState<boolean>(false);
   const [anag, set_anag] = useState<Record<string, string>>({});
   const set_a = (k: string, v: string) => set_anag((p) => ({ ...p, [k]: v }));
 
