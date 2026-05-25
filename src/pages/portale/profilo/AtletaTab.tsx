@@ -36,12 +36,15 @@ const SectionCard: React.FC<{
   </div>
 );
 
-const GenitoreCard: React.FC<{ nome?: string; cognome?: string; email?: string; tel?: string; idx: number }> = ({
-  nome, cognome, email, tel, idx,
-}) => {
+const GenitoreCard: React.FC<{
+  nome?: string; cognome?: string; email?: string; tel?: string;
+  indirizzo?: string; cap?: string; citta?: string; cantone?: string;
+  idx: number;
+}> = ({ nome, cognome, email, tel, indirizzo, cap, citta, cantone, idx }) => {
   const display = [nome, cognome].filter(Boolean).join(" ") || email || "Genitore";
   const ini = `${nome?.[0] ?? ""}${cognome?.[0] ?? ""}`.toUpperCase() || (email?.[0] ?? "?").toUpperCase();
   const gradient = idx === 0 ? "from-sky-500 to-indigo-500" : "from-violet-500 to-purple-600";
+  const addr = [indirizzo, [cap, citta].filter(Boolean).join(" "), cantone].filter(Boolean).join(", ");
   return (
     <div className="flex items-start gap-4 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors">
       <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${gradient} text-white flex items-center justify-center font-bold shadow-sm shrink-0`}>
@@ -59,6 +62,9 @@ const GenitoreCard: React.FC<{ nome?: string; cognome?: string; email?: string; 
             <a href={`tel:${tel}`} className="inline-flex items-center gap-1.5 text-xs text-emerald-600 hover:text-emerald-700">
               <Phone className="w-3.5 h-3.5 shrink-0" /> {tel}
             </a>
+          )}
+          {addr && (
+            <p className="text-xs text-slate-500 mt-0.5 leading-snug">{addr}</p>
           )}
         </div>
       </div>
