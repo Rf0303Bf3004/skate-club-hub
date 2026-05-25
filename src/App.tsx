@@ -30,6 +30,7 @@ import SuperAdminBillingDashboardPage from "@/pages/SuperAdminBillingDashboardPa
 import SuperAdminTabelloneFatturePage from "@/pages/SuperAdminTabelloneFatturePage";
 import SuperAdminListinoPage from "@/pages/SuperAdminListinoPage";
 import SuperAdminClubDetailPage from "@/pages/SuperAdminClubDetailPage";
+import SuperAdminFatturaDetailPage from "@/pages/SuperAdminFatturaDetailPage";
 import NotFound from "@/pages/NotFound";
 import RuoliPermessiPage from "@/pages/RuoliPermessiPage";
 import UtentiPage from "@/pages/UtentiPage";
@@ -249,6 +250,10 @@ const AuthenticatedApp = () => {
           <Route
             path="/superadmin/clubs/:id"
             element={<ProtectedSuperAdmin><SuperAdminClubDetailPage /></ProtectedSuperAdmin>}
+          />
+          <Route
+            path="/superadmin/fatture/:id"
+            element={<ProtectedSuperAdmin><SuperAdminFatturaDetailPage /></ProtectedSuperAdmin>}
           />
           <Route
             path="/superadmin/utenti"

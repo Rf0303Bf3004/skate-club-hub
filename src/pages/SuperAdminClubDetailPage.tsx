@@ -19,6 +19,11 @@ const SuperAdminClubDetailPage: React.FC = () => {
   const today = new Date().toISOString().slice(0, 10);
   const [prezzo, set_prezzo] = useState<number>(5);
   const [fee, set_fee] = useState<number>(50);
+  const [mesi_fee, set_mesi_fee] = useState<number>(12);
+  const [mesi_atleti, set_mesi_atleti] = useState<number>(12);
+  const [mese_inizio, set_mese_inizio] = useState<number>(1);
+  const [costo_setup, set_costo_setup] = useState<number>(0);
+  const [setup_fatt, set_setup_fatt] = useState<boolean>(false);
   const [anag, set_anag] = useState<Record<string, string>>({});
   const set_a = (k: string, v: string) => set_anag((p) => ({ ...p, [k]: v }));
 
@@ -33,7 +38,7 @@ const SuperAdminClubDetailPage: React.FC = () => {
     enabled: !!id,
     queryFn: async () => {
       const { data, error } = await supabase.from("clubs")
-        .select("id, nome, sigla, citta, indirizzo, cap, cantone, paese, email, telefono, sito_web, numero_tessera_federale, prezzo_per_atleta_chf, fee_fissa_chf, partita_iva, numero_iva_chf, iban, intestatario_iban, twint_qr_url")
+        .select("id, nome, sigla, citta, indirizzo, cap, cantone, paese, email, telefono, sito_web, numero_tessera_federale, prezzo_per_atleta_chf, fee_fissa_chf, partita_iva, numero_iva_chf, iban, intestatario_iban, twint_qr_url, mesi_fatturazione_fee, mesi_fatturazione_atleti, mese_inizio_fatturazione, costo_setup_chf, setup_fatturato")
         .eq("id", id!).maybeSingle();
       if (error) throw error;
       return data as any;
@@ -57,6 +62,11 @@ const SuperAdminClubDetailPage: React.FC = () => {
     if (club) {
       set_prezzo(Number(club.prezzo_per_atleta_chf ?? 5));
       set_fee(Number(club.fee_fissa_chf ?? 50));
+      set_mesi_fee(Number(club.mesi_fatturazione_fee ?? 12));
+      set_mesi_atleti(Number(club.mesi_fatturazione_atleti ?? 12));
+      set_mese_inizio(Number(club.mese_inizio_fatturazione ?? 1));
+      set_costo_setup(Number(club.costo_setup_chf ?? 0));
+      set_setup_fatt(!!club.setup_fatturato);
       set_anag({
         nome: club.nome ?? "",
         sigla: club.sigla ?? "",
@@ -105,7 +115,15 @@ const SuperAdminClubDetailPage: React.FC = () => {
   const salva_prezzi = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("clubs")
-        .update({ prezzo_per_atleta_chf: prezzo, fee_fissa_chf: fee } as any)
+        .update({
+          prezzo_per_atleta_chf: prezzo,
+          fee_fissa_chf: fee,
+          mesi_fatturazione_fee: mesi_fee,
+          mesi_fatturazione_atleti: mesi_atleti,
+          mese_inizio_fatturazione: mese_inizio,
+          costo_setup_chf: costo_setup,
+          setup_fatturato: setup_fatt,
+        } as any)
         .eq("id", id!);
       if (error) throw error;
     },
@@ -228,30 +246,47 @@ const SuperAdminClubDetailPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader><CardTitle>{t("club_detail.tariffazione")}</CardTitle></CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-xs">{t("club_detail.fee_fissa_label")}</Label>
-                <Input type="number" step="0.01" min={0} value={fee}
-                  onChange={(e) => set_fee(parseFloat(e.target.value) || 0)} />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">{t("club_detail.prezzo_label")}</Label>
-                <Input type="number" step="0.01" min={0} value={prezzo}
-                  onChange={(e) => set_prezzo(parseFloat(e.target.value) || 0)} />
-              </div>
+      <Card>
+        <CardHeader><CardTitle>{t("club_detail.tariffazione")}</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          <RigaTariffa
+            label="Canone base mensile"
+            importo={fee} on_importo={set_fee}
+            mesi={mesi_fee} on_mesi={set_mesi_fee}
+          />
+          <div className="-mt-2 pl-1">
+            <Label className="text-xs">Mese di inizio fatturazione</Label>
+            <select className="h-9 mt-1 w-48 rounded-md border border-input bg-background px-2 text-sm"
+              value={mese_inizio} onChange={(e) => set_mese_inizio(parseInt(e.target.value, 10))}>
+              {["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"].map((m, i) => (
+                <option key={i+1} value={i+1}>{m}</option>
+              ))}
+            </select>
+          </div>
+          <RigaTariffa
+            label="Prezzo per atleta / mese"
+            importo={prezzo} on_importo={set_prezzo}
+            mesi={mesi_atleti} on_mesi={set_mesi_atleti}
+          />
+          <div className="flex items-end gap-3 pt-2 border-t">
+            <div className="space-y-1">
+              <Label className="text-xs">Costo setup una tantum (CHF)</Label>
+              <Input type="number" step="0.01" min={0} className="w-40" value={costo_setup}
+                onChange={(e) => set_costo_setup(parseFloat(e.target.value) || 0)} />
             </div>
-            <div className="rounded-md bg-muted/40 px-3 py-2 text-sm">
-              {t("club_detail.riepilogo")}:{" "}
-              <b>{fee.toFixed(2)} + {n_atleti} × {prezzo.toFixed(2)} = CHF {importo_previsto.toFixed(2)}</b>
-            </div>
-            <Button onClick={() => salva_prezzi.mutate()} disabled={salva_prezzi.isPending}>{t("listino.salva")}</Button>
-          </CardContent>
-        </Card>
-      </div>
+            <label className="flex items-center gap-2 text-sm pb-2 cursor-pointer">
+              <input type="checkbox" checked={setup_fatt} onChange={(e) => set_setup_fatt(e.target.checked)} />
+              Già fatturato
+            </label>
+          </div>
+          <div className="rounded-lg bg-muted/50 px-4 py-3 text-sm space-y-1">
+            <p><b>Fattura mensile tipo:</b> canone {fee.toFixed(2)} CHF + {n_atleti} atleti × {prezzo.toFixed(2)} CHF = <b>CHF {importo_previsto.toFixed(2)}</b>/mese</p>
+            <p><b>Setup una tantum:</b> CHF {costo_setup.toFixed(2)} {setup_fatt ? "(già fatturato)" : "(da fatturare alla prima emissione)"}</p>
+            <p className="pt-1 border-t mt-2"><b>Totale annuale previsto:</b> CHF {(fee * mesi_fee + n_atleti * prezzo * mesi_atleti + (setup_fatt ? 0 : costo_setup)).toFixed(2)}</p>
+          </div>
+          <Button onClick={() => salva_prezzi.mutate()} disabled={salva_prezzi.isPending}>{t("listino.salva")}</Button>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader><CardTitle>{t("club_detail.storico")}</CardTitle></CardHeader>
@@ -262,40 +297,34 @@ const SuperAdminClubDetailPage: React.FC = () => {
                 <tr className="border-b text-left text-xs uppercase text-muted-foreground">
                   <th className="py-2 px-3">Periodo</th>
                   <th className="py-2 px-3 text-right">Atleti</th>
-                  <th className="py-2 px-3 text-right">Canone base</th>
-                  <th className="py-2 px-3 text-right">CHF/atleta</th>
                   <th className="py-2 px-3 text-right">Importo</th>
                   <th className="py-2 px-3">Scadenza</th>
                   <th className="py-2 px-3">Stato</th>
-                  <th className="py-2 px-3"></th>
                 </tr>
               </thead>
               <tbody>
                 {fatture.map((f) => {
-                  const scaduta = !f.pagata && f.data_scadenza < today;
+                  const stato_ui = f.stato ?? (f.pagata ? "pagata" : (f.data_scadenza < today ? "scaduta" : "bozza"));
+                  const cls: Record<string, string> = {
+                    bozza: "bg-slate-100 text-slate-800", inviata: "bg-blue-100 text-blue-800",
+                    pagata: "bg-emerald-100 text-emerald-800", scaduta: "bg-red-100 text-red-800",
+                    annullata: "bg-gray-200 text-gray-700",
+                  };
                   return (
-                    <tr key={f.id} className="border-b">
+                    <tr key={f.id} className="border-b hover:bg-muted/40 cursor-pointer"
+                        onClick={() => navigate(`/superadmin/fatture/${f.id}`)}>
                       <td className="py-2 px-3 font-medium">{f.periodo}</td>
                       <td className="py-2 px-3 text-right tabular-nums">{f.n_atleti}</td>
-                      <td className="py-2 px-3 text-right tabular-nums">{Number(f.fee_fissa_chf ?? 0).toFixed(2)}</td>
-                      <td className="py-2 px-3 text-right tabular-nums">{Number(f.prezzo_per_atleta_chf).toFixed(2)}</td>
                       <td className="py-2 px-3 text-right tabular-nums">CHF {Number(f.importo_chf).toFixed(2)}</td>
                       <td className="py-2 px-3">{f.data_scadenza}</td>
                       <td className="py-2 px-3">
-                        <Badge className={f.pagata ? "bg-emerald-100 text-emerald-800" : scaduta ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-800"}>
-                          {f.pagata ? `Pagata ${f.data_pagamento ?? ""}` : scaduta ? "Scaduta" : "Da pagare"}
-                        </Badge>
-                      </td>
-                      <td className="py-2 px-3 text-right">
-                        <Button size="sm" variant="outline" onClick={() => toggle_pagata.mutate(f)}>
-                          {f.pagata ? t("club_detail.annulla_pagamento") : t("club_detail.marca_pagata")}
-                        </Button>
+                        <Badge className={cls[stato_ui] || cls.bozza}>{stato_ui.toUpperCase()}</Badge>
                       </td>
                     </tr>
                   );
                 })}
                 {fatture.length === 0 && (
-                  <tr><td colSpan={8} className="py-8 text-center text-muted-foreground">{t("tabellone.nessuna")}</td></tr>
+                  <tr><td colSpan={5} className="py-8 text-center text-muted-foreground">{t("tabellone.nessuna")}</td></tr>
                 )}
               </tbody>
             </table>
@@ -305,5 +334,25 @@ const SuperAdminClubDetailPage: React.FC = () => {
     </div>
   );
 };
+
+const RigaTariffa: React.FC<{
+  label: string; importo: number; on_importo: (v: number) => void;
+  mesi: number; on_mesi: (v: number) => void;
+}> = ({ label, importo, on_importo, mesi, on_mesi }) => (
+  <div>
+    <Label className="text-xs">{label}</Label>
+    <div className="flex items-center gap-2 mt-1">
+      <Input type="number" step="0.01" min={0} className="w-40" value={importo}
+        onChange={(e) => on_importo(parseFloat(e.target.value) || 0)} />
+      <span className="text-sm text-muted-foreground">CHF ×</span>
+      <select className="h-10 rounded-md border border-input bg-background px-2 text-sm"
+        value={mesi} onChange={(e) => on_mesi(parseInt(e.target.value, 10))}>
+        {Array.from({length: 13}, (_, i) => i).map((n) => (
+          <option key={n} value={n}>{n} {n === 1 ? "mese" : "mesi"}/anno</option>
+        ))}
+      </select>
+    </div>
+  </div>
+);
 
 export default SuperAdminClubDetailPage;
