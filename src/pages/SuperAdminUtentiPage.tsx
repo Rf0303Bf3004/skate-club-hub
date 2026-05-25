@@ -21,6 +21,7 @@ const SuperAdminUtentiPage: React.FC = () => {
   const [search, set_search] = useState("");
   const [nuovo_open, set_nuovo_open] = useState(false);
   const [pwd_dialog, set_pwd_dialog] = useState<{ open: boolean; pwd: string; user?: string }>({ open: false, pwd: "" });
+  const [all_clubs, set_all_clubs] = useState<Array<{ id: string; nome: string }>>([]);
 
   const load = async () => {
     set_loading(true);
@@ -30,13 +31,20 @@ const SuperAdminUtentiPage: React.FC = () => {
     set_loading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  const load_clubs = async () => {
+    const { data, error } = await supabase
+      .from("clubs")
+      .select("id, nome")
+      .eq("attivo", true)
+      .order("nome");
+    if (!error) set_all_clubs((data ?? []) as any);
+  };
 
-  const clubs = Array.from(new Set(utenti.map((u) => u.club_nome).filter(Boolean))).sort();
+  useEffect(() => { load(); load_clubs(); }, []);
 
   const filtered = utenti.filter((u) => {
     if (filtro_ruolo !== "all" && u.ruolo !== filtro_ruolo) return false;
-    if (filtro_club !== "all" && u.club_nome !== filtro_club) return false;
+    if (filtro_club !== "all" && u.club_id !== filtro_club) return false;
     if (search) {
       const q = search.toLowerCase();
       const blob = `${u.email ?? ""} ${u.nome ?? ""} ${u.cognome ?? ""}`.toLowerCase();
