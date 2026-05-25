@@ -15,7 +15,7 @@ const PortaleLoginPage: React.FC = () => {
   useEffect(() => {
     (async () => {
       const s = await portale_restore_session();
-      if (s) navigate("/portale/home", { replace: true });
+      if (s) navigate("/mio-club/home", { replace: true });
     })();
   }, [navigate]);
 
@@ -25,7 +25,7 @@ const PortaleLoginPage: React.FC = () => {
     set_busy(true);
     try {
       await portale_login(codice);
-      navigate("/portale/home", { replace: true });
+      navigate("/mio-club/home", { replace: true });
     } catch (err: any) {
       toast.error(err?.message ?? "Errore di accesso, riprova");
     } finally {

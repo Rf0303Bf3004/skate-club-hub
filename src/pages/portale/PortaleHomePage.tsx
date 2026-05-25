@@ -9,11 +9,11 @@ const PortaleHomePage: React.FC = () => {
   const { t } = useTranslation("portale");
 
   const tiles = [
-    { to: "/portale/calendario", icon: Calendar, label: t("menu.calendario"), color: "bg-indigo-500" },
-    { to: "/portale/eventi", icon: Sparkles, label: t("menu.eventi"), color: "bg-orange-500" },
-    { to: "/portale/profilo/corsi", icon: GraduationCap, label: t("menu.corsi"), color: "bg-emerald-500" },
-    { to: "/portale/profilo/fatture", icon: CreditCard, label: t("menu.fatture"), color: "bg-sky-500" },
-    { to: "/portale/profilo", icon: User, label: t("menu.profilo"), color: "bg-purple-500" },
+    { to: "/mio-club/calendario", icon: Calendar, label: t("menu.calendario"), color: "bg-indigo-500" },
+    { to: "/mio-club/eventi", icon: Sparkles, label: t("menu.eventi"), color: "bg-orange-500" },
+    { to: "/mio-club/profilo/corsi", icon: GraduationCap, label: t("menu.corsi"), color: "bg-emerald-500" },
+    { to: "/mio-club/profilo/fatture", icon: CreditCard, label: t("menu.fatture"), color: "bg-sky-500" },
+    { to: "/mio-club/profilo", icon: User, label: t("menu.profilo"), color: "bg-purple-500" },
   ];
 
   return (
