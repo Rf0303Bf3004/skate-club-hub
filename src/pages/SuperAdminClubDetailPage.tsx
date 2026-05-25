@@ -57,8 +57,39 @@ const SuperAdminClubDetailPage: React.FC = () => {
     if (club) {
       set_prezzo(Number(club.prezzo_per_atleta_chf ?? 5));
       set_fee(Number(club.fee_fissa_chf ?? 50));
+      set_anag({
+        nome: club.nome ?? "",
+        sigla: club.sigla ?? "",
+        indirizzo: club.indirizzo ?? "",
+        cap: club.cap ?? "",
+        citta: club.citta ?? "",
+        cantone: club.cantone ?? "",
+        paese: club.paese ?? "CH",
+        email: club.email ?? "",
+        telefono: club.telefono ?? "",
+        sito_web: club.sito_web ?? "",
+        numero_tessera_federale: club.numero_tessera_federale ?? "",
+        partita_iva: club.partita_iva ?? "",
+        numero_iva_chf: club.numero_iva_chf ?? "",
+        iban: club.iban ?? "",
+        intestatario_iban: club.intestatario_iban ?? "",
+        twint_qr_url: club.twint_qr_url ?? "",
+      });
     }
   }, [club]);
+
+  const salva_anagrafica = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("clubs").update(anag as any).eq("id", id!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Anagrafica club salvata" });
+      qc.invalidateQueries({ queryKey: ["sa_club_detail", id] });
+      qc.invalidateQueries({ queryKey: ["sa_clubs"] });
+    },
+    onError: (e: any) => toast({ title: "Errore salvataggio", description: String(e?.message ?? e), variant: "destructive" }),
+  });
 
   const { data: fatture = [] } = useQuery({
     queryKey: ["sa_club_fatture", id],
