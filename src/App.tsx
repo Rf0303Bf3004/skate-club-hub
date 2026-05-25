@@ -62,6 +62,8 @@ import AtletaTab from "@/pages/portale/profilo/AtletaTab";
 import CorsiTab from "@/pages/portale/profilo/CorsiTab";
 import FattureTab from "@/pages/portale/profilo/FattureTab";
 import ConvenzioniTab from "@/pages/portale/profilo/ConvenzioniTab";
+import LandingPage from "@/pages/LandingPage";
+
 
 const queryClient = new QueryClient();
 
