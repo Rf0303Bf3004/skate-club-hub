@@ -601,6 +601,7 @@ export type Database = {
           cap: string | null
           citta: string | null
           colore_primario: string | null
+          costo_setup_chf: number
           created_at: string
           descrizione: string | null
           email: string | null
@@ -610,6 +611,9 @@ export type Database = {
           indirizzo: string | null
           intestatario_iban: string | null
           logo_url: string | null
+          mese_inizio_fatturazione: number
+          mesi_fatturazione_atleti: number
+          mesi_fatturazione_fee: number
           nome: string
           numero_iva_chf: string | null
           numero_tessera_federale: string | null
@@ -622,6 +626,7 @@ export type Database = {
           reminder_last_run_date: string | null
           reminder_orario_invio: number
           reminder_staff_attivo: boolean
+          setup_fatturato: boolean
           sigla: string | null
           sito_web: string | null
           telefono: string | null
@@ -634,6 +639,7 @@ export type Database = {
           cap?: string | null
           citta?: string | null
           colore_primario?: string | null
+          costo_setup_chf?: number
           created_at?: string
           descrizione?: string | null
           email?: string | null
@@ -643,6 +649,9 @@ export type Database = {
           indirizzo?: string | null
           intestatario_iban?: string | null
           logo_url?: string | null
+          mese_inizio_fatturazione?: number
+          mesi_fatturazione_atleti?: number
+          mesi_fatturazione_fee?: number
           nome?: string
           numero_iva_chf?: string | null
           numero_tessera_federale?: string | null
@@ -655,6 +664,7 @@ export type Database = {
           reminder_last_run_date?: string | null
           reminder_orario_invio?: number
           reminder_staff_attivo?: boolean
+          setup_fatturato?: boolean
           sigla?: string | null
           sito_web?: string | null
           telefono?: string | null
@@ -667,6 +677,7 @@ export type Database = {
           cap?: string | null
           citta?: string | null
           colore_primario?: string | null
+          costo_setup_chf?: number
           created_at?: string
           descrizione?: string | null
           email?: string | null
@@ -676,6 +687,9 @@ export type Database = {
           indirizzo?: string | null
           intestatario_iban?: string | null
           logo_url?: string | null
+          mese_inizio_fatturazione?: number
+          mesi_fatturazione_atleti?: number
+          mesi_fatturazione_fee?: number
           nome?: string
           numero_iva_chf?: string | null
           numero_tessera_federale?: string | null
@@ -688,6 +702,7 @@ export type Database = {
           reminder_last_run_date?: string | null
           reminder_orario_invio?: number
           reminder_staff_attivo?: boolean
+          setup_fatturato?: boolean
           sigla?: string | null
           sito_web?: string | null
           telefono?: string | null
@@ -1726,46 +1741,64 @@ export type Database = {
           club_id: string
           created_at: string
           data_emissione: string
+          data_invio: string | null
           data_pagamento: string | null
           data_scadenza: string
           fee_fissa_chf: number
           id: string
+          importo_atleti_chf: number
           importo_chf: number
+          importo_setup_chf: number
           n_atleti: number
           note: string | null
           pagata: boolean
+          pdf_url: string | null
           periodo: string
           prezzo_per_atleta_chf: number
+          righe_custom: Json | null
+          stato: string
         }
         Insert: {
           club_id: string
           created_at?: string
           data_emissione?: string
+          data_invio?: string | null
           data_pagamento?: string | null
           data_scadenza: string
           fee_fissa_chf?: number
           id?: string
+          importo_atleti_chf?: number
           importo_chf: number
+          importo_setup_chf?: number
           n_atleti: number
           note?: string | null
           pagata?: boolean
+          pdf_url?: string | null
           periodo: string
           prezzo_per_atleta_chf: number
+          righe_custom?: Json | null
+          stato?: string
         }
         Update: {
           club_id?: string
           created_at?: string
           data_emissione?: string
+          data_invio?: string | null
           data_pagamento?: string | null
           data_scadenza?: string
           fee_fissa_chf?: number
           id?: string
+          importo_atleti_chf?: number
           importo_chf?: number
+          importo_setup_chf?: number
           n_atleti?: number
           note?: string | null
           pagata?: boolean
+          pdf_url?: string | null
           periodo?: string
           prezzo_per_atleta_chf?: number
+          righe_custom?: Json | null
+          stato?: string
         }
         Relationships: [
           {

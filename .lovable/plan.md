@@ -1,65 +1,80 @@
-## Piano: Portale Web Atleta + Estensione Superadmin
+# TARIFFAZIONE-SUPERADMIN-V2
 
-Due aree separate, entrambe da costruire ex novo. Sotto i dettagli operativi.
+Lavoro grosso, lo eseguo in 5 step ordinati. Ti chiedo conferma prima di partire perché tocca DB + edge function + PDF + email.
 
----
+## 1) Schema DB (migration)
 
-### TASK 1 — Portale Web Atleta (`/portale/*`)
+**clubs** — aggiungo:
+- `mesi_fatturazione_fee` (int2, default 12, 0–12)
+- `mesi_fatturazione_atleti` (int2, default 12, 0–12)
+- `mese_inizio_fatturazione` (int2, default 1, 1–12)
+- `costo_setup_chf` (numeric, default 0)
+- `setup_fatturato` (bool, default false)
 
-**Routing pubblico (fuori MainLayout admin)**
-- `/portale` → `PortaleLoginPage` (campo codice `AT-XXXX-XXXX`, chiama edge `mobile-auth-login`, salva sessione).
-- `/portale/*` → `PortaleLayout` (header + sidebar) con guard che verifica `app_metadata.role === 'mobile_parent'`; altrimenti redirect a `/portale`.
-- Sub-route: `home`, `calendario`, `eventi`, `notizie`, `profilo`, `profilo/atleta`, `profilo/corsi`, `profilo/fatture`, `profilo/convenzioni`.
-- Link "Accesso Atleti" aggiunto in `LoginPage` admin.
+**fatture_clubs** — aggiungo:
+- `importo_atleti_chf` (numeric, default 0)
+- `importo_setup_chf` (numeric, default 0)
+- `stato` text default `'bozza'` CHECK in (bozza, inviata, pagata, scaduta, annullata)
+- `pdf_url` text
+- `data_invio` timestamptz
 
-**File nuovi**
-```
-src/pages/portale/PortaleLoginPage.tsx
-src/pages/portale/PortaleLayout.tsx           (header + sidebar + Outlet)
-src/pages/portale/PortaleHomePage.tsx
-src/pages/portale/PortaleCalendarioPage.tsx
-src/pages/portale/PortaleEventiPage.tsx
-src/pages/portale/PortaleNotiziePage.tsx
-src/pages/portale/PortaleProfiloPage.tsx      (hub)
-src/pages/portale/profilo/AtletaTab.tsx
-src/pages/portale/profilo/CorsiTab.tsx
-src/pages/portale/profilo/FattureTab.tsx
-src/pages/portale/profilo/ConvenzioniTab.tsx
-src/lib/portale-auth.ts                       (login/logout/session helper su mobile-auth-login)
-src/locales/it/portale.json
-```
+Nota: la colonna `pagata` esistente resta per retrocompatibilità ma `stato` diventa la fonte di verità.
 
-**Sicurezza**: tutte le query usano il client Supabase autenticato. RLS già attive (`mobile_atleta_id()`, `mobile_club_id()`). Nessuna funzione admin importata.
+## 2) Cron mensile (`fattura-clubs-mensile`)
 
-**Stile**: palette identica all'app mobile (tokens locali a `index.css` come variabili semantiche per non sporcare il design system admin: `--portale-accent`, `--portale-purple`, ecc.). Card `rounded-2xl`, shadow soft.
+Rifaccio la logica con le 3 componenti:
+- fee attiva solo se il mese corrente rientra negli N mesi a partire da `mese_inizio_fatturazione`
+- stesso per atleti
+- setup solo se `setup_fatturato=false` e prima fattura → poi flag a true
+- salva 3 componenti separate; `stato='bozza'`
 
----
+## 3) UI `/superadmin/clubs/{id}` — sezione Tariffazione
 
-### TASK 2 — Estensione Superadmin
+3 righe (canone base, prezzo atleta, setup una tantum) con mesi/anno e mese inizio, più card riepilogo dinamica con totale annuale previsto.
 
-**Nuova pagina `/superadmin/utenti`**
-- File: `src/pages/SuperAdminUtentiPage.tsx`.
-- Lista da `utenti_club` joinata con `auth.users` (via edge function dedicata `superadmin-utenti` per accedere a `auth.users` con service role).
-- Filtri ruolo + club, colonne: email, nome cognome, ruolo, club, attivo, ultimo accesso.
-- Azioni riga: Reset password, Disattiva, Cambia ruolo.
-- Bottone "Nuovo superadmin" → modal con email/nome/cognome + password autogenerata copiabile.
+## 4) Dettaglio fattura `/superadmin/fatture/{id}` (route nuova)
 
-**Edge function `superadmin-utenti`**
-- Verifica JWT chiamante abbia ruolo `superadmin` (query `utenti_club`).
-- Azioni: `list`, `reset_password` (genera + `admin.updateUserById`), `set_disattivo`, `cambia_ruolo`, `crea_superadmin`.
+- Intestatario club completo + mittente Ice Arena Manager Sagl Bellinzona
+- Tabella righe (canone, atleti×prezzo, setup)
+- 4 bottoni: Anteprima PDF, Modifica (solo bozza), Invia (bozza→inviata + email), Marca pagata
+- Form modifica righe + note (campo `note` opzionale, lo aggiungo alla migration)
+- PDF con `@react-pdf/renderer` (stesso pattern del Pitch Sponsor): logo header, anagrafica, tabella, totale, IBAN/Twint, scadenza, footer fiscale. Cache in `pdf_url`.
 
-**Self-recovery**
-- Pagina pubblica `/portale-recovery` → `supabase.auth.resetPasswordForEmail(email, { redirectTo: `${origin}/reset-password` })`.
-- Pagina `/reset-password` (pubblica) per impostare nuova password.
-- Link "Password dimenticata?" nella `LoginPage` admin.
+Aggiungo link cliccabile dalle celle del tabellone esistente al dettaglio.
 
-**Sidebar**: aggiungo "Utenti" alle sub-voci Superadmin.
+## 5) Edge function `send-fattura-email` + invio massivo
 
-**i18n**: estendo `src/locales/it/superadmin.json` con `utenti.*` e `recovery.*`.
+- Edge function: riceve `fattura_id`, valida, recupera dati club + sagl, manda email via **Resend** (connector) al presidente con il PDF in allegato (PDF generato lato client e passato come base64, oppure rigenerato server-side con un template HTML semplice — vedi nota sotto), aggiorna `stato='inviata'`, `data_invio=now()`, `pdf_url`.
+- Bottone "Invia tutte le bozze del mese" sul tabellone: modale conferma con count + totale, poi loop sequenziale con progress bar, summary finale.
 
----
+**Nota tecnica PDF in email**: `@react-pdf/renderer` non gira in Deno. Due opzioni:
+- **A (consigliata)**: client genera il PDF, lo carica in storage bucket `fatture_clubs`, passa l'URL all'edge function che lo allega via fetch.
+- **B**: template HTML inline nell'email (no allegato PDF, solo link al PDF in storage).
 
-### Verifica
-- `bunx tsc --noEmit` → 0 errori.
-- Test login portale con `AT-ZPG4-U3K2` via `supabase--curl_edge_functions`.
-- Conferma che `robertofalco@bluewin.ch` (ruolo superadmin) vede la sezione, admin di Stella no (già coperto da check `is_superadmin` esistente in `MainLayout`).
+Vado con **A**: creo bucket privato `fatture-clubs` con RLS solo superadmin, client uppa PDF, edge function allega.
+
+## Dipendenze e prerequisiti
+
+- **Resend connector** già configurato? Se no devo chiederti di collegarlo prima di poter inviare email reali. Per la prima iterazione l'edge function può funzionare anche senza Resend (stato passa a inviata, ma email skippata con warning nei log) così puoi testare il flusso. Confermami se hai Resend o vuoi che ti guidi a configurarlo.
+- `@react-pdf/renderer` già presente (usato per Pitch Sponsor) — riuso.
+- Mittente "Ice Arena Manager Sagl, Bellinzona" hard-coded per ora come placeholder come da prompt, configurabile più avanti.
+
+## File toccati (stima)
+
+- 1 migration SQL (clubs + fatture_clubs + bucket storage + RLS)
+- `supabase/functions/fattura-clubs-mensile/index.ts` (riscrittura logica)
+- `supabase/functions/send-fattura-email/index.ts` (nuova)
+- `supabase/config.toml` (registra nuova function se serve)
+- `src/pages/SuperAdminClubDetailPage.tsx` (sezione Tariffazione)
+- `src/pages/SuperAdminFatturaDetailPage.tsx` (nuova)
+- `src/pages/SuperAdminTabelloneFatturePage.tsx` (cella → link dettaglio, bottone invio massivo)
+- `src/lib/fattura-club-pdf.tsx` (nuovo, react-pdf)
+- `src/App.tsx` (route nuova)
+- `src/locales/it/superadmin.json` (stringhe nuove)
+
+## Domande prima di partire
+
+1. **Resend**: già configurato o devo guidarti? (in caso negativo procedo con email "best effort" e log warning, così puoi testare tutto il resto)
+2. Mittente Sagl placeholder: ok "Ice Arena Manager Sagl — Bellinzona, CHE-XXX.XXX.XXX MWST, IBAN CH00 0000 0000 0000 0000 0" da sostituire più avanti?
+
+Appena confermi (o dici "vai senza domande, decidi tu") parto con la migration.
