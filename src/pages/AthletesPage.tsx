@@ -388,51 +388,60 @@ const AtletaModal: React.FC<{
           {/* Dati anagrafici extra */}
           <div className="pt-2 border-t border-border">
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">Dati anagrafici</p>
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Sesso">
+                <Select value={form.sesso || ""} onValueChange={(v) => set_val("sesso", v)}>
+                  <SelectTrigger className="h-10 w-full rounded-lg">
+                    <SelectValue placeholder="Seleziona" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="F">Femmina</SelectItem>
+                    <SelectItem value="M">Maschio</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
               <Field label="Telefono">
-                <input value={form.telefono} onChange={(e) => set_val("telefono", e.target.value)} className={input_cls} />
+                <input value={form.telefono} onChange={(e) => set_val("telefono", e.target.value)} placeholder="+41 79 123 45 67" className={input_cls} />
+              </Field>
+            </div>
+            <div className="mt-3">
+              <Field label="Codice fiscale (opzionale)">
+                <input value={form.codice_fiscale} onChange={(e) => set_val("codice_fiscale", e.target.value)} className={input_cls} />
               </Field>
             </div>
             <div className="mt-3 space-y-3">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Indirizzo di residenza</p>
-              <Field label="Via">
-                <input
-                  value={form.indirizzo_via}
-                  onChange={(e) => set_val("indirizzo_via", e.target.value)}
-                  className={input_cls}
-                />
+              <Field label="Indirizzo (via e numero)">
+                <input value={form.indirizzo} onChange={(e) => set_val("indirizzo", e.target.value)} className={input_cls} />
               </Field>
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,120px)_minmax(0,1fr)_minmax(0,180px)]">
-                <Field label="NAP">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,110px)_minmax(0,1fr)_minmax(0,140px)]">
+                <Field label="CAP">
                   <input
-                    value={form.indirizzo_nap}
-                    onChange={(e) => set_val("indirizzo_nap", e.target.value)}
-                    maxLength={10}
+                    value={form.cap}
+                    onChange={(e) => set_val("cap", e.target.value.replace(/[^0-9]/g, "").slice(0, 5))}
+                    placeholder="6900"
                     className={input_cls}
                   />
                 </Field>
-                <Field label="Località">
-                  <input
-                    value={form.indirizzo_localita}
-                    onChange={(e) => set_val("indirizzo_localita", e.target.value)}
-                    className={input_cls}
-                  />
+                <Field label="Città">
+                  <input value={form.citta} onChange={(e) => set_val("citta", e.target.value)} className={input_cls} />
                 </Field>
-                <Field label="Nazione">
-                  <Select value={form.indirizzo_nazione} onValueChange={(v) => set_val("indirizzo_nazione", v)}>
+                <Field label="Cantone">
+                  <Select value={form.cantone || ""} onValueChange={(v) => set_val("cantone", v)}>
                     <SelectTrigger className="h-10 w-full rounded-lg">
-                      <SelectValue placeholder="Seleziona nazione" />
+                      <SelectValue placeholder="—" />
                     </SelectTrigger>
                     <SelectContent>
-                      {NAZIONI_INDIRIZZO.map((nazione) => (
-                        <SelectItem key={nazione.value} value={nazione.value}>
-                          {nazione.label}
-                        </SelectItem>
+                      {CANTONI_CH.map((c) => (
+                        <SelectItem key={c} value={c}>{c}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </Field>
               </div>
+              {form.cap && form.cap.length > 0 && form.cap.length !== 4 && (
+                <p className="text-xs text-destructive">CAP svizzero: 4 cifre</p>
+              )}
             </div>
           </div>
 
@@ -460,36 +469,92 @@ const AtletaModal: React.FC<{
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">Genitore 1</p>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Nome">
-                <input
-                  value={form.genitore1_nome}
-                  onChange={(e) => set_val("genitore1_nome", e.target.value)}
-                  className={input_cls}
-                />
+                <input value={form.genitore1_nome} onChange={(e) => set_val("genitore1_nome", e.target.value)} className={input_cls} />
               </Field>
               <Field label="Cognome">
-                <input
-                  value={form.genitore1_cognome}
-                  onChange={(e) => set_val("genitore1_cognome", e.target.value)}
-                  className={input_cls}
-                />
+                <input value={form.genitore1_cognome} onChange={(e) => set_val("genitore1_cognome", e.target.value)} className={input_cls} />
               </Field>
               <Field label="Telefono">
-                <input
-                  value={form.genitore1_telefono}
-                  onChange={(e) => set_val("genitore1_telefono", e.target.value)}
-                  className={input_cls}
-                />
+                <input value={form.genitore1_telefono} onChange={(e) => set_val("genitore1_telefono", e.target.value)} placeholder="+41 ..." className={input_cls} />
               </Field>
               <Field label="Email">
-                <input
-                  type="email"
-                  value={form.genitore1_email}
-                  onChange={(e) => set_val("genitore1_email", e.target.value)}
-                  className={input_cls}
-                />
+                <input type="email" value={form.genitore1_email} onChange={(e) => set_val("genitore1_email", e.target.value)} className={input_cls} />
               </Field>
             </div>
+            <div className="mt-3 space-y-3">
+              <Field label="Indirizzo (via e numero)">
+                <input value={form.genitore1_indirizzo} onChange={(e) => set_val("genitore1_indirizzo", e.target.value)} className={input_cls} />
+              </Field>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,110px)_minmax(0,1fr)_minmax(0,140px)]">
+                <Field label="CAP">
+                  <input value={form.genitore1_cap} onChange={(e) => set_val("genitore1_cap", e.target.value.replace(/[^0-9]/g, "").slice(0,5))} className={input_cls} />
+                </Field>
+                <Field label="Città">
+                  <input value={form.genitore1_citta} onChange={(e) => set_val("genitore1_citta", e.target.value)} className={input_cls} />
+                </Field>
+                <Field label="Cantone">
+                  <Select value={form.genitore1_cantone || ""} onValueChange={(v) => set_val("genitore1_cantone", v)}>
+                    <SelectTrigger className="h-10 w-full rounded-lg"><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectContent>
+                      {CANTONI_CH.map((c) => (<SelectItem key={c} value={c}>{c}</SelectItem>))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+              </div>
+            </div>
           </div>
+
+          {/* Genitore 2 — collassabile */}
+          <div className="pt-2 border-t border-border">
+            <button
+              type="button"
+              onClick={() => set_show_g2((v) => !v)}
+              className="w-full flex items-center justify-between text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3 hover:text-foreground"
+            >
+              <span>Genitore 2 (opzionale)</span>
+              <span className="text-base leading-none">{show_g2 ? "−" : "+"}</span>
+            </button>
+            {show_g2 && (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Nome">
+                    <input value={form.genitore2_nome} onChange={(e) => set_val("genitore2_nome", e.target.value)} className={input_cls} />
+                  </Field>
+                  <Field label="Cognome">
+                    <input value={form.genitore2_cognome} onChange={(e) => set_val("genitore2_cognome", e.target.value)} className={input_cls} />
+                  </Field>
+                  <Field label="Telefono">
+                    <input value={form.genitore2_telefono} onChange={(e) => set_val("genitore2_telefono", e.target.value)} placeholder="+41 ..." className={input_cls} />
+                  </Field>
+                  <Field label="Email">
+                    <input type="email" value={form.genitore2_email} onChange={(e) => set_val("genitore2_email", e.target.value)} className={input_cls} />
+                  </Field>
+                </div>
+                <div className="mt-3 space-y-3">
+                  <Field label="Indirizzo (via e numero)">
+                    <input value={form.genitore2_indirizzo} onChange={(e) => set_val("genitore2_indirizzo", e.target.value)} className={input_cls} />
+                  </Field>
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,110px)_minmax(0,1fr)_minmax(0,140px)]">
+                    <Field label="CAP">
+                      <input value={form.genitore2_cap} onChange={(e) => set_val("genitore2_cap", e.target.value.replace(/[^0-9]/g, "").slice(0,5))} className={input_cls} />
+                    </Field>
+                    <Field label="Città">
+                      <input value={form.genitore2_citta} onChange={(e) => set_val("genitore2_citta", e.target.value)} className={input_cls} />
+                    </Field>
+                    <Field label="Cantone">
+                      <Select value={form.genitore2_cantone || ""} onValueChange={(v) => set_val("genitore2_cantone", v)}>
+                        <SelectTrigger className="h-10 w-full rounded-lg"><SelectValue placeholder="—" /></SelectTrigger>
+                        <SelectContent>
+                          {CANTONI_CH.map((c) => (<SelectItem key={c} value={c}>{c}</SelectItem>))}
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
 
 
           <Field label="Note">
