@@ -47,12 +47,23 @@ Deno.serve(async (req) => {
 
     const { data: clubs, error: e_clubs } = await sb
       .from("clubs")
-      .select("id, nome, prezzo_per_atleta_chf, fee_fissa_chf")
+      .select("id, nome, prezzo_per_atleta_chf, fee_fissa_chf, mesi_fatturazione_fee, mesi_fatturazione_atleti, mese_inizio_fatturazione, costo_setup_chf, setup_fatturato")
       .eq("attivo", true);
     if (e_clubs) throw e_clubs;
 
     const scadenza = due_date_from(oggi);
     const risultato: any[] = [];
+    const mese_corrente = parseInt(periodo.slice(5, 7), 10);
+
+    const mese_attivo = (mese: number, inizio: number, durata: number): boolean => {
+      if (!durata || durata <= 0) return false;
+      if (durata >= 12) return true;
+      for (let i = 0; i < durata; i++) {
+        const m = ((inizio - 1 + i) % 12) + 1;
+        if (m === mese) return true;
+      }
+      return false;
+    };
 
     for (const c of clubs ?? []) {
       const { count, error: e_atl } = await sb
@@ -64,8 +75,19 @@ Deno.serve(async (req) => {
 
       const n_atleti = count ?? 0;
       const prezzo = Number(c.prezzo_per_atleta_chf ?? 5);
-      const fee_fissa = Number((c as any).fee_fissa_chf ?? 50);
-      const importo = Number((fee_fissa + n_atleti * prezzo).toFixed(2));
+      const fee_fissa_base = Number((c as any).fee_fissa_chf ?? 50);
+      const mesi_fee = Number((c as any).mesi_fatturazione_fee ?? 12);
+      const mesi_atl = Number((c as any).mesi_fatturazione_atleti ?? 12);
+      const mese_inizio = Number((c as any).mese_inizio_fatturazione ?? 1);
+      const costo_setup = Number((c as any).costo_setup_chf ?? 0);
+      const setup_gia_fatt = Boolean((c as any).setup_fatturato ?? false);
+
+      const fee_fissa = mese_attivo(mese_corrente, mese_inizio, mesi_fee) ? fee_fissa_base : 0;
+      const importo_atleti = mese_attivo(mese_corrente, mese_inizio, mesi_atl) ? Number((n_atleti * prezzo).toFixed(2)) : 0;
+      const importo_setup = !setup_gia_fatt && costo_setup > 0 ? costo_setup : 0;
+      const importo = Number((fee_fissa + importo_atleti + importo_setup).toFixed(2));
+
+      if (importo <= 0) { risultato.push({ club: c.id, skip: "nulla da fatturare" }); continue; }
 
       const { error: e_ins } = await sb.from("fatture_clubs").upsert(
         {
@@ -74,13 +96,20 @@ Deno.serve(async (req) => {
           n_atleti,
           prezzo_per_atleta_chf: prezzo,
           fee_fissa_chf: fee_fissa,
+          importo_atleti_chf: importo_atleti,
+          importo_setup_chf: importo_setup,
           importo_chf: importo,
+          stato: "bozza",
           data_emissione: oggi,
           data_scadenza: scadenza,
         },
         { onConflict: "club_id,periodo", ignoreDuplicates: true },
       );
       if (e_ins) { risultato.push({ club: c.id, error: e_ins.message }); continue; }
+
+      if (importo_setup > 0) {
+        await sb.from("clubs").update({ setup_fatturato: true }).eq("id", c.id);
+      }
 
       // Comunicazione al presidente (best effort).
       await sb.from("comunicazioni").insert({
