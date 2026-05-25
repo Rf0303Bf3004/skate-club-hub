@@ -40,15 +40,8 @@ const LIVELLI_TUTTI = [...LIVELLI_COMUNI, ...LIVELLI_CARRIERA];
 
 const TUTTI_LIVELLI = [...LIVELLI_COMUNI, ...LIVELLI_CARRIERA];
 
-const NAZIONI_INDIRIZZO = [
-  { value: "CH", label: "🇨🇭 Svizzera (CH)" },
-  { value: "IT", label: "🇮🇹 Italia (IT)" },
-  { value: "DE", label: "🇩🇪 Germania (DE)" },
-  { value: "FR", label: "🇫🇷 Francia (FR)" },
-  { value: "AT", label: "🇦🇹 Austria (AT)" },
-  { value: "LI", label: "🇱🇮 Liechtenstein (LI)" },
-  { value: "ES", label: "🇪🇸 Spagna (ES)" },
-  { value: "PT", label: "🇵🇹 Portogallo (PT)" },
+const CANTONI_CH = [
+  "AG","AI","AR","BE","BL","BS","FR","GE","GL","GR","JU","LU","NE","NW","OW","SG","SH","SO","SZ","TG","TI","UR","VD","VS","ZG","ZH",
 ];
 
 // ─── Field ─────────────────────────────────────────────────
