@@ -48,7 +48,7 @@ const PortaleLayout: React.FC = () => {
   const iniziali = `${session.atleta.nome?.[0] ?? ""}${session.atleta.cognome?.[0] ?? ""}`.toUpperCase();
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-white to-sky-50">
       {open && <div className="fixed inset-0 bg-black/30 z-40 lg:hidden" onClick={() => set_open(false)} />}
       <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 flex flex-col transform transition-transform duration-200 ease-out ${open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
         <div className="p-5 flex items-center gap-3 border-b border-slate-200">
