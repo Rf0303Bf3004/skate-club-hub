@@ -1055,15 +1055,8 @@ export type Database = {
             foreignKeyName: "corsi_livello_id_fkey"
             columns: ["livello_id"]
             isOneToOne: false
-            referencedRelation: "livelli_catalogo"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "corsi_livello_richiesto_fkey"
-            columns: ["livello_richiesto"]
-            isOneToOne: false
             referencedRelation: "livelli"
-            referencedColumns: ["nome"]
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "corsi_stagione_id_fkey"
@@ -2491,33 +2484,6 @@ export type Database = {
           attivo: boolean
           created_at: string
           fase: string
-          id: number
-          nome: string
-          ordine: number
-        }
-        Insert: {
-          attivo?: boolean
-          created_at?: string
-          fase: string
-          id?: number
-          nome: string
-          ordine: number
-        }
-        Update: {
-          attivo?: boolean
-          created_at?: string
-          fase?: string
-          id?: number
-          nome?: string
-          ordine?: number
-        }
-        Relationships: []
-      }
-      livelli_catalogo: {
-        Row: {
-          attivo: boolean
-          categoria: string
-          created_at: string
           id: string
           nome: string
           ordine: number
@@ -2525,8 +2491,8 @@ export type Database = {
         }
         Insert: {
           attivo?: boolean
-          categoria: string
           created_at?: string
+          fase: string
           id?: string
           nome: string
           ordine: number
@@ -2534,8 +2500,8 @@ export type Database = {
         }
         Update: {
           attivo?: boolean
-          categoria?: string
           created_at?: string
+          fase?: string
           id?: string
           nome?: string
           ordine?: number
@@ -2877,14 +2843,14 @@ export type Database = {
             foreignKeyName: "percorsi_atleta_livello_attuale_id_fkey"
             columns: ["livello_attuale_id"]
             isOneToOne: false
-            referencedRelation: "livelli_catalogo"
+            referencedRelation: "livelli"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "percorsi_atleta_livello_in_preparazione_id_fkey"
             columns: ["livello_in_preparazione_id"]
             isOneToOne: false
-            referencedRelation: "livelli_catalogo"
+            referencedRelation: "livelli"
             referencedColumns: ["id"]
           },
         ]
