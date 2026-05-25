@@ -110,7 +110,7 @@ const SuperAdminUtentiPage: React.FC = () => {
           <SelectTrigger className="w-56"><SelectValue placeholder="Club" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tutti i club</SelectItem>
-            {clubs.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            {all_clubs.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
