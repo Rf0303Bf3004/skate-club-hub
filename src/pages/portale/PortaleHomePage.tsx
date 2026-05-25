@@ -19,10 +19,10 @@ const PortaleHomePage: React.FC = () => {
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       <section className="bg-gradient-to-r from-sky-500 to-indigo-600 text-white rounded-3xl p-6 lg:p-8 shadow-lg">
-        <h1 className="text-3xl lg:text-4xl font-bold tracking-tight">
-          Ciao {session.atleta.nome}!
+        <h1 className="text-[36px] lg:text-[40px] leading-tight font-extrabold tracking-tight">
+          Ciao {session.atleta.nome}, ecco la tua settimana
         </h1>
-        {session.club?.nome && <p className="text-sm lg:text-base opacity-90 mt-2">{session.club.nome}</p>}
+        {session.club?.nome && <p className="text-sm opacity-80 mt-2 font-normal">{session.club.nome}</p>}
       </section>
 
       <section>
