@@ -76,6 +76,12 @@ Deno.serve(async (req) => {
         paese: "Svizzera",
         attivo: true,
         onboarding_completato: false,
+        fee_fissa_chf: 50,
+        prezzo_per_atleta_chf: 1.20,
+        costo_setup_chf: 0,
+        setup_fatturato: false,
+        mesi_fatturazione_fee: 12,
+        mesi_fatturazione_atleti: 12,
       })
       .select("id")
       .single();
