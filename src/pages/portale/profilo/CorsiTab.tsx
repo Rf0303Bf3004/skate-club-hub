@@ -64,7 +64,9 @@ const CorsiTab: React.FC = () => {
   if (loading) return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-sky-500" /></div>;
 
   const miei = corsi.filter((c) => iscr.has(c.id));
-  const disponibili = corsi.filter((c) => !iscr.has(c.id));
+  const disponibili = corsi.filter((c) =>
+    !iscr.has(c.id) && c.livello_id && livelli_autorizzati.has(c.livello_id),
+  );
 
   return (
     <Tabs defaultValue="miei">
