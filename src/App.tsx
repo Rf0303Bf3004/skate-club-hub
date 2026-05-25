@@ -115,6 +115,7 @@ const PublicRoutes = ({ children }: { children: React.ReactNode }) => {
               <Route path="atleta" element={<AtletaTab />} />
               <Route path="corsi" element={<CorsiTab />} />
               <Route path="fatture" element={<FattureTab />} />
+              <Route path="fatture/:id" element={<FatturaDetailPage />} />
               <Route path="convenzioni" element={<ConvenzioniTab />} />
             </Route>
           </Route>
