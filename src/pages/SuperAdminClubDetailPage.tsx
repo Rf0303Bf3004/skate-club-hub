@@ -19,13 +19,21 @@ const SuperAdminClubDetailPage: React.FC = () => {
   const today = new Date().toISOString().slice(0, 10);
   const [prezzo, set_prezzo] = useState<number>(5);
   const [fee, set_fee] = useState<number>(50);
+  const [anag, set_anag] = useState<Record<string, string>>({});
+  const set_a = (k: string, v: string) => set_anag((p) => ({ ...p, [k]: v }));
+
+  const CANTONI_CH = ["AG","AI","AR","BE","BL","BS","FR","GE","GL","GR","JU","LU","NE","NW","OW","SG","SH","SO","SZ","TG","TI","UR","VD","VS","ZG","ZH"];
+  const iva_re = /^CHE-\d{3}\.\d{3}\.\d{3}( (MWST|IVA|TVA))?$/;
+  const iva_valido = !anag.numero_iva_chf || iva_re.test((anag.numero_iva_chf || "").trim());
+  const iban_clean = (anag.iban || "").replace(/\s/g, "");
+  const iban_valido = !iban_clean || (iban_clean.startsWith("CH") && iban_clean.length === 21);
 
   const { data: club } = useQuery({
     queryKey: ["sa_club_detail", id],
     enabled: !!id,
     queryFn: async () => {
       const { data, error } = await supabase.from("clubs")
-        .select("id, nome, citta, indirizzo, email, telefono, prezzo_per_atleta_chf, fee_fissa_chf")
+        .select("id, nome, sigla, citta, indirizzo, cap, cantone, paese, email, telefono, sito_web, numero_tessera_federale, prezzo_per_atleta_chf, fee_fissa_chf, partita_iva, numero_iva_chf, iban, intestatario_iban, twint_qr_url")
         .eq("id", id!).maybeSingle();
       if (error) throw error;
       return data as any;
@@ -49,8 +57,39 @@ const SuperAdminClubDetailPage: React.FC = () => {
     if (club) {
       set_prezzo(Number(club.prezzo_per_atleta_chf ?? 5));
       set_fee(Number(club.fee_fissa_chf ?? 50));
+      set_anag({
+        nome: club.nome ?? "",
+        sigla: club.sigla ?? "",
+        indirizzo: club.indirizzo ?? "",
+        cap: club.cap ?? "",
+        citta: club.citta ?? "",
+        cantone: club.cantone ?? "",
+        paese: club.paese ?? "CH",
+        email: club.email ?? "",
+        telefono: club.telefono ?? "",
+        sito_web: club.sito_web ?? "",
+        numero_tessera_federale: club.numero_tessera_federale ?? "",
+        partita_iva: club.partita_iva ?? "",
+        numero_iva_chf: club.numero_iva_chf ?? "",
+        iban: club.iban ?? "",
+        intestatario_iban: club.intestatario_iban ?? "",
+        twint_qr_url: club.twint_qr_url ?? "",
+      });
     }
   }, [club]);
+
+  const salva_anagrafica = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("clubs").update(anag as any).eq("id", id!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Anagrafica club salvata" });
+      qc.invalidateQueries({ queryKey: ["sa_club_detail", id] });
+      qc.invalidateQueries({ queryKey: ["sa_clubs"] });
+    },
+    onError: (e: any) => toast({ title: "Errore salvataggio", description: String(e?.message ?? e), variant: "destructive" }),
+  });
 
   const { data: fatture = [] } = useQuery({
     queryKey: ["sa_club_fatture", id],
@@ -103,16 +142,93 @@ const SuperAdminClubDetailPage: React.FC = () => {
         <p className="text-sm text-muted-foreground">{club.citta || "—"}</p>
       </div>
 
+      <Card>
+        <CardHeader><CardTitle>Anagrafica club</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="space-y-1 md:col-span-2">
+              <Label className="text-xs">Nome club</Label>
+              <Input value={anag.nome ?? ""} onChange={(e) => set_a("nome", e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Sigla</Label>
+              <Input value={anag.sigla ?? ""} onChange={(e) => set_a("sigla", e.target.value.toUpperCase())} maxLength={8} />
+            </div>
+            <div className="space-y-1 md:col-span-3">
+              <Label className="text-xs">Indirizzo (via e numero)</Label>
+              <Input value={anag.indirizzo ?? ""} onChange={(e) => set_a("indirizzo", e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">CAP</Label>
+              <Input value={anag.cap ?? ""} onChange={(e) => set_a("cap", e.target.value.replace(/[^0-9]/g, "").slice(0,5))} placeholder="6900" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Città</Label>
+              <Input value={anag.citta ?? ""} onChange={(e) => set_a("citta", e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Cantone</Label>
+              <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={anag.cantone ?? ""} onChange={(e) => set_a("cantone", e.target.value)}>
+                <option value="">—</option>
+                {CANTONI_CH.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Email</Label>
+              <Input type="email" value={anag.email ?? ""} onChange={(e) => set_a("email", e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Telefono</Label>
+              <Input value={anag.telefono ?? ""} onChange={(e) => set_a("telefono", e.target.value)} placeholder="+41 ..." />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Sito web</Label>
+              <Input value={anag.sito_web ?? ""} onChange={(e) => set_a("sito_web", e.target.value)} placeholder="https://..." />
+            </div>
+            <div className="space-y-1 md:col-span-3">
+              <Label className="text-xs">N. tessera federale</Label>
+              <Input value={anag.numero_tessera_federale ?? ""} onChange={(e) => set_a("numero_tessera_federale", e.target.value)} />
+            </div>
+          </div>
+
+          <div className="border-t pt-4 space-y-3">
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Dati fiscali e bancari</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Partita IVA</Label>
+                <Input value={anag.partita_iva ?? ""} onChange={(e) => set_a("partita_iva", e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Numero IVA svizzero</Label>
+                <Input value={anag.numero_iva_chf ?? ""} onChange={(e) => set_a("numero_iva_chf", e.target.value.toUpperCase())} placeholder="CHE-123.456.789 MWST" />
+                {!iva_valido && (<p className="text-xs text-destructive">Formato: CHE-XXX.XXX.XXX (MWST/IVA/TVA opzionale)</p>)}
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">IBAN</Label>
+                <Input value={anag.iban ?? ""} onChange={(e) => set_a("iban", e.target.value.toUpperCase().replace(/[^A-Z0-9\s]/g, ""))} placeholder="CH56 0483 5012 3456 7800 9" maxLength={26} />
+                {!iban_valido && (<p className="text-xs text-destructive">IBAN svizzero: inizia con CH, 21 caratteri</p>)}
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Intestatario IBAN</Label>
+                <Input value={anag.intestatario_iban ?? ""} onChange={(e) => set_a("intestatario_iban", e.target.value)} />
+              </div>
+              <div className="space-y-1 md:col-span-2">
+                <Label className="text-xs">TWINT QR URL</Label>
+                <Input value={anag.twint_qr_url ?? ""} onChange={(e) => set_a("twint_qr_url", e.target.value)} placeholder="https://..." />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between border-t pt-3">
+            <p className="text-xs text-muted-foreground">Atleti attivi: <b className="text-foreground">{n_atleti}</b></p>
+            <Button onClick={() => salva_anagrafica.mutate()} disabled={salva_anagrafica.isPending || !iva_valido || !iban_valido}>
+              {salva_anagrafica.isPending ? "..." : "Salva anagrafica"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader><CardTitle>{t("club_detail.anagrafica")}</CardTitle></CardHeader>
-          <CardContent className="space-y-1 text-sm">
-            <div><b>Indirizzo:</b> {club.indirizzo || "—"}</div>
-            <div><b>Email:</b> {club.email || "—"}</div>
-            <div><b>Telefono:</b> {club.telefono || "—"}</div>
-            <div><b>Atleti attivi:</b> {n_atleti}</div>
-          </CardContent>
-        </Card>
         <Card>
           <CardHeader><CardTitle>{t("club_detail.tariffazione")}</CardTitle></CardHeader>
           <CardContent className="space-y-3">

@@ -36,12 +36,15 @@ const SectionCard: React.FC<{
   </div>
 );
 
-const GenitoreCard: React.FC<{ nome?: string; cognome?: string; email?: string; tel?: string; idx: number }> = ({
-  nome, cognome, email, tel, idx,
-}) => {
+const GenitoreCard: React.FC<{
+  nome?: string; cognome?: string; email?: string; tel?: string;
+  indirizzo?: string; cap?: string; citta?: string; cantone?: string;
+  idx: number;
+}> = ({ nome, cognome, email, tel, indirizzo, cap, citta, cantone, idx }) => {
   const display = [nome, cognome].filter(Boolean).join(" ") || email || "Genitore";
   const ini = `${nome?.[0] ?? ""}${cognome?.[0] ?? ""}`.toUpperCase() || (email?.[0] ?? "?").toUpperCase();
   const gradient = idx === 0 ? "from-sky-500 to-indigo-500" : "from-violet-500 to-purple-600";
+  const addr = [indirizzo, [cap, citta].filter(Boolean).join(" "), cantone].filter(Boolean).join(", ");
   return (
     <div className="flex items-start gap-4 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors">
       <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${gradient} text-white flex items-center justify-center font-bold shadow-sm shrink-0`}>
@@ -59,6 +62,9 @@ const GenitoreCard: React.FC<{ nome?: string; cognome?: string; email?: string; 
             <a href={`tel:${tel}`} className="inline-flex items-center gap-1.5 text-xs text-emerald-600 hover:text-emerald-700">
               <Phone className="w-3.5 h-3.5 shrink-0" /> {tel}
             </a>
+          )}
+          {addr && (
+            <p className="text-xs text-slate-500 mt-0.5 leading-snug">{addr}</p>
           )}
         </div>
       </div>
@@ -95,8 +101,15 @@ const AtletaTab: React.FC = () => {
     ? new Date(atleta.data_nascita + "T00:00:00").toLocaleDateString("it-CH", { day: "2-digit", month: "long", year: "numeric" })
     : "—";
 
+  const indirizzo_atleta = [
+    atleta.indirizzo,
+    [atleta.cap, atleta.citta].filter(Boolean).join(" "),
+    atleta.cantone,
+  ].filter(Boolean).join(", ") || "—";
+
   const has_g1 = atleta.genitore1_nome || atleta.genitore1_email || atleta.genitore1_telefono;
   const has_g2 = atleta.genitore2_nome || atleta.genitore2_email || atleta.genitore2_telefono;
+
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -107,7 +120,8 @@ const AtletaTab: React.FC = () => {
           <Row label="Sesso">{atleta.sesso === "F" ? "Femmina" : atleta.sesso === "M" ? "Maschio" : "—"}</Row>
           <Row label="Codice atleta" mono>{atleta.codice_atleta ?? "—"}</Row>
           <Row label="Categoria"><span className="capitalize">{atleta.categoria ?? "—"}</span></Row>
-          <Row label="Indirizzo">{atleta.indirizzo || "—"}</Row>
+          <Row label="Indirizzo">{indirizzo_atleta}</Row>
+          <Row label="Codice fiscale">{atleta.codice_fiscale || "—"}</Row>
           <Row label="Telefono">
             {atleta.telefono ? (
               <a href={`tel:${atleta.telefono}`} className="text-sky-600 hover:text-sky-700">{atleta.telefono}</a>
@@ -179,6 +193,10 @@ const AtletaTab: React.FC = () => {
                 cognome={atleta.genitore1_cognome}
                 email={atleta.genitore1_email}
                 tel={atleta.genitore1_telefono}
+                indirizzo={atleta.genitore1_indirizzo}
+                cap={atleta.genitore1_cap}
+                citta={atleta.genitore1_citta}
+                cantone={atleta.genitore1_cantone}
                 idx={0}
               />
             )}
@@ -188,6 +206,10 @@ const AtletaTab: React.FC = () => {
                 cognome={atleta.genitore2_cognome}
                 email={atleta.genitore2_email}
                 tel={atleta.genitore2_telefono}
+                indirizzo={atleta.genitore2_indirizzo}
+                cap={atleta.genitore2_cap}
+                citta={atleta.genitore2_citta}
+                cantone={atleta.genitore2_cantone}
                 idx={1}
               />
             )}

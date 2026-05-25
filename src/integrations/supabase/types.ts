@@ -90,9 +90,12 @@ export type Database = {
           atleta_federazione: boolean | null
           attivo: boolean | null
           attivo_come_monitore: boolean | null
+          cantone: string | null
+          cap: string | null
           carriera_artistica: string | null
           carriera_stile: string | null
           categoria: string
+          citta: string | null
           club_id: string
           codice_atleta: string | null
           codice_fiscale: string | null
@@ -105,12 +108,20 @@ export type Database = {
           e_aiuto_monitrice: boolean
           e_monitrice: boolean
           foto_url: string | null
+          genitore1_cantone: string | null
+          genitore1_cap: string | null
+          genitore1_citta: string | null
           genitore1_cognome: string | null
           genitore1_email: string | null
+          genitore1_indirizzo: string | null
           genitore1_nome: string | null
           genitore1_telefono: string | null
+          genitore2_cantone: string | null
+          genitore2_cap: string | null
+          genitore2_citta: string | null
           genitore2_cognome: string | null
           genitore2_email: string | null
+          genitore2_indirizzo: string | null
           genitore2_nome: string | null
           genitore2_telefono: string | null
           id: string
@@ -145,9 +156,12 @@ export type Database = {
           atleta_federazione?: boolean | null
           attivo?: boolean | null
           attivo_come_monitore?: boolean | null
+          cantone?: string | null
+          cap?: string | null
           carriera_artistica?: string | null
           carriera_stile?: string | null
           categoria?: string
+          citta?: string | null
           club_id: string
           codice_atleta?: string | null
           codice_fiscale?: string | null
@@ -160,12 +174,20 @@ export type Database = {
           e_aiuto_monitrice?: boolean
           e_monitrice?: boolean
           foto_url?: string | null
+          genitore1_cantone?: string | null
+          genitore1_cap?: string | null
+          genitore1_citta?: string | null
           genitore1_cognome?: string | null
           genitore1_email?: string | null
+          genitore1_indirizzo?: string | null
           genitore1_nome?: string | null
           genitore1_telefono?: string | null
+          genitore2_cantone?: string | null
+          genitore2_cap?: string | null
+          genitore2_citta?: string | null
           genitore2_cognome?: string | null
           genitore2_email?: string | null
+          genitore2_indirizzo?: string | null
           genitore2_nome?: string | null
           genitore2_telefono?: string | null
           id?: string
@@ -200,9 +222,12 @@ export type Database = {
           atleta_federazione?: boolean | null
           attivo?: boolean | null
           attivo_come_monitore?: boolean | null
+          cantone?: string | null
+          cap?: string | null
           carriera_artistica?: string | null
           carriera_stile?: string | null
           categoria?: string
+          citta?: string | null
           club_id?: string
           codice_atleta?: string | null
           codice_fiscale?: string | null
@@ -215,12 +240,20 @@ export type Database = {
           e_aiuto_monitrice?: boolean
           e_monitrice?: boolean
           foto_url?: string | null
+          genitore1_cantone?: string | null
+          genitore1_cap?: string | null
+          genitore1_citta?: string | null
           genitore1_cognome?: string | null
           genitore1_email?: string | null
+          genitore1_indirizzo?: string | null
           genitore1_nome?: string | null
           genitore1_telefono?: string | null
+          genitore2_cantone?: string | null
+          genitore2_cap?: string | null
+          genitore2_citta?: string | null
           genitore2_cognome?: string | null
           genitore2_email?: string | null
+          genitore2_indirizzo?: string | null
           genitore2_nome?: string | null
           genitore2_telefono?: string | null
           id?: string
@@ -572,13 +605,17 @@ export type Database = {
           descrizione: string | null
           email: string | null
           fee_fissa_chf: number
+          iban: string | null
           id: string
           indirizzo: string | null
+          intestatario_iban: string | null
           logo_url: string | null
           nome: string
+          numero_iva_chf: string | null
           numero_tessera_federale: string | null
           onboarding_completato: boolean
           paese: string | null
+          partita_iva: string | null
           prezzo_per_atleta_chf: number
           reminder_allenamenti_attivo: boolean
           reminder_anticipo_giorni: number
@@ -588,6 +625,7 @@ export type Database = {
           sigla: string | null
           sito_web: string | null
           telefono: string | null
+          twint_qr_url: string | null
         }
         Insert: {
           attivo?: boolean
@@ -600,13 +638,17 @@ export type Database = {
           descrizione?: string | null
           email?: string | null
           fee_fissa_chf?: number
+          iban?: string | null
           id?: string
           indirizzo?: string | null
+          intestatario_iban?: string | null
           logo_url?: string | null
           nome?: string
+          numero_iva_chf?: string | null
           numero_tessera_federale?: string | null
           onboarding_completato?: boolean
           paese?: string | null
+          partita_iva?: string | null
           prezzo_per_atleta_chf?: number
           reminder_allenamenti_attivo?: boolean
           reminder_anticipo_giorni?: number
@@ -616,6 +658,7 @@ export type Database = {
           sigla?: string | null
           sito_web?: string | null
           telefono?: string | null
+          twint_qr_url?: string | null
         }
         Update: {
           attivo?: boolean
@@ -628,13 +671,17 @@ export type Database = {
           descrizione?: string | null
           email?: string | null
           fee_fissa_chf?: number
+          iban?: string | null
           id?: string
           indirizzo?: string | null
+          intestatario_iban?: string | null
           logo_url?: string | null
           nome?: string
+          numero_iva_chf?: string | null
           numero_tessera_federale?: string | null
           onboarding_completato?: boolean
           paese?: string | null
+          partita_iva?: string | null
           prezzo_per_atleta_chf?: number
           reminder_allenamenti_attivo?: boolean
           reminder_anticipo_giorni?: number
@@ -644,6 +691,7 @@ export type Database = {
           sigla?: string | null
           sito_web?: string | null
           telefono?: string | null
+          twint_qr_url?: string | null
         }
         Relationships: []
       }

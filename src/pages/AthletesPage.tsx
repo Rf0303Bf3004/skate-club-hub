@@ -40,15 +40,8 @@ const LIVELLI_TUTTI = [...LIVELLI_COMUNI, ...LIVELLI_CARRIERA];
 
 const TUTTI_LIVELLI = [...LIVELLI_COMUNI, ...LIVELLI_CARRIERA];
 
-const NAZIONI_INDIRIZZO = [
-  { value: "CH", label: "🇨🇭 Svizzera (CH)" },
-  { value: "IT", label: "🇮🇹 Italia (IT)" },
-  { value: "DE", label: "🇩🇪 Germania (DE)" },
-  { value: "FR", label: "🇫🇷 Francia (FR)" },
-  { value: "AT", label: "🇦🇹 Austria (AT)" },
-  { value: "LI", label: "🇱🇮 Liechtenstein (LI)" },
-  { value: "ES", label: "🇪🇸 Spagna (ES)" },
-  { value: "PT", label: "🇵🇹 Portogallo (PT)" },
+const CANTONI_CH = [
+  "AG","AI","AR","BE","BL","BS","FR","GE","GL","GR","JU","LU","NE","NW","OW","SG","SH","SO","SZ","TG","TI","UR","VD","VS","ZG","ZH",
 ];
 
 // ─── Field ─────────────────────────────────────────────────
@@ -150,12 +143,27 @@ const AtletaModal: React.FC<{
     licenza_sis_categoria: atleta?.licenza_sis_categoria || "",
     licenza_sis_disciplina: atleta?.licenza_sis_disciplina || "",
     licenza_sis_validita_a: atleta?.licenza_sis_validita_a?.split("T")[0] || "",
-    indirizzo_via: atleta?.indirizzo_via || "",
-    indirizzo_nap: atleta?.indirizzo_nap || "",
-    indirizzo_localita: atleta?.indirizzo_localita || "",
-    indirizzo_nazione: atleta?.indirizzo_nazione || "CH",
+    sesso: atleta?.sesso || "",
+    codice_fiscale: atleta?.codice_fiscale || "",
+    indirizzo: atleta?.indirizzo || "",
+    cap: atleta?.cap || "",
+    citta: atleta?.citta || "",
+    cantone: atleta?.cantone || "",
     telefono: atleta?.telefono || "",
+    genitore2_nome: atleta?.genitore2_nome || "",
+    genitore2_cognome: atleta?.genitore2_cognome || "",
+    genitore2_telefono: atleta?.genitore2_telefono || "",
+    genitore2_email: atleta?.genitore2_email || "",
+    genitore1_indirizzo: atleta?.genitore1_indirizzo || "",
+    genitore1_cap: atleta?.genitore1_cap || "",
+    genitore1_citta: atleta?.genitore1_citta || "",
+    genitore1_cantone: atleta?.genitore1_cantone || "",
+    genitore2_indirizzo: atleta?.genitore2_indirizzo || "",
+    genitore2_cap: atleta?.genitore2_cap || "",
+    genitore2_citta: atleta?.genitore2_citta || "",
+    genitore2_cantone: atleta?.genitore2_cantone || "",
   });
+  const [show_g2, set_show_g2] = useState(!!(atleta?.genitore2_nome || atleta?.genitore2_email));
   const [confirm_delete, set_confirm_delete] = useState(false);
   const [uploading_foto, set_uploading_foto] = useState(false);
   const [uploading_disco, set_uploading_disco] = useState(false);
@@ -380,51 +388,60 @@ const AtletaModal: React.FC<{
           {/* Dati anagrafici extra */}
           <div className="pt-2 border-t border-border">
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">Dati anagrafici</p>
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Sesso">
+                <Select value={form.sesso || ""} onValueChange={(v) => set_val("sesso", v)}>
+                  <SelectTrigger className="h-10 w-full rounded-lg">
+                    <SelectValue placeholder="Seleziona" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="F">Femmina</SelectItem>
+                    <SelectItem value="M">Maschio</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
               <Field label="Telefono">
-                <input value={form.telefono} onChange={(e) => set_val("telefono", e.target.value)} className={input_cls} />
+                <input value={form.telefono} onChange={(e) => set_val("telefono", e.target.value)} placeholder="+41 79 123 45 67" className={input_cls} />
+              </Field>
+            </div>
+            <div className="mt-3">
+              <Field label="Codice fiscale (opzionale)">
+                <input value={form.codice_fiscale} onChange={(e) => set_val("codice_fiscale", e.target.value)} className={input_cls} />
               </Field>
             </div>
             <div className="mt-3 space-y-3">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Indirizzo di residenza</p>
-              <Field label="Via">
-                <input
-                  value={form.indirizzo_via}
-                  onChange={(e) => set_val("indirizzo_via", e.target.value)}
-                  className={input_cls}
-                />
+              <Field label="Indirizzo (via e numero)">
+                <input value={form.indirizzo} onChange={(e) => set_val("indirizzo", e.target.value)} className={input_cls} />
               </Field>
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,120px)_minmax(0,1fr)_minmax(0,180px)]">
-                <Field label="NAP">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,110px)_minmax(0,1fr)_minmax(0,140px)]">
+                <Field label="CAP">
                   <input
-                    value={form.indirizzo_nap}
-                    onChange={(e) => set_val("indirizzo_nap", e.target.value)}
-                    maxLength={10}
+                    value={form.cap}
+                    onChange={(e) => set_val("cap", e.target.value.replace(/[^0-9]/g, "").slice(0, 5))}
+                    placeholder="6900"
                     className={input_cls}
                   />
                 </Field>
-                <Field label="Località">
-                  <input
-                    value={form.indirizzo_localita}
-                    onChange={(e) => set_val("indirizzo_localita", e.target.value)}
-                    className={input_cls}
-                  />
+                <Field label="Città">
+                  <input value={form.citta} onChange={(e) => set_val("citta", e.target.value)} className={input_cls} />
                 </Field>
-                <Field label="Nazione">
-                  <Select value={form.indirizzo_nazione} onValueChange={(v) => set_val("indirizzo_nazione", v)}>
+                <Field label="Cantone">
+                  <Select value={form.cantone || ""} onValueChange={(v) => set_val("cantone", v)}>
                     <SelectTrigger className="h-10 w-full rounded-lg">
-                      <SelectValue placeholder="Seleziona nazione" />
+                      <SelectValue placeholder="—" />
                     </SelectTrigger>
                     <SelectContent>
-                      {NAZIONI_INDIRIZZO.map((nazione) => (
-                        <SelectItem key={nazione.value} value={nazione.value}>
-                          {nazione.label}
-                        </SelectItem>
+                      {CANTONI_CH.map((c) => (
+                        <SelectItem key={c} value={c}>{c}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </Field>
               </div>
+              {form.cap && form.cap.length > 0 && form.cap.length !== 4 && (
+                <p className="text-xs text-destructive">CAP svizzero: 4 cifre</p>
+              )}
             </div>
           </div>
 
@@ -452,36 +469,92 @@ const AtletaModal: React.FC<{
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">Genitore 1</p>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Nome">
-                <input
-                  value={form.genitore1_nome}
-                  onChange={(e) => set_val("genitore1_nome", e.target.value)}
-                  className={input_cls}
-                />
+                <input value={form.genitore1_nome} onChange={(e) => set_val("genitore1_nome", e.target.value)} className={input_cls} />
               </Field>
               <Field label="Cognome">
-                <input
-                  value={form.genitore1_cognome}
-                  onChange={(e) => set_val("genitore1_cognome", e.target.value)}
-                  className={input_cls}
-                />
+                <input value={form.genitore1_cognome} onChange={(e) => set_val("genitore1_cognome", e.target.value)} className={input_cls} />
               </Field>
               <Field label="Telefono">
-                <input
-                  value={form.genitore1_telefono}
-                  onChange={(e) => set_val("genitore1_telefono", e.target.value)}
-                  className={input_cls}
-                />
+                <input value={form.genitore1_telefono} onChange={(e) => set_val("genitore1_telefono", e.target.value)} placeholder="+41 ..." className={input_cls} />
               </Field>
               <Field label="Email">
-                <input
-                  type="email"
-                  value={form.genitore1_email}
-                  onChange={(e) => set_val("genitore1_email", e.target.value)}
-                  className={input_cls}
-                />
+                <input type="email" value={form.genitore1_email} onChange={(e) => set_val("genitore1_email", e.target.value)} className={input_cls} />
               </Field>
             </div>
+            <div className="mt-3 space-y-3">
+              <Field label="Indirizzo (via e numero)">
+                <input value={form.genitore1_indirizzo} onChange={(e) => set_val("genitore1_indirizzo", e.target.value)} className={input_cls} />
+              </Field>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,110px)_minmax(0,1fr)_minmax(0,140px)]">
+                <Field label="CAP">
+                  <input value={form.genitore1_cap} onChange={(e) => set_val("genitore1_cap", e.target.value.replace(/[^0-9]/g, "").slice(0,5))} className={input_cls} />
+                </Field>
+                <Field label="Città">
+                  <input value={form.genitore1_citta} onChange={(e) => set_val("genitore1_citta", e.target.value)} className={input_cls} />
+                </Field>
+                <Field label="Cantone">
+                  <Select value={form.genitore1_cantone || ""} onValueChange={(v) => set_val("genitore1_cantone", v)}>
+                    <SelectTrigger className="h-10 w-full rounded-lg"><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectContent>
+                      {CANTONI_CH.map((c) => (<SelectItem key={c} value={c}>{c}</SelectItem>))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+              </div>
+            </div>
           </div>
+
+          {/* Genitore 2 — collassabile */}
+          <div className="pt-2 border-t border-border">
+            <button
+              type="button"
+              onClick={() => set_show_g2((v) => !v)}
+              className="w-full flex items-center justify-between text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3 hover:text-foreground"
+            >
+              <span>Genitore 2 (opzionale)</span>
+              <span className="text-base leading-none">{show_g2 ? "−" : "+"}</span>
+            </button>
+            {show_g2 && (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Nome">
+                    <input value={form.genitore2_nome} onChange={(e) => set_val("genitore2_nome", e.target.value)} className={input_cls} />
+                  </Field>
+                  <Field label="Cognome">
+                    <input value={form.genitore2_cognome} onChange={(e) => set_val("genitore2_cognome", e.target.value)} className={input_cls} />
+                  </Field>
+                  <Field label="Telefono">
+                    <input value={form.genitore2_telefono} onChange={(e) => set_val("genitore2_telefono", e.target.value)} placeholder="+41 ..." className={input_cls} />
+                  </Field>
+                  <Field label="Email">
+                    <input type="email" value={form.genitore2_email} onChange={(e) => set_val("genitore2_email", e.target.value)} className={input_cls} />
+                  </Field>
+                </div>
+                <div className="mt-3 space-y-3">
+                  <Field label="Indirizzo (via e numero)">
+                    <input value={form.genitore2_indirizzo} onChange={(e) => set_val("genitore2_indirizzo", e.target.value)} className={input_cls} />
+                  </Field>
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,110px)_minmax(0,1fr)_minmax(0,140px)]">
+                    <Field label="CAP">
+                      <input value={form.genitore2_cap} onChange={(e) => set_val("genitore2_cap", e.target.value.replace(/[^0-9]/g, "").slice(0,5))} className={input_cls} />
+                    </Field>
+                    <Field label="Città">
+                      <input value={form.genitore2_citta} onChange={(e) => set_val("genitore2_citta", e.target.value)} className={input_cls} />
+                    </Field>
+                    <Field label="Cantone">
+                      <Select value={form.genitore2_cantone || ""} onValueChange={(v) => set_val("genitore2_cantone", v)}>
+                        <SelectTrigger className="h-10 w-full rounded-lg"><SelectValue placeholder="—" /></SelectTrigger>
+                        <SelectContent>
+                          {CANTONI_CH.map((c) => (<SelectItem key={c} value={c}>{c}</SelectItem>))}
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
 
 
           <Field label="Note">
@@ -829,7 +902,7 @@ const AthletesPage: React.FC = () => {
                 <div>
                   <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Dati personali</p>
                   <div className="grid grid-cols-2 gap-2">
-                    {([["Telefono", atleta.telefono], ["Indirizzo", [atleta.indirizzo_via, atleta.indirizzo_nap, atleta.indirizzo_localita].filter(Boolean).join(" ") || atleta.indirizzo]] as [string, string | undefined][]).map(([l, v]) => (
+                    {([["Telefono", atleta.telefono], ["Indirizzo", [atleta.indirizzo, [atleta.cap, atleta.citta].filter(Boolean).join(" "), atleta.cantone].filter(Boolean).join(", ")]] as [string, string | undefined][]).map(([l, v]) => (
                       <div key={l} className="bg-muted/30 rounded-lg px-3 py-2">
                         <p className="text-xs text-muted-foreground">{l}</p>
                         <p className="text-sm font-medium text-foreground">{v || <span className="text-muted-foreground/40 italic">—</span>}</p>
