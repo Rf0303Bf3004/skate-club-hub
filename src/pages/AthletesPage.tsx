@@ -902,7 +902,7 @@ const AthletesPage: React.FC = () => {
                 <div>
                   <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Dati personali</p>
                   <div className="grid grid-cols-2 gap-2">
-                    {([["Telefono", atleta.telefono], ["Indirizzo", [atleta.indirizzo_via, atleta.indirizzo_nap, atleta.indirizzo_localita].filter(Boolean).join(" ") || atleta.indirizzo]] as [string, string | undefined][]).map(([l, v]) => (
+                    {([["Telefono", atleta.telefono], ["Indirizzo", [atleta.indirizzo, [atleta.cap, atleta.citta].filter(Boolean).join(" "), atleta.cantone].filter(Boolean).join(", ")]] as [string, string | undefined][]).map(([l, v]) => (
                       <div key={l} className="bg-muted/30 rounded-lg px-3 py-2">
                         <p className="text-xs text-muted-foreground">{l}</p>
                         <p className="text-sm font-medium text-foreground">{v || <span className="text-muted-foreground/40 italic">—</span>}</p>
