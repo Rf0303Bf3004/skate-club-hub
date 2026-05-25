@@ -38,7 +38,10 @@ export const SelectLivello: React.FC<SelectLivelloProps> = ({
 
   const opzioni = React.useMemo<LivelloRow[]>(() => {
     if (fase === "qualsiasi") return livelli;
-    return livelli.filter((l) => l.fase === fase);
+    // Compat: 'comune' = pulcini + amatori; 'carriera' = artistica
+    const allowed =
+      fase === "comune" ? ["pulcini", "amatori"] : fase === "carriera" ? ["artistica"] : [fase as string];
+    return livelli.filter((l) => allowed.includes(l.fase));
   }, [livelli, fase]);
 
   const default_null_label =
