@@ -78,14 +78,30 @@ const PublicRoutes = ({ children }: { children: React.ReactNode }) => {
       </BrowserRouter>
     );
   }
-  if (path === "/portale" || path.startsWith("/portale/") || path === "/portale-recovery" || path === "/reset-password") {
+  if (
+    path === "/mio-club" || path.startsWith("/mio-club/") ||
+    path === "/portale" || path.startsWith("/portale/") ||
+    path === "/portale-recovery" || path === "/reset-password"
+  ) {
     return (
       <BrowserRouter>
         <Routes>
-          <Route path="/portale" element={<PortaleLoginPage />} />
+          {/* Redirect permanente da vecchio /portale → /mio-club */}
+          <Route path="/portale" element={<Navigate to="/mio-club" replace />} />
+          <Route path="/portale/home" element={<Navigate to="/mio-club/home" replace />} />
+          <Route path="/portale/calendario" element={<Navigate to="/mio-club/calendario" replace />} />
+          <Route path="/portale/eventi" element={<Navigate to="/mio-club/eventi" replace />} />
+          <Route path="/portale/notizie" element={<Navigate to="/mio-club/notizie" replace />} />
+          <Route path="/portale/profilo" element={<Navigate to="/mio-club/profilo" replace />} />
+          <Route path="/portale/profilo/atleta" element={<Navigate to="/mio-club/profilo/atleta" replace />} />
+          <Route path="/portale/profilo/corsi" element={<Navigate to="/mio-club/profilo/corsi" replace />} />
+          <Route path="/portale/profilo/fatture" element={<Navigate to="/mio-club/profilo/fatture" replace />} />
+          <Route path="/portale/profilo/convenzioni" element={<Navigate to="/mio-club/profilo/convenzioni" replace />} />
+
+          <Route path="/mio-club" element={<PortaleLoginPage />} />
           <Route path="/portale-recovery" element={<RecoveryPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route path="/portale" element={<PortaleLayout />}>
+          <Route path="/mio-club" element={<PortaleLayout />}>
             <Route path="home" element={<PortaleHomePage />} />
             <Route path="calendario" element={<PortaleCalendarioPage />} />
             <Route path="eventi" element={<PortaleEventiPage />} />

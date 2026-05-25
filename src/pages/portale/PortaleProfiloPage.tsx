@@ -6,13 +6,13 @@ import { useTranslation } from "react-i18next";
 const PortaleProfiloPage: React.FC = () => {
   const { t } = useTranslation("portale");
   const location = useLocation();
-  const at_root = location.pathname === "/portale/profilo" || location.pathname === "/portale/profilo/";
+  const at_root = location.pathname === "/mio-club/profilo" || location.pathname === "/mio-club/profilo/";
 
   const subnav = [
-    { to: "/portale/profilo/atleta", icon: User, label: t("profilo.tab_atleta") },
-    { to: "/portale/profilo/corsi", icon: GraduationCap, label: t("profilo.tab_corsi") },
-    { to: "/portale/profilo/fatture", icon: CreditCard, label: t("profilo.tab_fatture") },
-    { to: "/portale/profilo/convenzioni", icon: Sparkles, label: t("profilo.tab_convenzioni") },
+    { to: "/mio-club/profilo/atleta", icon: User, label: t("profilo.tab_atleta") },
+    { to: "/mio-club/profilo/corsi", icon: GraduationCap, label: t("profilo.tab_corsi") },
+    { to: "/mio-club/profilo/fatture", icon: CreditCard, label: t("profilo.tab_fatture") },
+    { to: "/mio-club/profilo/convenzioni", icon: Sparkles, label: t("profilo.tab_convenzioni") },
   ];
 
   return (

@@ -16,7 +16,7 @@ const PortaleLayout: React.FC = () => {
     (async () => {
       const s = await portale_restore_session();
       if (!s) {
-        navigate("/portale", { replace: true });
+        navigate("/mio-club", { replace: true });
       } else {
         set_session(s);
       }
@@ -26,7 +26,7 @@ const PortaleLayout: React.FC = () => {
 
   const handle_logout = async () => {
     await portale_logout();
-    navigate("/portale", { replace: true });
+    navigate("/mio-club", { replace: true });
   };
 
   if (loading || !session) {
@@ -38,11 +38,11 @@ const PortaleLayout: React.FC = () => {
   }
 
   const items = [
-    { to: "/portale/home", icon: Home, label: t("menu.home") },
-    { to: "/portale/calendario", icon: Calendar, label: t("menu.calendario") },
-    { to: "/portale/eventi", icon: Sparkles, label: t("menu.eventi") },
-    { to: "/portale/notizie", icon: MessageSquare, label: t("menu.notizie") },
-    { to: "/portale/profilo", icon: User, label: t("menu.profilo") },
+    { to: "/mio-club/home", icon: Home, label: t("menu.home") },
+    { to: "/mio-club/calendario", icon: Calendar, label: t("menu.calendario") },
+    { to: "/mio-club/eventi", icon: Sparkles, label: t("menu.eventi") },
+    { to: "/mio-club/notizie", icon: MessageSquare, label: t("menu.notizie") },
+    { to: "/mio-club/profilo", icon: User, label: t("menu.profilo") },
   ];
 
   const iniziali = `${session.atleta.nome?.[0] ?? ""}${session.atleta.cognome?.[0] ?? ""}`.toUpperCase();

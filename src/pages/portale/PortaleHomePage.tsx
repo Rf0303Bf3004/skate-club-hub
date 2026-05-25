@@ -9,19 +9,20 @@ const PortaleHomePage: React.FC = () => {
   const { t } = useTranslation("portale");
 
   const tiles = [
-    { to: "/portale/calendario", icon: Calendar, label: t("menu.calendario"), color: "bg-indigo-500" },
-    { to: "/portale/eventi", icon: Sparkles, label: t("menu.eventi"), color: "bg-orange-500" },
-    { to: "/portale/profilo/corsi", icon: GraduationCap, label: t("menu.corsi"), color: "bg-emerald-500" },
-    { to: "/portale/profilo/fatture", icon: CreditCard, label: t("menu.fatture"), color: "bg-sky-500" },
-    { to: "/portale/profilo", icon: User, label: t("menu.profilo"), color: "bg-purple-500" },
+    { to: "/mio-club/calendario", icon: Calendar, label: t("menu.calendario"), color: "bg-indigo-500" },
+    { to: "/mio-club/eventi", icon: Sparkles, label: t("menu.eventi"), color: "bg-orange-500" },
+    { to: "/mio-club/profilo/corsi", icon: GraduationCap, label: t("menu.corsi"), color: "bg-emerald-500" },
+    { to: "/mio-club/profilo/fatture", icon: CreditCard, label: t("menu.fatture"), color: "bg-sky-500" },
+    { to: "/mio-club/profilo", icon: User, label: t("menu.profilo"), color: "bg-purple-500" },
   ];
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       <section className="bg-gradient-to-r from-sky-500 to-indigo-600 text-white rounded-3xl p-6 lg:p-8 shadow-lg">
-        <p className="text-sm opacity-90">{t("home.benvenuto")}</p>
-        <h1 className="text-2xl lg:text-3xl font-bold mt-1">{session.atleta.nome} {session.atleta.cognome}</h1>
-        {session.club?.nome && <p className="text-sm opacity-90 mt-2">{session.club.nome}</p>}
+        <h1 className="text-3xl lg:text-4xl font-bold tracking-tight">
+          Ciao {session.atleta.nome}!
+        </h1>
+        {session.club?.nome && <p className="text-sm lg:text-base opacity-90 mt-2">{session.club.nome}</p>}
       </section>
 
       <section>
