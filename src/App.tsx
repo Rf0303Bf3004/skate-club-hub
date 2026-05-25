@@ -174,7 +174,17 @@ const AuthenticatedApp = () => {
     );
   }
 
-  if (!is_authenticated) return <LoginPage />;
+  if (!is_authenticated) {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/staff" element={<LoginPage />} />
+          <Route path="/" element={<LandingPage />} />
+          <Route path="*" element={<LandingPage />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
 
   return (
     <BrowserRouter>
