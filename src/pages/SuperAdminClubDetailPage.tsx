@@ -142,16 +142,93 @@ const SuperAdminClubDetailPage: React.FC = () => {
         <p className="text-sm text-muted-foreground">{club.citta || "—"}</p>
       </div>
 
+      <Card>
+        <CardHeader><CardTitle>Anagrafica club</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="space-y-1 md:col-span-2">
+              <Label className="text-xs">Nome club</Label>
+              <Input value={anag.nome ?? ""} onChange={(e) => set_a("nome", e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Sigla</Label>
+              <Input value={anag.sigla ?? ""} onChange={(e) => set_a("sigla", e.target.value.toUpperCase())} maxLength={8} />
+            </div>
+            <div className="space-y-1 md:col-span-3">
+              <Label className="text-xs">Indirizzo (via e numero)</Label>
+              <Input value={anag.indirizzo ?? ""} onChange={(e) => set_a("indirizzo", e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">CAP</Label>
+              <Input value={anag.cap ?? ""} onChange={(e) => set_a("cap", e.target.value.replace(/[^0-9]/g, "").slice(0,5))} placeholder="6900" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Città</Label>
+              <Input value={anag.citta ?? ""} onChange={(e) => set_a("citta", e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Cantone</Label>
+              <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={anag.cantone ?? ""} onChange={(e) => set_a("cantone", e.target.value)}>
+                <option value="">—</option>
+                {CANTONI_CH.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Email</Label>
+              <Input type="email" value={anag.email ?? ""} onChange={(e) => set_a("email", e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Telefono</Label>
+              <Input value={anag.telefono ?? ""} onChange={(e) => set_a("telefono", e.target.value)} placeholder="+41 ..." />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Sito web</Label>
+              <Input value={anag.sito_web ?? ""} onChange={(e) => set_a("sito_web", e.target.value)} placeholder="https://..." />
+            </div>
+            <div className="space-y-1 md:col-span-3">
+              <Label className="text-xs">N. tessera federale</Label>
+              <Input value={anag.numero_tessera_federale ?? ""} onChange={(e) => set_a("numero_tessera_federale", e.target.value)} />
+            </div>
+          </div>
+
+          <div className="border-t pt-4 space-y-3">
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Dati fiscali e bancari</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Partita IVA</Label>
+                <Input value={anag.partita_iva ?? ""} onChange={(e) => set_a("partita_iva", e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Numero IVA svizzero</Label>
+                <Input value={anag.numero_iva_chf ?? ""} onChange={(e) => set_a("numero_iva_chf", e.target.value.toUpperCase())} placeholder="CHE-123.456.789 MWST" />
+                {!iva_valido && (<p className="text-xs text-destructive">Formato: CHE-XXX.XXX.XXX (MWST/IVA/TVA opzionale)</p>)}
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">IBAN</Label>
+                <Input value={anag.iban ?? ""} onChange={(e) => set_a("iban", e.target.value.toUpperCase().replace(/[^A-Z0-9\s]/g, ""))} placeholder="CH56 0483 5012 3456 7800 9" maxLength={26} />
+                {!iban_valido && (<p className="text-xs text-destructive">IBAN svizzero: inizia con CH, 21 caratteri</p>)}
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Intestatario IBAN</Label>
+                <Input value={anag.intestatario_iban ?? ""} onChange={(e) => set_a("intestatario_iban", e.target.value)} />
+              </div>
+              <div className="space-y-1 md:col-span-2">
+                <Label className="text-xs">TWINT QR URL</Label>
+                <Input value={anag.twint_qr_url ?? ""} onChange={(e) => set_a("twint_qr_url", e.target.value)} placeholder="https://..." />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between border-t pt-3">
+            <p className="text-xs text-muted-foreground">Atleti attivi: <b className="text-foreground">{n_atleti}</b></p>
+            <Button onClick={() => salva_anagrafica.mutate()} disabled={salva_anagrafica.isPending || !iva_valido || !iban_valido}>
+              {salva_anagrafica.isPending ? "..." : "Salva anagrafica"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader><CardTitle>{t("club_detail.anagrafica")}</CardTitle></CardHeader>
-          <CardContent className="space-y-1 text-sm">
-            <div><b>Indirizzo:</b> {club.indirizzo || "—"}</div>
-            <div><b>Email:</b> {club.email || "—"}</div>
-            <div><b>Telefono:</b> {club.telefono || "—"}</div>
-            <div><b>Atleti attivi:</b> {n_atleti}</div>
-          </CardContent>
-        </Card>
         <Card>
           <CardHeader><CardTitle>{t("club_detail.tariffazione")}</CardTitle></CardHeader>
           <CardContent className="space-y-3">
