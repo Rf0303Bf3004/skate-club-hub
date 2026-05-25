@@ -193,6 +193,10 @@ const AtletaTab: React.FC = () => {
                 cognome={atleta.genitore1_cognome}
                 email={atleta.genitore1_email}
                 tel={atleta.genitore1_telefono}
+                indirizzo={atleta.genitore1_indirizzo}
+                cap={atleta.genitore1_cap}
+                citta={atleta.genitore1_citta}
+                cantone={atleta.genitore1_cantone}
                 idx={0}
               />
             )}
@@ -202,6 +206,10 @@ const AtletaTab: React.FC = () => {
                 cognome={atleta.genitore2_cognome}
                 email={atleta.genitore2_email}
                 tel={atleta.genitore2_telefono}
+                indirizzo={atleta.genitore2_indirizzo}
+                cap={atleta.genitore2_cap}
+                citta={atleta.genitore2_citta}
+                cantone={atleta.genitore2_cantone}
                 idx={1}
               />
             )}
