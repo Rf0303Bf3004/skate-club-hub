@@ -114,7 +114,8 @@ const AtletaTab: React.FC = () => {
           <Row label="Sesso">{atleta.sesso === "F" ? "Femmina" : atleta.sesso === "M" ? "Maschio" : "—"}</Row>
           <Row label="Codice atleta" mono>{atleta.codice_atleta ?? "—"}</Row>
           <Row label="Categoria"><span className="capitalize">{atleta.categoria ?? "—"}</span></Row>
-          <Row label="Indirizzo">{atleta.indirizzo || "—"}</Row>
+          <Row label="Indirizzo">{indirizzo_atleta}</Row>
+          <Row label="Codice fiscale">{atleta.codice_fiscale || "—"}</Row>
           <Row label="Telefono">
             {atleta.telefono ? (
               <a href={`tel:${atleta.telefono}`} className="text-sky-600 hover:text-sky-700">{atleta.telefono}</a>
