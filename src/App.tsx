@@ -62,6 +62,8 @@ import AtletaTab from "@/pages/portale/profilo/AtletaTab";
 import CorsiTab from "@/pages/portale/profilo/CorsiTab";
 import FattureTab from "@/pages/portale/profilo/FattureTab";
 import ConvenzioniTab from "@/pages/portale/profilo/ConvenzioniTab";
+import LandingPage from "@/pages/LandingPage";
+
 
 const queryClient = new QueryClient();
 
@@ -172,13 +174,24 @@ const AuthenticatedApp = () => {
     );
   }
 
-  if (!is_authenticated) return <LoginPage />;
+  if (!is_authenticated) {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/staff" element={<LoginPage />} />
+          <Route path="/" element={<LandingPage />} />
+          <Route path="*" element={<LandingPage />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
 
   return (
     <BrowserRouter>
       <MainLayout>
         <Routes>
           <Route path="/" element={<SmartHome />} />
+          <Route path="/staff" element={<Navigate to="/" replace />} />
           <Route path="/atleti" element={<AthletesPage />} />
           <Route path="/atleti/:id" element={<AthletesPage />} />
           <Route path="/istruttori" element={<InstructorsPage />} />

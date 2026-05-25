@@ -95,12 +95,8 @@ const LoginPage: React.FC = () => {
             <p className="text-sm text-muted-foreground">
               {t('login.new_club_question')} <a href="/registrati" className="text-primary underline">{t('login.register_here')}</a>
             </p>
-            <div className="pt-2 border-t border-border">
-              <a href="/mio-club" className="text-sm text-sky-600 hover:underline font-medium">
-                🎿 Accesso Atleti / Genitori
-              </a>
-            </div>
           </div>
+
         </div>
       </div>
     </div>
