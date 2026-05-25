@@ -60,7 +60,7 @@ const SuperAdminFatturaDetailPage: React.FC = () => {
     if (Number(f.importo_atleti_chf ?? 0) > 0 || Number(f.n_atleti ?? 0) > 0) {
       out.push({
         descrizione: `${f.n_atleti} atleti × CHF ${Number(f.prezzo_per_atleta_chf).toFixed(2)}/mese`,
-        importo: Number(f.importo_atleti_chf ?? (f.n_atleti * Number(f.prezzo_per_atleta_chf))),
+        importo: Number(f.importo_atleti_chf) > 0 ? Number(f.importo_atleti_chf) : Number(f.n_atleti) * Number(f.prezzo_per_atleta_chf),
       });
     }
     if (Number(f.importo_setup_chf ?? 0) > 0) out.push({ descrizione: "Costo setup iniziale", importo: Number(f.importo_setup_chf) });
