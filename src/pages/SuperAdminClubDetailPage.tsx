@@ -62,6 +62,11 @@ const SuperAdminClubDetailPage: React.FC = () => {
     if (club) {
       set_prezzo(Number(club.prezzo_per_atleta_chf ?? 5));
       set_fee(Number(club.fee_fissa_chf ?? 50));
+      set_mesi_fee(Number(club.mesi_fatturazione_fee ?? 12));
+      set_mesi_atleti(Number(club.mesi_fatturazione_atleti ?? 12));
+      set_mese_inizio(Number(club.mese_inizio_fatturazione ?? 1));
+      set_costo_setup(Number(club.costo_setup_chf ?? 0));
+      set_setup_fatt(!!club.setup_fatturato);
       set_anag({
         nome: club.nome ?? "",
         sigla: club.sigla ?? "",
