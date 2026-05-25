@@ -637,11 +637,12 @@ export function use_corsi_completi() {
   return { corsi_completi, corsi, disp_ghiaccio, ...rest };
 }
 
-// ─── Livelli (master) ──────────────────────────────────────
+// ─── Livelli (master, modello multi-paese/fase) ──────────────
 export type LivelloRow = {
-  id: number;
+  id: string;
+  paese: string;
   nome: string;
-  fase: "comune" | "carriera" | string;
+  fase: "pulcini" | "amatori" | "artistica" | string;
   ordine: number;
   attivo: boolean;
 };
