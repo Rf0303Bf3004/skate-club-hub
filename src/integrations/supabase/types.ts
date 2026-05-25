@@ -1666,12 +1666,25 @@ export type Database = {
           email_inviata_at: string | null
           id: string
           importo: number | null
+          intestatario_cantone: string | null
+          intestatario_cap: string | null
+          intestatario_citta: string | null
+          intestatario_cognome: string | null
+          intestatario_email: string | null
+          intestatario_indirizzo: string | null
+          intestatario_nome: string | null
           note: string | null
           numero: string | null
           pagata: boolean | null
+          pdf_url: string | null
           periodo: string | null
           riferimento_id: string | null
-          stato: string | null
+          righe: Json | null
+          sconto_causale: string | null
+          sconto_importo_chf: number
+          sconto_note: string | null
+          sconto_percentuale: number
+          stato: string
           tipo: string | null
         }
         Insert: {
@@ -1685,12 +1698,25 @@ export type Database = {
           email_inviata_at?: string | null
           id?: string
           importo?: number | null
+          intestatario_cantone?: string | null
+          intestatario_cap?: string | null
+          intestatario_citta?: string | null
+          intestatario_cognome?: string | null
+          intestatario_email?: string | null
+          intestatario_indirizzo?: string | null
+          intestatario_nome?: string | null
           note?: string | null
           numero?: string | null
           pagata?: boolean | null
+          pdf_url?: string | null
           periodo?: string | null
           riferimento_id?: string | null
-          stato?: string | null
+          righe?: Json | null
+          sconto_causale?: string | null
+          sconto_importo_chf?: number
+          sconto_note?: string | null
+          sconto_percentuale?: number
+          stato?: string
           tipo?: string | null
         }
         Update: {
@@ -1704,12 +1730,25 @@ export type Database = {
           email_inviata_at?: string | null
           id?: string
           importo?: number | null
+          intestatario_cantone?: string | null
+          intestatario_cap?: string | null
+          intestatario_citta?: string | null
+          intestatario_cognome?: string | null
+          intestatario_email?: string | null
+          intestatario_indirizzo?: string | null
+          intestatario_nome?: string | null
           note?: string | null
           numero?: string | null
           pagata?: boolean | null
+          pdf_url?: string | null
           periodo?: string | null
           riferimento_id?: string | null
-          stato?: string | null
+          righe?: Json | null
+          sconto_causale?: string | null
+          sconto_importo_chf?: number
+          sconto_note?: string | null
+          sconto_percentuale?: number
+          stato?: string
           tipo?: string | null
         }
         Relationships: [
