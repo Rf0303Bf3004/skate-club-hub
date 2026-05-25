@@ -7,8 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { Building2, Users, TrendingUp, Wallet, RefreshCw } from "lucide-react";
+import { Building2, Users, TrendingUp, Wallet, FileText, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 
 function periodo_corrente_str(): string {
   const d = new Date();
@@ -19,8 +20,19 @@ type ClubRow = {
   id: string;
   nome: string;
   citta: string | null;
+  indirizzo: string | null;
+  cap: string | null;
+  cantone: string | null;
+  email: string | null;
+  partita_iva: string | null;
+  iban: string | null;
   prezzo_per_atleta_chf: number;
   fee_fissa_chf: number;
+  mesi_fatturazione_fee: number;
+  mesi_fatturazione_atleti: number;
+  mese_inizio_fatturazione: number;
+  costo_setup_chf: number;
+  setup_fatturato: boolean;
   attivo: boolean;
 };
 type FatturaClubRow = {
@@ -28,25 +40,62 @@ type FatturaClubRow = {
   club_id: string;
   periodo: string;
   importo_chf: number;
+  stato: string | null;
   pagata: boolean;
   data_scadenza: string;
   data_pagamento: string | null;
 };
+
+// Calcola se un mese (1..12) rientra in N mesi consecutivi a partire da mese_inizio
+function mese_attivo(mese_corrente: number, mese_inizio: number, n_mesi: number): boolean {
+  if (n_mesi <= 0) return false;
+  if (n_mesi >= 12) return true;
+  for (let i = 0; i < n_mesi; i++) {
+    const m = ((mese_inizio - 1 + i) % 12) + 1;
+    if (m === mese_corrente) return true;
+  }
+  return false;
+}
+
+function anagrafica_completa(c: ClubRow): boolean {
+  return !!(c.nome && c.indirizzo && c.cap && c.citta && c.cantone && c.email && c.iban);
+}
+
+function calcola_righe(c: ClubRow, n_atleti: number, mese: number, esiste_gia_fattura: boolean) {
+  const fee_attivo = mese_attivo(mese, c.mese_inizio_fatturazione, c.mesi_fatturazione_fee);
+  const atl_attivo = mese_attivo(mese, c.mese_inizio_fatturazione, c.mesi_fatturazione_atleti);
+  const fee = fee_attivo ? Number(c.fee_fissa_chf ?? 0) : 0;
+  const prezzo = Number(c.prezzo_per_atleta_chf ?? 0);
+  const importo_atleti = atl_attivo ? n_atleti * prezzo : 0;
+  const importo_setup = !c.setup_fatturato && !esiste_gia_fattura ? Number(c.costo_setup_chf ?? 0) : 0;
+  return {
+    fee,
+    fee_attivo,
+    atl_attivo,
+    prezzo,
+    importo_atleti,
+    importo_setup,
+    totale: Number((fee + importo_atleti + importo_setup).toFixed(2)),
+  };
+}
 
 const SuperAdminBillingDashboardPage: React.FC = () => {
   const { t } = useTranslation("superadmin");
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [search, set_search] = useState("");
+  const [preview_open, set_preview_open] = useState(false);
+  const [confirming, set_confirming] = useState(false);
   const periodo = periodo_corrente_str();
+  const mese_corrente = new Date().getMonth() + 1;
   const today = new Date().toISOString().slice(0, 10);
 
   const { data: clubs = [] } = useQuery({
-    queryKey: ["sa_clubs"],
+    queryKey: ["sa_clubs_v2"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("clubs")
-        .select("id, nome, citta, prezzo_per_atleta_chf, fee_fissa_chf, attivo")
+        .select("id, nome, citta, indirizzo, cap, cantone, email, partita_iva, iban, prezzo_per_atleta_chf, fee_fissa_chf, attivo, mesi_fatturazione_fee, mesi_fatturazione_atleti, mese_inizio_fatturazione, costo_setup_chf, setup_fatturato")
         .order("nome");
       if (error) throw error;
       return (data ?? []) as ClubRow[];
@@ -68,11 +117,11 @@ const SuperAdminBillingDashboardPage: React.FC = () => {
   });
 
   const { data: fatture = [] } = useQuery({
-    queryKey: ["sa_fatture_clubs"],
+    queryKey: ["sa_fatture_clubs_v2"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("fatture_clubs" as any)
-        .select("id, club_id, periodo, importo_chf, pagata, data_scadenza, data_pagamento")
+        .select("id, club_id, periodo, importo_chf, stato, pagata, data_scadenza, data_pagamento")
         .order("periodo", { ascending: false });
       if (error) throw error;
       return (data ?? []) as unknown as FatturaClubRow[];
@@ -85,40 +134,93 @@ const SuperAdminBillingDashboardPage: React.FC = () => {
     return m;
   }, [fatture]);
 
+  const fattura_esistente = (cid: string) =>
+    fatture.some((f) => f.club_id === cid && f.periodo === periodo);
+
+  const anteprima_righe = useMemo(() => {
+    return clubs.filter((c) => c.attivo).map((c) => {
+      const n = atleti_counts[c.id] ?? 0;
+      const esiste = fattura_esistente(c.id);
+      const r = calcola_righe(c, n, mese_corrente, esiste);
+      return { club: c, n_atleti: n, esiste, ...r };
+    });
+  }, [clubs, atleti_counts, fatture, mese_corrente, periodo]);
+
+  const totale_aggregato = anteprima_righe.reduce(
+    (a, r) => a + (r.esiste ? 0 : r.totale),
+    0,
+  );
+
   const kpi = useMemo(() => {
     const club_attivi = clubs.filter((c) => c.attivo).length;
     const atleti_totali = Object.values(atleti_counts).reduce((a, b) => a + b, 0);
-    const mese = fatture.filter((f) => f.periodo === periodo);
-    const mrr_incassato = mese.filter((f) => f.pagata).reduce((a, f) => a + Number(f.importo_chf), 0);
-    // MRR previsto = somma calcolata su fee_fissa + n_atleti * prezzo per ogni club attivo
-    const mrr_previsto = clubs.filter((c) => c.attivo).reduce((a, c) => {
-      const n = atleti_counts[c.id] ?? 0;
-      return a + Number(c.fee_fissa_chf ?? 50) + n * Number(c.prezzo_per_atleta_chf ?? 5);
-    }, 0);
+    const mese_arr = fatture.filter((f) => f.periodo === periodo);
+    const mrr_incassato = mese_arr
+      .filter((f) => (f.stato === "pagata") || f.pagata)
+      .reduce((a, f) => a + Number(f.importo_chf), 0);
+    const mrr_previsto = anteprima_righe.reduce((a, r) => a + r.totale, 0);
     return { club_attivi, atleti_totali, mrr_previsto, mrr_incassato };
-  }, [clubs, atleti_counts, fatture, periodo]);
+  }, [clubs, atleti_counts, fatture, periodo, anteprima_righe]);
 
-  const genera_mut = useMutation({
-    mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke("fattura-clubs-mensile", { body: {} });
+  const conferma_genera = async () => {
+    set_confirming(true);
+    try {
+      const scadenza = new Date();
+      scadenza.setDate(scadenza.getDate() + 30);
+      const data_scadenza = scadenza.toISOString().slice(0, 10);
+
+      const da_inserire = anteprima_righe
+        .filter((r) => !r.esiste && r.totale > 0)
+        .map((r) => ({
+          club_id: r.club.id,
+          periodo,
+          n_atleti: r.n_atleti,
+          prezzo_per_atleta_chf: r.prezzo,
+          fee_fissa_chf: r.fee,
+          importo_atleti_chf: r.importo_atleti,
+          importo_setup_chf: r.importo_setup,
+          importo_chf: r.totale,
+          stato: "bozza",
+          data_emissione: today,
+          data_scadenza,
+        }));
+
+      if (da_inserire.length === 0) {
+        toast({ title: "Nessuna fattura da generare per questo periodo" });
+        set_preview_open(false);
+        set_confirming(false);
+        return;
+      }
+
+      const { error } = await supabase
+        .from("fatture_clubs" as any)
+        .upsert(da_inserire as any, { onConflict: "club_id,periodo", ignoreDuplicates: true });
       if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      toast({ title: t("dashboard.azioni.generazione_ok") });
-      qc.invalidateQueries({ queryKey: ["sa_fatture_clubs"] });
-    },
-    onError: (e: any) => toast({ title: t("dashboard.azioni.generazione_err"), description: String(e?.message ?? e), variant: "destructive" }),
-  });
 
-  const stato_ultima = (cid: string): { label: string; cls: string; data?: string | null } => {
+      toast({ title: `${da_inserire.length} bozza/e create per ${periodo}` });
+      set_preview_open(false);
+      qc.invalidateQueries({ queryKey: ["sa_fatture_clubs_v2"] });
+      navigate("/superadmin/tabellone");
+    } catch (e: any) {
+      toast({ title: "Errore", description: String(e?.message ?? e), variant: "destructive" });
+    } finally {
+      set_confirming(false);
+    }
+  };
+
+  const stato_ultima = (cid: string): { label: string; cls: string } => {
     const lista = fatture_per_club[cid] ?? [];
-    if (lista.length === 0) return { label: t("dashboard.stato.nessuna"), cls: "bg-muted text-muted-foreground" };
+    if (lista.length === 0) return { label: "Nessuna", cls: "bg-muted text-muted-foreground" };
     const ult = lista[0];
-    const pagata_ult = lista.find((f) => f.pagata);
-    if (ult.pagata) return { label: t("dashboard.stato.pagata"), cls: "bg-emerald-100 text-emerald-800", data: ult.data_pagamento };
-    if (ult.data_scadenza < today) return { label: t("dashboard.stato.scaduta"), cls: "bg-red-100 text-red-800", data: pagata_ult?.data_pagamento };
-    return { label: t("dashboard.stato.da_pagare"), cls: "bg-amber-100 text-amber-800", data: pagata_ult?.data_pagamento };
+    const stato = ult.stato ?? (ult.pagata ? "pagata" : "bozza");
+    if (stato === "pagata") return { label: "Pagata", cls: "bg-emerald-100 text-emerald-800" };
+    if (stato === "bozza") return { label: "Bozza", cls: "bg-slate-200 text-slate-800" };
+    if (stato === "inviata") {
+      if (ult.data_scadenza < today) return { label: "Scaduta", cls: "bg-red-100 text-red-800" };
+      return { label: "Inviata", cls: "bg-amber-100 text-amber-800" };
+    }
+    if (stato === "scaduta") return { label: "Scaduta", cls: "bg-red-100 text-red-800" };
+    return { label: stato, cls: "bg-muted text-muted-foreground" };
   };
 
   const filtrati = useMemo(() => {
@@ -127,24 +229,18 @@ const SuperAdminBillingDashboardPage: React.FC = () => {
   }, [clubs, search]);
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">{t("dashboard.title")}</h1>
-          <p className="text-sm text-muted-foreground">{t("dashboard.subtitle")}</p>
-        </div>
-        <Button onClick={() => genera_mut.mutate()} disabled={genera_mut.isPending}>
-          <RefreshCw className={`w-4 h-4 mr-2 ${genera_mut.isPending ? "animate-spin" : ""}`} />
-          {t("dashboard.azioni.genera_ora")}
-        </Button>
+    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+      <div>
+        <h1 className="text-2xl font-bold">Dashboard SuperAdmin</h1>
+        <p className="text-sm text-muted-foreground">Vista di sistema · Periodo corrente {periodo}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
-          { icon: Building2, label: t("dashboard.kpi.club_attivi"), value: kpi.club_attivi },
-          { icon: Users, label: t("dashboard.kpi.atleti_totali"), value: kpi.atleti_totali },
-          { icon: TrendingUp, label: t("dashboard.kpi.mrr_previsto"), value: `CHF ${kpi.mrr_previsto.toFixed(2)}` },
-          { icon: Wallet, label: t("dashboard.kpi.mrr_incassato"), value: `CHF ${kpi.mrr_incassato.toFixed(2)}` },
+          { icon: Building2, label: "Club attivi", value: kpi.club_attivi },
+          { icon: Users, label: "Atleti totali", value: kpi.atleti_totali },
+          { icon: TrendingUp, label: "MRR previsto questo mese", value: `CHF ${kpi.mrr_previsto.toFixed(2)}` },
+          { icon: Wallet, label: "MRR incassato questo mese", value: `CHF ${kpi.mrr_incassato.toFixed(2)}` },
         ].map((k) => (
           <Card key={k.label}>
             <CardContent className="p-4 flex items-center gap-3">
@@ -160,58 +256,147 @@ const SuperAdminBillingDashboardPage: React.FC = () => {
         ))}
       </div>
 
+      <Card className="border-primary/30 bg-primary/5">
+        <CardContent className="p-5 flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center">
+              <FileText className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <p className="font-semibold">Genera fatture del mese ({periodo})</p>
+              <p className="text-xs text-muted-foreground">Anteprima e conferma · crea le bozze nel Tabellone</p>
+            </div>
+          </div>
+          <Button size="lg" onClick={() => set_preview_open(true)}>
+            <FileText className="w-4 h-4 mr-2" /> Genera fatture del mese
+          </Button>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between gap-3 flex-wrap">
-            <CardTitle>{t("dashboard.lista_club")}</CardTitle>
-            <Input value={search} onChange={(e) => set_search(e.target.value)} placeholder={t("dashboard.cerca")} className="max-w-xs" />
+            <CardTitle>Club</CardTitle>
+            <Input value={search} onChange={(e) => set_search(e.target.value)} placeholder="Cerca club…" className="max-w-xs" />
           </div>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-left text-xs uppercase text-muted-foreground">
-                  <th className="py-2 px-3">{t("dashboard.col.nome")}</th>
-                  <th className="py-2 px-3 text-right">{t("dashboard.col.atleti")}</th>
-                  <th className="py-2 px-3 text-right">{t("dashboard.col.canone_base")}</th>
-                  <th className="py-2 px-3 text-right">{t("dashboard.col.prezzo")}</th>
-                  <th className="py-2 px-3 text-right">{t("dashboard.col.importo")}</th>
-                  <th className="py-2 px-3">{t("dashboard.col.stato")}</th>
-                  <th className="py-2 px-3">{t("dashboard.col.ultima_pagata")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtrati.map((c) => {
-                  const n = atleti_counts[c.id] ?? 0;
-                  const prezzo = Number(c.prezzo_per_atleta_chf ?? 5);
-                  const fee = Number(c.fee_fissa_chf ?? 50);
-                  const importo = fee + n * prezzo;
-                  const st = stato_ultima(c.id);
-                  return (
-                    <tr key={c.id} className="border-b hover:bg-muted/40 cursor-pointer"
-                      onClick={() => navigate(`/superadmin/clubs/${c.id}`)}>
-                      <td className="py-2 px-3">
-                        <div className="font-medium">{c.nome}</div>
-                        <div className="text-xs text-muted-foreground">{c.citta || "—"}</div>
-                      </td>
-                      <td className="py-2 px-3 text-right tabular-nums">{n}</td>
-                      <td className="py-2 px-3 text-right tabular-nums">{fee.toFixed(2)}</td>
-                      <td className="py-2 px-3 text-right tabular-nums">{prezzo.toFixed(2)}</td>
-                      <td className="py-2 px-3 text-right tabular-nums font-semibold">CHF {importo.toFixed(2)}</td>
-                      <td className="py-2 px-3"><Badge className={st.cls}>{st.label}</Badge></td>
-                      <td className="py-2 px-3 text-xs text-muted-foreground">{st.data ?? "—"}</td>
-                    </tr>
-                  );
-                })}
-                {filtrati.length === 0 && (
-                  <tr><td colSpan={7} className="py-8 text-center text-muted-foreground">—</td></tr>
-                )}
-              </tbody>
-            </table>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+            {filtrati.map((c) => {
+              const n = atleti_counts[c.id] ?? 0;
+              const esiste = fattura_esistente(c.id);
+              const r = calcola_righe(c, n, mese_corrente, esiste);
+              const st = stato_ultima(c.id);
+              const completa = anagrafica_completa(c);
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => navigate(`/superadmin/clubs/${c.id}`)}
+                  className="text-left border rounded-xl p-4 hover:bg-muted/40 hover:border-primary/40 transition bg-card"
+                >
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div>
+                      <div className="font-semibold">{c.nome}</div>
+                      <div className="text-xs text-muted-foreground">{c.citta || "—"}</div>
+                    </div>
+                    <Badge className={st.cls}>{st.label}</Badge>
+                  </div>
+                  <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                    {completa ? (
+                      <><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /><span>Anagrafica completa</span></>
+                    ) : (
+                      <><AlertCircle className="w-3.5 h-3.5 text-amber-600" /><span>Anagrafica mancante</span></>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <p className="text-muted-foreground">Atleti</p>
+                      <p className="font-semibold">{n}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Prezzo/atleta</p>
+                      <p className="font-semibold tabular-nums">CHF {Number(c.prezzo_per_atleta_chf ?? 0).toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Fee mensile</p>
+                      <p className="font-semibold tabular-nums">CHF {Number(c.fee_fissa_chf ?? 0).toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Previsto mese</p>
+                      <p className="font-semibold tabular-nums">CHF {r.totale.toFixed(2)}</p>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+            {filtrati.length === 0 && (
+              <div className="col-span-full py-8 text-center text-muted-foreground">Nessun club</div>
+            )}
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={preview_open} onOpenChange={set_preview_open}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Anteprima fatture · {periodo}</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto border rounded-lg">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50 sticky top-0">
+                <tr className="text-left text-xs uppercase">
+                  <th className="py-2 px-3">Club</th>
+                  <th className="py-2 px-3 text-right">Atleti</th>
+                  <th className="py-2 px-3 text-right">Canone</th>
+                  <th className="py-2 px-3 text-right">Atleti × Prezzo</th>
+                  <th className="py-2 px-3 text-right">Setup</th>
+                  <th className="py-2 px-3 text-right">Totale</th>
+                  <th className="py-2 px-3">Stato</th>
+                </tr>
+              </thead>
+              <tbody>
+                {anteprima_righe.map((r) => (
+                  <tr key={r.club.id} className="border-b">
+                    <td className="py-2 px-3 font-medium">{r.club.nome}</td>
+                    <td className="py-2 px-3 text-right tabular-nums">{r.n_atleti}</td>
+                    <td className="py-2 px-3 text-right tabular-nums">
+                      {r.fee_attivo ? `CHF ${r.fee.toFixed(2)}` : <span className="text-muted-foreground">—</span>}
+                    </td>
+                    <td className="py-2 px-3 text-right tabular-nums">
+                      {r.atl_attivo ? `${r.n_atleti} × ${r.prezzo.toFixed(2)} = ${r.importo_atleti.toFixed(2)}` : <span className="text-muted-foreground">—</span>}
+                    </td>
+                    <td className="py-2 px-3 text-right tabular-nums">
+                      {r.importo_setup > 0 ? `CHF ${r.importo_setup.toFixed(2)}` : <span className="text-muted-foreground">—</span>}
+                    </td>
+                    <td className="py-2 px-3 text-right tabular-nums font-semibold">CHF {r.totale.toFixed(2)}</td>
+                    <td className="py-2 px-3">
+                      {r.esiste
+                        ? <Badge className="bg-slate-200 text-slate-700">Già esistente</Badge>
+                        : r.totale > 0
+                          ? <Badge className="bg-emerald-100 text-emerald-800">Da creare</Badge>
+                          : <Badge className="bg-muted text-muted-foreground">Nessun importo</Badge>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="bg-muted/40 font-semibold">
+                  <td colSpan={5} className="py-2 px-3 text-right">Totale da creare</td>
+                  <td className="py-2 px-3 text-right tabular-nums">CHF {totale_aggregato.toFixed(2)}</td>
+                  <td />
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => set_preview_open(false)} disabled={confirming}>Annulla</Button>
+            <Button onClick={conferma_genera} disabled={confirming}>
+              {confirming ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Conferma e crea bozze
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
