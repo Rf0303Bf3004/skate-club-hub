@@ -63,6 +63,8 @@ import AtletaTab from "@/pages/portale/profilo/AtletaTab";
 import CorsiTab from "@/pages/portale/profilo/CorsiTab";
 import FattureTab from "@/pages/portale/profilo/FattureTab";
 import ConvenzioniTab from "@/pages/portale/profilo/ConvenzioniTab";
+import FatturaDetailPage from "@/pages/portale/profilo/FatturaDetailPage";
+import SegreteriaFatturaDetailPage from "@/pages/SegreteriaFatturaDetailPage";
 import LandingPage from "@/pages/LandingPage";
 
 
@@ -113,6 +115,7 @@ const PublicRoutes = ({ children }: { children: React.ReactNode }) => {
               <Route path="atleta" element={<AtletaTab />} />
               <Route path="corsi" element={<CorsiTab />} />
               <Route path="fatture" element={<FattureTab />} />
+              <Route path="fatture/:id" element={<FatturaDetailPage />} />
               <Route path="convenzioni" element={<ConvenzioniTab />} />
             </Route>
           </Route>
@@ -206,6 +209,7 @@ const AuthenticatedApp = () => {
           <Route path="/eventi/:id" element={<EventiPage />} />
           <Route path="/fatture" element={<InvoicesPage />} />
           <Route path="/segreteria/fatture" element={<SegreteriaFatturePage />} />
+          <Route path="/segreteria/fatture/:id" element={<SegreteriaFatturaDetailPage />} />
           <Route path="/comunicazioni" element={<CommunicationsPage />} />
           <Route path="/stagioni" element={<SeasonsPage />} />
           <Route path="/campi-eventi" element={<CampiEventiPage />} />

@@ -478,7 +478,7 @@ const SegreteriaFatturePage: React.FC = () => {
                         variant="outline"
                         onClick={() => {
                           set_modal_cella(null);
-                          navigate(`/fatture?id=${f.id}`);
+                          navigate(`/segreteria/fatture/${f.id}`);
                         }}
                       >
                         {t("tabellone.modal.apri_fattura")}
