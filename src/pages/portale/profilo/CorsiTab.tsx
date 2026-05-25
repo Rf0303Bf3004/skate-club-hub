@@ -18,19 +18,31 @@ const CorsiTab: React.FC = () => {
   const [richieste, set_richieste] = useState<Set<string>>(new Set());
   const [privates, set_privates] = useState<any[]>([]);
 
+  const [livelli_autorizzati, set_livelli_autorizzati] = React.useState<Set<string>>(new Set());
+
   const load = async () => {
     if (!session) return;
     const oggi = new Date().toISOString().slice(0, 10);
-    const [c, i, r, lp] = await Promise.all([
+    const [c, i, r, lp, pa] = await Promise.all([
       supabase.from("corsi").select("*").eq("club_id", session.atleta.club_id).eq("attivo", true).order("nome"),
       supabase.from("iscrizioni_corsi").select("corso_id").eq("atleta_id", session.atleta.id).eq("attiva", true),
       supabase.from("richieste_iscrizione").select("corso_id").eq("atleta_id", session.atleta.id).eq("stato", "in_attesa"),
       supabase.from("lezioni_private_atlete").select("lezione_id, lezioni_private(*)").eq("atleta_id", session.atleta.id),
+      (supabase.from as any)("percorsi_atleta")
+        .select("livello_in_preparazione_id, livelli_extra_autorizzati_ids")
+        .eq("atleta_id", session.atleta.id)
+        .eq("attivo", true),
     ]);
     set_corsi(c.data ?? []);
     set_iscr(new Set((i.data ?? []).map((x: any) => x.corso_id)));
     set_richieste(new Set((r.data ?? []).map((x: any) => x.corso_id)));
     set_privates(((lp.data ?? []) as any[]).map((x) => x.lezioni_private).filter((l) => l && !l.annullata && l.data >= oggi));
+    const autorizzati = new Set<string>();
+    ((pa as any)?.data ?? []).forEach((p: any) => {
+      if (p.livello_in_preparazione_id) autorizzati.add(p.livello_in_preparazione_id);
+      (p.livelli_extra_autorizzati_ids ?? []).forEach((id: string) => autorizzati.add(id));
+    });
+    set_livelli_autorizzati(autorizzati);
     set_loading(false);
   };
 
