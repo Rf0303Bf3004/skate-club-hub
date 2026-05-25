@@ -143,12 +143,27 @@ const AtletaModal: React.FC<{
     licenza_sis_categoria: atleta?.licenza_sis_categoria || "",
     licenza_sis_disciplina: atleta?.licenza_sis_disciplina || "",
     licenza_sis_validita_a: atleta?.licenza_sis_validita_a?.split("T")[0] || "",
-    indirizzo_via: atleta?.indirizzo_via || "",
-    indirizzo_nap: atleta?.indirizzo_nap || "",
-    indirizzo_localita: atleta?.indirizzo_localita || "",
-    indirizzo_nazione: atleta?.indirizzo_nazione || "CH",
+    sesso: atleta?.sesso || "",
+    codice_fiscale: atleta?.codice_fiscale || "",
+    indirizzo: atleta?.indirizzo || "",
+    cap: atleta?.cap || "",
+    citta: atleta?.citta || "",
+    cantone: atleta?.cantone || "",
     telefono: atleta?.telefono || "",
+    genitore2_nome: atleta?.genitore2_nome || "",
+    genitore2_cognome: atleta?.genitore2_cognome || "",
+    genitore2_telefono: atleta?.genitore2_telefono || "",
+    genitore2_email: atleta?.genitore2_email || "",
+    genitore1_indirizzo: atleta?.genitore1_indirizzo || "",
+    genitore1_cap: atleta?.genitore1_cap || "",
+    genitore1_citta: atleta?.genitore1_citta || "",
+    genitore1_cantone: atleta?.genitore1_cantone || "",
+    genitore2_indirizzo: atleta?.genitore2_indirizzo || "",
+    genitore2_cap: atleta?.genitore2_cap || "",
+    genitore2_citta: atleta?.genitore2_citta || "",
+    genitore2_cantone: atleta?.genitore2_cantone || "",
   });
+  const [show_g2, set_show_g2] = useState(!!(atleta?.genitore2_nome || atleta?.genitore2_email));
   const [confirm_delete, set_confirm_delete] = useState(false);
   const [uploading_foto, set_uploading_foto] = useState(false);
   const [uploading_disco, set_uploading_disco] = useState(false);
