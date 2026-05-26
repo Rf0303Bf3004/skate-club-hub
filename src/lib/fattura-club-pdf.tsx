@@ -64,11 +64,17 @@ const s = StyleSheet.create({
 
 export const FatturaClubDocument: React.FC<{ data: FatturaClubData }> = ({ data }) => {
   const dest = data.club;
+  const paese_iso = (dest.paese_iso || "CH").toUpperCase();
+  const cap_len_max = paese_iso === "CH" ? 4 : 5;
+  const territorio = paese_iso === "CH"
+    ? [dest.cantone, "Svizzera"].filter(Boolean).join(" – ")
+    : [dest.provincia, dest.regione, "Italia"].filter(Boolean).join(" – ");
   const indirizzo_dest = [
     dest.indirizzo,
     [dest.cap, dest.citta].filter(Boolean).join(" "),
-    [dest.cantone, dest.paese || "CH"].filter(Boolean).join(" – "),
+    territorio,
   ].filter(Boolean);
+  void cap_len_max;
 
   return (
     <Document>
