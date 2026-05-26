@@ -950,6 +950,7 @@ async function build_fatture_mese(anno: number, mese: number) {
       tipo: "Lezione Privata",
       riferimento_id: null,
       periodo,
+      ...snap_of(atleta_id),
     });
   }
 
