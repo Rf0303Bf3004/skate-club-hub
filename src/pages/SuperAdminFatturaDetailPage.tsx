@@ -291,16 +291,39 @@ const SuperAdminFatturaDetailPage: React.FC = () => {
 
       <Dialog open={open_preview} onOpenChange={set_open_preview}>
         <DialogContent className="max-w-6xl h-[92vh] flex flex-col">
-          <DialogHeader><DialogTitle>Anteprima PDF</DialogTitle></DialogHeader>
-          <div className="flex-1 min-h-0">
-            {pdf_data && (
-              <PDFViewer width="100%" height="100%" showToolbar={false}>
-                <FatturaClubDocument data={pdf_data} />
-              </PDFViewer>
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between pr-8">
+              <span>Anteprima PDF</span>
+              {pdf_data && (
+                <PDFDownloadLink
+                  document={<FatturaClubDocument data={pdf_data} />}
+                  fileName={`Fattura_${f.periodo}_${club.nome.replace(/\s+/g, "_")}.pdf`}
+                >
+                  {({ loading }) => (
+                    <Button size="sm" disabled={loading}>
+                      <Download className="w-4 h-4 mr-2" />
+                      {loading ? "Preparazione…" : "Scarica PDF"}
+                    </Button>
+                  )}
+                </PDFDownloadLink>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 min-h-0 bg-muted/30 rounded">
+            {pdf_data && open_preview && (
+              <BlobProvider document={<FatturaClubDocument data={pdf_data} />}>
+                {({ url, loading, error }) => {
+                  if (loading) return <div className="flex items-center justify-center h-full text-muted-foreground">Generazione PDF…</div>;
+                  if (error) return <div className="flex items-center justify-center h-full text-destructive p-4 text-sm">Errore generazione PDF: {String(error.message ?? error)}</div>;
+                  if (!url) return null;
+                  return <iframe src={url} title="Anteprima fattura" className="w-full h-full border-0" />;
+                }}
+              </BlobProvider>
             )}
           </div>
         </DialogContent>
       </Dialog>
+
 
       <Dialog open={open_pay} onOpenChange={set_open_pay}>
         <DialogContent>
