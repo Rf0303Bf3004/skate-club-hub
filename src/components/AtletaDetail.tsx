@@ -1404,27 +1404,68 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
               atleta={form}
               on_updated={(nuovo) => upd("codice_atleta", nuovo)}
             />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {[
-                { label: t("genitore_1"), prefix: "genitore1" },
-                { label: t("genitore_2"), prefix: "genitore2" },
-              ].map(({ label, prefix }) => (
-                <div key={prefix} className="bg-card rounded-xl shadow-card p-5 space-y-3">
-                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{label}</h4>
-                  {["nome", "cognome", "telefono", "email"].map((field) => (
-                    <div key={field} className="space-y-1.5">
-                      <Label className="text-sm text-muted-foreground">{t(field)}</Label>
-                      <Input
-                        type={field === "email" ? "email" : "text"}
-                        value={form[`${prefix}_${field}`] || ""}
-                        onChange={(e) => upd(`${prefix}_${field}`, e.target.value)}
-                        className="h-9"
-                      />
+            {[
+              { label: t("genitore_1"), prefix: "genitore1", collapsible: false },
+              { label: t("genitore_2"), prefix: "genitore2", collapsible: true },
+            ].map(({ label, prefix, collapsible }) => {
+              const has_g2_data = prefix === "genitore2" && (form.genitore2_nome || form.genitore2_email || form.genitore2_indirizzo);
+              const body = (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {["nome", "cognome", "telefono", "email"].map((field) => (
+                      <div key={field} className="space-y-1.5">
+                        <Label className="text-sm text-muted-foreground">{t(field)}</Label>
+                        <Input
+                          type={field === "email" ? "email" : field === "telefono" ? "tel" : "text"}
+                          value={form[`${prefix}_${field}`] || ""}
+                          onChange={(e) => upd(`${prefix}_${field}`, e.target.value)}
+                          className="h-9"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-sm text-muted-foreground">Indirizzo</Label>
+                    <Input value={form[`${prefix}_indirizzo`] || ""} onChange={(e) => upd(`${prefix}_indirizzo`, e.target.value)} className="h-9" placeholder="Via, numero" />
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-sm text-muted-foreground">CAP</Label>
+                      <Input value={form[`${prefix}_cap`] || ""} onChange={(e) => upd(`${prefix}_cap`, e.target.value)} maxLength={4} className="h-9" />
                     </div>
-                  ))}
+                    <div className="col-span-2 space-y-1.5">
+                      <Label className="text-sm text-muted-foreground">Città</Label>
+                      <Input value={form[`${prefix}_citta`] || ""} onChange={(e) => upd(`${prefix}_citta`, e.target.value)} className="h-9" />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-sm text-muted-foreground">Cantone</Label>
+                    <Select value={form[`${prefix}_cantone`] || ""} onValueChange={(v) => upd(`${prefix}_cantone`, v)}>
+                      <SelectTrigger className="h-9"><SelectValue placeholder="—" /></SelectTrigger>
+                      <SelectContent>
+                        {CANTONI_CH.map(([code, nome]) => (
+                          <SelectItem key={code} value={code}>{code} — {nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-              ))}
-            </div>
+              );
+              if (collapsible) {
+                return (
+                  <details key={prefix} className="bg-card rounded-xl shadow-card p-5" open={!!has_g2_data}>
+                    <summary className="text-xs font-bold text-muted-foreground uppercase tracking-wider cursor-pointer select-none">{label}</summary>
+                    <div className="mt-4">{body}</div>
+                  </details>
+                );
+              }
+              return (
+                <div key={prefix} className="bg-card rounded-xl shadow-card p-5 space-y-4">
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{label}</h4>
+                  {body}
+                </div>
+              );
+            })}
           </TabsContent>
 
           {/* ── Fatture ── */}
