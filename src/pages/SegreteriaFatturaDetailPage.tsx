@@ -31,6 +31,7 @@ const SegreteriaFatturaDetailPage: React.FC = () => {
   const [loading, set_loading] = useState(true);
   const [saving, set_saving] = useState(false);
   const [f, set_f] = useState<FatturaFull | null>(null);
+  const [preview_open, set_preview_open] = useState(false);
   const [atleta, set_atleta] = useState<any>(null);
   const [club, set_club] = useState<any>(null);
   const [righe, set_righe] = useState<FatturaAtletaRiga[]>([]);
