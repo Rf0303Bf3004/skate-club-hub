@@ -7,8 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield, Save, X, RefreshCw, Copy, Eye, EyeOff, Upload, ArrowLeft } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-
-const CANTONI = ["AG","AI","AR","BE","BL","BS","FR","GE","GL","GR","JU","LU","NE","NW","OW","SG","SH","SO","SZ","TG","TI","UR","VD","VS","ZG","ZH"];
+import { AnagraficaTerritoriale } from "@/components/AnagraficaTerritoriale";
+import {
+  isValidPartitaIVA,
+  isValidIBAN,
+  getPartitaIVAPlaceholder,
+  getIBANPlaceholder,
+  getTelefonoPlaceholder,
+  type paese_iso,
+} from "@/lib/territori";
 
 function gen_password(): string {
   const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
