@@ -10,6 +10,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { ArrowLeft } from "lucide-react";
+import { AnagraficaTerritoriale } from "@/components/AnagraficaTerritoriale";
+import {
+  isValidPartitaIVA,
+  isValidIBAN,
+  getPartitaIVAPlaceholder,
+  getIBANPlaceholder,
+  getTelefonoPlaceholder,
+  type paese_iso,
+} from "@/lib/territori";
 
 const SuperAdminClubDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
