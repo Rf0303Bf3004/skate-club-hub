@@ -187,20 +187,28 @@ const SuperAdminClubDetailPage: React.FC = () => {
               <Label className="text-xs">Indirizzo (via e numero)</Label>
               <Input value={anag.indirizzo ?? ""} onChange={(e) => set_a("indirizzo", e.target.value)} />
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs">CAP</Label>
-              <Input value={anag.cap ?? ""} onChange={(e) => set_a("cap", e.target.value.replace(/[^0-9]/g, "").slice(0,5))} placeholder="6900" />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Città</Label>
-              <Input value={anag.citta ?? ""} onChange={(e) => set_a("citta", e.target.value)} />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Cantone</Label>
-              <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={anag.cantone ?? ""} onChange={(e) => set_a("cantone", e.target.value)}>
-                <option value="">—</option>
-                {CANTONI_CH.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
+            <div className="md:col-span-3">
+              <AnagraficaTerritoriale
+                values={{
+                  paese_iso: anag.paese_iso ?? "CH",
+                  indirizzo: anag.indirizzo,
+                  cap: anag.cap,
+                  citta: anag.citta,
+                  cantone: anag.cantone,
+                  regione: anag.regione,
+                  provincia: anag.provincia,
+                }}
+                onChange={(patch) =>
+                  set_anag((p) => ({
+                    ...p,
+                    ...Object.fromEntries(
+                      Object.entries(patch).map(([k, v]) => [k, (v ?? "") as string]),
+                    ),
+                    paese: (patch.paese_iso as string) ?? p.paese,
+                  }))
+                }
+                cols={2}
+              />
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Email</Label>
@@ -208,7 +216,7 @@ const SuperAdminClubDetailPage: React.FC = () => {
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Telefono</Label>
-              <Input value={anag.telefono ?? ""} onChange={(e) => set_a("telefono", e.target.value)} placeholder="+41 ..." />
+              <Input value={anag.telefono ?? ""} onChange={(e) => set_a("telefono", e.target.value)} placeholder={getTelefonoPlaceholder(paese)} />
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Sito web</Label>
