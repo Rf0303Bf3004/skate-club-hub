@@ -36,11 +36,9 @@ const SuperAdminClubDetailPage: React.FC = () => {
   const [anag, set_anag] = useState<Record<string, string>>({});
   const set_a = (k: string, v: string) => set_anag((p) => ({ ...p, [k]: v }));
 
-  const CANTONI_CH = ["AG","AI","AR","BE","BL","BS","FR","GE","GL","GR","JU","LU","NE","NW","OW","SG","SH","SO","SZ","TG","TI","UR","VD","VS","ZG","ZH"];
-  const iva_re = /^CHE-\d{3}\.\d{3}\.\d{3}( (MWST|IVA|TVA))?$/;
-  const iva_valido = !anag.numero_iva_chf || iva_re.test((anag.numero_iva_chf || "").trim());
-  const iban_clean = (anag.iban || "").replace(/\s/g, "");
-  const iban_valido = !iban_clean || (iban_clean.startsWith("CH") && iban_clean.length === 21);
+  const paese: paese_iso = ((anag.paese_iso || anag.paese) as paese_iso) || "CH";
+  const iva_valido = isValidPartitaIVA(paese, anag.partita_iva || "") && (paese !== "CH" || !anag.numero_iva_chf || isValidPartitaIVA("CH", anag.numero_iva_chf));
+  const iban_valido = isValidIBAN(paese, anag.iban || "");
 
   const { data: club } = useQuery({
     queryKey: ["sa_club_detail", id],
