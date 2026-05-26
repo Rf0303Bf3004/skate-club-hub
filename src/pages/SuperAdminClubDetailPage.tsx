@@ -45,7 +45,7 @@ const SuperAdminClubDetailPage: React.FC = () => {
     enabled: !!id,
     queryFn: async () => {
       const { data, error } = await supabase.from("clubs")
-        .select("id, nome, sigla, citta, indirizzo, cap, cantone, paese, email, telefono, sito_web, numero_tessera_federale, prezzo_per_atleta_chf, fee_fissa_chf, partita_iva, numero_iva_chf, iban, intestatario_iban, twint_qr_url, mesi_fatturazione_fee, mesi_fatturazione_atleti, mese_inizio_fatturazione, costo_setup_chf, setup_fatturato")
+        .select("id, nome, sigla, citta, indirizzo, cap, cantone, paese, paese_iso, regione, provincia, codice_fiscale, email, telefono, sito_web, numero_tessera_federale, prezzo_per_atleta_chf, fee_fissa_chf, partita_iva, numero_iva_chf, iban, intestatario_iban, twint_qr_url, mesi_fatturazione_fee, mesi_fatturazione_atleti, mese_inizio_fatturazione, costo_setup_chf, setup_fatturato")
         .eq("id", id!).maybeSingle();
       if (error) throw error;
       return data as any;
