@@ -234,12 +234,18 @@ const SuperAdminFatturaDetailPage: React.FC = () => {
         <Card>
           <CardHeader><CardTitle className="text-base">Intestatario</CardTitle></CardHeader>
           <CardContent className="text-sm space-y-0.5">
-            <p className="font-semibold">{club.nome}</p>
-            {club.indirizzo && <p>{club.indirizzo}</p>}
-            <p>{[club.cap, club.citta].filter(Boolean).join(" ")}</p>
-            <p>{[club.cantone, club.paese || "CH"].filter(Boolean).join(" – ")}</p>
-            {club.partita_iva && <p className="text-muted-foreground">P.IVA: {club.partita_iva}</p>}
-            {club.numero_iva_chf && <p className="text-muted-foreground">IVA: {club.numero_iva_chf}</p>}
+            <p className="font-semibold">{intest.nome}</p>
+            {intest.indirizzo && <p>{intest.indirizzo}</p>}
+            {(intest.cap || intest.citta) && <p>{[intest.cap, intest.citta].filter(Boolean).join(" ")}</p>}
+            {intest.cantone && <p>{intest.cantone}</p>}
+            {intest.partita_iva && <p className="text-muted-foreground">P.IVA: {intest.partita_iva}</p>}
+            {intest.numero_iva_chf && <p className="text-muted-foreground">IVA: {intest.numero_iva_chf}</p>}
+            {intest.iban && <p className="text-muted-foreground">IBAN: {intest.iban}</p>}
+            {intest_incompleto && (
+              <p className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                Intestazione fattura incompleta — completa l'anagrafica del club e rigenera la fattura.
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>
