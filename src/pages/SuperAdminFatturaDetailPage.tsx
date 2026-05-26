@@ -70,6 +70,19 @@ const SuperAdminFatturaDetailPage: React.FC = () => {
   const righe = edit_mode ? edit_righe : righe_default;
   const totale = righe.reduce((a, r) => a + Number(r.importo || 0), 0);
 
+  const intest = useMemo(() => ({
+    nome: f?.intestatario_nome ?? club?.nome ?? "",
+    indirizzo: f?.intestatario_indirizzo ?? club?.indirizzo ?? null,
+    cap: f?.intestatario_cap ?? club?.cap ?? null,
+    citta: f?.intestatario_citta ?? club?.citta ?? null,
+    cantone: f?.intestatario_cantone ?? club?.cantone ?? null,
+    partita_iva: f?.intestatario_partita_iva ?? club?.partita_iva ?? null,
+    numero_iva_chf: f?.intestatario_numero_iva_chf ?? club?.numero_iva_chf ?? null,
+    iban: f?.intestatario_iban ?? null,
+  }), [f, club]);
+
+  const intest_incompleto = !intest.indirizzo || !intest.cap || !intest.citta;
+
   const pdf_data: FatturaClubData | null = useMemo(() => {
     if (!f || !club) return null;
     return {
@@ -81,17 +94,18 @@ const SuperAdminFatturaDetailPage: React.FC = () => {
       totale,
       note: edit_mode ? edit_note : (f.note ?? ""),
       club: {
-        nome: club.nome,
-        indirizzo: club.indirizzo,
-        cap: club.cap,
-        citta: club.citta,
-        cantone: club.cantone,
+        nome: intest.nome,
+        indirizzo: intest.indirizzo ?? undefined,
+        cap: intest.cap ?? undefined,
+        citta: intest.citta ?? undefined,
+        cantone: intest.cantone ?? undefined,
         paese: club.paese,
-        partita_iva: club.partita_iva,
-        numero_iva_chf: club.numero_iva_chf,
+        partita_iva: intest.partita_iva ?? undefined,
+        numero_iva_chf: intest.numero_iva_chf ?? undefined,
+        iban: intest.iban ?? undefined,
       },
     };
-  }, [f, club, righe, totale, edit_mode, edit_note]);
+  }, [f, club, righe, totale, edit_mode, edit_note, intest]);
 
   const start_edit = () => {
     set_edit_righe(righe_default.length ? righe_default : [{ descrizione: "", importo: 0 }]);
