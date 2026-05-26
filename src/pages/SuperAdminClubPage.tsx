@@ -147,10 +147,15 @@ const SuperAdminClubPage: React.FC = () => {
             {clubs.length} club registrati
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={load_clubs} disabled={loading} className="gap-2">
-          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-          Aggiorna
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" onClick={() => (window.location.href = "/superadmin/clubs/nuovo")} className="gap-2">
+            <Building2 className="w-4 h-4" /> Nuovo club
+          </Button>
+          <Button variant="outline" size="sm" onClick={load_clubs} disabled={loading} className="gap-2">
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+            Aggiorna
+          </Button>
+        </div>
       </div>
 
       {/* Search */}
