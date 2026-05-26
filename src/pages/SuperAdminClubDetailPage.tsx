@@ -229,17 +229,24 @@ const SuperAdminClubDetailPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs">Partita IVA</Label>
-                <Input value={anag.partita_iva ?? ""} onChange={(e) => set_a("partita_iva", e.target.value)} />
+                <Input value={anag.partita_iva ?? ""} onChange={(e) => set_a("partita_iva", e.target.value)} placeholder={getPartitaIVAPlaceholder(paese)} />
+                {!iva_valido && (<p className="text-xs text-destructive">{paese === "CH" ? "Formato CH: CHE-XXX.XXX.XXX" : "P.IVA italiana: 11 cifre"}</p>)}
               </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Numero IVA svizzero</Label>
-                <Input value={anag.numero_iva_chf ?? ""} onChange={(e) => set_a("numero_iva_chf", e.target.value.toUpperCase())} placeholder="CHE-123.456.789 MWST" />
-                {!iva_valido && (<p className="text-xs text-destructive">Formato: CHE-XXX.XXX.XXX (MWST/IVA/TVA opzionale)</p>)}
-              </div>
+              {paese === "CH" ? (
+                <div className="space-y-1">
+                  <Label className="text-xs">Numero IVA svizzero</Label>
+                  <Input value={anag.numero_iva_chf ?? ""} onChange={(e) => set_a("numero_iva_chf", e.target.value.toUpperCase())} placeholder="CHE-123.456.789 MWST" />
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <Label className="text-xs">Codice fiscale (opzionale)</Label>
+                  <Input value={anag.codice_fiscale ?? ""} onChange={(e) => set_a("codice_fiscale", e.target.value.toUpperCase())} placeholder="RSSMRA80A01H501U" maxLength={16} />
+                </div>
+              )}
               <div className="space-y-1">
                 <Label className="text-xs">IBAN</Label>
-                <Input value={anag.iban ?? ""} onChange={(e) => set_a("iban", e.target.value.toUpperCase().replace(/[^A-Z0-9\s]/g, ""))} placeholder="CH56 0483 5012 3456 7800 9" maxLength={26} />
-                {!iban_valido && (<p className="text-xs text-destructive">IBAN svizzero: inizia con CH, 21 caratteri</p>)}
+                <Input value={anag.iban ?? ""} onChange={(e) => set_a("iban", e.target.value.toUpperCase().replace(/[^A-Z0-9\s]/g, ""))} placeholder={getIBANPlaceholder(paese)} maxLength={paese === "CH" ? 26 : 31} />
+                {!iban_valido && (<p className="text-xs text-destructive">{paese === "CH" ? "IBAN svizzero: inizia con CH, 21 caratteri" : "IBAN italiano: inizia con IT, 27 caratteri"}</p>)}
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Intestatario IBAN</Label>
