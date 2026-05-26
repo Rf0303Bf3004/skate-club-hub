@@ -38,7 +38,10 @@ const SuperAdminNewClubPage: React.FC = () => {
   const [cap, set_cap] = useState("");
   const [citta, set_citta] = useState("");
   const [cantone, set_cantone] = useState("");
-  const [paese, set_paese] = useState("Svizzera");
+  const [regione, set_regione] = useState<string | null>(null);
+  const [provincia, set_provincia] = useState<string | null>(null);
+  const [codice_fiscale, set_codice_fiscale] = useState("");
+  const [paese_code, set_paese_code] = useState<paese_iso>("CH");
   const [email_club, set_email_club] = useState("");
   const [telefono_club, set_telefono_club] = useState("");
   const [sito_web, set_sito_web] = useState("");
