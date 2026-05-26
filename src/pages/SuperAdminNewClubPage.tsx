@@ -196,35 +196,30 @@ const SuperAdminNewClubPage: React.FC = () => {
             <Input value={numero_tessera} onChange={(e) => set_numero_tessera(e.target.value)} />
           </div>
           <div className="sm:col-span-2">
-            <label className="text-xs text-muted-foreground">Indirizzo</label>
-            <Input value={indirizzo} onChange={(e) => set_indirizzo(e.target.value)} placeholder="Via Roma 1" />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground">CAP</label>
-            <Input value={cap} onChange={(e) => set_cap(e.target.value)} maxLength={4} placeholder="6900" />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground">Città</label>
-            <Input value={citta} onChange={(e) => set_citta(e.target.value)} placeholder="Lugano" />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground">Cantone</label>
-            <select value={cantone} onChange={(e) => set_cantone(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
-              <option value="">—</option>
-              {CANTONI.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground">Paese</label>
-            <Input value={paese} onChange={(e) => set_paese(e.target.value)} />
+            <AnagraficaTerritoriale
+              values={{
+                paese_iso: paese_code,
+                indirizzo, cap, citta, cantone, regione, provincia,
+              }}
+              onChange={(patch) => {
+                if (patch.paese_iso !== undefined) set_paese_code((patch.paese_iso as paese_iso) || "CH");
+                if (patch.indirizzo !== undefined) set_indirizzo(patch.indirizzo ?? "");
+                if (patch.cap !== undefined) set_cap(patch.cap ?? "");
+                if (patch.citta !== undefined) set_citta(patch.citta ?? "");
+                if (patch.cantone !== undefined) set_cantone(patch.cantone ?? "");
+                if (patch.regione !== undefined) set_regione(patch.regione ?? null);
+                if (patch.provincia !== undefined) set_provincia(patch.provincia ?? null);
+              }}
+              cols={2}
+            />
           </div>
           <div>
             <label className="text-xs text-muted-foreground">Email del club</label>
-            <Input type="email" value={email_club} onChange={(e) => set_email_club(e.target.value)} placeholder="info@club.ch" />
+            <Input type="email" value={email_club} onChange={(e) => set_email_club(e.target.value)} placeholder={paese_code === "CH" ? "info@club.ch" : "info@club.it"} />
           </div>
           <div>
             <label className="text-xs text-muted-foreground">Telefono</label>
-            <Input value={telefono_club} onChange={(e) => set_telefono_club(e.target.value)} />
+            <Input value={telefono_club} onChange={(e) => set_telefono_club(e.target.value)} placeholder={getTelefonoPlaceholder(paese_code)} />
           </div>
           <div className="sm:col-span-2">
             <label className="text-xs text-muted-foreground">Sito web</label>
@@ -232,12 +227,22 @@ const SuperAdminNewClubPage: React.FC = () => {
           </div>
           <div>
             <label className="text-xs text-muted-foreground">Partita IVA</label>
-            <Input value={partita_iva} onChange={(e) => set_partita_iva(e.target.value)} />
+            <Input value={partita_iva} onChange={(e) => set_partita_iva(e.target.value)} placeholder={getPartitaIVAPlaceholder(paese_code)} />
+            {partita_iva && !isValidPartitaIVA(paese_code, partita_iva) && (
+              <p className="text-xs text-destructive mt-1">{paese_code === "CH" ? "Formato CH: CHE-XXX.XXX.XXX" : "P.IVA italiana: 11 cifre"}</p>
+            )}
           </div>
-          <div>
-            <label className="text-xs text-muted-foreground">Numero IVA CH (CHE-XXX.XXX.XXX)</label>
-            <Input value={numero_iva_chf} onChange={(e) => set_numero_iva_chf(e.target.value)} />
-          </div>
+          {paese_code === "CH" ? (
+            <div>
+              <label className="text-xs text-muted-foreground">Numero IVA CH (CHE-XXX.XXX.XXX)</label>
+              <Input value={numero_iva_chf} onChange={(e) => set_numero_iva_chf(e.target.value)} />
+            </div>
+          ) : (
+            <div>
+              <label className="text-xs text-muted-foreground">Codice fiscale (opzionale)</label>
+              <Input value={codice_fiscale} onChange={(e) => set_codice_fiscale(e.target.value.toUpperCase())} maxLength={16} placeholder="RSSMRA80A01H501U" />
+            </div>
+          )}
           <div>
             <label className="text-xs text-muted-foreground">IBAN</label>
             <Input value={iban} onChange={(e) => set_iban(e.target.value)} placeholder="CH..." />
