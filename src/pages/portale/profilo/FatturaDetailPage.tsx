@@ -28,6 +28,7 @@ const FatturaDetailPage: React.FC = () => {
   const [email_to, set_email_to] = useState("");
   const [sending, set_sending] = useState(false);
   const [pay_open, set_pay_open] = useState(false);
+  const [preview_open, set_preview_open] = useState(false);
 
   useEffect(() => {
     (async () => {
