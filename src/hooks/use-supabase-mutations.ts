@@ -878,6 +878,25 @@ async function build_fatture_mese(anno: number, mese: number) {
   const dup_key = (a: string, t: string, r: string | null) => `${a}|${t}|${r ?? ""}`;
   const dup_set = new Set((esistenti ?? []).map((e: any) => dup_key(e.atleta_id, e.tipo, e.riferimento_id)));
 
+  // Snapshot intestatario (genitore1) per ogni atleta del club, usato sulle fatture create.
+  const { data: atleti_snap } = await supabase
+    .from("atleti")
+    .select("id, genitore1_nome, genitore1_cognome, genitore1_indirizzo, genitore1_cap, genitore1_citta, genitore1_cantone, genitore1_email")
+    .eq("club_id", cid());
+  const intest_map = new Map<string, any>();
+  for (const a of atleti_snap || []) {
+    intest_map.set((a as any).id, {
+      intestatario_nome: (a as any).genitore1_nome || null,
+      intestatario_cognome: (a as any).genitore1_cognome || null,
+      intestatario_indirizzo: (a as any).genitore1_indirizzo || null,
+      intestatario_cap: (a as any).genitore1_cap || null,
+      intestatario_citta: (a as any).genitore1_citta || null,
+      intestatario_cantone: (a as any).genitore1_cantone || null,
+      intestatario_email: (a as any).genitore1_email || null,
+    });
+  }
+  const snap_of = (atleta_id: string) => intest_map.get(atleta_id) ?? {};
+
   const fatture_da_creare: any[] = [];
 
   const { data: corsi } = await supabase.from("corsi").select("*").eq("club_id", cid()).eq("attivo", true);
