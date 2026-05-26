@@ -9,8 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { PDFViewer, pdf } from "@react-pdf/renderer";
-import { ArrowLeft, FileText, Send, CheckCircle2, Pencil, Plus, Trash2 } from "lucide-react";
+import { BlobProvider, PDFDownloadLink, pdf } from "@react-pdf/renderer";
+import { ArrowLeft, FileText, Send, CheckCircle2, Pencil, Plus, Trash2, Download } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { FatturaClubDocument, type FatturaClubData, type FatturaRiga } from "@/lib/fattura-club-pdf";
 
