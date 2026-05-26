@@ -155,6 +155,11 @@ const SegreteriaFatturaDetailPage: React.FC = () => {
         {/* Intestatario */}
         <div className="border border-border rounded-xl p-4 bg-muted/20">
           <h3 className="font-semibold mb-3 text-sm uppercase tracking-wide text-muted-foreground">Intestatario</h3>
+          {(!f.intestatario_nome || !f.intestatario_indirizzo || !f.intestatario_cap || !f.intestatario_citta) && (
+            <div className="mb-3 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+              Intestazione fattura incompleta — completa l'anagrafica del genitore nella scheda atleta e rigenera.
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div><Label>Nome</Label><Input disabled={!editable} value={f.intestatario_nome ?? ""} onChange={(e) => set_f({ ...f, intestatario_nome: e.target.value })} /></div>
             <div><Label>Cognome</Label><Input disabled={!editable} value={f.intestatario_cognome ?? ""} onChange={(e) => set_f({ ...f, intestatario_cognome: e.target.value })} /></div>
