@@ -1486,15 +1486,15 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                       .from("fatture")
                       .insert({
                         club_id,
-                        atleta_id: atleta.id,
+                        atleta_id: a.id,
                         stato: "bozza",
                         data_emissione: oggi,
                         data_scadenza: scad,
                         importo: 0,
                         righe: [],
                         descrizione: "Nuova fattura",
-                        intestatario_nome: form.genitore1_nome || atleta.nome || null,
-                        intestatario_cognome: (form as any).genitore1_cognome || atleta.cognome || null,
+                        intestatario_nome: form.genitore1_nome || a.nome || null,
+                        intestatario_cognome: (form as any).genitore1_cognome || a.cognome || null,
                         intestatario_email: form.genitore1_email || null,
                         intestatario_indirizzo: form.genitore1_indirizzo || null,
                         intestatario_cap: (form as any).genitore1_cap || null,
