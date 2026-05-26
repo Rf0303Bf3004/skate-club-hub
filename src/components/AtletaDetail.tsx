@@ -919,6 +919,56 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
               <EditRow label="TAG NFC" value={form.tag_nfc || ""} onChange={(v) => upd("tag_nfc", v)} />
 
               <div className="pt-3 border-t border-border space-y-3">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Indirizzo atleta</p>
+                <div className="space-y-1.5">
+                  <Label className="text-sm text-muted-foreground">Sesso</Label>
+                  <Select value={form.sesso || ""} onValueChange={(v) => upd("sesso", v)}>
+                    <SelectTrigger className="h-9"><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="F">Femmina</SelectItem>
+                      <SelectItem value="M">Maschio</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm text-muted-foreground">Indirizzo</Label>
+                  <Input value={form.indirizzo || ""} onChange={(e) => upd("indirizzo", e.target.value)} className="h-9" placeholder="Via, numero" />
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-sm text-muted-foreground">CAP</Label>
+                    <Input value={form.cap || ""} onChange={(e) => upd("cap", e.target.value)} maxLength={4} className="h-9" />
+                  </div>
+                  <div className="col-span-2 space-y-1.5">
+                    <Label className="text-sm text-muted-foreground">Città</Label>
+                    <Input value={form.citta || ""} onChange={(e) => upd("citta", e.target.value)} className="h-9" />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm text-muted-foreground">Cantone</Label>
+                  <Select value={form.cantone || ""} onValueChange={(v) => upd("cantone", v)}>
+                    <SelectTrigger className="h-9"><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectContent>
+                      {CANTONI_CH.map(([code, nome]) => (
+                        <SelectItem key={code} value={code}>{code} — {nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-sm text-muted-foreground">Telefono</Label>
+                    <Input type="tel" value={form.telefono || ""} onChange={(e) => upd("telefono", e.target.value)} className="h-9" placeholder="+41 ..." />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-sm text-muted-foreground">Codice fiscale</Label>
+                    <Input value={form.codice_fiscale || ""} onChange={(e) => upd("codice_fiscale", e.target.value)} className="h-9" />
+                  </div>
+                </div>
+              </div>
+
+
+              <div className="pt-3 border-t border-border space-y-3">
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Licenza Swiss Ice Skating</p>
                 <EditRow
                   label="N° licenza SIS"
