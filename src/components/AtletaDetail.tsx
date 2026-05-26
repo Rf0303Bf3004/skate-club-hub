@@ -47,6 +47,16 @@ const LIVELLI_COMUNI = ["Pulcini", "Stellina 1", "Stellina 2", "Stellina 3", "St
 const LIVELLI_CARRIERA = ["Interbronzo", "Bronzo", "Interargento", "Argento", "Interoro", "Oro"];
 const LIVELLI_PROGRESSIONE = [...LIVELLI_COMUNI, ...LIVELLI_CARRIERA];
 
+const CANTONI_CH = [
+  ["AG", "Argovia"], ["AI", "Appenzello Interno"], ["AR", "Appenzello Esterno"],
+  ["BE", "Berna"], ["BL", "Basilea Campagna"], ["BS", "Basilea Città"],
+  ["FR", "Friburgo"], ["GE", "Ginevra"], ["GL", "Glarona"], ["GR", "Grigioni"],
+  ["JU", "Giura"], ["LU", "Lucerna"], ["NE", "Neuchâtel"], ["NW", "Nidvaldo"],
+  ["OW", "Obvaldo"], ["SG", "San Gallo"], ["SH", "Sciaffusa"], ["SO", "Soletta"],
+  ["SZ", "Svitto"], ["TG", "Turgovia"], ["TI", "Ticino"], ["UR", "Uri"],
+  ["VD", "Vaud"], ["VS", "Vallese"], ["ZG", "Zugo"], ["ZH", "Zurigo"],
+] as const;
+
 // ─── NumInput ──────────────────────────────────────────────
 function to_num(v: string | number): number {
   if (typeof v === "number") return isNaN(v) ? 0 : v;
@@ -534,10 +544,25 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
         genitore1_cognome: form.genitore1_cognome,
         genitore1_telefono: form.genitore1_telefono,
         genitore1_email: form.genitore1_email,
+        genitore1_indirizzo: form.genitore1_indirizzo || null,
+        genitore1_cap: form.genitore1_cap || null,
+        genitore1_citta: form.genitore1_citta || null,
+        genitore1_cantone: form.genitore1_cantone || null,
         genitore2_nome: form.genitore2_nome,
         genitore2_cognome: form.genitore2_cognome,
         genitore2_telefono: form.genitore2_telefono,
         genitore2_email: form.genitore2_email,
+        genitore2_indirizzo: form.genitore2_indirizzo || null,
+        genitore2_cap: form.genitore2_cap || null,
+        genitore2_citta: form.genitore2_citta || null,
+        genitore2_cantone: form.genitore2_cantone || null,
+        sesso: form.sesso || null,
+        indirizzo: form.indirizzo || null,
+        cap: form.cap || null,
+        citta: form.citta || null,
+        cantone: form.cantone || null,
+        telefono: form.telefono || null,
+        codice_fiscale: form.codice_fiscale || null,
         attivo: form.attivo !== false,
         note: form.note,
         disco_in_preparazione: form.disco_in_preparazione,
@@ -892,6 +917,56 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                 type="number"
               />
               <EditRow label="TAG NFC" value={form.tag_nfc || ""} onChange={(v) => upd("tag_nfc", v)} />
+
+              <div className="pt-3 border-t border-border space-y-3">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Indirizzo atleta</p>
+                <div className="space-y-1.5">
+                  <Label className="text-sm text-muted-foreground">Sesso</Label>
+                  <Select value={form.sesso || ""} onValueChange={(v) => upd("sesso", v)}>
+                    <SelectTrigger className="h-9"><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="F">Femmina</SelectItem>
+                      <SelectItem value="M">Maschio</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm text-muted-foreground">Indirizzo</Label>
+                  <Input value={form.indirizzo || ""} onChange={(e) => upd("indirizzo", e.target.value)} className="h-9" placeholder="Via, numero" />
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-sm text-muted-foreground">CAP</Label>
+                    <Input value={form.cap || ""} onChange={(e) => upd("cap", e.target.value)} maxLength={4} className="h-9" />
+                  </div>
+                  <div className="col-span-2 space-y-1.5">
+                    <Label className="text-sm text-muted-foreground">Città</Label>
+                    <Input value={form.citta || ""} onChange={(e) => upd("citta", e.target.value)} className="h-9" />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm text-muted-foreground">Cantone</Label>
+                  <Select value={form.cantone || ""} onValueChange={(v) => upd("cantone", v)}>
+                    <SelectTrigger className="h-9"><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectContent>
+                      {CANTONI_CH.map(([code, nome]) => (
+                        <SelectItem key={code} value={code}>{code} — {nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-sm text-muted-foreground">Telefono</Label>
+                    <Input type="tel" value={form.telefono || ""} onChange={(e) => upd("telefono", e.target.value)} className="h-9" placeholder="+41 ..." />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-sm text-muted-foreground">Codice fiscale</Label>
+                    <Input value={form.codice_fiscale || ""} onChange={(e) => upd("codice_fiscale", e.target.value)} className="h-9" />
+                  </div>
+                </div>
+              </div>
+
 
               <div className="pt-3 border-t border-border space-y-3">
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Licenza Swiss Ice Skating</p>
@@ -1329,27 +1404,68 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
               atleta={form}
               on_updated={(nuovo) => upd("codice_atleta", nuovo)}
             />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {[
-                { label: t("genitore_1"), prefix: "genitore1" },
-                { label: t("genitore_2"), prefix: "genitore2" },
-              ].map(({ label, prefix }) => (
-                <div key={prefix} className="bg-card rounded-xl shadow-card p-5 space-y-3">
-                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{label}</h4>
-                  {["nome", "cognome", "telefono", "email"].map((field) => (
-                    <div key={field} className="space-y-1.5">
-                      <Label className="text-sm text-muted-foreground">{t(field)}</Label>
-                      <Input
-                        type={field === "email" ? "email" : "text"}
-                        value={form[`${prefix}_${field}`] || ""}
-                        onChange={(e) => upd(`${prefix}_${field}`, e.target.value)}
-                        className="h-9"
-                      />
+            {[
+              { label: t("genitore_1"), prefix: "genitore1", collapsible: false },
+              { label: t("genitore_2"), prefix: "genitore2", collapsible: true },
+            ].map(({ label, prefix, collapsible }) => {
+              const has_g2_data = prefix === "genitore2" && (form.genitore2_nome || form.genitore2_email || form.genitore2_indirizzo);
+              const body = (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {["nome", "cognome", "telefono", "email"].map((field) => (
+                      <div key={field} className="space-y-1.5">
+                        <Label className="text-sm text-muted-foreground">{t(field)}</Label>
+                        <Input
+                          type={field === "email" ? "email" : field === "telefono" ? "tel" : "text"}
+                          value={form[`${prefix}_${field}`] || ""}
+                          onChange={(e) => upd(`${prefix}_${field}`, e.target.value)}
+                          className="h-9"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-sm text-muted-foreground">Indirizzo</Label>
+                    <Input value={form[`${prefix}_indirizzo`] || ""} onChange={(e) => upd(`${prefix}_indirizzo`, e.target.value)} className="h-9" placeholder="Via, numero" />
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-sm text-muted-foreground">CAP</Label>
+                      <Input value={form[`${prefix}_cap`] || ""} onChange={(e) => upd(`${prefix}_cap`, e.target.value)} maxLength={4} className="h-9" />
                     </div>
-                  ))}
+                    <div className="col-span-2 space-y-1.5">
+                      <Label className="text-sm text-muted-foreground">Città</Label>
+                      <Input value={form[`${prefix}_citta`] || ""} onChange={(e) => upd(`${prefix}_citta`, e.target.value)} className="h-9" />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-sm text-muted-foreground">Cantone</Label>
+                    <Select value={form[`${prefix}_cantone`] || ""} onValueChange={(v) => upd(`${prefix}_cantone`, v)}>
+                      <SelectTrigger className="h-9"><SelectValue placeholder="—" /></SelectTrigger>
+                      <SelectContent>
+                        {CANTONI_CH.map(([code, nome]) => (
+                          <SelectItem key={code} value={code}>{code} — {nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-              ))}
-            </div>
+              );
+              if (collapsible) {
+                return (
+                  <details key={prefix} className="bg-card rounded-xl shadow-card p-5" open={!!has_g2_data}>
+                    <summary className="text-xs font-bold text-muted-foreground uppercase tracking-wider cursor-pointer select-none">{label}</summary>
+                    <div className="mt-4">{body}</div>
+                  </details>
+                );
+              }
+              return (
+                <div key={prefix} className="bg-card rounded-xl shadow-card p-5 space-y-4">
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{label}</h4>
+                  {body}
+                </div>
+              );
+            })}
           </TabsContent>
 
           {/* ── Fatture ── */}
