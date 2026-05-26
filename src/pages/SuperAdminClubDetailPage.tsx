@@ -183,10 +183,6 @@ const SuperAdminClubDetailPage: React.FC = () => {
               <Label className="text-xs">Sigla</Label>
               <Input value={anag.sigla ?? ""} onChange={(e) => set_a("sigla", e.target.value.toUpperCase())} maxLength={8} />
             </div>
-            <div className="space-y-1 md:col-span-3">
-              <Label className="text-xs">Indirizzo (via e numero)</Label>
-              <Input value={anag.indirizzo ?? ""} onChange={(e) => set_a("indirizzo", e.target.value)} />
-            </div>
             <div className="md:col-span-3">
               <AnagraficaTerritoriale
                 values={{
