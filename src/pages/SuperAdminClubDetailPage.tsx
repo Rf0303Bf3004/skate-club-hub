@@ -10,6 +10,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { ArrowLeft } from "lucide-react";
+import { AnagraficaTerritoriale } from "@/components/AnagraficaTerritoriale";
+import {
+  isValidPartitaIVA,
+  isValidIBAN,
+  getPartitaIVAPlaceholder,
+  getIBANPlaceholder,
+  getTelefonoPlaceholder,
+  type paese_iso,
+} from "@/lib/territori";
 
 const SuperAdminClubDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -27,18 +36,16 @@ const SuperAdminClubDetailPage: React.FC = () => {
   const [anag, set_anag] = useState<Record<string, string>>({});
   const set_a = (k: string, v: string) => set_anag((p) => ({ ...p, [k]: v }));
 
-  const CANTONI_CH = ["AG","AI","AR","BE","BL","BS","FR","GE","GL","GR","JU","LU","NE","NW","OW","SG","SH","SO","SZ","TG","TI","UR","VD","VS","ZG","ZH"];
-  const iva_re = /^CHE-\d{3}\.\d{3}\.\d{3}( (MWST|IVA|TVA))?$/;
-  const iva_valido = !anag.numero_iva_chf || iva_re.test((anag.numero_iva_chf || "").trim());
-  const iban_clean = (anag.iban || "").replace(/\s/g, "");
-  const iban_valido = !iban_clean || (iban_clean.startsWith("CH") && iban_clean.length === 21);
+  const paese: paese_iso = ((anag.paese_iso || anag.paese) as paese_iso) || "CH";
+  const iva_valido = isValidPartitaIVA(paese, anag.partita_iva || "") && (paese !== "CH" || !anag.numero_iva_chf || isValidPartitaIVA("CH", anag.numero_iva_chf));
+  const iban_valido = isValidIBAN(paese, anag.iban || "");
 
   const { data: club } = useQuery({
     queryKey: ["sa_club_detail", id],
     enabled: !!id,
     queryFn: async () => {
       const { data, error } = await supabase.from("clubs")
-        .select("id, nome, sigla, citta, indirizzo, cap, cantone, paese, email, telefono, sito_web, numero_tessera_federale, prezzo_per_atleta_chf, fee_fissa_chf, partita_iva, numero_iva_chf, iban, intestatario_iban, twint_qr_url, mesi_fatturazione_fee, mesi_fatturazione_atleti, mese_inizio_fatturazione, costo_setup_chf, setup_fatturato")
+        .select("id, nome, sigla, citta, indirizzo, cap, cantone, paese, paese_iso, regione, provincia, codice_fiscale, email, telefono, sito_web, numero_tessera_federale, prezzo_per_atleta_chf, fee_fissa_chf, partita_iva, numero_iva_chf, iban, intestatario_iban, twint_qr_url, mesi_fatturazione_fee, mesi_fatturazione_atleti, mese_inizio_fatturazione, costo_setup_chf, setup_fatturato")
         .eq("id", id!).maybeSingle();
       if (error) throw error;
       return data as any;
@@ -74,7 +81,11 @@ const SuperAdminClubDetailPage: React.FC = () => {
         cap: club.cap ?? "",
         citta: club.citta ?? "",
         cantone: club.cantone ?? "",
+        paese_iso: club.paese_iso ?? club.paese ?? "CH",
         paese: club.paese ?? "CH",
+        regione: club.regione ?? "",
+        provincia: club.provincia ?? "",
+        codice_fiscale: club.codice_fiscale ?? "",
         email: club.email ?? "",
         telefono: club.telefono ?? "",
         sito_web: club.sito_web ?? "",
@@ -172,24 +183,28 @@ const SuperAdminClubDetailPage: React.FC = () => {
               <Label className="text-xs">Sigla</Label>
               <Input value={anag.sigla ?? ""} onChange={(e) => set_a("sigla", e.target.value.toUpperCase())} maxLength={8} />
             </div>
-            <div className="space-y-1 md:col-span-3">
-              <Label className="text-xs">Indirizzo (via e numero)</Label>
-              <Input value={anag.indirizzo ?? ""} onChange={(e) => set_a("indirizzo", e.target.value)} />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">CAP</Label>
-              <Input value={anag.cap ?? ""} onChange={(e) => set_a("cap", e.target.value.replace(/[^0-9]/g, "").slice(0,5))} placeholder="6900" />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Città</Label>
-              <Input value={anag.citta ?? ""} onChange={(e) => set_a("citta", e.target.value)} />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Cantone</Label>
-              <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={anag.cantone ?? ""} onChange={(e) => set_a("cantone", e.target.value)}>
-                <option value="">—</option>
-                {CANTONI_CH.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
+            <div className="md:col-span-3">
+              <AnagraficaTerritoriale
+                values={{
+                  paese_iso: anag.paese_iso ?? "CH",
+                  indirizzo: anag.indirizzo,
+                  cap: anag.cap,
+                  citta: anag.citta,
+                  cantone: anag.cantone,
+                  regione: anag.regione,
+                  provincia: anag.provincia,
+                }}
+                onChange={(patch) =>
+                  set_anag((p) => ({
+                    ...p,
+                    ...Object.fromEntries(
+                      Object.entries(patch).map(([k, v]) => [k, (v ?? "") as string]),
+                    ),
+                    paese: (patch.paese_iso as string) ?? p.paese,
+                  }))
+                }
+                cols={2}
+              />
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Email</Label>
@@ -197,7 +212,7 @@ const SuperAdminClubDetailPage: React.FC = () => {
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Telefono</Label>
-              <Input value={anag.telefono ?? ""} onChange={(e) => set_a("telefono", e.target.value)} placeholder="+41 ..." />
+              <Input value={anag.telefono ?? ""} onChange={(e) => set_a("telefono", e.target.value)} placeholder={getTelefonoPlaceholder(paese)} />
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Sito web</Label>
@@ -214,17 +229,24 @@ const SuperAdminClubDetailPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs">Partita IVA</Label>
-                <Input value={anag.partita_iva ?? ""} onChange={(e) => set_a("partita_iva", e.target.value)} />
+                <Input value={anag.partita_iva ?? ""} onChange={(e) => set_a("partita_iva", e.target.value)} placeholder={getPartitaIVAPlaceholder(paese)} />
+                {!iva_valido && (<p className="text-xs text-destructive">{paese === "CH" ? "Formato CH: CHE-XXX.XXX.XXX" : "P.IVA italiana: 11 cifre"}</p>)}
               </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Numero IVA svizzero</Label>
-                <Input value={anag.numero_iva_chf ?? ""} onChange={(e) => set_a("numero_iva_chf", e.target.value.toUpperCase())} placeholder="CHE-123.456.789 MWST" />
-                {!iva_valido && (<p className="text-xs text-destructive">Formato: CHE-XXX.XXX.XXX (MWST/IVA/TVA opzionale)</p>)}
-              </div>
+              {paese === "CH" ? (
+                <div className="space-y-1">
+                  <Label className="text-xs">Numero IVA svizzero</Label>
+                  <Input value={anag.numero_iva_chf ?? ""} onChange={(e) => set_a("numero_iva_chf", e.target.value.toUpperCase())} placeholder="CHE-123.456.789 MWST" />
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <Label className="text-xs">Codice fiscale (opzionale)</Label>
+                  <Input value={anag.codice_fiscale ?? ""} onChange={(e) => set_a("codice_fiscale", e.target.value.toUpperCase())} placeholder="RSSMRA80A01H501U" maxLength={16} />
+                </div>
+              )}
               <div className="space-y-1">
                 <Label className="text-xs">IBAN</Label>
-                <Input value={anag.iban ?? ""} onChange={(e) => set_a("iban", e.target.value.toUpperCase().replace(/[^A-Z0-9\s]/g, ""))} placeholder="CH56 0483 5012 3456 7800 9" maxLength={26} />
-                {!iban_valido && (<p className="text-xs text-destructive">IBAN svizzero: inizia con CH, 21 caratteri</p>)}
+                <Input value={anag.iban ?? ""} onChange={(e) => set_a("iban", e.target.value.toUpperCase().replace(/[^A-Z0-9\s]/g, ""))} placeholder={getIBANPlaceholder(paese)} maxLength={paese === "CH" ? 26 : 31} />
+                {!iban_valido && (<p className="text-xs text-destructive">{paese === "CH" ? "IBAN svizzero: inizia con CH, 21 caratteri" : "IBAN italiano: inizia con IT, 27 caratteri"}</p>)}
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Intestatario IBAN</Label>

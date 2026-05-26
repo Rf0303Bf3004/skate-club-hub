@@ -115,6 +115,9 @@ export type Database = {
           genitore1_email: string | null
           genitore1_indirizzo: string | null
           genitore1_nome: string | null
+          genitore1_paese_iso: string | null
+          genitore1_provincia: string | null
+          genitore1_regione: string | null
           genitore1_telefono: string | null
           genitore2_cantone: string | null
           genitore2_cap: string | null
@@ -123,6 +126,9 @@ export type Database = {
           genitore2_email: string | null
           genitore2_indirizzo: string | null
           genitore2_nome: string | null
+          genitore2_paese_iso: string | null
+          genitore2_provincia: string | null
+          genitore2_regione: string | null
           genitore2_telefono: string | null
           id: string
           importato_da_excel: boolean
@@ -141,6 +147,9 @@ export type Database = {
           nome: string
           note: string | null
           ore_pista_stagione: number | null
+          paese_iso: string
+          provincia: string | null
+          regione: string | null
           ruolo_pista: string | null
           sesso: string | null
           tag_nfc: string | null
@@ -181,6 +190,9 @@ export type Database = {
           genitore1_email?: string | null
           genitore1_indirizzo?: string | null
           genitore1_nome?: string | null
+          genitore1_paese_iso?: string | null
+          genitore1_provincia?: string | null
+          genitore1_regione?: string | null
           genitore1_telefono?: string | null
           genitore2_cantone?: string | null
           genitore2_cap?: string | null
@@ -189,6 +201,9 @@ export type Database = {
           genitore2_email?: string | null
           genitore2_indirizzo?: string | null
           genitore2_nome?: string | null
+          genitore2_paese_iso?: string | null
+          genitore2_provincia?: string | null
+          genitore2_regione?: string | null
           genitore2_telefono?: string | null
           id?: string
           importato_da_excel?: boolean
@@ -207,6 +222,9 @@ export type Database = {
           nome?: string
           note?: string | null
           ore_pista_stagione?: number | null
+          paese_iso?: string
+          provincia?: string | null
+          regione?: string | null
           ruolo_pista?: string | null
           sesso?: string | null
           tag_nfc?: string | null
@@ -247,6 +265,9 @@ export type Database = {
           genitore1_email?: string | null
           genitore1_indirizzo?: string | null
           genitore1_nome?: string | null
+          genitore1_paese_iso?: string | null
+          genitore1_provincia?: string | null
+          genitore1_regione?: string | null
           genitore1_telefono?: string | null
           genitore2_cantone?: string | null
           genitore2_cap?: string | null
@@ -255,6 +276,9 @@ export type Database = {
           genitore2_email?: string | null
           genitore2_indirizzo?: string | null
           genitore2_nome?: string | null
+          genitore2_paese_iso?: string | null
+          genitore2_provincia?: string | null
+          genitore2_regione?: string | null
           genitore2_telefono?: string | null
           id?: string
           importato_da_excel?: boolean
@@ -273,6 +297,9 @@ export type Database = {
           nome?: string
           note?: string | null
           ore_pista_stagione?: number | null
+          paese_iso?: string
+          provincia?: string | null
+          regione?: string | null
           ruolo_pista?: string | null
           sesso?: string | null
           tag_nfc?: string | null
@@ -600,6 +627,7 @@ export type Database = {
           cantone: string | null
           cap: string | null
           citta: string | null
+          codice_fiscale: string | null
           colore_primario: string | null
           costo_setup_chf: number
           created_at: string
@@ -619,8 +647,11 @@ export type Database = {
           numero_tessera_federale: string | null
           onboarding_completato: boolean
           paese: string | null
+          paese_iso: string
           partita_iva: string | null
           prezzo_per_atleta_chf: number
+          provincia: string | null
+          regione: string | null
           reminder_allenamenti_attivo: boolean
           reminder_anticipo_giorni: number
           reminder_last_run_date: string | null
@@ -638,6 +669,7 @@ export type Database = {
           cantone?: string | null
           cap?: string | null
           citta?: string | null
+          codice_fiscale?: string | null
           colore_primario?: string | null
           costo_setup_chf?: number
           created_at?: string
@@ -657,8 +689,11 @@ export type Database = {
           numero_tessera_federale?: string | null
           onboarding_completato?: boolean
           paese?: string | null
+          paese_iso?: string
           partita_iva?: string | null
           prezzo_per_atleta_chf?: number
+          provincia?: string | null
+          regione?: string | null
           reminder_allenamenti_attivo?: boolean
           reminder_anticipo_giorni?: number
           reminder_last_run_date?: string | null
@@ -676,6 +711,7 @@ export type Database = {
           cantone?: string | null
           cap?: string | null
           citta?: string | null
+          codice_fiscale?: string | null
           colore_primario?: string | null
           costo_setup_chf?: number
           created_at?: string
@@ -695,8 +731,11 @@ export type Database = {
           numero_tessera_federale?: string | null
           onboarding_completato?: boolean
           paese?: string | null
+          paese_iso?: string
           partita_iva?: string | null
           prezzo_per_atleta_chf?: number
+          provincia?: string | null
+          regione?: string | null
           reminder_allenamenti_attivo?: boolean
           reminder_anticipo_giorni?: number
           reminder_last_run_date?: string | null
@@ -1673,6 +1712,9 @@ export type Database = {
           intestatario_email: string | null
           intestatario_indirizzo: string | null
           intestatario_nome: string | null
+          intestatario_paese_iso: string | null
+          intestatario_provincia: string | null
+          intestatario_regione: string | null
           note: string | null
           numero: string | null
           pagata: boolean | null
@@ -1705,6 +1747,9 @@ export type Database = {
           intestatario_email?: string | null
           intestatario_indirizzo?: string | null
           intestatario_nome?: string | null
+          intestatario_paese_iso?: string | null
+          intestatario_provincia?: string | null
+          intestatario_regione?: string | null
           note?: string | null
           numero?: string | null
           pagata?: boolean | null
@@ -1737,6 +1782,9 @@ export type Database = {
           intestatario_email?: string | null
           intestatario_indirizzo?: string | null
           intestatario_nome?: string | null
+          intestatario_paese_iso?: string | null
+          intestatario_provincia?: string | null
+          intestatario_regione?: string | null
           note?: string | null
           numero?: string | null
           pagata?: boolean | null
@@ -1795,7 +1843,10 @@ export type Database = {
           intestatario_indirizzo: string | null
           intestatario_nome: string | null
           intestatario_numero_iva_chf: string | null
+          intestatario_paese_iso: string | null
           intestatario_partita_iva: string | null
+          intestatario_provincia: string | null
+          intestatario_regione: string | null
           n_atleti: number
           note: string | null
           pagata: boolean
@@ -1824,7 +1875,10 @@ export type Database = {
           intestatario_indirizzo?: string | null
           intestatario_nome?: string | null
           intestatario_numero_iva_chf?: string | null
+          intestatario_paese_iso?: string | null
           intestatario_partita_iva?: string | null
+          intestatario_provincia?: string | null
+          intestatario_regione?: string | null
           n_atleti: number
           note?: string | null
           pagata?: boolean
@@ -1853,7 +1907,10 @@ export type Database = {
           intestatario_indirizzo?: string | null
           intestatario_nome?: string | null
           intestatario_numero_iva_chf?: string | null
+          intestatario_paese_iso?: string | null
           intestatario_partita_iva?: string | null
+          intestatario_provincia?: string | null
+          intestatario_regione?: string | null
           n_atleti?: number
           note?: string | null
           pagata?: boolean

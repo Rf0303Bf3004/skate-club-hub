@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
 
     const { data: clubs, error: e_clubs } = await sb
       .from("clubs")
-      .select("id, nome, indirizzo, cap, citta, cantone, partita_iva, numero_iva_chf, iban, prezzo_per_atleta_chf, fee_fissa_chf, mesi_fatturazione_fee, mesi_fatturazione_atleti, mese_inizio_fatturazione, costo_setup_chf, setup_fatturato")
+      .select("id, nome, indirizzo, cap, citta, cantone, paese_iso, regione, provincia, partita_iva, numero_iva_chf, iban, prezzo_per_atleta_chf, fee_fissa_chf, mesi_fatturazione_fee, mesi_fatturazione_atleti, mese_inizio_fatturazione, costo_setup_chf, setup_fatturato")
       .eq("attivo", true);
     if (e_clubs) throw e_clubs;
 
@@ -107,6 +107,9 @@ Deno.serve(async (req) => {
           intestatario_cap: (c as any).cap ?? null,
           intestatario_citta: (c as any).citta ?? null,
           intestatario_cantone: (c as any).cantone ?? null,
+          intestatario_paese_iso: (c as any).paese_iso ?? "CH",
+          intestatario_regione: (c as any).regione ?? null,
+          intestatario_provincia: (c as any).provincia ?? null,
           intestatario_partita_iva: (c as any).partita_iva ?? null,
           intestatario_numero_iva_chf: (c as any).numero_iva_chf ?? null,
           intestatario_iban: (c as any).iban ?? null,

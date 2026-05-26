@@ -1,80 +1,91 @@
-# TARIFFAZIONE-SUPERADMIN-V2
+## MULTIPAESE-ANAGRAFICA — piano di esecuzione
 
-Lavoro grosso, lo eseguo in 5 step ordinati. Ti chiedo conferma prima di partire perché tocca DB + edge function + PDF + email.
+Adatto i form anagrafici (club, atleta, persona) e le fatture al paese selezionato (CH default, IT). Dato l'ampio impatto su DB, costanti, form e PDF, propongo questo piano prima di applicare.
 
-## 1) Schema DB (migration)
+---
 
-**clubs** — aggiungo:
-- `mesi_fatturazione_fee` (int2, default 12, 0–12)
-- `mesi_fatturazione_atleti` (int2, default 12, 0–12)
-- `mese_inizio_fatturazione` (int2, default 1, 1–12)
-- `costo_setup_chf` (numeric, default 0)
-- `setup_fatturato` (bool, default false)
+### 1) Costanti territoriali — `src/lib/territori.ts` (nuovo)
 
-**fatture_clubs** — aggiungo:
-- `importo_atleti_chf` (numeric, default 0)
-- `importo_setup_chf` (numeric, default 0)
-- `stato` text default `'bozza'` CHECK in (bozza, inviata, pagata, scaduta, annullata)
-- `pdf_url` text
-- `data_invio` timestamptz
+Esporto:
+- `PAESI = [{code:'CH',label:'Svizzera'},{code:'IT',label:'Italia'}]`
+- `CANTONI_CH` (26 voci con sigla: AG, AR, AI, BL, BS, BE, FR, GE, GL, GR, JU, LU, NE, NW, OW, SG, SH, SO, SZ, TI, TG, UR, VS, VD, ZG, ZH)
+- `REGIONI_IT` (20)
+- `PROVINCE_IT` (110, ognuna `{sigla, nome, regione}`) + helper `getProvinceByRegione(regione)`
+- Regex/validatori: `isValidCAP(paese, cap)`, `isValidPartitaIVA(paese, value)`, `isValidIBAN(paese, value)`, `isValidCodiceFiscaleIT(value)`
+- Placeholder helpers: `getTelefonoPlaceholder`, `getCAPPlaceholder`, `getPartitaIVAPlaceholder`, `getIBANPlaceholder`
 
-Nota: la colonna `pagata` esistente resta per retrocompatibilità ma `stato` diventa la fonte di verità.
+### 2) Migrazione DB
 
-## 2) Cron mensile (`fattura-clubs-mensile`)
+```sql
+ALTER TABLE public.clubs
+  ADD COLUMN IF NOT EXISTS paese_iso text NOT NULL DEFAULT 'CH',
+  ADD COLUMN IF NOT EXISTS regione text,
+  ADD COLUMN IF NOT EXISTS provincia text,
+  ADD COLUMN IF NOT EXISTS codice_fiscale text;
 
-Rifaccio la logica con le 3 componenti:
-- fee attiva solo se il mese corrente rientra negli N mesi a partire da `mese_inizio_fatturazione`
-- stesso per atleti
-- setup solo se `setup_fatturato=false` e prima fattura → poi flag a true
-- salva 3 componenti separate; `stato='bozza'`
+ALTER TABLE public.atleti
+  ADD COLUMN IF NOT EXISTS paese_iso text NOT NULL DEFAULT 'CH',
+  ADD COLUMN IF NOT EXISTS regione text,
+  ADD COLUMN IF NOT EXISTS provincia text,
+  ADD COLUMN IF NOT EXISTS genitore1_paese_iso text,
+  ADD COLUMN IF NOT EXISTS genitore1_regione text,
+  ADD COLUMN IF NOT EXISTS genitore1_provincia text,
+  ADD COLUMN IF NOT EXISTS genitore2_paese_iso text,
+  ADD COLUMN IF NOT EXISTS genitore2_regione text,
+  ADD COLUMN IF NOT EXISTS genitore2_provincia text;
 
-## 3) UI `/superadmin/clubs/{id}` — sezione Tariffazione
+ALTER TABLE public.fatture
+  ADD COLUMN IF NOT EXISTS intestatario_paese_iso text,
+  ADD COLUMN IF NOT EXISTS intestatario_regione text,
+  ADD COLUMN IF NOT EXISTS intestatario_provincia text;
 
-3 righe (canone base, prezzo atleta, setup una tantum) con mesi/anno e mese inizio, più card riepilogo dinamica con totale annuale previsto.
+ALTER TABLE public.fatture_clubs
+  ADD COLUMN IF NOT EXISTS intestatario_paese_iso text DEFAULT 'CH',
+  ADD COLUMN IF NOT EXISTS intestatario_regione text,
+  ADD COLUMN IF NOT EXISTS intestatario_provincia text;
+```
 
-## 4) Dettaglio fattura `/superadmin/fatture/{id}` (route nuova)
+Nessun check constraint a livello DB (validazione applicativa, come da prompt "flessibile"). Default CH retro-compatibile con dati esistenti.
 
-- Intestatario club completo + mittente Ice Arena Manager Sagl Bellinzona
-- Tabella righe (canone, atleti×prezzo, setup)
-- 4 bottoni: Anteprima PDF, Modifica (solo bozza), Invia (bozza→inviata + email), Marca pagata
-- Form modifica righe + note (campo `note` opzionale, lo aggiungo alla migration)
-- PDF con `@react-pdf/renderer` (stesso pattern del Pitch Sponsor): logo header, anagrafica, tabella, totale, IBAN/Twint, scadenza, footer fiscale. Cache in `pdf_url`.
+### 3) UI adattiva — componente riusabile
 
-Aggiungo link cliccabile dalle celle del tabellone esistente al dettaglio.
+Nuovo componente `src/components/AnagraficaTerritoriale.tsx` con props `{ paese, onPaeseChange, valori, onChange, prefisso? }`. Renderizza:
+- Select Paese (CH/IT) in alto
+- Se CH → select Cantone, CAP 4 cifre
+- Se IT → select Regione + select Provincia dipendente, CAP 5 cifre
+- Helper per IBAN/P.IVA/telefono con placeholder dinamici
 
-## 5) Edge function `send-fattura-email` + invio massivo
+Lo applico nei form esistenti:
+- `SuperAdminNewClubPage.tsx` — sezione anagrafica club
+- `SuperAdminClubDetailPage` / dove si modifica il club (cerco il file esistente)
+- `AtletaDetail.tsx` — sezione anagrafica atleta + Genitore 1 + Genitore 2
+- Eventuale form persone staff (se esiste; verifico)
 
-- Edge function: riceve `fattura_id`, valida, recupera dati club + sagl, manda email via **Resend** (connector) al presidente con il PDF in allegato (PDF generato lato client e passato come base64, oppure rigenerato server-side con un template HTML semplice — vedi nota sotto), aggiorna `stato='inviata'`, `data_invio=now()`, `pdf_url`.
-- Bottone "Invia tutte le bozze del mese" sul tabellone: modale conferma con count + totale, poi loop sequenziale con progress bar, summary finale.
+### 4) PDF fatture
 
-**Nota tecnica PDF in email**: `@react-pdf/renderer` non gira in Deno. Due opzioni:
-- **A (consigliata)**: client genera il PDF, lo carica in storage bucket `fatture_clubs`, passa l'URL all'edge function che lo allega via fetch.
-- **B**: template HTML inline nell'email (no allegato PDF, solo link al PDF in storage).
+- `src/lib/fattura-club-pdf.tsx`: riga indirizzo mostra `CAP Citta (Cantone)` se CH, `CAP Citta (Provincia) - Regione` se IT. P.IVA formattata col label coerente.
+- PDF fatture atleta (cerco file): stesso pattern usando snapshot `intestatario_*`.
 
-Vado con **A**: creo bucket privato `fatture-clubs` con RLS solo superadmin, client uppa PDF, edge function allega.
+### 5) Snapshot intestatario
 
-## Dipendenze e prerequisiti
+- `fattura-clubs-mensile/index.ts`: copia anche `paese_iso/regione/provincia` da `clubs`.
+- `use-supabase-mutations.ts` (build_fatture_mese): copia anche `paese_iso/regione/provincia` da `atleti.genitore1_*`.
 
-- **Resend connector** già configurato? Se no devo chiederti di collegarlo prima di poter inviare email reali. Per la prima iterazione l'edge function può funzionare anche senza Resend (stato passa a inviata, ma email skippata con warning nei log) così puoi testare il flusso. Confermami se hai Resend o vuoi che ti guidi a configurarlo.
-- `@react-pdf/renderer` già presente (usato per Pitch Sponsor) — riuso.
-- Mittente "Ice Arena Manager Sagl, Bellinzona" hard-coded per ora come placeholder come da prompt, configurabile più avanti.
+### 6) Backfill
 
-## File toccati (stima)
+`UPDATE clubs SET paese_iso='CH' WHERE paese_iso IS NULL;` (idem atleti). Già coperto dal DEFAULT, nessun ulteriore backfill necessario.
 
-- 1 migration SQL (clubs + fatture_clubs + bucket storage + RLS)
-- `supabase/functions/fattura-clubs-mensile/index.ts` (riscrittura logica)
-- `supabase/functions/send-fattura-email/index.ts` (nuova)
-- `supabase/config.toml` (registra nuova function se serve)
-- `src/pages/SuperAdminClubDetailPage.tsx` (sezione Tariffazione)
-- `src/pages/SuperAdminFatturaDetailPage.tsx` (nuova)
-- `src/pages/SuperAdminTabelloneFatturePage.tsx` (cella → link dettaglio, bottone invio massivo)
-- `src/lib/fattura-club-pdf.tsx` (nuovo, react-pdf)
-- `src/App.tsx` (route nuova)
-- `src/locales/it/superadmin.json` (stringhe nuove)
+### 7) Verifica
 
-## Domande prima di partire
+- `bunx tsc --noEmit` → 0 errori
+- Smoke manuale: creo club IT con regione/provincia/PIVA 11 cifre/IBAN IT, verifico salvataggio e PDF.
 
-1. **Resend**: già configurato o devo guidarti? (in caso negativo procedo con email "best effort" e log warning, così puoi testare tutto il resto)
-2. Mittente Sagl placeholder: ok "Ice Arena Manager Sagl — Bellinzona, CHE-XXX.XXX.XXX MWST, IBAN CH00 0000 0000 0000 0000 0" da sostituire più avanti?
+---
 
-Appena confermi (o dici "vai senza domande, decidi tu") parto con la migration.
+### Domande di scoping rapide
+
+1. **Province IT**: ok elenco completo 110 province con sigla? (peso ~3KB nel bundle)
+2. **Validazione DB**: confermi nessun CHECK constraint (solo frontend)?
+3. **Form persona/staff**: vuoi che adatti anche il form utenti staff o per ora solo club + atleta + genitori?
+
+Procedo appena confermi (o dimmi varianti).

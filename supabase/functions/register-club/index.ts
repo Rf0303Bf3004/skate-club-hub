@@ -18,7 +18,11 @@ interface Payload {
   cap?: string;
   citta?: string;
   cantone?: string;
+  regione?: string;
+  provincia?: string;
+  codice_fiscale?: string;
   paese?: string;
+  paese_iso?: string;
   email_club?: string;
   telefono_club?: string;
   sito_web?: string;
@@ -99,7 +103,11 @@ Deno.serve(async (req) => {
       cap: body.cap?.trim() || null,
       citta: body.citta?.trim() || null,
       cantone: body.cantone?.trim() || null,
+      regione: body.regione?.trim() || null,
+      provincia: body.provincia?.trim() || null,
+      codice_fiscale: body.codice_fiscale?.trim() || null,
       paese: body.paese?.trim() || "Svizzera",
+      paese_iso: (body.paese_iso?.trim() || "CH").toUpperCase(),
       email: email_club,
       telefono: (body.telefono_club || body.telefono)?.trim() || null,
       sito_web: body.sito_web?.trim() || null,

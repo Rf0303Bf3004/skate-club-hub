@@ -881,7 +881,7 @@ async function build_fatture_mese(anno: number, mese: number) {
   // Snapshot intestatario (genitore1) per ogni atleta del club, usato sulle fatture create.
   const { data: atleti_snap } = await supabase
     .from("atleti")
-    .select("id, genitore1_nome, genitore1_cognome, genitore1_indirizzo, genitore1_cap, genitore1_citta, genitore1_cantone, genitore1_email")
+    .select("id, genitore1_nome, genitore1_cognome, genitore1_indirizzo, genitore1_cap, genitore1_citta, genitore1_cantone, genitore1_paese_iso, genitore1_regione, genitore1_provincia, genitore1_email")
     .eq("club_id", cid());
   const intest_map = new Map<string, any>();
   for (const a of atleti_snap || []) {
@@ -892,6 +892,9 @@ async function build_fatture_mese(anno: number, mese: number) {
       intestatario_cap: (a as any).genitore1_cap || null,
       intestatario_citta: (a as any).genitore1_citta || null,
       intestatario_cantone: (a as any).genitore1_cantone || null,
+      intestatario_paese_iso: (a as any).genitore1_paese_iso || "CH",
+      intestatario_regione: (a as any).genitore1_regione || null,
+      intestatario_provincia: (a as any).genitore1_provincia || null,
       intestatario_email: (a as any).genitore1_email || null,
     });
   }
