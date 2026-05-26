@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ArrowLeft, Printer, Download, Mail, CreditCard, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { load_fattura_full, build_pdf_data, genera_e_apri_pdf } from "@/lib/fattura-atleta-helpers";
+import { load_fattura_full, build_pdf_data } from "@/lib/fattura-atleta-helpers";
+import AnteprimaFatturaAtletaDialog from "@/components/AnteprimaFatturaAtletaDialog";
 
 const STATO_COLORS: Record<string, string> = {
   bozza: "bg-slate-100 text-slate-700",
