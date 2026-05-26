@@ -245,7 +245,10 @@ const SuperAdminNewClubPage: React.FC = () => {
           )}
           <div>
             <label className="text-xs text-muted-foreground">IBAN</label>
-            <Input value={iban} onChange={(e) => set_iban(e.target.value)} placeholder="CH..." />
+            <Input value={iban} onChange={(e) => set_iban(e.target.value.toUpperCase())} placeholder={getIBANPlaceholder(paese_code)} />
+            {iban && !isValidIBAN(paese_code, iban) && (
+              <p className="text-xs text-destructive mt-1">{paese_code === "CH" ? "IBAN CH: 21 caratteri" : "IBAN IT: 27 caratteri"}</p>
+            )}
           </div>
           <div>
             <label className="text-xs text-muted-foreground">Intestatario IBAN</label>
