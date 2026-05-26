@@ -11,8 +11,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Plus, Trash2, FileText, Send, CheckCircle, XCircle, Loader2, ChevronDown } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { load_fattura_full, build_pdf_data, genera_e_apri_pdf, type FatturaFull } from "@/lib/fattura-atleta-helpers";
+import { load_fattura_full, build_pdf_data, type FatturaFull } from "@/lib/fattura-atleta-helpers";
 import type { FatturaAtletaRiga } from "@/lib/fattura-atleta-pdf";
+import AnteprimaFatturaAtletaDialog from "@/components/AnteprimaFatturaAtletaDialog";
 
 const CAUSALI = ["Pacchetto multiplo", "Secondo figlio", "Sconto fedelta", "Promozionale", "Altro"];
 
