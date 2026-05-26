@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ArrowLeft, Printer, Download, Mail, CreditCard, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { load_fattura_full, build_pdf_data, genera_e_apri_pdf } from "@/lib/fattura-atleta-helpers";
+import { load_fattura_full, build_pdf_data } from "@/lib/fattura-atleta-helpers";
+import AnteprimaFatturaAtletaDialog from "@/components/AnteprimaFatturaAtletaDialog";
 
 const STATO_COLORS: Record<string, string> = {
   bozza: "bg-slate-100 text-slate-700",
@@ -27,6 +28,7 @@ const FatturaDetailPage: React.FC = () => {
   const [email_to, set_email_to] = useState("");
   const [sending, set_sending] = useState(false);
   const [pay_open, set_pay_open] = useState(false);
+  const [preview_open, set_preview_open] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -132,14 +134,17 @@ const FatturaDetailPage: React.FC = () => {
 
         {/* 4 BOTTONI */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-3 border-t border-slate-200">
-          <Button variant="outline" onClick={() => genera_e_apri_pdf(d._id, "stampa")}><Printer className="w-4 h-4 mr-1" /> Stampa</Button>
-          <Button variant="outline" onClick={() => genera_e_apri_pdf(d._id, "scarica")}><Download className="w-4 h-4 mr-1" /> Scarica</Button>
+          <Button variant="outline" onClick={() => set_preview_open(true)}><Printer className="w-4 h-4 mr-1" /> Anteprima</Button>
+          <Button variant="outline" onClick={() => set_preview_open(true)}><Download className="w-4 h-4 mr-1" /> Scarica</Button>
           <Button variant="outline" onClick={() => set_email_open(true)}><Mail className="w-4 h-4 mr-1" /> Email</Button>
           {d._stato !== "pagata" && (
             <Button className="bg-sky-600 hover:bg-sky-700" onClick={() => set_pay_open(true)}><CreditCard className="w-4 h-4 mr-1" /> Paga</Button>
           )}
         </div>
       </div>
+
+      <AnteprimaFatturaAtletaDialog fattura_id={d._id} open={preview_open} onOpenChange={set_preview_open} />
+
 
       <Dialog open={email_open} onOpenChange={set_email_open}>
         <DialogContent>

@@ -11,8 +11,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Plus, Trash2, FileText, Send, CheckCircle, XCircle, Loader2, ChevronDown } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { load_fattura_full, build_pdf_data, genera_e_apri_pdf, type FatturaFull } from "@/lib/fattura-atleta-helpers";
+import { load_fattura_full, build_pdf_data, type FatturaFull } from "@/lib/fattura-atleta-helpers";
 import type { FatturaAtletaRiga } from "@/lib/fattura-atleta-pdf";
+import AnteprimaFatturaAtletaDialog from "@/components/AnteprimaFatturaAtletaDialog";
 
 const CAUSALI = ["Pacchetto multiplo", "Secondo figlio", "Sconto fedelta", "Promozionale", "Altro"];
 
@@ -30,6 +31,7 @@ const SegreteriaFatturaDetailPage: React.FC = () => {
   const [loading, set_loading] = useState(true);
   const [saving, set_saving] = useState(false);
   const [f, set_f] = useState<FatturaFull | null>(null);
+  const [preview_open, set_preview_open] = useState(false);
   const [atleta, set_atleta] = useState<any>(null);
   const [club, set_club] = useState<any>(null);
   const [righe, set_righe] = useState<FatturaAtletaRiga[]>([]);
@@ -263,7 +265,7 @@ const SegreteriaFatturaDetailPage: React.FC = () => {
         {/* Azioni */}
         <div className="flex flex-wrap gap-2 justify-end pt-2 border-t border-border">
           {editable && <Button onClick={salva_bozza} disabled={saving} variant="outline">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salva bozza"}</Button>}
-          <Button variant="outline" onClick={() => genera_e_apri_pdf(f.id, "apri")}><FileText className="w-4 h-4 mr-1" /> Anteprima PDF</Button>
+          <Button variant="outline" onClick={() => set_preview_open(true)}><FileText className="w-4 h-4 mr-1" /> Anteprima PDF</Button>
           {f.stato !== "pagata" && f.stato !== "annullata" && (
             <Button onClick={invia_email} className="bg-sky-600 hover:bg-sky-700"><Send className="w-4 h-4 mr-1" /> Invia</Button>
           )}
@@ -275,6 +277,7 @@ const SegreteriaFatturaDetailPage: React.FC = () => {
           )}
         </div>
       </div>
+      <AnteprimaFatturaAtletaDialog fattura_id={f.id} open={preview_open} onOpenChange={set_preview_open} />
     </div>
   );
 };
