@@ -31,6 +31,7 @@ export type FatturaClubData = {
     paese?: string;
     partita_iva?: string;
     numero_iva_chf?: string;
+    iban?: string;
   };
 };
 
