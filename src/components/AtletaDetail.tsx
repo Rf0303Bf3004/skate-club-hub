@@ -284,6 +284,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   // Deep-link tab via ?tab=...
   const VALID_TABS = ["anagrafica", "livello", "corsi", "gare", "medagliere", "genitori", "fatture", "lezioni", "calendario", "storico_test"] as const;
   const [search_params, set_search_params] = useSearchParams();
+  const navigate = useNavigate();
   const initial_tab = (() => {
     const t = search_params.get("tab");
     return t && (VALID_TABS as readonly string[]).includes(t) ? t : "anagrafica";
