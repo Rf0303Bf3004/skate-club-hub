@@ -30,6 +30,7 @@ import SuperAdminBillingDashboardPage from "@/pages/SuperAdminBillingDashboardPa
 import SuperAdminTabelloneFatturePage from "@/pages/SuperAdminTabelloneFatturePage";
 import SuperAdminListinoPage from "@/pages/SuperAdminListinoPage";
 import SuperAdminClubDetailPage from "@/pages/SuperAdminClubDetailPage";
+import SuperAdminNewClubPage from "@/pages/SuperAdminNewClubPage";
 import SuperAdminFatturaDetailPage from "@/pages/SuperAdminFatturaDetailPage";
 import NotFound from "@/pages/NotFound";
 import RuoliPermessiPage from "@/pages/RuoliPermessiPage";
