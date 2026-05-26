@@ -29,6 +29,9 @@ export type FatturaClubData = {
     citta?: string;
     cantone?: string;
     paese?: string;
+    paese_iso?: string;
+    regione?: string;
+    provincia?: string;
     partita_iva?: string;
     numero_iva_chf?: string;
     iban?: string;
