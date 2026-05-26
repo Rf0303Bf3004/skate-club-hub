@@ -1,4 +1,5 @@
-// Edge function: registrazione pubblica di un nuovo club.
+// Edge function: registrazione club.
+// Usata sia dal flusso pubblico /registrati che dal flusso superadmin "Nuovo club".
 // Crea auth user (presidente) + clubs + club_identity + stagione + utenti_club.
 // Trigger DB seed_new_club popola pacchetti e permessi automaticamente.
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -10,11 +11,35 @@ const corsHeaders = {
 };
 
 interface Payload {
+  // Anagrafica club
   nome_club: string;
   sigla?: string;
-  cantone?: string;
+  indirizzo?: string;
+  cap?: string;
   citta?: string;
+  cantone?: string;
+  paese?: string;
+  email_club?: string;
+  telefono_club?: string;
+  sito_web?: string;
+  numero_tessera_federale?: string;
+  partita_iva?: string;
+  numero_iva_chf?: string;
+  iban?: string;
+  intestatario_iban?: string;
+  logo_url?: string;
+  colore_primario?: string;
   federazione?: string;
+
+  // Tariffazione (opzionali, defaults applicati)
+  fee_fissa_chf?: number;
+  prezzo_per_atleta_chf?: number;
+  costo_setup_chf?: number;
+  setup_fatturato?: boolean;
+  mesi_fatturazione_fee?: number;
+  mesi_fatturazione_atleti?: number;
+
+  // Presidente
   email_presidente: string;
   password: string;
   nome_presidente: string;
@@ -46,9 +71,12 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
+    const email_presidente = body.email_presidente.trim().toLowerCase();
+    const email_club = (body.email_club || email_presidente).trim().toLowerCase();
+
     // 1. Create auth user (auto-confirmed)
     const { data: userData, error: userErr } = await admin.auth.admin.createUser({
-      email: body.email_presidente.trim().toLowerCase(),
+      email: email_presidente,
       password: body.password,
       email_confirm: true,
       user_metadata: {
@@ -64,25 +92,37 @@ Deno.serve(async (req) => {
     const user_id = userData.user.id;
 
     // 2. Create club
+    const club_insert: Record<string, unknown> = {
+      nome: body.nome_club.trim(),
+      sigla: body.sigla?.trim() || null,
+      indirizzo: body.indirizzo?.trim() || null,
+      cap: body.cap?.trim() || null,
+      citta: body.citta?.trim() || null,
+      cantone: body.cantone?.trim() || null,
+      paese: body.paese?.trim() || "Svizzera",
+      email: email_club,
+      telefono: (body.telefono_club || body.telefono)?.trim() || null,
+      sito_web: body.sito_web?.trim() || null,
+      numero_tessera_federale: body.numero_tessera_federale?.trim() || null,
+      partita_iva: body.partita_iva?.trim() || null,
+      numero_iva_chf: body.numero_iva_chf?.trim() || null,
+      iban: body.iban?.trim() || null,
+      intestatario_iban: body.intestatario_iban?.trim() || null,
+      logo_url: body.logo_url?.trim() || null,
+      colore_primario: body.colore_primario?.trim() || "#3B82F6",
+      attivo: true,
+      onboarding_completato: false,
+      fee_fissa_chf: body.fee_fissa_chf ?? 50,
+      prezzo_per_atleta_chf: body.prezzo_per_atleta_chf ?? 1.20,
+      costo_setup_chf: body.costo_setup_chf ?? 0,
+      setup_fatturato: body.setup_fatturato ?? false,
+      mesi_fatturazione_fee: body.mesi_fatturazione_fee ?? 12,
+      mesi_fatturazione_atleti: body.mesi_fatturazione_atleti ?? 12,
+    };
+
     const { data: clubData, error: clubErr } = await admin
       .from("clubs")
-      .insert({
-        nome: body.nome_club.trim(),
-        sigla: body.sigla?.trim() || null,
-        cantone: body.cantone?.trim() || null,
-        citta: body.citta?.trim() || null,
-        email: body.email_presidente.trim().toLowerCase(),
-        telefono: body.telefono?.trim() || null,
-        paese: "Svizzera",
-        attivo: true,
-        onboarding_completato: false,
-        fee_fissa_chf: 50,
-        prezzo_per_atleta_chf: 1.20,
-        costo_setup_chf: 0,
-        setup_fatturato: false,
-        mesi_fatturazione_fee: 12,
-        mesi_fatturazione_atleti: 12,
-      })
+      .insert(club_insert)
       .select("id")
       .single();
     if (clubErr || !clubData) {
@@ -98,7 +138,7 @@ Deno.serve(async (req) => {
     await admin.from("club_identity").insert({
       club_id,
       citta: body.citta?.trim() || null,
-      email_contatto: body.email_presidente.trim().toLowerCase(),
+      email_contatto: email_club,
       federazione: body.federazione?.trim() || "",
     });
 
