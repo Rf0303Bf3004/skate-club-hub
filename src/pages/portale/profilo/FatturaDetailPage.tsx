@@ -134,14 +134,17 @@ const FatturaDetailPage: React.FC = () => {
 
         {/* 4 BOTTONI */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-3 border-t border-slate-200">
-          <Button variant="outline" onClick={() => genera_e_apri_pdf(d._id, "stampa")}><Printer className="w-4 h-4 mr-1" /> Stampa</Button>
-          <Button variant="outline" onClick={() => genera_e_apri_pdf(d._id, "scarica")}><Download className="w-4 h-4 mr-1" /> Scarica</Button>
+          <Button variant="outline" onClick={() => set_preview_open(true)}><Printer className="w-4 h-4 mr-1" /> Anteprima</Button>
+          <Button variant="outline" onClick={() => set_preview_open(true)}><Download className="w-4 h-4 mr-1" /> Scarica</Button>
           <Button variant="outline" onClick={() => set_email_open(true)}><Mail className="w-4 h-4 mr-1" /> Email</Button>
           {d._stato !== "pagata" && (
             <Button className="bg-sky-600 hover:bg-sky-700" onClick={() => set_pay_open(true)}><CreditCard className="w-4 h-4 mr-1" /> Paga</Button>
           )}
         </div>
       </div>
+
+      <AnteprimaFatturaAtletaDialog fattura_id={d._id} open={preview_open} onOpenChange={set_preview_open} />
+
 
       <Dialog open={email_open} onOpenChange={set_email_open}>
         <DialogContent>
