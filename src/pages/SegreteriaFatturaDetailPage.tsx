@@ -265,7 +265,7 @@ const SegreteriaFatturaDetailPage: React.FC = () => {
         {/* Azioni */}
         <div className="flex flex-wrap gap-2 justify-end pt-2 border-t border-border">
           {editable && <Button onClick={salva_bozza} disabled={saving} variant="outline">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salva bozza"}</Button>}
-          <Button variant="outline" onClick={() => genera_e_apri_pdf(f.id, "apri")}><FileText className="w-4 h-4 mr-1" /> Anteprima PDF</Button>
+          <Button variant="outline" onClick={() => set_preview_open(true)}><FileText className="w-4 h-4 mr-1" /> Anteprima PDF</Button>
           {f.stato !== "pagata" && f.stato !== "annullata" && (
             <Button onClick={invia_email} className="bg-sky-600 hover:bg-sky-700"><Send className="w-4 h-4 mr-1" /> Invia</Button>
           )}
