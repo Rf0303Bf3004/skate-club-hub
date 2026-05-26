@@ -277,6 +277,7 @@ const SegreteriaFatturaDetailPage: React.FC = () => {
           )}
         </div>
       </div>
+      <AnteprimaFatturaAtletaDialog fattura_id={f.id} open={preview_open} onOpenChange={set_preview_open} />
     </div>
   );
 };
