@@ -917,6 +917,7 @@ async function build_fatture_mese(anno: number, mese: number) {
       tipo: "Corso",
       riferimento_id: corso.id,
       periodo,
+      ...snap_of((isc as any).atleta_id),
     });
   }
 
