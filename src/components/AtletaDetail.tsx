@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { format_data_completa } from "@/lib/format-data";
 import { CheckCircle2, AlertTriangle } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { Calendar } from "lucide-react";
 import CalendarioAtletaInterattivo from "@/components/CalendarioAtletaInterattivo";
 import CodiceAtletaCard from "@/components/CodiceAtletaCard";
@@ -284,6 +284,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   // Deep-link tab via ?tab=...
   const VALID_TABS = ["anagrafica", "livello", "corsi", "gare", "medagliere", "genitori", "fatture", "lezioni", "calendario", "storico_test"] as const;
   const [search_params, set_search_params] = useSearchParams();
+  const navigate = useNavigate();
   const initial_tab = (() => {
     const t = search_params.get("tab");
     return t && (VALID_TABS as readonly string[]).includes(t) ? t : "anagrafica";
@@ -1470,51 +1471,92 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
 
           {/* ── Fatture ── */}
           <TabsContent value="fatture" className="mt-6">
-            <div className="bg-card rounded-xl shadow-card overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                      {t("numero_fattura")}
-                    </th>
-                    <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                      {t("descrizione")}
-                    </th>
-                    <th className="text-right px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                      {t("importo")}
-                    </th>
-                    <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                      {t("stato")}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {athlete_fatture.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground text-sm">
-                        Nessuna fattura.
-                      </td>
-                    </tr>
-                  ) : (
-                    athlete_fatture.map((f: any) => (
-                      <tr key={f.id} className="border-b border-border/50">
-                        <td className="px-4 py-3 font-medium tabular-nums text-foreground">{f.numero}</td>
-                        <td className="px-4 py-3 text-muted-foreground">{f.descrizione}</td>
-                        <td className="px-4 py-3 text-right tabular-nums font-medium text-foreground">
-                          CHF {Number(f.importo).toFixed(2)}
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <Badge variant={f.stato === "pagata" ? "default" : "destructive"} className="text-xs">
-                            {t(f.stato)}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Fatture atleta</h3>
+              <Button
+                size="sm"
+                className="bg-sky-600 hover:bg-sky-700"
+                onClick={async () => {
+                  try {
+                    const club_id = await get_current_club_id();
+                    if (!club_id) throw new Error("Club non identificato");
+                    const oggi = new Date().toISOString().slice(0, 10);
+                    const scad = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+                    const { data, error } = await supabase
+                      .from("fatture")
+                      .insert({
+                        club_id,
+                        atleta_id: a.id,
+                        stato: "bozza",
+                        data_emissione: oggi,
+                        data_scadenza: scad,
+                        importo: 0,
+                        righe: [],
+                        descrizione: "Nuova fattura",
+                        intestatario_nome: form.genitore1_nome || a.nome || null,
+                        intestatario_cognome: (form as any).genitore1_cognome || a.cognome || null,
+                        intestatario_email: form.genitore1_email || null,
+                        intestatario_indirizzo: form.genitore1_indirizzo || null,
+                        intestatario_cap: (form as any).genitore1_cap || null,
+                        intestatario_citta: (form as any).genitore1_citta || null,
+                        intestatario_cantone: (form as any).genitore1_cantone || null,
+                      })
+                      .select("id")
+                      .single();
+                    if (error) throw error;
+                    navigate(`/segreteria/fatture/${data.id}`);
+                  } catch (e: any) {
+                    toast({ title: "Errore", description: e?.message, variant: "destructive" });
+                  }
+                }}
+              >
+                + Nuova fattura
+              </Button>
             </div>
+            {athlete_fatture.length === 0 ? (
+              <div className="bg-card rounded-xl shadow-card p-8 text-center text-muted-foreground text-sm">
+                Nessuna fattura.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {athlete_fatture.map((f: any) => {
+                  const stato_cls: Record<string, string> = {
+                    bozza: "bg-slate-100 text-slate-700 border-slate-200",
+                    inviata: "bg-blue-100 text-blue-700 border-blue-200",
+                    pagata: "bg-emerald-100 text-emerald-700 border-emerald-200",
+                    scaduta: "bg-red-100 text-red-700 border-red-200",
+                    annullata: "bg-gray-100 text-gray-500 border-gray-200",
+                    da_pagare: "bg-amber-100 text-amber-700 border-amber-200",
+                  };
+                  return (
+                    <button
+                      key={f.id}
+                      onClick={() => navigate(`/segreteria/fatture/${f.id}`)}
+                      className="text-left bg-card rounded-xl shadow-card p-4 hover:shadow-md hover:border-primary/40 border border-transparent transition"
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div>
+                          <div className="font-semibold text-foreground">{f.numero || `Bozza ${f.id.slice(0, 6)}`}</div>
+                          {f.periodo && <div className="text-xs text-muted-foreground">{f.periodo}</div>}
+                        </div>
+                        <span className={`text-xs px-2 py-1 rounded-md border font-medium ${stato_cls[f.stato] || stato_cls.da_pagare}`}>
+                          {f.stato}
+                        </span>
+                      </div>
+                      {f.descrizione && <p className="text-sm text-muted-foreground mb-2 line-clamp-2">{f.descrizione}</p>}
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          {f.data_scadenza ? `Scad. ${new Date(f.data_scadenza + "T00:00:00").toLocaleDateString("de-CH")}` : "—"}
+                        </span>
+                        <span className="font-bold tabular-nums text-foreground">CHF {Number(f.importo || 0).toFixed(2)}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </TabsContent>
+
 
           {/* ── Lezioni ── */}
           <TabsContent value="lezioni" className="mt-6">
