@@ -983,6 +983,7 @@ async function build_fatture_mese(anno: number, mese: number) {
         tipo: "Test Livello",
         riferimento_id: null,
         periodo,
+        ...snap_of(atleta_id),
       });
     }
   }
