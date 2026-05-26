@@ -156,7 +156,10 @@ const SuperAdminListinoPage: React.FC = () => {
           <h1 className="text-2xl font-bold">{t("listino.title")}</h1>
           <p className="text-sm text-muted-foreground">Imposta canone, prezzo/atleta e setup per ciascun club.</p>
         </div>
-        <Button variant="outline" onClick={() => set_open_default(true)}>Applica listino default a tutti</Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={() => navigate("/superadmin/clubs/nuovo")}>Nuovo club</Button>
+          <Button variant="outline" onClick={() => set_open_default(true)}>Applica listino default a tutti</Button>
+        </div>
       </div>
 
       <Card>
