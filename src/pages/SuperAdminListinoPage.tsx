@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
@@ -33,6 +34,7 @@ const DEFAULTS: EditRow = {
 
 const SuperAdminListinoPage: React.FC = () => {
   const { t } = useTranslation("superadmin");
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const [search, set_search] = useState("");
   const [edits, set_edits] = useState<Record<string, EditRow>>({});
@@ -156,7 +158,10 @@ const SuperAdminListinoPage: React.FC = () => {
           <h1 className="text-2xl font-bold">{t("listino.title")}</h1>
           <p className="text-sm text-muted-foreground">Imposta canone, prezzo/atleta e setup per ciascun club.</p>
         </div>
-        <Button variant="outline" onClick={() => set_open_default(true)}>Applica listino default a tutti</Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={() => navigate("/superadmin/clubs/nuovo")}>Nuovo club</Button>
+          <Button variant="outline" onClick={() => set_open_default(true)}>Applica listino default a tutti</Button>
+        </div>
       </div>
 
       <Card>
