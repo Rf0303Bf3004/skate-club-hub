@@ -47,6 +47,16 @@ const LIVELLI_COMUNI = ["Pulcini", "Stellina 1", "Stellina 2", "Stellina 3", "St
 const LIVELLI_CARRIERA = ["Interbronzo", "Bronzo", "Interargento", "Argento", "Interoro", "Oro"];
 const LIVELLI_PROGRESSIONE = [...LIVELLI_COMUNI, ...LIVELLI_CARRIERA];
 
+const CANTONI_CH = [
+  ["AG", "Argovia"], ["AI", "Appenzello Interno"], ["AR", "Appenzello Esterno"],
+  ["BE", "Berna"], ["BL", "Basilea Campagna"], ["BS", "Basilea Città"],
+  ["FR", "Friburgo"], ["GE", "Ginevra"], ["GL", "Glarona"], ["GR", "Grigioni"],
+  ["JU", "Giura"], ["LU", "Lucerna"], ["NE", "Neuchâtel"], ["NW", "Nidvaldo"],
+  ["OW", "Obvaldo"], ["SG", "San Gallo"], ["SH", "Sciaffusa"], ["SO", "Soletta"],
+  ["SZ", "Svitto"], ["TG", "Turgovia"], ["TI", "Ticino"], ["UR", "Uri"],
+  ["VD", "Vaud"], ["VS", "Vallese"], ["ZG", "Zugo"], ["ZH", "Zurigo"],
+] as const;
+
 // ─── NumInput ──────────────────────────────────────────────
 function to_num(v: string | number): number {
   if (typeof v === "number") return isNaN(v) ? 0 : v;
