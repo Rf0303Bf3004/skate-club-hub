@@ -18,7 +18,11 @@ interface Payload {
   cap?: string;
   citta?: string;
   cantone?: string;
+  regione?: string;
+  provincia?: string;
+  codice_fiscale?: string;
   paese?: string;
+  paese_iso?: string;
   email_club?: string;
   telefono_club?: string;
   sito_web?: string;
