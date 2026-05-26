@@ -1788,6 +1788,14 @@ export type Database = {
           importo_atleti_chf: number
           importo_chf: number
           importo_setup_chf: number
+          intestatario_cantone: string | null
+          intestatario_cap: string | null
+          intestatario_citta: string | null
+          intestatario_iban: string | null
+          intestatario_indirizzo: string | null
+          intestatario_nome: string | null
+          intestatario_numero_iva_chf: string | null
+          intestatario_partita_iva: string | null
           n_atleti: number
           note: string | null
           pagata: boolean
@@ -1809,6 +1817,14 @@ export type Database = {
           importo_atleti_chf?: number
           importo_chf: number
           importo_setup_chf?: number
+          intestatario_cantone?: string | null
+          intestatario_cap?: string | null
+          intestatario_citta?: string | null
+          intestatario_iban?: string | null
+          intestatario_indirizzo?: string | null
+          intestatario_nome?: string | null
+          intestatario_numero_iva_chf?: string | null
+          intestatario_partita_iva?: string | null
           n_atleti: number
           note?: string | null
           pagata?: boolean
@@ -1830,6 +1846,14 @@ export type Database = {
           importo_atleti_chf?: number
           importo_chf?: number
           importo_setup_chf?: number
+          intestatario_cantone?: string | null
+          intestatario_cap?: string | null
+          intestatario_citta?: string | null
+          intestatario_iban?: string | null
+          intestatario_indirizzo?: string | null
+          intestatario_nome?: string | null
+          intestatario_numero_iva_chf?: string | null
+          intestatario_partita_iva?: string | null
           n_atleti?: number
           note?: string | null
           pagata?: boolean

@@ -31,6 +31,7 @@ export type FatturaClubData = {
     paese?: string;
     partita_iva?: string;
     numero_iva_chf?: string;
+    iban?: string;
   };
 };
 
@@ -93,6 +94,7 @@ export const FatturaClubDocument: React.FC<{ data: FatturaClubData }> = ({ data 
           {indirizzo_dest.map((l, i) => <Text key={i}>{l}</Text>)}
           {dest.partita_iva ? <Text style={s.small}>P.IVA: {dest.partita_iva}</Text> : null}
           {dest.numero_iva_chf ? <Text style={s.small}>IVA: {dest.numero_iva_chf}</Text> : null}
+          {dest.iban ? <Text style={s.small}>IBAN: {dest.iban}</Text> : null}
         </View>
 
         <View style={s.table}>

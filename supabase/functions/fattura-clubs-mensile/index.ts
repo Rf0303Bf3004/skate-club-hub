@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
 
     const { data: clubs, error: e_clubs } = await sb
       .from("clubs")
-      .select("id, nome, prezzo_per_atleta_chf, fee_fissa_chf, mesi_fatturazione_fee, mesi_fatturazione_atleti, mese_inizio_fatturazione, costo_setup_chf, setup_fatturato")
+      .select("id, nome, indirizzo, cap, citta, cantone, partita_iva, numero_iva_chf, iban, prezzo_per_atleta_chf, fee_fissa_chf, mesi_fatturazione_fee, mesi_fatturazione_atleti, mese_inizio_fatturazione, costo_setup_chf, setup_fatturato")
       .eq("attivo", true);
     if (e_clubs) throw e_clubs;
 
@@ -102,6 +102,14 @@ Deno.serve(async (req) => {
           stato: "bozza",
           data_emissione: oggi,
           data_scadenza: scadenza,
+          intestatario_nome: (c as any).nome ?? null,
+          intestatario_indirizzo: (c as any).indirizzo ?? null,
+          intestatario_cap: (c as any).cap ?? null,
+          intestatario_citta: (c as any).citta ?? null,
+          intestatario_cantone: (c as any).cantone ?? null,
+          intestatario_partita_iva: (c as any).partita_iva ?? null,
+          intestatario_numero_iva_chf: (c as any).numero_iva_chf ?? null,
+          intestatario_iban: (c as any).iban ?? null,
         },
         { onConflict: "club_id,periodo", ignoreDuplicates: true },
       );

@@ -70,6 +70,19 @@ const SuperAdminFatturaDetailPage: React.FC = () => {
   const righe = edit_mode ? edit_righe : righe_default;
   const totale = righe.reduce((a, r) => a + Number(r.importo || 0), 0);
 
+  const intest = useMemo(() => ({
+    nome: f?.intestatario_nome ?? club?.nome ?? "",
+    indirizzo: f?.intestatario_indirizzo ?? club?.indirizzo ?? null,
+    cap: f?.intestatario_cap ?? club?.cap ?? null,
+    citta: f?.intestatario_citta ?? club?.citta ?? null,
+    cantone: f?.intestatario_cantone ?? club?.cantone ?? null,
+    partita_iva: f?.intestatario_partita_iva ?? club?.partita_iva ?? null,
+    numero_iva_chf: f?.intestatario_numero_iva_chf ?? club?.numero_iva_chf ?? null,
+    iban: f?.intestatario_iban ?? null,
+  }), [f, club]);
+
+  const intest_incompleto = !intest.indirizzo || !intest.cap || !intest.citta;
+
   const pdf_data: FatturaClubData | null = useMemo(() => {
     if (!f || !club) return null;
     return {
@@ -81,17 +94,18 @@ const SuperAdminFatturaDetailPage: React.FC = () => {
       totale,
       note: edit_mode ? edit_note : (f.note ?? ""),
       club: {
-        nome: club.nome,
-        indirizzo: club.indirizzo,
-        cap: club.cap,
-        citta: club.citta,
-        cantone: club.cantone,
+        nome: intest.nome,
+        indirizzo: intest.indirizzo ?? undefined,
+        cap: intest.cap ?? undefined,
+        citta: intest.citta ?? undefined,
+        cantone: intest.cantone ?? undefined,
         paese: club.paese,
-        partita_iva: club.partita_iva,
-        numero_iva_chf: club.numero_iva_chf,
+        partita_iva: intest.partita_iva ?? undefined,
+        numero_iva_chf: intest.numero_iva_chf ?? undefined,
+        iban: intest.iban ?? undefined,
       },
     };
-  }, [f, club, righe, totale, edit_mode, edit_note]);
+  }, [f, club, righe, totale, edit_mode, edit_note, intest]);
 
   const start_edit = () => {
     set_edit_righe(righe_default.length ? righe_default : [{ descrizione: "", importo: 0 }]);
@@ -220,12 +234,18 @@ const SuperAdminFatturaDetailPage: React.FC = () => {
         <Card>
           <CardHeader><CardTitle className="text-base">Intestatario</CardTitle></CardHeader>
           <CardContent className="text-sm space-y-0.5">
-            <p className="font-semibold">{club.nome}</p>
-            {club.indirizzo && <p>{club.indirizzo}</p>}
-            <p>{[club.cap, club.citta].filter(Boolean).join(" ")}</p>
-            <p>{[club.cantone, club.paese || "CH"].filter(Boolean).join(" – ")}</p>
-            {club.partita_iva && <p className="text-muted-foreground">P.IVA: {club.partita_iva}</p>}
-            {club.numero_iva_chf && <p className="text-muted-foreground">IVA: {club.numero_iva_chf}</p>}
+            <p className="font-semibold">{intest.nome}</p>
+            {intest.indirizzo && <p>{intest.indirizzo}</p>}
+            {(intest.cap || intest.citta) && <p>{[intest.cap, intest.citta].filter(Boolean).join(" ")}</p>}
+            {intest.cantone && <p>{intest.cantone}</p>}
+            {intest.partita_iva && <p className="text-muted-foreground">P.IVA: {intest.partita_iva}</p>}
+            {intest.numero_iva_chf && <p className="text-muted-foreground">IVA: {intest.numero_iva_chf}</p>}
+            {intest.iban && <p className="text-muted-foreground">IBAN: {intest.iban}</p>}
+            {intest_incompleto && (
+              <p className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                Intestazione fattura incompleta — completa l'anagrafica del club e rigenera la fattura.
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>
