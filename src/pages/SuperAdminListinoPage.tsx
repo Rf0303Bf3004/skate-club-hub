@@ -34,6 +34,7 @@ const DEFAULTS: EditRow = {
 
 const SuperAdminListinoPage: React.FC = () => {
   const { t } = useTranslation("superadmin");
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const [search, set_search] = useState("");
   const [edits, set_edits] = useState<Record<string, EditRow>>({});
