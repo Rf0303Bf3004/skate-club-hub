@@ -428,7 +428,10 @@ const BoxComunicazione: React.FC<{
   const [template_sel, set_template_sel] = useState("");
   const [urgente, set_urgente] = useState(false);
   const [atleta_search, set_atleta_search] = useState("");
-  
+  const [template_raw, set_template_raw] = useState<string | null>(null);
+  const [ph_corso, set_ph_corso] = useState("");
+  const [ph_data, set_ph_data] = useState("");
+  const [ph_ora, set_ph_ora] = useState("");
 
   // Applica preset esterno (es. "Invia auguri" da banner compleanno)
   const last_preset_marker = React.useRef<string | null>(null);
@@ -443,8 +446,11 @@ const BoxComunicazione: React.FC<{
     set_titolo(preset.titolo);
     set_testo(preset.testo);
     set_template_sel("");
+    set_template_raw(null);
+    set_ph_corso(""); set_ph_data(""); set_ph_ora("");
     on_preset_consumed?.();
   }, [preset, on_preset_consumed]);
+
 
   const input_cls =
     "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
