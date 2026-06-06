@@ -493,6 +493,20 @@ const CommunicationsPage: React.FC = () => {
     );
   }, [com_visible, archive_search]);
 
+  const filtered_atleti = useMemo(() => {
+    const q = atleta_search.trim().toLowerCase();
+    if (!q) return atleti;
+    const terms = q.split(/\s+/).filter(Boolean);
+    return atleti
+      .filter((a: any) => {
+        const full = `${a.cognome} ${a.nome}`.toLowerCase();
+        const rev = `${a.nome} ${a.cognome}`.toLowerCase();
+        const liv = get_atleta_livello_label(a).toLowerCase();
+        return terms.every((term: string) => full.includes(term) || rev.includes(term) || liv.includes(term));
+      })
+      .sort((a: any, b: any) => `${a.cognome} ${a.nome}`.localeCompare(`${b.cognome} ${b.nome}`, 'it'));
+  }, [atleti, atleta_search]);
+
   const non_lette_count = ricevute.filter((c: any) => !c.letta).length;
 
   const mark_letta = async (id: string) => {
