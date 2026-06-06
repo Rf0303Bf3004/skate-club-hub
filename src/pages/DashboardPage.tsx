@@ -427,6 +427,7 @@ const BoxComunicazione: React.FC<{
   const [testo, set_testo] = useState("");
   const [template_sel, set_template_sel] = useState("");
   const [urgente, set_urgente] = useState(false);
+  const [atleta_search, set_atleta_search] = useState("");
   
 
   // Applica preset esterno (es. "Invia auguri" da banner compleanno)
