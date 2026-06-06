@@ -533,6 +533,16 @@ const BoxComunicazione: React.FC<{
 
   const destinatari = get_destinatari();
 
+  const filtered_atleti = useMemo(() => {
+    const q = atleta_search.trim().toLowerCase();
+    if (!q) return atleti.filter((a) => a.stato === "attivo");
+    return atleti.filter((a) => {
+      if (a.stato !== "attivo") return false;
+      const full = `${a.nome} ${a.cognome}`.toLowerCase();
+      return full.includes(q);
+    });
+  }, [atleti, atleta_search]);
+
   const handle_template = (tid: string) => {
     set_template_sel(tid);
     const t = templates.find((x) => x.id === tid);
