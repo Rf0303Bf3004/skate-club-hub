@@ -609,6 +609,7 @@ const BoxComunicazione: React.FC<{
             set_tipo_dest(e.target.value);
             set_riferimento_id("");
             set_persona_id("");
+            set_atleta_search("");
           }}
           className={input_cls}
         >
