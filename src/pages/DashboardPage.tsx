@@ -639,6 +639,51 @@ const BoxComunicazione: React.FC<{
         </select>
       </div>
 
+      {/* Segnaposto template */}
+      {template_raw && (placeholders.corso || placeholders.data || placeholders.ora) && (
+        <div className="space-y-1.5 rounded-lg border border-primary/20 bg-primary/5 p-3">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            Compila i campi del template
+          </p>
+          {placeholders.corso && (
+            <div className="space-y-1">
+              <label className="text-[11px] text-muted-foreground">Corso</label>
+              <select value={ph_corso} onChange={(e) => set_ph_corso(e.target.value)} className={input_cls}>
+                <option value="">Seleziona corso…</option>
+                {corsi
+                  .filter((c) => c.stato === "attivo")
+                  .map((c) => (
+                    <option key={c.id} value={c.id}>{c.nome}</option>
+                  ))}
+              </select>
+            </div>
+          )}
+          {placeholders.data && (
+            <div className="space-y-1">
+              <label className="text-[11px] text-muted-foreground">Data</label>
+              <input
+                type="date"
+                value={ph_data}
+                onChange={(e) => set_ph_data(e.target.value)}
+                className={input_cls}
+              />
+            </div>
+          )}
+          {placeholders.ora && (
+            <div className="space-y-1">
+              <label className="text-[11px] text-muted-foreground">Ora</label>
+              <input
+                type="time"
+                value={ph_ora}
+                onChange={(e) => set_ph_ora(e.target.value)}
+                className={input_cls}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+
       {/* Destinatari */}
       <div className="space-y-1.5">
         <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{td("quick_comm.recipients")}</label>
