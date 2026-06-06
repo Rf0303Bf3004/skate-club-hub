@@ -249,6 +249,23 @@ export default function TestLivelloPage() {
 
   const selected_test = tests.find((t) => t.id === selected_test_id);
 
+  // Filtro Attivi (oggi/futuri o senza data) vs Passati/Archiviati (data < oggi).
+  // Nota: nulla viene cancellato dal DB, è solo un filtro UI.
+  const today_iso = new Date().toISOString().split("T")[0];
+  const get_data_test = (t: TestLivello): string | null => {
+    if (t.tipo === "in_gara") return gare.find((g) => g.id === t.gara_id)?.data ?? t.data;
+    return t.data;
+  };
+  const tests_passati = useMemo(
+    () => tests.filter((t) => { const d = get_data_test(t); return d && d < today_iso; }),
+    [tests, gare, today_iso],
+  );
+  const tests_attivi = useMemo(
+    () => tests.filter((t) => { const d = get_data_test(t); return !d || d >= today_iso; }),
+    [tests, gare, today_iso],
+  );
+  const tests_visibili = mostra_passati ? tests_passati : tests_attivi;
+
   // Auto-sync default titolo/testo per la sezione Comunicazione (form Nuovo Test)
   useEffect(() => {
     if (com_touched) return;
