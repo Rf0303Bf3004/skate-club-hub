@@ -28,6 +28,8 @@ import {
   TrendingUp,
   MessageSquare,
   XCircle,
+  Search,
+  X,
   Clock,
   Wifi,
   ChevronDown,
