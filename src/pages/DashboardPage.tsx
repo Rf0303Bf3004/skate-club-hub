@@ -428,7 +428,10 @@ const BoxComunicazione: React.FC<{
   const [template_sel, set_template_sel] = useState("");
   const [urgente, set_urgente] = useState(false);
   const [atleta_search, set_atleta_search] = useState("");
-  
+  const [template_raw, set_template_raw] = useState<string | null>(null);
+  const [ph_corso, set_ph_corso] = useState("");
+  const [ph_data, set_ph_data] = useState("");
+  const [ph_ora, set_ph_ora] = useState("");
 
   // Applica preset esterno (es. "Invia auguri" da banner compleanno)
   const last_preset_marker = React.useRef<string | null>(null);
@@ -443,8 +446,11 @@ const BoxComunicazione: React.FC<{
     set_titolo(preset.titolo);
     set_testo(preset.testo);
     set_template_sel("");
+    set_template_raw(null);
+    set_ph_corso(""); set_ph_data(""); set_ph_ora("");
     on_preset_consumed?.();
   }, [preset, on_preset_consumed]);
+
 
   const input_cls =
     "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
@@ -548,9 +554,39 @@ const BoxComunicazione: React.FC<{
     const t = templates.find((x) => x.id === tid);
     if (t) {
       set_titolo(t.nome);
+      set_template_raw(t.testo);
+      set_ph_corso(""); set_ph_data(""); set_ph_ora("");
       set_testo(t.testo);
+    } else {
+      set_template_raw(null);
     }
   };
+
+  // Sostituzione segnaposto in tempo reale
+  const placeholders = React.useMemo(() => {
+    if (!template_raw) return { corso: false, data: false, ora: false };
+    return {
+      corso: template_raw.includes("{corso}"),
+      data: template_raw.includes("{data}"),
+      ora: template_raw.includes("{ora}"),
+    };
+  }, [template_raw]);
+
+  React.useEffect(() => {
+    if (!template_raw) return;
+    const corso_label = ph_corso
+      ? (corsi.find((c) => c.id === ph_corso)?.nome ?? "{corso}")
+      : "{corso}";
+    const data_label = ph_data
+      ? new Date(ph_data + "T00:00:00").toLocaleDateString("it-CH", { day: "2-digit", month: "long", year: "numeric" })
+      : "{data}";
+    const ora_label = ph_ora || "{ora}";
+    let out = template_raw;
+    out = out.split("{corso}").join(corso_label);
+    out = out.split("{data}").join(data_label);
+    out = out.split("{ora}").join(ora_label);
+    set_testo(out);
+  }, [template_raw, ph_corso, ph_data, ph_ora, corsi]);
 
   const handle_salva_inapp = async () => {
     if (!titolo || !testo) {
@@ -573,11 +609,14 @@ const BoxComunicazione: React.FC<{
       set_titolo("");
       set_testo("");
       set_template_sel("");
+      set_template_raw(null);
+      set_ph_corso(""); set_ph_data(""); set_ph_ora("");
       set_urgente(false);
     } catch (err: any) {
       toast({ title: td("toast.error"), description: err?.message, variant: "destructive" });
     }
   };
+
 
 
   return (
@@ -599,6 +638,51 @@ const BoxComunicazione: React.FC<{
           ))}
         </select>
       </div>
+
+      {/* Segnaposto template */}
+      {template_raw && (placeholders.corso || placeholders.data || placeholders.ora) && (
+        <div className="space-y-1.5 rounded-lg border border-primary/20 bg-primary/5 p-3">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            Compila i campi del template
+          </p>
+          {placeholders.corso && (
+            <div className="space-y-1">
+              <label className="text-[11px] text-muted-foreground">Corso</label>
+              <select value={ph_corso} onChange={(e) => set_ph_corso(e.target.value)} className={input_cls}>
+                <option value="">Seleziona corso…</option>
+                {corsi
+                  .filter((c) => c.stato === "attivo")
+                  .map((c) => (
+                    <option key={c.id} value={c.id}>{c.nome}</option>
+                  ))}
+              </select>
+            </div>
+          )}
+          {placeholders.data && (
+            <div className="space-y-1">
+              <label className="text-[11px] text-muted-foreground">Data</label>
+              <input
+                type="date"
+                value={ph_data}
+                onChange={(e) => set_ph_data(e.target.value)}
+                className={input_cls}
+              />
+            </div>
+          )}
+          {placeholders.ora && (
+            <div className="space-y-1">
+              <label className="text-[11px] text-muted-foreground">Ora</label>
+              <input
+                type="time"
+                value={ph_ora}
+                onChange={(e) => set_ph_ora(e.target.value)}
+                className={input_cls}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
 
       {/* Destinatari */}
       <div className="space-y-1.5">
@@ -720,7 +804,7 @@ const BoxComunicazione: React.FC<{
         <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{td("quick_comm.message")}</label>
         <textarea
           value={testo}
-          onChange={(e) => set_testo(e.target.value)}
+          onChange={(e) => { set_testo(e.target.value); if (template_raw) set_template_raw(null); }}
           rows={4}
           placeholder={td("quick_comm.message_placeholder")}
           className={`${input_cls} resize-none`}

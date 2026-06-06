@@ -560,6 +560,21 @@ export type Database = {
         }
         Relationships: []
       }
+      atleti_bk_compleanni_20260606: {
+        Row: {
+          data_nascita: string | null
+          id: string | null
+        }
+        Insert: {
+          data_nascita?: string | null
+          id?: string | null
+        }
+        Update: {
+          data_nascita?: string | null
+          id?: string | null
+        }
+        Relationships: []
+      }
       atleti_storici_stagioni: {
         Row: {
           atleta_id: string | null
@@ -1546,6 +1561,144 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      corsi_bk_demoseed_20260606: {
+        Row: {
+          attivo: boolean | null
+          capienza_max: number | null
+          categoria: string | null
+          club_id: string | null
+          costo_annuale: number | null
+          costo_mensile: number | null
+          created_at: string | null
+          giorno: string | null
+          id: string | null
+          livello_id: string | null
+          livello_richiesto: string | null
+          nome: string | null
+          note: string | null
+          ora_fine: string | null
+          ora_inizio: string | null
+          percorso: string | null
+          richiede_approvazione: boolean | null
+          stagione_id: string | null
+          tipo: string | null
+          usa_ghiaccio: boolean | null
+        }
+        Insert: {
+          attivo?: boolean | null
+          capienza_max?: number | null
+          categoria?: string | null
+          club_id?: string | null
+          costo_annuale?: number | null
+          costo_mensile?: number | null
+          created_at?: string | null
+          giorno?: string | null
+          id?: string | null
+          livello_id?: string | null
+          livello_richiesto?: string | null
+          nome?: string | null
+          note?: string | null
+          ora_fine?: string | null
+          ora_inizio?: string | null
+          percorso?: string | null
+          richiede_approvazione?: boolean | null
+          stagione_id?: string | null
+          tipo?: string | null
+          usa_ghiaccio?: boolean | null
+        }
+        Update: {
+          attivo?: boolean | null
+          capienza_max?: number | null
+          categoria?: string | null
+          club_id?: string | null
+          costo_annuale?: number | null
+          costo_mensile?: number | null
+          created_at?: string | null
+          giorno?: string | null
+          id?: string | null
+          livello_id?: string | null
+          livello_richiesto?: string | null
+          nome?: string | null
+          note?: string | null
+          ora_fine?: string | null
+          ora_inizio?: string | null
+          percorso?: string | null
+          richiede_approvazione?: boolean | null
+          stagione_id?: string | null
+          tipo?: string | null
+          usa_ghiaccio?: boolean | null
+        }
+        Relationships: []
+      }
+      corsi_bk_seed_20260606: {
+        Row: {
+          attivo: boolean | null
+          capienza_max: number | null
+          categoria: string | null
+          club_id: string | null
+          costo_annuale: number | null
+          costo_mensile: number | null
+          created_at: string | null
+          giorno: string | null
+          id: string | null
+          livello_id: string | null
+          livello_richiesto: string | null
+          nome: string | null
+          note: string | null
+          ora_fine: string | null
+          ora_inizio: string | null
+          percorso: string | null
+          richiede_approvazione: boolean | null
+          stagione_id: string | null
+          tipo: string | null
+          usa_ghiaccio: boolean | null
+        }
+        Insert: {
+          attivo?: boolean | null
+          capienza_max?: number | null
+          categoria?: string | null
+          club_id?: string | null
+          costo_annuale?: number | null
+          costo_mensile?: number | null
+          created_at?: string | null
+          giorno?: string | null
+          id?: string | null
+          livello_id?: string | null
+          livello_richiesto?: string | null
+          nome?: string | null
+          note?: string | null
+          ora_fine?: string | null
+          ora_inizio?: string | null
+          percorso?: string | null
+          richiede_approvazione?: boolean | null
+          stagione_id?: string | null
+          tipo?: string | null
+          usa_ghiaccio?: boolean | null
+        }
+        Update: {
+          attivo?: boolean | null
+          capienza_max?: number | null
+          categoria?: string | null
+          club_id?: string | null
+          costo_annuale?: number | null
+          costo_mensile?: number | null
+          created_at?: string | null
+          giorno?: string | null
+          id?: string | null
+          livello_id?: string | null
+          livello_richiesto?: string | null
+          nome?: string | null
+          note?: string | null
+          ora_fine?: string | null
+          ora_inizio?: string | null
+          percorso?: string | null
+          richiede_approvazione?: boolean | null
+          stagione_id?: string | null
+          tipo?: string | null
+          usa_ghiaccio?: boolean | null
+        }
+        Relationships: []
       }
       corsi_istruttori: {
         Row: {
