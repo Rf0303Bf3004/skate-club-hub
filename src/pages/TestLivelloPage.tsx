@@ -133,6 +133,7 @@ export default function TestLivelloPage() {
   const [view, set_view] = useState<"list" | "detail" | "new">(route_params.id ? "detail" : "list");
   const [selected_test_id, set_selected_test_id] = useState<string | null>(route_params.id ?? null);
   const [form, set_form] = useState<NuovoTestForm>({ ...empty_form });
+  const [mostra_passati, set_mostra_passati] = useState(false);
 
   // ─── Sezione Comunicazione (form Nuovo Test) ────────────
   const [com_state, set_com_state] = useState<ComunicazioneFormState>(() => empty_comunicazione_state());
@@ -247,6 +248,23 @@ export default function TestLivelloPage() {
   });
 
   const selected_test = tests.find((t) => t.id === selected_test_id);
+
+  // Filtro Attivi (oggi/futuri o senza data) vs Passati/Archiviati (data < oggi).
+  // Nota: nulla viene cancellato dal DB, è solo un filtro UI.
+  const today_iso = new Date().toISOString().split("T")[0];
+  const get_data_test = (t: TestLivello): string | null => {
+    if (t.tipo === "in_gara") return gare.find((g) => g.id === t.gara_id)?.data ?? t.data;
+    return t.data;
+  };
+  const tests_passati = useMemo(
+    () => tests.filter((t) => { const d = get_data_test(t); return d && d < today_iso; }),
+    [tests, gare, today_iso],
+  );
+  const tests_attivi = useMemo(
+    () => tests.filter((t) => { const d = get_data_test(t); return !d || d >= today_iso; }),
+    [tests, gare, today_iso],
+  );
+  const tests_visibili = mostra_passati ? tests_passati : tests_attivi;
 
   // Auto-sync default titolo/testo per la sezione Comunicazione (form Nuovo Test)
   useEffect(() => {
@@ -494,15 +512,33 @@ export default function TestLivelloPage() {
             <Plus className="w-4 h-4 mr-2" /> Nuovo Test
           </Button>
         </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant={mostra_passati ? "outline" : "default"}
+            size="sm"
+            onClick={() => set_mostra_passati(false)}
+          >
+            Attivi ({tests_attivi.length})
+          </Button>
+          <Button
+            variant={mostra_passati ? "default" : "outline"}
+            size="sm"
+            onClick={() => set_mostra_passati(true)}
+          >
+            Passati / Archiviati ({tests_passati.length})
+          </Button>
+        </div>
         {isLoading ? (
           <div className="flex justify-center py-12">
             <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
           </div>
-        ) : tests.length === 0 ? (
-          <Card><CardContent className="py-12 text-center text-muted-foreground">Nessun test di livello creato</CardContent></Card>
+        ) : tests_visibili.length === 0 ? (
+          <Card><CardContent className="py-12 text-center text-muted-foreground">
+            {mostra_passati ? "Nessun test passato" : "Nessun test di livello attivo"}
+          </CardContent></Card>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {tests.map((t) => {
+            {tests_visibili.map((t) => {
               const rows = counters[t.id] ?? [];
               const n_atleti = new Set(test_atleti.filter((x) => x.test_id === t.id).map((x) => x.atleta_id)).size;
               // se non ho ancora i test_atleti del test corrente, uso la lunghezza dei raw (step) per fallback
