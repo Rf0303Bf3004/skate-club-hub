@@ -554,9 +554,39 @@ const BoxComunicazione: React.FC<{
     const t = templates.find((x) => x.id === tid);
     if (t) {
       set_titolo(t.nome);
+      set_template_raw(t.testo);
+      set_ph_corso(""); set_ph_data(""); set_ph_ora("");
       set_testo(t.testo);
+    } else {
+      set_template_raw(null);
     }
   };
+
+  // Sostituzione segnaposto in tempo reale
+  const placeholders = React.useMemo(() => {
+    if (!template_raw) return { corso: false, data: false, ora: false };
+    return {
+      corso: template_raw.includes("{corso}"),
+      data: template_raw.includes("{data}"),
+      ora: template_raw.includes("{ora}"),
+    };
+  }, [template_raw]);
+
+  React.useEffect(() => {
+    if (!template_raw) return;
+    const corso_label = ph_corso
+      ? (corsi.find((c) => c.id === ph_corso)?.nome ?? "{corso}")
+      : "{corso}";
+    const data_label = ph_data
+      ? new Date(ph_data + "T00:00:00").toLocaleDateString("it-CH", { day: "2-digit", month: "long", year: "numeric" })
+      : "{data}";
+    const ora_label = ph_ora || "{ora}";
+    let out = template_raw;
+    out = out.split("{corso}").join(corso_label);
+    out = out.split("{data}").join(data_label);
+    out = out.split("{ora}").join(ora_label);
+    set_testo(out);
+  }, [template_raw, ph_corso, ph_data, ph_ora, corsi]);
 
   const handle_salva_inapp = async () => {
     if (!titolo || !testo) {
@@ -579,11 +609,14 @@ const BoxComunicazione: React.FC<{
       set_titolo("");
       set_testo("");
       set_template_sel("");
+      set_template_raw(null);
+      set_ph_corso(""); set_ph_data(""); set_ph_ora("");
       set_urgente(false);
     } catch (err: any) {
       toast({ title: td("toast.error"), description: err?.message, variant: "destructive" });
     }
   };
+
 
 
   return (
