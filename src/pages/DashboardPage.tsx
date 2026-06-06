@@ -804,7 +804,7 @@ const BoxComunicazione: React.FC<{
         <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{td("quick_comm.message")}</label>
         <textarea
           value={testo}
-          onChange={(e) => set_testo(e.target.value)}
+          onChange={(e) => { set_testo(e.target.value); if (template_raw) set_template_raw(null); }}
           rows={4}
           placeholder={td("quick_comm.message_placeholder")}
           className={`${input_cls} resize-none`}
