@@ -5108,6 +5108,10 @@ export type Database = {
         Returns: undefined
       }
       mobile_atleta_id: { Args: never; Returns: string }
+      mobile_can_see_comunicazione: {
+        Args: { p_com_id: string }
+        Returns: boolean
+      }
       mobile_club_id: { Args: never; Returns: string }
       normalize_label: { Args: { input: string }; Returns: string }
       ricalcola_cache_ore_mensile: {
