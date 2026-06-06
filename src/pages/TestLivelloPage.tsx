@@ -133,6 +133,7 @@ export default function TestLivelloPage() {
   const [view, set_view] = useState<"list" | "detail" | "new">(route_params.id ? "detail" : "list");
   const [selected_test_id, set_selected_test_id] = useState<string | null>(route_params.id ?? null);
   const [form, set_form] = useState<NuovoTestForm>({ ...empty_form });
+  const [mostra_passati, set_mostra_passati] = useState(false);
 
   // ─── Sezione Comunicazione (form Nuovo Test) ────────────
   const [com_state, set_com_state] = useState<ComunicazioneFormState>(() => empty_comunicazione_state());
