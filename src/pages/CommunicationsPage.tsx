@@ -493,6 +493,20 @@ const CommunicationsPage: React.FC = () => {
     );
   }, [com_visible, archive_search]);
 
+  const filtered_atleti = useMemo(() => {
+    const q = atleta_search.trim().toLowerCase();
+    if (!q) return atleti;
+    const terms = q.split(/\s+/).filter(Boolean);
+    return atleti
+      .filter((a: any) => {
+        const full = `${a.cognome} ${a.nome}`.toLowerCase();
+        const rev = `${a.nome} ${a.cognome}`.toLowerCase();
+        const liv = get_atleta_livello_label(a).toLowerCase();
+        return terms.every((term: string) => full.includes(term) || rev.includes(term) || liv.includes(term));
+      })
+      .sort((a: any, b: any) => `${a.cognome} ${a.nome}`.localeCompare(`${b.cognome} ${b.nome}`, 'it'));
+  }, [atleti, atleta_search]);
+
   const non_lette_count = ricevute.filter((c: any) => !c.letta).length;
 
   const mark_letta = async (id: string) => {
@@ -969,11 +983,25 @@ const CommunicationsPage: React.FC = () => {
               {tipo_destinatari === 'atleti' && (
                 <div className="space-y-2 rounded-xl border border-border p-3">
                   <Label className="text-xs">Atleti specifici</Label>
-                  <Input
-                    placeholder="Cerca per nome, cognome o livello…"
-                    value={atleta_search}
-                    onChange={(e) => set_atleta_search(e.target.value)}
-                  />
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                    <Input
+                      placeholder="Cerca per nome o cognome…"
+                      value={atleta_search}
+                      onChange={(e) => set_atleta_search(e.target.value)}
+                      className="pl-10 pr-10 h-12 text-base"
+                    />
+                    {atleta_search && (
+                      <button
+                        type="button"
+                        aria-label="Pulisci ricerca"
+                        onClick={() => set_atleta_search('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-muted text-muted-foreground"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                   <div className="flex justify-between">
                     <Button type="button" variant="ghost" size="sm" onClick={() => set_atleti_specifici_ids(atleti.map((a: any) => a.id))}>
                       Seleziona tutti
@@ -982,22 +1010,11 @@ const CommunicationsPage: React.FC = () => {
                       Deseleziona
                     </Button>
                   </div>
-                  <div className="max-h-64 overflow-y-auto space-y-1 border rounded-md p-2 bg-background">
-                    {(() => {
-                      const q = atleta_search.trim().toLowerCase();
-                      const lista = atleti
-                        .filter((a: any) => {
-                          if (!q) return true;
-                          const liv = get_atleta_livello_label(a).toLowerCase();
-                          return (
-                            `${a.cognome} ${a.nome}`.toLowerCase().includes(q) ||
-                            `${a.nome} ${a.cognome}`.toLowerCase().includes(q) ||
-                            liv.includes(q)
-                          );
-                        })
-                        .sort((a: any, b: any) => `${a.cognome} ${a.nome}`.localeCompare(`${b.cognome} ${b.nome}`, 'it'));
-                      if (lista.length === 0) return <p className="text-xs text-muted-foreground px-2 py-1">Nessun atleta trovato.</p>;
-                      return lista.map((a: any) => {
+                  <div className="max-h-[280px] overflow-y-auto space-y-1 border rounded-md p-2 bg-background">
+                    {filtered_atleti.length === 0 ? (
+                      <p className="text-xs text-muted-foreground px-2 py-1">Nessun atleta trovato.</p>
+                    ) : (
+                      filtered_atleti.map((a: any) => {
                         const checked = atleti_specifici_ids.includes(a.id);
                         return (
                           <label key={a.id} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-muted cursor-pointer text-sm">
@@ -1011,8 +1028,8 @@ const CommunicationsPage: React.FC = () => {
                             <Badge variant="outline" className="text-[10px]">{get_atleta_livello_label(a)}</Badge>
                           </label>
                         );
-                      });
-                    })()}
+                      })
+                    )}
                   </div>
                   <p className="text-[11px] text-muted-foreground">{atleti_specifici_ids.length} atleti selezionati</p>
                 </div>
