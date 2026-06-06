@@ -28,6 +28,8 @@ import {
   TrendingUp,
   MessageSquare,
   XCircle,
+  Search,
+  X,
   Clock,
   Wifi,
   ChevronDown,
@@ -40,6 +42,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -424,6 +427,7 @@ const BoxComunicazione: React.FC<{
   const [testo, set_testo] = useState("");
   const [template_sel, set_template_sel] = useState("");
   const [urgente, set_urgente] = useState(false);
+  const [atleta_search, set_atleta_search] = useState("");
   
 
   // Applica preset esterno (es. "Invia auguri" da banner compleanno)
@@ -529,6 +533,16 @@ const BoxComunicazione: React.FC<{
 
   const destinatari = get_destinatari();
 
+  const filtered_atleti = useMemo(() => {
+    const q = atleta_search.trim().toLowerCase();
+    if (!q) return atleti.filter((a) => a.stato === "attivo");
+    return atleti.filter((a) => {
+      if (a.stato !== "attivo") return false;
+      const full = `${a.nome} ${a.cognome}`.toLowerCase();
+      return full.includes(q);
+    });
+  }, [atleti, atleta_search]);
+
   const handle_template = (tid: string) => {
     set_template_sel(tid);
     const t = templates.find((x) => x.id === tid);
@@ -595,6 +609,7 @@ const BoxComunicazione: React.FC<{
             set_tipo_dest(e.target.value);
             set_riferimento_id("");
             set_persona_id("");
+            set_atleta_search("");
           }}
           className={input_cls}
         >
@@ -632,16 +647,44 @@ const BoxComunicazione: React.FC<{
           </select>
         )}
         {tipo_dest === "singolo_atleta" && (
-          <select value={persona_id} onChange={(e) => set_persona_id(e.target.value)} className={input_cls}>
-            <option value="">{td("quick_comm.select_atleta")}</option>
-            {atleti
-              .filter((a) => a.stato === "attivo")
-              .map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.nome} {a.cognome}
-                </option>
-              ))}
-          </select>
+          <div className="space-y-2">
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+              <Input
+                className="pl-9 pr-9 text-base h-12"
+                placeholder="Cerca atleta…"
+                value={atleta_search}
+                onChange={(e) => set_atleta_search(e.target.value)}
+              />
+              {atleta_search && (
+                <button
+                  type="button"
+                  onClick={() => set_atleta_search("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            <div className="border rounded-md max-h-56 overflow-y-auto space-y-0.5 bg-background">
+              {filtered_atleti.length === 0 ? (
+                <p className="text-sm text-muted-foreground px-3 py-3">Nessun atleta trovato.</p>
+              ) : (
+                filtered_atleti.map((a) => (
+                  <div
+                    key={a.id}
+                    onClick={() => set_persona_id(a.id)}
+                    className={`flex items-center gap-2 px-3 py-3 rounded cursor-pointer text-sm min-h-[44px] ${
+                      persona_id === a.id ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted"
+                    }`}
+                  >
+                    <span className="flex-1">{a.nome} {a.cognome}</span>
+                    {persona_id === a.id && <span className="text-primary">✓</span>}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         )}
         {tipo_dest === "singolo_istruttore" && (
           <select value={persona_id} onChange={(e) => set_persona_id(e.target.value)} className={input_cls}>
