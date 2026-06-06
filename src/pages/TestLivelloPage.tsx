@@ -512,18 +512,6 @@ export default function TestLivelloPage() {
             <Plus className="w-4 h-4 mr-2" /> Nuovo Test
           </Button>
         </div>
-        {isLoading ? (
-          <div className="flex justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
-          </div>
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-foreground">Test di Livello</h1>
-          <Button onClick={() => { set_form({ ...empty_form }); set_view("new"); }}>
-            <Plus className="w-4 h-4 mr-2" /> Nuovo Test
-          </Button>
-        </div>
         <div className="flex items-center gap-2">
           <Button
             variant={mostra_passati ? "outline" : "default"}
