@@ -60,6 +60,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "adesioni_atleta_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti_con_completezza"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "adesioni_atleta_club_id_fkey"
             columns: ["club_id"]
             isOneToOne: false
@@ -94,7 +101,7 @@ export type Database = {
           cap: string | null
           carriera_artistica: string | null
           carriera_stile: string | null
-          categoria: string
+          categoria: string | null
           citta: string | null
           club_id: string
           codice_atleta: string | null
@@ -169,7 +176,7 @@ export type Database = {
           cap?: string | null
           carriera_artistica?: string | null
           carriera_stile?: string | null
-          categoria?: string
+          categoria?: string | null
           citta?: string | null
           club_id: string
           codice_atleta?: string | null
@@ -244,7 +251,7 @@ export type Database = {
           cap?: string | null
           carriera_artistica?: string | null
           carriera_stile?: string | null
-          categoria?: string
+          categoria?: string | null
           citta?: string | null
           club_id?: string
           codice_atleta?: string | null
@@ -324,6 +331,234 @@ export type Database = {
             referencedColumns: ["club_id"]
           },
         ]
+      }
+      atleti_backup_20260606: {
+        Row: {
+          a_rischio: boolean | null
+          a_rischio_da: string | null
+          agonista: boolean | null
+          atleta_federazione: boolean | null
+          attivo: boolean | null
+          attivo_come_monitore: boolean | null
+          cantone: string | null
+          cap: string | null
+          carriera_artistica: string | null
+          carriera_stile: string | null
+          categoria: string | null
+          citta: string | null
+          club_id: string | null
+          codice_atleta: string | null
+          codice_fiscale: string | null
+          cognome: string | null
+          compenso_orario_pista: number | null
+          created_at: string | null
+          data_nascita: string | null
+          disco_in_preparazione: string | null
+          disco_url: string | null
+          e_aiuto_monitrice: boolean | null
+          e_monitrice: boolean | null
+          foto_url: string | null
+          genitore1_cantone: string | null
+          genitore1_cap: string | null
+          genitore1_citta: string | null
+          genitore1_cognome: string | null
+          genitore1_email: string | null
+          genitore1_indirizzo: string | null
+          genitore1_nome: string | null
+          genitore1_paese_iso: string | null
+          genitore1_provincia: string | null
+          genitore1_regione: string | null
+          genitore1_telefono: string | null
+          genitore2_cantone: string | null
+          genitore2_cap: string | null
+          genitore2_citta: string | null
+          genitore2_cognome: string | null
+          genitore2_email: string | null
+          genitore2_indirizzo: string | null
+          genitore2_nome: string | null
+          genitore2_paese_iso: string | null
+          genitore2_provincia: string | null
+          genitore2_regione: string | null
+          genitore2_telefono: string | null
+          id: string | null
+          importato_da_excel: boolean | null
+          indirizzo: string | null
+          licenza_sis_categoria: string | null
+          licenza_sis_disciplina: string | null
+          licenza_sis_numero: string | null
+          licenza_sis_validita_a: string | null
+          livello_amatori: string | null
+          livello_artistica: string | null
+          livello_artistica_in_preparazione: string | null
+          livello_attuale: string | null
+          livello_in_preparazione: string | null
+          livello_stile: string | null
+          livello_stile_in_preparazione: string | null
+          nome: string | null
+          note: string | null
+          ore_pista_stagione: number | null
+          paese_iso: string | null
+          provincia: string | null
+          regione: string | null
+          ruolo_pista: string | null
+          sesso: string | null
+          tag_nfc: string | null
+          telefono: string | null
+          verificato: boolean | null
+          verificato_at: string | null
+          verificato_da_user_id: string | null
+        }
+        Insert: {
+          a_rischio?: boolean | null
+          a_rischio_da?: string | null
+          agonista?: boolean | null
+          atleta_federazione?: boolean | null
+          attivo?: boolean | null
+          attivo_come_monitore?: boolean | null
+          cantone?: string | null
+          cap?: string | null
+          carriera_artistica?: string | null
+          carriera_stile?: string | null
+          categoria?: string | null
+          citta?: string | null
+          club_id?: string | null
+          codice_atleta?: string | null
+          codice_fiscale?: string | null
+          cognome?: string | null
+          compenso_orario_pista?: number | null
+          created_at?: string | null
+          data_nascita?: string | null
+          disco_in_preparazione?: string | null
+          disco_url?: string | null
+          e_aiuto_monitrice?: boolean | null
+          e_monitrice?: boolean | null
+          foto_url?: string | null
+          genitore1_cantone?: string | null
+          genitore1_cap?: string | null
+          genitore1_citta?: string | null
+          genitore1_cognome?: string | null
+          genitore1_email?: string | null
+          genitore1_indirizzo?: string | null
+          genitore1_nome?: string | null
+          genitore1_paese_iso?: string | null
+          genitore1_provincia?: string | null
+          genitore1_regione?: string | null
+          genitore1_telefono?: string | null
+          genitore2_cantone?: string | null
+          genitore2_cap?: string | null
+          genitore2_citta?: string | null
+          genitore2_cognome?: string | null
+          genitore2_email?: string | null
+          genitore2_indirizzo?: string | null
+          genitore2_nome?: string | null
+          genitore2_paese_iso?: string | null
+          genitore2_provincia?: string | null
+          genitore2_regione?: string | null
+          genitore2_telefono?: string | null
+          id?: string | null
+          importato_da_excel?: boolean | null
+          indirizzo?: string | null
+          licenza_sis_categoria?: string | null
+          licenza_sis_disciplina?: string | null
+          licenza_sis_numero?: string | null
+          licenza_sis_validita_a?: string | null
+          livello_amatori?: string | null
+          livello_artistica?: string | null
+          livello_artistica_in_preparazione?: string | null
+          livello_attuale?: string | null
+          livello_in_preparazione?: string | null
+          livello_stile?: string | null
+          livello_stile_in_preparazione?: string | null
+          nome?: string | null
+          note?: string | null
+          ore_pista_stagione?: number | null
+          paese_iso?: string | null
+          provincia?: string | null
+          regione?: string | null
+          ruolo_pista?: string | null
+          sesso?: string | null
+          tag_nfc?: string | null
+          telefono?: string | null
+          verificato?: boolean | null
+          verificato_at?: string | null
+          verificato_da_user_id?: string | null
+        }
+        Update: {
+          a_rischio?: boolean | null
+          a_rischio_da?: string | null
+          agonista?: boolean | null
+          atleta_federazione?: boolean | null
+          attivo?: boolean | null
+          attivo_come_monitore?: boolean | null
+          cantone?: string | null
+          cap?: string | null
+          carriera_artistica?: string | null
+          carriera_stile?: string | null
+          categoria?: string | null
+          citta?: string | null
+          club_id?: string | null
+          codice_atleta?: string | null
+          codice_fiscale?: string | null
+          cognome?: string | null
+          compenso_orario_pista?: number | null
+          created_at?: string | null
+          data_nascita?: string | null
+          disco_in_preparazione?: string | null
+          disco_url?: string | null
+          e_aiuto_monitrice?: boolean | null
+          e_monitrice?: boolean | null
+          foto_url?: string | null
+          genitore1_cantone?: string | null
+          genitore1_cap?: string | null
+          genitore1_citta?: string | null
+          genitore1_cognome?: string | null
+          genitore1_email?: string | null
+          genitore1_indirizzo?: string | null
+          genitore1_nome?: string | null
+          genitore1_paese_iso?: string | null
+          genitore1_provincia?: string | null
+          genitore1_regione?: string | null
+          genitore1_telefono?: string | null
+          genitore2_cantone?: string | null
+          genitore2_cap?: string | null
+          genitore2_citta?: string | null
+          genitore2_cognome?: string | null
+          genitore2_email?: string | null
+          genitore2_indirizzo?: string | null
+          genitore2_nome?: string | null
+          genitore2_paese_iso?: string | null
+          genitore2_provincia?: string | null
+          genitore2_regione?: string | null
+          genitore2_telefono?: string | null
+          id?: string | null
+          importato_da_excel?: boolean | null
+          indirizzo?: string | null
+          licenza_sis_categoria?: string | null
+          licenza_sis_disciplina?: string | null
+          licenza_sis_numero?: string | null
+          licenza_sis_validita_a?: string | null
+          livello_amatori?: string | null
+          livello_artistica?: string | null
+          livello_artistica_in_preparazione?: string | null
+          livello_attuale?: string | null
+          livello_in_preparazione?: string | null
+          livello_stile?: string | null
+          livello_stile_in_preparazione?: string | null
+          nome?: string | null
+          note?: string | null
+          ore_pista_stagione?: number | null
+          paese_iso?: string | null
+          provincia?: string | null
+          regione?: string | null
+          ruolo_pista?: string | null
+          sesso?: string | null
+          tag_nfc?: string | null
+          telefono?: string | null
+          verificato?: boolean | null
+          verificato_at?: string | null
+          verificato_da_user_id?: string | null
+        }
+        Relationships: []
       }
       atleti_storici_stagioni: {
         Row: {
@@ -646,7 +881,7 @@ export type Database = {
           numero_iva_chf: string | null
           numero_tessera_federale: string | null
           onboarding_completato: boolean
-          paese: string | null
+          paese: string
           paese_iso: string
           partita_iva: string | null
           prezzo_per_atleta_chf: number
@@ -688,7 +923,7 @@ export type Database = {
           numero_iva_chf?: string | null
           numero_tessera_federale?: string | null
           onboarding_completato?: boolean
-          paese?: string | null
+          paese?: string
           paese_iso?: string
           partita_iva?: string | null
           prezzo_per_atleta_chf?: number
@@ -730,7 +965,7 @@ export type Database = {
           numero_iva_chf?: string | null
           numero_tessera_federale?: string | null
           onboarding_completato?: boolean
-          paese?: string | null
+          paese?: string
           paese_iso?: string
           partita_iva?: string | null
           prezzo_per_atleta_chf?: number
@@ -742,6 +977,135 @@ export type Database = {
           reminder_orario_invio?: number
           reminder_staff_attivo?: boolean
           setup_fatturato?: boolean
+          sigla?: string | null
+          sito_web?: string | null
+          telefono?: string | null
+          twint_qr_url?: string | null
+        }
+        Relationships: []
+      }
+      clubs_backup_20260606: {
+        Row: {
+          attivo: boolean | null
+          banner_onboarding_chiuso: boolean | null
+          cantone: string | null
+          cap: string | null
+          citta: string | null
+          codice_fiscale: string | null
+          colore_primario: string | null
+          costo_setup_chf: number | null
+          created_at: string | null
+          descrizione: string | null
+          email: string | null
+          fee_fissa_chf: number | null
+          iban: string | null
+          id: string | null
+          indirizzo: string | null
+          intestatario_iban: string | null
+          logo_url: string | null
+          mese_inizio_fatturazione: number | null
+          mesi_fatturazione_atleti: number | null
+          mesi_fatturazione_fee: number | null
+          nome: string | null
+          numero_iva_chf: string | null
+          numero_tessera_federale: string | null
+          onboarding_completato: boolean | null
+          paese: string | null
+          paese_iso: string | null
+          partita_iva: string | null
+          prezzo_per_atleta_chf: number | null
+          provincia: string | null
+          regione: string | null
+          reminder_allenamenti_attivo: boolean | null
+          reminder_anticipo_giorni: number | null
+          reminder_last_run_date: string | null
+          reminder_orario_invio: number | null
+          reminder_staff_attivo: boolean | null
+          setup_fatturato: boolean | null
+          sigla: string | null
+          sito_web: string | null
+          telefono: string | null
+          twint_qr_url: string | null
+        }
+        Insert: {
+          attivo?: boolean | null
+          banner_onboarding_chiuso?: boolean | null
+          cantone?: string | null
+          cap?: string | null
+          citta?: string | null
+          codice_fiscale?: string | null
+          colore_primario?: string | null
+          costo_setup_chf?: number | null
+          created_at?: string | null
+          descrizione?: string | null
+          email?: string | null
+          fee_fissa_chf?: number | null
+          iban?: string | null
+          id?: string | null
+          indirizzo?: string | null
+          intestatario_iban?: string | null
+          logo_url?: string | null
+          mese_inizio_fatturazione?: number | null
+          mesi_fatturazione_atleti?: number | null
+          mesi_fatturazione_fee?: number | null
+          nome?: string | null
+          numero_iva_chf?: string | null
+          numero_tessera_federale?: string | null
+          onboarding_completato?: boolean | null
+          paese?: string | null
+          paese_iso?: string | null
+          partita_iva?: string | null
+          prezzo_per_atleta_chf?: number | null
+          provincia?: string | null
+          regione?: string | null
+          reminder_allenamenti_attivo?: boolean | null
+          reminder_anticipo_giorni?: number | null
+          reminder_last_run_date?: string | null
+          reminder_orario_invio?: number | null
+          reminder_staff_attivo?: boolean | null
+          setup_fatturato?: boolean | null
+          sigla?: string | null
+          sito_web?: string | null
+          telefono?: string | null
+          twint_qr_url?: string | null
+        }
+        Update: {
+          attivo?: boolean | null
+          banner_onboarding_chiuso?: boolean | null
+          cantone?: string | null
+          cap?: string | null
+          citta?: string | null
+          codice_fiscale?: string | null
+          colore_primario?: string | null
+          costo_setup_chf?: number | null
+          created_at?: string | null
+          descrizione?: string | null
+          email?: string | null
+          fee_fissa_chf?: number | null
+          iban?: string | null
+          id?: string | null
+          indirizzo?: string | null
+          intestatario_iban?: string | null
+          logo_url?: string | null
+          mese_inizio_fatturazione?: number | null
+          mesi_fatturazione_atleti?: number | null
+          mesi_fatturazione_fee?: number | null
+          nome?: string | null
+          numero_iva_chf?: string | null
+          numero_tessera_federale?: string | null
+          onboarding_completato?: boolean | null
+          paese?: string | null
+          paese_iso?: string | null
+          partita_iva?: string | null
+          prezzo_per_atleta_chf?: number | null
+          provincia?: string | null
+          regione?: string | null
+          reminder_allenamenti_attivo?: boolean | null
+          reminder_anticipo_giorni?: number | null
+          reminder_last_run_date?: string | null
+          reminder_orario_invio?: number | null
+          reminder_staff_attivo?: boolean | null
+          setup_fatturato?: boolean | null
           sigla?: string | null
           sito_web?: string | null
           telefono?: string | null
@@ -855,6 +1219,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "comunicazioni_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti_con_completezza"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "comunicazioni_club_id_fkey"
             columns: ["club_id"]
             isOneToOne: false
@@ -941,6 +1312,13 @@ export type Database = {
             columns: ["atleta_id"]
             isOneToOne: false
             referencedRelation: "atleti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comunicazioni_destinatari_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti_con_completezza"
             referencedColumns: ["id"]
           },
           {
@@ -1808,6 +2186,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fatture_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti_con_completezza"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fatture_club_id_fkey"
             columns: ["club_id"]
             isOneToOne: false
@@ -2110,6 +2495,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "iscrizioni_corsi_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti_con_completezza"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "iscrizioni_corsi_corso_id_fkey"
             columns: ["corso_id"]
             isOneToOne: false
@@ -2231,6 +2623,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "iscrizioni_eventi_esterni_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti_con_completezza"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "iscrizioni_eventi_esterni_evento_esterno_id_fkey"
             columns: ["evento_esterno_id"]
             isOneToOne: false
@@ -2303,6 +2702,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "iscrizioni_gare_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti_con_completezza"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "iscrizioni_gare_gara_id_fkey"
             columns: ["gara_id"]
             isOneToOne: false
@@ -2352,6 +2758,13 @@ export type Database = {
             columns: ["atleta_id"]
             isOneToOne: false
             referencedRelation: "atleti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "iscrizioni_pacchetti_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti_con_completezza"
             referencedColumns: ["id"]
           },
           {
@@ -2485,6 +2898,13 @@ export type Database = {
             referencedRelation: "atleti"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "istruttori_linked_atleta_id_fkey"
+            columns: ["linked_atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti_con_completezza"
+            referencedColumns: ["id"]
+          },
         ]
       }
       letture_comunicazioni: {
@@ -2518,6 +2938,13 @@ export type Database = {
             columns: ["atleta_id"]
             isOneToOne: false
             referencedRelation: "atleti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "letture_comunicazioni_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti_con_completezza"
             referencedColumns: ["id"]
           },
           {
@@ -2633,6 +3060,13 @@ export type Database = {
             columns: ["atleta_id"]
             isOneToOne: false
             referencedRelation: "atleti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lezioni_private_atlete_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti_con_completezza"
             referencedColumns: ["id"]
           },
           {
@@ -3038,6 +3472,13 @@ export type Database = {
             columns: ["atleta_id"]
             isOneToOne: false
             referencedRelation: "atleti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "percorsi_atleta_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti_con_completezza"
             referencedColumns: ["id"]
           },
           {
@@ -3724,6 +4165,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "risultati_gara_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti_con_completezza"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "risultati_gara_gara_id_fkey"
             columns: ["gara_id"]
             isOneToOne: false
@@ -4149,6 +4597,13 @@ export type Database = {
             referencedRelation: "atleti"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "storico_livelli_atleta_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti_con_completezza"
+            referencedColumns: ["id"]
+          },
         ]
       }
       test_livello: {
@@ -4287,6 +4742,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "test_livello_atleti_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti_con_completezza"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "test_livello_atleti_test_id_fkey"
             columns: ["test_id"]
             isOneToOne: false
@@ -4396,6 +4858,102 @@ export type Database = {
       }
     }
     Views: {
+      atleti_con_completezza: {
+        Row: {
+          a_rischio: boolean | null
+          a_rischio_da: string | null
+          agonista: boolean | null
+          atleta_federazione: boolean | null
+          attivo: boolean | null
+          attivo_come_monitore: boolean | null
+          campi_mancanti: string[] | null
+          cantone: string | null
+          cap: string | null
+          carriera_artistica: string | null
+          carriera_stile: string | null
+          categoria: string | null
+          citta: string | null
+          club_id: string | null
+          club_paese: string | null
+          codice_atleta: string | null
+          codice_fiscale: string | null
+          cognome: string | null
+          compenso_orario_pista: number | null
+          created_at: string | null
+          data_nascita: string | null
+          disco_in_preparazione: string | null
+          disco_url: string | null
+          e_aiuto_monitrice: boolean | null
+          e_monitrice: boolean | null
+          foto_url: string | null
+          genitore1_cantone: string | null
+          genitore1_cap: string | null
+          genitore1_citta: string | null
+          genitore1_cognome: string | null
+          genitore1_email: string | null
+          genitore1_indirizzo: string | null
+          genitore1_nome: string | null
+          genitore1_paese_iso: string | null
+          genitore1_provincia: string | null
+          genitore1_regione: string | null
+          genitore1_telefono: string | null
+          genitore2_cantone: string | null
+          genitore2_cap: string | null
+          genitore2_citta: string | null
+          genitore2_cognome: string | null
+          genitore2_email: string | null
+          genitore2_indirizzo: string | null
+          genitore2_nome: string | null
+          genitore2_paese_iso: string | null
+          genitore2_provincia: string | null
+          genitore2_regione: string | null
+          genitore2_telefono: string | null
+          id: string | null
+          importato_da_excel: boolean | null
+          indirizzo: string | null
+          licenza_sis_categoria: string | null
+          licenza_sis_disciplina: string | null
+          licenza_sis_numero: string | null
+          licenza_sis_validita_a: string | null
+          livello_amatori: string | null
+          livello_artistica: string | null
+          livello_artistica_in_preparazione: string | null
+          livello_attuale: string | null
+          livello_in_preparazione: string | null
+          livello_stile: string | null
+          livello_stile_in_preparazione: string | null
+          nome: string | null
+          note: string | null
+          ore_pista_stagione: number | null
+          paese_iso: string | null
+          provincia: string | null
+          regione: string | null
+          ruolo_pista: string | null
+          scheda_completa: boolean | null
+          sesso: string | null
+          tag_nfc: string | null
+          telefono: string | null
+          verificato: boolean | null
+          verificato_at: string | null
+          verificato_da_user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atleti_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atleti_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "kpi_pitch_sponsor"
+            referencedColumns: ["club_id"]
+          },
+        ]
+      }
       gare_calendario_mobile: {
         Row: {
           archiviata: boolean | null
