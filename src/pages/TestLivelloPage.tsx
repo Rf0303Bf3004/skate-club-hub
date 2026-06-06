@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, ArrowLeft, Trash2, X, CheckCircle, Send } from "lucide-react";
+import { Plus, ArrowLeft, Trash2, X, CheckCircle, Send, Search } from "lucide-react";
 import {
   ComunicazioneFormSection,
   empty_comunicazione_state,
@@ -384,6 +384,7 @@ export default function TestLivelloPage() {
   // ─── Add Athlete Dialog (multitest chain) ────────────────────────────
   const [show_add, set_show_add] = useState(false);
   const [add_atleta_id, set_add_atleta_id] = useState<string>("");
+  const [search_atleta, set_search_atleta] = useState("");
   const [chain, set_chain] = useState<{ accesso: string; target: string; richiede_disciplina: boolean; disciplina: Disciplina | "" }[]>([]);
 
   // Quando seleziono un atleta, pre-popolo la catena con il primo passaggio valido
@@ -398,7 +399,7 @@ export default function TestLivelloPage() {
   }, [add_atleta_id, atleti]);
 
   useEffect(() => {
-    if (!show_add) { set_add_atleta_id(""); set_chain([]); }
+    if (!show_add) { set_add_atleta_id(""); set_chain([]); set_search_atleta(""); }
   }, [show_add]);
 
   const all_passaggi = useMemo(() => [...TEST_BASE_PASSAGGI, ...TEST_CARRIERA_PASSAGGI], []);
