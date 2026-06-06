@@ -462,6 +462,15 @@ export default function TestLivelloPage() {
   const convocate_ids = new Set(test_atleti.map((ta) => ta.atleta_id));
   const atleti_per_add = atleti.filter((a) => !convocate_ids.has(a.id));
 
+  const atleti_filtrati = useMemo(() => {
+    if (!search_atleta.trim()) return atleti_per_add;
+    const terms = search_atleta.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    return atleti_per_add.filter((a) => {
+      const text = `${a.nome} ${a.cognome}`.toLowerCase();
+      return terms.every((t) => text.includes(t));
+    });
+  }, [search_atleta, atleti_per_add]);
+
   // Raggruppa per atleta nel dettaglio
   const grouped_chains = useMemo(() => {
     const map = new Map<string, TestAtleta[]>();
@@ -790,18 +799,57 @@ export default function TestLivelloPage() {
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium text-foreground">Atleta *</label>
-              <Select value={add_atleta_id} onValueChange={set_add_atleta_id}>
-                <SelectTrigger><SelectValue placeholder="Seleziona un'atleta non convocata" /></SelectTrigger>
-                <SelectContent>
-                  {atleti_per_add.length === 0 ? (
-                    <div className="px-3 py-2 text-sm text-muted-foreground">Tutte le atlete sono già convocate</div>
-                  ) : atleti_per_add.map((a) => (
-                    <SelectItem key={a.id} value={a.id}>
-                      {a.cognome} {a.nome} <span className="text-xs text-muted-foreground">· {get_livello_gara(a as any)}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {!add_atleta_id ? (
+                <div className="mt-1 border rounded-md overflow-hidden">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                    <Input
+                      placeholder="Cerca per nome o cognome…"
+                      value={search_atleta}
+                      onChange={(e) => set_search_atleta(e.target.value)}
+                      className="h-12 pl-9 pr-9 text-base border-0 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                    />
+                    {search_atleta && (
+                      <button
+                        type="button"
+                        onClick={() => set_search_atleta("")}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-muted text-muted-foreground"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                  <div className="max-h-[280px] overflow-y-auto">
+                    {atleti_filtrati.length === 0 ? (
+                      <p className="px-3 py-4 text-sm text-muted-foreground text-center">Nessuna atleta trovata</p>
+                    ) : (
+                      atleti_filtrati.map((a) => (
+                        <button
+                          key={a.id}
+                          type="button"
+                          className="w-full text-left px-3 py-2.5 hover:bg-accent text-sm flex items-center justify-between border-t border-border/50 first:border-t-0"
+                          onClick={() => set_add_atleta_id(a.id)}
+                        >
+                          <span>{a.cognome} {a.nome}</span>
+                          <span className="text-xs text-muted-foreground">{get_livello_gara(a as any)}</span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-1 flex items-center justify-between px-3 py-2.5 border rounded-md bg-muted/30">
+                  <span className="text-sm font-medium">
+                    {(() => {
+                      const a = atleti.find((x) => x.id === add_atleta_id);
+                      return a ? `${a.cognome} ${a.nome}` : "Atleta selezionato";
+                    })()}
+                  </span>
+                  <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => { set_add_atleta_id(""); set_search_atleta(""); }}>
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
             </div>
 
             {chain.length > 0 && (
