@@ -516,11 +516,41 @@ export default function TestLivelloPage() {
           <div className="flex justify-center py-12">
             <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
           </div>
-        ) : tests.length === 0 ? (
-          <Card><CardContent className="py-12 text-center text-muted-foreground">Nessun test di livello creato</CardContent></Card>
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-foreground">Test di Livello</h1>
+          <Button onClick={() => { set_form({ ...empty_form }); set_view("new"); }}>
+            <Plus className="w-4 h-4 mr-2" /> Nuovo Test
+          </Button>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant={mostra_passati ? "outline" : "default"}
+            size="sm"
+            onClick={() => set_mostra_passati(false)}
+          >
+            Attivi ({tests_attivi.length})
+          </Button>
+          <Button
+            variant={mostra_passati ? "default" : "outline"}
+            size="sm"
+            onClick={() => set_mostra_passati(true)}
+          >
+            Passati / Archiviati ({tests_passati.length})
+          </Button>
+        </div>
+        {isLoading ? (
+          <div className="flex justify-center py-12">
+            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
+          </div>
+        ) : tests_visibili.length === 0 ? (
+          <Card><CardContent className="py-12 text-center text-muted-foreground">
+            {mostra_passati ? "Nessun test passato" : "Nessun test di livello attivo"}
+          </CardContent></Card>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {tests.map((t) => {
+            {tests_visibili.map((t) => {
               const rows = counters[t.id] ?? [];
               const n_atleti = new Set(test_atleti.filter((x) => x.test_id === t.id).map((x) => x.atleta_id)).size;
               // se non ho ancora i test_atleti del test corrente, uso la lunghezza dei raw (step) per fallback
