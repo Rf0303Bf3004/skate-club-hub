@@ -595,7 +595,11 @@ export type CorsoCompletoResult = {
   motivo?: string;
 };
 
-export function check_corso_completo(corso: any, disp_ghiaccio: any[]): CorsoCompletoResult {
+export function check_corso_completo(
+  corso: any,
+  disp_ghiaccio: any[],
+  istruttori?: any[],
+): CorsoCompletoResult {
   // 1. Must have giorno, ora_inizio, ora_fine
   if (!corso.giorno || !corso.ora_inizio || !corso.ora_fine) {
     return { completo: false, motivo: "Giorno/orario non definito" };
@@ -621,6 +625,34 @@ export function check_corso_completo(corso: any, disp_ghiaccio: any[]): CorsoCom
 
   if (!coperto) {
     return { completo: false, motivo: "Orario fuori disponibilità ghiaccio" };
+  }
+
+  // 4. Verifica istruttore (solo se la lista istruttori è fornita).
+  //    Ogni istruttore ha .disponibilita = { "Lunedì": [{ ora_inizio, ora_fine }, ...], ... }
+  if (Array.isArray(istruttori)) {
+    const ids: string[] = corso.istruttori_ids || [];
+    if (ids.length === 0) {
+      return { completo: false, motivo: "Nessun istruttore assegnato" };
+    }
+    const target_giorno = norm_giorno(corso.giorno);
+    const has_coverage = ids.some((id) => {
+      const istr = istruttori.find((i: any) => i.id === id);
+      if (!istr) return false;
+      const disp_map = (istr.disponibilita || {}) as Record<string, { ora_inizio: string; ora_fine: string }[]>;
+      let fasce: { ora_inizio: string; ora_fine: string }[] = [];
+      for (const k of Object.keys(disp_map)) {
+        if (norm_giorno(k) === target_giorno) {
+          fasce = disp_map[k] || [];
+          break;
+        }
+      }
+      return fasce.some(
+        (f) => _time_to_min(f.ora_inizio) <= corso_start && _time_to_min(f.ora_fine) >= corso_end,
+      );
+    });
+    if (!has_coverage) {
+      return { completo: false, motivo: "Istruttore fuori dalla disponibilità dichiarata" };
+    }
   }
 
   return { completo: true };
