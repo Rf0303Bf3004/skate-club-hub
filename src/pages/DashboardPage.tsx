@@ -648,46 +648,103 @@ const BoxComunicazione: React.FC<{
       </div>
 
       {/* Segnaposto template */}
-      {template_raw && (placeholders.corso || placeholders.data || placeholders.ora) && (
+      {template_raw && detected_placeholders.length > 0 && (
         <div className="space-y-1.5 rounded-lg border border-primary/20 bg-primary/5 p-3">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
             Compila i campi del template
           </p>
-          {placeholders.corso && (
-            <div className="space-y-1">
-              <label className="text-[11px] text-muted-foreground">Corso</label>
-              <select value={ph_corso} onChange={(e) => set_ph_corso(e.target.value)} className={input_cls}>
-                <option value="">Seleziona corso…</option>
-                {corsi
-                  .filter((c) => c.stato === "attivo")
-                  .map((c) => (
-                    <option key={c.id} value={c.id}>{c.nome}</option>
-                  ))}
-              </select>
-            </div>
-          )}
-          {placeholders.data && (
-            <div className="space-y-1">
-              <label className="text-[11px] text-muted-foreground">Data</label>
-              <input
-                type="date"
-                value={ph_data}
-                onChange={(e) => set_ph_data(e.target.value)}
-                className={input_cls}
-              />
-            </div>
-          )}
-          {placeholders.ora && (
-            <div className="space-y-1">
-              <label className="text-[11px] text-muted-foreground">Ora</label>
-              <input
-                type="time"
-                value={ph_ora}
-                onChange={(e) => set_ph_ora(e.target.value)}
-                className={input_cls}
-              />
-            </div>
-          )}
+          {detected_placeholders.map((ph) => {
+            const val = ph_values[ph] || "";
+            if (ph === "corso" || ph === "nome_corso") {
+              return (
+                <div className="space-y-1" key={ph}>
+                  <label className="text-[11px] text-muted-foreground">Corso</label>
+                  <select
+                    value={val}
+                    onChange={(e) => set_ph_values((prev) => ({ ...prev, [ph]: e.target.value }))}
+                    className={input_cls}
+                  >
+                    <option value="">Seleziona corso…</option>
+                    {corsi
+                      .filter((c) => c.stato === "attivo")
+                      .map((c) => (
+                        <option key={c.id} value={c.id}>{c.nome}</option>
+                      ))}
+                  </select>
+                </div>
+              );
+            }
+            if (ph === "data") {
+              return (
+                <div className="space-y-1" key={ph}>
+                  <label className="text-[11px] text-muted-foreground">Data</label>
+                  <input
+                    type="date"
+                    value={val}
+                    onChange={(e) => set_ph_values((prev) => ({ ...prev, [ph]: e.target.value }))}
+                    className={input_cls}
+                  />
+                </div>
+              );
+            }
+            if (ph === "ora" || ph === "nuovo_orario" || ph === "vecchio_orario") {
+              const label = ph === "ora" ? "Ora" : ph === "nuovo_orario" ? "Nuovo orario" : "Vecchio orario";
+              return (
+                <div className="space-y-1" key={ph}>
+                  <label className="text-[11px] text-muted-foreground">{label}</label>
+                  <input
+                    type="time"
+                    value={val}
+                    onChange={(e) => set_ph_values((prev) => ({ ...prev, [ph]: e.target.value }))}
+                    className={input_cls}
+                  />
+                </div>
+              );
+            }
+            if (ph === "motivo") {
+              return (
+                <div className="space-y-1" key={ph}>
+                  <label className="text-[11px] text-muted-foreground">Motivo</label>
+                  <select
+                    value={val}
+                    onChange={(e) => set_ph_values((prev) => ({ ...prev, [ph]: e.target.value }))}
+                    className={input_cls}
+                  >
+                    <option value="">Seleziona motivo…</option>
+                    <option value="Manutenzione impianto">Manutenzione impianto</option>
+                    <option value="Gara o evento">Gara o evento</option>
+                    <option value="Festivita'">Festivita'</option>
+                    <option value="Chiusura straordinaria">Chiusura straordinaria</option>
+                    <option value="Condizioni del ghiaccio">Condizioni del ghiaccio</option>
+                    <option value="Altro">Altro</option>
+                  </select>
+                  {val === "Altro" && (
+                    <input
+                      type="text"
+                      value={ph_motivo_altro}
+                      onChange={(e) => set_ph_motivo_altro(e.target.value)}
+                      placeholder="Specifica il motivo…"
+                      className={input_cls}
+                    />
+                  )}
+                </div>
+              );
+            }
+            // fallback generico per tutti gli altri segnaposto
+            const fallback_label = ph.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
+            return (
+              <div className="space-y-1" key={ph}>
+                <label className="text-[11px] text-muted-foreground">{fallback_label}</label>
+                <input
+                  type="text"
+                  value={val}
+                  onChange={(e) => set_ph_values((prev) => ({ ...prev, [ph]: e.target.value }))}
+                  placeholder={`Inserisci ${fallback_label.toLowerCase()}…`}
+                  className={input_cls}
+                />
+              </div>
+            );
+          })}
         </div>
       )}
 
