@@ -1381,10 +1381,10 @@ const CorsoModal: React.FC<{
       set_ghiaccio_error(null);
       set_ghiaccio_warning(null);
     }
-    // Reset ora_fine when day changes (fascia needs re-selection)
+    // Reset ora_inizio/ora_fine when day changes (fascia needs re-selection).
+    // NON spegnere posiziona_planning: il giorno scelto deve sopravvivere al salvataggio.
     if (k === "giorno") {
       set_form((p) => ({ ...p, giorno: v, ora_inizio: "", ora_fine: "" }));
-      set_posiziona_planning(false);
     }
   };
 
