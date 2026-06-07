@@ -2624,7 +2624,7 @@ const CoursesPage: React.FC = () => {
                   <div className="space-y-2">
                     {group.map((c: any) => {
                       const istruttori_corso = (c.istruttori_ids || []).map((id: string) => istruttori.find((i: any) => i.id === id)).filter(Boolean);
-                      const completezza = check_corso_completo(c, disp_ghiaccio);
+                      const completezza = check_corso_completo(c, disp_ghiaccio, istruttori);
                       return (
                         <div key={c.id} onClick={() => open_corso(c)}
                           className="flex items-center gap-4 px-4 py-3 bg-card rounded-xl border border-border/50 hover:border-primary/30 cursor-pointer transition-shadow hover:shadow-card-hover">
