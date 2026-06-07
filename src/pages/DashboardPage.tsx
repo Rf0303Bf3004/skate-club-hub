@@ -563,30 +563,37 @@ const BoxComunicazione: React.FC<{
   };
 
   // Sostituzione segnaposto in tempo reale
-  const placeholders = React.useMemo(() => {
-    if (!template_raw) return { corso: false, data: false, ora: false };
-    return {
-      corso: template_raw.includes("{corso}"),
-      data: template_raw.includes("{data}"),
-      ora: template_raw.includes("{ora}"),
-    };
-  }, [template_raw]);
+  const extract_placeholders = (text: string | null): string[] => {
+    if (!text) return [];
+    const matches = text.match(/\{([^}]+)\}/g) ?? [];
+    return [...new Set(matches.map((m) => m.slice(1, -1)))];
+  };
+
+  const detected_placeholders = React.useMemo(() => extract_placeholders(template_raw), [template_raw]);
+
+  const fmt_date_it = (d: string) =>
+    new Date(d + "T00:00:00").toLocaleDateString("it-CH", { day: "2-digit", month: "long", year: "numeric" });
 
   React.useEffect(() => {
     if (!template_raw) return;
-    const corso_label = ph_corso
-      ? (corsi.find((c) => c.id === ph_corso)?.nome ?? "{corso}")
-      : "{corso}";
-    const data_label = ph_data
-      ? new Date(ph_data + "T00:00:00").toLocaleDateString("it-CH", { day: "2-digit", month: "long", year: "numeric" })
-      : "{data}";
-    const ora_label = ph_ora || "{ora}";
     let out = template_raw;
-    out = out.split("{corso}").join(corso_label);
-    out = out.split("{data}").join(data_label);
-    out = out.split("{ora}").join(ora_label);
+    detected_placeholders.forEach((ph) => {
+      const raw = ph_values[ph];
+      if (!raw) return;
+      let val = raw;
+      if (ph === "corso" || ph === "nome_corso") {
+        val = corsi.find((c) => c.id === raw)?.nome ?? `{${ph}}`;
+      }
+      if (ph === "data") {
+        val = fmt_date_it(raw);
+      }
+      if (ph === "motivo" && raw === "Altro") {
+        val = ph_motivo_altro || "Altro";
+      }
+      out = out.split(`{${ph}}`).join(val);
+    });
     set_testo(out);
-  }, [template_raw, ph_corso, ph_data, ph_ora, corsi]);
+  }, [template_raw, ph_values, ph_motivo_altro, detected_placeholders, corsi]);
 
   const handle_salva_inapp = async () => {
     if (!titolo || !testo) {
