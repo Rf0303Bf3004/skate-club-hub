@@ -1022,11 +1022,12 @@ export const GrigliaFasceGhiaccio: React.FC<{
     });
   }, [fasce_ghiaccio, corsi_pianificati, corso_id, corsi, istruttori, fascia_attiva]);
 
-  // Instructor availability: regola binaria condivisa con il wizard.
-  // Visibile = ha disponibilità dichiarata che copre lo slot E nessun conflitto su altri corsi/planning.
+  // Instructor availability: mostra TUTTI gli istruttori attivi, distinguendo
+  //  - disponibili (selezionabili, stile normale)
+  //  - fuori disponibilità dichiarata (selezionabili, badge ambra: corso resterà incompleto)
+  //  - in conflitto su altro corso (NON selezionabili, hard block)
   const istruttori_status = useMemo(() => {
     if (!ora_inizio_sel || !ora_fine_sel) return [];
-    // Singola fonte di verità: stesso helper usato da CorsoWizard (Step 3).
     const status = calcola_status_istruttori_per_slot({
       istruttori,
       giorno,
@@ -1035,18 +1036,17 @@ export const GrigliaFasceGhiaccio: React.FC<{
       planning_slots: corsi_pianificati as any,
       corso_id_corrente: corso_id ?? null,
     });
-    const filtrati = status
-      .filter((s) => s.disponibile)
-      .map((s) => ({ ...(s.istruttore as any), disponibile: true, conflitto_nome: null, motivo_ko: null }));
-    // eslint-disable-next-line no-console
-    console.debug("[GrigliaFasceGhiaccio] istruttori_status", {
-      giorno, ora_inizio_sel, ora_fine_sel,
-      totali: status.length, disponibili: filtrati.length,
-      esclusi: status
-        .filter((s) => !s.disponibile)
-        .map((s) => `${(s.istruttore as any).nome} ${(s.istruttore as any).cognome}: ${s.motivo_ko}`),
+    return status.map((s) => {
+      const conflitto_corso = s.conflitto_corso_id ? corsi.find((c: any) => c.id === s.conflitto_corso_id) : null;
+      return {
+        ...(s.istruttore as any),
+        disponibile: s.disponibile,
+        motivo_ko: s.motivo_ko,
+        fuori_disponibilita: s.motivo_ko === "no_disponibilita" || s.motivo_ko === "slot_incompleto",
+        conflitto: s.motivo_ko === "conflitto_planning",
+        conflitto_nome: conflitto_corso?.nome || null,
+      };
     });
-    return filtrati;
   }, [istruttori, corsi_pianificati, corsi, corso_id, giorno, ora_inizio_sel, ora_fine_sel]);
 
   // Duration buttons
@@ -1210,19 +1210,42 @@ export const GrigliaFasceGhiaccio: React.FC<{
             {istruttori_status.map((i: any) => {
               const selected = istruttori_ids_sel.includes(i.id);
               const colore = i.colore || "#6B7280";
-              if (!i.disponibile) {
+              // Stato 1: conflitto su altro corso → non cliccabile
+              if (i.conflitto) {
                 return (
                   <div
                     key={i.id}
                     className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium border-2 border-border bg-muted/40 opacity-60 cursor-not-allowed"
-                    title={`Occupato in "${i.conflitto_nome}"`}
+                    title={`Occupato in "${i.conflitto_nome ?? '—'}"`}
                   >
                     <span className="w-3 h-3 rounded-full flex-shrink-0 bg-muted-foreground/30" />
                     <span className="text-muted-foreground">{i.nome} {i.cognome}</span>
-                    <span className="text-[9px] text-muted-foreground">(occupato in {i.conflitto_nome})</span>
+                    <span className="text-[9px] text-muted-foreground">(occupato{i.conflitto_nome ? ` in ${i.conflitto_nome}` : ""})</span>
                   </div>
                 );
               }
+              // Stato 2: fuori disponibilità dichiarata → cliccabile, badge ambra
+              if (i.fuori_disponibilita) {
+                return (
+                  <button
+                    key={i.id}
+                    type="button"
+                    onClick={() => on_select_istruttore(i.id)}
+                    title="Fuori dalla disponibilità dichiarata — il corso resterà segnalato come incompleto"
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium cursor-pointer transition-all border-2 border-dashed ${
+                      selected
+                        ? "border-amber-500 bg-amber-100 text-amber-900"
+                        : "border-amber-400 bg-amber-50 text-amber-800 hover:bg-amber-100"
+                    }`}
+                  >
+                    <AlertTriangle className="w-3 h-3 flex-shrink-0" />
+                    {i.nome} {i.cognome}
+                    <span className="text-[9px] opacity-80">(fuori disponibilità)</span>
+                    {selected && <span className="text-[10px] font-bold">✓</span>}
+                  </button>
+                );
+              }
+              // Stato 3: disponibile
               return (
                 <button
                   key={i.id}
@@ -1283,7 +1306,7 @@ const CorsoModal: React.FC<{
 }) => {
   const qc = useQueryClient();
   const { data: disp_ghiaccio_modal = [] } = use_disponibilita_ghiaccio();
-  const corso_completezza = corso ? check_corso_completo(corso, disp_ghiaccio_modal) : { completo: false, motivo: "Nuovo corso" };
+  const corso_completezza = corso ? check_corso_completo(corso, disp_ghiaccio_modal, istruttori) : { completo: false, motivo: "Nuovo corso" };
   const has_planning = !!(corso?.giorno && corso?.ora_inizio && corso?.ora_fine);
   const [posiziona_planning, set_posiziona_planning] = useState(corso ? has_planning : false);
   const [form, set_form] = useState({
@@ -2624,7 +2647,7 @@ const CoursesPage: React.FC = () => {
                   <div className="space-y-2">
                     {group.map((c: any) => {
                       const istruttori_corso = (c.istruttori_ids || []).map((id: string) => istruttori.find((i: any) => i.id === id)).filter(Boolean);
-                      const completezza = check_corso_completo(c, disp_ghiaccio);
+                      const completezza = check_corso_completo(c, disp_ghiaccio, istruttori);
                       return (
                         <div key={c.id} onClick={() => open_corso(c)}
                           className="flex items-center gap-4 px-4 py-3 bg-card rounded-xl border border-border/50 hover:border-primary/30 cursor-pointer transition-shadow hover:shadow-card-hover">
@@ -2681,7 +2704,7 @@ const CoursesPage: React.FC = () => {
                   </h2>
                   <div className="space-y-2">
                     {group.sort((a: any, b: any) => GIORNI_DB.indexOf(a.giorno) - GIORNI_DB.indexOf(b.giorno) || time_to_min(a.ora_inizio) - time_to_min(b.ora_inizio)).map((c: any) => {
-                      const completezza = check_corso_completo(c, disp_ghiaccio);
+                      const completezza = check_corso_completo(c, disp_ghiaccio, istruttori);
                       return (
                         <div key={c.id} onClick={() => open_corso(c)}
                           className="flex items-center gap-4 px-4 py-3 bg-card rounded-xl border border-border/50 hover:border-primary/30 cursor-pointer transition-shadow hover:shadow-card-hover">

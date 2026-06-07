@@ -1,91 +1,63 @@
-## MULTIPAESE-ANAGRAFICA — piano di esecuzione
+## Contesto
 
-Adatto i form anagrafici (club, atleta, persona) e le fatture al paese selezionato (CH default, IT). Dato l'ampio impatto su DB, costanti, form e PDF, propongo questo piano prima di applicare.
+La struttura del form esiste già: `GrigliaFasceGhiaccio` (src/pages/CoursesPage.tsx) mostra le fasce ghiaccio del giorno, calcola slot per durata (45/60/90/custom), e usa `calcola_status_istruttori_per_slot` per filtrare gli istruttori disponibili. La completezza è calcolata da `check_corso_completo` in `src/hooks/use-supabase-data.ts`.
 
----
+Mancano: (a) mostrare anche gli istruttori NON disponibili come selezionabili con badge di avviso, (b) verifica istruttore nella regola di completezza.
 
-### 1) Costanti territoriali — `src/lib/territori.ts` (nuovo)
+## Modifiche
 
-Esporto:
-- `PAESI = [{code:'CH',label:'Svizzera'},{code:'IT',label:'Italia'}]`
-- `CANTONI_CH` (26 voci con sigla: AG, AR, AI, BL, BS, BE, FR, GE, GL, GR, JU, LU, NE, NW, OW, SG, SH, SO, SZ, TI, TG, UR, VS, VD, ZG, ZH)
-- `REGIONI_IT` (20)
-- `PROVINCE_IT` (110, ognuna `{sigla, nome, regione}`) + helper `getProvinceByRegione(regione)`
-- Regex/validatori: `isValidCAP(paese, cap)`, `isValidPartitaIVA(paese, value)`, `isValidIBAN(paese, value)`, `isValidCodiceFiscaleIT(value)`
-- Placeholder helpers: `getTelefonoPlaceholder`, `getCAPPlaceholder`, `getPartitaIVAPlaceholder`, `getIBANPlaceholder`
+### 1. `src/hooks/use-supabase-data.ts` — `check_corso_completo`
 
-### 2) Migrazione DB
+Estendere la firma per accettare anche `disp_istruttori` e la lista istruttori:
 
-```sql
-ALTER TABLE public.clubs
-  ADD COLUMN IF NOT EXISTS paese_iso text NOT NULL DEFAULT 'CH',
-  ADD COLUMN IF NOT EXISTS regione text,
-  ADD COLUMN IF NOT EXISTS provincia text,
-  ADD COLUMN IF NOT EXISTS codice_fiscale text;
-
-ALTER TABLE public.atleti
-  ADD COLUMN IF NOT EXISTS paese_iso text NOT NULL DEFAULT 'CH',
-  ADD COLUMN IF NOT EXISTS regione text,
-  ADD COLUMN IF NOT EXISTS provincia text,
-  ADD COLUMN IF NOT EXISTS genitore1_paese_iso text,
-  ADD COLUMN IF NOT EXISTS genitore1_regione text,
-  ADD COLUMN IF NOT EXISTS genitore1_provincia text,
-  ADD COLUMN IF NOT EXISTS genitore2_paese_iso text,
-  ADD COLUMN IF NOT EXISTS genitore2_regione text,
-  ADD COLUMN IF NOT EXISTS genitore2_provincia text;
-
-ALTER TABLE public.fatture
-  ADD COLUMN IF NOT EXISTS intestatario_paese_iso text,
-  ADD COLUMN IF NOT EXISTS intestatario_regione text,
-  ADD COLUMN IF NOT EXISTS intestatario_provincia text;
-
-ALTER TABLE public.fatture_clubs
-  ADD COLUMN IF NOT EXISTS intestatario_paese_iso text DEFAULT 'CH',
-  ADD COLUMN IF NOT EXISTS intestatario_regione text,
-  ADD COLUMN IF NOT EXISTS intestatario_provincia text;
+```ts
+export function check_corso_completo(
+  corso: any,
+  disp_ghiaccio: any[],
+  disp_istruttori?: any[],   // righe disponibilita_istruttori del club
+): CorsoCompletoResult
 ```
 
-Nessun check constraint a livello DB (validazione applicativa, come da prompt "flessibile"). Default CH retro-compatibile con dati esistenti.
+Logica nuova:
+- Off-Ice (tipo ≠ "ghiaccio"): invariato, completo se giorno+orari definiti.
+- Ghiaccio:
+  1. Verifica fascia ghiaccio (logica attuale, **non toccata**: `norm_giorno` + contenimento orario).
+  2. Verifica istruttore: deve esistere almeno una voce in `corso.istruttori_ids`. Se vuoto → `incompleto: "Nessun istruttore assegnato"`.
+  3. Per ognuno degli istruttori assegnati, cercare in `disp_istruttori` una riga con `norm_giorno(d.giorno) === norm_giorno(corso.giorno)` AND `d.ora_inizio ≤ corso.ora_inizio` AND `d.ora_fine ≥ corso.ora_fine`. Basta che **almeno uno** copra lo slot → completo. Se nessuno copre → `incompleto: "Istruttore fuori dalla disponibilità dichiarata"`.
 
-### 3) UI adattiva — componente riusabile
+Il parametro `disp_istruttori` è opzionale per non rompere chiamanti esistenti (se assente → si comporta come oggi sulla parte istruttore: completo se fascia OK).
 
-Nuovo componente `src/components/AnagraficaTerritoriale.tsx` con props `{ paese, onPaeseChange, valori, onChange, prefisso? }`. Renderizza:
-- Select Paese (CH/IT) in alto
-- Se CH → select Cantone, CAP 4 cifre
-- Se IT → select Regione + select Provincia dipendente, CAP 5 cifre
-- Helper per IBAN/P.IVA/telefono con placeholder dinamici
+### 2. `use_corsi_completi` (stesso file)
 
-Lo applico nei form esistenti:
-- `SuperAdminNewClubPage.tsx` — sezione anagrafica club
-- `SuperAdminClubDetailPage` / dove si modifica il club (cerco il file esistente)
-- `AtletaDetail.tsx` — sezione anagrafica atleta + Genitore 1 + Genitore 2
-- Eventuale form persone staff (se esiste; verifico)
+Caricare anche `disponibilita_istruttori` (già letta in `use_meta_planning` ma serve qui locale): aggiungere un piccolo hook `use_disponibilita_istruttori()` o riutilizzare la query esistente. Passarla a `check_corso_completo`.
 
-### 4) PDF fatture
+### 3. `src/pages/CoursesPage.tsx` — chiamanti di `check_corso_completo`
 
-- `src/lib/fattura-club-pdf.tsx`: riga indirizzo mostra `CAP Citta (Cantone)` se CH, `CAP Citta (Provincia) - Regione` se IT. P.IVA formattata col label coerente.
-- PDF fatture atleta (cerco file): stesso pattern usando snapshot `intestatario_*`.
+Tre callsite (1286, 2627, 2684): leggere `disponibilita_istruttori` del club (query React Query) e passarla come terzo argomento.
 
-### 5) Snapshot intestatario
+### 4. `GrigliaFasceGhiaccio` — mostrare anche istruttori fuori disponibilità
 
-- `fattura-clubs-mensile/index.ts`: copia anche `paese_iso/regione/provincia` da `clubs`.
-- `use-supabase-mutations.ts` (build_fatture_mese): copia anche `paese_iso/regione/provincia` da `atleti.genitore1_*`.
+Oggi `istruttori_status` filtra via `.filter((s) => s.disponibile)`. Cambio: mostrare TUTTI gli istruttori attivi del club, distinguendo tre stati visivi:
 
-### 6) Backfill
+- **Disponibile + libero**: pill cliccabile, stile attuale.
+- **Fuori disponibilità dichiarata** (`motivo_ko === "no_disponibilita"`): pill cliccabile ma con bordo tratteggiato ambra + icona ⚠ + tooltip "Fuori dalla disponibilità dichiarata — il corso resterà segnalato come incompleto". **Cliccabile** (selezione permessa), non blocca il salvataggio.
+- **Conflitto su altro corso** (`motivo_ko === "conflitto_planning"`): resta non cliccabile (come oggi), perché è un vincolo hard di sovrapposizione, non di disponibilità.
 
-`UPDATE clubs SET paese_iso='CH' WHERE paese_iso IS NULL;` (idem atleti). Già coperto dal DEFAULT, nessun ulteriore backfill necessario.
+Nessuna modifica a `calcola_status_istruttori_per_slot` (continua a restituire lo stato; cambia solo il rendering).
 
-### 7) Verifica
+### 5. Avviso completezza in `CorsoModal`
 
-- `bunx tsc --noEmit` → 0 errori
-- Smoke manuale: creo club IT con regione/provincia/PIVA 11 cifre/IBAN IT, verifico salvataggio e PDF.
+Già esiste `corso_completezza` (linea 1286). Mostrare il `motivo` in un banner sopra il form quando incompleto, così l'utente capisce subito perché. Se già mostrato, lasciare invariato.
 
----
+## Cosa NON cambia
 
-### Domande di scoping rapide
+- Logica di contenimento orario ghiaccio (intatta).
+- Filtro `tipo='ghiaccio'` su `disponibilita_ghiaccio` (intatto).
+- Generazione slot per durata (parte 1: già esistente, intatta).
+- La disponibilità istruttore viene **ricalcolata** ad ogni apertura del corso leggendo `disponibilita_istruttori` correnti: nessuna scrittura di "snapshot", nessuno spostamento automatico di corsi se in futuro un istruttore modifica la sua disponibilità — il corso esistente resterà semplicemente flaggato come incompleto.
+- Off-Ice: nessun vincolo ghiaccio né istruttore-su-fascia-ghiaccio.
 
-1. **Province IT**: ok elenco completo 110 province con sigla? (peso ~3KB nel bundle)
-2. **Validazione DB**: confermi nessun CHECK constraint (solo frontend)?
-3. **Form persona/staff**: vuoi che adatti anche il form utenti staff o per ora solo club + atleta + genitori?
+## File toccati
 
-Procedo appena confermi (o dimmi varianti).
+- `src/hooks/use-supabase-data.ts` — firma e logica `check_corso_completo`, hook lettura `disponibilita_istruttori`.
+- `src/pages/CoursesPage.tsx` — 3 callsite + rendering pill istruttori "fuori disponibilità" cliccabile.
