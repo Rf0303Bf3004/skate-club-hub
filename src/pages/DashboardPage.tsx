@@ -617,7 +617,8 @@ const BoxComunicazione: React.FC<{
       set_testo("");
       set_template_sel("");
       set_template_raw(null);
-      set_ph_corso(""); set_ph_data(""); set_ph_ora("");
+      set_ph_values({});
+      set_ph_motivo_altro("");
       set_urgente(false);
     } catch (err: any) {
       toast({ title: td("toast.error"), description: err?.message, variant: "destructive" });
