@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase, get_current_club_id } from "@/lib/supabase";
+import { norm_giorno } from "@/lib/availability";
 
 // ─── Club & Setup ──────────────────────────────────────────
 export function use_club() {
@@ -607,7 +608,7 @@ export function check_corso_completo(corso: any, disp_ghiaccio: any[]): CorsoCom
   }
 
   // 3. Solo per i corsi Ghiaccio: verifica che l'orario rientri nelle fasce ghiaccio
-  const slots_giorno = disp_ghiaccio.filter((s: any) => s.giorno === corso.giorno);
+  const slots_giorno = disp_ghiaccio.filter((s: any) => norm_giorno(s.giorno) === norm_giorno(corso.giorno));
   if (slots_giorno.length === 0) {
     return { completo: false, motivo: "Nessun ghiaccio disponibile per " + corso.giorno };
   }
