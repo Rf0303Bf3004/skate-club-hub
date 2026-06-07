@@ -10,6 +10,7 @@ import {
   use_presenze_corso,
   use_disponibilita_ghiaccio,
   check_corso_completo,
+  calcola_capienza_overlap,
   get_istruttore_name_from_list,
   use_livelli,
 } from "@/hooks/use-supabase-data";
@@ -957,8 +958,15 @@ export const GrigliaFasceGhiaccio: React.FC<{
   on_select_istruttore: (id: string) => void;
   istruttori_ids_sel: string[];
 }> = ({ giorno, corso_id, istruttori, corsi, ora_inizio_sel, ora_fine_sel, on_select_fascia, on_select_istruttore, istruttori_ids_sel }) => {
-  // Track which fascia (ice slot) was clicked
-  const [fascia_attiva, set_fascia_attiva] = useState<{ ora_inizio: string; ora_fine: string } | null>(null);
+  // Durata corrente (in minuti) per generare gli slot. Default 60 oppure derivata
+  // dall'orario già scelto (utile in modifica). Pulsanti rapidi 45/60/90 + input libero.
+  const [durata_sel, set_durata_sel] = useState<number>(() => {
+    if (ora_inizio_sel && ora_fine_sel) {
+      const d = time_to_min(ora_fine_sel) - time_to_min(ora_inizio_sel);
+      return d > 0 ? d : 60;
+    }
+    return 60;
+  });
 
   // Load ice availability slots for this day
   const { data: fasce_ghiaccio = [] } = useQuery({
@@ -977,6 +985,9 @@ export const GrigliaFasceGhiaccio: React.FC<{
   });
 
   // Load planned courses for this day from planning_corsi_settimana (current active week)
+  // Servono SOLO come info (per mostrare quali corsi insistono già sulla fascia) e per
+  // la verifica conflitto istruttore. NON sottraggono ghiaccio: più corsi possono
+  // coesistere sullo stesso slot (istruttori diversi).
   const { data: corsi_pianificati = [] } = useQuery({
     queryKey: ["corsi_pianificati_giorno", giorno],
     queryFn: async () => {
@@ -1000,11 +1011,27 @@ export const GrigliaFasceGhiaccio: React.FC<{
     },
   });
 
-  // Build slot status for each ice fascia
-  const fasce_with_status = useMemo(() => {
+  // Per ogni fascia ghiaccio genera gli slot affiancati di `durata_sel` minuti
+  // partendo da fascia.ora_inizio, IGNORANDO i corsi esistenti (ghiaccio condiviso).
+  // Mostra anche i corsi che insistono sulla fascia come info, senza bloccarne la
+  // selezione.
+  const fasce_with_tiles = useMemo(() => {
     return fasce_ghiaccio.map((f: any) => {
-      const f_start = time_to_min(f.ora_inizio);
-      const f_end = time_to_min(f.ora_fine);
+      const f_start_str = f.ora_inizio?.slice(0, 5);
+      const f_end_str = f.ora_fine?.slice(0, 5);
+      const f_start = time_to_min(f_start_str);
+      const f_end = time_to_min(f_end_str);
+      const tiles: { ora_inizio: string; ora_fine: string }[] = [];
+      if (durata_sel > 0) {
+        let cur = f_start;
+        while (cur + durata_sel <= f_end) {
+          tiles.push({
+            ora_inizio: add_minutes_to_time("00:00", cur),
+            ora_fine: add_minutes_to_time("00:00", cur + durata_sel),
+          });
+          cur += durata_sel;
+        }
+      }
       const occupanti = corsi_pianificati
         .filter((p: any) => p.corso_id !== corso_id && time_to_min(p.ora_inizio) < f_end && time_to_min(p.ora_fine) > f_start)
         .map((p: any) => {
@@ -1013,14 +1040,13 @@ export const GrigliaFasceGhiaccio: React.FC<{
           return {
             nome: c?.nome || "—",
             istruttore: istr ? `${istr.nome} ${istr.cognome}` : "",
-            ora_inizio: p.ora_inizio,
-            ora_fine: p.ora_fine,
+            ora_inizio: p.ora_inizio?.slice(0, 5),
+            ora_fine: p.ora_fine?.slice(0, 5),
           };
         });
-      const is_active = fascia_attiva?.ora_inizio === f.ora_inizio?.slice(0, 5) && fascia_attiva?.ora_fine === f.ora_fine?.slice(0, 5);
-      return { ...f, occupanti, libero: occupanti.length === 0, is_active };
+      return { f_start_str, f_end_str, tiles, occupanti };
     });
-  }, [fasce_ghiaccio, corsi_pianificati, corso_id, corsi, istruttori, fascia_attiva]);
+  }, [fasce_ghiaccio, corsi_pianificati, corso_id, corsi, istruttori, durata_sel]);
 
   // Instructor availability: mostra TUTTI gli istruttori attivi, distinguendo
   //  - disponibili (selezionabili, stile normale)
@@ -1049,31 +1075,8 @@ export const GrigliaFasceGhiaccio: React.FC<{
     });
   }, [istruttori, corsi_pianificati, corsi, corso_id, giorno, ora_inizio_sel, ora_fine_sel]);
 
-  // Duration buttons
-  const durate = useMemo(() => {
-    if (!fascia_attiva || !ora_inizio_sel) return [];
-    const fascia_end = time_to_min(fascia_attiva.ora_fine);
-    const start = time_to_min(ora_inizio_sel);
-    const fascia_dur = fascia_end - start;
-    const opts: { label: string; minuti: number }[] = [];
-    if (fascia_dur >= 45) opts.push({ label: "45 min", minuti: 45 });
-    if (fascia_dur >= 60) opts.push({ label: "60 min", minuti: 60 });
-    if (fascia_dur >= 90) opts.push({ label: "90 min", minuti: 90 });
-    opts.push({ label: "Tutta la fascia", minuti: fascia_dur });
-    // Deduplicate if fascia_dur equals one of the fixed values
-    const seen = new Set<number>();
-    return opts.filter(o => { if (seen.has(o.minuti)) return false; seen.add(o.minuti); return true; });
-  }, [fascia_attiva, ora_inizio_sel]);
-
-  const handle_click_fascia = (oi: string, of_: string) => {
-    set_fascia_attiva({ ora_inizio: oi, ora_fine: of_ });
-    on_select_fascia(oi, ""); // Set ora_inizio only, clear ora_fine
-  };
-
-  const handle_durata = (minuti: number) => {
-    if (!ora_inizio_sel) return;
-    const fine = add_minutes_to_time(ora_inizio_sel, minuti);
-    on_select_fascia(ora_inizio_sel, fine);
+  const handle_pick_tile = (oi: string, of_: string) => {
+    on_select_fascia(oi, of_);
   };
 
   if (fasce_ghiaccio.length === 0) {
@@ -1087,118 +1090,121 @@ export const GrigliaFasceGhiaccio: React.FC<{
     );
   }
 
+  const durate_preset = [45, 60, 90];
+
   return (
     <div className="space-y-3 mt-1">
-      {/* Ice slot grid */}
+      {/* Durata selector */}
       <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Fasce ghiaccio — {giorno}</label>
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Durata corso</label>
+        <div className="flex flex-wrap gap-2 items-center">
+          {durate_preset.map((d) => (
+            <button
+              key={d}
+              type="button"
+              onClick={() => set_durata_sel(d)}
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium border-2 transition-all ${
+                durata_sel === d
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-card hover:bg-accent hover:border-primary/40"
+              }`}
+            >
+              {d} min
+            </button>
+          ))}
+          <div className="inline-flex items-center gap-1 rounded-lg border-2 border-border px-2 py-1">
+            <input
+              key={`durata-${durata_sel}`}
+              type="number"
+              min={1}
+              className="w-14 text-sm font-medium text-center bg-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              defaultValue={durata_sel}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  const val = parseInt((e.target as HTMLInputElement).value);
+                  if (val > 0) set_durata_sel(val);
+                }
+              }}
+              onBlur={(e) => {
+                const val = parseInt(e.target.value);
+                if (val > 0) set_durata_sel(val);
+              }}
+              placeholder="—"
+            />
+            <span className="text-xs text-muted-foreground">min custom</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Fasce ghiaccio + slot tiles */}
+      <div className="space-y-1.5">
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+          Slot proponibili — {giorno} (ghiaccio condiviso)
+        </label>
         <div className="space-y-2">
-          {fasce_with_status.map((f: any, idx: number) => {
-            if (f.libero) {
-              return (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => handle_click_fascia(f.ora_inizio?.slice(0, 5), f.ora_fine?.slice(0, 5))}
-                  className={`w-full text-left rounded-xl border-2 p-3 transition-all ${
-                    f.is_active
-                      ? "border-primary bg-primary/10 ring-2 ring-primary/30"
-                      : "border-green-300 bg-green-50 hover:bg-green-100 hover:border-green-400"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-sm font-semibold text-foreground">
-                        {f.ora_inizio?.slice(0, 5)} – {f.ora_fine?.slice(0, 5)}
-                      </span>
-                      {f.is_active && <Badge className="bg-primary text-primary-foreground text-[10px]">✓ Selezionata</Badge>}
-                    </div>
-                    {!f.is_active && (
-                      <span className="text-xs font-medium text-green-700">LIBERO — clicca per selezionare</span>
-                    )}
-                  </div>
-                </button>
-              );
-            }
-            return (
-              <div key={idx} className="w-full rounded-xl border-2 border-border bg-muted/40 p-3 opacity-70">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-sm font-semibold text-muted-foreground">
-                    {f.ora_inizio?.slice(0, 5)} – {f.ora_fine?.slice(0, 5)}
+          {fasce_with_tiles.map((f: any, idx: number) => (
+            <div key={idx} className="w-full rounded-xl border-2 border-border bg-card p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-mono text-sm font-semibold text-foreground">
+                  {f.f_start_str} – {f.f_end_str}
+                </span>
+                {f.occupanti.length > 0 && (
+                  <span className="text-[10px] text-muted-foreground">
+                    {f.occupanti.length} corso/i già in pista
                   </span>
-                  <Badge variant="secondary" className="text-[10px]">Occupata</Badge>
+                )}
+              </div>
+              {f.tiles.length === 0 ? (
+                <p className="text-xs text-muted-foreground italic">
+                  Durata {durata_sel}′ non entra nella fascia.
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {f.tiles.map((t: any, j: number) => {
+                    const is_selected =
+                      ora_inizio_sel === t.ora_inizio && ora_fine_sel === t.ora_fine;
+                    return (
+                      <button
+                        key={j}
+                        type="button"
+                        onClick={() => handle_pick_tile(t.ora_inizio, t.ora_fine)}
+                        className={`rounded-lg px-2.5 py-1 text-xs font-mono font-medium border-2 transition-all ${
+                          is_selected
+                            ? "border-primary bg-primary/10 text-primary ring-2 ring-primary/30"
+                            : "border-green-300 bg-green-50 text-green-800 hover:bg-green-100 hover:border-green-400"
+                        }`}
+                      >
+                        {t.ora_inizio}–{t.ora_fine}
+                        {is_selected && <span className="ml-1">✓</span>}
+                      </button>
+                    );
+                  })}
                 </div>
-                <div className="mt-1.5 space-y-0.5">
+              )}
+              {f.occupanti.length > 0 && (
+                <div className="mt-2 pt-2 border-t border-dashed border-border/60 space-y-0.5">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                    Già in pista (info, non blocca):
+                  </p>
                   {f.occupanti.map((o: any, j: number) => (
                     <p key={j} className="text-xs text-muted-foreground">
                       <span className="font-medium text-foreground">{o.nome}</span>
                       {o.istruttore && <span> — {o.istruttore}</span>}
-                      <span className="font-mono ml-1">({o.ora_inizio?.slice(0, 5)}–{o.ora_fine?.slice(0, 5)})</span>
+                      <span className="font-mono ml-1">({o.ora_inizio}–{o.ora_fine})</span>
                     </p>
                   ))}
                 </div>
-              </div>
-            );
-          })}
+              )}
+            </div>
+          ))}
         </div>
+        {ora_inizio_sel && ora_fine_sel && (
+          <p className="text-xs font-medium text-primary">
+            Orario selezionato: {ora_inizio_sel} – {ora_fine_sel}
+          </p>
+        )}
       </div>
 
-      {/* Duration buttons */}
-      {fascia_attiva && ora_inizio_sel && (
-        <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            Durata — da {ora_inizio_sel}
-          </label>
-          <div className="flex flex-wrap gap-2 items-center">
-            {durate.map((d) => {
-              const target_fine = add_minutes_to_time(ora_inizio_sel, d.minuti);
-              const is_selected = ora_fine_sel === target_fine;
-              return (
-                <button
-                  key={d.minuti}
-                  type="button"
-                  onClick={() => handle_durata(d.minuti)}
-                  className={`rounded-lg px-3 py-1.5 text-sm font-medium border-2 transition-all ${
-                    is_selected
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border bg-card hover:bg-accent hover:border-primary/40"
-                  }`}
-                >
-                  {d.label}
-                  <span className="text-[10px] ml-1 opacity-60">→ {target_fine}</span>
-                </button>
-              );
-            })}
-            {/* Manual duration input */}
-            <div className="inline-flex items-center gap-1 rounded-lg border-2 border-border px-2 py-1">
-              <input
-                key={`${ora_inizio_sel}-${ora_fine_sel}`}
-                type="number"
-                min={1}
-                className="w-12 text-sm font-medium text-center bg-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                defaultValue={ora_inizio_sel && ora_fine_sel ? time_to_min(ora_fine_sel) - time_to_min(ora_inizio_sel) : ""}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    const val = parseInt((e.target as HTMLInputElement).value);
-                    if (val > 0) handle_durata(val);
-                  }
-                }}
-                onBlur={(e) => {
-                  const val = parseInt(e.target.value);
-                  if (val > 0) handle_durata(val);
-                }}
-                placeholder="—"
-              />
-              <span className="text-xs text-muted-foreground">min</span>
-            </div>
-          </div>
-          {ora_fine_sel && (
-            <p className="text-xs font-medium text-primary">
-              Orario selezionato: {ora_inizio_sel} – {ora_fine_sel}
-            </p>
-          )}
-        </div>
-      )}
 
       {/* Instructor availability */}
       {ora_inizio_sel && ora_fine_sel && (
@@ -1307,6 +1313,44 @@ const CorsoModal: React.FC<{
   const qc = useQueryClient();
   const { data: disp_ghiaccio_modal = [] } = use_disponibilita_ghiaccio();
   const corso_completezza = corso ? check_corso_completo(corso, disp_ghiaccio_modal, istruttori) : { completo: false, motivo: "Nuovo corso" };
+
+  // Capienza pista (alert NON bloccante): legge max_atleti_contemporanei e
+  // conteggio iscritti per corso del club, NON entra in check_corso_completo.
+  const { data: max_capienza = 0 } = useQuery({
+    queryKey: ["configurazione_ghiaccio_max_capienza"],
+    queryFn: async () => {
+      const club_id = get_current_club_id();
+      const { data } = await supabase
+        .from("configurazione_ghiaccio")
+        .select("max_atleti_contemporanei")
+        .eq("club_id", club_id)
+        .maybeSingle();
+      return Number(data?.max_atleti_contemporanei ?? 0) || 0;
+    },
+  });
+  const { data: iscrizioni_per_corso = {} } = useQuery<Record<string, number>>({
+    queryKey: ["iscrizioni_per_corso_count"],
+    queryFn: async () => {
+      const club_id = get_current_club_id();
+      const { data: corsi_club } = await supabase
+        .from("corsi")
+        .select("id")
+        .eq("club_id", club_id);
+      const ids = (corsi_club || []).map((c: any) => c.id);
+      if (ids.length === 0) return {};
+      const { data: iscr } = await supabase
+        .from("iscrizioni_corsi")
+        .select("corso_id, attiva")
+        .in("corso_id", ids)
+        .eq("attiva", true);
+      const map: Record<string, number> = {};
+      for (const r of iscr || []) {
+        map[(r as any).corso_id] = (map[(r as any).corso_id] || 0) + 1;
+      }
+      return map;
+    },
+  });
+
   const has_planning = !!(corso?.giorno && corso?.ora_inizio && corso?.ora_fine);
   const [posiziona_planning, set_posiziona_planning] = useState(corso ? has_planning : false);
   const [form, set_form] = useState({
@@ -1341,6 +1385,25 @@ const CorsoModal: React.FC<{
   const [tipo_dialog_open, set_tipo_dialog_open] = useState(false);
   const [tipo_dialog_tipo, set_tipo_dialog_tipo] = useState<string>(corso?.tipo || "Ghiaccio");
   const [tipo_dialog_categoria, set_tipo_dialog_categoria] = useState<string>(corso?.categoria || "");
+
+  // Calcolo capienza pista (alert non bloccante). Solo per corsi Ghiaccio quando
+  // max_atleti_contemporanei è valorizzato (>0). NON entra in check_corso_completo.
+  const capienza = useMemo(() => {
+    if ((form.tipo || "").toLowerCase().trim() !== "ghiaccio") {
+      return { supera: false, totale: 0, max: max_capienza };
+    }
+    return calcola_capienza_overlap({
+      giorno: form.giorno,
+      ora_inizio: form.ora_inizio,
+      ora_fine: form.ora_fine,
+      candidato_id: corso?.id ?? null,
+      candidato_iscritti: corso?.id ? (iscrizioni_per_corso[corso.id] || 0) : 0,
+      corsi,
+      iscrizioni_per_corso,
+      max: max_capienza,
+    });
+  }, [form.tipo, form.giorno, form.ora_inizio, form.ora_fine, corso?.id, corsi, iscrizioni_per_corso, max_capienza]);
+
 
   // Query fasce ghiaccio for selected day to control toggle state
   const { data: fasce_giorno_modal = [] } = useQuery({
@@ -1733,6 +1796,15 @@ const CorsoModal: React.FC<{
               <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
               <p className="text-xs text-orange-700">
                 <strong>Corso incompleto:</strong> {corso_completezza.motivo}. Le iscrizioni sono disabilitate finché il corso non è completo.
+              </p>
+            </div>
+          )}
+
+          {capienza.supera && (
+            <div className="flex items-start gap-2 px-3 py-2.5 mt-2 rounded-lg bg-yellow-50 border border-yellow-300">
+              <AlertTriangle className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-yellow-800">
+                <strong>Attenzione: capienza pista superata</strong> ({capienza.totale} atleti su {capienza.max} consentiti in contemporanea). Salvataggio non bloccato.
               </p>
             </div>
           )}
