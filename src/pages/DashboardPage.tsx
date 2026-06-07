@@ -446,7 +446,7 @@ const BoxComunicazione: React.FC<{
     set_testo(preset.testo);
     set_template_sel("");
     set_template_raw(null);
-    set_ph_corso(""); set_ph_data(""); set_ph_ora("");
+    set_ph_values({}); set_ph_motivo_altro("");
     on_preset_consumed?.();
   }, [preset, on_preset_consumed]);
 
