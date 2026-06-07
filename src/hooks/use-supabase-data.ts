@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase, get_current_club_id } from "@/lib/supabase";
+import { norm_giorno } from "@/lib/availability";
 
 // ─── Club & Setup ──────────────────────────────────────────
 export function use_club() {
