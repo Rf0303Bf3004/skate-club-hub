@@ -658,6 +658,47 @@ export function check_corso_completo(
   return { completo: true };
 }
 
+// ─── Capienza pista (alert non bloccante) ──────────────────
+// Somma gli iscritti dei corsi che si sovrappongono in orario (stesso giorno
+// normalizzato + overlap di [ora_inizio, ora_fine)) INCLUSO il candidato.
+// Se la somma supera `max` (>0) → supera=true. NON entra in check_corso_completo.
+export type CapienzaResult = { supera: boolean; totale: number; max: number };
+export function calcola_capienza_overlap(params: {
+  giorno?: string | null;
+  ora_inizio?: string | null;
+  ora_fine?: string | null;
+  candidato_id?: string | null;
+  candidato_iscritti?: number;
+  corsi: any[];
+  iscrizioni_per_corso: Record<string, number>;
+  max: number;
+}): CapienzaResult {
+  const {
+    giorno, ora_inizio, ora_fine,
+    candidato_id = null, candidato_iscritti = 0,
+    corsi, iscrizioni_per_corso, max,
+  } = params;
+  if (!max || max <= 0 || !giorno || !ora_inizio || !ora_fine) {
+    return { supera: false, totale: 0, max: max || 0 };
+  }
+  const ng = norm_giorno(giorno);
+  const s = _time_to_min(ora_inizio);
+  const e = _time_to_min(ora_fine);
+  let totale = candidato_iscritti;
+  for (const c of corsi || []) {
+    if (!c || c.id === candidato_id) continue;
+    if (!c.giorno || !c.ora_inizio || !c.ora_fine) continue;
+    if ((c.tipo || "").toLowerCase().trim() !== "ghiaccio") continue;
+    if (norm_giorno(c.giorno) !== ng) continue;
+    const cs = _time_to_min(c.ora_inizio);
+    const ce = _time_to_min(c.ora_fine);
+    if (cs < e && ce > s) {
+      totale += iscrizioni_per_corso?.[c.id] || 0;
+    }
+  }
+  return { supera: totale > max, totale, max };
+}
+
 /**
  * Returns a filtered list of only complete courses + the raw check function.
  */
