@@ -1068,8 +1068,8 @@ export const GrigliaFasceGhiaccio: React.FC<{
         ...(s.istruttore as any),
         disponibile: s.disponibile,
         motivo_ko: s.motivo_ko,
-        fuori_disponibilita: s.motivo_ko === "no_disponibilita" || s.motivo_ko === "slot_incompleto",
-        conflitto: s.motivo_ko === "conflitto_planning",
+        fuori_disponibilita: s.disponibile === false && !s.conflitto_corso_id,
+        conflitto: !!s.conflitto_corso_id,
         conflitto_nome: conflitto_corso?.nome || null,
       };
     });
