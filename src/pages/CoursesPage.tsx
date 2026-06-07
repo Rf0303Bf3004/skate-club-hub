@@ -2681,7 +2681,7 @@ const CoursesPage: React.FC = () => {
                   </h2>
                   <div className="space-y-2">
                     {group.sort((a: any, b: any) => GIORNI_DB.indexOf(a.giorno) - GIORNI_DB.indexOf(b.giorno) || time_to_min(a.ora_inizio) - time_to_min(b.ora_inizio)).map((c: any) => {
-                      const completezza = check_corso_completo(c, disp_ghiaccio);
+                      const completezza = check_corso_completo(c, disp_ghiaccio, istruttori);
                       return (
                         <div key={c.id} onClick={() => open_corso(c)}
                           className="flex items-center gap-4 px-4 py-3 bg-card rounded-xl border border-border/50 hover:border-primary/30 cursor-pointer transition-shadow hover:shadow-card-hover">
