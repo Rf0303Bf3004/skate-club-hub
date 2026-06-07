@@ -1210,19 +1210,42 @@ export const GrigliaFasceGhiaccio: React.FC<{
             {istruttori_status.map((i: any) => {
               const selected = istruttori_ids_sel.includes(i.id);
               const colore = i.colore || "#6B7280";
-              if (!i.disponibile) {
+              // Stato 1: conflitto su altro corso → non cliccabile
+              if (i.conflitto) {
                 return (
                   <div
                     key={i.id}
                     className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium border-2 border-border bg-muted/40 opacity-60 cursor-not-allowed"
-                    title={`Occupato in "${i.conflitto_nome}"`}
+                    title={`Occupato in "${i.conflitto_nome ?? '—'}"`}
                   >
                     <span className="w-3 h-3 rounded-full flex-shrink-0 bg-muted-foreground/30" />
                     <span className="text-muted-foreground">{i.nome} {i.cognome}</span>
-                    <span className="text-[9px] text-muted-foreground">(occupato in {i.conflitto_nome})</span>
+                    <span className="text-[9px] text-muted-foreground">(occupato{i.conflitto_nome ? ` in ${i.conflitto_nome}` : ""})</span>
                   </div>
                 );
               }
+              // Stato 2: fuori disponibilità dichiarata → cliccabile, badge ambra
+              if (i.fuori_disponibilita) {
+                return (
+                  <button
+                    key={i.id}
+                    type="button"
+                    onClick={() => on_select_istruttore(i.id)}
+                    title="Fuori dalla disponibilità dichiarata — il corso resterà segnalato come incompleto"
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium cursor-pointer transition-all border-2 border-dashed ${
+                      selected
+                        ? "border-amber-500 bg-amber-100 text-amber-900"
+                        : "border-amber-400 bg-amber-50 text-amber-800 hover:bg-amber-100"
+                    }`}
+                  >
+                    <AlertTriangle className="w-3 h-3 flex-shrink-0" />
+                    {i.nome} {i.cognome}
+                    <span className="text-[9px] opacity-80">(fuori disponibilità)</span>
+                    {selected && <span className="text-[10px] font-bold">✓</span>}
+                  </button>
+                );
+              }
+              // Stato 3: disponibile
               return (
                 <button
                   key={i.id}
