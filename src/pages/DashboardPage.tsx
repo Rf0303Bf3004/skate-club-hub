@@ -554,7 +554,8 @@ const BoxComunicazione: React.FC<{
     if (t) {
       set_titolo(t.nome);
       set_template_raw(t.testo);
-      set_ph_corso(""); set_ph_data(""); set_ph_ora("");
+      set_ph_values({});
+      set_ph_motivo_altro("");
       set_testo(t.testo);
     } else {
       set_template_raw(null);
