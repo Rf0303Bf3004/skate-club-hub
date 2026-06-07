@@ -664,10 +664,11 @@ export function check_corso_completo(
 export function use_corsi_completi() {
   const { data: corsi = [], ...rest } = use_corsi();
   const { data: disp_ghiaccio = [] } = use_disponibilita_ghiaccio();
+  const { data: istruttori = [] } = use_istruttori();
 
-  const corsi_completi = corsi.filter((c: any) => check_corso_completo(c, disp_ghiaccio).completo);
+  const corsi_completi = corsi.filter((c: any) => check_corso_completo(c, disp_ghiaccio, istruttori).completo);
 
-  return { corsi_completi, corsi, disp_ghiaccio, ...rest };
+  return { corsi_completi, corsi, disp_ghiaccio, istruttori, ...rest };
 }
 
 // ─── Livelli (master, modello multi-paese/fase) ──────────────
