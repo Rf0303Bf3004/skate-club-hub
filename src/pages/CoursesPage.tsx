@@ -1312,6 +1312,44 @@ const CorsoModal: React.FC<{
   const qc = useQueryClient();
   const { data: disp_ghiaccio_modal = [] } = use_disponibilita_ghiaccio();
   const corso_completezza = corso ? check_corso_completo(corso, disp_ghiaccio_modal, istruttori) : { completo: false, motivo: "Nuovo corso" };
+
+  // Capienza pista (alert NON bloccante): legge max_atleti_contemporanei e
+  // conteggio iscritti per corso del club, NON entra in check_corso_completo.
+  const { data: max_capienza = 0 } = useQuery({
+    queryKey: ["configurazione_ghiaccio_max_capienza"],
+    queryFn: async () => {
+      const club_id = get_current_club_id();
+      const { data } = await supabase
+        .from("configurazione_ghiaccio")
+        .select("max_atleti_contemporanei")
+        .eq("club_id", club_id)
+        .maybeSingle();
+      return Number(data?.max_atleti_contemporanei ?? 0) || 0;
+    },
+  });
+  const { data: iscrizioni_per_corso = {} } = useQuery<Record<string, number>>({
+    queryKey: ["iscrizioni_per_corso_count"],
+    queryFn: async () => {
+      const club_id = get_current_club_id();
+      const { data: corsi_club } = await supabase
+        .from("corsi")
+        .select("id")
+        .eq("club_id", club_id);
+      const ids = (corsi_club || []).map((c: any) => c.id);
+      if (ids.length === 0) return {};
+      const { data: iscr } = await supabase
+        .from("iscrizioni_corsi")
+        .select("corso_id, attiva")
+        .in("corso_id", ids)
+        .eq("attiva", true);
+      const map: Record<string, number> = {};
+      for (const r of iscr || []) {
+        map[(r as any).corso_id] = (map[(r as any).corso_id] || 0) + 1;
+      }
+      return map;
+    },
+  });
+
   const has_planning = !!(corso?.giorno && corso?.ora_inizio && corso?.ora_fine);
   const [posiziona_planning, set_posiziona_planning] = useState(corso ? has_planning : false);
   const [form, set_form] = useState({
