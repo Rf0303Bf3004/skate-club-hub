@@ -46,7 +46,7 @@ export type istruttore_disponibile_result = {
  * dentro una fascia. Disponibilità parziale = allarme.
  */
 /** Normalizza nome giorno: minuscolo + rimozione accenti, così "Martedì" === "Martedi" === "martedì". */
-function norm_giorno(g: string | null | undefined): string {
+export function norm_giorno(g: string | null | undefined): string {
   return (g ?? "")
     .toString()
     .normalize("NFD")
