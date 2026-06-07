@@ -1022,11 +1022,12 @@ export const GrigliaFasceGhiaccio: React.FC<{
     });
   }, [fasce_ghiaccio, corsi_pianificati, corso_id, corsi, istruttori, fascia_attiva]);
 
-  // Instructor availability: regola binaria condivisa con il wizard.
-  // Visibile = ha disponibilità dichiarata che copre lo slot E nessun conflitto su altri corsi/planning.
+  // Instructor availability: mostra TUTTI gli istruttori attivi, distinguendo
+  //  - disponibili (selezionabili, stile normale)
+  //  - fuori disponibilità dichiarata (selezionabili, badge ambra: corso resterà incompleto)
+  //  - in conflitto su altro corso (NON selezionabili, hard block)
   const istruttori_status = useMemo(() => {
     if (!ora_inizio_sel || !ora_fine_sel) return [];
-    // Singola fonte di verità: stesso helper usato da CorsoWizard (Step 3).
     const status = calcola_status_istruttori_per_slot({
       istruttori,
       giorno,
@@ -1035,18 +1036,17 @@ export const GrigliaFasceGhiaccio: React.FC<{
       planning_slots: corsi_pianificati as any,
       corso_id_corrente: corso_id ?? null,
     });
-    const filtrati = status
-      .filter((s) => s.disponibile)
-      .map((s) => ({ ...(s.istruttore as any), disponibile: true, conflitto_nome: null, motivo_ko: null }));
-    // eslint-disable-next-line no-console
-    console.debug("[GrigliaFasceGhiaccio] istruttori_status", {
-      giorno, ora_inizio_sel, ora_fine_sel,
-      totali: status.length, disponibili: filtrati.length,
-      esclusi: status
-        .filter((s) => !s.disponibile)
-        .map((s) => `${(s.istruttore as any).nome} ${(s.istruttore as any).cognome}: ${s.motivo_ko}`),
+    return status.map((s) => {
+      const conflitto_corso = s.conflitto_corso_id ? corsi.find((c: any) => c.id === s.conflitto_corso_id) : null;
+      return {
+        ...(s.istruttore as any),
+        disponibile: s.disponibile,
+        motivo_ko: s.motivo_ko,
+        fuori_disponibilita: s.motivo_ko === "no_disponibilita" || s.motivo_ko === "slot_incompleto",
+        conflitto: s.motivo_ko === "conflitto_planning",
+        conflitto_nome: conflitto_corso?.nome || null,
+      };
     });
-    return filtrati;
   }, [istruttori, corsi_pianificati, corsi, corso_id, giorno, ora_inizio_sel, ora_fine_sel]);
 
   // Duration buttons
