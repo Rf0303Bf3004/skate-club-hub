@@ -1386,6 +1386,25 @@ const CorsoModal: React.FC<{
   const [tipo_dialog_tipo, set_tipo_dialog_tipo] = useState<string>(corso?.tipo || "Ghiaccio");
   const [tipo_dialog_categoria, set_tipo_dialog_categoria] = useState<string>(corso?.categoria || "");
 
+  // Calcolo capienza pista (alert non bloccante). Solo per corsi Ghiaccio quando
+  // max_atleti_contemporanei è valorizzato (>0). NON entra in check_corso_completo.
+  const capienza = useMemo(() => {
+    if ((form.tipo || "").toLowerCase().trim() !== "ghiaccio") {
+      return { supera: false, totale: 0, max: max_capienza };
+    }
+    return calcola_capienza_overlap({
+      giorno: form.giorno,
+      ora_inizio: form.ora_inizio,
+      ora_fine: form.ora_fine,
+      candidato_id: corso?.id ?? null,
+      candidato_iscritti: corso?.id ? (iscrizioni_per_corso[corso.id] || 0) : 0,
+      corsi,
+      iscrizioni_per_corso,
+      max: max_capienza,
+    });
+  }, [form.tipo, form.giorno, form.ora_inizio, form.ora_fine, corso?.id, corsi, iscrizioni_per_corso, max_capienza]);
+
+
   // Query fasce ghiaccio for selected day to control toggle state
   const { data: fasce_giorno_modal = [] } = useQuery({
     queryKey: ["fasce_ghiaccio_toggle", form.giorno],
