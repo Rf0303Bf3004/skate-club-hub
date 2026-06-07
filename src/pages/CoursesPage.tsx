@@ -10,6 +10,7 @@ import {
   use_presenze_corso,
   use_disponibilita_ghiaccio,
   check_corso_completo,
+  calcola_capienza_overlap,
   get_istruttore_name_from_list,
   use_livelli,
 } from "@/hooks/use-supabase-data";
