@@ -103,6 +103,39 @@ function SignedImage({ path, className, alt }: { path: string | null; className?
   return <img src={url} alt={alt} className={className} />;
 }
 
+// ============== QR convenzione ==============
+function QrConvenzione({ token, azienda }: { token: string; azienda: string }) {
+  const [url, set_url] = useState<string | null>(null);
+  const target = typeof window !== "undefined" ? `${window.location.origin}/c/${token}` : "";
+  useEffect(() => {
+    let attivo = true;
+    QRCode.toDataURL(target, { width: 256, margin: 1 }).then(u => { if (attivo) set_url(u); });
+    return () => { attivo = false; };
+  }, [target]);
+  const handle_download = () => {
+    if (!url) return;
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `qr-${azienda.replace(/[^a-z0-9]+/gi, "-").toLowerCase() || "convenzione"}.png`;
+    a.click();
+  };
+  return (
+    <div className="flex items-center gap-3 pt-2 border-t border-slate-100">
+      {url
+        ? <img src={url} alt={`QR ${azienda}`} className="w-20 h-20 border border-slate-200 rounded bg-white" />
+        : <div className="w-20 h-20 bg-slate-100 animate-pulse rounded" />}
+      <div className="flex-1 min-w-0">
+        <p className="text-xs text-slate-500">Scansiona o condividi il link:</p>
+        <p className="text-xs font-mono text-slate-700 truncate">{target}</p>
+        <Button size="sm" variant="outline" className="mt-1.5 h-7 text-xs" onClick={handle_download} disabled={!url}>
+          <Download className="w-3 h-3 mr-1" /> Scarica QR
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+
 // ============== Pagina ==============
 export default function SuperAdminConvenzioniPage() {
   return (
