@@ -1,63 +1,49 @@
-## Contesto
+# Convenzioni — Dashboard Superadmin (UI parte 1)
 
-La struttura del form esiste già: `GrigliaFasceGhiaccio` (src/pages/CoursesPage.tsx) mostra le fasce ghiaccio del giorno, calcola slot per durata (45/60/90/custom), e usa `calcola_status_istruttori_per_slot` per filtrare gli istruttori disponibili. La completezza è calcolata da `check_corso_completo` in `src/hooks/use-supabase-data.ts`.
+## Scope
+Nuova pagina **/superadmin/convenzioni**, visibile solo al superadmin, con due tab: gestione convenzioni e gestione aree di mercato. Nessuna vista soci / nessuna pagina QR (passi successivi).
 
-Mancano: (a) mostrare anche gli istruttori NON disponibili come selezionabili con badge di avviso, (b) verifica istruttore nella regola di completezza.
+## File nuovi
+1. `src/pages/SuperAdminConvenzioniPage.tsx` — pagina con `<Tabs>` shadcn, due sotto-componenti interni:
+   - `TabConvenzioni`: lista + filtri + modale nuovo/modifica.
+   - `TabAree`: lista + inline edit + toggle attiva.
+2. (Nessun nuovo hook globale: tutte le query in pagina con `useQuery`/`useMutation` da `@/lib/supabase`, coerente con altre pagine superadmin tipo `SuperAdminListinoPage`.)
 
-## Modifiche
+## File modificati
+- `src/App.tsx`: import e rotta `/superadmin/convenzioni` dentro `<ProtectedSuperAdmin>`.
+- `src/components/MainLayout.tsx`: nuova `NavLink` nella sezione superadmin (icona `Gift` o `BadgePercent` di lucide), inserita prima di Manutenzione.
+- `src/locales/it/superadmin.json`: chiavi `menu.convenzioni` e blocco `convenzioni.*` (titoli, label form, toast).
 
-### 1. `src/hooks/use-supabase-data.ts` — `check_corso_completo`
+## Storage
+Per logo e immagine uso un bucket pubblico **`convenzioni`** (creato via `storage_create_bucket`, public=true). Path: `logos/{convenzione_id_o_uuid}.{ext}` e `immagini/{...}`. Policy storage.objects: SELECT public, INSERT/UPDATE/DELETE solo superadmin (via `public.is_superadmin()` già esistente). Upload con `supabase.storage.from('convenzioni').upload(...)` + `getPublicUrl`. Anteprime: logo 80x80 `object-contain` bg-slate-50, immagine banner `aspect-video object-cover`.
 
-Estendere la firma per accettare anche `disp_istruttori` e la lista istruttori:
+## Tab A — Gestione convenzioni
+**Query**: `convenzioni` + join `convenzioni_aree(nome,icona)` ordinato per `in_evidenza desc, created_at desc`. In parallelo `convenzioni_scansioni` raggruppata per `convenzione_id` (semplice `select convenzione_id` + reduce client, dataset piccolo) → mappa conteggi.
 
-```ts
-export function check_corso_completo(
-  corso: any,
-  disp_ghiaccio: any[],
-  disp_istruttori?: any[],   // righe disponibilita_istruttori del club
-): CorsoCompletoResult
-```
+**Lista** = card grid responsive (1/2/3 col) con:
+- Logo 64x64 a sinistra (placeholder iniziale azienda se assente).
+- Azienda (titolo bold) + titolo offerta (sottotitolo).
+- Riga chip: area (icona lucide dinamica + nome), `geo_citta — geo_cantone`, badge stato (verde attiva / giallo sospesa / grigio scaduta), badge "★ In evidenza" se attiva.
+- Validità `dd/MM/yyyy → dd/MM/yyyy` con `format-data.ts`.
+- Contatore scansioni con icona `ScanLine`.
+- Bottoni Modifica, Cambia stato (dropdown), Elimina (conferma con typing "ELIMINA").
 
-Logica nuova:
-- Off-Ice (tipo ≠ "ghiaccio"): invariato, completo se giorno+orari definiti.
-- Ghiaccio:
-  1. Verifica fascia ghiaccio (logica attuale, **non toccata**: `norm_giorno` + contenimento orario).
-  2. Verifica istruttore: deve esistere almeno una voce in `corso.istruttori_ids`. Se vuoto → `incompleto: "Nessun istruttore assegnato"`.
-  3. Per ognuno degli istruttori assegnati, cercare in `disp_istruttori` una riga con `norm_giorno(d.giorno) === norm_giorno(corso.giorno)` AND `d.ora_inizio ≤ corso.ora_inizio` AND `d.ora_fine ≥ corso.ora_fine`. Basta che **almeno uno** copra lo slot → completo. Se nessuno copre → `incompleto: "Istruttore fuori dalla disponibilità dichiarata"`.
+**Filtri** (top bar): search azienda/titolo, select area (tutte + lista aree attive), select stato (tutti/attiva/sospesa/scaduta), toggle "Solo in evidenza".
 
-Il parametro `disp_istruttori` è opzionale per non rompere chiamanti esistenti (se assente → si comporta come oggi sulla parte istruttore: completo se fascia OK).
+**Modale Nuova/Modifica** (`Dialog` shadcn):
+- Campi: azienda*, area_id (Select aree attive)*, titolo*, descrizione (Textarea), upload logo (input file + anteprima 80x80 + bottone rimuovi), upload immagine banner opzionale, indirizzo, geo_cantone (Select cantoni CH già definiti in `src/lib/territori.ts` se esiste, altrimenti input), geo_citta, validita_da/validita_a (DateInput), codice_sconto, Switch in_evidenza, Select stato (default attiva).
+- Salvataggio: upload file → insert/update riga. `qr_token` lasciato al default DB.
 
-### 2. `use_corsi_completi` (stesso file)
+## Tab B — Gestione aree
+- Tabella `convenzioni_aree` ordinata per `ordine`.
+- Colonne: drag-handle visiva (no riordino in MVP, modificabile via campo numerico `ordine`), nome (input inline), icona (input testo + preview icona lucide dinamica), ordine (number), attiva (Switch).
+- Bottone "Nuova area" in alto (riga vuota in modale piccolo).
+- Salvataggio singola riga su blur / Switch toggle.
 
-Caricare anche `disponibilita_istruttori` (già letta in `use_meta_planning` ma serve qui locale): aggiungere un piccolo hook `use_disponibilita_istruttori()` o riutilizzare la query esistente. Passarla a `check_corso_completo`.
+## Icone lucide dinamiche
+Helper `get_lucide_icon(name: string)` interno alla pagina: mappa stringa kebab → componente da `lucide-react` per le 8 aree del seed (dumbbell, car, utensils, heart-pulse, shirt, home, ticket, plane) + fallback `Tag`. Permette di aggiungere altre icone semplicemente importandole.
 
-### 3. `src/pages/CoursesPage.tsx` — chiamanti di `check_corso_completo`
+## Conferme richieste
+Nessuna: il piano usa pattern già consolidati (ProtectedSuperAdmin, Dialog shadcn, useQuery/useMutation), il bucket viene creato come parte dell'implementazione.
 
-Tre callsite (1286, 2627, 2684): leggere `disponibilita_istruttori` del club (query React Query) e passarla come terzo argomento.
-
-### 4. `GrigliaFasceGhiaccio` — mostrare anche istruttori fuori disponibilità
-
-Oggi `istruttori_status` filtra via `.filter((s) => s.disponibile)`. Cambio: mostrare TUTTI gli istruttori attivi del club, distinguendo tre stati visivi:
-
-- **Disponibile + libero**: pill cliccabile, stile attuale.
-- **Fuori disponibilità dichiarata** (`motivo_ko === "no_disponibilita"`): pill cliccabile ma con bordo tratteggiato ambra + icona ⚠ + tooltip "Fuori dalla disponibilità dichiarata — il corso resterà segnalato come incompleto". **Cliccabile** (selezione permessa), non blocca il salvataggio.
-- **Conflitto su altro corso** (`motivo_ko === "conflitto_planning"`): resta non cliccabile (come oggi), perché è un vincolo hard di sovrapposizione, non di disponibilità.
-
-Nessuna modifica a `calcola_status_istruttori_per_slot` (continua a restituire lo stato; cambia solo il rendering).
-
-### 5. Avviso completezza in `CorsoModal`
-
-Già esiste `corso_completezza` (linea 1286). Mostrare il `motivo` in un banner sopra il form quando incompleto, così l'utente capisce subito perché. Se già mostrato, lasciare invariato.
-
-## Cosa NON cambia
-
-- Logica di contenimento orario ghiaccio (intatta).
-- Filtro `tipo='ghiaccio'` su `disponibilita_ghiaccio` (intatto).
-- Generazione slot per durata (parte 1: già esistente, intatta).
-- La disponibilità istruttore viene **ricalcolata** ad ogni apertura del corso leggendo `disponibilita_istruttori` correnti: nessuna scrittura di "snapshot", nessuno spostamento automatico di corsi se in futuro un istruttore modifica la sua disponibilità — il corso esistente resterà semplicemente flaggato come incompleto.
-- Off-Ice: nessun vincolo ghiaccio né istruttore-su-fascia-ghiaccio.
-
-## File toccati
-
-- `src/hooks/use-supabase-data.ts` — firma e logica `check_corso_completo`, hook lettura `disponibilita_istruttori`.
-- `src/pages/CoursesPage.tsx` — 3 callsite + rendering pill istruttori "fuori disponibilità" cliccabile.
+Procedo con l'implementazione?
