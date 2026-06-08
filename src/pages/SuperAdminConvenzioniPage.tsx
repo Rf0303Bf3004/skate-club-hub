@@ -38,6 +38,13 @@ interface Area {
   ordine: number;
   attiva: boolean;
 }
+interface TipoProposta {
+  id: string;
+  nome: string;
+  formato: "percentuale" | "importo" | "testo" | null;
+  ordine: number;
+  attiva: boolean;
+}
 interface Convenzione {
   id: string;
   area_id: string | null;
@@ -56,8 +63,20 @@ interface Convenzione {
   stato: string;
   qr_token: string;
   created_at: string;
+  tipo_proposta_id: string | null;
+  valore_proposta: string | null;
   convenzioni_aree?: { nome: string; icona: string | null } | null;
+  convenzioni_tipi_proposta?: { nome: string; formato: string | null } | null;
 }
+
+function format_proposta(formato: string | null | undefined, valore: string | null | undefined): string | null {
+  const v = (valore ?? "").trim();
+  if (!v) return null;
+  if (formato === "percentuale") return `-${v}%`;
+  if (formato === "importo") return `-${v} CHF`;
+  return v;
+}
+
 
 // ============== Storage helpers (bucket privato → signed URL) ==============
 async function upload_file(file: File, prefix: "logos" | "immagini"): Promise<string> {
