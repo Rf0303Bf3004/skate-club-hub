@@ -85,6 +85,16 @@ const PublicRoutes = ({ children }: { children: React.ReactNode }) => {
       </BrowserRouter>
     );
   }
+  if (path.startsWith("/c/")) {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/c/:token" element={<ConvenzionePubblicaPage />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
+
   if (
     path === "/mio-club" || path.startsWith("/mio-club/") ||
     path === "/portale" || path.startsWith("/portale/") ||
