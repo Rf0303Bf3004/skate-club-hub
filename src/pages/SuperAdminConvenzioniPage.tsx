@@ -291,11 +291,18 @@ function TabConvenzioni() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <h3 className="font-semibold text-slate-900 truncate">{c.azienda}</h3>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <h3 className="font-semibold text-slate-900 truncate">{c.azienda}</h3>
+                          {(() => {
+                            const lbl = format_proposta(c.convenzioni_tipi_proposta?.formato, c.valore_proposta);
+                            return lbl ? <Badge className="bg-blue-600 text-white hover:bg-blue-600 shrink-0">{lbl}</Badge> : null;
+                          })()}
+                        </div>
                         <p className="text-sm text-slate-600 truncate">{c.titolo}</p>
                       </div>
                       {c.in_evidenza && <Star className="w-4 h-4 text-amber-500 fill-amber-500 shrink-0" />}
                     </div>
+
                     <div className="flex flex-wrap gap-1.5 mt-2">
                       {c.convenzioni_aree?.nome && (
                         <Badge variant="outline" className="gap-1">
