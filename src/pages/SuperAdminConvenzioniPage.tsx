@@ -381,9 +381,9 @@ function TabConvenzioni() {
 
 // ============== Modale form convenzione ==============
 function ConvenzioneFormModal({
-  open, onClose, editing, aree, onSaved,
+  open, onClose, editing, aree, tipi, onSaved,
 }: {
-  open: boolean; onClose: () => void; editing: Convenzione | null; aree: Area[]; onSaved: () => void;
+  open: boolean; onClose: () => void; editing: Convenzione | null; aree: Area[]; tipi: TipoProposta[]; onSaved: () => void;
 }) {
   const [form, set_form] = useState<Partial<Convenzione>>({});
   const [logo_file, set_logo_file] = useState<File | null>(null);
@@ -399,6 +399,17 @@ function ConvenzioneFormModal({
   }, [open, editing]);
 
   const update = (k: keyof Convenzione, v: any) => set_form(prev => ({ ...prev, [k]: v }));
+
+  const tipo_sel = tipi.find(t => t.id === form.tipo_proposta_id) ?? null;
+  const formato = tipo_sel?.formato ?? null;
+  const valore_placeholder =
+    formato === "percentuale" ? "es. 15"
+    : formato === "importo" ? "es. 20"
+    : "es. Caffè omaggio";
+  const valore_suffix =
+    formato === "percentuale" ? "%"
+    : formato === "importo" ? "CHF"
+    : null;
 
   const handle_save = async () => {
     if (!form.azienda || !form.titolo || !form.area_id) {
@@ -427,7 +438,10 @@ function ConvenzioneFormModal({
         codice_sconto: form.codice_sconto ?? null,
         in_evidenza: !!form.in_evidenza,
         stato: form.stato ?? "attiva",
+        tipo_proposta_id: form.tipo_proposta_id ?? null,
+        valore_proposta: (form.valore_proposta ?? "").toString().trim() || null,
       };
+
 
       if (editing) {
         const { error } = await supabase.from("convenzioni").update(payload).eq("id", editing.id);
