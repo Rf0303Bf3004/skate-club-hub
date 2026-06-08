@@ -13,10 +13,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { toast } from "sonner";
 import { CANTONI_CH } from "@/lib/territori";
 import {
-  Plus, Pencil, Trash2, ScanLine, Star, Tag,
+  Plus, Pencil, Trash2, ScanLine, Star, Tag, Download,
   Dumbbell, Car, Utensils, HeartPulse, Shirt, Home, Ticket, Plane,
   Coffee, Gift, Briefcase, Sparkles, Music,
 } from "lucide-react";
+import QRCode from "qrcode";
 
 // ============== Helpers icone lucide dinamiche ==============
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -102,6 +103,39 @@ function SignedImage({ path, className, alt }: { path: string | null; className?
   return <img src={url} alt={alt} className={className} />;
 }
 
+// ============== QR convenzione ==============
+function QrConvenzione({ token, azienda }: { token: string; azienda: string }) {
+  const [url, set_url] = useState<string | null>(null);
+  const target = typeof window !== "undefined" ? `${window.location.origin}/c/${token}` : "";
+  useEffect(() => {
+    let attivo = true;
+    QRCode.toDataURL(target, { width: 256, margin: 1 }).then(u => { if (attivo) set_url(u); });
+    return () => { attivo = false; };
+  }, [target]);
+  const handle_download = () => {
+    if (!url) return;
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `qr-${azienda.replace(/[^a-z0-9]+/gi, "-").toLowerCase() || "convenzione"}.png`;
+    a.click();
+  };
+  return (
+    <div className="flex items-center gap-3 pt-2 border-t border-slate-100">
+      {url
+        ? <img src={url} alt={`QR ${azienda}`} className="w-20 h-20 border border-slate-200 rounded bg-white" />
+        : <div className="w-20 h-20 bg-slate-100 animate-pulse rounded" />}
+      <div className="flex-1 min-w-0">
+        <p className="text-xs text-slate-500">Scansiona o condividi il link:</p>
+        <p className="text-xs font-mono text-slate-700 truncate">{target}</p>
+        <Button size="sm" variant="outline" className="mt-1.5 h-7 text-xs" onClick={handle_download} disabled={!url}>
+          <Download className="w-3 h-3 mr-1" /> Scarica QR
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+
 // ============== Pagina ==============
 export default function SuperAdminConvenzioniPage() {
   return (
@@ -178,11 +212,18 @@ function TabConvenzioni() {
   const { data: scan_map = {} } = useQuery({
     queryKey: ["convenzioni_scansioni_count"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("convenzioni_scansioni").select("convenzione_id");
+      const { data, error } = await supabase
+        .from("convenzioni_scansioni")
+        .select("convenzione_id, atleta_id");
       if (error) throw error;
-      const map: Record<string, number> = {};
+      const map: Record<string, { aperture: number; soci: number; _set: Set<string> }> = {};
       (data ?? []).forEach((r: any) => {
-        if (r.convenzione_id) map[r.convenzione_id] = (map[r.convenzione_id] ?? 0) + 1;
+        if (!r.convenzione_id) return;
+        const entry = map[r.convenzione_id] ?? { aperture: 0, soci: 0, _set: new Set<string>() };
+        entry.aperture += 1;
+        if (r.atleta_id) entry._set.add(r.atleta_id);
+        entry.soci = entry._set.size;
+        map[r.convenzione_id] = entry;
       });
       return map;
     },
@@ -320,9 +361,12 @@ function TabConvenzioni() {
                   )}
                   <div className="flex items-center gap-1 pt-1">
                     <ScanLine className="w-3.5 h-3.5" />
-                    <span>{scan_map[c.id] ?? 0} scansioni</span>
+                    <span>
+                      {(scan_map[c.id]?.aperture ?? 0)} aperture · {(scan_map[c.id]?.soci ?? 0)} soci
+                    </span>
                   </div>
                 </div>
+                <QrConvenzione token={c.qr_token} azienda={c.azienda} />
                 <div className="flex gap-2 pt-2 border-t border-slate-100">
                   <Button size="sm" variant="outline" onClick={() => { set_editing(c); set_modal_open(true); }}>
                     <Pencil className="w-3.5 h-3.5 mr-1" /> Modifica
