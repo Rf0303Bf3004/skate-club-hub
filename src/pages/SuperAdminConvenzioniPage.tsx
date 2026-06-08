@@ -536,6 +536,36 @@ function ConvenzioneFormModal({
             </div>
           </div>
 
+          <div>
+            <Label>Tipo di proposta</Label>
+            <Select
+              value={form.tipo_proposta_id ?? "__none__"}
+              onValueChange={v => update("tipo_proposta_id", v === "__none__" ? null : v)}
+            >
+              <SelectTrigger><SelectValue placeholder="Seleziona" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">— Nessuno —</SelectItem>
+                {tipi.map(t => <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Valore</Label>
+            <div className="relative">
+              <Input
+                value={form.valore_proposta ?? ""}
+                onChange={e => update("valore_proposta", e.target.value)}
+                placeholder={valore_placeholder}
+                className={valore_suffix ? "pr-12" : ""}
+              />
+              {valore_suffix && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-500 pointer-events-none">{valore_suffix}</span>
+              )}
+            </div>
+          </div>
+
+
+
           <div className="md:col-span-2">
             <Label>Indirizzo</Label>
             <Input value={form.indirizzo ?? ""} onChange={e => update("indirizzo", e.target.value)} />
