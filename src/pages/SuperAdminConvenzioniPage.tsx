@@ -114,6 +114,7 @@ export default function SuperAdminConvenzioniPage() {
         <TabsList>
           <TabsTrigger value="convenzioni">Convenzioni</TabsTrigger>
           <TabsTrigger value="aree">Aree di mercato</TabsTrigger>
+          <TabsTrigger value="tipi">Tipi di proposta</TabsTrigger>
         </TabsList>
         <TabsContent value="convenzioni" className="mt-4">
           <TabConvenzioni />
@@ -121,7 +122,11 @@ export default function SuperAdminConvenzioniPage() {
         <TabsContent value="aree" className="mt-4">
           <TabAree />
         </TabsContent>
+        <TabsContent value="tipi" className="mt-4">
+          <TabTipi />
+        </TabsContent>
       </Tabs>
+
     </div>
   );
 }
