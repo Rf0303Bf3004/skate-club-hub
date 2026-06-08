@@ -774,3 +774,162 @@ function AreaFormModal({
     </Dialog>
   );
 }
+
+// ============== Tab Tipi di proposta ==============
+function TabTipi() {
+  const qc = useQueryClient();
+  const [modal_open, set_modal_open] = useState(false);
+  const [editing, set_editing] = useState<TipoProposta | null>(null);
+
+  const { data: tipi = [], isLoading } = useQuery({
+    queryKey: ["convenzioni_tipi_proposta_all"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("convenzioni_tipi_proposta").select("*").order("ordine");
+      if (error) throw error;
+      return (data ?? []) as TipoProposta[];
+    },
+  });
+
+  const mut_toggle = useMutation({
+    mutationFn: async ({ id, attiva }: { id: string; attiva: boolean }) => {
+      const { error } = await supabase.from("convenzioni_tipi_proposta").update({ attiva }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["convenzioni_tipi_proposta_all"] }),
+    onError: (e: any) => toast.error("Errore: " + (e?.message ?? "")),
+  });
+
+  return (
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <Button onClick={() => { set_editing(null); set_modal_open(true); }}>
+          <Plus className="w-4 h-4 mr-1" /> Nuovo tipo
+        </Button>
+      </div>
+      {isLoading ? (
+        <div className="text-sm text-slate-500">Caricamento…</div>
+      ) : (
+        <div className="border border-slate-200 rounded-lg bg-white overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50 text-slate-600 text-xs uppercase">
+              <tr>
+                <th className="text-left p-3">Ordine</th>
+                <th className="text-left p-3">Nome</th>
+                <th className="text-left p-3">Formato</th>
+                <th className="text-left p-3">Attiva</th>
+                <th className="text-right p-3"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {tipi.map(t => (
+                <tr key={t.id} className="border-t border-slate-100 hover:bg-slate-50">
+                  <td className="p-3 w-16">{t.ordine}</td>
+                  <td className="p-3 font-medium">{t.nome}</td>
+                  <td className="p-3 w-32">
+                    <Badge variant="outline">{t.formato ?? "—"}</Badge>
+                  </td>
+                  <td className="p-3 w-24">
+                    <Switch checked={t.attiva} onCheckedChange={(v) => mut_toggle.mutate({ id: t.id, attiva: v })} />
+                  </td>
+                  <td className="p-3 text-right">
+                    <Button size="sm" variant="outline" onClick={() => { set_editing(t); set_modal_open(true); }}>
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <TipoFormModal
+        open={modal_open}
+        editing={editing}
+        onClose={() => set_modal_open(false)}
+        onSaved={() => {
+          qc.invalidateQueries({ queryKey: ["convenzioni_tipi_proposta_all"] });
+          qc.invalidateQueries({ queryKey: ["convenzioni_tipi_proposta_attivi"] });
+          set_modal_open(false);
+        }}
+      />
+    </div>
+  );
+}
+
+function TipoFormModal({
+  open, onClose, editing, onSaved,
+}: { open: boolean; onClose: () => void; editing: TipoProposta | null; onSaved: () => void }) {
+  const [form, set_form] = useState<Partial<TipoProposta>>({});
+  const [saving, set_saving] = useState(false);
+  useEffect(() => {
+    if (open) set_form(editing ?? { ordine: 0, attiva: true, formato: "testo" });
+  }, [open, editing]);
+
+  const update = (k: keyof TipoProposta, v: any) => set_form(p => ({ ...p, [k]: v }));
+
+  const handle_save = async () => {
+    if (!form.nome) { toast.error("Il nome è obbligatorio"); return; }
+    set_saving(true);
+    try {
+      const payload = {
+        nome: form.nome,
+        formato: form.formato ?? null,
+        ordine: form.ordine ?? 0,
+        attiva: form.attiva ?? true,
+      };
+      if (editing) {
+        const { error } = await supabase.from("convenzioni_tipi_proposta").update(payload).eq("id", editing.id);
+        if (error) throw error;
+        toast.success("Tipo aggiornato");
+      } else {
+        const { error } = await supabase.from("convenzioni_tipi_proposta").insert(payload);
+        if (error) throw error;
+        toast.success("Tipo creato");
+      }
+      onSaved();
+    } catch (e: any) {
+      toast.error("Errore: " + (e?.message ?? ""));
+    } finally { set_saving(false); }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent>
+        <DialogHeader><DialogTitle>{editing ? "Modifica tipo" : "Nuovo tipo"}</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label>Nome *</Label>
+            <Input value={form.nome ?? ""} onChange={e => update("nome", e.target.value)} />
+          </div>
+          <div>
+            <Label>Formato</Label>
+            <Select value={form.formato ?? "testo"} onValueChange={v => update("formato", v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="percentuale">percentuale</SelectItem>
+                <SelectItem value="importo">importo</SelectItem>
+                <SelectItem value="testo">testo</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-[11px] text-slate-500 mt-1">
+              Determina come viene formattato il valore: "-15%", "-20 CHF" oppure testo libero.
+            </p>
+          </div>
+          <div>
+            <Label>Ordine</Label>
+            <Input type="number" value={form.ordine ?? 0} onChange={e => update("ordine", parseInt(e.target.value || "0", 10))} />
+          </div>
+          <div className="flex items-center gap-2">
+            <Switch checked={form.attiva ?? true} onCheckedChange={v => update("attiva", v)} id="attt" />
+            <Label htmlFor="attt">Attiva</Label>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={saving}>Annulla</Button>
+          <Button onClick={handle_save} disabled={saving}>{saving ? "Salvataggio…" : "Salva"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
