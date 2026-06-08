@@ -179,11 +179,18 @@ function TabConvenzioni() {
   const { data: scan_map = {} } = useQuery({
     queryKey: ["convenzioni_scansioni_count"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("convenzioni_scansioni").select("convenzione_id");
+      const { data, error } = await supabase
+        .from("convenzioni_scansioni")
+        .select("convenzione_id, atleta_id");
       if (error) throw error;
-      const map: Record<string, number> = {};
+      const map: Record<string, { aperture: number; soci: number; _set: Set<string> }> = {};
       (data ?? []).forEach((r: any) => {
-        if (r.convenzione_id) map[r.convenzione_id] = (map[r.convenzione_id] ?? 0) + 1;
+        if (!r.convenzione_id) return;
+        const entry = map[r.convenzione_id] ?? { aperture: 0, soci: 0, _set: new Set<string>() };
+        entry.aperture += 1;
+        if (r.atleta_id) entry._set.add(r.atleta_id);
+        entry.soci = entry._set.size;
+        map[r.convenzione_id] = entry;
       });
       return map;
     },
