@@ -54,6 +54,7 @@ import RecoveryPage from "@/pages/RecoveryPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import SuperAdminUtentiPage from "@/pages/SuperAdminUtentiPage";
 import SuperAdminConvenzioniPage from "@/pages/SuperAdminConvenzioniPage";
+import ConvenzioniSociPage from "@/pages/ConvenzioniSociPage";
 import ConvenzionePubblicaPage from "@/pages/ConvenzionePubblicaPage";
 import PortaleLoginPage from "@/pages/portale/PortaleLoginPage";
 import PortaleLayout from "@/pages/portale/PortaleLayout";
@@ -244,6 +245,7 @@ const AuthenticatedApp = () => {
           <Route path="/test-mobile-auth" element={<TestMobileAuthPage />} />
           <Route path="/import-atleti" element={<ImportAtletiPage />} />
           <Route path="/pacchetti-sponsor" element={<PacchettiSponsorPage />} />
+          <Route path="/convenzioni" element={<ConvenzioniSociPage />} />
           <Route path="/onboarding" element={<OnboardingPage />} />
           <Route path="/presidente/relazione" element={<PresidentRelazione />} />
           <Route path="/presidente/relazione/contenuti" element={<PresidentRelazione />} />
