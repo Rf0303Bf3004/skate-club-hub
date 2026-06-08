@@ -328,9 +328,12 @@ function TabConvenzioni() {
                   )}
                   <div className="flex items-center gap-1 pt-1">
                     <ScanLine className="w-3.5 h-3.5" />
-                    <span>{scan_map[c.id] ?? 0} scansioni</span>
+                    <span>
+                      {(scan_map[c.id]?.aperture ?? 0)} aperture · {(scan_map[c.id]?.soci ?? 0)} soci
+                    </span>
                   </div>
                 </div>
+                <QrConvenzione token={c.qr_token} azienda={c.azienda} />
                 <div className="flex gap-2 pt-2 border-t border-slate-100">
                   <Button size="sm" variant="outline" onClick={() => { set_editing(c); set_modal_open(true); }}>
                     <Pencil className="w-3.5 h-3.5 mr-1" /> Modifica
