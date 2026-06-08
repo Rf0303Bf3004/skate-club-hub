@@ -152,18 +152,28 @@ function TabConvenzioni() {
     },
   });
 
+  const { data: tipi = [] } = useQuery({
+    queryKey: ["convenzioni_tipi_proposta_attivi"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("convenzioni_tipi_proposta").select("*").order("ordine");
+      if (error) throw error;
+      return (data ?? []) as TipoProposta[];
+    },
+  });
+
   const { data: convenzioni = [], isLoading } = useQuery({
     queryKey: ["convenzioni_admin"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("convenzioni")
-        .select("*, convenzioni_aree(nome, icona)")
+        .select("*, convenzioni_aree(nome, icona), convenzioni_tipi_proposta(nome, formato)")
         .order("in_evidenza", { ascending: false })
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Convenzione[];
     },
   });
+
 
   const { data: scan_map = {} } = useQuery({
     queryKey: ["convenzioni_scansioni_count"],
