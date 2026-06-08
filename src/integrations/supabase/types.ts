@@ -1464,6 +1464,139 @@ export type Database = {
         }
         Relationships: []
       }
+      convenzioni: {
+        Row: {
+          area_id: string | null
+          azienda: string
+          codice_sconto: string | null
+          created_at: string
+          descrizione: string | null
+          geo_cantone: string | null
+          geo_citta: string | null
+          id: string
+          immagine_url: string | null
+          in_evidenza: boolean
+          indirizzo: string | null
+          logo_url: string | null
+          qr_token: string
+          stato: string
+          titolo: string
+          validita_a: string | null
+          validita_da: string | null
+        }
+        Insert: {
+          area_id?: string | null
+          azienda: string
+          codice_sconto?: string | null
+          created_at?: string
+          descrizione?: string | null
+          geo_cantone?: string | null
+          geo_citta?: string | null
+          id?: string
+          immagine_url?: string | null
+          in_evidenza?: boolean
+          indirizzo?: string | null
+          logo_url?: string | null
+          qr_token?: string
+          stato?: string
+          titolo: string
+          validita_a?: string | null
+          validita_da?: string | null
+        }
+        Update: {
+          area_id?: string | null
+          azienda?: string
+          codice_sconto?: string | null
+          created_at?: string
+          descrizione?: string | null
+          geo_cantone?: string | null
+          geo_citta?: string | null
+          id?: string
+          immagine_url?: string | null
+          in_evidenza?: boolean
+          indirizzo?: string | null
+          logo_url?: string | null
+          qr_token?: string
+          stato?: string
+          titolo?: string
+          validita_a?: string | null
+          validita_da?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "convenzioni_area_id_fkey"
+            columns: ["area_id"]
+            isOneToOne: false
+            referencedRelation: "convenzioni_aree"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      convenzioni_aree: {
+        Row: {
+          attiva: boolean
+          created_at: string
+          icona: string | null
+          id: string
+          nome: string
+          ordine: number
+        }
+        Insert: {
+          attiva?: boolean
+          created_at?: string
+          icona?: string | null
+          id?: string
+          nome: string
+          ordine?: number
+        }
+        Update: {
+          attiva?: boolean
+          created_at?: string
+          icona?: string | null
+          id?: string
+          nome?: string
+          ordine?: number
+        }
+        Relationships: []
+      }
+      convenzioni_scansioni: {
+        Row: {
+          atleta_id: string | null
+          club_id: string | null
+          convenzione_id: string | null
+          id: string
+          qr_token: string | null
+          scansionato_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          atleta_id?: string | null
+          club_id?: string | null
+          convenzione_id?: string | null
+          id?: string
+          qr_token?: string | null
+          scansionato_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          atleta_id?: string | null
+          club_id?: string | null
+          convenzione_id?: string | null
+          id?: string
+          qr_token?: string | null
+          scansionato_at?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "convenzioni_scansioni_convenzione_id_fkey"
+            columns: ["convenzione_id"]
+            isOneToOne: false
+            referencedRelation: "convenzioni"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       corsi: {
         Row: {
           attivo: boolean | null
@@ -5256,6 +5389,7 @@ export type Database = {
         Returns: string
       }
       is_mobile_parent: { Args: never; Returns: boolean }
+      is_superadmin: { Args: never; Returns: boolean }
       migra_atleta_livello: {
         Args: { p_atleta_id: string }
         Returns: undefined
