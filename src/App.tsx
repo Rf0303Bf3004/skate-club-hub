@@ -54,6 +54,7 @@ import RecoveryPage from "@/pages/RecoveryPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import SuperAdminUtentiPage from "@/pages/SuperAdminUtentiPage";
 import SuperAdminConvenzioniPage from "@/pages/SuperAdminConvenzioniPage";
+import ConvenzionePubblicaPage from "@/pages/ConvenzionePubblicaPage";
 import PortaleLoginPage from "@/pages/portale/PortaleLoginPage";
 import PortaleLayout from "@/pages/portale/PortaleLayout";
 import PortaleHomePage from "@/pages/portale/PortaleHomePage";
