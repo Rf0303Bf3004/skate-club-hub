@@ -1480,9 +1480,11 @@ export type Database = {
           logo_url: string | null
           qr_token: string
           stato: string
+          tipo_proposta_id: string | null
           titolo: string
           validita_a: string | null
           validita_da: string | null
+          valore_proposta: string | null
         }
         Insert: {
           area_id?: string | null
@@ -1499,9 +1501,11 @@ export type Database = {
           logo_url?: string | null
           qr_token?: string
           stato?: string
+          tipo_proposta_id?: string | null
           titolo: string
           validita_a?: string | null
           validita_da?: string | null
+          valore_proposta?: string | null
         }
         Update: {
           area_id?: string | null
@@ -1518,9 +1522,11 @@ export type Database = {
           logo_url?: string | null
           qr_token?: string
           stato?: string
+          tipo_proposta_id?: string | null
           titolo?: string
           validita_a?: string | null
           validita_da?: string | null
+          valore_proposta?: string | null
         }
         Relationships: [
           {
@@ -1528,6 +1534,13 @@ export type Database = {
             columns: ["area_id"]
             isOneToOne: false
             referencedRelation: "convenzioni_aree"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "convenzioni_tipo_proposta_id_fkey"
+            columns: ["tipo_proposta_id"]
+            isOneToOne: false
+            referencedRelation: "convenzioni_tipi_proposta"
             referencedColumns: ["id"]
           },
         ]
@@ -1596,6 +1609,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      convenzioni_tipi_proposta: {
+        Row: {
+          attiva: boolean
+          created_at: string
+          formato: string | null
+          id: string
+          nome: string
+          ordine: number
+        }
+        Insert: {
+          attiva?: boolean
+          created_at?: string
+          formato?: string | null
+          id?: string
+          nome: string
+          ordine?: number
+        }
+        Update: {
+          attiva?: boolean
+          created_at?: string
+          formato?: string | null
+          id?: string
+          nome?: string
+          ordine?: number
+        }
+        Relationships: []
       }
       corsi: {
         Row: {
