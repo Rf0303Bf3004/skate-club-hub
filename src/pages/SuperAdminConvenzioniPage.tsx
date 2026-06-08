@@ -13,10 +13,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { toast } from "sonner";
 import { CANTONI_CH } from "@/lib/territori";
 import {
-  Plus, Pencil, Trash2, ScanLine, Star, Tag,
+  Plus, Pencil, Trash2, ScanLine, Star, Tag, Download,
   Dumbbell, Car, Utensils, HeartPulse, Shirt, Home, Ticket, Plane,
   Coffee, Gift, Briefcase, Sparkles, Music,
 } from "lucide-react";
+import QRCode from "qrcode";
 
 // ============== Helpers icone lucide dinamiche ==============
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
