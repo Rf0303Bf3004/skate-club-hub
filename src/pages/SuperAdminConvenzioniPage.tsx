@@ -350,6 +350,8 @@ function TabConvenzioni() {
         onClose={() => set_modal_open(false)}
         editing={editing}
         aree={aree_attive}
+        tipi={tipi.filter(t => t.attiva)}
+
         onSaved={() => {
           qc.invalidateQueries({ queryKey: ["convenzioni_admin"] });
           set_modal_open(false);
