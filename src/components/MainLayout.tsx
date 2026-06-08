@@ -228,6 +228,13 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               <span>{tc("menu.utenti")}</span>
             </NavLink>
           )}
+          {!is_superadmin && session && (
+            <NavLink to="/convenzioni" onClick={() => set_sidebar_open(false)}
+              className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/convenzioni" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+              <BadgePercent className="w-4 h-4 shrink-0" />
+              <span>Convenzioni</span>
+            </NavLink>
+          )}
           {is_superadmin && (
             <>
               <div className="pt-2 pb-1">
