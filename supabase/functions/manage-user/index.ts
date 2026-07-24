@@ -101,7 +101,16 @@ Deno.serve(async (req) => {
       if (!target) return json({ error: "not_found" }, 404);
 
       const { error: up_err } = await admin.auth.admin.updateUserById(user_id, { password });
-      if (up_err) return json({ error: up_err.message }, 400);
+      if (up_err) {
+        const msg = up_err.message || "";
+        if (/weak|pwned|known to be/i.test(msg)) {
+          return json({
+            error: "Password troppo debole o compromessa. Scegline una più robusta (evita password comuni, usa almeno 10 caratteri con maiuscole, numeri e simboli).",
+            code: "weak_password",
+          }, 400);
+        }
+        return json({ error: msg }, 400);
+      }
       return json({ ok: true });
     }
 
