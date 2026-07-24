@@ -69,7 +69,13 @@ Deno.serve(async (req) => {
         email_confirm: true,
         user_metadata: { nome, cognome },
       });
-      if (cr_err || !created.user) return json({ error: cr_err?.message || "create_failed" }, 400);
+      if (cr_err || !created.user) {
+        const msg = cr_err?.message || "create_failed";
+        if (/weak|pwned|known to be/i.test(msg)) {
+          return json({ error: "Password troppo debole o compromessa. Scegline una più robusta.", code: "weak_password" }, 400);
+        }
+        return json({ error: msg }, 400);
+      }
 
       const { error: ins_err } = await admin.from("utenti_club").insert({
         user_id: created.user.id,
