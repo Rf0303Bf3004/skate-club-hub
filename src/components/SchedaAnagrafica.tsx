@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { use_club } from '@/hooks/use-supabase-data';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Printer, QrCode } from 'lucide-react';
+import { ArrowLeft, Printer, QrCode, Copy, Check } from 'lucide-react';
 
 interface SchedaProps { atleta: any; on_back: () => void; }
 
@@ -10,6 +10,17 @@ const SchedaAnagrafica: React.FC<SchedaProps> = ({ atleta, on_back }) => {
   const codice = atleta.codice_atleta || (atleta.cognome + atleta.nome + '0001').toUpperCase().replace(/\s/g, '').slice(0, 16);
   const url_foto = 'https://app.icearena.ch/carica-foto/' + encodeURIComponent(codice);
   const qr_src = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(url_foto);
+  const [copiato, set_copiato] = useState(false);
+
+  const copia_link = async () => {
+    try {
+      await navigator.clipboard.writeText(url_foto);
+      set_copiato(true);
+      setTimeout(() => set_copiato(false), 2000);
+    } catch {
+      set_copiato(false);
+    }
+  };
 
 
   return (
@@ -96,7 +107,12 @@ const SchedaAnagrafica: React.FC<SchedaProps> = ({ atleta, on_back }) => {
               <p className='text-xs font-bold text-gray-500 uppercase tracking-widest mb-3'>Foto profilo online</p>
               {qr_src ? <img src={qr_src} alt='QR per caricare la foto profilo' className='w-28 h-28 rounded-xl border border-gray-200' /> : <div className='w-28 h-28 bg-gray-100 rounded-xl animate-pulse' />}
               <p className='text-xs text-gray-500 mt-2 leading-snug'>Scansiona per caricare<br/>la foto dell atleta</p>
-              <p className='text-xs font-bold text-indigo-600 mt-1 font-mono break-all'>{codice}</p>
+              <a href={url_foto} target='_blank' rel='noopener noreferrer' className='block text-xs text-indigo-600 underline font-medium mt-2 break-all select-all leading-snug'>{url_foto}</a>
+              <button type='button' onClick={copia_link} className='print:hidden mt-2 inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100'>
+                {copiato ? <Check className='w-3.5 h-3.5' /> : <Copy className='w-3.5 h-3.5' />}
+                {copiato ? 'Copiato' : 'Copia link'}
+              </button>
+              <p className='text-xs text-gray-400 mt-2 font-mono break-all'>Codice atleta: {codice}</p>
               <p className='text-xs text-green-600 font-medium mt-1'>Nessun login richiesto</p>
             </div>
 
@@ -110,6 +126,7 @@ const SchedaAnagrafica: React.FC<SchedaProps> = ({ atleta, on_back }) => {
             <div className='w-full space-y-1 text-center'>
               <p className='text-xs font-bold text-gray-400 uppercase tracking-widest'>Come fare</p>
               <p className='text-xs text-gray-500 leading-snug'>1. Inquadra il QR col telefono<br/>2. Si apre la pagina dell atleta<br/>3. Scatta o scegli la foto<br/>4. Conferma il caricamento</p>
+              <p className='text-xs text-gray-500 leading-snug pt-1'>Non riesci a scansionare? Apri il link qui sopra oppure copialo nel browser del telefono.</p>
             </div>
 
           </div>
