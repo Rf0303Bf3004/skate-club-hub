@@ -851,9 +851,52 @@ const AthletesPage: React.FC = () => {
     }
   };
 
+  const crea_atleta_rapido = async () => {
+    if (!quick_form.nome.trim() || !quick_form.cognome.trim()) {
+      toast({ title: "Nome e cognome obbligatori", variant: "destructive" });
+      return;
+    }
+    set_quick_saving(true);
+    try {
+      const { data, error } = await supabase
+        .from("atleti")
+        .insert({
+          club_id: get_current_club_id(),
+          nome: quick_form.nome.trim(),
+          cognome: quick_form.cognome.trim(),
+          genitore1_email: quick_form.genitore1_email.trim() || null,
+          genitore1_telefono: quick_form.genitore1_telefono.trim() || null,
+          attivo: false,
+          verificato: false,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      set_quick_open(false);
+      set_quick_form({ nome: "", cognome: "", genitore1_email: "", genitore1_telefono: "" });
+      set_scheda_atleta_nuovo(data);
+      set_scheda_modo("iscrizione");
+      toast({ title: "✅ Atleta creato — scheda di iscrizione pronta" });
+    } catch (err: any) {
+      toast({ title: "Errore creazione atleta", description: err?.message, variant: "destructive" });
+    } finally {
+      set_quick_saving(false);
+    }
+  };
+
+  if (scheda_atleta_nuovo) {
+    return (
+      <SchedaAnagrafica
+        atleta={scheda_atleta_nuovo}
+        modo={scheda_modo}
+        on_back={() => set_scheda_atleta_nuovo(null)}
+      />
+    );
+  }
+
   if (scheda_id) {
     const atleta = atleti.find((a: any) => a.id === scheda_id);
-    if (atleta) return <SchedaAnagrafica atleta={atleta} on_back={() => set_scheda_id(null)} />;
+    if (atleta) return <SchedaAnagrafica atleta={atleta} modo={scheda_modo} on_back={() => set_scheda_id(null)} />;
   }
 
 
