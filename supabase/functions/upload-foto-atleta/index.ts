@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
 
     const { data: atleta, error: atl_err } = await admin
       .from("atleti")
-      .select("id, nome, cognome, club_id, stato, foto_url")
+      .select("id, nome, cognome, club_id, attivo, foto_url")
       .eq("codice_atleta", codice)
       .maybeSingle();
     if (atl_err) {
@@ -70,9 +70,7 @@ Deno.serve(async (req) => {
       return json({ error: "db_error" }, 500);
     }
     if (!atleta) return json({ error: "codice_non_trovato" }, 404);
-    if (atleta.stato && String(atleta.stato).toLowerCase() !== "attivo") {
-      return json({ error: "atleta_non_attivo" }, 403);
-    }
+
 
     // Lookup (nessun file): restituisce i dati per la conferma visiva
     if (!file) {
