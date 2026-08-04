@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Shield, X, Trash2, Upload, ArrowLeft, Printer, Mail, AlertCircle } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import AtletaDetail from "@/components/AtletaDetail";
+import SchedaAnagrafica from "@/components/SchedaAnagrafica";
 import AthleteBadges from "@/components/AthleteBadges";
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
