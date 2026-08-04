@@ -999,6 +999,12 @@ const AthletesPage: React.FC = () => {
               </Button>
             )}
             <Button
+              variant="outline"
+              onClick={() => set_quick_open(true)}
+            >
+              <Plus className="w-4 h-4 mr-2" /> Iscrivi nuovo atleta
+            </Button>
+            <Button
               className="bg-primary hover:bg-primary/90"
               onClick={() => {
                 set_selected_atleta(null);
