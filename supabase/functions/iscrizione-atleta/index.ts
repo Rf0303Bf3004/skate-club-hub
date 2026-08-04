@@ -44,6 +44,21 @@ const CAMPI_TESTO = [
   "genitore1_cantone",
 ];
 
+const CATEGORIE_OK = ["pulcini", "amatori", "artistica"];
+const LIVELLI_OK = [
+  "Pulcini",
+  "Stellina 1",
+  "Stellina 2",
+  "Stellina 3",
+  "Stellina 4",
+  "Interbronzo",
+  "Bronzo",
+  "Interargento",
+  "Argento",
+  "Interoro",
+  "Oro",
+];
+
 const clean = (v: unknown, max = 255) => {
   const s = String(v ?? "").trim();
   if (!s) return null;
@@ -146,6 +161,18 @@ Deno.serve(async (req) => {
       const d = String(payload.data_nascita);
       if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return json({ error: "data_non_valida" }, 400);
       update.data_nascita = d;
+    }
+
+    // Livello iniziale: impostabile solo se l'atleta non ha ancora una categoria a DB
+    if (!atleta.categoria) {
+      const categoria = clean(payload.categoria, 20);
+      if (categoria && CATEGORIE_OK.includes(categoria)) {
+        update.categoria = categoria;
+        const liv_am = clean(payload.livello_amatori, 30);
+        if (liv_am && LIVELLI_OK.includes(liv_am)) update.livello_amatori = liv_am;
+        const liv_ar = clean(payload.livello_artistica, 30);
+        if (liv_ar && LIVELLI_OK.includes(liv_ar)) update.livello_artistica = liv_ar;
+      }
     }
 
     for (const campo of CAMPI_TESTO) {
