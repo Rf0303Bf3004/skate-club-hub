@@ -71,6 +71,7 @@ import FatturaDetailPage from "@/pages/portale/profilo/FatturaDetailPage";
 import SegreteriaFatturaDetailPage from "@/pages/SegreteriaFatturaDetailPage";
 import LandingPage from "@/pages/LandingPage";
 import CaricaFotoPage from "@/pages/CaricaFotoPage";
+import IscrizioneAtletaPage from "@/pages/IscrizioneAtletaPage";
 
 
 
@@ -94,6 +95,15 @@ const PublicRoutes = ({ children }: { children: React.ReactNode }) => {
       <BrowserRouter>
         <Routes>
           <Route path="/carica-foto/:codice_atleta" element={<CaricaFotoPage />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
+  if (path.startsWith("/iscrizione/")) {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/iscrizione/:codice_atleta" element={<IscrizioneAtletaPage />} />
         </Routes>
       </BrowserRouter>
     );
