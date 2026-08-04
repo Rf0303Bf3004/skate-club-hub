@@ -54,7 +54,7 @@ const SchedaAnagrafica: React.FC<SchedaProps> = ({ atleta, on_back, modo = 'foto
           <div style={{background:'#818cf8'}} className='w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-xl shrink-0'>C</div>
           <div>
             <p className='text-white font-semibold text-base'>{club?.nome || 'Club'}</p>
-            <p style={{color:'rgba(255,255,255,0.5)'}} className='text-xs'>Scheda anagrafica atleta</p>
+            <p style={{color:'rgba(255,255,255,0.5)'}} className='text-xs'>{e_iscrizione ? 'Modulo di iscrizione atleta' : 'Scheda anagrafica atleta'}</p>
           </div>
           <span style={{background:'rgba(129,140,248,0.2)',color:'#818cf8'}} className='ml-auto text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider'>{atleta.stato === 'attivo' ? 'Attivo' : 'Inattivo'}</span>
         </div>
