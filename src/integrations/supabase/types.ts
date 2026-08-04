@@ -108,6 +108,8 @@ export type Database = {
           codice_fiscale: string | null
           cognome: string
           compenso_orario_pista: number | null
+          consenso_foto_video: boolean
+          contratto_accettato_at: string | null
           created_at: string
           data_nascita: string | null
           disco_in_preparazione: string | null
@@ -140,6 +142,7 @@ export type Database = {
           id: string
           importato_da_excel: boolean
           indirizzo: string | null
+          intende_test_livello: boolean
           licenza_sis_categoria: string | null
           licenza_sis_disciplina: string | null
           licenza_sis_numero: string | null
@@ -155,6 +158,7 @@ export type Database = {
           note: string | null
           ore_pista_stagione: number | null
           paese_iso: string
+          partecipa_gare: boolean
           provincia: string | null
           regione: string | null
           ruolo_pista: string | null
@@ -183,6 +187,8 @@ export type Database = {
           codice_fiscale?: string | null
           cognome?: string
           compenso_orario_pista?: number | null
+          consenso_foto_video?: boolean
+          contratto_accettato_at?: string | null
           created_at?: string
           data_nascita?: string | null
           disco_in_preparazione?: string | null
@@ -215,6 +221,7 @@ export type Database = {
           id?: string
           importato_da_excel?: boolean
           indirizzo?: string | null
+          intende_test_livello?: boolean
           licenza_sis_categoria?: string | null
           licenza_sis_disciplina?: string | null
           licenza_sis_numero?: string | null
@@ -230,6 +237,7 @@ export type Database = {
           note?: string | null
           ore_pista_stagione?: number | null
           paese_iso?: string
+          partecipa_gare?: boolean
           provincia?: string | null
           regione?: string | null
           ruolo_pista?: string | null
@@ -258,6 +266,8 @@ export type Database = {
           codice_fiscale?: string | null
           cognome?: string
           compenso_orario_pista?: number | null
+          consenso_foto_video?: boolean
+          contratto_accettato_at?: string | null
           created_at?: string
           data_nascita?: string | null
           disco_in_preparazione?: string | null
@@ -290,6 +300,7 @@ export type Database = {
           id?: string
           importato_da_excel?: boolean
           indirizzo?: string | null
+          intende_test_livello?: boolean
           licenza_sis_categoria?: string | null
           licenza_sis_disciplina?: string | null
           licenza_sis_numero?: string | null
@@ -305,6 +316,7 @@ export type Database = {
           note?: string | null
           ore_pista_stagione?: number | null
           paese_iso?: string
+          partecipa_gare?: boolean
           provincia?: string | null
           regione?: string | null
           ruolo_pista?: string | null
@@ -4129,6 +4141,7 @@ export type Database = {
         Row: {
           anno_fondazione: number | null
           banca: string | null
+          clausole_contratto: string | null
           club_id: string
           created_at: string
           data_fine_stagione: string | null
@@ -4152,6 +4165,7 @@ export type Database = {
         Insert: {
           anno_fondazione?: number | null
           banca?: string | null
+          clausole_contratto?: string | null
           club_id: string
           created_at?: string
           data_fine_stagione?: string | null
@@ -4175,6 +4189,7 @@ export type Database = {
         Update: {
           anno_fondazione?: number | null
           banca?: string | null
+          clausole_contratto?: string | null
           club_id?: string
           created_at?: string
           data_fine_stagione?: string | null

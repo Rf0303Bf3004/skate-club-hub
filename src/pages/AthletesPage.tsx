@@ -632,6 +632,11 @@ const AthletesPage: React.FC = () => {
   const [modal_open, set_modal_open] = useState(false);
   const [selected_atleta, set_selected_atleta] = useState<any>(null);
   const [scheda_id, set_scheda_id] = useState<string | null>(null);
+  const [scheda_modo, set_scheda_modo] = useState<"foto" | "iscrizione">("foto");
+  const [scheda_atleta_nuovo, set_scheda_atleta_nuovo] = useState<any>(null);
+  const [quick_open, set_quick_open] = useState(false);
+  const [quick_form, set_quick_form] = useState<{ nome: string; cognome: string; genitore1_email: string; genitore1_telefono: string }>({ nome: "", cognome: "", genitore1_email: "", genitore1_telefono: "" });
+  const [quick_saving, set_quick_saving] = useState(false);
   
   const { data: club } = use_club();
   const { data: adesioni = [] } = use_adesioni_atleta();
@@ -846,9 +851,52 @@ const AthletesPage: React.FC = () => {
     }
   };
 
+  const crea_atleta_rapido = async () => {
+    if (!quick_form.nome.trim() || !quick_form.cognome.trim()) {
+      toast({ title: "Nome e cognome obbligatori", variant: "destructive" });
+      return;
+    }
+    set_quick_saving(true);
+    try {
+      const { data, error } = await supabase
+        .from("atleti")
+        .insert({
+          club_id: get_current_club_id(),
+          nome: quick_form.nome.trim(),
+          cognome: quick_form.cognome.trim(),
+          genitore1_email: quick_form.genitore1_email.trim() || null,
+          genitore1_telefono: quick_form.genitore1_telefono.trim() || null,
+          attivo: false,
+          verificato: false,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      set_quick_open(false);
+      set_quick_form({ nome: "", cognome: "", genitore1_email: "", genitore1_telefono: "" });
+      set_scheda_atleta_nuovo(data);
+      set_scheda_modo("iscrizione");
+      toast({ title: "✅ Atleta creato — scheda di iscrizione pronta" });
+    } catch (err: any) {
+      toast({ title: "Errore creazione atleta", description: err?.message, variant: "destructive" });
+    } finally {
+      set_quick_saving(false);
+    }
+  };
+
+  if (scheda_atleta_nuovo) {
+    return (
+      <SchedaAnagrafica
+        atleta={scheda_atleta_nuovo}
+        modo={scheda_modo}
+        on_back={() => set_scheda_atleta_nuovo(null)}
+      />
+    );
+  }
+
   if (scheda_id) {
     const atleta = atleti.find((a: any) => a.id === scheda_id);
-    if (atleta) return <SchedaAnagrafica atleta={atleta} on_back={() => set_scheda_id(null)} />;
+    if (atleta) return <SchedaAnagrafica atleta={atleta} modo={scheda_modo} on_back={() => set_scheda_id(null)} />;
   }
 
 
@@ -878,6 +926,40 @@ const AthletesPage: React.FC = () => {
           deleting={elimina.isPending}
         />
       )}
+
+      {quick_open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => !quick_saving && set_quick_open(false)}>
+          <div className="w-full max-w-md rounded-2xl bg-card border p-5 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <div>
+              <h2 className="text-lg font-semibold">Iscrivi nuovo atleta</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Crea la scheda minima: il resto lo completa il genitore dalla pagina di iscrizione.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Nome" required>
+                <Input value={quick_form.nome} onChange={(e) => set_quick_form((p) => ({ ...p, nome: e.target.value }))} />
+              </Field>
+              <Field label="Cognome" required>
+                <Input value={quick_form.cognome} onChange={(e) => set_quick_form((p) => ({ ...p, cognome: e.target.value }))} />
+              </Field>
+              <Field label="Email genitore">
+                <Input type="email" value={quick_form.genitore1_email} onChange={(e) => set_quick_form((p) => ({ ...p, genitore1_email: e.target.value }))} />
+              </Field>
+              <Field label="Telefono genitore">
+                <Input type="tel" value={quick_form.genitore1_telefono} onChange={(e) => set_quick_form((p) => ({ ...p, genitore1_telefono: e.target.value }))} />
+              </Field>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => set_quick_open(false)} disabled={quick_saving}>Annulla</Button>
+              <Button onClick={crea_atleta_rapido} disabled={quick_saving}>
+                {quick_saving ? "Creazione…" : "Crea e stampa scheda"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       <div className="space-y-6 animate-fade-in">
         {non_iscritti_count > 0 && (
@@ -916,6 +998,12 @@ const AthletesPage: React.FC = () => {
                 <Upload className="w-4 h-4 mr-2" /> Importa da Excel
               </Button>
             )}
+            <Button
+              variant="outline"
+              onClick={() => set_quick_open(true)}
+            >
+              <Plus className="w-4 h-4 mr-2" /> Iscrivi nuovo atleta
+            </Button>
             <Button
               className="bg-primary hover:bg-primary/90"
               onClick={() => {
@@ -1357,10 +1445,18 @@ const AthletesPage: React.FC = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => set_scheda_id(a.id)}
+                          onClick={() => { set_scheda_modo("foto"); set_scheda_id(a.id); }}
                           className="text-xs h-7"
                         >
                           Scheda
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => { set_scheda_modo("iscrizione"); set_scheda_id(a.id); }}
+                          className="text-xs h-7"
+                        >
+                          Iscrizione
                         </Button>
                         <Button
                           variant="ghost"

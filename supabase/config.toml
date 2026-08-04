@@ -9,3 +9,6 @@ verify_jwt = false
 [functions.upload-foto-atleta]
 verify_jwt = false
 
+[functions.iscrizione-atleta]
+verify_jwt = false
+
