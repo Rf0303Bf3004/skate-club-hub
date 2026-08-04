@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { use_club } from '@/hooks/use-supabase-data';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Printer, QrCode } from 'lucide-react';
+import { ArrowLeft, Printer, QrCode, Copy, Check } from 'lucide-react';
 
 interface SchedaProps { atleta: any; on_back: () => void; }
 
@@ -10,6 +10,17 @@ const SchedaAnagrafica: React.FC<SchedaProps> = ({ atleta, on_back }) => {
   const codice = atleta.codice_atleta || (atleta.cognome + atleta.nome + '0001').toUpperCase().replace(/\s/g, '').slice(0, 16);
   const url_foto = 'https://app.icearena.ch/carica-foto/' + encodeURIComponent(codice);
   const qr_src = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(url_foto);
+  const [copiato, set_copiato] = useState(false);
+
+  const copia_link = async () => {
+    try {
+      await navigator.clipboard.writeText(url_foto);
+      set_copiato(true);
+      setTimeout(() => set_copiato(false), 2000);
+    } catch {
+      set_copiato(false);
+    }
+  };
 
 
   return (
