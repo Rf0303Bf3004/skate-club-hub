@@ -1,16 +1,35 @@
-import React, { useState } from 'react';
-import { use_club } from '@/hooks/use-supabase-data';
+import React, { useState, useMemo } from 'react';
+import { use_club, use_setup_club, use_stagioni } from '@/hooks/use-supabase-data';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Printer, QrCode, Copy, Check } from 'lucide-react';
+import { build_contratto } from '@/lib/contratto-adesione';
 
-interface SchedaProps { atleta: any; on_back: () => void; }
+interface SchedaProps { atleta: any; on_back: () => void; modo?: 'foto' | 'iscrizione'; }
 
-const SchedaAnagrafica: React.FC<SchedaProps> = ({ atleta, on_back }) => {
+const URL_APP_STORE = 'https://app.icearena.ch/mio-club';
+
+const SchedaAnagrafica: React.FC<SchedaProps> = ({ atleta, on_back, modo = 'foto' }) => {
   const { data: club } = use_club();
+  const { data: setup } = use_setup_club();
+  const { data: stagioni = [] } = use_stagioni();
+  const stagione_attiva = (stagioni as any[]).find((s: any) => s.attiva);
   const codice = atleta.codice_atleta || (atleta.cognome + atleta.nome + '0001').toUpperCase().replace(/\s/g, '').slice(0, 16);
-  const url_foto = 'https://app.icearena.ch/carica-foto/' + encodeURIComponent(codice);
+  const e_iscrizione = modo === 'iscrizione';
+  const url_foto = 'https://app.icearena.ch/' + (e_iscrizione ? 'iscrizione/' : 'carica-foto/') + encodeURIComponent(codice);
   const qr_src = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(url_foto);
+  const qr_store = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(URL_APP_STORE);
   const [copiato, set_copiato] = useState(false);
+
+  const articoli = useMemo(() => build_contratto({
+    club_nome: (club as any)?.nome,
+    club_citta: (club as any)?.citta,
+    club_cantone: (club as any)?.cantone,
+    club_paese: (club as any)?.paese,
+    stagione_nome: stagione_attiva?.nome,
+    stagione_data_inizio: stagione_attiva?.data_inizio,
+    stagione_data_fine: stagione_attiva?.data_fine,
+    clausole_contratto: (setup as any)?.clausole_contratto,
+  }), [club, setup, stagione_attiva]);
 
   const copia_link = async () => {
     try {
