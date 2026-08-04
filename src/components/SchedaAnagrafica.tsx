@@ -7,8 +7,10 @@ interface SchedaProps { atleta: any; on_back: () => void; }
 
 const SchedaAnagrafica: React.FC<SchedaProps> = ({ atleta, on_back }) => {
   const { data: club } = use_club();
-  const codice = (atleta.cognome + atleta.nome + '0001').toUpperCase().replace(/\s/g, '').slice(0, 16);
-  const qr_src = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(codice);
+  const codice = atleta.codice_atleta || (atleta.cognome + atleta.nome + '0001').toUpperCase().replace(/\s/g, '').slice(0, 16);
+  const url_foto = 'https://app.icearena.ch/carica-foto/' + encodeURIComponent(codice);
+  const qr_src = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(url_foto);
+
 
   return (
     <div className='space-y-4 animate-fade-in'>
@@ -91,24 +93,25 @@ const SchedaAnagrafica: React.FC<SchedaProps> = ({ atleta, on_back }) => {
 
           <div className='p-5 flex flex-col items-center gap-4'>
             <div className='text-center'>
-              <p className='text-xs font-bold text-gray-500 uppercase tracking-widest mb-3'>App Ice Arena</p>
-              {qr_src ? <img src={qr_src} className='w-28 h-28 rounded-xl border border-gray-200' /> : <div className='w-28 h-28 bg-gray-100 rounded-xl animate-pulse' />}
-              <p className='text-xs text-gray-500 mt-2 leading-snug'>Scansiona per<br/>scaricare l app</p>
+              <p className='text-xs font-bold text-gray-500 uppercase tracking-widest mb-3'>Foto profilo online</p>
+              {qr_src ? <img src={qr_src} alt='QR per caricare la foto profilo' className='w-28 h-28 rounded-xl border border-gray-200' /> : <div className='w-28 h-28 bg-gray-100 rounded-xl animate-pulse' />}
+              <p className='text-xs text-gray-500 mt-2 leading-snug'>Scansiona per caricare<br/>la foto dell atleta</p>
               <p className='text-xs font-bold text-indigo-600 mt-1 font-mono break-all'>{codice}</p>
-              <p className='text-xs text-green-600 font-medium mt-1'>Non scade mai</p>
+              <p className='text-xs text-green-600 font-medium mt-1'>Nessun login richiesto</p>
             </div>
 
             <div className='w-full border-t border-gray-100 pt-3 space-y-2'>
-              <p className='text-xs font-bold text-gray-400 uppercase tracking-widest text-center'>Foto profilo</p>
+              <p className='text-xs font-bold text-gray-400 uppercase tracking-widest text-center'>Requisiti foto</p>
               <div className='bg-amber-50 border border-amber-200 rounded-lg p-2 text-center'>
                 <p className='text-xs text-amber-700 font-medium leading-snug'>Sfondo bianco<br/>Busto e viso<br/>JPG/PNG min 300px<br/>Max 2MB</p>
               </div>
             </div>
 
             <div className='w-full space-y-1 text-center'>
-              <p className='text-xs font-bold text-gray-400 uppercase tracking-widest'>Istruzioni app</p>
-              <p className='text-xs text-gray-500 leading-snug'>1. Scarica Ice Arena<br/>2. Tocca Accedi<br/>3. Inserisci il codice<br/>4. Carica foto profilo</p>
+              <p className='text-xs font-bold text-gray-400 uppercase tracking-widest'>Come fare</p>
+              <p className='text-xs text-gray-500 leading-snug'>1. Inquadra il QR col telefono<br/>2. Si apre la pagina dell atleta<br/>3. Scatta o scegli la foto<br/>4. Conferma il caricamento</p>
             </div>
+
           </div>
         </div>
 

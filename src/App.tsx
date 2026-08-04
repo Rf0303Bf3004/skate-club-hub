@@ -70,6 +70,8 @@ import ConvenzioniTab from "@/pages/portale/profilo/ConvenzioniTab";
 import FatturaDetailPage from "@/pages/portale/profilo/FatturaDetailPage";
 import SegreteriaFatturaDetailPage from "@/pages/SegreteriaFatturaDetailPage";
 import LandingPage from "@/pages/LandingPage";
+import CaricaFotoPage from "@/pages/CaricaFotoPage";
+
 
 
 const queryClient = new QueryClient();
@@ -87,6 +89,15 @@ const PublicRoutes = ({ children }: { children: React.ReactNode }) => {
       </BrowserRouter>
     );
   }
+  if (path.startsWith("/carica-foto/")) {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/carica-foto/:codice_atleta" element={<CaricaFotoPage />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
   if (path.startsWith("/c/")) {
     return (
       <BrowserRouter>
@@ -96,6 +107,7 @@ const PublicRoutes = ({ children }: { children: React.ReactNode }) => {
       </BrowserRouter>
     );
   }
+
 
   if (
     path === "/mio-club" || path.startsWith("/mio-club/") ||
