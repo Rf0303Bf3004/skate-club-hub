@@ -1445,10 +1445,18 @@ const AthletesPage: React.FC = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => set_scheda_id(a.id)}
+                          onClick={() => { set_scheda_modo("foto"); set_scheda_id(a.id); }}
                           className="text-xs h-7"
                         >
                           Scheda
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => { set_scheda_modo("iscrizione"); set_scheda_id(a.id); }}
+                          className="text-xs h-7"
+                        >
+                          Iscrizione
                         </Button>
                         <Button
                           variant="ghost"
