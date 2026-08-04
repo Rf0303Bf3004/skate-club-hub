@@ -7,8 +7,10 @@ interface SchedaProps { atleta: any; on_back: () => void; }
 
 const SchedaAnagrafica: React.FC<SchedaProps> = ({ atleta, on_back }) => {
   const { data: club } = use_club();
-  const codice = (atleta.cognome + atleta.nome + '0001').toUpperCase().replace(/\s/g, '').slice(0, 16);
-  const qr_src = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(codice);
+  const codice = atleta.codice_atleta || (atleta.cognome + atleta.nome + '0001').toUpperCase().replace(/\s/g, '').slice(0, 16);
+  const url_foto = 'https://app.icearena.ch/carica-foto/' + encodeURIComponent(codice);
+  const qr_src = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(url_foto);
+
 
   return (
     <div className='space-y-4 animate-fade-in'>
