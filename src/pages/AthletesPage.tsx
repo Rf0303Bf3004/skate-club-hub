@@ -632,6 +632,11 @@ const AthletesPage: React.FC = () => {
   const [modal_open, set_modal_open] = useState(false);
   const [selected_atleta, set_selected_atleta] = useState<any>(null);
   const [scheda_id, set_scheda_id] = useState<string | null>(null);
+  const [scheda_modo, set_scheda_modo] = useState<"foto" | "iscrizione">("foto");
+  const [scheda_atleta_nuovo, set_scheda_atleta_nuovo] = useState<any>(null);
+  const [quick_open, set_quick_open] = useState(false);
+  const [quick_form, set_quick_form] = useState<{ nome: string; cognome: string; genitore1_email: string; genitore1_telefono: string }>({ nome: "", cognome: "", genitore1_email: "", genitore1_telefono: "" });
+  const [quick_saving, set_quick_saving] = useState(false);
   
   const { data: club } = use_club();
   const { data: adesioni = [] } = use_adesioni_atleta();
