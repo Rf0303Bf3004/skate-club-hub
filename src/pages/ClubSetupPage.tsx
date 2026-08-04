@@ -159,7 +159,7 @@ const ClubSetupPage: React.FC = () => {
       const setup_fields = [
         "max_lezioni_private_contemporanee", "max_atlete_lezione_condivisa",
         "slot_lezione_privata_minuti", "iban", "intestatario_conto", "banca", "indirizzo_banca", "twint_paylink",
-        "data_inizio_stagione", "data_fine_stagione", "medagliere_punti",
+        "data_inizio_stagione", "data_fine_stagione", "medagliere_punti", "clausole_contratto",
       ];
       for (const f of setup_fields) {
         if (f in form) setup_payload[f] = form[f];
@@ -532,6 +532,25 @@ const ClubSetupPage: React.FC = () => {
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
             placeholder="Descrizione del club..."
           />
+        </section>
+
+        <Separator />
+
+        {/* Clausole aggiuntive al contratto di adesione */}
+        <section className="space-y-4">
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">
+            Clausole aggiuntive al contratto di adesione
+          </h2>
+          <textarea
+            value={get_val("clausole_contratto")}
+            onChange={(e) => set_val("clausole_contratto", e.target.value)}
+            rows={5}
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            placeholder="Testo libero mostrato come articolo 12 del contratto di adesione (lascia vuoto per non mostrarlo)..."
+          />
+          <p className="text-xs text-muted-foreground">
+            Appare come Art. 12 nella pagina pubblica di iscrizione e nella scheda stampabile. Se vuoto, l'articolo non viene mostrato.
+          </p>
         </section>
 
         <Separator />
