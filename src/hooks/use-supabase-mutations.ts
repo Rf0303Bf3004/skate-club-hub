@@ -1132,8 +1132,42 @@ export function use_crea_comunicazione() {
         return;
       }
 
+      // Atlete che gareggiano (agonista oppure partecipa_gare)
+      if (data.tipo_destinatari === "agoniste") {
+        const { data: atleti_gare, error: e_ag } = await supabase
+          .from("atleti")
+          .select("id, agonista, partecipa_gare, attivo")
+          .eq("club_id", club_id);
+        if (e_ag) throw e_ag;
+        const ids_gare = (atleti_gare ?? [])
+          .filter((a: any) => a.attivo !== false && (a.agonista === true || a.partecipa_gare === true))
+          .map((a: any) => a.id);
+
+        const { data: ins_ag, error: e_ins_ag } = await supabase
+          .from("comunicazioni")
+          .insert({
+            club_id,
+            titolo: data.titolo,
+            testo: data.testo,
+            tipo_destinatari: "manuale",
+            urgente,
+            ...fk_evento,
+          })
+          .select("id")
+          .single();
+        if (e_ins_ag) throw e_ins_ag;
+        if (ids_gare.length > 0) {
+          const { error: e_dest_ag } = await supabase
+            .from("comunicazioni_destinatari")
+            .insert(ids_gare.map((atleta_id: string) => ({ comunicazione_id: ins_ag.id, atleta_id })));
+          if (e_dest_ag) throw e_dest_ag;
+        }
+        return;
+      }
+
       // Filtro per livello → popoliamo manualmente i destinatari (bypass trigger "tutti").
       if (data.tipo_destinatari === "per_livello" && data.livello_categoria) {
+
         const { data: atleti, error: e_at } = await supabase
           .from("atleti")
           .select("id, percorso_amatori, carriera_artistica, carriera_stile")
