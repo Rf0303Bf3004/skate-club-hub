@@ -278,10 +278,10 @@ const AtletaModal: React.FC<{
           {/* Nome e Cognome */}
           <div className="grid grid-cols-2 gap-3">
             <Field label="Nome" required>
-              <input value={form.nome} onChange={(e) => set_val("nome", e.target.value)} className={input_cls} />
+              <input value={form.nome} onChange={(e) => set_val("nome", e.target.value)} onBlur={() => normalizza_campo("nome")} className={input_cls} />
             </Field>
             <Field label="Cognome" required>
-              <input value={form.cognome} onChange={(e) => set_val("cognome", e.target.value)} className={input_cls} />
+              <input value={form.cognome} onChange={(e) => set_val("cognome", e.target.value)} onBlur={() => normalizza_campo("cognome")} className={input_cls} />
             </Field>
           </div>
 
@@ -438,19 +438,20 @@ const AtletaModal: React.FC<{
             <div className="mt-3 space-y-3">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Indirizzo di residenza</p>
               <Field label="Indirizzo (via e numero)">
-                <input value={form.indirizzo} onChange={(e) => set_val("indirizzo", e.target.value)} className={input_cls} />
+                <input value={form.indirizzo} onChange={(e) => set_val("indirizzo", e.target.value)} onBlur={() => normalizza_campo("indirizzo", "indirizzo")} className={input_cls} />
               </Field>
               <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,110px)_minmax(0,1fr)_minmax(0,140px)]">
                 <Field label="CAP">
                   <input
                     value={form.cap}
                     onChange={(e) => set_val("cap", e.target.value.replace(/[^0-9]/g, "").slice(0, 5))}
+                    onBlur={() => suggerisci_da_nap("cap", "citta", "cantone")}
                     placeholder="6900"
                     className={input_cls}
                   />
                 </Field>
                 <Field label="Città">
-                  <input value={form.citta} onChange={(e) => set_val("citta", e.target.value)} className={input_cls} />
+                  <input value={form.citta} onChange={(e) => set_val("citta", e.target.value)} onBlur={() => normalizza_campo("citta")} className={input_cls} />
                 </Field>
                 <Field label="Cantone">
                   <Select value={form.cantone || ""} onValueChange={(v) => set_val("cantone", v)}>
@@ -495,28 +496,28 @@ const AtletaModal: React.FC<{
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">Genitore 1</p>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Nome">
-                <input value={form.genitore1_nome} onChange={(e) => set_val("genitore1_nome", e.target.value)} className={input_cls} />
+                <input value={form.genitore1_nome} onChange={(e) => set_val("genitore1_nome", e.target.value)} onBlur={() => normalizza_campo("genitore1_nome")} className={input_cls} />
               </Field>
               <Field label="Cognome">
-                <input value={form.genitore1_cognome} onChange={(e) => set_val("genitore1_cognome", e.target.value)} className={input_cls} />
+                <input value={form.genitore1_cognome} onChange={(e) => set_val("genitore1_cognome", e.target.value)} onBlur={() => normalizza_campo("genitore1_cognome")} className={input_cls} />
               </Field>
               <Field label="Telefono">
                 <input value={form.genitore1_telefono} onChange={(e) => set_val("genitore1_telefono", e.target.value)} placeholder="+41 ..." className={input_cls} />
               </Field>
               <Field label="Email">
-                <input type="email" value={form.genitore1_email} onChange={(e) => set_val("genitore1_email", e.target.value)} className={input_cls} />
+                <input type="email" value={form.genitore1_email} onChange={(e) => set_val("genitore1_email", e.target.value)} onBlur={() => normalizza_campo("genitore1_email", "email")} className={input_cls} />
               </Field>
             </div>
             <div className="mt-3 space-y-3">
               <Field label="Indirizzo (via e numero)">
-                <input value={form.genitore1_indirizzo} onChange={(e) => set_val("genitore1_indirizzo", e.target.value)} className={input_cls} />
+                <input value={form.genitore1_indirizzo} onChange={(e) => set_val("genitore1_indirizzo", e.target.value)} onBlur={() => normalizza_campo("genitore1_indirizzo", "indirizzo")} className={input_cls} />
               </Field>
               <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,110px)_minmax(0,1fr)_minmax(0,140px)]">
                 <Field label="CAP">
-                  <input value={form.genitore1_cap} onChange={(e) => set_val("genitore1_cap", e.target.value.replace(/[^0-9]/g, "").slice(0,5))} className={input_cls} />
+                  <input value={form.genitore1_cap} onChange={(e) => set_val("genitore1_cap", e.target.value.replace(/[^0-9]/g, "").slice(0,5))} onBlur={() => suggerisci_da_nap("genitore1_cap", "genitore1_citta", "genitore1_cantone")} className={input_cls} />
                 </Field>
                 <Field label="Città">
-                  <input value={form.genitore1_citta} onChange={(e) => set_val("genitore1_citta", e.target.value)} className={input_cls} />
+                  <input value={form.genitore1_citta} onChange={(e) => set_val("genitore1_citta", e.target.value)} onBlur={() => normalizza_campo("genitore1_citta")} className={input_cls} />
                 </Field>
                 <Field label="Cantone">
                   <Select value={form.genitore1_cantone || ""} onValueChange={(v) => set_val("genitore1_cantone", v)}>
@@ -544,28 +545,28 @@ const AtletaModal: React.FC<{
               <>
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Nome">
-                    <input value={form.genitore2_nome} onChange={(e) => set_val("genitore2_nome", e.target.value)} className={input_cls} />
+                    <input value={form.genitore2_nome} onChange={(e) => set_val("genitore2_nome", e.target.value)} onBlur={() => normalizza_campo("genitore2_nome")} className={input_cls} />
                   </Field>
                   <Field label="Cognome">
-                    <input value={form.genitore2_cognome} onChange={(e) => set_val("genitore2_cognome", e.target.value)} className={input_cls} />
+                    <input value={form.genitore2_cognome} onChange={(e) => set_val("genitore2_cognome", e.target.value)} onBlur={() => normalizza_campo("genitore2_cognome")} className={input_cls} />
                   </Field>
                   <Field label="Telefono">
                     <input value={form.genitore2_telefono} onChange={(e) => set_val("genitore2_telefono", e.target.value)} placeholder="+41 ..." className={input_cls} />
                   </Field>
                   <Field label="Email">
-                    <input type="email" value={form.genitore2_email} onChange={(e) => set_val("genitore2_email", e.target.value)} className={input_cls} />
+                    <input type="email" value={form.genitore2_email} onChange={(e) => set_val("genitore2_email", e.target.value)} onBlur={() => normalizza_campo("genitore2_email", "email")} className={input_cls} />
                   </Field>
                 </div>
                 <div className="mt-3 space-y-3">
                   <Field label="Indirizzo (via e numero)">
-                    <input value={form.genitore2_indirizzo} onChange={(e) => set_val("genitore2_indirizzo", e.target.value)} className={input_cls} />
+                    <input value={form.genitore2_indirizzo} onChange={(e) => set_val("genitore2_indirizzo", e.target.value)} onBlur={() => normalizza_campo("genitore2_indirizzo", "indirizzo")} className={input_cls} />
                   </Field>
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,110px)_minmax(0,1fr)_minmax(0,140px)]">
                     <Field label="CAP">
-                      <input value={form.genitore2_cap} onChange={(e) => set_val("genitore2_cap", e.target.value.replace(/[^0-9]/g, "").slice(0,5))} className={input_cls} />
+                      <input value={form.genitore2_cap} onChange={(e) => set_val("genitore2_cap", e.target.value.replace(/[^0-9]/g, "").slice(0,5))} onBlur={() => suggerisci_da_nap("genitore2_cap", "genitore2_citta", "genitore2_cantone")} className={input_cls} />
                     </Field>
                     <Field label="Città">
-                      <input value={form.genitore2_citta} onChange={(e) => set_val("genitore2_citta", e.target.value)} className={input_cls} />
+                      <input value={form.genitore2_citta} onChange={(e) => set_val("genitore2_citta", e.target.value)} onBlur={() => normalizza_campo("genitore2_citta")} className={input_cls} />
                     </Field>
                     <Field label="Cantone">
                       <Select value={form.genitore2_cantone || ""} onValueChange={(v) => set_val("genitore2_cantone", v)}>
@@ -1008,13 +1009,13 @@ const AthletesPage: React.FC = () => {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Nome" required>
-                <Input value={quick_form.nome} onChange={(e) => set_quick_form((p) => ({ ...p, nome: e.target.value }))} />
+                <Input value={quick_form.nome} onChange={(e) => set_quick_form((p) => ({ ...p, nome: e.target.value }))} onBlur={() => set_quick_form((p) => ({ ...p, nome: capitalizza_nome(p.nome) }))} />
               </Field>
               <Field label="Cognome" required>
-                <Input value={quick_form.cognome} onChange={(e) => set_quick_form((p) => ({ ...p, cognome: e.target.value }))} />
+                <Input value={quick_form.cognome} onChange={(e) => set_quick_form((p) => ({ ...p, cognome: e.target.value }))} onBlur={() => set_quick_form((p) => ({ ...p, cognome: capitalizza_nome(p.cognome) }))} />
               </Field>
               <Field label="Email genitore">
-                <Input type="email" value={quick_form.genitore1_email} onChange={(e) => set_quick_form((p) => ({ ...p, genitore1_email: e.target.value }))} />
+                <Input type="email" value={quick_form.genitore1_email} onChange={(e) => set_quick_form((p) => ({ ...p, genitore1_email: e.target.value }))} onBlur={() => set_quick_form((p) => ({ ...p, genitore1_email: normalizza_email(p.genitore1_email) }))} />
               </Field>
               <Field label="Telefono genitore">
                 <Input type="tel" value={quick_form.genitore1_telefono} onChange={(e) => set_quick_form((p) => ({ ...p, genitore1_telefono: e.target.value }))} />
