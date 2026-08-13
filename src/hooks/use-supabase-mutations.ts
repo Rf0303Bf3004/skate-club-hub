@@ -219,11 +219,13 @@ export function use_upsert_atleta() {
         const { data: inserted, error } = await supabase
           .from("atleti")
           .insert(payload)
-          .select("id")
+          .select("*")
           .single();
         if (error) throw error;
         atleta_id = inserted?.id;
+        atleta_creato = inserted;
       }
+
 
       // Storico livelli: chiudi la voce attiva e aprine una nuova quando livello_attuale cambia
       // (o quando si crea un nuovo atleta).
