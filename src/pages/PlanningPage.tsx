@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import AnnullaCorsoDialog from "@/components/planning/AnnullaCorsoDialog";
+import { PosizionamentoWizard } from "@/components/planning/PosizionamentoWizard";
 import SpostaCorsoDialog from "@/components/planning/SpostaCorsoDialog";
 import AvvisaAtletiDialog from "@/components/planning/AvvisaAtletiDialog";
 import { istruttore_disponibile, compute_exception_diff, type exception_diff_entry } from "@/lib/availability";
@@ -1396,6 +1397,42 @@ function PlanningPageInner() {
     }
   };
 
+  // ── Posizionamento guidato (wizard 3 passi) ──
+  const place_from_wizard = async (
+    corso: any, giorno: string, ora_inizio: string, ora_fine: string, istruttore_id: string | null,
+  ) => {
+    set_saving(true);
+    try {
+      const corso_id = corso.corso_id || corso.id;
+      if (is_generated && settimana) {
+        const { error } = await supabase.from("planning_corsi_settimana").insert({
+          settimana_id: settimana.id,
+          corso_id,
+          data: date_for_giorno[giorno],
+          ora_inizio,
+          ora_fine,
+          istruttore_id: istruttore_id ?? (corso.istruttori_ids ?? [])[0] ?? null,
+        });
+        if (error) throw error;
+        refetchSettimana();
+      } else {
+        const { error } = await supabase.from("corsi").update({ giorno, ora_inizio, ora_fine }).eq("id", corso_id);
+        if (error) throw error;
+        await queryClient.invalidateQueries({ queryKey: ["corsi"] });
+      }
+      if (istruttore_id) {
+        await supabase.from("corsi_istruttori").delete().eq("corso_id", corso_id);
+        await supabase.from("corsi_istruttori").insert({ corso_id, istruttore_id });
+        await queryClient.invalidateQueries({ queryKey: ["corsi"] });
+      }
+      toast.success(`${corso.nome} posizionato`);
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      set_saving(false);
+    }
+  };
+
   // ── Actions ──
   const place_corso = async (corso: any, giorno: string, ora_inizio: string, ora_fine: string) => {
     if (is_generated && settimana) {
@@ -2012,6 +2049,18 @@ function PlanningPageInner() {
           <AvvisaAtletiDialog open={!!avvisa_dialog} on_close={() => set_avvisa_dialog(null)} tipo={avvisa_dialog.tipo} planning_corso_id={avvisa_dialog.planning_corso_id} contesto={avvisa_dialog.contesto} />
         )}
 
+        {show_wizard && (
+          <PosizionamentoWizard
+            open={show_wizard}
+            on_close={() => set_show_wizard(false)}
+            corsi_da_posizionare={corsiDaPosizionare}
+            slots={slots}
+            posizionati={posizionati}
+            istruttori={istruttori}
+            saving={saving}
+            on_place={place_from_wizard}
+          />
+        )}
       </TooltipProvider>
     );
   }
@@ -2518,6 +2567,18 @@ function PlanningPageInner() {
         {avvisa_dialog && (
           <AvvisaAtletiDialog open={!!avvisa_dialog} on_close={() => set_avvisa_dialog(null)}
             tipo={avvisa_dialog.tipo} planning_corso_id={avvisa_dialog.planning_corso_id} contesto={avvisa_dialog.contesto} />
+        )}
+        {show_wizard && (
+          <PosizionamentoWizard
+            open={show_wizard}
+            on_close={() => set_show_wizard(false)}
+            corsi_da_posizionare={corsiDaPosizionare}
+            slots={slots}
+            posizionati={posizionati}
+            istruttori={istruttori}
+            saving={saving}
+            on_place={place_from_wizard}
+          />
         )}
       </div>
     </TooltipProvider>
