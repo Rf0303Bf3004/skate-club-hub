@@ -861,8 +861,9 @@ const AthletesPage: React.FC = () => {
       toast({ title: "Livello iniziale obbligatorio", description: "Seleziona il livello dell'atleta.", variant: "destructive" });
       return;
     }
-
+    if (quick_saving) return;
     const gia_esiste = (atleti ?? []).some(
+
       (a: any) =>
         (a.nome ?? "").trim().toLowerCase() === quick_form.nome.trim().toLowerCase() &&
         (a.cognome ?? "").trim().toLowerCase() === quick_form.cognome.trim().toLowerCase(),
