@@ -208,7 +208,15 @@ const CommunicationsPage: React.FC = () => {
     }).length;
   }, [atleti, livello_categoria, tipo_destinatari]);
 
-  const static_count = tipo_destinatari === 'tutti' ? atleti.length : level_count;
+  const agoniste_count = useMemo(
+    () => atleti.filter((a: any) => a.attivo !== false && (a.agonista === true || a.partecipa_gare === true)).length,
+    [atleti],
+  );
+
+  const static_count = tipo_destinatari === 'tutti'
+    ? atleti.length
+    : (tipo_destinatari === 'agoniste' ? agoniste_count : level_count);
+
   const preview_selected_count = selected_recipient_ids.length;
   const preview_total_count = recipient_preview.length;
 
