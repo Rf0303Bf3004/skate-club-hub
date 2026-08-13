@@ -203,6 +203,8 @@ export function use_upsert_atleta() {
 
       let atleta_id: string | undefined = data.id;
       let livello_attuale_precedente: string | null = null;
+      let atleta_creato: any = null;
+
 
       if (data.id) {
         // Recupero livello attuale precedente per decidere se aggiornare lo storico
@@ -219,11 +221,13 @@ export function use_upsert_atleta() {
         const { data: inserted, error } = await supabase
           .from("atleti")
           .insert(payload)
-          .select("id")
+          .select("*")
           .single();
         if (error) throw error;
         atleta_id = inserted?.id;
+        atleta_creato = inserted;
       }
+
 
       // Storico livelli: chiudi la voce attiva e aprine una nuova quando livello_attuale cambia
       // (o quando si crea un nuovo atleta).
@@ -247,7 +251,10 @@ export function use_upsert_atleta() {
           data_fine: null,
         });
       }
+
+      return { atleta: atleta_creato, is_new: !data.id };
     },
+
     onSuccess: () => qc.invalidateQueries({ queryKey: ["atleti"] }),
   });
 }

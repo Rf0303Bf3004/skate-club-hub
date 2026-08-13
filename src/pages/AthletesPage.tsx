@@ -833,13 +833,22 @@ const AthletesPage: React.FC = () => {
 
   const handle_save = async (data: any) => {
     try {
-      await upsert.mutateAsync(data);
+      const res: any = await upsert.mutateAsync(data);
       set_modal_open(false);
-      toast({ title: data.id ? "✅ Atleta aggiornata" : "✅ Atleta creata" });
+      await query_client.invalidateQueries({ queryKey: ["atleti", get_current_club_id()] });
+      if (!data.id && res?.atleta) {
+        // Nuovo atleta: mostro subito la scheda con codice atleta, QR e stampa
+        set_scheda_atleta_nuovo(res.atleta);
+        set_scheda_modo("iscrizione");
+        toast({ title: "✅ Atleta creata", description: `Codice atleta: ${res.atleta.codice_atleta ?? "—"}` });
+      } else {
+        toast({ title: data.id ? "✅ Atleta aggiornata" : "✅ Atleta creata" });
+      }
     } catch (err: any) {
       toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
     }
   };
+
 
   const handle_delete = async () => {
     try {
@@ -912,7 +921,7 @@ const AthletesPage: React.FC = () => {
       set_quick_form({ nome: "", cognome: "", genitore1_email: "", genitore1_telefono: "", livello: "", livello_prep: "" });
       set_scheda_atleta_nuovo(data);
       set_scheda_modo("iscrizione");
-      toast({ title: "✅ Atleta creato — scheda di iscrizione pronta" });
+      toast({ title: "✅ Atleta creato", description: `Codice atleta: ${data?.codice_atleta ?? "—"} — scheda di iscrizione pronta` });
     } catch (err: any) {
       toast({ title: "Errore creazione atleta", description: err?.message, variant: "destructive" });
     } finally {
