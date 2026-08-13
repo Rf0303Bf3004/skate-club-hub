@@ -21,6 +21,8 @@ import { supabase, get_current_club_id } from "@/lib/supabase";
 import SearchableListLayout from "@/components/common/SearchableListLayout";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
+import { capitalizza_nome, capitalizza_indirizzo, normalizza_email, cerca_nap } from "@/lib/formato-testo";
+
 import DateInput from "@/components/forms/DateInput";
 import {
   LIVELLI_AMATORI,
