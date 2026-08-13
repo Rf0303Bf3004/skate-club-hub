@@ -147,7 +147,7 @@ const SchedaAnagrafica: React.FC<SchedaProps> = ({ atleta, on_back, modo = 'foto
                 {copiato ? <Check className='w-3.5 h-3.5' /> : <Copy className='w-3.5 h-3.5' />}
                 {copiato ? 'Copiato' : 'Copia link'}
               </button>
-              <p className='text-xs text-gray-400 mt-2 font-mono break-all'>Codice atleta: {codice}</p>
+              <p className='text-xs text-gray-400 mt-2 font-mono whitespace-nowrap'>Codice atleta: <span className='font-bold text-gray-600 tracking-tight select-all'>{codice}</span></p>
               <p className='text-xs text-green-600 font-medium mt-1'>Nessun login richiesto</p>
             </div>
 
