@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { AlertTriangle } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
@@ -613,6 +613,7 @@ const AtletaModal: React.FC<{
 const AthletesPage: React.FC = () => {
   const { t } = useI18n();
   const navigate = useNavigate();
+  const query_client = useQueryClient();
   const { session } = useAuth();
   const params = useParams<{ id?: string }>();
   const { data: atleti = [], isLoading } = use_atleti();
@@ -890,6 +891,7 @@ const AthletesPage: React.FC = () => {
         .select()
         .single();
       if (error) throw error;
+      await query_client.invalidateQueries({ queryKey: ["atleti", get_current_club_id()] });
       set_quick_open(false);
       set_quick_form({ nome: "", cognome: "", genitore1_email: "", genitore1_telefono: "", livello: "", livello_prep: "" });
       set_scheda_atleta_nuovo(data);
