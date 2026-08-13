@@ -5,6 +5,7 @@ import { use_corsi, use_istruttori, use_stagioni, use_atleti } from "@/hooks/use
 import {
   X, Loader2, ChevronLeft, ChevronRight, Plus, Wrench, Eye, Check,
   ArrowLeft, LayoutGrid, Pencil, Undo2, Mail, Move, AlertTriangle, Calendar, Zap, CheckCircle2, Hammer, Trash2,
+  Wand2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -21,6 +22,7 @@ import {
 } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import AnnullaCorsoDialog from "@/components/planning/AnnullaCorsoDialog";
+import { PosizionamentoWizard } from "@/components/planning/PosizionamentoWizard";
 import SpostaCorsoDialog from "@/components/planning/SpostaCorsoDialog";
 import AvvisaAtletiDialog from "@/components/planning/AvvisaAtletiDialog";
 import { istruttore_disponibile, compute_exception_diff, type exception_diff_entry } from "@/lib/availability";
@@ -407,6 +409,7 @@ function SidebarCostruzione({
   set_pick_corso,
   on_new_corso,
   on_new_privata,
+  on_wizard,
   className,
   settimana,
   on_genera,
@@ -419,6 +422,7 @@ function SidebarCostruzione({
   set_pick_corso: (c: any) => void;
   on_new_corso: () => void;
   on_new_privata: () => void;
+  on_wizard: () => void;
   className: string;
   settimana: any | null;
   on_genera: () => void;
@@ -443,12 +447,16 @@ function SidebarCostruzione({
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs font-bold text-foreground uppercase">Da posizionare ({corsiDaPosizionare.length})</span>
       </div>
+      <Button size="sm" className="w-full text-xs gap-1.5" onClick={on_wizard}>
+        <Wand2 className="h-3 w-3" /> Posizionamento guidato
+      </Button>
       <Button size="sm" variant="outline" className="w-full text-xs" onClick={on_new_corso}>
         <Plus className="h-3 w-3 mr-1" /> Corso/Pacchetto
       </Button>
       <Button size="sm" variant="outline" className="w-full text-xs" onClick={on_new_privata}>
         <Plus className="h-3 w-3 mr-1" /> Lezione privata
       </Button>
+
       {corsiDaPosizionare.length === 0 ? (
         <div className="text-center py-4 text-muted-foreground text-xs">
           <Check className="h-5 w-5 mx-auto text-green-500 mb-1" />
@@ -610,6 +618,7 @@ function PlanningPageInner() {
   const [slot_manager_open, set_slot_manager_open] = useState(false);
   const [show_new_corso, set_show_new_corso] = useState(false);
   const [show_new_privata, set_show_new_privata] = useState(false);
+  const [show_wizard, set_show_wizard] = useState(false);
   const [show_edit_corso, set_show_edit_corso] = useState<any>(null);
   const [annulla_dialog, set_annulla_dialog] = useState<any>(null);
   const [sposta_dialog, set_sposta_dialog] = useState<any>(null);
@@ -1388,6 +1397,42 @@ function PlanningPageInner() {
     }
   };
 
+  // ── Posizionamento guidato (wizard 3 passi) ──
+  const place_from_wizard = async (
+    corso: any, giorno: string, ora_inizio: string, ora_fine: string, istruttore_id: string | null,
+  ) => {
+    set_saving(true);
+    try {
+      const corso_id = corso.corso_id || corso.id;
+      if (is_generated && settimana) {
+        const { error } = await supabase.from("planning_corsi_settimana").insert({
+          settimana_id: settimana.id,
+          corso_id,
+          data: date_for_giorno[giorno],
+          ora_inizio,
+          ora_fine,
+          istruttore_id: istruttore_id ?? (corso.istruttori_ids ?? [])[0] ?? null,
+        });
+        if (error) throw error;
+        refetchSettimana();
+      } else {
+        const { error } = await supabase.from("corsi").update({ giorno, ora_inizio, ora_fine }).eq("id", corso_id);
+        if (error) throw error;
+        await queryClient.invalidateQueries({ queryKey: ["corsi"] });
+      }
+      if (istruttore_id) {
+        await supabase.from("corsi_istruttori").delete().eq("corso_id", corso_id);
+        await supabase.from("corsi_istruttori").insert({ corso_id, istruttore_id });
+        await queryClient.invalidateQueries({ queryKey: ["corsi"] });
+      }
+      toast.success(`${corso.nome} posizionato`);
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      set_saving(false);
+    }
+  };
+
   // ── Actions ──
   const place_corso = async (corso: any, giorno: string, ora_inizio: string, ora_fine: string) => {
     if (is_generated && settimana) {
@@ -1628,6 +1673,7 @@ function PlanningPageInner() {
                   set_pick_corso={set_pick_corso}
                   on_new_corso={() => set_show_new_corso(true)}
                   on_new_privata={() => set_show_new_privata(true)}
+                  on_wizard={() => set_show_wizard(true)}
                   settimana={settimana}
                   on_genera={generaSettimana}
                   on_pubblica={pubblicaSettimana}
@@ -2003,6 +2049,18 @@ function PlanningPageInner() {
           <AvvisaAtletiDialog open={!!avvisa_dialog} on_close={() => set_avvisa_dialog(null)} tipo={avvisa_dialog.tipo} planning_corso_id={avvisa_dialog.planning_corso_id} contesto={avvisa_dialog.contesto} />
         )}
 
+        {show_wizard && (
+          <PosizionamentoWizard
+            open={show_wizard}
+            on_close={() => set_show_wizard(false)}
+            corsi_da_posizionare={corsiDaPosizionare}
+            slots={slots}
+            posizionati={posizionati}
+            istruttori={istruttori}
+            saving={saving}
+            on_place={place_from_wizard}
+          />
+        )}
       </TooltipProvider>
     );
   }
@@ -2166,6 +2224,7 @@ function PlanningPageInner() {
                 set_pick_corso={set_pick_corso}
                 on_new_corso={() => set_show_new_corso(true)}
                 on_new_privata={() => set_show_new_privata(true)}
+                on_wizard={() => set_show_wizard(true)}
                 settimana={settimana}
                 on_genera={generaSettimana}
                 on_pubblica={pubblicaSettimana}
@@ -2508,6 +2567,18 @@ function PlanningPageInner() {
         {avvisa_dialog && (
           <AvvisaAtletiDialog open={!!avvisa_dialog} on_close={() => set_avvisa_dialog(null)}
             tipo={avvisa_dialog.tipo} planning_corso_id={avvisa_dialog.planning_corso_id} contesto={avvisa_dialog.contesto} />
+        )}
+        {show_wizard && (
+          <PosizionamentoWizard
+            open={show_wizard}
+            on_close={() => set_show_wizard(false)}
+            corsi_da_posizionare={corsiDaPosizionare}
+            slots={slots}
+            posizionati={posizionati}
+            istruttori={istruttori}
+            saving={saving}
+            on_place={place_from_wizard}
+          />
         )}
       </div>
     </TooltipProvider>
