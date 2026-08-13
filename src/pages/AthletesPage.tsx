@@ -857,7 +857,18 @@ const AthletesPage: React.FC = () => {
       toast({ title: "Nome e cognome obbligatori", variant: "destructive" });
       return;
     }
+    if (quick_saving) return;
+    const gia_esiste = (atleti ?? []).some(
+      (a: any) =>
+        (a.nome ?? "").trim().toLowerCase() === quick_form.nome.trim().toLowerCase() &&
+        (a.cognome ?? "").trim().toLowerCase() === quick_form.cognome.trim().toLowerCase(),
+    );
+    if (gia_esiste) {
+      toast({ title: "Atleta già presente", description: "Esiste già una scheda con questo nome e cognome.", variant: "destructive" });
+      return;
+    }
     set_quick_saving(true);
+
     try {
       const liv = quick_form.livello;
       const campi_livello: Record<string, any> = {};
