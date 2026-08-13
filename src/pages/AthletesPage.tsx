@@ -964,7 +964,24 @@ const AthletesPage: React.FC = () => {
               <Field label="Telefono genitore">
                 <Input type="tel" value={quick_form.genitore1_telefono} onChange={(e) => set_quick_form((p) => ({ ...p, genitore1_telefono: e.target.value }))} />
               </Field>
+              <Field label="Livello iniziale">
+                <Select value={quick_form.livello || undefined} onValueChange={(v) => set_quick_form((p) => ({ ...p, livello: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Seleziona livello" /></SelectTrigger>
+                  <SelectContent>
+                    {LIVELLI_TUTTI.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="In preparazione">
+                <Select value={quick_form.livello_prep || undefined} onValueChange={(v) => set_quick_form((p) => ({ ...p, livello_prep: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Opzionale" /></SelectTrigger>
+                  <SelectContent>
+                    {LIVELLI_TUTTI.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </Field>
             </div>
+
             <div className="flex justify-end gap-2">
               <Button variant="ghost" onClick={() => set_quick_open(false)} disabled={quick_saving}>Annulla</Button>
               <Button onClick={crea_atleta_rapido} disabled={quick_saving}>
