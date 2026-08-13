@@ -173,6 +173,29 @@ const AtletaModal: React.FC<{
     set_form((p) => ({ ...p, [k]: v }));
   }, []);
 
+  // Regola di formattazione: ogni parola con iniziale maiuscola, resto minuscolo
+  const normalizza_campo = useCallback((k: string, tipo: "nome" | "indirizzo" | "email" = "nome") => {
+    set_form((p) => {
+      const attuale = String((p as any)[k] ?? "");
+      const nuovo =
+        tipo === "email" ? normalizza_email(attuale) : tipo === "indirizzo" ? capitalizza_indirizzo(attuale) : capitalizza_nome(attuale);
+      return attuale === nuovo ? p : { ...p, [k]: nuovo };
+    });
+  }, []);
+
+  // Suggerimento Città / Cantone dal NAP
+  const suggerisci_da_nap = useCallback(async (cap_key: string, citta_key: string, cantone_key: string) => {
+    const cap = String((form as any)[cap_key] ?? "");
+    const info = await cerca_nap(cap);
+    if (!info) return;
+    set_form((p) => ({
+      ...p,
+      [citta_key]: String((p as any)[citta_key] ?? "").trim() || info.citta,
+      [cantone_key]: String((p as any)[cantone_key] ?? "").trim() || info.cantone,
+    }));
+  }, [form]);
+
+
   
 
   const handle_foto_upload = async (file: File) => {
