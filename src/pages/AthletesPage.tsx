@@ -921,7 +921,7 @@ const AthletesPage: React.FC = () => {
       set_quick_form({ nome: "", cognome: "", genitore1_email: "", genitore1_telefono: "", livello: "", livello_prep: "" });
       set_scheda_atleta_nuovo(data);
       set_scheda_modo("iscrizione");
-      toast({ title: "✅ Atleta creato — scheda di iscrizione pronta" });
+      toast({ title: "✅ Atleta creato", description: `Codice atleta: ${data?.codice_atleta ?? "—"} — scheda di iscrizione pronta` });
     } catch (err: any) {
       toast({ title: "Errore creazione atleta", description: err?.message, variant: "destructive" });
     } finally {
