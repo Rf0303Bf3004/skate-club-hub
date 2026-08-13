@@ -501,6 +501,16 @@ const BoxComunicazione: React.FC<{
         }))
         .filter((x) => x.telefono);
     }
+    if (tipo_dest === "agoniste") {
+      return atleti
+        .filter((a: any) => a.stato === "attivo" && (a.agonista === true || a.partecipa_gare === true))
+        .map((a: any) => ({
+          nome: `${a.nome} ${a.cognome}`,
+          telefono: a.genitore1_telefono || "",
+        }))
+        .filter((x) => x.telefono);
+    }
+
     if (tipo_dest === "corso" && riferimento_id) {
       const corso = corsi.find((c) => c.id === riferimento_id);
       if (!corso) return [];
@@ -767,6 +777,8 @@ const BoxComunicazione: React.FC<{
           <option value="istruttori">{td("quick_comm.recipient_options.istruttori")}</option>
           <option value="monitori">{td("quick_comm.recipient_options.monitori")}</option>
           <option value="aiuto_monitori">{td("quick_comm.recipient_options.aiuto_monitori")}</option>
+          <option value="agoniste">{td("quick_comm.recipient_options.agoniste")}</option>
+
           <option value="corso">{td("quick_comm.recipient_options.corso")}</option>
           <option value="gara">{td("quick_comm.recipient_options.gara")}</option>
           <option value="singolo_atleta">{td("quick_comm.recipient_options.singolo_atleta")}</option>
