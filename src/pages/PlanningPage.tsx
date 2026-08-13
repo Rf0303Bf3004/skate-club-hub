@@ -5,6 +5,7 @@ import { use_corsi, use_istruttori, use_stagioni, use_atleti } from "@/hooks/use
 import {
   X, Loader2, ChevronLeft, ChevronRight, Plus, Wrench, Eye, Check,
   ArrowLeft, LayoutGrid, Pencil, Undo2, Mail, Move, AlertTriangle, Calendar, Zap, CheckCircle2, Hammer, Trash2,
+  Wand2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -616,6 +617,7 @@ function PlanningPageInner() {
   const [slot_manager_open, set_slot_manager_open] = useState(false);
   const [show_new_corso, set_show_new_corso] = useState(false);
   const [show_new_privata, set_show_new_privata] = useState(false);
+  const [show_wizard, set_show_wizard] = useState(false);
   const [show_edit_corso, set_show_edit_corso] = useState<any>(null);
   const [annulla_dialog, set_annulla_dialog] = useState<any>(null);
   const [sposta_dialog, set_sposta_dialog] = useState<any>(null);
@@ -1634,6 +1636,7 @@ function PlanningPageInner() {
                   set_pick_corso={set_pick_corso}
                   on_new_corso={() => set_show_new_corso(true)}
                   on_new_privata={() => set_show_new_privata(true)}
+                  on_wizard={() => set_show_wizard(true)}
                   settimana={settimana}
                   on_genera={generaSettimana}
                   on_pubblica={pubblicaSettimana}
@@ -2172,6 +2175,7 @@ function PlanningPageInner() {
                 set_pick_corso={set_pick_corso}
                 on_new_corso={() => set_show_new_corso(true)}
                 on_new_privata={() => set_show_new_privata(true)}
+                on_wizard={() => set_show_wizard(true)}
                 settimana={settimana}
                 on_genera={generaSettimana}
                 on_pubblica={pubblicaSettimana}
