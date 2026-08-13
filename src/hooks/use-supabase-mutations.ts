@@ -203,6 +203,8 @@ export function use_upsert_atleta() {
 
       let atleta_id: string | undefined = data.id;
       let livello_attuale_precedente: string | null = null;
+      let atleta_creato: any = null;
+
 
       if (data.id) {
         // Recupero livello attuale precedente per decidere se aggiornare lo storico
