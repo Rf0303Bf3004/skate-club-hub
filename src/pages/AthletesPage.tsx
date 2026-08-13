@@ -870,7 +870,10 @@ const AthletesPage: React.FC = () => {
         campi_livello.livello_artistica = liv;
       }
       if (quick_form.livello_prep) {
-        campi_livello.livello_artistica_in_preparazione = quick_form.livello_prep;
+        campi_livello.livello_in_preparazione = quick_form.livello_prep;
+        if (campi_livello.categoria === "artistica") {
+          campi_livello.livello_artistica_in_preparazione = quick_form.livello_prep;
+        }
       }
       const { data, error } = await supabase
         .from("atleti")
