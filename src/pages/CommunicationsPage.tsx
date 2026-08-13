@@ -763,6 +763,7 @@ const CommunicationsPage: React.FC = () => {
                       <SelectItem value="tutti">Tutto il club</SelectItem>
                       <SelectItem value="per_corsi">Per corso</SelectItem>
                       <SelectItem value="per_livello">Per livello</SelectItem>
+                      <SelectItem value="agoniste">Atlete che gareggiano</SelectItem>
                       <SelectItem value="atleti">Atleti specifici</SelectItem>
                       <SelectItem value="per_giorno">Per giorno (data specifica)</SelectItem>
                       <SelectItem value="per_istruttore">Per istruttore</SelectItem>
@@ -771,7 +772,8 @@ const CommunicationsPage: React.FC = () => {
                   </Select>
                 </div>
 
-                {(tipo_destinatari === 'tutti' || tipo_destinatari === 'per_livello') && (
+                {(tipo_destinatari === 'tutti' || tipo_destinatari === 'per_livello' || tipo_destinatari === 'agoniste') && (
+
                   <div className="rounded-lg border border-border bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
                     <span className="font-medium text-foreground">{static_count}</span> atleti
                   </div>
