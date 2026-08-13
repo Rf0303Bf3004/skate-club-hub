@@ -985,7 +985,7 @@ const AthletesPage: React.FC = () => {
               <Field label="Telefono genitore">
                 <Input type="tel" value={quick_form.genitore1_telefono} onChange={(e) => set_quick_form((p) => ({ ...p, genitore1_telefono: e.target.value }))} />
               </Field>
-              <Field label="Livello iniziale">
+              <Field label="Livello iniziale" required>
                 <Select value={quick_form.livello || undefined} onValueChange={(v) => set_quick_form((p) => ({ ...p, livello: v }))}>
                   <SelectTrigger><SelectValue placeholder="Seleziona livello" /></SelectTrigger>
                   <SelectContent>
