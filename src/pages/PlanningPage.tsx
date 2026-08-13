@@ -407,6 +407,7 @@ function SidebarCostruzione({
   set_pick_corso,
   on_new_corso,
   on_new_privata,
+  on_wizard,
   className,
   settimana,
   on_genera,
@@ -419,6 +420,7 @@ function SidebarCostruzione({
   set_pick_corso: (c: any) => void;
   on_new_corso: () => void;
   on_new_privata: () => void;
+  on_wizard: () => void;
   className: string;
   settimana: any | null;
   on_genera: () => void;
@@ -443,12 +445,16 @@ function SidebarCostruzione({
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs font-bold text-foreground uppercase">Da posizionare ({corsiDaPosizionare.length})</span>
       </div>
+      <Button size="sm" className="w-full text-xs gap-1.5" onClick={on_wizard}>
+        <Wand2 className="h-3 w-3" /> Posizionamento guidato
+      </Button>
       <Button size="sm" variant="outline" className="w-full text-xs" onClick={on_new_corso}>
         <Plus className="h-3 w-3 mr-1" /> Corso/Pacchetto
       </Button>
       <Button size="sm" variant="outline" className="w-full text-xs" onClick={on_new_privata}>
         <Plus className="h-3 w-3 mr-1" /> Lezione privata
       </Button>
+
       {corsiDaPosizionare.length === 0 ? (
         <div className="text-center py-4 text-muted-foreground text-xs">
           <Check className="h-5 w-5 mx-auto text-green-500 mb-1" />
