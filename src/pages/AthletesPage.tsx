@@ -857,8 +857,13 @@ const AthletesPage: React.FC = () => {
       toast({ title: "Nome e cognome obbligatori", variant: "destructive" });
       return;
     }
+    if (!quick_form.livello) {
+      toast({ title: "Livello iniziale obbligatorio", description: "Seleziona il livello dell'atleta.", variant: "destructive" });
+      return;
+    }
     if (quick_saving) return;
     const gia_esiste = (atleti ?? []).some(
+
       (a: any) =>
         (a.nome ?? "").trim().toLowerCase() === quick_form.nome.trim().toLowerCase() &&
         (a.cognome ?? "").trim().toLowerCase() === quick_form.cognome.trim().toLowerCase(),
@@ -980,7 +985,7 @@ const AthletesPage: React.FC = () => {
               <Field label="Telefono genitore">
                 <Input type="tel" value={quick_form.genitore1_telefono} onChange={(e) => set_quick_form((p) => ({ ...p, genitore1_telefono: e.target.value }))} />
               </Field>
-              <Field label="Livello iniziale">
+              <Field label="Livello iniziale" required>
                 <Select value={quick_form.livello || undefined} onValueChange={(v) => set_quick_form((p) => ({ ...p, livello: v }))}>
                   <SelectTrigger><SelectValue placeholder="Seleziona livello" /></SelectTrigger>
                   <SelectContent>
