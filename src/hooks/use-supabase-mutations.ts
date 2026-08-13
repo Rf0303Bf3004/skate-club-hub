@@ -251,7 +251,10 @@ export function use_upsert_atleta() {
           data_fine: null,
         });
       }
+
+      return { atleta: atleta_creato, is_new: !data.id };
     },
+
     onSuccess: () => qc.invalidateQueries({ queryKey: ["atleti"] }),
   });
 }
