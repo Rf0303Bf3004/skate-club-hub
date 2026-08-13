@@ -635,7 +635,7 @@ const AthletesPage: React.FC = () => {
   const [scheda_modo, set_scheda_modo] = useState<"foto" | "iscrizione">("foto");
   const [scheda_atleta_nuovo, set_scheda_atleta_nuovo] = useState<any>(null);
   const [quick_open, set_quick_open] = useState(false);
-  const [quick_form, set_quick_form] = useState<{ nome: string; cognome: string; genitore1_email: string; genitore1_telefono: string }>({ nome: "", cognome: "", genitore1_email: "", genitore1_telefono: "" });
+  const [quick_form, set_quick_form] = useState<{ nome: string; cognome: string; genitore1_email: string; genitore1_telefono: string; livello: string; livello_prep: string }>({ nome: "", cognome: "", genitore1_email: "", genitore1_telefono: "", livello: "", livello_prep: "" });
   const [quick_saving, set_quick_saving] = useState(false);
   
   const { data: club } = use_club();
@@ -858,6 +858,23 @@ const AthletesPage: React.FC = () => {
     }
     set_quick_saving(true);
     try {
+      const liv = quick_form.livello;
+      const campi_livello: Record<string, any> = {};
+      if (liv === "Pulcini") {
+        campi_livello.categoria = "pulcini";
+      } else if (LIVELLI_AMATORI.includes(liv as any)) {
+        campi_livello.categoria = "amatori";
+        campi_livello.livello_amatori = liv;
+      } else if (liv) {
+        campi_livello.categoria = "artistica";
+        campi_livello.livello_artistica = liv;
+      }
+      if (quick_form.livello_prep) {
+        campi_livello.livello_in_preparazione = quick_form.livello_prep;
+        if (campi_livello.categoria === "artistica") {
+          campi_livello.livello_artistica_in_preparazione = quick_form.livello_prep;
+        }
+      }
       const { data, error } = await supabase
         .from("atleti")
         .insert({
@@ -866,6 +883,7 @@ const AthletesPage: React.FC = () => {
           cognome: quick_form.cognome.trim(),
           genitore1_email: quick_form.genitore1_email.trim() || null,
           genitore1_telefono: quick_form.genitore1_telefono.trim() || null,
+          ...campi_livello,
           attivo: false,
           verificato: false,
         })
@@ -873,7 +891,7 @@ const AthletesPage: React.FC = () => {
         .single();
       if (error) throw error;
       set_quick_open(false);
-      set_quick_form({ nome: "", cognome: "", genitore1_email: "", genitore1_telefono: "" });
+      set_quick_form({ nome: "", cognome: "", genitore1_email: "", genitore1_telefono: "", livello: "", livello_prep: "" });
       set_scheda_atleta_nuovo(data);
       set_scheda_modo("iscrizione");
       toast({ title: "✅ Atleta creato — scheda di iscrizione pronta" });
@@ -949,7 +967,24 @@ const AthletesPage: React.FC = () => {
               <Field label="Telefono genitore">
                 <Input type="tel" value={quick_form.genitore1_telefono} onChange={(e) => set_quick_form((p) => ({ ...p, genitore1_telefono: e.target.value }))} />
               </Field>
+              <Field label="Livello iniziale">
+                <Select value={quick_form.livello || undefined} onValueChange={(v) => set_quick_form((p) => ({ ...p, livello: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Seleziona livello" /></SelectTrigger>
+                  <SelectContent>
+                    {LIVELLI_TUTTI.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="In preparazione">
+                <Select value={quick_form.livello_prep || undefined} onValueChange={(v) => set_quick_form((p) => ({ ...p, livello_prep: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Opzionale" /></SelectTrigger>
+                  <SelectContent>
+                    {LIVELLI_TUTTI.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </Field>
             </div>
+
             <div className="flex justify-end gap-2">
               <Button variant="ghost" onClick={() => set_quick_open(false)} disabled={quick_saving}>Annulla</Button>
               <Button onClick={crea_atleta_rapido} disabled={quick_saving}>

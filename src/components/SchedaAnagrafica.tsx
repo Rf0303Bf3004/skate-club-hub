@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { use_club, use_setup_club, use_stagioni } from '@/hooks/use-supabase-data';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Printer, QrCode, Copy, Check } from 'lucide-react';
+import { ArrowLeft, Printer, QrCode, Copy, Check, Send } from 'lucide-react';
 import { build_contratto } from '@/lib/contratto-adesione';
 
 interface SchedaProps { atleta: any; on_back: () => void; modo?: 'foto' | 'iscrizione'; }
@@ -42,12 +42,20 @@ const SchedaAnagrafica: React.FC<SchedaProps> = ({ atleta, on_back, modo = 'foto
   };
 
 
+  const url_whatsapp = 'https://wa.me/?text=' + encodeURIComponent(
+    `Ciao! Ecco il link per ${e_iscrizione ? "completare l'iscrizione di" : 'caricare la foto di'} ${atleta.nome} ${atleta.cognome} (codice ${codice}): ${url_foto}`
+  );
+
   return (
     <div className='space-y-4 animate-fade-in'>
       <div className='flex items-center gap-3 print:hidden'>
         <Button variant='ghost' size='sm' onClick={on_back}><ArrowLeft className='w-4 h-4 mr-1' /> Indietro</Button>
-        <Button size='sm' onClick={() => window.print()} className='ml-auto'><Printer className='w-4 h-4 mr-2' /> Stampa / Salva PDF</Button>
+        <Button variant='outline' size='sm' onClick={() => window.open(url_whatsapp, '_blank')} className='ml-auto'>
+          <Send className='w-4 h-4 mr-2' /> Invia su WhatsApp
+        </Button>
+        <Button size='sm' onClick={() => window.print()}><Printer className='w-4 h-4 mr-2' /> Stampa / Salva PDF</Button>
       </div>
+
 
       <div id='scheda' className='bg-white rounded-2xl overflow-hidden border border-gray-200 max-w-2xl mx-auto print:max-w-full print:border-0 print:rounded-none'>
         <div style={{background:'#1a1a2e'}} className='px-6 py-4 flex items-center gap-4'>
