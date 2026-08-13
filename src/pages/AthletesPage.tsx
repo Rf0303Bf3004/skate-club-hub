@@ -857,7 +857,25 @@ const AthletesPage: React.FC = () => {
   }, [atleti, search, solo_da_verificare, status_filter, agonista_filter, attivo_filter, eta_filter, card_filter, categoria_filter, percorso_filter, level_filter, sort_by, adesioni]);
 
 
-  const handle_save = async (data: any) => {
+  const handle_save = async (data_in: any) => {
+    const data = {
+      ...data_in,
+      ...Object.fromEntries(
+        ["nome", "cognome", "citta", "genitore1_nome", "genitore1_cognome", "genitore1_citta", "genitore2_nome", "genitore2_cognome", "genitore2_citta"]
+          .filter((k) => typeof data_in?.[k] === "string")
+          .map((k) => [k, capitalizza_nome(data_in[k])]),
+      ),
+      ...Object.fromEntries(
+        ["indirizzo", "genitore1_indirizzo", "genitore2_indirizzo"]
+          .filter((k) => typeof data_in?.[k] === "string")
+          .map((k) => [k, capitalizza_indirizzo(data_in[k])]),
+      ),
+      ...Object.fromEntries(
+        ["genitore1_email", "genitore2_email"]
+          .filter((k) => typeof data_in?.[k] === "string")
+          .map((k) => [k, normalizza_email(data_in[k])]),
+      ),
+    };
     try {
       const res: any = await upsert.mutateAsync(data);
       set_modal_open(false);
@@ -931,9 +949,9 @@ const AthletesPage: React.FC = () => {
         .from("atleti")
         .insert({
           club_id: get_current_club_id(),
-          nome: quick_form.nome.trim(),
-          cognome: quick_form.cognome.trim(),
-          genitore1_email: quick_form.genitore1_email.trim() || null,
+          nome: capitalizza_nome(quick_form.nome),
+          cognome: capitalizza_nome(quick_form.cognome),
+          genitore1_email: normalizza_email(quick_form.genitore1_email) || null,
           genitore1_telefono: quick_form.genitore1_telefono.trim() || null,
           ...campi_livello,
           attivo: true,
