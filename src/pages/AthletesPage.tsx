@@ -885,7 +885,7 @@ const AthletesPage: React.FC = () => {
           genitore1_email: quick_form.genitore1_email.trim() || null,
           genitore1_telefono: quick_form.genitore1_telefono.trim() || null,
           ...campi_livello,
-          attivo: false,
+          attivo: true,
           verificato: false,
         })
         .select()
