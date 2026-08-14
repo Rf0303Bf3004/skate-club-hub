@@ -384,6 +384,23 @@ const ClubSetupPage: React.FC = () => {
   const current_logo = logo_preview || club?.logo_url;
   const colore = get_val("colore_primario", "#3B82F6");
 
+  // Completezza tab
+  const tab_completa: Record<string, boolean> = {
+    configurazione: !!get_val("nome") && !!get_val("email") && !!get_val("indirizzo"),
+    ghiaccio: Object.values(disp_local).some((v) => (v?.length ?? 0) > 0),
+    catalogo: (catalogo_count ?? 0) > 0,
+    fatturazione: !!String(get_val("iban", "")).trim() && !!String(get_val("intestatario_conto", "")).trim(),
+  };
+
+  const tab_label = (value: string, label: string) => (
+    <span className="flex items-center gap-1.5">
+      {label}
+      {tab_completa[value]
+        ? <CheckCircle2 className="w-3.5 h-3.5 text-success" />
+        : <AlertCircle className="w-3.5 h-3.5 text-orange-500" />}
+    </span>
+  );
+
   return (
     <div className="space-y-6 animate-fade-in">
       <h1 className="text-xl font-bold tracking-tight text-foreground">{t("setup_club")}</h1>
