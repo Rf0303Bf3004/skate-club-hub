@@ -1225,13 +1225,14 @@ export const GrigliaFasceGhiaccio: React.FC<{
       </div>
 
 
-      {/* Instructor availability */}
+      {/* Instructor availability — sticky in fondo al contenitore scrollabile
+          così resta sempre visibile dopo la scelta dello slot */}
       {ora_inizio_sel && ora_fine_sel && (
-        <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+        <div className="sticky bottom-0 z-20 -mx-1 space-y-1.5 rounded-xl border-2 border-primary/30 bg-card/95 backdrop-blur-sm p-3 shadow-lg">
+          <label className="text-xs font-semibold text-primary uppercase tracking-wide">
             Istruttori disponibili — {ora_inizio_sel}–{ora_fine_sel}
           </label>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
             {istruttori_status.map((i: any) => {
               const selected = istruttori_ids_sel.includes(i.id);
               const colore = i.colore || "#6B7280";
