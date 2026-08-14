@@ -1539,14 +1539,6 @@ function PlanningPageInner() {
           set_annulla_dialog({ ...c, settimana_id: sid });
         }
       : undefined,
-    on_avvisa: c?._is_plan_row
-      ? () =>
-          set_avvisa_dialog({
-            tipo: "generico",
-            planning_corso_id: c.id,
-            contesto: { nome_corso: c.nome, ora_inizio: c.ora_inizio, ora_fine: c.ora_fine },
-          })
-      : undefined,
     on_rimuovi: build_mode ? () => remove_corso(c) : undefined,
   });
 
