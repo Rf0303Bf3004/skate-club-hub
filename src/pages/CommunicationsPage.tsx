@@ -357,7 +357,7 @@ const CommunicationsPage: React.FC = () => {
   };
 
   const open_new = () => {
-    set_step('choose');
+    set_step('form');
     set_selected_template(null);
     set_placeholders({});
     set_titolo('');
