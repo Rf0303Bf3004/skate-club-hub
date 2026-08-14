@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Calendar } from "lucide-react";
+import { use_persisted_state } from "@/hooks/use-persisted-state";
+import ConfirmButton from "@/components/common/ConfirmButton";
 import { useI18n } from "@/lib/i18n";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -2364,11 +2366,11 @@ const CoursesPage: React.FC = () => {
   }, [stagioni]);
 
   // Filters
-  const [ricerca_corso, set_ricerca_corso] = useState("");
-  const [filtro_giorno, set_filtro_giorno] = useState("Tutti");
-  const [filtro_tipo, set_filtro_tipo] = useState("");
-  const [filtro_istruttore, set_filtro_istruttore] = useState("");
-  const [filtro_stato, set_filtro_stato] = useState<StatoCorso>("tutti");
+  const [ricerca_corso, set_ricerca_corso] = use_persisted_state("corsi_ricerca", "");
+  const [filtro_giorno, set_filtro_giorno] = use_persisted_state("corsi_giorno", "Tutti");
+  const [filtro_tipo, set_filtro_tipo] = use_persisted_state("corsi_tipo", "");
+  const [filtro_istruttore, set_filtro_istruttore] = use_persisted_state("corsi_istruttore", "");
+  const [filtro_stato, set_filtro_stato] = use_persisted_state<StatoCorso>("corsi_stato", "tutti");
 
   const has_filters =
     ricerca_corso.trim() !== "" || filtro_giorno !== "Tutti" || filtro_tipo !== "" || filtro_istruttore !== "" || filtro_stato !== "tutti";
@@ -2847,10 +2849,10 @@ const CoursesPage: React.FC = () => {
                           )}
                           {c.tipo && <Badge variant="secondary" className="text-xs flex-shrink-0">{c.tipo}</Badge>}
                           <span className="text-xs text-muted-foreground flex-shrink-0">{(c.atleti_ids||[]).length} iscritti</span>
-                          <button
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              if (!window.confirm(`Eliminare il corso "${c.nome}"? Questa azione non è reversibile.`)) return;
+                          <ConfirmButton
+                            titolo={`Eliminare il corso "${c.nome}"?`}
+                            descrizione="Questa azione non è reversibile."
+                            on_conferma={async () => {
                               try {
                                 await elimina.mutateAsync(c.id);
                                 toast({ title: "🗑️ Corso eliminato" });
@@ -2858,12 +2860,16 @@ const CoursesPage: React.FC = () => {
                                 toast({ title: "Errore eliminazione", description: err?.message, variant: "destructive" });
                               }
                             }}
-                            className="text-muted-foreground hover:text-destructive p-1 rounded flex-shrink-0"
-                            title="Elimina corso"
-                            aria-label="Elimina corso"
                           >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                            <button
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-muted-foreground hover:text-destructive p-1 rounded flex-shrink-0"
+                              title="Elimina corso"
+                              aria-label="Elimina corso"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </ConfirmButton>
                         </div>
                       );
                     })}
@@ -2911,10 +2917,10 @@ const CoursesPage: React.FC = () => {
                           )}
                           {c.tipo && <Badge variant="secondary" className="text-xs flex-shrink-0">{c.tipo}</Badge>}
                           <span className="text-xs text-muted-foreground flex-shrink-0">{(c.atleti_ids||[]).length} iscritti</span>
-                          <button
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              if (!window.confirm(`Eliminare il corso "${c.nome}"? Questa azione non è reversibile.`)) return;
+                          <ConfirmButton
+                            titolo={`Eliminare il corso "${c.nome}"?`}
+                            descrizione="Questa azione non è reversibile."
+                            on_conferma={async () => {
                               try {
                                 await elimina.mutateAsync(c.id);
                                 toast({ title: "🗑️ Corso eliminato" });
@@ -2922,12 +2928,16 @@ const CoursesPage: React.FC = () => {
                                 toast({ title: "Errore eliminazione", description: err?.message, variant: "destructive" });
                               }
                             }}
-                            className="text-muted-foreground hover:text-destructive p-1 rounded flex-shrink-0"
-                            title="Elimina corso"
-                            aria-label="Elimina corso"
                           >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                            <button
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-muted-foreground hover:text-destructive p-1 rounded flex-shrink-0"
+                              title="Elimina corso"
+                              aria-label="Elimina corso"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </ConfirmButton>
                         </div>
                       );
                     })}

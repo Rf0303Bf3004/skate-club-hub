@@ -13,6 +13,25 @@ import { it } from "date-fns/locale";
 
 const STEPS = ["Nuova Stagione", "Disponibilità Ghiaccio", "Istruttori", "Catalogo Corsi", "Attiva Stagione"];
 
+/** Conferma esplicita di presa visione: evita di attivare una stagione "saltando" i passaggi. */
+const AckStep: React.FC<{
+  step: number;
+  ack: Record<number, boolean>;
+  set_ack: React.Dispatch<React.SetStateAction<Record<number, boolean>>>;
+  label: string;
+}> = ({ step, ack, set_ack, label }) => (
+  <div className="flex items-center gap-2 pt-1">
+    <Checkbox
+      id={`ack_${step}`}
+      checked={!!ack[step]}
+      onCheckedChange={(v) => set_ack((p) => ({ ...p, [step]: !!v }))}
+    />
+    <label htmlFor={`ack_${step}`} className="text-sm text-foreground cursor-pointer">
+      {label}
+    </label>
+  </div>
+);
+
 export default function NuovaStagionePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -22,6 +41,7 @@ export default function NuovaStagionePage() {
   const [data_inizio, set_data_inizio] = useState("");
   const [data_fine, set_data_fine] = useState("");
   const [conferma, set_conferma] = useState(false);
+  const [ack, set_ack] = useState<Record<number, boolean>>({});
   const [submitting, set_submitting] = useState(false);
 
   const { data: stagione_attiva } = useQuery({
@@ -42,7 +62,7 @@ export default function NuovaStagionePage() {
   const can_advance = () => {
     if (step === 0) return nome.trim() && data_inizio && data_fine;
     if (step === 4) return conferma;
-    return true;
+    return !!ack[step];
   };
 
   const handle_complete = async () => {
@@ -180,6 +200,7 @@ export default function NuovaStagionePage() {
                   </p>
                 </div>
               </div>
+              <AckStep step={1} ack={ack} set_ack={set_ack} label="Ho capito: le fasce ghiaccio verranno azzerate" />
             </div>
           )}
 
@@ -196,6 +217,7 @@ export default function NuovaStagionePage() {
               <Button variant="outline" size="sm" onClick={() => navigate("/istruttori")}>
                 <ExternalLink className="mr-1 h-3.5 w-3.5" /> Vai a Istruttori
               </Button>
+              <AckStep step={2} ack={ack} set_ack={set_ack} label="Ho verificato gli istruttori per la nuova stagione" />
             </div>
           )}
 
@@ -211,6 +233,7 @@ export default function NuovaStagionePage() {
               <Button variant="outline" size="sm" onClick={() => navigate("/corsi")}>
                 <ExternalLink className="mr-1 h-3.5 w-3.5" /> Vai a Corsi
               </Button>
+              <AckStep step={3} ack={ack} set_ack={set_ack} label="Ho capito che dovrò creare i corsi della nuova stagione" />
             </div>
           )}
 

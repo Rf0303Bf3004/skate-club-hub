@@ -1031,33 +1031,36 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
               </Button>
             )}
             {step < 2 && (
-              <Button
-                onClick={() => set_step((s) => s + 1)}
-                disabled={(step === 1 && !can_next_1) || (step === 2 && !can_next_2)}
-                title={
-                  step === 1 && errors_step1.length > 0
-                    ? `Compila: ${errors_step1.join(", ")}`
-                    : step === 2 && errors_step2.length > 0
-                    ? `Compila: ${errors_step2.join(", ")}`
-                    : ""
-                }
-              >
-                Avanti <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
+              <div className="flex flex-col items-end gap-1">
+                {errors_step1.length > 0 && (
+                  <span className="text-[11px] text-destructive">
+                    Manca: {errors_step1.join(", ")}
+                  </span>
+                )}
+                <Button
+                  onClick={() => set_step((s) => s + 1)}
+                  disabled={step === 1 && !can_next_1}
+                >
+                  Avanti <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
             )}
             {step === 2 && (
-              <Button
-                onClick={handle_submit}
-                disabled={saving || istruttori_ko_selezionati.length > 0}
-                className="bg-primary hover:bg-primary/90"
-                title={
-                  istruttori_ko_selezionati.length > 0
-                    ? `Rimuovi prima gli istruttori non disponibili: ${istruttori_ko_selezionati.map((i: any) => `${i.nome} ${i.cognome}`).join(", ")}`
-                    : ""
-                }
-              >
-                {saving ? "Salvataggio..." : "💾 Salva corso"}
-              </Button>
+              <div className="flex flex-col items-end gap-1">
+                {istruttori_ko_selezionati.length > 0 && (
+                  <span className="text-[11px] text-destructive max-w-[320px] text-right">
+                    Rimuovi prima gli istruttori non disponibili:{" "}
+                    {istruttori_ko_selezionati.map((i: any) => `${i.nome} ${i.cognome}`).join(", ")}
+                  </span>
+                )}
+                <Button
+                  onClick={handle_submit}
+                  disabled={saving || istruttori_ko_selezionati.length > 0}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  {saving ? "Salvataggio..." : "💾 Salva corso"}
+                </Button>
+              </div>
             )}
           </div>
         </div>

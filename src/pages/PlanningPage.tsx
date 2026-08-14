@@ -2227,6 +2227,18 @@ function PlanningPageInner() {
           </div>
         )}
 
+        {/* Promemoria sempre visibile: la modalità cambia il significato dei click */}
+        {build_mode && (
+          <button
+            onClick={() => { set_build_mode(false); set_pick_corso(null); }}
+            className="fixed bottom-5 right-5 z-50 inline-flex items-center gap-2 rounded-full border border-amber-600 bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg hover:bg-amber-600"
+            title="Esci dalla modalità Costruzione"
+          >
+            <Hammer className="h-4 w-4" />
+            Costruzione attiva — esci
+          </button>
+        )}
+
         {/* Main content: vista Mese OR (sidebar + grid) */}
         {view_mode === "mese" ? (
           <MeseView

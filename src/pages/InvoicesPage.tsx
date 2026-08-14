@@ -21,7 +21,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Trash2, X, Printer, Mail } from "lucide-react";
+import { FileText, Trash2, X, Printer, Mail, Receipt } from "lucide-react";
+import EmptyState from "@/components/common/EmptyState";
 import { toast } from "@/hooks/use-toast";
 import { get_fattura_stato_ui, get_fattura_stato_label, get_fattura_stato_classes } from "@/lib/fattura-status";
 
@@ -844,8 +845,12 @@ const InvoicesPage: React.FC = () => {
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground text-sm">
-                      Nessuna fattura trovata.
+                    <td colSpan={6} className="px-4 py-4">
+                      <EmptyState
+                        icon={Receipt}
+                        titolo="Nessuna fattura da mostrare"
+                        descrizione="Con i filtri attivi non risulta nessuna fattura. Azzera i filtri oppure genera le fatture del mese dalla sezione Fatturazione."
+                      />
                     </td>
                   </tr>
                 ) : (

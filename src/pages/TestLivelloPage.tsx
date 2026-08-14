@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import ConfirmButton from "@/components/common/ConfirmButton";
 import { Plus, ArrowLeft, Trash2, X, CheckCircle, Send, Search } from "lucide-react";
 import {
   ComunicazioneFormSection,
@@ -717,11 +718,15 @@ export default function TestLivelloPage() {
         <h1 className="text-2xl font-bold text-foreground">{selected_test.nome}</h1>
         <Badge variant="outline" className="capitalize">{selected_test.tipo === "in_gara" ? "in gara" : "base"}</Badge>
         <div className="ml-auto flex gap-2">
-          <Button variant="destructive" size="sm" onClick={() => {
-            if (window.confirm("Eliminare definitivamente questo test e tutte le sue convocazioni?")) delete_test.mutate(selected_test.id);
-          }}>
-            <Trash2 className="w-4 h-4 mr-1" /> Elimina
-          </Button>
+          <ConfirmButton
+            titolo="Eliminare questo test?"
+            descrizione="Verranno eliminate definitivamente anche tutte le convocazioni collegate."
+            on_conferma={() => delete_test.mutate(selected_test.id)}
+          >
+            <Button variant="destructive" size="sm">
+              <Trash2 className="w-4 h-4 mr-1" /> Elimina
+            </Button>
+          </ConfirmButton>
         </div>
       </div>
 
@@ -807,14 +812,16 @@ export default function TestLivelloPage() {
                             onBlur={(e) => update_field.mutate({ id: step.id, patch: { note_istruttore: e.target.value } as any })}
                             placeholder="Note istruttore..."
                           />
-                          <Button
-                            variant="ghost" size="icon" className="h-7 w-7"
-                            onClick={() => {
-                              if (window.confirm(`Rimuovere lo step #${step.ordine} (${step.livello_accesso} → ${step.livello_target})?`)) remove_step.mutate(step.id);
-                            }}
+                          <ConfirmButton
+                            titolo={`Rimuovere lo step #${step.ordine}?`}
+                            descrizione={`${step.livello_accesso} → ${step.livello_target}`}
+                            conferma_label="Rimuovi"
+                            on_conferma={() => remove_step.mutate(step.id)}
                           >
-                            <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                          </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7">
+                              <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                            </Button>
+                          </ConfirmButton>
                         </div>
                       );
                     })}

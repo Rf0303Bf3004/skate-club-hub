@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Plus, ArrowLeft, Trash2, Sparkles, MapPin, Calendar as CalendarIcon, Clock, Users as UsersIcon, Pencil } from "lucide-react";
+import ConfirmButton from "@/components/common/ConfirmButton";
 
 type Evento = {
   id: string;
@@ -205,9 +206,13 @@ export default function EventiPage() {
           {evento.tipo && <Badge variant="outline">{evento.tipo}</Badge>}
           <div className="ml-auto flex gap-2">
             <Button size="sm" variant="outline" onClick={() => open_edit(evento)}><Pencil className="w-4 h-4 mr-1" /> Modifica</Button>
-            <Button size="sm" variant="destructive" onClick={() => {
-              if (window.confirm("Eliminare definitivamente questo evento e tutte le sue iscrizioni?")) delete_evento.mutate(evento.id);
-            }}><Trash2 className="w-4 h-4 mr-1" /> Elimina</Button>
+            <ConfirmButton
+              titolo="Eliminare questo evento?"
+              descrizione="Verranno eliminate definitivamente anche tutte le iscrizioni collegate."
+              on_conferma={() => delete_evento.mutate(evento.id)}
+            >
+              <Button size="sm" variant="destructive"><Trash2 className="w-4 h-4 mr-1" /> Elimina</Button>
+            </ConfirmButton>
           </div>
         </div>
 
