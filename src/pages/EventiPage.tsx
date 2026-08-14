@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Plus, ArrowLeft, Trash2, Sparkles, MapPin, Calendar as CalendarIcon, Clock, Users as UsersIcon, Pencil } from "lucide-react";
+import ConfirmButton from "@/components/common/ConfirmButton";
 
 type Evento = {
   id: string;
