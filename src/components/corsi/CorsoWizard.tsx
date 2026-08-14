@@ -872,7 +872,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
 
               {!posiziona_planning && (
                 <div className="px-3 py-2 rounded-lg bg-blue-50 border border-blue-200 text-xs text-blue-700">
-                  Il corso verrà salvato senza giorno e orario. Lo potrai posizionare dopo dal backlog del Planning.
+                  Il corso verrà salvato senza giorno e orario. Lo potrai posizionare dopo da 'Da posizionare' nel Planning.
                 </div>
               )}
             </div>

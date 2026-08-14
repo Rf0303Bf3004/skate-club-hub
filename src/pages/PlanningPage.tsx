@@ -1680,7 +1680,7 @@ function PlanningPageInner() {
 
           {/* Content */}
           <div className="flex flex-1 overflow-hidden">
-            {/* Sidebar left - build mode backlog */}
+            {/* Sidebar left - corsi da posizionare */}
             {build_mode && (
               <SidebarErrorBoundary className="w-[280px] flex-shrink-0 border-r border-border overflow-y-auto p-3 space-y-2 bg-muted/30">
                 <SidebarCostruzione

@@ -2410,10 +2410,10 @@ const CoursesPage: React.FC = () => {
   const corsi_per_giorno = useMemo(() => {
     const groups: Record<string, any[]> = {};
     GIORNI_DB.forEach(g => { groups[g] = []; });
-    groups["Da pianificare"] = [];
+    groups["Da posizionare"] = [];
     corsi_filtrati.forEach((c: any) => {
       if (c.giorno && GIORNI_DB.includes(c.giorno)) groups[c.giorno].push(c);
-      else groups["Da pianificare"].push(c);
+      else groups["Da posizionare"].push(c);
     });
     return groups;
   }, [corsi_filtrati]);
@@ -2781,13 +2781,13 @@ const CoursesPage: React.FC = () => {
           </div>
         ) : vista === "giorno" ? (
           <div className="space-y-6">
-            {[...GIORNI_DB, "Da pianificare"].map((giorno) => {
+            {[...GIORNI_DB, "Da posizionare"].map((giorno) => {
               const group = corsi_per_giorno[giorno] || [];
               if (group.length === 0) return null;
               return (
                 <div key={giorno}>
                   <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-3 border-b border-border pb-1">
-                    {giorno === "Da pianificare" ? "📋 Da pianificare" : giorno}
+                    {giorno === "Da posizionare" ? "📋 Da posizionare" : giorno}
                     <span className="text-xs font-normal ml-2 text-muted-foreground">({group.length})</span>
                   </h2>
                   <div className="space-y-2">
