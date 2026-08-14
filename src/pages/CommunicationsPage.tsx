@@ -53,7 +53,7 @@ const TEMPLATES = [
     id: 'gara',
     nome: 'Comunicazione gara',
     titolo: 'Gara — {nome_gara}',
-    testo: 'Vi ricordiamo la gara {nome_gara} in programma il {data} a {luogo}. Gli atleti convocati riceveranno comunicazione separata.',
+    testo: 'Vi ricordiamo la gara {nome_gara} in programma il {data} a {luogo}.',
     tipo_destinatari: 'tutti',
     placeholders: ['nome_gara', 'data', 'luogo'],
   },

@@ -43,6 +43,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -431,6 +432,9 @@ const BoxComunicazione: React.FC<{
   const [template_raw, set_template_raw] = useState<string | null>(null);
   const [ph_values, set_ph_values] = useState<Record<string, string>>({});
   const [ph_motivo_altro, set_ph_motivo_altro] = useState("");
+  const [esclusi, set_esclusi] = useState<string[]>([]);
+  const [mostra_gruppo, set_mostra_gruppo] = useState(false);
+  const [gruppo_search, set_gruppo_search] = useState("");
 
   // Applica preset esterno (es. "Invia auguri" da banner compleanno)
   const last_preset_marker = React.useRef<string | null>(null);
@@ -548,6 +552,42 @@ const BoxComunicazione: React.FC<{
 
   const destinatari = get_destinatari();
 
+  // ── Gruppo atleti risolto (per anteprima ed esclusioni puntuali) ──
+  const gruppo_atleti = useMemo<any[]>(() => {
+    const attivi = atleti.filter((a) => a.stato === "attivo");
+    if (tipo_dest === "tutti" || tipo_dest === "atleti_attivi") return attivi;
+    if (tipo_dest === "monitori") return monitori.filter((m: any) => m.ruolo_pista === "monitore");
+    if (tipo_dest === "aiuto_monitori") return monitori.filter((m: any) => m.ruolo_pista === "aiuto_monitore");
+    if (tipo_dest === "agoniste")
+      return attivi.filter((a: any) => a.agonista === true || a.partecipa_gare === true);
+    if (tipo_dest === "corso" && riferimento_id) {
+      const corso = corsi.find((c) => c.id === riferimento_id);
+      return corso ? atleti.filter((a) => corso.atleti_ids?.includes(a.id)) : [];
+    }
+    if (tipo_dest === "gara" && riferimento_id) {
+      const gara = gare.find((g) => g.id === riferimento_id);
+      return gara ? atleti.filter((a) => gara.atleti_iscritti?.some((ai: any) => ai.atleta_id === a.id)) : [];
+    }
+    return [];
+  }, [tipo_dest, riferimento_id, atleti, monitori, corsi, gare]);
+
+  const gruppo_atleti_ordinati = useMemo(
+    () => [...gruppo_atleti].sort((a, b) => `${a.cognome} ${a.nome}`.localeCompare(`${b.cognome} ${b.nome}`, "it")),
+    [gruppo_atleti]
+  );
+
+  const atleti_inclusi = useMemo(
+    () => gruppo_atleti_ordinati.filter((a) => !esclusi.includes(a.id)),
+    [gruppo_atleti_ordinati, esclusi]
+  );
+
+  React.useEffect(() => {
+    set_esclusi([]);
+    set_mostra_gruppo(false);
+    set_gruppo_search("");
+  }, [tipo_dest, riferimento_id]);
+
+
   const filtered_atleti = useMemo(() => {
     const q = atleta_search.trim().toLowerCase();
     if (!q) return atleti.filter((a) => a.stato === "attivo");
@@ -614,14 +654,26 @@ const BoxComunicazione: React.FC<{
     try {
       const is_birthday = last_preset_marker.current?.startsWith("birthday:") ?? false;
       const target_atleta_id = tipo_dest === "singolo_atleta" ? persona_id : null;
-      await crea.mutateAsync({
-        titolo,
-        testo,
-        tipo_destinatari: is_birthday ? "compleanno" : tipo_dest,
-        corso_id: tipo_dest === "corso" ? riferimento_id : null,
-        atleta_id: target_atleta_id,
-        urgente,
-      });
+      const con_esclusioni = !is_birthday && esclusi.length > 0 && atleti_inclusi.length > 0;
+
+      if (con_esclusioni) {
+        await crea.mutateAsync({
+          titolo,
+          testo,
+          tipo_destinatari: "atleti",
+          atleta_ids_manuali: atleti_inclusi.map((a) => a.id),
+          urgente,
+        });
+      } else {
+        await crea.mutateAsync({
+          titolo,
+          testo,
+          tipo_destinatari: is_birthday ? "compleanno" : tipo_dest,
+          corso_id: tipo_dest === "corso" ? riferimento_id : null,
+          atleta_id: target_atleta_id,
+          urgente,
+        });
+      }
       toast({ title: td("quick_comm.saved_toast") });
       set_titolo("");
       set_testo("");
@@ -629,7 +681,11 @@ const BoxComunicazione: React.FC<{
       set_template_raw(null);
       set_ph_values({});
       set_ph_motivo_altro("");
+      set_esclusi([]);
+      set_mostra_gruppo(false);
+      set_gruppo_search("");
       set_urgente(false);
+
     } catch (err: any) {
       toast({ title: td("toast.error"), description: err?.message, variant: "destructive" });
     }
@@ -858,11 +914,92 @@ const BoxComunicazione: React.FC<{
           </select>
         )}
 
-        {destinatari.length > 0 && (
+        {gruppo_atleti_ordinati.length > 0 && (
+          <div className="rounded-lg border border-border bg-background">
+            <button
+              type="button"
+              onClick={() => set_mostra_gruppo((v) => !v)}
+              className="w-full flex items-center justify-between px-3 py-3 text-sm min-h-[44px]"
+            >
+              <span className="font-medium">
+                {atleti_inclusi.length} di {gruppo_atleti_ordinati.length} destinatari
+                {esclusi.length > 0 && <span className="text-muted-foreground"> · {esclusi.length} esclusi</span>}
+              </span>
+              <span className="text-xs text-primary">{mostra_gruppo ? "Nascondi" : "Modifica"}</span>
+            </button>
+
+            {mostra_gruppo && (
+              <div className="border-t p-2 space-y-2">
+                <div className="relative">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                  <Input
+                    className="pl-9 pr-9 text-base h-11"
+                    placeholder="Cerca atleta…"
+                    value={gruppo_search}
+                    onChange={(e) => set_gruppo_search(e.target.value)}
+                  />
+                  {gruppo_search && (
+                    <button
+                      type="button"
+                      onClick={() => set_gruppo_search("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button type="button" size="sm" variant="outline" className="flex-1 text-xs" onClick={() => set_esclusi([])}>
+                    Seleziona tutti
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 text-xs"
+                    onClick={() => set_esclusi(gruppo_atleti_ordinati.map((a) => a.id))}
+                  >
+                    Deseleziona tutti
+                  </Button>
+                </div>
+                <div className="max-h-64 overflow-y-auto space-y-0.5">
+                  {gruppo_atleti_ordinati
+                    .filter((a) =>
+                      `${a.nome} ${a.cognome}`.toLowerCase().includes(gruppo_search.trim().toLowerCase())
+                    )
+                    .map((a) => {
+                      const incluso = !esclusi.includes(a.id);
+                      return (
+                        <label
+                          key={a.id}
+                          className="flex items-center gap-3 px-3 py-3 rounded cursor-pointer text-sm min-h-[44px] hover:bg-muted"
+                        >
+                          <Checkbox
+                            checked={incluso}
+                            onCheckedChange={() =>
+                              set_esclusi((prev) =>
+                                prev.includes(a.id) ? prev.filter((x) => x !== a.id) : [...prev, a.id]
+                              )
+                            }
+                          />
+                          <span className={incluso ? "flex-1" : "flex-1 text-muted-foreground line-through"}>
+                            {a.cognome} {a.nome}
+                          </span>
+                        </label>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {destinatari.length > 0 && gruppo_atleti_ordinati.length === 0 && (
           <p className="text-xs text-primary font-medium">
             {td("quick_comm.recipients_count", { count: destinatari.length })}
           </p>
         )}
+
       </div>
 
       {/* Titolo */}
