@@ -1,49 +1,52 @@
-# Convenzioni — Dashboard Superadmin (UI parte 1)
+# Protocollo di lavoro corsi: semplice e funzionale
 
-## Scope
-Nuova pagina **/superadmin/convenzioni**, visibile solo al superadmin, con due tab: gestione convenzioni e gestione aree di mercato. Nessuna vista soci / nessuna pagina QR (passi successivi).
+Obiettivo: un percorso unico e ripetibile per costruire la stagione, senza dover capire ogni volta se partire dai corsi o dal planning.
 
-## File nuovi
-1. `src/pages/SuperAdminConvenzioniPage.tsx` — pagina con `<Tabs>` shadcn, due sotto-componenti interni:
-   - `TabConvenzioni`: lista + filtri + modale nuovo/modifica.
-   - `TabAree`: lista + inline edit + toggle attiva.
-2. (Nessun nuovo hook globale: tutte le query in pagina con `useQuery`/`useMutation` da `@/lib/supabase`, coerente con altre pagine superadmin tipo `SuperAdminListinoPage`.)
+## Il protocollo in 4 passi
 
-## File modificati
-- `src/App.tsx`: import e rotta `/superadmin/convenzioni` dentro `<ProtectedSuperAdmin>`.
-- `src/components/MainLayout.tsx`: nuova `NavLink` nella sezione superadmin (icona `Gift` o `BadgePercent` di lucide), inserita prima di Manutenzione.
-- `src/locales/it/superadmin.json`: chiavi `menu.convenzioni` e blocco `convenzioni.*` (titoli, label form, toast).
+```text
+1. PREPARA        2. DUPLICA           3. COLLOCA            4. CHIUDI
+   ghiaccio +   ->  stagione            slot + istruttore  ->  controlli
+   istruttori       precedente          (wizard/planning)      finali
+```
 
-## Storage
-Per logo e immagine uso un bucket pubblico **`convenzioni`** (creato via `storage_create_bucket`, public=true). Path: `logos/{convenzione_id_o_uuid}.{ext}` e `immagini/{...}`. Policy storage.objects: SELECT public, INSERT/UPDATE/DELETE solo superadmin (via `public.is_superadmin()` già esistente). Upload con `supabase.storage.from('convenzioni').upload(...)` + `getPublicUrl`. Anteprime: logo 80x80 `object-contain` bg-slate-50, immagine banner `aspect-video object-cover`.
+1. **Prepara la base** — fasce ghiaccio e disponibilità istruttori della nuova stagione. Senza queste, nessun corso può diventare "Completo".
+2. **Duplica la stagione precedente** — copia i corsi (nome, tipo, livello, costi, giorno/ora, istruttori) nella nuova stagione. Gli iscritti NON vengono copiati.
+3. **Colloca ciò che resta** — i corsi duplicati che non hanno più uno slot valido finiscono in "Da pianificare" e si risolvono col wizard esistente (corso → slot → istruttore).
+4. **Chiudi** — un pannello di controllo mostra cosa manca prima di considerare la stagione pronta.
 
-## Tab A — Gestione convenzioni
-**Query**: `convenzioni` + join `convenzioni_aree(nome,icona)` ordinato per `in_evidenza desc, created_at desc`. In parallelo `convenzioni_scansioni` raggruppata per `convenzione_id` (semplice `select convenzione_id` + reduce client, dataset piccolo) → mappa conteggi.
+## Cosa costruisco
 
-**Lista** = card grid responsive (1/2/3 col) con:
-- Logo 64x64 a sinistra (placeholder iniziale azienda se assente).
-- Azienda (titolo bold) + titolo offerta (sottotitolo).
-- Riga chip: area (icona lucide dinamica + nome), `geo_citta — geo_cantone`, badge stato (verde attiva / giallo sospesa / grigio scaduta), badge "★ In evidenza" se attiva.
-- Validità `dd/MM/yyyy → dd/MM/yyyy` con `format-data.ts`.
-- Contatore scansioni con icona `ScanLine`.
-- Bottoni Modifica, Cambia stato (dropdown), Elimina (conferma con typing "ELIMINA").
+### A. Duplica stagione (nuovo)
+- Pulsante "Duplica da stagione precedente" nella pagina Corsi.
+- Dialogo: scegli la stagione sorgente, vedi l'elenco dei corsi con checkbox (tutti selezionati di default), scegli se copiare anche giorno/ora e istruttori.
+- Al salvataggio: crea i corsi nella stagione corrente e ricopia le righe `corsi_istruttori`.
+- Dopo la copia, ogni corso viene rivalutato: se lo slot non è più dentro una fascia ghiaccio valida o l'istruttore non è più disponibile, il corso resta senza collocazione e va in "Da pianificare".
 
-**Filtri** (top bar): search azienda/titolo, select area (tutte + lista aree attive), select stato (tutti/attiva/sospesa/scaduta), toggle "Solo in evidenza".
+### B. Barra di avanzamento stagione (nuovo)
+In cima alla pagina Corsi, una riga con quattro contatori cliccabili:
+- Corsi completi
+- Da pianificare (senza giorno/ora)
+- Senza istruttore valido
+- Fuori fascia ghiaccio
 
-**Modale Nuova/Modifica** (`Dialog` shadcn):
-- Campi: azienda*, area_id (Select aree attive)*, titolo*, descrizione (Textarea), upload logo (input file + anteprima 80x80 + bottone rimuovi), upload immagine banner opzionale, indirizzo, geo_cantone (Select cantoni CH già definiti in `src/lib/territori.ts` se esiste, altrimenti input), geo_citta, validita_da/validita_a (DateInput), codice_sconto, Switch in_evidenza, Select stato (default attiva).
-- Salvataggio: upload file → insert/update riga. `qr_token` lasciato al default DB.
+Ogni contatore filtra la lista sotto, così il lavoro diventa "svuota le tre colonne rosse".
 
-## Tab B — Gestione aree
-- Tabella `convenzioni_aree` ordinata per `ordine`.
-- Colonne: drag-handle visiva (no riordino in MVP, modificabile via campo numerico `ordine`), nome (input inline), icona (input testo + preview icona lucide dinamica), ordine (number), attiva (Switch).
-- Bottone "Nuova area" in alto (riga vuota in modale piccolo).
-- Salvataggio singola riga su blur / Switch toggle.
+### C. Wizard sempre a portata di mano
+- Il wizard di posizionamento (già esistente) viene richiamato direttamente dalla card del corso incompleto, precompilato con quel corso.
+- Nel passo "slot" resta la proposta automatica del miglior abbinamento (ghiaccio valido + capienza ok + istruttore disponibile) in cima alla lista, evidenziata, ma tutte le opzioni valide restano selezionabili: suggerimento sì, imposizione no.
 
-## Icone lucide dinamiche
-Helper `get_lucide_icon(name: string)` interno alla pagina: mappa stringa kebab → componente da `lucide-react` per le 8 aree del seed (dumbbell, car, utensils, heart-pulse, shirt, home, ticket, plane) + fallback `Tag`. Permette di aggiungere altre icone semplicemente importandole.
+### D. Creazione dal planning
+Click su una fascia ghiaccio libera nel planning → mini-form che crea il corso già ancorato a quel giorno/ora, con la lista dei soli istruttori disponibili in quella fascia.
 
-## Conferme richieste
-Nessuna: il piano usa pattern già consolidati (ProtectedSuperAdmin, Dialog shadcn, useQuery/useMutation), il bucket viene creato come parte dell'implementazione.
+## Note tecniche
+- Nessuna modifica allo schema: si riusano `corsi`, `corsi_istruttori`, `disponibilita_ghiaccio`, `disponibilita_istruttori`, `stagioni`.
+- La duplicazione filtra per `club_id` e scrive con lo `stagione_id` corrente.
+- La regola di completezza resta quella attuale (`check_corso_completo` in `src/hooks/use-supabase-data.ts`), usata anche per i contatori.
+- Il wizard riusa `src/components/planning/PosizionamentoWizard.tsx` senza duplicare logica.
 
-Procedo con l'implementazione?
+## Ordine di consegna
+1. Barra di avanzamento + filtri (feedback immediato su cosa manca)
+2. Duplica stagione precedente
+3. Wizard richiamabile dalla card corso + proposta automatica evidenziata
+4. Creazione corso dal planning
