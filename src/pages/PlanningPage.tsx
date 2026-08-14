@@ -2149,7 +2149,10 @@ function PlanningPageInner() {
               <Button variant="ghost" size="sm" onClick={go_today} className="text-xs"><Calendar className="h-3.5 w-3.5 mr-1" />Oggi</Button>
             </div>
           )}
-          <div className="inline-flex rounded-lg border border-border overflow-hidden ml-auto">
+          <span className="hidden lg:inline text-[11px] text-muted-foreground ml-auto">
+            Tocca a lungo (o tasto destro) su un corso per aprire le azioni
+          </span>
+          <div className="inline-flex rounded-lg border border-border overflow-hidden lg:ml-3 ml-auto">
             {(["giorno", "settimana", "mese"] as ViewMode[]).map((m, idx) => (
               <button key={m} onClick={() => set_view(m)}
                 className={`px-3 py-1.5 text-sm font-medium transition-colors capitalize ${view_mode === m ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"} ${idx > 0 ? "border-l border-border" : ""}`}
