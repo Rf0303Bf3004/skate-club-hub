@@ -41,8 +41,26 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { CorsoWizard } from "@/components/corsi/CorsoWizard";
+import { AvanzamentoStagione, type StatoCorso } from "@/components/corsi/AvanzamentoStagione";
+import { DuplicaStagioneDialog } from "@/components/corsi/DuplicaStagioneDialog";
+import { Copy, Wand2 } from "lucide-react";
 
 const GIORNI_DB = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
+
+// Classifica un corso in una delle 4 colonne del protocollo di lavoro.
+function classifica_corso(
+  corso: any,
+  disp_ghiaccio: any[],
+  istruttori: any[],
+): Exclude<StatoCorso, "tutti"> {
+  const res = check_corso_completo(corso, disp_ghiaccio, istruttori);
+  if (res.completo) return "completi";
+  const motivo = (res.motivo || "").toLowerCase();
+  if (!corso.giorno || !corso.ora_inizio || !corso.ora_fine) return "da_pianificare";
+  if (motivo.includes("istruttore")) return "senza_istruttore";
+  if (motivo.includes("ghiaccio") || motivo.includes("disponibilità")) return "fuori_ghiaccio";
+  return "da_pianificare";
+}
 
 const LIVELLI_CORSO = [
   "tutti", "pulcini", "stellina1", "stellina2", "stellina3", "stellina4",
