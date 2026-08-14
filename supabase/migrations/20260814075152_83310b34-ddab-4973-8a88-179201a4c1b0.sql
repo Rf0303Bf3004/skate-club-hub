@@ -1,0 +1,1 @@
+update public.comunicazioni_template set testo = 'Vi ricordiamo la gara {nome_gara} in programma il {data} a {luogo}.' where id = '243679e4-27a7-45ed-a028-7d99c91c6e58';
