@@ -897,11 +897,92 @@ const BoxComunicazione: React.FC<{
           </select>
         )}
 
-        {destinatari.length > 0 && (
+        {gruppo_atleti_ordinati.length > 0 && (
+          <div className="rounded-lg border border-border bg-background">
+            <button
+              type="button"
+              onClick={() => set_mostra_gruppo((v) => !v)}
+              className="w-full flex items-center justify-between px-3 py-3 text-sm min-h-[44px]"
+            >
+              <span className="font-medium">
+                {atleti_inclusi.length} di {gruppo_atleti_ordinati.length} destinatari
+                {esclusi.length > 0 && <span className="text-muted-foreground"> · {esclusi.length} esclusi</span>}
+              </span>
+              <span className="text-xs text-primary">{mostra_gruppo ? "Nascondi" : "Modifica"}</span>
+            </button>
+
+            {mostra_gruppo && (
+              <div className="border-t p-2 space-y-2">
+                <div className="relative">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                  <Input
+                    className="pl-9 pr-9 text-base h-11"
+                    placeholder="Cerca atleta…"
+                    value={gruppo_search}
+                    onChange={(e) => set_gruppo_search(e.target.value)}
+                  />
+                  {gruppo_search && (
+                    <button
+                      type="button"
+                      onClick={() => set_gruppo_search("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button type="button" size="sm" variant="outline" className="flex-1 text-xs" onClick={() => set_esclusi([])}>
+                    Seleziona tutti
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 text-xs"
+                    onClick={() => set_esclusi(gruppo_atleti_ordinati.map((a) => a.id))}
+                  >
+                    Deseleziona tutti
+                  </Button>
+                </div>
+                <div className="max-h-64 overflow-y-auto space-y-0.5">
+                  {gruppo_atleti_ordinati
+                    .filter((a) =>
+                      `${a.nome} ${a.cognome}`.toLowerCase().includes(gruppo_search.trim().toLowerCase())
+                    )
+                    .map((a) => {
+                      const incluso = !esclusi.includes(a.id);
+                      return (
+                        <label
+                          key={a.id}
+                          className="flex items-center gap-3 px-3 py-3 rounded cursor-pointer text-sm min-h-[44px] hover:bg-muted"
+                        >
+                          <Checkbox
+                            checked={incluso}
+                            onCheckedChange={() =>
+                              set_esclusi((prev) =>
+                                prev.includes(a.id) ? prev.filter((x) => x !== a.id) : [...prev, a.id]
+                              )
+                            }
+                          />
+                          <span className={incluso ? "flex-1" : "flex-1 text-muted-foreground line-through"}>
+                            {a.cognome} {a.nome}
+                          </span>
+                        </label>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {destinatari.length > 0 && gruppo_atleti_ordinati.length === 0 && (
           <p className="text-xs text-primary font-medium">
             {td("quick_comm.recipients_count", { count: destinatari.length })}
           </p>
         )}
+
       </div>
 
       {/* Titolo */}
