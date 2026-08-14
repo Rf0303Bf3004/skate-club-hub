@@ -181,6 +181,7 @@ export default function NuovaStagionePage() {
                   </p>
                 </div>
               </div>
+              <AckStep step={1} ack={ack} set_ack={set_ack} label="Ho capito: le fasce ghiaccio verranno azzerate" />
             </div>
           )}
 
@@ -197,6 +198,7 @@ export default function NuovaStagionePage() {
               <Button variant="outline" size="sm" onClick={() => navigate("/istruttori")}>
                 <ExternalLink className="mr-1 h-3.5 w-3.5" /> Vai a Istruttori
               </Button>
+              <AckStep step={2} ack={ack} set_ack={set_ack} label="Ho verificato gli istruttori per la nuova stagione" />
             </div>
           )}
 
@@ -212,6 +214,7 @@ export default function NuovaStagionePage() {
               <Button variant="outline" size="sm" onClick={() => navigate("/corsi")}>
                 <ExternalLink className="mr-1 h-3.5 w-3.5" /> Vai a Corsi
               </Button>
+              <AckStep step={3} ack={ack} set_ack={set_ack} label="Ho capito che dovrò creare i corsi della nuova stagione" />
             </div>
           )}
 
