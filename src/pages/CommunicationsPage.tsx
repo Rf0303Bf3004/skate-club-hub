@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useI18n } from '@/lib/i18n';
-import { use_atleti, use_comunicazioni, use_corsi, use_istruttori } from '@/hooks/use-supabase-data';
+import { use_atleti, use_comunicazioni, use_corsi, use_istruttori, use_stagioni } from '@/hooks/use-supabase-data';
 import { use_crea_comunicazione } from '@/hooks/use-supabase-mutations';
 import { supabase, get_current_club_id } from '@/lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ConversazioniTab } from '@/components/comunicazioni/ConversazioniTab';
 import { MieiReminderStaffTab } from '@/components/comunicazioni/MieiReminderStaffTab';
+import { ListaComunicazioni } from '@/components/comunicazioni/ListaComunicazioni';
 import { Bell } from 'lucide-react';
 
 const TEMPLATES = [
@@ -128,6 +129,7 @@ const CommunicationsPage: React.FC = () => {
   const { data: corsi = [] } = use_corsi();
   const { data: atleti = [] } = use_atleti();
   const { data: istruttori = [] } = use_istruttori();
+  const { data: stagioni = [] } = use_stagioni();
   const crea = use_crea_comunicazione();
 
   const [modal_open, set_modal_open] = useState(false);
@@ -476,8 +478,6 @@ const CommunicationsPage: React.FC = () => {
   const can_see_all = ruolo === 'superadmin' || ruolo === 'admin';
   const can_see_miei_reminder_staff = ruolo === 'istruttore' || ruolo === 'aiuto_monitore';
 
-  const [archive_search, set_archive_search] = useState('');
-
   const com_visible = useMemo(
     () => comunicazioni.filter((c: any) => c.tipo !== 'iscrizione_atleta'),
     [comunicazioni],
@@ -490,16 +490,10 @@ const CommunicationsPage: React.FC = () => {
     () => com_visible.filter((c: any) => c.categoria === 'ricevuta' && !c.archiviata),
     [com_visible],
   );
-  const archivio = useMemo(() => {
-    const arch = com_visible.filter((c: any) => c.archiviata);
-    const q = archive_search.trim().toLowerCase();
-    if (!q) return arch;
-    return arch.filter((c: any) =>
-      (c.titolo || '').toLowerCase().includes(q) ||
-      (c.testo || '').toLowerCase().includes(q) ||
-      (c.corpo || '').toLowerCase().includes(q),
-    );
-  }, [com_visible, archive_search]);
+  const archivio = useMemo(
+    () => com_visible.filter((c: any) => c.archiviata),
+    [com_visible],
+  );
 
   const filtered_atleti = useMemo(() => {
     const q = atleta_search.trim().toLowerCase();
