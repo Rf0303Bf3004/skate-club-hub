@@ -2364,11 +2364,11 @@ const CoursesPage: React.FC = () => {
   }, [stagioni]);
 
   // Filters
-  const [ricerca_corso, set_ricerca_corso] = useState("");
-  const [filtro_giorno, set_filtro_giorno] = useState("Tutti");
-  const [filtro_tipo, set_filtro_tipo] = useState("");
-  const [filtro_istruttore, set_filtro_istruttore] = useState("");
-  const [filtro_stato, set_filtro_stato] = useState<StatoCorso>("tutti");
+  const [ricerca_corso, set_ricerca_corso] = use_persisted_state("corsi_ricerca", "");
+  const [filtro_giorno, set_filtro_giorno] = use_persisted_state("corsi_giorno", "Tutti");
+  const [filtro_tipo, set_filtro_tipo] = use_persisted_state("corsi_tipo", "");
+  const [filtro_istruttore, set_filtro_istruttore] = use_persisted_state("corsi_istruttore", "");
+  const [filtro_stato, set_filtro_stato] = use_persisted_state<StatoCorso>("corsi_stato", "tutti");
 
   const has_filters =
     ricerca_corso.trim() !== "" || filtro_giorno !== "Tutti" || filtro_tipo !== "" || filtro_istruttore !== "" || filtro_stato !== "tutti";

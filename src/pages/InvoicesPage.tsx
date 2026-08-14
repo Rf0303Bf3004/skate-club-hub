@@ -844,8 +844,12 @@ const InvoicesPage: React.FC = () => {
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground text-sm">
-                      Nessuna fattura trovata.
+                    <td colSpan={6} className="px-4 py-4">
+                      <EmptyState
+                        icon={Receipt}
+                        titolo="Nessuna fattura da mostrare"
+                        descrizione="Con i filtri attivi non risulta nessuna fattura. Azzera i filtri oppure genera le fatture del mese dalla sezione Fatturazione."
+                      />
                     </td>
                   </tr>
                 ) : (
