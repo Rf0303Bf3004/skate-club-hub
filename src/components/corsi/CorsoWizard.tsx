@@ -538,7 +538,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
     }
   };
 
-  const STEP_LABELS = ["Anagrafica", "Collocamento", "Istruttori", "Riepilogo"];
+  const STEP_LABELS = ["Il corso", "Quando e con chi"];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -546,7 +546,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
         <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
           <div>
             <h2 className="text-base font-bold text-foreground">{is_edit ? "Ridefinisci corso" : "Nuovo corso"}</h2>
-            <p className="text-xs text-muted-foreground">Step {step} di 4 · {STEP_LABELS[step - 1]}</p>
+            <p className="text-xs text-muted-foreground">Step {step} di 2 · {STEP_LABELS[step - 1]}</p>
           </div>
           <button onClick={on_close} className="text-muted-foreground hover:text-foreground" aria-label="Chiudi">
             <X className="w-5 h-5" />
@@ -554,7 +554,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
         </div>
 
         <div className="px-6 pt-4 pb-2 flex-shrink-0">
-          <StepDots step={step} total={4} labels={STEP_LABELS} />
+          <StepDots step={step} total={2} labels={STEP_LABELS} />
         </div>
 
         {error_db && (
@@ -875,7 +875,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
             </div>
           )}
 
-          {step === 3 && (() => {
+          {step === 2 && (() => {
             const render_chip = (i: any, opts: { removable_only?: boolean } = {}) => {
               const selected = form.istruttori_ids.includes(i.id);
               const colore = i.colore || "#6B7280";
