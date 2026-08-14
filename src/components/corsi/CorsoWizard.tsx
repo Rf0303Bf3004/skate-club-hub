@@ -1031,19 +1031,19 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
               </Button>
             )}
             {step < 2 && (
-              <Button
-                onClick={() => set_step((s) => s + 1)}
-                disabled={(step === 1 && !can_next_1) || (step === 2 && !can_next_2)}
-                title={
-                  step === 1 && errors_step1.length > 0
-                    ? `Compila: ${errors_step1.join(", ")}`
-                    : step === 2 && errors_step2.length > 0
-                    ? `Compila: ${errors_step2.join(", ")}`
-                    : ""
-                }
-              >
-                Avanti <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
+              <div className="flex flex-col items-end gap-1">
+                {errors_step1.length > 0 && (
+                  <span className="text-[11px] text-destructive">
+                    Manca: {errors_step1.join(", ")}
+                  </span>
+                )}
+                <Button
+                  onClick={() => set_step((s) => s + 1)}
+                  disabled={step === 1 && !can_next_1}
+                >
+                  Avanti <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
             )}
             {step === 2 && (
               <Button
