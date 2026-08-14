@@ -22,6 +22,7 @@ export default function NuovaStagionePage() {
   const [data_inizio, set_data_inizio] = useState("");
   const [data_fine, set_data_fine] = useState("");
   const [conferma, set_conferma] = useState(false);
+  const [ack, set_ack] = useState<Record<number, boolean>>({});
   const [submitting, set_submitting] = useState(false);
 
   const { data: stagione_attiva } = useQuery({
@@ -42,7 +43,7 @@ export default function NuovaStagionePage() {
   const can_advance = () => {
     if (step === 0) return nome.trim() && data_inizio && data_fine;
     if (step === 4) return conferma;
-    return true;
+    return !!ack[step];
   };
 
   const handle_complete = async () => {

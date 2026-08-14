@@ -1046,18 +1046,21 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
               </div>
             )}
             {step === 2 && (
-              <Button
-                onClick={handle_submit}
-                disabled={saving || istruttori_ko_selezionati.length > 0}
-                className="bg-primary hover:bg-primary/90"
-                title={
-                  istruttori_ko_selezionati.length > 0
-                    ? `Rimuovi prima gli istruttori non disponibili: ${istruttori_ko_selezionati.map((i: any) => `${i.nome} ${i.cognome}`).join(", ")}`
-                    : ""
-                }
-              >
-                {saving ? "Salvataggio..." : "💾 Salva corso"}
-              </Button>
+              <div className="flex flex-col items-end gap-1">
+                {istruttori_ko_selezionati.length > 0 && (
+                  <span className="text-[11px] text-destructive max-w-[320px] text-right">
+                    Rimuovi prima gli istruttori non disponibili:{" "}
+                    {istruttori_ko_selezionati.map((i: any) => `${i.nome} ${i.cognome}`).join(", ")}
+                  </span>
+                )}
+                <Button
+                  onClick={handle_submit}
+                  disabled={saving || istruttori_ko_selezionati.length > 0}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  {saving ? "Salvataggio..." : "💾 Salva corso"}
+                </Button>
+              </div>
             )}
           </div>
         </div>
