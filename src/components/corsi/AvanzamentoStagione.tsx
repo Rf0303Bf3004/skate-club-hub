@@ -26,7 +26,7 @@ const CARDS: {
   },
   {
     key: "da_pianificare",
-    label: "Da pianificare",
+    label: "Da posizionare",
     icon: CalendarClock,
     tone: "border-border hover:border-amber-400/60 text-amber-700",
     tone_active: "border-amber-500 bg-amber-50 text-amber-800",

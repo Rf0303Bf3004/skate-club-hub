@@ -25,6 +25,7 @@ import AnnullaCorsoDialog from "@/components/planning/AnnullaCorsoDialog";
 import { PosizionamentoWizard } from "@/components/planning/PosizionamentoWizard";
 import SpostaCorsoDialog from "@/components/planning/SpostaCorsoDialog";
 import AvvisaAtletiDialog from "@/components/planning/AvvisaAtletiDialog";
+import SlotMenu from "@/components/planning/SlotMenu";
 import { istruttore_disponibile, compute_exception_diff, type exception_diff_entry } from "@/lib/availability";
 import MeseView from "@/components/planning/MeseView";
 import { use_elimina_corso } from "@/hooks/use-supabase-mutations";
@@ -1525,6 +1526,23 @@ function PlanningPageInner() {
     }
   };
 
+  // ── Menu contestuale unico sullo slot: azioni pertinenti al blocco ──
+  const azioni_slot = (c: any) => ({
+    titolo: c?.nome ?? "Corso",
+    sottotitolo: `${c?.ora_inizio?.slice(0, 5) ?? ""}–${c?.ora_fine?.slice(0, 5) ?? ""}`,
+    on_dettagli: () => set_selected_corso_id(c.id),
+    on_modifica: () => set_show_edit_corso(c),
+    on_sposta: c?._is_plan_row ? () => set_sposta_dialog(c) : undefined,
+    on_annulla: c?._is_plan_row
+      ? async () => {
+          const sid = await ensure_settimana_id();
+          if (!sid) return;
+          set_annulla_dialog({ ...c, settimana_id: sid });
+        }
+      : undefined,
+    on_rimuovi: build_mode ? () => remove_corso(c) : undefined,
+  });
+
   // ── Confirmation dialog handler ──
   const handle_confirm_place = () => {
     if (!confirm_place) return;
@@ -1662,7 +1680,7 @@ function PlanningPageInner() {
 
           {/* Content */}
           <div className="flex flex-1 overflow-hidden">
-            {/* Sidebar left - build mode backlog */}
+            {/* Sidebar left - corsi da posizionare */}
             {build_mode && (
               <SidebarErrorBoundary className="w-[280px] flex-shrink-0 border-r border-border overflow-y-auto p-3 space-y-2 bg-muted/30">
                 <SidebarCostruzione
@@ -1755,7 +1773,8 @@ function PlanningPageInner() {
                     const exc = exceptions_by_id[c.id];
                     const has_exc = !!exc && exc.length > 0;
                     return (
-                      <Tooltip key={c.id}>
+                      <SlotMenu key={c.id} {...azioni_slot(c)}>
+                        <Tooltip>
                         <TooltipTrigger asChild>
                           <div
                             className={`absolute z-[3] rounded flex flex-col justify-center overflow-hidden cursor-pointer ${is_selected ? "ring-2 ring-primary" : ""} ${is_conflict ? "animate-pulse" : ""}`}
@@ -1830,7 +1849,8 @@ function PlanningPageInner() {
                             </div>
                           )}
                         </TooltipContent>
-                      </Tooltip>
+                        </Tooltip>
+                      </SlotMenu>
                     );
                   })
                 )}
@@ -1887,7 +1907,8 @@ function PlanningPageInner() {
                       const colore = first_istr?.colore || OFF_ICE_COLORS[(c.tipo || "").toLowerCase()] || "#94A3B8";
                       const is_conflict = conflict_ids.has(c.id);
                       return (
-                        <Tooltip key={c.id}>
+                        <SlotMenu key={c.id} {...azioni_slot(c)}>
+                          <Tooltip>
                           <TooltipTrigger asChild>
                             <div
                               className={`absolute top-1 bottom-1 rounded-sm cursor-pointer flex items-center px-1 overflow-hidden ${is_conflict ? "animate-pulse" : ""}`}
@@ -1910,7 +1931,8 @@ function PlanningPageInner() {
                             <p className="text-xs">Off-ice · {c.ora_inizio?.slice(0,5)}–{c.ora_fine?.slice(0,5)}</p>
                             {is_conflict && <p className="text-xs font-bold mt-1" style={{ color: "#DC2626" }}>⚠ Conflitto istruttore</p>}
                           </TooltipContent>
-                        </Tooltip>
+                          </Tooltip>
+                        </SlotMenu>
                       );
                     })}
                     </div>
@@ -2127,7 +2149,10 @@ function PlanningPageInner() {
               <Button variant="ghost" size="sm" onClick={go_today} className="text-xs"><Calendar className="h-3.5 w-3.5 mr-1" />Oggi</Button>
             </div>
           )}
-          <div className="inline-flex rounded-lg border border-border overflow-hidden ml-auto">
+          <span className="hidden lg:inline text-[11px] text-muted-foreground ml-auto">
+            Tocca a lungo (o tasto destro) su un corso per aprire le azioni
+          </span>
+          <div className="inline-flex rounded-lg border border-border overflow-hidden lg:ml-3 ml-auto">
             {(["giorno", "settimana", "mese"] as ViewMode[]).map((m, idx) => (
               <button key={m} onClick={() => set_view(m)}
                 className={`px-3 py-1.5 text-sm font-medium transition-colors capitalize ${view_mode === m ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"} ${idx > 0 ? "border-l border-border" : ""}`}
@@ -2376,7 +2401,8 @@ function PlanningPageInner() {
                           const exc = exceptions_by_id[c.id];
                           const has_exc = !!exc && exc.length > 0;
                           return (
-                            <Tooltip key={c.id}>
+                            <SlotMenu key={c.id} {...azioni_slot(c)}>
+                              <Tooltip>
                               <TooltipTrigger asChild>
                                 <div className={`absolute z-[3] rounded-sm overflow-hidden ${pulse ? "animate-pulse" : ""} flex items-center justify-center`} style={{
                                   left: `${((cs - range_start) / total_min) * 100}%`,
@@ -2420,7 +2446,8 @@ function PlanningPageInner() {
                                   </div>
                                 )}
                               </TooltipContent>
-                            </Tooltip>
+                              </Tooltip>
+                            </SlotMenu>
                           );
                         })
                       )}
@@ -2475,7 +2502,8 @@ function PlanningPageInner() {
                           const exc = exceptions_by_id[c.id];
                           const has_exc = !!exc && exc.length > 0;
                           return (
-                            <Tooltip key={c.id}>
+                            <SlotMenu key={c.id} {...azioni_slot(c)}>
+                              <Tooltip>
                               <TooltipTrigger asChild>
                                 <div className={`absolute z-[3] rounded-sm overflow-hidden ${pulse ? "animate-pulse" : ""} flex items-center justify-center`} style={{
                                   left: `${((cs - range_start) / total_min) * 100}%`,
@@ -2511,7 +2539,8 @@ function PlanningPageInner() {
                                   </div>
                                 )}
                               </TooltipContent>
-                            </Tooltip>
+                              </Tooltip>
+                            </SlotMenu>
                           );
                         })
                       )}

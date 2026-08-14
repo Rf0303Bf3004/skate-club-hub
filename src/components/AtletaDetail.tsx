@@ -283,6 +283,26 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
 
   // Deep-link tab via ?tab=...
   const VALID_TABS = ["anagrafica", "livello", "corsi", "gare", "medagliere", "genitori", "fatture", "lezioni", "calendario", "storico_test"] as const;
+  // Etichette delle sotto-sezioni
+  const TAB_LABELS: Record<string, string> = {
+    anagrafica: t("anagrafica"),
+    genitori: t("genitori"),
+    corsi: t("corsi"),
+    lezioni: t("lezioni"),
+    calendario: "Calendario",
+    livello: t("livello"),
+    storico_test: "Storico test",
+    gare: t("gare"),
+    medagliere: t("medagliere"),
+    fatture: t("fatture"),
+  };
+  // 4 macro-aree che raggruppano le sotto-sezioni
+  const MACRO_AREE: { id: string; label: string; tabs: string[] }[] = [
+    { id: "profilo", label: "Profilo", tabs: ["anagrafica", "genitori"] },
+    { id: "attivita", label: "Attività", tabs: ["corsi", "lezioni", "calendario"] },
+    { id: "sportivo", label: "Sportivo", tabs: ["livello", "storico_test", "gare", "medagliere"] },
+    { id: "amministrativo", label: "Amministrativo", tabs: ["fatture"] },
+  ];
   const [search_params, set_search_params] = useSearchParams();
   const navigate = useNavigate();
   const initial_tab = (() => {
@@ -882,18 +902,43 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
         </div>
 
         <Tabs value={active_tab} onValueChange={handle_tab_change}>
-          <TabsList className="flex-wrap">
-            <TabsTrigger value="anagrafica">{t("anagrafica")}</TabsTrigger>
-            <TabsTrigger value="livello">{t("livello")}</TabsTrigger>
-            <TabsTrigger value="corsi">{t("corsi")}</TabsTrigger>
-            <TabsTrigger value="gare">{t("gare")}</TabsTrigger>
-            <TabsTrigger value="medagliere">{t("medagliere")}</TabsTrigger>
-            <TabsTrigger value="genitori">{t("genitori")}</TabsTrigger>
-            <TabsTrigger value="fatture">{t("fatture")}</TabsTrigger>
-            <TabsTrigger value="lezioni">{t("lezioni")}</TabsTrigger>
-            <TabsTrigger value="calendario">Calendario</TabsTrigger>
-            <TabsTrigger value="storico_test">Storico Test</TabsTrigger>
-          </TabsList>
+          {/* ── Navigazione a 2 livelli: 4 macro-aree + sotto-sezioni ── */}
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {MACRO_AREE.map((m) => {
+                const attiva = m.tabs.includes(active_tab as any);
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => handle_tab_change(m.tabs[0])}
+                    aria-current={attiva ? "true" : undefined}
+                    className={`min-h-11 rounded-xl border-2 px-3 py-2 text-sm font-semibold transition-all ${
+                      attiva
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                    }`}
+                  >
+                    {m.label}
+                  </button>
+                );
+              })}
+            </div>
+            {(() => {
+              const macro = MACRO_AREE.find((m) => m.tabs.includes(active_tab as any)) ?? MACRO_AREE[0];
+              if (macro.tabs.length < 2) return null;
+              return (
+                <TabsList className="flex-wrap">
+                  {macro.tabs.map((tb) => (
+                    <TabsTrigger key={tb} value={tb}>
+                      {TAB_LABELS[tb]}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              );
+            })()}
+          </div>
+
 
           {/* ── Anagrafica ── */}
           <TabsContent value="anagrafica" className="mt-6">

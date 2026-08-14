@@ -368,7 +368,7 @@ const PortaleAtletaPage: React.FC = () => {
                       <div className="flex-1 min-w-0">
                         <h3 className="text-sm font-bold text-foreground">{corso.nome}</h3>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {corso.giorno || "Da pianificare"}
+                          {corso.giorno || "Da posizionare"}
                           {corso.ora_inizio && ` · ${corso.ora_inizio.slice(0, 5)}`}
                           {corso.ora_fine && ` - ${corso.ora_fine.slice(0, 5)}`}
                         </p>

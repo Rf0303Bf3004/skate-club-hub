@@ -538,7 +538,10 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
     }
   };
 
-  const STEP_LABELS = ["Anagrafica", "Collocamento", "Istruttori", "Riepilogo"];
+  const check_slot = has_slot;
+  const check_istruttore = form.istruttori_ids.length > 0;
+
+  const STEP_LABELS = ["Il corso", "Quando e con chi"];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -546,7 +549,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
         <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
           <div>
             <h2 className="text-base font-bold text-foreground">{is_edit ? "Ridefinisci corso" : "Nuovo corso"}</h2>
-            <p className="text-xs text-muted-foreground">Step {step} di 4 · {STEP_LABELS[step - 1]}</p>
+            <p className="text-xs text-muted-foreground">Step {step} di 2 · {STEP_LABELS[step - 1]}</p>
           </div>
           <button onClick={on_close} className="text-muted-foreground hover:text-foreground" aria-label="Chiudi">
             <X className="w-5 h-5" />
@@ -554,7 +557,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
         </div>
 
         <div className="px-6 pt-4 pb-2 flex-shrink-0">
-          <StepDots step={step} total={4} labels={STEP_LABELS} />
+          <StepDots step={step} total={2} labels={STEP_LABELS} />
         </div>
 
         {error_db && (
@@ -731,7 +734,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                 <div className="space-y-0.5">
                   <Label className="text-sm font-semibold cursor-pointer">Posiziona subito nel planning</Label>
                   <p className="text-[11px] text-muted-foreground">
-                    {posiziona_planning ? "Giorno e ora obbligatori" : "Il corso resterà nel backlog 'Da posizionare'"}
+                    {posiziona_planning ? "Giorno e ora obbligatori" : "Decido dopo dove metterlo: il corso resta in 'Da posizionare'"}
                   </p>
                 </div>
                 <input
@@ -869,13 +872,13 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
 
               {!posiziona_planning && (
                 <div className="px-3 py-2 rounded-lg bg-blue-50 border border-blue-200 text-xs text-blue-700">
-                  Il corso verrà salvato senza giorno e orario. Lo potrai posizionare dopo dal backlog del Planning.
+                  Il corso verrà salvato senza giorno e orario. Lo potrai posizionare dopo da 'Da posizionare' nel Planning.
                 </div>
               )}
             </div>
           )}
 
-          {step === 3 && (() => {
+          {step === 2 && (() => {
             const render_chip = (i: any, opts: { removable_only?: boolean } = {}) => {
               const selected = form.istruttori_ids.includes(i.id);
               const colore = i.colore || "#6B7280";
@@ -946,16 +949,8 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                         Nessun istruttore è disponibile il {form.giorno} dalle {form.ora_inizio} alle {form.ora_fine}
                       </p>
                       <p className="text-xs text-rose-700">
-                        Torna allo step Collocamento e scegli un altro slot, oppure apri la pagina Istruttori per aggiungere disponibilità dichiarate.
+                        Scegli un altro slot qui sopra, oppure apri la pagina Istruttori per aggiungere disponibilità dichiarate.
                       </p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => set_step(2)}
-                        className="mt-2"
-                      >
-                        <ChevronLeft className="w-4 h-4 mr-1" /> Torna a Collocamento
-                      </Button>
                     </div>
                   </div>
                 ) : (
@@ -975,99 +970,34 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
             );
           })()}
 
-          {step === 4 && (
-            <div className="space-y-3">
-              <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase">Nome</span>
-                  <span className="text-sm font-semibold">{form.nome || "—"}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase">Tipo</span>
-                  <span className="text-sm font-semibold flex items-center gap-1.5">
-                    {form.tipo === "Ghiaccio" ? <Snowflake className="w-3.5 h-3.5 text-primary" /> : form.tipo === "Off-Ice" ? <Dumbbell className="w-3.5 h-3.5 text-primary" /> : null}
-                    {form.tipo || "—"}
-                    {form.tipo === "Off-Ice" && form.categoria && <span className="text-muted-foreground">· {form.categoria}</span>}
+          {/* Striscia di verifica: sostituisce il vecchio step Riepilogo */}
+          {step === 2 && (
+            <div className="rounded-xl border border-border bg-muted/20 px-3 py-2.5 space-y-1.5">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+                <span className="inline-flex items-center gap-1.5">
+                  {check_slot ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> : <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />}
+                  <span className={check_slot ? "text-emerald-700 font-medium" : "text-amber-700 font-medium"}>
+                    {check_slot ? `${form.giorno} ${form.ora_inizio}–${form.ora_fine}` : "Da posizionare"}
                   </span>
-                </div>
-                {form.tipo === "Ghiaccio" && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase">Livello</span>
-                    <span className="text-sm">{form.livello_richiesto || "Tutti i livelli"}{is_carriera && form.percorso ? ` · ${form.percorso === "artistica" ? "Artistica" : "Stile"}` : ""}</span>
-                  </div>
-                )}
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase">Collocamento</span>
-                  <span className="text-sm">
-                    {posiziona_planning && form.giorno && form.ora_inizio && form.ora_fine
-                      ? `${form.giorno} ${form.ora_inizio}–${form.ora_fine} (${form.durata} min)`
-                      : "Da posizionare in seguito"}
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  {check_istruttore ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> : <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />}
+                  <span className={check_istruttore ? "text-emerald-700 font-medium" : "text-amber-700 font-medium"}>
+                    {check_istruttore ? `${form.istruttori_ids.length} istruttore/i` : "Nessun istruttore"}
                   </span>
-                </div>
-                <div className="flex items-start justify-between gap-3">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase pt-1">Istruttori</span>
-                  <div className="flex flex-wrap gap-1.5 justify-end max-w-[70%]">
-                    {form.istruttori_ids.length === 0 ? (
-                      <span className="text-sm text-muted-foreground">Nessuno</span>
-                    ) : (
-                      form.istruttori_ids.map((id: string) => {
-                        const i = istruttori.find((x: any) => x.id === id);
-                        if (!i) return null;
-                        const cls = has_slot ? classify_istruttore(i) : { bucket: "ok" as Bucket, tooltip: "" };
-                        const is_ko = cls.bucket === "ko";
-                        const colore = i.colore || "#6B7280";
-                        return (
-                          <button
-                            key={id}
-                            type="button"
-                            onClick={() => toggle_istruttore(id)}
-                            title={is_ko ? `${cls.tooltip} — clicca per rimuovere` : "Clicca per rimuovere"}
-                            className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium border-2 cursor-pointer transition-all hover:opacity-80 ${
-                              is_ko ? "ring-1 ring-rose-300" : ""
-                            }`}
-                            style={{
-                              borderColor: is_ko ? "#dc2626" : colore,
-                              backgroundColor: is_ko ? "#fef2f2" : `${colore}20`,
-                              color: is_ko ? "#b91c1c" : colore,
-                            }}
-                          >
-                            {i.nome} {i.cognome}
-                            <X className="w-3 h-3" />
-                          </button>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
-                {istruttori_ko_selezionati.length > 0 && (
-                  <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-rose-50 border border-rose-300 mt-1">
-                    <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs text-rose-800">
-                      <strong>Salvataggio bloccato:</strong> rimuovi gli istruttori non disponibili (chip rosse con ✕) prima di salvare.
-                    </p>
-                  </div>
-                )}
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase">Costi</span>
-                  <span className="text-sm">
-                    {form.costo_mensile_str ? `CHF ${form.costo_mensile_str}/mese` : "—"}
-                    {form.costo_annuale_str ? ` · CHF ${form.costo_annuale_str}/anno` : ""}
-                  </span>
-                </div>
+                </span>
+                <span className="text-muted-foreground">
+                  {form.nome || "Senza nome"} · {form.tipo || "—"} · {form.durata} min
+                </span>
               </div>
-
-              {error_db && (
-                <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-3 space-y-2">
-                  <details className="text-xs text-destructive/80">
-                    <summary className="cursor-pointer font-medium">Dettaglio tecnico errore</summary>
-                    <pre className="mt-2 whitespace-pre-wrap break-words bg-destructive/10 p-2 rounded">{error_db}</pre>
-                  </details>
+              {istruttori_ko_selezionati.length > 0 && (
+                <div className="flex items-start gap-2 px-2 py-1.5 rounded-lg bg-rose-50 border border-rose-300">
+                  <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-rose-800">
+                    <strong>Salvataggio bloccato:</strong> togli gli istruttori non disponibili ({istruttori_ko_selezionati.map((i: any) => `${i.nome} ${i.cognome}`).join(", ")}).
+                  </p>
                 </div>
               )}
-
-              <p className="text-xs text-muted-foreground">
-                Verifica e premi <strong>Salva corso</strong>. I dati verranno scritti nel database.
-              </p>
             </div>
           )}
         </div>
@@ -1100,7 +1030,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                 <ChevronLeft className="w-4 h-4 mr-1" /> Indietro
               </Button>
             )}
-            {step < 4 && (
+            {step < 2 && (
               <Button
                 onClick={() => set_step((s) => s + 1)}
                 disabled={(step === 1 && !can_next_1) || (step === 2 && !can_next_2)}
@@ -1115,7 +1045,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                 Avanti <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             )}
-            {step === 4 && (
+            {step === 2 && (
               <Button
                 onClick={handle_submit}
                 disabled={saving || istruttori_ko_selezionati.length > 0}

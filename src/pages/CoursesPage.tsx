@@ -20,6 +20,7 @@ import { use_upsert_corso, use_elimina_corso, use_upsert_presenza_corso } from "
 import { istruttore_disponibile, calcola_status_istruttori_per_slot } from "@/lib/availability";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -2363,15 +2364,17 @@ const CoursesPage: React.FC = () => {
   }, [stagioni]);
 
   // Filters
+  const [ricerca_corso, set_ricerca_corso] = useState("");
   const [filtro_giorno, set_filtro_giorno] = useState("Tutti");
   const [filtro_tipo, set_filtro_tipo] = useState("");
   const [filtro_istruttore, set_filtro_istruttore] = useState("");
   const [filtro_stato, set_filtro_stato] = useState<StatoCorso>("tutti");
 
   const has_filters =
-    filtro_giorno !== "Tutti" || filtro_tipo !== "" || filtro_istruttore !== "" || filtro_stato !== "tutti";
+    ricerca_corso.trim() !== "" || filtro_giorno !== "Tutti" || filtro_tipo !== "" || filtro_istruttore !== "" || filtro_stato !== "tutti";
 
   const reset_filters = () => {
+    set_ricerca_corso("");
     set_filtro_giorno("Tutti");
     set_filtro_tipo("");
     set_filtro_istruttore("");
@@ -2394,7 +2397,9 @@ const CoursesPage: React.FC = () => {
   }, [stato_per_corso]);
 
   const corsi_filtrati = useMemo(() => {
+    const q = ricerca_corso.trim().toLowerCase();
     return corsi
+      .filter((c: any) => !q || `${c.nome ?? ""} ${c.tipo ?? ""}`.toLowerCase().includes(q))
       .filter((c: any) => filtro_giorno === "Tutti" || c.giorno === filtro_giorno)
       .filter((c: any) => !filtro_tipo || c.tipo === filtro_tipo)
       .filter((c: any) => !filtro_istruttore || (c.istruttori_ids || []).includes(filtro_istruttore))
@@ -2405,15 +2410,15 @@ const CoursesPage: React.FC = () => {
         if (day_a !== day_b) return day_a - day_b;
         return time_to_min(a.ora_inizio) - time_to_min(b.ora_inizio);
       });
-  }, [corsi, filtro_giorno, filtro_tipo, filtro_istruttore, filtro_stato, stato_per_corso]);
+  }, [corsi, ricerca_corso, filtro_giorno, filtro_tipo, filtro_istruttore, filtro_stato, stato_per_corso]);
 
   const corsi_per_giorno = useMemo(() => {
     const groups: Record<string, any[]> = {};
     GIORNI_DB.forEach(g => { groups[g] = []; });
-    groups["Da pianificare"] = [];
+    groups["Da posizionare"] = [];
     corsi_filtrati.forEach((c: any) => {
       if (c.giorno && GIORNI_DB.includes(c.giorno)) groups[c.giorno].push(c);
-      else groups["Da pianificare"].push(c);
+      else groups["Da posizionare"].push(c);
     });
     return groups;
   }, [corsi_filtrati]);
@@ -2758,6 +2763,26 @@ const CoursesPage: React.FC = () => {
         </div>
 
 
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          <Input
+            value={ricerca_corso}
+            onChange={(e) => set_ricerca_corso(e.target.value)}
+            placeholder="Cerca corso per nome o tipo…"
+            className="pl-9 pr-9 h-11"
+          />
+          {ricerca_corso && (
+            <button
+              type="button"
+              aria-label="Cancella ricerca"
+              onClick={() => set_ricerca_corso("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md hover:bg-muted"
+            >
+              <X className="w-4 h-4 text-muted-foreground" />
+            </button>
+          )}
+        </div>
+
         <FilterBar
           giorno={filtro_giorno}
           setGiorno={set_filtro_giorno}
@@ -2781,13 +2806,13 @@ const CoursesPage: React.FC = () => {
           </div>
         ) : vista === "giorno" ? (
           <div className="space-y-6">
-            {[...GIORNI_DB, "Da pianificare"].map((giorno) => {
+            {[...GIORNI_DB, "Da posizionare"].map((giorno) => {
               const group = corsi_per_giorno[giorno] || [];
               if (group.length === 0) return null;
               return (
                 <div key={giorno}>
                   <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-3 border-b border-border pb-1">
-                    {giorno === "Da pianificare" ? "📋 Da pianificare" : giorno}
+                    {giorno === "Da posizionare" ? "📋 Da posizionare" : giorno}
                     <span className="text-xs font-normal ml-2 text-muted-foreground">({group.length})</span>
                   </h2>
                   <div className="space-y-2">
