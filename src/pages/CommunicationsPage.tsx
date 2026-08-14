@@ -357,7 +357,7 @@ const CommunicationsPage: React.FC = () => {
   };
 
   const open_new = () => {
-    set_step('choose');
+    set_step('form');
     set_selected_template(null);
     set_placeholders({});
     set_titolo('');
@@ -656,43 +656,28 @@ const CommunicationsPage: React.FC = () => {
             <DialogTitle>{t('nuova_comunicazione')}</DialogTitle>
           </DialogHeader>
 
-          {step === 'choose' && (
-            <div className="space-y-3">
-              <button onClick={() => set_step('template_pick')}
-                className="w-full flex items-center gap-3 p-4 rounded-xl border border-border hover:border-primary/40 transition-colors text-left">
-                <FileText className="w-5 h-5 text-primary flex-shrink-0" />
-                <div>
-                  <p className="font-semibold text-foreground">Da template</p>
-                  <p className="text-xs text-muted-foreground">Scegli tra 5 template predefiniti</p>
-                </div>
-              </button>
-              <button onClick={start_custom}
-                className="w-full flex items-center gap-3 p-4 rounded-xl border border-border hover:border-primary/40 transition-colors text-left">
-                <Pencil className="w-5 h-5 text-primary flex-shrink-0" />
-                <div>
-                  <p className="font-semibold text-foreground">Personalizzata</p>
-                  <p className="text-xs text-muted-foreground">Scrivi una comunicazione libera</p>
-                </div>
-              </button>
-            </div>
-          )}
-
-          {step === 'template_pick' && (
-            <div className="space-y-2">
-              {TEMPLATES.map((tpl) => (
-                <button key={tpl.id} onClick={() => pick_template(tpl)}
-                  className="w-full text-left p-3 rounded-xl border border-border hover:border-primary/40 transition-colors space-y-1">
-                  <p className="font-semibold text-foreground text-sm">{tpl.nome}</p>
-                  <p className="text-xs text-muted-foreground line-clamp-2">{tpl.testo}</p>
-                  <Badge variant="secondary" className="text-[10px]">{tpl.tipo_destinatari === 'tutti' ? 'Tutti' : 'Per corso'}</Badge>
-                </button>
-              ))}
-              <Button variant="ghost" size="sm" onClick={() => set_step('choose')} className="text-xs">← Indietro</Button>
-            </div>
-          )}
-
           {step === 'form' && (
             <div className="space-y-4">
+              <div>
+                <Label className="text-xs">Parti da</Label>
+                <Select
+                  value={selected_template ? selected_template.id : 'custom'}
+                  onValueChange={(v) => {
+                    if (v === 'custom') { start_custom(); return; }
+                    const tpl = TEMPLATES.find((x) => x.id === v);
+                    if (tpl) pick_template(tpl);
+                  }}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="custom">Comunicazione personalizzata</SelectItem>
+                    {TEMPLATES.map((tpl) => (
+                      <SelectItem key={tpl.id} value={tpl.id}>{tpl.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               {/* Placeholder inputs */}
               {selected_template && selected_template.placeholders.length > 0 && (
                 <div className="space-y-2 p-3 bg-muted/30 rounded-xl">
