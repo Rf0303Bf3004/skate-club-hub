@@ -1020,9 +1020,10 @@ const AthletesPage: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => !quick_saving && set_quick_open(false)}>
           <div className="w-full max-w-md rounded-2xl bg-card border p-5 space-y-4" onClick={(e) => e.stopPropagation()}>
             <div>
-              <h2 className="text-lg font-semibold">Iscrivi nuovo atleta</h2>
+              <h2 className="text-lg font-semibold">Nuovo atleta</h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Crea la scheda minima: il resto lo completa il genitore dalla pagina di iscrizione.
+                Bastano questi dati per creare la scheda: il resto lo completa il genitore dalla pagina di iscrizione.
+                Se preferisci inserire tutto ora, usa "Compila subito la scheda completa".
               </p>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -1056,7 +1057,19 @@ const AthletesPage: React.FC = () => {
               </Field>
             </div>
 
-            <div className="flex justify-end gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <Button
+                variant="ghost"
+                className="mr-auto text-muted-foreground"
+                disabled={quick_saving}
+                onClick={() => {
+                  set_quick_open(false);
+                  set_selected_atleta(null);
+                  set_modal_open(true);
+                }}
+              >
+                Compila subito la scheda completa
+              </Button>
               <Button variant="ghost" onClick={() => set_quick_open(false)} disabled={quick_saving}>Annulla</Button>
               <Button onClick={crea_atleta_rapido} disabled={quick_saving}>
                 {quick_saving ? "Creazione…" : "Crea e stampa scheda"}
@@ -1105,17 +1118,8 @@ const AthletesPage: React.FC = () => {
               </Button>
             )}
             <Button
-              variant="outline"
-              onClick={() => set_quick_open(true)}
-            >
-              <Plus className="w-4 h-4 mr-2" /> Iscrivi nuovo atleta
-            </Button>
-            <Button
               className="bg-primary hover:bg-primary/90"
-              onClick={() => {
-                set_selected_atleta(null);
-                set_modal_open(true);
-              }}
+              onClick={() => set_quick_open(true)}
             >
               <Plus className="w-4 h-4 mr-2" /> {t("nuovo_atleta")}
             </Button>
