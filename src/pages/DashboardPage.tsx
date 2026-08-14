@@ -431,6 +431,9 @@ const BoxComunicazione: React.FC<{
   const [template_raw, set_template_raw] = useState<string | null>(null);
   const [ph_values, set_ph_values] = useState<Record<string, string>>({});
   const [ph_motivo_altro, set_ph_motivo_altro] = useState("");
+  const [esclusi, set_esclusi] = useState<string[]>([]);
+  const [mostra_gruppo, set_mostra_gruppo] = useState(false);
+  const [gruppo_search, set_gruppo_search] = useState("");
 
   // Applica preset esterno (es. "Invia auguri" da banner compleanno)
   const last_preset_marker = React.useRef<string | null>(null);
