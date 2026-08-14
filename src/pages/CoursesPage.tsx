@@ -2708,19 +2708,41 @@ const CoursesPage: React.FC = () => {
         />
       )}
 
+      {duplica_open && (
+        <DuplicaStagioneDialog
+          stagioni={stagioni}
+          corsi={corsi}
+          stagione_corrente_id={stagione_corrente_id}
+          on_close={() => set_duplica_open(false)}
+          on_done={() => qc.invalidateQueries({ queryKey: ["corsi"] })}
+        />
+      )}
+
       <div className="space-y-6 animate-fade-in">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
           <h1 className="text-xl font-bold tracking-tight text-foreground">{t("corsi")}</h1>
-          <Button
-            className="bg-primary hover:bg-primary/90"
-            onClick={() => {
-              set_wizard_corso(null);
-              set_wizard_open(true);
-            }}
-          >
-            <Plus className="w-4 h-4 mr-2" /> {t("nuovo_corso")}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => set_duplica_open(true)}>
+              <Copy className="w-4 h-4 mr-2" /> Duplica stagione
+            </Button>
+            <Button
+              className="bg-primary hover:bg-primary/90"
+              onClick={() => {
+                set_wizard_corso(null);
+                set_wizard_open(true);
+              }}
+            >
+              <Plus className="w-4 h-4 mr-2" /> {t("nuovo_corso")}
+            </Button>
+          </div>
         </div>
+
+        <AvanzamentoStagione
+          conteggi={conteggi_stato}
+          totale={corsi.length}
+          attivo={filtro_stato}
+          on_change={set_filtro_stato}
+        />
 
         {/* Vista toggle */}
         <div className="flex items-center gap-3 flex-wrap">
@@ -2733,6 +2755,7 @@ const CoursesPage: React.FC = () => {
             ))}
           </div>
         </div>
+
 
         <FilterBar
           giorno={filtro_giorno}
