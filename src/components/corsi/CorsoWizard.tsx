@@ -744,6 +744,21 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
 
               {posiziona_planning && (
                 <>
+                  {proposta_slot && (
+                    <div className="rounded-xl border border-primary/40 bg-primary/5 p-3 flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground">Proposta automatica</p>
+                        <p className="text-xs text-muted-foreground">
+                          {proposta_slot.giorno} {proposta_slot.ora_inizio}–{proposta_slot.ora_fine} · ghiaccio libero ·{" "}
+                          {proposta_slot.istruttore.nome} {proposta_slot.istruttore.cognome} disponibile
+                        </p>
+                      </div>
+                      <Button type="button" size="sm" onClick={applica_proposta} className="flex-shrink-0">
+                        Usa
+                      </Button>
+                    </div>
+                  )}
                   <div>
                     <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Giorno *</Label>
                     <select
