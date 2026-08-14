@@ -2870,9 +2870,18 @@ const CoursesPage: React.FC = () => {
                             <span className="font-semibold text-foreground">{c.nome}</span>
                           </div>
                           {!completezza.completo && (
-                            <Badge variant="outline" className="text-[10px] border-orange-300 bg-orange-50 text-orange-700 flex-shrink-0" title={completezza.motivo}>
-                              <AlertTriangle className="w-3 h-3 mr-1" />Incompleto
-                            </Badge>
+                            <>
+                              <Badge variant="outline" className="text-[10px] border-orange-300 bg-orange-50 text-orange-700 flex-shrink-0" title={completezza.motivo}>
+                                <AlertTriangle className="w-3 h-3 mr-1" />Incompleto
+                              </Badge>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); set_wizard_corso(c); set_wizard_open(true); }}
+                                className="flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline flex-shrink-0"
+                                title={completezza.motivo}
+                              >
+                                <Wand2 className="w-3.5 h-3.5" /> Sistema
+                              </button>
+                            </>
                           )}
                           {c.tipo && <Badge variant="secondary" className="text-xs flex-shrink-0">{c.tipo}</Badge>}
                           <span className="text-xs text-muted-foreground flex-shrink-0">{(c.atleti_ids||[]).length} iscritti</span>
