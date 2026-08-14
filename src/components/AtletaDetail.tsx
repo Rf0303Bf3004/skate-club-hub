@@ -283,6 +283,26 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
 
   // Deep-link tab via ?tab=...
   const VALID_TABS = ["anagrafica", "livello", "corsi", "gare", "medagliere", "genitori", "fatture", "lezioni", "calendario", "storico_test"] as const;
+  // Etichette delle sotto-sezioni
+  const TAB_LABELS: Record<string, string> = {
+    anagrafica: t("anagrafica"),
+    genitori: t("genitori"),
+    corsi: t("corsi"),
+    lezioni: t("lezioni"),
+    calendario: "Calendario",
+    livello: t("livello"),
+    storico_test: "Storico test",
+    gare: t("gare"),
+    medagliere: t("medagliere"),
+    fatture: t("fatture"),
+  };
+  // 4 macro-aree che raggruppano le sotto-sezioni
+  const MACRO_AREE: { id: string; label: string; tabs: string[] }[] = [
+    { id: "profilo", label: "Profilo", tabs: ["anagrafica", "genitori"] },
+    { id: "attivita", label: "Attività", tabs: ["corsi", "lezioni", "calendario"] },
+    { id: "sportivo", label: "Sportivo", tabs: ["livello", "storico_test", "gare", "medagliere"] },
+    { id: "amministrativo", label: "Amministrativo", tabs: ["fatture"] },
+  ];
   const [search_params, set_search_params] = useSearchParams();
   const navigate = useNavigate();
   const initial_tab = (() => {
