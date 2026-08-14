@@ -9,6 +9,7 @@ import {
   use_atleti_monitori,
   use_presenze_corso,
   use_disponibilita_ghiaccio,
+  use_stagioni,
   check_corso_completo,
   calcola_capienza_overlap,
   get_istruttore_name_from_list,
@@ -40,8 +41,26 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { CorsoWizard } from "@/components/corsi/CorsoWizard";
+import { AvanzamentoStagione, type StatoCorso } from "@/components/corsi/AvanzamentoStagione";
+import { DuplicaStagioneDialog } from "@/components/corsi/DuplicaStagioneDialog";
+import { Copy, Wand2 } from "lucide-react";
 
 const GIORNI_DB = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
+
+// Classifica un corso in una delle 4 colonne del protocollo di lavoro.
+function classifica_corso(
+  corso: any,
+  disp_ghiaccio: any[],
+  istruttori: any[],
+): Exclude<StatoCorso, "tutti"> {
+  const res = check_corso_completo(corso, disp_ghiaccio, istruttori);
+  if (res.completo) return "completi";
+  const motivo = (res.motivo || "").toLowerCase();
+  if (!corso.giorno || !corso.ora_inizio || !corso.ora_fine) return "da_pianificare";
+  if (motivo.includes("istruttore")) return "senza_istruttore";
+  if (motivo.includes("ghiaccio") || motivo.includes("disponibilità")) return "fuori_ghiaccio";
+  return "da_pianificare";
+}
 
 const LIVELLI_CORSO = [
   "tutti", "pulcini", "stellina1", "stellina2", "stellina3", "stellina4",
@@ -2334,32 +2353,58 @@ const CoursesPage: React.FC = () => {
   const [wizard_open, set_wizard_open] = useState(false);
   const [wizard_corso, set_wizard_corso] = useState<any>(null);
   const [vista, set_vista] = useState<"giorno" | "istruttore">("giorno");
+  const [duplica_open, set_duplica_open] = useState(false);
+
+  const { data: stagioni = [] } = use_stagioni();
+  const stagione_corrente_id = useMemo(() => {
+    const attiva = (stagioni ?? []).find((s: any) => s.attiva);
+    return attiva?.id ?? (stagioni ?? [])[0]?.id ?? null;
+  }, [stagioni]);
 
   // Filters
   const [filtro_giorno, set_filtro_giorno] = useState("Tutti");
   const [filtro_tipo, set_filtro_tipo] = useState("");
   const [filtro_istruttore, set_filtro_istruttore] = useState("");
+  const [filtro_stato, set_filtro_stato] = useState<StatoCorso>("tutti");
 
-  const has_filters = filtro_giorno !== "Tutti" || filtro_tipo !== "" || filtro_istruttore !== "";
+  const has_filters =
+    filtro_giorno !== "Tutti" || filtro_tipo !== "" || filtro_istruttore !== "" || filtro_stato !== "tutti";
 
   const reset_filters = () => {
     set_filtro_giorno("Tutti");
     set_filtro_tipo("");
     set_filtro_istruttore("");
+    set_filtro_stato("tutti");
   };
+
+  // Classificazione (protocollo): completi / da pianificare / senza istruttore / fuori ghiaccio
+  const stato_per_corso = useMemo(() => {
+    const map: Record<string, Exclude<StatoCorso, "tutti">> = {};
+    (corsi ?? []).forEach((c: any) => {
+      map[c.id] = classifica_corso(c, disp_ghiaccio, istruttori);
+    });
+    return map;
+  }, [corsi, disp_ghiaccio, istruttori]);
+
+  const conteggi_stato = useMemo(() => {
+    const base = { completi: 0, da_pianificare: 0, senza_istruttore: 0, fuori_ghiaccio: 0 };
+    Object.values(stato_per_corso).forEach((s) => { base[s] += 1; });
+    return base;
+  }, [stato_per_corso]);
 
   const corsi_filtrati = useMemo(() => {
     return corsi
       .filter((c: any) => filtro_giorno === "Tutti" || c.giorno === filtro_giorno)
       .filter((c: any) => !filtro_tipo || c.tipo === filtro_tipo)
       .filter((c: any) => !filtro_istruttore || (c.istruttori_ids || []).includes(filtro_istruttore))
+      .filter((c: any) => filtro_stato === "tutti" || stato_per_corso[c.id] === filtro_stato)
       .sort((a: any, b: any) => {
         const day_a = GIORNI_DB.indexOf(a.giorno);
         const day_b = GIORNI_DB.indexOf(b.giorno);
         if (day_a !== day_b) return day_a - day_b;
         return time_to_min(a.ora_inizio) - time_to_min(b.ora_inizio);
       });
-  }, [corsi, filtro_giorno, filtro_tipo, filtro_istruttore]);
+  }, [corsi, filtro_giorno, filtro_tipo, filtro_istruttore, filtro_stato, stato_per_corso]);
 
   const corsi_per_giorno = useMemo(() => {
     const groups: Record<string, any[]> = {};
@@ -2663,19 +2708,41 @@ const CoursesPage: React.FC = () => {
         />
       )}
 
+      {duplica_open && (
+        <DuplicaStagioneDialog
+          stagioni={stagioni}
+          corsi={corsi}
+          stagione_corrente_id={stagione_corrente_id}
+          on_close={() => set_duplica_open(false)}
+          on_done={() => qc.invalidateQueries({ queryKey: ["corsi"] })}
+        />
+      )}
+
       <div className="space-y-6 animate-fade-in">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
           <h1 className="text-xl font-bold tracking-tight text-foreground">{t("corsi")}</h1>
-          <Button
-            className="bg-primary hover:bg-primary/90"
-            onClick={() => {
-              set_wizard_corso(null);
-              set_wizard_open(true);
-            }}
-          >
-            <Plus className="w-4 h-4 mr-2" /> {t("nuovo_corso")}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => set_duplica_open(true)}>
+              <Copy className="w-4 h-4 mr-2" /> Duplica stagione
+            </Button>
+            <Button
+              className="bg-primary hover:bg-primary/90"
+              onClick={() => {
+                set_wizard_corso(null);
+                set_wizard_open(true);
+              }}
+            >
+              <Plus className="w-4 h-4 mr-2" /> {t("nuovo_corso")}
+            </Button>
+          </div>
         </div>
+
+        <AvanzamentoStagione
+          conteggi={conteggi_stato}
+          totale={corsi.length}
+          attivo={filtro_stato}
+          on_change={set_filtro_stato}
+        />
 
         {/* Vista toggle */}
         <div className="flex items-center gap-3 flex-wrap">
@@ -2688,6 +2755,7 @@ const CoursesPage: React.FC = () => {
             ))}
           </div>
         </div>
+
 
         <FilterBar
           giorno={filtro_giorno}
@@ -2738,9 +2806,18 @@ const CoursesPage: React.FC = () => {
                             {istruttori_corso.map((i: any) => `${i.nome} ${i.cognome?.charAt(0)}.`).join(", ") || "—"}
                           </span>
                           {!completezza.completo && (
-                            <Badge variant="outline" className="text-[10px] border-orange-300 bg-orange-50 text-orange-700 flex-shrink-0" title={completezza.motivo}>
-                              <AlertTriangle className="w-3 h-3 mr-1" />Incompleto
-                            </Badge>
+                            <>
+                              <Badge variant="outline" className="text-[10px] border-orange-300 bg-orange-50 text-orange-700 flex-shrink-0" title={completezza.motivo}>
+                                <AlertTriangle className="w-3 h-3 mr-1" />Incompleto
+                              </Badge>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); set_wizard_corso(c); set_wizard_open(true); }}
+                                className="flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline flex-shrink-0"
+                                title={completezza.motivo}
+                              >
+                                <Wand2 className="w-3.5 h-3.5" /> Sistema
+                              </button>
+                            </>
                           )}
                           {c.tipo && <Badge variant="secondary" className="text-xs flex-shrink-0">{c.tipo}</Badge>}
                           <span className="text-xs text-muted-foreground flex-shrink-0">{(c.atleti_ids||[]).length} iscritti</span>
@@ -2793,9 +2870,18 @@ const CoursesPage: React.FC = () => {
                             <span className="font-semibold text-foreground">{c.nome}</span>
                           </div>
                           {!completezza.completo && (
-                            <Badge variant="outline" className="text-[10px] border-orange-300 bg-orange-50 text-orange-700 flex-shrink-0" title={completezza.motivo}>
-                              <AlertTriangle className="w-3 h-3 mr-1" />Incompleto
-                            </Badge>
+                            <>
+                              <Badge variant="outline" className="text-[10px] border-orange-300 bg-orange-50 text-orange-700 flex-shrink-0" title={completezza.motivo}>
+                                <AlertTriangle className="w-3 h-3 mr-1" />Incompleto
+                              </Badge>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); set_wizard_corso(c); set_wizard_open(true); }}
+                                className="flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline flex-shrink-0"
+                                title={completezza.motivo}
+                              >
+                                <Wand2 className="w-3.5 h-3.5" /> Sistema
+                              </button>
+                            </>
                           )}
                           {c.tipo && <Badge variant="secondary" className="text-xs flex-shrink-0">{c.tipo}</Badge>}
                           <span className="text-xs text-muted-foreground flex-shrink-0">{(c.atleti_ids||[]).length} iscritti</span>

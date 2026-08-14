@@ -9,9 +9,9 @@ import { Check, ChevronLeft, ChevronRight, Snowflake, Dumbbell, AlertTriangle, X
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { GrigliaFasceGhiaccio, NumInput, to_num } from "@/pages/CoursesPage";
 import { toast } from "@/hooks/use-toast";
-import { calcola_status_istruttori_per_slot } from "@/lib/availability";
+import { calcola_status_istruttori_per_slot, norm_giorno, time_to_min as tmin } from "@/lib/availability";
 import { SelectLivello } from "@/components/ui/select-livello";
-import { use_livelli } from "@/hooks/use-supabase-data";
+import { use_livelli, use_disponibilita_ghiaccio } from "@/hooks/use-supabase-data";
 
 const GIORNI_DB = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
 const GIORNO_TO_WEEKDAY: Record<string, number> = {
@@ -369,6 +369,70 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
     [has_slot, status_istruttori, istruttori_attivi],
   );
 
+  // ── Proposta automatica di slot (solo corsi Ghiaccio) ──────────────
+  const { data: disp_ghiaccio_tutte = [] } = use_disponibilita_ghiaccio();
+
+  const proposta_slot = useMemo(() => {
+    if (form.tipo !== "Ghiaccio") return null;
+    const durata = Number(form.durata) || 60;
+    if (durata <= 0) return null;
+
+    // conflitti istruttore su TUTTI i giorni (dai corsi master)
+    const conflitti_all: any[] = [];
+    for (const c of corsi || []) {
+      if (!c || c.id === corso?.id || !c.ora_inizio || !c.ora_fine) continue;
+      for (const iid of c.istruttori_ids || []) {
+        conflitti_all.push({
+          corso_id: c.id,
+          istruttore_id: iid,
+          giorno: norm_giorno(c.giorno),
+          ora_inizio: c.ora_inizio,
+          ora_fine: c.ora_fine,
+        });
+      }
+    }
+
+    for (const g of GIORNI_DB) {
+      const fasce = (disp_ghiaccio_tutte as any[]).filter((f) => norm_giorno(f.giorno) === norm_giorno(g));
+      for (const f of fasce) {
+        const fs = tmin((f.ora_inizio || "").slice(0, 5));
+        const fe = tmin((f.ora_fine || "").slice(0, 5));
+        for (let s = fs; s + durata <= fe; s += 15) {
+          const e = s + durata;
+          const oi = `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+          const of_ = `${String(Math.floor(e / 60)).padStart(2, "0")}:${String(e % 60).padStart(2, "0")}`;
+          const st = calcola_status_istruttori_per_slot({
+            istruttori: istruttori_attivi,
+            giorno: g,
+            ora_inizio: oi,
+            ora_fine: of_,
+            planning_slots: conflitti_all.filter((x) => x.giorno === norm_giorno(g)),
+            corso_id_corrente: corso?.id ?? null,
+          });
+          const liberi = st.filter((x) => x.disponibile);
+          if (liberi.length > 0) {
+            return { giorno: g, ora_inizio: oi, ora_fine: of_, durata, istruttore: liberi[0].istruttore as any };
+          }
+        }
+      }
+    }
+    return null;
+  }, [form.tipo, form.durata, disp_ghiaccio_tutte, istruttori_attivi, corsi, corso?.id]);
+
+  const applica_proposta = () => {
+    if (!proposta_slot) return;
+    set_form((p) => ({
+      ...p,
+      giorno: proposta_slot.giorno,
+      ora_inizio: proposta_slot.ora_inizio,
+      ora_fine: proposta_slot.ora_fine,
+      durata: proposta_slot.durata,
+      istruttori_ids: p.istruttori_ids.includes(proposta_slot.istruttore.id)
+        ? p.istruttori_ids
+        : [...p.istruttori_ids, proposta_slot.istruttore.id],
+    }));
+  };
+
   const classify_istruttore = (i: any): { bucket: Bucket; label: string; tooltip: string } => {
     if (!has_slot) return { bucket: "ok", label: "", tooltip: "" };
     const s = status_istruttori.find((x) => x.istruttore.id === i.id);
@@ -680,6 +744,21 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
 
               {posiziona_planning && (
                 <>
+                  {proposta_slot && (
+                    <div className="rounded-xl border border-primary/40 bg-primary/5 p-3 flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground">Proposta automatica</p>
+                        <p className="text-xs text-muted-foreground">
+                          {proposta_slot.giorno} {proposta_slot.ora_inizio}–{proposta_slot.ora_fine} · ghiaccio libero ·{" "}
+                          {proposta_slot.istruttore.nome} {proposta_slot.istruttore.cognome} disponibile
+                        </p>
+                      </div>
+                      <Button type="button" size="sm" onClick={applica_proposta} className="flex-shrink-0">
+                        Usa
+                      </Button>
+                    </div>
+                  )}
                   <div>
                     <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Giorno *</Label>
                     <select
