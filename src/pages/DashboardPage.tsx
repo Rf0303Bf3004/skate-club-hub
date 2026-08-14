@@ -654,14 +654,26 @@ const BoxComunicazione: React.FC<{
     try {
       const is_birthday = last_preset_marker.current?.startsWith("birthday:") ?? false;
       const target_atleta_id = tipo_dest === "singolo_atleta" ? persona_id : null;
-      await crea.mutateAsync({
-        titolo,
-        testo,
-        tipo_destinatari: is_birthday ? "compleanno" : tipo_dest,
-        corso_id: tipo_dest === "corso" ? riferimento_id : null,
-        atleta_id: target_atleta_id,
-        urgente,
-      });
+      const con_esclusioni = !is_birthday && esclusi.length > 0 && atleti_inclusi.length > 0;
+
+      if (con_esclusioni) {
+        await crea.mutateAsync({
+          titolo,
+          testo,
+          tipo_destinatari: "atleti",
+          atleta_ids_manuali: atleti_inclusi.map((a) => a.id),
+          urgente,
+        });
+      } else {
+        await crea.mutateAsync({
+          titolo,
+          testo,
+          tipo_destinatari: is_birthday ? "compleanno" : tipo_dest,
+          corso_id: tipo_dest === "corso" ? riferimento_id : null,
+          atleta_id: target_atleta_id,
+          urgente,
+        });
+      }
       toast({ title: td("quick_comm.saved_toast") });
       set_titolo("");
       set_testo("");
@@ -669,7 +681,11 @@ const BoxComunicazione: React.FC<{
       set_template_raw(null);
       set_ph_values({});
       set_ph_motivo_altro("");
+      set_esclusi([]);
+      set_mostra_gruppo(false);
+      set_gruppo_search("");
       set_urgente(false);
+
     } catch (err: any) {
       toast({ title: td("toast.error"), description: err?.message, variant: "destructive" });
     }
