@@ -1525,6 +1525,31 @@ function PlanningPageInner() {
     }
   };
 
+  // ── Menu contestuale unico sullo slot: azioni pertinenti al blocco ──
+  const azioni_slot = (c: any) => ({
+    titolo: c?.nome ?? "Corso",
+    sottotitolo: `${c?.ora_inizio?.slice(0, 5) ?? ""}–${c?.ora_fine?.slice(0, 5) ?? ""}`,
+    on_dettagli: () => set_selected_corso_id(c.id),
+    on_modifica: () => set_show_edit_corso(c),
+    on_sposta: c?._is_plan_row ? () => set_sposta_dialog(c) : undefined,
+    on_annulla: c?._is_plan_row
+      ? async () => {
+          const sid = await ensure_settimana_id();
+          if (!sid) return;
+          set_annulla_dialog({ ...c, settimana_id: sid });
+        }
+      : undefined,
+    on_avvisa: c?._is_plan_row
+      ? () =>
+          set_avvisa_dialog({
+            tipo: "generico",
+            planning_corso_id: c.id,
+            contesto: { nome_corso: c.nome, ora_inizio: c.ora_inizio, ora_fine: c.ora_fine },
+          })
+      : undefined,
+    on_rimuovi: build_mode ? () => remove_corso(c) : undefined,
+  });
+
   // ── Confirmation dialog handler ──
   const handle_confirm_place = () => {
     if (!confirm_place) return;
