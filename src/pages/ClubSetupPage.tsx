@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
-import { Upload, Globe, Phone, Mail, MapPin, Hash, Users, UserCheck, Calendar, Building2, Plus, Trash2, Loader2 } from "lucide-react";
+import { Upload, Globe, Phone, Mail, MapPin, Hash, Users, UserCheck, Calendar, Building2, Plus, Trash2, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import CatalogoOffertaTab from "@/components/CatalogoOffertaTab";
 import FatturazioneTab from "@/components/FatturazioneTab";
 import { RegoleComunicazioniSection } from "@/components/comunicazioni/RegoleComunicazioniSection";
@@ -51,6 +51,21 @@ function use_disponibilita_ghiaccio() {
   });
 }
 
+function use_catalogo_count() {
+  const club_id = get_current_club_id();
+  return useQuery({
+    queryKey: ["catalogo_livelli_count", club_id],
+    enabled: !!club_id,
+    queryFn: async () => {
+      const { count } = await (supabase as any)
+        .from("catalogo_livelli")
+        .select("id", { count: "exact", head: true })
+        .eq("club_id", club_id);
+      return count ?? 0;
+    },
+  });
+}
+
 const ClubSetupPage: React.FC = () => {
   const { t } = useI18n();
   const queryClient = useQueryClient();
@@ -61,6 +76,7 @@ const ClubSetupPage: React.FC = () => {
   const { data: istruttori = [] } = use_istruttori();
   const { data: config_ghiaccio, isLoading: loading_config } = use_config_ghiaccio();
   const { data: disp_ghiaccio_raw, isLoading: loading_disp } = use_disponibilita_ghiaccio();
+  const { data: catalogo_count } = use_catalogo_count();
 
   const stagione_attiva = stagioni.find((s: any) => s.attiva);
   const [form, set_form] = useState<Record<string, any>>({});
@@ -427,10 +443,10 @@ const ClubSetupPage: React.FC = () => {
 
       <Tabs defaultValue="configurazione" className="w-full">
         <TabsList className="mb-4">
-          <TabsTrigger value="configurazione">Configurazione</TabsTrigger>
-          <TabsTrigger value="ghiaccio">Ghiaccio e Planning</TabsTrigger>
-          <TabsTrigger value="catalogo">Catalogo Offerta</TabsTrigger>
-          <TabsTrigger value="fatturazione">Fatturazione</TabsTrigger>
+          <TabsTrigger value="configurazione">{tab_label("configurazione", "Configurazione")}</TabsTrigger>
+          <TabsTrigger value="ghiaccio">{tab_label("ghiaccio", "Ghiaccio e Planning")}</TabsTrigger>
+          <TabsTrigger value="catalogo">{tab_label("catalogo", "Catalogo Offerta")}</TabsTrigger>
+          <TabsTrigger value="fatturazione">{tab_label("fatturazione", "Fatturazione")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="configurazione">
