@@ -548,6 +548,42 @@ const BoxComunicazione: React.FC<{
 
   const destinatari = get_destinatari();
 
+  // ── Gruppo atleti risolto (per anteprima ed esclusioni puntuali) ──
+  const gruppo_atleti = useMemo<any[]>(() => {
+    const attivi = atleti.filter((a) => a.stato === "attivo");
+    if (tipo_dest === "tutti" || tipo_dest === "atleti_attivi") return attivi;
+    if (tipo_dest === "monitori") return monitori.filter((m: any) => m.ruolo_pista === "monitore");
+    if (tipo_dest === "aiuto_monitori") return monitori.filter((m: any) => m.ruolo_pista === "aiuto_monitore");
+    if (tipo_dest === "agoniste")
+      return attivi.filter((a: any) => a.agonista === true || a.partecipa_gare === true);
+    if (tipo_dest === "corso" && riferimento_id) {
+      const corso = corsi.find((c) => c.id === riferimento_id);
+      return corso ? atleti.filter((a) => corso.atleti_ids?.includes(a.id)) : [];
+    }
+    if (tipo_dest === "gara" && riferimento_id) {
+      const gara = gare.find((g) => g.id === riferimento_id);
+      return gara ? atleti.filter((a) => gara.atleti_iscritti?.some((ai: any) => ai.atleta_id === a.id)) : [];
+    }
+    return [];
+  }, [tipo_dest, riferimento_id, atleti, monitori, corsi, gare]);
+
+  const gruppo_atleti_ordinati = useMemo(
+    () => [...gruppo_atleti].sort((a, b) => `${a.cognome} ${a.nome}`.localeCompare(`${b.cognome} ${b.nome}`, "it")),
+    [gruppo_atleti]
+  );
+
+  const atleti_inclusi = useMemo(
+    () => gruppo_atleti_ordinati.filter((a) => !esclusi.includes(a.id)),
+    [gruppo_atleti_ordinati, esclusi]
+  );
+
+  React.useEffect(() => {
+    set_esclusi([]);
+    set_mostra_gruppo(false);
+    set_gruppo_search("");
+  }, [tipo_dest, riferimento_id]);
+
+
   const filtered_atleti = useMemo(() => {
     const q = atleta_search.trim().toLowerCase();
     if (!q) return atleti.filter((a) => a.stato === "attivo");
