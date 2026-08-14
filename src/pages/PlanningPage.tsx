@@ -25,6 +25,7 @@ import AnnullaCorsoDialog from "@/components/planning/AnnullaCorsoDialog";
 import { PosizionamentoWizard } from "@/components/planning/PosizionamentoWizard";
 import SpostaCorsoDialog from "@/components/planning/SpostaCorsoDialog";
 import AvvisaAtletiDialog from "@/components/planning/AvvisaAtletiDialog";
+import SlotMenu from "@/components/planning/SlotMenu";
 import { istruttore_disponibile, compute_exception_diff, type exception_diff_entry } from "@/lib/availability";
 import MeseView from "@/components/planning/MeseView";
 import { use_elimina_corso } from "@/hooks/use-supabase-mutations";
@@ -1772,7 +1773,8 @@ function PlanningPageInner() {
                     const exc = exceptions_by_id[c.id];
                     const has_exc = !!exc && exc.length > 0;
                     return (
-                      <Tooltip key={c.id}>
+                      <SlotMenu key={c.id} {...azioni_slot(c)}>
+                        <Tooltip>
                         <TooltipTrigger asChild>
                           <div
                             className={`absolute z-[3] rounded flex flex-col justify-center overflow-hidden cursor-pointer ${is_selected ? "ring-2 ring-primary" : ""} ${is_conflict ? "animate-pulse" : ""}`}
@@ -1847,7 +1849,8 @@ function PlanningPageInner() {
                             </div>
                           )}
                         </TooltipContent>
-                      </Tooltip>
+                        </Tooltip>
+                      </SlotMenu>
                     );
                   })
                 )}
@@ -1904,7 +1907,8 @@ function PlanningPageInner() {
                       const colore = first_istr?.colore || OFF_ICE_COLORS[(c.tipo || "").toLowerCase()] || "#94A3B8";
                       const is_conflict = conflict_ids.has(c.id);
                       return (
-                        <Tooltip key={c.id}>
+                        <SlotMenu key={c.id} {...azioni_slot(c)}>
+                          <Tooltip>
                           <TooltipTrigger asChild>
                             <div
                               className={`absolute top-1 bottom-1 rounded-sm cursor-pointer flex items-center px-1 overflow-hidden ${is_conflict ? "animate-pulse" : ""}`}
@@ -1927,7 +1931,8 @@ function PlanningPageInner() {
                             <p className="text-xs">Off-ice · {c.ora_inizio?.slice(0,5)}–{c.ora_fine?.slice(0,5)}</p>
                             {is_conflict && <p className="text-xs font-bold mt-1" style={{ color: "#DC2626" }}>⚠ Conflitto istruttore</p>}
                           </TooltipContent>
-                        </Tooltip>
+                          </Tooltip>
+                        </SlotMenu>
                       );
                     })}
                     </div>
@@ -2393,7 +2398,8 @@ function PlanningPageInner() {
                           const exc = exceptions_by_id[c.id];
                           const has_exc = !!exc && exc.length > 0;
                           return (
-                            <Tooltip key={c.id}>
+                            <SlotMenu key={c.id} {...azioni_slot(c)}>
+                              <Tooltip>
                               <TooltipTrigger asChild>
                                 <div className={`absolute z-[3] rounded-sm overflow-hidden ${pulse ? "animate-pulse" : ""} flex items-center justify-center`} style={{
                                   left: `${((cs - range_start) / total_min) * 100}%`,
@@ -2437,7 +2443,8 @@ function PlanningPageInner() {
                                   </div>
                                 )}
                               </TooltipContent>
-                            </Tooltip>
+                              </Tooltip>
+                            </SlotMenu>
                           );
                         })
                       )}
@@ -2492,7 +2499,8 @@ function PlanningPageInner() {
                           const exc = exceptions_by_id[c.id];
                           const has_exc = !!exc && exc.length > 0;
                           return (
-                            <Tooltip key={c.id}>
+                            <SlotMenu key={c.id} {...azioni_slot(c)}>
+                              <Tooltip>
                               <TooltipTrigger asChild>
                                 <div className={`absolute z-[3] rounded-sm overflow-hidden ${pulse ? "animate-pulse" : ""} flex items-center justify-center`} style={{
                                   left: `${((cs - range_start) / total_min) * 100}%`,
@@ -2528,7 +2536,8 @@ function PlanningPageInner() {
                                   </div>
                                 )}
                               </TooltipContent>
-                            </Tooltip>
+                              </Tooltip>
+                            </SlotMenu>
                           );
                         })
                       )}
