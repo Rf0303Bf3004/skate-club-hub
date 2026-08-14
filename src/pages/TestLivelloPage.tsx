@@ -717,11 +717,15 @@ export default function TestLivelloPage() {
         <h1 className="text-2xl font-bold text-foreground">{selected_test.nome}</h1>
         <Badge variant="outline" className="capitalize">{selected_test.tipo === "in_gara" ? "in gara" : "base"}</Badge>
         <div className="ml-auto flex gap-2">
-          <Button variant="destructive" size="sm" onClick={() => {
-            if (window.confirm("Eliminare definitivamente questo test e tutte le sue convocazioni?")) delete_test.mutate(selected_test.id);
-          }}>
-            <Trash2 className="w-4 h-4 mr-1" /> Elimina
-          </Button>
+          <ConfirmButton
+            titolo="Eliminare questo test?"
+            descrizione="Verranno eliminate definitivamente anche tutte le convocazioni collegate."
+            on_conferma={() => delete_test.mutate(selected_test.id)}
+          >
+            <Button variant="destructive" size="sm">
+              <Trash2 className="w-4 h-4 mr-1" /> Elimina
+            </Button>
+          </ConfirmButton>
         </div>
       </div>
 

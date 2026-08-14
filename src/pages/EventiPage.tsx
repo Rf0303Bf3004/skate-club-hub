@@ -205,9 +205,13 @@ export default function EventiPage() {
           {evento.tipo && <Badge variant="outline">{evento.tipo}</Badge>}
           <div className="ml-auto flex gap-2">
             <Button size="sm" variant="outline" onClick={() => open_edit(evento)}><Pencil className="w-4 h-4 mr-1" /> Modifica</Button>
-            <Button size="sm" variant="destructive" onClick={() => {
-              if (window.confirm("Eliminare definitivamente questo evento e tutte le sue iscrizioni?")) delete_evento.mutate(evento.id);
-            }}><Trash2 className="w-4 h-4 mr-1" /> Elimina</Button>
+            <ConfirmButton
+              titolo="Eliminare questo evento?"
+              descrizione="Verranno eliminate definitivamente anche tutte le iscrizioni collegate."
+              on_conferma={() => delete_evento.mutate(evento.id)}
+            >
+              <Button size="sm" variant="destructive"><Trash2 className="w-4 h-4 mr-1" /> Elimina</Button>
+            </ConfirmButton>
           </div>
         </div>
 
