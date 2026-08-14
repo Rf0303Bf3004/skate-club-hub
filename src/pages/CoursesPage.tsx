@@ -2321,6 +2321,11 @@ const CoursesPage: React.FC = () => {
   const { data: atleti = [] } = use_atleti();
   const { data: monitori = [] } = use_atleti_monitori();
   const { data: tipi_catalogo = [] } = use_tipi_corso();
+  const tipi_corso = useMemo(() => {
+    const set = new Set<string>(tipi_catalogo);
+    (corsi ?? []).forEach((c: any) => { if (c?.tipo) set.add(c.tipo); });
+    return [...set].sort((a, b) => a.localeCompare(b, "it"));
+  }, [tipi_catalogo, corsi]);
   const upsert = use_upsert_corso();
   const elimina = use_elimina_corso();
   const [modal_open, set_modal_open] = useState(false);
