@@ -2353,32 +2353,58 @@ const CoursesPage: React.FC = () => {
   const [wizard_open, set_wizard_open] = useState(false);
   const [wizard_corso, set_wizard_corso] = useState<any>(null);
   const [vista, set_vista] = useState<"giorno" | "istruttore">("giorno");
+  const [duplica_open, set_duplica_open] = useState(false);
+
+  const { data: stagioni = [] } = use_stagioni();
+  const stagione_corrente_id = useMemo(() => {
+    const attiva = (stagioni ?? []).find((s: any) => s.attiva);
+    return attiva?.id ?? (stagioni ?? [])[0]?.id ?? null;
+  }, [stagioni]);
 
   // Filters
   const [filtro_giorno, set_filtro_giorno] = useState("Tutti");
   const [filtro_tipo, set_filtro_tipo] = useState("");
   const [filtro_istruttore, set_filtro_istruttore] = useState("");
+  const [filtro_stato, set_filtro_stato] = useState<StatoCorso>("tutti");
 
-  const has_filters = filtro_giorno !== "Tutti" || filtro_tipo !== "" || filtro_istruttore !== "";
+  const has_filters =
+    filtro_giorno !== "Tutti" || filtro_tipo !== "" || filtro_istruttore !== "" || filtro_stato !== "tutti";
 
   const reset_filters = () => {
     set_filtro_giorno("Tutti");
     set_filtro_tipo("");
     set_filtro_istruttore("");
+    set_filtro_stato("tutti");
   };
+
+  // Classificazione (protocollo): completi / da pianificare / senza istruttore / fuori ghiaccio
+  const stato_per_corso = useMemo(() => {
+    const map: Record<string, Exclude<StatoCorso, "tutti">> = {};
+    (corsi ?? []).forEach((c: any) => {
+      map[c.id] = classifica_corso(c, disp_ghiaccio, istruttori);
+    });
+    return map;
+  }, [corsi, disp_ghiaccio, istruttori]);
+
+  const conteggi_stato = useMemo(() => {
+    const base = { completi: 0, da_pianificare: 0, senza_istruttore: 0, fuori_ghiaccio: 0 };
+    Object.values(stato_per_corso).forEach((s) => { base[s] += 1; });
+    return base;
+  }, [stato_per_corso]);
 
   const corsi_filtrati = useMemo(() => {
     return corsi
       .filter((c: any) => filtro_giorno === "Tutti" || c.giorno === filtro_giorno)
       .filter((c: any) => !filtro_tipo || c.tipo === filtro_tipo)
       .filter((c: any) => !filtro_istruttore || (c.istruttori_ids || []).includes(filtro_istruttore))
+      .filter((c: any) => filtro_stato === "tutti" || stato_per_corso[c.id] === filtro_stato)
       .sort((a: any, b: any) => {
         const day_a = GIORNI_DB.indexOf(a.giorno);
         const day_b = GIORNI_DB.indexOf(b.giorno);
         if (day_a !== day_b) return day_a - day_b;
         return time_to_min(a.ora_inizio) - time_to_min(b.ora_inizio);
       });
-  }, [corsi, filtro_giorno, filtro_tipo, filtro_istruttore]);
+  }, [corsi, filtro_giorno, filtro_tipo, filtro_istruttore, filtro_stato, stato_per_corso]);
 
   const corsi_per_giorno = useMemo(() => {
     const groups: Record<string, any[]> = {};
