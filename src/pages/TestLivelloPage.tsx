@@ -812,14 +812,16 @@ export default function TestLivelloPage() {
                             onBlur={(e) => update_field.mutate({ id: step.id, patch: { note_istruttore: e.target.value } as any })}
                             placeholder="Note istruttore..."
                           />
-                          <Button
-                            variant="ghost" size="icon" className="h-7 w-7"
-                            onClick={() => {
-                              if (window.confirm(`Rimuovere lo step #${step.ordine} (${step.livello_accesso} → ${step.livello_target})?`)) remove_step.mutate(step.id);
-                            }}
+                          <ConfirmButton
+                            titolo={`Rimuovere lo step #${step.ordine}?`}
+                            descrizione={`${step.livello_accesso} → ${step.livello_target}`}
+                            conferma_label="Rimuovi"
+                            on_conferma={() => remove_step.mutate(step.id)}
                           >
-                            <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                          </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7">
+                              <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                            </Button>
+                          </ConfirmButton>
                         </div>
                       );
                     })}
