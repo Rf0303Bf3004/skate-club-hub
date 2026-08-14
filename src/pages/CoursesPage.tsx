@@ -9,6 +9,7 @@ import {
   use_atleti_monitori,
   use_presenze_corso,
   use_disponibilita_ghiaccio,
+  use_stagioni,
   check_corso_completo,
   calcola_capienza_overlap,
   get_istruttore_name_from_list,
