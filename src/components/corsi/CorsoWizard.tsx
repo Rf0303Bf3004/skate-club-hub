@@ -734,7 +734,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                 <div className="space-y-0.5">
                   <Label className="text-sm font-semibold cursor-pointer">Posiziona subito nel planning</Label>
                   <p className="text-[11px] text-muted-foreground">
-                    {posiziona_planning ? "Giorno e ora obbligatori" : "Il corso resterà nel backlog 'Da posizionare'"}
+                    {posiziona_planning ? "Giorno e ora obbligatori" : "Decido dopo dove metterlo: il corso resta in 'Da posizionare'"}
                   </p>
                 </div>
                 <input
@@ -949,16 +949,8 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                         Nessun istruttore è disponibile il {form.giorno} dalle {form.ora_inizio} alle {form.ora_fine}
                       </p>
                       <p className="text-xs text-rose-700">
-                        Torna allo step Collocamento e scegli un altro slot, oppure apri la pagina Istruttori per aggiungere disponibilità dichiarate.
+                        Scegli un altro slot qui sopra, oppure apri la pagina Istruttori per aggiungere disponibilità dichiarate.
                       </p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => set_step(2)}
-                        className="mt-2"
-                      >
-                        <ChevronLeft className="w-4 h-4 mr-1" /> Torna a Collocamento
-                      </Button>
                     </div>
                   </div>
                 ) : (
