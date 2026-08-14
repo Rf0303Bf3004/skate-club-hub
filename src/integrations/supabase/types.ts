@@ -771,6 +771,7 @@ export type Database = {
       comunicazioni: {
         Row: {
           archiviata: boolean
+          archiviata_at: string | null
           atleta_id: string | null
           atleti_ids: string[] | null
           categoria: string
@@ -803,6 +804,7 @@ export type Database = {
         }
         Insert: {
           archiviata?: boolean
+          archiviata_at?: string | null
           atleta_id?: string | null
           atleti_ids?: string[] | null
           categoria?: string
@@ -835,6 +837,7 @@ export type Database = {
         }
         Update: {
           archiviata?: boolean
+          archiviata_at?: string | null
           atleta_id?: string | null
           atleti_ids?: string[] | null
           categoria?: string
