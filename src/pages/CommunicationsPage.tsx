@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useI18n } from '@/lib/i18n';
-import { use_atleti, use_comunicazioni, use_corsi, use_istruttori } from '@/hooks/use-supabase-data';
+import { use_atleti, use_comunicazioni, use_corsi, use_istruttori, use_stagioni } from '@/hooks/use-supabase-data';
 import { use_crea_comunicazione } from '@/hooks/use-supabase-mutations';
 import { supabase, get_current_club_id } from '@/lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ConversazioniTab } from '@/components/comunicazioni/ConversazioniTab';
 import { MieiReminderStaffTab } from '@/components/comunicazioni/MieiReminderStaffTab';
+import { ListaComunicazioni } from '@/components/comunicazioni/ListaComunicazioni';
 import { Bell } from 'lucide-react';
 
 const TEMPLATES = [
@@ -128,6 +129,7 @@ const CommunicationsPage: React.FC = () => {
   const { data: corsi = [] } = use_corsi();
   const { data: atleti = [] } = use_atleti();
   const { data: istruttori = [] } = use_istruttori();
+  const { data: stagioni = [] } = use_stagioni();
   const crea = use_crea_comunicazione();
 
   const [modal_open, set_modal_open] = useState(false);
@@ -476,8 +478,6 @@ const CommunicationsPage: React.FC = () => {
   const can_see_all = ruolo === 'superadmin' || ruolo === 'admin';
   const can_see_miei_reminder_staff = ruolo === 'istruttore' || ruolo === 'aiuto_monitore';
 
-  const [archive_search, set_archive_search] = useState('');
-
   const com_visible = useMemo(
     () => comunicazioni.filter((c: any) => c.tipo !== 'iscrizione_atleta'),
     [comunicazioni],
@@ -490,16 +490,10 @@ const CommunicationsPage: React.FC = () => {
     () => com_visible.filter((c: any) => c.categoria === 'ricevuta' && !c.archiviata),
     [com_visible],
   );
-  const archivio = useMemo(() => {
-    const arch = com_visible.filter((c: any) => c.archiviata);
-    const q = archive_search.trim().toLowerCase();
-    if (!q) return arch;
-    return arch.filter((c: any) =>
-      (c.titolo || '').toLowerCase().includes(q) ||
-      (c.testo || '').toLowerCase().includes(q) ||
-      (c.corpo || '').toLowerCase().includes(q),
-    );
-  }, [com_visible, archive_search]);
+  const archivio = useMemo(
+    () => com_visible.filter((c: any) => c.archiviata),
+    [com_visible],
+  );
 
   const filtered_atleti = useMemo(() => {
     const q = atleta_search.trim().toLowerCase();
@@ -606,15 +600,25 @@ const CommunicationsPage: React.FC = () => {
         </TabsList>
 
         <TabsContent value="inviate" className="mt-4">
-          {inviate.length === 0
-            ? empty_state('Nessun messaggio inviato.', <Send className="w-12 h-12" />)
-            : <div className="space-y-4">{inviate.map((c: any) => render_card(c))}</div>}
+          <ListaComunicazioni
+            items={inviate}
+            mode="attive"
+            get_destinatari_label={get_destinatari_label}
+            get_data_label={get_data_label}
+            empty_text="Nessun messaggio inviato."
+          />
         </TabsContent>
 
         <TabsContent value="ricevute" className="mt-4">
-          {ricevute.length === 0
-            ? empty_state('Nessun messaggio ricevuto.', <Inbox className="w-12 h-12" />)
-            : <div className="space-y-4">{ricevute.map((c: any) => render_card(c, { highlight_unread: true }))}</div>}
+          <ListaComunicazioni
+            items={ricevute}
+            mode="attive"
+            highlight_unread
+            get_destinatari_label={get_destinatari_label}
+            get_data_label={get_data_label}
+            on_open={(c) => { if (c.categoria === 'ricevuta' && !c.letta) void mark_letta(c.id); }}
+            empty_text="Nessun messaggio ricevuto."
+          />
         </TabsContent>
 
         {can_see_miei_reminder_staff && (
@@ -630,19 +634,15 @@ const CommunicationsPage: React.FC = () => {
         )}
 
         {can_see_all && (
-          <TabsContent value="archivio" className="mt-4 space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                value={archive_search}
-                onChange={(e) => set_archive_search(e.target.value)}
-                placeholder="Cerca nei messaggi archiviati…"
-                className="pl-9"
-              />
-            </div>
-            {archivio.length === 0
-              ? empty_state(archive_search ? 'Nessun risultato.' : 'Nessun messaggio in archivio.', <Archive className="w-12 h-12" />)
-              : <div className="space-y-4">{archivio.map((c: any) => render_card(c))}</div>}
+          <TabsContent value="archivio" className="mt-4">
+            <ListaComunicazioni
+              items={archivio}
+              mode="archivio"
+              stagioni={stagioni}
+              get_destinatari_label={get_destinatari_label}
+              get_data_label={get_data_label}
+              empty_text="Nessun messaggio in archivio."
+            />
           </TabsContent>
         )}
       </Tabs>
