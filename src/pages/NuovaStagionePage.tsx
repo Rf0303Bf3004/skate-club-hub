@@ -13,6 +13,25 @@ import { it } from "date-fns/locale";
 
 const STEPS = ["Nuova Stagione", "Disponibilità Ghiaccio", "Istruttori", "Catalogo Corsi", "Attiva Stagione"];
 
+/** Conferma esplicita di presa visione: evita di attivare una stagione "saltando" i passaggi. */
+const AckStep: React.FC<{
+  step: number;
+  ack: Record<number, boolean>;
+  set_ack: React.Dispatch<React.SetStateAction<Record<number, boolean>>>;
+  label: string;
+}> = ({ step, ack, set_ack, label }) => (
+  <div className="flex items-center gap-2 pt-1">
+    <Checkbox
+      id={`ack_${step}`}
+      checked={!!ack[step]}
+      onCheckedChange={(v) => set_ack((p) => ({ ...p, [step]: !!v }))}
+    />
+    <label htmlFor={`ack_${step}`} className="text-sm text-foreground cursor-pointer">
+      {label}
+    </label>
+  </div>
+);
+
 export default function NuovaStagionePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
