@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import ConfirmButton from "@/components/common/ConfirmButton";
 import { Plus, ArrowLeft, Trash2, X, CheckCircle, Send, Search } from "lucide-react";
 import {
   ComunicazioneFormSection,
