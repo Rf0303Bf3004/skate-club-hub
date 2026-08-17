@@ -1,30 +1,22 @@
-import React, { useState, useRef, useMemo, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import React, { useState, useMemo, useEffect } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import SearchableListLayout from "@/components/common/SearchableListLayout";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useI18n } from "@/lib/i18n";
 import {
   use_fatture,
   use_atleti,
-  use_setup_club,
-  use_club,
-  use_corsi,
-  use_lezioni_private,
   get_atleta_name_from_list,
 } from "@/hooks/use-supabase-data";
-import {
-  use_segna_fattura_pagata,
-  use_genera_fatture_mensili,
-  use_elimina_fattura,
-  use_invia_email_fattura,
-} from "@/hooks/use-supabase-mutations";
+import { use_genera_fatture_mensili } from "@/hooks/use-supabase-mutations";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Trash2, X, Printer, Mail, Receipt } from "lucide-react";
+import { FileText, Receipt } from "lucide-react";
 import EmptyState from "@/components/common/EmptyState";
 import { toast } from "@/hooks/use-toast";
 import { get_fattura_stato_ui, get_fattura_stato_label, get_fattura_stato_classes } from "@/lib/fattura-status";
+
 
 
 // ─── Main Page ─────────────────────────────────────────────
@@ -45,16 +37,15 @@ const InvoicesPage: React.FC = () => {
   const search = useDebouncedValue(search_raw, 200);
   const [periodo_filter, set_periodo_filter] = useState<"tutti" | "mese" | "trimestre" | "anno">("tutti");
   const [sort_by, set_sort_by] = useState<"data_desc" | "importo_desc" | "scadenza">("data_desc");
-  const [selected_fattura, set_selected_fattura] = useState<any>(null);
-  const [search_params, set_search_params] = useSearchParams();
+  const [search_params] = useSearchParams();
+  const navigate = useNavigate();
 
+  // Deep-link legacy: /fatture?id=<uuid> → nuovo editor completo
   useEffect(() => {
     const id = search_params.get("id");
-    if (id && fatture.length > 0) {
-      const f = fatture.find((x: any) => x.id === id);
-      if (f) set_selected_fattura(f);
-    }
-  }, [search_params, fatture]);
+    if (id) navigate(`/segreteria/fatture/${id}`, { replace: true });
+  }, [search_params, navigate]);
+
 
   const today_iso = new Date().toISOString().split("T")[0];
 
@@ -112,44 +103,6 @@ const InvoicesPage: React.FC = () => {
     }
   };
 
-  const handle_paga = async () => {
-    if (!selected_fattura) return;
-    try {
-      await segna_pagata.mutateAsync(selected_fattura.id);
-      set_selected_fattura(null);
-      toast({ title: "✅ Fattura segnata come pagata" });
-    } catch (err: any) {
-      toast({ title: "Errore", description: err?.message, variant: "destructive" });
-    }
-  };
-
-  const handle_elimina = async () => {
-    if (!selected_fattura) return;
-    try {
-      await elimina.mutateAsync(selected_fattura.id);
-      set_selected_fattura(null);
-      toast({ title: "🗑️ Fattura eliminata" });
-    } catch (err: any) {
-      toast({ title: "Errore eliminazione", description: err?.message, variant: "destructive" });
-    }
-  };
-
-  const handle_invia_email = async () => {
-    if (!selected_fattura) return;
-    const atleta = atleti.find((a: any) => a.id === selected_fattura.atleta_id);
-    const email = atleta?.genitore1_email || atleta?.genitore2_email || "";
-    if (!email) {
-      toast({ title: "Email non disponibile", description: "Configura email genitore", variant: "destructive" });
-      return;
-    }
-    try {
-      await invia_email.mutateAsync({ fattura_id: selected_fattura.id, email });
-      toast({ title: `📧 Email registrata per ${email}` });
-      set_selected_fattura((prev: any) => prev ? { ...prev, email_inviata_at: new Date().toISOString() } : prev);
-    } catch (err: any) {
-      toast({ title: "Errore invio email", description: err?.message, variant: "destructive" });
-    }
-  };
 
   if (isLoading) {
     return (
@@ -159,27 +112,9 @@ const InvoicesPage: React.FC = () => {
     );
   }
 
-  const atleta_selected = selected_fattura ? atleti.find((a: any) => a.id === selected_fattura.atleta_id) : null;
-
   return (
     <>
-      {selected_fattura && (
-        <FatturaModal
-          fattura={selected_fattura}
-          atleta={atleta_selected}
-          setup={setup}
-          club={club}
-          corsi={corsi}
-          lezioni={lezioni}
-          on_close={() => set_selected_fattura(null)}
-          on_paga={handle_paga}
-          on_elimina={handle_elimina}
-          on_invia_email={handle_invia_email}
-          paying={segna_pagata.isPending}
-          deleting={elimina.isPending}
-          sending_email={invia_email.isPending}
-        />
-      )}
+
 
       <div className="space-y-6 animate-fade-in">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
