@@ -18,6 +18,8 @@ import {
   Coffee, Gift, Briefcase, Sparkles, Music,
 } from "lucide-react";
 import QRCode from "qrcode";
+import { stato_pubblicazione, label_pubblicazione, colore_pubblicazione, stato_validita } from "@/lib/convenzioni-date";
+
 
 // ============== Helpers icone lucide dinamiche ==============
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
