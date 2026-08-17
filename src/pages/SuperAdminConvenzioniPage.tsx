@@ -458,14 +458,20 @@ function ConvenzioneFormModal({
   const [logo_file, set_logo_file] = useState<File | null>(null);
   const [imm_file, set_imm_file] = useState<File | null>(null);
   const [saving, set_saving] = useState(false);
+  const [nazione_sel, set_nazione_sel] = useState<string | null>(null);
+  const { data: nazioni = [] } = use_nazioni();
+  const { data: regioni = [] } = use_regioni();
 
   useEffect(() => {
     if (open) {
       set_form(editing ?? { stato: "attiva", in_evidenza: false });
       set_logo_file(null);
       set_imm_file(null);
+      const reg = editing?.regione_id ? regioni.find(r => r.id === editing.regione_id) : null;
+      set_nazione_sel(reg?.nazione_id ?? null);
     }
-  }, [open, editing]);
+  }, [open, editing, regioni]);
+
 
   const update = (k: keyof Convenzione, v: any) => set_form(prev => ({ ...prev, [k]: v }));
 
