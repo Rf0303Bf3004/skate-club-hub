@@ -2150,7 +2150,7 @@ function PlanningPageInner() {
             </div>
           )}
           <span className="hidden lg:inline text-[11px] text-muted-foreground ml-auto">
-            Tocca a lungo (o tasto destro) su un corso per aprire le azioni
+            Tocca o clicca su un corso per le azioni
           </span>
           <div className="inline-flex rounded-lg border border-border overflow-hidden lg:ml-3 ml-auto">
             {(["giorno", "settimana", "mese"] as ViewMode[]).map((m, idx) => (
