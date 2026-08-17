@@ -134,6 +134,8 @@ export default function ConvenzionePubblicaPage() {
   }
 
   const lbl = format_proposta(data.convenzioni_tipi_proposta?.formato, data.valore_proposta);
+  const stato_val = stato_validita(data);
+
 
   return (
     <div className="min-h-screen bg-slate-50">
