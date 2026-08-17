@@ -7,6 +7,14 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Info, Move, Ban, Megaphone, Pencil, Trash2 } from "lucide-react";
 
 export interface SlotMenuAzioni {
@@ -20,9 +28,8 @@ export interface SlotMenuAzioni {
 
 /**
  * Menu contestuale unico per un blocco del planning.
- * Mostra SOLO le azioni pertinenti allo slot: le voci non applicabili
- * non vengono renderizzate (niente pulsanti spenti).
- * Il click normale resta invariato (apre il pannello dettagli).
+ * Mostra SOLO le azioni pertinenti allo slot.
+ * Apertura: click/tap sinistro (touch-friendly, iPad) oppure click destro (scorciatoia mouse).
  */
 export const SlotMenu: React.FC<
   SlotMenuAzioni & { titolo: string; sottotitolo?: string; children: React.ReactNode }
@@ -37,35 +44,69 @@ export const SlotMenu: React.FC<
 
   if (voci.length === 0 && !on_rimuovi) return <>{children}</>;
 
+  const header = (
+    <>
+      {titolo}
+      {sottotitolo && <span className="block text-[11px] font-normal text-muted-foreground">{sottotitolo}</span>}
+    </>
+  );
+
+  const content_class = "w-56 max-w-[calc(100vw-1.5rem)]";
+
   return (
-    <ContextMenu>
-      <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
-      <ContextMenuContent className="w-56">
-        <ContextMenuLabel className="truncate">
-          {titolo}
-          {sottotitolo && <span className="block text-[11px] font-normal text-muted-foreground">{sottotitolo}</span>}
-        </ContextMenuLabel>
-        <ContextMenuSeparator />
+    <DropdownMenu>
+      <ContextMenu>
+        <DropdownMenuTrigger asChild>
+          <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
+        </DropdownMenuTrigger>
+
+        <ContextMenuContent className={content_class}>
+          <ContextMenuLabel className="truncate">{header}</ContextMenuLabel>
+          <ContextMenuSeparator />
+          {voci.map((v) => {
+            const Icon = v.icon;
+            return (
+              <ContextMenuItem key={v.key} onSelect={() => v.fn?.()} className="gap-2">
+                <Icon className="h-4 w-4" />
+                {v.label}
+              </ContextMenuItem>
+            );
+          })}
+          {on_rimuovi && (
+            <>
+              <ContextMenuSeparator />
+              <ContextMenuItem onSelect={() => on_rimuovi()} className="gap-2 text-destructive focus:text-destructive">
+                <Trash2 className="h-4 w-4" />
+                Togli dal planning
+              </ContextMenuItem>
+            </>
+          )}
+        </ContextMenuContent>
+      </ContextMenu>
+
+      <DropdownMenuContent align="start" collisionPadding={8} className={content_class}>
+        <DropdownMenuLabel className="truncate">{header}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
         {voci.map((v) => {
           const Icon = v.icon;
           return (
-            <ContextMenuItem key={v.key} onSelect={() => v.fn?.()} className="gap-2">
+            <DropdownMenuItem key={v.key} onSelect={() => v.fn?.()} className="gap-2">
               <Icon className="h-4 w-4" />
               {v.label}
-            </ContextMenuItem>
+            </DropdownMenuItem>
           );
         })}
         {on_rimuovi && (
           <>
-            <ContextMenuSeparator />
-            <ContextMenuItem onSelect={() => on_rimuovi()} className="gap-2 text-destructive focus:text-destructive">
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => on_rimuovi()} className="gap-2 text-destructive focus:text-destructive">
               <Trash2 className="h-4 w-4" />
               Togli dal planning
-            </ContextMenuItem>
+            </DropdownMenuItem>
           </>
         )}
-      </ContextMenuContent>
-    </ContextMenu>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 
