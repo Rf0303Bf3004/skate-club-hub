@@ -24,6 +24,7 @@ import {
   crea_nazione, crea_regione, crea_provincia,
 } from "@/lib/convenzioni-territori";
 import { TerritorioCombobox, StelleSelector } from "@/components/convenzioni/TerritorioCombobox";
+import { e_area_alloggio, e_area_ristorazione, TIPI_CUCINA, FASCE_PREZZO } from "@/lib/convenzioni-tipologie";
 
 
 
