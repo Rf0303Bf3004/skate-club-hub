@@ -59,6 +59,7 @@ interface Convenzione {
   indirizzo: string | null;
   geo_cantone: string | null;
   geo_citta: string | null;
+  regione_id: string | null;
   validita_da: string | null;
   validita_a: string | null;
   pubblicazione_da: string | null;
@@ -73,7 +74,9 @@ interface Convenzione {
   valore_proposta: string | null;
   convenzioni_aree?: { nome: string; icona: string | null } | null;
   convenzioni_tipi_proposta?: { nome: string; formato: string | null } | null;
+  convenzioni_regioni?: { id: string; nome: string; nazione_id: string; convenzioni_nazioni?: { nome: string } | null } | null;
 }
+
 
 function format_proposta(formato: string | null | undefined, valore: string | null | undefined): string | null {
   const v = (valore ?? "").trim();
