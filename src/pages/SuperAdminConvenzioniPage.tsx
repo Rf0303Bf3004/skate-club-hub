@@ -61,7 +61,10 @@ interface Convenzione {
   geo_citta: string | null;
   validita_da: string | null;
   validita_a: string | null;
+  pubblicazione_da: string | null;
+  pubblicazione_a: string | null;
   codice_sconto: string | null;
+
   in_evidenza: boolean;
   stato: string;
   qr_token: string;
