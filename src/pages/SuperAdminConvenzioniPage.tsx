@@ -511,6 +511,8 @@ function ConvenzioneFormModal({
         indirizzo: form.indirizzo ?? null,
         geo_cantone: form.geo_cantone ?? null,
         geo_citta: form.geo_citta ?? null,
+        regione_id: form.regione_id ?? null,
+
         validita_da: form.validita_da || null,
         validita_a: form.validita_a || null,
         pubblicazione_da: form.pubblicazione_da || null,
