@@ -515,8 +515,9 @@ export default function ConvenzioniSociPage() {
             {lista_ordinata.length === 1 ? " convenzione" : " convenzioni"}
             {filtri_attivi && <> su <span className="tabular-nums">{convenzioni.length}</span></>}
             {nome_area && <> · categoria <span className="text-foreground font-medium">{nome_area}</span></>}
-            {regione && <> · area <span className="text-foreground font-medium">{regione}</span></>}
+            {nome_regione && <> · area <span className="text-foreground font-medium">{nome_regione}</span></>}
           </p>
+
           {filtri_attivi && (
             <Button type="button" variant="ghost" size="sm" onClick={reset_filtri} className="gap-1.5">
               <X className="w-4 h-4" /> Azzera filtri
