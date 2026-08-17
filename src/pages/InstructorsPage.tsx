@@ -1790,9 +1790,17 @@ const InstructorsPage: React.FC = () => {
           ))}
         </div>
 
+        <SearchableListLayout
+          search={search_istruttori}
+          on_search_change={set_search_istruttori}
+          search_placeholder="Cerca per nome, cognome o email…"
+          count_filtered={istruttori_filtrati.length}
+          count_total={istruttori.length}
+          sticky={false}
+        >
         {istruttori_filtrati.length === 0 ? (
           <div className="bg-card rounded-xl shadow-card p-12 text-center text-muted-foreground">
-            <p className="text-sm">Nessuno in questa categoria.</p>
+            <p className="text-sm">Nessun istruttore corrisponde ai criteri.</p>
             <p className="text-xs mt-1">
               Crea un nuovo istruttore con il bottone in alto, o vai in <strong>Atleti</strong> e spunta "Monitrice" / "Aiuto monitrice".
             </p>
@@ -1870,6 +1878,7 @@ const InstructorsPage: React.FC = () => {
             })}
           </div>
         )}
+        </SearchableListLayout>
 
       </div>
     </>
