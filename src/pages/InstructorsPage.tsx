@@ -13,6 +13,7 @@ import { use_upsert_istruttore, use_save_disponibilita, use_elimina_istruttore }
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import SearchableListLayout from "@/components/common/SearchableListLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Trash2, ArrowLeft, Euro, Clock, TrendingUp, Download, Upload, X, Info, CheckCircle2, AlertTriangle, ShieldCheck } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -1417,6 +1418,7 @@ const InstructorsPage: React.FC = () => {
   const [disp_local, set_disp_local] = useState<Record<string, { ora_inizio: string; ora_fine: string }[]>>({});
   const [saving_contratto, set_saving_contratto] = useState(false);
   const [active_filter, set_active_filter] = useState<"tutti" | "istruttore" | "monitrice" | "aiuto_monitrice">("tutti");
+  const [search_istruttori, set_search_istruttori] = useState("");
 
   // Lookup atleti by id per resolver dei linked_atleta_id
   const atleti_by_id = useMemo(() => {
@@ -1441,6 +1443,12 @@ const InstructorsPage: React.FC = () => {
     if (active_filter !== "tutti") {
       list = list.filter((i: any) => (i.livello_istruttore || "istruttore") === active_filter);
     }
+    const q = search_istruttori.trim().toLowerCase();
+    if (q) {
+      list = list.filter((i: any) =>
+        `${i.nome ?? ""} ${i.cognome ?? ""} ${i.email ?? ""}`.toLowerCase().includes(q)
+      );
+    }
     // Sospesi in fondo
     list.sort((a: any, b: any) => {
       const sa = a.stato_staff === "sospeso" ? 1 : 0;
@@ -1449,7 +1457,7 @@ const InstructorsPage: React.FC = () => {
       return (a.cognome || "").localeCompare(b.cognome || "");
     });
     return list;
-  }, [istruttori, active_filter]);
+  }, [istruttori, active_filter, search_istruttori]);
   const monitori = monitori_atleti.filter((a: any) => a.ruolo_pista === "monitore");
   const aiuto_monitori = monitori_atleti.filter((a: any) => a.ruolo_pista === "aiuto_monitore");
 
