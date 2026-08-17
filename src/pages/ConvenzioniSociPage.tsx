@@ -291,7 +291,7 @@ const DettaglioDialog: React.FC<{ c: Convenzione | null; on_close: () => void }>
 export default function ConvenzioniSociPage() {
   const { session } = useAuth();
   const [area_id, set_area_id] = useState<string | null>(null);
-  const [regione, set_regione] = useState<string | null>(null);
+  const [regione_id, set_regione_id] = useState<string | null>(null);
   const [search, set_search] = useState("");
   const [selected, set_selected] = useState<Convenzione | null>(null);
 
@@ -320,12 +320,15 @@ export default function ConvenzioniSociPage() {
     },
   });
 
+  const { data: nazioni = [] } = use_nazioni();
+  const { data: regioni_all = [] } = use_regioni();
+
   const { data: convenzioni = [], isLoading } = useQuery({
     queryKey: ["convenzioni_attive"],
     queryFn: async () => {
       const { data } = await supabase
         .from("convenzioni")
-        .select("*, convenzioni_aree(id, nome, icona, ordine, attiva), convenzioni_tipi_proposta(id, nome, formato)")
+        .select("*, convenzioni_aree(id, nome, icona, ordine, attiva), convenzioni_tipi_proposta(id, nome, formato), convenzioni_regioni(id, nome, nazione_id, ordine, convenzioni_nazioni(id, nome, ordine))")
         .eq("stato", "attiva");
       return ((data ?? []) as unknown as Convenzione[]).filter((c) => is_pubblicata(c));
     },
@@ -333,7 +336,7 @@ export default function ConvenzioniSociPage() {
 
   const match_search = (c: Convenzione, q: string) =>
     !q ||
-    `${c.azienda ?? ""} ${c.titolo ?? ""} ${c.descrizione ?? ""} ${c.geo_citta ?? ""} ${c.geo_cantone ?? ""} ${c.convenzioni_aree?.nome ?? ""}`
+    `${c.azienda ?? ""} ${c.titolo ?? ""} ${c.descrizione ?? ""} ${c.geo_citta ?? ""} ${c.convenzioni_regioni?.nome ?? ""} ${c.convenzioni_regioni?.convenzioni_nazioni?.nome ?? ""} ${c.geo_cantone ?? ""} ${c.convenzioni_aree?.nome ?? ""}`
       .toLowerCase()
       .includes(q);
 
@@ -346,37 +349,36 @@ export default function ConvenzioniSociPage() {
   const conteggi_aree = useMemo(() => {
     const m = new Map<string, number>();
     base
-      .filter((c) => !regione || regione_di(c) === regione)
+      .filter((c) => !regione_id || c.regione_id === regione_id)
       .forEach((c) => {
         if (!c.area_id) return;
         m.set(c.area_id, (m.get(c.area_id) ?? 0) + 1);
       });
     return m;
-  }, [base, regione]);
+  }, [base, regione_id]);
 
-  const regioni = useMemo(() => {
-    const m = new Map<string, number>();
+  /** Pillole geografiche a due livelli: Nazione → Regioni (solo quelle con convenzioni). */
+  const gruppi_geo = useMemo(() => {
+    const conteggi = new Map<string, number>();
     base
       .filter((c) => !area_id || c.area_id === area_id)
       .forEach((c) => {
-        const r = regione_di(c);
-        m.set(r, (m.get(r) ?? 0) + 1);
+        if (!c.regione_id) return;
+        conteggi.set(c.regione_id, (conteggi.get(c.regione_id) ?? 0) + 1);
       });
-    const cantone_club = (club?.cantone || "").trim();
-    return [...m.entries()].sort((a, b) => {
-      if (a[0] === SENZA_AREA_GEO) return 1;
-      if (b[0] === SENZA_AREA_GEO) return -1;
-      if (cantone_club) {
-        if (a[0] === cantone_club) return -1;
-        if (b[0] === cantone_club) return 1;
-      }
-      return a[0].localeCompare(b[0]);
-    });
-  }, [base, area_id, club?.cantone]);
+    return raggruppa_per_nazione(nazioni, regioni_all)
+      .map((g) => ({
+        nazione: g.nazione.nome,
+        voci: g.regioni
+          .filter((r) => (conteggi.get(r.id) ?? 0) > 0)
+          .map((r) => ({ id: r.id, nome: r.nome, count: conteggi.get(r.id) ?? 0 })),
+      }))
+      .filter((g) => g.voci.length > 0);
+  }, [base, area_id, nazioni, regioni_all]);
 
   const lista_ordinata = useMemo(() => {
     const filtrate = base.filter(
-      (c) => (!area_id || c.area_id === area_id) && (!regione || regione_di(c) === regione),
+      (c) => (!area_id || c.area_id === area_id) && (!regione_id || c.regione_id === regione_id),
     );
     const citta = (club?.citta || "").trim().toLowerCase();
     const cantone = (club?.cantone || "").trim().toUpperCase();
@@ -393,11 +395,13 @@ export default function ConvenzioniSociPage() {
       if (ra !== rb) return ra - rb;
       return a.azienda.localeCompare(b.azienda);
     });
-  }, [base, area_id, regione, club?.citta, club?.cantone]);
+  }, [base, area_id, regione_id, club?.citta, club?.cantone]);
 
-  const filtri_attivi = !!area_id || !!regione || !!q;
-  const reset_filtri = () => { set_area_id(null); set_regione(null); set_search(""); };
+  const filtri_attivi = !!area_id || !!regione_id || !!q;
+  const reset_filtri = () => { set_area_id(null); set_regione_id(null); set_search(""); };
   const nome_area = aree.find((a) => a.id === area_id)?.nome;
+  const nome_regione = regioni_all.find((r) => r.id === regione_id)?.nome;
+
 
   return (
     <div className="p-4 md:p-8 space-y-6 max-w-[1400px] mx-auto">
