@@ -450,23 +450,38 @@ export default function ConvenzioniSociPage() {
           )}
         </div>
 
-        {regioni.length > 0 && (
+        {gruppi_geo.length > 0 && (
           <div>
             <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
               <Globe2 className="w-3.5 h-3.5" /> Area geografica
             </p>
-            <div className="flex flex-wrap gap-2">
-              <FilterPill attivo={regione === null} onClick={() => set_regione(null)} count={base.filter((c) => !area_id || c.area_id === area_id).length}>
-                Tutte le aree
+            <div className="mb-3">
+              <FilterPill attivo={regione_id === null} onClick={() => set_regione_id(null)} count={base.filter((c) => !area_id || c.area_id === area_id).length}>
+                Tutte le destinazioni
               </FilterPill>
-              {regioni.map(([r, n]) => (
-                <FilterPill key={r} attivo={regione === r} onClick={() => set_regione(regione === r ? null : r)} count={n}>
-                  {r}
-                </FilterPill>
+            </div>
+            <div className="space-y-3">
+              {gruppi_geo.map((g) => (
+                <div key={g.nazione}>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80 mb-1.5">{g.nazione}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {g.voci.map((v) => (
+                      <FilterPill
+                        key={v.id}
+                        attivo={regione_id === v.id}
+                        onClick={() => set_regione_id(regione_id === v.id ? null : v.id)}
+                        count={v.count}
+                      >
+                        {v.nome}
+                      </FilterPill>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           </div>
         )}
+
 
         {aree.length > 0 && (
           <div>
