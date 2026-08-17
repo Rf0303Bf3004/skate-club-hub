@@ -7,7 +7,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { I18nProvider } from "@/lib/i18n";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import MainLayout from "@/components/MainLayout";
-import SlotProbe from "@/pages/__SlotProbe";
 import LoginPage from "@/pages/LoginPage";
 import DashboardPage from "@/pages/DashboardPage";
 import AthletesPage from "@/pages/AthletesPage";
@@ -220,7 +219,6 @@ const AuthenticatedApp = () => {
       <BrowserRouter>
         <Routes>
           <Route path="/staff" element={<LoginPage />} />
-          <Route path="/__slotprobe" element={<SlotProbe />} />
           <Route path="/" element={<LandingPage />} />
           <Route path="*" element={<LandingPage />} />
         </Routes>
