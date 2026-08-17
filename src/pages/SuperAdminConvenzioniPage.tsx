@@ -322,6 +322,9 @@ function TabConvenzioni() {
               c.stato === "attiva" ? "bg-emerald-100 text-emerald-700 border-emerald-200"
               : c.stato === "sospesa" ? "bg-amber-100 text-amber-700 border-amber-200"
               : "bg-slate-100 text-slate-600 border-slate-200";
+            const st_pub = stato_pubblicazione(c);
+            const st_val = stato_validita(c);
+
             return (
               <div key={c.id} className="border border-slate-200 rounded-lg bg-white shadow-sm hover:shadow-md transition p-4 flex flex-col gap-3">
                 <div className="flex gap-3">
