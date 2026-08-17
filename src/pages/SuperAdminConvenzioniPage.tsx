@@ -482,6 +482,15 @@ function ConvenzioneFormModal({
       toast.error("Compila azienda, area e titolo");
       return;
     }
+    if (form.validita_da && form.validita_a && form.validita_a < form.validita_da) {
+      toast.error("La data di fine validità non può precedere quella di inizio");
+      return;
+    }
+    if (form.pubblicazione_da && form.pubblicazione_a && form.pubblicazione_a < form.pubblicazione_da) {
+      toast.error("La data di fine pubblicazione non può precedere quella di inizio");
+      return;
+    }
+
     set_saving(true);
     try {
       let logo_path = form.logo_url ?? null;
