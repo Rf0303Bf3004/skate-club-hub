@@ -51,19 +51,6 @@ export default function PresidentRelazioneGestione() {
                 ))}
               </SelectContent>
             </Select>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span>
-                    <Button disabled variant="outline" className="gap-2">
-                      <FileDown className="w-4 h-4" />
-                      Anteprima relazione
-                    </Button>
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent>Disponibile nel prossimo step</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
           </div>
         </header>
       )}

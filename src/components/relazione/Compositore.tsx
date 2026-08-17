@@ -53,13 +53,11 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
 
   const handle_generate = async () => {
     if (is_generating_ref.current) {
-      console.log("[PDF] Generazione gia in corso, click ignorato");
       return;
     }
     is_generating_ref.current = true;
     set_generating(true);
     try {
-      console.log("[PDF] Generazione avviata");
       const attivi = items.filter((i) => i.attivo);
       const { blob, pages } = await generateRelazionePDF({
         club,
@@ -79,7 +77,6 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
       toast.success(`Relazione PDF generata (${pages} pagine, ${sizeStr}). File scaricato come '${filename}'`);
     } catch (e: any) {
       if (e?.message === "Generazione gia in corso. Attendi il completamento.") {
-        console.log("[PDF] Generazione gia in corso, click ignorato");
         return;
       }
       console.error(e);
@@ -307,7 +304,7 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
       qc.invalidateQueries({ queryKey: ["relazione_comp_allegati", club_id, stagione_id] }),
     ]);
     saving_store.success();
-    toast.success("Tutto salvato!");
+    toast.success("Dati aggiornati");
   };
 
   const select = (id: string) => {
@@ -368,14 +365,14 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
               onClick={handle_save_all}
               disabled={saving.pending > 0}
               className="gap-2"
-              title="Salva modifiche"
+              title="Ricarica i contenuti più recenti (le modifiche sono già salvate in automatico)"
             >
               {saving.pending > 0 ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              <span className="hidden sm:inline">Salva modifiche</span>
+              <span className="hidden sm:inline">Aggiorna</span>
             </Button>
           </div>
           <p className="text-xs text-slate-500 text-center">
-            La generazione richiede 2-3 secondi. Aspetta il completamento prima di cliccare di nuovo.
+            Le modifiche all'indice sono salvate in automatico.
           </p>
         </div>
         <IndiceComponibile

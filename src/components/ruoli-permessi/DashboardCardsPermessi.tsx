@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { Save, RotateCcw, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import ConfirmButton from "@/components/common/ConfirmButton";
 import { Switch } from "@/components/ui/switch";
 import { CARDS, AREE, RUOLI_DASHBOARD, type AreaDashboard } from "@/config/dashboardCards";
 
@@ -119,7 +120,6 @@ const DashboardCardsPermessi: React.FC = () => {
 
   const ripristina = async () => {
     if (!club_id) return;
-    if (!window.confirm("Ripristinare la configurazione consigliata? Le impostazioni attuali verranno sovrascritte.")) return;
     set_saving(true);
     try {
       await supabase.from("dashboard_card_permessi").delete().eq("club_id", club_id);
@@ -171,10 +171,17 @@ const DashboardCardsPermessi: React.FC = () => {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={ripristina} disabled={saving} className="gap-2">
-            <RotateCcw className="w-4 h-4" />
-            Ripristina configurazione consigliata
-          </Button>
+          <ConfirmButton
+            titolo="Ripristinare la configurazione consigliata?"
+            descrizione="Le impostazioni attuali delle card verranno sovrascritte."
+            conferma_label="Ripristina"
+            on_conferma={() => { void ripristina(); }}
+          >
+            <Button variant="outline" size="sm" disabled={saving} className="gap-2">
+              <RotateCcw className="w-4 h-4" />
+              Ripristina configurazione consigliata
+            </Button>
+          </ConfirmButton>
           <Button size="sm" onClick={salva} disabled={saving} className="gap-2">
             <Save className="w-4 h-4" />
             {saving ? "Salvo..." : "Salva permessi card"}
