@@ -137,6 +137,8 @@ const DettaglioDialog: React.FC<{ c: Convenzione | null; on_close: () => void }>
 
   if (!c) return null;
   const lbl = format_proposta(c.convenzioni_tipi_proposta?.formato, c.valore_proposta);
+  const stato_val = stato_validita(c);
+
 
   return (
     <Dialog open={!!c} onOpenChange={(o) => { if (!o) on_close(); }}>
