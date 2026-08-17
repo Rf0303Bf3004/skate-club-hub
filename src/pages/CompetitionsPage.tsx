@@ -7,6 +7,7 @@ import { days_until } from "@/lib/mock-data";
 import { use_elimina_gara } from "@/hooks/use-supabase-mutations";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import SearchableListLayout from "@/components/common/SearchableListLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Plus,
@@ -902,6 +903,8 @@ const CompetitionsPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search_params]);
 
+  const [search_gare, set_search_gare] = useState("");
+
   const handle_tab_change = (val: string) => {
     set_active_tab(val);
     const next = new URLSearchParams(search_params);
@@ -910,18 +913,30 @@ const CompetitionsPage: React.FC = () => {
     set_search_params(next, { replace: true });
   };
 
+  const match_ricerca = (g: any) => {
+    const q = search_gare.trim().toLowerCase();
+    if (!q) return true;
+    return `${g.nome ?? ""} ${g.localita ?? ""} ${g.club_ospitante ?? ""}`.toLowerCase().includes(q);
+  };
+
   const gare_future = useMemo(
     () =>
       gare
         .filter((g: any) => !is_passata(g.data) && !g.archiviata)
+        .filter(match_ricerca)
         .sort((a: any, b: any) => a.data.localeCompare(b.data)),
-    [gare],
+    [gare, search_gare],
   );
   const gare_archivio = useMemo(
     () =>
       gare
         .filter((g: any) => is_passata(g.data) || g.archiviata)
+        .filter(match_ricerca)
         .sort((a: any, b: any) => b.data.localeCompare(a.data)),
+    [gare, search_gare],
+  );
+  const gare_totali_lista = useMemo(
+    () => gare.filter((g: any) => true).length,
     [gare],
   );
 
@@ -1323,8 +1338,19 @@ const CompetitionsPage: React.FC = () => {
           <TabsContent value="elenco" className="mt-4 space-y-6">
             <ImportGaraPdf
               atleti_db={atleti.map((a: any) => ({ id: a.id, nome: a.nome, cognome: a.cognome }))}
-              on_done={() => {}}
+              on_done={() => {
+                queryClient.invalidateQueries({ queryKey: ["gare"] });
+              }}
             />
+
+            <SearchableListLayout
+              search={search_gare}
+              on_search_change={set_search_gare}
+              search_placeholder="Cerca per nome gara, luogo o club ospitante…"
+              count_filtered={gare_future.length + gare_archivio.length}
+              count_total={gare_totali_lista}
+              sticky={false}
+            >
 
         <div className="bg-card rounded-xl shadow-card overflow-hidden">
           <div className="px-4 py-3 border-b border-border flex items-center justify-between">
