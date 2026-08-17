@@ -243,7 +243,7 @@ export default function ConvenzioniSociPage() {
         .from("convenzioni")
         .select("*, convenzioni_aree(id, nome, icona, ordine, attiva), convenzioni_tipi_proposta(id, nome, formato)")
         .eq("stato", "attiva");
-      return ((data ?? []) as unknown as Convenzione[]).filter(in_validita);
+      return ((data ?? []) as unknown as Convenzione[]).filter((c) => is_pubblicata(c));
     },
   });
 
