@@ -732,7 +732,43 @@ function ConvenzioneFormModal({
             </div>
           </div>
 
+          {mostra_stelle && (
+            <div className="md:col-span-2">
+              <Label>Stelle (categoria alberghiera)</Label>
+              <StelleSelector value={form.stelle ?? null} on_change={v => update("stelle", v)} />
+            </div>
+          )}
 
+          {mostra_ristorante && (
+            <>
+              <div>
+                <Label>Tipo di cucina</Label>
+                <Select
+                  value={form.tipo_cucina ?? "__none__"}
+                  onValueChange={v => update("tipo_cucina", v === "__none__" ? null : v)}
+                >
+                  <SelectTrigger><SelectValue placeholder="Seleziona" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— Nessuno —</SelectItem>
+                    {TIPI_CUCINA.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Fascia di prezzo</Label>
+                <Select
+                  value={form.fascia_prezzo ?? "__none__"}
+                  onValueChange={v => update("fascia_prezzo", v === "__none__" ? null : v)}
+                >
+                  <SelectTrigger><SelectValue placeholder="Seleziona" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— Nessuna —</SelectItem>
+                    {FASCE_PREZZO.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
 
           <div className="md:col-span-2">
             <Label>Indirizzo</Label>
@@ -740,30 +776,38 @@ function ConvenzioneFormModal({
           </div>
           <div>
             <Label>Nazione</Label>
-            <Select
-              value={nazione_sel ?? ""}
-              onValueChange={v => { set_nazione_sel(v); update("regione_id", null); }}
-            >
-              <SelectTrigger><SelectValue placeholder="Seleziona nazione" /></SelectTrigger>
-              <SelectContent>
-                {nazioni.map(n => <SelectItem key={n.id} value={n.id}>{n.nome}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <TerritorioCombobox
+              value={nazione_sel}
+              options={nazioni.map(n => ({ id: n.id, nome: n.nome }))}
+              placeholder="Seleziona o crea nazione"
+              on_select={(id) => {
+                set_nazione_sel(id);
+                set_form(prev => ({ ...prev, regione_id: null, provincia_id: null }));
+              }}
+              on_create={handle_crea_nazione}
+            />
           </div>
           <div>
             <Label>Regione</Label>
-            <Select
-              value={form.regione_id ?? ""}
-              onValueChange={v => update("regione_id", v)}
+            <TerritorioCombobox
+              value={form.regione_id ?? null}
+              options={regioni.filter(r => r.nazione_id === nazione_sel).map(r => ({ id: r.id, nome: r.nome }))}
+              placeholder={nazione_sel ? "Seleziona o crea regione" : "Scegli prima la nazione"}
               disabled={!nazione_sel}
-            >
-              <SelectTrigger><SelectValue placeholder={nazione_sel ? "Seleziona regione" : "Scegli prima la nazione"} /></SelectTrigger>
-              <SelectContent>
-                {regioni.filter(r => r.nazione_id === nazione_sel).map(r => (
-                  <SelectItem key={r.id} value={r.id}>{r.nome}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              on_select={(id) => set_form(prev => ({ ...prev, regione_id: id, provincia_id: null }))}
+              on_create={handle_crea_regione}
+            />
+          </div>
+          <div>
+            <Label>Provincia</Label>
+            <TerritorioCombobox
+              value={form.provincia_id ?? null}
+              options={province.filter(p => p.regione_id === form.regione_id).map(p => ({ id: p.id, nome: p.nome }))}
+              placeholder={form.regione_id ? "Seleziona o crea provincia" : "Scegli prima la regione"}
+              disabled={!form.regione_id}
+              on_select={(id) => update("provincia_id", id)}
+              on_create={handle_crea_provincia}
+            />
           </div>
           <div>
             <Label>Città</Label>
@@ -778,6 +822,7 @@ function ConvenzioneFormModal({
               </SelectContent>
             </Select>
           </div>
+
 
           <div>
             <Label>Validità da</Label>
