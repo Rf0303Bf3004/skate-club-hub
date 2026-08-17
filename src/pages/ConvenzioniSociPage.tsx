@@ -155,6 +155,12 @@ const DettaglioDialog: React.FC<{ c: Convenzione | null; on_close: () => void }>
               <p className="text-sm font-normal text-muted-foreground truncate">{c.titolo}</p>
             </div>
             {lbl && <Badge className="bg-primary text-primary-foreground hover:bg-primary">{lbl}</Badge>}
+            {stato_val.label && (
+              <Badge variant="outline" className={stato_val.tipo === "scaduta" ? "text-muted-foreground" : "border-amber-300 text-amber-700 bg-amber-50"}>
+                {stato_val.label}
+              </Badge>
+            )}
+
           </DialogTitle>
         </DialogHeader>
 
