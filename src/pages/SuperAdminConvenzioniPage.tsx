@@ -545,6 +545,10 @@ function ConvenzioneFormModal({
 
   const update = (k: keyof Convenzione, v: any) => set_form(prev => ({ ...prev, [k]: v }));
 
+  const area_sel = aree.find(a => a.id === form.area_id) ?? null;
+  const mostra_stelle = e_area_alloggio(area_sel?.nome);
+  const mostra_ristorante = e_area_ristorazione(area_sel?.nome);
+
   const tipo_sel = tipi.find(t => t.id === form.tipo_proposta_id) ?? null;
   const formato = tipo_sel?.formato ?? null;
   const valore_placeholder =
