@@ -9,6 +9,7 @@ import { BadgePercent, MapPin, Calendar, Ticket, Star, Loader2, Tag, Search, X, 
 import { Input } from "@/components/ui/input";
 import QRCode from "qrcode";
 import { is_pubblicata, stato_validita } from "@/lib/convenzioni-date";
+import { use_nazioni, use_regioni, raggruppa_per_nazione } from "@/lib/convenzioni-territori";
 
 interface Area { id: string; nome: string; icona: string | null; ordine: number; attiva: boolean; }
 interface Tipo { id: string; nome: string; formato: string | null; }
@@ -23,6 +24,7 @@ interface Convenzione {
   indirizzo: string | null;
   geo_cantone: string | null;
   geo_citta: string | null;
+  regione_id: string | null;
   validita_da: string | null;
   validita_a: string | null;
   pubblicazione_da: string | null;
@@ -35,18 +37,9 @@ interface Convenzione {
   valore_proposta: string | null;
   convenzioni_aree?: Area | null;
   convenzioni_tipi_proposta?: Tipo | null;
+  convenzioni_regioni?: { id: string; nome: string; nazione_id: string; ordine: number; convenzioni_nazioni?: { id: string; nome: string; ordine: number } | null } | null;
 }
 
-const SENZA_AREA_GEO = "Altre destinazioni";
-
-/** Chiave di raggruppamento geografico: cantone/regione se presente, altrimenti città. */
-function regione_di(c: Convenzione): string {
-  const reg = (c.geo_cantone || "").trim();
-  if (reg) return reg;
-  const citta = (c.geo_citta || "").trim();
-  if (citta) return citta;
-  return SENZA_AREA_GEO;
-}
 
 function format_proposta(formato: string | null | undefined, valore: string | null | undefined): string | null {
   const v = (valore ?? "").trim();
