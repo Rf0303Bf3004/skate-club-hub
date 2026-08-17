@@ -375,7 +375,19 @@ export default function ConvenzioniSociPage() {
   const q = search.trim().toLowerCase();
 
   /** Base su cui contare: la ricerca testuale si applica sempre. */
-  const base = useMemo(() => convenzioni.filter((c) => match_search(c, q)), [convenzioni, q]);
+  const base_ricerca = useMemo(() => convenzioni.filter((c) => match_search(c, q)), [convenzioni, q]);
+
+  /** Contatori per le sezioni tematiche (Hotel & Viaggi / Ristoranti / Altro). */
+  const conteggi_sezioni = useMemo(() => {
+    const m: Record<Exclude<sezione_tema, "tutte">, number> = { hotel: 0, ristoranti: 0, altro: 0 };
+    base_ricerca.forEach((c) => { m[sezione_di(c)] += 1; });
+    return m;
+  }, [base_ricerca]);
+
+  const base = useMemo(
+    () => (sezione === "tutte" ? base_ricerca : base_ricerca.filter((c) => sezione_di(c) === sezione)),
+    [base_ricerca, sezione],
+  );
 
   /** Conteggi incrociati: ogni contatore rispetta l'altro filtro attivo. */
   const conteggi_aree = useMemo(() => {
