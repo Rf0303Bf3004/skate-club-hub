@@ -5,7 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { BadgePercent, MapPin, Calendar, Ticket, Star, Loader2, Tag } from "lucide-react";
+import { BadgePercent, MapPin, Calendar, Ticket, Star, Loader2, Tag, Search, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import QRCode from "qrcode";
 
 interface Area { id: string; nome: string; icona: string | null; ordine: number; attiva: boolean; }
@@ -270,7 +271,7 @@ export default function ConvenzioniSociPage() {
       if (a.in_evidenza !== b.in_evidenza) return a.in_evidenza ? -1 : 1;
       return a.azienda.localeCompare(b.azienda);
     });
-  }, [convenzioni, area_id, club?.citta, club?.cantone]);
+  }, [convenzioni, area_id, search, club?.citta, club?.cantone]);
 
   return (
     <div className="p-4 md:p-8 space-y-6">
