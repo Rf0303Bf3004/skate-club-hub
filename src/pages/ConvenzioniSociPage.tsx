@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { BadgePercent, MapPin, Calendar, Ticket, Star, Loader2, Tag, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import QRCode from "qrcode";
+import { is_pubblicata, stato_validita } from "@/lib/convenzioni-date";
+
 
 interface Area { id: string; nome: string; icona: string | null; ordine: number; attiva: boolean; }
 interface Tipo { id: string; nome: string; formato: string | null; }
