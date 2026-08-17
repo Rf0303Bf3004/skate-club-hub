@@ -143,7 +143,7 @@ const SegreteriaFatturaDetailPage: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-4">
-      <Button variant="ghost" size="sm" onClick={() => navigate(-1)}><ArrowLeft className="w-4 h-4 mr-1" /> Indietro</Button>
+      <Button variant="ghost" size="sm" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/fatture"))}><ArrowLeft className="w-4 h-4 mr-1" /> Indietro</Button>
 
       <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
         <div className="flex items-start justify-between gap-3">
