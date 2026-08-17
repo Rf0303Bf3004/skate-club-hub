@@ -425,7 +425,7 @@ export default function ConvenzioniSociPage() {
               <p className="text-xs uppercase tracking-wider text-muted-foreground mt-1">Partner attivi</p>
             </div>
             <div className="hidden sm:block">
-              <p className="text-3xl font-bold tabular-nums text-foreground leading-none">{regioni.length}</p>
+              <p className="text-3xl font-bold tabular-nums text-foreground leading-none">{gruppi_geo.reduce((n, g) => n + g.voci.length, 0)}</p>
               <p className="text-xs uppercase tracking-wider text-muted-foreground mt-1">Destinazioni</p>
             </div>
           </div>
