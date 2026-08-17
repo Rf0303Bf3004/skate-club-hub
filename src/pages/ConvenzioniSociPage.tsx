@@ -206,6 +206,7 @@ const DettaglioDialog: React.FC<{ c: Convenzione | null; on_close: () => void }>
 export default function ConvenzioniSociPage() {
   const { session } = useAuth();
   const [area_id, set_area_id] = useState<string | null>(null);
+  const [search, set_search] = useState("");
   const [selected, set_selected] = useState<Convenzione | null>(null);
 
   const { data: club } = useQuery({
@@ -245,7 +246,15 @@ export default function ConvenzioniSociPage() {
   });
 
   const lista_ordinata = useMemo(() => {
-    const filtrate = area_id ? convenzioni.filter((c) => c.area_id === area_id) : convenzioni;
+    const q = search.trim().toLowerCase();
+    const per_area = area_id ? convenzioni.filter((c) => c.area_id === area_id) : convenzioni;
+    const filtrate = q
+      ? per_area.filter((c) =>
+          `${c.titolo ?? ""} ${(c as any).partner ?? ""} ${(c as any).descrizione ?? ""} ${(c as any).localita ?? ""}`
+            .toLowerCase()
+            .includes(q),
+        )
+      : per_area;
     const citta = (club?.citta || "").trim().toLowerCase();
     const cantone = (club?.cantone || "").trim().toUpperCase();
     const rank = (c: Convenzione) => {
@@ -273,6 +282,26 @@ export default function ConvenzioniSociPage() {
           <h1 className="text-2xl font-bold text-foreground">Convenzioni</h1>
           <p className="text-sm text-muted-foreground">Vantaggi riservati ai soci del club</p>
         </div>
+      </div>
+
+      <div className="relative max-w-md">
+        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={search}
+          onChange={(e) => set_search(e.target.value)}
+          placeholder="Cerca convenzione, partner o località…"
+          className="pl-9 pr-9 h-11"
+        />
+        {search && (
+          <button
+            type="button"
+            aria-label="Cancella ricerca"
+            onClick={() => set_search("")}
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md hover:bg-muted"
+          >
+            <X className="w-4 h-4 text-muted-foreground" />
+          </button>
+        )}
       </div>
 
       {aree.length > 0 && (

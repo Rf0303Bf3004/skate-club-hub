@@ -5,8 +5,6 @@ import { use_stagioni } from "@/hooks/use-supabase-data";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
-import { FileDown } from "lucide-react";
 import BlocchiTestoTab from "@/components/relazione/BlocchiTestoTab";
 import AllegatiTab from "@/components/relazione/AllegatiTab";
 import ParagrafiTab from "@/components/relazione/ParagrafiTab";
