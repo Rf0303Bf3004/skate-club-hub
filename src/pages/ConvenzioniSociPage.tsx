@@ -105,7 +105,8 @@ const ConvenzioneCard: React.FC<{ c: Convenzione; on_open: (c: Convenzione) => v
   const banner = useSignedUrl(c.immagine_url);
   const lbl = format_proposta(c.convenzioni_tipi_proposta?.formato, c.valore_proposta);
   const stato_val = stato_validita(c);
-  const luogo = [c.geo_citta, c.geo_cantone].filter(Boolean).join(" · ");
+  const luogo = [c.geo_citta, c.convenzioni_regioni?.nome ?? c.geo_cantone].filter(Boolean).join(" · ");
+
 
   return (
     <button
