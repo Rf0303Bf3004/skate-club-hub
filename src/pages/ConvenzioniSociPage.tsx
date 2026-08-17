@@ -493,7 +493,7 @@ export default function ConvenzioniSociPage() {
               <SlidersHorizontal className="w-3.5 h-3.5" /> Categoria
             </p>
             <div className="flex flex-wrap gap-2">
-              <FilterPill attivo={area_id === null} onClick={() => set_area_id(null)} count={base.filter((c) => !regione || regione_di(c) === regione).length}>
+              <FilterPill attivo={area_id === null} onClick={() => set_area_id(null)} count={base.filter((c) => !regione_id || c.regione_id === regione_id).length}>
                 Tutte le categorie
               </FilterPill>
               {aree.map((a) => (
