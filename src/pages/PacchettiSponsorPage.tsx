@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { use_club } from "@/hooks/use-supabase-data";
 import { Button } from "@/components/ui/button";
+import ConfirmButton from "@/components/common/ConfirmButton";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { FileText, Plus, Pencil, Trash2, RotateCcw, FileEdit } from "lucide-react";
@@ -234,9 +235,16 @@ export default function PacchettiSponsorPage() {
           <Button variant="outline" size="sm" onClick={() => set_text_open(true)}>
             <FileEdit className="w-4 h-4 mr-2" /> Modifica testo Pitch
           </Button>
-          <Button variant="outline" size="sm" onClick={() => { if (confirm("Ripristinare i 3 pacchetti default? Quelli attuali saranno eliminati.")) reset_mut.mutate(); }}>
-            <RotateCcw className="w-4 h-4 mr-2" /> Reset ai default
-          </Button>
+          <ConfirmButton
+            titolo="Ripristinare la configurazione consigliata?"
+            descrizione="I 3 pacchetti predefiniti verranno ricreati e quelli attuali eliminati."
+            conferma_label="Ripristina"
+            on_conferma={() => reset_mut.mutate()}
+          >
+            <Button variant="outline" size="sm">
+              <RotateCcw className="w-4 h-4 mr-2" /> Ripristina configurazione consigliata
+            </Button>
+          </ConfirmButton>
           <Button size="sm" onClick={() => { set_dlg_initial(undefined); set_dlg_open(true); }}>
             <Plus className="w-4 h-4 mr-2" /> Aggiungi pacchetto
           </Button>
@@ -274,9 +282,15 @@ export default function PacchettiSponsorPage() {
                 <Button size="sm" variant="outline" className="flex-1" onClick={() => apri_modifica(p)}>
                   <Pencil className="w-3 h-3 mr-1" /> Modifica
                 </Button>
-                <Button size="sm" variant="ghost" className="text-destructive" onClick={() => { if (confirm("Eliminare il pacchetto?")) del_mut.mutate(p.id); }}>
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+                <ConfirmButton
+                  titolo="Eliminare il pacchetto?"
+                  descrizione={`"${p.nome_visualizzato}" verrà rimosso definitivamente.`}
+                  on_conferma={() => del_mut.mutate(p.id)}
+                >
+                  <Button size="sm" variant="ghost" className="text-destructive" aria-label="Elimina pacchetto">
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </ConfirmButton>
               </div>
             </Card>
           );

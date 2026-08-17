@@ -133,7 +133,7 @@ const CommunicationsPage: React.FC = () => {
   const crea = use_crea_comunicazione();
 
   const [modal_open, set_modal_open] = useState(false);
-  const [step, set_step] = useState<'choose' | 'template_pick' | 'form'>('choose');
+  const [step, set_step] = useState<'form'>('form');
   const [selected_template, set_selected_template] = useState<typeof TEMPLATES[0] | null>(null);
   const [placeholders, set_placeholders] = useState<Record<string, string>>({});
   const [titolo, set_titolo] = useState('');
@@ -458,6 +458,8 @@ const CommunicationsPage: React.FC = () => {
     }
     if (td === 'per_atleta' || td === 'atleta') return t('per_atleta');
     if (td === 'agonisti') return 'Agonisti';
+    if (td === 'agoniste') return 'Atlete che gareggiano';
+    if (td === 'solo_staff') return 'Solo staff';
     if (td === 'per_livello') return 'Per livello';
     if (td === 'manuale') return 'Selezione filtrata';
     if (td === 'per_corsi') return 'Per corsi';
