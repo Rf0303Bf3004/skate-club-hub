@@ -593,6 +593,10 @@ function ConvenzioneFormModal({
         geo_cantone: form.geo_cantone ?? null,
         geo_citta: form.geo_citta ?? null,
         regione_id: form.regione_id ?? null,
+        provincia_id: form.provincia_id ?? null,
+        stelle: mostra_stelle ? (form.stelle ?? null) : null,
+        tipo_cucina: mostra_ristorante ? (form.tipo_cucina || null) : null,
+        fascia_prezzo: mostra_ristorante ? (form.fascia_prezzo || null) : null,
 
         validita_da: form.validita_da || null,
         validita_a: form.validita_a || null,
