@@ -652,11 +652,38 @@ function ConvenzioneFormModal({
             <Input value={form.indirizzo ?? ""} onChange={e => update("indirizzo", e.target.value)} />
           </div>
           <div>
+            <Label>Nazione</Label>
+            <Select
+              value={nazione_sel ?? ""}
+              onValueChange={v => { set_nazione_sel(v); update("regione_id", null); }}
+            >
+              <SelectTrigger><SelectValue placeholder="Seleziona nazione" /></SelectTrigger>
+              <SelectContent>
+                {nazioni.map(n => <SelectItem key={n.id} value={n.id}>{n.nome}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Regione</Label>
+            <Select
+              value={form.regione_id ?? ""}
+              onValueChange={v => update("regione_id", v)}
+              disabled={!nazione_sel}
+            >
+              <SelectTrigger><SelectValue placeholder={nazione_sel ? "Seleziona regione" : "Scegli prima la nazione"} /></SelectTrigger>
+              <SelectContent>
+                {regioni.filter(r => r.nazione_id === nazione_sel).map(r => (
+                  <SelectItem key={r.id} value={r.id}>{r.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
             <Label>Città</Label>
             <Input value={form.geo_citta ?? ""} onChange={e => update("geo_citta", e.target.value)} />
           </div>
           <div>
-            <Label>Cantone</Label>
+            <Label>Cantone (facoltativo)</Label>
             <Select value={form.geo_cantone ?? ""} onValueChange={v => update("geo_cantone", v)}>
               <SelectTrigger><SelectValue placeholder="Seleziona" /></SelectTrigger>
               <SelectContent>
@@ -664,6 +691,7 @@ function ConvenzioneFormModal({
               </SelectContent>
             </Select>
           </div>
+
           <div>
             <Label>Validità da</Label>
             <Input type="date" value={form.validita_da ?? ""} onChange={e => update("validita_da", e.target.value)} />
