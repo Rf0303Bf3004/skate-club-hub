@@ -171,10 +171,28 @@ const ConvenzioneCard: React.FC<{ c: Convenzione; on_open: (c: Convenzione) => v
           <p className="text-sm text-muted-foreground mt-1 line-clamp-2 leading-snug">{c.titolo}</p>
         </div>
 
+        {!!c.stelle && (
+          <div className="flex items-center gap-0.5" aria-label={`${c.stelle} stelle`}>
+            {Array.from({ length: c.stelle }).map((_, i) => (
+              <Star key={i} className="w-4 h-4 text-amber-500 fill-amber-500" />
+            ))}
+          </div>
+        )}
+
         <div className="flex flex-wrap items-center gap-1.5">
           {c.convenzioni_aree?.nome && (
             <Badge variant="secondary" className="gap-1 font-medium">
               <Tag className="w-3 h-3" />{c.convenzioni_aree.nome}
+            </Badge>
+          )}
+          {c.tipo_cucina && (
+            <Badge variant="outline" className="gap-1 font-normal">
+              <UtensilsCrossed className="w-3 h-3" />{c.tipo_cucina}
+            </Badge>
+          )}
+          {c.fascia_prezzo && (
+            <Badge variant="outline" className="font-semibold text-emerald-700 border-emerald-200 bg-emerald-50">
+              {c.fascia_prezzo}
             </Badge>
           )}
           {luogo && (
