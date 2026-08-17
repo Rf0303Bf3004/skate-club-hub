@@ -393,9 +393,20 @@ function TabConvenzioni() {
                   </div>
                 </div>
                 <div className="text-xs text-slate-500 space-y-0.5">
-                  {(c.geo_citta || c.convenzioni_regioni?.nome || c.geo_cantone) && (
-                    <div>{[c.geo_citta, c.convenzioni_regioni?.nome ?? c.geo_cantone, c.convenzioni_regioni?.convenzioni_nazioni?.nome].filter(Boolean).join(" — ")}</div>
+                  {!!c.stelle && (
+                    <div className="flex items-center gap-0.5">
+                      {Array.from({ length: c.stelle }).map((_, i) => (
+                        <Star key={i} className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                      ))}
+                    </div>
                   )}
+                  {(c.tipo_cucina || c.fascia_prezzo) && (
+                    <div>{[c.tipo_cucina, c.fascia_prezzo].filter(Boolean).join(" · ")}</div>
+                  )}
+                  {(c.geo_citta || c.convenzioni_province?.nome || c.convenzioni_regioni?.nome || c.geo_cantone) && (
+                    <div>{[c.geo_citta, c.convenzioni_province?.nome, c.convenzioni_regioni?.nome ?? c.geo_cantone, c.convenzioni_regioni?.convenzioni_nazioni?.nome].filter(Boolean).join(" — ")}</div>
+                  )}
+
 
                   {(c.validita_da || c.validita_a) && (
                     <div>Validità: {c.validita_da ?? "—"} → {c.validita_a ?? "—"}</div>
