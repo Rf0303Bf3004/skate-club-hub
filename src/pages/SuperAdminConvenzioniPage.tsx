@@ -356,6 +356,16 @@ function TabConvenzioni() {
                         </Badge>
                       )}
                       <Badge variant="outline" className={stato_color}>{c.stato}</Badge>
+                      <Badge variant="outline" className={colore_pubblicazione[st_pub]}>
+                        {label_pubblicazione[st_pub]}
+                      </Badge>
+                      {st_val.label && (
+                        <Badge variant="outline" className={st_val.tipo === "scaduta"
+                          ? "bg-slate-100 text-slate-600 border-slate-200"
+                          : "bg-amber-50 text-amber-700 border-amber-200"}>
+                          {st_val.label}
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -364,6 +374,10 @@ function TabConvenzioni() {
                   {(c.validita_da || c.validita_a) && (
                     <div>Validità: {c.validita_da ?? "—"} → {c.validita_a ?? "—"}</div>
                   )}
+                  {(c.pubblicazione_da || c.pubblicazione_a) && (
+                    <div>Pubblicazione: {c.pubblicazione_da ?? "—"} → {c.pubblicazione_a ?? "—"}</div>
+                  )}
+
                   <div className="flex items-center gap-1 pt-1">
                     <ScanLine className="w-3.5 h-3.5" />
                     <span>
