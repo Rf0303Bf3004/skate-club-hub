@@ -1202,21 +1202,19 @@ function TabTerritori() {
   const qc = useQueryClient();
   const { data: nazioni = [] } = use_nazioni();
   const { data: regioni = [] } = use_regioni();
+  const { data: province = [] } = use_province();
   const [nuova_nazione, set_nuova_nazione] = useState("");
   const [nuova_regione, set_nuova_regione] = useState<Record<string, string>>({});
+  const [nuova_provincia, set_nuova_provincia] = useState<Record<string, string>>({});
 
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["convenzioni_nazioni"] });
     qc.invalidateQueries({ queryKey: ["convenzioni_regioni"] });
+    qc.invalidateQueries({ queryKey: ["convenzioni_province"] });
   };
 
   const mut_add_nazione = useMutation({
-    mutationFn: async (nome: string) => {
-      const { error } = await supabase
-        .from("convenzioni_nazioni")
-        .insert({ nome: nome.trim(), ordine: nazioni.length + 1 });
-      if (error) throw error;
-    },
+    mutationFn: async (nome: string) => { await crea_nazione(nome, nazioni.length + 1); },
     onSuccess: () => { toast.success("Nazione aggiunta"); set_nuova_nazione(""); refresh(); },
     onError: (e: any) => toast.error("Errore: " + (e?.message ?? "")),
   });
@@ -1224,12 +1222,27 @@ function TabTerritori() {
   const mut_add_regione = useMutation({
     mutationFn: async ({ nazione_id, nome }: { nazione_id: string; nome: string }) => {
       const conteggio = regioni.filter(r => r.nazione_id === nazione_id).length;
-      const { error } = await supabase
-        .from("convenzioni_regioni")
-        .insert({ nazione_id, nome: nome.trim(), ordine: conteggio + 1 });
-      if (error) throw error;
+      await crea_regione(nazione_id, nome, conteggio + 1);
     },
     onSuccess: (_d, v) => { toast.success("Regione aggiunta"); set_nuova_regione(p => ({ ...p, [v.nazione_id]: "" })); refresh(); },
+    onError: (e: any) => toast.error("Errore: " + (e?.message ?? "")),
+  });
+
+  const mut_add_provincia = useMutation({
+    mutationFn: async ({ regione_id, nome }: { regione_id: string; nome: string }) => {
+      const conteggio = province.filter(p => p.regione_id === regione_id).length;
+      await crea_provincia(regione_id, nome, conteggio + 1);
+    },
+    onSuccess: (_d, v) => { toast.success("Provincia aggiunta"); set_nuova_provincia(p => ({ ...p, [v.regione_id]: "" })); refresh(); },
+    onError: (e: any) => toast.error("Errore: " + (e?.message ?? "")),
+  });
+
+  const mut_del_provincia = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("convenzioni_province" as any).delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Provincia eliminata"); refresh(); },
     onError: (e: any) => toast.error("Errore: " + (e?.message ?? "")),
   });
 
@@ -1287,22 +1300,65 @@ function TabTerritori() {
                   <Trash2 className="w-3.5 h-3.5" />
                 </Button>
               </div>
-              <div className="flex flex-wrap gap-1.5">
+
+              <div className="space-y-3">
                 {figlie.length === 0 && <span className="text-xs text-slate-400">Nessuna regione</span>}
-                {figlie.map(r => (
-                  <Badge key={r.id} variant="outline" className="gap-1 pr-1">
-                    {r.nome}
-                    <button
-                      type="button"
-                      className="p-0.5 rounded hover:bg-red-50 text-red-600"
-                      onClick={() => mut_del_regione.mutate(r.id)}
-                      aria-label={`Elimina ${r.nome}`}
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  </Badge>
-                ))}
+                {figlie.map(r => {
+                  const prov = province.filter(p => p.regione_id === r.id);
+                  return (
+                    <div key={r.id} className="border border-slate-100 rounded-md p-2.5 space-y-2 bg-slate-50/60">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-medium text-slate-800">{r.nome}</span>
+                        <button
+                          type="button"
+                          className="p-1 rounded hover:bg-red-50 text-red-600"
+                          onClick={() => mut_del_regione.mutate(r.id)}
+                          aria-label={`Elimina ${r.nome}`}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {prov.length === 0 && <span className="text-[11px] text-slate-400">Nessuna provincia</span>}
+                        {prov.map(p => (
+                          <Badge key={p.id} variant="outline" className="gap-1 pr-1 bg-white">
+                            {p.nome}
+                            <button
+                              type="button"
+                              className="p-0.5 rounded hover:bg-red-50 text-red-600"
+                              onClick={() => mut_del_provincia.mutate(p.id)}
+                              aria-label={`Elimina ${p.nome}`}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <Input
+                          className="h-8 text-sm bg-white"
+                          placeholder="Nuova provincia"
+                          value={nuova_provincia[r.id] ?? ""}
+                          onChange={e => set_nuova_provincia(p => ({ ...p, [r.id]: e.target.value }))}
+                        />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8"
+                          onClick={() => {
+                            const nome = (nuova_provincia[r.id] ?? "").trim();
+                            if (nome) mut_add_provincia.mutate({ regione_id: r.id, nome });
+                          }}
+                          disabled={!(nuova_provincia[r.id] ?? "").trim()}
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
+
               <div className="flex gap-2">
                 <Input
                   className="h-9"
@@ -1329,3 +1385,4 @@ function TabTerritori() {
     </div>
   );
 }
+
