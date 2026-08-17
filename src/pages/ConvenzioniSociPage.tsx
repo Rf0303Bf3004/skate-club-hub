@@ -358,7 +358,7 @@ export default function ConvenzioniSociPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("convenzioni")
-        .select("*, convenzioni_aree(id, nome, icona, ordine, attiva), convenzioni_tipi_proposta(id, nome, formato), convenzioni_regioni(id, nome, nazione_id, ordine, convenzioni_nazioni(id, nome, ordine))")
+        .select("*, convenzioni_aree(id, nome, icona, ordine, attiva), convenzioni_tipi_proposta(id, nome, formato), convenzioni_province(id, nome), convenzioni_regioni(id, nome, nazione_id, ordine, convenzioni_nazioni(id, nome, ordine))")
         .eq("stato", "attiva");
       return ((data ?? []) as unknown as Convenzione[]).filter((c) => is_pubblicata(c));
     },
