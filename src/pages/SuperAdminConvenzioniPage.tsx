@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import QRCode from "qrcode";
 import { stato_pubblicazione, label_pubblicazione, colore_pubblicazione, stato_validita } from "@/lib/convenzioni-date";
+import { use_nazioni, use_regioni } from "@/lib/convenzioni-territori";
+
 
 
 // ============== Helpers icone lucide dinamiche ==============
@@ -59,6 +61,7 @@ interface Convenzione {
   indirizzo: string | null;
   geo_cantone: string | null;
   geo_citta: string | null;
+  regione_id: string | null;
   validita_da: string | null;
   validita_a: string | null;
   pubblicazione_da: string | null;
@@ -73,7 +76,9 @@ interface Convenzione {
   valore_proposta: string | null;
   convenzioni_aree?: { nome: string; icona: string | null } | null;
   convenzioni_tipi_proposta?: { nome: string; formato: string | null } | null;
+  convenzioni_regioni?: { id: string; nome: string; nazione_id: string; convenzioni_nazioni?: { nome: string } | null } | null;
 }
+
 
 function format_proposta(formato: string | null | undefined, valore: string | null | undefined): string | null {
   const v = (valore ?? "").trim();
@@ -154,6 +159,7 @@ export default function SuperAdminConvenzioniPage() {
           <TabsTrigger value="convenzioni">Convenzioni</TabsTrigger>
           <TabsTrigger value="aree">Aree di mercato</TabsTrigger>
           <TabsTrigger value="tipi">Tipi di proposta</TabsTrigger>
+          <TabsTrigger value="territori">Nazioni e regioni</TabsTrigger>
         </TabsList>
         <TabsContent value="convenzioni" className="mt-4">
           <TabConvenzioni />
@@ -164,7 +170,11 @@ export default function SuperAdminConvenzioniPage() {
         <TabsContent value="tipi" className="mt-4">
           <TabTipi />
         </TabsContent>
+        <TabsContent value="territori" className="mt-4">
+          <TabTerritori />
+        </TabsContent>
       </Tabs>
+
 
     </div>
   );
@@ -205,7 +215,7 @@ function TabConvenzioni() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("convenzioni")
-        .select("*, convenzioni_aree(nome, icona), convenzioni_tipi_proposta(nome, formato)")
+        .select("*, convenzioni_aree(nome, icona), convenzioni_tipi_proposta(nome, formato), convenzioni_regioni(id, nome, nazione_id, convenzioni_nazioni(nome))")
         .order("in_evidenza", { ascending: false })
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -373,7 +383,10 @@ function TabConvenzioni() {
                   </div>
                 </div>
                 <div className="text-xs text-slate-500 space-y-0.5">
-                  {(c.geo_citta || c.geo_cantone) && <div>{[c.geo_citta, c.geo_cantone].filter(Boolean).join(" — ")}</div>}
+                  {(c.geo_citta || c.convenzioni_regioni?.nome || c.geo_cantone) && (
+                    <div>{[c.geo_citta, c.convenzioni_regioni?.nome ?? c.geo_cantone, c.convenzioni_regioni?.convenzioni_nazioni?.nome].filter(Boolean).join(" — ")}</div>
+                  )}
+
                   {(c.validita_da || c.validita_a) && (
                     <div>Validità: {c.validita_da ?? "—"} → {c.validita_a ?? "—"}</div>
                   )}
@@ -455,6 +468,9 @@ function ConvenzioneFormModal({
   const [logo_file, set_logo_file] = useState<File | null>(null);
   const [imm_file, set_imm_file] = useState<File | null>(null);
   const [saving, set_saving] = useState(false);
+  const [nazione_sel, set_nazione_sel] = useState<string | null>(null);
+  const { data: nazioni = [] } = use_nazioni();
+  const { data: regioni = [] } = use_regioni();
 
   useEffect(() => {
     if (open) {
@@ -463,6 +479,15 @@ function ConvenzioneFormModal({
       set_imm_file(null);
     }
   }, [open, editing]);
+
+  useEffect(() => {
+    if (!open) return;
+    const reg = form.regione_id ? regioni.find(r => r.id === form.regione_id) : null;
+    if (reg) set_nazione_sel(reg.nazione_id);
+    else if (!form.regione_id && !nazione_sel) set_nazione_sel(null);
+  }, [open, form.regione_id, regioni]);
+
+
 
   const update = (k: keyof Convenzione, v: any) => set_form(prev => ({ ...prev, [k]: v }));
 
@@ -508,6 +533,8 @@ function ConvenzioneFormModal({
         indirizzo: form.indirizzo ?? null,
         geo_cantone: form.geo_cantone ?? null,
         geo_citta: form.geo_citta ?? null,
+        regione_id: form.regione_id ?? null,
+
         validita_da: form.validita_da || null,
         validita_a: form.validita_a || null,
         pubblicazione_da: form.pubblicazione_da || null,
@@ -649,11 +676,38 @@ function ConvenzioneFormModal({
             <Input value={form.indirizzo ?? ""} onChange={e => update("indirizzo", e.target.value)} />
           </div>
           <div>
+            <Label>Nazione</Label>
+            <Select
+              value={nazione_sel ?? ""}
+              onValueChange={v => { set_nazione_sel(v); update("regione_id", null); }}
+            >
+              <SelectTrigger><SelectValue placeholder="Seleziona nazione" /></SelectTrigger>
+              <SelectContent>
+                {nazioni.map(n => <SelectItem key={n.id} value={n.id}>{n.nome}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Regione</Label>
+            <Select
+              value={form.regione_id ?? ""}
+              onValueChange={v => update("regione_id", v)}
+              disabled={!nazione_sel}
+            >
+              <SelectTrigger><SelectValue placeholder={nazione_sel ? "Seleziona regione" : "Scegli prima la nazione"} /></SelectTrigger>
+              <SelectContent>
+                {regioni.filter(r => r.nazione_id === nazione_sel).map(r => (
+                  <SelectItem key={r.id} value={r.id}>{r.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
             <Label>Città</Label>
             <Input value={form.geo_citta ?? ""} onChange={e => update("geo_citta", e.target.value)} />
           </div>
           <div>
-            <Label>Cantone</Label>
+            <Label>Cantone (facoltativo)</Label>
             <Select value={form.geo_cantone ?? ""} onValueChange={v => update("geo_cantone", v)}>
               <SelectTrigger><SelectValue placeholder="Seleziona" /></SelectTrigger>
               <SelectContent>
@@ -661,6 +715,7 @@ function ConvenzioneFormModal({
               </SelectContent>
             </Select>
           </div>
+
           <div>
             <Label>Validità da</Label>
             <Input type="date" value={form.validita_da ?? ""} onChange={e => update("validita_da", e.target.value)} />
@@ -1022,3 +1077,136 @@ function TipoFormModal({
   );
 }
 
+
+// ============== Tab Territori (nazioni + regioni) ==============
+function TabTerritori() {
+  const qc = useQueryClient();
+  const { data: nazioni = [] } = use_nazioni();
+  const { data: regioni = [] } = use_regioni();
+  const [nuova_nazione, set_nuova_nazione] = useState("");
+  const [nuova_regione, set_nuova_regione] = useState<Record<string, string>>({});
+
+  const refresh = () => {
+    qc.invalidateQueries({ queryKey: ["convenzioni_nazioni"] });
+    qc.invalidateQueries({ queryKey: ["convenzioni_regioni"] });
+  };
+
+  const mut_add_nazione = useMutation({
+    mutationFn: async (nome: string) => {
+      const { error } = await supabase
+        .from("convenzioni_nazioni")
+        .insert({ nome: nome.trim(), ordine: nazioni.length + 1 });
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Nazione aggiunta"); set_nuova_nazione(""); refresh(); },
+    onError: (e: any) => toast.error("Errore: " + (e?.message ?? "")),
+  });
+
+  const mut_add_regione = useMutation({
+    mutationFn: async ({ nazione_id, nome }: { nazione_id: string; nome: string }) => {
+      const conteggio = regioni.filter(r => r.nazione_id === nazione_id).length;
+      const { error } = await supabase
+        .from("convenzioni_regioni")
+        .insert({ nazione_id, nome: nome.trim(), ordine: conteggio + 1 });
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => { toast.success("Regione aggiunta"); set_nuova_regione(p => ({ ...p, [v.nazione_id]: "" })); refresh(); },
+    onError: (e: any) => toast.error("Errore: " + (e?.message ?? "")),
+  });
+
+  const mut_del_regione = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("convenzioni_regioni").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Regione eliminata"); refresh(); },
+    onError: (e: any) => toast.error("Errore: " + (e?.message ?? "")),
+  });
+
+  const mut_del_nazione = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("convenzioni_nazioni").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Nazione eliminata"); refresh(); },
+    onError: (e: any) => toast.error("Errore: " + (e?.message ?? "")),
+  });
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col md:flex-row gap-2 md:items-end">
+        <div className="flex-1">
+          <Label className="text-xs">Nuova nazione</Label>
+          <Input
+            placeholder="es. Francia"
+            value={nuova_nazione}
+            onChange={e => set_nuova_nazione(e.target.value)}
+          />
+        </div>
+        <Button
+          onClick={() => nuova_nazione.trim() && mut_add_nazione.mutate(nuova_nazione)}
+          disabled={!nuova_nazione.trim() || mut_add_nazione.isPending}
+        >
+          <Plus className="w-4 h-4 mr-1" /> Aggiungi nazione
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {nazioni.map(n => {
+          const figlie = regioni.filter(r => r.nazione_id === n.id);
+          return (
+            <div key={n.id} className="border border-slate-200 rounded-lg bg-white p-4 space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="font-semibold text-slate-900">{n.nome}</h3>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-red-600"
+                  onClick={() => mut_del_nazione.mutate(n.id)}
+                  title="Elimina nazione (rimuove anche le sue regioni)"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {figlie.length === 0 && <span className="text-xs text-slate-400">Nessuna regione</span>}
+                {figlie.map(r => (
+                  <Badge key={r.id} variant="outline" className="gap-1 pr-1">
+                    {r.nome}
+                    <button
+                      type="button"
+                      className="p-0.5 rounded hover:bg-red-50 text-red-600"
+                      onClick={() => mut_del_regione.mutate(r.id)}
+                      aria-label={`Elimina ${r.nome}`}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  className="h-9"
+                  placeholder="Nuova regione"
+                  value={nuova_regione[n.id] ?? ""}
+                  onChange={e => set_nuova_regione(p => ({ ...p, [n.id]: e.target.value }))}
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const nome = (nuova_regione[n.id] ?? "").trim();
+                    if (nome) mut_add_regione.mutate({ nazione_id: n.id, nome });
+                  }}
+                  disabled={!(nuova_regione[n.id] ?? "").trim()}
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

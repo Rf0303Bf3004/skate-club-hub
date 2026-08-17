@@ -1124,6 +1124,7 @@ export type Database = {
           pubblicazione_a: string | null
           pubblicazione_da: string | null
           qr_token: string
+          regione_id: string | null
           stato: string
           tipo_proposta_id: string | null
           titolo: string
@@ -1147,6 +1148,7 @@ export type Database = {
           pubblicazione_a?: string | null
           pubblicazione_da?: string | null
           qr_token?: string
+          regione_id?: string | null
           stato?: string
           tipo_proposta_id?: string | null
           titolo: string
@@ -1170,6 +1172,7 @@ export type Database = {
           pubblicazione_a?: string | null
           pubblicazione_da?: string | null
           qr_token?: string
+          regione_id?: string | null
           stato?: string
           tipo_proposta_id?: string | null
           titolo?: string
@@ -1183,6 +1186,13 @@ export type Database = {
             columns: ["area_id"]
             isOneToOne: false
             referencedRelation: "convenzioni_aree"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "convenzioni_regione_id_fkey"
+            columns: ["regione_id"]
+            isOneToOne: false
+            referencedRelation: "convenzioni_regioni"
             referencedColumns: ["id"]
           },
           {
@@ -1220,6 +1230,65 @@ export type Database = {
           ordine?: number
         }
         Relationships: []
+      }
+      convenzioni_nazioni: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          ordine: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          ordine?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          ordine?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      convenzioni_regioni: {
+        Row: {
+          created_at: string
+          id: string
+          nazione_id: string
+          nome: string
+          ordine: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nazione_id: string
+          nome: string
+          ordine?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nazione_id?: string
+          nome?: string
+          ordine?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "convenzioni_regioni_nazione_id_fkey"
+            columns: ["nazione_id"]
+            isOneToOne: false
+            referencedRelation: "convenzioni_nazioni"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       convenzioni_scansioni: {
         Row: {

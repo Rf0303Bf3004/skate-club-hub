@@ -9,6 +9,7 @@ import { BadgePercent, MapPin, Calendar, Ticket, Star, Loader2, Tag, Search, X, 
 import { Input } from "@/components/ui/input";
 import QRCode from "qrcode";
 import { is_pubblicata, stato_validita } from "@/lib/convenzioni-date";
+import { use_nazioni, use_regioni, raggruppa_per_nazione } from "@/lib/convenzioni-territori";
 
 interface Area { id: string; nome: string; icona: string | null; ordine: number; attiva: boolean; }
 interface Tipo { id: string; nome: string; formato: string | null; }
@@ -23,6 +24,7 @@ interface Convenzione {
   indirizzo: string | null;
   geo_cantone: string | null;
   geo_citta: string | null;
+  regione_id: string | null;
   validita_da: string | null;
   validita_a: string | null;
   pubblicazione_da: string | null;
@@ -35,18 +37,9 @@ interface Convenzione {
   valore_proposta: string | null;
   convenzioni_aree?: Area | null;
   convenzioni_tipi_proposta?: Tipo | null;
+  convenzioni_regioni?: { id: string; nome: string; nazione_id: string; ordine: number; convenzioni_nazioni?: { id: string; nome: string; ordine: number } | null } | null;
 }
 
-const SENZA_AREA_GEO = "Altre destinazioni";
-
-/** Chiave di raggruppamento geografico: cantone/regione se presente, altrimenti città. */
-function regione_di(c: Convenzione): string {
-  const reg = (c.geo_cantone || "").trim();
-  if (reg) return reg;
-  const citta = (c.geo_citta || "").trim();
-  if (citta) return citta;
-  return SENZA_AREA_GEO;
-}
 
 function format_proposta(formato: string | null | undefined, valore: string | null | undefined): string | null {
   const v = (valore ?? "").trim();
@@ -105,7 +98,8 @@ const ConvenzioneCard: React.FC<{ c: Convenzione; on_open: (c: Convenzione) => v
   const banner = useSignedUrl(c.immagine_url);
   const lbl = format_proposta(c.convenzioni_tipi_proposta?.formato, c.valore_proposta);
   const stato_val = stato_validita(c);
-  const luogo = [c.geo_citta, c.geo_cantone].filter(Boolean).join(" · ");
+  const luogo = [c.geo_citta, c.convenzioni_regioni?.nome ?? c.geo_cantone].filter(Boolean).join(" · ");
+
 
   return (
     <button
@@ -291,7 +285,7 @@ const DettaglioDialog: React.FC<{ c: Convenzione | null; on_close: () => void }>
 export default function ConvenzioniSociPage() {
   const { session } = useAuth();
   const [area_id, set_area_id] = useState<string | null>(null);
-  const [regione, set_regione] = useState<string | null>(null);
+  const [regione_id, set_regione_id] = useState<string | null>(null);
   const [search, set_search] = useState("");
   const [selected, set_selected] = useState<Convenzione | null>(null);
 
@@ -320,12 +314,15 @@ export default function ConvenzioniSociPage() {
     },
   });
 
+  const { data: nazioni = [] } = use_nazioni();
+  const { data: regioni_all = [] } = use_regioni();
+
   const { data: convenzioni = [], isLoading } = useQuery({
     queryKey: ["convenzioni_attive"],
     queryFn: async () => {
       const { data } = await supabase
         .from("convenzioni")
-        .select("*, convenzioni_aree(id, nome, icona, ordine, attiva), convenzioni_tipi_proposta(id, nome, formato)")
+        .select("*, convenzioni_aree(id, nome, icona, ordine, attiva), convenzioni_tipi_proposta(id, nome, formato), convenzioni_regioni(id, nome, nazione_id, ordine, convenzioni_nazioni(id, nome, ordine))")
         .eq("stato", "attiva");
       return ((data ?? []) as unknown as Convenzione[]).filter((c) => is_pubblicata(c));
     },
@@ -333,7 +330,7 @@ export default function ConvenzioniSociPage() {
 
   const match_search = (c: Convenzione, q: string) =>
     !q ||
-    `${c.azienda ?? ""} ${c.titolo ?? ""} ${c.descrizione ?? ""} ${c.geo_citta ?? ""} ${c.geo_cantone ?? ""} ${c.convenzioni_aree?.nome ?? ""}`
+    `${c.azienda ?? ""} ${c.titolo ?? ""} ${c.descrizione ?? ""} ${c.geo_citta ?? ""} ${c.convenzioni_regioni?.nome ?? ""} ${c.convenzioni_regioni?.convenzioni_nazioni?.nome ?? ""} ${c.geo_cantone ?? ""} ${c.convenzioni_aree?.nome ?? ""}`
       .toLowerCase()
       .includes(q);
 
@@ -346,37 +343,36 @@ export default function ConvenzioniSociPage() {
   const conteggi_aree = useMemo(() => {
     const m = new Map<string, number>();
     base
-      .filter((c) => !regione || regione_di(c) === regione)
+      .filter((c) => !regione_id || c.regione_id === regione_id)
       .forEach((c) => {
         if (!c.area_id) return;
         m.set(c.area_id, (m.get(c.area_id) ?? 0) + 1);
       });
     return m;
-  }, [base, regione]);
+  }, [base, regione_id]);
 
-  const regioni = useMemo(() => {
-    const m = new Map<string, number>();
+  /** Pillole geografiche a due livelli: Nazione → Regioni (solo quelle con convenzioni). */
+  const gruppi_geo = useMemo(() => {
+    const conteggi = new Map<string, number>();
     base
       .filter((c) => !area_id || c.area_id === area_id)
       .forEach((c) => {
-        const r = regione_di(c);
-        m.set(r, (m.get(r) ?? 0) + 1);
+        if (!c.regione_id) return;
+        conteggi.set(c.regione_id, (conteggi.get(c.regione_id) ?? 0) + 1);
       });
-    const cantone_club = (club?.cantone || "").trim();
-    return [...m.entries()].sort((a, b) => {
-      if (a[0] === SENZA_AREA_GEO) return 1;
-      if (b[0] === SENZA_AREA_GEO) return -1;
-      if (cantone_club) {
-        if (a[0] === cantone_club) return -1;
-        if (b[0] === cantone_club) return 1;
-      }
-      return a[0].localeCompare(b[0]);
-    });
-  }, [base, area_id, club?.cantone]);
+    return raggruppa_per_nazione(nazioni, regioni_all)
+      .map((g) => ({
+        nazione: g.nazione.nome,
+        voci: g.regioni
+          .filter((r) => (conteggi.get(r.id) ?? 0) > 0)
+          .map((r) => ({ id: r.id, nome: r.nome, count: conteggi.get(r.id) ?? 0 })),
+      }))
+      .filter((g) => g.voci.length > 0);
+  }, [base, area_id, nazioni, regioni_all]);
 
   const lista_ordinata = useMemo(() => {
     const filtrate = base.filter(
-      (c) => (!area_id || c.area_id === area_id) && (!regione || regione_di(c) === regione),
+      (c) => (!area_id || c.area_id === area_id) && (!regione_id || c.regione_id === regione_id),
     );
     const citta = (club?.citta || "").trim().toLowerCase();
     const cantone = (club?.cantone || "").trim().toUpperCase();
@@ -393,11 +389,13 @@ export default function ConvenzioniSociPage() {
       if (ra !== rb) return ra - rb;
       return a.azienda.localeCompare(b.azienda);
     });
-  }, [base, area_id, regione, club?.citta, club?.cantone]);
+  }, [base, area_id, regione_id, club?.citta, club?.cantone]);
 
-  const filtri_attivi = !!area_id || !!regione || !!q;
-  const reset_filtri = () => { set_area_id(null); set_regione(null); set_search(""); };
+  const filtri_attivi = !!area_id || !!regione_id || !!q;
+  const reset_filtri = () => { set_area_id(null); set_regione_id(null); set_search(""); };
   const nome_area = aree.find((a) => a.id === area_id)?.nome;
+  const nome_regione = regioni_all.find((r) => r.id === regione_id)?.nome;
+
 
   return (
     <div className="p-4 md:p-8 space-y-6 max-w-[1400px] mx-auto">
@@ -421,7 +419,7 @@ export default function ConvenzioniSociPage() {
               <p className="text-xs uppercase tracking-wider text-muted-foreground mt-1">Partner attivi</p>
             </div>
             <div className="hidden sm:block">
-              <p className="text-3xl font-bold tabular-nums text-foreground leading-none">{regioni.length}</p>
+              <p className="text-3xl font-bold tabular-nums text-foreground leading-none">{gruppi_geo.reduce((n, g) => n + g.voci.length, 0)}</p>
               <p className="text-xs uppercase tracking-wider text-muted-foreground mt-1">Destinazioni</p>
             </div>
           </div>
@@ -450,23 +448,38 @@ export default function ConvenzioniSociPage() {
           )}
         </div>
 
-        {regioni.length > 0 && (
+        {gruppi_geo.length > 0 && (
           <div>
             <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
               <Globe2 className="w-3.5 h-3.5" /> Area geografica
             </p>
-            <div className="flex flex-wrap gap-2">
-              <FilterPill attivo={regione === null} onClick={() => set_regione(null)} count={base.filter((c) => !area_id || c.area_id === area_id).length}>
-                Tutte le aree
+            <div className="mb-3">
+              <FilterPill attivo={regione_id === null} onClick={() => set_regione_id(null)} count={base.filter((c) => !area_id || c.area_id === area_id).length}>
+                Tutte le destinazioni
               </FilterPill>
-              {regioni.map(([r, n]) => (
-                <FilterPill key={r} attivo={regione === r} onClick={() => set_regione(regione === r ? null : r)} count={n}>
-                  {r}
-                </FilterPill>
+            </div>
+            <div className="space-y-3">
+              {gruppi_geo.map((g) => (
+                <div key={g.nazione}>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80 mb-1.5">{g.nazione}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {g.voci.map((v) => (
+                      <FilterPill
+                        key={v.id}
+                        attivo={regione_id === v.id}
+                        onClick={() => set_regione_id(regione_id === v.id ? null : v.id)}
+                        count={v.count}
+                      >
+                        {v.nome}
+                      </FilterPill>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           </div>
         )}
+
 
         {aree.length > 0 && (
           <div>
@@ -474,7 +487,7 @@ export default function ConvenzioniSociPage() {
               <SlidersHorizontal className="w-3.5 h-3.5" /> Categoria
             </p>
             <div className="flex flex-wrap gap-2">
-              <FilterPill attivo={area_id === null} onClick={() => set_area_id(null)} count={base.filter((c) => !regione || regione_di(c) === regione).length}>
+              <FilterPill attivo={area_id === null} onClick={() => set_area_id(null)} count={base.filter((c) => !regione_id || c.regione_id === regione_id).length}>
                 Tutte le categorie
               </FilterPill>
               {aree.map((a) => (
@@ -500,8 +513,9 @@ export default function ConvenzioniSociPage() {
             {lista_ordinata.length === 1 ? " convenzione" : " convenzioni"}
             {filtri_attivi && <> su <span className="tabular-nums">{convenzioni.length}</span></>}
             {nome_area && <> · categoria <span className="text-foreground font-medium">{nome_area}</span></>}
-            {regione && <> · area <span className="text-foreground font-medium">{regione}</span></>}
+            {nome_regione && <> · area <span className="text-foreground font-medium">{nome_regione}</span></>}
           </p>
+
           {filtri_attivi && (
             <Button type="button" variant="ghost" size="sm" onClick={reset_filtri} className="gap-1.5">
               <X className="w-4 h-4" /> Azzera filtri
