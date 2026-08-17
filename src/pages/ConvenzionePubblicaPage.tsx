@@ -66,7 +66,7 @@ export default function ConvenzionePubblicaPage() {
         .eq("qr_token", token)
         .maybeSingle();
       if (!attivo) return;
-      if (!row || row.stato !== "attiva") {
+      if (!row || row.stato !== "attiva" || !is_pubblicata(row as any)) {
         set_not_found(true);
         set_loading(false);
         return;
