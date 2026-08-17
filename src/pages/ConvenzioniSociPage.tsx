@@ -67,6 +67,8 @@ const ConvenzioneCard: React.FC<{ c: Convenzione; on_open: (c: Convenzione) => v
   const logo = useSignedUrl(c.logo_url);
   const banner = useSignedUrl(c.immagine_url);
   const lbl = format_proposta(c.convenzioni_tipi_proposta?.formato, c.valore_proposta);
+  const stato_val = stato_validita(c);
+
   return (
     <button
       type="button"
