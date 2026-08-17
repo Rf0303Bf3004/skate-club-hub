@@ -18,6 +18,8 @@ import {
   Coffee, Gift, Briefcase, Sparkles, Music,
 } from "lucide-react";
 import QRCode from "qrcode";
+import { stato_pubblicazione, label_pubblicazione, colore_pubblicazione, stato_validita } from "@/lib/convenzioni-date";
+
 
 // ============== Helpers icone lucide dinamiche ==============
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -59,7 +61,10 @@ interface Convenzione {
   geo_citta: string | null;
   validita_da: string | null;
   validita_a: string | null;
+  pubblicazione_da: string | null;
+  pubblicazione_a: string | null;
   codice_sconto: string | null;
+
   in_evidenza: boolean;
   stato: string;
   qr_token: string;
@@ -320,6 +325,9 @@ function TabConvenzioni() {
               c.stato === "attiva" ? "bg-emerald-100 text-emerald-700 border-emerald-200"
               : c.stato === "sospesa" ? "bg-amber-100 text-amber-700 border-amber-200"
               : "bg-slate-100 text-slate-600 border-slate-200";
+            const st_pub = stato_pubblicazione(c);
+            const st_val = stato_validita(c);
+
             return (
               <div key={c.id} className="border border-slate-200 rounded-lg bg-white shadow-sm hover:shadow-md transition p-4 flex flex-col gap-3">
                 <div className="flex gap-3">
@@ -351,6 +359,16 @@ function TabConvenzioni() {
                         </Badge>
                       )}
                       <Badge variant="outline" className={stato_color}>{c.stato}</Badge>
+                      <Badge variant="outline" className={colore_pubblicazione[st_pub]}>
+                        {label_pubblicazione[st_pub]}
+                      </Badge>
+                      {st_val.label && (
+                        <Badge variant="outline" className={st_val.tipo === "scaduta"
+                          ? "bg-slate-100 text-slate-600 border-slate-200"
+                          : "bg-amber-50 text-amber-700 border-amber-200"}>
+                          {st_val.label}
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -359,6 +377,10 @@ function TabConvenzioni() {
                   {(c.validita_da || c.validita_a) && (
                     <div>Validità: {c.validita_da ?? "—"} → {c.validita_a ?? "—"}</div>
                   )}
+                  {(c.pubblicazione_da || c.pubblicazione_a) && (
+                    <div>Pubblicazione: {c.pubblicazione_da ?? "—"} → {c.pubblicazione_a ?? "—"}</div>
+                  )}
+
                   <div className="flex items-center gap-1 pt-1">
                     <ScanLine className="w-3.5 h-3.5" />
                     <span>
@@ -460,6 +482,15 @@ function ConvenzioneFormModal({
       toast.error("Compila azienda, area e titolo");
       return;
     }
+    if (form.validita_da && form.validita_a && form.validita_a < form.validita_da) {
+      toast.error("La data di fine validità non può precedere quella di inizio");
+      return;
+    }
+    if (form.pubblicazione_da && form.pubblicazione_a && form.pubblicazione_a < form.pubblicazione_da) {
+      toast.error("La data di fine pubblicazione non può precedere quella di inizio");
+      return;
+    }
+
     set_saving(true);
     try {
       let logo_path = form.logo_url ?? null;
@@ -479,6 +510,9 @@ function ConvenzioneFormModal({
         geo_citta: form.geo_citta ?? null,
         validita_da: form.validita_da || null,
         validita_a: form.validita_a || null,
+        pubblicazione_da: form.pubblicazione_da || null,
+        pubblicazione_a: form.pubblicazione_a || null,
+
         codice_sconto: form.codice_sconto ?? null,
         in_evidenza: !!form.in_evidenza,
         stato: form.stato ?? "attiva",
@@ -630,11 +664,22 @@ function ConvenzioneFormModal({
           <div>
             <Label>Validità da</Label>
             <Input type="date" value={form.validita_da ?? ""} onChange={e => update("validita_da", e.target.value)} />
+            <p className="text-xs text-slate-500 mt-1">Periodo in cui l'offerta è effettivamente valida (vuoto = sempre valida)</p>
           </div>
           <div>
             <Label>Validità a</Label>
             <Input type="date" value={form.validita_a ?? ""} onChange={e => update("validita_a", e.target.value)} />
           </div>
+          <div>
+            <Label>Pubblicazione da</Label>
+            <Input type="date" value={form.pubblicazione_da ?? ""} onChange={e => update("pubblicazione_da", e.target.value)} />
+            <p className="text-xs text-slate-500 mt-1">Periodo in cui la convenzione è visibile ai soci (vuoto = sempre pubblicata)</p>
+          </div>
+          <div>
+            <Label>Pubblicazione a</Label>
+            <Input type="date" value={form.pubblicazione_a ?? ""} onChange={e => update("pubblicazione_a", e.target.value)} />
+          </div>
+
           <div>
             <Label>Codice sconto</Label>
             <Input value={form.codice_sconto ?? ""} onChange={e => update("codice_sconto", e.target.value)} />

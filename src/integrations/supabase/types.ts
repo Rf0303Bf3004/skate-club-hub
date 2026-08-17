@@ -1121,6 +1121,8 @@ export type Database = {
           in_evidenza: boolean
           indirizzo: string | null
           logo_url: string | null
+          pubblicazione_a: string | null
+          pubblicazione_da: string | null
           qr_token: string
           stato: string
           tipo_proposta_id: string | null
@@ -1142,6 +1144,8 @@ export type Database = {
           in_evidenza?: boolean
           indirizzo?: string | null
           logo_url?: string | null
+          pubblicazione_a?: string | null
+          pubblicazione_da?: string | null
           qr_token?: string
           stato?: string
           tipo_proposta_id?: string | null
@@ -1163,6 +1167,8 @@ export type Database = {
           in_evidenza?: boolean
           indirizzo?: string | null
           logo_url?: string | null
+          pubblicazione_a?: string | null
+          pubblicazione_da?: string | null
           qr_token?: string
           stato?: string
           tipo_proposta_id?: string | null

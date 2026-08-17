@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { BadgePercent, MapPin, Calendar, Ticket, Star, Loader2, Tag, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import QRCode from "qrcode";
+import { is_pubblicata, stato_validita } from "@/lib/convenzioni-date";
+
 
 interface Area { id: string; nome: string; icona: string | null; ordine: number; attiva: boolean; }
 interface Tipo { id: string; nome: string; formato: string | null; }
@@ -24,7 +26,10 @@ interface Convenzione {
   geo_citta: string | null;
   validita_da: string | null;
   validita_a: string | null;
+  pubblicazione_da: string | null;
+  pubblicazione_a: string | null;
   codice_sconto: string | null;
+
   qr_token: string;
   stato: string;
   in_evidenza: boolean;
@@ -42,12 +47,8 @@ function format_proposta(formato: string | null | undefined, valore: string | nu
   return v;
 }
 
-function in_validita(c: Convenzione): boolean {
-  const oggi = new Date().toISOString().slice(0, 10);
-  if (c.validita_da && oggi < c.validita_da) return false;
-  if (c.validita_a && oggi > c.validita_a) return false;
-  return true;
-}
+
+
 
 function useSignedUrl(path: string | null | undefined) {
   const [url, set_url] = useState<string | null>(null);
@@ -66,6 +67,8 @@ const ConvenzioneCard: React.FC<{ c: Convenzione; on_open: (c: Convenzione) => v
   const logo = useSignedUrl(c.logo_url);
   const banner = useSignedUrl(c.immagine_url);
   const lbl = format_proposta(c.convenzioni_tipi_proposta?.formato, c.valore_proposta);
+  const stato_val = stato_validita(c);
+
   return (
     <button
       type="button"
@@ -88,6 +91,12 @@ const ConvenzioneCard: React.FC<{ c: Convenzione; on_open: (c: Convenzione) => v
             <h3 className="font-bold text-foreground truncate">{c.azienda}</h3>
             {c.in_evidenza && <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500 shrink-0 mt-1" />}
             {lbl && <Badge className="bg-primary text-primary-foreground hover:bg-primary">{lbl}</Badge>}
+            {stato_val.label && (
+              <Badge variant="outline" className={stato_val.tipo === "scaduta" ? "text-muted-foreground" : "border-amber-300 text-amber-700 bg-amber-50"}>
+                {stato_val.label}
+              </Badge>
+            )}
+
           </div>
           <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">{c.titolo}</p>
           <div className="flex flex-wrap items-center gap-2 mt-2 text-xs text-muted-foreground">
@@ -128,6 +137,8 @@ const DettaglioDialog: React.FC<{ c: Convenzione | null; on_close: () => void }>
 
   if (!c) return null;
   const lbl = format_proposta(c.convenzioni_tipi_proposta?.formato, c.valore_proposta);
+  const stato_val = stato_validita(c);
+
 
   return (
     <Dialog open={!!c} onOpenChange={(o) => { if (!o) on_close(); }}>
@@ -144,6 +155,12 @@ const DettaglioDialog: React.FC<{ c: Convenzione | null; on_close: () => void }>
               <p className="text-sm font-normal text-muted-foreground truncate">{c.titolo}</p>
             </div>
             {lbl && <Badge className="bg-primary text-primary-foreground hover:bg-primary">{lbl}</Badge>}
+            {stato_val.label && (
+              <Badge variant="outline" className={stato_val.tipo === "scaduta" ? "text-muted-foreground" : "border-amber-300 text-amber-700 bg-amber-50"}>
+                {stato_val.label}
+              </Badge>
+            )}
+
           </DialogTitle>
         </DialogHeader>
 
@@ -242,7 +259,7 @@ export default function ConvenzioniSociPage() {
         .from("convenzioni")
         .select("*, convenzioni_aree(id, nome, icona, ordine, attiva), convenzioni_tipi_proposta(id, nome, formato)")
         .eq("stato", "attiva");
-      return ((data ?? []) as unknown as Convenzione[]).filter(in_validita);
+      return ((data ?? []) as unknown as Convenzione[]).filter((c) => is_pubblicata(c));
     },
   });
 

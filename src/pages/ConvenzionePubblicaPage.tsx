@@ -3,6 +3,8 @@ import { useParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Badge } from "@/components/ui/badge";
 import { Tag, MapPin, Calendar, Ticket } from "lucide-react";
+import { is_pubblicata, stato_validita } from "@/lib/convenzioni-date";
+
 
 interface ConvenzionePubblica {
   id: string;
@@ -16,7 +18,10 @@ interface ConvenzionePubblica {
   geo_cantone: string | null;
   validita_da: string | null;
   validita_a: string | null;
+  pubblicazione_da: string | null;
+  pubblicazione_a: string | null;
   codice_sconto: string | null;
+
   stato: string;
   qr_token: string;
   valore_proposta: string | null;
@@ -61,7 +66,7 @@ export default function ConvenzionePubblicaPage() {
         .eq("qr_token", token)
         .maybeSingle();
       if (!attivo) return;
-      if (!row || row.stato !== "attiva") {
+      if (!row || row.stato !== "attiva" || !is_pubblicata(row as any)) {
         set_not_found(true);
         set_loading(false);
         return;
@@ -129,6 +134,8 @@ export default function ConvenzionePubblicaPage() {
   }
 
   const lbl = format_proposta(data.convenzioni_tipi_proposta?.formato, data.valore_proposta);
+  const stato_val = stato_validita(data);
+
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -155,6 +162,17 @@ export default function ConvenzionePubblicaPage() {
                     <Badge variant="outline">{data.convenzioni_aree.nome}</Badge>
                   )}
                   {lbl && <Badge className="bg-blue-600 text-white hover:bg-blue-600">{lbl}</Badge>}
+                  {stato_val.label && (
+                    <Badge
+                      variant="outline"
+                      className={stato_val.tipo === "scaduta"
+                        ? "border-slate-300 text-slate-600 bg-slate-100"
+                        : "border-amber-300 text-amber-700 bg-amber-50"}
+                    >
+                      {stato_val.label}
+                    </Badge>
+                  )}
+
                 </div>
               </div>
             </div>
