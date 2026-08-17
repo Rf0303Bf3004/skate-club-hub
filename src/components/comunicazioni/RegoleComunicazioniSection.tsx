@@ -40,6 +40,7 @@ const CODICI_ORDINE = ["assenze_ripetute", "rifiuto_staff", "saturazione_bassa"]
 
 export function RegoleComunicazioniSection({ club_id }: { club_id: string | null }) {
   const [regole, set_regole] = useState<Regola[]>([]);
+  const [regole_originali, set_regole_originali] = useState<Record<string, string>>({});
   const [loading, set_loading] = useState(true);
   const [saving_id, set_saving_id] = useState<string | null>(null);
 
@@ -148,8 +149,14 @@ export function RegoleComunicazioniSection({ club_id }: { club_id: string | null
                   size="sm"
                   variant="outline"
                   className="ml-auto h-8"
-                  disabled={saving_id === r.id}
-                  onClick={() => update_regola(r, { parametri: r.parametri })}
+                  disabled={
+                    saving_id === r.id ||
+                    regole_originali[r.id] === JSON.stringify(r.parametri ?? {})
+                  }
+                  onClick={() => {
+                    update_regola(r, { parametri: r.parametri });
+                    set_regole_originali((prev) => ({ ...prev, [r.id]: JSON.stringify(r.parametri ?? {}) }));
+                  }}
                 >
                   Salva soglia
                 </Button>
