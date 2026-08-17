@@ -640,6 +640,20 @@ export default function ConvenzioniSociPage() {
             </Button>
           )}
         </div>
+      ) : vista === "mappa" ? (
+        <MappaConvenzioni
+          elementi={lista_ordinata.map((c) => ({
+            ...c,
+            provincia: c.convenzioni_province?.nome ?? null,
+            citta: c.geo_citta,
+            regione: c.convenzioni_regioni?.nome ?? null,
+            nazione: c.convenzioni_regioni?.convenzioni_nazioni?.nome ?? null,
+          }))}
+          on_open={(e) => {
+            const trovata = lista_ordinata.find((c) => c.id === e.id) ?? null;
+            set_selected(trovata);
+          }}
+        />
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 animate-in fade-in duration-300">
           {lista_ordinata.map((c) => (
