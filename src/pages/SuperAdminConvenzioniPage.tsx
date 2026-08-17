@@ -376,7 +376,10 @@ function TabConvenzioni() {
                   </div>
                 </div>
                 <div className="text-xs text-slate-500 space-y-0.5">
-                  {(c.geo_citta || c.geo_cantone) && <div>{[c.geo_citta, c.geo_cantone].filter(Boolean).join(" — ")}</div>}
+                  {(c.geo_citta || c.convenzioni_regioni?.nome || c.geo_cantone) && (
+                    <div>{[c.geo_citta, c.convenzioni_regioni?.nome ?? c.geo_cantone, c.convenzioni_regioni?.convenzioni_nazioni?.nome].filter(Boolean).join(" — ")}</div>
+                  )}
+
                   {(c.validita_da || c.validita_a) && (
                     <div>Validità: {c.validita_da ?? "—"} → {c.validita_a ?? "—"}</div>
                   )}
