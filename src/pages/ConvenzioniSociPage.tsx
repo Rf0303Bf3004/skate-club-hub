@@ -5,11 +5,13 @@ import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { BadgePercent, MapPin, Calendar, Ticket, Star, Loader2, Tag, Search, X, Globe2, SlidersHorizontal } from "lucide-react";
+import { BadgePercent, MapPin, Calendar, Ticket, Star, Loader2, Tag, Search, X, Globe2, SlidersHorizontal, List, Map as MapIcon, UtensilsCrossed } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import QRCode from "qrcode";
 import { is_pubblicata, stato_validita } from "@/lib/convenzioni-date";
 import { use_nazioni, use_regioni, raggruppa_per_nazione } from "@/lib/convenzioni-territori";
+import { e_area_alloggio, e_area_ristorazione } from "@/lib/convenzioni-tipologie";
+import MappaConvenzioni from "@/components/convenzioni/MappaConvenzioni";
 
 interface Area { id: string; nome: string; icona: string | null; ordine: number; attiva: boolean; }
 interface Tipo { id: string; nome: string; formato: string | null; }
@@ -25,6 +27,10 @@ interface Convenzione {
   geo_cantone: string | null;
   geo_citta: string | null;
   regione_id: string | null;
+  provincia_id: string | null;
+  stelle: number | null;
+  tipo_cucina: string | null;
+  fascia_prezzo: string | null;
   validita_da: string | null;
   validita_a: string | null;
   pubblicazione_da: string | null;
@@ -37,8 +43,20 @@ interface Convenzione {
   valore_proposta: string | null;
   convenzioni_aree?: Area | null;
   convenzioni_tipi_proposta?: Tipo | null;
+  convenzioni_province?: { id: string; nome: string } | null;
   convenzioni_regioni?: { id: string; nome: string; nazione_id: string; ordine: number; convenzioni_nazioni?: { id: string; nome: string; ordine: number } | null } | null;
 }
+
+/** Sezioni tematiche della vista soci. */
+type sezione_tema = "tutte" | "hotel" | "ristoranti" | "altro";
+
+function sezione_di(c: Convenzione): Exclude<sezione_tema, "tutte"> {
+  const nome = c.convenzioni_aree?.nome;
+  if (e_area_ristorazione(nome)) return "ristoranti";
+  if (e_area_alloggio(nome)) return "hotel";
+  return "altro";
+}
+
 
 
 function format_proposta(formato: string | null | undefined, valore: string | null | undefined): string | null {
