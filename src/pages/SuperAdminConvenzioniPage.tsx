@@ -1025,3 +1025,136 @@ function TipoFormModal({
   );
 }
 
+
+// ============== Tab Territori (nazioni + regioni) ==============
+function TabTerritori() {
+  const qc = useQueryClient();
+  const { data: nazioni = [] } = use_nazioni();
+  const { data: regioni = [] } = use_regioni();
+  const [nuova_nazione, set_nuova_nazione] = useState("");
+  const [nuova_regione, set_nuova_regione] = useState<Record<string, string>>({});
+
+  const refresh = () => {
+    qc.invalidateQueries({ queryKey: ["convenzioni_nazioni"] });
+    qc.invalidateQueries({ queryKey: ["convenzioni_regioni"] });
+  };
+
+  const mut_add_nazione = useMutation({
+    mutationFn: async (nome: string) => {
+      const { error } = await supabase
+        .from("convenzioni_nazioni")
+        .insert({ nome: nome.trim(), ordine: nazioni.length + 1 });
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Nazione aggiunta"); set_nuova_nazione(""); refresh(); },
+    onError: (e: any) => toast.error("Errore: " + (e?.message ?? "")),
+  });
+
+  const mut_add_regione = useMutation({
+    mutationFn: async ({ nazione_id, nome }: { nazione_id: string; nome: string }) => {
+      const conteggio = regioni.filter(r => r.nazione_id === nazione_id).length;
+      const { error } = await supabase
+        .from("convenzioni_regioni")
+        .insert({ nazione_id, nome: nome.trim(), ordine: conteggio + 1 });
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => { toast.success("Regione aggiunta"); set_nuova_regione(p => ({ ...p, [v.nazione_id]: "" })); refresh(); },
+    onError: (e: any) => toast.error("Errore: " + (e?.message ?? "")),
+  });
+
+  const mut_del_regione = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("convenzioni_regioni").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Regione eliminata"); refresh(); },
+    onError: (e: any) => toast.error("Errore: " + (e?.message ?? "")),
+  });
+
+  const mut_del_nazione = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("convenzioni_nazioni").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Nazione eliminata"); refresh(); },
+    onError: (e: any) => toast.error("Errore: " + (e?.message ?? "")),
+  });
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col md:flex-row gap-2 md:items-end">
+        <div className="flex-1">
+          <Label className="text-xs">Nuova nazione</Label>
+          <Input
+            placeholder="es. Francia"
+            value={nuova_nazione}
+            onChange={e => set_nuova_nazione(e.target.value)}
+          />
+        </div>
+        <Button
+          onClick={() => nuova_nazione.trim() && mut_add_nazione.mutate(nuova_nazione)}
+          disabled={!nuova_nazione.trim() || mut_add_nazione.isPending}
+        >
+          <Plus className="w-4 h-4 mr-1" /> Aggiungi nazione
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {nazioni.map(n => {
+          const figlie = regioni.filter(r => r.nazione_id === n.id);
+          return (
+            <div key={n.id} className="border border-slate-200 rounded-lg bg-white p-4 space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="font-semibold text-slate-900">{n.nome}</h3>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-red-600"
+                  onClick={() => mut_del_nazione.mutate(n.id)}
+                  title="Elimina nazione (rimuove anche le sue regioni)"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {figlie.length === 0 && <span className="text-xs text-slate-400">Nessuna regione</span>}
+                {figlie.map(r => (
+                  <Badge key={r.id} variant="outline" className="gap-1 pr-1">
+                    {r.nome}
+                    <button
+                      type="button"
+                      className="p-0.5 rounded hover:bg-red-50 text-red-600"
+                      onClick={() => mut_del_regione.mutate(r.id)}
+                      aria-label={`Elimina ${r.nome}`}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  className="h-9"
+                  placeholder="Nuova regione"
+                  value={nuova_regione[n.id] ?? ""}
+                  onChange={e => set_nuova_regione(p => ({ ...p, [n.id]: e.target.value }))}
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const nome = (nuova_regione[n.id] ?? "").trim();
+                    if (nome) mut_add_regione.mutate({ nazione_id: n.id, nome });
+                  }}
+                  disabled={!(nuova_regione[n.id] ?? "").trim()}
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
