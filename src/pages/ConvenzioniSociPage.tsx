@@ -91,6 +91,12 @@ const ConvenzioneCard: React.FC<{ c: Convenzione; on_open: (c: Convenzione) => v
             <h3 className="font-bold text-foreground truncate">{c.azienda}</h3>
             {c.in_evidenza && <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500 shrink-0 mt-1" />}
             {lbl && <Badge className="bg-primary text-primary-foreground hover:bg-primary">{lbl}</Badge>}
+            {stato_val.label && (
+              <Badge variant="outline" className={stato_val.tipo === "scaduta" ? "text-muted-foreground" : "border-amber-300 text-amber-700 bg-amber-50"}>
+                {stato_val.label}
+              </Badge>
+            )}
+
           </div>
           <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">{c.titolo}</p>
           <div className="flex flex-wrap items-center gap-2 mt-2 text-xs text-muted-foreground">
