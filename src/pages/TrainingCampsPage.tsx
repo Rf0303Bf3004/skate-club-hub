@@ -3,6 +3,7 @@ import { useI18n } from "@/lib/i18n";
 import { use_campi, use_atleti, get_atleta_name_from_list } from "@/hooks/use-supabase-data";
 import { use_upsert_campo, use_iscrivi_atleta_campo, use_elimina_campo } from "@/hooks/use-supabase-mutations";
 import { Button } from "@/components/ui/button";
+import SearchableListLayout from "@/components/common/SearchableListLayout";
 import { Badge } from "@/components/ui/badge";
 import { Plus, MapPin, Calendar, X, AlertTriangle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -404,6 +405,13 @@ const TrainingCampsPage: React.FC = () => {
   const { data: atleti = [] } = use_atleti();
   const [campo_modal, set_campo_modal] = useState<any>(null);
   const [isc_campo, set_isc_campo] = useState<any>(null);
+  const [search_campi, set_search_campi] = useState("");
+
+  const campi_filtrati = (campi as any[]).filter((c) => {
+    const q = search_campi.trim().toLowerCase();
+    if (!q) return true;
+    return `${c.nome ?? ""} ${c.luogo ?? ""} ${c.localita ?? ""}`.toLowerCase().includes(q);
+  });
 
   if (isLoading)
     return (
@@ -427,13 +435,25 @@ const TrainingCampsPage: React.FC = () => {
           </Button>
         </div>
 
-        {campi.length === 0 ? (
+        <SearchableListLayout
+          search={search_campi}
+          on_search_change={set_search_campi}
+          search_placeholder="Cerca campo per nome o luogo…"
+          count_filtered={campi_filtrati.length}
+          count_total={campi.length}
+          sticky={false}
+        >
+        {campi_filtrati.length === 0 ? (
           <div className="bg-card rounded-xl shadow-card p-12 text-center text-muted-foreground">
             <MapPin className="w-8 h-8 mx-auto mb-2 opacity-30" />
-            <p className="text-sm">Nessun campo di allenamento. Clicca "Nuovo campo" per aggiungerne uno.</p>
+            <p className="text-sm">
+              {campi.length === 0
+                ? 'Nessun campo di allenamento. Clicca "Nuovo campo" per aggiungerne uno.'
+                : "Nessun campo corrisponde alla ricerca."}
+            </p>
           </div>
         ) : (
-          campi.map((camp: any) => (
+          campi_filtrati.map((camp: any) => (
             <div key={camp.id} className="bg-card rounded-xl shadow-card p-6 space-y-5">
               <div className="flex items-start justify-between">
                 <div>
@@ -513,6 +533,7 @@ const TrainingCampsPage: React.FC = () => {
             </div>
           ))
         )}
+        </SearchableListLayout>
       </div>
     </>
   );

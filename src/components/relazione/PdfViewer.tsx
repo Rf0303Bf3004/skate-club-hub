@@ -22,16 +22,13 @@ interface PdfPageCanvasProps {
 
 async function load_pdf_from_blob(blob: Blob) {
   try {
-    console.log(`[PdfViewer] Blob ricevuto: size=${blob.size} type=${blob.type}`);
     const array_buffer = await blob.arrayBuffer();
-    console.log(`[PdfViewer] ArrayBuffer creato: bytes=${array_buffer.byteLength}`);
     const loading_task = pdfjsLib.getDocument({
       data: new Uint8Array(array_buffer),
       cMapUrl: `//cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/cmaps/`,
       cMapPacked: true,
     });
     const pdf_document = await loading_task.promise;
-    console.log(`[PdfViewer] PDF document caricato: pagine=${pdf_document.numPages}`);
     return pdf_document;
   } catch (error: any) {
     console.error("[PdfViewer] Errore caricamento PDF:", error);
@@ -70,7 +67,6 @@ function PdfPageCanvas({ pdf, page_num, total_pages, scale }: PdfPageCanvasProps
         set_page_width(viewport.width);
         await render_page(pdf, page_num, canvas, scale);
         if (!cancelled && token === render_token_ref.current) {
-          console.log(`[PdfViewer] Render pagina ${page_num}/${total_pages} completato`);
         }
       } catch (error: any) {
         if (!cancelled) {

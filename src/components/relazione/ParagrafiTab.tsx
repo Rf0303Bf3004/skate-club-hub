@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import ConfirmButton from "@/components/common/ConfirmButton";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -214,14 +215,24 @@ export default function ParagrafiTab({ club_id, stagione_id }: Props) {
                                 <Button size="sm" variant="ghost" onClick={() => { set_editing_id(p.id); set_edit_text(p.contenuto); }} className="h-8 gap-1">
                                   <Pencil className="w-3.5 h-3.5" /> Modifica
                                 </Button>
-                                <Button size="sm" variant="ghost" className="h-8 gap-1"
-                                  disabled={m_regen_single.isPending}
-                                  onClick={() => {
-                                    if (p.is_edited && !confirm("Questo paragrafo e' stato modificato manualmente. Sovrascrivere con la versione automatica?")) return;
-                                    m_regen_single.mutate(p);
-                                  }}>
-                                  <RotateCw className="w-3.5 h-3.5" /> Rigenera
-                                </Button>
+                                {p.is_edited ? (
+                                  <ConfirmButton
+                                    titolo="Sovrascrivere il testo modificato?"
+                                    descrizione="Questo paragrafo è stato modificato a mano: verrà sostituito dalla versione generata automaticamente."
+                                    conferma_label="Rigenera"
+                                    on_conferma={() => m_regen_single.mutate(p)}
+                                  >
+                                    <Button size="sm" variant="ghost" className="h-8 gap-1" disabled={m_regen_single.isPending}>
+                                      <RotateCw className="w-3.5 h-3.5" /> Rigenera
+                                    </Button>
+                                  </ConfirmButton>
+                                ) : (
+                                  <Button size="sm" variant="ghost" className="h-8 gap-1"
+                                    disabled={m_regen_single.isPending}
+                                    onClick={() => m_regen_single.mutate(p)}>
+                                    <RotateCw className="w-3.5 h-3.5" /> Rigenera
+                                  </Button>
+                                )}
                               </div>
                             )}
                           </div>

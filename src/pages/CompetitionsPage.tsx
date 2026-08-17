@@ -7,6 +7,7 @@ import { days_until } from "@/lib/mock-data";
 import { use_elimina_gara } from "@/hooks/use-supabase-mutations";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import SearchableListLayout from "@/components/common/SearchableListLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Plus,
@@ -720,7 +721,7 @@ const GraficoAndamento: React.FC<{
         const pa = ai?.punteggio_artistico ?? null;
         const totale = pt !== null && pa !== null ? pt + pa : (ai?.punteggio ?? null);
         return {
-          gara: new Date(g.data + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "short" }),
+          gara: new Date(g.data + "T00:00:00").toLocaleDateString("it-CH", { day: "2-digit", month: "short" }),
           nome_gara: g.nome,
           punteggio: totale,
           posizione: ai?.posizione ?? null,
@@ -902,6 +903,8 @@ const CompetitionsPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search_params]);
 
+  const [search_gare, set_search_gare] = useState("");
+
   const handle_tab_change = (val: string) => {
     set_active_tab(val);
     const next = new URLSearchParams(search_params);
@@ -910,20 +913,29 @@ const CompetitionsPage: React.FC = () => {
     set_search_params(next, { replace: true });
   };
 
+  const match_ricerca = (g: any) => {
+    const q = search_gare.trim().toLowerCase();
+    if (!q) return true;
+    return `${g.nome ?? ""} ${g.localita ?? ""} ${g.club_ospitante ?? ""}`.toLowerCase().includes(q);
+  };
+
   const gare_future = useMemo(
     () =>
       gare
         .filter((g: any) => !is_passata(g.data) && !g.archiviata)
+        .filter(match_ricerca)
         .sort((a: any, b: any) => a.data.localeCompare(b.data)),
-    [gare],
+    [gare, search_gare],
   );
   const gare_archivio = useMemo(
     () =>
       gare
         .filter((g: any) => is_passata(g.data) || g.archiviata)
+        .filter(match_ricerca)
         .sort((a: any, b: any) => b.data.localeCompare(a.data)),
-    [gare],
+    [gare, search_gare],
   );
+  const gare_totali_lista = gare.length;
 
   const selected = gare.find((g: any) => g.id === selected_id);
 
@@ -1067,7 +1079,7 @@ const CompetitionsPage: React.FC = () => {
             </div>
             <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5" /> {new Date(selected.data + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                <Calendar className="w-3.5 h-3.5" /> {new Date(selected.data + "T00:00:00").toLocaleDateString("it-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
               </span>
               <span className="flex items-center gap-1">
                 <MapPin className="w-3.5 h-3.5" /> {selected.localita}
@@ -1323,8 +1335,19 @@ const CompetitionsPage: React.FC = () => {
           <TabsContent value="elenco" className="mt-4 space-y-6">
             <ImportGaraPdf
               atleti_db={atleti.map((a: any) => ({ id: a.id, nome: a.nome, cognome: a.cognome }))}
-              on_done={() => {}}
+              on_done={() => {
+                queryClient.invalidateQueries({ queryKey: ["gare"] });
+              }}
             />
+
+            <SearchableListLayout
+              search={search_gare}
+              on_search_change={set_search_gare}
+              search_placeholder="Cerca per nome gara, luogo o club ospitante…"
+              count_filtered={gare_future.length + gare_archivio.length}
+              count_total={gare_totali_lista}
+              sticky={false}
+            >
 
         <div className="bg-card rounded-xl shadow-card overflow-hidden">
           <div className="px-4 py-3 border-b border-border flex items-center justify-between">
@@ -1372,7 +1395,7 @@ const CompetitionsPage: React.FC = () => {
                     >
                       <td className="px-4 py-3 font-medium text-foreground">{g.nome}</td>
                       <td className="px-4 py-3 tabular-nums text-muted-foreground">
-                        {new Date(g.data + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                        {new Date(g.data + "T00:00:00").toLocaleDateString("it-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
                       </td>
                       <td className="px-4 py-3">
                         <CountdownBadge data={g.data} />
@@ -1448,7 +1471,7 @@ const CompetitionsPage: React.FC = () => {
                         >
                           <td className="px-4 py-3 font-medium text-foreground">{g.nome}</td>
                           <td className="px-4 py-3 tabular-nums text-muted-foreground">
-                            {g.data ? new Date(g.data + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—"}
+                            {g.data ? new Date(g.data + "T00:00:00").toLocaleDateString("it-CH", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—"}
                           </td>
                           <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{g.luogo || "—"}</td>
                           <td className="px-4 py-3">
@@ -1489,6 +1512,7 @@ const CompetitionsPage: React.FC = () => {
             )}
           </div>
         )}
+            </SearchableListLayout>
           </TabsContent>
 
           <TabsContent value="medagliere" className="mt-4">
