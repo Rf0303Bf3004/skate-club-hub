@@ -476,6 +476,40 @@ export default function ConvenzioniSociPage() {
         </div>
       </header>
 
+      {/* Sezioni tematiche + vista */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
+          <FilterPill attivo={sezione === "tutte"} onClick={() => set_sezione("tutte")} count={base_ricerca.length}>
+            Tutte
+          </FilterPill>
+          <FilterPill attivo={sezione === "hotel"} onClick={() => set_sezione("hotel")} count={conteggi_sezioni.hotel}>
+            Hotel & Viaggi
+          </FilterPill>
+          <FilterPill attivo={sezione === "ristoranti"} onClick={() => set_sezione("ristoranti")} count={conteggi_sezioni.ristoranti}>
+            Ristoranti
+          </FilterPill>
+          <FilterPill attivo={sezione === "altro"} onClick={() => set_sezione("altro")} count={conteggi_sezioni.altro}>
+            Altro
+          </FilterPill>
+        </div>
+        <div className="inline-flex rounded-full border border-border bg-card p-1">
+          <button
+            type="button"
+            onClick={() => set_vista("lista")}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 h-8 text-sm font-medium transition-colors ${vista === "lista" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
+          >
+            <List className="w-4 h-4" /> Lista
+          </button>
+          <button
+            type="button"
+            onClick={() => set_vista("mappa")}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 h-8 text-sm font-medium transition-colors ${vista === "mappa" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
+          >
+            <MapIcon className="w-4 h-4" /> Mappa
+          </button>
+        </div>
+      </div>
+
       {/* Barra filtri */}
       <div className="space-y-4 rounded-2xl border border-border bg-card p-4 md:p-5">
         <div className="relative max-w-xl">
