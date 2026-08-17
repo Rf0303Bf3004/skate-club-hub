@@ -510,6 +510,9 @@ function ConvenzioneFormModal({
         geo_citta: form.geo_citta ?? null,
         validita_da: form.validita_da || null,
         validita_a: form.validita_a || null,
+        pubblicazione_da: form.pubblicazione_da || null,
+        pubblicazione_a: form.pubblicazione_a || null,
+
         codice_sconto: form.codice_sconto ?? null,
         in_evidenza: !!form.in_evidenza,
         stato: form.stato ?? "attiva",
