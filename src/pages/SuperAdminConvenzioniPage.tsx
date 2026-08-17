@@ -664,11 +664,22 @@ function ConvenzioneFormModal({
           <div>
             <Label>Validità da</Label>
             <Input type="date" value={form.validita_da ?? ""} onChange={e => update("validita_da", e.target.value)} />
+            <p className="text-xs text-slate-500 mt-1">Periodo in cui l'offerta è effettivamente valida (vuoto = sempre valida)</p>
           </div>
           <div>
             <Label>Validità a</Label>
             <Input type="date" value={form.validita_a ?? ""} onChange={e => update("validita_a", e.target.value)} />
           </div>
+          <div>
+            <Label>Pubblicazione da</Label>
+            <Input type="date" value={form.pubblicazione_da ?? ""} onChange={e => update("pubblicazione_da", e.target.value)} />
+            <p className="text-xs text-slate-500 mt-1">Periodo in cui la convenzione è visibile ai soci (vuoto = sempre pubblicata)</p>
+          </div>
+          <div>
+            <Label>Pubblicazione a</Label>
+            <Input type="date" value={form.pubblicazione_a ?? ""} onChange={e => update("pubblicazione_a", e.target.value)} />
+          </div>
+
           <div>
             <Label>Codice sconto</Label>
             <Input value={form.codice_sconto ?? ""} onChange={e => update("codice_sconto", e.target.value)} />
