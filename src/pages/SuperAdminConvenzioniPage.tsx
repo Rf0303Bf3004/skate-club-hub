@@ -467,10 +467,16 @@ function ConvenzioneFormModal({
       set_form(editing ?? { stato: "attiva", in_evidenza: false });
       set_logo_file(null);
       set_imm_file(null);
-      const reg = editing?.regione_id ? regioni.find(r => r.id === editing.regione_id) : null;
-      set_nazione_sel(reg?.nazione_id ?? null);
     }
-  }, [open, editing, regioni]);
+  }, [open, editing]);
+
+  useEffect(() => {
+    if (!open) return;
+    const reg = form.regione_id ? regioni.find(r => r.id === form.regione_id) : null;
+    if (reg) set_nazione_sel(reg.nazione_id);
+    else if (!form.regione_id && !nazione_sel) set_nazione_sel(null);
+  }, [open, form.regione_id, regioni]);
+
 
 
   const update = (k: keyof Convenzione, v: any) => set_form(prev => ({ ...prev, [k]: v }));
