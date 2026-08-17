@@ -24,14 +24,7 @@ const InvoicesPage: React.FC = () => {
   const { t } = useI18n();
   const { data: fatture = [], isLoading } = use_fatture();
   const { data: atleti = [] } = use_atleti();
-  const { data: setup } = use_setup_club();
-  const { data: club } = use_club();
-  const { data: corsi = [] } = use_corsi();
-  const { data: lezioni = [] } = use_lezioni_private();
-  const segna_pagata = use_segna_fattura_pagata();
   const genera = use_genera_fatture_mensili();
-  const elimina = use_elimina_fattura();
-  const invia_email = use_invia_email_fattura();
   const [status_filter, set_status_filter] = useState("tutti");
   const [search_raw, set_search_raw] = useState("");
   const search = useDebouncedValue(search_raw, 200);
@@ -247,7 +240,7 @@ const InvoicesPage: React.FC = () => {
                   filtered.map((f: any) => (
                     <tr
                       key={f.id}
-                      onClick={() => set_selected_fattura(f)}
+                      onClick={() => navigate(`/segreteria/fatture/${f.id}`)}
                       className="border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors"
                     >
                       <td className="px-4 py-3 font-medium tabular-nums text-foreground">{f.numero}</td>
