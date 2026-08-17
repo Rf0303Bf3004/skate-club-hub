@@ -935,10 +935,7 @@ const CompetitionsPage: React.FC = () => {
         .sort((a: any, b: any) => b.data.localeCompare(a.data)),
     [gare, search_gare],
   );
-  const gare_totali_lista = useMemo(
-    () => gare.filter((g: any) => true).length,
-    [gare],
-  );
+  const gare_totali_lista = gare.length;
 
   const selected = gare.find((g: any) => g.id === selected_id);
 
