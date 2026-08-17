@@ -162,6 +162,17 @@ export default function ConvenzionePubblicaPage() {
                     <Badge variant="outline">{data.convenzioni_aree.nome}</Badge>
                   )}
                   {lbl && <Badge className="bg-blue-600 text-white hover:bg-blue-600">{lbl}</Badge>}
+                  {stato_val.label && (
+                    <Badge
+                      variant="outline"
+                      className={stato_val.tipo === "scaduta"
+                        ? "border-slate-300 text-slate-600 bg-slate-100"
+                        : "border-amber-300 text-amber-700 bg-amber-50"}
+                    >
+                      {stato_val.label}
+                    </Badge>
+                  )}
+
                 </div>
               </div>
             </div>
