@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import QRCode from "qrcode";
 import { stato_pubblicazione, label_pubblicazione, colore_pubblicazione, stato_validita } from "@/lib/convenzioni-date";
+import { use_nazioni, use_regioni } from "@/lib/convenzioni-territori";
+
 
 
 // ============== Helpers icone lucide dinamiche ==============
