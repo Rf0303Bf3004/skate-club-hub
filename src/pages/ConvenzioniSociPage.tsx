@@ -47,12 +47,8 @@ function format_proposta(formato: string | null | undefined, valore: string | nu
   return v;
 }
 
-function in_validita(c: Convenzione): boolean {
-  const oggi = new Date().toISOString().slice(0, 10);
-  if (c.validita_da && oggi < c.validita_da) return false;
-  if (c.validita_a && oggi > c.validita_a) return false;
-  return true;
-}
+
+
 
 function useSignedUrl(path: string | null | undefined) {
   const [url, set_url] = useState<string | null>(null);
