@@ -3,6 +3,8 @@ import { useParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Badge } from "@/components/ui/badge";
 import { Tag, MapPin, Calendar, Ticket } from "lucide-react";
+import { is_pubblicata, stato_validita } from "@/lib/convenzioni-date";
+
 
 interface ConvenzionePubblica {
   id: string;
