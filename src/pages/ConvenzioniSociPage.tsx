@@ -324,6 +324,8 @@ export default function ConvenzioniSociPage() {
   const [regione_id, set_regione_id] = useState<string | null>(null);
   const [search, set_search] = useState("");
   const [selected, set_selected] = useState<Convenzione | null>(null);
+  const [sezione, set_sezione] = useState<sezione_tema>("tutte");
+  const [vista, set_vista] = useState<"lista" | "mappa">("lista");
 
   const { data: club } = useQuery({
     queryKey: ["club_geo", session?.club_id],
