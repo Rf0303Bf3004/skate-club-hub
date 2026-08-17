@@ -1515,6 +1515,7 @@ const CompetitionsPage: React.FC = () => {
             )}
           </div>
         )}
+            </SearchableListLayout>
           </TabsContent>
 
           <TabsContent value="medagliere" className="mt-4">
