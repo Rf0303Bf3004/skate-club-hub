@@ -208,7 +208,7 @@ function TabConvenzioni() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("convenzioni")
-        .select("*, convenzioni_aree(nome, icona), convenzioni_tipi_proposta(nome, formato)")
+        .select("*, convenzioni_aree(nome, icona), convenzioni_tipi_proposta(nome, formato), convenzioni_regioni(id, nome, nazione_id, convenzioni_nazioni(nome))")
         .order("in_evidenza", { ascending: false })
         .order("created_at", { ascending: false });
       if (error) throw error;
