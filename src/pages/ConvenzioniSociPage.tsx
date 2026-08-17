@@ -441,8 +441,8 @@ export default function ConvenzioniSociPage() {
     });
   }, [base, area_id, regione_id, club?.citta, club?.cantone]);
 
-  const filtri_attivi = !!area_id || !!regione_id || !!q;
-  const reset_filtri = () => { set_area_id(null); set_regione_id(null); set_search(""); };
+  const filtri_attivi = !!area_id || !!regione_id || !!q || sezione !== "tutte";
+  const reset_filtri = () => { set_area_id(null); set_regione_id(null); set_search(""); set_sezione("tutte"); };
   const nome_area = aree.find((a) => a.id === area_id)?.nome;
   const nome_regione = regioni_all.find((r) => r.id === regione_id)?.nome;
 
