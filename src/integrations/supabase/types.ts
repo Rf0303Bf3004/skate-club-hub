@@ -1114,6 +1114,7 @@ export type Database = {
           codice_sconto: string | null
           created_at: string
           descrizione: string | null
+          fascia_prezzo: string | null
           geo_cantone: string | null
           geo_citta: string | null
           id: string
@@ -1121,11 +1122,14 @@ export type Database = {
           in_evidenza: boolean
           indirizzo: string | null
           logo_url: string | null
+          provincia_id: string | null
           pubblicazione_a: string | null
           pubblicazione_da: string | null
           qr_token: string
           regione_id: string | null
           stato: string
+          stelle: number | null
+          tipo_cucina: string | null
           tipo_proposta_id: string | null
           titolo: string
           validita_a: string | null
@@ -1138,6 +1142,7 @@ export type Database = {
           codice_sconto?: string | null
           created_at?: string
           descrizione?: string | null
+          fascia_prezzo?: string | null
           geo_cantone?: string | null
           geo_citta?: string | null
           id?: string
@@ -1145,11 +1150,14 @@ export type Database = {
           in_evidenza?: boolean
           indirizzo?: string | null
           logo_url?: string | null
+          provincia_id?: string | null
           pubblicazione_a?: string | null
           pubblicazione_da?: string | null
           qr_token?: string
           regione_id?: string | null
           stato?: string
+          stelle?: number | null
+          tipo_cucina?: string | null
           tipo_proposta_id?: string | null
           titolo: string
           validita_a?: string | null
@@ -1162,6 +1170,7 @@ export type Database = {
           codice_sconto?: string | null
           created_at?: string
           descrizione?: string | null
+          fascia_prezzo?: string | null
           geo_cantone?: string | null
           geo_citta?: string | null
           id?: string
@@ -1169,11 +1178,14 @@ export type Database = {
           in_evidenza?: boolean
           indirizzo?: string | null
           logo_url?: string | null
+          provincia_id?: string | null
           pubblicazione_a?: string | null
           pubblicazione_da?: string | null
           qr_token?: string
           regione_id?: string | null
           stato?: string
+          stelle?: number | null
+          tipo_cucina?: string | null
           tipo_proposta_id?: string | null
           titolo?: string
           validita_a?: string | null
@@ -1186,6 +1198,13 @@ export type Database = {
             columns: ["area_id"]
             isOneToOne: false
             referencedRelation: "convenzioni_aree"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "convenzioni_provincia_id_fkey"
+            columns: ["provincia_id"]
+            isOneToOne: false
+            referencedRelation: "convenzioni_province"
             referencedColumns: ["id"]
           },
           {
@@ -1254,6 +1273,41 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      convenzioni_province: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          ordine: number
+          regione_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          ordine?: number
+          regione_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          ordine?: number
+          regione_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "convenzioni_province_regione_id_fkey"
+            columns: ["regione_id"]
+            isOneToOne: false
+            referencedRelation: "convenzioni_regioni"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       convenzioni_regioni: {
         Row: {

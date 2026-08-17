@@ -19,7 +19,12 @@ import {
 } from "lucide-react";
 import QRCode from "qrcode";
 import { stato_pubblicazione, label_pubblicazione, colore_pubblicazione, stato_validita } from "@/lib/convenzioni-date";
-import { use_nazioni, use_regioni } from "@/lib/convenzioni-territori";
+import {
+  use_nazioni, use_regioni, use_province,
+  crea_nazione, crea_regione, crea_provincia,
+} from "@/lib/convenzioni-territori";
+import { TerritorioCombobox, StelleSelector } from "@/components/convenzioni/TerritorioCombobox";
+import { e_area_alloggio, e_area_ristorazione, TIPI_CUCINA, FASCE_PREZZO } from "@/lib/convenzioni-tipologie";
 
 
 
@@ -62,6 +67,10 @@ interface Convenzione {
   geo_cantone: string | null;
   geo_citta: string | null;
   regione_id: string | null;
+  provincia_id: string | null;
+  stelle: number | null;
+  tipo_cucina: string | null;
+  fascia_prezzo: string | null;
   validita_da: string | null;
   validita_a: string | null;
   pubblicazione_da: string | null;
@@ -77,6 +86,7 @@ interface Convenzione {
   convenzioni_aree?: { nome: string; icona: string | null } | null;
   convenzioni_tipi_proposta?: { nome: string; formato: string | null } | null;
   convenzioni_regioni?: { id: string; nome: string; nazione_id: string; convenzioni_nazioni?: { nome: string } | null } | null;
+  convenzioni_province?: { id: string; nome: string } | null;
 }
 
 
@@ -215,7 +225,7 @@ function TabConvenzioni() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("convenzioni")
-        .select("*, convenzioni_aree(nome, icona), convenzioni_tipi_proposta(nome, formato), convenzioni_regioni(id, nome, nazione_id, convenzioni_nazioni(nome))")
+        .select("*, convenzioni_aree(nome, icona), convenzioni_tipi_proposta(nome, formato), convenzioni_regioni(id, nome, nazione_id, convenzioni_nazioni(nome)), convenzioni_province(id, nome)")
         .order("in_evidenza", { ascending: false })
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -383,9 +393,20 @@ function TabConvenzioni() {
                   </div>
                 </div>
                 <div className="text-xs text-slate-500 space-y-0.5">
-                  {(c.geo_citta || c.convenzioni_regioni?.nome || c.geo_cantone) && (
-                    <div>{[c.geo_citta, c.convenzioni_regioni?.nome ?? c.geo_cantone, c.convenzioni_regioni?.convenzioni_nazioni?.nome].filter(Boolean).join(" — ")}</div>
+                  {!!c.stelle && (
+                    <div className="flex items-center gap-0.5">
+                      {Array.from({ length: c.stelle }).map((_, i) => (
+                        <Star key={i} className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                      ))}
+                    </div>
                   )}
+                  {(c.tipo_cucina || c.fascia_prezzo) && (
+                    <div>{[c.tipo_cucina, c.fascia_prezzo].filter(Boolean).join(" · ")}</div>
+                  )}
+                  {(c.geo_citta || c.convenzioni_province?.nome || c.convenzioni_regioni?.nome || c.geo_cantone) && (
+                    <div>{[c.geo_citta, c.convenzioni_province?.nome, c.convenzioni_regioni?.nome ?? c.geo_cantone, c.convenzioni_regioni?.convenzioni_nazioni?.nome].filter(Boolean).join(" — ")}</div>
+                  )}
+
 
                   {(c.validita_da || c.validita_a) && (
                     <div>Validità: {c.validita_da ?? "—"} → {c.validita_a ?? "—"}</div>
@@ -469,8 +490,10 @@ function ConvenzioneFormModal({
   const [imm_file, set_imm_file] = useState<File | null>(null);
   const [saving, set_saving] = useState(false);
   const [nazione_sel, set_nazione_sel] = useState<string | null>(null);
+  const qc_form = useQueryClient();
   const { data: nazioni = [] } = use_nazioni();
   const { data: regioni = [] } = use_regioni();
+  const { data: province = [] } = use_province();
 
   useEffect(() => {
     if (open) {
@@ -487,9 +510,56 @@ function ConvenzioneFormModal({
     else if (!form.regione_id && !nazione_sel) set_nazione_sel(null);
   }, [open, form.regione_id, regioni]);
 
+  const handle_crea_nazione = async (nome: string) => {
+    try {
+      const n = await crea_nazione(nome, nazioni.length + 1);
+      await qc_form.invalidateQueries({ queryKey: ["convenzioni_nazioni"] });
+      set_nazione_sel(n.id);
+      set_form(prev => ({ ...prev, regione_id: null, provincia_id: null }));
+      toast.success(`Nazione «${n.nome}» creata`);
+      return n.id;
+    } catch (e: any) {
+      toast.error("Errore creazione nazione: " + (e?.message ?? ""));
+      throw e;
+    }
+  };
+
+  const handle_crea_regione = async (nome: string) => {
+    if (!nazione_sel) throw new Error("nazione mancante");
+    try {
+      const conteggio = regioni.filter(r => r.nazione_id === nazione_sel).length;
+      const r = await crea_regione(nazione_sel, nome, conteggio + 1);
+      await qc_form.invalidateQueries({ queryKey: ["convenzioni_regioni"] });
+      set_form(prev => ({ ...prev, provincia_id: null }));
+      toast.success(`Regione «${r.nome}» creata`);
+      return r.id;
+    } catch (e: any) {
+      toast.error("Errore creazione regione: " + (e?.message ?? ""));
+      throw e;
+    }
+  };
+
+  const handle_crea_provincia = async (nome: string) => {
+    if (!form.regione_id) throw new Error("regione mancante");
+    try {
+      const conteggio = province.filter(p => p.regione_id === form.regione_id).length;
+      const p = await crea_provincia(form.regione_id, nome, conteggio + 1);
+      await qc_form.invalidateQueries({ queryKey: ["convenzioni_province"] });
+      toast.success(`Provincia «${p.nome}» creata`);
+      return p.id;
+    } catch (e: any) {
+      toast.error("Errore creazione provincia: " + (e?.message ?? ""));
+      throw e;
+    }
+  };
+
 
 
   const update = (k: keyof Convenzione, v: any) => set_form(prev => ({ ...prev, [k]: v }));
+
+  const area_sel = aree.find(a => a.id === form.area_id) ?? null;
+  const mostra_stelle = e_area_alloggio(area_sel?.nome);
+  const mostra_ristorante = e_area_ristorazione(area_sel?.nome);
 
   const tipo_sel = tipi.find(t => t.id === form.tipo_proposta_id) ?? null;
   const formato = tipo_sel?.formato ?? null;
@@ -534,6 +604,10 @@ function ConvenzioneFormModal({
         geo_cantone: form.geo_cantone ?? null,
         geo_citta: form.geo_citta ?? null,
         regione_id: form.regione_id ?? null,
+        provincia_id: form.provincia_id ?? null,
+        stelle: mostra_stelle ? (form.stelle ?? null) : null,
+        tipo_cucina: mostra_ristorante ? (form.tipo_cucina || null) : null,
+        fascia_prezzo: mostra_ristorante ? (form.fascia_prezzo || null) : null,
 
         validita_da: form.validita_da || null,
         validita_a: form.validita_a || null,
@@ -669,7 +743,43 @@ function ConvenzioneFormModal({
             </div>
           </div>
 
+          {mostra_stelle && (
+            <div className="md:col-span-2">
+              <Label>Stelle (categoria alberghiera)</Label>
+              <StelleSelector value={form.stelle ?? null} on_change={v => update("stelle", v)} />
+            </div>
+          )}
 
+          {mostra_ristorante && (
+            <>
+              <div>
+                <Label>Tipo di cucina</Label>
+                <Select
+                  value={form.tipo_cucina ?? "__none__"}
+                  onValueChange={v => update("tipo_cucina", v === "__none__" ? null : v)}
+                >
+                  <SelectTrigger><SelectValue placeholder="Seleziona" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— Nessuno —</SelectItem>
+                    {TIPI_CUCINA.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Fascia di prezzo</Label>
+                <Select
+                  value={form.fascia_prezzo ?? "__none__"}
+                  onValueChange={v => update("fascia_prezzo", v === "__none__" ? null : v)}
+                >
+                  <SelectTrigger><SelectValue placeholder="Seleziona" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— Nessuna —</SelectItem>
+                    {FASCE_PREZZO.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
 
           <div className="md:col-span-2">
             <Label>Indirizzo</Label>
@@ -677,30 +787,38 @@ function ConvenzioneFormModal({
           </div>
           <div>
             <Label>Nazione</Label>
-            <Select
-              value={nazione_sel ?? ""}
-              onValueChange={v => { set_nazione_sel(v); update("regione_id", null); }}
-            >
-              <SelectTrigger><SelectValue placeholder="Seleziona nazione" /></SelectTrigger>
-              <SelectContent>
-                {nazioni.map(n => <SelectItem key={n.id} value={n.id}>{n.nome}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <TerritorioCombobox
+              value={nazione_sel}
+              options={nazioni.map(n => ({ id: n.id, nome: n.nome }))}
+              placeholder="Seleziona o crea nazione"
+              on_select={(id) => {
+                set_nazione_sel(id);
+                set_form(prev => ({ ...prev, regione_id: null, provincia_id: null }));
+              }}
+              on_create={handle_crea_nazione}
+            />
           </div>
           <div>
             <Label>Regione</Label>
-            <Select
-              value={form.regione_id ?? ""}
-              onValueChange={v => update("regione_id", v)}
+            <TerritorioCombobox
+              value={form.regione_id ?? null}
+              options={regioni.filter(r => r.nazione_id === nazione_sel).map(r => ({ id: r.id, nome: r.nome }))}
+              placeholder={nazione_sel ? "Seleziona o crea regione" : "Scegli prima la nazione"}
               disabled={!nazione_sel}
-            >
-              <SelectTrigger><SelectValue placeholder={nazione_sel ? "Seleziona regione" : "Scegli prima la nazione"} /></SelectTrigger>
-              <SelectContent>
-                {regioni.filter(r => r.nazione_id === nazione_sel).map(r => (
-                  <SelectItem key={r.id} value={r.id}>{r.nome}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              on_select={(id) => set_form(prev => ({ ...prev, regione_id: id, provincia_id: null }))}
+              on_create={handle_crea_regione}
+            />
+          </div>
+          <div>
+            <Label>Provincia</Label>
+            <TerritorioCombobox
+              value={form.provincia_id ?? null}
+              options={province.filter(p => p.regione_id === form.regione_id).map(p => ({ id: p.id, nome: p.nome }))}
+              placeholder={form.regione_id ? "Seleziona o crea provincia" : "Scegli prima la regione"}
+              disabled={!form.regione_id}
+              on_select={(id) => update("provincia_id", id)}
+              on_create={handle_crea_provincia}
+            />
           </div>
           <div>
             <Label>Città</Label>
@@ -715,6 +833,7 @@ function ConvenzioneFormModal({
               </SelectContent>
             </Select>
           </div>
+
 
           <div>
             <Label>Validità da</Label>
@@ -1083,21 +1202,19 @@ function TabTerritori() {
   const qc = useQueryClient();
   const { data: nazioni = [] } = use_nazioni();
   const { data: regioni = [] } = use_regioni();
+  const { data: province = [] } = use_province();
   const [nuova_nazione, set_nuova_nazione] = useState("");
   const [nuova_regione, set_nuova_regione] = useState<Record<string, string>>({});
+  const [nuova_provincia, set_nuova_provincia] = useState<Record<string, string>>({});
 
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["convenzioni_nazioni"] });
     qc.invalidateQueries({ queryKey: ["convenzioni_regioni"] });
+    qc.invalidateQueries({ queryKey: ["convenzioni_province"] });
   };
 
   const mut_add_nazione = useMutation({
-    mutationFn: async (nome: string) => {
-      const { error } = await supabase
-        .from("convenzioni_nazioni")
-        .insert({ nome: nome.trim(), ordine: nazioni.length + 1 });
-      if (error) throw error;
-    },
+    mutationFn: async (nome: string) => { await crea_nazione(nome, nazioni.length + 1); },
     onSuccess: () => { toast.success("Nazione aggiunta"); set_nuova_nazione(""); refresh(); },
     onError: (e: any) => toast.error("Errore: " + (e?.message ?? "")),
   });
@@ -1105,12 +1222,27 @@ function TabTerritori() {
   const mut_add_regione = useMutation({
     mutationFn: async ({ nazione_id, nome }: { nazione_id: string; nome: string }) => {
       const conteggio = regioni.filter(r => r.nazione_id === nazione_id).length;
-      const { error } = await supabase
-        .from("convenzioni_regioni")
-        .insert({ nazione_id, nome: nome.trim(), ordine: conteggio + 1 });
-      if (error) throw error;
+      await crea_regione(nazione_id, nome, conteggio + 1);
     },
     onSuccess: (_d, v) => { toast.success("Regione aggiunta"); set_nuova_regione(p => ({ ...p, [v.nazione_id]: "" })); refresh(); },
+    onError: (e: any) => toast.error("Errore: " + (e?.message ?? "")),
+  });
+
+  const mut_add_provincia = useMutation({
+    mutationFn: async ({ regione_id, nome }: { regione_id: string; nome: string }) => {
+      const conteggio = province.filter(p => p.regione_id === regione_id).length;
+      await crea_provincia(regione_id, nome, conteggio + 1);
+    },
+    onSuccess: (_d, v) => { toast.success("Provincia aggiunta"); set_nuova_provincia(p => ({ ...p, [v.regione_id]: "" })); refresh(); },
+    onError: (e: any) => toast.error("Errore: " + (e?.message ?? "")),
+  });
+
+  const mut_del_provincia = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("convenzioni_province" as any).delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Provincia eliminata"); refresh(); },
     onError: (e: any) => toast.error("Errore: " + (e?.message ?? "")),
   });
 
@@ -1168,22 +1300,65 @@ function TabTerritori() {
                   <Trash2 className="w-3.5 h-3.5" />
                 </Button>
               </div>
-              <div className="flex flex-wrap gap-1.5">
+
+              <div className="space-y-3">
                 {figlie.length === 0 && <span className="text-xs text-slate-400">Nessuna regione</span>}
-                {figlie.map(r => (
-                  <Badge key={r.id} variant="outline" className="gap-1 pr-1">
-                    {r.nome}
-                    <button
-                      type="button"
-                      className="p-0.5 rounded hover:bg-red-50 text-red-600"
-                      onClick={() => mut_del_regione.mutate(r.id)}
-                      aria-label={`Elimina ${r.nome}`}
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  </Badge>
-                ))}
+                {figlie.map(r => {
+                  const prov = province.filter(p => p.regione_id === r.id);
+                  return (
+                    <div key={r.id} className="border border-slate-100 rounded-md p-2.5 space-y-2 bg-slate-50/60">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-medium text-slate-800">{r.nome}</span>
+                        <button
+                          type="button"
+                          className="p-1 rounded hover:bg-red-50 text-red-600"
+                          onClick={() => mut_del_regione.mutate(r.id)}
+                          aria-label={`Elimina ${r.nome}`}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {prov.length === 0 && <span className="text-[11px] text-slate-400">Nessuna provincia</span>}
+                        {prov.map(p => (
+                          <Badge key={p.id} variant="outline" className="gap-1 pr-1 bg-white">
+                            {p.nome}
+                            <button
+                              type="button"
+                              className="p-0.5 rounded hover:bg-red-50 text-red-600"
+                              onClick={() => mut_del_provincia.mutate(p.id)}
+                              aria-label={`Elimina ${p.nome}`}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <Input
+                          className="h-8 text-sm bg-white"
+                          placeholder="Nuova provincia"
+                          value={nuova_provincia[r.id] ?? ""}
+                          onChange={e => set_nuova_provincia(p => ({ ...p, [r.id]: e.target.value }))}
+                        />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8"
+                          onClick={() => {
+                            const nome = (nuova_provincia[r.id] ?? "").trim();
+                            if (nome) mut_add_provincia.mutate({ regione_id: r.id, nome });
+                          }}
+                          disabled={!(nuova_provincia[r.id] ?? "").trim()}
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
+
               <div className="flex gap-2">
                 <Input
                   className="h-9"
@@ -1210,3 +1385,4 @@ function TabTerritori() {
     </div>
   );
 }
+

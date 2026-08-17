@@ -5,11 +5,13 @@ import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { BadgePercent, MapPin, Calendar, Ticket, Star, Loader2, Tag, Search, X, Globe2, SlidersHorizontal } from "lucide-react";
+import { BadgePercent, MapPin, Calendar, Ticket, Star, Loader2, Tag, Search, X, Globe2, SlidersHorizontal, List, Map as MapIcon, UtensilsCrossed } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import QRCode from "qrcode";
 import { is_pubblicata, stato_validita } from "@/lib/convenzioni-date";
 import { use_nazioni, use_regioni, raggruppa_per_nazione } from "@/lib/convenzioni-territori";
+import { e_area_alloggio, e_area_ristorazione } from "@/lib/convenzioni-tipologie";
+import MappaConvenzioni from "@/components/convenzioni/MappaConvenzioni";
 
 interface Area { id: string; nome: string; icona: string | null; ordine: number; attiva: boolean; }
 interface Tipo { id: string; nome: string; formato: string | null; }
@@ -25,6 +27,10 @@ interface Convenzione {
   geo_cantone: string | null;
   geo_citta: string | null;
   regione_id: string | null;
+  provincia_id: string | null;
+  stelle: number | null;
+  tipo_cucina: string | null;
+  fascia_prezzo: string | null;
   validita_da: string | null;
   validita_a: string | null;
   pubblicazione_da: string | null;
@@ -37,8 +43,20 @@ interface Convenzione {
   valore_proposta: string | null;
   convenzioni_aree?: Area | null;
   convenzioni_tipi_proposta?: Tipo | null;
+  convenzioni_province?: { id: string; nome: string } | null;
   convenzioni_regioni?: { id: string; nome: string; nazione_id: string; ordine: number; convenzioni_nazioni?: { id: string; nome: string; ordine: number } | null } | null;
 }
+
+/** Sezioni tematiche della vista soci. */
+type sezione_tema = "tutte" | "hotel" | "ristoranti" | "altro";
+
+function sezione_di(c: Convenzione): Exclude<sezione_tema, "tutte"> {
+  const nome = c.convenzioni_aree?.nome;
+  if (e_area_ristorazione(nome)) return "ristoranti";
+  if (e_area_alloggio(nome)) return "hotel";
+  return "altro";
+}
+
 
 
 function format_proposta(formato: string | null | undefined, valore: string | null | undefined): string | null {
@@ -98,7 +116,7 @@ const ConvenzioneCard: React.FC<{ c: Convenzione; on_open: (c: Convenzione) => v
   const banner = useSignedUrl(c.immagine_url);
   const lbl = format_proposta(c.convenzioni_tipi_proposta?.formato, c.valore_proposta);
   const stato_val = stato_validita(c);
-  const luogo = [c.geo_citta, c.convenzioni_regioni?.nome ?? c.geo_cantone].filter(Boolean).join(" · ");
+  const luogo = [c.geo_citta, c.convenzioni_province?.nome, c.convenzioni_regioni?.nome ?? c.geo_cantone].filter(Boolean).join(" · ");
 
 
   return (
@@ -153,10 +171,28 @@ const ConvenzioneCard: React.FC<{ c: Convenzione; on_open: (c: Convenzione) => v
           <p className="text-sm text-muted-foreground mt-1 line-clamp-2 leading-snug">{c.titolo}</p>
         </div>
 
+        {!!c.stelle && (
+          <div className="flex items-center gap-0.5" aria-label={`${c.stelle} stelle`}>
+            {Array.from({ length: c.stelle }).map((_, i) => (
+              <Star key={i} className="w-4 h-4 text-amber-500 fill-amber-500" />
+            ))}
+          </div>
+        )}
+
         <div className="flex flex-wrap items-center gap-1.5">
           {c.convenzioni_aree?.nome && (
             <Badge variant="secondary" className="gap-1 font-medium">
               <Tag className="w-3 h-3" />{c.convenzioni_aree.nome}
+            </Badge>
+          )}
+          {c.tipo_cucina && (
+            <Badge variant="outline" className="gap-1 font-normal">
+              <UtensilsCrossed className="w-3 h-3" />{c.tipo_cucina}
+            </Badge>
+          )}
+          {c.fascia_prezzo && (
+            <Badge variant="outline" className="font-semibold text-emerald-700 border-emerald-200 bg-emerald-50">
+              {c.fascia_prezzo}
             </Badge>
           )}
           {luogo && (
@@ -288,6 +324,8 @@ export default function ConvenzioniSociPage() {
   const [regione_id, set_regione_id] = useState<string | null>(null);
   const [search, set_search] = useState("");
   const [selected, set_selected] = useState<Convenzione | null>(null);
+  const [sezione, set_sezione] = useState<sezione_tema>("tutte");
+  const [vista, set_vista] = useState<"lista" | "mappa">("lista");
 
   const { data: club } = useQuery({
     queryKey: ["club_geo", session?.club_id],
@@ -322,7 +360,7 @@ export default function ConvenzioniSociPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("convenzioni")
-        .select("*, convenzioni_aree(id, nome, icona, ordine, attiva), convenzioni_tipi_proposta(id, nome, formato), convenzioni_regioni(id, nome, nazione_id, ordine, convenzioni_nazioni(id, nome, ordine))")
+        .select("*, convenzioni_aree(id, nome, icona, ordine, attiva), convenzioni_tipi_proposta(id, nome, formato), convenzioni_province(id, nome), convenzioni_regioni(id, nome, nazione_id, ordine, convenzioni_nazioni(id, nome, ordine))")
         .eq("stato", "attiva");
       return ((data ?? []) as unknown as Convenzione[]).filter((c) => is_pubblicata(c));
     },
@@ -337,7 +375,19 @@ export default function ConvenzioniSociPage() {
   const q = search.trim().toLowerCase();
 
   /** Base su cui contare: la ricerca testuale si applica sempre. */
-  const base = useMemo(() => convenzioni.filter((c) => match_search(c, q)), [convenzioni, q]);
+  const base_ricerca = useMemo(() => convenzioni.filter((c) => match_search(c, q)), [convenzioni, q]);
+
+  /** Contatori per le sezioni tematiche (Hotel & Viaggi / Ristoranti / Altro). */
+  const conteggi_sezioni = useMemo(() => {
+    const m: Record<Exclude<sezione_tema, "tutte">, number> = { hotel: 0, ristoranti: 0, altro: 0 };
+    base_ricerca.forEach((c) => { m[sezione_di(c)] += 1; });
+    return m;
+  }, [base_ricerca]);
+
+  const base = useMemo(
+    () => (sezione === "tutte" ? base_ricerca : base_ricerca.filter((c) => sezione_di(c) === sezione)),
+    [base_ricerca, sezione],
+  );
 
   /** Conteggi incrociati: ogni contatore rispetta l'altro filtro attivo. */
   const conteggi_aree = useMemo(() => {
@@ -391,8 +441,8 @@ export default function ConvenzioniSociPage() {
     });
   }, [base, area_id, regione_id, club?.citta, club?.cantone]);
 
-  const filtri_attivi = !!area_id || !!regione_id || !!q;
-  const reset_filtri = () => { set_area_id(null); set_regione_id(null); set_search(""); };
+  const filtri_attivi = !!area_id || !!regione_id || !!q || sezione !== "tutte";
+  const reset_filtri = () => { set_area_id(null); set_regione_id(null); set_search(""); set_sezione("tutte"); };
   const nome_area = aree.find((a) => a.id === area_id)?.nome;
   const nome_regione = regioni_all.find((r) => r.id === regione_id)?.nome;
 
@@ -425,6 +475,40 @@ export default function ConvenzioniSociPage() {
           </div>
         </div>
       </header>
+
+      {/* Sezioni tematiche + vista */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
+          <FilterPill attivo={sezione === "tutte"} onClick={() => set_sezione("tutte")} count={base_ricerca.length}>
+            Tutte
+          </FilterPill>
+          <FilterPill attivo={sezione === "hotel"} onClick={() => set_sezione("hotel")} count={conteggi_sezioni.hotel}>
+            Hotel & Viaggi
+          </FilterPill>
+          <FilterPill attivo={sezione === "ristoranti"} onClick={() => set_sezione("ristoranti")} count={conteggi_sezioni.ristoranti}>
+            Ristoranti
+          </FilterPill>
+          <FilterPill attivo={sezione === "altro"} onClick={() => set_sezione("altro")} count={conteggi_sezioni.altro}>
+            Altro
+          </FilterPill>
+        </div>
+        <div className="inline-flex rounded-full border border-border bg-card p-1">
+          <button
+            type="button"
+            onClick={() => set_vista("lista")}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 h-8 text-sm font-medium transition-colors ${vista === "lista" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
+          >
+            <List className="w-4 h-4" /> Lista
+          </button>
+          <button
+            type="button"
+            onClick={() => set_vista("mappa")}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 h-8 text-sm font-medium transition-colors ${vista === "mappa" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
+          >
+            <MapIcon className="w-4 h-4" /> Mappa
+          </button>
+        </div>
+      </div>
 
       {/* Barra filtri */}
       <div className="space-y-4 rounded-2xl border border-border bg-card p-4 md:p-5">
@@ -556,6 +640,20 @@ export default function ConvenzioniSociPage() {
             </Button>
           )}
         </div>
+      ) : vista === "mappa" ? (
+        <MappaConvenzioni
+          elementi={lista_ordinata.map((c) => ({
+            ...c,
+            provincia: c.convenzioni_province?.nome ?? null,
+            citta: c.geo_citta,
+            regione: c.convenzioni_regioni?.nome ?? null,
+            nazione: c.convenzioni_regioni?.convenzioni_nazioni?.nome ?? null,
+          }))}
+          on_open={(e) => {
+            const trovata = lista_ordinata.find((c) => c.id === e.id) ?? null;
+            set_selected(trovata);
+          }}
+        />
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 animate-in fade-in duration-300">
           {lista_ordinata.map((c) => (
