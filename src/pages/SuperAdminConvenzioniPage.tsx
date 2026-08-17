@@ -19,7 +19,11 @@ import {
 } from "lucide-react";
 import QRCode from "qrcode";
 import { stato_pubblicazione, label_pubblicazione, colore_pubblicazione, stato_validita } from "@/lib/convenzioni-date";
-import { use_nazioni, use_regioni } from "@/lib/convenzioni-territori";
+import {
+  use_nazioni, use_regioni, use_province,
+  crea_nazione, crea_regione, crea_provincia,
+} from "@/lib/convenzioni-territori";
+import { TerritorioCombobox, StelleSelector } from "@/components/convenzioni/TerritorioCombobox";
 
 
 
@@ -62,6 +66,10 @@ interface Convenzione {
   geo_cantone: string | null;
   geo_citta: string | null;
   regione_id: string | null;
+  provincia_id: string | null;
+  stelle: number | null;
+  tipo_cucina: string | null;
+  fascia_prezzo: string | null;
   validita_da: string | null;
   validita_a: string | null;
   pubblicazione_da: string | null;
@@ -77,6 +85,7 @@ interface Convenzione {
   convenzioni_aree?: { nome: string; icona: string | null } | null;
   convenzioni_tipi_proposta?: { nome: string; formato: string | null } | null;
   convenzioni_regioni?: { id: string; nome: string; nazione_id: string; convenzioni_nazioni?: { nome: string } | null } | null;
+  convenzioni_province?: { id: string; nome: string } | null;
 }
 
 
@@ -215,7 +224,7 @@ function TabConvenzioni() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("convenzioni")
-        .select("*, convenzioni_aree(nome, icona), convenzioni_tipi_proposta(nome, formato), convenzioni_regioni(id, nome, nazione_id, convenzioni_nazioni(nome))")
+        .select("*, convenzioni_aree(nome, icona), convenzioni_tipi_proposta(nome, formato), convenzioni_regioni(id, nome, nazione_id, convenzioni_nazioni(nome)), convenzioni_province(id, nome)")
         .order("in_evidenza", { ascending: false })
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -469,8 +478,10 @@ function ConvenzioneFormModal({
   const [imm_file, set_imm_file] = useState<File | null>(null);
   const [saving, set_saving] = useState(false);
   const [nazione_sel, set_nazione_sel] = useState<string | null>(null);
+  const qc_form = useQueryClient();
   const { data: nazioni = [] } = use_nazioni();
   const { data: regioni = [] } = use_regioni();
+  const { data: province = [] } = use_province();
 
   useEffect(() => {
     if (open) {
@@ -486,6 +497,49 @@ function ConvenzioneFormModal({
     if (reg) set_nazione_sel(reg.nazione_id);
     else if (!form.regione_id && !nazione_sel) set_nazione_sel(null);
   }, [open, form.regione_id, regioni]);
+
+  const handle_crea_nazione = async (nome: string) => {
+    try {
+      const n = await crea_nazione(nome, nazioni.length + 1);
+      await qc_form.invalidateQueries({ queryKey: ["convenzioni_nazioni"] });
+      set_nazione_sel(n.id);
+      set_form(prev => ({ ...prev, regione_id: null, provincia_id: null }));
+      toast.success(`Nazione «${n.nome}» creata`);
+      return n.id;
+    } catch (e: any) {
+      toast.error("Errore creazione nazione: " + (e?.message ?? ""));
+      throw e;
+    }
+  };
+
+  const handle_crea_regione = async (nome: string) => {
+    if (!nazione_sel) throw new Error("nazione mancante");
+    try {
+      const conteggio = regioni.filter(r => r.nazione_id === nazione_sel).length;
+      const r = await crea_regione(nazione_sel, nome, conteggio + 1);
+      await qc_form.invalidateQueries({ queryKey: ["convenzioni_regioni"] });
+      set_form(prev => ({ ...prev, provincia_id: null }));
+      toast.success(`Regione «${r.nome}» creata`);
+      return r.id;
+    } catch (e: any) {
+      toast.error("Errore creazione regione: " + (e?.message ?? ""));
+      throw e;
+    }
+  };
+
+  const handle_crea_provincia = async (nome: string) => {
+    if (!form.regione_id) throw new Error("regione mancante");
+    try {
+      const conteggio = province.filter(p => p.regione_id === form.regione_id).length;
+      const p = await crea_provincia(form.regione_id, nome, conteggio + 1);
+      await qc_form.invalidateQueries({ queryKey: ["convenzioni_province"] });
+      toast.success(`Provincia «${p.nome}» creata`);
+      return p.id;
+    } catch (e: any) {
+      toast.error("Errore creazione provincia: " + (e?.message ?? ""));
+      throw e;
+    }
+  };
 
 
 
