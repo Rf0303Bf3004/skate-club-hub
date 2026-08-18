@@ -1,0 +1,120 @@
+import React, { useEffect, useState } from "react";
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import SortableItem from "@/components/relazione/SortableItem";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Trash2, Plus } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import {
+  use_griglia_specialita,
+  use_upsert_specialita,
+  use_elimina_specialita,
+  type GrigliaSpecialita,
+} from "@/hooks/use-griglia-ghiaccio";
+
+/** CRUD minimale sulla tassonomia delle specialità della griglia ghiaccio. */
+const SpecialitaManager: React.FC = () => {
+  const { data: specialita = [], isLoading } = use_griglia_specialita();
+  const upsert = use_upsert_specialita();
+  const elimina = use_elimina_specialita();
+
+  const [lista, set_lista] = useState<GrigliaSpecialita[]>([]);
+  const [nuovo_nome, set_nuovo_nome] = useState("");
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  useEffect(() => {
+    set_lista(specialita);
+  }, [specialita]);
+
+  const handle_drag_end = async (event: any) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const old_index = lista.findIndex((s) => s.id === active.id);
+    const new_index = lista.findIndex((s) => s.id === over.id);
+    if (old_index < 0 || new_index < 0) return;
+    const nuova = arrayMove(lista, old_index, new_index);
+    set_lista(nuova);
+    try {
+      await Promise.all(
+        nuova.map((s, idx) => upsert.mutateAsync({ id: s.id, nome: s.nome, ordine: idx + 1, attivo: s.attivo })),
+      );
+      toast({ title: "Ordine aggiornato" });
+    } catch (e: any) {
+      toast({ title: "Errore", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const aggiungi = async () => {
+    const nome = nuovo_nome.trim();
+    if (!nome) return;
+    try {
+      await upsert.mutateAsync({ nome, ordine: lista.length + 1, attivo: true });
+      set_nuovo_nome("");
+      toast({ title: "Specialità aggiunta" });
+    } catch (e: any) {
+      toast({ title: "Errore", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const rimuovi = async (id: string) => {
+    try {
+      await elimina.mutateAsync(id);
+      toast({ title: "Specialità eliminata" });
+    } catch (e: any) {
+      toast({ title: "Errore", description: e.message, variant: "destructive" });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handle_drag_end}>
+        <SortableContext items={lista.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+          <div className="space-y-1.5">
+            {lista.map((s) => (
+              <SortableItem key={s.id} id={s.id}>
+                <div className="flex items-center justify-between gap-2 px-3 py-2 bg-muted/30 rounded-lg">
+                  <span className="text-sm truncate">{s.nome}</span>
+                  <Button variant="ghost" size="icon" onClick={() => rimuovi(s.id)} title="Elimina">
+                    <Trash2 className="w-4 h-4 text-destructive" />
+                  </Button>
+                </div>
+              </SortableItem>
+            ))}
+            {lista.length === 0 && (
+              <p className="text-sm text-muted-foreground py-2">Nessuna specialità configurata.</p>
+            )}
+          </div>
+        </SortableContext>
+      </DndContext>
+
+      <div className="flex items-center gap-2 pt-2 border-t">
+        <Input
+          value={nuovo_nome}
+          onChange={(e) => set_nuovo_nome(e.target.value)}
+          placeholder="Nuova specialità…"
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              void aggiungi();
+            }
+          }}
+        />
+        <Button onClick={aggiungi} disabled={!nuovo_nome.trim()}>
+          <Plus className="w-4 h-4 mr-1" /> Aggiungi
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+export default SpecialitaManager;
