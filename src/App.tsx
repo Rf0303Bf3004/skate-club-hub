@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import GrigliaGhiaccioPage from "@/pages/GrigliaGhiaccioPage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useNavigate, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -259,6 +260,7 @@ const AuthenticatedApp = () => {
           <Route path="/configurazione-club" element={<Navigate to="/setup-club" replace />} />
           <Route path="/gestione-ruoli" element={<Navigate to="/ruoli-permessi" replace />} />
           <Route path="/planning" element={<PlanningPage />} />
+          <Route path="/griglia-ghiaccio" element={<GrigliaGhiaccioPage />} />
           <Route path="/setup-club" element={<ClubSetupPage />} />
           <Route path="/gestione-avanzata" element={<AdvancedManagementPage />} />
           <Route path="/richieste-iscrizione" element={<RichiesteIscrizionePage />} />

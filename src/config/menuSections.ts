@@ -2,7 +2,7 @@ import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Trophy, Clock,
   Receipt, MessageSquare, Building2, Calendar, CalendarRange, MapPin,
   ListChecks, Handshake, UserCog, ShieldCheck, Wrench, FileSpreadsheet,
-  ClipboardCheck, Sparkles, UserPlus,
+  ClipboardCheck, Sparkles, UserPlus, LayoutGrid,
 } from "lucide-react";
 
 export type MenuGruppo = "principale" | "setup";
@@ -30,6 +30,7 @@ export const MENU_SECTIONS: MenuSection[] = [
   { codice: "lezioni_private", label: "Lezioni Private", icon: Clock,           path: "/lezioni-private", gruppo: "principale", ordine: 9 },
   { codice: "fatture",         label: "Fatture",         icon: Receipt,         path: "/fatture",         gruppo: "principale", ordine: 10 },
   { codice: "comunicazioni",   label: "Comunicazioni",   icon: MessageSquare,   path: "/comunicazioni",   gruppo: "principale", ordine: 11 },
+  { codice: "griglia_ghiaccio",  label: "Griglia Ghiaccio", icon: LayoutGrid,      path: "/griglia-ghiaccio", gruppo: "principale", ordine: 12 },
   // SETUP
   { codice: "setup_club",        label: "Setup del Club",     icon: Building2,     path: "/setup-club",        gruppo: "setup", ordine: 1 },
   { codice: "stagioni",          label: "Stagioni",           icon: Calendar,      path: "/stagioni",          gruppo: "setup", ordine: 2 },
