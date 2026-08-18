@@ -3,7 +3,7 @@ import { Navigate } from "react-router-dom";
 import { use_richieste_iscrizione, use_atleti, use_corsi } from "@/hooks/use-supabase-data";
 import { use_gestisci_richiesta } from "@/hooks/use-supabase-mutations";
 import { useAuth } from "@/lib/auth";
-import { useHasPermesso } from "@/hooks/usePermessi";
+import { usePermessiSezioniMatrix } from "@/hooks/usePermessi";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, X, Clock, Search, MessageSquare, ClipboardList, ChevronLeft, ChevronRight, Archive } from "lucide-react";
@@ -21,14 +21,13 @@ const PAGE_SIZES = [25, 50, 100];
 
 const RichiesteIscrizionePage: React.FC = () => {
   const { session } = useAuth();
-  const allowed = useHasPermesso("richieste_iscrizione");
+  const { visibile_set, is_admin_like, is_loading: is_loading_permessi } = usePermessiSezioniMatrix();
+  const allowed = is_admin_like || visibile_set.has("richieste_iscrizione");
   const { data: richieste = [], isLoading: isLoadingRichieste, isError } = use_richieste_iscrizione();
   const { data: atleti = [], isLoading: isLoadingAtleti } = use_atleti();
   const { data: corsi = [], isLoading: isLoadingCorsi } = use_corsi();
   const isLoading = isLoadingRichieste || isLoadingAtleti || isLoadingCorsi;
   const gestisci = use_gestisci_richiesta();
-
-  if (!allowed) return <Navigate to="/" replace />;
 
   const [filtro, set_filtro] = useState<Filtro>("in_attesa");
   const [query, set_query] = useState("");
@@ -95,6 +94,16 @@ const RichiesteIscrizionePage: React.FC = () => {
     set_page(1);
     set_selezione([]);
   }, [filtro, query, filtro_corso, filtro_periodo, page_size]);
+
+  if (is_loading_permessi) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  if (!allowed) return <Navigate to="/" replace />;
 
   const pendenti_pagina = pagina.filter((r: any) => r.stato === "in_attesa");
   const tutte_selezionate = pendenti_pagina.length > 0 && pendenti_pagina.every((r: any) => selezione.includes(r.id));
