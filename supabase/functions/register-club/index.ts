@@ -53,6 +53,14 @@ interface Payload {
   telefono?: string;
 }
 
+// La tabella clubs accetta solo i codici ISO 'CH' o 'IT' per paese/paese_iso
+function normalizza_paese(valore?: string | null): "CH" | "IT" {
+  const v = (valore ?? "").trim().toLowerCase();
+  if (v === "it" || v === "italia" || v === "italy") return "IT";
+  return "CH";
+}
+
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
