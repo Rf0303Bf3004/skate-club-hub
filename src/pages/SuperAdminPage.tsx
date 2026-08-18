@@ -679,6 +679,7 @@ const SuperAdminPage: React.FC = () => {
               { key: "clubs", label: "🏢 Club", icon: Building2 },
               { key: "azioni", label: "⚙️ Azioni", icon: Database },
               { key: "utenti", label: "👥 Utenti", icon: UserCheck },
+              { key: "app_mobile", label: "📱 App Mobile", icon: Database },
               { key: "db", label: "📋 Log", icon: BarChart3 },
             ] as const
           ).map((t) => (
