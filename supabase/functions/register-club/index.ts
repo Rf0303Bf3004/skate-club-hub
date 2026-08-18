@@ -36,6 +36,7 @@ interface Payload {
   colore_primario?: string;
   federazione?: string;
 
+
   // Tariffazione (opzionali, defaults applicati)
   fee_fissa_chf?: number;
   prezzo_per_atleta_chf?: number;
