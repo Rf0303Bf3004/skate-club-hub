@@ -48,6 +48,14 @@ export const ModalitaGestioneSection: React.FC = () => {
     },
   });
 
+  React.useEffect(() => {
+    if (salva.isSuccess) {
+      set_just_saved(true);
+      const timer = setTimeout(() => set_just_saved(false), 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [salva.isSuccess]);
+
   if (!allowed) return null;
 
   return (
