@@ -89,11 +89,81 @@ export type Database = {
           },
         ]
       }
+      atleta_ppc_elementi: {
+        Row: {
+          atleta_id: string
+          categoria_elemento: string | null
+          codice_elemento: string | null
+          created_at: string
+          creato_da: string | null
+          descrizione: string | null
+          id: string
+          note: string | null
+          ordine: number | null
+          programma: string | null
+          stagione_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          atleta_id: string
+          categoria_elemento?: string | null
+          codice_elemento?: string | null
+          created_at?: string
+          creato_da?: string | null
+          descrizione?: string | null
+          id?: string
+          note?: string | null
+          ordine?: number | null
+          programma?: string | null
+          stagione_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          atleta_id?: string
+          categoria_elemento?: string | null
+          codice_elemento?: string | null
+          created_at?: string
+          creato_da?: string | null
+          descrizione?: string | null
+          id?: string
+          note?: string | null
+          ordine?: number | null
+          programma?: string | null
+          stagione_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atleta_ppc_elementi_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atleta_ppc_elementi_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti_con_completezza"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atleta_ppc_elementi_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       atleti: {
         Row: {
           a_rischio: boolean
           a_rischio_da: string | null
           agonista: boolean
+          atleta_bmetod: boolean | null
+          atleta_club: boolean | null
+          atleta_esterno: boolean | null
           atleta_federazione: boolean | null
           attivo: boolean | null
           attivo_come_monitore: boolean | null
@@ -173,6 +243,9 @@ export type Database = {
           a_rischio?: boolean
           a_rischio_da?: string | null
           agonista?: boolean
+          atleta_bmetod?: boolean | null
+          atleta_club?: boolean | null
+          atleta_esterno?: boolean | null
           atleta_federazione?: boolean | null
           attivo?: boolean | null
           attivo_come_monitore?: boolean | null
@@ -252,6 +325,9 @@ export type Database = {
           a_rischio?: boolean
           a_rischio_da?: string | null
           agonista?: boolean
+          atleta_bmetod?: boolean | null
+          atleta_club?: boolean | null
+          atleta_esterno?: boolean | null
           atleta_federazione?: boolean | null
           attivo?: boolean | null
           attivo_come_monitore?: boolean | null

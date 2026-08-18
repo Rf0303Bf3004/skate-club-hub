@@ -132,6 +132,9 @@ const AtletaModal: React.FC<{
     ore_pista_stagione: atleta?.ore_pista_stagione || 0,
     agonista: atleta?.agonista || atleta?.atleta_federazione || false,
     atleta_federazione: atleta?.atleta_federazione || false,
+    atleta_club: atleta?.atleta_club || false,
+    atleta_bmetod: atleta?.atleta_bmetod || false,
+    atleta_esterno: atleta?.atleta_esterno || false,
     tag_nfc: atleta?.tag_nfc || "",
     genitore1_nome: atleta?.genitore1_nome || atleta?.genitore_1?.nome || "",
     genitore1_cognome: atleta?.genitore1_cognome || atleta?.genitore_1?.cognome || "",
@@ -357,6 +360,50 @@ const AtletaModal: React.FC<{
               <label htmlFor="fed_check" className="cursor-pointer">
                 <span className="text-sm font-medium text-foreground">Atleta di Federazione</span>
                 <span className="block text-xs text-muted-foreground">Rappresenta il Cantone nelle gare federali</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Provenienza */}
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Provenienza</p>
+            <div className="flex items-start gap-3 px-3 py-2 bg-muted/30 rounded-lg">
+              <input
+                type="checkbox"
+                id="club_check"
+                checked={form.atleta_club}
+                onChange={(e) => set_val("atleta_club", e.target.checked)}
+                className="w-4 h-4 mt-0.5 accent-primary"
+              />
+              <label htmlFor="club_check" className="cursor-pointer">
+                <span className="text-sm font-medium text-foreground">Club</span>
+                <span className="block text-xs text-muted-foreground">Atleta del club principale</span>
+              </label>
+            </div>
+            <div className="flex items-start gap-3 px-3 py-2 bg-muted/30 rounded-lg">
+              <input
+                type="checkbox"
+                id="bmetod_check"
+                checked={form.atleta_bmetod}
+                onChange={(e) => set_val("atleta_bmetod", e.target.checked)}
+                className="w-4 h-4 mt-0.5 accent-primary"
+              />
+              <label htmlFor="bmetod_check" className="cursor-pointer">
+                <span className="text-sm font-medium text-foreground">BMETOD</span>
+                <span className="block text-xs text-muted-foreground">Atleta BMETOD Academy</span>
+              </label>
+            </div>
+            <div className="flex items-start gap-3 px-3 py-2 bg-muted/30 rounded-lg">
+              <input
+                type="checkbox"
+                id="esterno_check"
+                checked={form.atleta_esterno}
+                onChange={(e) => set_val("atleta_esterno", e.target.checked)}
+                className="w-4 h-4 mt-0.5 accent-primary"
+              />
+              <label htmlFor="esterno_check" className="cursor-pointer">
+                <span className="text-sm font-medium text-foreground">Esterno</span>
+                <span className="block text-xs text-muted-foreground">Pattinatore esterno ospite</span>
               </label>
             </div>
           </div>
@@ -1508,7 +1555,13 @@ const AthletesPage: React.FC = () => {
                             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                               <p className="font-medium text-foreground inline-flex items-center gap-2 flex-wrap">
                                 <span>{a.nome} {a.cognome}</span>
-                                <AthleteBadges agonista={a.agonista} atleta_federazione={a.atleta_federazione} />
+                                <AthleteBadges
+                                  agonista={a.agonista}
+                                  atleta_federazione={a.atleta_federazione}
+                                  atleta_club={a.atleta_club}
+                                  atleta_bmetod={a.atleta_bmetod}
+                                  atleta_esterno={a.atleta_esterno}
+                                />
                                 {a.verificato === false && (
                                   <span className="inline-flex items-center gap-1 rounded-md bg-yellow-100 px-1.5 py-0.5 text-[10px] font-semibold text-yellow-800 ring-1 ring-inset ring-yellow-300">
                                     ⚠️ Da verificare

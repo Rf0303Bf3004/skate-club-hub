@@ -560,6 +560,9 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
         licenza_sis_validita_da: form.licenza_sis_validita_da || null,
         licenza_sis_validita_a: form.licenza_sis_validita_a || null,
         atleta_federazione: is_carriera_attiva ? form.atleta_federazione : false,
+        atleta_club: !!form.atleta_club,
+        atleta_bmetod: !!form.atleta_bmetod,
+        atleta_esterno: !!form.atleta_esterno,
         ore_pista_stagione: form.ore_pista_stagione,
         genitore1_nome: form.genitore1_nome,
         genitore1_cognome: form.genitore1_cognome,
@@ -817,7 +820,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                 }
               }
 
-              const has_flags = form.agonista || form.atleta_federazione || form.attivo_come_monitore;
+              const has_flags = form.agonista || form.atleta_federazione || form.attivo_come_monitore || form.atleta_club || form.atleta_bmetod || form.atleta_esterno;
 
               return (
                 <div className="flex flex-col gap-2">
@@ -892,6 +895,15 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                           <UserCog className="w-[14px] h-[14px]" />
                           Monitore
                         </span>
+                      )}
+                      {form.atleta_club && (
+                        <span className="inline-flex items-center gap-1">Club</span>
+                      )}
+                      {form.atleta_bmetod && (
+                        <span className="inline-flex items-center gap-1">BMETOD</span>
+                      )}
+                      {form.atleta_esterno && (
+                        <span className="inline-flex items-center gap-1">Esterno</span>
                       )}
                     </div>
                   )}
@@ -1226,12 +1238,53 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                           onChange={(e) => upd("atleta_federazione", e.target.checked)}
                           className="w-4 h-4 accent-primary"
                         />
-                        <label htmlFor="fed_check" className="text-sm font-medium text-foreground cursor-pointer">
+                      <label htmlFor="fed_check" className="text-sm font-medium text-foreground cursor-pointer">
                           Atleta federazione
                         </label>
                       </div>
                     </>
                   )}
+
+                  {/* Provenienza — sempre visibile, indipendente dalla categoria */}
+                  <div className="pt-2 space-y-2">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Provenienza</p>
+                    <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
+                      <input
+                        type="checkbox"
+                        id="club_check"
+                        checked={!!form.atleta_club}
+                        onChange={(e) => upd("atleta_club", e.target.checked)}
+                        className="w-4 h-4 accent-primary"
+                      />
+                      <label htmlFor="club_check" className="text-sm font-medium text-foreground cursor-pointer">
+                        Atleta Club
+                      </label>
+                    </div>
+                    <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
+                      <input
+                        type="checkbox"
+                        id="bmetod_check"
+                        checked={!!form.atleta_bmetod}
+                        onChange={(e) => upd("atleta_bmetod", e.target.checked)}
+                        className="w-4 h-4 accent-primary"
+                      />
+                      <label htmlFor="bmetod_check" className="text-sm font-medium text-foreground cursor-pointer">
+                        Atleta BMETOD
+                      </label>
+                    </div>
+                    <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
+                      <input
+                        type="checkbox"
+                        id="esterno_check"
+                        checked={!!form.atleta_esterno}
+                        onChange={(e) => upd("atleta_esterno", e.target.checked)}
+                        className="w-4 h-4 accent-primary"
+                      />
+                      <label htmlFor="esterno_check" className="text-sm font-medium text-foreground cursor-pointer">
+                        Atleta Esterno
+                      </label>
+                    </div>
+                  </div>
                 </div>
               )}
 
