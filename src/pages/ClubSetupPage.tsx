@@ -776,7 +776,12 @@ const ClubSetupPage: React.FC = () => {
             {saving ? "Salvataggio..." : "Salva modifiche"}
           </Button>
         </div>
+
+        <Separator />
+
+        <ModalitaGestioneSection />
         </div>
+
         </TabsContent>
 
         <TabsContent value="ghiaccio">
