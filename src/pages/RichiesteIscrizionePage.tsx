@@ -95,6 +95,16 @@ const RichiesteIscrizionePage: React.FC = () => {
     set_selezione([]);
   }, [filtro, query, filtro_corso, filtro_periodo, page_size]);
 
+  if (is_loading_permessi) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  if (!allowed) return <Navigate to="/" replace />;
+
   const pendenti_pagina = pagina.filter((r: any) => r.stato === "in_attesa");
   const tutte_selezionate = pendenti_pagina.length > 0 && pendenti_pagina.every((r: any) => selezione.includes(r.id));
 
