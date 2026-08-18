@@ -107,8 +107,9 @@ Deno.serve(async (req) => {
       regione: body.regione?.trim() || null,
       provincia: body.provincia?.trim() || null,
       codice_fiscale: body.codice_fiscale?.trim() || null,
-      paese: body.paese?.trim() || "Svizzera",
-      paese_iso: (body.paese_iso?.trim() || "CH").toUpperCase(),
+      paese: normalizza_paese(body.paese_iso ?? body.paese),
+      paese_iso: normalizza_paese(body.paese_iso ?? body.paese),
+
       email: email_club,
       telefono: (body.telefono_club || body.telefono)?.trim() || null,
       sito_web: body.sito_web?.trim() || null,
