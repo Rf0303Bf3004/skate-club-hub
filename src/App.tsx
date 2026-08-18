@@ -54,6 +54,7 @@ import RecoveryPage from "@/pages/RecoveryPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import SuperAdminUtentiPage from "@/pages/SuperAdminUtentiPage";
 import SuperAdminConvenzioniPage from "@/pages/SuperAdminConvenzioniPage";
+import SuperAdminAppMobilePage from "@/pages/SuperAdminAppMobilePage";
 import ConvenzioniSociPage from "@/pages/ConvenzioniSociPage";
 import ConvenzionePubblicaPage from "@/pages/ConvenzionePubblicaPage";
 import PortaleLoginPage from "@/pages/portale/PortaleLoginPage";
@@ -307,6 +308,10 @@ const AuthenticatedApp = () => {
           <Route
             path="/superadmin/convenzioni"
             element={<ProtectedSuperAdmin><SuperAdminConvenzioniPage /></ProtectedSuperAdmin>}
+          />
+          <Route
+            path="/superadmin/app-mobile"
+            element={<ProtectedSuperAdmin><SuperAdminAppMobilePage /></ProtectedSuperAdmin>}
           />
           <Route
             path="/superadmin/operazioni"
