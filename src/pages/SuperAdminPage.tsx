@@ -448,7 +448,7 @@ const SuperAdminPage: React.FC = () => {
   const [clubs, set_clubs] = useState<ClubStats[]>([]);
   const [selected_club, set_selected_club] = useState<string | null>(null);
   const [loading, set_loading] = useState(true);
-  const [tab, set_tab] = useState<"clubs" | "azioni" | "utenti" | "db">("clubs");
+  const [tab, set_tab] = useState<"clubs" | "azioni" | "utenti" | "app_mobile" | "db">("clubs");
   const [log, set_log] = useState<string[]>([]);
 
   const add_log = (msg: string) => {
