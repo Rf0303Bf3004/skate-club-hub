@@ -2437,6 +2437,241 @@ export type Database = {
           },
         ]
       }
+      griglia_blocchi: {
+        Row: {
+          club_id: string
+          created_at: string
+          creato_da: string | null
+          data: string
+          id: string
+          ora_fine: string
+          ora_inizio: string
+          pubblicato_at: string | null
+          stato: string
+          titolo: string | null
+          updated_at: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          creato_da?: string | null
+          data: string
+          id?: string
+          ora_fine: string
+          ora_inizio: string
+          pubblicato_at?: string | null
+          stato?: string
+          titolo?: string | null
+          updated_at?: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          creato_da?: string | null
+          data?: string
+          id?: string
+          ora_fine?: string
+          ora_inizio?: string
+          pubblicato_at?: string | null
+          stato?: string
+          titolo?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "griglia_blocchi_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "griglia_blocchi_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "kpi_pitch_sponsor"
+            referencedColumns: ["club_id"]
+          },
+        ]
+      }
+      griglia_sessioni: {
+        Row: {
+          blocco_id: string
+          created_at: string
+          id: string
+          note: string | null
+          ora_fine: string
+          ora_inizio: string
+          ordine: number
+          specialita_id: string | null
+          specialita_testo_libero: string | null
+          updated_at: string
+        }
+        Insert: {
+          blocco_id: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          ora_fine: string
+          ora_inizio: string
+          ordine?: number
+          specialita_id?: string | null
+          specialita_testo_libero?: string | null
+          updated_at?: string
+        }
+        Update: {
+          blocco_id?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          ora_fine?: string
+          ora_inizio?: string
+          ordine?: number
+          specialita_id?: string | null
+          specialita_testo_libero?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "griglia_sessioni_blocco_id_fkey"
+            columns: ["blocco_id"]
+            isOneToOne: false
+            referencedRelation: "griglia_blocchi"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "griglia_sessioni_specialita_id_fkey"
+            columns: ["specialita_id"]
+            isOneToOne: false
+            referencedRelation: "griglia_specialita"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      griglia_sessioni_atleti: {
+        Row: {
+          atleta_id: string
+          created_at: string
+          id: string
+          sessione_id: string
+        }
+        Insert: {
+          atleta_id: string
+          created_at?: string
+          id?: string
+          sessione_id: string
+        }
+        Update: {
+          atleta_id?: string
+          created_at?: string
+          id?: string
+          sessione_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "griglia_sessioni_atleti_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "griglia_sessioni_atleti_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti_con_completezza"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "griglia_sessioni_atleti_sessione_id_fkey"
+            columns: ["sessione_id"]
+            isOneToOne: false
+            referencedRelation: "griglia_sessioni"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      griglia_sessioni_istruttori: {
+        Row: {
+          created_at: string
+          id: string
+          istruttore_id: string
+          sessione_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          istruttore_id: string
+          sessione_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          istruttore_id?: string
+          sessione_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "griglia_sessioni_istruttori_istruttore_id_fkey"
+            columns: ["istruttore_id"]
+            isOneToOne: false
+            referencedRelation: "istruttori"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "griglia_sessioni_istruttori_sessione_id_fkey"
+            columns: ["sessione_id"]
+            isOneToOne: false
+            referencedRelation: "griglia_sessioni"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      griglia_specialita: {
+        Row: {
+          attivo: boolean
+          club_id: string
+          created_at: string
+          id: string
+          nome: string
+          ordine: number
+          updated_at: string
+        }
+        Insert: {
+          attivo?: boolean
+          club_id: string
+          created_at?: string
+          id?: string
+          nome: string
+          ordine?: number
+          updated_at?: string
+        }
+        Update: {
+          attivo?: boolean
+          club_id?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          ordine?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "griglia_specialita_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "griglia_specialita_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "kpi_pitch_sponsor"
+            referencedColumns: ["club_id"]
+          },
+        ]
+      }
       impostazioni_app_mobile: {
         Row: {
           android_store_url: string | null
@@ -5305,12 +5540,14 @@ export type Database = {
         Returns: undefined
       }
       sync_atleta_to_staff: { Args: { p_atleta_id: string }; Returns: string }
+      user_can_manage_griglia: { Args: never; Returns: boolean }
       user_can_manage_richieste: { Args: never; Returns: boolean }
       user_can_see_finance: { Args: never; Returns: boolean }
       user_club_id: { Args: never; Returns: string }
       user_has_ruolo: { Args: { _ruolo: string }; Returns: boolean }
       user_is_admin_like: { Args: never; Returns: boolean }
       user_is_presidente: { Args: never; Returns: boolean }
+      user_is_vicepresidente: { Args: never; Returns: boolean }
     }
     Enums: {
       livello_istruttore_enum: "istruttore" | "monitrice" | "aiuto_monitrice"
