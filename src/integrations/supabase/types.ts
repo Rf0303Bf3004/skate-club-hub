@@ -5241,6 +5241,25 @@ export type Database = {
         Returns: boolean
       }
       mobile_club_id: { Args: never; Returns: string }
+      mobile_club_info: {
+        Args: never
+        Returns: {
+          cantone: string
+          cap: string
+          citta: string
+          colore_primario: string
+          descrizione: string
+          email: string
+          id: string
+          indirizzo: string
+          logo_url: string
+          nome: string
+          paese: string
+          sigla: string
+          sito_web: string
+          telefono: string
+        }[]
+      }
       mobile_iscrizioni_gare: {
         Args: never
         Returns: {
