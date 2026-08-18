@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Copy, Check, QrCode, Printer, Download, RefreshCw } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Copy, Check, QrCode, Printer, Download, RefreshCw, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
@@ -19,6 +19,22 @@ export default function CodiceAtletaCard({ atleta, on_updated }: Props) {
   const [show_qr, set_show_qr] = useState(false);
   const [rigenerando, set_rigenerando] = useState(false);
   const [conferma_rigen, set_conferma_rigen] = useState(false);
+  const [ios_store_url, set_ios_store_url] = useState("");
+  const [android_store_url, set_android_store_url] = useState("");
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("impostazioni_app_mobile")
+        .select("ios_store_url, android_store_url")
+        .limit(1)
+        .maybeSingle();
+      if (data) {
+        set_ios_store_url(data.ios_store_url ?? "");
+        set_android_store_url(data.android_store_url ?? "");
+      }
+    })();
+  }, []);
 
   const codice = atleta.codice_atleta || "";
 
@@ -46,6 +62,12 @@ export default function CodiceAtletaCard({ atleta, on_updated }: Props) {
   const stampa_scheda = () => {
     if (!codice) return;
     const nome_completo = `${atleta.nome ?? ""} ${atleta.cognome ?? ""}`.trim();
+    const ios = ios_store_url.trim();
+    const android = android_store_url.trim();
+    const box_store = (etichetta: string, url: string) =>
+      url
+        ? `<div class="store"><div class="store-title">${etichetta}</div><img class="store-qr" src="${qr_url(url, 320)}" alt="QR ${etichetta}" /><div class="store-link">${url}</div></div>`
+        : `<div class="store"><div class="store-title">${etichetta}</div><div class="store-todo">Link non ancora disponibile</div></div>`;
     const html = `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Codice atleta ${codice}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,Helvetica,Arial,sans-serif;}
@@ -61,6 +83,12 @@ body{padding:48px;color:#0F172A;}
 img.qr{width:220px;height:220px;margin-top:18px;}
 ol{text-align:left;max-width:420px;margin:28px auto 0;font-size:13px;line-height:1.7;color:#334155;}
 ol li::marker{color:#0284C7;font-weight:700;}
+.stores{display:flex;gap:16px;margin-top:28px;justify-content:center;}
+.store{flex:1;max-width:220px;border:1.5px solid #E2E8F0;border-radius:14px;padding:14px;text-align:center;page-break-inside:avoid;}
+.store-title{font-size:11px;font-weight:800;color:#1E2761;margin-bottom:8px;}
+.store-qr{width:130px;height:130px;}
+.store-link{font-size:7.5px;color:#64748B;word-break:break-all;margin-top:6px;}
+.store-todo{font-size:10px;color:#94A3B8;padding:36px 6px;}
 .footer{margin-top:28px;font-size:10px;color:#94A3B8;text-align:center;}
 @media print{@page{margin:0;size:A4;}body{padding:24mm;}}
 </style></head><body>
@@ -71,11 +99,16 @@ ol li::marker{color:#0284C7;font-weight:700;}
   <div class="codice">${codice}</div>
   <div><img class="qr" src="${qr_url(codice, 440)}" alt="QR ${codice}" /></div>
   <ol>
-    <li>Scarica l'app <strong>Ice Arena</strong> dallo store.</li>
+    <li>Scarica l'app <strong>Ice Arena</strong> dallo store (QR qui sotto).</li>
     <li>Apri l'app e tocca <strong>Inserisci codice</strong>.</li>
     <li>Digita o scansiona <strong>${codice}</strong>.</li>
     <li>Il profilo dell'atleta verrà collegato al dispositivo.</li>
   </ol>
+  <div class="label">Scarica l'app Ice Arena</div>
+  <div class="stores">
+    ${box_store("📲 iPhone — App Store", ios)}
+    ${box_store("🤖 Android — Google Play", android)}
+  </div>
 </div>
 <div class="footer">Codice permanente — non scade. In caso di smarrimento, il club può rigenerarlo dalla scheda atleta.</div>
 <script>window.onload=function(){setTimeout(function(){window.print();},300);};</script>
@@ -149,9 +182,39 @@ ol li::marker{color:#0284C7;font-weight:700;}
         </Button>
       </div>
 
+      {/* Download app */}
+      <div className="space-y-2 border-t border-primary/15 pt-3">
+        <div className="text-[10px] font-bold uppercase tracking-[1.4px] text-primary">
+          Scarica l'app Ice Arena
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {[
+            { etichetta: "📲 iPhone — App Store", url: ios_store_url.trim() },
+            { etichetta: "🤖 Android — Google Play", url: android_store_url.trim() },
+          ].map((s) => (
+            <Button
+              key={s.etichetta}
+              size="sm"
+              variant="outline"
+              disabled={!s.url}
+              onClick={() => s.url && window.open(s.url, "_blank", "noopener,noreferrer")}
+              className="gap-1.5"
+              title={s.url || "Link non ancora disponibile"}
+            >
+              {s.etichetta}
+              {s.url ? (
+                <ExternalLink className="w-3.5 h-3.5" />
+              ) : (
+                <span className="text-[10px] font-normal">(link non ancora disponibile)</span>
+              )}
+            </Button>
+          ))}
+        </div>
+      </div>
+
       {/* Dialog QR */}
       <Dialog open={show_qr} onOpenChange={set_show_qr}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <QrCode className="w-5 h-5 text-primary" /> QR codice atleta
@@ -166,9 +229,32 @@ ol li::marker{color:#0284C7;font-weight:700;}
             <Button onClick={scarica_qr} variant="outline" className="w-full gap-1.5">
               <Download className="w-4 h-4" /> Scarica PNG
             </Button>
+
+            <div className="grid grid-cols-2 gap-3 border-t pt-3">
+              {[
+                { etichetta: "Scansiona per iPhone", url: ios_store_url.trim() },
+                { etichetta: "Scansiona per Android", url: android_store_url.trim() },
+              ].map((s) => (
+                <div key={s.etichetta} className="space-y-1.5">
+                  <p className="text-[11px] font-semibold text-foreground">{s.etichetta}</p>
+                  {s.url ? (
+                    <img
+                      src={qr_url(s.url, 200)}
+                      alt={s.etichetta}
+                      className="mx-auto rounded-lg border bg-white w-28 h-28"
+                    />
+                  ) : (
+                    <div className="mx-auto w-28 h-28 rounded-lg border border-dashed flex items-center justify-center text-[10px] text-muted-foreground px-2 text-center">
+                      Link non ancora disponibile
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </DialogContent>
       </Dialog>
+
 
       {/* Conferma rigenerazione */}
       <Dialog open={conferma_rigen} onOpenChange={(o) => !rigenerando && set_conferma_rigen(o)}>
