@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { FlaskConical } from "lucide-react";
+import { Check, FlaskConical } from "lucide-react";
 
 /**
  * Sezione avanzata/sperimentale: permette al Presidente/admin di scegliere una
@@ -19,6 +19,7 @@ export const ModalitaGestioneSection: React.FC = () => {
   const allowed = !!session && ["superadmin", "admin", "presidente"].includes(session.ruolo);
   const queryClient = useQueryClient();
   const { modalita, is_loading } = useModalitaArea("ghiaccio");
+  const [just_saved, set_just_saved] = React.useState(false);
 
   const salva = useMutation({
     mutationFn: async (nuova_modalita: string) => {
@@ -47,6 +48,14 @@ export const ModalitaGestioneSection: React.FC = () => {
     },
   });
 
+  React.useEffect(() => {
+    if (salva.isSuccess) {
+      set_just_saved(true);
+      const timer = setTimeout(() => set_just_saved(false), 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [salva.isSuccess]);
+
   if (!allowed) return null;
 
   return (
@@ -60,7 +69,15 @@ export const ModalitaGestioneSection: React.FC = () => {
       </div>
 
       <div className="space-y-1.5 max-w-md">
-        <Label className="text-xs text-muted-foreground">Ghiaccio</Label>
+        <div className="flex items-center justify-between">
+          <Label className="text-xs text-muted-foreground">Ghiaccio</Label>
+          {just_saved && (
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600">
+              <Check className="w-3.5 h-3.5" />
+              Salvato
+            </span>
+          )}
+        </div>
         <Select
           value={modalita}
           disabled={is_loading || salva.isPending}
@@ -71,17 +88,15 @@ export const ModalitaGestioneSection: React.FC = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="standard">Standard (corsi settimanali ricorrenti)</SelectItem>
-            <SelectItem value="griglia_giornaliera">
-              <span className="flex items-center gap-2">
-                Griglia giornaliera (Tailor Made)
-                <Badge variant="secondary" className="text-[10px]">In costruzione</Badge>
-              </span>
-            </SelectItem>
+            <SelectItem value="griglia_giornaliera">Griglia giornaliera (Tailor Made)</SelectItem>
           </SelectContent>
         </Select>
         <p className="text-xs text-muted-foreground">
           Cambia il modo in cui questo club gestisce l'area Ghiaccio. La modalità Standard resta quella
           predefinita e consigliata per la maggior parte dei club.
+        </p>
+        <p className="text-xs text-amber-600">
+          Il cambio si applica e si salva immediatamente alla selezione — non serve il pulsante "Salva modifiche" qui sopra.
         </p>
       </div>
     </section>
