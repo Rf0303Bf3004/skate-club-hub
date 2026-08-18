@@ -5,11 +5,13 @@ export type RuoloUtente =
   | "dt"
   | "segreteria"
   | "presidente"
+  | "vicepresidente"
   | "istruttore"
   | "aiuto_monitore";
 
 export const RUOLI_GRANULARI: RuoloUtente[] = [
   "presidente",
+  "vicepresidente",
   "segreteria",
   "dt",
   "istruttore",
@@ -25,4 +27,12 @@ export function is_admin_like(ruolo?: string | null): boolean {
 /** Ruoli che possono confermare manualmente le ore lavorate di un istruttore. */
 export function can_override_ore_lavoro(ruolo?: string | null): boolean {
   return ruolo === "superadmin" || ruolo === "admin" || ruolo === "dt" || ruolo === "presidente";
+}
+
+/** Ruoli che possono gestire (creare/modificare) la Griglia Ghiaccio giornaliera.
+ *  Stesso criterio della funzione DB public.user_can_manage_griglia(). */
+export function can_manage_griglia(ruolo?: string | null): boolean {
+  return (
+    ruolo === "superadmin" || ruolo === "admin" || ruolo === "vicepresidente" || ruolo === "presidente"
+  );
 }
