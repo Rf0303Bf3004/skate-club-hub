@@ -5026,70 +5026,9 @@ export type Database = {
           punteggio: number | null
           punteggio_artistico: number | null
           punteggio_tecnico: number | null
-          voto_giudici: number | null
+          voto_giudici: string | null
         }
-        Insert: {
-          atleta_id?: string | null
-          carriera?: string | null
-          created_at?: string | null
-          disciplina?: string | null
-          gara_id?: string | null
-          id?: string | null
-          livello_atleta?: string | null
-          medaglia?: string | null
-          note?: string | null
-          posizione?: number | null
-          punteggio?: number | null
-          punteggio_artistico?: number | null
-          punteggio_tecnico?: number | null
-          voto_giudici?: number | null
-        }
-        Update: {
-          atleta_id?: string | null
-          carriera?: string | null
-          created_at?: string | null
-          disciplina?: string | null
-          gara_id?: string | null
-          id?: string | null
-          livello_atleta?: string | null
-          medaglia?: string | null
-          note?: string | null
-          posizione?: number | null
-          punteggio?: number | null
-          punteggio_artistico?: number | null
-          punteggio_tecnico?: number | null
-          voto_giudici?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "iscrizioni_gare_atleta_id_fkey"
-            columns: ["atleta_id"]
-            isOneToOne: false
-            referencedRelation: "atleti"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "iscrizioni_gare_atleta_id_fkey"
-            columns: ["atleta_id"]
-            isOneToOne: false
-            referencedRelation: "atleti_con_completezza"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "iscrizioni_gare_gara_id_fkey"
-            columns: ["gara_id"]
-            isOneToOne: false
-            referencedRelation: "gare_calendario"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "iscrizioni_gare_gara_id_fkey"
-            columns: ["gara_id"]
-            isOneToOne: false
-            referencedRelation: "gare_calendario_mobile"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       kpi_pitch_sponsor: {
         Row: {
@@ -5178,6 +5117,25 @@ export type Database = {
         Returns: boolean
       }
       mobile_club_id: { Args: never; Returns: string }
+      mobile_iscrizioni_gare: {
+        Args: never
+        Returns: {
+          atleta_id: string
+          carriera: string
+          created_at: string
+          disciplina: string
+          gara_id: string
+          id: string
+          livello_atleta: string
+          medaglia: string
+          note: string
+          posizione: number
+          punteggio: number
+          punteggio_artistico: number
+          punteggio_tecnico: number
+          voto_giudici: string
+        }[]
+      }
       normalize_label: { Args: { input: string }; Returns: string }
       ricalcola_cache_ore_mensile: {
         Args: { p_anno: number; p_istruttore_id: string; p_mese: number }
