@@ -9,6 +9,9 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/comp
 type Props = {
   agonista?: boolean | null;
   atleta_federazione?: boolean | null;
+  atleta_club?: boolean | null;
+  atleta_bmetod?: boolean | null;
+  atleta_esterno?: boolean | null;
   className?: string;
 };
 
