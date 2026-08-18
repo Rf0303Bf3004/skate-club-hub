@@ -147,6 +147,12 @@ const AtletaTab: React.FC = () => {
   const on_save = async () => {
     if (!atleta?.id) return;
     set_saving(true);
+    const sessione_ok = await portale_ensure_session();
+    if (!sessione_ok) {
+      toast.error("Sessione scaduta, reinserisci il codice atleta");
+      set_saving(false);
+      return;
+    }
     const payload: Record<string, any> = {
       indirizzo: form.indirizzo || null,
       cap: form.cap || null,
@@ -165,12 +171,18 @@ const AtletaTab: React.FC = () => {
       .from("atleti").update(payload).eq("id", atleta.id).select("*").maybeSingle();
     if (error) {
       toast.error(error.message || "Salvataggio non riuscito");
+    } else if (!data) {
+      // PostgREST non restituisce errore se la policy RLS non fa match:
+      // nessuna riga aggiornata => il salvataggio NON è avvenuto.
+      toast.error("Salvataggio non riuscito, contatta l'amministratore");
     } else {
-      if (data) { set_atleta(data); applica_form(data); }
+      set_atleta(data);
+      applica_form(data);
       toast.success("Modifiche salvate");
     }
     set_saving(false);
   };
+
 
   if (loading) {
     return <div className="flex justify-center py-12"><Loader2 className="w-7 h-7 animate-spin text-sky-500" /></div>;
