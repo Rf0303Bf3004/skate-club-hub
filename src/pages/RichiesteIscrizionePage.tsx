@@ -3,7 +3,7 @@ import { Navigate } from "react-router-dom";
 import { use_richieste_iscrizione, use_atleti, use_corsi } from "@/hooks/use-supabase-data";
 import { use_gestisci_richiesta } from "@/hooks/use-supabase-mutations";
 import { useAuth } from "@/lib/auth";
-import { useHasPermesso } from "@/hooks/usePermessi";
+import { usePermessiSezioniMatrix } from "@/hooks/usePermessi";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, X, Clock, Search, MessageSquare, ClipboardList, ChevronLeft, ChevronRight, Archive } from "lucide-react";
