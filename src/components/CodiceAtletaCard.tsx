@@ -182,9 +182,39 @@ ol li::marker{color:#0284C7;font-weight:700;}
         </Button>
       </div>
 
+      {/* Download app */}
+      <div className="space-y-2 border-t border-primary/15 pt-3">
+        <div className="text-[10px] font-bold uppercase tracking-[1.4px] text-primary">
+          Scarica l'app Ice Arena
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {[
+            { etichetta: "📲 iPhone — App Store", url: ios_store_url.trim() },
+            { etichetta: "🤖 Android — Google Play", url: android_store_url.trim() },
+          ].map((s) => (
+            <Button
+              key={s.etichetta}
+              size="sm"
+              variant="outline"
+              disabled={!s.url}
+              onClick={() => s.url && window.open(s.url, "_blank", "noopener,noreferrer")}
+              className="gap-1.5"
+              title={s.url || "Link non ancora disponibile"}
+            >
+              {s.etichetta}
+              {s.url ? (
+                <ExternalLink className="w-3.5 h-3.5" />
+              ) : (
+                <span className="text-[10px] font-normal">(link non ancora disponibile)</span>
+              )}
+            </Button>
+          ))}
+        </div>
+      </div>
+
       {/* Dialog QR */}
       <Dialog open={show_qr} onOpenChange={set_show_qr}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <QrCode className="w-5 h-5 text-primary" /> QR codice atleta
@@ -199,9 +229,32 @@ ol li::marker{color:#0284C7;font-weight:700;}
             <Button onClick={scarica_qr} variant="outline" className="w-full gap-1.5">
               <Download className="w-4 h-4" /> Scarica PNG
             </Button>
+
+            <div className="grid grid-cols-2 gap-3 border-t pt-3">
+              {[
+                { etichetta: "Scansiona per iPhone", url: ios_store_url.trim() },
+                { etichetta: "Scansiona per Android", url: android_store_url.trim() },
+              ].map((s) => (
+                <div key={s.etichetta} className="space-y-1.5">
+                  <p className="text-[11px] font-semibold text-foreground">{s.etichetta}</p>
+                  {s.url ? (
+                    <img
+                      src={qr_url(s.url, 200)}
+                      alt={s.etichetta}
+                      className="mx-auto rounded-lg border bg-white w-28 h-28"
+                    />
+                  ) : (
+                    <div className="mx-auto w-28 h-28 rounded-lg border border-dashed flex items-center justify-center text-[10px] text-muted-foreground px-2 text-center">
+                      Link non ancora disponibile
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </DialogContent>
       </Dialog>
+
 
       {/* Conferma rigenerazione */}
       <Dialog open={conferma_rigen} onOpenChange={(o) => !rigenerando && set_conferma_rigen(o)}>
