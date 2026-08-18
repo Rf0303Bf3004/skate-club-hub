@@ -40,6 +40,8 @@ import {
   Clock,
   ArrowRightLeft,
   Users,
+  Snowflake,
+  Dumbbell,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
@@ -1846,12 +1848,12 @@ const CorsoModal: React.FC<{
                 <div className="flex items-center gap-2 flex-wrap">
                   {form.tipo === "Ghiaccio" ? (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200 text-sm font-medium">
-                      <span>🧊</span>
+                      <Snowflake className="w-3.5 h-3.5" />
                       <span>Ghiaccio</span>
                     </span>
                   ) : form.tipo === "Off-Ice" ? (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 text-gray-700 border border-gray-200 text-sm font-medium">
-                      <span>🏋️</span>
+                      <Dumbbell className="w-3.5 h-3.5" />
                       <span>Off-Ice{form.categoria ? ` · ${form.categoria}` : ""}</span>
                     </span>
                   ) : (
@@ -2110,7 +2112,7 @@ const CorsoModal: React.FC<{
                       : "border-border bg-background text-foreground hover:bg-muted/50"
                   }`}
                 >
-                  <span>🧊</span> Ghiaccio
+                  <Snowflake className="w-4 h-4" /> Ghiaccio
                 </button>
                 <button
                   type="button"
@@ -2121,7 +2123,7 @@ const CorsoModal: React.FC<{
                       : "border-border bg-background text-foreground hover:bg-muted/50"
                   }`}
                 >
-                  <span>🏋️</span> Off-Ice
+                  <Dumbbell className="w-4 h-4" /> Off-Ice
                 </button>
               </div>
             </div>
@@ -2221,14 +2223,14 @@ const CorsoCard: React.FC<{
         {corso.tipo && (() => {
           const t_lower = String(corso.tipo).toLowerCase().trim();
           let cls = "bg-muted text-muted-foreground border border-border";
-          let icon = "";
-          if (t_lower === "ghiaccio") { cls = "bg-sky-100 text-sky-800 border border-sky-200"; icon = "🧊"; }
-          else if (t_lower === "off-ice" || t_lower === "off ice") { cls = "bg-amber-100 text-amber-800 border border-amber-200"; icon = "🏋️"; }
+          let icon: React.ReactNode = null;
+          if (t_lower === "ghiaccio") { cls = "bg-sky-100 text-sky-800 border border-sky-200"; icon = <Snowflake className="w-3 h-3" />; }
+          else if (t_lower === "off-ice" || t_lower === "off ice") { cls = "bg-amber-100 text-amber-800 border border-amber-200"; icon = <Dumbbell className="w-3 h-3" />; }
           else if (t_lower === "danza") { cls = "bg-pink-100 text-pink-800 border border-pink-200"; }
           else if (t_lower === "stretching") { cls = "bg-violet-100 text-violet-800 border border-violet-200"; }
           return (
             <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full ${cls}`}>
-              {icon && <span>{icon}</span>}{corso.tipo}
+              {icon}{corso.tipo}
             </span>
           );
         })()}
