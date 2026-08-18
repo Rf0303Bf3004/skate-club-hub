@@ -1,0 +1,1 @@
+UPDATE public.atleti SET citta = NULL WHERE id = 'aa7ab7d6-2734-47b0-bf7d-2e0a3aadcbe4' AND citta = 'VerificaDemo';
