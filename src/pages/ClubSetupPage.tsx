@@ -15,6 +15,8 @@ import { Upload, Globe, Phone, Mail, MapPin, Hash, Users, UserCheck, Calendar, B
 import CatalogoOffertaTab from "@/components/CatalogoOffertaTab";
 import FatturazioneTab from "@/components/FatturazioneTab";
 import { RegoleComunicazioniSection } from "@/components/comunicazioni/RegoleComunicazioniSection";
+import ModalitaGestioneSection from "@/components/setup/ModalitaGestioneSection";
+
 
 const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"] as const;
 
