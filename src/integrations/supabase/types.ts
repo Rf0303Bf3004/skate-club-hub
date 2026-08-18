@@ -3155,6 +3155,54 @@ export type Database = {
         }
         Relationships: []
       }
+      moduli_gestione_club: {
+        Row: {
+          area: string
+          attivato_at: string | null
+          attivato_da: string | null
+          club_id: string
+          created_at: string
+          id: string
+          modalita: string
+          updated_at: string
+        }
+        Insert: {
+          area: string
+          attivato_at?: string | null
+          attivato_da?: string | null
+          club_id: string
+          created_at?: string
+          id?: string
+          modalita?: string
+          updated_at?: string
+        }
+        Update: {
+          area?: string
+          attivato_at?: string | null
+          attivato_da?: string | null
+          club_id?: string
+          created_at?: string
+          id?: string
+          modalita?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moduli_gestione_club_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moduli_gestione_club_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "kpi_pitch_sponsor"
+            referencedColumns: ["club_id"]
+          },
+        ]
+      }
       motivi_abbandono_aggregati: {
         Row: {
           club_id: string
