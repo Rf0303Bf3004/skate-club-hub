@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Copy, Check, QrCode, Printer, Download, RefreshCw } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Copy, Check, QrCode, Printer, Download, RefreshCw, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
@@ -19,6 +19,22 @@ export default function CodiceAtletaCard({ atleta, on_updated }: Props) {
   const [show_qr, set_show_qr] = useState(false);
   const [rigenerando, set_rigenerando] = useState(false);
   const [conferma_rigen, set_conferma_rigen] = useState(false);
+  const [ios_store_url, set_ios_store_url] = useState("");
+  const [android_store_url, set_android_store_url] = useState("");
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("impostazioni_app_mobile")
+        .select("ios_store_url, android_store_url")
+        .limit(1)
+        .maybeSingle();
+      if (data) {
+        set_ios_store_url(data.ios_store_url ?? "");
+        set_android_store_url(data.android_store_url ?? "");
+      }
+    })();
+  }, []);
 
   const codice = atleta.codice_atleta || "";
 
