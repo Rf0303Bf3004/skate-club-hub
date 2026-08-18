@@ -2,7 +2,7 @@ import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Trophy, Clock,
   Receipt, MessageSquare, Building2, Calendar, CalendarRange, MapPin,
   ListChecks, Handshake, UserCog, ShieldCheck, Wrench, FileSpreadsheet,
-  ClipboardCheck, Sparkles,
+  ClipboardCheck, Sparkles, UserPlus,
 } from "lucide-react";
 
 export type MenuGruppo = "principale" | "setup";
@@ -19,9 +19,10 @@ export interface MenuSection {
 
 export const MENU_SECTIONS: MenuSection[] = [
   // PRINCIPALE
-  { codice: "dashboard",       label: "Dashboard",       icon: LayoutDashboard, path: "/",                gruppo: "principale", ordine: 1 },
-  { codice: "atleti",          label: "Atleti",          icon: Users,           path: "/atleti",          gruppo: "principale", ordine: 2 },
-  { codice: "istruttori",      label: "Istruttori",      icon: GraduationCap,   path: "/istruttori",      gruppo: "principale", ordine: 3 },
+  { codice: "dashboard",        label: "Dashboard",          icon: LayoutDashboard, path: "/",                gruppo: "principale", ordine: 1 },
+  { codice: "atleti",           label: "Atleti",             icon: Users,           path: "/atleti",          gruppo: "principale", ordine: 2 },
+  { codice: "richieste_iscrizione", label: "Richieste Iscrizione", icon: UserPlus,        path: "/richieste-iscrizione", gruppo: "principale", ordine: 3 },
+  { codice: "istruttori",       label: "Istruttori",         icon: GraduationCap,   path: "/istruttori",      gruppo: "principale", ordine: 4 },
   { codice: "corsi",           label: "Corsi",           icon: BookOpen,        path: "/corsi",           gruppo: "principale", ordine: 4 },
   { codice: "gare",            label: "Gare",            icon: Trophy,          path: "/gare",            gruppo: "principale", ordine: 5 },
   { codice: "test_livello",    label: "Test Livello",    icon: ClipboardCheck,  path: "/test",            gruppo: "principale", ordine: 6 },
