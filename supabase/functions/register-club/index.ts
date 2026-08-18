@@ -36,6 +36,7 @@ interface Payload {
   colore_primario?: string;
   federazione?: string;
 
+
   // Tariffazione (opzionali, defaults applicati)
   fee_fissa_chf?: number;
   prezzo_per_atleta_chf?: number;
@@ -51,6 +52,14 @@ interface Payload {
   cognome_presidente: string;
   telefono?: string;
 }
+
+// La tabella clubs accetta solo i codici ISO 'CH' o 'IT' per paese/paese_iso
+function normalizza_paese(valore?: string | null): "CH" | "IT" {
+  const v = (valore ?? "").trim().toLowerCase();
+  if (v === "it" || v === "italia" || v === "italy") return "IT";
+  return "CH";
+}
+
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -107,8 +116,9 @@ Deno.serve(async (req) => {
       regione: body.regione?.trim() || null,
       provincia: body.provincia?.trim() || null,
       codice_fiscale: body.codice_fiscale?.trim() || null,
-      paese: body.paese?.trim() || "Svizzera",
-      paese_iso: (body.paese_iso?.trim() || "CH").toUpperCase(),
+      paese: normalizza_paese(body.paese_iso ?? body.paese),
+      paese_iso: normalizza_paese(body.paese_iso ?? body.paese),
+
       email: email_club,
       telefono: (body.telefono_club || body.telefono)?.trim() || null,
       sito_web: body.sito_web?.trim() || null,
