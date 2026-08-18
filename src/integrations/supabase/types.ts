@@ -2361,6 +2361,27 @@ export type Database = {
           },
         ]
       }
+      impostazioni_app_mobile: {
+        Row: {
+          android_store_url: string | null
+          id: string
+          ios_store_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          android_store_url?: string | null
+          id?: string
+          ios_store_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          android_store_url?: string | null
+          id?: string
+          ios_store_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       impostazioni_planning: {
         Row: {
           club_id: string
