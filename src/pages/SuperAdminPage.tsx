@@ -770,6 +770,9 @@ const SuperAdminPage: React.FC = () => {
           </div>
         )}
 
+        {/* Tab: App Mobile */}
+        {tab === "app_mobile" && <AppMobileTab on_log={add_log} />}
+
         {/* Tab: Log */}
         {tab === "db" && (
           <div className="space-y-3">
