@@ -19,6 +19,15 @@ export const ModalitaGestioneSection: React.FC = () => {
   const allowed = !!session && ["superadmin", "admin", "presidente"].includes(session.ruolo);
   const queryClient = useQueryClient();
   const { modalita, is_loading } = useModalitaArea("ghiaccio");
+  const [just_saved, set_just_saved] = React.useState(false);
+
+  React.useEffect(() => {
+    if (salva.isSuccess) {
+      set_just_saved(true);
+      const timer = setTimeout(() => set_just_saved(false), 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [salva.isSuccess]);
 
   const salva = useMutation({
     mutationFn: async (nuova_modalita: string) => {
