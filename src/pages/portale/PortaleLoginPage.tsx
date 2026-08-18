@@ -4,7 +4,8 @@ import { toast } from "sonner";
 import { Loader2, Snowflake } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
-import { portale_login, portale_restore_session, normalize_codice } from "@/lib/portale-auth";
+import { portale_login, portale_restore_session } from "@/lib/portale-auth";
+import CodiceAtletaInput from "@/components/portale/CodiceAtletaInput";
 
 const PortaleLoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -50,21 +51,6 @@ const PortaleLoginPage: React.FC = () => {
     }
   };
 
-  // Maschera AT-XXXX-XXXX
-  const on_change = (raw: string) => {
-    const clean = raw.toUpperCase().replace(/[^A-Z0-9]/g, "");
-    let out = clean;
-    if (clean.startsWith("AT")) {
-      const rest = clean.slice(2);
-      out = "AT" + (rest.length > 0 ? "-" + rest.slice(0, 4) : "");
-      if (rest.length > 4) out += "-" + rest.slice(4, 8);
-    } else if (clean.length > 0) {
-      out = "AT-" + clean.slice(0, 4);
-      if (clean.length > 4) out += "-" + clean.slice(4, 8);
-    }
-    set_codice(out);
-  };
-
   return (
     <div className="min-h-screen relative flex items-center justify-center p-0 sm:p-4 bg-gradient-to-br from-sky-500 via-indigo-600 to-purple-700">
       {/* Pattern decorativo */}
@@ -95,18 +81,7 @@ const PortaleLoginPage: React.FC = () => {
           </div>
 
           <form onSubmit={handle_submit} className="space-y-5">
-            <input
-              id="codice"
-              value={codice}
-              onChange={(e) => on_change(e.target.value)}
-              onBlur={() => set_codice((c) => normalize_codice(c))}
-              placeholder="AT-XXXX-XXXX"
-              maxLength={12}
-              className="w-full h-14 font-mono tracking-[0.25em] text-center text-xl uppercase rounded-2xl border-2 border-slate-200 bg-white focus:border-sky-500 focus:outline-none focus:ring-4 focus:ring-sky-500/20 transition-all"
-              autoComplete="off"
-              autoFocus
-              inputMode="text"
-            />
+            <CodiceAtletaInput value={codice} onChange={set_codice} autoFocus />
             <Button
               type="submit"
               className="w-full h-14 text-base font-semibold rounded-2xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white shadow-lg shadow-indigo-500/30 transition-all hover:shadow-xl hover:scale-[1.01]"
