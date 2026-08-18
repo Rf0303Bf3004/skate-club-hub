@@ -62,6 +62,12 @@ export default function CodiceAtletaCard({ atleta, on_updated }: Props) {
   const stampa_scheda = () => {
     if (!codice) return;
     const nome_completo = `${atleta.nome ?? ""} ${atleta.cognome ?? ""}`.trim();
+    const ios = ios_store_url.trim();
+    const android = android_store_url.trim();
+    const box_store = (etichetta: string, url: string) =>
+      url
+        ? `<div class="store"><div class="store-title">${etichetta}</div><img class="store-qr" src="${qr_url(url, 320)}" alt="QR ${etichetta}" /><div class="store-link">${url}</div></div>`
+        : `<div class="store"><div class="store-title">${etichetta}</div><div class="store-todo">Link non ancora disponibile</div></div>`;
     const html = `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Codice atleta ${codice}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,Helvetica,Arial,sans-serif;}
@@ -77,6 +83,12 @@ body{padding:48px;color:#0F172A;}
 img.qr{width:220px;height:220px;margin-top:18px;}
 ol{text-align:left;max-width:420px;margin:28px auto 0;font-size:13px;line-height:1.7;color:#334155;}
 ol li::marker{color:#0284C7;font-weight:700;}
+.stores{display:flex;gap:16px;margin-top:28px;justify-content:center;}
+.store{flex:1;max-width:220px;border:1.5px solid #E2E8F0;border-radius:14px;padding:14px;text-align:center;page-break-inside:avoid;}
+.store-title{font-size:11px;font-weight:800;color:#1E2761;margin-bottom:8px;}
+.store-qr{width:130px;height:130px;}
+.store-link{font-size:7.5px;color:#64748B;word-break:break-all;margin-top:6px;}
+.store-todo{font-size:10px;color:#94A3B8;padding:36px 6px;}
 .footer{margin-top:28px;font-size:10px;color:#94A3B8;text-align:center;}
 @media print{@page{margin:0;size:A4;}body{padding:24mm;}}
 </style></head><body>
@@ -87,11 +99,16 @@ ol li::marker{color:#0284C7;font-weight:700;}
   <div class="codice">${codice}</div>
   <div><img class="qr" src="${qr_url(codice, 440)}" alt="QR ${codice}" /></div>
   <ol>
-    <li>Scarica l'app <strong>Ice Arena</strong> dallo store.</li>
+    <li>Scarica l'app <strong>Ice Arena</strong> dallo store (QR qui sotto).</li>
     <li>Apri l'app e tocca <strong>Inserisci codice</strong>.</li>
     <li>Digita o scansiona <strong>${codice}</strong>.</li>
     <li>Il profilo dell'atleta verrà collegato al dispositivo.</li>
   </ol>
+  <div class="label">Scarica l'app Ice Arena</div>
+  <div class="stores">
+    ${box_store("📲 iPhone — App Store", ios)}
+    ${box_store("🤖 Android — Google Play", android)}
+  </div>
 </div>
 <div class="footer">Codice permanente — non scade. In caso di smarrimento, il club può rigenerarlo dalla scheda atleta.</div>
 <script>window.onload=function(){setTimeout(function(){window.print();},300);};</script>
