@@ -5166,6 +5166,7 @@ export type Database = {
       user_club_id: { Args: never; Returns: string }
       user_has_ruolo: { Args: { _ruolo: string }; Returns: boolean }
       user_is_admin_like: { Args: never; Returns: boolean }
+      user_is_presidente: { Args: never; Returns: boolean }
     }
     Enums: {
       livello_istruttore_enum: "istruttore" | "monitrice" | "aiuto_monitrice"
