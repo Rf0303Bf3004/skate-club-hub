@@ -6,7 +6,7 @@ import { Loader2, IdCard, Trophy, Users, Mail, Phone, Sparkles, Camera, Save } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { PortaleSession } from "@/lib/portale-auth";
+import { portale_ensure_session, type PortaleSession } from "@/lib/portale-auth";
 
 const MAX_BYTES = 2 * 1024 * 1024;
 const TIPI_OK = ["image/jpeg", "image/jpg", "image/png"];
