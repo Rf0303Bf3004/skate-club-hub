@@ -132,6 +132,23 @@ export async function portale_remove_profilo(atleta_id: string): Promise<Portale
   return get_portale_session();
 }
 
+// Garantisce che la sessione Supabase attiva sia davvero quella del profilo
+// atleta selezionato nel portale (altrimenti gli update RLS non toccano righe).
+export async function portale_ensure_session(): Promise<boolean> {
+  const stored = get_portale_session();
+  if (!stored) return false;
+  try {
+    const { data } = await supabase.auth.getUser();
+    const meta = (data?.user?.app_metadata ?? {}) as Record<string, unknown>;
+    if (meta.role === "mobile_parent" && meta.atleta_id === stored.atleta.id) return true;
+  } catch { /* ignore */ }
+  const { error } = await supabase.auth.setSession({
+    access_token: stored.access_token,
+    refresh_token: stored.refresh_token,
+  });
+  return !error;
+}
+
 export async function portale_restore_session(): Promise<PortaleSession | null> {
   const stored = get_portale_session();
   if (!stored) return null;
