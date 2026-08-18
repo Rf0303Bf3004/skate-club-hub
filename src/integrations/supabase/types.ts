@@ -5162,6 +5162,7 @@ export type Database = {
         Returns: undefined
       }
       sync_atleta_to_staff: { Args: { p_atleta_id: string }; Returns: string }
+      user_can_manage_richieste: { Args: never; Returns: boolean }
       user_can_see_finance: { Args: never; Returns: boolean }
       user_club_id: { Args: never; Returns: string }
       user_has_ruolo: { Args: { _ruolo: string }; Returns: boolean }

@@ -1,7 +1,9 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { Navigate } from "react-router-dom";
 import { use_richieste_iscrizione, use_atleti, use_corsi } from "@/hooks/use-supabase-data";
 import { use_gestisci_richiesta } from "@/hooks/use-supabase-mutations";
 import { useAuth } from "@/lib/auth";
+import { useHasPermesso } from "@/hooks/usePermessi";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, X, Clock, Search, MessageSquare, ClipboardList, ChevronLeft, ChevronRight, Archive } from "lucide-react";
@@ -19,11 +21,14 @@ const PAGE_SIZES = [25, 50, 100];
 
 const RichiesteIscrizionePage: React.FC = () => {
   const { session } = useAuth();
+  const allowed = useHasPermesso("richieste_iscrizione");
   const { data: richieste = [], isLoading: isLoadingRichieste, isError } = use_richieste_iscrizione();
   const { data: atleti = [], isLoading: isLoadingAtleti } = use_atleti();
   const { data: corsi = [], isLoading: isLoadingCorsi } = use_corsi();
   const isLoading = isLoadingRichieste || isLoadingAtleti || isLoadingCorsi;
   const gestisci = use_gestisci_richiesta();
+
+  if (!allowed) return <Navigate to="/" replace />;
 
   const [filtro, set_filtro] = useState<Filtro>("in_attesa");
   const [query, set_query] = useState("");
