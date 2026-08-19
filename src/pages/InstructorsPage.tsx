@@ -147,14 +147,32 @@ const IstruttoreModal: React.FC<{
     note: istruttore?.note || "",
     foto_url: istruttore?.foto_url || "",
     tag_nfc: istruttore?.tag_nfc || "",
+    user_id: istruttore?.user_id || "",
     ruolo: "istruttore",
   });
   const [confirm_delete, set_confirm_delete] = useState(false);
   const [uploading_foto, set_uploading_foto] = useState(false);
 
+  // Utenti app del club con ruolo staff, collegabili all'anagrafica istruttore
+  const { data: utenti_staff = [] } = useQuery({
+    queryKey: ["utenti_club_staff", get_current_club_id()],
+    enabled: !!get_current_club_id(),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("utenti_club")
+        .select("user_id, nome, cognome, ruolo")
+        .eq("club_id", get_current_club_id())
+        .in("ruolo", ["istruttore", "aiuto_monitore", "dt"])
+        .order("cognome");
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
   const set_val = useCallback((k: string, v: any) => {
     set_form((p) => ({ ...p, [k]: v }));
   }, []);
+
 
   const handle_foto_upload = async (file: File) => {
     set_uploading_foto(true);
