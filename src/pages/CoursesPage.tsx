@@ -49,6 +49,8 @@ import { CorsoWizard } from "@/components/corsi/CorsoWizard";
 import { AvanzamentoStagione, type StatoCorso } from "@/components/corsi/AvanzamentoStagione";
 import { DuplicaStagioneDialog } from "@/components/corsi/DuplicaStagioneDialog";
 import { Copy, Wand2 } from "lucide-react";
+import { useModalitaArea } from "@/hooks/useModalitaArea";
+import FatturazioneIscrizioneRow from "@/components/corsi/FatturazioneIscrizioneRow";
 
 const GIORNI_DB = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
 
@@ -338,6 +340,8 @@ const TabIscrizioni: React.FC<{
   const [salto_query, set_salto_query] = useState("");
   // Optimistic: ID appena iscritti localmente, prima del refresh dal DB
   const [iscritti_ottimistici, set_iscritti_ottimistici] = useState<string[]>([]);
+  const { modalita: modalita_fatturazione } = useModalitaArea("fatturazione");
+  const multi_rs = modalita_fatturazione === "multi_ragione_sociale";
 
   const ha_filtro_livello = !!livello_richiesto && livello_richiesto !== "tutti";
 
@@ -382,6 +386,12 @@ const TabIscrizioni: React.FC<{
         salto_livello,
         note_salto_livello: note_sl || "",
       };
+      if (multi_rs) {
+        // Default precompilato dalla scheda atleta, modificabile poi per la singola iscrizione.
+        const atleta = tutti_atleti.find((x: any) => x.id === atleta_id);
+        payload.ragione_sociale_id = atleta?.ragione_sociale_id ?? null;
+        payload.ragione_sociale_listino_id = atleta?.ragione_sociale_listino_id ?? null;
+      }
       const { error } = await supabase.from("iscrizioni_corsi").insert(payload);
       if (error) throw error;
       // Optimistic update: rimuove l'atleta dalla lista disponibili immediatamente
@@ -610,7 +620,8 @@ const TabIscrizioni: React.FC<{
         ) : (
           <div className="border border-border rounded-xl overflow-hidden divide-y divide-border/50">
             {atleti_iscritti.map((a: any) => (
-              <div key={a.id} className="flex items-center justify-between px-3 py-2.5">
+              <div key={a.id}>
+              <div className="flex items-center justify-between px-3 py-2.5">
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
                     {a.nome[0]}{a.cognome[0]}
@@ -631,6 +642,8 @@ const TabIscrizioni: React.FC<{
                 >
                   {removing === a.id ? "..." : <Trash2 className="w-3.5 h-3.5" />}
                 </Button>
+              </div>
+              {multi_rs && <FatturazioneIscrizioneRow corso_id={corso_id} atleta_id={a.id} />}
               </div>
             ))}
           </div>

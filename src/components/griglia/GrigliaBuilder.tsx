@@ -23,7 +23,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import SpecialitaManager from "@/components/griglia/SpecialitaManager";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { Settings, Plus, Trash2, X, GraduationCap, Send, CheckCircle2 } from "lucide-react";
+import { Settings, Plus, Trash2, X, GraduationCap, Send, CheckCircle2, GripVertical, HelpCircle } from "lucide-react";
 
 const DURATA_DEFAULT_MIN = 20;
 const ALTRO = "__altro__";
@@ -80,14 +80,46 @@ const PillolaDraggable: React.FC<{
   );
 };
 
+// ─── Intestazione gruppo (livello) draggable ───────────────
+const GruppoDraggable: React.FC<{
+  drag_id: string;
+  livello: string;
+  atleta_ids: string[];
+}> = ({ drag_id, livello, atleta_ids }) => {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: drag_id,
+    data: { tipo: "gruppo", atleta_ids },
+  });
+  return (
+    <div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      title={`Trascina tutto il gruppo ${livello} (${atleta_ids.length})`}
+      className={cn(
+        "flex items-center gap-1.5 px-2 py-1 rounded-md border border-dashed border-muted-foreground/40 bg-muted/30",
+        "text-[11px] font-semibold uppercase tracking-wide text-muted-foreground",
+        "cursor-grab active:cursor-grabbing select-none",
+        isDragging && "opacity-40",
+      )}
+    >
+      <GripVertical className="w-3 h-3 shrink-0" />
+      <span className="truncate">{livello}</span>
+      <span className="ml-auto text-[10px] font-normal">· {atleta_ids.length}</span>
+    </div>
+  );
+};
+
 // ─── Box pool sorgente ─────────────────────────────────────
 const PoolBox: React.FC<{
   titolo: string;
-  items: { id: string; nome: string; cognome: string }[];
+  items: { id: string; nome: string; cognome: string; livello_attuale?: string | null }[];
   prefisso: "atleta" | "istruttore";
   variante_istruttori?: boolean;
   colore?: string | null;
-}> = ({ titolo, items, prefisso, variante_istruttori, colore }) => {
+  box_id?: string;
+  neutro?: boolean;
+}> = ({ titolo, items, prefisso, variante_istruttori, colore, box_id, neutro }) => {
   const [q, set_q] = useState("");
   const filtrati = useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -95,17 +127,33 @@ const PoolBox: React.FC<{
     return items.filter((i) => `${i.nome} ${i.cognome}`.toLowerCase().includes(term));
   }, [items, q]);
 
+  // Raggruppamento per livello (solo per gli atleti)
+  const gruppi = useMemo(() => {
+    if (prefisso !== "atleta") return [];
+    const map = new Map<string, typeof filtrati>();
+    for (const i of filtrati) {
+      const liv = (i.livello_attuale || "Senza livello") as string;
+      map.set(liv, [...(map.get(liv) ?? []), i]);
+    }
+    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0], "it"));
+  }, [filtrati, prefisso]);
+
   return (
     <div
       className={cn(
         "rounded-xl border p-3 flex flex-col gap-2",
-        variante_istruttori ? "bg-primary/5 border-primary/30" : "bg-muted/20 border-border",
+        variante_istruttori
+          ? "bg-primary/5 border-primary/30"
+          : neutro
+            ? "bg-muted/40 border-dashed border-muted-foreground/40"
+            : "bg-muted/20 border-border",
       )}
     >
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-semibold flex items-center gap-1.5">
           {variante_istruttori && <GraduationCap className="w-4 h-4 text-primary" />}
-          {!variante_istruttori && colore && (
+          {!variante_istruttori && neutro && <HelpCircle className="w-4 h-4 text-muted-foreground" />}
+          {!variante_istruttori && !neutro && colore && (
             <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ backgroundColor: colore }} />
           )}
           <span className="truncate">{titolo}</span>
@@ -119,20 +167,41 @@ const PoolBox: React.FC<{
         className="h-7 text-xs"
       />
       <div className="flex flex-col gap-1.5 max-h-56 overflow-y-auto pr-1">
-        {filtrati.map((i) => (
-          <PillolaDraggable
-            key={i.id}
-            drag_id={`${prefisso}:${i.id}`}
-            label={`${i.nome} ${i.cognome}`}
-            sigla={iniziali(i.nome, i.cognome)}
-            is_istruttore={prefisso === "istruttore"}
-          />
-        ))}
+        {prefisso === "atleta"
+          ? gruppi.map(([livello, membri]) => (
+              <div key={livello} className="flex flex-col gap-1">
+                <GruppoDraggable
+                  drag_id={`gruppo:${box_id ?? titolo}:${livello}`}
+                  livello={livello}
+                  atleta_ids={membri.map((m) => m.id)}
+                />
+                <div className="flex flex-col gap-1 pl-2 border-l border-border/60">
+                  {membri.map((i) => (
+                    <PillolaDraggable
+                      key={i.id}
+                      drag_id={`atleta:${i.id}`}
+                      label={`${i.nome} ${i.cognome}`}
+                      sigla={iniziali(i.nome, i.cognome)}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))
+          : filtrati.map((i) => (
+              <PillolaDraggable
+                key={i.id}
+                drag_id={`istruttore:${i.id}`}
+                label={`${i.nome} ${i.cognome}`}
+                sigla={iniziali(i.nome, i.cognome)}
+                is_istruttore
+              />
+            ))}
         {filtrati.length === 0 && <p className="text-xs text-muted-foreground py-1">Nessun risultato.</p>}
       </div>
     </div>
   );
 };
+
 
 // ─── Box sessione (droppable) ──────────────────────────────
 const SessioneBox: React.FC<{
@@ -292,6 +361,16 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
     () => (atleti as any[]).filter((a) => !a.atleta_esterno),
     [atleti],
   );
+  // Atleti non esterni e non ancora assegnati ad alcuna ragione sociale:
+  // devono restare visibili quando i box dinamici per ragione sociale sono attivi.
+  const pool_senza_ragione_sociale = useMemo(
+    () =>
+      ragioni_attive.length > 0
+        ? (atleti as any[]).filter((a) => !a.atleta_esterno && !a.ragione_sociale_id)
+        : [],
+    [ragioni_attive, atleti],
+  );
+
   const pool_esterni = useMemo(() => (atleti as any[]).filter((a) => a.atleta_esterno), [atleti]);
   const pool_istruttori = useMemo(() => (istruttori as any[]).filter((i) => i.attivo), [istruttori]);
 
@@ -335,7 +414,16 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
 
     const [tipo, persona_id] = String(active.id).split(":");
     try {
-      if (tipo === "atleta") {
+      if (tipo === "gruppo") {
+        const ids: string[] = active.data?.current?.atleta_ids ?? [];
+        for (const atleta_id of ids) {
+          const a = (atleti as any[]).find((x) => x.id === atleta_id);
+          const nome = a ? `${a.nome} ${a.cognome}` : "Atleta";
+          avvisa_sovrapposizione("atleta", atleta_id, nome, dest);
+          await assegna_atleta.mutateAsync({ sessione_id, atleta_id });
+        }
+        if (ids.length > 0) toast({ title: `✅ ${ids.length} atleti assegnati alla sessione` });
+      } else if (tipo === "atleta") {
         const a = (atleti as any[]).find((x) => x.id === persona_id);
         const nome = a ? `${a.nome} ${a.cognome}` : "Atleta";
         avvisa_sovrapposizione("atleta", persona_id, nome, dest);
@@ -420,12 +508,21 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           {pool_ragioni.length > 0 ? (
             pool_ragioni.map((p) => (
-              <PoolBox key={p.id} titolo={p.titolo} items={p.items} prefisso="atleta" colore={p.colore} />
+              <PoolBox key={p.id} box_id={p.id} titolo={p.titolo} items={p.items} prefisso="atleta" colore={p.colore} />
             ))
           ) : (
-            <PoolBox titolo="Club" items={pool_club_fallback} prefisso="atleta" />
+            <PoolBox box_id="club" titolo="Club" items={pool_club_fallback} prefisso="atleta" />
           )}
-          <PoolBox titolo="Esterni" items={pool_esterni} prefisso="atleta" />
+          {pool_senza_ragione_sociale.length > 0 && (
+            <PoolBox
+              box_id="senza_rs"
+              titolo="Senza ragione sociale"
+              items={pool_senza_ragione_sociale}
+              prefisso="atleta"
+              neutro
+            />
+          )}
+          <PoolBox box_id="esterni" titolo="Esterni" items={pool_esterni} prefisso="atleta" />
           <PoolBox titolo="Istruttori" items={pool_istruttori} prefisso="istruttore" variante_istruttori />
         </div>
 
