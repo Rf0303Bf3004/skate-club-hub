@@ -800,30 +800,68 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
           <PoolBox titolo="Istruttori" items={pool_istruttori} prefisso="istruttore" variante_istruttori />
         </div>
 
-        {/* Fascia inferiore: sotto-sessioni */}
-        <div className="space-y-3 mt-4">
-          {sessioni.map((s) => (
-            <SessioneBox
-              key={s.id}
-              sessione={s}
-              specialita={specialita as any[]}
-              on_change={(patch) => salva_sessione(s, patch)}
-              on_elimina={() => elimina_sessione.mutateAsync(s.id)}
-              on_rimuovi_atleta={(atleta_id) => rimuovi_atleta.mutateAsync({ sessione_id: s.id, atleta_id })}
-              on_rimuovi_istruttore={(istruttore_id) =>
-                rimuovi_istruttore.mutateAsync({ sessione_id: s.id, istruttore_id })
-              }
-              data_blocco={blocco.data}
-              atleti_tutti={atleti as any[]}
-              ragioni_sociali={ragioni_attive}
-            />
-          ))}
-          {sessioni.length === 0 && (
-            <p className="text-sm text-muted-foreground">Nessuna sotto-sessione. Aggiungine una per iniziare.</p>
+        {/* Fascia inferiore: sotto-sessioni a tab */}
+        <div className="mt-4">
+          {sessioni.length === 0 ? (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">Nessuna sotto-sessione. Aggiungine una per iniziare.</p>
+              <Button variant="outline" size="sm" onClick={aggiungi_sessione}>
+                <Plus className="w-4 h-4 mr-1" /> Aggiungi sotto-sessione
+              </Button>
+            </div>
+          ) : (
+            <Tabs value={tab_attivo ?? sessioni[0].id} onValueChange={set_tab_attivo} className="w-full">
+              <div className="flex items-center gap-2">
+                <div className="overflow-x-auto flex-1">
+                  <TabsList className="inline-flex w-max">
+                    {sessioni.map((s) => {
+                      const pieno = (s.atleti?.length ?? 0) > 0 || (s.istruttori?.length ?? 0) > 0;
+                      return (
+                        <TabsTrigger key={s.id} value={s.id} className="gap-2 whitespace-nowrap">
+                          <span>
+                            {hhmm(s.ora_inizio)}–{hhmm(s.ora_fine)}
+                          </span>
+                          <span
+                            className={cn(
+                              "inline-block w-2 h-2 rounded-full",
+                              pieno ? "bg-primary" : "bg-muted-foreground/30",
+                            )}
+                          />
+                        </TabsTrigger>
+                      );
+                    })}
+                  </TabsList>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={aggiungi_sessione}
+                  title="Aggiungi sotto-sessione"
+                  className="shrink-0"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {sessioni.map((s) => (
+                <TabsContent key={s.id} value={s.id} className="mt-3">
+                  <SessioneBox
+                    sessione={s}
+                    specialita={specialita as any[]}
+                    on_change={(patch) => salva_sessione(s, patch)}
+                    on_elimina={() => elimina_sessione_tab(s.id)}
+                    on_rimuovi_atleta={(atleta_id) => rimuovi_atleta.mutateAsync({ sessione_id: s.id, atleta_id })}
+                    on_rimuovi_istruttore={(istruttore_id) =>
+                      rimuovi_istruttore.mutateAsync({ sessione_id: s.id, istruttore_id })
+                    }
+                    data_blocco={blocco.data}
+                    atleti_tutti={atleti as any[]}
+                    ragioni_sociali={ragioni_attive}
+                  />
+                </TabsContent>
+              ))}
+            </Tabs>
           )}
-          <Button variant="outline" size="sm" onClick={aggiungi_sessione}>
-            <Plus className="w-4 h-4 mr-1" /> Aggiungi sotto-sessione
-          </Button>
         </div>
       </DndContext>
 
