@@ -99,7 +99,7 @@ export async function fetch_blocchi_giorno(club_id: string, data_giorno: string)
   const lista_sessioni = (sessioni ?? []) as any[];
   const sessioni_ids = lista_sessioni.map((s: any) => s.id);
 
-  const [spec_res, sa_res, si_res, atleti_res, ist_res] = await Promise.all([
+  const [spec_res, sa_res, si_res, atleti_res, ist_res, rs_res] = await Promise.all([
     supabase.from("griglia_specialita" as any).select("id,nome,descrizione_messaggio").eq("club_id", club_id),
     sessioni_ids.length
       ? supabase.from("griglia_sessioni_atleti" as any).select("*").in("sessione_id", sessioni_ids)
@@ -107,12 +107,15 @@ export async function fetch_blocchi_giorno(club_id: string, data_giorno: string)
     sessioni_ids.length
       ? supabase.from("griglia_sessioni_istruttori" as any).select("*").in("sessione_id", sessioni_ids)
       : Promise.resolve({ data: [], error: null } as any),
-    supabase.from("atleti").select("id,nome,cognome").eq("club_id", club_id),
+    supabase.from("atleti").select("id,nome,cognome,ragione_sociale_id,atleta_esterno").eq("club_id", club_id),
     supabase.from("istruttori").select("id,nome,cognome,user_id").eq("club_id", club_id),
+    supabase.from("ragioni_sociali" as any).select("id,nome").eq("club_id", club_id),
   ]);
 
   const spec_map = new Map<string, any>();
   ((spec_res.data ?? []) as any[]).forEach((s: any) => spec_map.set(s.id, s));
+  const rs_map = new Map<string, string>();
+  ((rs_res.data ?? []) as any[]).forEach((r: any) => rs_map.set(r.id, r.nome));
   const atleti_map = new Map<string, any>();
   ((atleti_res.data ?? []) as any[]).forEach((a: any) => atleti_map.set(a.id, a));
   const ist_map = new Map<string, any>();
