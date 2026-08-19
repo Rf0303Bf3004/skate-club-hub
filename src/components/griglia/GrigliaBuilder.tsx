@@ -220,8 +220,17 @@ const PoolBox: React.FC<{
             : "bg-muted/20 border-border",
       )}
     >
-      <div className="flex items-center justify-between">
-        <h4 className="text-sm font-semibold flex items-center gap-1.5">
+      <button
+        type="button"
+        onClick={() => set_aperto((v) => !v)}
+        className="flex items-center justify-between gap-2 text-left"
+      >
+        <h4 className="text-sm font-semibold flex items-center gap-1.5 min-w-0">
+          {aperto ? (
+            <ChevronDown className="w-3.5 h-3.5 shrink-0" />
+          ) : (
+            <ChevronRight className="w-3.5 h-3.5 shrink-0" />
+          )}
           {variante_istruttori && <GraduationCap className="w-4 h-4 text-primary" />}
           {!variante_istruttori && neutro && <HelpCircle className="w-4 h-4 text-muted-foreground" />}
           {!variante_istruttori && !neutro && colore && (
@@ -229,48 +238,53 @@ const PoolBox: React.FC<{
           )}
           <span className="truncate">{titolo}</span>
         </h4>
-        <Badge variant="secondary" className="text-[10px]">{items.length}</Badge>
-      </div>
+        <Badge variant="secondary" className="text-[10px] shrink-0">{items.length}</Badge>
+      </button>
       <Input
         value={q}
-        onChange={(e) => set_q(e.target.value)}
+        onChange={(e) => {
+          set_q(e.target.value);
+          if (e.target.value.trim()) set_aperto(true);
+        }}
         placeholder="Cerca…"
         className="h-7 text-xs"
       />
-      <div className="flex flex-col gap-1.5 max-h-56 overflow-y-auto pr-1">
-        {prefisso === "atleta"
-          ? gruppi.map(([livello, membri]) => (
-              <div key={livello} className="flex flex-col gap-1">
-                <GruppoDraggable
-                  drag_id={`gruppo:${box_id ?? titolo}:${livello}`}
-                  livello={livello}
-                  atleta_ids={membri.map((m) => m.id)}
-                  colore={colore}
-                />
-                <div className="flex flex-col gap-1 pl-2 border-l border-border/60">
-                  {membri.map((i) => (
-                    <PillolaDraggable
-                      key={i.id}
-                      drag_id={`atleta:${i.id}`}
-                      label={`${i.nome} ${i.cognome}`}
-                      sigla={iniziali(i.nome, i.cognome)}
-                      colore={colore}
-                    />
-                  ))}
+      {aperto && (
+        <div className="flex flex-col gap-1.5 max-h-44 overflow-y-auto pr-1">
+          {prefisso === "atleta"
+            ? gruppi.map(([livello, membri]) => (
+                <div key={livello} className="flex flex-col gap-1">
+                  <GruppoDraggable
+                    drag_id={`gruppo:${box_id ?? titolo}:${livello}`}
+                    livello={livello}
+                    atleta_ids={membri.map((m) => m.id)}
+                    colore={colore}
+                  />
+                  <div className="flex flex-col gap-1 pl-2 border-l border-border/60">
+                    {membri.map((i) => (
+                      <PillolaDraggable
+                        key={i.id}
+                        drag_id={`atleta:${i.id}`}
+                        label={`${i.nome} ${i.cognome}`}
+                        sigla={iniziali(i.nome, i.cognome)}
+                        colore={colore}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))
-          : filtrati.map((i) => (
-              <PillolaDraggable
-                key={i.id}
-                drag_id={`istruttore:${i.id}`}
-                label={`${i.nome} ${i.cognome}`}
-                sigla={iniziali(i.nome, i.cognome)}
-                is_istruttore
-              />
-            ))}
-        {filtrati.length === 0 && <p className="text-xs text-muted-foreground py-1">Nessun risultato.</p>}
-      </div>
+              ))
+            : filtrati.map((i) => (
+                <PillolaDraggable
+                  key={i.id}
+                  drag_id={`istruttore:${i.id}`}
+                  label={`${i.nome} ${i.cognome}`}
+                  sigla={iniziali(i.nome, i.cognome)}
+                  is_istruttore
+                />
+              ))}
+          {filtrati.length === 0 && <p className="text-xs text-muted-foreground py-1">Nessun risultato.</p>}
+        </div>
+      )}
     </div>
   );
 };
