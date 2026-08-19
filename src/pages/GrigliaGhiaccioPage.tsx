@@ -356,7 +356,12 @@ const GrigliaGhiaccioPage: React.FC = () => {
                       </span>
                       {s.pista ? ` — ${s.pista}` : ""} — {s.specialita}
                       {s.specialita_descrizione ? ` (${s.specialita_descrizione})` : ""}
-                      <div className="text-muted-foreground">Atleti: {s.atleti.join(", ") || "—"}</div>
+                      <div className="text-muted-foreground">
+                        Atleti:{" "}
+                        {s.atleti
+                          .map((a) => (a.provenienza ? `${a.nome} — ${a.provenienza}` : a.nome))
+                          .join(", ") || "—"}
+                      </div>
                     </li>
                   ))}
                 </ul>
