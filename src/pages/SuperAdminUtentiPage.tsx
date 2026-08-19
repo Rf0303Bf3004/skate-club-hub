@@ -233,36 +233,72 @@ const SuperAdminUtentiPage: React.FC = () => {
   );
 };
 
-const NuovoSuperadminDialog: React.FC<{ open: boolean; on_close: () => void; on_done: (pwd: string, email: string) => void }> = ({ open, on_close, on_done }) => {
+const NuovoUtenteDialog: React.FC<{
+  open: boolean;
+  clubs: Array<{ id: string; nome: string }>;
+  on_close: () => void;
+  on_done: (pwd: string, email: string) => void;
+}> = ({ open, clubs, on_close, on_done }) => {
   const [email, set_email] = useState("");
   const [nome, set_nome] = useState("");
   const [cognome, set_cognome] = useState("");
+  const [ruolo, set_ruolo] = useState("presidente");
+  const [club_id, set_club_id] = useState("");
   const [busy, set_busy] = useState(false);
+
+  const club_richiesto = ruolo !== "superadmin";
 
   const submit = async () => {
     if (!email || !nome || !cognome) { toast.error("Compila tutti i campi"); return; }
+    if (club_richiesto && !club_id) { toast.error("Questo ruolo richiede un club"); return; }
     set_busy(true);
     const { data, error } = await supabase.functions.invoke("superadmin-utenti", {
-      body: { action: "crea_superadmin", email, nome, cognome },
+      body: { action: "crea_utente", email, nome, cognome, ruolo, club_id: club_richiesto ? club_id : null },
     });
     set_busy(false);
     if (error || (data as any)?.error) {
-      toast.error((data as any)?.message ?? error?.message ?? "Errore");
+      let msg = (data as any)?.message ?? error?.message ?? "Errore";
+      try {
+        const ctx = (error as any)?.context;
+        const parsed = ctx?.json ? await ctx.json() : null;
+        if (parsed?.message) msg = parsed.message;
+      } catch { /* ignora */ }
+      toast.error(msg);
       return;
     }
-    set_email(""); set_nome(""); set_cognome("");
+    set_email(""); set_nome(""); set_cognome(""); set_club_id("");
     on_done((data as any).new_password, email);
   };
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && on_close()}>
       <DialogContent>
-        <DialogHeader><DialogTitle>Nuovo superadmin</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>Nuovo utente</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1.5"><Label>Email</Label><Input type="email" value={email} onChange={(e) => set_email(e.target.value)} /></div>
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1.5"><Label>Nome</Label><Input value={nome} onChange={(e) => set_nome(e.target.value)} /></div>
             <div className="space-y-1.5"><Label>Cognome</Label><Input value={cognome} onChange={(e) => set_cognome(e.target.value)} /></div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1.5">
+              <Label>Ruolo</Label>
+              <Select value={ruolo} onValueChange={(v) => { set_ruolo(v); if (v === "superadmin") set_club_id(""); }}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {RUOLI.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Club{club_richiesto ? " *" : ""}</Label>
+              <Select value={club_id} onValueChange={set_club_id} disabled={!club_richiesto}>
+                <SelectTrigger><SelectValue placeholder={club_richiesto ? "Seleziona club" : "— Nessun club —"} /></SelectTrigger>
+                <SelectContent>
+                  {clubs.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
         <DialogFooter>
@@ -275,5 +311,6 @@ const NuovoSuperadminDialog: React.FC<{ open: boolean; on_close: () => void; on_
     </Dialog>
   );
 };
+
 
 export default SuperAdminUtentiPage;
