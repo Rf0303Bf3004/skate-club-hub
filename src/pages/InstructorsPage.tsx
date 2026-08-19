@@ -196,6 +196,7 @@ const IstruttoreModal: React.FC<{
       ...form,
       id: istruttore?.id,
       ruolo: "istruttore",
+      user_id: form.user_id || null,
       costo_minuto_lezione_privata: to_num(form.costo_minuto_lezione_privata),
     });
   };
