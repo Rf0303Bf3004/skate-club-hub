@@ -80,14 +80,18 @@ export const MieiReminderStaffTab: React.FC = () => {
                   {com?.data_evento && new Date(com.data_evento + "T00:00:00").toLocaleDateString("it-CH", { weekday: "long", day: "2-digit", month: "long" })}
                 </p>
               </div>
-              {gia_risposto && (
-                <Badge variant={r.rsvp_risposta === "si" ? "default" : "destructive"}>
-                  {r.rsvp_risposta === "si" ? "✅ Confermato" : "❌ Assente"}
-                </Badge>
+              {sola_lettura ? (
+                <Badge variant="secondary">Convocazione</Badge>
+              ) : (
+                gia_risposto && (
+                  <Badge variant={r.rsvp_risposta === "si" ? "default" : "destructive"}>
+                    {r.rsvp_risposta === "si" ? "✅ Confermato" : "❌ Assente"}
+                  </Badge>
+                )
               )}
             </div>
             <p className="text-sm text-foreground/80 whitespace-pre-wrap mb-3">{com?.testo}</p>
-            {!gia_risposto && (
+            {!sola_lettura && !gia_risposto && (
               <div className="flex gap-2 pt-2 border-t border-border">
                 <Button size="sm" className="flex-1" onClick={() => handle_rsvp(r.id, "si")} disabled={busy_id === r.id}>
                   <Check className="w-4 h-4 mr-1" /> Sarò presente
