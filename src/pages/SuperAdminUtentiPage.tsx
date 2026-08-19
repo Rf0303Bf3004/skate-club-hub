@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 
-const RUOLI = ["superadmin", "admin", "presidente", "segreteria", "dt", "istruttore", "aiuto_monitore"];
+const RUOLI = ["superadmin", "admin", "presidente", "vicepresidente", "segreteria", "dt", "istruttore", "aiuto_monitore"];
 
 const SuperAdminUtentiPage: React.FC = () => {
   const { t } = useTranslation("superadmin");
@@ -73,14 +73,39 @@ const SuperAdminUtentiPage: React.FC = () => {
     load();
   };
 
+  /** Invoca la edge function estraendo anche il body degli errori HTTP (4xx/5xx). */
+  const invoke_sa = async (body: any): Promise<{ data: any; error_message?: string }> => {
+    const { data, error } = await supabase.functions.invoke("superadmin-utenti", { body });
+    if (error) {
+      let msg = error.message;
+      try {
+        const ctx = (error as any).context;
+        const parsed = ctx?.json ? await ctx.json() : null;
+        if (parsed?.message) msg = parsed.message;
+      } catch { /* ignora */ }
+      return { data: null, error_message: msg };
+    }
+    if ((data as any)?.error) return { data, error_message: (data as any)?.message ?? "Errore" };
+    return { data };
+  };
+
   const cambia_ruolo = async (u: any, nuovo: string) => {
-    const { error } = await supabase.functions.invoke("superadmin-utenti", {
-      body: { action: "cambia_ruolo", user_id: u.user_id, ruolo: nuovo },
-    });
-    if (error) { toast.error(error.message); return; }
+    const { error_message } = await invoke_sa({ action: "cambia_ruolo", user_id: u.user_id, ruolo: nuovo });
+    if (error_message) { toast.error(error_message); return; }
     toast.success("Ruolo aggiornato");
     load();
   };
+
+  const cambia_club = async (u: any, nuovo: string) => {
+    const { error_message } = await invoke_sa({
+      action: "cambia_club", user_id: u.user_id, club_id: nuovo === "none" ? null : nuovo,
+    });
+    if (error_message) { toast.error(error_message); return; }
+    toast.success("Club aggiornato");
+    load();
+  };
+
+
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-4">
@@ -92,7 +117,7 @@ const SuperAdminUtentiPage: React.FC = () => {
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={load}><RefreshCcw className="w-4 h-4 mr-1" />Aggiorna</Button>
           <Button className="bg-purple-600 hover:bg-purple-700" size="sm" onClick={() => set_nuovo_open(true)}>
-            <ShieldPlus className="w-4 h-4 mr-1" />{t("utenti.nuovo_superadmin", { defaultValue: "Nuovo superadmin" })}
+            <ShieldPlus className="w-4 h-4 mr-1" />Nuovo utente
           </Button>
         </div>
       </div>
@@ -144,7 +169,15 @@ const SuperAdminUtentiPage: React.FC = () => {
                       </SelectContent>
                     </Select>
                   </TableCell>
-                  <TableCell className="text-xs">{u.club_nome ?? "—"}</TableCell>
+                  <TableCell>
+                    <Select value={u.club_id ?? "none"} onValueChange={(v) => cambia_club(u, v)}>
+                      <SelectTrigger className="h-8 w-48 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+                      <SelectContent>
+                        {(u.ruolo === "superadmin" || !u.club_id) && <SelectItem value="none">— Nessun club —</SelectItem>}
+                        {all_clubs.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleString("it-CH", { dateStyle: "short", timeStyle: "short" }) : "—"}
                   </TableCell>
@@ -171,7 +204,7 @@ const SuperAdminUtentiPage: React.FC = () => {
         </div>
       )}
 
-      <NuovoSuperadminDialog open={nuovo_open} on_close={() => set_nuovo_open(false)} on_done={(pwd, email) => {
+      <NuovoUtenteDialog open={nuovo_open} clubs={all_clubs} on_close={() => set_nuovo_open(false)} on_done={(pwd, email) => {
         set_nuovo_open(false);
         set_pwd_dialog({ open: true, pwd, user: email });
         load();
@@ -200,36 +233,72 @@ const SuperAdminUtentiPage: React.FC = () => {
   );
 };
 
-const NuovoSuperadminDialog: React.FC<{ open: boolean; on_close: () => void; on_done: (pwd: string, email: string) => void }> = ({ open, on_close, on_done }) => {
+const NuovoUtenteDialog: React.FC<{
+  open: boolean;
+  clubs: Array<{ id: string; nome: string }>;
+  on_close: () => void;
+  on_done: (pwd: string, email: string) => void;
+}> = ({ open, clubs, on_close, on_done }) => {
   const [email, set_email] = useState("");
   const [nome, set_nome] = useState("");
   const [cognome, set_cognome] = useState("");
+  const [ruolo, set_ruolo] = useState("presidente");
+  const [club_id, set_club_id] = useState("");
   const [busy, set_busy] = useState(false);
+
+  const club_richiesto = ruolo !== "superadmin";
 
   const submit = async () => {
     if (!email || !nome || !cognome) { toast.error("Compila tutti i campi"); return; }
+    if (club_richiesto && !club_id) { toast.error("Questo ruolo richiede un club"); return; }
     set_busy(true);
     const { data, error } = await supabase.functions.invoke("superadmin-utenti", {
-      body: { action: "crea_superadmin", email, nome, cognome },
+      body: { action: "crea_utente", email, nome, cognome, ruolo, club_id: club_richiesto ? club_id : null },
     });
     set_busy(false);
     if (error || (data as any)?.error) {
-      toast.error((data as any)?.message ?? error?.message ?? "Errore");
+      let msg = (data as any)?.message ?? error?.message ?? "Errore";
+      try {
+        const ctx = (error as any)?.context;
+        const parsed = ctx?.json ? await ctx.json() : null;
+        if (parsed?.message) msg = parsed.message;
+      } catch { /* ignora */ }
+      toast.error(msg);
       return;
     }
-    set_email(""); set_nome(""); set_cognome("");
+    set_email(""); set_nome(""); set_cognome(""); set_club_id("");
     on_done((data as any).new_password, email);
   };
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && on_close()}>
       <DialogContent>
-        <DialogHeader><DialogTitle>Nuovo superadmin</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>Nuovo utente</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1.5"><Label>Email</Label><Input type="email" value={email} onChange={(e) => set_email(e.target.value)} /></div>
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1.5"><Label>Nome</Label><Input value={nome} onChange={(e) => set_nome(e.target.value)} /></div>
             <div className="space-y-1.5"><Label>Cognome</Label><Input value={cognome} onChange={(e) => set_cognome(e.target.value)} /></div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1.5">
+              <Label>Ruolo</Label>
+              <Select value={ruolo} onValueChange={(v) => { set_ruolo(v); if (v === "superadmin") set_club_id(""); }}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {RUOLI.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Club{club_richiesto ? " *" : ""}</Label>
+              <Select value={club_id} onValueChange={set_club_id} disabled={!club_richiesto}>
+                <SelectTrigger><SelectValue placeholder={club_richiesto ? "Seleziona club" : "— Nessun club —"} /></SelectTrigger>
+                <SelectContent>
+                  {clubs.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
         <DialogFooter>
@@ -242,5 +311,6 @@ const NuovoSuperadminDialog: React.FC<{ open: boolean; on_close: () => void; on_
     </Dialog>
   );
 };
+
 
 export default SuperAdminUtentiPage;

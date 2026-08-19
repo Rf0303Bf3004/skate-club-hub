@@ -17,6 +17,8 @@ function json(body: unknown, status = 200) {
   });
 }
 
+const RUOLI_VALIDI = ["superadmin", "admin", "presidente", "vicepresidente", "segreteria", "dt", "istruttore", "aiuto_monitore"];
+
 function gen_password(len = 14): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
   const sym = "!@#$%&*?";
@@ -112,10 +114,54 @@ Deno.serve(async (req) => {
       const user_id = String(body?.user_id ?? "");
       const nuovo_ruolo = String(body?.ruolo ?? "");
       if (!user_id || !nuovo_ruolo) return json({ error: "missing_params" }, 400);
+      if (!RUOLI_VALIDI.includes(nuovo_ruolo)) return json({ error: "ruolo_non_valido", message: "Ruolo non valido" }, 400);
+      const { data: riga } = await admin.from("utenti_club").select("club_id").eq("user_id", user_id).maybeSingle();
+      if (nuovo_ruolo !== "superadmin" && !riga?.club_id) {
+        return json({ error: "club_richiesto", message: "Questo ruolo richiede un club — assegnalo prima o insieme al cambio ruolo" }, 400);
+      }
       const { error } = await admin.from("utenti_club").update({ ruolo: nuovo_ruolo }).eq("user_id", user_id);
       if (error) return json({ error: "update_failed", message: error.message }, 500);
       return json({ ok: true });
     }
+
+    if (action === "cambia_club") {
+      const user_id = String(body?.user_id ?? "");
+      const club_id = body?.club_id ? String(body.club_id) : null;
+      if (!user_id) return json({ error: "missing_user_id" }, 400);
+      const { data: riga } = await admin.from("utenti_club").select("ruolo").eq("user_id", user_id).maybeSingle();
+      if (!club_id && riga?.ruolo !== "superadmin") {
+        return json({ error: "club_richiesto", message: "Questo ruolo richiede un club" }, 400);
+      }
+      const { error } = await admin.from("utenti_club").update({ club_id }).eq("user_id", user_id);
+      if (error) return json({ error: "update_failed", message: error.message }, 500);
+      return json({ ok: true });
+    }
+
+    if (action === "crea_utente") {
+      const email = String(body?.email ?? "").trim().toLowerCase();
+      const nome = String(body?.nome ?? "").trim();
+      const cognome = String(body?.cognome ?? "").trim();
+      const ruolo = String(body?.ruolo ?? "").trim();
+      const club_id = body?.club_id ? String(body.club_id) : null;
+      if (!email || !nome || !cognome || !ruolo) return json({ error: "missing_params" }, 400);
+      if (!RUOLI_VALIDI.includes(ruolo)) return json({ error: "ruolo_non_valido", message: "Ruolo non valido" }, 400);
+      if (ruolo !== "superadmin" && !club_id) {
+        return json({ error: "club_richiesto", message: "Questo ruolo richiede un club" }, 400);
+      }
+      const new_password = gen_password(14);
+      const { data: created, error } = await admin.auth.admin.createUser({
+        email, password: new_password, email_confirm: true,
+        user_metadata: { full_name: `${nome} ${cognome}` },
+      });
+      if (error) return json({ error: "create_failed", message: error.message }, 500);
+      const { error: err_ins } = await admin.from("utenti_club").insert({
+        user_id: created.user!.id,
+        email, nome, cognome, ruolo, club_id,
+      });
+      if (err_ins) return json({ error: "create_failed", message: err_ins.message }, 500);
+      return json({ ok: true, new_password, user_id: created.user!.id });
+    }
+
 
     if (action === "crea_superadmin") {
       const email = String(body?.email ?? "").trim().toLowerCase();
