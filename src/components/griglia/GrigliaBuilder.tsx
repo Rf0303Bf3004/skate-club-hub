@@ -625,12 +625,26 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
     const inizio = ultima ? to_min(ultima.ora_fine) : to_min(blocco.ora_inizio);
     const fine = Math.min(inizio + DURATA_DEFAULT_MIN, to_min(blocco.ora_fine) || inizio + DURATA_DEFAULT_MIN);
     try {
-      await upsert_sessione.mutateAsync({
+      const nuovo_id = await upsert_sessione.mutateAsync({
         blocco_id: blocco.id,
         ordine: (ultima?.ordine ?? 0) + 1,
         ora_inizio: from_min(inizio),
         ora_fine: from_min(fine > inizio ? fine : inizio + DURATA_DEFAULT_MIN),
       });
+      if (nuovo_id) set_tab_attivo(nuovo_id);
+    } catch (e: any) {
+      toast({ title: "Errore", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const elimina_sessione_tab = async (sessione_id: string) => {
+    const idx = sessioni.findIndex((s) => s.id === sessione_id);
+    try {
+      await elimina_sessione.mutateAsync(sessione_id);
+      if (tab_attivo === sessione_id) {
+        const vicina = sessioni[idx - 1] ?? sessioni.find((s) => s.id !== sessione_id);
+        set_tab_attivo(vicina ? vicina.id : null);
+      }
     } catch (e: any) {
       toast({ title: "Errore", description: e.message, variant: "destructive" });
     }
