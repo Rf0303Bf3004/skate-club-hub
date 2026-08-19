@@ -418,8 +418,13 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
       <DndContext sensors={sensors} onDragEnd={handle_drag_end}>
         {/* Fascia superiore: pool sorgente */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <PoolBox titolo="Club" items={pool_club} prefisso="atleta" />
-          <PoolBox titolo="BMETOD" items={pool_bmetod} prefisso="atleta" />
+          {pool_ragioni.length > 0 ? (
+            pool_ragioni.map((p) => (
+              <PoolBox key={p.id} titolo={p.titolo} items={p.items} prefisso="atleta" colore={p.colore} />
+            ))
+          ) : (
+            <PoolBox titolo="Club" items={pool_club_fallback} prefisso="atleta" />
+          )}
           <PoolBox titolo="Esterni" items={pool_esterni} prefisso="atleta" />
           <PoolBox titolo="Istruttori" items={pool_istruttori} prefisso="istruttore" variante_istruttori />
         </div>
