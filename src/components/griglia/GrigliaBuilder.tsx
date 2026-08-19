@@ -361,6 +361,16 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
     () => (atleti as any[]).filter((a) => !a.atleta_esterno),
     [atleti],
   );
+  // Atleti non esterni e non ancora assegnati ad alcuna ragione sociale:
+  // devono restare visibili quando i box dinamici per ragione sociale sono attivi.
+  const pool_senza_ragione_sociale = useMemo(
+    () =>
+      ragioni_attive.length > 0
+        ? (atleti as any[]).filter((a) => !a.atleta_esterno && !a.ragione_sociale_id)
+        : [],
+    [ragioni_attive, atleti],
+  );
+
   const pool_esterni = useMemo(() => (atleti as any[]).filter((a) => a.atleta_esterno), [atleti]);
   const pool_istruttori = useMemo(() => (istruttori as any[]).filter((i) => i.attivo), [istruttori]);
 
@@ -404,7 +414,16 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
 
     const [tipo, persona_id] = String(active.id).split(":");
     try {
-      if (tipo === "atleta") {
+      if (tipo === "gruppo") {
+        const ids: string[] = active.data?.current?.atleta_ids ?? [];
+        for (const atleta_id of ids) {
+          const a = (atleti as any[]).find((x) => x.id === atleta_id);
+          const nome = a ? `${a.nome} ${a.cognome}` : "Atleta";
+          avvisa_sovrapposizione("atleta", atleta_id, nome, dest);
+          await assegna_atleta.mutateAsync({ sessione_id, atleta_id });
+        }
+        if (ids.length > 0) toast({ title: `✅ ${ids.length} atleti assegnati alla sessione` });
+      } else if (tipo === "atleta") {
         const a = (atleti as any[]).find((x) => x.id === persona_id);
         const nome = a ? `${a.nome} ${a.cognome}` : "Atleta";
         avvisa_sovrapposizione("atleta", persona_id, nome, dest);
@@ -489,12 +508,21 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           {pool_ragioni.length > 0 ? (
             pool_ragioni.map((p) => (
-              <PoolBox key={p.id} titolo={p.titolo} items={p.items} prefisso="atleta" colore={p.colore} />
+              <PoolBox key={p.id} box_id={p.id} titolo={p.titolo} items={p.items} prefisso="atleta" colore={p.colore} />
             ))
           ) : (
-            <PoolBox titolo="Club" items={pool_club_fallback} prefisso="atleta" />
+            <PoolBox box_id="club" titolo="Club" items={pool_club_fallback} prefisso="atleta" />
           )}
-          <PoolBox titolo="Esterni" items={pool_esterni} prefisso="atleta" />
+          {pool_senza_ragione_sociale.length > 0 && (
+            <PoolBox
+              box_id="senza_rs"
+              titolo="Senza ragione sociale"
+              items={pool_senza_ragione_sociale}
+              prefisso="atleta"
+              neutro
+            />
+          )}
+          <PoolBox box_id="esterni" titolo="Esterni" items={pool_esterni} prefisso="atleta" />
           <PoolBox titolo="Istruttori" items={pool_istruttori} prefisso="istruttore" variante_istruttori />
         </div>
 
