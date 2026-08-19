@@ -263,8 +263,31 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   const [open_specialita, set_open_specialita] = useState(false);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
-  const pool_club = useMemo(() => (atleti as any[]).filter((a) => a.atleta_club), [atleti]);
-  const pool_bmetod = useMemo(() => (atleti as any[]).filter((a) => a.atleta_bmetod), [atleti]);
+  // Box sorgente dinamici: uno per ragione sociale attiva (solo se modalità multi_ragione_sociale
+  // e almeno una ragione sociale configurata). Altrimenti fallback: un unico box "Club" con i non esterni.
+  const ragioni_attive = useMemo(
+    () =>
+      modalita_fatturazione === "multi_ragione_sociale"
+        ? (ragioni_sociali ?? []).filter((r) => r.attivo)
+        : [],
+    [modalita_fatturazione, ragioni_sociali],
+  );
+
+  const pool_ragioni = useMemo(
+    () =>
+      ragioni_attive.map((r) => ({
+        id: r.id,
+        titolo: r.nome,
+        colore: r.colore_primario,
+        items: (atleti as any[]).filter((a) => a.ragione_sociale_id === r.id),
+      })),
+    [ragioni_attive, atleti],
+  );
+
+  const pool_club_fallback = useMemo(
+    () => (atleti as any[]).filter((a) => !a.atleta_esterno),
+    [atleti],
+  );
   const pool_esterni = useMemo(() => (atleti as any[]).filter((a) => a.atleta_esterno), [atleti]);
   const pool_istruttori = useMemo(() => (istruttori as any[]).filter((i) => i.attivo), [istruttori]);
 
