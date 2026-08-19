@@ -59,8 +59,8 @@ export const MieiReminderStaffTab: React.FC = () => {
     return (
       <div className="bg-card border border-dashed border-border rounded-xl p-10 text-center">
         <BellRing className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
-        <p className="text-sm text-muted-foreground">Nessun reminder turno staff per te al momento.</p>
-        <p className="text-xs text-muted-foreground mt-1">Riceverai un avviso il giorno prima di ogni corso a cui sei assegnato.</p>
+        <p className="text-sm text-muted-foreground">Nessun reminder o convocazione per te al momento.</p>
+        <p className="text-xs text-muted-foreground mt-1">Qui trovi i reminder turno e le convocazioni della Griglia Ghiaccio.</p>
       </div>
     );
   }
