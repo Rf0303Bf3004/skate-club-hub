@@ -111,3 +111,20 @@
   0%, 100% { opacity: 1; }
   50% { opacity: 0.6; }
 }
+
+/* Stampa: solo il riepilogo istruttori della Griglia Ghiaccio, a flusso normale */
+@media print {
+  @page {
+    margin: 18mm;
+  }
+  body.stampa-griglia > *:not(#griglia-print-root) {
+    display: none !important;
+  }
+  body.stampa-griglia #griglia-print-root {
+    display: block !important;
+    position: static !important;
+    transform: none !important;
+    color: #000;
+    background: #fff;
+  }
+}
