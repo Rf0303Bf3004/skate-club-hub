@@ -69,12 +69,12 @@ Deno.serve(async (req) => {
       }
       const { data: rows } = await admin
         .from("utenti_club")
-        .select("user_id, email, nome, cognome, ruolo, club_id, clubs(nome)")
+        .select("user_id, nome, cognome, ruolo, club_id, clubs(nome)")
         .order("cognome");
       const merged = (rows ?? []).map((r: any) => ({
         ...users_map.get(r.user_id),
         user_id: r.user_id,
-        email: r.email ?? users_map.get(r.user_id)?.email,
+        email: users_map.get(r.user_id)?.email,
         nome: r.nome,
         cognome: r.cognome,
         ruolo: r.ruolo,
@@ -156,7 +156,7 @@ Deno.serve(async (req) => {
       if (error) return json({ error: "create_failed", message: error.message }, 500);
       const { error: err_ins } = await admin.from("utenti_club").insert({
         user_id: created.user!.id,
-        email, nome, cognome, ruolo, club_id,
+        nome, cognome, ruolo, club_id,
       });
       if (err_ins) return json({ error: "create_failed", message: err_ins.message }, 500);
       return json({ ok: true, new_password, user_id: created.user!.id });
@@ -175,11 +175,12 @@ Deno.serve(async (req) => {
       });
       if (error) return json({ error: "create_failed", message: error.message }, 500);
       // Inserisci riga in utenti_club come superadmin (senza club specifico)
-      await admin.from("utenti_club").insert({
+      const { error: err_ins } = await admin.from("utenti_club").insert({
         user_id: created.user!.id,
-        email, nome, cognome,
+        nome, cognome,
         ruolo: "superadmin",
       });
+      if (err_ins) return json({ error: "create_failed", message: err_ins.message }, 500);
       return json({ ok: true, new_password, user_id: created.user!.id });
     }
 
