@@ -897,11 +897,8 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                           Monitore
                         </span>
                       )}
-                      {form.atleta_club && (
-                        <span className="inline-flex items-center gap-1">Club</span>
-                      )}
-                      {form.atleta_bmetod && (
-                        <span className="inline-flex items-center gap-1">BMETOD</span>
+                      {ragione_sociale_atleta && (
+                        <span className="inline-flex items-center gap-1">{ragione_sociale_atleta.nome}</span>
                       )}
                       {form.atleta_esterno && (
                         <span className="inline-flex items-center gap-1">Esterno</span>
