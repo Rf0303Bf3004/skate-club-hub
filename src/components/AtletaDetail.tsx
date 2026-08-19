@@ -1,3 +1,4 @@
+import FatturazioneAtletaFields from "@/components/atleti/FatturazioneAtletaFields";
 import React, { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
@@ -563,6 +564,8 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
         atleta_club: !!form.atleta_club,
         atleta_bmetod: !!form.atleta_bmetod,
         atleta_esterno: !!form.atleta_esterno,
+        ragione_sociale_id: form.ragione_sociale_id || null,
+        ragione_sociale_listino_id: form.ragione_sociale_listino_id || null,
         ore_pista_stagione: form.ore_pista_stagione,
         genitore1_nome: form.genitore1_nome,
         genitore1_cognome: form.genitore1_cognome,
@@ -1200,6 +1203,18 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                   </div>
                 </div>
               </div>
+
+              {/* ─── Sezione Fatturazione (solo modalità multi ragione sociale) ─── */}
+              <FatturazioneAtletaFields
+                as_card
+                ragione_sociale_id={form.ragione_sociale_id ?? null}
+                ragione_sociale_listino_id={form.ragione_sociale_listino_id ?? null}
+                on_change={(patch) => {
+                  if ("ragione_sociale_id" in patch) upd("ragione_sociale_id", patch.ragione_sociale_id);
+                  if ("ragione_sociale_listino_id" in patch)
+                    upd("ragione_sociale_listino_id", patch.ragione_sociale_listino_id);
+                }}
+              />
 
               {/* ─── Sezione Livelli ─── */}
               {form.categoria !== "pulcini" && (

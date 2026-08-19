@@ -9,16 +9,32 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/hooks/use-toast";
 import { Check, FlaskConical } from "lucide-react";
 
+interface Props {
+  area?: string;
+  label?: string;
+  opzioni?: { value: string; label: string }[];
+}
+
+const OPZIONI_GHIACCIO: { value: string; label: string }[] = [
+  { value: "standard", label: "Standard (corsi settimanali ricorrenti)" },
+  { value: "griglia_giornaliera", label: "Griglia giornaliera (Tailor Made)" },
+];
+
 /**
  * Sezione avanzata/sperimentale: permette al Presidente/admin di scegliere una
  * modalità di gestione alternativa ("Tailor Made") per un'area operativa.
  * Additiva: nessuna schermata esistente cambia comportamento.
  */
-export const ModalitaGestioneSection: React.FC = () => {
+export const ModalitaGestioneSection: React.FC<Props> = ({
+  area = "ghiaccio",
+  label = "Ghiaccio",
+  opzioni = OPZIONI_GHIACCIO,
+}) => {
   const { session } = useAuth();
   const allowed = !!session && ["superadmin", "admin", "presidente"].includes(session.ruolo);
   const queryClient = useQueryClient();
-  const { modalita, is_loading } = useModalitaArea("ghiaccio");
+  const { modalita, is_loading } = useModalitaArea(area);
+
   const [just_saved, set_just_saved] = React.useState(false);
 
   const salva = useMutation({
@@ -30,7 +46,7 @@ export const ModalitaGestioneSection: React.FC = () => {
         .upsert(
           {
             club_id,
-            area: "ghiaccio",
+            area,
             modalita: nuova_modalita,
             attivato_da: session?.user_id ?? null,
             attivato_at: new Date().toISOString(),
@@ -70,7 +86,7 @@ export const ModalitaGestioneSection: React.FC = () => {
 
       <div className="space-y-1.5 max-w-md">
         <div className="flex items-center justify-between">
-          <Label className="text-xs text-muted-foreground">Ghiaccio</Label>
+          <Label className="text-xs text-muted-foreground">{label}</Label>
           {just_saved && (
             <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600">
               <Check className="w-3.5 h-3.5" />
@@ -87,14 +103,18 @@ export const ModalitaGestioneSection: React.FC = () => {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="standard">Standard (corsi settimanali ricorrenti)</SelectItem>
-            <SelectItem value="griglia_giornaliera">Griglia giornaliera (Tailor Made)</SelectItem>
+            {opzioni.map((o) => (
+              <SelectItem key={o.value} value={o.value}>
+                {o.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <p className="text-xs text-muted-foreground">
-          Cambia il modo in cui questo club gestisce l'area Ghiaccio. La modalità Standard resta quella
+          Cambia il modo in cui questo club gestisce l'area {label}. La modalità Standard resta quella
           predefinita e consigliata per la maggior parte dei club.
         </p>
+
         <p className="text-xs text-amber-600">
           Il cambio si applica e si salva immediatamente alla selezione — non serve il pulsante "Salva modifiche" qui sopra.
         </p>

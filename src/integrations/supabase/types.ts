@@ -230,6 +230,8 @@ export type Database = {
           paese_iso: string
           partecipa_gare: boolean
           provincia: string | null
+          ragione_sociale_id: string | null
+          ragione_sociale_listino_id: string | null
           regione: string | null
           ruolo_pista: string | null
           sesso: string | null
@@ -312,6 +314,8 @@ export type Database = {
           paese_iso?: string
           partecipa_gare?: boolean
           provincia?: string | null
+          ragione_sociale_id?: string | null
+          ragione_sociale_listino_id?: string | null
           regione?: string | null
           ruolo_pista?: string | null
           sesso?: string | null
@@ -394,6 +398,8 @@ export type Database = {
           paese_iso?: string
           partecipa_gare?: boolean
           provincia?: string | null
+          ragione_sociale_id?: string | null
+          ragione_sociale_listino_id?: string | null
           regione?: string | null
           ruolo_pista?: string | null
           sesso?: string | null
@@ -417,6 +423,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "kpi_pitch_sponsor"
             referencedColumns: ["club_id"]
+          },
+          {
+            foreignKeyName: "atleti_ragione_sociale_id_fkey"
+            columns: ["ragione_sociale_id"]
+            isOneToOne: false
+            referencedRelation: "ragioni_sociali"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atleti_ragione_sociale_listino_id_fkey"
+            columns: ["ragione_sociale_listino_id"]
+            isOneToOne: false
+            referencedRelation: "ragioni_sociali_listini"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -3199,6 +3219,51 @@ export type Database = {
           },
         ]
       }
+      istruttori_ragioni_sociali_tariffe: {
+        Row: {
+          created_at: string
+          id: string
+          istruttore_id: string
+          note: string | null
+          ragione_sociale_id: string
+          tariffa_oraria_chf: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          istruttore_id: string
+          note?: string | null
+          ragione_sociale_id: string
+          tariffa_oraria_chf?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          istruttore_id?: string
+          note?: string | null
+          ragione_sociale_id?: string
+          tariffa_oraria_chf?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "istruttori_ragioni_sociali_tariffe_istruttore_id_fkey"
+            columns: ["istruttore_id"]
+            isOneToOne: false
+            referencedRelation: "istruttori"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "istruttori_ragioni_sociali_tariffe_ragione_sociale_id_fkey"
+            columns: ["ragione_sociale_id"]
+            isOneToOne: false
+            referencedRelation: "ragioni_sociali"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       letture_comunicazioni: {
         Row: {
           archiviata_at: string | null
@@ -4093,6 +4158,128 @@ export type Database = {
           presente?: boolean | null
         }
         Relationships: []
+      }
+      ragioni_sociali: {
+        Row: {
+          attivo: boolean
+          banca: string | null
+          cap: string | null
+          citta: string | null
+          club_id: string
+          colore_primario: string
+          created_at: string
+          iban: string | null
+          id: string
+          indirizzo: string | null
+          intestatario_iban: string | null
+          logo_url: string | null
+          nome: string
+          numero_iva: string | null
+          ordine: number
+          paese_iso: string
+          partita_iva: string | null
+          updated_at: string
+        }
+        Insert: {
+          attivo?: boolean
+          banca?: string | null
+          cap?: string | null
+          citta?: string | null
+          club_id: string
+          colore_primario?: string
+          created_at?: string
+          iban?: string | null
+          id?: string
+          indirizzo?: string | null
+          intestatario_iban?: string | null
+          logo_url?: string | null
+          nome: string
+          numero_iva?: string | null
+          ordine?: number
+          paese_iso?: string
+          partita_iva?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attivo?: boolean
+          banca?: string | null
+          cap?: string | null
+          citta?: string | null
+          club_id?: string
+          colore_primario?: string
+          created_at?: string
+          iban?: string | null
+          id?: string
+          indirizzo?: string | null
+          intestatario_iban?: string | null
+          logo_url?: string | null
+          nome?: string
+          numero_iva?: string | null
+          ordine?: number
+          paese_iso?: string
+          partita_iva?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ragioni_sociali_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ragioni_sociali_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "kpi_pitch_sponsor"
+            referencedColumns: ["club_id"]
+          },
+        ]
+      }
+      ragioni_sociali_listini: {
+        Row: {
+          attivo: boolean
+          created_at: string
+          descrizione: string | null
+          id: string
+          nome: string
+          ordine: number
+          prezzo_slot_chf: number | null
+          ragione_sociale_id: string
+          updated_at: string
+        }
+        Insert: {
+          attivo?: boolean
+          created_at?: string
+          descrizione?: string | null
+          id?: string
+          nome: string
+          ordine?: number
+          prezzo_slot_chf?: number | null
+          ragione_sociale_id: string
+          updated_at?: string
+        }
+        Update: {
+          attivo?: boolean
+          created_at?: string
+          descrizione?: string | null
+          id?: string
+          nome?: string
+          ordine?: number
+          prezzo_slot_chf?: number | null
+          ragione_sociale_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ragioni_sociali_listini_ragione_sociale_id_fkey"
+            columns: ["ragione_sociale_id"]
+            isOneToOne: false
+            referencedRelation: "ragioni_sociali"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       regole_comunicazioni_club: {
         Row: {

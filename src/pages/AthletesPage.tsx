@@ -1,3 +1,4 @@
+import FatturazioneAtletaFields from "@/components/atleti/FatturazioneAtletaFields";
 import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
@@ -135,6 +136,8 @@ const AtletaModal: React.FC<{
     atleta_club: atleta?.atleta_club || false,
     atleta_bmetod: atleta?.atleta_bmetod || false,
     atleta_esterno: atleta?.atleta_esterno || false,
+    ragione_sociale_id: atleta?.ragione_sociale_id || null,
+    ragione_sociale_listino_id: atleta?.ragione_sociale_listino_id || null,
     tag_nfc: atleta?.tag_nfc || "",
     genitore1_nome: atleta?.genitore1_nome || atleta?.genitore_1?.nome || "",
     genitore1_cognome: atleta?.genitore1_cognome || atleta?.genitore_1?.cognome || "",
@@ -407,6 +410,16 @@ const AtletaModal: React.FC<{
               </label>
             </div>
           </div>
+
+          <FatturazioneAtletaFields
+            ragione_sociale_id={form.ragione_sociale_id}
+            ragione_sociale_listino_id={form.ragione_sociale_listino_id}
+            on_change={(patch) => {
+              if ("ragione_sociale_id" in patch) set_val("ragione_sociale_id", patch.ragione_sociale_id);
+              if ("ragione_sociale_listino_id" in patch)
+                set_val("ragione_sociale_listino_id", patch.ragione_sociale_listino_id);
+            }}
+          />
 
           <Field label="Ore pista stagione">
             <input

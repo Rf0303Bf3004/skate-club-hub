@@ -1,3 +1,4 @@
+import TariffeRagioniSocialiSection from "@/components/istruttori/TariffeRagioniSocialiSection";
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
@@ -1668,13 +1669,16 @@ const InstructorsPage: React.FC = () => {
             </TabsContent>
 
             <TabsContent value="compenso" className="mt-6">
-              <TabCompenso
-                istruttore={selected}
-                lezioni={lezioni}
-                corsi={corsi}
-                on_save_contratto={handle_save_contratto}
-                saving={saving_contratto}
-              />
+              <div className="space-y-6">
+                <TabCompenso
+                  istruttore={selected}
+                  lezioni={lezioni}
+                  corsi={corsi}
+                  on_save_contratto={handle_save_contratto}
+                  saving={saving_contratto}
+                />
+                <TariffeRagioniSocialiSection istruttore_id={selected.id} />
+              </div>
             </TabsContent>
 
             <TabsContent value="ore" className="mt-6">
