@@ -295,6 +295,8 @@ const RagioneSocialeDialog: React.FC<{
         logo_url: form.logo_url || null,
         colore_primario: form.colore_primario || "#3B82F6",
         attivo: !!form.attivo,
+        accesso_dedicato: !!form.accesso_dedicato,
+        numero_fattura_prefisso: form.numero_fattura_prefisso || null,
       } as any);
       toast({ title: "Ragione sociale salvata" });
       on_close();
