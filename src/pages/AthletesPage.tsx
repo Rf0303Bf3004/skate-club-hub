@@ -1571,9 +1571,8 @@ const AthletesPage: React.FC = () => {
                                 <AthleteBadges
                                   agonista={a.agonista}
                                   atleta_federazione={a.atleta_federazione}
-                                  atleta_club={a.atleta_club}
-                                  atleta_bmetod={a.atleta_bmetod}
                                   atleta_esterno={a.atleta_esterno}
+                                  ragione_sociale_id={(a as any).ragione_sociale_id}
                                 />
                                 {a.verificato === false && (
                                   <span className="inline-flex items-center gap-1 rounded-md bg-yellow-100 px-1.5 py-0.5 text-[10px] font-semibold text-yellow-800 ring-1 ring-inset ring-yellow-300">
