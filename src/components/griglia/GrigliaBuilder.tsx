@@ -213,6 +213,9 @@ const PoolBox: React.FC<{
 }> = ({ titolo, items, prefisso, variante_istruttori, colore, box_id, neutro }) => {
   const [q, set_q] = useState("");
   const [aperto, set_aperto] = useState(true);
+  const [gruppi_aperti, set_gruppi_aperti] = useState<Record<string, boolean>>({});
+  const ricerca_attiva = q.trim().length > 0;
+
   const filtrati = useMemo(() => {
     const term = q.trim().toLowerCase();
     if (!term) return items;
