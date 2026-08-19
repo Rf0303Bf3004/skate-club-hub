@@ -50,6 +50,32 @@ function iniziali(nome?: string, cognome?: string): string {
   return `${(nome || "?").charAt(0)}${(cognome || "").charAt(0)}`.toUpperCase();
 }
 
+// Orari pregenerati ogni 5 minuti (00:00 – 23:55): evita la digitazione manuale nei time input nativi.
+const ORARI_5_MIN: string[] = Array.from({ length: (24 * 60) / 5 }, (_, i) => from_min(i * 5));
+
+const OrarioSelect: React.FC<{ value: string; onChange: (v: string) => void; aria_label: string }> = ({
+  value,
+  onChange,
+  aria_label,
+}) => {
+  const v = hhmm(value);
+  const opzioni = useMemo(() => (v && !ORARI_5_MIN.includes(v) ? [v, ...ORARI_5_MIN] : ORARI_5_MIN), [v]);
+  return (
+    <Select value={v || undefined} onValueChange={onChange}>
+      <SelectTrigger className="h-8 w-[7.5rem]" aria-label={aria_label}>
+        <SelectValue placeholder="--:--" />
+      </SelectTrigger>
+      <SelectContent className="max-h-64">
+        {opzioni.map((o) => (
+          <SelectItem key={o} value={o}>
+            {o}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+};
+
 
 // ─── Testi messaggio convocazione ──────────────────────────
 const GIORNI_IT = ["Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato"];
