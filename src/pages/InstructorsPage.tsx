@@ -264,6 +264,25 @@ const IstruttoreModal: React.FC<{
             <input value={form.telefono} onChange={(e) => set_val("telefono", e.target.value)} className={input_cls} />
           </Field>
 
+          <Field label="Utente collegato (accesso app)">
+            <select
+              value={form.user_id}
+              onChange={(e) => set_val("user_id", e.target.value)}
+              className={input_cls}
+            >
+              <option value="">— Nessun utente collegato —</option>
+              {utenti_staff.map((u: any) => (
+                <option key={u.user_id} value={u.user_id}>
+                  {`${u.cognome ?? ""} ${u.nome ?? ""}`.trim() || u.user_id.slice(0, 8)} ({u.ruolo})
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-muted-foreground mt-1">
+              Serve per ricevere in app le convocazioni della Griglia Ghiaccio.
+            </p>
+          </Field>
+
+
           <Field label="TAG NFC">
             <input
               value={form.tag_nfc}
