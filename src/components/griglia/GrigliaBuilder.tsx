@@ -512,6 +512,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   const pubblica = use_pubblica_blocco();
 
   const [open_specialita, set_open_specialita] = useState(false);
+  const [riepilogo_aperto, set_riepilogo_aperto] = useState(false);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   // Box sorgente dinamici: uno per ragione sociale attiva (solo se modalità multi_ragione_sociale
