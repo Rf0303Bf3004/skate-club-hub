@@ -169,7 +169,7 @@ export function use_istruttori() {
         // NB: i campi di costo (costo_orario_*, compenso_fisso_*, costo_minuto_lezione_privata) sono
         // hidden via column-level REVOKE; vengono recuperati separatamente con la RPC get_istruttori_costi
         // e fusi solo se l'utente ha i ruoli finanziari.
-        supabase.from("istruttori").select("id,club_id,nome,cognome,email,telefono,colore,attivo,created_at,linked_atleta_id,livello_istruttore,stato_staff,note,tipo_contratto,specialita").eq("club_id", get_current_club_id()).order("cognome"),
+        supabase.from("istruttori").select("id,club_id,nome,cognome,email,telefono,colore,attivo,created_at,linked_atleta_id,livello_istruttore,stato_staff,note,tipo_contratto,specialita,user_id").eq("club_id", get_current_club_id()).order("cognome"),
         supabase.from("disponibilita_istruttori").select("*"),
         supabase.rpc("get_istruttori_costi", { p_club_id: get_current_club_id() } as any),
       ]);

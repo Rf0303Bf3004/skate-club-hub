@@ -147,14 +147,32 @@ const IstruttoreModal: React.FC<{
     note: istruttore?.note || "",
     foto_url: istruttore?.foto_url || "",
     tag_nfc: istruttore?.tag_nfc || "",
+    user_id: istruttore?.user_id || "",
     ruolo: "istruttore",
   });
   const [confirm_delete, set_confirm_delete] = useState(false);
   const [uploading_foto, set_uploading_foto] = useState(false);
 
+  // Utenti app del club con ruolo staff, collegabili all'anagrafica istruttore
+  const { data: utenti_staff = [] } = useQuery({
+    queryKey: ["utenti_club_staff", get_current_club_id()],
+    enabled: !!get_current_club_id(),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("utenti_club")
+        .select("user_id, nome, cognome, ruolo")
+        .eq("club_id", get_current_club_id())
+        .in("ruolo", ["istruttore", "aiuto_monitore", "dt"])
+        .order("cognome");
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
   const set_val = useCallback((k: string, v: any) => {
     set_form((p) => ({ ...p, [k]: v }));
   }, []);
+
 
   const handle_foto_upload = async (file: File) => {
     set_uploading_foto(true);
@@ -178,6 +196,7 @@ const IstruttoreModal: React.FC<{
       ...form,
       id: istruttore?.id,
       ruolo: "istruttore",
+      user_id: form.user_id || null,
       costo_minuto_lezione_privata: to_num(form.costo_minuto_lezione_privata),
     });
   };
@@ -245,6 +264,25 @@ const IstruttoreModal: React.FC<{
           <Field label="Telefono">
             <input value={form.telefono} onChange={(e) => set_val("telefono", e.target.value)} className={input_cls} />
           </Field>
+
+          <Field label="Utente collegato (accesso app)">
+            <select
+              value={form.user_id}
+              onChange={(e) => set_val("user_id", e.target.value)}
+              className={input_cls}
+            >
+              <option value="">— Nessun utente collegato —</option>
+              {utenti_staff.map((u: any) => (
+                <option key={u.user_id} value={u.user_id}>
+                  {`${u.cognome ?? ""} ${u.nome ?? ""}`.trim() || u.user_id.slice(0, 8)} ({u.ruolo})
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-muted-foreground mt-1">
+              Serve per ricevere in app le convocazioni della Griglia Ghiaccio.
+            </p>
+          </Field>
+
 
           <Field label="TAG NFC">
             <input
