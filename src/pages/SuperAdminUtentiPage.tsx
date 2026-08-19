@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 
-const RUOLI = ["superadmin", "admin", "presidente", "segreteria", "dt", "istruttore", "aiuto_monitore"];
+const RUOLI = ["superadmin", "admin", "presidente", "vicepresidente", "segreteria", "dt", "istruttore", "aiuto_monitore"];
 
 const SuperAdminUtentiPage: React.FC = () => {
   const { t } = useTranslation("superadmin");
