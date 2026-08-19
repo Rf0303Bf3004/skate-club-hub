@@ -217,6 +217,52 @@ export function use_upsert_blocco() {
   });
 }
 
+function hhmm_short(t?: string | null): string {
+  return (t ?? "").slice(0, 5);
+}
+
+/** Riga testuale di una sessione, stesso contenuto del riepilogo stampabile. */
+export function riga_sessione_istruttore(s: GrigliaSessione): string {
+  const spec = s.specialita_nome || s.specialita_testo_libero || "Allenamento";
+  const desc = s.specialita_descrizione ? ` (${s.specialita_descrizione})` : "";
+  const pista = s.pista ? `${s.pista} ` : "";
+  const atleti = (s.atleti ?? []).map((a) => `${a.nome} ${a.cognome}`.trim()).join(", ");
+  return `${hhmm_short(s.ora_inizio)}–${hhmm_short(s.ora_fine)} ${pista}${spec}${desc} — Atleti: ${atleti || "—"}`;
+}
+
+export interface RiepilogoIstruttore {
+  istruttore_id: string;
+  nome: string;
+  user_id: string | null;
+  righe: string[];
+}
+
+/** Raggruppa tutte le sessioni per istruttore, ordinate per orario. */
+export function riepilogo_istruttori_da_blocchi(blocchi: GrigliaBlocco[]): RiepilogoIstruttore[] {
+  const map = new Map<string, { nome: string; user_id: string | null; righe: { ora: number; testo: string }[] }>();
+  for (const b of blocchi) {
+    for (const s of b.sessioni ?? []) {
+      const testo = riga_sessione_istruttore(s);
+      const ora = Number(hhmm_short(s.ora_inizio).replace(":", ""));
+      for (const i of s.istruttori ?? []) {
+        const nome = `${i.nome} ${i.cognome}`.trim() || i.istruttore_id.slice(0, 8);
+        const cur = map.get(i.istruttore_id) ?? { nome, user_id: i.user_id ?? null, righe: [] };
+        if (i.user_id) cur.user_id = i.user_id;
+        cur.righe.push({ ora, testo });
+        map.set(i.istruttore_id, cur);
+      }
+    }
+  }
+  return Array.from(map.entries())
+    .map(([istruttore_id, v]) => ({
+      istruttore_id,
+      nome: v.nome,
+      user_id: v.user_id,
+      righe: v.righe.sort((a, b) => a.ora - b.ora).map((r) => r.testo),
+    }))
+    .sort((a, b) => a.nome.localeCompare(b.nome, "it"));
+}
+
 export function use_pubblica_blocco() {
   const invalidate = use_invalidate_griglia();
   const qc = useQueryClient();
@@ -232,11 +278,13 @@ export function use_pubblica_blocco() {
 
       // Invio convocazioni: una comunicazione per atleta e per sessione con messaggio.
       let inviate = 0;
+      let istruttori_avvisati = 0;
+      let istruttori_senza_account = 0;
       const sessioni = typeof blocco === "string" ? [] : blocco.sessioni ?? [];
-      if (!club_id || sessioni.length === 0) return { blocco_id, inviate };
+      const data_evento = typeof blocco === "string" ? null : blocco.data ?? null;
+      if (!club_id) return { blocco_id, inviate, istruttori_avvisati, istruttori_senza_account };
 
       const adesso = new Date().toISOString();
-      const data_evento = typeof blocco === "string" ? null : blocco.data ?? null;
 
       for (const s of sessioni) {
         const testo = (s.messaggio_atleti ?? "").trim();
@@ -260,14 +308,74 @@ export function use_pubblica_blocco() {
           inviate += 1;
         }
       }
-      return { blocco_id, inviate };
+
+      // ─── Convocazioni istruttori: una sola comunicazione al giorno per istruttore ───
+      if (data_evento) {
+        const blocchi_giorno = await fetch_blocchi_giorno(club_id, data_evento);
+        const riepilogo = riepilogo_istruttori_da_blocchi(
+          blocchi_giorno.filter((b) => b.stato === "pubblicato" || b.id === blocco_id),
+        );
+
+        // Sostituisci le convocazioni istruttore già create per questa data (niente duplicati).
+        const { error: err_del } = await supabase
+          .from("comunicazioni")
+          .delete()
+          .eq("club_id", club_id)
+          .eq("sotto_tipo", "griglia_convocazione")
+          .eq("data_evento", data_evento);
+        if (err_del) throw err_del;
+
+        const label_giorno = new Date(`${data_evento}T00:00:00`).toLocaleDateString("it-CH", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+        });
+
+        for (const i of riepilogo) {
+          if (!i.user_id) {
+            istruttori_senza_account += 1;
+            continue;
+          }
+          const testo = [`Le tue sessioni di ${label_giorno}:`, ...i.righe.map((r) => `• ${r}`)].join("\n");
+          const { data: com, error: err_com } = await supabase
+            .from("comunicazioni")
+            .insert({
+              club_id,
+              titolo: `Convocazione ghiaccio — ${label_giorno}`,
+              testo,
+              corpo: testo,
+              tipo: "convocazione",
+              sotto_tipo: "griglia_convocazione",
+              // NON 'staff': eviterebbe il trigger che invia a tutto lo staff del club
+              tipo_destinatari: "staff_selezionati",
+              data_evento,
+              stato: "inviata",
+              inviata_at: adesso,
+            } as any)
+            .select("id")
+            .single();
+          if (err_com) throw err_com;
+          const { error: err_dest } = await supabase.from("comunicazioni_destinatari_staff").insert({
+            comunicazione_id: (com as any).id,
+            user_id: i.user_id,
+            club_id,
+            stato: "inviata",
+          } as any);
+          if (err_dest) throw err_dest;
+          istruttori_avvisati += 1;
+        }
+      }
+
+      return { blocco_id, inviate, istruttori_avvisati, istruttori_senza_account };
     },
     onSuccess: () => {
       invalidate();
       qc.invalidateQueries({ queryKey: ["comunicazioni"] });
+      qc.invalidateQueries({ queryKey: ["miei_reminder_staff"] });
     },
   });
 }
+
 
 export function use_elimina_blocco() {
   const invalidate = use_invalidate_griglia();
