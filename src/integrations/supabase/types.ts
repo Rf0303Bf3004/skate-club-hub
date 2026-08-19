@@ -3182,6 +3182,7 @@ export type Database = {
           stato_staff: Database["public"]["Enums"]["stato_staff_enum"]
           telefono: string | null
           tipo_contratto: string
+          user_id: string | null
         }
         Insert: {
           attivo?: boolean | null
@@ -3204,6 +3205,7 @@ export type Database = {
           stato_staff?: Database["public"]["Enums"]["stato_staff_enum"]
           telefono?: string | null
           tipo_contratto?: string
+          user_id?: string | null
         }
         Update: {
           attivo?: boolean | null
@@ -3226,6 +3228,7 @@ export type Database = {
           stato_staff?: Database["public"]["Enums"]["stato_staff_enum"]
           telefono?: string | null
           tipo_contratto?: string
+          user_id?: string | null
         }
         Relationships: [
           {
