@@ -135,12 +135,21 @@ export async function fetch_blocchi_giorno(club_id: string, data_giorno: string)
           : null,
         atleti: sa
           .filter((x: any) => x.sessione_id === s.id)
-          .map((x: any) => ({
-            id: x.id,
-            atleta_id: x.atleta_id,
-            nome: atleti_map.get(x.atleta_id)?.nome ?? "",
-            cognome: atleti_map.get(x.atleta_id)?.cognome ?? x.atleta_id.slice(0, 8),
-          })),
+          .map((x: any) => {
+            const at = atleti_map.get(x.atleta_id);
+            const provenienza = at?.ragione_sociale_id
+              ? rs_map.get(at.ragione_sociale_id) ?? null
+              : at?.atleta_esterno
+                ? "Esterno"
+                : null;
+            return {
+              id: x.id,
+              atleta_id: x.atleta_id,
+              nome: at?.nome ?? "",
+              cognome: at?.cognome ?? x.atleta_id.slice(0, 8),
+              provenienza,
+            };
+          }),
         istruttori: si
           .filter((x: any) => x.sessione_id === s.id)
           .map((x: any) => ({
