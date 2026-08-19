@@ -276,14 +276,21 @@ const PoolBox: React.FC<{
       {aperto && (
         <div className="flex flex-col gap-1.5 max-h-44 overflow-y-auto pr-1">
           {prefisso === "atleta"
-            ? gruppi.map(([livello, membri]) => (
+            ? gruppi.map(([livello, membri]) => {
+                const gruppo_aperto = ricerca_attiva || !!gruppi_aperti[livello];
+                return (
                 <div key={livello} className="flex flex-col gap-1">
                   <GruppoDraggable
                     drag_id={`gruppo:${box_id ?? titolo}:${livello}`}
                     livello={livello}
                     atleta_ids={membri.map((m) => m.id)}
                     colore={colore}
+                    aperto={gruppo_aperto}
+                    on_toggle={() =>
+                      set_gruppi_aperti((prev) => ({ ...prev, [livello]: !gruppo_aperto }))
+                    }
                   />
+                  {gruppo_aperto && (
                   <div className="flex flex-col gap-1 pl-2 border-l border-border/60">
                     {membri.map((i) => (
                       <PillolaDraggable
@@ -295,8 +302,11 @@ const PoolBox: React.FC<{
                       />
                     ))}
                   </div>
+                  )}
                 </div>
-              ))
+                );
+              })
+
             : filtrati.map((i) => (
                 <PillolaDraggable
                   key={i.id}
