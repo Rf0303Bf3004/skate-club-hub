@@ -133,8 +133,6 @@ const AtletaModal: React.FC<{
     ore_pista_stagione: atleta?.ore_pista_stagione || 0,
     agonista: atleta?.agonista || atleta?.atleta_federazione || false,
     atleta_federazione: atleta?.atleta_federazione || false,
-    atleta_club: atleta?.atleta_club || false,
-    atleta_bmetod: atleta?.atleta_bmetod || false,
     atleta_esterno: atleta?.atleta_esterno || false,
     ragione_sociale_id: atleta?.ragione_sociale_id || null,
     ragione_sociale_listino_id: atleta?.ragione_sociale_listino_id || null,
