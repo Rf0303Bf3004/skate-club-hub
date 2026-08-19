@@ -155,17 +155,31 @@ const GruppoDraggable: React.FC<{
   livello: string;
   atleta_ids: string[];
   colore?: string | null;
-}> = ({ drag_id, livello, atleta_ids, colore }) => {
+  aperto?: boolean;
+  on_toggle?: () => void;
+}> = ({ drag_id, livello, atleta_ids, colore, aperto, on_toggle }) => {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: drag_id,
     data: { tipo: "gruppo", atleta_ids },
   });
+  const down_ref = React.useRef<{ x: number; y: number } | null>(null);
   return (
     <div
       ref={setNodeRef}
       {...attributes}
       {...listeners}
-      title={`Trascina tutto il gruppo ${livello} (${atleta_ids.length})`}
+      onPointerDown={(e) => {
+        down_ref.current = { x: e.clientX, y: e.clientY };
+        listeners?.onPointerDown?.(e);
+      }}
+      onClick={(e) => {
+        const d = down_ref.current;
+        down_ref.current = null;
+        if (!d) return;
+        const dist = Math.hypot(e.clientX - d.x, e.clientY - d.y);
+        if (dist < 5) on_toggle?.();
+      }}
+      title={`Trascina tutto il gruppo ${livello} (${atleta_ids.length}) · clicca per aprire/chiudere`}
       className={cn(
         "flex items-center gap-1.5 px-2 py-1 rounded-md border border-dashed border-muted-foreground/40 bg-muted/30",
         "text-[11px] font-semibold uppercase tracking-wide text-muted-foreground",
@@ -175,11 +189,17 @@ const GruppoDraggable: React.FC<{
       style={colore ? { borderLeft: `3px solid ${colore}`, backgroundColor: `${colore}1A` } : undefined}
     >
       <GripVertical className="w-3 h-3 shrink-0" />
+      {aperto ? (
+        <ChevronDown className="w-3 h-3 shrink-0" />
+      ) : (
+        <ChevronRight className="w-3 h-3 shrink-0" />
+      )}
       <span className="truncate">{livello}</span>
       <span className="ml-auto text-[10px] font-normal">· {atleta_ids.length}</span>
     </div>
   );
 };
+
 
 // ─── Box pool sorgente ─────────────────────────────────────
 const PoolBox: React.FC<{
@@ -193,6 +213,9 @@ const PoolBox: React.FC<{
 }> = ({ titolo, items, prefisso, variante_istruttori, colore, box_id, neutro }) => {
   const [q, set_q] = useState("");
   const [aperto, set_aperto] = useState(true);
+  const [gruppi_aperti, set_gruppi_aperti] = useState<Record<string, boolean>>({});
+  const ricerca_attiva = q.trim().length > 0;
+
   const filtrati = useMemo(() => {
     const term = q.trim().toLowerCase();
     if (!term) return items;
@@ -253,14 +276,21 @@ const PoolBox: React.FC<{
       {aperto && (
         <div className="flex flex-col gap-1.5 max-h-44 overflow-y-auto pr-1">
           {prefisso === "atleta"
-            ? gruppi.map(([livello, membri]) => (
+            ? gruppi.map(([livello, membri]) => {
+                const gruppo_aperto = ricerca_attiva || !!gruppi_aperti[livello];
+                return (
                 <div key={livello} className="flex flex-col gap-1">
                   <GruppoDraggable
                     drag_id={`gruppo:${box_id ?? titolo}:${livello}`}
                     livello={livello}
                     atleta_ids={membri.map((m) => m.id)}
                     colore={colore}
+                    aperto={gruppo_aperto}
+                    on_toggle={() =>
+                      set_gruppi_aperti((prev) => ({ ...prev, [livello]: !gruppo_aperto }))
+                    }
                   />
+                  {gruppo_aperto && (
                   <div className="flex flex-col gap-1 pl-2 border-l border-border/60">
                     {membri.map((i) => (
                       <PillolaDraggable
@@ -272,8 +302,11 @@ const PoolBox: React.FC<{
                       />
                     ))}
                   </div>
+                  )}
                 </div>
-              ))
+                );
+              })
+
             : filtrati.map((i) => (
                 <PillolaDraggable
                   key={i.id}
