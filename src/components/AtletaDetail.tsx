@@ -1161,46 +1161,20 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                 )}
               </div>
 
-              {/* ─── Sezione Provenienza ─── */}
+              {/* ─── Sezione Atleta esterno ─── */}
               <div className="bg-card rounded-xl shadow-card p-6 space-y-4">
-                <h3 className="text-sm font-bold text-foreground">Provenienza</h3>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
-                    <input
-                      type="checkbox"
-                      id="club_check"
-                      checked={!!form.atleta_club}
-                      onChange={(e) => upd("atleta_club", e.target.checked)}
-                      className="w-4 h-4 accent-primary"
-                    />
-                    <label htmlFor="club_check" className="text-sm font-medium text-foreground cursor-pointer">
-                      Atleta Club
-                    </label>
-                  </div>
-                  <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
-                    <input
-                      type="checkbox"
-                      id="bmetod_check"
-                      checked={!!form.atleta_bmetod}
-                      onChange={(e) => upd("atleta_bmetod", e.target.checked)}
-                      className="w-4 h-4 accent-primary"
-                    />
-                    <label htmlFor="bmetod_check" className="text-sm font-medium text-foreground cursor-pointer">
-                      Atleta BMETOD
-                    </label>
-                  </div>
-                  <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
-                    <input
-                      type="checkbox"
-                      id="esterno_check"
-                      checked={!!form.atleta_esterno}
-                      onChange={(e) => upd("atleta_esterno", e.target.checked)}
-                      className="w-4 h-4 accent-primary"
-                    />
-                    <label htmlFor="esterno_check" className="text-sm font-medium text-foreground cursor-pointer">
-                      Atleta Esterno
-                    </label>
-                  </div>
+                <h3 className="text-sm font-bold text-foreground">Atleta esterno</h3>
+                <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
+                  <input
+                    type="checkbox"
+                    id="esterno_check"
+                    checked={!!form.atleta_esterno}
+                    onChange={(e) => upd("atleta_esterno", e.target.checked)}
+                    className="w-4 h-4 accent-primary"
+                  />
+                  <label htmlFor="esterno_check" className="text-sm font-medium text-foreground cursor-pointer">
+                    Pattinatore esterno ospite
+                  </label>
                 </div>
               </div>
 
