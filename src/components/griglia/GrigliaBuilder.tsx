@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { DndContext, useDraggable, useDroppable, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { use_atleti, use_istruttori } from "@/hooks/use-supabase-data";
 import { use_ragioni_sociali } from "@/hooks/use-ragioni-sociali";
@@ -22,6 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SpecialitaManager from "@/components/griglia/SpecialitaManager";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -513,6 +514,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
 
   const [open_specialita, set_open_specialita] = useState(false);
   const [riepilogo_aperto, set_riepilogo_aperto] = useState(false);
+  const [tab_attivo, set_tab_attivo] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   // Box sorgente dinamici: uno per ragione sociale attiva (solo se modalità multi_ragione_sociale
@@ -623,16 +625,41 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
     const inizio = ultima ? to_min(ultima.ora_fine) : to_min(blocco.ora_inizio);
     const fine = Math.min(inizio + DURATA_DEFAULT_MIN, to_min(blocco.ora_fine) || inizio + DURATA_DEFAULT_MIN);
     try {
-      await upsert_sessione.mutateAsync({
+      const nuovo_id = await upsert_sessione.mutateAsync({
         blocco_id: blocco.id,
         ordine: (ultima?.ordine ?? 0) + 1,
         ora_inizio: from_min(inizio),
         ora_fine: from_min(fine > inizio ? fine : inizio + DURATA_DEFAULT_MIN),
       });
+      if (nuovo_id) set_tab_attivo(nuovo_id);
     } catch (e: any) {
       toast({ title: "Errore", description: e.message, variant: "destructive" });
     }
   };
+
+  const elimina_sessione_tab = async (sessione_id: string) => {
+    const idx = sessioni.findIndex((s) => s.id === sessione_id);
+    try {
+      await elimina_sessione.mutateAsync(sessione_id);
+      if (tab_attivo === sessione_id) {
+        const vicina = sessioni[idx - 1] ?? sessioni.find((s) => s.id !== sessione_id);
+        set_tab_attivo(vicina ? vicina.id : null);
+      }
+    } catch (e: any) {
+      toast({ title: "Errore", description: e.message, variant: "destructive" });
+    }
+  };
+
+  // Mantiene sempre un tab valido selezionato
+  useEffect(() => {
+    if (sessioni.length === 0) {
+      if (tab_attivo !== null) set_tab_attivo(null);
+      return;
+    }
+    if (!tab_attivo || !sessioni.some((s) => s.id === tab_attivo)) {
+      set_tab_attivo(sessioni[0].id);
+    }
+  }, [sessioni, tab_attivo]);
 
   const salva_sessione = async (s: GrigliaSessione, patch: Partial<GrigliaSessione>) => {
     const merged = { ...s, ...patch };
@@ -773,30 +800,68 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
           <PoolBox titolo="Istruttori" items={pool_istruttori} prefisso="istruttore" variante_istruttori />
         </div>
 
-        {/* Fascia inferiore: sotto-sessioni */}
-        <div className="space-y-3 mt-4">
-          {sessioni.map((s) => (
-            <SessioneBox
-              key={s.id}
-              sessione={s}
-              specialita={specialita as any[]}
-              on_change={(patch) => salva_sessione(s, patch)}
-              on_elimina={() => elimina_sessione.mutateAsync(s.id)}
-              on_rimuovi_atleta={(atleta_id) => rimuovi_atleta.mutateAsync({ sessione_id: s.id, atleta_id })}
-              on_rimuovi_istruttore={(istruttore_id) =>
-                rimuovi_istruttore.mutateAsync({ sessione_id: s.id, istruttore_id })
-              }
-              data_blocco={blocco.data}
-              atleti_tutti={atleti as any[]}
-              ragioni_sociali={ragioni_attive}
-            />
-          ))}
-          {sessioni.length === 0 && (
-            <p className="text-sm text-muted-foreground">Nessuna sotto-sessione. Aggiungine una per iniziare.</p>
+        {/* Fascia inferiore: sotto-sessioni a tab */}
+        <div className="mt-4">
+          {sessioni.length === 0 ? (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">Nessuna sotto-sessione. Aggiungine una per iniziare.</p>
+              <Button variant="outline" size="sm" onClick={aggiungi_sessione}>
+                <Plus className="w-4 h-4 mr-1" /> Aggiungi sotto-sessione
+              </Button>
+            </div>
+          ) : (
+            <Tabs value={tab_attivo ?? sessioni[0].id} onValueChange={set_tab_attivo} className="w-full">
+              <div className="flex items-center gap-2">
+                <div className="overflow-x-auto flex-1">
+                  <TabsList className="inline-flex w-max">
+                    {sessioni.map((s) => {
+                      const pieno = (s.atleti?.length ?? 0) > 0 || (s.istruttori?.length ?? 0) > 0;
+                      return (
+                        <TabsTrigger key={s.id} value={s.id} className="gap-2 whitespace-nowrap">
+                          <span>
+                            {hhmm(s.ora_inizio)}–{hhmm(s.ora_fine)}
+                          </span>
+                          <span
+                            className={cn(
+                              "inline-block w-2 h-2 rounded-full",
+                              pieno ? "bg-primary" : "bg-muted-foreground/30",
+                            )}
+                          />
+                        </TabsTrigger>
+                      );
+                    })}
+                  </TabsList>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={aggiungi_sessione}
+                  title="Aggiungi sotto-sessione"
+                  className="shrink-0"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {sessioni.map((s) => (
+                <TabsContent key={s.id} value={s.id} className="mt-3">
+                  <SessioneBox
+                    sessione={s}
+                    specialita={specialita as any[]}
+                    on_change={(patch) => salva_sessione(s, patch)}
+                    on_elimina={() => elimina_sessione_tab(s.id)}
+                    on_rimuovi_atleta={(atleta_id) => rimuovi_atleta.mutateAsync({ sessione_id: s.id, atleta_id })}
+                    on_rimuovi_istruttore={(istruttore_id) =>
+                      rimuovi_istruttore.mutateAsync({ sessione_id: s.id, istruttore_id })
+                    }
+                    data_blocco={blocco.data}
+                    atleti_tutti={atleti as any[]}
+                    ragioni_sociali={ragioni_attive}
+                  />
+                </TabsContent>
+              ))}
+            </Tabs>
           )}
-          <Button variant="outline" size="sm" onClick={aggiungi_sessione}>
-            <Plus className="w-4 h-4 mr-1" /> Aggiungi sotto-sessione
-          </Button>
         </div>
       </DndContext>
 
