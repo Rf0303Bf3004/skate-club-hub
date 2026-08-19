@@ -69,12 +69,12 @@ Deno.serve(async (req) => {
       }
       const { data: rows } = await admin
         .from("utenti_club")
-        .select("user_id, email, nome, cognome, ruolo, club_id, clubs(nome)")
+        .select("user_id, nome, cognome, ruolo, club_id, clubs(nome)")
         .order("cognome");
       const merged = (rows ?? []).map((r: any) => ({
         ...users_map.get(r.user_id),
         user_id: r.user_id,
-        email: r.email ?? users_map.get(r.user_id)?.email,
+        email: users_map.get(r.user_id)?.email,
         nome: r.nome,
         cognome: r.cognome,
         ruolo: r.ruolo,
