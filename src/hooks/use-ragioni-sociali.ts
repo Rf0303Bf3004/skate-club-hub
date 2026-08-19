@@ -19,6 +19,9 @@ export interface RagioneSociale {
   colore_primario: string | null;
   attivo: boolean;
   ordine: number;
+  accesso_dedicato?: boolean;
+  numero_fattura_prefisso?: string | null;
+  prossimo_numero_fattura?: number | null;
 }
 
 export interface RagioneSocialeListino {
