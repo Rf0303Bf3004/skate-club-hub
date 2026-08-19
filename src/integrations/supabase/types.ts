@@ -2788,6 +2788,8 @@ export type Database = {
           created_at: string
           id: string
           note_salto_livello: string | null
+          ragione_sociale_id: string | null
+          ragione_sociale_listino_id: string | null
           salto_livello: boolean | null
         }
         Insert: {
@@ -2797,6 +2799,8 @@ export type Database = {
           created_at?: string
           id?: string
           note_salto_livello?: string | null
+          ragione_sociale_id?: string | null
+          ragione_sociale_listino_id?: string | null
           salto_livello?: boolean | null
         }
         Update: {
@@ -2806,6 +2810,8 @@ export type Database = {
           created_at?: string
           id?: string
           note_salto_livello?: string | null
+          ragione_sociale_id?: string | null
+          ragione_sociale_listino_id?: string | null
           salto_livello?: boolean | null
         }
         Relationships: [
@@ -2828,6 +2834,20 @@ export type Database = {
             columns: ["corso_id"]
             isOneToOne: false
             referencedRelation: "corsi"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "iscrizioni_corsi_ragione_sociale_id_fkey"
+            columns: ["ragione_sociale_id"]
+            isOneToOne: false
+            referencedRelation: "ragioni_sociali"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "iscrizioni_corsi_ragione_sociale_listino_id_fkey"
+            columns: ["ragione_sociale_listino_id"]
+            isOneToOne: false
+            referencedRelation: "ragioni_sociali_listini"
             referencedColumns: ["id"]
           },
         ]
