@@ -169,7 +169,15 @@ const SuperAdminUtentiPage: React.FC = () => {
                       </SelectContent>
                     </Select>
                   </TableCell>
-                  <TableCell className="text-xs">{u.club_nome ?? "—"}</TableCell>
+                  <TableCell>
+                    <Select value={u.club_id ?? "none"} onValueChange={(v) => cambia_club(u, v)}>
+                      <SelectTrigger className="h-8 w-48 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+                      <SelectContent>
+                        {(u.ruolo === "superadmin" || !u.club_id) && <SelectItem value="none">— Nessun club —</SelectItem>}
+                        {all_clubs.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleString("it-CH", { dateStyle: "short", timeStyle: "short" }) : "—"}
                   </TableCell>
