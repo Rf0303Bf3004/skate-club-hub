@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from "react";
 import { DndContext, useDraggable, useDroppable, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { use_atleti, use_istruttori } from "@/hooks/use-supabase-data";
+import { use_ragioni_sociali } from "@/hooks/use-ragioni-sociali";
+import { useModalitaArea } from "@/hooks/useModalitaArea";
 import {
   use_griglia_specialita,
   use_upsert_sessione,
