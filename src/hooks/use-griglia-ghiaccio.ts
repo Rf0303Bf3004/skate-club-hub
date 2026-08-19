@@ -76,86 +76,89 @@ export function use_griglia_specialita() {
 }
 
 // ─── Blocchi del giorno (idratati) ─────────────────────────
+export async function fetch_blocchi_giorno(club_id: string, data_giorno: string): Promise<GrigliaBlocco[]> {
+  const { data: blocchi, error: err_blocchi } = await supabase
+    .from("griglia_blocchi" as any)
+    .select("*")
+    .eq("club_id", club_id)
+    .eq("data", data_giorno)
+    .order("ora_inizio");
+  if (err_blocchi) throw err_blocchi;
+  const lista_blocchi = (blocchi ?? []) as any[];
+  if (lista_blocchi.length === 0) return [] as GrigliaBlocco[];
+
+  const blocchi_ids = lista_blocchi.map((b: any) => b.id);
+  const { data: sessioni, error: err_sess } = await supabase
+    .from("griglia_sessioni" as any)
+    .select("*")
+    .in("blocco_id", blocchi_ids)
+    .order("ordine");
+  if (err_sess) throw err_sess;
+  const lista_sessioni = (sessioni ?? []) as any[];
+  const sessioni_ids = lista_sessioni.map((s: any) => s.id);
+
+  const [spec_res, sa_res, si_res, atleti_res, ist_res] = await Promise.all([
+    supabase.from("griglia_specialita" as any).select("id,nome,descrizione_messaggio").eq("club_id", club_id),
+    sessioni_ids.length
+      ? supabase.from("griglia_sessioni_atleti" as any).select("*").in("sessione_id", sessioni_ids)
+      : Promise.resolve({ data: [], error: null } as any),
+    sessioni_ids.length
+      ? supabase.from("griglia_sessioni_istruttori" as any).select("*").in("sessione_id", sessioni_ids)
+      : Promise.resolve({ data: [], error: null } as any),
+    supabase.from("atleti").select("id,nome,cognome").eq("club_id", club_id),
+    supabase.from("istruttori").select("id,nome,cognome,user_id").eq("club_id", club_id),
+  ]);
+
+  const spec_map = new Map<string, any>();
+  ((spec_res.data ?? []) as any[]).forEach((s: any) => spec_map.set(s.id, s));
+  const atleti_map = new Map<string, any>();
+  ((atleti_res.data ?? []) as any[]).forEach((a: any) => atleti_map.set(a.id, a));
+  const ist_map = new Map<string, any>();
+  ((ist_res.data ?? []) as any[]).forEach((i: any) => ist_map.set(i.id, i));
+  const sa = (sa_res.data ?? []) as any[];
+  const si = (si_res.data ?? []) as any[];
+
+  return lista_blocchi.map((b: any) => ({
+    ...b,
+    sessioni: lista_sessioni
+      .filter((s: any) => s.blocco_id === b.id)
+      .map((s: any) => ({
+        ...s,
+        specialita_nome: s.specialita_id ? spec_map.get(s.specialita_id)?.nome ?? null : null,
+        specialita_descrizione: s.specialita_id
+          ? spec_map.get(s.specialita_id)?.descrizione_messaggio ?? null
+          : null,
+        atleti: sa
+          .filter((x: any) => x.sessione_id === s.id)
+          .map((x: any) => ({
+            id: x.id,
+            atleta_id: x.atleta_id,
+            nome: atleti_map.get(x.atleta_id)?.nome ?? "",
+            cognome: atleti_map.get(x.atleta_id)?.cognome ?? x.atleta_id.slice(0, 8),
+          })),
+        istruttori: si
+          .filter((x: any) => x.sessione_id === s.id)
+          .map((x: any) => ({
+            id: x.id,
+            istruttore_id: x.istruttore_id,
+            nome: ist_map.get(x.istruttore_id)?.nome ?? "",
+            cognome: ist_map.get(x.istruttore_id)?.cognome ?? x.istruttore_id.slice(0, 8),
+            user_id: ist_map.get(x.istruttore_id)?.user_id ?? null,
+          })),
+      })),
+  })) as GrigliaBlocco[];
+}
+
 export function use_griglia_blocchi_giorno(data_giorno: string) {
   return useQuery({
     refetchOnMount: "always",
     staleTime: 0,
     enabled: !!get_current_club_id() && !!data_giorno,
     queryKey: ["griglia_blocchi_giorno", get_current_club_id(), data_giorno],
-    queryFn: async () => {
-      const club_id = get_current_club_id();
-      const { data: blocchi, error: err_blocchi } = await supabase
-        .from("griglia_blocchi" as any)
-        .select("*")
-        .eq("club_id", club_id)
-        .eq("data", data_giorno)
-        .order("ora_inizio");
-      if (err_blocchi) throw err_blocchi;
-      const lista_blocchi = (blocchi ?? []) as any[];
-      if (lista_blocchi.length === 0) return [] as GrigliaBlocco[];
-
-      const blocchi_ids = lista_blocchi.map((b: any) => b.id);
-      const { data: sessioni, error: err_sess } = await supabase
-        .from("griglia_sessioni" as any)
-        .select("*")
-        .in("blocco_id", blocchi_ids)
-        .order("ordine");
-      if (err_sess) throw err_sess;
-      const lista_sessioni = (sessioni ?? []) as any[];
-      const sessioni_ids = lista_sessioni.map((s: any) => s.id);
-
-      const [spec_res, sa_res, si_res, atleti_res, ist_res] = await Promise.all([
-        supabase.from("griglia_specialita" as any).select("id,nome,descrizione_messaggio").eq("club_id", club_id),
-        sessioni_ids.length
-          ? supabase.from("griglia_sessioni_atleti" as any).select("*").in("sessione_id", sessioni_ids)
-          : Promise.resolve({ data: [], error: null } as any),
-        sessioni_ids.length
-          ? supabase.from("griglia_sessioni_istruttori" as any).select("*").in("sessione_id", sessioni_ids)
-          : Promise.resolve({ data: [], error: null } as any),
-        supabase.from("atleti").select("id,nome,cognome").eq("club_id", club_id),
-        supabase.from("istruttori").select("id,nome,cognome").eq("club_id", club_id),
-      ]);
-
-      const spec_map = new Map<string, any>();
-      ((spec_res.data ?? []) as any[]).forEach((s: any) => spec_map.set(s.id, s));
-      const atleti_map = new Map<string, any>();
-      ((atleti_res.data ?? []) as any[]).forEach((a: any) => atleti_map.set(a.id, a));
-      const ist_map = new Map<string, any>();
-      ((ist_res.data ?? []) as any[]).forEach((i: any) => ist_map.set(i.id, i));
-      const sa = (sa_res.data ?? []) as any[];
-      const si = (si_res.data ?? []) as any[];
-
-      return lista_blocchi.map((b: any) => ({
-        ...b,
-        sessioni: lista_sessioni
-          .filter((s: any) => s.blocco_id === b.id)
-          .map((s: any) => ({
-            ...s,
-            specialita_nome: s.specialita_id ? spec_map.get(s.specialita_id)?.nome ?? null : null,
-            specialita_descrizione: s.specialita_id
-              ? spec_map.get(s.specialita_id)?.descrizione_messaggio ?? null
-              : null,
-            atleti: sa
-              .filter((x: any) => x.sessione_id === s.id)
-              .map((x: any) => ({
-                id: x.id,
-                atleta_id: x.atleta_id,
-                nome: atleti_map.get(x.atleta_id)?.nome ?? "",
-                cognome: atleti_map.get(x.atleta_id)?.cognome ?? x.atleta_id.slice(0, 8),
-              })),
-            istruttori: si
-              .filter((x: any) => x.sessione_id === s.id)
-              .map((x: any) => ({
-                id: x.id,
-                istruttore_id: x.istruttore_id,
-                nome: ist_map.get(x.istruttore_id)?.nome ?? "",
-                cognome: ist_map.get(x.istruttore_id)?.cognome ?? x.istruttore_id.slice(0, 8),
-              })),
-          })),
-      })) as GrigliaBlocco[];
-    },
+    queryFn: async () => fetch_blocchi_giorno(get_current_club_id() as string, data_giorno),
   });
 }
+
 
 // ─── Helper invalidazione ──────────────────────────────────
 function use_invalidate_griglia() {
