@@ -103,7 +103,10 @@ const PoolBox: React.FC<{
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-semibold flex items-center gap-1.5">
           {variante_istruttori && <GraduationCap className="w-4 h-4 text-primary" />}
-          {titolo}
+          {!variante_istruttori && colore && (
+            <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ backgroundColor: colore }} />
+          )}
+          <span className="truncate">{titolo}</span>
         </h4>
         <Badge variant="secondary" className="text-[10px]">{items.length}</Badge>
       </div>
