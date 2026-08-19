@@ -1,5 +1,6 @@
 import React from "react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
+import { use_ragioni_sociali } from "@/hooks/use-ragioni-sociali";
 
 /**
  * Mini-pillole testuali FED / AGO per atleti.
@@ -9,9 +10,8 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/comp
 type Props = {
   agonista?: boolean | null;
   atleta_federazione?: boolean | null;
-  atleta_club?: boolean | null;
-  atleta_bmetod?: boolean | null;
   atleta_esterno?: boolean | null;
+  ragione_sociale_id?: string | null;
   className?: string;
 };
 
@@ -21,12 +21,16 @@ const pill_cls =
 const AthleteBadges: React.FC<Props> = ({
   agonista,
   atleta_federazione,
-  atleta_club,
-  atleta_bmetod,
   atleta_esterno,
+  ragione_sociale_id,
   className,
 }) => {
-  if (!agonista && !atleta_federazione && !atleta_club && !atleta_bmetod && !atleta_esterno) return null;
+  const { data: ragioni_sociali = [] } = use_ragioni_sociali();
+  const ragione_sociale = ragione_sociale_id
+    ? (ragioni_sociali ?? []).find((r) => r.id === ragione_sociale_id)
+    : undefined;
+
+  if (!agonista && !atleta_federazione && !atleta_esterno && !ragione_sociale) return null;
   return (
     <TooltipProvider delayDuration={200}>
       <span className={`inline-flex items-center gap-1 align-middle ${className ?? ""}`}>
@@ -46,20 +50,12 @@ const AthleteBadges: React.FC<Props> = ({
             <TooltipContent>Agonista</TooltipContent>
           </Tooltip>
         )}
-        {atleta_club && (
+        {ragione_sociale && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className={pill_cls}>CLUB</span>
+              <span className={pill_cls}>{ragione_sociale.nome.toUpperCase()}</span>
             </TooltipTrigger>
-            <TooltipContent>Atleta del Club</TooltipContent>
-          </Tooltip>
-        )}
-        {atleta_bmetod && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className={pill_cls}>BMETOD</span>
-            </TooltipTrigger>
-            <TooltipContent>Atleta BMETOD Academy</TooltipContent>
+            <TooltipContent>Ragione sociale: {ragione_sociale.nome}</TooltipContent>
           </Tooltip>
         )}
         {atleta_esterno && (

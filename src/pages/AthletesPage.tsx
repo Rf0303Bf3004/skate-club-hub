@@ -133,8 +133,6 @@ const AtletaModal: React.FC<{
     ore_pista_stagione: atleta?.ore_pista_stagione || 0,
     agonista: atleta?.agonista || atleta?.atleta_federazione || false,
     atleta_federazione: atleta?.atleta_federazione || false,
-    atleta_club: atleta?.atleta_club || false,
-    atleta_bmetod: atleta?.atleta_bmetod || false,
     atleta_esterno: atleta?.atleta_esterno || false,
     ragione_sociale_id: atleta?.ragione_sociale_id || null,
     ragione_sociale_listino_id: atleta?.ragione_sociale_listino_id || null,
@@ -367,35 +365,8 @@ const AtletaModal: React.FC<{
             </div>
           </div>
 
-          {/* Provenienza */}
+          {/* Atleta esterno */}
           <div className="space-y-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Provenienza</p>
-            <div className="flex items-start gap-3 px-3 py-2 bg-muted/30 rounded-lg">
-              <input
-                type="checkbox"
-                id="club_check"
-                checked={form.atleta_club}
-                onChange={(e) => set_val("atleta_club", e.target.checked)}
-                className="w-4 h-4 mt-0.5 accent-primary"
-              />
-              <label htmlFor="club_check" className="cursor-pointer">
-                <span className="text-sm font-medium text-foreground">Club</span>
-                <span className="block text-xs text-muted-foreground">Atleta del club principale</span>
-              </label>
-            </div>
-            <div className="flex items-start gap-3 px-3 py-2 bg-muted/30 rounded-lg">
-              <input
-                type="checkbox"
-                id="bmetod_check"
-                checked={form.atleta_bmetod}
-                onChange={(e) => set_val("atleta_bmetod", e.target.checked)}
-                className="w-4 h-4 mt-0.5 accent-primary"
-              />
-              <label htmlFor="bmetod_check" className="cursor-pointer">
-                <span className="text-sm font-medium text-foreground">BMETOD</span>
-                <span className="block text-xs text-muted-foreground">Atleta BMETOD Academy</span>
-              </label>
-            </div>
             <div className="flex items-start gap-3 px-3 py-2 bg-muted/30 rounded-lg">
               <input
                 type="checkbox"
@@ -405,7 +376,7 @@ const AtletaModal: React.FC<{
                 className="w-4 h-4 mt-0.5 accent-primary"
               />
               <label htmlFor="esterno_check" className="cursor-pointer">
-                <span className="text-sm font-medium text-foreground">Esterno</span>
+                <span className="text-sm font-medium text-foreground">Atleta esterno</span>
                 <span className="block text-xs text-muted-foreground">Pattinatore esterno ospite</span>
               </label>
             </div>
@@ -1571,9 +1542,8 @@ const AthletesPage: React.FC = () => {
                                 <AthleteBadges
                                   agonista={a.agonista}
                                   atleta_federazione={a.atleta_federazione}
-                                  atleta_club={a.atleta_club}
-                                  atleta_bmetod={a.atleta_bmetod}
                                   atleta_esterno={a.atleta_esterno}
+                                  ragione_sociale_id={(a as any).ragione_sociale_id}
                                 />
                                 {a.verificato === false && (
                                   <span className="inline-flex items-center gap-1 rounded-md bg-yellow-100 px-1.5 py-0.5 text-[10px] font-semibold text-yellow-800 ring-1 ring-inset ring-yellow-300">

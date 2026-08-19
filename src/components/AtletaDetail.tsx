@@ -1,4 +1,5 @@
 import FatturazioneAtletaFields from "@/components/atleti/FatturazioneAtletaFields";
+import { use_ragioni_sociali } from "@/hooks/use-ragioni-sociali";
 import React, { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
@@ -364,6 +365,15 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
     })(),
   });
 
+  const { data: ragioni_sociali_club = [] } = use_ragioni_sociali();
+  const ragione_sociale_atleta = useMemo(
+    () =>
+      form.ragione_sociale_id
+        ? (ragioni_sociali_club ?? []).find((r) => r.id === form.ragione_sociale_id)
+        : undefined,
+    [ragioni_sociali_club, form.ragione_sociale_id],
+  );
+
   // Compenso staff modal state (apre dopo save se un flag staff è stato appena attivato)
   const [pending_compenso, set_pending_compenso] = useState<null | {
     livello: "monitrice" | "aiuto_monitrice";
@@ -561,8 +571,6 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
         licenza_sis_validita_da: form.licenza_sis_validita_da || null,
         licenza_sis_validita_a: form.licenza_sis_validita_a || null,
         atleta_federazione: is_carriera_attiva ? form.atleta_federazione : false,
-        atleta_club: !!form.atleta_club,
-        atleta_bmetod: !!form.atleta_bmetod,
         atleta_esterno: !!form.atleta_esterno,
         ragione_sociale_id: form.ragione_sociale_id || null,
         ragione_sociale_listino_id: form.ragione_sociale_listino_id || null,
@@ -823,7 +831,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                 }
               }
 
-              const has_flags = form.agonista || form.atleta_federazione || form.attivo_come_monitore || form.atleta_club || form.atleta_bmetod || form.atleta_esterno;
+              const has_flags = form.agonista || form.atleta_federazione || form.attivo_come_monitore || form.atleta_esterno || !!ragione_sociale_atleta;
 
               return (
                 <div className="flex flex-col gap-2">
@@ -899,11 +907,8 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                           Monitore
                         </span>
                       )}
-                      {form.atleta_club && (
-                        <span className="inline-flex items-center gap-1">Club</span>
-                      )}
-                      {form.atleta_bmetod && (
-                        <span className="inline-flex items-center gap-1">BMETOD</span>
+                      {ragione_sociale_atleta && (
+                        <span className="inline-flex items-center gap-1">{ragione_sociale_atleta.nome}</span>
                       )}
                       {form.atleta_esterno && (
                         <span className="inline-flex items-center gap-1">Esterno</span>
@@ -1161,46 +1166,20 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                 )}
               </div>
 
-              {/* ─── Sezione Provenienza ─── */}
+              {/* ─── Sezione Atleta esterno ─── */}
               <div className="bg-card rounded-xl shadow-card p-6 space-y-4">
-                <h3 className="text-sm font-bold text-foreground">Provenienza</h3>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
-                    <input
-                      type="checkbox"
-                      id="club_check"
-                      checked={!!form.atleta_club}
-                      onChange={(e) => upd("atleta_club", e.target.checked)}
-                      className="w-4 h-4 accent-primary"
-                    />
-                    <label htmlFor="club_check" className="text-sm font-medium text-foreground cursor-pointer">
-                      Atleta Club
-                    </label>
-                  </div>
-                  <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
-                    <input
-                      type="checkbox"
-                      id="bmetod_check"
-                      checked={!!form.atleta_bmetod}
-                      onChange={(e) => upd("atleta_bmetod", e.target.checked)}
-                      className="w-4 h-4 accent-primary"
-                    />
-                    <label htmlFor="bmetod_check" className="text-sm font-medium text-foreground cursor-pointer">
-                      Atleta BMETOD
-                    </label>
-                  </div>
-                  <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
-                    <input
-                      type="checkbox"
-                      id="esterno_check"
-                      checked={!!form.atleta_esterno}
-                      onChange={(e) => upd("atleta_esterno", e.target.checked)}
-                      className="w-4 h-4 accent-primary"
-                    />
-                    <label htmlFor="esterno_check" className="text-sm font-medium text-foreground cursor-pointer">
-                      Atleta Esterno
-                    </label>
-                  </div>
+                <h3 className="text-sm font-bold text-foreground">Atleta esterno</h3>
+                <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
+                  <input
+                    type="checkbox"
+                    id="esterno_check"
+                    checked={!!form.atleta_esterno}
+                    onChange={(e) => upd("atleta_esterno", e.target.checked)}
+                    className="w-4 h-4 accent-primary"
+                  />
+                  <label htmlFor="esterno_check" className="text-sm font-medium text-foreground cursor-pointer">
+                    Pattinatore esterno ospite
+                  </label>
                 </div>
               </div>
 

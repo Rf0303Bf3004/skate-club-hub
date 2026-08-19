@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from "react";
 import { DndContext, useDraggable, useDroppable, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { use_atleti, use_istruttori } from "@/hooks/use-supabase-data";
+import { use_ragioni_sociali } from "@/hooks/use-ragioni-sociali";
+import { useModalitaArea } from "@/hooks/useModalitaArea";
 import {
   use_griglia_specialita,
   use_upsert_sessione,
@@ -84,7 +86,8 @@ const PoolBox: React.FC<{
   items: { id: string; nome: string; cognome: string }[];
   prefisso: "atleta" | "istruttore";
   variante_istruttori?: boolean;
-}> = ({ titolo, items, prefisso, variante_istruttori }) => {
+  colore?: string | null;
+}> = ({ titolo, items, prefisso, variante_istruttori, colore }) => {
   const [q, set_q] = useState("");
   const filtrati = useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -102,7 +105,10 @@ const PoolBox: React.FC<{
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-semibold flex items-center gap-1.5">
           {variante_istruttori && <GraduationCap className="w-4 h-4 text-primary" />}
-          {titolo}
+          {!variante_istruttori && colore && (
+            <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ backgroundColor: colore }} />
+          )}
+          <span className="truncate">{titolo}</span>
         </h4>
         <Badge variant="secondary" className="text-[10px]">{items.length}</Badge>
       </div>
@@ -247,6 +253,8 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   const { data: atleti = [] } = use_atleti();
   const { data: istruttori = [] } = use_istruttori();
   const { data: specialita = [] } = use_griglia_specialita();
+  const { data: ragioni_sociali = [] } = use_ragioni_sociali();
+  const { modalita: modalita_fatturazione } = useModalitaArea("fatturazione");
 
   const upsert_sessione = use_upsert_sessione();
   const elimina_sessione = use_elimina_sessione();
@@ -259,8 +267,31 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   const [open_specialita, set_open_specialita] = useState(false);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
-  const pool_club = useMemo(() => (atleti as any[]).filter((a) => a.atleta_club), [atleti]);
-  const pool_bmetod = useMemo(() => (atleti as any[]).filter((a) => a.atleta_bmetod), [atleti]);
+  // Box sorgente dinamici: uno per ragione sociale attiva (solo se modalità multi_ragione_sociale
+  // e almeno una ragione sociale configurata). Altrimenti fallback: un unico box "Club" con i non esterni.
+  const ragioni_attive = useMemo(
+    () =>
+      modalita_fatturazione === "multi_ragione_sociale"
+        ? (ragioni_sociali ?? []).filter((r) => r.attivo)
+        : [],
+    [modalita_fatturazione, ragioni_sociali],
+  );
+
+  const pool_ragioni = useMemo(
+    () =>
+      ragioni_attive.map((r) => ({
+        id: r.id,
+        titolo: r.nome,
+        colore: r.colore_primario,
+        items: (atleti as any[]).filter((a) => a.ragione_sociale_id === r.id),
+      })),
+    [ragioni_attive, atleti],
+  );
+
+  const pool_club_fallback = useMemo(
+    () => (atleti as any[]).filter((a) => !a.atleta_esterno),
+    [atleti],
+  );
   const pool_esterni = useMemo(() => (atleti as any[]).filter((a) => a.atleta_esterno), [atleti]);
   const pool_istruttori = useMemo(() => (istruttori as any[]).filter((i) => i.attivo), [istruttori]);
 
@@ -387,8 +418,13 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
       <DndContext sensors={sensors} onDragEnd={handle_drag_end}>
         {/* Fascia superiore: pool sorgente */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <PoolBox titolo="Club" items={pool_club} prefisso="atleta" />
-          <PoolBox titolo="BMETOD" items={pool_bmetod} prefisso="atleta" />
+          {pool_ragioni.length > 0 ? (
+            pool_ragioni.map((p) => (
+              <PoolBox key={p.id} titolo={p.titolo} items={p.items} prefisso="atleta" colore={p.colore} />
+            ))
+          ) : (
+            <PoolBox titolo="Club" items={pool_club_fallback} prefisso="atleta" />
+          )}
           <PoolBox titolo="Esterni" items={pool_esterni} prefisso="atleta" />
           <PoolBox titolo="Istruttori" items={pool_istruttori} prefisso="istruttore" variante_istruttori />
         </div>

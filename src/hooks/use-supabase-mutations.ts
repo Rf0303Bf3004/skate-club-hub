@@ -158,8 +158,6 @@ export function use_upsert_atleta() {
         ...(data.livello_stile !== undefined ? { livello_stile: data.livello_stile || null } : {}),
         ...(data.livello_stile_in_preparazione !== undefined ? { livello_stile_in_preparazione: data.livello_stile_in_preparazione || null } : {}),
         atleta_federazione: !!data.atleta_federazione,
-        atleta_club: !!data.atleta_club,
-        atleta_bmetod: !!data.atleta_bmetod,
         atleta_esterno: !!data.atleta_esterno,
         ...(data.ragione_sociale_id !== undefined ? { ragione_sociale_id: data.ragione_sociale_id || null } : {}),
         ...(data.ragione_sociale_listino_id !== undefined ? { ragione_sociale_listino_id: data.ragione_sociale_listino_id || null } : {}),
