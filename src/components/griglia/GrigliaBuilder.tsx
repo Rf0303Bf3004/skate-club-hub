@@ -278,6 +278,33 @@ const SessioneBox: React.FC<{
     if (!a.ragione_sociale_id) return null;
     return ragioni_sociali.find((r) => r.id === a.ragione_sociale_id)?.colore_primario ?? null;
   };
+
+  // Ordine visivo: stesso ordine dei box sorgente (ragioni sociali, senza ragione sociale, esterni),
+  // poi alfabetico per cognome/nome all'interno di ciascun gruppo.
+  const atleti_ordinati = useMemo(() => {
+    const ordine_ragione = new Map<string, number>();
+    ragioni_sociali.forEach((r, idx) => ordine_ragione.set(r.id, idx));
+    const idx_senza = ragioni_sociali.length;
+    const idx_esterni = ragioni_sociali.length + 1;
+
+    const gruppo_di = (atleta_id: string): number => {
+      const a = atleti_tutti.find((x) => x.id === atleta_id);
+      if (!a) return idx_senza;
+      if (a.atleta_esterno) return idx_esterni;
+      if (a.ragione_sociale_id) return ordine_ragione.get(a.ragione_sociale_id) ?? idx_senza;
+      return idx_senza;
+    };
+
+    return [...sessione.atleti].sort((a, b) => {
+      const diff = gruppo_di(a.atleta_id) - gruppo_di(b.atleta_id);
+      if (diff !== 0) return diff;
+      return (
+        (a.cognome ?? "").localeCompare(b.cognome ?? "", "it") ||
+        (a.nome ?? "").localeCompare(b.nome ?? "", "it")
+      );
+    });
+  }, [sessione.atleti, atleti_tutti, ragioni_sociali]);
+
   const { setNodeRef, isOver } = useDroppable({ id: `sessione:${sessione.id}` });
   const usa_testo = !sessione.specialita_id && !!sessione.specialita_testo_libero;
   const [modo_libero, set_modo_libero] = useState(usa_testo);
@@ -397,7 +424,7 @@ const SessioneBox: React.FC<{
             </button>
           </span>
         ))}
-        {sessione.atleti.map((a) => {
+        {atleti_ordinati.map((a) => {
           const colore = colore_atleta(a.atleta_id);
           return (
           <span
