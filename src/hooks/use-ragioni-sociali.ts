@@ -194,3 +194,73 @@ export function use_upsert_tariffa_istruttore() {
     },
   });
 }
+
+// ─── Utenti con accesso dedicato ───────────────────────────
+export interface UtenteClubLite {
+  id: string;
+  nome: string | null;
+  cognome: string | null;
+  ruolo: string | null;
+}
+
+export function use_utenti_club_lite() {
+  return useQuery({
+    refetchOnMount: "always",
+    staleTime: 0,
+    enabled: !!get_current_club_id(),
+    queryKey: ["utenti_club_lite", get_current_club_id()],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("utenti_club" as any)
+        .select("id, nome, cognome, ruolo")
+        .eq("club_id", get_current_club_id())
+        .order("cognome");
+      if (error) throw error;
+      return ((data ?? []) as any[]) as UtenteClubLite[];
+    },
+  });
+}
+
+export function use_utenti_ragione_sociale(ragione_sociale_id?: string | null) {
+  return useQuery({
+    refetchOnMount: "always",
+    staleTime: 0,
+    enabled: !!ragione_sociale_id,
+    queryKey: ["ragioni_sociali_utenti", ragione_sociale_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ragioni_sociali_utenti" as any)
+        .select("*")
+        .eq("ragione_sociale_id", ragione_sociale_id);
+      if (error) throw error;
+      return ((data ?? []) as any[]).map((r) => String(r.utente_id));
+    },
+  });
+}
+
+export function use_toggle_utente_ragione_sociale() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: { ragione_sociale_id: string; utente_id: string; assegna: boolean }) => {
+      if (payload.assegna) {
+        const { error } = await supabase
+          .from("ragioni_sociali_utenti" as any)
+          .upsert(
+            { ragione_sociale_id: payload.ragione_sociale_id, utente_id: payload.utente_id } as any,
+            { onConflict: "ragione_sociale_id,utente_id" },
+          );
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("ragioni_sociali_utenti" as any)
+          .delete()
+          .eq("ragione_sociale_id", payload.ragione_sociale_id)
+          .eq("utente_id", payload.utente_id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["ragioni_sociali_utenti"] });
+    },
+  });
+}
