@@ -653,13 +653,44 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
     }
   };
 
+  // Riepilogo destinatari pre-pubblicazione (aggiornato mentre si lavora)
+  const riepilogo_invio = useMemo(() => {
+    const atleti_map = new Map<string, string>();
+    let convocazioni = 0;
+    for (const s of sessioni) {
+      const testo = (s.messaggio_atleti ?? "").trim();
+      if (!testo) continue;
+      for (const a of s.atleti ?? []) {
+        convocazioni += 1;
+        atleti_map.set(a.atleta_id, `${a.nome} ${a.cognome}`.trim());
+      }
+    }
+    const ist_con = new Map<string, string>();
+    const ist_senza = new Map<string, string>();
+    for (const s of sessioni) {
+      for (const i of s.istruttori ?? []) {
+        const nome = `${i.nome} ${i.cognome}`.trim() || i.istruttore_id.slice(0, 8);
+        if (i.user_id) ist_con.set(i.istruttore_id, nome);
+        else ist_senza.set(i.istruttore_id, nome);
+      }
+    }
+    return {
+      convocazioni,
+      atleti: Array.from(atleti_map.values()).sort((a, b) => a.localeCompare(b, "it")),
+      istruttori: Array.from(ist_con.values()).sort((a, b) => a.localeCompare(b, "it")),
+      istruttori_senza_account: Array.from(ist_senza.values()).sort((a, b) => a.localeCompare(b, "it")),
+    };
+  }, [sessioni]);
+
   const handle_pubblica = async () => {
     try {
       const res = await pubblica.mutateAsync(blocco);
       const n = res?.inviate ?? 0;
-      toast({
-        title: n > 0 ? `✅ Griglia pubblicata — ${n} convocazioni inviate agli atleti` : "✅ Griglia pubblicata",
-      });
+      const ni = res?.istruttori_avvisati ?? 0;
+      const ns = res?.istruttori_senza_account ?? 0;
+      const parti = [`${n} convocazioni agli atleti`, `${ni} istruttori avvisati`];
+      if (ns > 0) parti.push(`${ns} istruttori senza account collegato`);
+      toast({ title: "✅ Griglia pubblicata", description: parti.join(" · ") });
     } catch (e: any) {
       toast({ title: "Errore", description: e.message, variant: "destructive" });
     }
@@ -669,22 +700,54 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
     <div className="space-y-4">
       {/* Barra azioni */}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
+        <div className="space-y-2">
           {blocco.stato === "pubblicato" ? (
             <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
               <CheckCircle2 className="w-3 h-3 mr-1" />
               Pubblicato{blocco.pubblicato_at ? ` il ${new Date(blocco.pubblicato_at).toLocaleDateString("it-CH")}` : ""}
             </Badge>
           ) : (
-            <Button size="sm" onClick={handle_pubblica} disabled={pubblica.isPending}>
-              <Send className="w-4 h-4 mr-1" /> Pubblica e invia convocazioni
-            </Button>
+            <>
+              <button
+                type="button"
+                onClick={() => set_riepilogo_aperto((v) => !v)}
+                className="text-xs text-left text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+              >
+                Invierai: {riepilogo_invio.convocazioni} convocazioni a {riepilogo_invio.atleti.length} atleti ·{" "}
+                {riepilogo_invio.istruttori.length} istruttori avvisati
+                {riepilogo_invio.istruttori_senza_account.length > 0
+                  ? ` · ${riepilogo_invio.istruttori_senza_account.length} istruttori senza account collegato (non riceveranno nulla)`
+                  : ""}
+              </button>
+              {riepilogo_aperto && (
+                <div className="text-xs text-muted-foreground border rounded-lg p-2 space-y-1 max-w-xl">
+                  <p>
+                    <span className="font-medium text-foreground">Atleti:</span>{" "}
+                    {riepilogo_invio.atleti.join(", ") || "nessuno"}
+                  </p>
+                  <p>
+                    <span className="font-medium text-foreground">Istruttori:</span>{" "}
+                    {riepilogo_invio.istruttori.join(", ") || "nessuno"}
+                  </p>
+                  {riepilogo_invio.istruttori_senza_account.length > 0 && (
+                    <p>
+                      <span className="font-medium text-foreground">Senza account collegato:</span>{" "}
+                      {riepilogo_invio.istruttori_senza_account.join(", ")}
+                    </p>
+                  )}
+                </div>
+              )}
+              <Button size="sm" onClick={handle_pubblica} disabled={pubblica.isPending}>
+                <Send className="w-4 h-4 mr-1" /> Pubblica e invia convocazioni
+              </Button>
+            </>
           )}
         </div>
         <Button variant="outline" size="sm" onClick={() => set_open_specialita(true)}>
           <Settings className="w-4 h-4 mr-1" /> Gestisci specialità
         </Button>
       </div>
+
 
       <DndContext sensors={sensors} onDragEnd={handle_drag_end}>
         {/* Fascia superiore: pool sorgente */}
