@@ -46,7 +46,7 @@ export const ModalitaGestioneSection: React.FC<Props> = ({
         .upsert(
           {
             club_id,
-            area: "ghiaccio",
+            area,
             modalita: nuova_modalita,
             attivato_da: session?.user_id ?? null,
             attivato_at: new Date().toISOString(),
