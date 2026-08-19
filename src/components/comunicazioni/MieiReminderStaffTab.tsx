@@ -70,6 +70,7 @@ export const MieiReminderStaffTab: React.FC = () => {
       {reminders.map((r) => {
         const com = r.comunicazioni;
         const gia_risposto = !!r.rsvp_risposta;
+        const sola_lettura = com?.sotto_tipo === "griglia_convocazione";
         return (
           <div key={r.id} className={`bg-card border rounded-xl p-4 shadow-sm ${com?.urgente ? "border-destructive/40" : "border-border"}`}>
             <div className="flex items-start justify-between gap-3 mb-2">
