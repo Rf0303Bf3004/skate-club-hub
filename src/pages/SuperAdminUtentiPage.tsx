@@ -73,25 +73,38 @@ const SuperAdminUtentiPage: React.FC = () => {
     load();
   };
 
+  /** Invoca la edge function estraendo anche il body degli errori HTTP (4xx/5xx). */
+  const invoke_sa = async (body: any): Promise<{ data: any; error_message?: string }> => {
+    const { data, error } = await supabase.functions.invoke("superadmin-utenti", { body });
+    if (error) {
+      let msg = error.message;
+      try {
+        const ctx = (error as any).context;
+        const parsed = ctx?.json ? await ctx.json() : null;
+        if (parsed?.message) msg = parsed.message;
+      } catch { /* ignora */ }
+      return { data: null, error_message: msg };
+    }
+    if ((data as any)?.error) return { data, error_message: (data as any)?.message ?? "Errore" };
+    return { data };
+  };
+
   const cambia_ruolo = async (u: any, nuovo: string) => {
-    const { data, error } = await supabase.functions.invoke("superadmin-utenti", {
-      body: { action: "cambia_ruolo", user_id: u.user_id, ruolo: nuovo },
-    });
-    const err = (data as any)?.error;
-    if (err || error) { toast.error((data as any)?.message ?? error?.message ?? "Errore"); return; }
+    const { error_message } = await invoke_sa({ action: "cambia_ruolo", user_id: u.user_id, ruolo: nuovo });
+    if (error_message) { toast.error(error_message); return; }
     toast.success("Ruolo aggiornato");
     load();
   };
 
   const cambia_club = async (u: any, nuovo: string) => {
-    const { data, error } = await supabase.functions.invoke("superadmin-utenti", {
-      body: { action: "cambia_club", user_id: u.user_id, club_id: nuovo === "none" ? null : nuovo },
+    const { error_message } = await invoke_sa({
+      action: "cambia_club", user_id: u.user_id, club_id: nuovo === "none" ? null : nuovo,
     });
-    const err = (data as any)?.error;
-    if (err || error) { toast.error((data as any)?.message ?? error?.message ?? "Errore"); return; }
+    if (error_message) { toast.error(error_message); return; }
     toast.success("Club aggiornato");
     load();
   };
+
 
 
   return (
