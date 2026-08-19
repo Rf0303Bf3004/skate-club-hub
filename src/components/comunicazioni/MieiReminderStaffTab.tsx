@@ -25,7 +25,7 @@ export const MieiReminderStaffTab: React.FC = () => {
         .select("id, stato, rsvp_risposta, rsvp_at, creato_at, comunicazione_id, comunicazioni!inner(id, titolo, testo, sotto_tipo, data_evento, urgente)")
         .eq("user_id", user_id!)
         .eq("club_id", club_id)
-        .eq("comunicazioni.sotto_tipo", "reminder_staff")
+        .in("comunicazioni.sotto_tipo", ["reminder_staff", "griglia_convocazione"])
         .order("creato_at", { ascending: false })
         .limit(50);
       if (error) throw error;
