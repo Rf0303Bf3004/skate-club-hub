@@ -1,6 +1,7 @@
 import React from "react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { use_ragioni_sociali } from "@/hooks/use-ragioni-sociali";
+import { VERDE_ESTERNI } from "@/components/ProvenienzaLegenda";
 
 /**
  * Mini-pillole testuali FED / AGO per atleti.
@@ -53,7 +54,19 @@ const AthleteBadges: React.FC<Props> = ({
         {ragione_sociale && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className={pill_cls}>{ragione_sociale.nome.toUpperCase()}</span>
+              <span
+                className={pill_cls}
+                style={
+                  ragione_sociale.colore_primario
+                    ? {
+                        borderLeft: `3px solid ${ragione_sociale.colore_primario}`,
+                        backgroundColor: `${ragione_sociale.colore_primario}1A`,
+                      }
+                    : undefined
+                }
+              >
+                {ragione_sociale.nome.toUpperCase()}
+              </span>
             </TooltipTrigger>
             <TooltipContent>Ragione sociale: {ragione_sociale.nome}</TooltipContent>
           </Tooltip>
@@ -61,11 +74,17 @@ const AthleteBadges: React.FC<Props> = ({
         {atleta_esterno && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className={pill_cls}>ESTERNO</span>
+              <span
+                className={pill_cls}
+                style={{ borderLeft: `3px solid ${VERDE_ESTERNI}`, backgroundColor: `${VERDE_ESTERNI}1A` }}
+              >
+                ESTERNO
+              </span>
             </TooltipTrigger>
             <TooltipContent>Pattinatore esterno ospite</TooltipContent>
           </Tooltip>
         )}
+
       </span>
     </TooltipProvider>
   );

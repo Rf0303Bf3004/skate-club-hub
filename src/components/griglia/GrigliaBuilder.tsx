@@ -3,6 +3,7 @@ import { DndContext, useDraggable, useDroppable, PointerSensor, useSensor, useSe
 import { use_atleti, use_istruttori } from "@/hooks/use-supabase-data";
 import { use_ragioni_sociali } from "@/hooks/use-ragioni-sociali";
 import { useModalitaArea } from "@/hooks/useModalitaArea";
+import { VERDE_ESTERNI } from "@/components/ProvenienzaLegenda";
 import {
   use_griglia_specialita,
   use_upsert_sessione,
@@ -53,7 +54,8 @@ const PillolaDraggable: React.FC<{
   label: string;
   sigla: string;
   is_istruttore?: boolean;
-}> = ({ drag_id, label, sigla, is_istruttore }) => {
+  colore?: string | null;
+}> = ({ drag_id, label, sigla, is_istruttore, colore }) => {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: drag_id });
   return (
     <div
@@ -62,9 +64,10 @@ const PillolaDraggable: React.FC<{
       {...listeners}
       className={cn(
         "flex items-center gap-2 px-2 py-1 rounded-full border text-xs cursor-grab active:cursor-grabbing select-none",
-        is_istruttore ? "bg-primary/10 border-primary/40" : "bg-background border-border",
+        is_istruttore ? "bg-primary/10 border-primary/40" : colore ? "border-border" : "bg-background border-border",
         isDragging && "opacity-40",
       )}
+      style={colore ? { borderLeft: `3px solid ${colore}`, backgroundColor: `${colore}1A` } : undefined}
       title={label}
     >
       <span
@@ -85,7 +88,8 @@ const GruppoDraggable: React.FC<{
   drag_id: string;
   livello: string;
   atleta_ids: string[];
-}> = ({ drag_id, livello, atleta_ids }) => {
+  colore?: string | null;
+}> = ({ drag_id, livello, atleta_ids, colore }) => {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: drag_id,
     data: { tipo: "gruppo", atleta_ids },
@@ -102,6 +106,7 @@ const GruppoDraggable: React.FC<{
         "cursor-grab active:cursor-grabbing select-none",
         isDragging && "opacity-40",
       )}
+      style={colore ? { borderLeft: `3px solid ${colore}`, backgroundColor: `${colore}1A` } : undefined}
     >
       <GripVertical className="w-3 h-3 shrink-0" />
       <span className="truncate">{livello}</span>
@@ -174,6 +179,7 @@ const PoolBox: React.FC<{
                   drag_id={`gruppo:${box_id ?? titolo}:${livello}`}
                   livello={livello}
                   atleta_ids={membri.map((m) => m.id)}
+                  colore={colore}
                 />
                 <div className="flex flex-col gap-1 pl-2 border-l border-border/60">
                   {membri.map((i) => (
@@ -182,6 +188,7 @@ const PoolBox: React.FC<{
                       drag_id={`atleta:${i.id}`}
                       label={`${i.nome} ${i.cognome}`}
                       sigla={iniziali(i.nome, i.cognome)}
+                      colore={colore}
                     />
                   ))}
                 </div>
@@ -211,7 +218,25 @@ const SessioneBox: React.FC<{
   on_elimina: () => void;
   on_rimuovi_atleta: (atleta_id: string) => void;
   on_rimuovi_istruttore: (istruttore_id: string) => void;
-}> = ({ sessione, specialita, on_change, on_elimina, on_rimuovi_atleta, on_rimuovi_istruttore }) => {
+  atleti_tutti?: { id: string; ragione_sociale_id?: string | null; atleta_esterno?: boolean | null }[];
+  ragioni_sociali?: { id: string; colore_primario: string | null }[];
+}> = ({
+  sessione,
+  specialita,
+  on_change,
+  on_elimina,
+  on_rimuovi_atleta,
+  on_rimuovi_istruttore,
+  atleti_tutti = [],
+  ragioni_sociali = [],
+}) => {
+  const colore_atleta = (atleta_id: string): string | null => {
+    const a = atleti_tutti.find((x) => x.id === atleta_id);
+    if (!a) return null;
+    if (a.atleta_esterno) return VERDE_ESTERNI;
+    if (!a.ragione_sociale_id) return null;
+    return ragioni_sociali.find((r) => r.id === a.ragione_sociale_id)?.colore_primario ?? null;
+  };
   const { setNodeRef, isOver } = useDroppable({ id: `sessione:${sessione.id}` });
   const usa_testo = !sessione.specialita_id && !!sessione.specialita_testo_libero;
   const [modo_libero, set_modo_libero] = useState(usa_testo);
@@ -296,17 +321,24 @@ const SessioneBox: React.FC<{
             </button>
           </span>
         ))}
-        {sessione.atleti.map((a) => (
+        {sessione.atleti.map((a) => {
+          const colore = colore_atleta(a.atleta_id);
+          return (
           <span
             key={a.id}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs border border-border bg-background"
+            className={cn(
+              "inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs border",
+              colore ? "border-border" : "border-border bg-background",
+            )}
+            style={colore ? { borderLeft: `3px solid ${colore}`, backgroundColor: `${colore}1A` } : undefined}
           >
             {a.nome} {a.cognome}
             <button type="button" onClick={() => on_rimuovi_atleta(a.atleta_id)} aria-label="Rimuovi">
               <X className="w-3 h-3 text-muted-foreground hover:text-destructive" />
             </button>
           </span>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -522,7 +554,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
               neutro
             />
           )}
-          <PoolBox box_id="esterni" titolo="Esterni" items={pool_esterni} prefisso="atleta" />
+          <PoolBox box_id="esterni" titolo="Esterni" items={pool_esterni} prefisso="atleta" colore={VERDE_ESTERNI} />
           <PoolBox titolo="Istruttori" items={pool_istruttori} prefisso="istruttore" variante_istruttori />
         </div>
 
@@ -539,6 +571,8 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
               on_rimuovi_istruttore={(istruttore_id) =>
                 rimuovi_istruttore.mutateAsync({ sessione_id: s.id, istruttore_id })
               }
+              atleti_tutti={atleti as any[]}
+              ragioni_sociali={ragioni_attive}
             />
           ))}
           {sessioni.length === 0 && (

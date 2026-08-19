@@ -11,6 +11,7 @@ import {
   type GrigliaBlocco,
 } from "@/hooks/use-griglia-ghiaccio";
 import GrigliaBuilder from "@/components/griglia/GrigliaBuilder";
+import ProvenienzaLegenda from "@/components/ProvenienzaLegenda";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -175,6 +176,8 @@ const GrigliaGhiaccioPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      <ProvenienzaLegenda />
 
       {isLoading ? (
         <div className="flex items-center justify-center h-40">

@@ -17,6 +17,7 @@ import { Switch } from "@/components/ui/switch";
 import AtletaDetail from "@/components/AtletaDetail";
 import SchedaAnagrafica from "@/components/SchedaAnagrafica";
 import AthleteBadges from "@/components/AthleteBadges";
+import ProvenienzaLegenda from "@/components/ProvenienzaLegenda";
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import SearchableListLayout from "@/components/common/SearchableListLayout";
@@ -1486,6 +1487,7 @@ const AthletesPage: React.FC = () => {
           );
         })()}
 
+        <ProvenienzaLegenda className="px-1" />
 
         <div className="bg-card rounded-xl shadow-card overflow-hidden">
           <div className="overflow-x-auto">
