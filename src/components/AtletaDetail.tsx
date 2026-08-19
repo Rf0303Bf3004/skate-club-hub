@@ -364,6 +364,15 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
     })(),
   });
 
+  const { data: ragioni_sociali_club = [] } = use_ragioni_sociali();
+  const ragione_sociale_atleta = useMemo(
+    () =>
+      form.ragione_sociale_id
+        ? (ragioni_sociali_club ?? []).find((r) => r.id === form.ragione_sociale_id)
+        : undefined,
+    [ragioni_sociali_club, form.ragione_sociale_id],
+  );
+
   // Compenso staff modal state (apre dopo save se un flag staff è stato appena attivato)
   const [pending_compenso, set_pending_compenso] = useState<null | {
     livello: "monitrice" | "aiuto_monitrice";
