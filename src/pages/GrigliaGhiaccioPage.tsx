@@ -333,8 +333,8 @@ const GrigliaGhiaccioPage: React.FC = () => {
       </Dialog>
 
       <Dialog open={riepilogo_open} onOpenChange={set_riepilogo_open}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto print:static print:max-w-none print:max-h-none print:overflow-visible print:border-0 print:shadow-none">
-          <DialogHeader className="print:hidden">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
             <DialogTitle>Riepilogo istruttori</DialogTitle>
           </DialogHeader>
           <div className="space-y-5">
@@ -342,29 +342,39 @@ const GrigliaGhiaccioPage: React.FC = () => {
               <p className="text-sm text-muted-foreground">Nessun istruttore assegnato per questa data.</p>
             )}
             {riepilogo_istruttori.map((i) => (
-              <div key={i.nome} className="space-y-1 break-inside-avoid">
+              <div key={i.istruttore_id} className="space-y-1">
                 <h3 className="font-semibold">{i.nome}</h3>
                 <p className="text-xs text-muted-foreground capitalize">{label_data(data_sel)}</p>
-                <ul className="text-sm space-y-1 mt-1">
-                  {i.righe.map((r, idx) => (
-                    <li key={idx}>{r.testo}</li>
+                <ul className="text-sm space-y-2 mt-1">
+                  {i.sessioni.map((s, idx) => (
+                    <li key={idx}>
+                      <span className="font-medium">
+                        {s.ora_inizio}–{s.ora_fine}
+                      </span>
+                      {s.pista ? ` — ${s.pista}` : ""} — {s.specialita}
+                      {s.specialita_descrizione ? ` (${s.specialita_descrizione})` : ""}
+                      <div className="text-muted-foreground">Atleti: {s.atleti.join(", ") || "—"}</div>
+                    </li>
                   ))}
                 </ul>
               </div>
             ))}
           </div>
-          <DialogFooter className="print:hidden">
+          <DialogFooter>
             <Button variant="outline" onClick={() => set_riepilogo_open(false)}>
               Chiudi
             </Button>
-            <Button onClick={() => window.print()}>
+            <Button onClick={stampa}>
               <Printer className="w-4 h-4 mr-1" /> Stampa
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <StampaRiepilogoIstruttori istruttori={riepilogo_istruttori} data_label={label_data(data_sel)} />
     </div>
   );
 };
 
 export default GrigliaGhiaccioPage;
+
