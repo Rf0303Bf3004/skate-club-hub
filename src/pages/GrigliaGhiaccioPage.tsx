@@ -12,6 +12,11 @@ import {
 } from "@/hooks/use-griglia-ghiaccio";
 import GrigliaBuilder from "@/components/griglia/GrigliaBuilder";
 import ProvenienzaLegenda from "@/components/ProvenienzaLegenda";
+import StampaRiepilogoIstruttori, {
+  type IstruttoreStampa,
+  type RigaSessioneStampa,
+} from "@/components/griglia/StampaRiepilogoIstruttori";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
