@@ -367,35 +367,8 @@ const AtletaModal: React.FC<{
             </div>
           </div>
 
-          {/* Provenienza */}
+          {/* Atleta esterno */}
           <div className="space-y-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Provenienza</p>
-            <div className="flex items-start gap-3 px-3 py-2 bg-muted/30 rounded-lg">
-              <input
-                type="checkbox"
-                id="club_check"
-                checked={form.atleta_club}
-                onChange={(e) => set_val("atleta_club", e.target.checked)}
-                className="w-4 h-4 mt-0.5 accent-primary"
-              />
-              <label htmlFor="club_check" className="cursor-pointer">
-                <span className="text-sm font-medium text-foreground">Club</span>
-                <span className="block text-xs text-muted-foreground">Atleta del club principale</span>
-              </label>
-            </div>
-            <div className="flex items-start gap-3 px-3 py-2 bg-muted/30 rounded-lg">
-              <input
-                type="checkbox"
-                id="bmetod_check"
-                checked={form.atleta_bmetod}
-                onChange={(e) => set_val("atleta_bmetod", e.target.checked)}
-                className="w-4 h-4 mt-0.5 accent-primary"
-              />
-              <label htmlFor="bmetod_check" className="cursor-pointer">
-                <span className="text-sm font-medium text-foreground">BMETOD</span>
-                <span className="block text-xs text-muted-foreground">Atleta BMETOD Academy</span>
-              </label>
-            </div>
             <div className="flex items-start gap-3 px-3 py-2 bg-muted/30 rounded-lg">
               <input
                 type="checkbox"
@@ -405,7 +378,7 @@ const AtletaModal: React.FC<{
                 className="w-4 h-4 mt-0.5 accent-primary"
               />
               <label htmlFor="esterno_check" className="cursor-pointer">
-                <span className="text-sm font-medium text-foreground">Esterno</span>
+                <span className="text-sm font-medium text-foreground">Atleta esterno</span>
                 <span className="block text-xs text-muted-foreground">Pattinatore esterno ospite</span>
               </label>
             </div>
