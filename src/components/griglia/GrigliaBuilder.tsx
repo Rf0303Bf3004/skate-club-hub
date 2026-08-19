@@ -18,6 +18,7 @@ import {
 } from "@/hooks/use-griglia-ghiaccio";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -46,6 +47,44 @@ function from_min(v: number): string {
 
 function iniziali(nome?: string, cognome?: string): string {
   return `${(nome || "?").charAt(0)}${(cognome || "").charAt(0)}`.toUpperCase();
+}
+
+
+// ─── Testi messaggio convocazione ──────────────────────────
+const GIORNI_IT = ["Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato"];
+
+function etichetta_giorno(data_iso: string): string {
+  if (!data_iso) return "";
+  const d = new Date(`${data_iso}T00:00:00`);
+  const oggi = new Date();
+  const key = (x: Date) =>
+    `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
+  const domani = new Date(oggi);
+  domani.setDate(oggi.getDate() + 1);
+  const data_fmt = `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`;
+  if (key(d) === key(oggi)) return `Oggi ${data_fmt}`;
+  if (key(d) === key(domani)) return `Domani ${data_fmt}`;
+  return `${GIORNI_IT[d.getDay()]} ${data_fmt}`;
+}
+
+function nome_specialita(s: GrigliaSessione): string {
+  return s.specialita_nome || s.specialita_testo_libero || "allenamento";
+}
+
+function testo_istruttori(s: GrigliaSessione): string {
+  return (s.istruttori ?? []).map((i) => `${i.nome} ${i.cognome}`.trim()).join(", ");
+}
+
+export function messaggio_standard(s: GrigliaSessione, data_iso: string): string {
+  const desc = s.specialita_descrizione ? ` – ${s.specialita_descrizione}` : "";
+  const ist = testo_istruttori(s);
+  return `${etichetta_giorno(data_iso)} in pista dalle ${hhmm(s.ora_inizio)} alle ${hhmm(s.ora_fine)} ${nome_specialita(s)}${desc}${ist ? `, Istruttore ${ist}` : ""}.`;
+}
+
+export function messaggio_breve(s: GrigliaSessione, data_iso: string): string {
+  const desc = s.specialita_descrizione ? ` – ${s.specialita_descrizione}` : "";
+  const ist = testo_istruttori(s);
+  return `${etichetta_giorno(data_iso)} ore ${hhmm(s.ora_inizio)}-${hhmm(s.ora_fine)}: ${nome_specialita(s)}${desc}${ist ? ` con ${ist}` : ""}.`;
 }
 
 // ─── Pillola draggable (pool sorgente) ─────────────────────
@@ -220,6 +259,7 @@ const SessioneBox: React.FC<{
   on_rimuovi_istruttore: (istruttore_id: string) => void;
   atleti_tutti?: { id: string; ragione_sociale_id?: string | null; atleta_esterno?: boolean | null }[];
   ragioni_sociali?: { id: string; colore_primario: string | null }[];
+  data_blocco: string;
 }> = ({
   sessione,
   specialita,
@@ -229,6 +269,7 @@ const SessioneBox: React.FC<{
   on_rimuovi_istruttore,
   atleti_tutti = [],
   ragioni_sociali = [],
+  data_blocco,
 }) => {
   const colore_atleta = (atleta_id: string): string | null => {
     const a = atleti_tutti.find((x) => x.id === atleta_id);
@@ -240,6 +281,32 @@ const SessioneBox: React.FC<{
   const { setNodeRef, isOver } = useDroppable({ id: `sessione:${sessione.id}` });
   const usa_testo = !sessione.specialita_id && !!sessione.specialita_testo_libero;
   const [modo_libero, set_modo_libero] = useState(usa_testo);
+  const [messaggio, set_messaggio] = useState(sessione.messaggio_atleti ?? "");
+  const [pista, set_pista] = useState(sessione.pista ?? "");
+  const prefill_fatto = React.useRef(false);
+
+  React.useEffect(() => {
+    set_messaggio(sessione.messaggio_atleti ?? "");
+  }, [sessione.messaggio_atleti]);
+
+  React.useEffect(() => {
+    set_pista(sessione.pista ?? "");
+  }, [sessione.pista]);
+
+  // Pre-riempimento automatico solo alla prima volta (messaggio ancora vuoto).
+  React.useEffect(() => {
+    if (prefill_fatto.current) return;
+    if ((sessione.messaggio_atleti ?? "").trim()) {
+      prefill_fatto.current = true;
+      return;
+    }
+    if ((sessione.atleti ?? []).length === 0) return;
+    prefill_fatto.current = true;
+    const testo = messaggio_standard(sessione, data_blocco);
+    set_messaggio(testo);
+    on_change({ messaggio_atleti: testo });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessione.atleti?.length, sessione.messaggio_atleti]);
 
   return (
     <div className="rounded-xl border bg-card p-3 space-y-3">
@@ -256,6 +323,15 @@ const SessioneBox: React.FC<{
           value={hhmm(sessione.ora_fine)}
           onChange={(e) => on_change({ ora_fine: e.target.value })}
           className="h-8 w-[7.5rem]"
+        />
+        <Input
+          value={pista}
+          onChange={(e) => set_pista(e.target.value)}
+          onBlur={() => {
+            if ((sessione.pista ?? "") !== pista) on_change({ pista: pista.trim() || null });
+          }}
+          placeholder="Pista (facoltativa)"
+          className="h-8 w-[9.5rem]"
         />
         <div className="flex-1 min-w-[12rem]">
           <Select
@@ -340,6 +416,49 @@ const SessioneBox: React.FC<{
           );
         })}
       </div>
+
+      {(sessione.atleti ?? []).length > 0 && (
+        <div className="space-y-2 pt-1 border-t">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold">Messaggio agli atleti</span>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => {
+                const t = messaggio_standard(sessione, data_blocco);
+                set_messaggio(t);
+                on_change({ messaggio_atleti: t });
+              }}
+            >
+              Modello standard
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => {
+                const t = messaggio_breve(sessione, data_blocco);
+                set_messaggio(t);
+                on_change({ messaggio_atleti: t });
+              }}
+            >
+              Modello breve
+            </Button>
+          </div>
+          <Textarea
+            value={messaggio}
+            onChange={(e) => set_messaggio(e.target.value)}
+            onBlur={() => {
+              if ((sessione.messaggio_atleti ?? "") !== messaggio)
+                on_change({ messaggio_atleti: messaggio.trim() || null });
+            }}
+            rows={3}
+            className="text-xs"
+            placeholder="Testo che verrà inviato agli atleti alla pubblicazione…"
+          />
+        </div>
+      )}
     </div>
   );
 };
@@ -499,6 +618,8 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
         specialita_id: merged.specialita_id,
         specialita_testo_libero: merged.specialita_testo_libero,
         note: merged.note,
+        pista: merged.pista,
+        messaggio_atleti: merged.messaggio_atleti,
       });
     } catch (e: any) {
       toast({ title: "Errore", description: e.message, variant: "destructive" });
@@ -507,8 +628,11 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
 
   const handle_pubblica = async () => {
     try {
-      await pubblica.mutateAsync(blocco.id);
-      toast({ title: "✅ Griglia pubblicata" });
+      const res = await pubblica.mutateAsync(blocco);
+      const n = res?.inviate ?? 0;
+      toast({
+        title: n > 0 ? `✅ Griglia pubblicata — ${n} convocazioni inviate agli atleti` : "✅ Griglia pubblicata",
+      });
     } catch (e: any) {
       toast({ title: "Errore", description: e.message, variant: "destructive" });
     }
@@ -526,7 +650,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
             </Badge>
           ) : (
             <Button size="sm" onClick={handle_pubblica} disabled={pubblica.isPending}>
-              <Send className="w-4 h-4 mr-1" /> Pubblica griglia
+              <Send className="w-4 h-4 mr-1" /> Pubblica e invia convocazioni
             </Button>
           )}
         </div>
@@ -571,6 +695,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
               on_rimuovi_istruttore={(istruttore_id) =>
                 rimuovi_istruttore.mutateAsync({ sessione_id: s.id, istruttore_id })
               }
+              data_blocco={blocco.data}
               atleti_tutti={atleti as any[]}
               ragioni_sociali={ragioni_attive}
             />

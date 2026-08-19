@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { LayoutGrid, Plus, Trash2, ChevronDown, ChevronRight, GraduationCap } from "lucide-react";
+import { LayoutGrid, Plus, Trash2, ChevronDown, ChevronRight, GraduationCap, Printer } from "lucide-react";
 
 function oggi_iso(): string {
   const d = new Date();
@@ -45,6 +45,7 @@ const GrigliaGhiaccioPage: React.FC = () => {
   const [data_sel, set_data_sel] = useState<string>(oggi_iso());
   const [espansi, set_espansi] = useState<string[]>([]);
   const [modal_open, set_modal_open] = useState(false);
+  const [riepilogo_open, set_riepilogo_open] = useState(false);
   const [form, set_form] = useState({ ora_inizio: "17:00", ora_fine: "18:00", titolo: "" });
 
   const { data: blocchi = [], isLoading } = use_griglia_blocchi_giorno(data_sel);
@@ -55,6 +56,29 @@ const GrigliaGhiaccioPage: React.FC = () => {
     const l = label_data(data_sel);
     return l ? `Griglia di ${l.charAt(0).toUpperCase()}${l.slice(1)}` : "Griglia";
   }, [data_sel]);
+
+  const riepilogo_istruttori = useMemo(() => {
+    const map = new Map<string, { nome: string; righe: { ora: number; testo: string }[] }>();
+    for (const b of blocchi) {
+      for (const s of b.sessioni ?? []) {
+        const spec = s.specialita_nome || s.specialita_testo_libero || "Allenamento";
+        const desc = s.specialita_descrizione ? ` (${s.specialita_descrizione})` : "";
+        const pista = s.pista ? `${s.pista} ` : "";
+        const atleti = (s.atleti ?? []).map((a) => `${a.nome} ${a.cognome}`.trim()).join(", ");
+        const testo = `${hhmm(s.ora_inizio)}–${hhmm(s.ora_fine)} ${pista}${spec}${desc} — Atleti: ${atleti || "—"}`;
+        const ora = Number(hhmm(s.ora_inizio).replace(":", ""));
+        for (const i of s.istruttori ?? []) {
+          const nome = `${i.nome} ${i.cognome}`.trim() || i.istruttore_id.slice(0, 8);
+          const cur = map.get(i.istruttore_id) ?? { nome, righe: [] };
+          cur.righe.push({ ora, testo });
+          map.set(i.istruttore_id, cur);
+        }
+      }
+    }
+    return Array.from(map.values())
+      .map((v) => ({ ...v, righe: v.righe.sort((a, b) => a.ora - b.ora) }))
+      .sort((a, b) => a.nome.localeCompare(b.nome, "it"));
+  }, [blocchi]);
 
   const toggle_espanso = (id: string) =>
     set_espansi((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -151,7 +175,7 @@ const GrigliaGhiaccioPage: React.FC = () => {
   );
 
   return (
-    <div className="p-4 md:p-6 space-y-5">
+    <div className="p-4 md:p-6 space-y-5 print:hidden">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
@@ -169,6 +193,11 @@ const GrigliaGhiaccioPage: React.FC = () => {
               className="h-9 w-[11rem]"
             />
           </div>
+          {is_editor && (
+            <Button variant="outline" onClick={() => set_riepilogo_open(true)}>
+              <Printer className="w-4 h-4 mr-1" /> Stampa riepilogo istruttori
+            </Button>
+          )}
           {is_editor && (
             <Button onClick={() => set_modal_open(true)}>
               <Plus className="w-4 h-4 mr-1" /> Nuovo blocco
@@ -270,6 +299,38 @@ const GrigliaGhiaccioPage: React.FC = () => {
             </Button>
             <Button onClick={salva_blocco} disabled={upsert_blocco.isPending}>
               Crea blocco
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={riepilogo_open} onOpenChange={set_riepilogo_open}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto print:static print:max-w-none print:max-h-none print:overflow-visible print:border-0 print:shadow-none">
+          <DialogHeader className="print:hidden">
+            <DialogTitle>Riepilogo istruttori</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-5">
+            {riepilogo_istruttori.length === 0 && (
+              <p className="text-sm text-muted-foreground">Nessun istruttore assegnato per questa data.</p>
+            )}
+            {riepilogo_istruttori.map((i) => (
+              <div key={i.nome} className="space-y-1 break-inside-avoid">
+                <h3 className="font-semibold">{i.nome}</h3>
+                <p className="text-xs text-muted-foreground capitalize">{label_data(data_sel)}</p>
+                <ul className="text-sm space-y-1 mt-1">
+                  {i.righe.map((r, idx) => (
+                    <li key={idx}>{r.testo}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <DialogFooter className="print:hidden">
+            <Button variant="outline" onClick={() => set_riepilogo_open(false)}>
+              Chiudi
+            </Button>
+            <Button onClick={() => window.print()}>
+              <Printer className="w-4 h-4 mr-1" /> Stampa
             </Button>
           </DialogFooter>
         </DialogContent>

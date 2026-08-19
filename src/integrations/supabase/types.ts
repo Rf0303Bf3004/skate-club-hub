@@ -2529,10 +2529,12 @@ export type Database = {
           blocco_id: string
           created_at: string
           id: string
+          messaggio_atleti: string | null
           note: string | null
           ora_fine: string
           ora_inizio: string
           ordine: number
+          pista: string | null
           specialita_id: string | null
           specialita_testo_libero: string | null
           updated_at: string
@@ -2541,10 +2543,12 @@ export type Database = {
           blocco_id: string
           created_at?: string
           id?: string
+          messaggio_atleti?: string | null
           note?: string | null
           ora_fine: string
           ora_inizio: string
           ordine?: number
+          pista?: string | null
           specialita_id?: string | null
           specialita_testo_libero?: string | null
           updated_at?: string
@@ -2553,10 +2557,12 @@ export type Database = {
           blocco_id?: string
           created_at?: string
           id?: string
+          messaggio_atleti?: string | null
           note?: string | null
           ora_fine?: string
           ora_inizio?: string
           ordine?: number
+          pista?: string | null
           specialita_id?: string | null
           specialita_testo_libero?: string | null
           updated_at?: string
@@ -2662,6 +2668,7 @@ export type Database = {
           attivo: boolean
           club_id: string
           created_at: string
+          descrizione_messaggio: string | null
           id: string
           nome: string
           ordine: number
@@ -2671,6 +2678,7 @@ export type Database = {
           attivo?: boolean
           club_id: string
           created_at?: string
+          descrizione_messaggio?: string | null
           id?: string
           nome: string
           ordine?: number
@@ -2680,6 +2688,7 @@ export type Database = {
           attivo?: boolean
           club_id?: string
           created_at?: string
+          descrizione_messaggio?: string | null
           id?: string
           nome?: string
           ordine?: number

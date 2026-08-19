@@ -9,6 +9,7 @@ export interface GrigliaSpecialita {
   nome: string;
   ordine: number;
   attivo: boolean;
+  descrizione_messaggio?: string | null;
 }
 
 export interface GrigliaSessioneAtleta {
@@ -34,6 +35,9 @@ export interface GrigliaSessione {
   specialita_id: string | null;
   specialita_testo_libero: string | null;
   specialita_nome: string | null;
+  specialita_descrizione: string | null;
+  pista: string | null;
+  messaggio_atleti: string | null;
   note: string | null;
   atleti: GrigliaSessioneAtleta[];
   istruttori: GrigliaSessioneIstruttore[];
@@ -101,7 +105,7 @@ export function use_griglia_blocchi_giorno(data_giorno: string) {
       const sessioni_ids = lista_sessioni.map((s: any) => s.id);
 
       const [spec_res, sa_res, si_res, atleti_res, ist_res] = await Promise.all([
-        supabase.from("griglia_specialita" as any).select("id,nome").eq("club_id", club_id),
+        supabase.from("griglia_specialita" as any).select("id,nome,descrizione_messaggio").eq("club_id", club_id),
         sessioni_ids.length
           ? supabase.from("griglia_sessioni_atleti" as any).select("*").in("sessione_id", sessioni_ids)
           : Promise.resolve({ data: [], error: null } as any),
@@ -112,8 +116,8 @@ export function use_griglia_blocchi_giorno(data_giorno: string) {
         supabase.from("istruttori").select("id,nome,cognome").eq("club_id", club_id),
       ]);
 
-      const spec_map = new Map<string, string>();
-      ((spec_res.data ?? []) as any[]).forEach((s: any) => spec_map.set(s.id, s.nome));
+      const spec_map = new Map<string, any>();
+      ((spec_res.data ?? []) as any[]).forEach((s: any) => spec_map.set(s.id, s));
       const atleti_map = new Map<string, any>();
       ((atleti_res.data ?? []) as any[]).forEach((a: any) => atleti_map.set(a.id, a));
       const ist_map = new Map<string, any>();
@@ -127,7 +131,10 @@ export function use_griglia_blocchi_giorno(data_giorno: string) {
           .filter((s: any) => s.blocco_id === b.id)
           .map((s: any) => ({
             ...s,
-            specialita_nome: s.specialita_id ? spec_map.get(s.specialita_id) ?? null : null,
+            specialita_nome: s.specialita_id ? spec_map.get(s.specialita_id)?.nome ?? null : null,
+            specialita_descrizione: s.specialita_id
+              ? spec_map.get(s.specialita_id)?.descrizione_messaggio ?? null
+              : null,
             atleti: sa
               .filter((x: any) => x.sessione_id === s.id)
               .map((x: any) => ({
@@ -208,15 +215,53 @@ export function use_upsert_blocco() {
 
 export function use_pubblica_blocco() {
   const invalidate = use_invalidate_griglia();
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (blocco_id: string) => {
+    mutationFn: async (blocco: string | GrigliaBlocco) => {
+      const blocco_id = typeof blocco === "string" ? blocco : blocco.id;
+      const club_id = get_current_club_id();
       const { error } = await supabase
         .from("griglia_blocchi" as any)
         .update({ stato: "pubblicato", pubblicato_at: new Date().toISOString() } as any)
         .eq("id", blocco_id);
       if (error) throw error;
+
+      // Invio convocazioni: una comunicazione per atleta e per sessione con messaggio.
+      let inviate = 0;
+      const sessioni = typeof blocco === "string" ? [] : blocco.sessioni ?? [];
+      if (!club_id || sessioni.length === 0) return { blocco_id, inviate };
+
+      const adesso = new Date().toISOString();
+      const data_evento = typeof blocco === "string" ? null : blocco.data ?? null;
+
+      for (const s of sessioni) {
+        const testo = (s.messaggio_atleti ?? "").trim();
+        if (!testo || (s.atleti ?? []).length === 0) continue;
+        for (const a of s.atleti) {
+          const payload: any = {
+            club_id,
+            titolo: "Convocazione allenamento",
+            testo,
+            corpo: testo,
+            tipo: "evento",
+            tipo_destinatari: "atleti",
+            atleti_ids: [a.atleta_id],
+            atleta_id: a.atleta_id,
+            data_evento,
+            stato: "inviata",
+            inviata_at: adesso,
+          };
+          const { error: err_com } = await supabase.from("comunicazioni").insert(payload);
+          if (err_com) throw err_com;
+          inviate += 1;
+        }
+      }
+      return { blocco_id, inviate };
     },
-    onSuccess: invalidate,
+    onSuccess: () => {
+      invalidate();
+      qc.invalidateQueries({ queryKey: ["comunicazioni"] });
+    },
   });
 }
 
@@ -244,6 +289,8 @@ export function use_upsert_sessione() {
       specialita_id?: string | null;
       specialita_testo_libero?: string | null;
       note?: string | null;
+      pista?: string | null;
+      messaggio_atleti?: string | null;
     }) => {
       // XOR: mai entrambi valorizzati
       const usa_testo = !!input.specialita_testo_libero && !input.specialita_id;
@@ -255,6 +302,8 @@ export function use_upsert_sessione() {
         specialita_id: usa_testo ? null : input.specialita_id ?? null,
         specialita_testo_libero: usa_testo ? input.specialita_testo_libero : null,
         note: input.note ?? null,
+        pista: input.pista ?? null,
+        messaggio_atleti: input.messaggio_atleti ?? null,
       };
       if (input.id) {
         const { error } = await supabase.from("griglia_sessioni" as any).update(payload as any).eq("id", input.id);
@@ -345,20 +394,37 @@ export function use_rimuovi_istruttore_sessione() {
 export function use_upsert_specialita() {
   const invalidate = use_invalidate_griglia();
   return useMutation({
-    mutationFn: async (input: { id?: string; nome: string; ordine: number; attivo?: boolean }) => {
+    mutationFn: async (input: {
+      id?: string;
+      nome: string;
+      ordine: number;
+      attivo?: boolean;
+      descrizione_messaggio?: string | null;
+    }) => {
       const club_id = get_current_club_id();
       if (!club_id) throw new Error("Club non disponibile");
       if (input.id) {
         const { error } = await supabase
           .from("griglia_specialita" as any)
-          .update({ nome: input.nome, ordine: input.ordine, attivo: input.attivo ?? true } as any)
+          .update({
+            nome: input.nome,
+            ordine: input.ordine,
+            attivo: input.attivo ?? true,
+            descrizione_messaggio: input.descrizione_messaggio ?? null,
+          } as any)
           .eq("id", input.id);
         if (error) throw error;
         return input.id;
       }
       const { data, error } = await supabase
         .from("griglia_specialita" as any)
-        .insert({ club_id, nome: input.nome, ordine: input.ordine, attivo: input.attivo ?? true } as any)
+        .insert({
+          club_id,
+          nome: input.nome,
+          ordine: input.ordine,
+          attivo: input.attivo ?? true,
+          descrizione_messaggio: input.descrizione_messaggio ?? null,
+        } as any)
         .select("id")
         .single();
       if (error) throw error;

@@ -21,6 +21,7 @@ const SpecialitaManager: React.FC = () => {
 
   const [lista, set_lista] = useState<GrigliaSpecialita[]>([]);
   const [nuovo_nome, set_nuovo_nome] = useState("");
+  const [nuova_descrizione, set_nuova_descrizione] = useState("");
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -38,7 +39,15 @@ const SpecialitaManager: React.FC = () => {
     set_lista(nuova);
     try {
       await Promise.all(
-        nuova.map((s, idx) => upsert.mutateAsync({ id: s.id, nome: s.nome, ordine: idx + 1, attivo: s.attivo })),
+        nuova.map((s, idx) =>
+          upsert.mutateAsync({
+            id: s.id,
+            nome: s.nome,
+            ordine: idx + 1,
+            attivo: s.attivo,
+            descrizione_messaggio: s.descrizione_messaggio ?? null,
+          }),
+        ),
       );
       toast({ title: "Ordine aggiornato" });
     } catch (e: any) {
@@ -50,9 +59,30 @@ const SpecialitaManager: React.FC = () => {
     const nome = nuovo_nome.trim();
     if (!nome) return;
     try {
-      await upsert.mutateAsync({ nome, ordine: lista.length + 1, attivo: true });
+      await upsert.mutateAsync({
+        nome,
+        ordine: lista.length + 1,
+        attivo: true,
+        descrizione_messaggio: nuova_descrizione.trim() || null,
+      });
       set_nuovo_nome("");
+      set_nuova_descrizione("");
       toast({ title: "Specialità aggiunta" });
+    } catch (e: any) {
+      toast({ title: "Errore", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const salva_descrizione = async (s: GrigliaSpecialita, descrizione: string) => {
+    if ((s.descrizione_messaggio ?? "") === descrizione) return;
+    try {
+      await upsert.mutateAsync({
+        id: s.id,
+        nome: s.nome,
+        ordine: s.ordine,
+        attivo: s.attivo,
+        descrizione_messaggio: descrizione.trim() || null,
+      });
     } catch (e: any) {
       toast({ title: "Errore", description: e.message, variant: "destructive" });
     }
@@ -82,11 +112,19 @@ const SpecialitaManager: React.FC = () => {
           <div className="space-y-1.5">
             {lista.map((s) => (
               <SortableItem key={s.id} id={s.id}>
-                <div className="flex items-center justify-between gap-2 px-3 py-2 bg-muted/30 rounded-lg">
-                  <span className="text-sm truncate">{s.nome}</span>
-                  <Button variant="ghost" size="icon" onClick={() => rimuovi(s.id)} title="Elimina">
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
+                <div className="px-3 py-2 bg-muted/30 rounded-lg space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm truncate">{s.nome}</span>
+                    <Button variant="ghost" size="icon" onClick={() => rimuovi(s.id)} title="Elimina">
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
+                  <Input
+                    defaultValue={s.descrizione_messaggio ?? ""}
+                    onBlur={(e) => void salva_descrizione(s, e.target.value)}
+                    placeholder="Descrizione per i messaggi (es. lavoro su equilibrio e velocità)"
+                    className="h-7 text-xs"
+                  />
                 </div>
               </SortableItem>
             ))}
@@ -97,7 +135,8 @@ const SpecialitaManager: React.FC = () => {
         </SortableContext>
       </DndContext>
 
-      <div className="flex items-center gap-2 pt-2 border-t">
+      <div className="pt-2 border-t space-y-2">
+        <div className="flex items-center gap-2">
         <Input
           value={nuovo_nome}
           onChange={(e) => set_nuovo_nome(e.target.value)}
@@ -112,6 +151,13 @@ const SpecialitaManager: React.FC = () => {
         <Button onClick={aggiungi} disabled={!nuovo_nome.trim()}>
           <Plus className="w-4 h-4 mr-1" /> Aggiungi
         </Button>
+        </div>
+        <Input
+          value={nuova_descrizione}
+          onChange={(e) => set_nuova_descrizione(e.target.value)}
+          placeholder="Descrizione per i messaggi (es. lavoro su equilibrio e velocità)"
+          className="h-8 text-xs"
+        />
       </div>
     </div>
   );
