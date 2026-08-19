@@ -74,13 +74,25 @@ const SuperAdminUtentiPage: React.FC = () => {
   };
 
   const cambia_ruolo = async (u: any, nuovo: string) => {
-    const { error } = await supabase.functions.invoke("superadmin-utenti", {
+    const { data, error } = await supabase.functions.invoke("superadmin-utenti", {
       body: { action: "cambia_ruolo", user_id: u.user_id, ruolo: nuovo },
     });
-    if (error) { toast.error(error.message); return; }
+    const err = (data as any)?.error;
+    if (err || error) { toast.error((data as any)?.message ?? error?.message ?? "Errore"); return; }
     toast.success("Ruolo aggiornato");
     load();
   };
+
+  const cambia_club = async (u: any, nuovo: string) => {
+    const { data, error } = await supabase.functions.invoke("superadmin-utenti", {
+      body: { action: "cambia_club", user_id: u.user_id, club_id: nuovo === "none" ? null : nuovo },
+    });
+    const err = (data as any)?.error;
+    if (err || error) { toast.error((data as any)?.message ?? error?.message ?? "Errore"); return; }
+    toast.success("Club aggiornato");
+    load();
+  };
+
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-4">
