@@ -80,14 +80,46 @@ const PillolaDraggable: React.FC<{
   );
 };
 
+// ─── Intestazione gruppo (livello) draggable ───────────────
+const GruppoDraggable: React.FC<{
+  drag_id: string;
+  livello: string;
+  atleta_ids: string[];
+}> = ({ drag_id, livello, atleta_ids }) => {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: drag_id,
+    data: { tipo: "gruppo", atleta_ids },
+  });
+  return (
+    <div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      title={`Trascina tutto il gruppo ${livello} (${atleta_ids.length})`}
+      className={cn(
+        "flex items-center gap-1.5 px-2 py-1 rounded-md border border-dashed border-muted-foreground/40 bg-muted/30",
+        "text-[11px] font-semibold uppercase tracking-wide text-muted-foreground",
+        "cursor-grab active:cursor-grabbing select-none",
+        isDragging && "opacity-40",
+      )}
+    >
+      <GripVertical className="w-3 h-3 shrink-0" />
+      <span className="truncate">{livello}</span>
+      <span className="ml-auto text-[10px] font-normal">· {atleta_ids.length}</span>
+    </div>
+  );
+};
+
 // ─── Box pool sorgente ─────────────────────────────────────
 const PoolBox: React.FC<{
   titolo: string;
-  items: { id: string; nome: string; cognome: string }[];
+  items: { id: string; nome: string; cognome: string; livello_attuale?: string | null }[];
   prefisso: "atleta" | "istruttore";
   variante_istruttori?: boolean;
   colore?: string | null;
-}> = ({ titolo, items, prefisso, variante_istruttori, colore }) => {
+  box_id?: string;
+  neutro?: boolean;
+}> = ({ titolo, items, prefisso, variante_istruttori, colore, box_id, neutro }) => {
   const [q, set_q] = useState("");
   const filtrati = useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -95,17 +127,33 @@ const PoolBox: React.FC<{
     return items.filter((i) => `${i.nome} ${i.cognome}`.toLowerCase().includes(term));
   }, [items, q]);
 
+  // Raggruppamento per livello (solo per gli atleti)
+  const gruppi = useMemo(() => {
+    if (prefisso !== "atleta") return [];
+    const map = new Map<string, typeof filtrati>();
+    for (const i of filtrati) {
+      const liv = (i.livello_attuale || "Senza livello") as string;
+      map.set(liv, [...(map.get(liv) ?? []), i]);
+    }
+    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0], "it"));
+  }, [filtrati, prefisso]);
+
   return (
     <div
       className={cn(
         "rounded-xl border p-3 flex flex-col gap-2",
-        variante_istruttori ? "bg-primary/5 border-primary/30" : "bg-muted/20 border-border",
+        variante_istruttori
+          ? "bg-primary/5 border-primary/30"
+          : neutro
+            ? "bg-muted/40 border-dashed border-muted-foreground/40"
+            : "bg-muted/20 border-border",
       )}
     >
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-semibold flex items-center gap-1.5">
           {variante_istruttori && <GraduationCap className="w-4 h-4 text-primary" />}
-          {!variante_istruttori && colore && (
+          {!variante_istruttori && neutro && <HelpCircle className="w-4 h-4 text-muted-foreground" />}
+          {!variante_istruttori && !neutro && colore && (
             <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ backgroundColor: colore }} />
           )}
           <span className="truncate">{titolo}</span>
@@ -119,20 +167,41 @@ const PoolBox: React.FC<{
         className="h-7 text-xs"
       />
       <div className="flex flex-col gap-1.5 max-h-56 overflow-y-auto pr-1">
-        {filtrati.map((i) => (
-          <PillolaDraggable
-            key={i.id}
-            drag_id={`${prefisso}:${i.id}`}
-            label={`${i.nome} ${i.cognome}`}
-            sigla={iniziali(i.nome, i.cognome)}
-            is_istruttore={prefisso === "istruttore"}
-          />
-        ))}
+        {prefisso === "atleta"
+          ? gruppi.map(([livello, membri]) => (
+              <div key={livello} className="flex flex-col gap-1">
+                <GruppoDraggable
+                  drag_id={`gruppo:${box_id ?? titolo}:${livello}`}
+                  livello={livello}
+                  atleta_ids={membri.map((m) => m.id)}
+                />
+                <div className="flex flex-col gap-1 pl-2 border-l border-border/60">
+                  {membri.map((i) => (
+                    <PillolaDraggable
+                      key={i.id}
+                      drag_id={`atleta:${i.id}`}
+                      label={`${i.nome} ${i.cognome}`}
+                      sigla={iniziali(i.nome, i.cognome)}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))
+          : filtrati.map((i) => (
+              <PillolaDraggable
+                key={i.id}
+                drag_id={`istruttore:${i.id}`}
+                label={`${i.nome} ${i.cognome}`}
+                sigla={iniziali(i.nome, i.cognome)}
+                is_istruttore
+              />
+            ))}
         {filtrati.length === 0 && <p className="text-xs text-muted-foreground py-1">Nessun risultato.</p>}
       </div>
     </div>
   );
 };
+
 
 // ─── Box sessione (droppable) ──────────────────────────────
 const SessioneBox: React.FC<{
