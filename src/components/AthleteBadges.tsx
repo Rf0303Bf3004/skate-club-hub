@@ -1,6 +1,7 @@
 import React from "react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { use_ragioni_sociali } from "@/hooks/use-ragioni-sociali";
+import { VERDE_ESTERNI } from "@/components/ProvenienzaLegenda";
 
 /**
  * Mini-pillole testuali FED / AGO per atleti.
