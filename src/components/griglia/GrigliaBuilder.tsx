@@ -155,17 +155,31 @@ const GruppoDraggable: React.FC<{
   livello: string;
   atleta_ids: string[];
   colore?: string | null;
-}> = ({ drag_id, livello, atleta_ids, colore }) => {
+  aperto?: boolean;
+  on_toggle?: () => void;
+}> = ({ drag_id, livello, atleta_ids, colore, aperto, on_toggle }) => {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: drag_id,
     data: { tipo: "gruppo", atleta_ids },
   });
+  const down_ref = React.useRef<{ x: number; y: number } | null>(null);
   return (
     <div
       ref={setNodeRef}
       {...attributes}
       {...listeners}
-      title={`Trascina tutto il gruppo ${livello} (${atleta_ids.length})`}
+      onPointerDown={(e) => {
+        down_ref.current = { x: e.clientX, y: e.clientY };
+        listeners?.onPointerDown?.(e);
+      }}
+      onClick={(e) => {
+        const d = down_ref.current;
+        down_ref.current = null;
+        if (!d) return;
+        const dist = Math.hypot(e.clientX - d.x, e.clientY - d.y);
+        if (dist < 5) on_toggle?.();
+      }}
+      title={`Trascina tutto il gruppo ${livello} (${atleta_ids.length}) · clicca per aprire/chiudere`}
       className={cn(
         "flex items-center gap-1.5 px-2 py-1 rounded-md border border-dashed border-muted-foreground/40 bg-muted/30",
         "text-[11px] font-semibold uppercase tracking-wide text-muted-foreground",
@@ -175,11 +189,17 @@ const GruppoDraggable: React.FC<{
       style={colore ? { borderLeft: `3px solid ${colore}`, backgroundColor: `${colore}1A` } : undefined}
     >
       <GripVertical className="w-3 h-3 shrink-0" />
+      {aperto ? (
+        <ChevronDown className="w-3 h-3 shrink-0" />
+      ) : (
+        <ChevronRight className="w-3 h-3 shrink-0" />
+      )}
       <span className="truncate">{livello}</span>
       <span className="ml-auto text-[10px] font-normal">· {atleta_ids.length}</span>
     </div>
   );
 };
+
 
 // ─── Box pool sorgente ─────────────────────────────────────
 const PoolBox: React.FC<{
