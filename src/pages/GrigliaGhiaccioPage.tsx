@@ -176,33 +176,39 @@ const GrigliaGhiaccioPage: React.FC = () => {
 
   return (
     <div className="p-4 md:p-6 space-y-5 print:hidden">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <LayoutGrid className="w-6 h-6 text-primary" /> Griglia Ghiaccio
-          </h1>
-          <p className="text-sm text-muted-foreground capitalize">{label_data(data_sel)}</p>
-        </div>
-        <div className="flex items-end gap-2">
-          <div className="space-y-1">
-            <Label className="text-xs">Data</Label>
-            <Input
-              type="date"
-              value={data_sel}
-              onChange={(e) => set_data_sel(e.target.value)}
-              className="h-9 w-[11rem]"
-            />
+      <div className="sticky top-0 z-30 -mx-4 md:-mx-6 px-4 md:px-6 py-3 bg-background/95 backdrop-blur border-b">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+              <LayoutGrid className="w-4 h-4 text-primary" /> Griglia Ghiaccio
+            </h1>
+            <div className="mt-1 inline-flex items-center rounded-xl bg-primary/10 border border-primary/30 px-4 py-2">
+              <span className="text-xl md:text-3xl font-extrabold capitalize text-primary leading-tight">
+                {label_data(data_sel)}
+              </span>
+            </div>
           </div>
-          {is_editor && (
-            <Button variant="outline" onClick={() => set_riepilogo_open(true)}>
-              <Printer className="w-4 h-4 mr-1" /> Stampa riepilogo istruttori
-            </Button>
-          )}
-          {is_editor && (
-            <Button onClick={() => set_modal_open(true)}>
-              <Plus className="w-4 h-4 mr-1" /> Nuovo blocco
-            </Button>
-          )}
+          <div className="flex items-end gap-2">
+            <div className="space-y-1">
+              <Label className="text-xs">Data</Label>
+              <Input
+                type="date"
+                value={data_sel}
+                onChange={(e) => set_data_sel(e.target.value)}
+                className="h-9 w-[11rem]"
+              />
+            </div>
+            {is_editor && (
+              <Button variant="outline" onClick={() => set_riepilogo_open(true)}>
+                <Printer className="w-4 h-4 mr-1" /> Stampa riepilogo istruttori
+              </Button>
+            )}
+            {is_editor && (
+              <Button onClick={() => set_modal_open(true)}>
+                <Plus className="w-4 h-4 mr-1" /> Nuovo blocco
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
