@@ -1,13 +1,18 @@
 import React from "react";
 import { createPortal } from "react-dom";
 
+export interface AtletaStampa {
+  nome: string;
+  provenienza: string | null;
+}
+
 export interface RigaSessioneStampa {
   ora_inizio: string;
   ora_fine: string;
   pista: string | null;
   specialita: string;
   specialita_descrizione: string | null;
-  atleti: string[];
+  atleti: AtletaStampa[];
 }
 
 export interface IstruttoreStampa {
