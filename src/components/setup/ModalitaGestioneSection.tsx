@@ -86,7 +86,7 @@ export const ModalitaGestioneSection: React.FC<Props> = ({
 
       <div className="space-y-1.5 max-w-md">
         <div className="flex items-center justify-between">
-          <Label className="text-xs text-muted-foreground">Ghiaccio</Label>
+          <Label className="text-xs text-muted-foreground">{label}</Label>
           {just_saved && (
             <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600">
               <Check className="w-3.5 h-3.5" />
@@ -103,14 +103,18 @@ export const ModalitaGestioneSection: React.FC<Props> = ({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="standard">Standard (corsi settimanali ricorrenti)</SelectItem>
-            <SelectItem value="griglia_giornaliera">Griglia giornaliera (Tailor Made)</SelectItem>
+            {opzioni.map((o) => (
+              <SelectItem key={o.value} value={o.value}>
+                {o.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <p className="text-xs text-muted-foreground">
-          Cambia il modo in cui questo club gestisce l'area Ghiaccio. La modalità Standard resta quella
+          Cambia il modo in cui questo club gestisce l'area {label}. La modalità Standard resta quella
           predefinita e consigliata per la maggior parte dei club.
         </p>
+
         <p className="text-xs text-amber-600">
           Il cambio si applica e si salva immediatamente alla selezione — non serve il pulsante "Salva modifiche" qui sopra.
         </p>
