@@ -251,6 +251,8 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   const { data: atleti = [] } = use_atleti();
   const { data: istruttori = [] } = use_istruttori();
   const { data: specialita = [] } = use_griglia_specialita();
+  const { data: ragioni_sociali = [] } = use_ragioni_sociali();
+  const { modalita: modalita_fatturazione } = useModalitaArea("fatturazione");
 
   const upsert_sessione = use_upsert_sessione();
   const elimina_sessione = use_elimina_sessione();
