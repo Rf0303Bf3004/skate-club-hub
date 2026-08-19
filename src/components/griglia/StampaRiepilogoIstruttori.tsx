@@ -43,7 +43,10 @@ const StampaRiepilogoIstruttori: React.FC<Props> = ({ istruttori, data_label }) 
       {s.atleti.length > 0 ? (
         <ul className="mt-1 ml-6 list-disc text-[15pt] leading-relaxed">
           {s.atleti.map((a, i) => (
-            <li key={i}>{a}</li>
+            <li key={i}>
+              {a.nome}
+              {a.provenienza ? ` — ${a.provenienza}` : ""}
+            </li>
           ))}
         </ul>
       ) : (
