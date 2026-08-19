@@ -561,8 +561,6 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
         licenza_sis_validita_da: form.licenza_sis_validita_da || null,
         licenza_sis_validita_a: form.licenza_sis_validita_a || null,
         atleta_federazione: is_carriera_attiva ? form.atleta_federazione : false,
-        atleta_club: !!form.atleta_club,
-        atleta_bmetod: !!form.atleta_bmetod,
         atleta_esterno: !!form.atleta_esterno,
         ragione_sociale_id: form.ragione_sociale_id || null,
         ragione_sociale_listino_id: form.ragione_sociale_listino_id || null,
