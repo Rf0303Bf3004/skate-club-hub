@@ -84,7 +84,8 @@ const PoolBox: React.FC<{
   items: { id: string; nome: string; cognome: string }[];
   prefisso: "atleta" | "istruttore";
   variante_istruttori?: boolean;
-}> = ({ titolo, items, prefisso, variante_istruttori }) => {
+  colore?: string | null;
+}> = ({ titolo, items, prefisso, variante_istruttori, colore }) => {
   const [q, set_q] = useState("");
   const filtrati = useMemo(() => {
     const term = q.trim().toLowerCase();
