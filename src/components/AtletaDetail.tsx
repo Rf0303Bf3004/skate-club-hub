@@ -1,4 +1,5 @@
 import FatturazioneAtletaFields from "@/components/atleti/FatturazioneAtletaFields";
+import { use_ragioni_sociali } from "@/hooks/use-ragioni-sociali";
 import React, { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
