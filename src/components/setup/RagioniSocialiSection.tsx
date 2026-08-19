@@ -387,7 +387,52 @@ const RagioneSocialeDialog: React.FC<{
             />
             Attiva
           </label>
+
+          {/* Fatturazione */}
+          <div className="space-y-3 rounded-lg border border-border/60 p-3">
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Fatturazione</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs text-muted-foreground">Prefisso numerazione fatture</Label>
+                <Input
+                  value={form.numero_fattura_prefisso}
+                  onChange={(e) => set_val("numero_fattura_prefisso", e.target.value)}
+                  placeholder="es. BM-"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Prossimo numero fattura</Label>
+                <p className="mt-2 text-sm font-medium tabular-nums text-foreground">
+                  {ragione?.prossimo_numero_fattura ?? 1}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start justify-between gap-3 pt-1">
+              <div className="space-y-0.5">
+                <p className="text-sm font-medium text-foreground">Accesso dedicato</p>
+                <p className="text-xs text-muted-foreground">
+                  Se attivo, solo gli utenti assegnati qui sotto potranno vedere e gestire le fatture di questa
+                  ragione sociale. Se disattivo, l'accesso è condiviso con segreteria/admin del club come oggi.
+                </p>
+              </div>
+              <Switch
+                checked={!!form.accesso_dedicato}
+                onCheckedChange={(v) => set_val("accesso_dedicato", v)}
+              />
+            </div>
+
+            {form.accesso_dedicato &&
+              (ragione?.id ? (
+                <UtentiAccessoSubSection ragione_sociale_id={ragione.id} />
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Salva prima la ragione sociale per assegnare gli utenti.
+                </p>
+              ))}
+          </div>
         </div>
+
 
         <DialogFooter>
           <Button variant="outline" onClick={on_close}>
