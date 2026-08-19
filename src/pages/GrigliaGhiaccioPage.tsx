@@ -12,6 +12,11 @@ import {
 } from "@/hooks/use-griglia-ghiaccio";
 import GrigliaBuilder from "@/components/griglia/GrigliaBuilder";
 import ProvenienzaLegenda from "@/components/ProvenienzaLegenda";
+import StampaRiepilogoIstruttori, {
+  type IstruttoreStampa,
+  type RigaSessioneStampa,
+} from "@/components/griglia/StampaRiepilogoIstruttori";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -57,28 +62,45 @@ const GrigliaGhiaccioPage: React.FC = () => {
     return l ? `Griglia di ${l.charAt(0).toUpperCase()}${l.slice(1)}` : "Griglia";
   }, [data_sel]);
 
-  const riepilogo_istruttori = useMemo(() => {
-    const map = new Map<string, { nome: string; righe: { ora: number; testo: string }[] }>();
+  const riepilogo_istruttori = useMemo<IstruttoreStampa[]>(() => {
+    const map = new Map<string, IstruttoreStampa>();
     for (const b of blocchi) {
       for (const s of b.sessioni ?? []) {
-        const spec = s.specialita_nome || s.specialita_testo_libero || "Allenamento";
-        const desc = s.specialita_descrizione ? ` (${s.specialita_descrizione})` : "";
-        const pista = s.pista ? `${s.pista} ` : "";
-        const atleti = (s.atleti ?? []).map((a) => `${a.nome} ${a.cognome}`.trim()).join(", ");
-        const testo = `${hhmm(s.ora_inizio)}–${hhmm(s.ora_fine)} ${pista}${spec}${desc} — Atleti: ${atleti || "—"}`;
-        const ora = Number(hhmm(s.ora_inizio).replace(":", ""));
+        const riga: RigaSessioneStampa = {
+          ora_inizio: hhmm(s.ora_inizio),
+          ora_fine: hhmm(s.ora_fine),
+          pista: s.pista ?? null,
+          specialita: s.specialita_nome || s.specialita_testo_libero || "Allenamento",
+          specialita_descrizione: s.specialita_descrizione ?? null,
+          atleti: (s.atleti ?? []).map((a) => `${a.nome} ${a.cognome}`.trim()),
+        };
         for (const i of s.istruttori ?? []) {
           const nome = `${i.nome} ${i.cognome}`.trim() || i.istruttore_id.slice(0, 8);
-          const cur = map.get(i.istruttore_id) ?? { nome, righe: [] };
-          cur.righe.push({ ora, testo });
+          const cur = map.get(i.istruttore_id) ?? { istruttore_id: i.istruttore_id, nome, sessioni: [] };
+          cur.sessioni.push(riga);
           map.set(i.istruttore_id, cur);
         }
       }
     }
     return Array.from(map.values())
-      .map((v) => ({ ...v, righe: v.righe.sort((a, b) => a.ora - b.ora) }))
+      .map((v) => ({
+        ...v,
+        sessioni: v.sessioni.sort((a, b) => a.ora_inizio.localeCompare(b.ora_inizio)),
+      }))
       .sort((a, b) => a.nome.localeCompare(b.nome, "it"));
   }, [blocchi]);
+
+  const stampa = () => {
+    document.body.classList.add("stampa-griglia");
+    const cleanup = () => {
+      document.body.classList.remove("stampa-griglia");
+      window.removeEventListener("afterprint", cleanup);
+    };
+    window.addEventListener("afterprint", cleanup);
+    window.print();
+    setTimeout(cleanup, 1000);
+  };
+
 
   const toggle_espanso = (id: string) =>
     set_espansi((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -311,8 +333,8 @@ const GrigliaGhiaccioPage: React.FC = () => {
       </Dialog>
 
       <Dialog open={riepilogo_open} onOpenChange={set_riepilogo_open}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto print:static print:max-w-none print:max-h-none print:overflow-visible print:border-0 print:shadow-none">
-          <DialogHeader className="print:hidden">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
             <DialogTitle>Riepilogo istruttori</DialogTitle>
           </DialogHeader>
           <div className="space-y-5">
@@ -320,29 +342,39 @@ const GrigliaGhiaccioPage: React.FC = () => {
               <p className="text-sm text-muted-foreground">Nessun istruttore assegnato per questa data.</p>
             )}
             {riepilogo_istruttori.map((i) => (
-              <div key={i.nome} className="space-y-1 break-inside-avoid">
+              <div key={i.istruttore_id} className="space-y-1">
                 <h3 className="font-semibold">{i.nome}</h3>
                 <p className="text-xs text-muted-foreground capitalize">{label_data(data_sel)}</p>
-                <ul className="text-sm space-y-1 mt-1">
-                  {i.righe.map((r, idx) => (
-                    <li key={idx}>{r.testo}</li>
+                <ul className="text-sm space-y-2 mt-1">
+                  {i.sessioni.map((s, idx) => (
+                    <li key={idx}>
+                      <span className="font-medium">
+                        {s.ora_inizio}–{s.ora_fine}
+                      </span>
+                      {s.pista ? ` — ${s.pista}` : ""} — {s.specialita}
+                      {s.specialita_descrizione ? ` (${s.specialita_descrizione})` : ""}
+                      <div className="text-muted-foreground">Atleti: {s.atleti.join(", ") || "—"}</div>
+                    </li>
                   ))}
                 </ul>
               </div>
             ))}
           </div>
-          <DialogFooter className="print:hidden">
+          <DialogFooter>
             <Button variant="outline" onClick={() => set_riepilogo_open(false)}>
               Chiudi
             </Button>
-            <Button onClick={() => window.print()}>
+            <Button onClick={stampa}>
               <Printer className="w-4 h-4 mr-1" /> Stampa
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <StampaRiepilogoIstruttori istruttori={riepilogo_istruttori} data_label={label_data(data_sel)} />
     </div>
   );
 };
 
 export default GrigliaGhiaccioPage;
+
