@@ -36,8 +36,8 @@ const RuoliPermessiPage: React.FC = () => {
   const [saving, set_saving] = useState(false);
   const [matrix, set_matrix] = useState<Record<string, Record<string, boolean>>>({});
 
-  // Solo admin/superadmin possono accedere a questa pagina
-  if (session && !is_admin_like(session.ruolo)) {
+  const puo_gestire_ruoli = is_admin_like(session?.ruolo) || session?.ruolo === "presidente";
+  if (session && !puo_gestire_ruoli) {
     return <Navigate to="/" replace />;
   }
 
