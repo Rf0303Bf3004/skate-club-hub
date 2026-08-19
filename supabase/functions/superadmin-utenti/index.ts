@@ -17,6 +17,8 @@ function json(body: unknown, status = 200) {
   });
 }
 
+const RUOLI_VALIDI = ["superadmin", "admin", "presidente", "vicepresidente", "segreteria", "dt", "istruttore", "aiuto_monitore"];
+
 function gen_password(len = 14): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
   const sym = "!@#$%&*?";
