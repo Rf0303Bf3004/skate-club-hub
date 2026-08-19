@@ -17,6 +17,7 @@ export interface GrigliaSessioneAtleta {
   atleta_id: string;
   nome: string;
   cognome: string;
+  provenienza: string | null;
 }
 
 export interface GrigliaSessioneIstruttore {
