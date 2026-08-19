@@ -204,7 +204,7 @@ const SuperAdminUtentiPage: React.FC = () => {
         </div>
       )}
 
-      <NuovoSuperadminDialog open={nuovo_open} on_close={() => set_nuovo_open(false)} on_done={(pwd, email) => {
+      <NuovoUtenteDialog open={nuovo_open} clubs={all_clubs} on_close={() => set_nuovo_open(false)} on_done={(pwd, email) => {
         set_nuovo_open(false);
         set_pwd_dialog({ open: true, pwd, user: email });
         load();
