@@ -117,7 +117,7 @@ const SuperAdminUtentiPage: React.FC = () => {
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={load}><RefreshCcw className="w-4 h-4 mr-1" />Aggiorna</Button>
           <Button className="bg-purple-600 hover:bg-purple-700" size="sm" onClick={() => set_nuovo_open(true)}>
-            <ShieldPlus className="w-4 h-4 mr-1" />{t("utenti.nuovo_superadmin", { defaultValue: "Nuovo superadmin" })}
+            <ShieldPlus className="w-4 h-4 mr-1" />Nuovo utente
           </Button>
         </div>
       </div>
