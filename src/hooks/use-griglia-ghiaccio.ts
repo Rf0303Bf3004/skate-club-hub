@@ -243,7 +243,7 @@ export function use_pubblica_blocco() {
             titolo: "Convocazione allenamento",
             testo,
             corpo: testo,
-            tipo: "evento",
+            tipo: "convocazione",
             tipo_destinatari: "atleti",
             atleti_ids: [a.atleta_id],
             atleta_id: a.atleta_id,
