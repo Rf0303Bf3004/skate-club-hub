@@ -2154,6 +2154,7 @@ export type Database = {
           pagata: boolean | null
           pdf_url: string | null
           periodo: string | null
+          ragione_sociale_id: string | null
           riferimento_id: string | null
           righe: Json | null
           sconto_causale: string | null
@@ -2189,6 +2190,7 @@ export type Database = {
           pagata?: boolean | null
           pdf_url?: string | null
           periodo?: string | null
+          ragione_sociale_id?: string | null
           riferimento_id?: string | null
           righe?: Json | null
           sconto_causale?: string | null
@@ -2224,6 +2226,7 @@ export type Database = {
           pagata?: boolean | null
           pdf_url?: string | null
           periodo?: string | null
+          ragione_sociale_id?: string | null
           riferimento_id?: string | null
           righe?: Json | null
           sconto_causale?: string | null
@@ -2261,6 +2264,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "kpi_pitch_sponsor"
             referencedColumns: ["club_id"]
+          },
+          {
+            foreignKeyName: "fatture_ragione_sociale_id_fkey"
+            columns: ["ragione_sociale_id"]
+            isOneToOne: false
+            referencedRelation: "ragioni_sociali"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -4161,6 +4171,7 @@ export type Database = {
       }
       ragioni_sociali: {
         Row: {
+          accesso_dedicato: boolean
           attivo: boolean
           banca: string | null
           cap: string | null
@@ -4172,15 +4183,19 @@ export type Database = {
           id: string
           indirizzo: string | null
           intestatario_iban: string | null
+          layout_config: Json
           logo_url: string | null
           nome: string
+          numero_fattura_prefisso: string | null
           numero_iva: string | null
           ordine: number
           paese_iso: string
           partita_iva: string | null
+          prossimo_numero_fattura: number
           updated_at: string
         }
         Insert: {
+          accesso_dedicato?: boolean
           attivo?: boolean
           banca?: string | null
           cap?: string | null
@@ -4192,15 +4207,19 @@ export type Database = {
           id?: string
           indirizzo?: string | null
           intestatario_iban?: string | null
+          layout_config?: Json
           logo_url?: string | null
           nome: string
+          numero_fattura_prefisso?: string | null
           numero_iva?: string | null
           ordine?: number
           paese_iso?: string
           partita_iva?: string | null
+          prossimo_numero_fattura?: number
           updated_at?: string
         }
         Update: {
+          accesso_dedicato?: boolean
           attivo?: boolean
           banca?: string | null
           cap?: string | null
@@ -4212,12 +4231,15 @@ export type Database = {
           id?: string
           indirizzo?: string | null
           intestatario_iban?: string | null
+          layout_config?: Json
           logo_url?: string | null
           nome?: string
+          numero_fattura_prefisso?: string | null
           numero_iva?: string | null
           ordine?: number
           paese_iso?: string
           partita_iva?: string | null
+          prossimo_numero_fattura?: number
           updated_at?: string
         }
         Relationships: [
@@ -4277,6 +4299,42 @@ export type Database = {
             columns: ["ragione_sociale_id"]
             isOneToOne: false
             referencedRelation: "ragioni_sociali"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ragioni_sociali_utenti: {
+        Row: {
+          created_at: string
+          id: string
+          ragione_sociale_id: string
+          utente_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ragione_sociale_id: string
+          utente_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ragione_sociale_id?: string
+          utente_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ragioni_sociali_utenti_ragione_sociale_id_fkey"
+            columns: ["ragione_sociale_id"]
+            isOneToOne: false
+            referencedRelation: "ragioni_sociali"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ragioni_sociali_utenti_utente_id_fkey"
+            columns: ["utente_id"]
+            isOneToOne: false
+            referencedRelation: "utenti_club"
             referencedColumns: ["id"]
           },
         ]

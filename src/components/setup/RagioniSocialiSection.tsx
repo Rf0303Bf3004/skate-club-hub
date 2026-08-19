@@ -9,8 +9,12 @@ import {
   use_listini_ragione_sociale,
   use_upsert_listino,
   use_elimina_listino,
+  use_utenti_club_lite,
+  use_utenti_ragione_sociale,
+  use_toggle_utente_ragione_sociale,
   type RagioneSociale,
 } from "@/hooks/use-ragioni-sociali";
+import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -147,6 +151,62 @@ const ListiniSubSection: React.FC<{ ragione_sociale_id: string }> = ({ ragione_s
   );
 };
 
+// ─── Utenti con accesso dedicato ───────────────────────────
+const UtentiAccessoSubSection: React.FC<{ ragione_sociale_id: string }> = ({ ragione_sociale_id }) => {
+  const { data: utenti = [], isLoading } = use_utenti_club_lite();
+  const { data: assegnati = [] } = use_utenti_ragione_sociale(ragione_sociale_id);
+  const toggle = use_toggle_utente_ragione_sociale();
+
+  return (
+    <div className="space-y-2 rounded-lg bg-muted/30 p-3">
+      <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Utenti con accesso dedicato</p>
+      {isLoading ? (
+        <p className="text-xs text-muted-foreground">Caricamento…</p>
+      ) : utenti.length === 0 ? (
+        <p className="text-xs text-muted-foreground">Nessun utente del club disponibile.</p>
+      ) : (
+        <div className="space-y-1">
+          {utenti.map((u) => {
+            const checked = assegnati.includes(u.id);
+            return (
+              <label
+                key={u.id}
+                className="flex items-center gap-2 rounded-md bg-background px-3 py-2 text-sm cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 accent-primary"
+                  checked={checked}
+                  disabled={toggle.isPending}
+                  onChange={async (e) => {
+                    try {
+                      await toggle.mutateAsync({
+                        ragione_sociale_id,
+                        utente_id: u.id,
+                        assegna: e.target.checked,
+                      });
+                    } catch (err: any) {
+                      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+                    }
+                  }}
+                />
+                <span className="font-medium text-foreground">
+                  {[u.nome, u.cognome].filter(Boolean).join(" ") || u.id.slice(0, 8)}
+                </span>
+                {u.ruolo && (
+                  <Badge variant="outline" className="text-[10px]">
+                    {u.ruolo}
+                  </Badge>
+                )}
+              </label>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ─── Dialog anagrafica ─────────────────────────────────────
 const empty_form = {
   nome: "",
@@ -162,6 +222,8 @@ const empty_form = {
   logo_url: "",
   colore_primario: "#3B82F6",
   attivo: true,
+  accesso_dedicato: false,
+  numero_fattura_prefisso: "",
 };
 
 const RagioneSocialeDialog: React.FC<{
@@ -172,6 +234,7 @@ const RagioneSocialeDialog: React.FC<{
   const upsert = use_upsert_ragione_sociale();
   const [form, set_form] = React.useState<Record<string, any>>(empty_form);
   const [uploading, set_uploading] = React.useState(false);
+
 
   React.useEffect(() => {
     if (!open) return;
@@ -232,6 +295,8 @@ const RagioneSocialeDialog: React.FC<{
         logo_url: form.logo_url || null,
         colore_primario: form.colore_primario || "#3B82F6",
         attivo: !!form.attivo,
+        accesso_dedicato: !!form.accesso_dedicato,
+        numero_fattura_prefisso: form.numero_fattura_prefisso || null,
       } as any);
       toast({ title: "Ragione sociale salvata" });
       on_close();
@@ -322,7 +387,52 @@ const RagioneSocialeDialog: React.FC<{
             />
             Attiva
           </label>
+
+          {/* Fatturazione */}
+          <div className="space-y-3 rounded-lg border border-border/60 p-3">
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Fatturazione</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs text-muted-foreground">Prefisso numerazione fatture</Label>
+                <Input
+                  value={form.numero_fattura_prefisso}
+                  onChange={(e) => set_val("numero_fattura_prefisso", e.target.value)}
+                  placeholder="es. BM-"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Prossimo numero fattura</Label>
+                <p className="mt-2 text-sm font-medium tabular-nums text-foreground">
+                  {ragione?.prossimo_numero_fattura ?? 1}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start justify-between gap-3 pt-1">
+              <div className="space-y-0.5">
+                <p className="text-sm font-medium text-foreground">Accesso dedicato</p>
+                <p className="text-xs text-muted-foreground">
+                  Se attivo, solo gli utenti assegnati qui sotto potranno vedere e gestire le fatture di questa
+                  ragione sociale. Se disattivo, l'accesso è condiviso con segreteria/admin del club come oggi.
+                </p>
+              </div>
+              <Switch
+                checked={!!form.accesso_dedicato}
+                onCheckedChange={(v) => set_val("accesso_dedicato", v)}
+              />
+            </div>
+
+            {form.accesso_dedicato &&
+              (ragione?.id ? (
+                <UtentiAccessoSubSection ragione_sociale_id={ragione.id} />
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Salva prima la ragione sociale per assegnare gli utenti.
+                </p>
+              ))}
+          </div>
         </div>
+
 
         <DialogFooter>
           <Button variant="outline" onClick={on_close}>
