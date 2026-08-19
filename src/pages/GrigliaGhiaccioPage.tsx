@@ -72,7 +72,10 @@ const GrigliaGhiaccioPage: React.FC = () => {
           pista: s.pista ?? null,
           specialita: s.specialita_nome || s.specialita_testo_libero || "Allenamento",
           specialita_descrizione: s.specialita_descrizione ?? null,
-          atleti: (s.atleti ?? []).map((a) => `${a.nome} ${a.cognome}`.trim()),
+          atleti: (s.atleti ?? []).map((a) => ({
+            nome: `${a.nome} ${a.cognome}`.trim(),
+            provenienza: a.provenienza ?? null,
+          })),
         };
         for (const i of s.istruttori ?? []) {
           const nome = `${i.nome} ${i.cognome}`.trim() || i.istruttore_id.slice(0, 8);
@@ -353,7 +356,12 @@ const GrigliaGhiaccioPage: React.FC = () => {
                       </span>
                       {s.pista ? ` — ${s.pista}` : ""} — {s.specialita}
                       {s.specialita_descrizione ? ` (${s.specialita_descrizione})` : ""}
-                      <div className="text-muted-foreground">Atleti: {s.atleti.join(", ") || "—"}</div>
+                      <div className="text-muted-foreground">
+                        Atleti:{" "}
+                        {s.atleti
+                          .map((a) => (a.provenienza ? `${a.nome} — ${a.provenienza}` : a.nome))
+                          .join(", ") || "—"}
+                      </div>
                     </li>
                   ))}
                 </ul>
