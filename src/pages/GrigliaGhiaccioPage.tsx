@@ -57,28 +57,45 @@ const GrigliaGhiaccioPage: React.FC = () => {
     return l ? `Griglia di ${l.charAt(0).toUpperCase()}${l.slice(1)}` : "Griglia";
   }, [data_sel]);
 
-  const riepilogo_istruttori = useMemo(() => {
-    const map = new Map<string, { nome: string; righe: { ora: number; testo: string }[] }>();
+  const riepilogo_istruttori = useMemo<IstruttoreStampa[]>(() => {
+    const map = new Map<string, IstruttoreStampa>();
     for (const b of blocchi) {
       for (const s of b.sessioni ?? []) {
-        const spec = s.specialita_nome || s.specialita_testo_libero || "Allenamento";
-        const desc = s.specialita_descrizione ? ` (${s.specialita_descrizione})` : "";
-        const pista = s.pista ? `${s.pista} ` : "";
-        const atleti = (s.atleti ?? []).map((a) => `${a.nome} ${a.cognome}`.trim()).join(", ");
-        const testo = `${hhmm(s.ora_inizio)}–${hhmm(s.ora_fine)} ${pista}${spec}${desc} — Atleti: ${atleti || "—"}`;
-        const ora = Number(hhmm(s.ora_inizio).replace(":", ""));
+        const riga: RigaSessioneStampa = {
+          ora_inizio: hhmm(s.ora_inizio),
+          ora_fine: hhmm(s.ora_fine),
+          pista: s.pista ?? null,
+          specialita: s.specialita_nome || s.specialita_testo_libero || "Allenamento",
+          specialita_descrizione: s.specialita_descrizione ?? null,
+          atleti: (s.atleti ?? []).map((a) => `${a.nome} ${a.cognome}`.trim()),
+        };
         for (const i of s.istruttori ?? []) {
           const nome = `${i.nome} ${i.cognome}`.trim() || i.istruttore_id.slice(0, 8);
-          const cur = map.get(i.istruttore_id) ?? { nome, righe: [] };
-          cur.righe.push({ ora, testo });
+          const cur = map.get(i.istruttore_id) ?? { istruttore_id: i.istruttore_id, nome, sessioni: [] };
+          cur.sessioni.push(riga);
           map.set(i.istruttore_id, cur);
         }
       }
     }
     return Array.from(map.values())
-      .map((v) => ({ ...v, righe: v.righe.sort((a, b) => a.ora - b.ora) }))
+      .map((v) => ({
+        ...v,
+        sessioni: v.sessioni.sort((a, b) => a.ora_inizio.localeCompare(b.ora_inizio)),
+      }))
       .sort((a, b) => a.nome.localeCompare(b.nome, "it"));
   }, [blocchi]);
+
+  const stampa = () => {
+    document.body.classList.add("stampa-griglia");
+    const cleanup = () => {
+      document.body.classList.remove("stampa-griglia");
+      window.removeEventListener("afterprint", cleanup);
+    };
+    window.addEventListener("afterprint", cleanup);
+    window.print();
+    setTimeout(cleanup, 1000);
+  };
+
 
   const toggle_espanso = (id: string) =>
     set_espansi((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
