@@ -156,7 +156,7 @@ Deno.serve(async (req) => {
       if (error) return json({ error: "create_failed", message: error.message }, 500);
       const { error: err_ins } = await admin.from("utenti_club").insert({
         user_id: created.user!.id,
-        email, nome, cognome, ruolo, club_id,
+        nome, cognome, ruolo, club_id,
       });
       if (err_ins) return json({ error: "create_failed", message: err_ins.message }, 500);
       return json({ ok: true, new_password, user_id: created.user!.id });
