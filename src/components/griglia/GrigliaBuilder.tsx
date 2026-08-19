@@ -26,7 +26,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SpecialitaManager from "@/components/griglia/SpecialitaManager";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { Settings, Plus, Trash2, X, GraduationCap, Send, CheckCircle2, GripVertical, HelpCircle } from "lucide-react";
+import { Settings, Plus, Trash2, X, GraduationCap, Send, CheckCircle2, GripVertical, HelpCircle, ChevronDown, ChevronRight } from "lucide-react";
 
 const DURATA_DEFAULT_MIN = 20;
 const ALTRO = "__altro__";
@@ -49,6 +49,32 @@ function from_min(v: number): string {
 function iniziali(nome?: string, cognome?: string): string {
   return `${(nome || "?").charAt(0)}${(cognome || "").charAt(0)}`.toUpperCase();
 }
+
+// Orari pregenerati ogni 5 minuti (00:00 – 23:55): evita la digitazione manuale nei time input nativi.
+const ORARI_5_MIN: string[] = Array.from({ length: (24 * 60) / 5 }, (_, i) => from_min(i * 5));
+
+const OrarioSelect: React.FC<{ value: string; onChange: (v: string) => void; aria_label: string }> = ({
+  value,
+  onChange,
+  aria_label,
+}) => {
+  const v = hhmm(value);
+  const opzioni = useMemo(() => (v && !ORARI_5_MIN.includes(v) ? [v, ...ORARI_5_MIN] : ORARI_5_MIN), [v]);
+  return (
+    <Select value={v || undefined} onValueChange={onChange}>
+      <SelectTrigger className="h-8 w-[7.5rem]" aria-label={aria_label}>
+        <SelectValue placeholder="--:--" />
+      </SelectTrigger>
+      <SelectContent className="max-h-64">
+        {opzioni.map((o) => (
+          <SelectItem key={o} value={o}>
+            {o}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+};
 
 
 // ─── Testi messaggio convocazione ──────────────────────────
@@ -166,6 +192,7 @@ const PoolBox: React.FC<{
   neutro?: boolean;
 }> = ({ titolo, items, prefisso, variante_istruttori, colore, box_id, neutro }) => {
   const [q, set_q] = useState("");
+  const [aperto, set_aperto] = useState(true);
   const filtrati = useMemo(() => {
     const term = q.trim().toLowerCase();
     if (!term) return items;
@@ -194,8 +221,17 @@ const PoolBox: React.FC<{
             : "bg-muted/20 border-border",
       )}
     >
-      <div className="flex items-center justify-between">
-        <h4 className="text-sm font-semibold flex items-center gap-1.5">
+      <button
+        type="button"
+        onClick={() => set_aperto((v) => !v)}
+        className="flex items-center justify-between gap-2 text-left"
+      >
+        <h4 className="text-sm font-semibold flex items-center gap-1.5 min-w-0">
+          {aperto ? (
+            <ChevronDown className="w-3.5 h-3.5 shrink-0" />
+          ) : (
+            <ChevronRight className="w-3.5 h-3.5 shrink-0" />
+          )}
           {variante_istruttori && <GraduationCap className="w-4 h-4 text-primary" />}
           {!variante_istruttori && neutro && <HelpCircle className="w-4 h-4 text-muted-foreground" />}
           {!variante_istruttori && !neutro && colore && (
@@ -203,48 +239,53 @@ const PoolBox: React.FC<{
           )}
           <span className="truncate">{titolo}</span>
         </h4>
-        <Badge variant="secondary" className="text-[10px]">{items.length}</Badge>
-      </div>
+        <Badge variant="secondary" className="text-[10px] shrink-0">{items.length}</Badge>
+      </button>
       <Input
         value={q}
-        onChange={(e) => set_q(e.target.value)}
+        onChange={(e) => {
+          set_q(e.target.value);
+          if (e.target.value.trim()) set_aperto(true);
+        }}
         placeholder="Cerca…"
         className="h-7 text-xs"
       />
-      <div className="flex flex-col gap-1.5 max-h-56 overflow-y-auto pr-1">
-        {prefisso === "atleta"
-          ? gruppi.map(([livello, membri]) => (
-              <div key={livello} className="flex flex-col gap-1">
-                <GruppoDraggable
-                  drag_id={`gruppo:${box_id ?? titolo}:${livello}`}
-                  livello={livello}
-                  atleta_ids={membri.map((m) => m.id)}
-                  colore={colore}
-                />
-                <div className="flex flex-col gap-1 pl-2 border-l border-border/60">
-                  {membri.map((i) => (
-                    <PillolaDraggable
-                      key={i.id}
-                      drag_id={`atleta:${i.id}`}
-                      label={`${i.nome} ${i.cognome}`}
-                      sigla={iniziali(i.nome, i.cognome)}
-                      colore={colore}
-                    />
-                  ))}
+      {aperto && (
+        <div className="flex flex-col gap-1.5 max-h-44 overflow-y-auto pr-1">
+          {prefisso === "atleta"
+            ? gruppi.map(([livello, membri]) => (
+                <div key={livello} className="flex flex-col gap-1">
+                  <GruppoDraggable
+                    drag_id={`gruppo:${box_id ?? titolo}:${livello}`}
+                    livello={livello}
+                    atleta_ids={membri.map((m) => m.id)}
+                    colore={colore}
+                  />
+                  <div className="flex flex-col gap-1 pl-2 border-l border-border/60">
+                    {membri.map((i) => (
+                      <PillolaDraggable
+                        key={i.id}
+                        drag_id={`atleta:${i.id}`}
+                        label={`${i.nome} ${i.cognome}`}
+                        sigla={iniziali(i.nome, i.cognome)}
+                        colore={colore}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))
-          : filtrati.map((i) => (
-              <PillolaDraggable
-                key={i.id}
-                drag_id={`istruttore:${i.id}`}
-                label={`${i.nome} ${i.cognome}`}
-                sigla={iniziali(i.nome, i.cognome)}
-                is_istruttore
-              />
-            ))}
-        {filtrati.length === 0 && <p className="text-xs text-muted-foreground py-1">Nessun risultato.</p>}
-      </div>
+              ))
+            : filtrati.map((i) => (
+                <PillolaDraggable
+                  key={i.id}
+                  drag_id={`istruttore:${i.id}`}
+                  label={`${i.nome} ${i.cognome}`}
+                  sigla={iniziali(i.nome, i.cognome)}
+                  is_istruttore
+                />
+              ))}
+          {filtrati.length === 0 && <p className="text-xs text-muted-foreground py-1">Nessun risultato.</p>}
+        </div>
+      )}
     </div>
   );
 };
@@ -339,18 +380,16 @@ const SessioneBox: React.FC<{
   return (
     <div className="rounded-xl border bg-card p-3 space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <Input
-          type="time"
+        <OrarioSelect
           value={hhmm(sessione.ora_inizio)}
-          onChange={(e) => on_change({ ora_inizio: e.target.value })}
-          className="h-8 w-[7.5rem]"
+          onChange={(v) => on_change({ ora_inizio: v })}
+          aria_label="Ora inizio"
         />
         <span className="text-muted-foreground text-sm">–</span>
-        <Input
-          type="time"
+        <OrarioSelect
           value={hhmm(sessione.ora_fine)}
-          onChange={(e) => on_change({ ora_fine: e.target.value })}
-          className="h-8 w-[7.5rem]"
+          onChange={(v) => on_change({ ora_fine: v })}
+          aria_label="Ora fine"
         />
         <Input
           value={pista}
