@@ -24,6 +24,7 @@ export interface GrigliaSessioneIstruttore {
   istruttore_id: string;
   nome: string;
   cognome: string;
+  user_id?: string | null;
 }
 
 export interface GrigliaSessione {
