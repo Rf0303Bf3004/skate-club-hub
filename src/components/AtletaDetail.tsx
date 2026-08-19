@@ -821,7 +821,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                 }
               }
 
-              const has_flags = form.agonista || form.atleta_federazione || form.attivo_come_monitore || form.atleta_club || form.atleta_bmetod || form.atleta_esterno;
+              const has_flags = form.agonista || form.atleta_federazione || form.attivo_come_monitore || form.atleta_esterno || !!ragione_sociale_atleta;
 
               return (
                 <div className="flex flex-col gap-2">
