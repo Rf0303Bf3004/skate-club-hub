@@ -16,6 +16,7 @@ import CatalogoOffertaTab from "@/components/CatalogoOffertaTab";
 import FatturazioneTab from "@/components/FatturazioneTab";
 import { RegoleComunicazioniSection } from "@/components/comunicazioni/RegoleComunicazioniSection";
 import ModalitaGestioneSection from "@/components/setup/ModalitaGestioneSection";
+import RagioniSocialiSection from "@/components/setup/RagioniSocialiSection";
 
 
 const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"] as const;
@@ -782,6 +783,15 @@ const ClubSetupPage: React.FC = () => {
         <Separator />
 
         <ModalitaGestioneSection />
+
+        <ModalitaGestioneSection
+          area="fatturazione"
+          label="Fatturazione"
+          opzioni={[
+            { value: "standard", label: "Standard (un solo profilo di fatturazione)" },
+            { value: "multi_ragione_sociale", label: "Ragioni sociali multiple" },
+          ]}
+        />
         </div>
 
         </TabsContent>
@@ -1015,7 +1025,10 @@ const ClubSetupPage: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="fatturazione">
-          <FatturazioneTab />
+          <div className="space-y-6">
+            <FatturazioneTab />
+            <RagioniSocialiSection />
+          </div>
         </TabsContent>
       </Tabs>
     </div>

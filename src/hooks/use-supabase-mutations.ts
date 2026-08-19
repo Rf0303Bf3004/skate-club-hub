@@ -161,6 +161,8 @@ export function use_upsert_atleta() {
         atleta_club: !!data.atleta_club,
         atleta_bmetod: !!data.atleta_bmetod,
         atleta_esterno: !!data.atleta_esterno,
+        ...(data.ragione_sociale_id !== undefined ? { ragione_sociale_id: data.ragione_sociale_id || null } : {}),
+        ...(data.ragione_sociale_listino_id !== undefined ? { ragione_sociale_listino_id: data.ragione_sociale_listino_id || null } : {}),
         // gerarchia: federazione implica agonista
         agonista: !!(data.agonista || data.atleta_federazione),
         ore_pista_stagione: data.ore_pista_stagione || 0,
