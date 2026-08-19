@@ -33,6 +33,10 @@ export function can_override_ore_lavoro(ruolo?: string | null): boolean {
  *  Stesso criterio della funzione DB public.user_can_manage_griglia(). */
 export function can_manage_griglia(ruolo?: string | null): boolean {
   return (
-    ruolo === "superadmin" || ruolo === "admin" || ruolo === "vicepresidente" || ruolo === "presidente"
+    ruolo === "superadmin" ||
+    ruolo === "admin" ||
+    ruolo === "vicepresidente" ||
+    ruolo === "presidente" ||
+    ruolo === "dt"
   );
 }
