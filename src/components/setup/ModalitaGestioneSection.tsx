@@ -9,16 +9,32 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/hooks/use-toast";
 import { Check, FlaskConical } from "lucide-react";
 
+interface Props {
+  area?: string;
+  label?: string;
+  opzioni?: { value: string; label: string }[];
+}
+
+const OPZIONI_GHIACCIO: { value: string; label: string }[] = [
+  { value: "standard", label: "Standard (corsi settimanali ricorrenti)" },
+  { value: "griglia_giornaliera", label: "Griglia giornaliera (Tailor Made)" },
+];
+
 /**
  * Sezione avanzata/sperimentale: permette al Presidente/admin di scegliere una
  * modalità di gestione alternativa ("Tailor Made") per un'area operativa.
  * Additiva: nessuna schermata esistente cambia comportamento.
  */
-export const ModalitaGestioneSection: React.FC = () => {
+export const ModalitaGestioneSection: React.FC<Props> = ({
+  area = "ghiaccio",
+  label = "Ghiaccio",
+  opzioni = OPZIONI_GHIACCIO,
+}) => {
   const { session } = useAuth();
   const allowed = !!session && ["superadmin", "admin", "presidente"].includes(session.ruolo);
   const queryClient = useQueryClient();
-  const { modalita, is_loading } = useModalitaArea("ghiaccio");
+  const { modalita, is_loading } = useModalitaArea(area);
+
   const [just_saved, set_just_saved] = React.useState(false);
 
   const salva = useMutation({
