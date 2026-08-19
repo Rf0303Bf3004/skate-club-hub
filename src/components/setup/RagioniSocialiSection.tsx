@@ -147,6 +147,62 @@ const ListiniSubSection: React.FC<{ ragione_sociale_id: string }> = ({ ragione_s
   );
 };
 
+// ─── Utenti con accesso dedicato ───────────────────────────
+const UtentiAccessoSubSection: React.FC<{ ragione_sociale_id: string }> = ({ ragione_sociale_id }) => {
+  const { data: utenti = [], isLoading } = use_utenti_club_lite();
+  const { data: assegnati = [] } = use_utenti_ragione_sociale(ragione_sociale_id);
+  const toggle = use_toggle_utente_ragione_sociale();
+
+  return (
+    <div className="space-y-2 rounded-lg bg-muted/30 p-3">
+      <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Utenti con accesso dedicato</p>
+      {isLoading ? (
+        <p className="text-xs text-muted-foreground">Caricamento…</p>
+      ) : utenti.length === 0 ? (
+        <p className="text-xs text-muted-foreground">Nessun utente del club disponibile.</p>
+      ) : (
+        <div className="space-y-1">
+          {utenti.map((u) => {
+            const checked = assegnati.includes(u.id);
+            return (
+              <label
+                key={u.id}
+                className="flex items-center gap-2 rounded-md bg-background px-3 py-2 text-sm cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 accent-primary"
+                  checked={checked}
+                  disabled={toggle.isPending}
+                  onChange={async (e) => {
+                    try {
+                      await toggle.mutateAsync({
+                        ragione_sociale_id,
+                        utente_id: u.id,
+                        assegna: e.target.checked,
+                      });
+                    } catch (err: any) {
+                      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+                    }
+                  }}
+                />
+                <span className="font-medium text-foreground">
+                  {[u.nome, u.cognome].filter(Boolean).join(" ") || u.id.slice(0, 8)}
+                </span>
+                {u.ruolo && (
+                  <Badge variant="outline" className="text-[10px]">
+                    {u.ruolo}
+                  </Badge>
+                )}
+              </label>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ─── Dialog anagrafica ─────────────────────────────────────
 const empty_form = {
   nome: "",
@@ -162,6 +218,8 @@ const empty_form = {
   logo_url: "",
   colore_primario: "#3B82F6",
   attivo: true,
+  accesso_dedicato: false,
+  numero_fattura_prefisso: "",
 };
 
 const RagioneSocialeDialog: React.FC<{
@@ -172,6 +230,7 @@ const RagioneSocialeDialog: React.FC<{
   const upsert = use_upsert_ragione_sociale();
   const [form, set_form] = React.useState<Record<string, any>>(empty_form);
   const [uploading, set_uploading] = React.useState(false);
+
 
   React.useEffect(() => {
     if (!open) return;
