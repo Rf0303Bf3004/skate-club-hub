@@ -650,6 +650,17 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
     }
   };
 
+  // Mantiene sempre un tab valido selezionato
+  useEffect(() => {
+    if (sessioni.length === 0) {
+      if (tab_attivo !== null) set_tab_attivo(null);
+      return;
+    }
+    if (!tab_attivo || !sessioni.some((s) => s.id === tab_attivo)) {
+      set_tab_attivo(sessioni[0].id);
+    }
+  }, [sessioni, tab_attivo]);
+
   const salva_sessione = async (s: GrigliaSessione, patch: Partial<GrigliaSessione>) => {
     const merged = { ...s, ...patch };
     try {
