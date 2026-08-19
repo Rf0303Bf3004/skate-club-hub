@@ -380,18 +380,16 @@ const SessioneBox: React.FC<{
   return (
     <div className="rounded-xl border bg-card p-3 space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <Input
-          type="time"
+        <OrarioSelect
           value={hhmm(sessione.ora_inizio)}
-          onChange={(e) => on_change({ ora_inizio: e.target.value })}
-          className="h-8 w-[7.5rem]"
+          onChange={(v) => on_change({ ora_inizio: v })}
+          aria_label="Ora inizio"
         />
         <span className="text-muted-foreground text-sm">–</span>
-        <Input
-          type="time"
+        <OrarioSelect
           value={hhmm(sessione.ora_fine)}
-          onChange={(e) => on_change({ ora_fine: e.target.value })}
-          className="h-8 w-[7.5rem]"
+          onChange={(v) => on_change({ ora_fine: v })}
+          aria_label="Ora fine"
         />
         <Input
           value={pista}
