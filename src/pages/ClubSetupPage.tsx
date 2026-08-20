@@ -1014,10 +1014,13 @@ const ClubSetupPage: React.FC = () => {
           </div>
         </div>
 
+        {risorsa_is_ghiaccio && (
+        <>
         <Separator />
 
         {/* Pulizia Ghiaccio */}
         <div>
+
           <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">
             🧹 Pulizia Ghiaccio
           </h3>
