@@ -46,6 +46,21 @@ Raccomandazione: **una sola famiglia di tabelle**, niente tabelle parallele off-
 
 Il `GrigliaBuilder` diventa parametrico su `risorsa`: cambia solo il pool di specialità, l'etichetta e le regole di capienza. Zero fork del componente.
 
+### b-bis) Due modalità di popolamento dei pool sorgente
+
+La sorgente dei pool non è più unica. Chi programma la giornata sceglie, **per singola sessione** (non per pagina, non per club), come vuole vedere gli atleti:
+
+| Modalità | Contenitori di primo livello | Gruppi interni | Uso |
+|---|---|---|---|
+| **Per livello anagrafico** (esistente) | ragione sociale / academy / Esterni | livello letto dalla scheda atleta | piani di personalizzazione: gruppi eterogenei (mix Stellina 2 + 3) non legati a un pacchetto fatturabile |
+| **Per proposta/pacchetto** (nuova) | la singola occorrenza di proposta, es. "Stellina 2 — giovedì 17:00-18:00" | opzionale: livello, per orientarsi dentro proposte numerose | programmazione ordinaria: si trascina il pacchetto e arrivano esattamente i suoi iscritti |
+
+Implicazioni tecniche:
+- Nessuna colonna nuova sulle tabelle griglia per la modalità in sé: è uno stato della UI. Si salva però su `griglia_sessioni.origine_pool` (`'livello' | 'proposta'`) + `griglia_sessioni.corso_id` — utile per sapere, a posteriori, se quella sessione nasce da un pacchetto o da una composizione manuale, e per i messaggi automatici.
+- In modalità "per proposta" il drag del contenitore intero inserisce in `griglia_sessioni_atleti` gli atleti con `iscrizioni_corsi.attiva = true` per **quella specifica riga `corsi`**, non per tutte le occorrenze omonime.
+- Il singolo atleta resta sempre trascinabile individualmente in entrambe le modalità: la modalità cambia solo il raggruppamento della sorgente, non le regole di rilascio.
+- Il toggle vive nell'header di ogni tab-sessione del `GrigliaBuilder`; le due modalità possono convivere nello stesso giorno su sessioni diverse.
+
 ## c) "Ripeti per tutta la stagione" — il ponte verso la fatturazione
 
 Riuso integrale di `corsi` + `iscrizioni_corsi`: la fatturazione non viene toccata.
