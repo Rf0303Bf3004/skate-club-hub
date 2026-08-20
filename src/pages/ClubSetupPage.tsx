@@ -18,6 +18,8 @@ import { RegoleComunicazioniSection } from "@/components/comunicazioni/RegoleCom
 import ModalitaGestioneSection from "@/components/setup/ModalitaGestioneSection";
 import RagioniSocialiSection from "@/components/setup/RagioniSocialiSection";
 import RisorseSection from "@/components/setup/RisorseSection";
+import { use_risorse_strutture } from "@/hooks/use-risorse-strutture";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 
 const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"] as const;
@@ -81,6 +83,7 @@ const ClubSetupPage: React.FC = () => {
   const { data: config_ghiaccio, isLoading: loading_config } = use_config_ghiaccio();
   const { data: disp_ghiaccio_raw, isLoading: loading_disp } = use_disponibilita_ghiaccio();
   const { data: catalogo_count } = use_catalogo_count();
+  const { data: risorse = [] } = use_risorse_strutture();
 
   const stagione_attiva = stagioni.find((s: any) => s.attiva);
   const [form, set_form] = useState<Record<string, any>>({});
@@ -92,25 +95,39 @@ const ClubSetupPage: React.FC = () => {
   const [ghiaccio_form, set_ghiaccio_form] = useState<Record<string, any>>({});
   const [saving_ghiaccio, set_saving_ghiaccio] = useState(false);
 
-  // Disponibilità ghiaccio local state
+  // Disponibilità strutture local state
+  const [risorsa_sel_id, set_risorsa_sel_id] = useState<string>("");
   const [disp_local, set_disp_local] = useState<Record<string, { ora_inizio: string; ora_fine: string }[]>>({});
   const [disp_pulizia_local, set_disp_pulizia_local] = useState<Record<string, { ora_inizio: string; ora_fine: string }[]>>({});
   const [saving_disp, set_saving_disp] = useState(false);
 
-  // Sync disp_local when data loads
+  const risorse_attive = (risorse ?? []).filter((r: any) => r.attiva !== false);
+  const risorsa_sel = (risorse ?? []).find((r: any) => r.id === risorsa_sel_id) ?? null;
+  const risorsa_is_ghiaccio = risorsa_sel?.tipo !== "palestra";
+
+  // Seleziona la prima risorsa disponibile
+  useEffect(() => {
+    if (!risorsa_sel_id && risorse_attive.length > 0) {
+      set_risorsa_sel_id(risorse_attive[0].id);
+    }
+  }, [risorse_attive, risorsa_sel_id]);
+
+  // Sync disp_local quando cambiano i dati o la risorsa selezionata
   useEffect(() => {
     if (disp_ghiaccio_raw) {
       const ghiaccio: Record<string, { ora_inizio: string; ora_fine: string }[]> = {};
       const pulizia: Record<string, { ora_inizio: string; ora_fine: string }[]> = {};
-      disp_ghiaccio_raw.forEach((d: any) => {
-        const target = d.tipo === "pulizia" ? pulizia : ghiaccio;
-        if (!target[d.giorno]) target[d.giorno] = [];
-        target[d.giorno].push({ ora_inizio: d.ora_inizio, ora_fine: d.ora_fine });
-      });
+      disp_ghiaccio_raw
+        .filter((d: any) => (risorsa_sel_id ? d.risorsa_id === risorsa_sel_id : !d.risorsa_id))
+        .forEach((d: any) => {
+          const target = d.tipo === "pulizia" ? pulizia : ghiaccio;
+          if (!target[d.giorno]) target[d.giorno] = [];
+          target[d.giorno].push({ ora_inizio: d.ora_inizio, ora_fine: d.ora_fine });
+        });
       set_disp_local(ghiaccio);
       set_disp_pulizia_local(pulizia);
     }
-  }, [disp_ghiaccio_raw]);
+  }, [disp_ghiaccio_raw, risorsa_sel_id]);
 
   const get_val = (field: string, fallback: any = "") => {
     if (field in form) return form[field];
@@ -362,31 +379,41 @@ const ClubSetupPage: React.FC = () => {
   };
 
   const save_disponibilita = async () => {
+    if (!risorsa_sel_id) {
+      toast({ title: "Seleziona una risorsa", variant: "destructive" });
+      return;
+    }
     set_saving_disp(true);
     try {
       const club_id = get_current_club_id();
-      // Delete all existing
-      const { error: del_err } = await supabase.from("disponibilita_ghiaccio").delete().eq("club_id", club_id);
+      // Cancella solo le righe della risorsa selezionata
+      const { error: del_err } = await supabase
+        .from("disponibilita_ghiaccio")
+        .delete()
+        .eq("club_id", club_id)
+        .eq("risorsa_id", risorsa_sel_id);
       if (del_err) throw del_err;
 
-      // Insert all (ghiaccio + pulizia)
+      // Insert all (disponibilità + eventuale pulizia)
       const rows: any[] = [];
       for (const [giorno, slots] of Object.entries(disp_local)) {
         for (const s of slots) {
-          rows.push({ club_id, giorno, ora_inizio: s.ora_inizio, ora_fine: s.ora_fine, tipo: "ghiaccio" });
+          rows.push({ club_id, risorsa_id: risorsa_sel_id, giorno, ora_inizio: s.ora_inizio, ora_fine: s.ora_fine, tipo: "ghiaccio" });
         }
       }
-      for (const [giorno, slots] of Object.entries(disp_pulizia_local)) {
-        for (const s of slots) {
-          rows.push({ club_id, giorno, ora_inizio: s.ora_inizio, ora_fine: s.ora_fine, tipo: "pulizia" });
+      if (risorsa_is_ghiaccio) {
+        for (const [giorno, slots] of Object.entries(disp_pulizia_local)) {
+          for (const s of slots) {
+            rows.push({ club_id, risorsa_id: risorsa_sel_id, giorno, ora_inizio: s.ora_inizio, ora_fine: s.ora_fine, tipo: "pulizia" });
+          }
         }
       }
       if (rows.length > 0) {
-        const { error: ins_err } = await supabase.from("disponibilita_ghiaccio").insert(rows);
+        const { error: ins_err } = await supabase.from("disponibilita_ghiaccio").insert(rows as any);
         if (ins_err) throw ins_err;
       }
 
-      toast({ title: "✅ Disponibilità ghiaccio e pulizia salvata" });
+      toast({ title: `✅ Disponibilità salvata per ${risorsa_sel?.nome ?? "la risorsa"}` });
       queryClient.invalidateQueries({ queryKey: ["disponibilita_ghiaccio"] });
     } catch (err: any) {
       toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
@@ -913,17 +940,38 @@ const ClubSetupPage: React.FC = () => {
 
         <Separator />
 
-        {/* Disponibilità ghiaccio settimanale */}
+        {/* Disponibilità strutture settimanale */}
         <div>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">
-              Disponibilità ghiaccio settimanale
+              Disponibilità strutture settimanale
             </h3>
-            <Button size="sm" onClick={save_disponibilita} disabled={saving_disp}>
+            <Button size="sm" onClick={save_disponibilita} disabled={saving_disp || !risorsa_sel_id}>
               {saving_disp ? "..." : "Salva disponibilità"}
             </Button>
           </div>
+          <div className="mb-4 max-w-sm">
+            <Label className="text-xs text-muted-foreground">Risorsa</Label>
+            <Select value={risorsa_sel_id} onValueChange={set_risorsa_sel_id}>
+              <SelectTrigger className="h-9 mt-1">
+                <SelectValue placeholder="Seleziona una risorsa" />
+              </SelectTrigger>
+              <SelectContent>
+                {risorse_attive.map((r: any) => (
+                  <SelectItem key={r.id} value={r.id}>
+                    {r.nome} · {r.tipo === "palestra" ? "Palestra" : "Ghiaccio"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {risorse_attive.length === 0 && (
+              <p className="text-xs text-muted-foreground italic mt-1">
+                Nessuna risorsa configurata — aggiungine una in "Risorse e strutture".
+              </p>
+            )}
+          </div>
           <div className="space-y-4">
+
             {GIORNI.map((giorno) => {
               const slots = disp_local[giorno] || [];
               return (
@@ -966,10 +1014,13 @@ const ClubSetupPage: React.FC = () => {
           </div>
         </div>
 
+        {risorsa_is_ghiaccio && (
+        <>
         <Separator />
 
         {/* Pulizia Ghiaccio */}
         <div>
+
           <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">
             🧹 Pulizia Ghiaccio
           </h3>
@@ -1015,7 +1066,10 @@ const ClubSetupPage: React.FC = () => {
             })}
           </div>
         </div>
+        </>
+        )}
       </div>
+
 
       <div className="max-w-2xl mt-6">
         <RisorseSection />
