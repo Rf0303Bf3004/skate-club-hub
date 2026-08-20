@@ -1789,6 +1789,7 @@ export type Database = {
           note: string | null
           ora_fine: string
           ora_inizio: string
+          risorsa_id: string | null
           stagione_id: string | null
           tipo: string
         }
@@ -1800,6 +1801,7 @@ export type Database = {
           note?: string | null
           ora_fine: string
           ora_inizio: string
+          risorsa_id?: string | null
           stagione_id?: string | null
           tipo?: string
         }
@@ -1811,10 +1813,19 @@ export type Database = {
           note?: string | null
           ora_fine?: string
           ora_inizio?: string
+          risorsa_id?: string | null
           stagione_id?: string | null
           tipo?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "disponibilita_ghiaccio_risorsa_id_fkey"
+            columns: ["risorsa_id"]
+            isOneToOne: false
+            referencedRelation: "risorse_strutture"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       disponibilita_istruttori: {
         Row: {
