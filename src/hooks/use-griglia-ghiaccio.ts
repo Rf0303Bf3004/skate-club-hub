@@ -211,15 +211,16 @@ export async function fetch_blocchi_giorno(
   })) as GrigliaBlocco[];
 }
 
-export function use_griglia_blocchi_giorno(data_giorno: string) {
+export function use_griglia_blocchi_giorno(data_giorno: string, risorsa_id?: string | null) {
   return useQuery({
     refetchOnMount: "always",
     staleTime: 0,
     enabled: !!get_current_club_id() && !!data_giorno,
-    queryKey: ["griglia_blocchi_giorno", get_current_club_id(), data_giorno],
-    queryFn: async () => fetch_blocchi_giorno(get_current_club_id() as string, data_giorno),
+    queryKey: ["griglia_blocchi_giorno", get_current_club_id(), data_giorno, risorsa_id ?? null],
+    queryFn: async () => fetch_blocchi_giorno(get_current_club_id() as string, data_giorno, risorsa_id),
   });
 }
+
 
 
 // ─── Helper invalidazione ──────────────────────────────────
