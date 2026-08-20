@@ -130,6 +130,10 @@ Il Planning attuale resta pienamente funzionante fino alla fase 6 inclusa. La gr
 5. **Doppio trigger su `comunicazioni`** già segnalato: le convocazioni generate dalla griglia off-ice erediterebbero il problema. Da chiudere prima della fase 4.
 6. **Presenze**: `presenze_corso` è legata a `corso_id`+data. Se le occorrenze nascono dalla griglia senza corso (giornate una tantum), le presenze restano scoperte. Serve `presenze` collegabile alla sessione di griglia.
 7. **Stagione**: `griglia_blocchi` non ha `stagione_id`. Con l'archiviazione multi-stagione già in uso altrove, va aggiunto (derivabile dalla data, ma meglio esplicito).
+8. **Atleta iscritto a proposte con orari sovrapposti**: oggi `iscrizioni_corsi` non ha alcun controllo di conflitto. Trascinando due proposte diverse sullo stesso orario lo stesso atleta finirebbe in due sessioni contemporanee. Serve un controllo in due punti: avviso all'iscrizione in `CoursesPage` (soft, il club può volerlo) e blocco duro nella Griglia (un atleta non può stare in due sessioni sovrapposte della stessa giornata, su qualsiasi risorsa).
+9. **Pool "per proposta" vuoto**: legittimo e frequente a inizio stagione. Il contenitore va mostrato comunque, con conteggio "0 iscritti" e scorciatoia "Gestisci adesioni" verso il corso, e non deve essere trascinabile finché è vuoto (altrimenti si crea una sessione fantasma senza atleti).
+10. **Doppio inserimento dello stesso atleta**: in modalità mista (una sessione per livello, una per proposta nello stesso giorno) è facile duplicare un atleta. `griglia_sessioni_atleti` deve avere un unique su `(sessione_id, atleta_id)` e la UI deve segnalare l'atleta già collocato altrove nella giornata.
+11. **Disallineamento proposta ↔ sessione**: se dopo il drag qualcuno si iscrive o si cancella dal corso, la sessione già creata non si aggiorna. Scelta consigliata: la sessione è uno snapshot, con un indicatore "3 nuovi iscritti non presenti in questa sessione" e un'azione "risincronizza", mai un aggiornamento automatico silenzioso.
 
 ## Domanda aperta prima di partire
 
