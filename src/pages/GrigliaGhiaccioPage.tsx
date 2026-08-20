@@ -150,22 +150,84 @@ const GrigliaGhiaccioPage: React.FC = () => {
   const toggle_espanso = (id: string) =>
     set_espansi((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
+  const apri_wizard = () => {
+    set_passo("a");
+    set_modo_suddivisione("unico");
+    set_n_sessioni(3);
+    set_corsie(["Pista 1", "Pista 2"]);
+    set_fascia_scelta(fasce.length > 0 ? "0" : "custom");
+    if (fasce.length > 0) {
+      set_form({ ora_inizio: hhmm(fasce[0].ora_inizio), ora_fine: hhmm(fasce[0].ora_fine), titolo: "" });
+    } else {
+      set_form({ ora_inizio: "17:00", ora_fine: "18:00", titolo: "" });
+    }
+    set_modal_open(true);
+  };
+
+  const scegli_fascia = (val: string) => {
+    set_fascia_scelta(val);
+    if (val !== "custom") {
+      const f = fasce[Number(val)];
+      if (f) set_form((prev) => ({ ...prev, ora_inizio: hhmm(f.ora_inizio), ora_fine: hhmm(f.ora_fine) }));
+    }
+  };
+
   const salva_blocco = async () => {
+    if (!risorsa_sel) {
+      toast({ title: "Nessuna risorsa selezionata", variant: "destructive" });
+      return;
+    }
+    set_creazione_in_corso(true);
     try {
       const id = await upsert_blocco.mutateAsync({
         data: data_sel,
         ora_inizio: form.ora_inizio,
         ora_fine: form.ora_fine,
         titolo: form.titolo.trim() || titolo_suggerito,
+        risorsa_id: risorsa_sel,
       });
+
+      if (id && modo_suddivisione === "sequenziale") {
+        const inizio = minuti(form.ora_inizio);
+        const fine = minuti(form.ora_fine);
+        const totale = Math.max(fine - inizio, 0);
+        const n = Math.max(1, Math.min(12, n_sessioni));
+        const passo_min = Math.floor(totale / n);
+        for (let i = 0; i < n; i++) {
+          const s_start = inizio + passo_min * i;
+          const s_end = i === n - 1 ? fine : inizio + passo_min * (i + 1);
+          await upsert_sessione.mutateAsync({
+            blocco_id: id,
+            ordine: i + 1,
+            ora_inizio: da_minuti(s_start),
+            ora_fine: da_minuti(s_end),
+          });
+        }
+      }
+
+      if (id && modo_suddivisione === "parallelo") {
+        for (let i = 0; i < corsie.length; i++) {
+          await upsert_sessione.mutateAsync({
+            blocco_id: id,
+            ordine: i + 1,
+            ora_inizio: form.ora_inizio,
+            ora_fine: form.ora_fine,
+            pista: corsie[i].trim() || `Pista ${i + 1}`,
+          });
+        }
+      }
+
       set_modal_open(false);
       set_form({ ora_inizio: "17:00", ora_fine: "18:00", titolo: "" });
       if (id) set_espansi((prev) => [...prev, id]);
       toast({ title: "Blocco creato" });
     } catch (e: any) {
       toast({ title: "Errore", description: e.message, variant: "destructive" });
+    } finally {
+      set_creazione_in_corso(false);
     }
   };
+
 
   const rimuovi_blocco = async (id: string) => {
     try {
