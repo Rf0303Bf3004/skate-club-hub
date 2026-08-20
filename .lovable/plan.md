@@ -46,6 +46,21 @@ Raccomandazione: **una sola famiglia di tabelle**, niente tabelle parallele off-
 
 Il `GrigliaBuilder` diventa parametrico su `risorsa`: cambia solo il pool di specialità, l'etichetta e le regole di capienza. Zero fork del componente.
 
+### b-bis) Due modalità di popolamento dei pool sorgente
+
+La sorgente dei pool non è più unica. Chi programma la giornata sceglie, **per singola sessione** (non per pagina, non per club), come vuole vedere gli atleti:
+
+| Modalità | Contenitori di primo livello | Gruppi interni | Uso |
+|---|---|---|---|
+| **Per livello anagrafico** (esistente) | ragione sociale / academy / Esterni | livello letto dalla scheda atleta | piani di personalizzazione: gruppi eterogenei (mix Stellina 2 + 3) non legati a un pacchetto fatturabile |
+| **Per proposta/pacchetto** (nuova) | la singola occorrenza di proposta, es. "Stellina 2 — giovedì 17:00-18:00" | opzionale: livello, per orientarsi dentro proposte numerose | programmazione ordinaria: si trascina il pacchetto e arrivano esattamente i suoi iscritti |
+
+Implicazioni tecniche:
+- Nessuna colonna nuova sulle tabelle griglia per la modalità in sé: è uno stato della UI. Si salva però su `griglia_sessioni.origine_pool` (`'livello' | 'proposta'`) + `griglia_sessioni.corso_id` — utile per sapere, a posteriori, se quella sessione nasce da un pacchetto o da una composizione manuale, e per i messaggi automatici.
+- In modalità "per proposta" il drag del contenitore intero inserisce in `griglia_sessioni_atleti` gli atleti con `iscrizioni_corsi.attiva = true` per **quella specifica riga `corsi`**, non per tutte le occorrenze omonime.
+- Il singolo atleta resta sempre trascinabile individualmente in entrambe le modalità: la modalità cambia solo il raggruppamento della sorgente, non le regole di rilascio.
+- Il toggle vive nell'header di ogni tab-sessione del `GrigliaBuilder`; le due modalità possono convivere nello stesso giorno su sessioni diverse.
+
 ## c) "Ripeti per tutta la stagione" — il ponte verso la fatturazione
 
 Riuso integrale di `corsi` + `iscrizioni_corsi`: la fatturazione non viene toccata.
@@ -60,6 +75,26 @@ Azione su una sessione di griglia → dialog "Ripeti ogni <giorno> per tutta la 
    - Alternativa più conservativa: continuare a generare `planning_corsi_settimana` e far leggere alla griglia anche quelle righe. Meno rotture, ma due fonti da tenere allineate — da evitare oltre la fase transitoria.
 
 Eccezioni per singolo giorno: già ottenibili con la griglia stessa (si modifica/cancella la sessione di quel giorno senza toccare il corso). Serve solo un flag `modificata_manualmente` sulla sessione, per non farla sovrascrivere da una ri-generazione.
+
+### c-bis) La proposta/pacchetto nasce PRIMA della programmazione
+
+Il bottone "Ripeti per tutta la stagione" resta, ma non è più l'unico modo in cui nasce un pacchetto. I due percorsi convivono:
+
+- **Bottom-up** (già descritto sopra): compongo la giornata a mano, poi la promuovo a pacchetto ricorrente.
+- **Top-down** (necessario per la modalità "per proposta"): creo prima la proposta commerciale con orari e prezzo, raccolgo le adesioni, e poi la trascino sulla Griglia già piena di iscritti.
+
+Modello dati: **una occorrenza di proposta = una riga `corsi`** (con `giorno`, `ora_inizio`, `ora_fine`, `risorsa_id`, costi, `capienza_max`) + le sue `iscrizioni_corsi`. Nessuna tabella nuova per il pacchetto. L'unica aggiunta è il raggruppamento commerciale:
+
+- `corsi.proposta_nome` (text) oppure, più pulito, `corsi.proposta_id` → tabella leggera `proposte` (`club_id`, `stagione_id`, `nome`, `descrizione`, `livello_id`, `attiva`). Preferibile la seconda: permette di rinominare la proposta senza toccare le occorrenze e di elencare "Stellina 2" con le sue 3 occorrenze settimanali come un'unica voce commerciale.
+- Ogni occorrenza mantiene iscrizioni proprie: un atleta aderisce a **una** occorrenza specifica, e viene fatturato per quella (o per la somma delle occorrenze/proposte a cui ha aderito). Questa è esattamente la semantica attuale di `iscrizioni_corsi`: nulla cambia in fatturazione.
+- Nella Griglia, il pool "per proposta" elenca le occorrenze `corsi` della stagione compatibili col giorno programmato (di default quelle con `giorno` = giorno della data; con opzione "mostra tutte" per casi eccezionali come recuperi).
+
+Interfaccia di gestione: **estendere `CoursesPage.tsx`, non creare una pagina nuova.** Serve:
+- raggruppamento visivo delle righe `corsi` per proposta (oggi sono un elenco piatto);
+- azione "Aggiungi occorrenza" su una proposta esistente (duplica giorno/orario/prezzo, iscrizioni vuote);
+- la gestione adesioni è già lì (`iscrizioni_corsi` + `FatturazioneIscrizioneRow`) e resta invariata.
+
+Quindi il punto (c) da solo non basta: la fase 5 va sdoppiata in "creazione proposte + adesioni" (top-down) e "promozione a ricorrente" (bottom-up).
 
 ## d) Dati storici del club reale
 
@@ -78,7 +113,9 @@ Le 80 occorrenze passate restano dove sono e continuano a servire lo storico/le 
 | 2 | `griglia_blocchi.risorsa_id`, selettore risorsa nella pagina Griglia, durate libere al posto dei 20'. | Basso (1 blocco esistente) |
 | 3 | Blocco reale sulla disponibilità istruttori nel drag-and-drop (vedi sotto). | Basso |
 | 4 | Griglia su risorse `palestra` (stesso componente) + specialità con `ambito`. | Basso |
-| 5 | "Ripeti per tutta la stagione" → `corsi`/`iscrizioni_corsi` + generazione occorrenze. Prima su una settimana pilota. | Medio-alto: tocca fatturazione |
+| 5a | Proposte/pacchetti: tabella `proposte` + raggruppamento e "aggiungi occorrenza" in `CoursesPage`. Adesioni invariate. | Basso (additivo) |
+| 5b | Modalità pool "per proposta" nel `GrigliaBuilder` (toggle per sessione) + `origine_pool`/`corso_id` su `griglia_sessioni`. | Medio |
+| 5c | "Ripeti per tutta la stagione" → `corsi`/`iscrizioni_corsi` + generazione occorrenze. Prima su una settimana pilota. | Medio-alto: tocca fatturazione |
 | 6 | Viste settimana/mese/stagione sopra le giornate; `MeseView` riadattata a leggere dalla griglia. | Medio |
 | 7 | Planning attuale in sola lettura, poi archiviato. | Da decidere con Roberto |
 
@@ -93,6 +130,10 @@ Il Planning attuale resta pienamente funzionante fino alla fase 6 inclusa. La gr
 5. **Doppio trigger su `comunicazioni`** già segnalato: le convocazioni generate dalla griglia off-ice erediterebbero il problema. Da chiudere prima della fase 4.
 6. **Presenze**: `presenze_corso` è legata a `corso_id`+data. Se le occorrenze nascono dalla griglia senza corso (giornate una tantum), le presenze restano scoperte. Serve `presenze` collegabile alla sessione di griglia.
 7. **Stagione**: `griglia_blocchi` non ha `stagione_id`. Con l'archiviazione multi-stagione già in uso altrove, va aggiunto (derivabile dalla data, ma meglio esplicito).
+8. **Atleta iscritto a proposte con orari sovrapposti**: oggi `iscrizioni_corsi` non ha alcun controllo di conflitto. Trascinando due proposte diverse sullo stesso orario lo stesso atleta finirebbe in due sessioni contemporanee. Serve un controllo in due punti: avviso all'iscrizione in `CoursesPage` (soft, il club può volerlo) e blocco duro nella Griglia (un atleta non può stare in due sessioni sovrapposte della stessa giornata, su qualsiasi risorsa).
+9. **Pool "per proposta" vuoto**: legittimo e frequente a inizio stagione. Il contenitore va mostrato comunque, con conteggio "0 iscritti" e scorciatoia "Gestisci adesioni" verso il corso, e non deve essere trascinabile finché è vuoto (altrimenti si crea una sessione fantasma senza atleti).
+10. **Doppio inserimento dello stesso atleta**: in modalità mista (una sessione per livello, una per proposta nello stesso giorno) è facile duplicare un atleta. `griglia_sessioni_atleti` deve avere un unique su `(sessione_id, atleta_id)` e la UI deve segnalare l'atleta già collocato altrove nella giornata.
+11. **Disallineamento proposta ↔ sessione**: se dopo il drag qualcuno si iscrive o si cancella dal corso, la sessione già creata non si aggiorna. Scelta consigliata: la sessione è uno snapshot, con un indicatore "3 nuovi iscritti non presenti in questa sessione" e un'azione "risincronizza", mai un aggiornamento automatico silenzioso.
 
 ## Domanda aperta prima di partire
 
