@@ -243,18 +243,21 @@ export function use_upsert_blocco() {
       ora_inizio: string;
       ora_fine: string;
       titolo?: string | null;
+      risorsa_id?: string | null;
     }) => {
       const club_id = get_current_club_id();
       if (!club_id) throw new Error("Club non disponibile");
       if (input.id) {
+        const patch: Record<string, any> = {
+          data: input.data,
+          ora_inizio: input.ora_inizio,
+          ora_fine: input.ora_fine,
+          titolo: input.titolo ?? null,
+        };
+        if (input.risorsa_id !== undefined) patch.risorsa_id = input.risorsa_id;
         const { error } = await supabase
           .from("griglia_blocchi" as any)
-          .update({
-            data: input.data,
-            ora_inizio: input.ora_inizio,
-            ora_fine: input.ora_fine,
-            titolo: input.titolo ?? null,
-          } as any)
+          .update(patch as any)
           .eq("id", input.id);
         if (error) throw error;
         return input.id;
@@ -267,6 +270,7 @@ export function use_upsert_blocco() {
           ora_inizio: input.ora_inizio,
           ora_fine: input.ora_fine,
           titolo: input.titolo ?? null,
+          risorsa_id: input.risorsa_id ?? null,
           stato: "bozza",
           creato_da: session?.user_id ?? null,
         } as any)
