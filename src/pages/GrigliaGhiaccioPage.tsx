@@ -426,46 +426,180 @@ const GrigliaGhiaccioPage: React.FC = () => {
       <Dialog open={modal_open} onOpenChange={set_modal_open}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nuovo blocco ghiaccio</DialogTitle>
+            <DialogTitle>
+              {passo === "a" ? "Nuovo blocco — orario" : "Nuovo blocco — suddivisione"}
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-xs">Ora inizio</Label>
-                <Input
-                  type="time"
-                  value={form.ora_inizio}
-                  onChange={(e) => set_form((f) => ({ ...f, ora_inizio: e.target.value }))}
-                />
+
+          {passo === "a" ? (
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground">
+                {giorno_settimana} {nome_risorsa ? `— ${nome_risorsa}` : ""}
+              </p>
+              {fasce.length === 0 && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 flex gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span>
+                    Nessuna disponibilità dichiarata per {giorno_settimana}
+                    {nome_risorsa ? ` su ${nome_risorsa}` : ""} — inserisci l'orario manualmente.
+                  </span>
+                </div>
+              )}
+              <div className="space-y-2">
+                {fasce.map((f, idx) => (
+                  <label
+                    key={idx}
+                    className="flex items-center gap-2 rounded-lg border p-2 cursor-pointer hover:bg-muted/50"
+                  >
+                    <input
+                      type="radio"
+                      name="fascia"
+                      checked={fascia_scelta === String(idx)}
+                      onChange={() => scegli_fascia(String(idx))}
+                    />
+                    <span className="text-sm font-medium">
+                      {hhmm(f.ora_inizio)}–{hhmm(f.ora_fine)}
+                    </span>
+                  </label>
+                ))}
+                <label className="flex items-center gap-2 rounded-lg border p-2 cursor-pointer hover:bg-muted/50">
+                  <input
+                    type="radio"
+                    name="fascia"
+                    checked={fascia_scelta === "custom"}
+                    onChange={() => scegli_fascia("custom")}
+                  />
+                  <span className="text-sm font-medium">Orario personalizzato</span>
+                </label>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Ora inizio</Label>
+                  <Input
+                    type="time"
+                    value={form.ora_inizio}
+                    disabled={fascia_scelta !== "custom"}
+                    onChange={(e) => set_form((f) => ({ ...f, ora_inizio: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Ora fine</Label>
+                  <Input
+                    type="time"
+                    value={form.ora_fine}
+                    disabled={fascia_scelta !== "custom"}
+                    onChange={(e) => set_form((f) => ({ ...f, ora_fine: e.target.value }))}
+                  />
+                </div>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">Ora fine</Label>
+                <Label className="text-xs">Titolo (opzionale)</Label>
                 <Input
-                  type="time"
-                  value={form.ora_fine}
-                  onChange={(e) => set_form((f) => ({ ...f, ora_fine: e.target.value }))}
+                  value={form.titolo}
+                  onChange={(e) => set_form((f) => ({ ...f, titolo: e.target.value }))}
+                  placeholder={titolo_suggerito}
                 />
               </div>
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Titolo (opzionale)</Label>
-              <Input
-                value={form.titolo}
-                onChange={(e) => set_form((f) => ({ ...f, titolo: e.target.value }))}
-                placeholder={titolo_suggerito}
-              />
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm">
+                Fascia scelta:{" "}
+                <span className="font-semibold">
+                  {form.ora_inizio}–{form.ora_fine}
+                </span>
+              </p>
+              <div className="grid gap-2">
+                <Button
+                  variant={modo_suddivisione === "unico" ? "default" : "outline"}
+                  onClick={() => set_modo_suddivisione("unico")}
+                >
+                  Un blocco unico
+                </Button>
+                <Button
+                  variant={modo_suddivisione === "sequenziale" ? "default" : "outline"}
+                  onClick={() => set_modo_suddivisione("sequenziale")}
+                >
+                  Dividi in N sessioni uguali
+                </Button>
+                <Button
+                  variant={modo_suddivisione === "parallelo" ? "default" : "outline"}
+                  onClick={() => set_modo_suddivisione("parallelo")}
+                >
+                  Dividi per pista/corsia in parallelo
+                </Button>
+              </div>
+
+              {modo_suddivisione === "sequenziale" && (
+                <div className="space-y-1">
+                  <Label className="text-xs">Numero sessioni</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={12}
+                    value={n_sessioni}
+                    onChange={(e) =>
+                      set_n_sessioni(Math.max(1, Math.min(12, Number(e.target.value) || 1)))
+                    }
+                  />
+                </div>
+              )}
+
+              {modo_suddivisione === "parallelo" && (
+                <div className="space-y-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Numero corsie</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={12}
+                      value={corsie.length}
+                      onChange={(e) => {
+                        const n = Math.max(1, Math.min(12, Number(e.target.value) || 1));
+                        set_corsie((prev) =>
+                          Array.from({ length: n }, (_, i) => prev[i] ?? `Pista ${i + 1}`),
+                        );
+                      }}
+                    />
+                  </div>
+                  {corsie.map((c, i) => (
+                    <Input
+                      key={i}
+                      value={c}
+                      onChange={(e) =>
+                        set_corsie((prev) => prev.map((v, idx) => (idx === i ? e.target.value : v)))
+                      }
+                      placeholder={`Pista ${i + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
+          )}
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => set_modal_open(false)}>
-              Annulla
-            </Button>
-            <Button onClick={salva_blocco} disabled={upsert_blocco.isPending}>
-              Crea blocco
-            </Button>
+            {passo === "a" ? (
+              <>
+                <Button variant="outline" onClick={() => set_modal_open(false)}>
+                  Annulla
+                </Button>
+                <Button onClick={() => set_passo("b")}>Avanti</Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => set_passo("a")}>
+                  Indietro
+                </Button>
+                <Button onClick={salva_blocco} disabled={creazione_in_corso || upsert_blocco.isPending}>
+                  Crea blocco
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
 
       <Dialog open={riepilogo_open} onOpenChange={set_riepilogo_open}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
