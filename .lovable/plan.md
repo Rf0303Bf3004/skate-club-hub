@@ -76,6 +76,26 @@ Azione su una sessione di griglia → dialog "Ripeti ogni <giorno> per tutta la 
 
 Eccezioni per singolo giorno: già ottenibili con la griglia stessa (si modifica/cancella la sessione di quel giorno senza toccare il corso). Serve solo un flag `modificata_manualmente` sulla sessione, per non farla sovrascrivere da una ri-generazione.
 
+### c-bis) La proposta/pacchetto nasce PRIMA della programmazione
+
+Il bottone "Ripeti per tutta la stagione" resta, ma non è più l'unico modo in cui nasce un pacchetto. I due percorsi convivono:
+
+- **Bottom-up** (già descritto sopra): compongo la giornata a mano, poi la promuovo a pacchetto ricorrente.
+- **Top-down** (necessario per la modalità "per proposta"): creo prima la proposta commerciale con orari e prezzo, raccolgo le adesioni, e poi la trascino sulla Griglia già piena di iscritti.
+
+Modello dati: **una occorrenza di proposta = una riga `corsi`** (con `giorno`, `ora_inizio`, `ora_fine`, `risorsa_id`, costi, `capienza_max`) + le sue `iscrizioni_corsi`. Nessuna tabella nuova per il pacchetto. L'unica aggiunta è il raggruppamento commerciale:
+
+- `corsi.proposta_nome` (text) oppure, più pulito, `corsi.proposta_id` → tabella leggera `proposte` (`club_id`, `stagione_id`, `nome`, `descrizione`, `livello_id`, `attiva`). Preferibile la seconda: permette di rinominare la proposta senza toccare le occorrenze e di elencare "Stellina 2" con le sue 3 occorrenze settimanali come un'unica voce commerciale.
+- Ogni occorrenza mantiene iscrizioni proprie: un atleta aderisce a **una** occorrenza specifica, e viene fatturato per quella (o per la somma delle occorrenze/proposte a cui ha aderito). Questa è esattamente la semantica attuale di `iscrizioni_corsi`: nulla cambia in fatturazione.
+- Nella Griglia, il pool "per proposta" elenca le occorrenze `corsi` della stagione compatibili col giorno programmato (di default quelle con `giorno` = giorno della data; con opzione "mostra tutte" per casi eccezionali come recuperi).
+
+Interfaccia di gestione: **estendere `CoursesPage.tsx`, non creare una pagina nuova.** Serve:
+- raggruppamento visivo delle righe `corsi` per proposta (oggi sono un elenco piatto);
+- azione "Aggiungi occorrenza" su una proposta esistente (duplica giorno/orario/prezzo, iscrizioni vuote);
+- la gestione adesioni è già lì (`iscrizioni_corsi` + `FatturazioneIscrizioneRow`) e resta invariata.
+
+Quindi il punto (c) da solo non basta: la fase 5 va sdoppiata in "creazione proposte + adesioni" (top-down) e "promozione a ricorrente" (bottom-up).
+
 ## d) Dati storici del club reale
 
 Nessuna cancellazione. Migrazione in due passi, entrambi reversibili:
