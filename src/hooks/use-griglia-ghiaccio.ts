@@ -55,8 +55,51 @@ export interface GrigliaBlocco {
   stato: "bozza" | "pubblicato";
   creato_da: string | null;
   pubblicato_at: string | null;
+  risorsa_id: string | null;
   sessioni: GrigliaSessione[];
 }
+
+// ─── Disponibilità dichiarata per giorno + risorsa ─────────
+export const GIORNI_IT_SETTIMANA = [
+  "Domenica",
+  "Lunedì",
+  "Martedì",
+  "Mercoledì",
+  "Giovedì",
+  "Venerdì",
+  "Sabato",
+];
+
+export function giorno_it_da_data(data_iso: string): string {
+  return GIORNI_IT_SETTIMANA[new Date(`${data_iso}T00:00:00`).getDay()];
+}
+
+export interface FasciaDisponibilita {
+  ora_inizio: string;
+  ora_fine: string;
+}
+
+export function use_disponibilita_giorno(risorsa_id: string | null, giorno_settimana: string | null) {
+  return useQuery({
+    refetchOnMount: "always",
+    staleTime: 0,
+    enabled: !!get_current_club_id() && !!risorsa_id && !!giorno_settimana,
+    queryKey: ["disponibilita_giorno", get_current_club_id(), risorsa_id, giorno_settimana],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("disponibilita_ghiaccio" as any)
+        .select("ora_inizio,ora_fine")
+        .eq("club_id", get_current_club_id())
+        .eq("risorsa_id", risorsa_id as string)
+        .eq("giorno", giorno_settimana as string)
+        .eq("tipo", "ghiaccio")
+        .order("ora_inizio");
+      if (error) throw error;
+      return ((data ?? []) as any[]) as FasciaDisponibilita[];
+    },
+  });
+}
+
 
 // ─── Specialità ────────────────────────────────────────────
 export function use_griglia_specialita() {
