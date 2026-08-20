@@ -327,13 +327,30 @@ const GrigliaGhiaccioPage: React.FC = () => {
                 className="h-9 w-[11rem]"
               />
             </div>
+            {risorse_ghiaccio.length > 0 && (
+              <div className="space-y-1">
+                <Label className="text-xs">Pista</Label>
+                <Select value={risorsa_sel} onValueChange={set_risorsa_sel}>
+                  <SelectTrigger className="h-9 w-[12rem]">
+                    <SelectValue placeholder="Seleziona pista" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {risorse_ghiaccio.map((r) => (
+                      <SelectItem key={r.id} value={r.id}>
+                        {r.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             {is_editor && (
               <Button variant="outline" onClick={() => set_riepilogo_open(true)}>
                 <Printer className="w-4 h-4 mr-1" /> Stampa riepilogo istruttori
               </Button>
             )}
             {is_editor && (
-              <Button onClick={() => set_modal_open(true)}>
+              <Button onClick={apri_wizard} disabled={risorse_ghiaccio.length === 0}>
                 <Plus className="w-4 h-4 mr-1" /> Nuovo blocco
               </Button>
             )}
@@ -342,6 +359,17 @@ const GrigliaGhiaccioPage: React.FC = () => {
       </div>
 
       <ProvenienzaLegenda />
+
+      {risorse_ghiaccio.length === 0 && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+          <span>
+            Nessuna pista di ghiaccio attiva configurata. Vai in Setup del Club → Risorse e strutture per
+            aggiungerne una prima di creare i blocchi della griglia.
+          </span>
+        </div>
+      )}
+
 
       {isLoading ? (
         <div className="flex items-center justify-center h-40">
