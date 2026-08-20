@@ -1015,6 +1015,10 @@ const ClubSetupPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <div className="max-w-2xl mt-6">
+        <RisorseSection />
+      </div>
         </TabsContent>
 
         <TabsContent value="catalogo">
