@@ -4712,6 +4712,60 @@ export type Database = {
         }
         Relationships: []
       }
+      risorse_strutture: {
+        Row: {
+          attiva: boolean
+          capienza_max: number | null
+          club_id: string
+          colore: string | null
+          created_at: string
+          id: string
+          nome: string
+          ordine: number
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          attiva?: boolean
+          capienza_max?: number | null
+          club_id: string
+          colore?: string | null
+          created_at?: string
+          id?: string
+          nome: string
+          ordine?: number
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          attiva?: boolean
+          capienza_max?: number | null
+          club_id?: string
+          colore?: string | null
+          created_at?: string
+          id?: string
+          nome?: string
+          ordine?: number
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "risorse_strutture_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "risorse_strutture_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "kpi_pitch_sponsor"
+            referencedColumns: ["club_id"]
+          },
+        ]
+      }
       risultati_gara: {
         Row: {
           atleta_id: string | null
