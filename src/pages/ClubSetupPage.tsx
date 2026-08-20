@@ -940,17 +940,38 @@ const ClubSetupPage: React.FC = () => {
 
         <Separator />
 
-        {/* Disponibilità ghiaccio settimanale */}
+        {/* Disponibilità strutture settimanale */}
         <div>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">
-              Disponibilità ghiaccio settimanale
+              Disponibilità strutture settimanale
             </h3>
-            <Button size="sm" onClick={save_disponibilita} disabled={saving_disp}>
+            <Button size="sm" onClick={save_disponibilita} disabled={saving_disp || !risorsa_sel_id}>
               {saving_disp ? "..." : "Salva disponibilità"}
             </Button>
           </div>
+          <div className="mb-4 max-w-sm">
+            <Label className="text-xs text-muted-foreground">Risorsa</Label>
+            <Select value={risorsa_sel_id} onValueChange={set_risorsa_sel_id}>
+              <SelectTrigger className="h-9 mt-1">
+                <SelectValue placeholder="Seleziona una risorsa" />
+              </SelectTrigger>
+              <SelectContent>
+                {risorse_attive.map((r: any) => (
+                  <SelectItem key={r.id} value={r.id}>
+                    {r.nome} · {r.tipo === "palestra" ? "Palestra" : "Ghiaccio"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {risorse_attive.length === 0 && (
+              <p className="text-xs text-muted-foreground italic mt-1">
+                Nessuna risorsa configurata — aggiungine una in "Risorse e strutture".
+              </p>
+            )}
+          </div>
           <div className="space-y-4">
+
             {GIORNI.map((giorno) => {
               const slots = disp_local[giorno] || [];
               return (
