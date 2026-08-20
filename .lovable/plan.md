@@ -113,7 +113,9 @@ Le 80 occorrenze passate restano dove sono e continuano a servire lo storico/le 
 | 2 | `griglia_blocchi.risorsa_id`, selettore risorsa nella pagina Griglia, durate libere al posto dei 20'. | Basso (1 blocco esistente) |
 | 3 | Blocco reale sulla disponibilità istruttori nel drag-and-drop (vedi sotto). | Basso |
 | 4 | Griglia su risorse `palestra` (stesso componente) + specialità con `ambito`. | Basso |
-| 5 | "Ripeti per tutta la stagione" → `corsi`/`iscrizioni_corsi` + generazione occorrenze. Prima su una settimana pilota. | Medio-alto: tocca fatturazione |
+| 5a | Proposte/pacchetti: tabella `proposte` + raggruppamento e "aggiungi occorrenza" in `CoursesPage`. Adesioni invariate. | Basso (additivo) |
+| 5b | Modalità pool "per proposta" nel `GrigliaBuilder` (toggle per sessione) + `origine_pool`/`corso_id` su `griglia_sessioni`. | Medio |
+| 5c | "Ripeti per tutta la stagione" → `corsi`/`iscrizioni_corsi` + generazione occorrenze. Prima su una settimana pilota. | Medio-alto: tocca fatturazione |
 | 6 | Viste settimana/mese/stagione sopra le giornate; `MeseView` riadattata a leggere dalla griglia. | Medio |
 | 7 | Planning attuale in sola lettura, poi archiviato. | Da decidere con Roberto |
 
