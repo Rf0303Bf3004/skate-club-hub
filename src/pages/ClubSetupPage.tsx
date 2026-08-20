@@ -18,6 +18,8 @@ import { RegoleComunicazioniSection } from "@/components/comunicazioni/RegoleCom
 import ModalitaGestioneSection from "@/components/setup/ModalitaGestioneSection";
 import RagioniSocialiSection from "@/components/setup/RagioniSocialiSection";
 import RisorseSection from "@/components/setup/RisorseSection";
+import { use_risorse_strutture } from "@/hooks/use-risorse-strutture";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 
 const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"] as const;
