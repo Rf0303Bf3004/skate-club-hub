@@ -379,31 +379,41 @@ const ClubSetupPage: React.FC = () => {
   };
 
   const save_disponibilita = async () => {
+    if (!risorsa_sel_id) {
+      toast({ title: "Seleziona una risorsa", variant: "destructive" });
+      return;
+    }
     set_saving_disp(true);
     try {
       const club_id = get_current_club_id();
-      // Delete all existing
-      const { error: del_err } = await supabase.from("disponibilita_ghiaccio").delete().eq("club_id", club_id);
+      // Cancella solo le righe della risorsa selezionata
+      const { error: del_err } = await supabase
+        .from("disponibilita_ghiaccio")
+        .delete()
+        .eq("club_id", club_id)
+        .eq("risorsa_id", risorsa_sel_id);
       if (del_err) throw del_err;
 
-      // Insert all (ghiaccio + pulizia)
+      // Insert all (disponibilità + eventuale pulizia)
       const rows: any[] = [];
       for (const [giorno, slots] of Object.entries(disp_local)) {
         for (const s of slots) {
-          rows.push({ club_id, giorno, ora_inizio: s.ora_inizio, ora_fine: s.ora_fine, tipo: "ghiaccio" });
+          rows.push({ club_id, risorsa_id: risorsa_sel_id, giorno, ora_inizio: s.ora_inizio, ora_fine: s.ora_fine, tipo: "ghiaccio" });
         }
       }
-      for (const [giorno, slots] of Object.entries(disp_pulizia_local)) {
-        for (const s of slots) {
-          rows.push({ club_id, giorno, ora_inizio: s.ora_inizio, ora_fine: s.ora_fine, tipo: "pulizia" });
+      if (risorsa_is_ghiaccio) {
+        for (const [giorno, slots] of Object.entries(disp_pulizia_local)) {
+          for (const s of slots) {
+            rows.push({ club_id, risorsa_id: risorsa_sel_id, giorno, ora_inizio: s.ora_inizio, ora_fine: s.ora_fine, tipo: "pulizia" });
+          }
         }
       }
       if (rows.length > 0) {
-        const { error: ins_err } = await supabase.from("disponibilita_ghiaccio").insert(rows);
+        const { error: ins_err } = await supabase.from("disponibilita_ghiaccio").insert(rows as any);
         if (ins_err) throw ins_err;
       }
 
-      toast({ title: "✅ Disponibilità ghiaccio e pulizia salvata" });
+      toast({ title: `✅ Disponibilità salvata per ${risorsa_sel?.nome ?? "la risorsa"}` });
       queryClient.invalidateQueries({ queryKey: ["disponibilita_ghiaccio"] });
     } catch (err: any) {
       toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
