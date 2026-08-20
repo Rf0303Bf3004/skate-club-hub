@@ -83,6 +83,7 @@ const ClubSetupPage: React.FC = () => {
   const { data: config_ghiaccio, isLoading: loading_config } = use_config_ghiaccio();
   const { data: disp_ghiaccio_raw, isLoading: loading_disp } = use_disponibilita_ghiaccio();
   const { data: catalogo_count } = use_catalogo_count();
+  const { data: risorse = [] } = use_risorse_strutture();
 
   const stagione_attiva = stagioni.find((s: any) => s.attiva);
   const [form, set_form] = useState<Record<string, any>>({});
@@ -94,25 +95,39 @@ const ClubSetupPage: React.FC = () => {
   const [ghiaccio_form, set_ghiaccio_form] = useState<Record<string, any>>({});
   const [saving_ghiaccio, set_saving_ghiaccio] = useState(false);
 
-  // Disponibilità ghiaccio local state
+  // Disponibilità strutture local state
+  const [risorsa_sel_id, set_risorsa_sel_id] = useState<string>("");
   const [disp_local, set_disp_local] = useState<Record<string, { ora_inizio: string; ora_fine: string }[]>>({});
   const [disp_pulizia_local, set_disp_pulizia_local] = useState<Record<string, { ora_inizio: string; ora_fine: string }[]>>({});
   const [saving_disp, set_saving_disp] = useState(false);
 
-  // Sync disp_local when data loads
+  const risorse_attive = (risorse ?? []).filter((r: any) => r.attiva !== false);
+  const risorsa_sel = (risorse ?? []).find((r: any) => r.id === risorsa_sel_id) ?? null;
+  const risorsa_is_ghiaccio = risorsa_sel?.tipo !== "palestra";
+
+  // Seleziona la prima risorsa disponibile
+  useEffect(() => {
+    if (!risorsa_sel_id && risorse_attive.length > 0) {
+      set_risorsa_sel_id(risorse_attive[0].id);
+    }
+  }, [risorse_attive, risorsa_sel_id]);
+
+  // Sync disp_local quando cambiano i dati o la risorsa selezionata
   useEffect(() => {
     if (disp_ghiaccio_raw) {
       const ghiaccio: Record<string, { ora_inizio: string; ora_fine: string }[]> = {};
       const pulizia: Record<string, { ora_inizio: string; ora_fine: string }[]> = {};
-      disp_ghiaccio_raw.forEach((d: any) => {
-        const target = d.tipo === "pulizia" ? pulizia : ghiaccio;
-        if (!target[d.giorno]) target[d.giorno] = [];
-        target[d.giorno].push({ ora_inizio: d.ora_inizio, ora_fine: d.ora_fine });
-      });
+      disp_ghiaccio_raw
+        .filter((d: any) => (risorsa_sel_id ? d.risorsa_id === risorsa_sel_id : !d.risorsa_id))
+        .forEach((d: any) => {
+          const target = d.tipo === "pulizia" ? pulizia : ghiaccio;
+          if (!target[d.giorno]) target[d.giorno] = [];
+          target[d.giorno].push({ ora_inizio: d.ora_inizio, ora_fine: d.ora_fine });
+        });
       set_disp_local(ghiaccio);
       set_disp_pulizia_local(pulizia);
     }
-  }, [disp_ghiaccio_raw]);
+  }, [disp_ghiaccio_raw, risorsa_sel_id]);
 
   const get_val = (field: string, fallback: any = "") => {
     if (field in form) return form[field];
