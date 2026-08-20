@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { usePermessiSezioniMatrix } from "@/hooks/usePermessi";
@@ -7,9 +7,13 @@ import { can_manage_griglia } from "@/lib/roles";
 import {
   use_griglia_blocchi_giorno,
   use_upsert_blocco,
+  use_upsert_sessione,
   use_elimina_blocco,
+  use_disponibilita_giorno,
+  giorno_it_da_data,
   type GrigliaBlocco,
 } from "@/hooks/use-griglia-ghiaccio";
+import { use_risorse_strutture } from "@/hooks/use-risorse-strutture";
 import GrigliaBuilder from "@/components/griglia/GrigliaBuilder";
 import ProvenienzaLegenda from "@/components/ProvenienzaLegenda";
 import StampaRiepilogoIstruttori, {
@@ -21,9 +25,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { LayoutGrid, Plus, Trash2, ChevronDown, ChevronRight, GraduationCap, Printer } from "lucide-react";
+import { LayoutGrid, Plus, Trash2, ChevronDown, ChevronRight, GraduationCap, Printer, AlertTriangle } from "lucide-react";
 
 function oggi_iso(): string {
   const d = new Date();
@@ -40,6 +45,17 @@ function hhmm(t?: string | null): string {
   return (t ?? "").slice(0, 5);
 }
 
+function minuti(t: string): number {
+  const [h, m] = hhmm(t).split(":").map(Number);
+  return (h || 0) * 60 + (m || 0);
+}
+
+function da_minuti(v: number): string {
+  const h = Math.floor(v / 60);
+  const m = v % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
 const GrigliaGhiaccioPage: React.FC = () => {
   const { session } = useAuth();
   const { visibile_set, is_admin_like, is_loading: is_loading_permessi } = usePermessiSezioniMatrix();
@@ -48,19 +64,45 @@ const GrigliaGhiaccioPage: React.FC = () => {
   const is_editor = can_manage_griglia(session?.ruolo);
 
   const [data_sel, set_data_sel] = useState<string>(oggi_iso());
+  const [risorsa_sel, set_risorsa_sel] = useState<string>("");
   const [espansi, set_espansi] = useState<string[]>([]);
   const [modal_open, set_modal_open] = useState(false);
   const [riepilogo_open, set_riepilogo_open] = useState(false);
   const [form, set_form] = useState({ ora_inizio: "17:00", ora_fine: "18:00", titolo: "" });
 
-  const { data: blocchi = [], isLoading } = use_griglia_blocchi_giorno(data_sel);
+  // Wizard nuovo blocco
+  const [passo, set_passo] = useState<"a" | "b">("a");
+  const [fascia_scelta, set_fascia_scelta] = useState<string>("custom");
+  const [modo_suddivisione, set_modo_suddivisione] = useState<"unico" | "sequenziale" | "parallelo">("unico");
+  const [n_sessioni, set_n_sessioni] = useState(3);
+  const [corsie, set_corsie] = useState<string[]>(["Pista 1", "Pista 2"]);
+  const [creazione_in_corso, set_creazione_in_corso] = useState(false);
+
+  const { data: risorse = [] } = use_risorse_strutture();
+  const risorse_ghiaccio = useMemo(
+    () => risorse.filter((r) => r.tipo === "ghiaccio" && r.attiva),
+    [risorse],
+  );
+
+  useEffect(() => {
+    if (!risorsa_sel && risorse_ghiaccio.length > 0) set_risorsa_sel(risorse_ghiaccio[0].id);
+  }, [risorse_ghiaccio, risorsa_sel]);
+
+  const { data: blocchi = [], isLoading } = use_griglia_blocchi_giorno(data_sel, risorsa_sel || null);
   const upsert_blocco = use_upsert_blocco();
+  const upsert_sessione = use_upsert_sessione();
   const elimina_blocco = use_elimina_blocco();
+
+  const giorno_settimana = useMemo(() => (data_sel ? giorno_it_da_data(data_sel) : null), [data_sel]);
+  const { data: fasce = [] } = use_disponibilita_giorno(risorsa_sel || null, giorno_settimana);
+
+  const nome_risorsa = risorse_ghiaccio.find((r) => r.id === risorsa_sel)?.nome ?? "";
 
   const titolo_suggerito = useMemo(() => {
     const l = label_data(data_sel);
     return l ? `Griglia di ${l.charAt(0).toUpperCase()}${l.slice(1)}` : "Griglia";
   }, [data_sel]);
+
 
   const riepilogo_istruttori = useMemo<IstruttoreStampa[]>(() => {
     const map = new Map<string, IstruttoreStampa>();
