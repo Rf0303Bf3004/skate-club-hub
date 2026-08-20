@@ -2488,6 +2488,7 @@ export type Database = {
           ora_fine: string
           ora_inizio: string
           pubblicato_at: string | null
+          risorsa_id: string | null
           stato: string
           titolo: string | null
           updated_at: string
@@ -2501,6 +2502,7 @@ export type Database = {
           ora_fine: string
           ora_inizio: string
           pubblicato_at?: string | null
+          risorsa_id?: string | null
           stato?: string
           titolo?: string | null
           updated_at?: string
@@ -2514,6 +2516,7 @@ export type Database = {
           ora_fine?: string
           ora_inizio?: string
           pubblicato_at?: string | null
+          risorsa_id?: string | null
           stato?: string
           titolo?: string | null
           updated_at?: string
@@ -2532,6 +2535,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "kpi_pitch_sponsor"
             referencedColumns: ["club_id"]
+          },
+          {
+            foreignKeyName: "griglia_blocchi_risorsa_id_fkey"
+            columns: ["risorsa_id"]
+            isOneToOne: false
+            referencedRelation: "risorse_strutture"
+            referencedColumns: ["id"]
           },
         ]
       }

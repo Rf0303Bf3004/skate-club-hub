@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { usePermessiSezioniMatrix } from "@/hooks/usePermessi";
@@ -7,9 +7,13 @@ import { can_manage_griglia } from "@/lib/roles";
 import {
   use_griglia_blocchi_giorno,
   use_upsert_blocco,
+  use_upsert_sessione,
   use_elimina_blocco,
+  use_disponibilita_giorno,
+  giorno_it_da_data,
   type GrigliaBlocco,
 } from "@/hooks/use-griglia-ghiaccio";
+import { use_risorse_strutture } from "@/hooks/use-risorse-strutture";
 import GrigliaBuilder from "@/components/griglia/GrigliaBuilder";
 import ProvenienzaLegenda from "@/components/ProvenienzaLegenda";
 import StampaRiepilogoIstruttori, {
@@ -21,9 +25,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { LayoutGrid, Plus, Trash2, ChevronDown, ChevronRight, GraduationCap, Printer } from "lucide-react";
+import { LayoutGrid, Plus, Trash2, ChevronDown, ChevronRight, GraduationCap, Printer, AlertTriangle } from "lucide-react";
 
 function oggi_iso(): string {
   const d = new Date();
@@ -40,6 +45,17 @@ function hhmm(t?: string | null): string {
   return (t ?? "").slice(0, 5);
 }
 
+function minuti(t: string): number {
+  const [h, m] = hhmm(t).split(":").map(Number);
+  return (h || 0) * 60 + (m || 0);
+}
+
+function da_minuti(v: number): string {
+  const h = Math.floor(v / 60);
+  const m = v % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
 const GrigliaGhiaccioPage: React.FC = () => {
   const { session } = useAuth();
   const { visibile_set, is_admin_like, is_loading: is_loading_permessi } = usePermessiSezioniMatrix();
@@ -48,19 +64,45 @@ const GrigliaGhiaccioPage: React.FC = () => {
   const is_editor = can_manage_griglia(session?.ruolo);
 
   const [data_sel, set_data_sel] = useState<string>(oggi_iso());
+  const [risorsa_sel, set_risorsa_sel] = useState<string>("");
   const [espansi, set_espansi] = useState<string[]>([]);
   const [modal_open, set_modal_open] = useState(false);
   const [riepilogo_open, set_riepilogo_open] = useState(false);
   const [form, set_form] = useState({ ora_inizio: "17:00", ora_fine: "18:00", titolo: "" });
 
-  const { data: blocchi = [], isLoading } = use_griglia_blocchi_giorno(data_sel);
+  // Wizard nuovo blocco
+  const [passo, set_passo] = useState<"a" | "b">("a");
+  const [fascia_scelta, set_fascia_scelta] = useState<string>("custom");
+  const [modo_suddivisione, set_modo_suddivisione] = useState<"unico" | "sequenziale" | "parallelo">("unico");
+  const [n_sessioni, set_n_sessioni] = useState(3);
+  const [corsie, set_corsie] = useState<string[]>(["Pista 1", "Pista 2"]);
+  const [creazione_in_corso, set_creazione_in_corso] = useState(false);
+
+  const { data: risorse = [] } = use_risorse_strutture();
+  const risorse_ghiaccio = useMemo(
+    () => risorse.filter((r) => r.tipo === "ghiaccio" && r.attiva),
+    [risorse],
+  );
+
+  useEffect(() => {
+    if (!risorsa_sel && risorse_ghiaccio.length > 0) set_risorsa_sel(risorse_ghiaccio[0].id);
+  }, [risorse_ghiaccio, risorsa_sel]);
+
+  const { data: blocchi = [], isLoading } = use_griglia_blocchi_giorno(data_sel, risorsa_sel || null);
   const upsert_blocco = use_upsert_blocco();
+  const upsert_sessione = use_upsert_sessione();
   const elimina_blocco = use_elimina_blocco();
+
+  const giorno_settimana = useMemo(() => (data_sel ? giorno_it_da_data(data_sel) : null), [data_sel]);
+  const { data: fasce = [] } = use_disponibilita_giorno(risorsa_sel || null, giorno_settimana);
+
+  const nome_risorsa = risorse_ghiaccio.find((r) => r.id === risorsa_sel)?.nome ?? "";
 
   const titolo_suggerito = useMemo(() => {
     const l = label_data(data_sel);
     return l ? `Griglia di ${l.charAt(0).toUpperCase()}${l.slice(1)}` : "Griglia";
   }, [data_sel]);
+
 
   const riepilogo_istruttori = useMemo<IstruttoreStampa[]>(() => {
     const map = new Map<string, IstruttoreStampa>();
@@ -108,22 +150,84 @@ const GrigliaGhiaccioPage: React.FC = () => {
   const toggle_espanso = (id: string) =>
     set_espansi((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
+  const apri_wizard = () => {
+    set_passo("a");
+    set_modo_suddivisione("unico");
+    set_n_sessioni(3);
+    set_corsie(["Pista 1", "Pista 2"]);
+    set_fascia_scelta(fasce.length > 0 ? "0" : "custom");
+    if (fasce.length > 0) {
+      set_form({ ora_inizio: hhmm(fasce[0].ora_inizio), ora_fine: hhmm(fasce[0].ora_fine), titolo: "" });
+    } else {
+      set_form({ ora_inizio: "17:00", ora_fine: "18:00", titolo: "" });
+    }
+    set_modal_open(true);
+  };
+
+  const scegli_fascia = (val: string) => {
+    set_fascia_scelta(val);
+    if (val !== "custom") {
+      const f = fasce[Number(val)];
+      if (f) set_form((prev) => ({ ...prev, ora_inizio: hhmm(f.ora_inizio), ora_fine: hhmm(f.ora_fine) }));
+    }
+  };
+
   const salva_blocco = async () => {
+    if (!risorsa_sel) {
+      toast({ title: "Nessuna risorsa selezionata", variant: "destructive" });
+      return;
+    }
+    set_creazione_in_corso(true);
     try {
       const id = await upsert_blocco.mutateAsync({
         data: data_sel,
         ora_inizio: form.ora_inizio,
         ora_fine: form.ora_fine,
         titolo: form.titolo.trim() || titolo_suggerito,
+        risorsa_id: risorsa_sel,
       });
+
+      if (id && modo_suddivisione === "sequenziale") {
+        const inizio = minuti(form.ora_inizio);
+        const fine = minuti(form.ora_fine);
+        const totale = Math.max(fine - inizio, 0);
+        const n = Math.max(1, Math.min(12, n_sessioni));
+        const passo_min = Math.floor(totale / n);
+        for (let i = 0; i < n; i++) {
+          const s_start = inizio + passo_min * i;
+          const s_end = i === n - 1 ? fine : inizio + passo_min * (i + 1);
+          await upsert_sessione.mutateAsync({
+            blocco_id: id,
+            ordine: i + 1,
+            ora_inizio: da_minuti(s_start),
+            ora_fine: da_minuti(s_end),
+          });
+        }
+      }
+
+      if (id && modo_suddivisione === "parallelo") {
+        for (let i = 0; i < corsie.length; i++) {
+          await upsert_sessione.mutateAsync({
+            blocco_id: id,
+            ordine: i + 1,
+            ora_inizio: form.ora_inizio,
+            ora_fine: form.ora_fine,
+            pista: corsie[i].trim() || `Pista ${i + 1}`,
+          });
+        }
+      }
+
       set_modal_open(false);
       set_form({ ora_inizio: "17:00", ora_fine: "18:00", titolo: "" });
       if (id) set_espansi((prev) => [...prev, id]);
       toast({ title: "Blocco creato" });
     } catch (e: any) {
       toast({ title: "Errore", description: e.message, variant: "destructive" });
+    } finally {
+      set_creazione_in_corso(false);
     }
   };
+
 
   const rimuovi_blocco = async (id: string) => {
     try {
@@ -223,13 +327,30 @@ const GrigliaGhiaccioPage: React.FC = () => {
                 className="h-9 w-[11rem]"
               />
             </div>
+            {risorse_ghiaccio.length > 0 && (
+              <div className="space-y-1">
+                <Label className="text-xs">Pista</Label>
+                <Select value={risorsa_sel} onValueChange={set_risorsa_sel}>
+                  <SelectTrigger className="h-9 w-[12rem]">
+                    <SelectValue placeholder="Seleziona pista" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {risorse_ghiaccio.map((r) => (
+                      <SelectItem key={r.id} value={r.id}>
+                        {r.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             {is_editor && (
               <Button variant="outline" onClick={() => set_riepilogo_open(true)}>
                 <Printer className="w-4 h-4 mr-1" /> Stampa riepilogo istruttori
               </Button>
             )}
             {is_editor && (
-              <Button onClick={() => set_modal_open(true)}>
+              <Button onClick={apri_wizard} disabled={risorse_ghiaccio.length === 0}>
                 <Plus className="w-4 h-4 mr-1" /> Nuovo blocco
               </Button>
             )}
@@ -238,6 +359,17 @@ const GrigliaGhiaccioPage: React.FC = () => {
       </div>
 
       <ProvenienzaLegenda />
+
+      {risorse_ghiaccio.length === 0 && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+          <span>
+            Nessuna pista di ghiaccio attiva configurata. Vai in Setup del Club → Risorse e strutture per
+            aggiungerne una prima di creare i blocchi della griglia.
+          </span>
+        </div>
+      )}
+
 
       {isLoading ? (
         <div className="flex items-center justify-center h-40">
@@ -294,46 +426,180 @@ const GrigliaGhiaccioPage: React.FC = () => {
       <Dialog open={modal_open} onOpenChange={set_modal_open}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nuovo blocco ghiaccio</DialogTitle>
+            <DialogTitle>
+              {passo === "a" ? "Nuovo blocco — orario" : "Nuovo blocco — suddivisione"}
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-xs">Ora inizio</Label>
-                <Input
-                  type="time"
-                  value={form.ora_inizio}
-                  onChange={(e) => set_form((f) => ({ ...f, ora_inizio: e.target.value }))}
-                />
+
+          {passo === "a" ? (
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground">
+                {giorno_settimana} {nome_risorsa ? `— ${nome_risorsa}` : ""}
+              </p>
+              {fasce.length === 0 && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 flex gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span>
+                    Nessuna disponibilità dichiarata per {giorno_settimana}
+                    {nome_risorsa ? ` su ${nome_risorsa}` : ""} — inserisci l'orario manualmente.
+                  </span>
+                </div>
+              )}
+              <div className="space-y-2">
+                {fasce.map((f, idx) => (
+                  <label
+                    key={idx}
+                    className="flex items-center gap-2 rounded-lg border p-2 cursor-pointer hover:bg-muted/50"
+                  >
+                    <input
+                      type="radio"
+                      name="fascia"
+                      checked={fascia_scelta === String(idx)}
+                      onChange={() => scegli_fascia(String(idx))}
+                    />
+                    <span className="text-sm font-medium">
+                      {hhmm(f.ora_inizio)}–{hhmm(f.ora_fine)}
+                    </span>
+                  </label>
+                ))}
+                <label className="flex items-center gap-2 rounded-lg border p-2 cursor-pointer hover:bg-muted/50">
+                  <input
+                    type="radio"
+                    name="fascia"
+                    checked={fascia_scelta === "custom"}
+                    onChange={() => scegli_fascia("custom")}
+                  />
+                  <span className="text-sm font-medium">Orario personalizzato</span>
+                </label>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Ora inizio</Label>
+                  <Input
+                    type="time"
+                    value={form.ora_inizio}
+                    disabled={fascia_scelta !== "custom"}
+                    onChange={(e) => set_form((f) => ({ ...f, ora_inizio: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Ora fine</Label>
+                  <Input
+                    type="time"
+                    value={form.ora_fine}
+                    disabled={fascia_scelta !== "custom"}
+                    onChange={(e) => set_form((f) => ({ ...f, ora_fine: e.target.value }))}
+                  />
+                </div>
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">Ora fine</Label>
+                <Label className="text-xs">Titolo (opzionale)</Label>
                 <Input
-                  type="time"
-                  value={form.ora_fine}
-                  onChange={(e) => set_form((f) => ({ ...f, ora_fine: e.target.value }))}
+                  value={form.titolo}
+                  onChange={(e) => set_form((f) => ({ ...f, titolo: e.target.value }))}
+                  placeholder={titolo_suggerito}
                 />
               </div>
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Titolo (opzionale)</Label>
-              <Input
-                value={form.titolo}
-                onChange={(e) => set_form((f) => ({ ...f, titolo: e.target.value }))}
-                placeholder={titolo_suggerito}
-              />
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm">
+                Fascia scelta:{" "}
+                <span className="font-semibold">
+                  {form.ora_inizio}–{form.ora_fine}
+                </span>
+              </p>
+              <div className="grid gap-2">
+                <Button
+                  variant={modo_suddivisione === "unico" ? "default" : "outline"}
+                  onClick={() => set_modo_suddivisione("unico")}
+                >
+                  Un blocco unico
+                </Button>
+                <Button
+                  variant={modo_suddivisione === "sequenziale" ? "default" : "outline"}
+                  onClick={() => set_modo_suddivisione("sequenziale")}
+                >
+                  Dividi in N sessioni uguali
+                </Button>
+                <Button
+                  variant={modo_suddivisione === "parallelo" ? "default" : "outline"}
+                  onClick={() => set_modo_suddivisione("parallelo")}
+                >
+                  Dividi per pista/corsia in parallelo
+                </Button>
+              </div>
+
+              {modo_suddivisione === "sequenziale" && (
+                <div className="space-y-1">
+                  <Label className="text-xs">Numero sessioni</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={12}
+                    value={n_sessioni}
+                    onChange={(e) =>
+                      set_n_sessioni(Math.max(1, Math.min(12, Number(e.target.value) || 1)))
+                    }
+                  />
+                </div>
+              )}
+
+              {modo_suddivisione === "parallelo" && (
+                <div className="space-y-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Numero corsie</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={12}
+                      value={corsie.length}
+                      onChange={(e) => {
+                        const n = Math.max(1, Math.min(12, Number(e.target.value) || 1));
+                        set_corsie((prev) =>
+                          Array.from({ length: n }, (_, i) => prev[i] ?? `Pista ${i + 1}`),
+                        );
+                      }}
+                    />
+                  </div>
+                  {corsie.map((c, i) => (
+                    <Input
+                      key={i}
+                      value={c}
+                      onChange={(e) =>
+                        set_corsie((prev) => prev.map((v, idx) => (idx === i ? e.target.value : v)))
+                      }
+                      placeholder={`Pista ${i + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
+          )}
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => set_modal_open(false)}>
-              Annulla
-            </Button>
-            <Button onClick={salva_blocco} disabled={upsert_blocco.isPending}>
-              Crea blocco
-            </Button>
+            {passo === "a" ? (
+              <>
+                <Button variant="outline" onClick={() => set_modal_open(false)}>
+                  Annulla
+                </Button>
+                <Button onClick={() => set_passo("b")}>Avanti</Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => set_passo("a")}>
+                  Indietro
+                </Button>
+                <Button onClick={salva_blocco} disabled={creazione_in_corso || upsert_blocco.isPending}>
+                  Crea blocco
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
 
       <Dialog open={riepilogo_open} onOpenChange={set_riepilogo_open}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">

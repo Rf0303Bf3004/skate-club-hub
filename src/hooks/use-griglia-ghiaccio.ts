@@ -55,8 +55,51 @@ export interface GrigliaBlocco {
   stato: "bozza" | "pubblicato";
   creato_da: string | null;
   pubblicato_at: string | null;
+  risorsa_id: string | null;
   sessioni: GrigliaSessione[];
 }
+
+// ─── Disponibilità dichiarata per giorno + risorsa ─────────
+export const GIORNI_IT_SETTIMANA = [
+  "Domenica",
+  "Lunedì",
+  "Martedì",
+  "Mercoledì",
+  "Giovedì",
+  "Venerdì",
+  "Sabato",
+];
+
+export function giorno_it_da_data(data_iso: string): string {
+  return GIORNI_IT_SETTIMANA[new Date(`${data_iso}T00:00:00`).getDay()];
+}
+
+export interface FasciaDisponibilita {
+  ora_inizio: string;
+  ora_fine: string;
+}
+
+export function use_disponibilita_giorno(risorsa_id: string | null, giorno_settimana: string | null) {
+  return useQuery({
+    refetchOnMount: "always",
+    staleTime: 0,
+    enabled: !!get_current_club_id() && !!risorsa_id && !!giorno_settimana,
+    queryKey: ["disponibilita_giorno", get_current_club_id(), risorsa_id, giorno_settimana],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("disponibilita_ghiaccio" as any)
+        .select("ora_inizio,ora_fine")
+        .eq("club_id", get_current_club_id())
+        .eq("risorsa_id", risorsa_id as string)
+        .eq("giorno", giorno_settimana as string)
+        .eq("tipo", "ghiaccio")
+        .order("ora_inizio");
+      if (error) throw error;
+      return ((data ?? []) as any[]) as FasciaDisponibilita[];
+    },
+  });
+}
+
 
 // ─── Specialità ────────────────────────────────────────────
 export function use_griglia_specialita() {
@@ -78,13 +121,18 @@ export function use_griglia_specialita() {
 }
 
 // ─── Blocchi del giorno (idratati) ─────────────────────────
-export async function fetch_blocchi_giorno(club_id: string, data_giorno: string): Promise<GrigliaBlocco[]> {
-  const { data: blocchi, error: err_blocchi } = await supabase
+export async function fetch_blocchi_giorno(
+  club_id: string,
+  data_giorno: string,
+  risorsa_id?: string | null,
+): Promise<GrigliaBlocco[]> {
+  let q = supabase
     .from("griglia_blocchi" as any)
     .select("*")
     .eq("club_id", club_id)
-    .eq("data", data_giorno)
-    .order("ora_inizio");
+    .eq("data", data_giorno);
+  if (risorsa_id) q = q.eq("risorsa_id", risorsa_id);
+  const { data: blocchi, error: err_blocchi } = await q.order("ora_inizio");
   if (err_blocchi) throw err_blocchi;
   const lista_blocchi = (blocchi ?? []) as any[];
   if (lista_blocchi.length === 0) return [] as GrigliaBlocco[];
@@ -163,15 +211,16 @@ export async function fetch_blocchi_giorno(club_id: string, data_giorno: string)
   })) as GrigliaBlocco[];
 }
 
-export function use_griglia_blocchi_giorno(data_giorno: string) {
+export function use_griglia_blocchi_giorno(data_giorno: string, risorsa_id?: string | null) {
   return useQuery({
     refetchOnMount: "always",
     staleTime: 0,
     enabled: !!get_current_club_id() && !!data_giorno,
-    queryKey: ["griglia_blocchi_giorno", get_current_club_id(), data_giorno],
-    queryFn: async () => fetch_blocchi_giorno(get_current_club_id() as string, data_giorno),
+    queryKey: ["griglia_blocchi_giorno", get_current_club_id(), data_giorno, risorsa_id ?? null],
+    queryFn: async () => fetch_blocchi_giorno(get_current_club_id() as string, data_giorno, risorsa_id),
   });
 }
+
 
 
 // ─── Helper invalidazione ──────────────────────────────────
@@ -194,18 +243,21 @@ export function use_upsert_blocco() {
       ora_inizio: string;
       ora_fine: string;
       titolo?: string | null;
+      risorsa_id?: string | null;
     }) => {
       const club_id = get_current_club_id();
       if (!club_id) throw new Error("Club non disponibile");
       if (input.id) {
+        const patch: Record<string, any> = {
+          data: input.data,
+          ora_inizio: input.ora_inizio,
+          ora_fine: input.ora_fine,
+          titolo: input.titolo ?? null,
+        };
+        if (input.risorsa_id !== undefined) patch.risorsa_id = input.risorsa_id;
         const { error } = await supabase
           .from("griglia_blocchi" as any)
-          .update({
-            data: input.data,
-            ora_inizio: input.ora_inizio,
-            ora_fine: input.ora_fine,
-            titolo: input.titolo ?? null,
-          } as any)
+          .update(patch as any)
           .eq("id", input.id);
         if (error) throw error;
         return input.id;
@@ -218,6 +270,7 @@ export function use_upsert_blocco() {
           ora_inizio: input.ora_inizio,
           ora_fine: input.ora_fine,
           titolo: input.titolo ?? null,
+          risorsa_id: input.risorsa_id ?? null,
           stato: "bozza",
           creato_da: session?.user_id ?? null,
         } as any)
