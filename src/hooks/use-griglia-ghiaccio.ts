@@ -121,13 +121,18 @@ export function use_griglia_specialita() {
 }
 
 // ─── Blocchi del giorno (idratati) ─────────────────────────
-export async function fetch_blocchi_giorno(club_id: string, data_giorno: string): Promise<GrigliaBlocco[]> {
-  const { data: blocchi, error: err_blocchi } = await supabase
+export async function fetch_blocchi_giorno(
+  club_id: string,
+  data_giorno: string,
+  risorsa_id?: string | null,
+): Promise<GrigliaBlocco[]> {
+  let q = supabase
     .from("griglia_blocchi" as any)
     .select("*")
     .eq("club_id", club_id)
-    .eq("data", data_giorno)
-    .order("ora_inizio");
+    .eq("data", data_giorno);
+  if (risorsa_id) q = q.eq("risorsa_id", risorsa_id);
+  const { data: blocchi, error: err_blocchi } = await q.order("ora_inizio");
   if (err_blocchi) throw err_blocchi;
   const lista_blocchi = (blocchi ?? []) as any[];
   if (lista_blocchi.length === 0) return [] as GrigliaBlocco[];
