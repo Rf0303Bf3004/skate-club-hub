@@ -17,6 +17,7 @@ import FatturazioneTab from "@/components/FatturazioneTab";
 import { RegoleComunicazioniSection } from "@/components/comunicazioni/RegoleComunicazioniSection";
 import ModalitaGestioneSection from "@/components/setup/ModalitaGestioneSection";
 import RagioniSocialiSection from "@/components/setup/RagioniSocialiSection";
+import RisorseSection from "@/components/setup/RisorseSection";
 
 
 const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"] as const;
