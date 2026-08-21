@@ -87,12 +87,16 @@ export interface FasciaDisponibilita {
   ora_fine: string;
 }
 
-export function use_disponibilita_giorno(risorsa_id: string | null, giorno_settimana: string | null) {
+export function use_disponibilita_giorno(
+  risorsa_id: string | null,
+  giorno_settimana: string | null,
+  tipo: "ghiaccio" | "pulizia" = "ghiaccio",
+) {
   return useQuery({
     refetchOnMount: "always",
     staleTime: 0,
     enabled: !!get_current_club_id() && !!risorsa_id && !!giorno_settimana,
-    queryKey: ["disponibilita_giorno", get_current_club_id(), risorsa_id, giorno_settimana],
+    queryKey: ["disponibilita_giorno", get_current_club_id(), risorsa_id, giorno_settimana, tipo],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("disponibilita_ghiaccio" as any)
@@ -100,7 +104,7 @@ export function use_disponibilita_giorno(risorsa_id: string | null, giorno_setti
         .eq("club_id", get_current_club_id())
         .eq("risorsa_id", risorsa_id as string)
         .eq("giorno", giorno_settimana as string)
-        .eq("tipo", "ghiaccio")
+        .eq("tipo", tipo)
         .order("ora_inizio");
       if (error) throw error;
       return ((data ?? []) as any[]) as FasciaDisponibilita[];
