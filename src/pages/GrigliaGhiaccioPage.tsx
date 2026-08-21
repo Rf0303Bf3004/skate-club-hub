@@ -384,13 +384,23 @@ const GrigliaGhiaccioPage: React.FC = () => {
                   <SelectContent>
                     {risorse_ghiaccio.map((r) => (
                       <SelectItem key={r.id} value={r.id}>
-                        {r.nome}
+                        {r.is_ospite ? `🧳 ${r.nome} (ospite)` : r.nome}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
             )}
+            <label className="flex cursor-pointer items-center gap-2 pt-5 text-xs text-muted-foreground">
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-primary"
+                checked={includi_ospiti}
+                onChange={(e) => set_includi_ospiti(e.target.checked)}
+              />
+              Includi risorse ospiti (trasferta)
+            </label>
+
             {is_editor && (
               <Button variant="outline" onClick={() => set_riepilogo_open(true)}>
                 <Printer className="w-4 h-4 mr-1" /> Stampa riepilogo istruttori
