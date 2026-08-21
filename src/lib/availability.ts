@@ -418,6 +418,8 @@ export type verifica_orario_disponibilita_params = {
   ora_fine: string;
   /** Nome giorno (solo per il testo del motivo) */
   giorno?: string;
+  /** Risorsa ospite (trasferta): nessuna disponibilità settimanale richiesta */
+  is_ospite?: boolean;
 };
 
 export type verifica_orario_disponibilita_result = { ok: boolean; motivo?: string };
@@ -425,12 +427,14 @@ export type verifica_orario_disponibilita_result = { ok: boolean; motivo?: strin
 export function verifica_orario_disponibilita(
   params: verifica_orario_disponibilita_params,
 ): verifica_orario_disponibilita_result {
-  const { fasce_ghiaccio = [], fasce_pulizia = [], ora_inizio, ora_fine, giorno } = params;
+  const { fasce_ghiaccio = [], fasce_pulizia = [], ora_inizio, ora_fine, giorno, is_ospite } = params;
+  if (is_ospite) return { ok: true };
   const s = time_to_min(ora_inizio);
   const e = time_to_min(ora_fine);
   const suffisso_giorno = giorno ? ` per ${giorno}` : "";
 
   if (e <= s) return { ok: false, motivo: "L'ora di fine deve essere successiva all'ora di inizio" };
+
 
   if (fasce_ghiaccio.length === 0) {
     return { ok: false, motivo: `Nessuna disponibilità dichiarata${suffisso_giorno}` };
