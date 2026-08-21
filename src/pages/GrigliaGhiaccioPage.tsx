@@ -210,6 +210,8 @@ const GrigliaGhiaccioPage: React.FC = () => {
         ora_inizio: form.ora_inizio,
         ora_fine: form.ora_fine,
         giorno: giorno_settimana ?? undefined,
+        is_ospite: !!risorsa_corrente?.is_ospite,
+
       });
       if (!check.ok) {
         set_motivo_blocco(check.motivo ?? null);
