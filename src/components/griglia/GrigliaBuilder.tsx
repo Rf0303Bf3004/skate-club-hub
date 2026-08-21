@@ -599,7 +599,10 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   >(null);
 
   const giorno_blocco = useMemo(() => (blocco.data ? giorno_it_da_data(blocco.data) : null), [blocco.data]);
+  const { data: risorse_tutte = [] } = use_risorse_strutture();
+  const risorsa_blocco = risorse_tutte.find((r) => r.id === blocco.risorsa_id) ?? null;
   const { data: fasce_ghiaccio = [] } = use_disponibilita_giorno(blocco.risorsa_id ?? null, giorno_blocco);
+
   const { data: fasce_pulizia = [] } = use_disponibilita_giorno(
     blocco.risorsa_id ?? null,
     giorno_blocco,
