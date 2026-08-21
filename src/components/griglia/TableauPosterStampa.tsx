@@ -39,6 +39,7 @@ const PAGINA_MM: Record<FormatoCarta, { w: number; h: number }> = {
 const MARGINE_MM = 12;
 const COL_LABEL_MM = 38;
 const HEADER_MM = 20;
+const ALTEZZA_SOTTORIGA_MM = 11;
 const ALTEZZA_CORSIA_MM = 22;
 
 export function hhmm_da_min(m: number): string {
@@ -46,6 +47,34 @@ export function hhmm_da_min(m: number): string {
   const mm = m % 60;
   return `${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
 }
+
+/**
+ * Interval graph coloring (greedy): assegna a ogni evento la prima sotto-riga
+ * libera (nessuna sovrapposizione temporale). Ritorna la mappa evento→sotto-riga
+ * e il numero di sotto-righe necessarie (minimo 1).
+ */
+export function impacchetta_sottorighe(eventi: TableauEvento[]): {
+  riga_per_evento: Record<string, number>;
+  n_righe: number;
+} {
+  const ordinati = [...eventi].sort((a, b) => a.inizio_min - b.inizio_min || a.fine_min - b.fine_min);
+  const fine_righe: number[] = [];
+  const riga_per_evento: Record<string, number> = {};
+
+  for (const e of ordinati) {
+    let riga = fine_righe.findIndex((fine) => fine <= e.inizio_min);
+    if (riga === -1) {
+      riga = fine_righe.length;
+      fine_righe.push(e.fine_min);
+    } else {
+      fine_righe[riga] = e.fine_min;
+    }
+    riga_per_evento[e.id] = riga;
+  }
+
+  return { riga_per_evento, n_righe: Math.max(1, fine_righe.length) };
+}
+
 
 /**
  * Tableau poster: swimlane orizzontali (una per risorsa), asse tempo orizzontale.
