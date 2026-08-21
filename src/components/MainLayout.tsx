@@ -274,35 +274,21 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             </>
           )}
 
-          {is_admin && (
-            <>
-              <div className="pt-3 pb-1"><div className="border-t border-border" /></div>
-              <NavLink to="/gestione-avanzata" onClick={() => set_sidebar_open(false)}
-                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/gestione-avanzata" ? "bg-destructive text-destructive-foreground shadow-sm" : "text-destructive/70 hover:bg-destructive/10 hover:text-destructive"}`}>
-                <ShieldAlert className="w-4 h-4 shrink-0" />
-                <span>{tc("menu.gestione_avanzata")}</span>
-              </NavLink>
-              <NavLink to="/ruoli-permessi" onClick={() => set_sidebar_open(false)}
-                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/ruoli-permessi" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
-                <Lock className="w-4 h-4 shrink-0" />
-                <span>{tc("menu.gestione_ruoli")}</span>
-              </NavLink>
-            </>
-          )}
-          {can_manage_users && !is_superadmin && (
+          {can_manage_users && !is_superadmin && !is_menu_legacy && (
             <NavLink to="/utenti" onClick={() => set_sidebar_open(false)}
               className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/utenti" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
               <Users className="w-4 h-4 shrink-0" />
               <span>{tc("menu.utenti")}</span>
             </NavLink>
           )}
-          {!is_superadmin && session && (
+          {!is_superadmin && session && !is_menu_legacy && (
             <NavLink to="/convenzioni" onClick={() => set_sidebar_open(false)}
               className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/convenzioni" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
               <BadgePercent className="w-4 h-4 shrink-0" />
               <span>Convenzioni</span>
             </NavLink>
           )}
+
           {is_superadmin && (
             <>
               <div className="pt-2 pb-1">
