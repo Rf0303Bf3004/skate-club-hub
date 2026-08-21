@@ -8,6 +8,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Lock, Mail, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 
+const STORAGE_KEY_ACCOUNT_RECENTI = 'login_account_recenti';
+
+function leggi_account_recenti(): string[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_ACCOUNT_RECENTI);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter((v) => typeof v === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
 const LoginPage: React.FC = () => {
   const { t } = useTranslation('onboarding');
   const { locale, set_locale } = useI18n();
@@ -15,6 +27,7 @@ const LoginPage: React.FC = () => {
   const [email, set_email] = useState('');
   const [password, set_password] = useState('');
   const [is_submitting, set_is_submitting] = useState(false);
+  const [account_recenti, set_account_recenti] = useState<string[]>(() => leggi_account_recenti());
 
   const handle_submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,6 +35,16 @@ const LoginPage: React.FC = () => {
 
     try {
       await login(email, password);
+      const email_pulita = email.trim().toLowerCase();
+      if (email_pulita) {
+        const aggiornati = [email_pulita, ...account_recenti.filter((a) => a !== email_pulita)].slice(0, 5);
+        set_account_recenti(aggiornati);
+        try {
+          localStorage.setItem(STORAGE_KEY_ACCOUNT_RECENTI, JSON.stringify(aggiornati));
+        } catch {
+          /* storage non disponibile */
+        }
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : t('login.sign_in_failed');
       toast.error(message);
@@ -29,6 +52,7 @@ const LoginPage: React.FC = () => {
       set_is_submitting(false);
     }
   };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30">
@@ -59,7 +83,22 @@ const LoginPage: React.FC = () => {
           </div>
 
           <form onSubmit={handle_submit} className="space-y-4">
+            {account_recenti.length > 0 && (
+              <div className="space-y-2">
+                <Select value={account_recenti.includes(email) ? email : undefined} onValueChange={(v) => set_email(v)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Account usati su questo dispositivo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {account_recenti.map((a) => (
+                      <SelectItem key={a} value={a}>{a}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
+
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
