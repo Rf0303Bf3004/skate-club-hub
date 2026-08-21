@@ -4,10 +4,11 @@ import { useAuth } from "@/lib/auth";
 import { usePermessiSezioniMatrix } from "@/hooks/usePermessi";
 import { useModalitaArea } from "@/hooks/useModalitaArea";
 import { can_manage_griglia } from "@/lib/roles";
-import { use_griglia_blocchi_giorno } from "@/hooks/use-griglia-ghiaccio";
+import { use_griglia_blocchi_giorno, giorno_it_da_data } from "@/hooks/use-griglia-ghiaccio";
 import { use_risorse_strutture } from "@/hooks/use-risorse-strutture";
 import GrigliaPistaSezione from "@/components/griglia/GrigliaPistaSezione";
 import ProvenienzaLegenda from "@/components/ProvenienzaLegenda";
+import TableauSchermo from "@/components/griglia/TableauSchermo";
 import StampaRiepilogoIstruttori, {
   type IstruttoreStampa,
   type RigaSessioneStampa,
@@ -26,7 +27,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { LayoutGrid, Printer, AlertTriangle, Columns3 } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { LayoutGrid, Printer, AlertTriangle, Columns3, Rows3 } from "lucide-react";
 
 function oggi_iso(): string {
   const d = new Date();
@@ -60,6 +62,7 @@ const GrigliaGhiaccioPage: React.FC = () => {
   const [riepilogo_open, set_riepilogo_open] = useState(false);
   const [tableau_open, set_tableau_open] = useState(false);
   const [formato_carta, set_formato_carta] = useState<FormatoCarta>("A4");
+  const [vista, set_vista] = useState<"impilata" | "tableau">("impilata");
 
   const { data: risorse = [] } = use_risorse_strutture();
   const risorse_ghiaccio = useMemo(
@@ -250,8 +253,34 @@ const GrigliaGhiaccioPage: React.FC = () => {
         </div>
       </div>
 
+      <div className="flex items-center gap-2">
+        <ToggleGroup
+          type="single"
+          value={vista}
+          onValueChange={(v) => v && set_vista(v as "impilata" | "tableau")}
+          variant="outline"
+          size="sm"
+        >
+          <ToggleGroupItem value="impilata" aria-label="Vista impilata">
+            <Rows3 className="mr-1 h-4 w-4" /> Vista impilata
+          </ToggleGroupItem>
+          <ToggleGroupItem value="tableau" aria-label="Vista tableau">
+            <Columns3 className="mr-1 h-4 w-4" /> Vista tableau
+          </ToggleGroupItem>
+        </ToggleGroup>
+      </div>
+
       <ProvenienzaLegenda />
 
+      {vista === "tableau" ? (
+        <TableauSchermo
+          corsie={corsie_tableau}
+          eventi={eventi_tableau}
+          min_inizio={finestra_tableau.min_inizio}
+          min_fine={finestra_tableau.min_fine}
+          giorno_settimana={giorno_it_da_data(data_sel)}
+        />
+      ) : (
       <div className="space-y-5">
         {risorse_ghiaccio.length === 0 ? (
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 flex items-start gap-2">
@@ -281,6 +310,7 @@ const GrigliaGhiaccioPage: React.FC = () => {
           </div>
         )}
       </div>
+      )}
 
       <Dialog open={riepilogo_open} onOpenChange={set_riepilogo_open}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
