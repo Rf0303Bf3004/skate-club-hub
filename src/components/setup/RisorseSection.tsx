@@ -275,13 +275,24 @@ export const RisorseSection: React.FC = () => {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <p className="truncate text-sm font-semibold text-foreground">{r.nome}</p>
+                          {r.is_ospite && (
+                            <Badge variant="secondary" className="gap-1 text-[10px]">
+                              <Luggage className="h-3 w-3" /> Ospite
+                            </Badge>
+                          )}
                           <Badge variant={r.attiva ? "default" : "outline"} className="text-[10px]">
                             {r.attiva ? "Attiva" : "Disattiva"}
                           </Badge>
                         </div>
+                        {r.is_ospite && (r.nome_struttura_ospitante || r.indirizzo_ospitante) && (
+                          <p className="truncate text-xs text-muted-foreground">
+                            {[r.nome_struttura_ospitante, r.indirizzo_ospitante].filter(Boolean).join(" — ")}
+                          </p>
+                        )}
                         <p className="text-xs text-muted-foreground">
                           Capienza {r.capienza_max ?? "—"}
                         </p>
+
                       </div>
                       <div className="flex items-center gap-1">
                         <Button
