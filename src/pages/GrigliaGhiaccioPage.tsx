@@ -16,6 +16,7 @@ import StampaRiepilogoIstruttori, {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { LayoutGrid, Printer, AlertTriangle } from "lucide-react";
 
@@ -50,6 +51,13 @@ const GrigliaGhiaccioPage: React.FC = () => {
     () =>
       risorse
         .filter((r) => r.tipo === "ghiaccio" && r.attiva && (includi_ospiti || !r.is_ospite))
+        .sort((a, b) => (a.ordine ?? 0) - (b.ordine ?? 0)),
+    [risorse, includi_ospiti],
+  );
+  const risorse_palestra = useMemo(
+    () =>
+      risorse
+        .filter((r) => r.tipo === "palestra" && r.attiva && (includi_ospiti || !r.is_ospite))
         .sort((a, b) => (a.ordine ?? 0) - (b.ordine ?? 0)),
     [risorse, includi_ospiti],
   );
@@ -167,21 +175,35 @@ const GrigliaGhiaccioPage: React.FC = () => {
 
       <ProvenienzaLegenda />
 
-      {risorse_ghiaccio.length === 0 ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 flex items-start gap-2">
-          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
-          <span>
-            Nessuna pista di ghiaccio attiva configurata. Vai in Setup del Club → Risorse e strutture per
-            aggiungerne una prima di creare i blocchi della griglia.
-          </span>
-        </div>
-      ) : (
-        <div className="space-y-5">
-          {risorse_ghiaccio.map((r) => (
-            <GrigliaPistaSezione key={r.id} risorsa={r} data_sel={data_sel} is_editor={is_editor} />
-          ))}
-        </div>
-      )}
+      <div className="space-y-5">
+        {risorse_ghiaccio.length === 0 ? (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+            <span>
+              Nessuna pista di ghiaccio attiva configurata. Vai in Setup del Club → Risorse e strutture per
+              aggiungerne una prima di creare i blocchi della griglia.
+            </span>
+          </div>
+        ) : (
+          <div className="space-y-5">
+            {risorse_ghiaccio.map((r) => (
+              <GrigliaPistaSezione key={r.id} risorsa={r} data_sel={data_sel} is_editor={is_editor} />
+            ))}
+          </div>
+        )}
+
+        {risorse_palestra.length > 0 && (
+          <div className="space-y-3 pt-2">
+            <Separator />
+            <h2 className="text-sm font-semibold text-muted-foreground">Palestre / Off Ice</h2>
+            <div className="space-y-5">
+              {risorse_palestra.map((r) => (
+                <GrigliaPistaSezione key={r.id} risorsa={r} data_sel={data_sel} is_editor={is_editor} />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
       <Dialog open={riepilogo_open} onOpenChange={set_riepilogo_open}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">

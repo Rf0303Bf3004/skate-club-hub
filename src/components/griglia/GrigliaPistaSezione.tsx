@@ -28,6 +28,7 @@ import {
   GraduationCap,
   AlertTriangle,
   Snowflake,
+  Dumbbell,
 } from "lucide-react";
 
 function label_data(data_iso: string): string {
@@ -80,7 +81,11 @@ const GrigliaPistaSezione: React.FC<Props> = ({ risorsa, data_sel, is_editor }) 
 
   const giorno_settimana = useMemo(() => (data_sel ? giorno_it_da_data(data_sel) : null), [data_sel]);
   const { data: fasce = [] } = use_disponibilita_giorno(risorsa.id, giorno_settimana);
-  const { data: fasce_pulizia = [] } = use_disponibilita_giorno(risorsa.id, giorno_settimana, "pulizia");
+  const { data: fasce_pulizia = [] } = use_disponibilita_giorno(
+    risorsa.tipo === "ghiaccio" ? risorsa.id : null,
+    giorno_settimana,
+    "pulizia",
+  );
 
   const nome_risorsa = risorsa.nome;
 
@@ -260,7 +265,11 @@ const GrigliaPistaSezione: React.FC<Props> = ({ risorsa, data_sel, is_editor }) 
             style={{ backgroundColor: colore_risorsa }}
             aria-hidden="true"
           />
-          <Snowflake className="w-4 h-4 text-primary shrink-0" />
+          {risorsa.tipo === "ghiaccio" ? (
+            <Snowflake className="w-4 h-4 text-primary shrink-0" />
+          ) : (
+            <Dumbbell className="w-4 h-4 text-primary shrink-0" />
+          )}
           <span className="font-bold truncate">{nome_risorsa}</span>
           {risorsa.is_ospite && (
             <Badge variant="secondary" className="text-[10px]">
@@ -290,7 +299,7 @@ const GrigliaPistaSezione: React.FC<Props> = ({ risorsa, data_sel, is_editor }) 
             </div>
           ) : blocchi.length === 0 ? (
             <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
-              Nessun blocco ghiaccio per questa data.
+              Nessun blocco per questa data.
             </div>
           ) : (
             <div className="space-y-3">
