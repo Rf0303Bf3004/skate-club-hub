@@ -81,7 +81,11 @@ const GrigliaPistaSezione: React.FC<Props> = ({ risorsa, data_sel, is_editor }) 
 
   const giorno_settimana = useMemo(() => (data_sel ? giorno_it_da_data(data_sel) : null), [data_sel]);
   const { data: fasce = [] } = use_disponibilita_giorno(risorsa.id, giorno_settimana);
-  const { data: fasce_pulizia = [] } = use_disponibilita_giorno(risorsa.id, giorno_settimana, "pulizia");
+  const { data: fasce_pulizia = [] } = use_disponibilita_giorno(
+    risorsa.tipo === "ghiaccio" ? risorsa.id : null,
+    giorno_settimana,
+    "pulizia",
+  );
 
   const nome_risorsa = risorsa.nome;
 
