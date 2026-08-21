@@ -41,6 +41,11 @@ function hhmm(t?: string | null): string {
   return (t ?? "").slice(0, 5);
 }
 
+function min_da_hhmm(t?: string | null): number {
+  const [h, m] = hhmm(t).split(":");
+  return (Number(h) || 0) * 60 + (Number(m) || 0);
+}
+
 const GrigliaGhiaccioPage: React.FC = () => {
   const { session } = useAuth();
   const { visibile_set, is_admin_like, is_loading: is_loading_permessi } = usePermessiSezioniMatrix();
