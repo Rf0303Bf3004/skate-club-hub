@@ -617,6 +617,82 @@ export type Database = {
         }
         Relationships: []
       }
+      catalogo_livelli: {
+        Row: {
+          atleti_per_area: number
+          club_id: string
+          costo_annuale: number
+          created_at: string
+          durata_minuti: number
+          id: string
+          iscritti_attuali: number
+          lezioni_per_settimana: number
+          livello: string
+          max_atleti_pista: number
+          max_per_monitrice: number
+          stagione_id: string | null
+          tipo_sessione_default: string
+          updated_at: string
+          usa_corsie: boolean
+        }
+        Insert: {
+          atleti_per_area?: number
+          club_id: string
+          costo_annuale?: number
+          created_at?: string
+          durata_minuti?: number
+          id?: string
+          iscritti_attuali?: number
+          lezioni_per_settimana?: number
+          livello: string
+          max_atleti_pista?: number
+          max_per_monitrice?: number
+          stagione_id?: string | null
+          tipo_sessione_default?: string
+          updated_at?: string
+          usa_corsie?: boolean
+        }
+        Update: {
+          atleti_per_area?: number
+          club_id?: string
+          costo_annuale?: number
+          created_at?: string
+          durata_minuti?: number
+          id?: string
+          iscritti_attuali?: number
+          lezioni_per_settimana?: number
+          livello?: string
+          max_atleti_pista?: number
+          max_per_monitrice?: number
+          stagione_id?: string | null
+          tipo_sessione_default?: string
+          updated_at?: string
+          usa_corsie?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogo_livelli_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalogo_livelli_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "kpi_pitch_sponsor"
+            referencedColumns: ["club_id"]
+          },
+          {
+            foreignKeyName: "catalogo_livelli_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       catalogo_pacchetti_opzionali: {
         Row: {
           attivo: boolean
