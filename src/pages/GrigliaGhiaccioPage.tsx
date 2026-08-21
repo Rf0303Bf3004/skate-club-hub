@@ -412,8 +412,18 @@ const GrigliaGhiaccioPage: React.FC = () => {
               </Button>
             )}
           </div>
+          {risorsa_corrente?.is_ospite && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              🧳 Trasferta
+              {risorsa_corrente.nome_struttura_ospitante
+                ? ` — ${risorsa_corrente.nome_struttura_ospitante}`
+                : ""}
+              {risorsa_corrente.indirizzo_ospitante ? ` · ${risorsa_corrente.indirizzo_ospitante}` : ""}
+            </p>
+          )}
         </div>
       </div>
+
 
       <ProvenienzaLegenda />
 
