@@ -93,6 +93,12 @@ function get_atleta_livello(atleta: any): string {
   return atleta.carriera_artistica || atleta.carriera_stile || atleta.percorso_amatori || "Pulcini";
 }
 
+function prezzo_non_impostato(corso: any): boolean {
+  if (!corso || corso.attivo !== true) return false;
+  const v = corso.costo_mensile == null ? 0 : Number(corso.costo_mensile);
+  return v === 0 || Number.isNaN(v);
+}
+
 function normalize_livello(l: string): string {
   if (!l) return "pulcini";
   const map: Record<string, string> = {
@@ -2247,6 +2253,11 @@ const CorsoCard: React.FC<{
             </span>
           );
         })()}
+        {prezzo_non_impostato(corso) && (
+          <Badge variant="outline" className="text-[10px] border-amber-300 bg-amber-50 text-amber-700 flex-shrink-0">
+            <AlertTriangle className="w-3 h-3 mr-1" /> Prezzo non impostato
+          </Badge>
+        )}
       </div>
 
       {istruttori_corso.length > 0 && (
@@ -2863,6 +2874,11 @@ const CoursesPage: React.FC = () => {
                             </>
                           )}
                           {c.tipo && <Badge variant="secondary" className="text-xs flex-shrink-0">{c.tipo}</Badge>}
+                          {prezzo_non_impostato(c) && (
+                            <Badge variant="outline" className="text-[10px] border-amber-300 bg-amber-50 text-amber-700 flex-shrink-0">
+                              <AlertTriangle className="w-3 h-3 mr-1" /> Prezzo non impostato
+                            </Badge>
+                          )}
                           <span className="text-xs text-muted-foreground flex-shrink-0">{(c.atleti_ids||[]).length} iscritti</span>
                           <ConfirmButton
                             titolo={`Eliminare il corso "${c.nome}"?`}
