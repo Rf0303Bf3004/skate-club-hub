@@ -2253,6 +2253,11 @@ const CorsoCard: React.FC<{
             </span>
           );
         })()}
+        {prezzo_non_impostato(corso) && (
+          <Badge variant="outline" className="text-[10px] border-amber-300 bg-amber-50 text-amber-700 flex-shrink-0">
+            <AlertTriangle className="w-3 h-3 mr-1" /> Prezzo non impostato
+          </Badge>
+        )}
       </div>
 
       {istruttori_corso.length > 0 && (
