@@ -256,15 +256,27 @@ export function use_upsert_blocco() {
       ora_fine: string;
       titolo?: string | null;
       risorsa_id?: string | null;
+      fuori_disponibilita?: boolean;
+      motivo_forzatura?: string | null;
     }) => {
       const club_id = get_current_club_id();
       if (!club_id) throw new Error("Club non disponibile");
+      const forzatura =
+        input.fuori_disponibilita === undefined
+          ? {}
+          : {
+              fuori_disponibilita: input.fuori_disponibilita,
+              motivo_forzatura: input.fuori_disponibilita ? input.motivo_forzatura ?? null : null,
+              forzato_da: input.fuori_disponibilita ? session?.user_id ?? null : null,
+              forzato_at: input.fuori_disponibilita ? new Date().toISOString() : null,
+            };
       if (input.id) {
         const patch: Record<string, any> = {
           data: input.data,
           ora_inizio: input.ora_inizio,
           ora_fine: input.ora_fine,
           titolo: input.titolo ?? null,
+          ...forzatura,
         };
         if (input.risorsa_id !== undefined) patch.risorsa_id = input.risorsa_id;
         const { error } = await supabase
@@ -285,6 +297,7 @@ export function use_upsert_blocco() {
           risorsa_id: input.risorsa_id ?? null,
           stato: "bozza",
           creato_da: session?.user_id ?? null,
+          ...forzatura,
         } as any)
         .select("id")
         .single();
