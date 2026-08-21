@@ -117,8 +117,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const nuovo_principale = MENU_PRINCIPALE.filter((s) => visibile_set.has(s.codice));
   const nuovo_setup = MENU_SETUP.filter((s) => visibile_set.has(s.codice));
 
-  const nav_items = legacy_nav_items;
   const [setup_open, set_setup_open] = React.useState(true);
+  const [op_open, set_op_open] = React.useState(true);
+  const [gare_open, set_gare_open] = React.useState(true);
+  const [fatt_open, set_fatt_open] = React.useState(true);
+  const [conf_open, set_conf_open] = React.useState(false);
+
 
   const render_nav_item = (path: string, Icon: any, label: string, key: string, disabled?: boolean) => {
     const is_active = location.pathname === path || (path !== "/" && location.pathname.startsWith(path));
