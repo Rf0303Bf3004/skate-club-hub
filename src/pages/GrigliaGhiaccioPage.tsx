@@ -54,6 +54,13 @@ const GrigliaGhiaccioPage: React.FC = () => {
         .sort((a, b) => (a.ordine ?? 0) - (b.ordine ?? 0)),
     [risorse, includi_ospiti],
   );
+  const risorse_palestra = useMemo(
+    () =>
+      risorse
+        .filter((r) => r.tipo === "palestra" && r.attiva && (includi_ospiti || !r.is_ospite))
+        .sort((a, b) => (a.ordine ?? 0) - (b.ordine ?? 0)),
+    [risorse, includi_ospiti],
+  );
 
   // Riepilogo istruttori: aggregato su TUTTE le piste del giorno
   const { data: blocchi_giorno = [] } = use_griglia_blocchi_giorno(data_sel);
