@@ -14,24 +14,31 @@ import { use_count_iscrizioni_non_lette } from "@/components/comunicazioni/Iscri
 import { MENU_PRINCIPALE, MENU_SETUP } from "@/config/menuSections";
 
 
-// Voci legacy (admin/superadmin vedono questo menu come prima)
-const legacy_nav_items = [
-  { key: "dashboard", sezione: "dashboard", path: "/", icon: LayoutDashboard },
-  { key: "atleti", sezione: "atleti", path: "/atleti", icon: Users },
-  { key: "istruttori", sezione: "istruttori", path: "/istruttori", icon: UserCheck },
-  { key: "corsi", sezione: "corsi", path: "/corsi", icon: BookOpen },
-  { key: "gare", sezione: "gare", path: "/gare", icon: Trophy },
-  { key: "test_livello", sezione: "gare", path: "/test", icon: ClipboardCheck },
-  { key: "eventi", sezione: "eventi", path: "/eventi", icon: Sparkles },
-  { key: "campi_eventi", sezione: "campi", path: "/campi-eventi", icon: Tent },
-  { key: "lezioni_private", sezione: "lezioni_private", path: "/lezioni-private", icon: GraduationCap },
-  { key: "fatture", sezione: "fatture", path: "/fatture", icon: CreditCard },
-  { key: "segreteria_fatture", sezione: "fatture", path: "/segreteria/fatture", icon: LayoutGrid },
-  { key: "comunicazioni", sezione: "comunicazioni", path: "/comunicazioni", icon: MessageSquare },
-  { key: "planning_ghiaccio", sezione: "planning_ghiaccio", path: "/planning", icon: Calendar },
-  { key: "richieste_iscrizione", sezione: "richieste_iscrizione", path: "/richieste-iscrizione", icon: ClipboardList },
-  { key: "setup_club", sezione: "setup_club", path: "/setup-club", icon: Settings },
+// Voci legacy raggruppate (admin/superadmin)
+const legacy_dashboard = { key: "dashboard", path: "/", icon: LayoutDashboard };
+
+const legacy_gruppo_operativita = [
+  { key: "atleti", path: "/atleti", icon: Users },
+  { key: "richieste_iscrizione", path: "/richieste-iscrizione", icon: ClipboardList },
+  { key: "istruttori", path: "/istruttori", icon: UserCheck },
+  { key: "griglia_ghiaccio", path: "/griglia-ghiaccio", icon: LayoutGrid, label: "Griglia Ghiaccio" },
+  { key: "planning_ghiaccio", path: "/planning", icon: Calendar },
+  { key: "corsi", path: "/corsi", icon: BookOpen },
+  { key: "lezioni_private", path: "/lezioni-private", icon: GraduationCap },
+  { key: "campi_eventi", path: "/campi-eventi", icon: Tent },
 ];
+
+const legacy_gruppo_gare = [
+  { key: "gare", path: "/gare", icon: Trophy },
+  { key: "test_livello", path: "/test", icon: ClipboardCheck },
+  { key: "eventi", path: "/eventi", icon: Sparkles },
+];
+
+const legacy_gruppo_fatturazione = [
+  { key: "fatture", path: "/fatture", icon: CreditCard },
+  { key: "segreteria_fatture", path: "/segreteria/fatture", icon: LayoutGrid },
+];
+
 
 function use_count_richieste_pendenti() {
   const { session } = useAuth();
