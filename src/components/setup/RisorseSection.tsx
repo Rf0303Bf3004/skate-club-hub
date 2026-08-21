@@ -4,6 +4,7 @@ import {
   use_risorse_strutture,
   use_upsert_risorsa,
   use_elimina_risorsa,
+  use_eventi_campi_opzioni,
   type RisorsaStruttura,
 } from "@/hooks/use-risorse-strutture";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Trash2, Pencil, MapPin } from "lucide-react";
+import { Plus, Trash2, Pencil, MapPin, Luggage } from "lucide-react";
 
 const empty_form = {
   nome: "",
@@ -20,7 +21,12 @@ const empty_form = {
   attiva: true,
   colore: "#3B82F6",
   capienza_max: "",
+  is_ospite: false,
+  nome_struttura_ospitante: "",
+  indirizzo_ospitante: "",
+  evento_campo_id: "",
 };
+
 
 const RisorsaDialog: React.FC<{
   open: boolean;
