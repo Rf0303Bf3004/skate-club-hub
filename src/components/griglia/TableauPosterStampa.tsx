@@ -320,10 +320,10 @@ const TableauPosterStampa: React.FC<Props> = ({
                   ))}
 
                   {/* corsie + eventi */}
-                  {corsie.map((c, idx) => {
-                    const items = eventi.filter(
-                      (e) => e.risorsa_id === c.id && e.fine_min > f.da && e.inizio_min < f.a,
-                    );
+                  {layout_corsie.map((l) => {
+                    const c = l.corsia;
+                    const items = l.items.filter((e) => e.fine_min > f.da && e.inizio_min < f.a);
+                    const compatto = l.n_righe > 1;
                     return (
                       <div
                         key={c.id}
@@ -331,14 +331,18 @@ const TableauPosterStampa: React.FC<Props> = ({
                           position: "absolute",
                           left: 0,
                           right: 0,
-                          top: `${idx * ALTEZZA_CORSIA_MM}mm`,
-                          height: `${ALTEZZA_CORSIA_MM}mm`,
+                          top: `${l.top}mm`,
+                          height: `${l.altezza}mm`,
                           borderTop: "0.2mm solid #999",
                         }}
                       >
                         {items.map((e) => {
                           const da = Math.max(e.inizio_min, f.da);
                           const a = Math.min(e.fine_min, f.a);
+                          const riga = l.riga_per_evento[e.id] ?? 0;
+                          const altezza_ev = compatto
+                            ? ALTEZZA_SOTTORIGA_MM - 1.5
+                            : l.altezza - 3;
                           return (
                             <div
                               key={e.id}
@@ -346,24 +350,40 @@ const TableauPosterStampa: React.FC<Props> = ({
                                 position: "absolute",
                                 left: `${(da - f.da) * mm_per_min}mm`,
                                 width: `${Math.max(6, (a - da) * mm_per_min)}mm`,
-                                top: "1.5mm",
-                                height: `${ALTEZZA_CORSIA_MM - 3}mm`,
+                                top: `${riga * ALTEZZA_SOTTORIGA_MM + (compatto ? 0.75 : 1.5)}mm`,
+                                height: `${altezza_ev}mm`,
                                 boxSizing: "border-box",
                                 border: `0.3mm solid ${c.colore || "#333"}`,
                                 borderLeft: `1.2mm solid ${c.colore || "#333"}`,
                                 borderRadius: "1mm",
                                 background: "#f4f6fa",
-                                padding: "0.8mm 1mm",
+                                padding: compatto ? "0.4mm 1mm" : "0.8mm 1mm",
                                 overflow: "hidden",
                               }}
                             >
-                              <div style={{ fontSize: "7.5pt", fontWeight: 800, lineHeight: 1.05 }}>
+                              <div
+                                style={{
+                                  fontSize: compatto ? "6pt" : "7.5pt",
+                                  fontWeight: 800,
+                                  lineHeight: 1.05,
+                                }}
+                              >
                                 {hhmm_da_min(e.inizio_min)}–{hhmm_da_min(e.fine_min)}
                                 {e.fuori_disponibilita ? " ⚠" : ""}
                               </div>
-                              <div style={{ fontSize: "8pt", fontWeight: 700, lineHeight: 1.1 }}>{e.titolo}</div>
+                              <div
+                                style={{
+                                  fontSize: compatto ? "6.5pt" : "8pt",
+                                  fontWeight: 700,
+                                  lineHeight: 1.1,
+                                }}
+                              >
+                                {e.titolo}
+                              </div>
                               {e.istruttori && (
-                                <div style={{ fontSize: "7pt", lineHeight: 1.1 }}>{e.istruttori}</div>
+                                <div style={{ fontSize: compatto ? "6pt" : "7pt", lineHeight: 1.05, fontStyle: "italic" }}>
+                                  {e.istruttori}
+                                </div>
                               )}
                             </div>
                           );
@@ -372,6 +392,7 @@ const TableauPosterStampa: React.FC<Props> = ({
                     );
                   })}
                   <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, borderBottom: "0.2mm solid #999" }} />
+
                 </div>
               </div>
             </div>
