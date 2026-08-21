@@ -40,3 +40,8 @@ export function can_manage_griglia(ruolo?: string | null): boolean {
     ruolo === "dt"
   );
 }
+
+/** Ruoli che possono forzare un orario fuori dalla disponibilità dichiarata. */
+export function can_forzare_disponibilita(ruolo?: string | null): boolean {
+  return ruolo === "superadmin" || ruolo === "admin" || ruolo === "presidente" || ruolo === "dt";
+}
