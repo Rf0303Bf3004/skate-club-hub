@@ -39,6 +39,30 @@ export function use_risorse_strutture() {
   });
 }
 
+// ─── Eventi/Campi del club (per collegare risorse ospiti) ──
+export interface EventoCampoOpzione {
+  id: string;
+  nome: string;
+  data_inizio: string | null;
+  data_fine: string | null;
+}
+
+export function use_eventi_campi_opzioni() {
+  return useQuery({
+    enabled: !!get_current_club_id(),
+    queryKey: ["eventi_campi_opzioni", get_current_club_id()],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("eventi_campi" as any)
+        .select("id, nome, data_inizio, data_fine")
+        .eq("club_id", get_current_club_id())
+        .order("data_inizio", { ascending: false });
+      if (error) throw error;
+      return ((data ?? []) as any[]) as EventoCampoOpzione[];
+    },
+  });
+}
+
 // ─── Mutation ──────────────────────────────────────────────
 export function use_upsert_risorsa() {
   const qc = useQueryClient();
