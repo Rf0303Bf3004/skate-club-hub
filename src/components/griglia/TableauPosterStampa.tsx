@@ -148,7 +148,18 @@ const TableauPosterStampa: React.FC<Props> = ({
     </div>
   );
 
-  const altezza_griglia = corsie.length * ALTEZZA_CORSIA_MM;
+  // layout verticale: ogni corsia ha N sotto-righe (eventi sovrapposti in parallelo)
+  let offset = 0;
+  const layout_corsie = corsie.map((c) => {
+    const items = eventi.filter((e) => e.risorsa_id === c.id);
+    const { riga_per_evento, n_righe } = impacchetta_sottorighe(items);
+    const altezza = Math.max(2, n_righe) * ALTEZZA_SOTTORIGA_MM;
+    const top = offset;
+    offset += altezza;
+    return { corsia: c, riga_per_evento, n_righe, altezza, top, items };
+  });
+
+  const altezza_griglia = Math.max(ALTEZZA_CORSIA_MM, offset);
 
   return createPortal(
     <div id="tableau-print-root" className="hidden print:block">
