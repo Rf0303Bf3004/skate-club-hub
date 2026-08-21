@@ -16,6 +16,8 @@ import {
 import { use_risorse_strutture } from "@/hooks/use-risorse-strutture";
 import GrigliaBuilder from "@/components/griglia/GrigliaBuilder";
 import ProvenienzaLegenda from "@/components/ProvenienzaLegenda";
+import ConfermaForzaturaDisponibilita from "@/components/griglia/ConfermaForzaturaDisponibilita";
+import { verifica_orario_disponibilita } from "@/lib/availability";
 import StampaRiepilogoIstruttori, {
   type IstruttoreStampa,
   type RigaSessioneStampa,
@@ -25,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
@@ -77,6 +80,8 @@ const GrigliaGhiaccioPage: React.FC = () => {
   const [n_sessioni, set_n_sessioni] = useState(3);
   const [corsie, set_corsie] = useState<string[]>(["Pista 1", "Pista 2"]);
   const [creazione_in_corso, set_creazione_in_corso] = useState(false);
+  const [forzatura_open, set_forzatura_open] = useState(false);
+  const [motivo_blocco, set_motivo_blocco] = useState<string | null>(null);
 
   const { data: risorse = [] } = use_risorse_strutture();
   const risorse_ghiaccio = useMemo(
@@ -95,6 +100,11 @@ const GrigliaGhiaccioPage: React.FC = () => {
 
   const giorno_settimana = useMemo(() => (data_sel ? giorno_it_da_data(data_sel) : null), [data_sel]);
   const { data: fasce = [] } = use_disponibilita_giorno(risorsa_sel || null, giorno_settimana);
+  const { data: fasce_pulizia = [] } = use_disponibilita_giorno(
+    risorsa_sel || null,
+    giorno_settimana,
+    "pulizia",
+  );
 
   const nome_risorsa = risorse_ghiaccio.find((r) => r.id === risorsa_sel)?.nome ?? "";
 
@@ -172,11 +182,27 @@ const GrigliaGhiaccioPage: React.FC = () => {
     }
   };
 
-  const salva_blocco = async () => {
+  const salva_blocco = async (forzatura?: string) => {
     if (!risorsa_sel) {
       toast({ title: "Nessuna risorsa selezionata", variant: "destructive" });
       return;
     }
+
+    if (!forzatura) {
+      const check = verifica_orario_disponibilita({
+        fasce_ghiaccio: fasce,
+        fasce_pulizia,
+        ora_inizio: form.ora_inizio,
+        ora_fine: form.ora_fine,
+        giorno: giorno_settimana ?? undefined,
+      });
+      if (!check.ok) {
+        set_motivo_blocco(check.motivo ?? null);
+        set_forzatura_open(true);
+        return;
+      }
+    }
+
     set_creazione_in_corso(true);
     try {
       const id = await upsert_blocco.mutateAsync({
@@ -185,6 +211,7 @@ const GrigliaGhiaccioPage: React.FC = () => {
         ora_fine: form.ora_fine,
         titolo: form.titolo.trim() || titolo_suggerito,
         risorsa_id: risorsa_sel,
+        ...(forzatura ? { fuori_disponibilita: true, motivo_forzatura: forzatura } : {}),
       });
 
       if (id && modo_suddivisione === "sequenziale") {
@@ -201,6 +228,7 @@ const GrigliaGhiaccioPage: React.FC = () => {
             ordine: i + 1,
             ora_inizio: da_minuti(s_start),
             ora_fine: da_minuti(s_end),
+            ...(forzatura ? { fuori_disponibilita: true, motivo_forzatura: forzatura } : {}),
           });
         }
       }
@@ -213,11 +241,13 @@ const GrigliaGhiaccioPage: React.FC = () => {
             ora_inizio: form.ora_inizio,
             ora_fine: form.ora_fine,
             pista: corsie[i].trim() || `Pista ${i + 1}`,
+            ...(forzatura ? { fuori_disponibilita: true, motivo_forzatura: forzatura } : {}),
           });
         }
       }
 
       set_modal_open(false);
+      set_forzatura_open(false);
       set_form({ ora_inizio: "17:00", ora_fine: "18:00", titolo: "" });
       if (id) set_espansi((prev) => [...prev, id]);
       toast({ title: "Blocco creato" });
@@ -406,6 +436,20 @@ const GrigliaGhiaccioPage: React.FC = () => {
                   >
                     {b.stato === "pubblicato" ? "Pubblicato" : "Bozza"}
                   </Badge>
+                  {b.fuori_disponibilita && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge className="bg-amber-100 text-amber-800 border-amber-300 gap-1">
+                            <AlertTriangle className="w-3 h-3" /> Fuori disponibilità
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          {b.motivo_forzatura || "Orario fuori dalla disponibilità dichiarata"}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
                   {is_editor && (
                     <Button variant="ghost" size="icon" onClick={() => rimuovi_blocco(b.id)} title="Elimina blocco">
                       <Trash2 className="w-4 h-4 text-destructive" />
@@ -591,7 +635,7 @@ const GrigliaGhiaccioPage: React.FC = () => {
                 <Button variant="outline" onClick={() => set_passo("a")}>
                   Indietro
                 </Button>
-                <Button onClick={salva_blocco} disabled={creazione_in_corso || upsert_blocco.isPending}>
+                <Button onClick={() => salva_blocco()} disabled={creazione_in_corso || upsert_blocco.isPending}>
                   Crea blocco
                 </Button>
               </>
@@ -644,6 +688,14 @@ const GrigliaGhiaccioPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfermaForzaturaDisponibilita
+        open={forzatura_open}
+        motivo={motivo_blocco}
+        orario_label={`${form.ora_inizio}–${form.ora_fine}`}
+        on_close={() => set_forzatura_open(false)}
+        on_forza={(m) => salva_blocco(m)}
+      />
 
       <StampaRiepilogoIstruttori istruttori={riepilogo_istruttori} data_label={label_data(data_sel)} />
     </div>

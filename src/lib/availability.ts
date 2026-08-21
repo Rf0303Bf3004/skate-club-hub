@@ -404,3 +404,54 @@ export function compute_exception_diff(
   return out;
 }
 
+
+// ─────────────────────────────────────────────────────────────
+// Validazione orario rispetto alla disponibilità dichiarata
+// (fasce ghiaccio) e alle fasce di pulizia.
+// Usata dalla Griglia Ghiaccio: blocchi e sotto-sessioni.
+// ─────────────────────────────────────────────────────────────
+
+export type verifica_orario_disponibilita_params = {
+  fasce_ghiaccio: fascia_disponibilita[];
+  fasce_pulizia?: fascia_disponibilita[];
+  ora_inizio: string;
+  ora_fine: string;
+  /** Nome giorno (solo per il testo del motivo) */
+  giorno?: string;
+};
+
+export type verifica_orario_disponibilita_result = { ok: boolean; motivo?: string };
+
+export function verifica_orario_disponibilita(
+  params: verifica_orario_disponibilita_params,
+): verifica_orario_disponibilita_result {
+  const { fasce_ghiaccio = [], fasce_pulizia = [], ora_inizio, ora_fine, giorno } = params;
+  const s = time_to_min(ora_inizio);
+  const e = time_to_min(ora_fine);
+  const suffisso_giorno = giorno ? ` per ${giorno}` : "";
+
+  if (e <= s) return { ok: false, motivo: "L'ora di fine deve essere successiva all'ora di inizio" };
+
+  if (fasce_ghiaccio.length === 0) {
+    return { ok: false, motivo: `Nessuna disponibilità dichiarata${suffisso_giorno}` };
+  }
+
+  const dentro = fasce_ghiaccio.some(
+    (f) => s >= time_to_min(f.ora_inizio) && e <= time_to_min(f.ora_fine),
+  );
+  if (!dentro) {
+    return { ok: false, motivo: `Fuori da ogni fascia dichiarata${suffisso_giorno}` };
+  }
+
+  const pulizia = fasce_pulizia.find(
+    (f) => time_to_min(f.ora_inizio) < e && time_to_min(f.ora_fine) > s,
+  );
+  if (pulizia) {
+    return {
+      ok: false,
+      motivo: `Si sovrappone alla Pulizia Ghiaccio ${fmt_hhmm(pulizia.ora_inizio)}–${fmt_hhmm(pulizia.ora_fine)}`,
+    };
+  }
+
+  return { ok: true };
+}

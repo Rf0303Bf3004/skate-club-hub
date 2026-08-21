@@ -13,6 +13,8 @@ import {
   use_assegna_istruttore_sessione,
   use_rimuovi_istruttore_sessione,
   use_pubblica_blocco,
+  use_disponibilita_giorno,
+  giorno_it_da_data,
   type GrigliaBlocco,
   type GrigliaSessione,
 } from "@/hooks/use-griglia-ghiaccio";
@@ -24,9 +26,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SpecialitaManager from "@/components/griglia/SpecialitaManager";
+import ConfermaForzaturaDisponibilita from "@/components/griglia/ConfermaForzaturaDisponibilita";
+import { verifica_orario_disponibilita } from "@/lib/availability";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { Settings, Plus, Trash2, X, GraduationCap, Send, CheckCircle2, GripVertical, HelpCircle, ChevronDown, ChevronRight } from "lucide-react";
+import { Settings, Plus, Trash2, X, GraduationCap, Send, CheckCircle2, GripVertical, HelpCircle, ChevronDown, ChevronRight, AlertTriangle } from "lucide-react";
 
 const DURATA_DEFAULT_MIN = 20;
 const ALTRO = "__altro__";
@@ -587,6 +592,19 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   const [open_specialita, set_open_specialita] = useState(false);
   const [riepilogo_aperto, set_riepilogo_aperto] = useState(false);
   const [tab_attivo, set_tab_attivo] = useState<string | null>(null);
+  const [forzatura_open, set_forzatura_open] = useState(false);
+  const [motivo_blocco, set_motivo_blocco] = useState<string | null>(null);
+  const [pending_patch, set_pending_patch] = useState<
+    { sessione: GrigliaSessione; patch: Partial<GrigliaSessione> } | null
+  >(null);
+
+  const giorno_blocco = useMemo(() => (blocco.data ? giorno_it_da_data(blocco.data) : null), [blocco.data]);
+  const { data: fasce_ghiaccio = [] } = use_disponibilita_giorno(blocco.risorsa_id ?? null, giorno_blocco);
+  const { data: fasce_pulizia = [] } = use_disponibilita_giorno(
+    blocco.risorsa_id ?? null,
+    giorno_blocco,
+    "pulizia",
+  );
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   // Box sorgente dinamici: uno per ragione sociale attiva (solo se modalità multi_ragione_sociale
@@ -733,8 +751,31 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
     }
   }, [sessioni, tab_attivo]);
 
-  const salva_sessione = async (s: GrigliaSessione, patch: Partial<GrigliaSessione>) => {
+  const salva_sessione = async (
+    s: GrigliaSessione,
+    patch: Partial<GrigliaSessione>,
+    forzatura?: string,
+  ) => {
     const merged = { ...s, ...patch };
+
+    // Controllo disponibilità solo quando cambia l'orario (il resto resta invariato).
+    const cambia_orario = patch.ora_inizio !== undefined || patch.ora_fine !== undefined;
+    if (cambia_orario && !forzatura) {
+      const check = verifica_orario_disponibilita({
+        fasce_ghiaccio,
+        fasce_pulizia,
+        ora_inizio: hhmm(merged.ora_inizio),
+        ora_fine: hhmm(merged.ora_fine),
+        giorno: giorno_blocco ?? undefined,
+      });
+      if (!check.ok) {
+        set_motivo_blocco(check.motivo ?? null);
+        set_pending_patch({ sessione: s, patch });
+        set_forzatura_open(true);
+        return;
+      }
+    }
+
     try {
       await upsert_sessione.mutateAsync({
         id: s.id,
@@ -747,10 +788,19 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
         note: merged.note,
         pista: merged.pista,
         messaggio_atleti: merged.messaggio_atleti,
+        ...(forzatura ? { fuori_disponibilita: true, motivo_forzatura: forzatura } : {}),
       });
     } catch (e: any) {
       toast({ title: "Errore", description: e.message, variant: "destructive" });
     }
+  };
+
+  const conferma_forzatura_sessione = async (motivo_forzatura: string) => {
+    const pend = pending_patch;
+    set_forzatura_open(false);
+    set_pending_patch(null);
+    if (!pend) return;
+    await salva_sessione(pend.sessione, pend.patch, motivo_forzatura);
   };
 
   // Riepilogo destinatari pre-pubblicazione (aggiornato mentre si lavora)
@@ -899,6 +949,18 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
                               pieno ? "bg-primary" : "bg-muted-foreground/30",
                             )}
                           />
+                          {s.fuori_disponibilita && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                                </TooltipTrigger>
+                                <TooltipContent className="max-w-xs">
+                                  {s.motivo_forzatura || "Orario fuori dalla disponibilità dichiarata"}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
                         </TabsTrigger>
                       );
                     })}
@@ -936,6 +998,23 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
           )}
         </div>
       </DndContext>
+
+      <ConfermaForzaturaDisponibilita
+        open={forzatura_open}
+        motivo={motivo_blocco}
+        orario_label={
+          pending_patch
+            ? `${hhmm(pending_patch.patch.ora_inizio ?? pending_patch.sessione.ora_inizio)}–${hhmm(
+                pending_patch.patch.ora_fine ?? pending_patch.sessione.ora_fine,
+              )}`
+            : undefined
+        }
+        on_close={() => {
+          set_forzatura_open(false);
+          set_pending_patch(null);
+        }}
+        on_forza={conferma_forzatura_sessione}
+      />
 
       <Dialog open={open_specialita} onOpenChange={set_open_specialita}>
         <DialogContent>

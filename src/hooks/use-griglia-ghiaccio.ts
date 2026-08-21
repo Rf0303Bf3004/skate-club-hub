@@ -41,6 +41,10 @@ export interface GrigliaSessione {
   pista: string | null;
   messaggio_atleti: string | null;
   note: string | null;
+  fuori_disponibilita?: boolean | null;
+  motivo_forzatura?: string | null;
+  forzato_da?: string | null;
+  forzato_at?: string | null;
   atleti: GrigliaSessioneAtleta[];
   istruttori: GrigliaSessioneIstruttore[];
 }
@@ -56,6 +60,10 @@ export interface GrigliaBlocco {
   creato_da: string | null;
   pubblicato_at: string | null;
   risorsa_id: string | null;
+  fuori_disponibilita?: boolean | null;
+  motivo_forzatura?: string | null;
+  forzato_da?: string | null;
+  forzato_at?: string | null;
   sessioni: GrigliaSessione[];
 }
 
@@ -79,12 +87,16 @@ export interface FasciaDisponibilita {
   ora_fine: string;
 }
 
-export function use_disponibilita_giorno(risorsa_id: string | null, giorno_settimana: string | null) {
+export function use_disponibilita_giorno(
+  risorsa_id: string | null,
+  giorno_settimana: string | null,
+  tipo: "ghiaccio" | "pulizia" = "ghiaccio",
+) {
   return useQuery({
     refetchOnMount: "always",
     staleTime: 0,
     enabled: !!get_current_club_id() && !!risorsa_id && !!giorno_settimana,
-    queryKey: ["disponibilita_giorno", get_current_club_id(), risorsa_id, giorno_settimana],
+    queryKey: ["disponibilita_giorno", get_current_club_id(), risorsa_id, giorno_settimana, tipo],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("disponibilita_ghiaccio" as any)
@@ -92,7 +104,7 @@ export function use_disponibilita_giorno(risorsa_id: string | null, giorno_setti
         .eq("club_id", get_current_club_id())
         .eq("risorsa_id", risorsa_id as string)
         .eq("giorno", giorno_settimana as string)
-        .eq("tipo", "ghiaccio")
+        .eq("tipo", tipo)
         .order("ora_inizio");
       if (error) throw error;
       return ((data ?? []) as any[]) as FasciaDisponibilita[];
@@ -244,15 +256,27 @@ export function use_upsert_blocco() {
       ora_fine: string;
       titolo?: string | null;
       risorsa_id?: string | null;
+      fuori_disponibilita?: boolean;
+      motivo_forzatura?: string | null;
     }) => {
       const club_id = get_current_club_id();
       if (!club_id) throw new Error("Club non disponibile");
+      const forzatura =
+        input.fuori_disponibilita === undefined
+          ? {}
+          : {
+              fuori_disponibilita: input.fuori_disponibilita,
+              motivo_forzatura: input.fuori_disponibilita ? input.motivo_forzatura ?? null : null,
+              forzato_da: input.fuori_disponibilita ? session?.user_id ?? null : null,
+              forzato_at: input.fuori_disponibilita ? new Date().toISOString() : null,
+            };
       if (input.id) {
         const patch: Record<string, any> = {
           data: input.data,
           ora_inizio: input.ora_inizio,
           ora_fine: input.ora_fine,
           titolo: input.titolo ?? null,
+          ...forzatura,
         };
         if (input.risorsa_id !== undefined) patch.risorsa_id = input.risorsa_id;
         const { error } = await supabase
@@ -273,6 +297,7 @@ export function use_upsert_blocco() {
           risorsa_id: input.risorsa_id ?? null,
           stato: "bozza",
           creato_da: session?.user_id ?? null,
+          ...forzatura,
         } as any)
         .select("id")
         .single();
@@ -457,6 +482,7 @@ export function use_elimina_blocco() {
 // ─── Mutation sessioni ─────────────────────────────────────
 export function use_upsert_sessione() {
   const invalidate = use_invalidate_griglia();
+  const { session } = useAuth();
   return useMutation({
     mutationFn: async (input: {
       id?: string;
@@ -469,9 +495,20 @@ export function use_upsert_sessione() {
       note?: string | null;
       pista?: string | null;
       messaggio_atleti?: string | null;
+      fuori_disponibilita?: boolean;
+      motivo_forzatura?: string | null;
     }) => {
       // XOR: mai entrambi valorizzati
       const usa_testo = !!input.specialita_testo_libero && !input.specialita_id;
+      const forzatura =
+        input.fuori_disponibilita === undefined
+          ? {}
+          : {
+              fuori_disponibilita: input.fuori_disponibilita,
+              motivo_forzatura: input.fuori_disponibilita ? input.motivo_forzatura ?? null : null,
+              forzato_da: input.fuori_disponibilita ? session?.user_id ?? null : null,
+              forzato_at: input.fuori_disponibilita ? new Date().toISOString() : null,
+            };
       const payload = {
         blocco_id: input.blocco_id,
         ordine: input.ordine,
@@ -482,6 +519,7 @@ export function use_upsert_sessione() {
         note: input.note ?? null,
         pista: input.pista ?? null,
         messaggio_atleti: input.messaggio_atleti ?? null,
+        ...forzatura,
       };
       if (input.id) {
         const { error } = await supabase.from("griglia_sessioni" as any).update(payload as any).eq("id", input.id);
