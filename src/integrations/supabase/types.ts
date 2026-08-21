@@ -2636,6 +2636,7 @@ export type Database = {
       griglia_sessioni: {
         Row: {
           blocco_id: string
+          corso_id: string | null
           created_at: string
           forzato_at: string | null
           forzato_da: string | null
@@ -2654,6 +2655,7 @@ export type Database = {
         }
         Insert: {
           blocco_id: string
+          corso_id?: string | null
           created_at?: string
           forzato_at?: string | null
           forzato_da?: string | null
@@ -2672,6 +2674,7 @@ export type Database = {
         }
         Update: {
           blocco_id?: string
+          corso_id?: string | null
           created_at?: string
           forzato_at?: string | null
           forzato_da?: string | null
@@ -2694,6 +2697,13 @@ export type Database = {
             columns: ["blocco_id"]
             isOneToOne: false
             referencedRelation: "griglia_blocchi"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "griglia_sessioni_corso_id_fkey"
+            columns: ["corso_id"]
+            isOneToOne: false
+            referencedRelation: "corsi"
             referencedColumns: ["id"]
           },
           {
