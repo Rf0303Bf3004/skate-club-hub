@@ -241,6 +241,10 @@ const GrigliaGhiaccioPage: React.FC = () => {
                 <Printer className="w-4 h-4 mr-1" /> Stampa riepilogo istruttori
               </Button>
             )}
+
+            <Button variant="outline" onClick={() => set_tableau_open(true)}>
+              <Columns3 className="w-4 h-4 mr-1" /> Stampa tableau poster
+            </Button>
           </div>
         </div>
       </div>
