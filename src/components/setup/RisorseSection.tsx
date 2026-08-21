@@ -147,7 +147,60 @@ const RisorsaDialog: React.FC<{
               Attiva
             </label>
           </div>
+
+          <div className="space-y-3 rounded-lg border border-border/60 p-3">
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-primary"
+                checked={!!form.is_ospite}
+                onChange={(e) => set_val("is_ospite", e.target.checked)}
+              />
+              <Luggage className="h-4 w-4 text-muted-foreground" />
+              È una risorsa ospite (trasferta)
+            </label>
+
+            {form.is_ospite && (
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Nome struttura/club ospitante</Label>
+                  <Input
+                    value={form.nome_struttura_ospitante}
+                    placeholder="es. PalaGhiaccio Como"
+                    onChange={(e) => set_val("nome_struttura_ospitante", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Indirizzo</Label>
+                  <Input
+                    value={form.indirizzo_ospitante}
+                    placeholder="es. Via Sinigaglia 1, Como"
+                    onChange={(e) => set_val("indirizzo_ospitante", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">
+                    Collega a un Campo/evento specifico (opzionale)
+                  </Label>
+                  <select
+                    className="h-10 w-full rounded-md border border-input bg-background px-2 text-sm"
+                    value={form.evento_campo_id}
+                    onChange={(e) => set_val("evento_campo_id", e.target.value)}
+                  >
+                    <option value="">Nessuno — riutilizzabile in futuro</option>
+                    {eventi_campi.map((ev) => (
+                      <option key={ev.id} value={ev.id}>
+                        {ev.nome}
+                        {ev.data_inizio ? ` (${ev.data_inizio}${ev.data_fine ? ` → ${ev.data_fine}` : ""})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
+
 
         <DialogFooter>
           <Button variant="ghost" onClick={on_close}>
