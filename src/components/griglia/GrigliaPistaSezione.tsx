@@ -28,6 +28,7 @@ import {
   GraduationCap,
   AlertTriangle,
   Snowflake,
+  Dumbbell,
 } from "lucide-react";
 
 function label_data(data_iso: string): string {
