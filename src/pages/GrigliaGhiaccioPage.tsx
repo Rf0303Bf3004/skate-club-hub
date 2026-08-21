@@ -95,6 +95,11 @@ const GrigliaGhiaccioPage: React.FC = () => {
 
   const giorno_settimana = useMemo(() => (data_sel ? giorno_it_da_data(data_sel) : null), [data_sel]);
   const { data: fasce = [] } = use_disponibilita_giorno(risorsa_sel || null, giorno_settimana);
+  const { data: fasce_pulizia = [] } = use_disponibilita_giorno(
+    risorsa_sel || null,
+    giorno_settimana,
+    "pulizia",
+  );
 
   const nome_risorsa = risorse_ghiaccio.find((r) => r.id === risorsa_sel)?.nome ?? "";
 
