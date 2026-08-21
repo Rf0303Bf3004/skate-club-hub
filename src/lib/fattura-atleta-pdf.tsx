@@ -1,5 +1,5 @@
 import React from "react";
-import { Document, Page, View, Text, StyleSheet, pdf } from "@react-pdf/renderer";
+import { Document, Page, View, Text, Image, StyleSheet, pdf } from "@react-pdf/renderer";
 
 export type FatturaAtletaRiga = {
   descrizione: string;
@@ -49,6 +49,11 @@ export type FatturaAtletaData = {
     iban?: string | null;
     intestatario_iban?: string | null;
     twint_qr_url?: string | null;
+    fattura_mostra_logo?: boolean | null;
+    fattura_colore_accento?: string | null;
+    fattura_mostra_iban?: boolean | null;
+    fattura_note_legali?: string | null;
+    fattura_footer_testo?: string | null;
   };
 };
 
@@ -56,6 +61,7 @@ const s = StyleSheet.create({
   page: { padding: 40, fontSize: 10, fontFamily: "Helvetica", color: "#0f172a" },
   header: { flexDirection: "row", justifyContent: "space-between", marginBottom: 24 },
   mittente: { fontSize: 9, lineHeight: 1.4 },
+  logo: { maxHeight: 50, height: 50, width: 100, objectFit: "contain", marginBottom: 6 },
   mittenteName: { fontSize: 13, fontWeight: 700, marginBottom: 4, color: "#1e3a8a" },
   invoiceMeta: { textAlign: "right" },
   invoiceTitle: { fontSize: 22, fontWeight: 700, color: "#1e3a8a", marginBottom: 6 },
@@ -84,6 +90,10 @@ const s = StyleSheet.create({
 
 export const FatturaAtletaDocument: React.FC<{ data: FatturaAtletaData }> = ({ data }) => {
   const intest = data.intestatario;
+  const accento = data.club.fattura_colore_accento || null;
+  const acc_style = accento ? { color: accento } : null;
+  const mostra_logo = !!data.club.fattura_mostra_logo && !!data.club.logo_url;
+  const mostra_iban = data.club.fattura_mostra_iban !== false;
   const indirizzo_dest = [
     intest.indirizzo,
     [intest.cap, intest.citta].filter(Boolean).join(" "),
@@ -95,7 +105,8 @@ export const FatturaAtletaDocument: React.FC<{ data: FatturaAtletaData }> = ({ d
       <Page size="A4" style={s.page}>
         <View style={s.header}>
           <View style={s.mittente}>
-            <Text style={s.mittenteName}>{data.club.nome}</Text>
+            {mostra_logo ? <Image src={data.club.logo_url as string} style={s.logo} /> : null}
+            <Text style={[s.mittenteName, acc_style]}>{data.club.nome}</Text>
             {data.club.indirizzo ? <Text>{data.club.indirizzo}</Text> : null}
             {(data.club.cap || data.club.citta) ? <Text>{[data.club.cap, data.club.citta].filter(Boolean).join(" ")}</Text> : null}
             {data.club.cantone ? <Text>{data.club.cantone}</Text> : null}
@@ -105,7 +116,7 @@ export const FatturaAtletaDocument: React.FC<{ data: FatturaAtletaData }> = ({ d
             {data.club.numero_iva_chf ? <Text>IVA: {data.club.numero_iva_chf}</Text> : null}
           </View>
           <View style={s.invoiceMeta}>
-            <Text style={s.invoiceTitle}>FATTURA</Text>
+            <Text style={[s.invoiceTitle, acc_style]}>FATTURA</Text>
             <Text style={s.small}>N. {data.numero}</Text>
             {data.periodo ? <Text style={s.small}>Periodo: {data.periodo}</Text> : null}
             <Text style={s.small}>Emissione: {data.data_emissione}</Text>
@@ -157,13 +168,13 @@ export const FatturaAtletaDocument: React.FC<{ data: FatturaAtletaData }> = ({ d
         )}
         <View style={s.totaleFinale}>
           <Text style={s.totaleFinaleLbl}>TOTALE CHF</Text>
-          <Text style={s.totaleFinaleVal}>{data.totale.toFixed(2)}</Text>
+          <Text style={[s.totaleFinaleVal, acc_style]}>{data.totale.toFixed(2)}</Text>
         </View>
 
         <View style={s.paySection}>
           <Text style={s.blockLabel}>Riferimento pagamento</Text>
-          {data.club.iban ? <Text>IBAN: {data.club.iban}</Text> : <Text>IBAN non configurato</Text>}
-          {data.club.intestatario_iban ? <Text>Intestatario: {data.club.intestatario_iban}</Text> : null}
+          {mostra_iban ? (data.club.iban ? <Text>IBAN: {data.club.iban}</Text> : <Text>IBAN non configurato</Text>) : null}
+          {mostra_iban && data.club.intestatario_iban ? <Text>Intestatario: {data.club.intestatario_iban}</Text> : null}
           <Text>Causale: Fattura {data.numero}{data.periodo ? ` – ${data.periodo}` : ""}</Text>
           {data.data_scadenza ? <Text style={{ marginTop: 4 }}>Scadenza: {data.data_scadenza}</Text> : null}
           {data.club.twint_qr_url ? <Text style={{ marginTop: 4 }}>Twint disponibile</Text> : null}
@@ -177,8 +188,17 @@ export const FatturaAtletaDocument: React.FC<{ data: FatturaAtletaData }> = ({ d
           </View>
         ) : null}
 
+        {data.club.fattura_note_legali ? (
+          <View style={{ marginTop: 14 }}>
+            <Text style={s.blockLabel}>Note legali</Text>
+            <Text>{data.club.fattura_note_legali}</Text>
+          </View>
+        ) : null}
+
         <Text style={s.footer} fixed>
-          {data.club.nome}{data.club.partita_iva ? ` · P.IVA ${data.club.partita_iva}` : ""}{data.club.email ? ` · ${data.club.email}` : ""}
+          {data.club.fattura_footer_testo
+            ? data.club.fattura_footer_testo
+            : `${data.club.nome}${data.club.partita_iva ? ` · P.IVA ${data.club.partita_iva}` : ""}${data.club.email ? ` · ${data.club.email}` : ""}`}
         </Text>
       </Page>
     </Document>
