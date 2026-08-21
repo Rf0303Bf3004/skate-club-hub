@@ -18,6 +18,8 @@ import {
   type GrigliaBlocco,
   type GrigliaSessione,
 } from "@/hooks/use-griglia-ghiaccio";
+import { use_risorse_strutture } from "@/hooks/use-risorse-strutture";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
