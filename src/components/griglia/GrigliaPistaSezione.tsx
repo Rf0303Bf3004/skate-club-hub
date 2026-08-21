@@ -265,7 +265,11 @@ const GrigliaPistaSezione: React.FC<Props> = ({ risorsa, data_sel, is_editor }) 
             style={{ backgroundColor: colore_risorsa }}
             aria-hidden="true"
           />
-          <Snowflake className="w-4 h-4 text-primary shrink-0" />
+          {risorsa.tipo === "ghiaccio" ? (
+            <Snowflake className="w-4 h-4 text-primary shrink-0" />
+          ) : (
+            <Dumbbell className="w-4 h-4 text-primary shrink-0" />
+          )}
           <span className="font-bold truncate">{nome_risorsa}</span>
           {risorsa.is_ospite && (
             <Badge variant="secondary" className="text-[10px]">
