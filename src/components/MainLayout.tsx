@@ -206,10 +206,41 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           </button>
         </div>
         <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
-          {/* Admin (non superadmin): menu legacy invariato */}
-          {is_admin && !is_superadmin && nav_items.map((item) =>
-            render_nav_item(item.path, item.icon, t(item.key), item.key)
+          {/* Admin: menu legacy raggruppato */}
+          {is_menu_legacy && (
+            <>
+              {render_nav_item(legacy_dashboard.path, legacy_dashboard.icon, t(legacy_dashboard.key), legacy_dashboard.key)}
+              {render_group("Operatività", LayoutGrid, op_open, () => set_op_open((o) => !o),
+                legacy_gruppo_operativita.map((i) => render_nav_item(i.path, i.icon, (i as any).label ?? t(i.key), i.key))
+              )}
+              {render_group("Gare & Eventi", Trophy, gare_open, () => set_gare_open((o) => !o),
+                legacy_gruppo_gare.map((i) => render_nav_item(i.path, i.icon, t(i.key), i.key))
+              )}
+              {render_group("Fatturazione", CreditCard, fatt_open, () => set_fatt_open((o) => !o),
+                legacy_gruppo_fatturazione.map((i) => render_nav_item(i.path, i.icon, t(i.key), i.key))
+              )}
+              {render_nav_item("/comunicazioni", MessageSquare, t("comunicazioni"), "comunicazioni")}
+              {render_group("Configurazione", Settings, conf_open, () => set_conf_open((o) => !o),
+                <>
+                  {render_nav_item("/setup-club", Settings, t("setup_club"), "setup_club")}
+                  {render_nav_item("/stagioni", Calendar, "Stagioni", "stagioni")}
+                  {can_manage_users && render_nav_item("/utenti", Users, tc("menu.utenti"), "utenti")}
+                  {is_admin && render_nav_item("/ruoli-permessi", Lock, tc("menu.gestione_ruoli"), "ruoli_permessi")}
+                  {session && render_nav_item("/convenzioni", BadgePercent, "Convenzioni", "convenzioni")}
+                  {render_nav_item("/pacchetti-sponsor", FileSpreadsheet, "Pacchetti Sponsor", "pacchetti_sponsor")}
+                  {render_nav_item("/import-atleti", FileSpreadsheet, "Import dati", "import_atleti")}
+                  {is_admin && (
+                    <NavLink to="/gestione-avanzata" onClick={() => set_sidebar_open(false)}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/gestione-avanzata" ? "bg-destructive text-destructive-foreground shadow-sm" : "text-destructive/70 hover:bg-destructive/10 hover:text-destructive"}`}>
+                      <ShieldAlert className="w-4 h-4 shrink-0" />
+                      <span>{tc("menu.gestione_avanzata")}</span>
+                    </NavLink>
+                  )}
+                </>
+              )}
+            </>
           )}
+
           {/* Nuovi ruoli: voci principali + gruppo Setup espandibile */}
           {is_nuovo_ruolo && (
             <>
