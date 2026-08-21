@@ -45,6 +45,8 @@ export interface GrigliaSessione {
   motivo_forzatura?: string | null;
   forzato_da?: string | null;
   forzato_at?: string | null;
+  corso_id?: string | null;
+  corso_nome?: string | null;
   atleti: GrigliaSessioneAtleta[];
   istruttori: GrigliaSessioneIstruttore[];
 }
