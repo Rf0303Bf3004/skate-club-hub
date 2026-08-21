@@ -158,6 +158,32 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     );
   };
 
+  const render_group = (
+    label: string,
+    Icon: any,
+    open: boolean,
+    toggle: () => void,
+    children: React.ReactNode,
+  ) => (
+    <div className="pt-2">
+      <button
+        onClick={toggle}
+        className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+      >
+        <Icon className="w-4 h-4 shrink-0" />
+        <span>{label}</span>
+        {open ? <ChevronDown className="w-4 h-4 ml-auto" /> : <ChevronRight className="w-4 h-4 ml-auto" />}
+      </button>
+      {open && (
+        <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border pl-2">{children}</div>
+      )}
+    </div>
+  );
+
+  const is_menu_legacy = is_admin && !is_superadmin;
+
+
+
 
   return (
     <div className="flex min-h-screen bg-background">
