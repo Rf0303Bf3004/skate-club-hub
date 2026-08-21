@@ -772,6 +772,8 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
         ora_inizio: hhmm(merged.ora_inizio),
         ora_fine: hhmm(merged.ora_fine),
         giorno: giorno_blocco ?? undefined,
+        is_ospite: !!risorsa_blocco?.is_ospite,
+
       });
       if (!check.ok) {
         set_motivo_blocco(check.motivo ?? null);
