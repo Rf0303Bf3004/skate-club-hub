@@ -177,11 +177,27 @@ const GrigliaGhiaccioPage: React.FC = () => {
     }
   };
 
-  const salva_blocco = async () => {
+  const salva_blocco = async (forzatura?: string) => {
     if (!risorsa_sel) {
       toast({ title: "Nessuna risorsa selezionata", variant: "destructive" });
       return;
     }
+
+    if (!forzatura) {
+      const check = verifica_orario_disponibilita({
+        fasce_ghiaccio: fasce,
+        fasce_pulizia,
+        ora_inizio: form.ora_inizio,
+        ora_fine: form.ora_fine,
+        giorno: giorno_settimana ?? undefined,
+      });
+      if (!check.ok) {
+        set_motivo_blocco(check.motivo ?? null);
+        set_forzatura_open(true);
+        return;
+      }
+    }
+
     set_creazione_in_corso(true);
     try {
       const id = await upsert_blocco.mutateAsync({
@@ -190,6 +206,7 @@ const GrigliaGhiaccioPage: React.FC = () => {
         ora_fine: form.ora_fine,
         titolo: form.titolo.trim() || titolo_suggerito,
         risorsa_id: risorsa_sel,
+        ...(forzatura ? { fuori_disponibilita: true, motivo_forzatura: forzatura } : {}),
       });
 
       if (id && modo_suddivisione === "sequenziale") {
