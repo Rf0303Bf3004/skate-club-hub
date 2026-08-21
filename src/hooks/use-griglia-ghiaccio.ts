@@ -482,6 +482,7 @@ export function use_elimina_blocco() {
 // ─── Mutation sessioni ─────────────────────────────────────
 export function use_upsert_sessione() {
   const invalidate = use_invalidate_griglia();
+  const { session } = useAuth();
   return useMutation({
     mutationFn: async (input: {
       id?: string;
@@ -494,9 +495,20 @@ export function use_upsert_sessione() {
       note?: string | null;
       pista?: string | null;
       messaggio_atleti?: string | null;
+      fuori_disponibilita?: boolean;
+      motivo_forzatura?: string | null;
     }) => {
       // XOR: mai entrambi valorizzati
       const usa_testo = !!input.specialita_testo_libero && !input.specialita_id;
+      const forzatura =
+        input.fuori_disponibilita === undefined
+          ? {}
+          : {
+              fuori_disponibilita: input.fuori_disponibilita,
+              motivo_forzatura: input.fuori_disponibilita ? input.motivo_forzatura ?? null : null,
+              forzato_da: input.fuori_disponibilita ? session?.user_id ?? null : null,
+              forzato_at: input.fuori_disponibilita ? new Date().toISOString() : null,
+            };
       const payload = {
         blocco_id: input.blocco_id,
         ordine: input.ordine,
@@ -507,6 +519,7 @@ export function use_upsert_sessione() {
         note: input.note ?? null,
         pista: input.pista ?? null,
         messaggio_atleti: input.messaggio_atleti ?? null,
+        ...forzatura,
       };
       if (input.id) {
         const { error } = await supabase.from("griglia_sessioni" as any).update(payload as any).eq("id", input.id);
