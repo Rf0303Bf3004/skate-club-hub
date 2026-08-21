@@ -17,6 +17,7 @@ import FatturazioneTab from "@/components/FatturazioneTab";
 import { RegoleComunicazioniSection } from "@/components/comunicazioni/RegoleComunicazioniSection";
 import ModalitaGestioneSection from "@/components/setup/ModalitaGestioneSection";
 import RagioniSocialiSection from "@/components/setup/RagioniSocialiSection";
+import FatturaLayoutSection from "@/components/setup/FatturaLayoutSection";
 import RisorseSection from "@/components/setup/RisorseSection";
 import { use_risorse_strutture } from "@/hooks/use-risorse-strutture";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -1087,6 +1088,7 @@ const ClubSetupPage: React.FC = () => {
           <div className="space-y-6">
             <FatturazioneTab />
             <RagioniSocialiSection />
+            <FatturaLayoutSection />
           </div>
         </TabsContent>
       </Tabs>

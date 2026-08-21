@@ -53,7 +53,7 @@ export async function load_fattura_full(id: string): Promise<{
       .maybeSingle(),
     supabase
       .from("setup_club")
-      .select("iban, intestatario_conto, twint_paylink")
+      .select("iban, intestatario_conto, twint_paylink, fattura_mostra_logo, fattura_colore_accento, fattura_mostra_iban, fattura_note_legali, fattura_footer_testo")
       .eq("club_id", f.club_id)
       .maybeSingle(),
   ]);
@@ -63,6 +63,11 @@ export async function load_fattura_full(id: string): Promise<{
     iban: setup?.iban ?? null,
     intestatario_iban: setup?.intestatario_conto ?? null,
     twint_qr_url: setup?.twint_paylink ?? null,
+    fattura_mostra_logo: setup?.fattura_mostra_logo ?? false,
+    fattura_colore_accento: setup?.fattura_colore_accento ?? null,
+    fattura_mostra_iban: setup?.fattura_mostra_iban ?? true,
+    fattura_note_legali: setup?.fattura_note_legali ?? null,
+    fattura_footer_testo: setup?.fattura_footer_testo ?? null,
   };
   return { fattura: f as FatturaFull, atleta: (atletaRes as any).data, club };
 }
@@ -132,6 +137,11 @@ export function build_pdf_data(
       iban: club?.iban,
       intestatario_iban: club?.intestatario_iban,
       twint_qr_url: club?.twint_qr_url,
+      fattura_mostra_logo: club?.fattura_mostra_logo ?? false,
+      fattura_colore_accento: club?.fattura_colore_accento ?? null,
+      fattura_mostra_iban: club?.fattura_mostra_iban ?? true,
+      fattura_note_legali: club?.fattura_note_legali ?? null,
+      fattura_footer_testo: club?.fattura_footer_testo ?? null,
     },
   };
 }

@@ -5139,6 +5139,12 @@ export type Database = {
           created_at: string
           data_fine_stagione: string | null
           data_inizio_stagione: string | null
+          fattura_colore_accento: string | null
+          fattura_footer_testo: string | null
+          fattura_mostra_iban: boolean
+          fattura_mostra_logo: boolean
+          fattura_note_legali: string | null
+          fattura_prefisso_numero: string
           fatturazione_costo_test: number | null
           fatturazione_giorno_mese: number | null
           fatturazione_invio_email_auto: boolean | null
@@ -5163,6 +5169,12 @@ export type Database = {
           created_at?: string
           data_fine_stagione?: string | null
           data_inizio_stagione?: string | null
+          fattura_colore_accento?: string | null
+          fattura_footer_testo?: string | null
+          fattura_mostra_iban?: boolean
+          fattura_mostra_logo?: boolean
+          fattura_note_legali?: string | null
+          fattura_prefisso_numero?: string
           fatturazione_costo_test?: number | null
           fatturazione_giorno_mese?: number | null
           fatturazione_invio_email_auto?: boolean | null
@@ -5187,6 +5199,12 @@ export type Database = {
           created_at?: string
           data_fine_stagione?: string | null
           data_inizio_stagione?: string | null
+          fattura_colore_accento?: string | null
+          fattura_footer_testo?: string | null
+          fattura_mostra_iban?: boolean
+          fattura_mostra_logo?: boolean
+          fattura_note_legali?: string | null
+          fattura_prefisso_numero?: string
           fatturazione_costo_test?: number | null
           fatturazione_giorno_mese?: number | null
           fatturazione_invio_email_auto?: boolean | null

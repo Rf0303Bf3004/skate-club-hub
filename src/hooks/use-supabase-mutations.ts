@@ -907,6 +907,8 @@ async function build_fatture_mese(anno: number, mese: number) {
   }
   const snap_of = (atleta_id: string) => intest_map.get(atleta_id) ?? {};
 
+  const prefisso_fattura = ((setup as any)?.fattura_prefisso_numero as string) || "F-";
+
   const fatture_da_creare: any[] = [];
 
   const { data: corsi } = await supabase.from("corsi").select("*").eq("club_id", cid()).eq("attivo", true);
@@ -918,7 +920,7 @@ async function build_fatture_mese(anno: number, mese: number) {
     fatture_da_creare.push({
       club_id: cid(),
       atleta_id: (isc as any).atleta_id,
-      numero: `F-${String(next_num++).padStart(4, "0")}`,
+      numero: `${prefisso_fattura}${String(next_num++).padStart(4, "0")}`,
       descrizione: `Corso ${(corso as any).nome} - ${mese_label}`,
       importo: (corso as any).costo_mensile,
       data_emissione: oggi,
@@ -951,7 +953,7 @@ async function build_fatture_mese(anno: number, mese: number) {
     fatture_da_creare.push({
       club_id: cid(),
       atleta_id,
-      numero: `F-${String(next_num++).padStart(4, "0")}`,
+      numero: `${prefisso_fattura}${String(next_num++).padStart(4, "0")}`,
       descrizione: `Lezioni private - ${mese_label}`,
       importo: totale,
       data_emissione: oggi,
@@ -984,7 +986,7 @@ async function build_fatture_mese(anno: number, mese: number) {
       fatture_da_creare.push({
         club_id: cid(),
         atleta_id,
-        numero: `F-${String(next_num++).padStart(4, "0")}`,
+        numero: `${prefisso_fattura}${String(next_num++).padStart(4, "0")}`,
         descrizione: `Test di livello (${count}) - ${mese_label}`,
         importo: costo_test * count,
         data_emissione: oggi,
