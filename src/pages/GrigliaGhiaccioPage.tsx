@@ -15,6 +15,7 @@ import StampaRiepilogoIstruttori, {
 import TableauPosterStampa, {
   calcola_fogli,
   hhmm_da_min,
+  impacchetta_sottorighe,
   type FormatoCarta,
   type TableauCorsia,
   type TableauEvento,
