@@ -573,14 +573,27 @@ export function use_disponibilita_ghiaccio() {
     enabled: !!get_current_club_id(),
     queryKey: ["disponibilita_ghiaccio", get_current_club_id()],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("disponibilita_ghiaccio")
-        .select("*")
-        .eq("club_id", get_current_club_id())
-        .eq("tipo", "ghiaccio");
+      const club_id = get_current_club_id();
+      const [{ data, error }, { data: risorse }] = await Promise.all([
+        supabase
+          .from("disponibilita_ghiaccio")
+          .select("*")
+          .eq("club_id", club_id)
+          .eq("tipo", "ghiaccio"),
+        supabase
+          .from("risorse_strutture" as any)
+          .select("id, tipo")
+          .eq("club_id", club_id),
+      ]);
       if (error) throw error;
-      return data ?? [];
+      // Escludi le fasce collegate a risorse non-ghiaccio (es. palestre):
+      // sono salvate con tipo "ghiaccio" ma non sono ore di pista.
+      const non_ghiaccio = new Set(
+        ((risorse ?? []) as any[]).filter((r) => r?.tipo && r.tipo !== "ghiaccio").map((r) => r.id),
+      );
+      return (data ?? []).filter((r: any) => !r.risorsa_id || !non_ghiaccio.has(r.risorsa_id));
     },
+
   });
 }
 
