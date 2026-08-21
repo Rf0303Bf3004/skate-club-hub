@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
+import { date_settimanali, genera_occorrenze_corso } from "@/lib/planning-occorrenze";
 
 // ─── Tipi ──────────────────────────────────────────────────
 export interface GrigliaSpecialita {
@@ -664,5 +665,213 @@ export function use_elimina_specialita() {
       if (error) throw error;
     },
     onSuccess: invalidate,
+  });
+}
+
+// ─── Ricorrenza sotto-sessione ─────────────────────────────
+export interface RipetiSessioneResult {
+  corso_id: string;
+  corso_creato: boolean;
+  corso_nome: string;
+  settimane_create: number;
+  settimane_esistenti: number;
+  occorrenze_create: number;
+}
+
+export function use_ripeti_sessione() {
+  const invalidate = use_invalidate_griglia();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      sessione: GrigliaSessione;
+      blocco: GrigliaBlocco;
+      fino_a: string;
+      nome_risorsa?: string | null;
+    }): Promise<RipetiSessioneResult> => {
+      const club_id = get_current_club_id();
+      if (!club_id) throw new Error("Club non disponibile");
+      const { sessione, blocco } = input;
+
+      // Stagione attiva del club (fallback: la più recente)
+      const { data: stagioni, error: err_st } = await supabase
+        .from("stagioni")
+        .select("id,data_fine,attiva,data_inizio")
+        .eq("club_id", club_id)
+        .order("data_inizio", { ascending: false });
+      if (err_st) throw err_st;
+      const lista_stagioni = (stagioni ?? []) as any[];
+      const stagione = lista_stagioni.find((s) => s.attiva) ?? lista_stagioni[0] ?? null;
+      if (!stagione?.id) throw new Error("Nessuna stagione configurata per il club");
+
+      const giorno = giorno_it_da_data(blocco.data);
+      const ora_inizio = sessione.ora_inizio;
+      const ora_fine = sessione.ora_fine;
+      const atleti_ids = (sessione.atleti ?? []).map((a) => a.atleta_id);
+      const istruttori_ids = (sessione.istruttori ?? []).map((i) => i.istruttore_id);
+
+      const etichetta_specialita =
+        sessione.specialita_nome || sessione.specialita_testo_libero || "Sessione ghiaccio";
+      const nome_corso = `${etichetta_specialita} — ${input.nome_risorsa ?? "Pista"}, ${giorno} ${ora_inizio.slice(0, 5)}`;
+
+      // 1) Corso collegato: riusa quello esistente, altrimenti crealo
+      let corso_id = sessione.corso_id ?? null;
+      let corso_creato = false;
+      let corso_nome = sessione.corso_nome ?? nome_corso;
+
+      if (!corso_id) {
+        const { data: corso, error: err_corso } = await supabase
+          .from("corsi")
+          .insert({
+            club_id,
+            nome: nome_corso,
+            tipo: "Ghiaccio",
+            giorno,
+            ora_inizio,
+            ora_fine,
+            costo_mensile: 0,
+            costo_annuale: 0,
+            attivo: true,
+            stagione_id: stagione.id,
+            usa_ghiaccio: true,
+          } as any)
+          .select("id,nome")
+          .single();
+        if (err_corso) throw err_corso;
+        corso_id = (corso as any).id as string;
+        corso_nome = (corso as any).nome as string;
+        corso_creato = true;
+
+        if (istruttori_ids.length > 0) {
+          const { error: err_ci } = await supabase
+            .from("corsi_istruttori")
+            .insert(istruttori_ids.map((istruttore_id) => ({ corso_id, istruttore_id })) as any);
+          if (err_ci) throw err_ci;
+        }
+        if (atleti_ids.length > 0) {
+          const { error: err_isc } = await supabase
+            .from("iscrizioni_corsi")
+            .insert(atleti_ids.map((atleta_id) => ({ corso_id, atleta_id, attiva: true })) as any);
+          if (err_isc) throw err_isc;
+        }
+        const { error: err_link } = await supabase
+          .from("griglia_sessioni" as any)
+          .update({ corso_id } as any)
+          .eq("id", sessione.id);
+        if (err_link) throw err_link;
+      }
+
+      // 2) Occorrenze nel Planning classico (stesso schema, idempotente)
+      const date = date_settimanali(blocco.data, input.fino_a);
+      const occ = await genera_occorrenze_corso({
+        club_id,
+        stagione_id: stagione.id,
+        corso_id: corso_id as string,
+        date,
+        ora_inizio,
+        ora_fine,
+        istruttore_id: istruttori_ids[0] ?? null,
+      });
+
+      // 3) Blocchi + sotto-sessioni della Griglia per ogni data
+      let settimane_create = 0;
+      let settimane_esistenti = 0;
+
+      for (const d of date) {
+        // blocco esistente per pista + data + stesso orario di blocco
+        let q = supabase
+          .from("griglia_blocchi" as any)
+          .select("id")
+          .eq("club_id", club_id)
+          .eq("data", d)
+          .eq("ora_inizio", blocco.ora_inizio);
+        q = blocco.risorsa_id ? q.eq("risorsa_id", blocco.risorsa_id) : q.is("risorsa_id", null);
+        const { data: trovato, error: err_b } = await q.maybeSingle();
+        if (err_b) throw err_b;
+
+        let blocco_dest_id = (trovato as any)?.id as string | undefined;
+        if (!blocco_dest_id) {
+          const { data: nuovo, error: err_nb } = await supabase
+            .from("griglia_blocchi" as any)
+            .insert({
+              club_id,
+              data: d,
+              ora_inizio: blocco.ora_inizio,
+              ora_fine: blocco.ora_fine,
+              titolo: blocco.titolo ?? null,
+              risorsa_id: blocco.risorsa_id ?? null,
+              stato: "bozza",
+            } as any)
+            .select("id")
+            .single();
+          if (err_nb) throw err_nb;
+          blocco_dest_id = (nuovo as any).id as string;
+        }
+
+        // sessione equivalente già presente?
+        const { data: sess_esistenti, error: err_se } = await supabase
+          .from("griglia_sessioni" as any)
+          .select("id,corso_id,ora_inizio")
+          .eq("blocco_id", blocco_dest_id)
+          .eq("ora_inizio", ora_inizio);
+        if (err_se) throw err_se;
+        const gia = ((sess_esistenti ?? []) as any[]).find(
+          (s) => s.corso_id === corso_id || !s.corso_id,
+        );
+        if (gia) {
+          settimane_esistenti += 1;
+          if (!gia.corso_id) {
+            await supabase.from("griglia_sessioni" as any).update({ corso_id } as any).eq("id", gia.id);
+          }
+          continue;
+        }
+
+        const { data: nuova_sess, error: err_ns } = await supabase
+          .from("griglia_sessioni" as any)
+          .insert({
+            blocco_id: blocco_dest_id,
+            ordine: sessione.ordine,
+            ora_inizio,
+            ora_fine,
+            specialita_id: sessione.specialita_id ?? null,
+            specialita_testo_libero: sessione.specialita_id ? null : sessione.specialita_testo_libero ?? null,
+            pista: sessione.pista ?? null,
+            note: sessione.note ?? null,
+            messaggio_atleti: sessione.messaggio_atleti ?? null,
+            corso_id,
+          } as any)
+          .select("id")
+          .single();
+        if (err_ns) throw err_ns;
+        const nuova_id = (nuova_sess as any).id as string;
+
+        if (atleti_ids.length > 0) {
+          const { error: e } = await supabase
+            .from("griglia_sessioni_atleti" as any)
+            .insert(atleti_ids.map((atleta_id) => ({ sessione_id: nuova_id, atleta_id })) as any);
+          if (e && !`${e.message}`.includes("duplicate")) throw e;
+        }
+        if (istruttori_ids.length > 0) {
+          const { error: e } = await supabase
+            .from("griglia_sessioni_istruttori" as any)
+            .insert(istruttori_ids.map((istruttore_id) => ({ sessione_id: nuova_id, istruttore_id })) as any);
+          if (e && !`${e.message}`.includes("duplicate")) throw e;
+        }
+        settimane_create += 1;
+      }
+
+      return {
+        corso_id: corso_id as string,
+        corso_creato,
+        corso_nome,
+        settimane_create,
+        settimane_esistenti,
+        occorrenze_create: occ.create,
+      };
+    },
+    onSuccess: () => {
+      invalidate();
+      qc.invalidateQueries({ queryKey: ["corsi"] });
+      qc.invalidateQueries({ queryKey: ["planning_corsi"] });
+    },
   });
 }
