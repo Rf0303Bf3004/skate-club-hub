@@ -38,7 +38,7 @@ export async function load_fattura_full(id: string): Promise<{
 }> {
   const { data: f, error } = await supabase.from("fatture").select("*").eq("id", id).maybeSingle();
   if (error || !f) throw error || new Error("Fattura non trovata");
-  const [atletaRes, clubRes] = await Promise.all([
+  const [atletaRes, clubRes, setupRes] = await Promise.all([
     f.atleta_id
       ? supabase
           .from("atleti")
@@ -48,11 +48,23 @@ export async function load_fattura_full(id: string): Promise<{
       : Promise.resolve({ data: null }),
     supabase
       .from("clubs")
-      .select("nome, logo_url, indirizzo, cap, citta, cantone, email, telefono, partita_iva, numero_iva_chf, iban, intestatario_iban, twint_qr_url")
+      .select("nome, logo_url, indirizzo, cap, citta, cantone, email, telefono, partita_iva, numero_iva_chf")
       .eq("id", f.club_id)
       .maybeSingle(),
+    supabase
+      .from("setup_club")
+      .select("iban, intestatario_conto, twint_paylink")
+      .eq("club_id", f.club_id)
+      .maybeSingle(),
   ]);
-  return { fattura: f as FatturaFull, atleta: (atletaRes as any).data, club: (clubRes as any).data };
+  const setup = (setupRes as any).data;
+  const club = {
+    ...(clubRes as any).data,
+    iban: setup?.iban ?? null,
+    intestatario_iban: setup?.intestatario_conto ?? null,
+    twint_qr_url: setup?.twint_paylink ?? null,
+  };
+  return { fattura: f as FatturaFull, atleta: (atletaRes as any).data, club };
 }
 
 export function build_pdf_data(
