@@ -613,6 +613,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   const assegna_istruttore = use_assegna_istruttore_sessione();
   const rimuovi_istruttore = use_rimuovi_istruttore_sessione();
   const pubblica = use_pubblica_blocco();
+  const ripeti = use_ripeti_sessione();
 
   const [open_specialita, set_open_specialita] = useState(false);
   const [riepilogo_aperto, set_riepilogo_aperto] = useState(false);
@@ -622,6 +623,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   const [pending_patch, set_pending_patch] = useState<
     { sessione: GrigliaSessione; patch: Partial<GrigliaSessione> } | null
   >(null);
+  const [ripeti_sessione, set_ripeti_sessione] = useState<GrigliaSessione | null>(null);
 
   const giorno_blocco = useMemo(() => (blocco.data ? giorno_it_da_data(blocco.data) : null), [blocco.data]);
   const { data: risorse_tutte = [] } = use_risorse_strutture();
@@ -778,6 +780,31 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
       set_tab_attivo(sessioni[0].id);
     }
   }, [sessioni, tab_attivo]);
+
+  const conferma_ripetizione = async (fino_a: string) => {
+    if (!ripeti_sessione) return;
+    try {
+      const res = await ripeti.mutateAsync({
+        sessione: ripeti_sessione,
+        blocco,
+        fino_a,
+        nome_risorsa: risorsa_blocco?.nome ?? null,
+      });
+      const parti = [
+        `${res.settimane_create} ${res.settimane_create === 1 ? "settimana creata" : "settimane create"}`,
+      ];
+      if (res.settimane_esistenti > 0) parti.push(`${res.settimane_esistenti} già esistenti`);
+      toast({
+        title: "🔁 Ricorrenza aggiornata",
+        description: res.corso_creato
+          ? `${parti.join(", ")}. Corso "${res.corso_nome}" creato — imposta il prezzo in Corsi.`
+          : parti.join(", "),
+      });
+      set_ripeti_sessione(null);
+    } catch (e: any) {
+      toast({ title: "Errore ricorrenza", description: e?.message, variant: "destructive" });
+    }
+  };
 
   const salva_sessione = async (
     s: GrigliaSessione,
