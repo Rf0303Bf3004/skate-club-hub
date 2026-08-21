@@ -101,9 +101,26 @@ const SuperAdminClubDetailPage: React.FC = () => {
 
   const salva_anagrafica = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("clubs").update(anag as any).eq("id", id!);
+      // Le colonne territoriali hanno check constraint: stringa vuota non ammessa -> null
+      const payload = Object.fromEntries(
+        Object.entries(anag as Record<string, any>).map(([k, v]) => [
+          k,
+          typeof v === "string" && v.trim() === "" ? null : v,
+        ]),
+      );
+      const paese_norm = payload.paese_iso === "IT" ? "IT" : "CH";
+      payload.paese = paese_norm;
+      payload.paese_iso = paese_norm;
+      if (paese_norm === "IT") {
+        payload.cantone = null;
+      } else {
+        payload.regione = null;
+        payload.provincia = null;
+      }
+      const { error } = await supabase.from("clubs").update(payload as any).eq("id", id!);
       if (error) throw error;
     },
+
     onSuccess: () => {
       toast({ title: "Anagrafica club salvata" });
       qc.invalidateQueries({ queryKey: ["sa_club_detail", id] });
