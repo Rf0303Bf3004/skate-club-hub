@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { use_club } from "@/hooks/use-supabase-data";
 import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
-import { LayoutDashboard, Users, BookOpen, Trophy, CreditCard, MessageSquare, Settings, Calendar, UserCheck, Tent, GraduationCap, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, Lock, ClipboardList, ClipboardCheck, Sparkles, ChevronDown, ChevronRight, FileText, Search, LayoutGrid, BadgePercent, Smartphone } from "lucide-react";
+import { LayoutDashboard, Users, BookOpen, Trophy, CreditCard, MessageSquare, Settings, Calendar, UserCheck, Tent, GraduationCap, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, Lock, ClipboardList, ClipboardCheck, Sparkles, ChevronDown, ChevronRight, FileText, Search, LayoutGrid, BadgePercent, Smartphone, FileSpreadsheet } from "lucide-react";
 import GlobalSearchPalette from "@/components/common/GlobalSearchPalette";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -14,24 +14,31 @@ import { use_count_iscrizioni_non_lette } from "@/components/comunicazioni/Iscri
 import { MENU_PRINCIPALE, MENU_SETUP } from "@/config/menuSections";
 
 
-// Voci legacy (admin/superadmin vedono questo menu come prima)
-const legacy_nav_items = [
-  { key: "dashboard", sezione: "dashboard", path: "/", icon: LayoutDashboard },
-  { key: "atleti", sezione: "atleti", path: "/atleti", icon: Users },
-  { key: "istruttori", sezione: "istruttori", path: "/istruttori", icon: UserCheck },
-  { key: "corsi", sezione: "corsi", path: "/corsi", icon: BookOpen },
-  { key: "gare", sezione: "gare", path: "/gare", icon: Trophy },
-  { key: "test_livello", sezione: "gare", path: "/test", icon: ClipboardCheck },
-  { key: "eventi", sezione: "eventi", path: "/eventi", icon: Sparkles },
-  { key: "campi_eventi", sezione: "campi", path: "/campi-eventi", icon: Tent },
-  { key: "lezioni_private", sezione: "lezioni_private", path: "/lezioni-private", icon: GraduationCap },
-  { key: "fatture", sezione: "fatture", path: "/fatture", icon: CreditCard },
-  { key: "segreteria_fatture", sezione: "fatture", path: "/segreteria/fatture", icon: LayoutGrid },
-  { key: "comunicazioni", sezione: "comunicazioni", path: "/comunicazioni", icon: MessageSquare },
-  { key: "planning_ghiaccio", sezione: "planning_ghiaccio", path: "/planning", icon: Calendar },
-  { key: "richieste_iscrizione", sezione: "richieste_iscrizione", path: "/richieste-iscrizione", icon: ClipboardList },
-  { key: "setup_club", sezione: "setup_club", path: "/setup-club", icon: Settings },
+// Voci legacy raggruppate (admin/superadmin)
+const legacy_dashboard = { key: "dashboard", path: "/", icon: LayoutDashboard };
+
+const legacy_gruppo_operativita = [
+  { key: "atleti", path: "/atleti", icon: Users },
+  { key: "richieste_iscrizione", path: "/richieste-iscrizione", icon: ClipboardList },
+  { key: "istruttori", path: "/istruttori", icon: UserCheck },
+  { key: "griglia_ghiaccio", path: "/griglia-ghiaccio", icon: LayoutGrid, label: "Griglia Ghiaccio" },
+  { key: "planning_ghiaccio", path: "/planning", icon: Calendar },
+  { key: "corsi", path: "/corsi", icon: BookOpen },
+  { key: "lezioni_private", path: "/lezioni-private", icon: GraduationCap },
+  { key: "campi_eventi", path: "/campi-eventi", icon: Tent },
 ];
+
+const legacy_gruppo_gare = [
+  { key: "gare", path: "/gare", icon: Trophy },
+  { key: "test_livello", path: "/test", icon: ClipboardCheck },
+  { key: "eventi", path: "/eventi", icon: Sparkles },
+];
+
+const legacy_gruppo_fatturazione = [
+  { key: "fatture", path: "/fatture", icon: CreditCard },
+  { key: "segreteria_fatture", path: "/segreteria/fatture", icon: LayoutGrid },
+];
+
 
 function use_count_richieste_pendenti() {
   const { session } = useAuth();
@@ -110,8 +117,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const nuovo_principale = MENU_PRINCIPALE.filter((s) => visibile_set.has(s.codice));
   const nuovo_setup = MENU_SETUP.filter((s) => visibile_set.has(s.codice));
 
-  const nav_items = legacy_nav_items;
   const [setup_open, set_setup_open] = React.useState(true);
+  const [op_open, set_op_open] = React.useState(true);
+  const [gare_open, set_gare_open] = React.useState(true);
+  const [fatt_open, set_fatt_open] = React.useState(true);
+  const [conf_open, set_conf_open] = React.useState(false);
+
 
   const render_nav_item = (path: string, Icon: any, label: string, key: string, disabled?: boolean) => {
     const is_active = location.pathname === path || (path !== "/" && location.pathname.startsWith(path));
@@ -147,6 +158,32 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     );
   };
 
+  const render_group = (
+    label: string,
+    Icon: any,
+    open: boolean,
+    toggle: () => void,
+    children: React.ReactNode,
+  ) => (
+    <div className="pt-2">
+      <button
+        onClick={toggle}
+        className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+      >
+        <Icon className="w-4 h-4 shrink-0" />
+        <span>{label}</span>
+        {open ? <ChevronDown className="w-4 h-4 ml-auto" /> : <ChevronRight className="w-4 h-4 ml-auto" />}
+      </button>
+      {open && (
+        <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border pl-2">{children}</div>
+      )}
+    </div>
+  );
+
+  const is_menu_legacy = is_admin && !is_superadmin;
+
+
+
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -169,10 +206,41 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           </button>
         </div>
         <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
-          {/* Admin (non superadmin): menu legacy invariato */}
-          {is_admin && !is_superadmin && nav_items.map((item) =>
-            render_nav_item(item.path, item.icon, t(item.key), item.key)
+          {/* Admin: menu legacy raggruppato */}
+          {is_menu_legacy && (
+            <>
+              {render_nav_item(legacy_dashboard.path, legacy_dashboard.icon, t(legacy_dashboard.key), legacy_dashboard.key)}
+              {render_group("Operatività", LayoutGrid, op_open, () => set_op_open((o) => !o),
+                legacy_gruppo_operativita.map((i) => render_nav_item(i.path, i.icon, (i as any).label ?? t(i.key), i.key))
+              )}
+              {render_group("Gare & Eventi", Trophy, gare_open, () => set_gare_open((o) => !o),
+                legacy_gruppo_gare.map((i) => render_nav_item(i.path, i.icon, t(i.key), i.key))
+              )}
+              {render_group("Fatturazione", CreditCard, fatt_open, () => set_fatt_open((o) => !o),
+                legacy_gruppo_fatturazione.map((i) => render_nav_item(i.path, i.icon, t(i.key), i.key))
+              )}
+              {render_nav_item("/comunicazioni", MessageSquare, t("comunicazioni"), "comunicazioni")}
+              {render_group("Configurazione", Settings, conf_open, () => set_conf_open((o) => !o),
+                <>
+                  {render_nav_item("/setup-club", Settings, t("setup_club"), "setup_club")}
+                  {render_nav_item("/stagioni", Calendar, "Stagioni", "stagioni")}
+                  {can_manage_users && render_nav_item("/utenti", Users, tc("menu.utenti"), "utenti")}
+                  {is_admin && render_nav_item("/ruoli-permessi", Lock, tc("menu.gestione_ruoli"), "ruoli_permessi")}
+                  {session && render_nav_item("/convenzioni", BadgePercent, "Convenzioni", "convenzioni")}
+                  {render_nav_item("/pacchetti-sponsor", FileSpreadsheet, "Pacchetti Sponsor", "pacchetti_sponsor")}
+                  {render_nav_item("/import-atleti", FileSpreadsheet, "Import dati", "import_atleti")}
+                  {is_admin && (
+                    <NavLink to="/gestione-avanzata" onClick={() => set_sidebar_open(false)}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/gestione-avanzata" ? "bg-destructive text-destructive-foreground shadow-sm" : "text-destructive/70 hover:bg-destructive/10 hover:text-destructive"}`}>
+                      <ShieldAlert className="w-4 h-4 shrink-0" />
+                      <span>{tc("menu.gestione_avanzata")}</span>
+                    </NavLink>
+                  )}
+                </>
+              )}
+            </>
           )}
+
           {/* Nuovi ruoli: voci principali + gruppo Setup espandibile */}
           {is_nuovo_ruolo && (
             <>
@@ -206,35 +274,21 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             </>
           )}
 
-          {is_admin && (
-            <>
-              <div className="pt-3 pb-1"><div className="border-t border-border" /></div>
-              <NavLink to="/gestione-avanzata" onClick={() => set_sidebar_open(false)}
-                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/gestione-avanzata" ? "bg-destructive text-destructive-foreground shadow-sm" : "text-destructive/70 hover:bg-destructive/10 hover:text-destructive"}`}>
-                <ShieldAlert className="w-4 h-4 shrink-0" />
-                <span>{tc("menu.gestione_avanzata")}</span>
-              </NavLink>
-              <NavLink to="/ruoli-permessi" onClick={() => set_sidebar_open(false)}
-                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/ruoli-permessi" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
-                <Lock className="w-4 h-4 shrink-0" />
-                <span>{tc("menu.gestione_ruoli")}</span>
-              </NavLink>
-            </>
-          )}
-          {can_manage_users && !is_superadmin && (
+          {can_manage_users && !is_superadmin && !is_menu_legacy && (
             <NavLink to="/utenti" onClick={() => set_sidebar_open(false)}
               className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/utenti" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
               <Users className="w-4 h-4 shrink-0" />
               <span>{tc("menu.utenti")}</span>
             </NavLink>
           )}
-          {!is_superadmin && session && (
+          {!is_superadmin && session && !is_menu_legacy && (
             <NavLink to="/convenzioni" onClick={() => set_sidebar_open(false)}
               className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/convenzioni" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
               <BadgePercent className="w-4 h-4 shrink-0" />
               <span>Convenzioni</span>
             </NavLink>
           )}
+
           {is_superadmin && (
             <>
               <div className="pt-2 pb-1">
