@@ -2874,6 +2874,11 @@ const CoursesPage: React.FC = () => {
                             </>
                           )}
                           {c.tipo && <Badge variant="secondary" className="text-xs flex-shrink-0">{c.tipo}</Badge>}
+                          {prezzo_non_impostato(c) && (
+                            <Badge variant="outline" className="text-[10px] border-amber-300 bg-amber-50 text-amber-700 flex-shrink-0">
+                              <AlertTriangle className="w-3 h-3 mr-1" /> Prezzo non impostato
+                            </Badge>
+                          )}
                           <span className="text-xs text-muted-foreground flex-shrink-0">{(c.atleti_ids||[]).length} iscritti</span>
                           <ConfirmButton
                             titolo={`Eliminare il corso "${c.nome}"?`}
