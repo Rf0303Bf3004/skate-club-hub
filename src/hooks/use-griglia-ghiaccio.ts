@@ -41,6 +41,10 @@ export interface GrigliaSessione {
   pista: string | null;
   messaggio_atleti: string | null;
   note: string | null;
+  fuori_disponibilita?: boolean | null;
+  motivo_forzatura?: string | null;
+  forzato_da?: string | null;
+  forzato_at?: string | null;
   atleti: GrigliaSessioneAtleta[];
   istruttori: GrigliaSessioneIstruttore[];
 }
@@ -56,6 +60,10 @@ export interface GrigliaBlocco {
   creato_da: string | null;
   pubblicato_at: string | null;
   risorsa_id: string | null;
+  fuori_disponibilita?: boolean | null;
+  motivo_forzatura?: string | null;
+  forzato_da?: string | null;
+  forzato_at?: string | null;
   sessioni: GrigliaSessione[];
 }
 
