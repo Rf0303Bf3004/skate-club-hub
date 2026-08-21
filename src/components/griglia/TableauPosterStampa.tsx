@@ -342,3 +342,21 @@ const TableauPosterStampa: React.FC<Props> = ({
 };
 
 export default TableauPosterStampa;
+
+/** Calcola quanti fogli servono e le fasce orarie coperte (stessa logica del render). */
+export function calcola_fogli(
+  formato: FormatoCarta,
+  min_inizio: number,
+  min_fine: number,
+  mm_per_min = 0.8,
+): { da: number; a: number; indice: number }[] {
+  const pagina = PAGINA_MM[formato];
+  const larghezza_tempo = pagina.w - MARGINE_MM * 2 - COL_LABEL_MM;
+  const minuti_per_foglio = Math.max(60, Math.floor(Math.floor(larghezza_tempo / mm_per_min) / 30) * 30);
+  const durata = Math.max(60, min_fine - min_inizio);
+  const n = Math.max(1, Math.ceil(durata / minuti_per_foglio));
+  return Array.from({ length: n }, (_, i) => {
+    const da = min_inizio + i * minuti_per_foglio;
+    return { da, a: Math.min(min_fine, da + minuti_per_foglio), indice: i + 1 };
+  });
+}
