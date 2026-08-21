@@ -13,6 +13,7 @@ import StampaRiepilogoIstruttori, {
   type RigaSessioneStampa,
 } from "@/components/griglia/StampaRiepilogoIstruttori";
 import TableauPosterStampa, {
+  calcola_fogli,
   hhmm_da_min,
   type FormatoCarta,
   type TableauCorsia,
