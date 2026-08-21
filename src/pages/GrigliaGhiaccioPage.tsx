@@ -104,10 +104,68 @@ const GrigliaGhiaccioPage: React.FC = () => {
       .sort((a, b) => a.nome.localeCompare(b.nome, "it"));
   }, [blocchi_giorno]);
 
+  // ─── Tableau poster (swimlane per risorsa) ───────────────
+  const corsie_tableau = useMemo<TableauCorsia[]>(
+    () =>
+      [...risorse_ghiaccio, ...risorse_palestra].map((r) => ({
+        id: r.id,
+        nome: r.nome,
+        tipo: r.tipo,
+        colore: r.colore,
+      })),
+    [risorse_ghiaccio, risorse_palestra],
+  );
+
+  const eventi_tableau = useMemo<TableauEvento[]>(() => {
+    const out: TableauEvento[] = [];
+    for (const b of blocchi_giorno) {
+      if (!b.risorsa_id) continue;
+      for (const s of b.sessioni ?? []) {
+        out.push({
+          id: s.id,
+          risorsa_id: b.risorsa_id,
+          inizio_min: min_da_hhmm(s.ora_inizio),
+          fine_min: min_da_hhmm(s.ora_fine),
+          titolo: s.corso_nome || s.specialita_nome || s.specialita_testo_libero || "Allenamento",
+          istruttori: (s.istruttori ?? []).map((i) => `${i.nome} ${i.cognome}`.trim()).join(", "),
+          fuori_disponibilita: !!s.fuori_disponibilita,
+        });
+      }
+    }
+    return out;
+  }, [blocchi_giorno]);
+
+  const finestra_tableau = useMemo(() => {
+    const rilevanti = blocchi_giorno.filter((b) => b.risorsa_id && corsie_tableau.some((c) => c.id === b.risorsa_id));
+    if (rilevanti.length === 0) return { min_inizio: 8 * 60, min_fine: 20 * 60 };
+    const inizio = Math.min(...rilevanti.map((b) => min_da_hhmm(b.ora_inizio)));
+    const fine = Math.max(...rilevanti.map((b) => min_da_hhmm(b.ora_fine)));
+    return {
+      min_inizio: Math.max(0, Math.floor((inizio - 30) / 30) * 30),
+      min_fine: Math.min(24 * 60, Math.ceil((fine + 30) / 30) * 30),
+    };
+  }, [blocchi_giorno, corsie_tableau]);
+
+  const fogli_tableau = useMemo(
+    () => calcola_fogli(formato_carta, finestra_tableau.min_inizio, finestra_tableau.min_fine),
+    [formato_carta, finestra_tableau],
+  );
+
   const stampa = () => {
     document.body.classList.add("stampa-griglia");
     const cleanup = () => {
       document.body.classList.remove("stampa-griglia");
+      window.removeEventListener("afterprint", cleanup);
+    };
+    window.addEventListener("afterprint", cleanup);
+    window.print();
+    setTimeout(cleanup, 1000);
+  };
+
+  const stampa_tableau = () => {
+    document.body.classList.add("stampa-tableau");
+    const cleanup = () => {
+      document.body.classList.remove("stampa-tableau");
       window.removeEventListener("afterprint", cleanup);
     };
     window.addEventListener("afterprint", cleanup);
