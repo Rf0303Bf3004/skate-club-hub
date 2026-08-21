@@ -237,15 +237,29 @@ const GrigliaPistaSezione: React.FC<Props> = ({ risorsa, data_sel, is_editor }) 
     </div>
   );
 
+  const colore_risorsa = risorsa.colore || "#9ca3af";
+  const sfondo_header = risorsa.colore ? `${risorsa.colore}14` : undefined;
+
   return (
-    <section className="rounded-2xl border bg-card/50">
-      <div className="flex flex-wrap items-center gap-3 p-3 border-b">
+    <section
+      className="rounded-2xl border border-l-4 bg-card/50"
+      style={{ borderLeftColor: colore_risorsa }}
+    >
+      <div
+        className="flex flex-wrap items-center gap-3 p-3 border-b"
+        style={{ backgroundColor: sfondo_header }}
+      >
         <button
           type="button"
           onClick={() => set_sezione_aperta((v) => !v)}
           className="flex items-center gap-2 text-left flex-1 min-w-0"
         >
           {sezione_aperta ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+          <span
+            className="w-3 h-3 rounded-full shrink-0"
+            style={{ backgroundColor: colore_risorsa }}
+            aria-hidden="true"
+          />
           <Snowflake className="w-4 h-4 text-primary shrink-0" />
           <span className="font-bold truncate">{nome_risorsa}</span>
           {risorsa.is_ospite && (
