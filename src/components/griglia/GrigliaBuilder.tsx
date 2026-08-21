@@ -14,6 +14,7 @@ import {
   use_rimuovi_istruttore_sessione,
   use_pubblica_blocco,
   use_disponibilita_giorno,
+  use_ripeti_sessione,
   giorno_it_da_data,
   type GrigliaBlocco,
   type GrigliaSessione,
@@ -29,11 +30,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SpecialitaManager from "@/components/griglia/SpecialitaManager";
 import ConfermaForzaturaDisponibilita from "@/components/griglia/ConfermaForzaturaDisponibilita";
+import RipetiSessioneDialog from "@/components/griglia/RipetiSessioneDialog";
 import { verifica_orario_disponibilita } from "@/lib/availability";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { Settings, Plus, Trash2, X, GraduationCap, Send, CheckCircle2, GripVertical, HelpCircle, ChevronDown, ChevronRight, AlertTriangle } from "lucide-react";
+import { Settings, Plus, Trash2, X, GraduationCap, Send, CheckCircle2, GripVertical, HelpCircle, ChevronDown, ChevronRight, AlertTriangle, Repeat } from "lucide-react";
 
 const DURATA_DEFAULT_MIN = 20;
 const ALTRO = "__altro__";
@@ -339,6 +341,7 @@ const SessioneBox: React.FC<{
   on_elimina: () => void;
   on_rimuovi_atleta: (atleta_id: string) => void;
   on_rimuovi_istruttore: (istruttore_id: string) => void;
+  on_ripeti?: () => void;
   atleti_tutti?: { id: string; ragione_sociale_id?: string | null; atleta_esterno?: boolean | null }[];
   ragioni_sociali?: { id: string; colore_primario: string | null }[];
   data_blocco: string;
@@ -349,6 +352,7 @@ const SessioneBox: React.FC<{
   on_elimina,
   on_rimuovi_atleta,
   on_rimuovi_istruttore,
+  on_ripeti,
   atleti_tutti = [],
   ragioni_sociali = [],
   data_blocco,
@@ -468,6 +472,25 @@ const SessioneBox: React.FC<{
             </SelectContent>
           </Select>
         </div>
+        {sessione.corso_id && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge variant="secondary" className="gap-1 text-[10px]">
+                  <Repeat className="w-3 h-3" /> Ricorrente
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                Collegata al corso: {sessione.corso_nome ?? "corso ricorrente"}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+        {on_ripeti && (
+          <Button variant="ghost" size="icon" onClick={on_ripeti} title="Ripeti questa sessione">
+            <Repeat className="w-4 h-4" />
+          </Button>
+        )}
         <Button variant="ghost" size="icon" onClick={on_elimina} title="Rimuovi sotto-sessione">
           <Trash2 className="w-4 h-4 text-destructive" />
         </Button>
@@ -590,6 +613,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   const assegna_istruttore = use_assegna_istruttore_sessione();
   const rimuovi_istruttore = use_rimuovi_istruttore_sessione();
   const pubblica = use_pubblica_blocco();
+  const ripeti = use_ripeti_sessione();
 
   const [open_specialita, set_open_specialita] = useState(false);
   const [riepilogo_aperto, set_riepilogo_aperto] = useState(false);
@@ -599,6 +623,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   const [pending_patch, set_pending_patch] = useState<
     { sessione: GrigliaSessione; patch: Partial<GrigliaSessione> } | null
   >(null);
+  const [ripeti_sessione, set_ripeti_sessione] = useState<GrigliaSessione | null>(null);
 
   const giorno_blocco = useMemo(() => (blocco.data ? giorno_it_da_data(blocco.data) : null), [blocco.data]);
   const { data: risorse_tutte = [] } = use_risorse_strutture();
@@ -755,6 +780,31 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
       set_tab_attivo(sessioni[0].id);
     }
   }, [sessioni, tab_attivo]);
+
+  const conferma_ripetizione = async (fino_a: string) => {
+    if (!ripeti_sessione) return;
+    try {
+      const res = await ripeti.mutateAsync({
+        sessione: ripeti_sessione,
+        blocco,
+        fino_a,
+        nome_risorsa: risorsa_blocco?.nome ?? null,
+      });
+      const parti = [
+        `${res.settimane_create} ${res.settimane_create === 1 ? "settimana creata" : "settimane create"}`,
+      ];
+      if (res.settimane_esistenti > 0) parti.push(`${res.settimane_esistenti} già esistenti`);
+      toast({
+        title: "🔁 Ricorrenza aggiornata",
+        description: res.corso_creato
+          ? `${parti.join(", ")}. Corso "${res.corso_nome}" creato — imposta il prezzo in Corsi.`
+          : parti.join(", "),
+      });
+      set_ripeti_sessione(null);
+    } catch (e: any) {
+      toast({ title: "Errore ricorrenza", description: e?.message, variant: "destructive" });
+    }
+  };
 
   const salva_sessione = async (
     s: GrigliaSessione,
@@ -956,6 +1006,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
                               pieno ? "bg-primary" : "bg-muted-foreground/30",
                             )}
                           />
+                          {s.corso_id && <Repeat className="w-3.5 h-3.5 text-primary" />}
                           {s.fuori_disponibilita && (
                             <TooltipProvider>
                               <Tooltip>
@@ -995,6 +1046,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
                     on_rimuovi_istruttore={(istruttore_id) =>
                       rimuovi_istruttore.mutateAsync({ sessione_id: s.id, istruttore_id })
                     }
+                    on_ripeti={() => set_ripeti_sessione(s)}
                     data_blocco={blocco.data}
                     atleti_tutti={atleti as any[]}
                     ragioni_sociali={ragioni_attive}
@@ -1021,6 +1073,16 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
           set_pending_patch(null);
         }}
         on_forza={conferma_forzatura_sessione}
+      />
+
+      <RipetiSessioneDialog
+        open={!!ripeti_sessione}
+        on_close={() => set_ripeti_sessione(null)}
+        giorno={giorno_it_da_data(blocco.data)}
+        data_blocco={blocco.data}
+        gia_ricorrente={!!ripeti_sessione?.corso_id}
+        in_corso={ripeti.isPending}
+        on_conferma={conferma_ripetizione}
       />
 
       <Dialog open={open_specialita} onOpenChange={set_open_specialita}>

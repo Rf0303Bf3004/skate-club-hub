@@ -1,0 +1,2 @@
+ALTER TABLE public.griglia_sessioni ADD COLUMN IF NOT EXISTS corso_id uuid REFERENCES public.corsi(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_griglia_sessioni_corso_id ON public.griglia_sessioni(corso_id);
