@@ -93,6 +93,12 @@ function get_atleta_livello(atleta: any): string {
   return atleta.carriera_artistica || atleta.carriera_stile || atleta.percorso_amatori || "Pulcini";
 }
 
+function prezzo_non_impostato(corso: any): boolean {
+  if (!corso || corso.attivo !== true) return false;
+  const v = corso.costo_mensile == null ? 0 : Number(corso.costo_mensile);
+  return v === 0 || Number.isNaN(v);
+}
+
 function normalize_livello(l: string): string {
   if (!l) return "pulcini";
   const map: Record<string, string> = {
