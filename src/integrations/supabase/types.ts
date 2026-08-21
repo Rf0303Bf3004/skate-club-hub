@@ -2484,7 +2484,11 @@ export type Database = {
           created_at: string
           creato_da: string | null
           data: string
+          forzato_at: string | null
+          forzato_da: string | null
+          fuori_disponibilita: boolean
           id: string
+          motivo_forzatura: string | null
           ora_fine: string
           ora_inizio: string
           pubblicato_at: string | null
@@ -2498,7 +2502,11 @@ export type Database = {
           created_at?: string
           creato_da?: string | null
           data: string
+          forzato_at?: string | null
+          forzato_da?: string | null
+          fuori_disponibilita?: boolean
           id?: string
+          motivo_forzatura?: string | null
           ora_fine: string
           ora_inizio: string
           pubblicato_at?: string | null
@@ -2512,7 +2520,11 @@ export type Database = {
           created_at?: string
           creato_da?: string | null
           data?: string
+          forzato_at?: string | null
+          forzato_da?: string | null
+          fuori_disponibilita?: boolean
           id?: string
+          motivo_forzatura?: string | null
           ora_fine?: string
           ora_inizio?: string
           pubblicato_at?: string | null
@@ -2549,8 +2561,12 @@ export type Database = {
         Row: {
           blocco_id: string
           created_at: string
+          forzato_at: string | null
+          forzato_da: string | null
+          fuori_disponibilita: boolean
           id: string
           messaggio_atleti: string | null
+          motivo_forzatura: string | null
           note: string | null
           ora_fine: string
           ora_inizio: string
@@ -2563,8 +2579,12 @@ export type Database = {
         Insert: {
           blocco_id: string
           created_at?: string
+          forzato_at?: string | null
+          forzato_da?: string | null
+          fuori_disponibilita?: boolean
           id?: string
           messaggio_atleti?: string | null
+          motivo_forzatura?: string | null
           note?: string | null
           ora_fine: string
           ora_inizio: string
@@ -2577,8 +2597,12 @@ export type Database = {
         Update: {
           blocco_id?: string
           created_at?: string
+          forzato_at?: string | null
+          forzato_da?: string | null
+          fuori_disponibilita?: boolean
           id?: string
           messaggio_atleti?: string | null
+          motivo_forzatura?: string | null
           note?: string | null
           ora_fine?: string
           ora_inizio?: string
