@@ -325,8 +325,104 @@ const GrigliaGhiaccioPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={tableau_open} onOpenChange={set_tableau_open}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Tableau poster stampabile</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-end gap-4">
+              <div className="space-y-1">
+                <Label className="text-xs">Formato carta (sempre orizzontale)</Label>
+                <div className="flex gap-2">
+                  {(["A4", "A3"] as FormatoCarta[]).map((f) => (
+                    <Button
+                      key={f}
+                      size="sm"
+                      variant={formato_carta === f ? "default" : "outline"}
+                      onClick={() => set_formato_carta(f)}
+                    >
+                      {f} landscape
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Fascia oraria {hhmm_da_min(finestra_tableau.min_inizio)}–{hhmm_da_min(finestra_tableau.min_fine)} ·{" "}
+                {corsie_tableau.length} corsie · {eventi_tableau.length} sessioni
+              </p>
+            </div>
+
+            <div className="rounded-lg border p-3 text-sm">
+              <p className="font-medium">
+                {fogli_tableau.length} foglio{fogli_tableau.length > 1 ? "i" : ""} da affiancare in orizzontale
+              </p>
+              <ul className="mt-1 space-y-0.5 text-muted-foreground text-xs">
+                {fogli_tableau.map((f) => (
+                  <li key={f.indice}>
+                    Foglio {f.indice}: {hhmm_da_min(f.da)} – {hhmm_da_min(f.a)} (tutte le risorse)
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-xs text-muted-foreground">
+                I segni di registro «+» agli angoli sono alla stessa altezza su ogni foglio: accosta il marker destro
+                del foglio N a quello sinistro del foglio N+1 per allineare le corsie.
+              </p>
+            </div>
+
+            {/* Anteprima a schermo (scala ridotta, solo prima fascia) */}
+            <div className="rounded-lg border p-3 space-y-1 overflow-x-auto">
+              {corsie_tableau.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nessuna risorsa attiva per questo giorno.</p>
+              ) : (
+                corsie_tableau.map((c) => {
+                  const items = eventi_tableau.filter((e) => e.risorsa_id === c.id);
+                  return (
+                    <div key={c.id} className="flex items-center gap-2 text-xs">
+                      <span
+                        className="inline-block h-3 w-1 rounded"
+                        style={{ backgroundColor: c.colore || "hsl(var(--primary))" }}
+                      />
+                      <span className="w-40 shrink-0 truncate font-medium">{c.nome}</span>
+                      <span className="text-muted-foreground truncate">
+                        {items.length === 0
+                          ? "—"
+                          : items
+                              .sort((a, b) => a.inizio_min - b.inizio_min)
+                              .map((e) => `${hhmm_da_min(e.inizio_min)} ${e.titolo}`)
+                              .join(" · ")}
+                      </span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => set_tableau_open(false)}>
+              Chiudi
+            </Button>
+            <Button onClick={stampa_tableau} disabled={corsie_tableau.length === 0}>
+              <Printer className="w-4 h-4 mr-1" /> Stampa tableau
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <StampaRiepilogoIstruttori istruttori={riepilogo_istruttori} data_label={label_data(data_sel)} />
+
+      <TableauPosterStampa
+        corsie={corsie_tableau}
+        eventi={eventi_tableau}
+        min_inizio={finestra_tableau.min_inizio}
+        min_fine={finestra_tableau.min_fine}
+        data_label={label_data(data_sel)}
+        formato={formato_carta}
+      />
     </div>
+
   );
 };
 
