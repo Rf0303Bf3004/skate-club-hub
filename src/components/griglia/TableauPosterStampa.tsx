@@ -246,13 +246,13 @@ const TableauPosterStampa: React.FC<Props> = ({
               <div style={{ display: "flex" }}>
                 {/* etichette corsie */}
                 <div style={{ width: `${COL_LABEL_MM}mm`, flex: "0 0 auto" }}>
-                  {corsie.map((c) => (
+                  {layout_corsie.map((l) => (
                     <div
-                      key={c.id}
+                      key={l.corsia.id}
                       style={{
-                        height: `${ALTEZZA_CORSIA_MM}mm`,
+                        height: `${l.altezza}mm`,
                         borderTop: "0.2mm solid #999",
-                        borderLeft: `1.5mm solid ${c.colore || "#333"}`,
+                        borderLeft: `1.5mm solid ${l.corsia.colore || "#333"}`,
                         display: "flex",
                         flexDirection: "column",
                         justifyContent: "center",
@@ -260,13 +260,15 @@ const TableauPosterStampa: React.FC<Props> = ({
                         boxSizing: "border-box",
                       }}
                     >
-                      <div style={{ fontSize: "10pt", fontWeight: 800, lineHeight: 1.1 }}>{c.nome}</div>
+                      <div style={{ fontSize: "10pt", fontWeight: 800, lineHeight: 1.1 }}>{l.corsia.nome}</div>
                       <div style={{ fontSize: "7pt", textTransform: "uppercase", letterSpacing: "0.4pt" }}>
-                        {c.tipo === "ghiaccio" ? "Ghiaccio" : "Off Ice"}
+                        {l.corsia.tipo === "ghiaccio" ? "Ghiaccio" : "Off Ice"}
+                        {l.n_righe > 1 ? ` · ${l.n_righe} gruppi` : ""}
                       </div>
                     </div>
                   ))}
                 </div>
+
 
                 {/* area tempo */}
                 <div
