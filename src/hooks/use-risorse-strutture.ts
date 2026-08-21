@@ -11,7 +11,12 @@ export interface RisorsaStruttura {
   attiva: boolean;
   colore: string | null;
   capienza_max: number | null;
+  is_ospite: boolean;
+  nome_struttura_ospitante: string | null;
+  indirizzo_ospitante: string | null;
+  evento_campo_id: string | null;
 }
+
 
 // ─── Lettura ───────────────────────────────────────────────
 export function use_risorse_strutture() {
