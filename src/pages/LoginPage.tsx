@@ -83,7 +83,22 @@ const LoginPage: React.FC = () => {
           </div>
 
           <form onSubmit={handle_submit} className="space-y-4">
+            {account_recenti.length > 0 && (
+              <div className="space-y-2">
+                <Select value={account_recenti.includes(email) ? email : undefined} onValueChange={(v) => set_email(v)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Account usati su questo dispositivo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {account_recenti.map((a) => (
+                      <SelectItem key={a} value={a}>{a}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
+
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
