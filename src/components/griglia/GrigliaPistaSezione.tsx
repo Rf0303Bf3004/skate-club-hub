@@ -299,7 +299,7 @@ const GrigliaPistaSezione: React.FC<Props> = ({ risorsa, data_sel, is_editor }) 
             </div>
           ) : blocchi.length === 0 ? (
             <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
-              Nessun blocco ghiaccio per questa data.
+              Nessun blocco per questa data.
             </div>
           ) : (
             <div className="space-y-3">
