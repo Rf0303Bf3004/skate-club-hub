@@ -15,6 +15,7 @@ import StampaRiepilogoIstruttori, {
 import TableauPosterStampa, {
   calcola_fogli,
   hhmm_da_min,
+  impacchetta_sottorighe,
   type FormatoCarta,
   type TableauCorsia,
   type TableauEvento,
@@ -378,24 +379,38 @@ const GrigliaGhiaccioPage: React.FC = () => {
               ) : (
                 corsie_tableau.map((c) => {
                   const items = eventi_tableau.filter((e) => e.risorsa_id === c.id);
+                  const { riga_per_evento, n_righe } = impacchetta_sottorighe(items);
                   return (
-                    <div key={c.id} className="flex items-center gap-2 text-xs">
+                    <div key={c.id} className="flex items-start gap-2 text-xs">
                       <span
-                        className="inline-block h-3 w-1 rounded"
+                        className="mt-1 inline-block h-3 w-1 shrink-0 rounded"
                         style={{ backgroundColor: c.colore || "hsl(var(--primary))" }}
                       />
-                      <span className="w-40 shrink-0 truncate font-medium">{c.nome}</span>
-                      <span className="text-muted-foreground truncate">
+                      <span className="w-40 shrink-0 truncate font-medium">
+                        {c.nome}
+                        {n_righe > 1 && (
+                          <span className="ml-1 text-muted-foreground">({n_righe} gruppi)</span>
+                        )}
+                      </span>
+                      <span className="text-muted-foreground min-w-0">
                         {items.length === 0
                           ? "—"
-                          : items
-                              .sort((a, b) => a.inizio_min - b.inizio_min)
-                              .map((e) => `${hhmm_da_min(e.inizio_min)} ${e.titolo}`)
+                          : [...items]
+                              .sort(
+                                (a, b) =>
+                                  (riga_per_evento[a.id] ?? 0) - (riga_per_evento[b.id] ?? 0) ||
+                                  a.inizio_min - b.inizio_min,
+                              )
+                              .map(
+                                (e) =>
+                                  `${n_righe > 1 ? `[${(riga_per_evento[e.id] ?? 0) + 1}] ` : ""}${hhmm_da_min(e.inizio_min)} ${e.titolo}${e.istruttori ? ` – ${e.istruttori}` : ""}`,
+                              )
                               .join(" · ")}
                       </span>
                     </div>
                   );
                 })
+
               )}
             </div>
           </div>
