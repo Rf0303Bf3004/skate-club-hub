@@ -161,7 +161,7 @@ export async function fetch_blocchi_giorno(
   const lista_sessioni = (sessioni ?? []) as any[];
   const sessioni_ids = lista_sessioni.map((s: any) => s.id);
 
-  const [spec_res, sa_res, si_res, atleti_res, ist_res, rs_res] = await Promise.all([
+  const [spec_res, sa_res, si_res, atleti_res, ist_res, rs_res, corsi_res] = await Promise.all([
     supabase.from("griglia_specialita" as any).select("id,nome,descrizione_messaggio").eq("club_id", club_id),
     sessioni_ids.length
       ? supabase.from("griglia_sessioni_atleti" as any).select("*").in("sessione_id", sessioni_ids)
@@ -183,6 +183,8 @@ export async function fetch_blocchi_giorno(
   ((atleti_res.data ?? []) as any[]).forEach((a: any) => atleti_map.set(a.id, a));
   const ist_map = new Map<string, any>();
   ((ist_res.data ?? []) as any[]).forEach((i: any) => ist_map.set(i.id, i));
+  const corsi_map = new Map<string, string>();
+  ((corsi_res.data ?? []) as any[]).forEach((c: any) => corsi_map.set(c.id, c.nome));
   const sa = (sa_res.data ?? []) as any[];
   const si = (si_res.data ?? []) as any[];
 
@@ -193,6 +195,7 @@ export async function fetch_blocchi_giorno(
       .map((s: any) => ({
         ...s,
         specialita_nome: s.specialita_id ? spec_map.get(s.specialita_id)?.nome ?? null : null,
+        corso_nome: s.corso_id ? corsi_map.get(s.corso_id) ?? null : null,
         specialita_descrizione: s.specialita_id
           ? spec_map.get(s.specialita_id)?.descrizione_messaggio ?? null
           : null,
