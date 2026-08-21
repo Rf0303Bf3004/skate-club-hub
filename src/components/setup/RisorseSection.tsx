@@ -4,6 +4,7 @@ import {
   use_risorse_strutture,
   use_upsert_risorsa,
   use_elimina_risorsa,
+  use_eventi_campi_opzioni,
   type RisorsaStruttura,
 } from "@/hooks/use-risorse-strutture";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Trash2, Pencil, MapPin } from "lucide-react";
+import { Plus, Trash2, Pencil, MapPin, Luggage } from "lucide-react";
 
 const empty_form = {
   nome: "",
@@ -20,7 +21,12 @@ const empty_form = {
   attiva: true,
   colore: "#3B82F6",
   capienza_max: "",
+  is_ospite: false,
+  nome_struttura_ospitante: "",
+  indirizzo_ospitante: "",
+  evento_campo_id: "",
 };
+
 
 const RisorsaDialog: React.FC<{
   open: boolean;
@@ -28,6 +34,7 @@ const RisorsaDialog: React.FC<{
   risorsa?: RisorsaStruttura | null;
 }> = ({ open, on_close, risorsa }) => {
   const upsert = use_upsert_risorsa();
+  const { data: eventi_campi = [] } = use_eventi_campi_opzioni();
   const [form, set_form] = React.useState<Record<string, any>>(empty_form);
 
   React.useEffect(() => {
@@ -40,6 +47,10 @@ const RisorsaDialog: React.FC<{
             attiva: risorsa.attiva !== false,
             colore: risorsa.colore || "#3B82F6",
             capienza_max: risorsa.capienza_max == null ? "" : String(risorsa.capienza_max),
+            is_ospite: !!risorsa.is_ospite,
+            nome_struttura_ospitante: risorsa.nome_struttura_ospitante ?? "",
+            indirizzo_ospitante: risorsa.indirizzo_ospitante ?? "",
+            evento_campo_id: risorsa.evento_campo_id ?? "",
           }
         : empty_form,
     );
@@ -60,7 +71,14 @@ const RisorsaDialog: React.FC<{
         attiva: !!form.attiva,
         colore: form.colore || null,
         capienza_max: form.capienza_max === "" ? null : Number(form.capienza_max),
+        is_ospite: !!form.is_ospite,
+        nome_struttura_ospitante: form.is_ospite
+          ? String(form.nome_struttura_ospitante).trim() || null
+          : null,
+        indirizzo_ospitante: form.is_ospite ? String(form.indirizzo_ospitante).trim() || null : null,
+        evento_campo_id: form.is_ospite ? form.evento_campo_id || null : null,
       } as any);
+
       toast({ title: "Risorsa salvata" });
       on_close();
     } catch (e: any) {
@@ -129,7 +147,60 @@ const RisorsaDialog: React.FC<{
               Attiva
             </label>
           </div>
+
+          <div className="space-y-3 rounded-lg border border-border/60 p-3">
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-primary"
+                checked={!!form.is_ospite}
+                onChange={(e) => set_val("is_ospite", e.target.checked)}
+              />
+              <Luggage className="h-4 w-4 text-muted-foreground" />
+              È una risorsa ospite (trasferta)
+            </label>
+
+            {form.is_ospite && (
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Nome struttura/club ospitante</Label>
+                  <Input
+                    value={form.nome_struttura_ospitante}
+                    placeholder="es. PalaGhiaccio Como"
+                    onChange={(e) => set_val("nome_struttura_ospitante", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Indirizzo</Label>
+                  <Input
+                    value={form.indirizzo_ospitante}
+                    placeholder="es. Via Sinigaglia 1, Como"
+                    onChange={(e) => set_val("indirizzo_ospitante", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">
+                    Collega a un Campo/evento specifico (opzionale)
+                  </Label>
+                  <select
+                    className="h-10 w-full rounded-md border border-input bg-background px-2 text-sm"
+                    value={form.evento_campo_id}
+                    onChange={(e) => set_val("evento_campo_id", e.target.value)}
+                  >
+                    <option value="">Nessuno — riutilizzabile in futuro</option>
+                    {eventi_campi.map((ev) => (
+                      <option key={ev.id} value={ev.id}>
+                        {ev.nome}
+                        {ev.data_inizio ? ` (${ev.data_inizio}${ev.data_fine ? ` → ${ev.data_fine}` : ""})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
+
 
         <DialogFooter>
           <Button variant="ghost" onClick={on_close}>
@@ -204,13 +275,24 @@ export const RisorseSection: React.FC = () => {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <p className="truncate text-sm font-semibold text-foreground">{r.nome}</p>
+                          {r.is_ospite && (
+                            <Badge variant="secondary" className="gap-1 text-[10px]">
+                              <Luggage className="h-3 w-3" /> Ospite
+                            </Badge>
+                          )}
                           <Badge variant={r.attiva ? "default" : "outline"} className="text-[10px]">
                             {r.attiva ? "Attiva" : "Disattiva"}
                           </Badge>
                         </div>
+                        {r.is_ospite && (r.nome_struttura_ospitante || r.indirizzo_ospitante) && (
+                          <p className="truncate text-xs text-muted-foreground">
+                            {[r.nome_struttura_ospitante, r.indirizzo_ospitante].filter(Boolean).join(" — ")}
+                          </p>
+                        )}
                         <p className="text-xs text-muted-foreground">
                           Capienza {r.capienza_max ?? "—"}
                         </p>
+
                       </div>
                       <div className="flex items-center gap-1">
                         <Button

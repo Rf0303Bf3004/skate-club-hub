@@ -83,14 +83,27 @@ const GrigliaGhiaccioPage: React.FC = () => {
   const [forzatura_open, set_forzatura_open] = useState(false);
   const [motivo_blocco, set_motivo_blocco] = useState<string | null>(null);
 
+  const [includi_ospiti, set_includi_ospiti] = useState(false);
+
   const { data: risorse = [] } = use_risorse_strutture();
   const risorse_ghiaccio = useMemo(
-    () => risorse.filter((r) => r.tipo === "ghiaccio" && r.attiva),
-    [risorse],
+    () =>
+      risorse.filter(
+        (r) => r.tipo === "ghiaccio" && r.attiva && (includi_ospiti || !r.is_ospite),
+      ),
+    [risorse, includi_ospiti],
   );
 
   useEffect(() => {
     if (!risorsa_sel && risorse_ghiaccio.length > 0) set_risorsa_sel(risorse_ghiaccio[0].id);
+  }, [risorse_ghiaccio, risorsa_sel]);
+
+  // se disattivo gli ospiti mentre ne ho una selezionata, torno alla prima disponibile
+  useEffect(() => {
+    if (!risorsa_sel) return;
+    if (!risorse_ghiaccio.some((r) => r.id === risorsa_sel)) {
+      set_risorsa_sel(risorse_ghiaccio[0]?.id ?? "");
+    }
   }, [risorse_ghiaccio, risorsa_sel]);
 
   const { data: blocchi = [], isLoading } = use_griglia_blocchi_giorno(data_sel, risorsa_sel || null);
@@ -106,7 +119,9 @@ const GrigliaGhiaccioPage: React.FC = () => {
     "pulizia",
   );
 
-  const nome_risorsa = risorse_ghiaccio.find((r) => r.id === risorsa_sel)?.nome ?? "";
+  const risorsa_corrente = risorse_ghiaccio.find((r) => r.id === risorsa_sel) ?? null;
+  const nome_risorsa = risorsa_corrente?.nome ?? "";
+
 
   const titolo_suggerito = useMemo(() => {
     const l = label_data(data_sel);
@@ -195,6 +210,8 @@ const GrigliaGhiaccioPage: React.FC = () => {
         ora_inizio: form.ora_inizio,
         ora_fine: form.ora_fine,
         giorno: giorno_settimana ?? undefined,
+        is_ospite: !!risorsa_corrente?.is_ospite,
+
       });
       if (!check.ok) {
         set_motivo_blocco(check.motivo ?? null);
@@ -367,13 +384,23 @@ const GrigliaGhiaccioPage: React.FC = () => {
                   <SelectContent>
                     {risorse_ghiaccio.map((r) => (
                       <SelectItem key={r.id} value={r.id}>
-                        {r.nome}
+                        {r.is_ospite ? `🧳 ${r.nome} (ospite)` : r.nome}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
             )}
+            <label className="flex cursor-pointer items-center gap-2 pt-5 text-xs text-muted-foreground">
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-primary"
+                checked={includi_ospiti}
+                onChange={(e) => set_includi_ospiti(e.target.checked)}
+              />
+              Includi risorse ospiti (trasferta)
+            </label>
+
             {is_editor && (
               <Button variant="outline" onClick={() => set_riepilogo_open(true)}>
                 <Printer className="w-4 h-4 mr-1" /> Stampa riepilogo istruttori
@@ -385,8 +412,18 @@ const GrigliaGhiaccioPage: React.FC = () => {
               </Button>
             )}
           </div>
+          {risorsa_corrente?.is_ospite && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              🧳 Trasferta
+              {risorsa_corrente.nome_struttura_ospitante
+                ? ` — ${risorsa_corrente.nome_struttura_ospitante}`
+                : ""}
+              {risorsa_corrente.indirizzo_ospitante ? ` · ${risorsa_corrente.indirizzo_ospitante}` : ""}
+            </p>
+          )}
         </div>
       </div>
+
 
       <ProvenienzaLegenda />
 

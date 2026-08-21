@@ -4840,8 +4840,12 @@ export type Database = {
           club_id: string
           colore: string | null
           created_at: string
+          evento_campo_id: string | null
           id: string
+          indirizzo_ospitante: string | null
+          is_ospite: boolean
           nome: string
+          nome_struttura_ospitante: string | null
           ordine: number
           tipo: string
           updated_at: string
@@ -4852,8 +4856,12 @@ export type Database = {
           club_id: string
           colore?: string | null
           created_at?: string
+          evento_campo_id?: string | null
           id?: string
+          indirizzo_ospitante?: string | null
+          is_ospite?: boolean
           nome: string
+          nome_struttura_ospitante?: string | null
           ordine?: number
           tipo: string
           updated_at?: string
@@ -4864,8 +4872,12 @@ export type Database = {
           club_id?: string
           colore?: string | null
           created_at?: string
+          evento_campo_id?: string | null
           id?: string
+          indirizzo_ospitante?: string | null
+          is_ospite?: boolean
           nome?: string
+          nome_struttura_ospitante?: string | null
           ordine?: number
           tipo?: string
           updated_at?: string
@@ -4884,6 +4896,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "kpi_pitch_sponsor"
             referencedColumns: ["club_id"]
+          },
+          {
+            foreignKeyName: "risorse_strutture_evento_campo_id_fkey"
+            columns: ["evento_campo_id"]
+            isOneToOne: false
+            referencedRelation: "eventi_campi"
+            referencedColumns: ["id"]
           },
         ]
       }

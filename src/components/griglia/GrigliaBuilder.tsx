@@ -18,6 +18,8 @@ import {
   type GrigliaBlocco,
   type GrigliaSessione,
 } from "@/hooks/use-griglia-ghiaccio";
+import { use_risorse_strutture } from "@/hooks/use-risorse-strutture";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -599,7 +601,10 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   >(null);
 
   const giorno_blocco = useMemo(() => (blocco.data ? giorno_it_da_data(blocco.data) : null), [blocco.data]);
+  const { data: risorse_tutte = [] } = use_risorse_strutture();
+  const risorsa_blocco = risorse_tutte.find((r) => r.id === blocco.risorsa_id) ?? null;
   const { data: fasce_ghiaccio = [] } = use_disponibilita_giorno(blocco.risorsa_id ?? null, giorno_blocco);
+
   const { data: fasce_pulizia = [] } = use_disponibilita_giorno(
     blocco.risorsa_id ?? null,
     giorno_blocco,
@@ -767,6 +772,8 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
         ora_inizio: hhmm(merged.ora_inizio),
         ora_fine: hhmm(merged.ora_fine),
         giorno: giorno_blocco ?? undefined,
+        is_ospite: !!risorsa_blocco?.is_ospite,
+
       });
       if (!check.ok) {
         set_motivo_blocco(check.motivo ?? null);
