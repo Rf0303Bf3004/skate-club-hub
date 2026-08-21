@@ -127,4 +127,19 @@
     color: #000;
     background: #fff;
   }
+
+  /* Tableau poster: fogli a dimensione fissa (A4/A3 landscape), margini gestiti internamente */
+  body.stampa-tableau > *:not(#tableau-print-root) {
+    display: none !important;
+  }
+  body.stampa-tableau #tableau-print-root {
+    display: block !important;
+    position: static !important;
+    transform: none !important;
+    color: #000;
+    background: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 }
+

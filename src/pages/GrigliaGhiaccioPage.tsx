@@ -12,13 +12,20 @@ import StampaRiepilogoIstruttori, {
   type IstruttoreStampa,
   type RigaSessioneStampa,
 } from "@/components/griglia/StampaRiepilogoIstruttori";
+import TableauPosterStampa, {
+  calcola_fogli,
+  hhmm_da_min,
+  type FormatoCarta,
+  type TableauCorsia,
+  type TableauEvento,
+} from "@/components/griglia/TableauPosterStampa";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { LayoutGrid, Printer, AlertTriangle } from "lucide-react";
+import { LayoutGrid, Printer, AlertTriangle, Columns3 } from "lucide-react";
 
 function oggi_iso(): string {
   const d = new Date();
@@ -35,6 +42,11 @@ function hhmm(t?: string | null): string {
   return (t ?? "").slice(0, 5);
 }
 
+function min_da_hhmm(t?: string | null): number {
+  const [h, m] = hhmm(t).split(":");
+  return (Number(h) || 0) * 60 + (Number(m) || 0);
+}
+
 const GrigliaGhiaccioPage: React.FC = () => {
   const { session } = useAuth();
   const { visibile_set, is_admin_like, is_loading: is_loading_permessi } = usePermessiSezioniMatrix();
@@ -45,6 +57,8 @@ const GrigliaGhiaccioPage: React.FC = () => {
   const [data_sel, set_data_sel] = useState<string>(oggi_iso());
   const [includi_ospiti, set_includi_ospiti] = useState(false);
   const [riepilogo_open, set_riepilogo_open] = useState(false);
+  const [tableau_open, set_tableau_open] = useState(false);
+  const [formato_carta, set_formato_carta] = useState<FormatoCarta>("A4");
 
   const { data: risorse = [] } = use_risorse_strutture();
   const risorse_ghiaccio = useMemo(
@@ -96,10 +110,68 @@ const GrigliaGhiaccioPage: React.FC = () => {
       .sort((a, b) => a.nome.localeCompare(b.nome, "it"));
   }, [blocchi_giorno]);
 
+  // ─── Tableau poster (swimlane per risorsa) ───────────────
+  const corsie_tableau = useMemo<TableauCorsia[]>(
+    () =>
+      [...risorse_ghiaccio, ...risorse_palestra].map((r) => ({
+        id: r.id,
+        nome: r.nome,
+        tipo: r.tipo,
+        colore: r.colore,
+      })),
+    [risorse_ghiaccio, risorse_palestra],
+  );
+
+  const eventi_tableau = useMemo<TableauEvento[]>(() => {
+    const out: TableauEvento[] = [];
+    for (const b of blocchi_giorno) {
+      if (!b.risorsa_id) continue;
+      for (const s of b.sessioni ?? []) {
+        out.push({
+          id: s.id,
+          risorsa_id: b.risorsa_id,
+          inizio_min: min_da_hhmm(s.ora_inizio),
+          fine_min: min_da_hhmm(s.ora_fine),
+          titolo: s.corso_nome || s.specialita_nome || s.specialita_testo_libero || "Allenamento",
+          istruttori: (s.istruttori ?? []).map((i) => `${i.nome} ${i.cognome}`.trim()).join(", "),
+          fuori_disponibilita: !!s.fuori_disponibilita,
+        });
+      }
+    }
+    return out;
+  }, [blocchi_giorno]);
+
+  const finestra_tableau = useMemo(() => {
+    const rilevanti = blocchi_giorno.filter((b) => b.risorsa_id && corsie_tableau.some((c) => c.id === b.risorsa_id));
+    if (rilevanti.length === 0) return { min_inizio: 8 * 60, min_fine: 20 * 60 };
+    const inizio = Math.min(...rilevanti.map((b) => min_da_hhmm(b.ora_inizio)));
+    const fine = Math.max(...rilevanti.map((b) => min_da_hhmm(b.ora_fine)));
+    return {
+      min_inizio: Math.max(0, Math.floor((inizio - 30) / 30) * 30),
+      min_fine: Math.min(24 * 60, Math.ceil((fine + 30) / 30) * 30),
+    };
+  }, [blocchi_giorno, corsie_tableau]);
+
+  const fogli_tableau = useMemo(
+    () => calcola_fogli(formato_carta, finestra_tableau.min_inizio, finestra_tableau.min_fine),
+    [formato_carta, finestra_tableau],
+  );
+
   const stampa = () => {
     document.body.classList.add("stampa-griglia");
     const cleanup = () => {
       document.body.classList.remove("stampa-griglia");
+      window.removeEventListener("afterprint", cleanup);
+    };
+    window.addEventListener("afterprint", cleanup);
+    window.print();
+    setTimeout(cleanup, 1000);
+  };
+
+  const stampa_tableau = () => {
+    document.body.classList.add("stampa-tableau");
+    const cleanup = () => {
+      document.body.classList.remove("stampa-tableau");
       window.removeEventListener("afterprint", cleanup);
     };
     window.addEventListener("afterprint", cleanup);
@@ -169,6 +241,10 @@ const GrigliaGhiaccioPage: React.FC = () => {
                 <Printer className="w-4 h-4 mr-1" /> Stampa riepilogo istruttori
               </Button>
             )}
+
+            <Button variant="outline" onClick={() => set_tableau_open(true)}>
+              <Columns3 className="w-4 h-4 mr-1" /> Stampa tableau poster
+            </Button>
           </div>
         </div>
       </div>
@@ -249,8 +325,104 @@ const GrigliaGhiaccioPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={tableau_open} onOpenChange={set_tableau_open}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Tableau poster stampabile</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-end gap-4">
+              <div className="space-y-1">
+                <Label className="text-xs">Formato carta (sempre orizzontale)</Label>
+                <div className="flex gap-2">
+                  {(["A4", "A3"] as FormatoCarta[]).map((f) => (
+                    <Button
+                      key={f}
+                      size="sm"
+                      variant={formato_carta === f ? "default" : "outline"}
+                      onClick={() => set_formato_carta(f)}
+                    >
+                      {f} landscape
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Fascia oraria {hhmm_da_min(finestra_tableau.min_inizio)}–{hhmm_da_min(finestra_tableau.min_fine)} ·{" "}
+                {corsie_tableau.length} corsie · {eventi_tableau.length} sessioni
+              </p>
+            </div>
+
+            <div className="rounded-lg border p-3 text-sm">
+              <p className="font-medium">
+                {fogli_tableau.length} foglio{fogli_tableau.length > 1 ? "i" : ""} da affiancare in orizzontale
+              </p>
+              <ul className="mt-1 space-y-0.5 text-muted-foreground text-xs">
+                {fogli_tableau.map((f) => (
+                  <li key={f.indice}>
+                    Foglio {f.indice}: {hhmm_da_min(f.da)} – {hhmm_da_min(f.a)} (tutte le risorse)
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-xs text-muted-foreground">
+                I segni di registro «+» agli angoli sono alla stessa altezza su ogni foglio: accosta il marker destro
+                del foglio N a quello sinistro del foglio N+1 per allineare le corsie.
+              </p>
+            </div>
+
+            {/* Anteprima a schermo (scala ridotta, solo prima fascia) */}
+            <div className="rounded-lg border p-3 space-y-1 overflow-x-auto">
+              {corsie_tableau.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nessuna risorsa attiva per questo giorno.</p>
+              ) : (
+                corsie_tableau.map((c) => {
+                  const items = eventi_tableau.filter((e) => e.risorsa_id === c.id);
+                  return (
+                    <div key={c.id} className="flex items-center gap-2 text-xs">
+                      <span
+                        className="inline-block h-3 w-1 rounded"
+                        style={{ backgroundColor: c.colore || "hsl(var(--primary))" }}
+                      />
+                      <span className="w-40 shrink-0 truncate font-medium">{c.nome}</span>
+                      <span className="text-muted-foreground truncate">
+                        {items.length === 0
+                          ? "—"
+                          : items
+                              .sort((a, b) => a.inizio_min - b.inizio_min)
+                              .map((e) => `${hhmm_da_min(e.inizio_min)} ${e.titolo}`)
+                              .join(" · ")}
+                      </span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => set_tableau_open(false)}>
+              Chiudi
+            </Button>
+            <Button onClick={stampa_tableau} disabled={corsie_tableau.length === 0}>
+              <Printer className="w-4 h-4 mr-1" /> Stampa tableau
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <StampaRiepilogoIstruttori istruttori={riepilogo_istruttori} data_label={label_data(data_sel)} />
+
+      <TableauPosterStampa
+        corsie={corsie_tableau}
+        eventi={eventi_tableau}
+        min_inizio={finestra_tableau.min_inizio}
+        min_fine={finestra_tableau.min_fine}
+        data_label={label_data(data_sel)}
+        formato={formato_carta}
+      />
     </div>
+
   );
 };
 
