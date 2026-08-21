@@ -1237,9 +1237,9 @@ export type Database = {
           created_at: string
           durata_pulizia_minuti: number
           id: string
-          max_atleti_contemporanei: number
+          max_atleti_contemporanei: number | null
           max_atleti_lezione_privata: number
-          max_atleti_per_istruttore: number
+          max_atleti_per_istruttore: number | null
           min_atleti_attivazione_corso: number
           min_iscritti_attivazione_corso: number | null
           modalita_costo_privata: string
@@ -1252,9 +1252,9 @@ export type Database = {
           created_at?: string
           durata_pulizia_minuti?: number
           id?: string
-          max_atleti_contemporanei?: number
+          max_atleti_contemporanei?: number | null
           max_atleti_lezione_privata?: number
-          max_atleti_per_istruttore?: number
+          max_atleti_per_istruttore?: number | null
           min_atleti_attivazione_corso?: number
           min_iscritti_attivazione_corso?: number | null
           modalita_costo_privata?: string
@@ -1267,9 +1267,9 @@ export type Database = {
           created_at?: string
           durata_pulizia_minuti?: number
           id?: string
-          max_atleti_contemporanei?: number
+          max_atleti_contemporanei?: number | null
           max_atleti_lezione_privata?: number
-          max_atleti_per_istruttore?: number
+          max_atleti_per_istruttore?: number | null
           min_atleti_attivazione_corso?: number
           min_iscritti_attivazione_corso?: number | null
           modalita_costo_privata?: string
