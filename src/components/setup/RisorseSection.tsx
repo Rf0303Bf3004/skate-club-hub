@@ -34,6 +34,7 @@ const RisorsaDialog: React.FC<{
   risorsa?: RisorsaStruttura | null;
 }> = ({ open, on_close, risorsa }) => {
   const upsert = use_upsert_risorsa();
+  const { data: eventi_campi = [] } = use_eventi_campi_opzioni();
   const [form, set_form] = React.useState<Record<string, any>>(empty_form);
 
   React.useEffect(() => {
@@ -46,6 +47,10 @@ const RisorsaDialog: React.FC<{
             attiva: risorsa.attiva !== false,
             colore: risorsa.colore || "#3B82F6",
             capienza_max: risorsa.capienza_max == null ? "" : String(risorsa.capienza_max),
+            is_ospite: !!risorsa.is_ospite,
+            nome_struttura_ospitante: risorsa.nome_struttura_ospitante ?? "",
+            indirizzo_ospitante: risorsa.indirizzo_ospitante ?? "",
+            evento_campo_id: risorsa.evento_campo_id ?? "",
           }
         : empty_form,
     );
@@ -66,7 +71,14 @@ const RisorsaDialog: React.FC<{
         attiva: !!form.attiva,
         colore: form.colore || null,
         capienza_max: form.capienza_max === "" ? null : Number(form.capienza_max),
+        is_ospite: !!form.is_ospite,
+        nome_struttura_ospitante: form.is_ospite
+          ? String(form.nome_struttura_ospitante).trim() || null
+          : null,
+        indirizzo_ospitante: form.is_ospite ? String(form.indirizzo_ospitante).trim() || null : null,
+        evento_campo_id: form.is_ospite ? form.evento_campo_id || null : null,
       } as any);
+
       toast({ title: "Risorsa salvata" });
       on_close();
     } catch (e: any) {
