@@ -787,31 +787,8 @@ const SessioneBox: React.FC<{
           />
         </div>
       )}
-
-      <AlertDialog open={conferma_rimuovi_gruppo} onOpenChange={set_conferma_rimuovi_gruppo}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Rimuovere il collegamento al gruppo?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Verranno rimossi tutti gli atleti della sessione ({sessione.atleti.length}) e il collegamento al gruppo
-              «{sessione.gruppo_livello}». La sessione tornerà vuota e gestibile manualmente.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annulla</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                set_conferma_rimuovi_gruppo(false);
-                on_rimuovi_gruppo?.();
-              }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Rimuovi gruppo
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
+
 
   );
 };
