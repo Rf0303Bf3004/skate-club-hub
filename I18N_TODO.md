@@ -495,3 +495,52 @@ Pattern usato (file con molti sotto-componenti non-hook): helper module-level
 - Placeholder i18next: `{{count}}`, `{{giorno}}`, `{{data}}`, `{{ora}}`, `{{inizio}}`, `{{fine}}`,
   `{{corso}}`, `{{motivo}}`, `{{istruttore}}`, `{{nomi}}`, `{{campi}}`, `{{step}}`, `{{label}}`.
 - Nessuna modifica ai JSON `src/locales/{de,fr,en}/`.
+
+## Step 1.5m — Componenti relazione (~15 file) 🟡 PARZIALE (9/15)
+
+Namespace unico: **`dashboard`**, prefisso `relazione.<nome_componente>.*` (coerente con le chiavi
+`relazione.*` già create da `PresidentRelazione.tsx` e `PresidentRelazioneGestione.tsx`).
+
+### File completati
+
+| File | Prefisso chiavi | N. chiavi |
+|---|---|---|
+| `relazione/SortableItem.tsx` | `relazione.sortable_item.*` | 1 |
+| `relazione/SavingIndicator.tsx` | `relazione.saving_indicator.*` | 8 |
+| `relazione/AllegatoCard.tsx` | `relazione.allegato_card.*` | 7 |
+| `relazione/BloccoCard.tsx` | `relazione.blocco_card.*` | 7 |
+| `relazione/BloccoForm.tsx` | `relazione.blocco_form.*` | 16 |
+| `relazione/AllegatoForm.tsx` | `relazione.allegato_form.*` | 18 |
+| `relazione/AllegatiTab.tsx` | `relazione.allegati_tab.*` | 8 |
+| `relazione/BlocchiTestoTab.tsx` | `relazione.blocchi_tab.*` | 32 |
+| `relazione/AnteprimaFedele.tsx` | `relazione.anteprima_fedele.*` | 10 |
+| `relazione/PdfViewer.tsx` | `relazione.pdf_viewer.*` | 8 |
+
+**Totale: 121 chiavi IT aggiunte** in `src/locales/it/dashboard.json` sotto `relazione`.
+
+### File senza stringhe hardcoded (nessun intervento necessario)
+- `relazione/TabHeaderInfo.tsx` — riceve `titolo`/`testo`/`collapsible_label` via props (già tradotti dal chiamante).
+- `relazione/AnteprimaPDF.tsx` — solo composizione di componenti Mock, nessun testo letterale.
+- `relazione/types-compositore.ts` — solo tipi.
+
+### Rimangono da fare (turno di completamento)
+| File | Prefisso proposto | Note |
+|---|---|---|
+| `relazione/Compositore.tsx` (423 righe) | `relazione.compositore.*` | File più grande dell'area: toolbar, pannelli, toast, dialog. |
+| `relazione/ParagrafiTab.tsx` (269 righe) | `relazione.paragrafi_tab.*` | Editor "Racconto dei dati", toni narrativi, rigenerazione. |
+| `relazione/IndiceComponibile.tsx` (214 righe) | `relazione.indice.*` | Lista sezioni drag & drop, etichette stato. |
+| `relazione/MockSezionePDF.tsx` (175 righe) | `relazione.mock_pdf.*` | Contiene `AREA_DEFINITIONS` (titoli/KPI/insight demo) + mock copertina/indice/chiusura. |
+| `relazione/categorie.ts` | `relazione.categorie.*` | Non è un `.tsx`: le `label` di `CATEGORIE_BLOCCO`/`CATEGORIE_ALLEGATO` andranno risolte a runtime dai componenti che le renderizzano (i **value** restano valori DB non tradotti). |
+
+### Note tecniche
+- Helper module-level `tk` (`i18n.t(..., { ns: "dashboard" })`) usato in `AllegatiTab`,
+  `BlocchiTestoTab`, `AllegatoForm`, `AnteprimaFedele`, `PdfViewer` per toast, messaggi di errore
+  lanciati fuori dal render (`new Error(...)`) e callback delle mutation; il JSX usa `useTranslation("dashboard")`.
+- Plurali gestiti con le forme i18next `_one`/`_other`: `blocchi_tab.migrazione_desc`,
+  `blocchi_tab.toast_spostati`, `blocchi_tab.toast_eliminati`.
+- Placeholder: `{{ordine}}`, `{{titolo}}`, `{{file}}`, `{{ora}}`, `{{count}}`, `{{current}}`,
+  `{{total}}`, `{{errore}}`.
+- Il markup inline (`<strong>`, `<em>`) nelle tabelle di esempio di `BlocchiTestoTab` è stato
+  appiattito in testo semplice per mantenere le chiavi traducibili senza `Trans`.
+- NON tradotti: valori DB (`categoria` dei blocchi/allegati), path di routing, nomi file.
+- Nessuna modifica ai JSON `src/locales/{de,fr,en}/`.
