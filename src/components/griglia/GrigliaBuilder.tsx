@@ -1420,7 +1420,25 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
         on_forza={conferma_forzatura_sessione}
       />
 
+      <AlertDialog open={!!conflitto_gruppo} onOpenChange={(o) => !o && set_conflitto_gruppo(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>⛔ Gruppo già assegnato in questo orario</AlertDialogTitle>
+            <AlertDialogDescription>
+              Il gruppo «{conflitto_gruppo?.livello}» è già assegnato a un'altra sessione sovrapposta (
+              {conflitto_gruppo?.conflitto.ora_inizio}–{conflitto_gruppo?.conflitto.ora_fine} —{" "}
+              {conflitto_gruppo?.conflitto.etichetta}). Lo stesso gruppo non può essere in due sessioni
+              contemporanee: rimuovi prima l'altro collegamento oppure cambia l'orario della sessione.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => set_conflitto_gruppo(null)}>Ho capito</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <RipetiSessioneDialog
+
         open={!!ripeti_sessione}
         on_close={() => set_ripeti_sessione(null)}
         giorno={giorno_it_da_data(blocco.data)}
