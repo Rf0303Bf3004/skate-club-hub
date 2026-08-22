@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 type Filtro = "tutte" | "in_attesa" | "approvata" | "rifiutata" | "archivio";
 
@@ -20,6 +21,7 @@ const GIORNI_ARCHIVIO = 30;
 const PAGE_SIZES = [25, 50, 100];
 
 const RichiesteIscrizionePage: React.FC = () => {
+  const { t } = useTranslation("atleti");
   const { session } = useAuth();
   const { visibile_set, is_admin_like, is_loading: is_loading_permessi } = usePermessiSezioniMatrix();
   const allowed = is_admin_like || visibile_set.has("richieste_iscrizione");
@@ -134,9 +136,9 @@ const RichiesteIscrizionePage: React.FC = () => {
           richiesta_id: r.id,
           azione: modal.azione,
           atleta_id: r.atleta_id,
-          atleta_nome: atleta ? `${atleta.nome} ${atleta.cognome}` : "Atleta",
+          atleta_nome: atleta ? `${atleta.nome} ${atleta.cognome}` : t("richieste_iscrizione.default_atleta_label"),
           corso_id: r.corso_id,
-          corso_nome: corso?.nome || "Corso",
+          corso_nome: corso?.nome || t("richieste_iscrizione.default_corso_label"),
           note_risposta,
           gestita_da: session?.email || "",
         });
@@ -147,8 +149,8 @@ const RichiesteIscrizionePage: React.FC = () => {
     }
     toast({
       title: ko === 0
-        ? `${ok} richiest${ok === 1 ? "a" : "e"} ${modal.azione === "approvata" ? "approvate" : "rifiutate"}`.replace("richiesta approvate", "richiesta approvata").replace("richiesta rifiutate", "richiesta rifiutata")
-        : `${ok} completate, ${ko} errori`,
+        ? t(modal.azione === "approvata" ? "richieste_iscrizione.toast.approvate" : "richieste_iscrizione.toast.rifiutate", { count: ok })
+        : t("richieste_iscrizione.toast.completate_errori", { ok, ko }),
       variant: ko > 0 ? "destructive" : undefined,
     });
     set_selezione([]);
@@ -156,9 +158,9 @@ const RichiesteIscrizionePage: React.FC = () => {
   };
 
   const stato_badge = (stato: string) => {
-    if (stato === "in_attesa") return <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-600"><Clock className="w-3 h-3 mr-1" />In attesa</Badge>;
-    if (stato === "approvata") return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200"><Check className="w-3 h-3 mr-1" />Approvata</Badge>;
-    return <Badge variant="destructive"><X className="w-3 h-3 mr-1" />Rifiutata</Badge>;
+    if (stato === "in_attesa") return <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-600"><Clock className="w-3 h-3 mr-1" />{t("richieste_iscrizione.stato_badge.in_attesa")}</Badge>;
+    if (stato === "approvata") return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200"><Check className="w-3 h-3 mr-1" />{t("richieste_iscrizione.stato_badge.approvata")}</Badge>;
+    return <Badge variant="destructive"><X className="w-3 h-3 mr-1" />{t("richieste_iscrizione.stato_badge.rifiutata")}</Badge>;
   };
 
   const render_riga = (r: any) => {
@@ -213,12 +215,12 @@ const RichiesteIscrizionePage: React.FC = () => {
             <ClipboardList className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-foreground">Richieste Iscrizione</h1>
-            <p className="text-sm text-muted-foreground">Gestisci le richieste di iscrizione ai corsi</p>
+            <h1 className="text-xl font-bold tracking-tight text-foreground">{t("richieste_iscrizione.page_title")}</h1>
+            <p className="text-sm text-muted-foreground">{t("richieste_iscrizione.page_subtitle")}</p>
           </div>
         </div>
         {counts.in_attesa > 0 && (
-          <Badge className="bg-amber-100 text-amber-700 text-sm px-3 py-1">{counts.in_attesa} in attesa</Badge>
+          <Badge className="bg-amber-100 text-amber-700 text-sm px-3 py-1">{t("richieste_iscrizione.badge_in_attesa", { count: counts.in_attesa })}</Badge>
         )}
       </div>
 
@@ -230,7 +232,7 @@ const RichiesteIscrizionePage: React.FC = () => {
 
       {isError && (
         <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-6 text-center">
-          <p className="text-sm text-destructive">Errore nel caricamento delle richieste.</p>
+          <p className="text-sm text-destructive">{t("richieste_iscrizione.error_loading")}</p>
         </div>
       )}
 
@@ -240,11 +242,11 @@ const RichiesteIscrizionePage: React.FC = () => {
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex gap-1 bg-muted/40 p-1 rounded-xl flex-wrap">
               {([
-                { key: "in_attesa", label: "In attesa", count: counts.in_attesa },
-                { key: "approvata", label: "Approvate", count: counts.approvata },
-                { key: "rifiutata", label: "Rifiutate", count: counts.rifiutata },
-                { key: "tutte", label: "Tutte", count: counts.attive },
-                { key: "archivio", label: "Archivio", count: counts.archivio },
+                { key: "in_attesa", label: t("richieste_iscrizione.filters.in_attesa"), count: counts.in_attesa },
+                { key: "approvata", label: t("richieste_iscrizione.filters.approvate"), count: counts.approvata },
+                { key: "rifiutata", label: t("richieste_iscrizione.filters.rifiutate"), count: counts.rifiutata },
+                { key: "tutte", label: t("richieste_iscrizione.filters.tutte"), count: counts.attive },
+                { key: "archivio", label: t("richieste_iscrizione.filters.archivio"), count: counts.archivio },
               ] as const).map((f) => (
                 <button
                   key={f.key}
@@ -264,7 +266,7 @@ const RichiesteIscrizionePage: React.FC = () => {
               <Input
                 value={query}
                 onChange={(e) => set_query(e.target.value)}
-                placeholder="Cerca atleta o corso..."
+                placeholder={t("richieste_iscrizione.search_placeholder")}
                 className="pl-9 h-10"
               />
               {query && (
@@ -275,9 +277,9 @@ const RichiesteIscrizionePage: React.FC = () => {
             </div>
 
             <Select value={filtro_corso} onValueChange={set_filtro_corso}>
-              <SelectTrigger className="h-10 w-[190px]"><SelectValue placeholder="Corso" /></SelectTrigger>
+              <SelectTrigger className="h-10 w-[190px]"><SelectValue placeholder={t("richieste_iscrizione.corso_placeholder")} /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="tutti">Tutti i corsi</SelectItem>
+                <SelectItem value="tutti">{t("richieste_iscrizione.tutti_corsi")}</SelectItem>
                 {corsi.map((c: any) => (
                   <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
                 ))}
@@ -285,12 +287,12 @@ const RichiesteIscrizionePage: React.FC = () => {
             </Select>
 
             <Select value={filtro_periodo} onValueChange={set_filtro_periodo}>
-              <SelectTrigger className="h-10 w-[160px]"><SelectValue placeholder="Periodo" /></SelectTrigger>
+              <SelectTrigger className="h-10 w-[160px]"><SelectValue placeholder={t("richieste_iscrizione.periodo_placeholder")} /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="tutto">Tutto il periodo</SelectItem>
-                <SelectItem value="7">Ultimi 7 giorni</SelectItem>
-                <SelectItem value="30">Ultimi 30 giorni</SelectItem>
-                <SelectItem value="90">Ultimi 90 giorni</SelectItem>
+                <SelectItem value="tutto">{t("richieste_iscrizione.periodo_tutto")}</SelectItem>
+                <SelectItem value="7">{t("richieste_iscrizione.periodo_7")}</SelectItem>
+                <SelectItem value="30">{t("richieste_iscrizione.periodo_30")}</SelectItem>
+                <SelectItem value="90">{t("richieste_iscrizione.periodo_90")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -298,21 +300,21 @@ const RichiesteIscrizionePage: React.FC = () => {
           {/* Bulk bar */}
           {selezione.length > 0 && (
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 p-3">
-              <span className="text-sm font-medium text-foreground">{selezione.length} selezionate</span>
+              <span className="text-sm font-medium text-foreground">{t("richieste_iscrizione.selezionate", { count: selezione.length })}</span>
               <div className="flex gap-2">
-                <Button variant="outline" className="h-10" onClick={() => set_selezione([])}>Annulla selezione</Button>
+                <Button variant="outline" className="h-10" onClick={() => set_selezione([])}>{t("richieste_iscrizione.annulla_selezione")}</Button>
                 <Button
                   className="h-10 bg-emerald-600 hover:bg-emerald-700"
                   onClick={() => open_modal(filtered.filter((r: any) => selezione.includes(r.id)), "approvata")}
                 >
-                  <Check className="w-4 h-4 mr-1" />Approva selezionate
+                  <Check className="w-4 h-4 mr-1" />{t("richieste_iscrizione.approva_selezionate")}
                 </Button>
                 <Button
                   variant="destructive"
                   className="h-10"
                   onClick={() => open_modal(filtered.filter((r: any) => selezione.includes(r.id)), "rifiutata")}
                 >
-                  <X className="w-4 h-4 mr-1" />Rifiuta selezionate
+                  <X className="w-4 h-4 mr-1" />{t("richieste_iscrizione.rifiuta_selezionate")}
                 </Button>
               </div>
             </div>
@@ -322,8 +324,8 @@ const RichiesteIscrizionePage: React.FC = () => {
           {richieste.length === 0 && (
             <div className="text-center py-16 border rounded-lg border-dashed border-border">
               <MessageSquare className="w-10 h-10 mx-auto mb-3 text-muted-foreground/30" />
-              <p className="text-sm font-medium text-muted-foreground">Nessuna richiesta di iscrizione</p>
-              <p className="text-xs text-muted-foreground mt-1">Le richieste inviate dai genitori appariranno qui.</p>
+              <p className="text-sm font-medium text-muted-foreground">{t("richieste_iscrizione.empty_title")}</p>
+              <p className="text-xs text-muted-foreground mt-1">{t("richieste_iscrizione.empty_desc")}</p>
             </div>
           )}
 
@@ -339,10 +341,10 @@ const RichiesteIscrizionePage: React.FC = () => {
                           <Checkbox checked={tutte_selezionate} onCheckedChange={toggle_tutte} className="h-5 w-5" />
                         )}
                       </th>
-                      <th className="p-3 text-left font-medium">Atleta</th>
-                      <th className="p-3 text-left font-medium">Corso</th>
-                      <th className="p-3 text-left font-medium">Data</th>
-                      <th className="p-3 text-left font-medium">Stato</th>
+                      <th className="p-3 text-left font-medium">{t("richieste_iscrizione.table.atleta")}</th>
+                      <th className="p-3 text-left font-medium">{t("richieste_iscrizione.table.corso")}</th>
+                      <th className="p-3 text-left font-medium">{t("richieste_iscrizione.table.data")}</th>
+                      <th className="p-3 text-left font-medium">{t("richieste_iscrizione.table.stato")}</th>
                       <th className="p-3" />
                     </tr>
                   </thead>
@@ -354,13 +356,13 @@ const RichiesteIscrizionePage: React.FC = () => {
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border p-3">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <span>
-                    {(page_corrente - 1) * page_size + 1}–{Math.min(page_corrente * page_size, filtered.length)} di {filtered.length}
+                    {t("richieste_iscrizione.pagination.range", { da: (page_corrente - 1) * page_size + 1, a: Math.min(page_corrente * page_size, filtered.length), totale: filtered.length })}
                   </span>
                   <Select value={String(page_size)} onValueChange={(v) => set_page_size(Number(v))}>
                     <SelectTrigger className="h-9 w-[110px]"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {PAGE_SIZES.map((s) => (
-                        <SelectItem key={s} value={String(s)}>{s} per pagina</SelectItem>
+                        <SelectItem key={s} value={String(s)}>{t("richieste_iscrizione.pagination.per_pagina", { size: s })}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -369,7 +371,7 @@ const RichiesteIscrizionePage: React.FC = () => {
                   <Button variant="outline" className="h-10 w-10 p-0" disabled={page_corrente <= 1} onClick={() => set_page(page_corrente - 1)}>
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
-                  <span className="text-xs text-muted-foreground">Pagina {page_corrente} di {total_pages}</span>
+                  <span className="text-xs text-muted-foreground">{t("richieste_iscrizione.pagination.pagina_di", { corrente: page_corrente, totale: total_pages })}</span>
                   <Button variant="outline" className="h-10 w-10 p-0" disabled={page_corrente >= total_pages} onClick={() => set_page(page_corrente + 1)}>
                     <ChevronRight className="w-4 h-4" />
                   </Button>
@@ -380,7 +382,7 @@ const RichiesteIscrizionePage: React.FC = () => {
 
           {richieste.length > 0 && filtered.length === 0 && (
             <div className="text-center py-12 border rounded-lg border-dashed border-border">
-              <p className="text-sm text-muted-foreground">Nessuna richiesta corrispondente ai filtri.</p>
+              <p className="text-sm text-muted-foreground">{t("richieste_iscrizione.no_match")}</p>
             </div>
           )}
         </>
@@ -392,34 +394,34 @@ const RichiesteIscrizionePage: React.FC = () => {
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>
-                {modal.azione === "approvata" ? "Approva richieste" : "Rifiuta richieste"}
+                {modal.azione === "approvata" ? t("richieste_iscrizione.modal.approva_title") : t("richieste_iscrizione.modal.rifiuta_title")}
                 {modal.richieste.length > 1 ? ` (${modal.richieste.length})` : ""}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">
                 {modal.azione === "approvata"
-                  ? `${modal.richieste.length > 1 ? "Gli atleti verranno iscritti" : "L'atleta verrà iscritto"} al corso e riceveranno una comunicazione di conferma.`
-                  : `${modal.richieste.length > 1 ? "Gli atleti riceveranno" : "L'atleta riceverà"} una comunicazione di rifiuto.`}
+                  ? t(modal.richieste.length > 1 ? "richieste_iscrizione.modal.approva_desc_plural" : "richieste_iscrizione.modal.approva_desc_singular")
+                  : t(modal.richieste.length > 1 ? "richieste_iscrizione.modal.rifiuta_desc_plural" : "richieste_iscrizione.modal.rifiuta_desc_singular")}
               </p>
               <div>
-                <Label className="text-xs">Note (opzionale)</Label>
+                <Label className="text-xs">{t("richieste_iscrizione.modal.note_label")}</Label>
                 <Input
                   value={note_risposta}
                   onChange={(e) => set_note_risposta(e.target.value)}
-                  placeholder={modal.azione === "rifiutata" ? "Motivo del rifiuto..." : "Note aggiuntive..."}
+                  placeholder={modal.azione === "rifiutata" ? t("richieste_iscrizione.modal.note_placeholder_rifiuto") : t("richieste_iscrizione.modal.note_placeholder_generico")}
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => set_modal(null)} disabled={gestisci.isPending}>Annulla</Button>
+              <Button variant="outline" onClick={() => set_modal(null)} disabled={gestisci.isPending}>{t("richieste_iscrizione.modal.annulla")}</Button>
               <Button
                 onClick={conferma}
                 disabled={gestisci.isPending}
                 className={modal.azione === "approvata" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
                 variant={modal.azione === "rifiutata" ? "destructive" : "default"}
               >
-                {gestisci.isPending ? "..." : modal.azione === "approvata" ? "Approva" : "Rifiuta"}
+                {gestisci.isPending ? t("richieste_iscrizione.modal.elaborazione") : modal.azione === "approvata" ? t("richieste_iscrizione.modal.approva") : t("richieste_iscrizione.modal.rifiuta")}
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { use_atleti, use_istruttori, use_stagioni } from "@/hooks/use-supabase-data";
@@ -62,6 +63,7 @@ const fmt_date = (d: string | null) => {
 };
 
 const CampiEventiPage = () => {
+  const { t } = useTranslation("events");
   const club_id = get_current_club_id();
   const qc = useQueryClient();
   const [tab, setTab] = useState("interno");
@@ -87,18 +89,18 @@ const CampiEventiPage = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-primary flex items-center gap-3">
-          <Tent className="w-8 h-8" /> Campi ed Eventi
+          <Tent className="w-8 h-8" /> {t("campi_eventi.page_title")}
         </h1>
         <p className="text-muted-foreground mt-1">
-          Gestisci campi interni con planning dedicato e campi esterni con comunicazioni alle famiglie.
+          {t("campi_eventi.page_subtitle")}
         </p>
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className="space-y-4">
         <TabsList className="grid grid-cols-3 w-full">
-          <TabsTrigger value="interno" className="gap-2"><Tent className="w-4 h-4" /> Campo Interno</TabsTrigger>
-          <TabsTrigger value="esterno" className="gap-2"><MapPin className="w-4 h-4" /> Campo Esterno</TabsTrigger>
-          <TabsTrigger value="gala" className="gap-2"><Sparkles className="w-4 h-4" /> Galà & Spettacoli</TabsTrigger>
+          <TabsTrigger value="interno" className="gap-2"><Tent className="w-4 h-4" /> {t("campi_eventi.tab_interno")}</TabsTrigger>
+          <TabsTrigger value="esterno" className="gap-2"><MapPin className="w-4 h-4" /> {t("campi_eventi.tab_esterno")}</TabsTrigger>
+          <TabsTrigger value="gala" className="gap-2"><Sparkles className="w-4 h-4" /> {t("campi_eventi.tab_gala")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="interno">
@@ -119,6 +121,7 @@ const CampiEventiPage = () => {
 // CAMPO INTERNO: mini-stagione con planning dedicato
 // ═══════════════════════════════════════════════════════════
 const CampoInternoSection: React.FC<{ eventi: EventoCampo[] }> = ({ eventi }) => {
+  const { t } = useTranslation("events");
   const club_id = get_current_club_id();
   const qc = useQueryClient();
   const { data: stagioni = [] } = use_stagioni();
@@ -130,7 +133,7 @@ const CampoInternoSection: React.FC<{ eventi: EventoCampo[] }> = ({ eventi }) =>
     mutationFn: async () => {
       const payload: any = {
         club_id,
-        nome: form.nome.trim() || "Campo interno",
+        nome: form.nome.trim() || t("campi_eventi.interno.name_placeholder_fallback"),
         modalita: "interno",
         data_inizio: form.data_inizio || null,
         data_fine: form.data_fine || null,
@@ -145,7 +148,7 @@ const CampoInternoSection: React.FC<{ eventi: EventoCampo[] }> = ({ eventi }) =>
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["eventi_campi"] });
-      toast.success("Campo interno creato");
+      toast.success(t("campi_eventi.interno.created_toast"));
       setOpen(false);
       setForm({ nome: "", data_inizio: "", data_fine: "", luogo: "", descrizione: "", costo: "0", stagione_id: "" });
     },
@@ -159,7 +162,7 @@ const CampoInternoSection: React.FC<{ eventi: EventoCampo[] }> = ({ eventi }) =>
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["eventi_campi"] });
-      toast.success("Eliminato");
+      toast.success(t("campi_eventi.interno.deleted_toast"));
       setSelected(null);
     },
   });
@@ -172,14 +175,14 @@ const CampoInternoSection: React.FC<{ eventi: EventoCampo[] }> = ({ eventi }) =>
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle>Campi Interni</CardTitle>
-          <CardDescription>Mini-stagioni temporanee con planning, sessioni, istruttori e iscrizioni atleti.</CardDescription>
+          <CardTitle>{t("campi_eventi.interno.title")}</CardTitle>
+          <CardDescription>{t("campi_eventi.interno.description")}</CardDescription>
         </div>
-        <Button onClick={() => setOpen(true)}><Plus className="w-4 h-4 mr-2" /> Nuovo Campo Interno</Button>
+        <Button onClick={() => setOpen(true)}><Plus className="w-4 h-4 mr-2" /> {t("campi_eventi.interno.new_button")}</Button>
       </CardHeader>
       <CardContent>
         {eventi.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-8 text-center">Nessun campo interno creato.</p>
+          <p className="text-sm text-muted-foreground py-8 text-center">{t("campi_eventi.interno.empty")}</p>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {eventi.map((e) => (
@@ -187,7 +190,7 @@ const CampoInternoSection: React.FC<{ eventi: EventoCampo[] }> = ({ eventi }) =>
                 <CardHeader>
                   <CardTitle className="text-base flex items-center justify-between">
                     {e.nome}
-                    <Badge variant="secondary">Interno</Badge>
+                    <Badge variant="secondary">{t("campi_eventi.interno.badge")}</Badge>
                   </CardTitle>
                   <CardDescription>
                     {fmt_date(e.data_inizio)} → {fmt_date(e.data_fine)}
@@ -206,29 +209,29 @@ const CampoInternoSection: React.FC<{ eventi: EventoCampo[] }> = ({ eventi }) =>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Nuovo Campo Interno</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("campi_eventi.interno.dialog_title")}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label>Nome</Label><Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} placeholder="Es: Camp Estivo 2026" /></div>
+            <div><Label>{t("campi_eventi.interno.name_label")}</Label><Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} placeholder={t("campi_eventi.interno.name_placeholder")} /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Data inizio</Label><Input type="date" value={form.data_inizio} onChange={(e) => setForm({ ...form, data_inizio: e.target.value })} /></div>
-              <div><Label>Data fine</Label><Input type="date" value={form.data_fine} onChange={(e) => setForm({ ...form, data_fine: e.target.value })} /></div>
+              <div><Label>{t("campi_eventi.interno.start_date_label")}</Label><Input type="date" value={form.data_inizio} onChange={(e) => setForm({ ...form, data_inizio: e.target.value })} /></div>
+              <div><Label>{t("campi_eventi.interno.end_date_label")}</Label><Input type="date" value={form.data_fine} onChange={(e) => setForm({ ...form, data_fine: e.target.value })} /></div>
             </div>
-            <div><Label>Luogo</Label><Input value={form.luogo} onChange={(e) => setForm({ ...form, luogo: e.target.value })} /></div>
-            <div><Label>Costo (CHF)</Label><Input type="number" value={form.costo} onChange={(e) => setForm({ ...form, costo: e.target.value })} /></div>
+            <div><Label>{t("campi_eventi.interno.place_label")}</Label><Input value={form.luogo} onChange={(e) => setForm({ ...form, luogo: e.target.value })} /></div>
+            <div><Label>{t("campi_eventi.interno.cost_label")}</Label><Input type="number" value={form.costo} onChange={(e) => setForm({ ...form, costo: e.target.value })} /></div>
             <div>
-              <Label>Stagione di riferimento</Label>
+              <Label>{t("campi_eventi.interno.season_label")}</Label>
               <Select value={form.stagione_id} onValueChange={(v) => setForm({ ...form, stagione_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Nessuna" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t("campi_eventi.interno.season_placeholder")} /></SelectTrigger>
                 <SelectContent>
                   {stagioni.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
-            <div><Label>Descrizione</Label><Textarea value={form.descrizione} onChange={(e) => setForm({ ...form, descrizione: e.target.value })} /></div>
+            <div><Label>{t("campi_eventi.interno.description_label")}</Label><Textarea value={form.descrizione} onChange={(e) => setForm({ ...form, descrizione: e.target.value })} /></div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Annulla</Button>
-            <Button onClick={() => create.mutate()} disabled={create.isPending}>Crea</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>{t("campi_eventi.interno.cancel")}</Button>
+            <Button onClick={() => create.mutate()} disabled={create.isPending}>{t("campi_eventi.interno.create")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -238,6 +241,7 @@ const CampoInternoSection: React.FC<{ eventi: EventoCampo[] }> = ({ eventi }) =>
 
 // Dettaglio Campo Interno: planning, iscrizioni
 const CampoInternoDettaglio: React.FC<{ evento: EventoCampo; onBack: () => void; onDelete: () => void }> = ({ evento, onBack, onDelete }) => {
+  const { t } = useTranslation("events");
   const qc = useQueryClient();
   const { data: istruttori = [] } = use_istruttori();
   const { data: atleti = [] } = use_atleti();
@@ -271,7 +275,7 @@ const CampoInternoDettaglio: React.FC<{ evento: EventoCampo; onBack: () => void;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["sessioni_campo", evento.id] });
-      toast.success("Sessione aggiunta");
+      toast.success(t("campi_eventi.detail.session_added_toast"));
       setOpenSess(false);
       setSessForm({ data: "", ora_inizio: "09:00", ora_fine: "11:00", titolo: "", istruttore_id: "", note: "" });
     },
@@ -304,12 +308,12 @@ const CampoInternoDettaglio: React.FC<{ evento: EventoCampo; onBack: () => void;
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <Button variant="ghost" onClick={onBack}>← Torna</Button>
+          <Button variant="ghost" onClick={onBack}>{t("campi_eventi.detail.back")}</Button>
           <h2 className="text-2xl font-bold mt-2">{evento.nome}</h2>
           <p className="text-sm text-muted-foreground">{fmt_date(evento.data_inizio)} → {fmt_date(evento.data_fine)} {evento.luogo && `• ${evento.luogo}`}</p>
         </div>
-        <Button variant="destructive" size="sm" onClick={() => { if (confirm("Eliminare il campo?")) onDelete(); }}>
-          <Trash2 className="w-4 h-4 mr-2" /> Elimina
+        <Button variant="destructive" size="sm" onClick={() => { if (confirm(t("campi_eventi.detail.delete_confirm"))) onDelete(); }}>
+          <Trash2 className="w-4 h-4 mr-2" /> {t("campi_eventi.detail.delete_button")}
         </Button>
       </div>
 
@@ -317,12 +321,12 @@ const CampoInternoDettaglio: React.FC<{ evento: EventoCampo; onBack: () => void;
         {/* Planning sessioni */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <div><CardTitle className="text-base">Planning Sessioni</CardTitle><CardDescription>{sessioni.length} sessioni programmate</CardDescription></div>
-            <Button size="sm" onClick={() => setOpenSess(true)}><Plus className="w-4 h-4 mr-1" /> Sessione</Button>
+            <div><CardTitle className="text-base">{t("campi_eventi.detail.planning_title")}</CardTitle><CardDescription>{t("campi_eventi.detail.planning_desc", { count: sessioni.length })}</CardDescription></div>
+            <Button size="sm" onClick={() => setOpenSess(true)}><Plus className="w-4 h-4 mr-1" /> {t("campi_eventi.detail.session_button")}</Button>
           </CardHeader>
           <CardContent>
             {sessioni.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">Nessuna sessione</p>
+              <p className="text-sm text-muted-foreground text-center py-4">{t("campi_eventi.detail.no_sessions")}</p>
             ) : (
               <div className="space-y-2">
                 {sessioni.map((s) => {
@@ -330,7 +334,7 @@ const CampoInternoDettaglio: React.FC<{ evento: EventoCampo; onBack: () => void;
                   return (
                     <div key={s.id} className="flex items-center justify-between p-3 rounded-md border bg-muted/30">
                       <div className="text-sm">
-                        <p className="font-medium">{s.titolo || "Sessione"} • {fmt_date(s.data)}</p>
+                        <p className="font-medium">{s.titolo || t("campi_eventi.detail.session_default_title")} • {fmt_date(s.data)}</p>
                         <p className="text-xs text-muted-foreground">{s.ora_inizio?.slice(0, 5)}–{s.ora_fine?.slice(0, 5)} {istr && `• ${istr.nome} ${istr.cognome}`}</p>
                       </div>
                       <Button variant="ghost" size="icon" onClick={() => delSess.mutate(s.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
@@ -345,8 +349,8 @@ const CampoInternoDettaglio: React.FC<{ evento: EventoCampo; onBack: () => void;
         {/* Iscrizioni atleti */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Iscrizioni Atleti</CardTitle>
-            <CardDescription>{iscritti_ids.size} iscritti su {atleti.length} atleti</CardDescription>
+            <CardTitle className="text-base">{t("campi_eventi.detail.enrollments_title")}</CardTitle>
+            <CardDescription>{t("campi_eventi.detail.enrollments_desc", { count: iscritti_ids.size, total: atleti.length })}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="max-h-96 overflow-y-auto space-y-1">
@@ -356,7 +360,7 @@ const CampoInternoDettaglio: React.FC<{ evento: EventoCampo; onBack: () => void;
                   <div key={a.id} className="flex items-center justify-between p-2 rounded hover:bg-muted/50">
                     <span className="text-sm">{a.cognome} {a.nome}</span>
                     <Button size="sm" variant={isc ? "default" : "outline"} onClick={() => toggleIscr.mutate({ atleta_id: a.id, iscritto: isc })}>
-                      {isc ? "Iscritto" : "Iscrivi"}
+                      {isc ? t("campi_eventi.detail.enrolled") : t("campi_eventi.detail.enroll")}
                     </Button>
                   </div>
                 );
@@ -368,28 +372,28 @@ const CampoInternoDettaglio: React.FC<{ evento: EventoCampo; onBack: () => void;
 
       <Dialog open={openSess} onOpenChange={setOpenSess}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Nuova Sessione</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("campi_eventi.detail.session_dialog_title")}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label>Titolo</Label><Input value={sessForm.titolo} onChange={(e) => setSessForm({ ...sessForm, titolo: e.target.value })} placeholder="Es: Allenamento mattina" /></div>
-            <div><Label>Data</Label><Input type="date" value={sessForm.data} onChange={(e) => setSessForm({ ...sessForm, data: e.target.value })} /></div>
+            <div><Label>{t("campi_eventi.detail.session_title_label")}</Label><Input value={sessForm.titolo} onChange={(e) => setSessForm({ ...sessForm, titolo: e.target.value })} placeholder={t("campi_eventi.detail.session_title_placeholder")} /></div>
+            <div><Label>{t("campi_eventi.detail.date_label")}</Label><Input type="date" value={sessForm.data} onChange={(e) => setSessForm({ ...sessForm, data: e.target.value })} /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Inizio</Label><Input type="time" value={sessForm.ora_inizio} onChange={(e) => setSessForm({ ...sessForm, ora_inizio: e.target.value })} /></div>
-              <div><Label>Fine</Label><Input type="time" value={sessForm.ora_fine} onChange={(e) => setSessForm({ ...sessForm, ora_fine: e.target.value })} /></div>
+              <div><Label>{t("campi_eventi.detail.start_time_label")}</Label><Input type="time" value={sessForm.ora_inizio} onChange={(e) => setSessForm({ ...sessForm, ora_inizio: e.target.value })} /></div>
+              <div><Label>{t("campi_eventi.detail.end_time_label")}</Label><Input type="time" value={sessForm.ora_fine} onChange={(e) => setSessForm({ ...sessForm, ora_fine: e.target.value })} /></div>
             </div>
             <div>
-              <Label>Istruttore</Label>
+              <Label>{t("campi_eventi.detail.instructor_label")}</Label>
               <Select value={sessForm.istruttore_id} onValueChange={(v) => setSessForm({ ...sessForm, istruttore_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Nessuno" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t("campi_eventi.detail.instructor_placeholder")} /></SelectTrigger>
                 <SelectContent>
                   {istruttori.map((i: any) => <SelectItem key={i.id} value={i.id}>{i.nome} {i.cognome}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
-            <div><Label>Note</Label><Textarea value={sessForm.note} onChange={(e) => setSessForm({ ...sessForm, note: e.target.value })} /></div>
+            <div><Label>{t("campi_eventi.detail.notes_label")}</Label><Textarea value={sessForm.note} onChange={(e) => setSessForm({ ...sessForm, note: e.target.value })} /></div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenSess(false)}>Annulla</Button>
-            <Button onClick={() => addSess.mutate()} disabled={!sessForm.data || addSess.isPending}>Aggiungi</Button>
+            <Button variant="outline" onClick={() => setOpenSess(false)}>{t("campi_eventi.detail.cancel")}</Button>
+            <Button onClick={() => addSess.mutate()} disabled={!sessForm.data || addSess.isPending}>{t("campi_eventi.detail.add")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -401,6 +405,7 @@ const CampoInternoDettaglio: React.FC<{ evento: EventoCampo; onBack: () => void;
 // CAMPO ESTERNO: scheda info + comunicazione famiglie
 // ═══════════════════════════════════════════════════════════
 const CampoEsternoSection: React.FC<{ eventi: EventoCampo[] }> = ({ eventi }) => {
+  const { t } = useTranslation("events");
   const club_id = get_current_club_id();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -410,7 +415,7 @@ const CampoEsternoSection: React.FC<{ eventi: EventoCampo[] }> = ({ eventi }) =>
     mutationFn: async () => {
       const payload: any = {
         club_id,
-        nome: form.nome.trim() || "Campo esterno",
+        nome: form.nome.trim() || t("campi_eventi.esterno.name_placeholder_fallback"),
         modalita: "esterno",
         data_inizio: form.data_inizio || null,
         data_fine: form.data_fine || null,
@@ -424,7 +429,7 @@ const CampoEsternoSection: React.FC<{ eventi: EventoCampo[] }> = ({ eventi }) =>
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["eventi_campi"] });
-      toast.success("Campo esterno creato");
+      toast.success(t("campi_eventi.esterno.created_toast"));
       setOpen(false);
       setForm({ nome: "", data_inizio: "", data_fine: "", luogo: "", descrizione: "", costo: "0", contatti: "" });
     },
@@ -440,14 +445,14 @@ const CampoEsternoSection: React.FC<{ eventi: EventoCampo[] }> = ({ eventi }) =>
 
   const inviaComunicazione = useMutation({
     mutationFn: async (e: EventoCampo) => {
-      const titolo = `Campo esterno: ${e.nome}`;
+      const titolo = t("campi_eventi.esterno.communication_title_prefix", { name: e.nome });
       const testo = [
-        `Vi informiamo del seguente campo esterno organizzato esternamente al club:`,
+        t("campi_eventi.esterno.communication_intro"),
         ``,
-        `📍 Luogo: ${e.luogo || "—"}`,
-        `📅 Date: ${fmt_date(e.data_inizio)} → ${fmt_date(e.data_fine)}`,
-        e.costo ? `💰 Costo: CHF ${Number(e.costo).toFixed(2)}` : ``,
-        e.contatti ? `📞 Contatti: ${e.contatti}` : ``,
+        t("campi_eventi.esterno.communication_place_label", { place: e.luogo || "—" }),
+        t("campi_eventi.esterno.communication_dates_label", { start: fmt_date(e.data_inizio), end: fmt_date(e.data_fine) }),
+        e.costo ? t("campi_eventi.esterno.communication_cost_label", { cost: Number(e.costo).toFixed(2) }) : ``,
+        e.contatti ? t("campi_eventi.esterno.communication_contacts_label", { contacts: e.contatti }) : ``,
         ``,
         e.descrizione || ``,
       ].filter(Boolean).join("\n");
@@ -462,7 +467,7 @@ const CampoEsternoSection: React.FC<{ eventi: EventoCampo[] }> = ({ eventi }) =>
       } as any);
       if (error) throw error;
     },
-    onSuccess: () => toast.success("Comunicazione creata e inviata a tutte le famiglie"),
+    onSuccess: () => toast.success(t("campi_eventi.esterno.communication_sent_toast")),
     onError: (err: any) => toast.error(err.message),
   });
 
@@ -470,14 +475,14 @@ const CampoEsternoSection: React.FC<{ eventi: EventoCampo[] }> = ({ eventi }) =>
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle>Campi Esterni</CardTitle>
-          <CardDescription>Schede informative su campi organizzati da terzi, con comunicazione manuale alle famiglie.</CardDescription>
+          <CardTitle>{t("campi_eventi.esterno.title")}</CardTitle>
+          <CardDescription>{t("campi_eventi.esterno.description")}</CardDescription>
         </div>
-        <Button onClick={() => setOpen(true)}><Plus className="w-4 h-4 mr-2" /> Nuovo Campo Esterno</Button>
+        <Button onClick={() => setOpen(true)}><Plus className="w-4 h-4 mr-2" /> {t("campi_eventi.esterno.new_button")}</Button>
       </CardHeader>
       <CardContent>
         {eventi.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-8 text-center">Nessun campo esterno.</p>
+          <p className="text-sm text-muted-foreground py-8 text-center">{t("campi_eventi.esterno.empty")}</p>
         ) : (
           <div className="space-y-3">
             {eventi.map((e) => (
@@ -486,7 +491,7 @@ const CampoEsternoSection: React.FC<{ eventi: EventoCampo[] }> = ({ eventi }) =>
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center gap-2">
                       <h3 className="font-semibold">{e.nome}</h3>
-                      <Badge variant="outline">Esterno</Badge>
+                      <Badge variant="outline">{t("campi_eventi.esterno.badge")}</Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
                       <CalendarIcon className="w-3 h-3 inline mr-1" />{fmt_date(e.data_inizio)} → {fmt_date(e.data_fine)}
@@ -498,9 +503,9 @@ const CampoEsternoSection: React.FC<{ eventi: EventoCampo[] }> = ({ eventi }) =>
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" onClick={() => inviaComunicazione.mutate(e)}>
-                      <Send className="w-4 h-4 mr-1" /> Invia comunicazione famiglie
+                      <Send className="w-4 h-4 mr-1" /> {t("campi_eventi.esterno.send_communication_button")}
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => { if (confirm("Eliminare?")) remove.mutate(e.id); }}>
+                    <Button size="sm" variant="ghost" onClick={() => { if (confirm(t("campi_eventi.esterno.delete_confirm"))) remove.mutate(e.id); }}>
                       <Trash2 className="w-4 h-4 text-destructive" />
                     </Button>
                   </div>
@@ -513,21 +518,21 @@ const CampoEsternoSection: React.FC<{ eventi: EventoCampo[] }> = ({ eventi }) =>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Nuovo Campo Esterno</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("campi_eventi.esterno.dialog_title")}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label>Nome</Label><Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} placeholder="Es: Camp internazionale Milano" /></div>
+            <div><Label>{t("campi_eventi.esterno.name_label")}</Label><Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} placeholder={t("campi_eventi.esterno.name_placeholder")} /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Data inizio</Label><Input type="date" value={form.data_inizio} onChange={(e) => setForm({ ...form, data_inizio: e.target.value })} /></div>
-              <div><Label>Data fine</Label><Input type="date" value={form.data_fine} onChange={(e) => setForm({ ...form, data_fine: e.target.value })} /></div>
+              <div><Label>{t("campi_eventi.esterno.start_date_label")}</Label><Input type="date" value={form.data_inizio} onChange={(e) => setForm({ ...form, data_inizio: e.target.value })} /></div>
+              <div><Label>{t("campi_eventi.esterno.end_date_label")}</Label><Input type="date" value={form.data_fine} onChange={(e) => setForm({ ...form, data_fine: e.target.value })} /></div>
             </div>
-            <div><Label>Luogo</Label><Input value={form.luogo} onChange={(e) => setForm({ ...form, luogo: e.target.value })} /></div>
-            <div><Label>Costo (CHF)</Label><Input type="number" value={form.costo} onChange={(e) => setForm({ ...form, costo: e.target.value })} /></div>
-            <div><Label>Contatti organizzatore</Label><Input value={form.contatti} onChange={(e) => setForm({ ...form, contatti: e.target.value })} placeholder="Email, telefono o sito" /></div>
-            <div><Label>Descrizione</Label><Textarea value={form.descrizione} onChange={(e) => setForm({ ...form, descrizione: e.target.value })} /></div>
+            <div><Label>{t("campi_eventi.esterno.place_label")}</Label><Input value={form.luogo} onChange={(e) => setForm({ ...form, luogo: e.target.value })} /></div>
+            <div><Label>{t("campi_eventi.esterno.cost_label")}</Label><Input type="number" value={form.costo} onChange={(e) => setForm({ ...form, costo: e.target.value })} /></div>
+            <div><Label>{t("campi_eventi.esterno.contacts_label")}</Label><Input value={form.contatti} onChange={(e) => setForm({ ...form, contatti: e.target.value })} placeholder={t("campi_eventi.esterno.contacts_placeholder")} /></div>
+            <div><Label>{t("campi_eventi.esterno.description_label")}</Label><Textarea value={form.descrizione} onChange={(e) => setForm({ ...form, descrizione: e.target.value })} /></div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Annulla</Button>
-            <Button onClick={() => create.mutate()} disabled={create.isPending}>Crea</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>{t("campi_eventi.esterno.cancel")}</Button>
+            <Button onClick={() => create.mutate()} disabled={create.isPending}>{t("campi_eventi.esterno.create")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -552,15 +557,16 @@ type EventoStraordinario = {
 };
 
 const TIPI_EVENTO = ["gala", "saggio", "spettacolo", "festa", "altro"] as const;
-const TIPI_EVENTO_LABEL: Record<string, string> = {
-  gala: "Galà",
-  saggio: "Saggio",
-  spettacolo: "Spettacolo",
-  festa: "Festa",
-  altro: "Altro",
-};
 
 const GalaSpettacoliSection: React.FC = () => {
+  const { t } = useTranslation("events");
+  const TIPI_EVENTO_LABEL: Record<string, string> = {
+    gala: t("campi_eventi.gala.type_gala"),
+    saggio: t("campi_eventi.gala.type_saggio"),
+    spettacolo: t("campi_eventi.gala.type_spettacolo"),
+    festa: t("campi_eventi.gala.type_festa"),
+    altro: t("campi_eventi.gala.type_altro"),
+  };
   const club_id = get_current_club_id();
   const qc = useQueryClient();
   const { data: stagioni = [] } = use_stagioni();
@@ -637,7 +643,7 @@ const GalaSpettacoliSection: React.FC = () => {
 
   const create = useMutation({
     mutationFn: async () => {
-      if (!form.titolo.trim() || !form.data) throw new Error("Titolo e data sono obbligatori");
+      if (!form.titolo.trim() || !form.data) throw new Error(t("campi_eventi.gala.missing_fields_error"));
       const tipo_finale = form.tipo_evento === "altro" && form.tipo_evento_altro.trim()
         ? form.tipo_evento_altro.trim()
         : form.tipo_evento;
@@ -671,7 +677,7 @@ const GalaSpettacoliSection: React.FC = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["eventi_straordinari_gala"] });
       qc.invalidateQueries({ queryKey: ["comunicazioni"] });
-      toast.success(com_state.invia ? "Evento creato e comunicazione inviata" : "Evento creato");
+      toast.success(com_state.invia ? t("campi_eventi.gala.created_toast_with_comm") : t("campi_eventi.gala.created_toast"));
       setOpen(false);
       reset_form();
     },
@@ -685,7 +691,7 @@ const GalaSpettacoliSection: React.FC = () => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["eventi_straordinari_gala"] });
-      toast.success("Evento eliminato");
+      toast.success(t("campi_eventi.gala.deleted_toast"));
     },
   });
 
@@ -712,7 +718,7 @@ const GalaSpettacoliSection: React.FC = () => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["comunicazioni"] });
-      toast.success("Comunicazione inviata alle famiglie");
+      toast.success(t("campi_eventi.gala.post_comm_sent_toast"));
     },
     onError: (err: any) => toast.error(err.message),
   });
@@ -721,14 +727,14 @@ const GalaSpettacoliSection: React.FC = () => {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle>Galà & Spettacoli</CardTitle>
-          <CardDescription>Crea galà, saggi, spettacoli e feste; opzionalmente invia subito una comunicazione collegata alle famiglie.</CardDescription>
+          <CardTitle>{t("campi_eventi.gala.title")}</CardTitle>
+          <CardDescription>{t("campi_eventi.gala.description")}</CardDescription>
         </div>
-        <Button onClick={() => setOpen(true)}><Plus className="w-4 h-4 mr-2" /> Nuovo Evento</Button>
+        <Button onClick={() => setOpen(true)}><Plus className="w-4 h-4 mr-2" /> {t("campi_eventi.gala.new_button")}</Button>
       </CardHeader>
       <CardContent>
         {eventi.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-8 text-center">Nessun evento creato.</p>
+          <p className="text-sm text-muted-foreground py-8 text-center">{t("campi_eventi.gala.empty")}</p>
         ) : (
           <div className="space-y-3">
             {eventi.map((e) => (
@@ -748,9 +754,9 @@ const GalaSpettacoliSection: React.FC = () => {
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" onClick={() => invia_comunicazione_post.mutate(e)} disabled={invia_comunicazione_post.isPending}>
-                      <Send className="w-4 h-4 mr-1" /> Comunica
+                      <Send className="w-4 h-4 mr-1" /> {t("campi_eventi.gala.communicate_button")}
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => { if (confirm("Eliminare l'evento?")) remove.mutate(e.id); }}>
+                    <Button size="sm" variant="ghost" onClick={() => { if (confirm(t("campi_eventi.gala.delete_confirm"))) remove.mutate(e.id); }}>
                       <Trash2 className="w-4 h-4 text-destructive" />
                     </Button>
                   </div>
@@ -763,12 +769,12 @@ const GalaSpettacoliSection: React.FC = () => {
 
       <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset_form(); }}>
         <DialogContent className="max-h-[85vh] overflow-y-auto max-w-xl">
-          <DialogHeader><DialogTitle>Nuovo Galà / Spettacolo</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("campi_eventi.gala.dialog_title")}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label>Titolo *</Label><Input value={form.titolo} onChange={(e) => setForm({ ...form, titolo: e.target.value })} placeholder="Es: Galà di Natale 2026" /></div>
+            <div><Label>{t("campi_eventi.gala.title_label")}</Label><Input value={form.titolo} onChange={(e) => setForm({ ...form, titolo: e.target.value })} placeholder={t("campi_eventi.gala.title_placeholder")} /></div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Tipo evento *</Label>
+                <Label>{t("campi_eventi.gala.event_type_label")}</Label>
                 <Select value={form.tipo_evento} onValueChange={(v) => setForm({ ...form, tipo_evento: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -780,27 +786,27 @@ const GalaSpettacoliSection: React.FC = () => {
               </div>
               {form.tipo_evento === "altro" && (
                 <div>
-                  <Label>Specifica tipo *</Label>
-                  <Input value={form.tipo_evento_altro} onChange={(e) => setForm({ ...form, tipo_evento_altro: e.target.value })} placeholder="Es: Open day" />
+                  <Label>{t("campi_eventi.gala.other_type_label")}</Label>
+                  <Input value={form.tipo_evento_altro} onChange={(e) => setForm({ ...form, tipo_evento_altro: e.target.value })} placeholder={t("campi_eventi.gala.other_type_placeholder")} />
                 </div>
               )}
             </div>
             <div className="grid grid-cols-3 gap-3">
-              <div><Label>Data *</Label><Input type="date" value={form.data} onChange={(e) => setForm({ ...form, data: e.target.value })} /></div>
-              <div><Label>Ora inizio</Label><Input type="time" value={form.ora_inizio} onChange={(e) => setForm({ ...form, ora_inizio: e.target.value })} /></div>
-              <div><Label>Ora fine</Label><Input type="time" value={form.ora_fine} onChange={(e) => setForm({ ...form, ora_fine: e.target.value })} /></div>
+              <div><Label>{t("campi_eventi.gala.date_label")}</Label><Input type="date" value={form.data} onChange={(e) => setForm({ ...form, data: e.target.value })} /></div>
+              <div><Label>{t("campi_eventi.gala.start_time_label")}</Label><Input type="time" value={form.ora_inizio} onChange={(e) => setForm({ ...form, ora_inizio: e.target.value })} /></div>
+              <div><Label>{t("campi_eventi.gala.end_time_label")}</Label><Input type="time" value={form.ora_fine} onChange={(e) => setForm({ ...form, ora_fine: e.target.value })} /></div>
             </div>
-            <div><Label>Luogo</Label><Input value={form.luogo} onChange={(e) => setForm({ ...form, luogo: e.target.value })} placeholder="Es: Pista del Resega" /></div>
+            <div><Label>{t("campi_eventi.gala.place_label")}</Label><Input value={form.luogo} onChange={(e) => setForm({ ...form, luogo: e.target.value })} placeholder={t("campi_eventi.gala.place_placeholder")} /></div>
             <div>
-              <Label>Stagione di riferimento</Label>
+              <Label>{t("campi_eventi.gala.season_label")}</Label>
               <Select value={form.stagione_id} onValueChange={(v) => setForm({ ...form, stagione_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Nessuna" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t("campi_eventi.gala.season_placeholder")} /></SelectTrigger>
                 <SelectContent>
                   {stagioni.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
-            <div><Label>Descrizione</Label><Textarea value={form.descrizione} onChange={(e) => setForm({ ...form, descrizione: e.target.value })} placeholder="Programma, dress code, info aggiuntive…" /></div>
+            <div><Label>{t("campi_eventi.gala.description_label")}</Label><Textarea value={form.descrizione} onChange={(e) => setForm({ ...form, descrizione: e.target.value })} placeholder={t("campi_eventi.gala.description_placeholder")} /></div>
 
             <ComunicazioneFormSection
               state={com_state}
@@ -814,12 +820,12 @@ const GalaSpettacoliSection: React.FC = () => {
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>{t("campi_eventi.gala.cancel")}</Button>
             <Button
               onClick={() => create.mutate()}
               disabled={create.isPending || !form.titolo.trim() || !form.data || (form.tipo_evento === "altro" && !form.tipo_evento_altro.trim())}
             >
-              {com_state.invia ? <><Send className="w-4 h-4 mr-1" /> Crea e comunica</> : "Crea"}
+              {com_state.invia ? <><Send className="w-4 h-4 mr-1" /> {t("campi_eventi.gala.create_and_communicate")}</> : t("campi_eventi.gala.create")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -277,5 +277,62 @@
       "reactivated": "Utente riattivato",
       "password_copied": "Password copiata"
     }
+  },
+  "nuova_stagione": {
+    "page_title": "Nuova Stagione",
+    "step_indicator": "Passo {{current}} di {{total}} — {{label}}",
+    "steps": {
+      "nuova_stagione": "Nuova Stagione",
+      "disponibilita_ghiaccio": "Disponibilità Ghiaccio",
+      "istruttori": "Istruttori",
+      "catalogo_corsi": "Catalogo Corsi",
+      "attiva_stagione": "Attiva Stagione"
+    },
+    "step1": {
+      "current_season_title": "Stagione corrente (verrà archiviata)",
+      "current_season_desc": "{{nome}} — dal {{inizio}} al {{fine}}",
+      "no_active_season": "Nessuna stagione attiva trovata.",
+      "name_label": "Nome nuova stagione",
+      "name_placeholder": "es. Stagione 2026-2027",
+      "start_date_label": "Data inizio",
+      "end_date_label": "Data fine"
+    },
+    "step2": {
+      "warning_title": "Azzeramento fasce ghiaccio",
+      "warning_desc": "Le fasce orario ghiaccio verranno azzerate. Potrai configurarle da zero in {{club_config}} dopo aver creato la stagione.",
+      "club_config_label": "Configurazione Club",
+      "ack_label": "Ho capito: le fasce ghiaccio verranno azzerate"
+    },
+    "step3": {
+      "info": "Gli istruttori esistenti restano disponibili. Verifica e aggiorna disponibilità e costi in {{istruttori}}.",
+      "istruttori_label": "Istruttori",
+      "go_to_istruttori": "Vai a Istruttori",
+      "ack_label": "Ho verificato gli istruttori per la nuova stagione"
+    },
+    "step4": {
+      "info": "Dovrai creare i nuovi corsi per la nuova stagione. I corsi della stagione precedente restano archiviati.",
+      "go_to_corsi": "Vai a Corsi",
+      "ack_label": "Ho capito che dovrò creare i corsi della nuova stagione"
+    },
+    "step5": {
+      "summary_title": "Riepilogo nuova stagione",
+      "summary_name": "Nome:",
+      "summary_start": "Inizio:",
+      "summary_end": "Fine:",
+      "summary_note": "Le fasce ghiaccio verranno azzerate. Istruttori e storico corsi restano disponibili.",
+      "confirm_label": "Confermo di voler creare la nuova stagione"
+    },
+    "nav": {
+      "back": "Indietro",
+      "next": "Avanti",
+      "creating": "Creazione...",
+      "create_activate": "Crea e Attiva Nuova Stagione"
+    },
+    "toast": {
+      "success": "Nuova stagione \"{{nome}}\" creata! Configura la disponibilità ghiaccio per iniziare.",
+      "error": "Errore: {{message}}",
+      "error_generic": "operazione fallita"
+    },
+    "date_placeholder": "—"
   }
 }
