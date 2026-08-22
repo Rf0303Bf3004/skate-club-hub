@@ -8,6 +8,8 @@ import { use_griglia_blocchi_giorno, giorno_it_da_data } from "@/hooks/use-grigl
 import { use_risorse_strutture } from "@/hooks/use-risorse-strutture";
 import GrigliaPistaSezione from "@/components/griglia/GrigliaPistaSezione";
 import ProvenienzaLegenda from "@/components/ProvenienzaLegenda";
+import DisponibilitaResiduaPopover from "@/components/griglia/DisponibilitaResiduaPopover";
+import BannerDisponibilitaScaduta from "@/components/common/BannerDisponibilitaScaduta";
 import TableauSchermo from "@/components/griglia/TableauSchermo";
 import StampaRiepilogoIstruttori, {
   type IstruttoreStampa,
@@ -253,12 +255,23 @@ const GrigliaGhiaccioPage: React.FC = () => {
               </Button>
             )}
 
+            <DisponibilitaResiduaPopover
+              data_sel={data_sel}
+              risorse={[...risorse_ghiaccio, ...risorse_palestra].map((r) => ({
+                id: r.id,
+                nome: r.nome,
+                tipo: r.tipo,
+              }))}
+            />
+
             <Button variant="outline" onClick={() => set_tableau_open(true)}>
               <Columns3 className="w-4 h-4 mr-1" /> Stampa tableau poster
             </Button>
           </div>
         </div>
       </div>
+
+      <BannerDisponibilitaScaduta />
 
       <div className="flex items-center gap-2">
         <ToggleGroup

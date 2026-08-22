@@ -19,6 +19,7 @@ import ModalitaGestioneSection from "@/components/setup/ModalitaGestioneSection"
 import RagioniSocialiSection from "@/components/setup/RagioniSocialiSection";
 import FatturaLayoutSection from "@/components/setup/FatturaLayoutSection";
 import RisorseSection from "@/components/setup/RisorseSection";
+import TemplateComunicazioniSection from "@/components/setup/TemplateComunicazioniSection";
 import { use_risorse_strutture } from "@/hooks/use-risorse-strutture";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -186,6 +187,7 @@ const ClubSetupPage: React.FC = () => {
         "reminder_allenamenti_attivo", "reminder_staff_attivo", "reminder_orario_invio", "reminder_anticipo_giorni",
         "reminder_planning_atleti_attivo", "reminder_planning_istruttori_attivo",
         "reminder_planning_orario_invio", "reminder_planning_anticipo_giorni",
+        "disponibilita_valida_fino_al",
       ];
       for (const f of club_fields) {
         if (f in form) club_payload[f] = form[f];
@@ -857,6 +859,17 @@ const ClubSetupPage: React.FC = () => {
 
         <Separator />
 
+        {/* Messaggi predefiniti */}
+        <section className="space-y-4">
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">💬 Messaggi predefiniti</h2>
+          <p className="text-xs text-muted-foreground">
+            Sono i testi pronti proposti nel menù a tendina della "Comunicazione rapida" in Dashboard.
+          </p>
+          <TemplateComunicazioniSection club_id={club?.id || get_current_club_id() || null} />
+        </section>
+
+        <Separator />
+
         {/* Salva dati club */}
         <div className="flex justify-end">
           <Button onClick={handle_save} disabled={saving || Object.keys(form).length === 0}>
@@ -1005,6 +1018,21 @@ const ClubSetupPage: React.FC = () => {
             <Button size="sm" onClick={save_disponibilita} disabled={saving_disp || !risorsa_sel_id}>
               {saving_disp ? "..." : "Salva disponibilità"}
             </Button>
+          </div>
+          <div className="mb-4 max-w-sm">
+            <Label className="text-xs text-muted-foreground">
+              Valida fino al (opzionale, lascia vuoto se la disponibilità non cambia mai)
+            </Label>
+            <Input
+              type="date"
+              className="h-9 mt-1"
+              value={get_val("disponibilita_valida_fino_al", "") || ""}
+              onChange={(e) => set_val("disponibilita_valida_fino_al", e.target.value || null)}
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Superata questa data comparirà un avviso in Dashboard e in Griglia Ghiaccio per rivedere la
+              disponibilità. Si salva con "Salva dati club".
+            </p>
           </div>
           <div className="mb-4 max-w-sm">
             <Label className="text-xs text-muted-foreground">Risorsa</Label>

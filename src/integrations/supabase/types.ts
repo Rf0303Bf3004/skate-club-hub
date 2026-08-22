@@ -820,6 +820,7 @@ export type Database = {
           costo_setup_chf: number
           created_at: string
           descrizione: string | null
+          disponibilita_valida_fino_al: string | null
           email: string | null
           fee_fissa_chf: number
           iban: string | null
@@ -867,6 +868,7 @@ export type Database = {
           costo_setup_chf?: number
           created_at?: string
           descrizione?: string | null
+          disponibilita_valida_fino_al?: string | null
           email?: string | null
           fee_fissa_chf?: number
           iban?: string | null
@@ -914,6 +916,7 @@ export type Database = {
           costo_setup_chf?: number
           created_at?: string
           descrizione?: string | null
+          disponibilita_valida_fino_al?: string | null
           email?: string | null
           fee_fissa_chf?: number
           iban?: string | null
