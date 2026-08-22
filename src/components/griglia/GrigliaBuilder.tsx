@@ -310,6 +310,7 @@ const PoolBox: React.FC<{
                     drag_id={`gruppo:${box_id ?? titolo}:${livello}`}
                     livello={livello}
                     atleta_ids={membri.map((m) => m.id)}
+                    box_id={box_id}
                     colore={colore}
                     aperto={gruppo_aperto}
                     on_toggle={() =>
