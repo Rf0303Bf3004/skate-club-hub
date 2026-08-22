@@ -13,9 +13,6 @@ import { calcola_status_istruttori_per_slot, norm_giorno, time_to_min as tmin } 
 import { SelectLivello } from "@/components/ui/select-livello";
 import { use_livelli, use_disponibilita_ghiaccio } from "@/hooks/use-supabase-data";
 import { useTranslation } from "react-i18next";
-import i18n from "@/i18n";
-
-const tk = (key: string, opts?: any) => i18n.t(`corso_wizard.${key}`, { ns: "corsi", ...(opts ?? {}) }) as string;
 
 const GIORNI_DB = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
 const GIORNO_TO_WEEKDAY: Record<string, number> = {
