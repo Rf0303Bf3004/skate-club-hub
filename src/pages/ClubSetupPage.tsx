@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useI18n } from "@/lib/i18n";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { use_club, use_setup_club, use_stagioni, use_atleti, use_istruttori } from "@/hooks/use-supabase-data";
 import { Input } from "@/components/ui/input";
@@ -75,7 +76,8 @@ function use_catalogo_count() {
 }
 
 const ClubSetupPage: React.FC = () => {
-  const { t } = useI18n();
+  const { t: t_old } = useI18n();
+  const { t } = useTranslation("settings");
   const queryClient = useQueryClient();
   const { data: club, isLoading: loading_club } = use_club();
   const { data: setup } = use_setup_club();
@@ -153,7 +155,7 @@ const ClubSetupPage: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      toast({ title: "Seleziona un file immagine", variant: "destructive" });
+      toast({ title: t("club.toast.seleziona_file_immagine"), variant: "destructive" });
       return;
     }
     set_uploading(true);
@@ -168,9 +170,9 @@ const ClubSetupPage: React.FC = () => {
       const logo_url = url_data.publicUrl;
       set_val("logo_url", logo_url);
       set_logo_preview(logo_url);
-      toast({ title: "✅ Logo caricato correttamente" });
+      toast({ title: t("club.toast.logo_caricato") });
     } catch (err: any) {
-      toast({ title: "Errore upload logo", description: err?.message, variant: "destructive" });
+      toast({ title: t("club.toast.errore_upload_logo"), description: err?.message, variant: "destructive" });
     } finally {
       set_uploading(false);
     }
@@ -244,10 +246,10 @@ const ClubSetupPage: React.FC = () => {
         await queryClient.invalidateQueries({ queryKey: ["stagioni"] });
       }
 
-      toast({ title: "✅ Configurazione salvata" });
+      toast({ title: t("club.toast.configurazione_salvata") });
       set_form({});
     } catch (err: any) {
-      toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
+      toast({ title: t("club.toast.errore_salvataggio"), description: err?.message, variant: "destructive" });
     } finally {
       set_saving(false);
     }
@@ -284,11 +286,11 @@ const ClubSetupPage: React.FC = () => {
         if (error) throw error;
       }
 
-      toast({ title: "✅ Configurazione ghiaccio salvata" });
+      toast({ title: t("club.toast.configurazione_ghiaccio_salvata") });
       set_ghiaccio_form({});
       queryClient.invalidateQueries({ queryKey: ["configurazione_ghiaccio"] });
     } catch (err: any) {
-      toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
+      toast({ title: t("club.toast.errore_salvataggio"), description: err?.message, variant: "destructive" });
     } finally {
       set_saving_ghiaccio(false);
     }
@@ -317,14 +319,14 @@ const ClubSetupPage: React.FC = () => {
         const { error } = await supabase.from("configurazione_ghiaccio").insert(payload);
         if (error) throw error;
       }
-      toast({ title: "✅ Configurazione lezioni private salvata" });
+      toast({ title: t("club.toast.configurazione_private_salvata") });
       set_ghiaccio_form((prev) => {
         const { max_atleti_lezione_privata, modalita_costo_privata, ...rest } = prev;
         return rest;
       });
       queryClient.invalidateQueries({ queryKey: ["configurazione_ghiaccio"] });
     } catch (err: any) {
-      toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
+      toast({ title: t("club.toast.errore_salvataggio"), description: err?.message, variant: "destructive" });
     } finally {
       set_saving_private(false);
     }
@@ -385,7 +387,7 @@ const ClubSetupPage: React.FC = () => {
 
   const save_disponibilita = async () => {
     if (!risorsa_sel_id) {
-      toast({ title: "Seleziona una risorsa", variant: "destructive" });
+      toast({ title: t("club.toast.seleziona_risorsa"), variant: "destructive" });
       return;
     }
     set_saving_disp(true);
@@ -418,10 +420,10 @@ const ClubSetupPage: React.FC = () => {
         if (ins_err) throw ins_err;
       }
 
-      toast({ title: `✅ Disponibilità salvata per ${risorsa_sel?.nome ?? "la risorsa"}` });
+      toast({ title: t("club.toast.disponibilita_salvata_per", { risorsa: risorsa_sel?.nome ?? t("club.fields.risorsa") }) });
       queryClient.invalidateQueries({ queryKey: ["disponibilita_ghiaccio"] });
     } catch (err: any) {
-      toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
+      toast({ title: t("club.toast.errore_salvataggio"), description: err?.message, variant: "destructive" });
     } finally {
       set_saving_disp(false);
     }
@@ -455,7 +457,7 @@ const ClubSetupPage: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <h1 className="text-xl font-bold tracking-tight text-foreground">{t("setup_club")}</h1>
+      <h1 className="text-xl font-bold tracking-tight text-foreground">{t_old("setup_club")}</h1>
 
       {/* Statistiche live */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -537,12 +539,12 @@ const ClubSetupPage: React.FC = () => {
 
         {/* Dati club */}
         <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("dati_club")}</h2>
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t_old("dati_club")}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label={t("nome")} icon={<Hash className="w-3.5 h-3.5" />}>
+            <Field label={t_old("nome")} icon={<Hash className="w-3.5 h-3.5" />}>
               <Input value={get_val("nome")} onChange={(e) => set_val("nome", e.target.value)} />
             </Field>
-            <Field label={t("paese")} icon={<Globe className="w-3.5 h-3.5" />}>
+            <Field label={t_old("paese")} icon={<Globe className="w-3.5 h-3.5" />}>
               <Input value={get_val("paese")} onChange={(e) => set_val("paese", e.target.value)} placeholder="CH" />
             </Field>
           </div>
@@ -558,10 +560,10 @@ const ClubSetupPage: React.FC = () => {
             </Field>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label={t("email")} icon={<Mail className="w-3.5 h-3.5" />}>
+            <Field label={t_old("email")} icon={<Mail className="w-3.5 h-3.5" />}>
               <Input type="email" value={get_val("email")} onChange={(e) => set_val("email", e.target.value)} />
             </Field>
-            <Field label={t("telefono")} icon={<Phone className="w-3.5 h-3.5" />}>
+            <Field label={t_old("telefono")} icon={<Phone className="w-3.5 h-3.5" />}>
               <Input value={get_val("telefono")} onChange={(e) => set_val("telefono", e.target.value)} />
             </Field>
             <Field label="Sito web" icon={<Globe className="w-3.5 h-3.5" />}>

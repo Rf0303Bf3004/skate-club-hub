@@ -448,24 +448,24 @@ const UtentiPage: React.FC = () => {
       <Dialog open={dialog_open} onOpenChange={set_dialog_open}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{edit_user ? "Modifica utente" : "Nuovo utente"}</DialogTitle>
+            <DialogTitle>{edit_user ? t("users.modal.edit_title") : t("users.modal.create_title")}</DialogTitle>
             <DialogDescription>
-              {edit_user ? "Aggiorna i dati dell'utente." : "Crea un nuovo utente del club."}
+              {edit_user ? t("users.modal.edit_description") : t("users.modal.create_description")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Nome *</Label>
+                <Label>{t("users.modal.field_nome")}</Label>
                 <Input value={form.nome} onChange={(e) => set_form({ ...form, nome: e.target.value })} />
               </div>
               <div>
-                <Label>Cognome *</Label>
+                <Label>{t("users.modal.field_cognome")}</Label>
                 <Input value={form.cognome} onChange={(e) => set_form({ ...form, cognome: e.target.value })} />
               </div>
             </div>
             <div>
-              <Label>Email *</Label>
+              <Label>{t("users.modal.field_email")}</Label>
               <Input
                 type="email"
                 value={form.email}
@@ -474,15 +474,15 @@ const UtentiPage: React.FC = () => {
               />
             </div>
             <div>
-              <Label>Telefono</Label>
+              <Label>{t("users.modal.field_telefono")}</Label>
               <Input value={form.telefono} onChange={(e) => set_form({ ...form, telefono: e.target.value })} />
             </div>
             <div>
-              <Label>{edit_user ? "Nuova password (lascia vuoto per non cambiare)" : "Password iniziale *"}</Label>
+              <Label>{edit_user ? t("users.modal.field_password_edit") : t("users.modal.field_password_create")}</Label>
               <Input value={form.password} onChange={(e) => set_form({ ...form, password: e.target.value })} />
             </div>
             <div>
-              <Label>Ruolo *</Label>
+              <Label>{t("users.modal.field_ruolo")}</Label>
               <Select value={form.ruolo} onValueChange={(v) => set_form({ ...form, ruolo: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -494,7 +494,7 @@ const UtentiPage: React.FC = () => {
             </div>
             {edit_user && (
               <div className="flex items-center justify-between rounded-md border border-border p-3">
-                <Label htmlFor="attivo-switch" className="text-sm">Attivo</Label>
+                <Label htmlFor="attivo-switch" className="text-sm">{t("users.modal.field_attivo")}</Label>
                 <Switch
                   id="attivo-switch"
                   checked={form.attivo}
@@ -504,9 +504,9 @@ const UtentiPage: React.FC = () => {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => set_dialog_open(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => set_dialog_open(false)}>{t("users.modal.cancel")}</Button>
             <Button onClick={submit} disabled={submitting}>
-              {submitting ? "Salvataggio..." : (edit_user ? "Salva modifiche" : "Crea utente")}
+              {submitting ? t("users.modal.saving") : (edit_user ? t("users.modal.save_edit") : t("users.modal.save_create"))}
             </Button>
           </DialogFooter>
         </DialogContent>
