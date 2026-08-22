@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.genera_planning_giornaliero() FROM PUBLIC, anon, authenticated;
