@@ -267,3 +267,35 @@ File completati e migrati a `useTranslation(<ns>)` (solo JSON IT aggiornato; FR/
 - Nessuna chiave con valore array/oggetto introdotta in questo turno: tutte sincronizzabili in `traduzioni_ui`.
 - Le costanti tecniche (`GIORNI`, `TIPI_CONTRATTO`, enum DB, discipline) NON sono state tradotte.
 - Nessuna modifica ai JSON `src/locales/{fr,de,en}/`.
+
+## Step 1.5e — Estrazione 5 pagine Setup (Seasons, ClubSetup, RuoliPermessi, Utenti, Onboarding)
+
+File completati e migrati a `useTranslation(<ns>)` (solo JSON IT aggiornato; FR/DE/EN da sincronizzare in `traduzioni_ui`):
+
+- [x] `src/pages/SeasonsPage.tsx` → `settings.seasons.*`
+- [x] `src/pages/ClubSetupPage.tsx` → `settings.club.*`
+- [x] `src/pages/RuoliPermessiPage.tsx` → `settings.roles.*`
+- [x] `src/pages/UtentiPage.tsx` → `settings.users.*`
+- [x] `src/pages/OnboardingPage.tsx` → `onboarding.wizard.*`
+
+### Chiavi nuove per namespace
+
+#### `settings` (src/locales/it/settings.json)
+
+**`seasons.*`**: type_regolare, type_pre_season, type_post_season, type_campo, field_nome, field_tipo, field_data_inizio, field_data_fine, active_checkbox_label, edit_title, new_title, name_placeholder, required_title, required_desc, invalid_dates_title, invalid_dates_desc, updated_toast, created_toast, save_error_title, deleted_toast, delete_error_title, cancel, save, saving, delete_season, delete_confirm, empty_state, status_active, status_inactive
+
+**`club.*`**: `toast.*` (9), `stats.*` (4), `tabs.*` (4), `sezioni.*` (15), `fields.*` (~33), `testi.*` (12), `stato.*` (2), `opzioni.*` (9), `azioni.*` (11)
+
+**`roles.*`**: role_presidente, role_segreteria, role_dt, role_istruttore, role_aiuto_monitore, permesso_ore_lavorate, permesso_costi_istruttori, page_title, page_subtitle, save_permissions, saving, column_section, group_main_menu, group_setup, group_sensitive, toast_saved_title, toast_saved_description, toast_save_error_title, note_label, note_text
+
+**`users.*`**: title, subtitle, new_user, search_placeholder, all_roles, only_active, none_found, `table.*` (8), `status.*` (2), `tooltip.*` (4), `relative_time.*` (4), `role.*` (8), `modal.*` (15), `confirm.*` (9), `password_dialog.*` (3), `toast.*` (9)
+
+#### `onboarding` (src/locales/it/onboarding.json)
+
+**`wizard.*`**: `days.*` (7), logo_max_size, logo_uploaded, availability_error, slots_configured, onboarding_completed, `done.*` (9), welcome_title, step_of, `step1.*` (15), `step2.*` (4), `step3.*` (6), back_button, next_button, complete_button
+
+### Note
+- Nessuna chiave con valore array/oggetto introdotta: tutte sincronizzabili in `traduzioni_ui`.
+- Le label di ruoli/permessi in `RuoliPermessiPage` (array a livello di modulo) sono state convertite in `label_key` risolte con `t()` nel render.
+- Enum DB, codici tecnici e contenuti generati dall'utente non sono stati tradotti.
+- Nessuna modifica ai JSON `src/locales/{fr,de,en}/`.

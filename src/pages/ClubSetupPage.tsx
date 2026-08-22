@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useI18n } from "@/lib/i18n";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { use_club, use_setup_club, use_stagioni, use_atleti, use_istruttori } from "@/hooks/use-supabase-data";
 import { Input } from "@/components/ui/input";
@@ -75,7 +76,8 @@ function use_catalogo_count() {
 }
 
 const ClubSetupPage: React.FC = () => {
-  const { t } = useI18n();
+  const { t: t_old } = useI18n();
+  const { t } = useTranslation("settings");
   const queryClient = useQueryClient();
   const { data: club, isLoading: loading_club } = use_club();
   const { data: setup } = use_setup_club();
@@ -153,7 +155,7 @@ const ClubSetupPage: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      toast({ title: "Seleziona un file immagine", variant: "destructive" });
+      toast({ title: t("club.toast.seleziona_file_immagine"), variant: "destructive" });
       return;
     }
     set_uploading(true);
@@ -168,9 +170,9 @@ const ClubSetupPage: React.FC = () => {
       const logo_url = url_data.publicUrl;
       set_val("logo_url", logo_url);
       set_logo_preview(logo_url);
-      toast({ title: "✅ Logo caricato correttamente" });
+      toast({ title: t("club.toast.logo_caricato") });
     } catch (err: any) {
-      toast({ title: "Errore upload logo", description: err?.message, variant: "destructive" });
+      toast({ title: t("club.toast.errore_upload_logo"), description: err?.message, variant: "destructive" });
     } finally {
       set_uploading(false);
     }
@@ -244,10 +246,10 @@ const ClubSetupPage: React.FC = () => {
         await queryClient.invalidateQueries({ queryKey: ["stagioni"] });
       }
 
-      toast({ title: "✅ Configurazione salvata" });
+      toast({ title: t("club.toast.configurazione_salvata") });
       set_form({});
     } catch (err: any) {
-      toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
+      toast({ title: t("club.toast.errore_salvataggio"), description: err?.message, variant: "destructive" });
     } finally {
       set_saving(false);
     }
@@ -284,11 +286,11 @@ const ClubSetupPage: React.FC = () => {
         if (error) throw error;
       }
 
-      toast({ title: "✅ Configurazione ghiaccio salvata" });
+      toast({ title: t("club.toast.configurazione_ghiaccio_salvata") });
       set_ghiaccio_form({});
       queryClient.invalidateQueries({ queryKey: ["configurazione_ghiaccio"] });
     } catch (err: any) {
-      toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
+      toast({ title: t("club.toast.errore_salvataggio"), description: err?.message, variant: "destructive" });
     } finally {
       set_saving_ghiaccio(false);
     }
@@ -317,14 +319,14 @@ const ClubSetupPage: React.FC = () => {
         const { error } = await supabase.from("configurazione_ghiaccio").insert(payload);
         if (error) throw error;
       }
-      toast({ title: "✅ Configurazione lezioni private salvata" });
+      toast({ title: t("club.toast.configurazione_private_salvata") });
       set_ghiaccio_form((prev) => {
         const { max_atleti_lezione_privata, modalita_costo_privata, ...rest } = prev;
         return rest;
       });
       queryClient.invalidateQueries({ queryKey: ["configurazione_ghiaccio"] });
     } catch (err: any) {
-      toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
+      toast({ title: t("club.toast.errore_salvataggio"), description: err?.message, variant: "destructive" });
     } finally {
       set_saving_private(false);
     }
@@ -385,7 +387,7 @@ const ClubSetupPage: React.FC = () => {
 
   const save_disponibilita = async () => {
     if (!risorsa_sel_id) {
-      toast({ title: "Seleziona una risorsa", variant: "destructive" });
+      toast({ title: t("club.toast.seleziona_risorsa"), variant: "destructive" });
       return;
     }
     set_saving_disp(true);
@@ -418,10 +420,10 @@ const ClubSetupPage: React.FC = () => {
         if (ins_err) throw ins_err;
       }
 
-      toast({ title: `✅ Disponibilità salvata per ${risorsa_sel?.nome ?? "la risorsa"}` });
+      toast({ title: t("club.toast.disponibilita_salvata_per", { risorsa: risorsa_sel?.nome ?? t("club.fields.risorsa") }) });
       queryClient.invalidateQueries({ queryKey: ["disponibilita_ghiaccio"] });
     } catch (err: any) {
-      toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
+      toast({ title: t("club.toast.errore_salvataggio"), description: err?.message, variant: "destructive" });
     } finally {
       set_saving_disp(false);
     }
@@ -455,15 +457,15 @@ const ClubSetupPage: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <h1 className="text-xl font-bold tracking-tight text-foreground">{t("setup_club")}</h1>
+      <h1 className="text-xl font-bold tracking-tight text-foreground">{t_old("setup_club")}</h1>
 
       {/* Statistiche live */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { icon: Users, label: "Atleti", value: atleti.length, color: "text-primary" },
-          { icon: UserCheck, label: "Istruttori", value: istruttori.filter((i: any) => i.attivo).length, color: "text-success" },
-          { icon: Calendar, label: "Stagione attiva", value: stagione_attiva?.nome || "—", color: "text-orange-500" },
-          { icon: Hash, label: "Club ID", value: get_current_club_id().slice(0, 8) + "...", color: "text-muted-foreground" },
+          { icon: Users, label: t("club.stats.atleti"), value: atleti.length, color: "text-primary" },
+          { icon: UserCheck, label: t("club.stats.istruttori"), value: istruttori.filter((i: any) => i.attivo).length, color: "text-success" },
+          { icon: Calendar, label: t("club.stats.stagione_attiva"), value: stagione_attiva?.nome || "—", color: "text-orange-500" },
+          { icon: Hash, label: t("club.stats.club_id"), value: get_current_club_id().slice(0, 8) + "...", color: "text-muted-foreground" },
         ].map((stat, i) => (
           <div key={i} className="bg-card rounded-xl shadow-card p-4 flex items-center gap-3">
             <div className={`w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center ${stat.color}`}>
@@ -479,19 +481,19 @@ const ClubSetupPage: React.FC = () => {
 
       <Tabs defaultValue="configurazione" className="w-full">
         <TabsList className="mb-4">
-          <TabsTrigger value="configurazione">{tab_label("configurazione", "Configurazione")}</TabsTrigger>
-          <TabsTrigger value="ghiaccio">{tab_label("ghiaccio", "Ghiaccio e Planning")}</TabsTrigger>
-          <TabsTrigger value="catalogo">{tab_label("catalogo", "Catalogo Offerta")}</TabsTrigger>
-          <TabsTrigger value="fatturazione">{tab_label("fatturazione", "Fatturazione")}</TabsTrigger>
+          <TabsTrigger value="configurazione">{tab_label("configurazione", t("club.tabs.configurazione"))}</TabsTrigger>
+          <TabsTrigger value="ghiaccio">{tab_label("ghiaccio", t("club.tabs.ghiaccio"))}</TabsTrigger>
+          <TabsTrigger value="catalogo">{tab_label("catalogo", t("club.tabs.catalogo"))}</TabsTrigger>
+          <TabsTrigger value="fatturazione">{tab_label("fatturazione", t("club.tabs.fatturazione"))}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="configurazione">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { icon: Users, label: "Atleti", value: atleti.length, color: "text-primary" },
-          { icon: UserCheck, label: "Istruttori", value: istruttori.filter((i: any) => i.attivo).length, color: "text-success" },
-          { icon: Calendar, label: "Stagione attiva", value: stagione_attiva?.nome || "—", color: "text-orange-500" },
-          { icon: Hash, label: "Club ID", value: get_current_club_id().slice(0, 8) + "...", color: "text-muted-foreground" },
+          { icon: Users, label: t("club.stats.atleti"), value: atleti.length, color: "text-primary" },
+          { icon: UserCheck, label: t("club.stats.istruttori"), value: istruttori.filter((i: any) => i.attivo).length, color: "text-success" },
+          { icon: Calendar, label: t("club.stats.stagione_attiva"), value: stagione_attiva?.nome || "—", color: "text-orange-500" },
+          { icon: Hash, label: t("club.stats.club_id"), value: get_current_club_id().slice(0, 8) + "...", color: "text-muted-foreground" },
         ].map((stat, i) => (
           <div key={i} className="bg-card rounded-xl shadow-card p-4 flex items-center gap-3">
             <div className={`w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center ${stat.color}`}>
@@ -508,7 +510,7 @@ const ClubSetupPage: React.FC = () => {
       <div className="bg-card rounded-xl shadow-card p-6 space-y-8 max-w-2xl">
         {/* Logo */}
         <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Logo Club</h2>
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.logo")}</h2>
           <div className="flex items-center gap-6">
             <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-border flex items-center justify-center overflow-hidden bg-muted/30 flex-shrink-0">
               {current_logo ? (
@@ -516,17 +518,17 @@ const ClubSetupPage: React.FC = () => {
               ) : (
                 <div className="text-center">
                   <Upload className="w-6 h-6 text-muted-foreground mx-auto mb-1" />
-                  <p className="text-[10px] text-muted-foreground">Logo</p>
+                  <p className="text-[10px] text-muted-foreground">{t("club.fields.logo_placeholder")}</p>
                 </div>
               )}
             </div>
             <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Formato consigliato: PNG o SVG, sfondo trasparente</p>
+              <p className="text-sm text-muted-foreground">{t("club.fields.logo_formato")}</p>
               <label className="cursor-pointer">
                 <input type="file" accept="image/*" onChange={handle_logo_upload} className="hidden" />
                 <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm font-medium transition-colors ${uploading ? "opacity-50 cursor-not-allowed" : "hover:bg-muted/50"}`}>
                   <Upload className="w-4 h-4" />
-                  {uploading ? "Caricamento..." : "Carica logo"}
+                  {uploading ? t("club.azioni.caricamento") : t("club.azioni.carica_logo")}
                 </span>
               </label>
             </div>
@@ -537,37 +539,37 @@ const ClubSetupPage: React.FC = () => {
 
         {/* Dati club */}
         <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("dati_club")}</h2>
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t_old("dati_club")}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label={t("nome")} icon={<Hash className="w-3.5 h-3.5" />}>
+            <Field label={t_old("nome")} icon={<Hash className="w-3.5 h-3.5" />}>
               <Input value={get_val("nome")} onChange={(e) => set_val("nome", e.target.value)} />
             </Field>
-            <Field label={t("paese")} icon={<Globe className="w-3.5 h-3.5" />}>
+            <Field label={t_old("paese")} icon={<Globe className="w-3.5 h-3.5" />}>
               <Input value={get_val("paese")} onChange={(e) => set_val("paese", e.target.value)} placeholder="CH" />
             </Field>
           </div>
           <div className="grid gap-4" style={{ gridTemplateColumns: "60% 15% 25%" }}>
-            <Field label="Via / Strada *" icon={<MapPin className="w-3.5 h-3.5" />}>
+            <Field label={t("club.fields.via")} icon={<MapPin className="w-3.5 h-3.5" />}>
               <Input required value={get_val("indirizzo")} onChange={(e) => set_val("indirizzo", e.target.value)} placeholder="Via del Ghiaccio 7" />
             </Field>
-            <Field label="NAP *" icon={<MapPin className="w-3.5 h-3.5" />}>
+            <Field label={t("club.fields.nap")} icon={<MapPin className="w-3.5 h-3.5" />}>
               <Input required maxLength={10} value={get_val("cap")} onChange={(e) => set_val("cap", e.target.value)} placeholder="6900" />
             </Field>
-            <Field label="Città *" icon={<MapPin className="w-3.5 h-3.5" />}>
+            <Field label={t("club.fields.citta")} icon={<MapPin className="w-3.5 h-3.5" />}>
               <Input required value={get_val("citta")} onChange={(e) => set_val("citta", e.target.value)} placeholder="Lugano" />
             </Field>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label={t("email")} icon={<Mail className="w-3.5 h-3.5" />}>
+            <Field label={t_old("email")} icon={<Mail className="w-3.5 h-3.5" />}>
               <Input type="email" value={get_val("email")} onChange={(e) => set_val("email", e.target.value)} />
             </Field>
-            <Field label={t("telefono")} icon={<Phone className="w-3.5 h-3.5" />}>
+            <Field label={t_old("telefono")} icon={<Phone className="w-3.5 h-3.5" />}>
               <Input value={get_val("telefono")} onChange={(e) => set_val("telefono", e.target.value)} />
             </Field>
-            <Field label="Sito web" icon={<Globe className="w-3.5 h-3.5" />}>
+            <Field label={t("club.fields.sito_web")} icon={<Globe className="w-3.5 h-3.5" />}>
               <Input value={get_val("sito_web")} onChange={(e) => set_val("sito_web", e.target.value)} placeholder="https://www.clubname.ch" />
             </Field>
-            <Field label="Tessera federale" icon={<Hash className="w-3.5 h-3.5" />}>
+            <Field label={t("club.fields.tessera_federale")} icon={<Hash className="w-3.5 h-3.5" />}>
               <Input value={get_val("numero_tessera_federale")} onChange={(e) => set_val("numero_tessera_federale", e.target.value)} />
             </Field>
           </div>
@@ -577,7 +579,7 @@ const ClubSetupPage: React.FC = () => {
 
         {/* Colore primario */}
         <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Colore primario</h2>
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.colore_primario")}</h2>
           <div className="flex items-center gap-4">
             <input
               type="color"
@@ -593,13 +595,13 @@ const ClubSetupPage: React.FC = () => {
 
         {/* Descrizione */}
         <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Descrizione</h2>
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.descrizione")}</h2>
           <textarea
             value={get_val("descrizione")}
             onChange={(e) => set_val("descrizione", e.target.value)}
             rows={3}
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-            placeholder="Descrizione del club..."
+            placeholder={t("club.fields.descrizione_placeholder")}
           />
         </section>
 
@@ -608,17 +610,17 @@ const ClubSetupPage: React.FC = () => {
         {/* Clausole aggiuntive al contratto di adesione */}
         <section className="space-y-4">
           <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">
-            Clausole aggiuntive al contratto di adesione
+            {t("club.sezioni.clausole_contratto")}
           </h2>
           <textarea
             value={get_val("clausole_contratto")}
             onChange={(e) => set_val("clausole_contratto", e.target.value)}
             rows={5}
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-            placeholder="Testo libero mostrato come articolo 12 del contratto di adesione (lascia vuoto per non mostrarlo)..."
+            placeholder={t("club.fields.clausole_placeholder")}
           />
           <p className="text-xs text-muted-foreground">
-            Appare come Art. 12 nella pagina pubblica di iscrizione e nella scheda stampabile. Se vuoto, l'articolo non viene mostrato.
+            {t("club.testi.clausole_info")}
           </p>
         </section>
 
@@ -626,23 +628,23 @@ const ClubSetupPage: React.FC = () => {
 
         {/* Date stagione */}
         <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">📅 Stagione</h2>
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.stagione")}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Data inizio stagione" icon={<Calendar className="w-3.5 h-3.5" />}>
+            <Field label={t("club.fields.data_inizio_stagione")} icon={<Calendar className="w-3.5 h-3.5" />}>
               <Input
                 type="date"
                 value={get_val("data_inizio_stagione", "")}
                 onChange={(e) => set_val("data_inizio_stagione", e.target.value || null)}
               />
             </Field>
-            <Field label="Data fine stagione" icon={<Calendar className="w-3.5 h-3.5" />}>
+            <Field label={t("club.fields.data_fine_stagione")} icon={<Calendar className="w-3.5 h-3.5" />}>
               <Input
                 type="date"
                 value={get_val("data_fine_stagione", "")}
                 onChange={(e) => set_val("data_fine_stagione", e.target.value || null)}
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Un banner apparirà in Dashboard quando mancano 30 giorni o meno
+                {t("club.testi.banner_scadenza_stagione")}
               </p>
             </Field>
           </div>
@@ -652,9 +654,9 @@ const ClubSetupPage: React.FC = () => {
 
         {/* Dati bancari */}
         <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">💳 Dati bancari per pagamenti</h2>
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.dati_bancari")}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="IBAN" icon={<Hash className="w-3.5 h-3.5" />}>
+            <Field label={t("club.fields.iban")} icon={<Hash className="w-3.5 h-3.5" />}>
               <Input
                 value={get_val("iban")}
                 onChange={(e) => {
@@ -667,18 +669,18 @@ const ClubSetupPage: React.FC = () => {
               {(() => {
                 const iban = get_val("iban", "").replace(/\s/g, "");
                 if (iban && (!iban.startsWith("CH") || iban.length !== 21)) {
-                  return <p className="text-xs text-destructive mt-1">IBAN svizzero: inizia con CH, 21 caratteri</p>;
+                  return <p className="text-xs text-destructive mt-1">{t("club.testi.iban_invalido")}</p>;
                 }
                 return null;
               })()}
             </Field>
-            <Field label="Intestatario conto" icon={<Building2 className="w-3.5 h-3.5" />}>
+            <Field label={t("club.fields.intestatario_conto")} icon={<Building2 className="w-3.5 h-3.5" />}>
               <Input value={get_val("intestatario_conto")} onChange={(e) => set_val("intestatario_conto", e.target.value)} placeholder="Club Pattinaggio Ascona" />
             </Field>
-            <Field label="Banca" icon={<Building2 className="w-3.5 h-3.5" />}>
+            <Field label={t("club.fields.banca")} icon={<Building2 className="w-3.5 h-3.5" />}>
               <Input value={get_val("banca")} onChange={(e) => set_val("banca", e.target.value)} placeholder="UBS, Raiffeisen, PostFinance..." />
             </Field>
-            <Field label="TWINT Paylink" icon={<Globe className="w-3.5 h-3.5" />}>
+            <Field label={t("club.fields.twint_paylink")} icon={<Globe className="w-3.5 h-3.5" />}>
               <Input value={get_val("twint_paylink")} onChange={(e) => set_val("twint_paylink", e.target.value)} placeholder="https://pay.raisenow.io/xxxxx" />
             </Field>
           </div>
@@ -688,9 +690,9 @@ const ClubSetupPage: React.FC = () => {
 
         {/* Medagliere club — punti per posizione */}
         <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">🏆 Medagliere club — Punteggio per posizione</h2>
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.medagliere")}</h2>
           <p className="text-xs text-muted-foreground">
-            Configura quanti punti vale ogni posizione finale nelle gare. I punti vengono sommati nel medagliere stagionale.
+            {t("club.testi.medagliere_info")}
           </p>
           {(() => {
             const default_punti: Record<string, number> = { "1": 10, "2": 7, "3": 5, "4": 3, "5": 2, "6": 1 };
@@ -731,7 +733,7 @@ const ClubSetupPage: React.FC = () => {
                   ))}
                 </div>
                 <Button variant="outline" size="sm" onClick={add_pos} className="gap-1">
-                  <Plus className="w-3 h-3" /> Aggiungi posizione
+                  <Plus className="w-3 h-3" /> {t("club.azioni.aggiungi_posizione")}
                 </Button>
               </div>
             );
@@ -742,34 +744,34 @@ const ClubSetupPage: React.FC = () => {
 
         {/* Reminder automatici */}
         <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">🔔 Reminder automatici</h2>
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.reminder")}</h2>
           <p className="text-xs text-muted-foreground">
-            Invio giornaliero automatico: gli atleti ricevono il reminder allenamento, lo staff riceve il turno. Possono confermare o segnalare assenza.
+            {t("club.testi.reminder_info")}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Reminder allenamenti atleta">
+            <Field label={t("club.fields.reminder_allenamenti")}>
               <div className="flex items-center gap-2">
                 <Switch
                   checked={get_val("reminder_allenamenti_attivo", club?.reminder_allenamenti_attivo ?? true)}
                   onCheckedChange={(v) => set_val("reminder_allenamenti_attivo", v)}
                 />
                 <span className="text-xs text-muted-foreground">
-                  {get_val("reminder_allenamenti_attivo", club?.reminder_allenamenti_attivo ?? true) ? "Attivo" : "Disattivo"}
+                  {get_val("reminder_allenamenti_attivo", club?.reminder_allenamenti_attivo ?? true) ? t("club.stato.attivo") : t("club.stato.disattivo")}
                 </span>
               </div>
             </Field>
-            <Field label="Reminder turno staff">
+            <Field label={t("club.fields.reminder_staff")}>
               <div className="flex items-center gap-2">
                 <Switch
                   checked={get_val("reminder_staff_attivo", club?.reminder_staff_attivo ?? true)}
                   onCheckedChange={(v) => set_val("reminder_staff_attivo", v)}
                 />
                 <span className="text-xs text-muted-foreground">
-                  {get_val("reminder_staff_attivo", club?.reminder_staff_attivo ?? true) ? "Attivo" : "Disattivo"}
+                  {get_val("reminder_staff_attivo", club?.reminder_staff_attivo ?? true) ? t("club.stato.attivo") : t("club.stato.disattivo")}
                 </span>
               </div>
             </Field>
-            <Field label="Orario invio (Europe/Zurich)">
+            <Field label={t("club.fields.orario_invio")}>
               <select
                 className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
                 value={String(get_val("reminder_orario_invio", club?.reminder_orario_invio ?? 18))}
@@ -780,47 +782,47 @@ const ClubSetupPage: React.FC = () => {
                 ))}
               </select>
             </Field>
-            <Field label="Anticipo">
+            <Field label={t("club.fields.anticipo")}>
               <select
                 className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
                 value={String(get_val("reminder_anticipo_giorni", club?.reminder_anticipo_giorni ?? 1))}
                 onChange={(e) => set_val("reminder_anticipo_giorni", Number(e.target.value))}
               >
-                <option value="1">1 giorno prima</option>
-                <option value="2">2 giorni prima</option>
+                <option value="1">{t("club.opzioni.un_giorno_prima")}</option>
+                <option value="2">{t("club.opzioni.due_giorni_prima")}</option>
               </select>
             </Field>
           </div>
 
           <div className="pt-2 space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">📅 Planning giornaliero (Griglia Ghiaccio)</h3>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t("club.sezioni.planning_giornaliero")}</h3>
             <p className="text-xs text-muted-foreground">
-              Un unico messaggio con tutto il programma della giornata, per chi ha sessioni sulla griglia ghiaccio.
+              {t("club.testi.planning_giornaliero_info")}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field label="Planning giornaliero — atleti">
+              <Field label={t("club.fields.planning_atleti")}>
                 <div className="flex items-center gap-2">
                   <Switch
                     checked={get_val("reminder_planning_atleti_attivo", (club as any)?.reminder_planning_atleti_attivo ?? false)}
                     onCheckedChange={(v) => set_val("reminder_planning_atleti_attivo", v)}
                   />
                   <span className="text-xs text-muted-foreground">
-                    {get_val("reminder_planning_atleti_attivo", (club as any)?.reminder_planning_atleti_attivo ?? false) ? "Attivo" : "Disattivo"}
+                    {get_val("reminder_planning_atleti_attivo", (club as any)?.reminder_planning_atleti_attivo ?? false) ? t("club.stato.attivo") : t("club.stato.disattivo")}
                   </span>
                 </div>
               </Field>
-              <Field label="Planning giornaliero — istruttori">
+              <Field label={t("club.fields.planning_istruttori")}>
                 <div className="flex items-center gap-2">
                   <Switch
                     checked={get_val("reminder_planning_istruttori_attivo", (club as any)?.reminder_planning_istruttori_attivo ?? false)}
                     onCheckedChange={(v) => set_val("reminder_planning_istruttori_attivo", v)}
                   />
                   <span className="text-xs text-muted-foreground">
-                    {get_val("reminder_planning_istruttori_attivo", (club as any)?.reminder_planning_istruttori_attivo ?? false) ? "Attivo" : "Disattivo"}
+                    {get_val("reminder_planning_istruttori_attivo", (club as any)?.reminder_planning_istruttori_attivo ?? false) ? t("club.stato.attivo") : t("club.stato.disattivo")}
                   </span>
                 </div>
               </Field>
-              <Field label="Orario invio planning (Europe/Zurich)">
+              <Field label={t("club.fields.orario_invio_planning")}>
                 <select
                   className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
                   value={String(get_val("reminder_planning_orario_invio", (club as any)?.reminder_planning_orario_invio ?? 7))}
@@ -831,15 +833,15 @@ const ClubSetupPage: React.FC = () => {
                   ))}
                 </select>
               </Field>
-              <Field label="Anticipo planning">
+              <Field label={t("club.fields.anticipo_planning")}>
                 <select
                   className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
                   value={String(get_val("reminder_planning_anticipo_giorni", (club as any)?.reminder_planning_anticipo_giorni ?? 0))}
                   onChange={(e) => set_val("reminder_planning_anticipo_giorni", Number(e.target.value))}
                 >
-                  <option value="0">Stesso giorno</option>
-                  <option value="1">1 giorno prima</option>
-                  <option value="2">2 giorni prima</option>
+                  <option value="0">{t("club.opzioni.stesso_giorno")}</option>
+                  <option value="1">{t("club.opzioni.un_giorno_prima")}</option>
+                  <option value="2">{t("club.opzioni.due_giorni_prima")}</option>
                 </select>
               </Field>
             </div>
@@ -850,9 +852,9 @@ const ClubSetupPage: React.FC = () => {
 
         {/* Regole comunicazioni intelligenti */}
         <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">🧠 Comunicazioni intelligenti</h2>
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.comunicazioni_intelligenti")}</h2>
           <p className="text-xs text-muted-foreground">
-            Il sistema monitora pattern (assenze, rifiuti, saturazione) e quando rileva un trigger emette automaticamente comunicazioni.
+            {t("club.testi.comunicazioni_intelligenti_info")}
           </p>
           <RegoleComunicazioniSection club_id={club?.id || get_current_club_id() || null} />
         </section>
@@ -861,9 +863,9 @@ const ClubSetupPage: React.FC = () => {
 
         {/* Messaggi predefiniti */}
         <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">💬 Messaggi predefiniti</h2>
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.messaggi_predefiniti")}</h2>
           <p className="text-xs text-muted-foreground">
-            Sono i testi pronti proposti nel menù a tendina della "Comunicazione rapida" in Dashboard.
+            {t("club.testi.messaggi_predefiniti_info")}
           </p>
           <TemplateComunicazioniSection club_id={club?.id || get_current_club_id() || null} />
         </section>
@@ -873,7 +875,7 @@ const ClubSetupPage: React.FC = () => {
         {/* Salva dati club */}
         <div className="flex justify-end">
           <Button onClick={handle_save} disabled={saving || Object.keys(form).length === 0}>
-            {saving ? "Salvataggio..." : "Salva modifiche"}
+            {saving ? t("club.azioni.salvataggio") : t("club.azioni.salva_modifiche")}
           </Button>
         </div>
 
@@ -883,10 +885,10 @@ const ClubSetupPage: React.FC = () => {
 
         <ModalitaGestioneSection
           area="fatturazione"
-          label="Fatturazione"
+          label={t("club.tabs.fatturazione")}
           opzioni={[
-            { value: "standard", label: "Standard (un solo profilo di fatturazione)" },
-            { value: "multi_ragione_sociale", label: "Ragioni sociali multiple" },
+            { value: "standard", label: t("club.opzioni.fatturazione_standard") },
+            { value: "multi_ragione_sociale", label: t("club.opzioni.fatturazione_multi") },
           ]}
         />
         </div>
@@ -896,26 +898,26 @@ const ClubSetupPage: React.FC = () => {
         <TabsContent value="ghiaccio">
       <div className="bg-card rounded-xl shadow-card p-6 space-y-8 max-w-2xl border-2 border-primary/20">
         <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-          🧊 Ghiaccio e Planning
+          {t("club.sezioni.ghiaccio_planning")}
         </h2>
 
         {/* Config fields */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Ora apertura pista">
+          <Field label={t("club.fields.ora_apertura")}>
             <Input
               type="time"
               value={get_ghiaccio_val("ora_apertura_default", "06:00")}
               onChange={(e) => set_ghiaccio_val("ora_apertura_default", e.target.value)}
             />
           </Field>
-          <Field label="Ora chiusura pista">
+          <Field label={t("club.fields.ora_chiusura")}>
             <Input
               type="time"
               value={get_ghiaccio_val("ora_chiusura_default", "22:30")}
               onChange={(e) => set_ghiaccio_val("ora_chiusura_default", e.target.value)}
             />
           </Field>
-          <Field label="Durata pulizia ghiaccio (min)">
+          <Field label={t("club.fields.durata_pulizia")}>
             <Input
               type="number"
               min={0}
@@ -923,40 +925,40 @@ const ClubSetupPage: React.FC = () => {
               onChange={(e) => set_ghiaccio_val("durata_pulizia_minuti", e.target.value)}
             />
           </Field>
-          <Field label="Max atleti contemporanei (alert, opzionale)">
+          <Field label={t("club.fields.max_atleti_contemporanei")}>
             <Input
               type="number"
               min={1}
-              placeholder="Lascia vuoto per disattivare l'allarme"
+              placeholder={t("club.fields.placeholder_lascia_vuoto_allarme")}
               value={get_ghiaccio_val("max_atleti_contemporanei", config_ghiaccio?.max_atleti_contemporanei ?? "")}
               onChange={(e) => set_ghiaccio_val("max_atleti_contemporanei", e.target.value)}
             />
             {!get_ghiaccio_val("max_atleti_contemporanei", config_ghiaccio?.max_atleti_contemporanei ?? "") && (
-              <p className="text-[11px] text-muted-foreground italic">ℹ Non configurato — gli allarmi correlati sono disattivati. Consigliamo di impostare un valore.</p>
+              <p className="text-[11px] text-muted-foreground italic">{t("club.testi.allarme_non_configurato")}</p>
             )}
           </Field>
-          <Field label="Max atleti per istruttore (alert, opzionale)">
+          <Field label={t("club.fields.max_atleti_per_istruttore")}>
             <Input
               type="number"
               min={1}
-              placeholder="Lascia vuoto per disattivare l'allarme"
+              placeholder={t("club.fields.placeholder_lascia_vuoto_allarme")}
               value={get_ghiaccio_val("max_atleti_per_istruttore", config_ghiaccio?.max_atleti_per_istruttore ?? "")}
               onChange={(e) => set_ghiaccio_val("max_atleti_per_istruttore", e.target.value)}
             />
             {!get_ghiaccio_val("max_atleti_per_istruttore", config_ghiaccio?.max_atleti_per_istruttore ?? "") && (
-              <p className="text-[11px] text-muted-foreground italic">ℹ Non configurato — gli allarmi correlati sono disattivati. Consigliamo di impostare un valore.</p>
+              <p className="text-[11px] text-muted-foreground italic">{t("club.testi.allarme_non_configurato")}</p>
             )}
           </Field>
-          <Field label="Min iscritti attivazione corso (alert, opzionale)">
+          <Field label={t("club.fields.min_iscritti_attivazione")}>
             <Input
               type="number"
               min={0}
-              placeholder="Lascia vuoto per disattivare l'allarme"
+              placeholder={t("club.fields.placeholder_lascia_vuoto_allarme")}
               value={get_ghiaccio_val("min_iscritti_attivazione_corso", (config_ghiaccio as any)?.min_iscritti_attivazione_corso ?? "")}
               onChange={(e) => set_ghiaccio_val("min_iscritti_attivazione_corso", e.target.value)}
             />
             {!get_ghiaccio_val("min_iscritti_attivazione_corso", (config_ghiaccio as any)?.min_iscritti_attivazione_corso ?? "") && (
-              <p className="text-[11px] text-muted-foreground italic">ℹ Non configurato — gli allarmi correlati sono disattivati. Consigliamo di impostare un valore.</p>
+              <p className="text-[11px] text-muted-foreground italic">{t("club.testi.allarme_non_configurato")}</p>
             )}
           </Field>
         </div>
@@ -966,10 +968,10 @@ const ClubSetupPage: React.FC = () => {
         {/* Lezioni Private */}
         <div>
           <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">
-            🎿 Lezioni Private
+            {t("club.sezioni.lezioni_private")}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Max atleti per lezione privata">
+            <Field label={t("club.fields.max_atleti_lezione_privata")}>
               <Input
                 type="number"
                 min={1}
@@ -977,7 +979,7 @@ const ClubSetupPage: React.FC = () => {
                 onChange={(e) => set_ghiaccio_val("max_atleti_lezione_privata", e.target.value)}
               />
             </Field>
-            <Field label="Modalità costo privata">
+            <Field label={t("club.fields.modalita_costo_privata")}>
               <RadioGroup
                 value={get_ghiaccio_val("modalita_costo_privata", (config_ghiaccio as any)?.modalita_costo_privata ?? "tariffa_fissa")}
                 onValueChange={(v) => set_ghiaccio_val("modalita_costo_privata", v)}
@@ -985,25 +987,25 @@ const ClubSetupPage: React.FC = () => {
               >
                 <label className="flex items-center gap-2 text-sm cursor-pointer">
                   <RadioGroupItem value="tariffa_fissa" id="mcp_fissa" />
-                  <span>Tariffa fissa per atleta</span>
+                  <span>{t("club.opzioni.tariffa_fissa")}</span>
                 </label>
                 <label className="flex items-center gap-2 text-sm cursor-pointer">
                   <RadioGroupItem value="diviso_atleti" id="mcp_diviso" />
-                  <span>Diviso tra atleti</span>
+                  <span>{t("club.opzioni.diviso_atleti")}</span>
                 </label>
               </RadioGroup>
             </Field>
           </div>
           <div className="flex justify-end mt-4">
             <Button onClick={handle_save_private} disabled={saving_private}>
-              {saving_private ? "Salvataggio..." : "Salva configurazione private"}
+              {saving_private ? t("club.azioni.salvataggio") : t("club.azioni.salva_config_private")}
             </Button>
           </div>
         </div>
 
         <div className="flex justify-end">
           <Button onClick={handle_save_ghiaccio} disabled={saving_ghiaccio}>
-            {saving_ghiaccio ? "Salvataggio..." : "Salva configurazione ghiaccio"}
+            {saving_ghiaccio ? t("club.azioni.salvataggio") : t("club.azioni.salva_config_ghiaccio")}
           </Button>
         </div>
 
@@ -1013,15 +1015,15 @@ const ClubSetupPage: React.FC = () => {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">
-              Disponibilità strutture settimanale
+              {t("club.sezioni.disponibilita_strutture")}
             </h3>
             <Button size="sm" onClick={save_disponibilita} disabled={saving_disp || !risorsa_sel_id}>
-              {saving_disp ? "..." : "Salva disponibilità"}
+              {saving_disp ? t("club.azioni.salvando") : t("club.azioni.salva_disponibilita")}
             </Button>
           </div>
           <div className="mb-4 max-w-sm">
             <Label className="text-xs text-muted-foreground">
-              Valida fino al (opzionale, lascia vuoto se la disponibilità non cambia mai)
+              {t("club.fields.valida_fino_al")}
             </Label>
             <Input
               type="date"
@@ -1030,27 +1032,26 @@ const ClubSetupPage: React.FC = () => {
               onChange={(e) => set_val("disponibilita_valida_fino_al", e.target.value || null)}
             />
             <p className="text-xs text-muted-foreground mt-1">
-              Superata questa data comparirà un avviso in Dashboard e in Griglia Ghiaccio per rivedere la
-              disponibilità. Si salva con "Salva dati club".
+              {t("club.testi.disponibilita_scadenza_info")}
             </p>
           </div>
           <div className="mb-4 max-w-sm">
-            <Label className="text-xs text-muted-foreground">Risorsa</Label>
+            <Label className="text-xs text-muted-foreground">{t("club.fields.risorsa")}</Label>
             <Select value={risorsa_sel_id} onValueChange={set_risorsa_sel_id}>
               <SelectTrigger className="h-9 mt-1">
-                <SelectValue placeholder="Seleziona una risorsa" />
+                <SelectValue placeholder={t("club.fields.seleziona_risorsa_placeholder")} />
               </SelectTrigger>
               <SelectContent>
                 {risorse_attive.map((r: any) => (
                   <SelectItem key={r.id} value={r.id}>
-                    {r.nome} · {r.tipo === "palestra" ? "Palestra" : "Ghiaccio"}
+                    {r.nome} · {r.tipo === "palestra" ? t("club.opzioni.palestra") : t("club.opzioni.ghiaccio")}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             {risorse_attive.length === 0 && (
               <p className="text-xs text-muted-foreground italic mt-1">
-                Nessuna risorsa configurata — aggiungine una in "Risorse e strutture".
+                {t("club.testi.nessuna_risorsa")}
               </p>
             )}
           </div>
@@ -1063,10 +1064,10 @@ const ClubSetupPage: React.FC = () => {
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-foreground">{giorno}</span>
                     <Button variant="ghost" size="sm" onClick={() => add_slot(giorno)} className="h-7 text-xs">
-                      <Plus className="w-3 h-3 mr-1" /> Slot
+                      <Plus className="w-3 h-3 mr-1" /> {t("club.azioni.slot")}
                     </Button>
                   </div>
-                  {slots.length === 0 && <p className="text-xs text-muted-foreground italic py-1">— nessuno slot — clicca <strong>+ Slot</strong> per aggiungere una fascia oraria</p>}
+                  {slots.length === 0 && <p className="text-xs text-muted-foreground italic py-1">{t("club.testi.nessuno_slot_prefix")} <strong>{t("club.azioni.plus_slot")}</strong> {t("club.testi.nessuno_slot_suffix")}</p>}
                   {slots.map((s, idx) => (
                     <div key={idx} className="flex items-center gap-2 mb-1">
                       <Input
@@ -1106,7 +1107,7 @@ const ClubSetupPage: React.FC = () => {
         <div>
 
           <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">
-            🧹 Pulizia Ghiaccio
+            {t("club.sezioni.pulizia_ghiaccio")}
           </h3>
           <div className="space-y-4">
             {GIORNI.map((giorno) => {
@@ -1116,10 +1117,10 @@ const ClubSetupPage: React.FC = () => {
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-foreground">{giorno}</span>
                     <Button variant="ghost" size="sm" onClick={() => add_slot_pulizia(giorno)} className="h-7 text-xs">
-                      <Plus className="w-3 h-3 mr-1" /> Slot
+                      <Plus className="w-3 h-3 mr-1" /> {t("club.azioni.slot")}
                     </Button>
                   </div>
-                  {slots.length === 0 && <p className="text-xs text-muted-foreground italic py-1">— nessuno slot — clicca <strong>+ Slot</strong> per aggiungere una fascia oraria</p>}
+                  {slots.length === 0 && <p className="text-xs text-muted-foreground italic py-1">{t("club.testi.nessuno_slot_prefix")} <strong>{t("club.azioni.plus_slot")}</strong> {t("club.testi.nessuno_slot_suffix")}</p>}
                   {slots.map((s, idx) => (
                     <div key={idx} className="flex items-center gap-2 mb-1">
                       <Input

@@ -51,6 +51,69 @@
     "next": "Avanti",
     "back": "Indietro",
     "finish": "Completa configurazione",
-    "skip": "Salta per ora"
+    "skip": "Salta per ora",
+    "days": {
+      "monday": "Lunedì",
+      "tuesday": "Martedì",
+      "wednesday": "Mercoledì",
+      "thursday": "Giovedì",
+      "friday": "Venerdì",
+      "saturday": "Sabato",
+      "sunday": "Domenica"
+    },
+    "logo_max_size": "Logo max 5MB",
+    "logo_uploaded": "Logo caricato",
+    "availability_error": "Errore disponibilità: {{message}}",
+    "slots_configured": "{{count}} slot ghiaccio configurati",
+    "onboarding_completed": "Configurazione iniziale completata!",
+    "done": {
+      "title": "Pronto! Il club è configurato 🎉",
+      "subtitle": "Scegli da dove iniziare. Potrai sempre tornare a queste sezioni dalla dashboard.",
+      "create_course_title": "Crea il tuo primo corso",
+      "create_course_desc": "Definisci nome, livello, capienza e prezzo.",
+      "invite_instructor_title": "Invita il tuo primo istruttore",
+      "invite_instructor_desc": "Aggiungi staff e assegna i ruoli.",
+      "import_athletes_title": "Importa atleti",
+      "import_athletes_desc": "Carica la lista atleti da CSV/Excel.",
+      "go_to_dashboard": "Vai alla Dashboard"
+    },
+    "welcome_title": "Benvenuto in Ice Arena",
+    "step_of": "Step {{step}} di {{total}}",
+    "step1": {
+      "title": "Identità del club",
+      "subtitle": "Logo, colore, dati base. Tutto modificabile in seguito.",
+      "logo_label": "Logo club",
+      "logo_empty": "vuoto",
+      "logo_upload_button": "Carica logo",
+      "primary_color_label": "Colore primario",
+      "founding_year_label": "Anno fondazione",
+      "federation_label": "Federazione",
+      "federation_placeholder": "es. FSP / ISU",
+      "mission_label": "Mission",
+      "mission_placeholder": "In 1-2 frasi, cosa vi distingue",
+      "website_label": "Sito web",
+      "instagram_label": "Instagram",
+      "instagram_placeholder": "@handle",
+      "facebook_label": "Facebook"
+    },
+    "step2": {
+      "title": "Prima stagione",
+      "subtitle": "Modificabile dalla pagina Stagioni.",
+      "season_name_label": "Nome stagione *",
+      "start_date_label": "Data inizio *",
+      "end_date_label": "Data fine *"
+    },
+    "step3": {
+      "title": "Disponibilità ghiaccio settimanale",
+      "subtitle": "Indica gli slot ricorrenti di disponibilità della pista. Modificabili da Configurazione Club.",
+      "day_label": "Giorno",
+      "start_label": "Inizio",
+      "end_label": "Fine",
+      "add_slot": "Aggiungi slot",
+      "skip_hint": "Puoi saltare lasciando la lista vuota e configurare dopo."
+    },
+    "back_button": "Indietro",
+    "next_button": "Avanti",
+    "complete_button": "Completa"
   }
 }

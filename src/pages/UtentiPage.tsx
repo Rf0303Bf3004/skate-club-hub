@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { useTranslation, Trans } from "react-i18next";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -21,23 +22,22 @@ import {
 } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
 
-const RUOLI_BASE = [
-  { value: "presidente", label: "Presidente" },
-  { value: "vicepresidente", label: "Vicepresidente" },
-  { value: "segreteria", label: "Segreteria" },
-  { value: "dt", label: "Direttore Tecnico" },
-  { value: "istruttore", label: "Istruttore" },
-  { value: "aiuto_monitore", label: "Aiuto Monitore" },
+const RUOLI_BASE_VALUES = [
+  "presidente",
+  "vicepresidente",
+  "segreteria",
+  "dt",
+  "istruttore",
+  "aiuto_monitore",
 ];
-const RUOLI_ESTESI = [
-  ...RUOLI_BASE,
-  { value: "admin", label: "Admin" },
-  { value: "superadmin", label: "Superadmin" },
-];
+const RUOLI_ESTESI_VALUES = [...RUOLI_BASE_VALUES, "admin", "superadmin"];
 
-const RUOLO_LABEL: Record<string, string> = Object.fromEntries(
-  RUOLI_ESTESI.map((r) => [r.value, r.label]),
-);
+function build_ruoli_base(t: (k: string) => string) {
+  return RUOLI_BASE_VALUES.map((value) => ({ value, label: t(`users.role.${value}`) }));
+}
+function build_ruoli_estesi(t: (k: string) => string) {
+  return RUOLI_ESTESI_VALUES.map((value) => ({ value, label: t(`users.role.${value}`) }));
+}
 
 const RUOLO_BADGE: Record<string, string> = {
   presidente: "bg-blue-100 text-blue-700 border-blue-200",
@@ -64,14 +64,14 @@ interface UtenteRow {
   last_sign_in_at?: string | null;
 }
 
-function format_relative(date_str?: string | null): string {
-  if (!date_str) return "mai";
+function format_relative(date_str: string | null | undefined, t: (k: string, opts?: any) => string): string {
+  if (!date_str) return t("users.relative_time.never");
   const d = new Date(date_str);
   const now = new Date();
   const diff_min = Math.floor((now.getTime() - d.getTime()) / 60000);
-  if (diff_min < 1) return "ora";
-  if (diff_min < 60) return `${diff_min} min fa`;
-  if (diff_min < 60 * 24) return `${Math.floor(diff_min / 60)} ore fa`;
+  if (diff_min < 1) return t("users.relative_time.now");
+  if (diff_min < 60) return t("users.relative_time.minutes_ago", { count: diff_min });
+  if (diff_min < 60 * 24) return t("users.relative_time.hours_ago", { count: Math.floor(diff_min / 60) });
   return d.toLocaleString("it-IT", {
     day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
   });
@@ -87,8 +87,11 @@ function rand_password(len = 12): string {
 }
 
 const UtentiPage: React.FC = () => {
+  const { t } = useTranslation("settings");
   const { session } = useAuth();
   const qc = useQueryClient();
+  const RUOLI_BASE = useMemo(() => build_ruoli_base(t), [t]);
+  const RUOLI_ESTESI = useMemo(() => build_ruoli_estesi(t), [t]);
 
   const allowed = session && ["superadmin", "admin", "presidente"].includes(session.ruolo);
   const club_id = session?.club_id;
@@ -184,7 +187,7 @@ const UtentiPage: React.FC = () => {
   const submit = async () => {
     if (!club_id) return;
     if (!form.nome.trim() || !form.cognome.trim() || !form.ruolo) {
-      toast.error("Compila tutti i campi obbligatori");
+      toast.error(t("users.toast.required_fields"));
       return;
     }
     set_submitting(true);
@@ -203,7 +206,7 @@ const UtentiPage: React.FC = () => {
         if (error) throw error;
 
         if (form.password.trim()) {
-          if (form.password.trim().length < 8) throw new Error("Password troppo corta (min 8)");
+          if (form.password.trim().length < 8) throw new Error(t("users.toast.password_too_short"));
           const { data: sess_data } = await supabase.auth.getSession();
           const r = await supabase.functions.invoke("manage-user", {
             body: {
@@ -217,15 +220,15 @@ const UtentiPage: React.FC = () => {
           if (r.error) throw new Error(r.error.message);
           if ((r.data as any)?.error) throw new Error((r.data as any).error);
         }
-        toast.success(`Utente ${form.nome} ${form.cognome} aggiornato`);
+        toast.success(t("users.toast.updated", { nome: form.nome, cognome: form.cognome }));
       } else {
         if (!form.email.trim() || !form.password.trim()) {
-          toast.error("Email e password obbligatorie");
+          toast.error(t("users.toast.email_password_required"));
           set_submitting(false);
           return;
         }
         if (form.password.trim().length < 8) {
-          toast.error("Password troppo corta (min 8)");
+          toast.error(t("users.toast.password_too_short"));
           set_submitting(false);
           return;
         }
@@ -245,12 +248,12 @@ const UtentiPage: React.FC = () => {
         });
         if (r.error) throw new Error(r.error.message);
         if ((r.data as any)?.error) throw new Error((r.data as any).error);
-        toast.success(`Utente ${form.nome} ${form.cognome} creato. Password: ${form.password}`);
+        toast.success(t("users.toast.created", { nome: form.nome, cognome: form.cognome, password: form.password }));
       }
       set_dialog_open(false);
       qc.invalidateQueries({ queryKey: ["utenti_club_admin", club_id] });
     } catch (e: any) {
-      toast.error(e?.message || "Errore");
+      toast.error(e?.message || t("users.toast.generic_error"));
     } finally {
       set_submitting(false);
     }
@@ -263,10 +266,10 @@ const UtentiPage: React.FC = () => {
         .update({ attivo: !u.attivo })
         .eq("id", u.id);
       if (error) throw error;
-      toast.success(u.attivo ? "Utente disattivato" : "Utente riattivato");
+      toast.success(u.attivo ? t("users.toast.deactivated") : t("users.toast.reactivated"));
       qc.invalidateQueries({ queryKey: ["utenti_club_admin", club_id] });
     } catch (e: any) {
-      toast.error(e?.message || "Errore");
+      toast.error(e?.message || t("users.toast.generic_error"));
     } finally {
       set_confirm_state(null);
     }
@@ -290,7 +293,7 @@ const UtentiPage: React.FC = () => {
       set_confirm_state(null);
       set_pwd_dialog({ password: new_pwd, nome: `${u.nome ?? ""} ${u.cognome ?? ""}`.trim() });
     } catch (e: any) {
-      toast.error(e?.message || "Errore");
+      toast.error(e?.message || t("users.toast.generic_error"));
       set_confirm_state(null);
     }
   };
@@ -301,12 +304,12 @@ const UtentiPage: React.FC = () => {
         <div className="flex items-center gap-3">
           <Users className="w-6 h-6 text-primary" />
           <div>
-            <h1 className="text-xl font-bold text-foreground">Gestione Utenti</h1>
-            <p className="text-sm text-muted-foreground">Crea e gestisci gli utenti del club</p>
+            <h1 className="text-xl font-bold text-foreground">{t("users.title")}</h1>
+            <p className="text-sm text-muted-foreground">{t("users.subtitle")}</p>
           </div>
         </div>
         <Button onClick={open_create} className="gap-2">
-          <Plus className="w-4 h-4" /> Nuovo utente
+          <Plus className="w-4 h-4" /> {t("users.new_user")}
         </Button>
       </div>
 
@@ -314,7 +317,7 @@ const UtentiPage: React.FC = () => {
         <div className="flex-1 relative">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Cerca per nome, cognome o email"
+            placeholder={t("users.search_placeholder")}
             value={search}
             onChange={(e) => set_search(e.target.value)}
             className="pl-9"
@@ -323,7 +326,7 @@ const UtentiPage: React.FC = () => {
         <Select value={filtro_ruolo} onValueChange={set_filtro_ruolo}>
           <SelectTrigger className="w-full sm:w-56"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="tutti">Tutti i ruoli</SelectItem>
+            <SelectItem value="tutti">{t("users.all_roles")}</SelectItem>
             {RUOLI_ESTESI.map((r) => (
               <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
             ))}
@@ -331,7 +334,7 @@ const UtentiPage: React.FC = () => {
         </Select>
         <div className="flex items-center gap-2">
           <Switch checked={solo_attivi} onCheckedChange={set_solo_attivi} id="solo-attivi" />
-          <Label htmlFor="solo-attivi" className="text-sm">Solo attivi</Label>
+          <Label htmlFor="solo-attivi" className="text-sm">{t("users.only_active")}</Label>
         </div>
       </div>
 
@@ -346,21 +349,21 @@ const UtentiPage: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/30">
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Cognome</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Telefono</TableHead>
-                  <TableHead>Ruolo</TableHead>
-                  <TableHead>Ultimo accesso</TableHead>
-                  <TableHead className="text-center">Attivo</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead>{t("users.table.nome")}</TableHead>
+                  <TableHead>{t("users.table.cognome")}</TableHead>
+                  <TableHead>{t("users.table.email")}</TableHead>
+                  <TableHead>{t("users.table.telefono")}</TableHead>
+                  <TableHead>{t("users.table.ruolo")}</TableHead>
+                  <TableHead>{t("users.table.last_access")}</TableHead>
+                  <TableHead className="text-center">{t("users.table.attivo")}</TableHead>
+                  <TableHead className="text-right">{t("users.table.azioni")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-8">
-                      Nessun utente trovato
+                      {t("users.none_found")}
                     </TableCell>
                   </TableRow>
                 )}
@@ -376,22 +379,22 @@ const UtentiPage: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border ${RUOLO_BADGE[u.ruolo] ?? "bg-muted text-muted-foreground border-border"}`}>
-                        {RUOLO_LABEL[u.ruolo] ?? u.ruolo}
+                        {t(`users.role.${u.ruolo}`, { defaultValue: u.ruolo })}
                       </span>
                     </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{format_relative(u.last_sign_in_at)}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{format_relative(u.last_sign_in_at, t)}</TableCell>
                     <TableCell className="text-center">
                       <Switch checked={!!u.attivo} disabled />
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="inline-flex gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => open_edit(u)} title="Modifica">
+                        <Button variant="ghost" size="icon" onClick={() => open_edit(u)} title={t("users.tooltip.modifica")}>
                           <Pencil className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => set_confirm_state({ type: "reset", user: u })} title="Reset password">
+                        <Button variant="ghost" size="icon" onClick={() => set_confirm_state({ type: "reset", user: u })} title={t("users.tooltip.reset_password")}>
                           <KeyRound className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => set_confirm_state({ type: "toggle", user: u })} title={u.attivo ? "Disattiva" : "Riattiva"}>
+                        <Button variant="ghost" size="icon" onClick={() => set_confirm_state({ type: "toggle", user: u })} title={u.attivo ? t("users.tooltip.disattiva") : t("users.tooltip.riattiva")}>
                           <Power className={`w-4 h-4 ${u.attivo ? "text-emerald-600" : "text-muted-foreground"}`} />
                         </Button>
                       </div>
@@ -405,7 +408,7 @@ const UtentiPage: React.FC = () => {
           {/* Mobile cards */}
           <div className="md:hidden space-y-2">
             {filtered.length === 0 && (
-              <p className="text-center text-sm text-muted-foreground py-8">Nessun utente trovato</p>
+              <p className="text-center text-sm text-muted-foreground py-8">{t("users.none_found")}</p>
             )}
             {filtered.map((u) => (
               <div key={u.id} className="bg-card rounded-xl shadow-card p-4 space-y-2">
@@ -415,17 +418,17 @@ const UtentiPage: React.FC = () => {
                     <p className="text-xs text-muted-foreground">{u.email ?? "—"}</p>
                   </div>
                   <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border ${RUOLO_BADGE[u.ruolo] ?? "bg-muted text-muted-foreground border-border"}`}>
-                    {RUOLO_LABEL[u.ruolo] ?? u.ruolo}
+                    {t(`users.role.${u.ruolo}`, { defaultValue: u.ruolo })}
                   </span>
                 </div>
                 {u.telefono && (
                   <a href={`tel:${u.telefono}`} className="text-sm text-primary block">{u.telefono}</a>
                 )}
-                <p className="text-[11px] text-muted-foreground">Ultimo accesso: {format_relative(u.last_sign_in_at)}</p>
+                <p className="text-[11px] text-muted-foreground">{t("users.table.last_access")}: {format_relative(u.last_sign_in_at, t)}</p>
                 <div className="flex items-center justify-between pt-1">
                   <div className="flex items-center gap-2 text-xs">
                     <Switch checked={!!u.attivo} disabled />
-                    <span>{u.attivo ? "Attivo" : "Disattivato"}</span>
+                    <span>{u.attivo ? t("users.status.attivo") : t("users.status.disattivato")}</span>
                   </div>
                   <div className="inline-flex gap-1">
                     <Button variant="ghost" size="icon" onClick={() => open_edit(u)}><Pencil className="w-4 h-4" /></Button>
@@ -445,24 +448,24 @@ const UtentiPage: React.FC = () => {
       <Dialog open={dialog_open} onOpenChange={set_dialog_open}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{edit_user ? "Modifica utente" : "Nuovo utente"}</DialogTitle>
+            <DialogTitle>{edit_user ? t("users.modal.edit_title") : t("users.modal.create_title")}</DialogTitle>
             <DialogDescription>
-              {edit_user ? "Aggiorna i dati dell'utente." : "Crea un nuovo utente del club."}
+              {edit_user ? t("users.modal.edit_description") : t("users.modal.create_description")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Nome *</Label>
+                <Label>{t("users.modal.field_nome")}</Label>
                 <Input value={form.nome} onChange={(e) => set_form({ ...form, nome: e.target.value })} />
               </div>
               <div>
-                <Label>Cognome *</Label>
+                <Label>{t("users.modal.field_cognome")}</Label>
                 <Input value={form.cognome} onChange={(e) => set_form({ ...form, cognome: e.target.value })} />
               </div>
             </div>
             <div>
-              <Label>Email *</Label>
+              <Label>{t("users.modal.field_email")}</Label>
               <Input
                 type="email"
                 value={form.email}
@@ -471,15 +474,15 @@ const UtentiPage: React.FC = () => {
               />
             </div>
             <div>
-              <Label>Telefono</Label>
+              <Label>{t("users.modal.field_telefono")}</Label>
               <Input value={form.telefono} onChange={(e) => set_form({ ...form, telefono: e.target.value })} />
             </div>
             <div>
-              <Label>{edit_user ? "Nuova password (lascia vuoto per non cambiare)" : "Password iniziale *"}</Label>
+              <Label>{edit_user ? t("users.modal.field_password_edit") : t("users.modal.field_password_create")}</Label>
               <Input value={form.password} onChange={(e) => set_form({ ...form, password: e.target.value })} />
             </div>
             <div>
-              <Label>Ruolo *</Label>
+              <Label>{t("users.modal.field_ruolo")}</Label>
               <Select value={form.ruolo} onValueChange={(v) => set_form({ ...form, ruolo: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -491,7 +494,7 @@ const UtentiPage: React.FC = () => {
             </div>
             {edit_user && (
               <div className="flex items-center justify-between rounded-md border border-border p-3">
-                <Label htmlFor="attivo-switch" className="text-sm">Attivo</Label>
+                <Label htmlFor="attivo-switch" className="text-sm">{t("users.modal.field_attivo")}</Label>
                 <Switch
                   id="attivo-switch"
                   checked={form.attivo}
@@ -501,9 +504,9 @@ const UtentiPage: React.FC = () => {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => set_dialog_open(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => set_dialog_open(false)}>{t("users.modal.cancel")}</Button>
             <Button onClick={submit} disabled={submitting}>
-              {submitting ? "Salvataggio..." : (edit_user ? "Salva modifiche" : "Crea utente")}
+              {submitting ? t("users.modal.saving") : (edit_user ? t("users.modal.save_edit") : t("users.modal.save_create"))}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -514,23 +517,38 @@ const UtentiPage: React.FC = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {confirm_state?.type === "reset" && "Reset password"}
-              {confirm_state?.type === "toggle" && (confirm_state.user.attivo ? "Disattivare utente" : "Riattivare utente")}
+              {confirm_state?.type === "reset" && t("users.confirm.reset_title")}
+              {confirm_state?.type === "toggle" && (confirm_state.user.attivo ? t("users.confirm.deactivate_title") : t("users.confirm.reactivate_title"))}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {confirm_state?.type === "reset" && (
-                <>Vuoi resettare la password di <strong>{confirm_state.user.nome} {confirm_state.user.cognome}</strong>? La nuova password sarà mostrata una sola volta.</>
+                <Trans
+                  i18nKey="users.confirm.reset_description"
+                  ns="settings"
+                  values={{ nome: `${confirm_state.user.nome ?? ""} ${confirm_state.user.cognome ?? ""}`.trim() }}
+                  components={{ strong: <strong /> }}
+                />
               )}
               {confirm_state?.type === "toggle" && confirm_state.user.attivo && (
-                <>Disattivare <strong>{confirm_state.user.nome} {confirm_state.user.cognome}</strong>? Non potrà più accedere al portale.</>
+                <Trans
+                  i18nKey="users.confirm.deactivate_description"
+                  ns="settings"
+                  values={{ nome: `${confirm_state.user.nome ?? ""} ${confirm_state.user.cognome ?? ""}`.trim() }}
+                  components={{ strong: <strong /> }}
+                />
               )}
               {confirm_state?.type === "toggle" && !confirm_state.user.attivo && (
-                <>Riattivare <strong>{confirm_state.user.nome} {confirm_state.user.cognome}</strong>? Potrà accedere di nuovo al portale.</>
+                <Trans
+                  i18nKey="users.confirm.reactivate_description"
+                  ns="settings"
+                  values={{ nome: `${confirm_state.user.nome ?? ""} ${confirm_state.user.cognome ?? ""}`.trim() }}
+                  components={{ strong: <strong /> }}
+                />
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogCancel>{t("users.confirm.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (!confirm_state) return;
@@ -538,7 +556,7 @@ const UtentiPage: React.FC = () => {
                 else do_toggle_attivo(confirm_state.user);
               }}
             >
-              Conferma
+              {t("users.confirm.confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -548,9 +566,14 @@ const UtentiPage: React.FC = () => {
       <Dialog open={!!pwd_dialog} onOpenChange={(o) => !o && set_pwd_dialog(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Nuova password generata</DialogTitle>
+            <DialogTitle>{t("users.password_dialog.title")}</DialogTitle>
             <DialogDescription>
-              Comunica questa password a <strong>{pwd_dialog?.nome}</strong>. Non sarà più visibile.
+              <Trans
+                i18nKey="users.password_dialog.description"
+                ns="settings"
+                values={{ nome: pwd_dialog?.nome ?? "" }}
+                components={{ strong: <strong /> }}
+              />
             </DialogDescription>
           </DialogHeader>
           <div className="flex items-center gap-2">
@@ -561,7 +584,7 @@ const UtentiPage: React.FC = () => {
               onClick={() => {
                 if (pwd_dialog) {
                   navigator.clipboard.writeText(pwd_dialog.password);
-                  toast.success("Password copiata");
+                  toast.success(t("users.toast.password_copied"));
                 }
               }}
             >
@@ -569,7 +592,7 @@ const UtentiPage: React.FC = () => {
             </Button>
           </div>
           <DialogFooter>
-            <Button onClick={() => set_pwd_dialog(null)}>Chiudi</Button>
+            <Button onClick={() => set_pwd_dialog(null)}>{t("users.password_dialog.close")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { toast } from "sonner";
 import { Loader2, ArrowLeft, ArrowRight, Plus, Trash2, Upload, BookOpen, UserPlus, Users, LayoutDashboard } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 interface SlotGhiaccio {
   giorno: string;
@@ -16,12 +17,21 @@ interface SlotGhiaccio {
   ora_fine: string;
 }
 
-const GIORNI = ["Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato","Domenica"];
 const TOTAL_STEPS = 3;
 
 export default function OnboardingPage() {
+  const { t } = useTranslation("onboarding");
   const { session } = useAuth();
   const navigate = useNavigate();
+  const GIORNI = [
+    t("wizard.days.monday"),
+    t("wizard.days.tuesday"),
+    t("wizard.days.wednesday"),
+    t("wizard.days.thursday"),
+    t("wizard.days.friday"),
+    t("wizard.days.saturday"),
+    t("wizard.days.sunday"),
+  ];
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -48,7 +58,7 @@ export default function OnboardingPage() {
 
   // Step 3: disponibilità ghiaccio
   const [slots, setSlots] = useState<SlotGhiaccio[]>([
-    { giorno: "Lunedì", ora_inizio: "17:00", ora_fine: "20:00" },
+    { giorno: GIORNI[0], ora_inizio: "17:00", ora_fine: "20:00" },
   ]);
 
   useEffect(() => {
@@ -81,7 +91,7 @@ export default function OnboardingPage() {
 
   const handleLogoUpload = async (file: File) => {
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { toast.error("Logo max 5MB"); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error(t("wizard.logo_max_size")); return; }
     setUploadingLogo(true);
     try {
       const ext = file.name.split(".").pop() || "png";
@@ -90,7 +100,7 @@ export default function OnboardingPage() {
       if (upErr) { toast.error(upErr.message); return; }
       const { data: pub } = supabase.storage.from("loghi-club").getPublicUrl(path);
       setLogoUrl(pub.publicUrl);
-      toast.success("Logo caricato");
+      toast.success(t("wizard.logo_uploaded"));
     } finally {
       setUploadingLogo(false);
     }
@@ -150,8 +160,8 @@ export default function OnboardingPage() {
     }));
     const { error } = await supabase.from("disponibilita_ghiaccio").insert(payload);
     setLoading(false);
-    if (error) { toast.error(`Errore disponibilità: ${error.message}`); return false; }
-    toast.success(`${valid.length} slot ghiaccio configurati`);
+    if (error) { toast.error(t("wizard.availability_error", { message: error.message })); return false; }
+    toast.success(t("wizard.slots_configured", { count: valid.length }));
     return true;
   };
 
@@ -174,7 +184,7 @@ export default function OnboardingPage() {
       .eq("id", session.club_id);
     setLoading(false);
     if (error) { toast.error(error.message); return; }
-    toast.success("Configurazione iniziale completata!");
+    toast.success(t("wizard.onboarding_completed"));
     navigate(to, { replace: true });
     if (to === "/") window.location.reload();
   };
@@ -184,16 +194,16 @@ export default function OnboardingPage() {
       <div className="min-h-screen bg-background p-4 md:p-8">
         <div className="max-w-3xl mx-auto">
           <div className="mb-6 text-center">
-            <h1 className="text-3xl font-bold">Pronto! Il club è configurato 🎉</h1>
-            <p className="text-muted-foreground mt-2">Scegli da dove iniziare. Potrai sempre tornare a queste sezioni dalla dashboard.</p>
+            <h1 className="text-3xl font-bold">{t("wizard.done.title")}</h1>
+            <p className="text-muted-foreground mt-2">{t("wizard.done.subtitle")}</p>
           </div>
           <div className="grid md:grid-cols-3 gap-4">
             <button onClick={() => completeAndGo("/corsi")} disabled={loading} className="text-left">
               <Card className="h-full hover:border-primary transition-colors cursor-pointer">
                 <CardHeader>
                   <BookOpen className="h-8 w-8 text-primary mb-2" />
-                  <CardTitle className="text-lg">Crea il tuo primo corso</CardTitle>
-                  <CardDescription>Definisci nome, livello, capienza e prezzo.</CardDescription>
+                  <CardTitle className="text-lg">{t("wizard.done.create_course_title")}</CardTitle>
+                  <CardDescription>{t("wizard.done.create_course_desc")}</CardDescription>
                 </CardHeader>
               </Card>
             </button>
@@ -201,8 +211,8 @@ export default function OnboardingPage() {
               <Card className="h-full hover:border-primary transition-colors cursor-pointer">
                 <CardHeader>
                   <UserPlus className="h-8 w-8 text-primary mb-2" />
-                  <CardTitle className="text-lg">Invita il tuo primo istruttore</CardTitle>
-                  <CardDescription>Aggiungi staff e assegna i ruoli.</CardDescription>
+                  <CardTitle className="text-lg">{t("wizard.done.invite_instructor_title")}</CardTitle>
+                  <CardDescription>{t("wizard.done.invite_instructor_desc")}</CardDescription>
                 </CardHeader>
               </Card>
             </button>
@@ -210,8 +220,8 @@ export default function OnboardingPage() {
               <Card className="h-full hover:border-primary transition-colors cursor-pointer">
                 <CardHeader>
                   <Users className="h-8 w-8 text-primary mb-2" />
-                  <CardTitle className="text-lg">Importa atleti</CardTitle>
-                  <CardDescription>Carica la lista atleti da CSV/Excel.</CardDescription>
+                  <CardTitle className="text-lg">{t("wizard.done.import_athletes_title")}</CardTitle>
+                  <CardDescription>{t("wizard.done.import_athletes_desc")}</CardDescription>
                 </CardHeader>
               </Card>
             </button>
@@ -219,7 +229,7 @@ export default function OnboardingPage() {
           <div className="mt-6 flex justify-center">
             <Button variant="outline" onClick={() => completeAndGo("/")} disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              <LayoutDashboard className="h-4 w-4 mr-2" /> Vai alla Dashboard
+              <LayoutDashboard className="h-4 w-4 mr-2" /> {t("wizard.done.go_to_dashboard")}
             </Button>
           </div>
         </div>
@@ -231,8 +241,8 @@ export default function OnboardingPage() {
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-3xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold">Benvenuto in Ice Arena</h1>
-          <p className="text-muted-foreground">Step {step} di {TOTAL_STEPS}</p>
+          <h1 className="text-2xl font-bold">{t("wizard.welcome_title")}</h1>
+          <p className="text-muted-foreground">{t("wizard.step_of", { step, total: TOTAL_STEPS })}</p>
           <div className="mt-3 flex gap-1">
             {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((i) => (
               <div key={i} className={`h-2 flex-1 rounded ${i <= step ? "bg-primary" : "bg-muted"}`} />
@@ -244,18 +254,18 @@ export default function OnboardingPage() {
           {step === 1 && (
             <>
               <CardHeader>
-                <CardTitle>Identità del club</CardTitle>
-                <CardDescription>Logo, colore, dati base. Tutto modificabile in seguito.</CardDescription>
+                <CardTitle>{t("wizard.step1.title")}</CardTitle>
+                <CardDescription>{t("wizard.step1.subtitle")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <Label>Logo club</Label>
+                    <Label>{t("wizard.step1.logo_label")}</Label>
                     <div className="flex items-center gap-3 mt-1">
                       {logoUrl ? (
                         <img src={logoUrl} alt="logo" className="h-16 w-16 object-contain rounded border bg-muted" />
                       ) : (
-                        <div className="h-16 w-16 rounded border bg-muted flex items-center justify-center text-xs text-muted-foreground">vuoto</div>
+                        <div className="h-16 w-16 rounded border bg-muted flex items-center justify-center text-xs text-muted-foreground">{t("wizard.step1.logo_empty")}</div>
                       )}
                       <label className="cursor-pointer">
                         <input
@@ -266,13 +276,13 @@ export default function OnboardingPage() {
                         />
                         <span className="inline-flex items-center gap-1 px-3 py-2 text-sm rounded-md border hover:bg-accent">
                           {uploadingLogo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                          Carica logo
+                          {t("wizard.step1.logo_upload_button")}
                         </span>
                       </label>
                     </div>
                   </div>
                   <div>
-                    <Label>Colore primario</Label>
+                    <Label>{t("wizard.step1.primary_color_label")}</Label>
                     <div className="flex items-center gap-2 mt-1">
                       <input
                         type="color"
@@ -284,27 +294,27 @@ export default function OnboardingPage() {
                     </div>
                   </div>
                   <div>
-                    <Label>Anno fondazione</Label>
+                    <Label>{t("wizard.step1.founding_year_label")}</Label>
                     <Input type="number" value={identity.anno_fondazione} onChange={(e) => setIdentity({ ...identity, anno_fondazione: e.target.value })} />
                   </div>
                   <div>
-                    <Label>Federazione</Label>
-                    <Input value={identity.federazione} onChange={(e) => setIdentity({ ...identity, federazione: e.target.value })} placeholder="es. FSP / ISU" />
+                    <Label>{t("wizard.step1.federation_label")}</Label>
+                    <Input value={identity.federazione} onChange={(e) => setIdentity({ ...identity, federazione: e.target.value })} placeholder={t("wizard.step1.federation_placeholder")} />
                   </div>
                   <div className="md:col-span-2">
-                    <Label>Mission</Label>
-                    <Textarea value={identity.mission} onChange={(e) => setIdentity({ ...identity, mission: e.target.value })} placeholder="In 1-2 frasi, cosa vi distingue" />
+                    <Label>{t("wizard.step1.mission_label")}</Label>
+                    <Textarea value={identity.mission} onChange={(e) => setIdentity({ ...identity, mission: e.target.value })} placeholder={t("wizard.step1.mission_placeholder")} />
                   </div>
                   <div className="md:col-span-2">
-                    <Label>Sito web</Label>
+                    <Label>{t("wizard.step1.website_label")}</Label>
                     <Input value={identity.sito_web} onChange={(e) => setIdentity({ ...identity, sito_web: e.target.value })} />
                   </div>
                   <div>
-                    <Label>Instagram</Label>
-                    <Input value={identity.social_instagram} onChange={(e) => setIdentity({ ...identity, social_instagram: e.target.value })} placeholder="@handle" />
+                    <Label>{t("wizard.step1.instagram_label")}</Label>
+                    <Input value={identity.social_instagram} onChange={(e) => setIdentity({ ...identity, social_instagram: e.target.value })} placeholder={t("wizard.step1.instagram_placeholder")} />
                   </div>
                   <div>
-                    <Label>Facebook</Label>
+                    <Label>{t("wizard.step1.facebook_label")}</Label>
                     <Input value={identity.social_facebook} onChange={(e) => setIdentity({ ...identity, social_facebook: e.target.value })} />
                   </div>
                 </div>
@@ -315,21 +325,21 @@ export default function OnboardingPage() {
           {step === 2 && (
             <>
               <CardHeader>
-                <CardTitle>Prima stagione</CardTitle>
-                <CardDescription>Modificabile dalla pagina Stagioni.</CardDescription>
+                <CardTitle>{t("wizard.step2.title")}</CardTitle>
+                <CardDescription>{t("wizard.step2.subtitle")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label>Nome stagione *</Label>
+                  <Label>{t("wizard.step2.season_name_label")}</Label>
                   <Input value={stagione.nome} onChange={(e) => setStagione({ ...stagione, nome: e.target.value })} />
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <Label>Data inizio *</Label>
+                    <Label>{t("wizard.step2.start_date_label")}</Label>
                     <Input type="date" value={stagione.data_inizio} onChange={(e) => setStagione({ ...stagione, data_inizio: e.target.value })} />
                   </div>
                   <div>
-                    <Label>Data fine *</Label>
+                    <Label>{t("wizard.step2.end_date_label")}</Label>
                     <Input type="date" value={stagione.data_fine} onChange={(e) => setStagione({ ...stagione, data_fine: e.target.value })} />
                   </div>
                 </div>
@@ -340,14 +350,14 @@ export default function OnboardingPage() {
           {step === 3 && (
             <>
               <CardHeader>
-                <CardTitle>Disponibilità ghiaccio settimanale</CardTitle>
-                <CardDescription>Indica gli slot ricorrenti di disponibilità della pista. Modificabili da Configurazione Club.</CardDescription>
+                <CardTitle>{t("wizard.step3.title")}</CardTitle>
+                <CardDescription>{t("wizard.step3.subtitle")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 {slots.map((s, i) => (
                   <div key={i} className="grid grid-cols-12 gap-2 items-end">
                     <div className="col-span-5">
-                      <Label className={i === 0 ? "" : "sr-only"}>Giorno</Label>
+                      <Label className={i === 0 ? "" : "sr-only"}>{t("wizard.step3.day_label")}</Label>
                       <select
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                         value={s.giorno}
@@ -359,13 +369,13 @@ export default function OnboardingPage() {
                       </select>
                     </div>
                     <div className="col-span-3">
-                      <Label className={i === 0 ? "" : "sr-only"}>Inizio</Label>
+                      <Label className={i === 0 ? "" : "sr-only"}>{t("wizard.step3.start_label")}</Label>
                       <Input type="time" value={s.ora_inizio} onChange={(e) => {
                         const next = [...slots]; next[i].ora_inizio = e.target.value; setSlots(next);
                       }} />
                     </div>
                     <div className="col-span-3">
-                      <Label className={i === 0 ? "" : "sr-only"}>Fine</Label>
+                      <Label className={i === 0 ? "" : "sr-only"}>{t("wizard.step3.end_label")}</Label>
                       <Input type="time" value={s.ora_fine} onChange={(e) => {
                         const next = [...slots]; next[i].ora_fine = e.target.value; setSlots(next);
                       }} />
@@ -377,11 +387,11 @@ export default function OnboardingPage() {
                     </div>
                   </div>
                 ))}
-                <Button variant="outline" size="sm" onClick={() => setSlots([...slots, { giorno: "Lunedì", ora_inizio: "17:00", ora_fine: "20:00" }])}>
-                  <Plus className="h-4 w-4 mr-1" /> Aggiungi slot
+                <Button variant="outline" size="sm" onClick={() => setSlots([...slots, { giorno: GIORNI[0], ora_inizio: "17:00", ora_fine: "20:00" }])}>
+                  <Plus className="h-4 w-4 mr-1" /> {t("wizard.step3.add_slot")}
                 </Button>
                 <p className="text-xs text-muted-foreground pt-2">
-                  Puoi saltare lasciando la lista vuota e configurare dopo.
+                  {t("wizard.step3.skip_hint")}
                 </p>
               </CardContent>
             </>
@@ -389,11 +399,11 @@ export default function OnboardingPage() {
 
           <div className="flex justify-between p-6 border-t">
             <Button variant="outline" disabled={step === 1 || loading} onClick={() => setStep(step - 1)}>
-              <ArrowLeft className="h-4 w-4 mr-1" /> Indietro
+              <ArrowLeft className="h-4 w-4 mr-1" /> {t("wizard.back_button")}
             </Button>
             <Button onClick={next} disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {step < TOTAL_STEPS ? <>Avanti <ArrowRight className="h-4 w-4 ml-1" /></> : "Completa"}
+              {step < TOTAL_STEPS ? <>{t("wizard.next_button")} <ArrowRight className="h-4 w-4 ml-1" /></> : t("wizard.complete_button")}
             </Button>
           </div>
         </Card>
