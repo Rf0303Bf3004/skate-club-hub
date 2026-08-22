@@ -89,16 +89,16 @@ export const ComunicazioneFormSection: React.FC<Props> = ({
         />
         <div className="flex-1">
           <Label htmlFor="comunicazione-invia" className="cursor-pointer flex items-center gap-2">
-            <Send className="w-4 h-4" /> {label ?? t("comunicazione_invia_subito")}
+            <Send className="w-4 h-4" /> {label ?? t("form_section.send_label")}
           </Label>
-          <p className="text-xs text-muted-foreground">{description ?? t("comunicazione_descrizione")}</p>
+          <p className="text-xs text-muted-foreground">{description ?? t("form_section.send_description")}</p>
         </div>
       </div>
 
       {state.invia && (
         <div className="space-y-3 pl-6">
           <div>
-            <Label>{t("comunicazione_titolo")}</Label>
+            <Label>{t("form_section.title")}</Label>
             <Input value={state.titolo} onChange={(e) => upd("titolo", e.target.value)} />
           </div>
           <TooltipProvider>
@@ -107,10 +107,10 @@ export const ComunicazioneFormSection: React.FC<Props> = ({
                 <TooltipTrigger asChild>
                   <Label htmlFor="comunicazione-urgente" className="cursor-pointer flex items-center gap-2 text-sm font-medium">
                     <AlertTriangle className="w-4 h-4 text-destructive" />
-                    Urgente
+                    {t("form_section.urgent")}
                   </Label>
                 </TooltipTrigger>
-                <TooltipContent>Sarà mostrata come banner urgente nell'app dell'atleta</TooltipContent>
+                <TooltipContent>{t("form_section.urgent_tooltip")}</TooltipContent>
               </Tooltip>
               <Switch
                 id="comunicazione-urgente"
@@ -121,7 +121,7 @@ export const ComunicazioneFormSection: React.FC<Props> = ({
             </div>
           </TooltipProvider>
           <div>
-            <Label>{t("comunicazione_testo")}</Label>
+            <Label>{t("form_section.text")}</Label>
             <Textarea
               value={state.testo}
               onChange={(e) => upd("testo", e.target.value)}
@@ -129,7 +129,7 @@ export const ComunicazioneFormSection: React.FC<Props> = ({
             />
           </div>
           <div>
-            <Label>{t("destinatari")}</Label>
+            <Label>{t("form_section.recipients")}</Label>
             <Select
               value={state.tipo_destinatari}
               onValueChange={(v: TipoDestinatariMulti) =>
@@ -138,11 +138,12 @@ export const ComunicazioneFormSection: React.FC<Props> = ({
             >
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="tutti">Tutto il club</SelectItem>
-                <SelectItem value="per_corso">Per corso</SelectItem>
-                <SelectItem value="per_livello">Per livello</SelectItem>
-                <SelectItem value="atleti">Atleti specifici</SelectItem>
+                <SelectItem value="tutti">{t("form_section.dest_all")}</SelectItem>
+                <SelectItem value="per_corso">{t("form_section.dest_per_corso")}</SelectItem>
+                <SelectItem value="per_livello">{t("form_section.dest_per_livello")}</SelectItem>
+                <SelectItem value="atleti">{t("form_section.dest_atleti")}</SelectItem>
               </SelectContent>
+
             </Select>
           </div>
 
