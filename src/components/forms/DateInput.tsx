@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   value: string; // formato AAAA-MM-GG (o vuoto)
@@ -9,6 +10,7 @@ interface Props {
 }
 
 const DateInput: React.FC<Props> = ({ value, onChange, className, min_year = 1900, max_year = 2020 }) => {
+  const { t } = useTranslation("common");
   const [gg, set_gg] = useState("");
   const [mm, set_mm] = useState("");
   const [aaaa, set_aaaa] = useState("");
@@ -53,7 +55,7 @@ const DateInput: React.FC<Props> = ({ value, onChange, className, min_year = 190
       <input
         type="text"
         inputMode="numeric"
-        placeholder="GG"
+        placeholder={t("date_input.dd")}
         value={gg}
         maxLength={2}
         onChange={(e) => {
@@ -69,7 +71,7 @@ const DateInput: React.FC<Props> = ({ value, onChange, className, min_year = 190
         ref={ref_mm}
         type="text"
         inputMode="numeric"
-        placeholder="MM"
+        placeholder={t("date_input.mm")}
         value={mm}
         maxLength={2}
         onChange={(e) => {
@@ -85,7 +87,7 @@ const DateInput: React.FC<Props> = ({ value, onChange, className, min_year = 190
         ref={ref_aaaa}
         type="text"
         inputMode="numeric"
-        placeholder="AAAA"
+        placeholder={t("date_input.yyyy")}
         value={aaaa}
         maxLength={4}
         onChange={(e) => {

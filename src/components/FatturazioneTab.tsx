@@ -20,13 +20,11 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { Calendar, Mail, Eye, FileText, Loader2 } from "lucide-react";
-
-const MESI = [
-  "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
-  "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre",
-];
+import { useTranslation } from "react-i18next";
 
 const FatturazioneTab: React.FC = () => {
+  const { t } = useTranslation("fatture");
+  const mese_label = (m: number) => t(`billing_tab.month_${m}`);
   const qc = useQueryClient();
   const { data: setup } = use_setup_club();
   const { data: atleti = [] } = use_atleti();
@@ -76,9 +74,9 @@ const FatturazioneTab: React.FC = () => {
         if (error) throw error;
       }
       await qc.invalidateQueries({ queryKey: ["setup_club", club_id] });
-      toast({ title: "✅ Impostazioni fatturazione salvate" });
+      toast({ title: t("billing_tab.toast_saved") });
     } catch (err: any) {
-      toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
+      toast({ title: t("billing_tab.toast_save_error"), description: err?.message, variant: "destructive" });
     } finally {
       set_saving(false);
     }
@@ -89,20 +87,20 @@ const FatturazioneTab: React.FC = () => {
       const rows = await anteprima.mutateAsync({ anno, mese });
       set_preview_rows(rows);
       if (rows.length === 0) {
-        toast({ title: "Nessuna fattura da generare per questo mese" });
+        toast({ title: t("billing_tab.toast_none") });
       }
     } catch (err: any) {
-      toast({ title: "Errore anteprima", description: err?.message, variant: "destructive" });
+      toast({ title: t("billing_tab.toast_preview_error"), description: err?.message, variant: "destructive" });
     }
   };
 
   const handle_genera = async () => {
     try {
       const count = await genera.mutateAsync({ anno, mese });
-      toast({ title: `✅ ${count} fatture generate per ${MESI[mese - 1]} ${anno}` });
+      toast({ title: t("billing_tab.toast_generated", { count, mese: mese_label(mese), anno }) });
       set_preview_rows(null);
     } catch (err: any) {
-      toast({ title: "Errore generazione", description: err?.message, variant: "destructive" });
+      toast({ title: t("billing_tab.toast_generate_error"), description: err?.message, variant: "destructive" });
     }
   };
 
@@ -124,15 +122,15 @@ const FatturazioneTab: React.FC = () => {
       <section className="space-y-4">
         <div className="flex items-center gap-2">
           <Calendar className="w-5 h-5 text-primary" />
-          <h2 className="text-base font-bold text-foreground">Generazione automatica</h2>
+          <h2 className="text-base font-bold text-foreground">{t("billing_tab.auto_title")}</h2>
         </div>
         <p className="text-xs text-muted-foreground">
-          Le fatture mensili vengono generate automaticamente nel giorno scelto del mese.
+          {t("billing_tab.auto_desc")}
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label htmlFor="giorno">Giorno del mese (1-28)</Label>
+            <Label htmlFor="giorno">{t("billing_tab.day_label")}</Label>
             <Input
               id="giorno"
               type="number"
@@ -144,7 +142,7 @@ const FatturazioneTab: React.FC = () => {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="costo_test">Costo per test di livello (CHF)</Label>
+            <Label htmlFor="costo_test">{t("billing_tab.test_cost_label")}</Label>
             <Input
               id="costo_test"
               type="number"
@@ -161,11 +159,11 @@ const FatturazioneTab: React.FC = () => {
             <div className="flex items-center gap-2">
               <Mail className="w-4 h-4 text-primary" />
               <Label htmlFor="email_auto" className="text-sm font-medium">
-                Invio email automatico ai genitori
+                {t("billing_tab.email_auto_label")}
               </Label>
             </div>
             <p className="text-xs text-muted-foreground">
-              Quando attivo, ogni fattura generata viene inviata via email al genitore.
+              {t("billing_tab.email_auto_desc")}
             </p>
           </div>
           <Switch id="email_auto" checked={email_auto} onCheckedChange={set_email_auto} />
@@ -173,7 +171,7 @@ const FatturazioneTab: React.FC = () => {
 
         <Button onClick={handle_save} disabled={saving} className="w-full sm:w-auto">
           {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-          Salva impostazioni
+          {t("billing_tab.save")}
         </Button>
       </section>
 
@@ -183,26 +181,26 @@ const FatturazioneTab: React.FC = () => {
       <section className="space-y-4">
         <div className="flex items-center gap-2">
           <FileText className="w-5 h-5 text-primary" />
-          <h2 className="text-base font-bold text-foreground">Generazione manuale con anteprima</h2>
+          <h2 className="text-base font-bold text-foreground">{t("billing_tab.manual_title")}</h2>
         </div>
         <p className="text-xs text-muted-foreground">
-          Visualizza in anticipo le fatture che verrebbero generate per un mese specifico, poi conferma.
+          {t("billing_tab.manual_desc")}
         </p>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <div className="space-y-1.5">
-            <Label>Mese</Label>
+            <Label>{t("billing_tab.month")}</Label>
             <Select value={String(mese)} onValueChange={(v) => { set_mese(Number(v)); set_preview_rows(null); }}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {MESI.map((m, i) => (
-                  <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>
+                {Array.from({ length: 12 }, (_, i) => (
+                  <SelectItem key={i} value={String(i + 1)}>{mese_label(i + 1)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label>Anno</Label>
+            <Label>{t("billing_tab.year")}</Label>
             <Select value={String(anno)} onValueChange={(v) => { set_anno(Number(v)); set_preview_rows(null); }}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -220,7 +218,7 @@ const FatturazioneTab: React.FC = () => {
               className="w-full"
             >
               {anteprima.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Eye className="w-4 h-4 mr-2" />}
-              Anteprima
+              {t("billing_tab.preview")}
             </Button>
           </div>
         </div>
@@ -231,17 +229,17 @@ const FatturazioneTab: React.FC = () => {
               <table className="w-full text-sm">
                 <thead className="bg-muted/40">
                   <tr>
-                    <th className="text-left px-3 py-2 text-xs font-bold text-muted-foreground uppercase">Atleta</th>
-                    <th className="text-left px-3 py-2 text-xs font-bold text-muted-foreground uppercase">Tipo</th>
-                    <th className="text-left px-3 py-2 text-xs font-bold text-muted-foreground uppercase">Descrizione</th>
-                    <th className="text-right px-3 py-2 text-xs font-bold text-muted-foreground uppercase">Importo</th>
+                    <th className="text-left px-3 py-2 text-xs font-bold text-muted-foreground uppercase">{t("billing_tab.col_atleta")}</th>
+                    <th className="text-left px-3 py-2 text-xs font-bold text-muted-foreground uppercase">{t("billing_tab.col_tipo")}</th>
+                    <th className="text-left px-3 py-2 text-xs font-bold text-muted-foreground uppercase">{t("billing_tab.col_descrizione")}</th>
+                    <th className="text-right px-3 py-2 text-xs font-bold text-muted-foreground uppercase">{t("billing_tab.col_importo")}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {preview_rows.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="px-3 py-6 text-center text-muted-foreground text-sm">
-                        Nessuna fattura da generare per {MESI[mese - 1]} {anno}.
+                        {t("billing_tab.none_for_period", { mese: mese_label(mese), anno })}
                       </td>
                     </tr>
                   ) : (
@@ -260,7 +258,7 @@ const FatturazioneTab: React.FC = () => {
                 {preview_rows.length > 0 && (
                   <tfoot className="bg-muted/30">
                     <tr>
-                      <td colSpan={3} className="px-3 py-2 text-right font-bold text-foreground">Totale</td>
+                      <td colSpan={3} className="px-3 py-2 text-right font-bold text-foreground">{t("billing_tab.total")}</td>
                       <td className="px-3 py-2 text-right tabular-nums font-bold text-primary">
                         CHF {totale_anteprima.toFixed(2)}
                       </td>
@@ -278,10 +276,10 @@ const FatturazioneTab: React.FC = () => {
                   className="bg-primary hover:bg-primary/90"
                 >
                   {genera.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileText className="w-4 h-4 mr-2" />}
-                  Conferma e genera {preview_rows.length} fatture
+                  {t("billing_tab.confirm_generate", { count: preview_rows.length })}
                 </Button>
                 <Button variant="outline" onClick={() => set_preview_rows(null)}>
-                  Annulla anteprima
+                  {t("billing_tab.cancel_preview")}
                 </Button>
               </div>
             )}
@@ -289,7 +287,7 @@ const FatturazioneTab: React.FC = () => {
         )}
 
         <p className="text-xs text-muted-foreground">
-          ℹ️ Il sistema evita duplicati: non vengono ricreate fatture già esistenti per lo stesso atleta, tipo e periodo.
+          {t("billing_tab.no_duplicates_note")}
         </p>
       </section>
     </div>

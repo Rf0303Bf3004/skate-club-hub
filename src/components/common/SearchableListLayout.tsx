@@ -3,6 +3,7 @@ import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 
 export type FilterChip = {
   key: string;
@@ -35,7 +36,7 @@ interface Props {
 const SearchableListLayout: React.FC<Props> = ({
   search,
   on_search_change,
-  search_placeholder = "Cerca…",
+  search_placeholder,
   filters = [],
   sort,
   count_filtered,
@@ -45,6 +46,7 @@ const SearchableListLayout: React.FC<Props> = ({
   sticky = true,
   right_actions,
 }) => {
+  const { t } = useTranslation("common");
   const has_active_filters =
     !!search ||
     filters.some((f) => f.value && f.value !== "tutti" && f.value !== "all" && f.value !== "");
@@ -66,15 +68,15 @@ const SearchableListLayout: React.FC<Props> = ({
             <div className="relative flex-1 min-w-[220px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
               <Input
-                aria-label="Ricerca"
+                aria-label={t("list_layout.aria_search")}
                 value={search}
                 onChange={(e) => on_search_change(e.target.value)}
-                placeholder={search_placeholder}
+                placeholder={search_placeholder ?? t("list_layout.search_placeholder")}
                 className="pl-9 pr-9 h-10"
               />
               {search && (
                 <button
-                  aria-label="Pulisci ricerca"
+                  aria-label={t("list_layout.clear_search")}
                   onClick={() => on_search_change("")}
                   className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-muted text-muted-foreground"
                 >
@@ -90,7 +92,7 @@ const SearchableListLayout: React.FC<Props> = ({
                 <SelectContent>
                   {sort.options.map((o) => (
                     <SelectItem key={o.value} value={o.value}>
-                      Ordina: {o.label}
+                      {t("list_layout.sort_prefix", { label: o.label })}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -123,7 +125,7 @@ const SearchableListLayout: React.FC<Props> = ({
                   onClick={reset_all}
                   className="h-8 text-xs text-muted-foreground"
                 >
-                  <X className="w-3 h-3 mr-1" /> Reset
+                  <X className="w-3 h-3 mr-1" /> {t("list_layout.reset")}
                 </Button>
               )}
             </div>
@@ -132,8 +134,8 @@ const SearchableListLayout: React.FC<Props> = ({
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>
               <span className="font-semibold text-foreground tabular-nums">{count_filtered}</span>
-              {" "}di{" "}
-              <span className="tabular-nums">{count_total}</span> risultati
+              {" "}{t("list_layout.results_suffix")}{" "}
+              <span className="tabular-nums">{count_total}</span> {t("list_layout.results_label")}
             </span>
             {extra_summary && <div>{extra_summary}</div>}
           </div>

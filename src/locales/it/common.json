@@ -275,5 +275,40 @@
     "coming_soon": "Versione finale in arrivo.",
     "info": "Per info",
     "back_register": "← Torna alla registrazione"
+  },
+  "search_palette": {
+    "placeholder": "Cerca atleti, comunicazioni, fatture…",
+    "hint_min_chars": "Digita almeno 2 caratteri per cercare in tutto il club.",
+    "empty": "Nessun risultato.",
+    "loading": "Caricamento…",
+    "hint_nav": "naviga",
+    "hint_open": "apri",
+    "hint_close": "chiudi",
+    "cat_atleti": "Atleti",
+    "cat_comunicazioni": "Comunicazioni",
+    "cat_fatture": "Fatture",
+    "cat_gare": "Gare",
+    "cat_eventi": "Eventi",
+    "cat_istruttori": "Istruttori",
+    "fallback_atleta": "Atleta",
+    "fallback_istruttore": "Istruttore",
+    "fallback_gara": "Gara",
+    "fallback_evento": "Evento",
+    "fallback_fattura": "Fattura",
+    "fallback_comunicazione": "(senza titolo)"
+  },
+  "list_layout": {
+    "search_placeholder": "Cerca…",
+    "aria_search": "Ricerca",
+    "clear_search": "Pulisci ricerca",
+    "reset": "Reset",
+    "sort_prefix": "Ordina: {{label}}",
+    "results_suffix": "di",
+    "results_label": "risultati"
+  },
+  "date_input": {
+    "dd": "GG",
+    "mm": "MM",
+    "yyyy": "AAAA"
   }
 }
