@@ -21,6 +21,9 @@ import {
   use_sync_gruppo_sessione,
   risolvi_membri_gruppo,
   verifica_conflitto_gruppo,
+  verifica_conflitto_atleta,
+  verifica_conflitto_istruttore,
+
   type ConflittoGruppo,
 
   giorno_it_da_data,
