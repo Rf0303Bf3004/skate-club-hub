@@ -20,6 +20,9 @@ import {
   use_rimuovi_gruppo_sessione,
   use_sync_gruppo_sessione,
   risolvi_membri_gruppo,
+  verifica_conflitto_gruppo,
+  type ConflittoGruppo,
+
   giorno_it_da_data,
   type GruppoScope,
   type GrigliaBlocco,
