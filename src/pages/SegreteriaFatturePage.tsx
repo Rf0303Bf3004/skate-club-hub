@@ -62,7 +62,12 @@ const SegreteriaFatturePage: React.FC = () => {
   const [ricerca, set_ricerca] = useState<string>("");
   const [modal_cella, set_modal_cella] = useState<{ atleta: AtletaRow; mese: number; cella: CellaMese } | null>(null);
 
-  const mesi_short = (t("tabellone.mesi_short", { returnObjects: true }) as string[]) ?? [];
+  const mesi_raw = t("tabellone.mesi_short", { returnObjects: true }) as unknown;
+  // Le liste (array) restano gestite solo nei JSON statici: se il valore non è un array, usa il fallback.
+  const mesi_short: string[] = Array.isArray(mesi_raw)
+    ? (mesi_raw as string[])
+    : ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"];
+
   const segna_pagata = use_segna_fattura_pagata();
   const invia_email = use_invia_email_fattura();
 
