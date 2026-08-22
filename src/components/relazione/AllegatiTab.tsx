@@ -10,10 +10,15 @@ import AllegatoForm from "./AllegatoForm";
 import SortableItem from "./SortableItem";
 import { DndContext, PointerSensor, KeyboardSensor, useSensor, useSensors, closestCenter, DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 
 interface Props { club_id: string; stagione_id: string; }
 
+const tk = (key: string, opts?: any) => i18n.t(`relazione.allegati_tab.${key}`, { ns: "dashboard", ...(opts ?? {}) }) as string;
+
 export default function AllegatiTab({ club_id, stagione_id }: Props) {
+  const { t } = useTranslation("dashboard");
   const qc = useQueryClient();
   const [editing, set_editing] = useState<any | null>(null);
   const [open_form, set_open_form] = useState(false);
@@ -39,7 +44,7 @@ export default function AllegatiTab({ club_id, stagione_id }: Props) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["relazioni_allegati", club_id, stagione_id] });
-      toast.success("Allegato eliminato");
+      toast.success(tk("toast_eliminato"));
     },
   });
 
@@ -78,9 +83,9 @@ export default function AllegatiTab({ club_id, stagione_id }: Props) {
     },
     onError: (_error, _ids, context) => {
       context?.previous.forEach(({ queryKey, data }) => qc.setQueryData(queryKey, data));
-      toast.error("Riordino non salvato");
+      toast.error(tk("toast_riordino_ko"));
     },
-    onSuccess: () => toast.success("Ordine salvato"),
+    onSuccess: () => toast.success(tk("toast_ordine_ok")),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["relazioni_allegati", club_id, stagione_id] });
       qc.invalidateQueries({ queryKey: ["relazione_comp_allegati", club_id, stagione_id] });
@@ -111,19 +116,19 @@ export default function AllegatiTab({ club_id, stagione_id }: Props) {
     <div className="space-y-4">
       <TabHeaderInfo
         icon={FileText}
-        titolo="Documenti PDF allegati"
-        testo="Carica qui i documenti PDF che devono essere inclusi in coda alla relazione: bilancio civilistico, scheda federale FISG, contratti sponsor, certificazioni, verbali assemblea."
+        titolo={t("relazione.allegati_tab.header_titolo")}
+        testo={t("relazione.allegati_tab.header_testo")}
       />
       <div className="flex justify-end">
         <Button onClick={() => { set_editing(null); set_open_form(true); }} className="gap-2">
-          <Plus className="w-4 h-4" />Carica nuovo allegato
+          <Plus className="w-4 h-4" />{t("relazione.allegati_tab.nuovo")}
         </Button>
       </div>
 
-      {isLoading && <p className="text-sm text-muted-foreground">Caricamento...</p>}
+      {isLoading && <p className="text-sm text-muted-foreground">{t("relazione.allegati_tab.caricamento")}</p>}
       {!isLoading && (allegati as any[]).length === 0 && (
         <p className="text-sm text-muted-foreground py-12 text-center border border-dashed rounded-md">
-          Nessun allegato. Carica il primo documento PDF.
+          {t("relazione.allegati_tab.empty")}
         </p>
       )}
 
