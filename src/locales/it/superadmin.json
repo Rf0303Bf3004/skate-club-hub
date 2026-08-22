@@ -55,7 +55,20 @@
     "title": "Tabellone Fatture Club",
     "subtitle": "Stato fatture B2B per club × mese",
     "anno": "Anno",
-    "mesi_short": ["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"],
+    "mesi_short": [
+      "Gen",
+      "Feb",
+      "Mar",
+      "Apr",
+      "Mag",
+      "Giu",
+      "Lug",
+      "Ago",
+      "Set",
+      "Ott",
+      "Nov",
+      "Dic"
+    ],
     "solo_non_pagati": "Solo non pagati",
     "esporta_csv": "Esporta CSV",
     "totale": "Totale anno",
@@ -79,5 +92,162 @@
     "marca_pagata": "Contrassegna come pagata",
     "annulla_pagamento": "Annulla pagamento",
     "torna": "Torna alla lista"
+  },
+  "clubs": {
+    "title": "Gestione Club",
+    "access_denied": "Accesso negato.",
+    "count": "{{count}} club registrati",
+    "new": "Nuovo club",
+    "refresh": "Aggiorna",
+    "search_placeholder": "Cerca per nome o città...",
+    "empty": "Nessun club trovato.",
+    "inactive": "Inattivo",
+    "active": "Attivo",
+    "demo": "Demo",
+    "logo_alt": "Logo",
+    "unpaid_invoices": "{{count}} fatture da pagare",
+    "select_hint": "Seleziona un club dalla lista per vedere i dettagli.",
+    "edit_title": "Modifica club",
+    "edit": "Modifica",
+    "saving": "Salvataggio...",
+    "save": "Salva modifiche",
+    "cancel": "Annulla",
+    "created_on": "Creato il {{data}}",
+    "stats": {
+      "atleti": "Atleti",
+      "istruttori": "Istruttori",
+      "corsi": "Corsi",
+      "utenti": "Utenti",
+      "fatture_aperte": "Fatture aperte"
+    },
+    "form": {
+      "nome": "Nome club *",
+      "citta": "Città",
+      "paese": "Paese",
+      "email": "Email",
+      "telefono": "Telefono",
+      "indirizzo": "Indirizzo",
+      "sito_web": "Sito web",
+      "tessera": "N° tessera federale",
+      "colore": "Colore:",
+      "descrizione": "Descrizione",
+      "attivo": "Attivo:"
+    },
+    "toast": {
+      "updated": "✅ Club aggiornato",
+      "error": "Errore"
+    }
+  },
+  "manutenzione": {
+    "title": "Manutenzione Ordinaria",
+    "subtitle": "Operazioni di pulizia e manutenzione del database.",
+    "scope": "Ambito operazione",
+    "all_clubs": "Tutti i club",
+    "all_clubs_label": "tutti i club",
+    "needs_club": "Richiede un club specifico",
+    "confirm_prefix": "Digita",
+    "confirm_middle": "per procedere su",
+    "run": "Esegui",
+    "running": "In esecuzione...",
+    "cancel": "Annulla",
+    "log": "Log operazioni",
+    "clear": "Pulisci",
+    "log_empty": "Nessuna operazione eseguita in questa sessione.",
+    "toast": {
+      "select_club": "Seleziona un club",
+      "select_club_desc": "Questa operazione richiede un club specifico.",
+      "error": "Errore"
+    },
+    "op": {
+      "fatture_pagate": {
+        "titolo": "Pulizia fatture pagate",
+        "descrizione": "Elimina le fatture già saldate per alleggerire il database.",
+        "result": "Eliminate {{count}} fatture pagate"
+      },
+      "presenze": {
+        "titolo": "Pulizia presenze vecchie (> 12 mesi)",
+        "descrizione": "Rimuove le presenze più vecchie di un anno.",
+        "result": "Eliminate {{count}} presenze vecchie"
+      },
+      "gare": {
+        "titolo": "Elimina gare archiviate",
+        "descrizione": "Rimuove gare archiviate e relative iscrizioni.",
+        "empty": "Nessuna gara archiviata trovata",
+        "result": "Eliminate {{count}} gare archiviate e relative iscrizioni"
+      },
+      "setup": {
+        "titolo": "Crea setup club mancanti",
+        "descrizione": "Genera un record setup_club per i club che non ce l'hanno.",
+        "result": "Creati {{count}} setup club mancanti",
+        "none": "Tutti i club hanno già un setup"
+      },
+      "export": {
+        "titolo": "Esporta dati club (Backup CSV)",
+        "descrizione": "Scarica i dati principali (atleti, istruttori, corsi) in formato CSV.",
+        "need_club": "Seleziona un club specifico per l'esportazione",
+        "result": "Backup scaricato per {{nome}}"
+      }
+    }
+  },
+  "str": {
+    "title": "Manutenzione Straordinaria",
+    "subtitle": "⚠️ Operazioni irreversibili e distruttive. Procedi con estrema cautela.",
+    "club_selected": "Club selezionato",
+    "select_club": "Seleziona un club",
+    "select_club_option": "— Seleziona un club —",
+    "select_option": "— Seleziona —",
+    "inactive_suffix": "(inattivo)",
+    "select_above": "Seleziona un club sopra.",
+    "dest_club": "Club destinazione:",
+    "confirm_prefix": "Digita",
+    "confirm_middle": "per procedere su",
+    "run": "Esegui",
+    "running": "In esecuzione...",
+    "cancel": "Annulla",
+    "error": "Errore",
+    "log": "Log operazioni",
+    "clear": "Pulisci",
+    "log_empty": "Nessuna operazione eseguita in questa sessione.",
+    "op": {
+      "toggle": {
+        "titolo_on": "Riattiva club",
+        "titolo_off": "Disattiva club",
+        "desc_on": "Riattiva il club permettendo nuovamente l'accesso.",
+        "desc_off": "Impedisce l'accesso al club senza cancellare alcun dato.",
+        "result": "Club {{nome}} {{stato}}",
+        "stato_on": "riattivato",
+        "stato_off": "disattivato"
+      },
+      "reset_utenti": {
+        "titolo": "Reset utenti/accessi club",
+        "descrizione": "Rimuove TUTTI gli utenti_club del club selezionato, resettando gli accessi.",
+        "result": "Rimossi {{count}} utenti da {{nome}}"
+      },
+      "wipe": {
+        "titolo": "Wipe completo dati club",
+        "descrizione": "Cancella TUTTI i dati operativi (atleti, corsi, fatture, presenze, gare, istruttori). Mantiene solo l'anagrafica club.",
+        "result": "Wipe completato per {{nome}}: {{dettaglio}}",
+        "empty": "Nessun dato da eliminare per {{nome}}"
+      },
+      "elimina": {
+        "titolo": "Eliminazione club definitiva",
+        "descrizione": "Elimina il club E tutti i suoi dati dal sistema. IRREVERSIBILE.",
+        "result": "Club \"{{nome}}\" eliminato definitivamente"
+      },
+      "reset_stagione": {
+        "titolo": "Reset stagione corrente",
+        "descrizione": "Elimina presenze, lezioni private e iscrizioni corsi della stagione in corso.",
+        "result": "Reset stagione per {{nome}}: {{dettaglio}}",
+        "empty": "Nessun dato stagionale trovato per {{nome}}"
+      },
+      "trasferisci": {
+        "titolo": "Trasferisci atleti tra club",
+        "descrizione": "Sposta TUTTI gli atleti dal club selezionato a un altro club.",
+        "err_dest": "Club destinazione non selezionato",
+        "err_same": "Club origine e destinazione sono uguali",
+        "all": "tutti gli",
+        "result": "Trasferiti {{count}} atleti da {{da}} a {{a}}"
+      }
+    }
   }
 }
