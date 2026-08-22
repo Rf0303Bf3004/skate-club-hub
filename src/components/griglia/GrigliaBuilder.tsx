@@ -21,6 +21,9 @@ import {
   use_sync_gruppo_sessione,
   risolvi_membri_gruppo,
   verifica_conflitto_gruppo,
+  verifica_conflitto_atleta,
+  verifica_conflitto_istruttore,
+
   type ConflittoGruppo,
 
   giorno_it_da_data,
@@ -871,6 +874,13 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   const [conflitto_gruppo, set_conflitto_gruppo] = useState<
     { livello: string; conflitto: ConflittoGruppo } | null
   >(null);
+  const [conflitto_atleta, set_conflitto_atleta] = useState<
+    { nome: string; conflitto: ConflittoGruppo } | null
+  >(null);
+  const [conflitto_istruttore, set_conflitto_istruttore] = useState<
+    { nome: string; istruttore_id: string; sessione_id: string; conflitto: ConflittoGruppo } | null
+  >(null);
+
 
 
   /** Riallinea SOLO gli atleti taggati con quel gruppo alla membership attuale. */
@@ -1035,27 +1045,45 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
           toast({ title: `🔗 Gruppo «${livello_gruppo}» collegato`, description: `${res.aggiunti} atleti aggiunti.` });
         } else {
           // Livello non definito: nessun gruppo dinamico, assegnazione individuale.
+          let assegnati = 0;
           for (const atleta_id of ids) {
             const a = (atleti as any[]).find((x) => x.id === atleta_id);
             const nome = a ? `${a.nome} ${a.cognome}` : "Atleta";
-            avvisa_sovrapposizione("atleta", atleta_id, nome, dest);
+            // ⛔ Controllo BLOCCANTE per singolo atleta.
+            const conflitto = await verifica_conflitto_atleta({ sessione_id, atleta_id });
+            if (conflitto) {
+              set_conflitto_atleta({ nome, conflitto });
+              return;
+            }
             await assegna_atleta.mutateAsync({ sessione_id, atleta_id });
+            assegnati += 1;
           }
-          if (ids.length > 0) toast({ title: `✅ ${ids.length} atleti assegnati alla sessione` });
+          if (assegnati > 0) toast({ title: `✅ ${assegnati} atleti assegnati alla sessione` });
         }
 
 
       } else if (tipo === "atleta") {
         const a = (atleti as any[]).find((x) => x.id === persona_id);
         const nome = a ? `${a.nome} ${a.cognome}` : "Atleta";
-        avvisa_sovrapposizione("atleta", persona_id, nome, dest);
+        // ⛔ Controllo BLOCCANTE: nessuna mutation se già in sessione sovrapposta.
+        const conflitto = await verifica_conflitto_atleta({ sessione_id, atleta_id: persona_id });
+        if (conflitto) {
+          set_conflitto_atleta({ nome, conflitto });
+          return;
+        }
         await assegna_atleta.mutateAsync({ sessione_id, atleta_id: persona_id });
       } else if (tipo === "istruttore") {
         const i = (istruttori as any[]).find((x) => x.id === persona_id);
         const nome = i ? `${i.nome} ${i.cognome}` : "Istruttore";
-        avvisa_sovrapposizione("istruttore", persona_id, nome, dest);
+        // ⚠️ Blocco di default, ma sbloccabile manualmente dall'utente.
+        const conflitto = await verifica_conflitto_istruttore({ sessione_id, istruttore_id: persona_id });
+        if (conflitto) {
+          set_conflitto_istruttore({ nome, istruttore_id: persona_id, sessione_id, conflitto });
+          return;
+        }
         await assegna_istruttore.mutateAsync({ sessione_id, istruttore_id: persona_id });
       }
+
     } catch (e: any) {
       toast({ title: "Errore assegnazione", description: e.message, variant: "destructive" });
     }
@@ -1436,6 +1464,61 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={!!conflitto_atleta} onOpenChange={(o) => !o && set_conflitto_atleta(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>⛔ Atleta già assegnato in questo orario</AlertDialogTitle>
+            <AlertDialogDescription>
+              {conflitto_atleta?.nome} è già assegnato a un'altra sessione sovrapposta (
+              {conflitto_atleta?.conflitto.ora_inizio}–{conflitto_atleta?.conflitto.ora_fine} —{" "}
+              {conflitto_atleta?.conflitto.etichetta}). Lo stesso atleta non può essere in due sessioni
+              contemporanee: rimuovilo prima dall'altra sessione oppure cambia l'orario.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => set_conflitto_atleta(null)}>Ho capito</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!conflitto_istruttore} onOpenChange={(o) => !o && set_conflitto_istruttore(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>⚠️ Istruttore già assegnato in questo orario</AlertDialogTitle>
+            <AlertDialogDescription>
+              {conflitto_istruttore?.nome} è già assegnato a un'altra sessione sovrapposta (
+              {conflitto_istruttore?.conflitto.ora_inizio}–{conflitto_istruttore?.conflitto.ora_fine} —{" "}
+              {conflitto_istruttore?.conflitto.etichetta}). Puoi assegnarlo comunque se deve seguire
+              eccezionalmente due gruppi in contemporanea.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                const c = conflitto_istruttore;
+                set_conflitto_istruttore(null);
+                if (!c) return;
+                try {
+                  await assegna_istruttore.mutateAsync({
+                    sessione_id: c.sessione_id,
+                    istruttore_id: c.istruttore_id,
+                    forza: true,
+                  });
+                  toast({ title: `✅ ${c.nome} assegnato nonostante la sovrapposizione` });
+                } catch (e: any) {
+                  toast({ title: "Errore assegnazione", description: e.message, variant: "destructive" });
+                }
+              }}
+            >
+              Assegna comunque
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+
 
       <RipetiSessioneDialog
 
