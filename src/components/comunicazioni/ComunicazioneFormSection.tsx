@@ -8,8 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { Send, X, Search, AlertTriangle } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useI18n } from "@/lib/i18n";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 import { use_livelli } from "@/hooks/use-supabase-data";
+
+const tf = (key: string, opts?: any) => i18n.t(`form_section.${key}`, { ns: "communications", ...(opts ?? {}) }) as string;
+
 
 export type TipoDestinatariMulti = "tutti" | "per_corso" | "per_livello" | "atleti";
 
