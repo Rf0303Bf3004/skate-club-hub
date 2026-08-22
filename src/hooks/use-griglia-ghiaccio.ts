@@ -934,6 +934,9 @@ export function use_ripeti_sessione() {
             note: sessione.note ?? null,
             messaggio_atleti: sessione.messaggio_atleti ?? null,
             corso_id,
+            gruppo_livello: sessione.gruppo_livello ?? null,
+            gruppo_scope: sessione.gruppo_scope ?? null,
+            gruppo_ragione_sociale_id: sessione.gruppo_ragione_sociale_id ?? null,
           } as any)
           .select("id")
           .single();
