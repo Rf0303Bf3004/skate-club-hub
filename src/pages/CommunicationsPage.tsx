@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useI18n } from '@/lib/i18n';
+import { useTranslation } from 'react-i18next';
 import { use_atleti, use_comunicazioni, use_corsi, use_istruttori, use_stagioni } from '@/hooks/use-supabase-data';
 import { use_crea_comunicazione } from '@/hooks/use-supabase-mutations';
 import { supabase, get_current_club_id } from '@/lib/supabase';
@@ -25,60 +25,64 @@ import { MieiReminderStaffTab } from '@/components/comunicazioni/MieiReminderSta
 import { ListaComunicazioni } from '@/components/comunicazioni/ListaComunicazioni';
 import { Bell } from 'lucide-react';
 
-const TEMPLATES = [
-  {
-    id: 'benvenuto',
-    nome: 'Benvenuto stagione',
-    titolo: 'Benvenuto alla stagione {anno}!',
-    testo: 'Siamo felici di darvi il benvenuto alla nuova stagione sportiva {anno}. Il calendario corsi è disponibile nell\'app. Per qualsiasi informazione non esitate a contattarci.',
-    tipo_destinatari: 'tutti',
-    placeholders: ['anno'],
-  },
-  {
-    id: 'corso_annullato',
-    nome: 'Corso annullato',
-    titolo: 'Corso annullato — {data}',
-    testo: 'Vi informiamo che il corso {nome_corso} di {data} è annullato. Ci scusiamo per l\'inconveniente.',
-    tipo_destinatari: 'per_corso',
-    placeholders: ['data', 'nome_corso'],
-  },
-  {
-    id: 'pista_chiusa',
-    nome: 'Pista chiusa',
-    titolo: 'Pista chiusa — {data}',
-    testo: 'La pista sarà chiusa {data} per {motivo}. Tutti i corsi previsti sono annullati.',
-    tipo_destinatari: 'tutti',
-    placeholders: ['data', 'motivo'],
-  },
-  {
-    id: 'gara',
-    nome: 'Comunicazione gara',
-    titolo: 'Gara — {nome_gara}',
-    testo: 'Vi ricordiamo la gara {nome_gara} in programma il {data} a {luogo}.',
-    tipo_destinatari: 'tutti',
-    placeholders: ['nome_gara', 'data', 'luogo'],
-  },
-  {
-    id: 'cambio_orario',
-    nome: 'Cambio orario',
-    titolo: 'Cambio orario — {corso}',
-    testo: 'Il corso {corso} cambia orario: dal {data} si terrà alle {nuovo_orario} invece di {vecchio_orario}.',
-    tipo_destinatari: 'per_corso',
-    placeholders: ['corso', 'data', 'nuovo_orario', 'vecchio_orario'],
-  },
-];
+function build_templates(t: (key: string) => string) {
+  return [
+    {
+      id: 'benvenuto',
+      nome: t('templates.benvenuto.nome'),
+      titolo: t('templates.benvenuto.titolo'),
+      testo: t('templates.benvenuto.testo'),
+      tipo_destinatari: 'tutti',
+      placeholders: ['anno'],
+    },
+    {
+      id: 'corso_annullato',
+      nome: t('templates.corso_annullato.nome'),
+      titolo: t('templates.corso_annullato.titolo'),
+      testo: t('templates.corso_annullato.testo'),
+      tipo_destinatari: 'per_corso',
+      placeholders: ['data', 'nome_corso'],
+    },
+    {
+      id: 'pista_chiusa',
+      nome: t('templates.pista_chiusa.nome'),
+      titolo: t('templates.pista_chiusa.titolo'),
+      testo: t('templates.pista_chiusa.testo'),
+      tipo_destinatari: 'tutti',
+      placeholders: ['data', 'motivo'],
+    },
+    {
+      id: 'gara',
+      nome: t('templates.gara.nome'),
+      titolo: t('templates.gara.titolo'),
+      testo: t('templates.gara.testo'),
+      tipo_destinatari: 'tutti',
+      placeholders: ['nome_gara', 'data', 'luogo'],
+    },
+    {
+      id: 'cambio_orario',
+      nome: t('templates.cambio_orario.nome'),
+      titolo: t('templates.cambio_orario.titolo'),
+      testo: t('templates.cambio_orario.testo'),
+      tipo_destinatari: 'per_corso',
+      placeholders: ['corso', 'data', 'nuovo_orario', 'vecchio_orario'],
+    },
+  ];
+}
 
-const PLACEHOLDER_LABELS: Record<string, string> = {
-  anno: 'Anno (es. 2026)',
-  data: 'Data',
-  nome_corso: 'Nome corso',
-  motivo: 'Motivo',
-  nome_gara: 'Nome gara',
-  luogo: 'Luogo',
-  corso: 'Nome corso',
-  nuovo_orario: 'Nuovo orario',
-  vecchio_orario: 'Vecchio orario',
-};
+function build_placeholder_labels(t: (key: string) => string): Record<string, string> {
+  return {
+    anno: t('placeholder_labels.anno'),
+    data: t('placeholder_labels.data'),
+    nome_corso: t('placeholder_labels.nome_corso'),
+    motivo: t('placeholder_labels.motivo'),
+    nome_gara: t('placeholder_labels.nome_gara'),
+    luogo: t('placeholder_labels.luogo'),
+    corso: t('placeholder_labels.corso'),
+    nuovo_orario: t('placeholder_labels.nuovo_orario'),
+    vecchio_orario: t('placeholder_labels.vecchio_orario'),
+  };
+}
 
 const LIVELLI_ORDER: Record<string, number> = {
   Pulcini: 0,
@@ -124,7 +128,9 @@ type RecipientPreviewRow = {
 };
 
 const CommunicationsPage: React.FC = () => {
-  const { t } = useI18n();
+  const { t } = useTranslation('communications');
+  const TEMPLATES = useMemo(() => build_templates(t), [t]);
+  const PLACEHOLDER_LABELS = useMemo(() => build_placeholder_labels(t), [t]);
   const { data: comunicazioni = [], isLoading } = use_comunicazioni();
   const { data: corsi = [] } = use_corsi();
   const { data: atleti = [] } = use_atleti();
