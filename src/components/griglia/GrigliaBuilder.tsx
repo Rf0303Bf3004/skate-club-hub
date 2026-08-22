@@ -1014,31 +1014,26 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
           const a = (atleti as any[]).find((x) => x.id === atleta_id);
           const nome = a ? `${a.nome} ${a.cognome}` : "Atleta";
           avvisa_sovrapposizione("atleta", atleta_id, nome, dest);
-          await assegna_atleta.mutateAsync({ sessione_id, atleta_id });
         }
-        // Collegamento dinamico: la sessione "ricorda" da quale gruppo arriva
         const livello_gruppo: string | undefined = active.data?.current?.livello;
         if (livello_gruppo && livello_gruppo !== LIVELLO_NON_DEFINITO) {
-          const { gruppo_scope, gruppo_ragione_sociale_id } = scope_da_box_id(
-            active.data?.current?.box_id,
-          );
-          await upsert_sessione.mutateAsync({
-            id: dest.id,
-            blocco_id: dest.blocco_id,
-            ordine: dest.ordine,
-            ora_inizio: dest.ora_inizio,
-            ora_fine: dest.ora_fine,
-            specialita_id: dest.specialita_id ?? null,
-            specialita_testo_libero: dest.specialita_testo_libero ?? null,
-            note: dest.note ?? null,
-            pista: dest.pista ?? null,
-            messaggio_atleti: dest.messaggio_atleti ?? null,
+          // Collegamento dinamico: nuova riga in griglia_sessioni_gruppi + atleti taggati.
+          const { gruppo_scope, gruppo_ragione_sociale_id } = scope_da_box_id(active.data?.current?.box_id);
+          const res = await assegna_gruppo.mutateAsync({
+            sessione_id,
             gruppo_livello: livello_gruppo,
-            gruppo_scope,
+            gruppo_scope: (gruppo_scope ?? "club") as GruppoScope,
             gruppo_ragione_sociale_id,
           });
+          toast({ title: `🔗 Gruppo «${livello_gruppo}» collegato`, description: `${res.aggiunti} atleti aggiunti.` });
+        } else {
+          // Livello non definito: nessun gruppo dinamico, assegnazione individuale.
+          for (const atleta_id of ids) {
+            await assegna_atleta.mutateAsync({ sessione_id, atleta_id });
+          }
+          if (ids.length > 0) toast({ title: `✅ ${ids.length} atleti assegnati alla sessione` });
         }
-        if (ids.length > 0) toast({ title: `✅ ${ids.length} atleti assegnati alla sessione` });
+
       } else if (tipo === "atleta") {
         const a = (atleti as any[]).find((x) => x.id === persona_id);
         const nome = a ? `${a.nome} ${a.cognome}` : "Atleta";
