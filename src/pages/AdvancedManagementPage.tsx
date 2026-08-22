@@ -5,6 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ShieldAlert, Trash2, AlertTriangle, X, Check, Search, Calendar } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
+
+const ta = (key: string, opts?: any) => i18n.t(`advanced.${key}`, { ns: "settings", ...(opts || {}) }) as string;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function fmt_date(d: string) {
@@ -37,17 +41,17 @@ const ConfermaEliminazioneModal: React.FC<{
         <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-destructive/5">
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-destructive" />
-            <h3 className="text-lg font-semibold text-foreground">Conferma eliminazione definitiva</h3>
+            <h3 className="text-lg font-semibold text-foreground">{ta("confirm.title")}</h3>
           </div>
         </div>
 
         <div className="px-6 py-4 space-y-4 max-h-[60vh] overflow-y-auto">
           <div className="space-y-2">
             <p className="text-sm text-destructive font-medium">
-              Stai per eliminare {ids.length} {ids.length === 1 ? 'lezione' : 'lezioni'} in modo definitivo.
+              {ta("confirm.warn", { count: ids.length, lezioni: ta("lezione", { count: ids.length }) })}
             </p>
             <p className="text-xs text-muted-foreground">
-              Questa operazione non può essere annullata.
+              {ta("confirm.irreversible")}
             </p>
           </div>
 
@@ -63,7 +67,7 @@ const ConfermaEliminazioneModal: React.FC<{
                   <Calendar className="h-3.5 w-3.5 text-destructive/70 shrink-0" />
                   <div className="min-w-0">
                     <p className="font-medium truncate">{fmt_date(l.data)} — {l.ora_inizio?.slice(0, 5)}</p>
-                    <p className="text-xs text-muted-foreground truncate">{istr ? `${istr.nome} ${istr.cognome}` : "—"} · {nomi || "Nessuna atleta"}</p>
+                    <p className="text-xs text-muted-foreground truncate">{istr ? `${istr.nome} ${istr.cognome}` : "—"} · {nomi || ta("no_athletes")}</p>
                   </div>
                 </div>
               );
@@ -72,7 +76,7 @@ const ConfermaEliminazioneModal: React.FC<{
 
           <div className="space-y-2 pt-2">
             <p className="text-sm font-medium text-foreground">
-              Scrivi <span className="font-bold text-destructive">{PAROLA}</span> per confermare:
+              {ta("confirm.type_prefix")} <span className="font-bold text-destructive">{PAROLA}</span> {ta("confirm.type_suffix")}
             </p>
             <input
               value={testo_conferma}
@@ -85,15 +89,15 @@ const ConfermaEliminazioneModal: React.FC<{
 
         <div className="flex justify-end gap-2 px-6 py-4 border-t border-border">
           <Button variant="outline" onClick={on_close}>
-            Annulla
+            {ta("cancel")}
           </Button>
           <Button variant="destructive" disabled={testo_conferma !== PAROLA || loading} onClick={on_confirm}>
             {loading ? (
               <span className="flex items-center gap-2">
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                Elimino...
+                {ta("deleting")}
               </span>
-            ) : `🗑️ Elimina ${ids.length} ${ids.length === 1 ? 'lezione' : 'lezioni'}`}
+            ) : `🗑️ ${ta("delete_n", { count: ids.length, lezioni: ta("lezione", { count: ids.length }) })}`}
           </Button>
         </div>
       </div>
@@ -160,9 +164,9 @@ const SezioneRicorrenze: React.FC<{
       set_conferma_open(false);
       set_lezione_base_id("");
       set_ids_da_eliminare([]);
-      toast({ title: `🗑️ ${ids_da_eliminare.length} ${ids_da_eliminare.length === 1 ? 'lezione eliminata' : 'lezioni eliminate'} correttamente` });
+      toast({ title: `🗑️ ${ta("toast.deleted", { count: ids_da_eliminare.length })}` });
     } catch (err: any) {
-      toast({ title: "Errore eliminazione", description: err?.message, variant: "destructive" });
+      toast({ title: ta("toast.error"), description: err?.message, variant: "destructive" });
     }
   };
 
@@ -173,17 +177,17 @@ const SezioneRicorrenze: React.FC<{
           <Calendar className="h-5 w-5 text-primary" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-foreground">Annulla lezioni ricorrenti</h2>
-          <p className="text-sm text-muted-foreground">Elimina una lezione e/o le sue ricorrenze future</p>
+          <h2 className="text-lg font-semibold text-foreground">{ta("recurring.title")}</h2>
+          <p className="text-sm text-muted-foreground">{ta("recurring.subtitle")}</p>
         </div>
       </div>
 
       {/* Step 1: Seleziona istruttore */}
       <div className="space-y-2">
-        <p className="text-sm font-medium text-foreground">1. Seleziona istruttore</p>
+        <p className="text-sm font-medium text-foreground">{ta("recurring.step1")}</p>
         <Select value={istruttore_id} onValueChange={v => { set_istruttore_id(v); set_lezione_base_id(""); }}>
           <SelectTrigger>
-            <SelectValue placeholder="Scegli istruttore..." />
+            <SelectValue placeholder={ta("recurring.choose_instructor")} />
           </SelectTrigger>
           <SelectContent>
             {istruttori.filter((i: any) => i.attivo).map((i: any) => (
@@ -196,9 +200,9 @@ const SezioneRicorrenze: React.FC<{
       {/* Step 2: Seleziona lezione base */}
       {istruttore_id && (
         <div className="space-y-2">
-          <p className="text-sm font-medium text-foreground">2. Seleziona la lezione di partenza</p>
+          <p className="text-sm font-medium text-foreground">{ta("recurring.step2")}</p>
           {lezioni_istruttore.length === 0 ? (
-            <p className="text-sm text-muted-foreground italic">Nessuna lezione futura per questo istruttore</p>
+            <p className="text-sm text-muted-foreground italic">{ta("recurring.no_future")}</p>
           ) : (
             <div className="space-y-1 max-h-60 overflow-y-auto">
               {lezioni_istruttore.map(l => {
@@ -219,10 +223,10 @@ const SezioneRicorrenze: React.FC<{
                     </div>
                     <div className="min-w-0">
                       <p className="font-medium truncate">{fmt_date(l.data)} · {l.ora_inizio?.slice(0, 5)}</p>
-                      <p className="text-xs text-muted-foreground truncate">{nomi || "Nessuna atleta"}</p>
+                      <p className="text-xs text-muted-foreground truncate">{nomi || ta("no_athletes")}</p>
                     </div>
                     {l.condivisa && (
-                      <span className="text-xs bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded">Semi</span>
+                      <span className="text-xs bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded">{ta("semi")}</span>
                     )}
                   </div>
                 );
@@ -235,13 +239,13 @@ const SezioneRicorrenze: React.FC<{
       {/* Step 3: Modalità annullamento */}
       {lezione_base_id && (
         <div className="space-y-3">
-          <p className="text-sm font-medium text-foreground">3. Cosa vuoi eliminare?</p>
+          <p className="text-sm font-medium text-foreground">{ta("recurring.step3")}</p>
 
           <div className="space-y-2">
             {[
-              { val: 'solo', label: 'Solo questa lezione', desc: '1 lezione eliminata' },
-              { val: 'future', label: 'Questa e tutte le future', desc: `${lezioni_collegate.length} lezioni collegate trovate` },
-              { val: 'quante', label: 'Questa e le prossime N', desc: 'Scegli quante' },
+              { val: 'solo', label: ta("recurring.mode_only"), desc: ta("recurring.mode_only_desc") },
+              { val: 'future', label: ta("recurring.mode_future"), desc: ta("recurring.mode_future_desc", { count: lezioni_collegate.length }) },
+              { val: 'quante', label: ta("recurring.mode_n"), desc: ta("recurring.mode_n_desc") },
             ].map(opt => (
               <div
                 key={opt.val}
@@ -262,37 +266,37 @@ const SezioneRicorrenze: React.FC<{
 
           {modalita === 'quante' && (
             <div className="flex items-center gap-2 text-sm">
-              <span>Elimina le prossime</span>
+              <span>{ta("recurring.delete_next")}</span>
               <input
                 type="number"
                 value={quante}
                 onChange={e => set_quante(Math.max(1, parseInt(e.target.value) || 1))}
                 className="w-16 rounded-lg border border-border bg-background px-2 py-1 text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary/40"
               />
-              <span>lezioni (su {lezioni_collegate.length} totali)</span>
+              <span>{ta("recurring.of_total", { count: lezioni_collegate.length })}</span>
             </div>
           )}
 
           {/* Anteprima */}
           <div className="bg-muted/30 rounded-lg p-3 space-y-1">
-            <p className="text-xs font-medium text-muted-foreground">Anteprima lezioni che verranno eliminate:</p>
+            <p className="text-xs font-medium text-muted-foreground">{ta("recurring.preview")}</p>
             <div className="space-y-0.5">
               {calcola_ids().slice(0, 5).map(id => {
                 const l = lezioni.find(x => x.id === id);
                 if (!l) return null;
                 return (
-                  <p key={id} className="text-xs text-foreground">· {fmt_date(l.data)} alle {l.ora_inizio?.slice(0, 5)}</p>
+                  <p key={id} className="text-xs text-foreground">· {ta("recurring.preview_row", { data: fmt_date(l.data), ora: l.ora_inizio?.slice(0, 5) })}</p>
                 );
               })}
               {calcola_ids().length > 5 && (
-                <p className="text-xs text-muted-foreground">... e altre {calcola_ids().length - 5} lezioni</p>
+                <p className="text-xs text-muted-foreground">{ta("recurring.and_more", { count: calcola_ids().length - 5 })}</p>
               )}
             </div>
           </div>
 
           <Button variant="destructive" onClick={handle_procedi} className="w-full">
             <Trash2 className="h-4 w-4 mr-2" />
-            Procedi con l'eliminazione ({calcola_ids().length} {calcola_ids().length === 1 ? 'lezione' : 'lezioni'})
+            {ta("recurring.proceed", { count: calcola_ids().length, lezioni: ta("lezione", { count: calcola_ids().length }) })}
           </Button>
         </div>
       )}
@@ -357,9 +361,9 @@ const SezioneSelezioneMolteplice: React.FC<{
       await annulla.mutateAsync(Array.from(selezionate));
       set_conferma_open(false);
       set_selezionate(new Set());
-      toast({ title: `🗑️ ${selezionate.size} ${selezionate.size === 1 ? 'lezione eliminata' : 'lezioni eliminate'} correttamente` });
+      toast({ title: `🗑️ ${ta("toast.deleted", { count: selezionate.size })}` });
     } catch (err: any) {
-      toast({ title: "Errore eliminazione", description: err?.message, variant: "destructive" });
+      toast({ title: ta("toast.error"), description: err?.message, variant: "destructive" });
     }
   };
 
@@ -370,21 +374,21 @@ const SezioneSelezioneMolteplice: React.FC<{
           <Trash2 className="h-5 w-5 text-destructive" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-foreground">Eliminazione multipla</h2>
-          <p className="text-sm text-muted-foreground">Seleziona e elimina più lezioni contemporaneamente</p>
+          <h2 className="text-lg font-semibold text-foreground">{ta("bulk.title")}</h2>
+          <p className="text-sm text-muted-foreground">{ta("bulk.subtitle")}</p>
         </div>
       </div>
 
       {/* Filtri */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="space-y-1">
-          <p className="text-xs font-medium text-muted-foreground">Istruttore</p>
+          <p className="text-xs font-medium text-muted-foreground">{ta("bulk.instructor")}</p>
           <Select value={filtro_istruttore} onValueChange={set_filtro_istruttore}>
             <SelectTrigger>
-              <SelectValue placeholder="Tutti" />
+              <SelectValue placeholder={ta("bulk.all")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="tutti">Tutti</SelectItem>
+              <SelectItem value="tutti">{ta("bulk.all")}</SelectItem>
               {istruttori.filter((i: any) => i.attivo).map((i: any) => (
                 <SelectItem key={i.id} value={i.id}>{i.nome} {i.cognome}</SelectItem>
               ))}
@@ -392,7 +396,7 @@ const SezioneSelezioneMolteplice: React.FC<{
           </Select>
         </div>
         <div className="space-y-1">
-          <p className="text-xs font-medium text-muted-foreground">Dal</p>
+          <p className="text-xs font-medium text-muted-foreground">{ta("bulk.from")}</p>
           <input
             type="date"
             value={filtro_da}
@@ -401,7 +405,7 @@ const SezioneSelezioneMolteplice: React.FC<{
           />
         </div>
         <div className="space-y-1">
-          <p className="text-xs font-medium text-muted-foreground">Al</p>
+          <p className="text-xs font-medium text-muted-foreground">{ta("bulk.to")}</p>
           <input
             type="date"
             value={filtro_a}
@@ -413,10 +417,10 @@ const SezioneSelezioneMolteplice: React.FC<{
 
       {/* Header lista */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">{lezioni_filtrate.length} lezioni trovate · {selezionate.size} selezionate</p>
+        <p className="text-sm text-muted-foreground">{ta("bulk.found", { count: lezioni_filtrate.length, sel: selezionate.size })}</p>
         {lezioni_filtrate.length > 0 && (
           <Button variant="ghost" size="sm" onClick={toggle_tutte}>
-            {selezionate.size === lezioni_filtrate.length ? "Deseleziona tutte" : "Seleziona tutte"}
+            {selezionate.size === lezioni_filtrate.length ? ta("bulk.deselect_all") : ta("bulk.select_all")}
           </Button>
         )}
       </div>
@@ -425,7 +429,7 @@ const SezioneSelezioneMolteplice: React.FC<{
       {lezioni_filtrate.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
           <Search className="h-8 w-8 mx-auto mb-2 opacity-40" />
-          <p className="text-sm">Nessuna lezione trovata con i filtri applicati</p>
+          <p className="text-sm">{ta("bulk.no_results")}</p>
         </div>
       ) : (
         <div className="space-y-1 max-h-80 overflow-y-auto">
@@ -450,10 +454,10 @@ const SezioneSelezioneMolteplice: React.FC<{
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-medium truncate">{fmt_date(l.data)} · {l.ora_inizio?.slice(0, 5)}</p>
-                    {is_semi && <span className="text-xs bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded">Semi</span>}
+                    {is_semi && <span className="text-xs bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded">{ta("semi")}</span>}
                   </div>
                   <p className="text-xs text-muted-foreground truncate">
-                    {istr ? `${istr.nome} ${istr.cognome}` : "—"} · {nomi || "Nessuna atleta"}
+                    {istr ? `${istr.nome} ${istr.cognome}` : "—"} · {nomi || ta("no_athletes")}
                   </p>
                 </div>
               </div>
@@ -466,7 +470,7 @@ const SezioneSelezioneMolteplice: React.FC<{
       {selezionate.size > 0 && (
         <Button variant="destructive" onClick={() => set_conferma_open(true)} className="w-full">
           <Trash2 className="h-4 w-4 mr-2" />
-          Elimina {selezionate.size} {selezionate.size === 1 ? 'lezione selezionata' : 'lezioni selezionate'}
+          {ta("bulk.delete_selected", { count: selezionate.size })}
         </Button>
       )}
 
@@ -487,6 +491,7 @@ const SezioneSelezioneMolteplice: React.FC<{
 
 // ─── Pagina principale ────────────────────────────────────────────────────────
 const AdvancedManagementPage: React.FC = () => {
+  useTranslation("settings");
   const { data: lezioni = [], isLoading } = use_lezioni_private();
   const { data: istruttori = [] } = use_istruttori();
   const { data: atleti = [] } = use_atleti();
@@ -504,10 +509,10 @@ const AdvancedManagementPage: React.FC = () => {
       <div className="space-y-2">
         <div className="flex items-center gap-3">
           <ShieldAlert className="h-7 w-7 text-destructive" />
-          <h1 className="text-2xl font-bold text-foreground">Gestione Avanzata</h1>
+          <h1 className="text-2xl font-bold text-foreground">{ta("title")}</h1>
         </div>
         <p className="text-sm text-muted-foreground">
-          Operazioni irreversibili. Tutte le eliminazioni richiedono conferma esplicita.
+          {ta("subtitle")}
         </p>
       </div>
 
@@ -515,7 +520,7 @@ const AdvancedManagementPage: React.FC = () => {
       <div className="flex items-center gap-3 bg-destructive/10 border border-destructive/30 rounded-xl px-4 py-3">
         <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
         <p className="text-sm text-destructive">
-          Le operazioni in questa pagina eliminano dati in modo definitivo e non possono essere annullate.
+          {ta("banner")}
         </p>
       </div>
 
