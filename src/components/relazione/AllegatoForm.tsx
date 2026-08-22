@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { CATEGORIE_ALLEGATO } from "./categorie";
+import { CATEGORIE_ALLEGATO, label_allegato } from "./categorie";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
 
@@ -117,7 +117,7 @@ export default function AllegatoForm({ open, on_close, club_id, stagione_id, all
             <Select value={categoria} onValueChange={set_categoria}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {CATEGORIE_ALLEGATO.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                {CATEGORIE_ALLEGATO.map((c) => <SelectItem key={c.value} value={c.value}>{label_allegato(c.value)}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>

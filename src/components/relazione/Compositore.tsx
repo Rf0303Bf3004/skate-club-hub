@@ -8,7 +8,7 @@ import AnteprimaFedele from "./AnteprimaFedele";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CompositoreItem, SISTEMA_LABELS } from "./types-compositore";
 import { AREA_DEFINITIONS } from "./MockSezionePDF";
-import { cat_blocco, cat_allegato } from "./categorie";
+import { label_blocco, label_allegato } from "./categorie";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -160,7 +160,7 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
         kind: "blocco",
         ref_id: b.id,
         titolo: b.titolo,
-        sottotitolo: `Blocco · ${cat_blocco(b.categoria).label}`,
+        sottotitolo: `Blocco · ${label_blocco(b.categoria)}`,
         attivo: !!b.attivo,
         ordine: b.ordine ?? 0,
         payload: b,
@@ -172,7 +172,7 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
         kind: "allegato",
         ref_id: a.id,
         titolo: a.titolo,
-        sottotitolo: `Allegato · ${cat_allegato(a.categoria).label}`,
+        sottotitolo: `Allegato · ${label_allegato(a.categoria)}`,
         attivo: a.attivo !== false,
         ordine: a.ordine ?? 0,
         payload: a,

@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { CATEGORIE_BLOCCO } from "./categorie";
+import { CATEGORIE_BLOCCO, label_blocco } from "./categorie";
 import { useTranslation } from "react-i18next";
 
 interface Props {
@@ -79,7 +79,7 @@ export default function BloccoForm({ open, on_close, club_id, stagione_id, blocc
             <Select value={categoria} onValueChange={set_categoria}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {CATEGORIE_BLOCCO.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                {CATEGORIE_BLOCCO.map((c) => <SelectItem key={c.value} value={c.value}>{label_blocco(c.value)}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
