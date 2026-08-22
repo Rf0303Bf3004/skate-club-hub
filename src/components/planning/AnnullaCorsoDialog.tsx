@@ -13,6 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { Loader2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 
 interface Props {
   open: boolean;
@@ -36,6 +38,8 @@ const format_data_it = (iso: string) => {
   return `${d}/${m}/${y}`;
 };
 
+const tk = (k: string, o?: any) => i18n.t(`annulla_dialog.${k}`, { ns: "planning", ...(o || {}) }) as string;
+
 const AnnullaCorsoDialog: React.FC<Props> = ({
   open,
   on_close,
@@ -52,21 +56,22 @@ const AnnullaCorsoDialog: React.FC<Props> = ({
   ora_fine,
   on_done,
 }) => {
+  const { t } = useTranslation("planning");
   const [motivo, set_motivo] = useState("");
   const [saving, set_saving] = useState(false);
 
   const handle_save = async () => {
     if (!motivo.trim()) {
-      toast.error("Il motivo è obbligatorio");
+      toast.error(tk("err_motivo"));
       return;
     }
     if (!settimana_id) {
-      toast.error("Settimana non materializzata");
+      toast.error(tk("err_settimana"));
       return;
     }
     const corso_id_target = corso_id_originale || planning_corso_id;
     if (!corso_id_target) {
-      toast.error("ID corso mancante");
+      toast.error(tk("err_corso_id"));
       return;
     }
     set_saving(true);
@@ -132,10 +137,10 @@ const AnnullaCorsoDialog: React.FC<Props> = ({
           const club_id = await get_current_club_id();
           if (club_id) {
             const data_it = format_data_it(data);
-            const testo = `Il corso "${corso_nome}" del ${data_it} è stato annullato. Motivo: ${motivo.trim()}`;
+            const testo = tk("com_testo", { corso: corso_nome, data: data_it, motivo: motivo.trim(), interpolation: { escapeValue: false } });
             const { error: com_err } = await supabase.from("comunicazioni").insert({
               club_id,
-              titolo: "Corso annullato",
+              titolo: tk("com_titolo"),
               testo,
               tipo: "corso_annullato",
               tipo_destinatari: "per_corso",
@@ -152,13 +157,13 @@ const AnnullaCorsoDialog: React.FC<Props> = ({
         console.error("[AnnullaCorsoDialog] errore creazione comunicazione", com_e);
       }
 
-      toast.success("Corso annullato per questa settimana");
+      toast.success(tk("ok"));
       on_done(final_id, motivo.trim());
       set_motivo("");
       on_close();
     } catch (e: any) {
       console.error("[AnnullaCorsoDialog] errore handle_save", e);
-      toast.error(e.message || "Errore durante l'annullamento");
+      toast.error(e.message || tk("err_generico"));
     } finally {
       set_saving(false);
     }
@@ -170,7 +175,7 @@ const AnnullaCorsoDialog: React.FC<Props> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Undo2 className="h-4 w-4 text-destructive" />
-            Annulla corso (solo questa settimana)
+            {t("annulla_dialog.titolo")}
           </DialogTitle>
           <DialogDescription>
             <span className="font-medium text-foreground">{corso_nome}</span>
@@ -178,17 +183,16 @@ const AnnullaCorsoDialog: React.FC<Props> = ({
             {giorno} {data} · {ora_inizio?.slice(0, 5)}–{ora_fine?.slice(0, 5)}
             <br />
             <span className="text-xs">
-              L'annullamento vale solo per questa occorrenza. Il corso ricorrente
-              non verrà modificato.
+              {t("annulla_dialog.nota")}
             </span>
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-2">
-          <Label htmlFor="motivo">Motivo dell'annullamento *</Label>
+          <Label htmlFor="motivo">{t("annulla_dialog.motivo_label")}</Label>
           <Textarea
             id="motivo"
-            placeholder="Es. Pista chiusa per manutenzione, malattia istruttore..."
+            placeholder={t("annulla_dialog.motivo_placeholder")}
             value={motivo}
             onChange={(e) => set_motivo(e.target.value)}
             rows={4}
@@ -198,7 +202,7 @@ const AnnullaCorsoDialog: React.FC<Props> = ({
 
         <DialogFooter>
           <Button variant="outline" onClick={on_close} disabled={saving}>
-            Annulla
+            {t("annulla_dialog.annulla")}
           </Button>
           <Button
             variant="destructive"
@@ -206,7 +210,7 @@ const AnnullaCorsoDialog: React.FC<Props> = ({
             disabled={saving || !motivo.trim()}
           >
             {saving && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
-            Conferma annullamento
+            {t("annulla_dialog.conferma")}
           </Button>
         </DialogFooter>
       </DialogContent>

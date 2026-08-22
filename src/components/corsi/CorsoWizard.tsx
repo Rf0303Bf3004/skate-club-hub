@@ -12,6 +12,7 @@ import { toast } from "@/hooks/use-toast";
 import { calcola_status_istruttori_per_slot, norm_giorno, time_to_min as tmin } from "@/lib/availability";
 import { SelectLivello } from "@/components/ui/select-livello";
 import { use_livelli, use_disponibilita_ghiaccio } from "@/hooks/use-supabase-data";
+import { useTranslation } from "react-i18next";
 
 const GIORNI_DB = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
 const GIORNO_TO_WEEKDAY: Record<string, number> = {
@@ -63,6 +64,7 @@ const OffIceTimeline: React.FC<{
   ora_fine: string;
   corsi: any[];
 }> = ({ giorno, corso_id, ora_inizio, ora_fine, corsi }) => {
+  const { t } = useTranslation("corsi");
   const corsi_giorno = useMemo(
     () => (corsi || []).filter(
       (c) => c.id !== corso_id && c.giorno === giorno && (c.tipo || "").toLowerCase() === "off-ice" && c.ora_inizio && c.ora_fine,
@@ -88,8 +90,8 @@ const OffIceTimeline: React.FC<{
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span className="font-medium">Timeline Off-Ice — {giorno}</span>
-        <span>06:00 – 22:00 · nessun vincolo orario</span>
+        <span className="font-medium">{t("corso_wizard.timeline_off_ice", { giorno })}</span>
+        <span>{t("corso_wizard.timeline_range")}</span>
       </div>
       <div className="relative h-16 bg-muted/30 rounded-lg border border-border overflow-hidden">
         {ticks.map((h) => {
@@ -166,6 +168,7 @@ export interface CorsoWizardProps {
 }
 
 export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, corsi, on_close, on_save, on_delete, saving, deleting }) => {
+  const { t } = useTranslation("corsi");
   const is_edit = !!corso?.id;
   const has_planning_init = !!(corso?.giorno && corso?.ora_inizio && corso?.ora_fine);
 
@@ -299,16 +302,16 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
   };
 
   const errors_step1: string[] = [];
-  if (!form.nome.trim()) errors_step1.push("Nome corso");
-  if (form.tipo !== "Ghiaccio" && form.tipo !== "Off-Ice") errors_step1.push("Tipo (Ghiaccio o Off-Ice)");
+  if (!form.nome.trim()) errors_step1.push(t("corso_wizard.campo_nome"));
+  if (form.tipo !== "Ghiaccio" && form.tipo !== "Off-Ice") errors_step1.push(t("corso_wizard.campo_tipo"));
 
   const errors_step2: string[] = [];
   if (posiziona_planning) {
-    if (!form.giorno) errors_step2.push("Giorno");
-    if (!form.ora_inizio) errors_step2.push("Ora inizio");
-    if (!form.ora_fine) errors_step2.push("Ora fine");
+    if (!form.giorno) errors_step2.push(t("corso_wizard.campo_giorno"));
+    if (!form.ora_inizio) errors_step2.push(t("corso_wizard.campo_ora_inizio"));
+    if (!form.ora_fine) errors_step2.push(t("corso_wizard.campo_ora_fine"));
     if (form.ora_inizio && form.ora_fine && time_to_min(form.ora_fine) <= time_to_min(form.ora_inizio)) {
-      errors_step2.push("Ora fine deve essere dopo Ora inizio");
+      errors_step2.push(t("corso_wizard.campo_ora_fine_dopo"));
     }
   }
 
@@ -434,15 +437,16 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
   };
 
   const classify_istruttore = (i: any): { bucket: Bucket; label: string; tooltip: string } => {
-    if (!has_slot) return { bucket: "ok", label: "", tooltip: "" };
+    if (!has_slot) return { bucket: "ok" as Bucket, label: "", tooltip: "" };
     const s = status_istruttori.find((x) => x.istruttore.id === i.id);
-    if (!s) return { bucket: "ko", label: "non disponibile", tooltip: "Non disponibile" };
-    if (s.disponibile) return { bucket: "ok", label: "", tooltip: "Disponibile" };
+    if (!s) return { bucket: "ko" as Bucket, label: t("corso_wizard.non_disponibile"), tooltip: t("corso_wizard.non_disponibile_cap") };
+    if (s.disponibile) return { bucket: "ok" as Bucket, label: "", tooltip: t("corso_wizard.disponibile") };
     if (s.motivo_ko === "conflitto_planning") {
       const c = (corsi || []).find((cc: any) => cc.id === s.conflitto_corso_id);
-      return { bucket: "busy", label: c?.nome || "altro corso", tooltip: `Già impegnato: ${c?.nome || "altro corso"}` };
+      const nome_c = c?.nome || t("corso_wizard.altro_corso");
+      return { bucket: "busy" as Bucket, label: nome_c, tooltip: t("corso_wizard.gia_impegnato", { corso: nome_c, interpolation: { escapeValue: false } }) };
     }
-    return { bucket: "ko", label: s.motivo_ko || "non disponibile", tooltip: s.motivo_ko || "Non disponibile" };
+    return { bucket: "ko" as Bucket, label: s.motivo_ko || t("corso_wizard.non_disponibile"), tooltip: s.motivo_ko || t("corso_wizard.non_disponibile_cap") };
   };
 
   // Auto-cleanup: se cambia lo slot, rimuovi dalla selezione gli istruttori non più disponibili
@@ -503,20 +507,21 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
     set_error_db(null);
     if (istruttori_ko_selezionati.length > 0) {
       set_error_db(
-        `Istruttori non disponibili selezionati: ${istruttori_ko_selezionati
-          .map((i: any) => `${i.nome} ${i.cognome}`)
-          .join(", ")}. Rimuovili prima di salvare.`,
+        t("corso_wizard.err_istruttori_ko", {
+          nomi: istruttori_ko_selezionati.map((i: any) => `${i.nome} ${i.cognome}`).join(", "),
+          interpolation: { escapeValue: false },
+        }),
       );
       return;
     }
     if (!get_current_club_id()) {
-      const msg = "Nessun club selezionato. Effettua nuovamente il login e riprova.";
+      const msg = t("corso_wizard.err_no_club");
       set_error_db(msg);
       toast({ title: msg, variant: "destructive" });
       return;
     }
     if (percorso_invalido) {
-      const msg = "Il percorso può essere impostato solo per livelli di carriera (Interbronzo → Oro).";
+      const msg = t("corso_wizard.percorso_invalido");
       set_error_db(msg);
       toast({ title: msg, variant: "destructive" });
       return;
@@ -533,7 +538,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
         percorso: is_carriera ? form.percorso : null,
       });
     } catch (e: any) {
-      const msg = e?.message || String(e) || "Errore sconosciuto";
+      const msg = e?.message || String(e) || t("corso_wizard.err_sconosciuto");
       set_error_db(msg);
     }
   };
@@ -541,17 +546,17 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
   const check_slot = has_slot;
   const check_istruttore = form.istruttori_ids.length > 0;
 
-  const STEP_LABELS = ["Il corso", "Quando e con chi"];
+  const STEP_LABELS = [t("corso_wizard.step1_label"), t("corso_wizard.step2_label")];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-2xl flex flex-col max-h-[92vh]">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
           <div>
-            <h2 className="text-base font-bold text-foreground">{is_edit ? "Ridefinisci corso" : "Nuovo corso"}</h2>
-            <p className="text-xs text-muted-foreground">Step {step} di 2 · {STEP_LABELS[step - 1]}</p>
+            <h2 className="text-base font-bold text-foreground">{is_edit ? t("corso_wizard.titolo_modifica") : t("corso_wizard.titolo_nuovo")}</h2>
+            <p className="text-xs text-muted-foreground">{t("corso_wizard.step_di", { step, label: STEP_LABELS[step - 1] })}</p>
           </div>
-          <button onClick={on_close} className="text-muted-foreground hover:text-foreground" aria-label="Chiudi">
+          <button onClick={on_close} className="text-muted-foreground hover:text-foreground" aria-label={t("corso_wizard.chiudi")}>
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -564,10 +569,10 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
           <div className="mx-6 mt-3 rounded-xl border border-destructive/40 bg-destructive/5 p-3 flex items-start gap-2 flex-shrink-0">
             <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-destructive">Errore</p>
+              <p className="text-xs font-semibold text-destructive">{t("corso_wizard.errore")}</p>
               <p className="text-xs text-destructive/90 break-words">{error_db}</p>
             </div>
-            <button onClick={() => set_error_db(null)} className="text-destructive/70 hover:text-destructive flex-shrink-0" aria-label="Chiudi errore">
+            <button onClick={() => set_error_db(null)} className="text-destructive/70 hover:text-destructive flex-shrink-0" aria-label={t("corso_wizard.chiudi_errore")}>
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -577,17 +582,17 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
           {step === 1 && (
             <div className="space-y-5">
               <div>
-                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Nome *</Label>
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("corso_wizard.nome")}</Label>
                 <Input
                   value={form.nome}
                   onChange={(e) => set_val("nome", e.target.value)}
-                  placeholder="es. Bronzo Giovedì"
+                  placeholder={t("corso_wizard.nome_placeholder")}
                   className="mt-1.5"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Tipo *</Label>
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("corso_wizard.tipo")}</Label>
                 <RadioGroup
                   value={form.tipo}
                   onValueChange={(v) => set_val("tipo", v)}
@@ -602,8 +607,8 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                     <RadioGroupItem value="Ghiaccio" id="tipo-ghiaccio" />
                     <Snowflake className={`w-5 h-5 ${form.tipo === "Ghiaccio" ? "text-primary" : "text-muted-foreground"}`} />
                     <div className="flex flex-col">
-                      <span className="text-sm font-semibold">Ghiaccio</span>
-                      <span className="text-[11px] text-muted-foreground">Sulla pista, vincoli ghiaccio</span>
+                      <span className="text-sm font-semibold">{t("corso_wizard.ghiaccio")}</span>
+                      <span className="text-[11px] text-muted-foreground">{t("corso_wizard.ghiaccio_desc")}</span>
                     </div>
                   </label>
                   <label
@@ -615,8 +620,8 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                     <RadioGroupItem value="Off-Ice" id="tipo-office" />
                     <Dumbbell className={`w-5 h-5 ${form.tipo === "Off-Ice" ? "text-primary" : "text-muted-foreground"}`} />
                     <div className="flex flex-col">
-                      <span className="text-sm font-semibold">Off-Ice</span>
-                      <span className="text-[11px] text-muted-foreground">Fuori pista, nessun vincolo orario</span>
+                      <span className="text-sm font-semibold">{t("corso_wizard.off_ice")}</span>
+                      <span className="text-[11px] text-muted-foreground">{t("corso_wizard.off_ice_desc")}</span>
                     </div>
                   </label>
                 </RadioGroup>
@@ -625,13 +630,13 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
               {form.tipo === "Off-Ice" && (
                 <div>
                   <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                    Categoria (facoltativa)
+                    {t("corso_wizard.categoria")}
                   </Label>
                   <Input
                     value={form.categoria}
                     onChange={(e) => set_val("categoria", e.target.value)}
                     list="categorie-office-suggerimenti"
-                    placeholder="es. Danza, Pilates, Stretching..."
+                    placeholder={t("corso_wizard.categoria_placeholder")}
                     className="mt-1.5"
                   />
                   <datalist id="categorie-office-suggerimenti">
@@ -639,43 +644,43 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                       <option key={s} value={s} />
                     ))}
                   </datalist>
-                  <p className="text-[11px] text-muted-foreground mt-1">Testo libero. Suggerimenti: Danza, Stretching, Pilates, Yoga, Fitness, Preparazione atletica.</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">{t("corso_wizard.categoria_hint")}</p>
                 </div>
               )}
 
               {form.tipo === "Ghiaccio" && (
                 <div className="space-y-3">
                   <div>
-                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Livello richiesto</Label>
+                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("corso_wizard.livello_richiesto")}</Label>
                     <div className="mt-1.5">
                       <SelectLivello
                         value={form.livello_richiesto}
                         onChange={(v) => set_val("livello_richiesto", v)}
                         fase="qualsiasi"
                         allowNull={true}
-                        nullLabel="— Aperto a tutti i livelli —"
+                        nullLabel={t("corso_wizard.livello_null")}
                       />
                     </div>
                   </div>
 
                   {is_carriera && (
                     <div>
-                      <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Percorso</Label>
+                      <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("corso_wizard.percorso")}</Label>
                       <select
                         value={form.percorso ?? ""}
                         onChange={(e) => set_val("percorso", e.target.value || null)}
                         className="mt-1.5 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                       >
-                        <option value="">Comune (no percorso)</option>
-                        <option value="artistica">Artistica</option>
-                        <option value="stile">Stile</option>
+                        <option value="">{t("corso_wizard.percorso_comune")}</option>
+                        <option value="artistica">{t("corso_wizard.percorso_artistica")}</option>
+                        <option value="stile">{t("corso_wizard.percorso_stile")}</option>
                       </select>
                     </div>
                   )}
 
                   {percorso_invalido && (
                     <p className="text-xs text-destructive">
-                      Il percorso può essere impostato solo per livelli di carriera (Interbronzo → Oro).
+                      {t("corso_wizard.percorso_invalido")}
                     </p>
                   )}
                 </div>
@@ -684,7 +689,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Costo mensile (CHF)</Label>
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("corso_wizard.costo_mensile")}</Label>
                   <div className="mt-1.5">
                     <NumInput
                       value={form.costo_mensile_str}
@@ -693,7 +698,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                   </div>
                 </div>
                 <div>
-                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Costo annuale (CHF)</Label>
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("corso_wizard.costo_annuale")}</Label>
                   <div className="mt-1.5">
                     <NumInput
                       value={form.costo_annuale_str}
@@ -704,7 +709,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
               </div>
 
               <div>
-                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Note</Label>
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("corso_wizard.note")}</Label>
                 <Textarea
                   value={form.note}
                   onChange={(e) => set_val("note", e.target.value)}
@@ -722,7 +727,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                   className="w-4 h-4 accent-primary"
                 />
                 <label htmlFor="attivo_corso_w" className="text-sm font-medium text-foreground cursor-pointer">
-                  Corso attivo
+                  {t("corso_wizard.corso_attivo")}
                 </label>
               </div>
             </div>
@@ -732,9 +737,9 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
             <div className="space-y-5">
               <div className="flex items-center justify-between px-3 py-2 bg-muted/30 rounded-lg">
                 <div className="space-y-0.5">
-                  <Label className="text-sm font-semibold cursor-pointer">Posiziona subito nel planning</Label>
+                  <Label className="text-sm font-semibold cursor-pointer">{t("corso_wizard.posiziona_planning")}</Label>
                   <p className="text-[11px] text-muted-foreground">
-                    {posiziona_planning ? "Giorno e ora obbligatori" : "Decido dopo dove metterlo: il corso resta in 'Da posizionare'"}
+                    {posiziona_planning ? t("corso_wizard.posiziona_on") : t("corso_wizard.posiziona_off")}
                   </p>
                 </div>
                 <input
@@ -751,19 +756,24 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                     <div className="rounded-xl border border-primary/40 bg-primary/5 p-3 flex items-start gap-3">
                       <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-foreground">Proposta automatica</p>
+                        <p className="text-sm font-semibold text-foreground">{t("corso_wizard.proposta_titolo")}</p>
                         <p className="text-xs text-muted-foreground">
-                          {proposta_slot.giorno} {proposta_slot.ora_inizio}–{proposta_slot.ora_fine} · ghiaccio libero ·{" "}
-                          {proposta_slot.istruttore.nome} {proposta_slot.istruttore.cognome} disponibile
+                          {t("corso_wizard.proposta_desc", {
+                            giorno: proposta_slot.giorno,
+                            inizio: proposta_slot.ora_inizio,
+                            fine: proposta_slot.ora_fine,
+                            istruttore: `${proposta_slot.istruttore.nome} ${proposta_slot.istruttore.cognome}`,
+                            interpolation: { escapeValue: false },
+                          })}
                         </p>
                       </div>
                       <Button type="button" size="sm" onClick={applica_proposta} className="flex-shrink-0">
-                        Usa
+                        {t("corso_wizard.proposta_usa")}
                       </Button>
                     </div>
                   )}
                   <div>
-                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Giorno *</Label>
+                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("corso_wizard.giorno")}</Label>
                     <select
                       value={form.giorno}
                       onChange={(e) => set_val("giorno", e.target.value)}
@@ -777,7 +787,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
 
                   <div className="grid grid-cols-3 gap-3">
                     <div>
-                      <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Inizio *</Label>
+                      <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("corso_wizard.inizio")}</Label>
                       <Input
                         type="time"
                         step={60}
@@ -788,7 +798,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                       />
                     </div>
                     <div>
-                      <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Durata (min) *</Label>
+                      <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("corso_wizard.durata")}</Label>
                       <Input
                         type="number"
                         min={5}
@@ -800,7 +810,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                       />
                     </div>
                     <div>
-                      <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Fine</Label>
+                      <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("corso_wizard.fine")}</Label>
                       <Input
                         type="time"
                         step={60}
@@ -812,13 +822,13 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                     </div>
                   </div>
                   <p className="text-[11px] text-muted-foreground -mt-3">
-                    Digita liberamente l'ora (step 1 minuto). Cambiando inizio o durata, fine si aggiorna automaticamente.
+                    {t("corso_wizard.orario_hint")}
                   </p>
 
                   {form.tipo === "Ghiaccio" ? (
                     <div className="border border-border rounded-xl p-3 bg-background">
                       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                        Fascia ghiaccio — {form.giorno}
+                        {t("corso_wizard.fascia_ghiaccio", { giorno: form.giorno })}
                       </p>
                       <GrigliaFasceGhiaccio
                         giorno={form.giorno}
@@ -854,7 +864,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                         corsi={corsi}
                       />
                       <p className="text-[11px] text-muted-foreground mt-2">
-                        I corsi Off-Ice non hanno vincoli di fascia ghiaccio. Digita liberamente.
+                        {t("corso_wizard.off_ice_hint")}
                       </p>
                     </div>
                   ) : null}
@@ -863,7 +873,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                     <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-orange-50 border border-orange-200">
                       <AlertTriangle className="w-4 h-4 text-orange-600 flex-shrink-0 mt-0.5" />
                       <p className="text-xs text-orange-700">
-                        Compila: <strong>{errors_step2.join(", ")}</strong>
+                        {t("corso_wizard.compila")} <strong>{errors_step2.join(", ")}</strong>
                       </p>
                     </div>
                   )}
@@ -872,7 +882,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
 
               {!posiziona_planning && (
                 <div className="px-3 py-2 rounded-lg bg-blue-50 border border-blue-200 text-xs text-blue-700">
-                  Il corso verrà salvato senza giorno e orario. Lo potrai posizionare dopo da 'Da posizionare' nel Planning.
+                  {t("corso_wizard.senza_planning")}
                 </div>
               )}
             </div>
@@ -894,7 +904,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                     backgroundColor: removable ? "#fef2f2" : selected ? `${colore}20` : "transparent",
                     color: removable ? "#b91c1c" : selected ? colore : "hsl(var(--foreground))",
                   }}
-                  title={removable ? "Clicca per rimuovere" : selected ? "Selezionato — clicca per togliere" : "Clicca per aggiungere"}
+                  title={removable ? t("corso_wizard.chip_rimuovi") : selected ? t("corso_wizard.chip_selezionato") : t("corso_wizard.chip_aggiungi")}
                 >
                   <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: colore }} />
                   {i.nome} {i.cognome}
@@ -908,11 +918,11 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
               <div className="space-y-4" onClick={() => rimossi_slot_change.length > 0 && set_rimossi_slot_change([])}>
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                    Istruttori assegnati ({form.istruttori_ids.length})
+                    {t("corso_wizard.istruttori_assegnati", { count: form.istruttori_ids.length })}
                   </Label>
                   {has_slot && (
                     <span className="text-[11px] text-muted-foreground">
-                      Slot: {form.giorno} {form.ora_inizio}–{form.ora_fine}
+                      {t("corso_wizard.slot", { giorno: form.giorno, inizio: form.ora_inizio, fine: form.ora_fine })}
                     </span>
                   )}
                 </div>
@@ -921,21 +931,24 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                   <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-orange-50 border border-orange-300">
                     <AlertTriangle className="w-4 h-4 text-orange-600 flex-shrink-0 mt-0.5" />
                     <div className="text-xs text-orange-800">
-                      <p className="font-semibold">Lo slot è cambiato.</p>
+                      <p className="font-semibold">{t("corso_wizard.slot_cambiato")}</p>
                       <p className="mt-0.5">
-                        {rimossi_slot_change.length} istruttore/i {rimossi_slot_change.length === 1 ? "è stato rimosso" : "sono stati rimossi"} dalla selezione perché non più disponibili: <strong>{rimossi_slot_change.join(", ")}</strong>.
+                        {rimossi_slot_change.length === 1
+                          ? t("corso_wizard.slot_rimossi_uno", { count: rimossi_slot_change.length })
+                          : t("corso_wizard.slot_rimossi_molti", { count: rimossi_slot_change.length })}{" "}
+                        <strong>{rimossi_slot_change.join(", ")}</strong>.
                       </p>
-                      <p className="mt-0.5">Seleziona nuovamente da chi compare qui sotto.</p>
+                      <p className="mt-0.5">{t("corso_wizard.slot_riseleziona")}</p>
                     </div>
                   </div>
                 )}
 
                 {istruttori_attivi.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Nessun istruttore attivo configurato.</p>
+                  <p className="text-sm text-muted-foreground">{t("corso_wizard.nessun_istruttore_attivo")}</p>
                 ) : !has_slot ? (
                   <>
                     <div className="px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800">
-                      Senza giorno e orario non posso verificare la disponibilità. Tutti gli istruttori sono selezionabili.
+                      {t("corso_wizard.no_slot_warning")}
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {istruttori_attivi.map((i: any) => render_chip(i))}
@@ -946,23 +959,24 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                     <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-center space-y-2">
                       <Ban className="w-6 h-6 text-rose-600 mx-auto" />
                       <p className="text-sm font-semibold text-rose-800">
-                        Nessun istruttore è disponibile il {form.giorno} dalle {form.ora_inizio} alle {form.ora_fine}
+                        {t("corso_wizard.nessuno_disponibile", { giorno: form.giorno, inizio: form.ora_inizio, fine: form.ora_fine })}
                       </p>
                       <p className="text-xs text-rose-700">
-                        Scegli un altro slot qui sopra, oppure apri la pagina Istruttori per aggiungere disponibilità dichiarate.
+                        {t("corso_wizard.nessuno_disponibile_hint")}
                       </p>
                     </div>
                   </div>
                 ) : (
                   <>
                     <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Disponibili per {form.giorno} {form.ora_inizio}–{form.ora_fine} ({istruttori_selezionabili.length})
+                      <CheckCircle2 className="w-3.5 h-3.5" />{" "}
+                      {t("corso_wizard.disponibili_per", { giorno: form.giorno, inizio: form.ora_inizio, fine: form.ora_fine, count: istruttori_selezionabili.length })}
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {istruttori_selezionabili.map((i: any) => render_chip(i))}
                     </div>
                     <p className="text-[11px] text-muted-foreground">
-                      Sono mostrati solo gli istruttori con disponibilità dichiarata che copre questo slot e senza conflitti su altri corsi sovrapposti.
+                      {t("corso_wizard.disponibili_hint")}
                     </p>
                   </>
                 )}
@@ -977,24 +991,25 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                 <span className="inline-flex items-center gap-1.5">
                   {check_slot ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> : <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />}
                   <span className={check_slot ? "text-emerald-700 font-medium" : "text-amber-700 font-medium"}>
-                    {check_slot ? `${form.giorno} ${form.ora_inizio}–${form.ora_fine}` : "Da posizionare"}
+                    {check_slot ? `${form.giorno} ${form.ora_inizio}–${form.ora_fine}` : t("corso_wizard.da_posizionare")}
                   </span>
                 </span>
                 <span className="inline-flex items-center gap-1.5">
                   {check_istruttore ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> : <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />}
                   <span className={check_istruttore ? "text-emerald-700 font-medium" : "text-amber-700 font-medium"}>
-                    {check_istruttore ? `${form.istruttori_ids.length} istruttore/i` : "Nessun istruttore"}
+                    {check_istruttore ? t("corso_wizard.n_istruttori", { count: form.istruttori_ids.length }) : t("corso_wizard.nessun_istruttore")}
                   </span>
                 </span>
                 <span className="text-muted-foreground">
-                  {form.nome || "Senza nome"} · {form.tipo || "—"} · {form.durata} min
+                  {form.nome || t("corso_wizard.senza_nome")} · {form.tipo || "—"} · {t("corso_wizard.minuti", { count: form.durata })}
                 </span>
               </div>
               {istruttori_ko_selezionati.length > 0 && (
                 <div className="flex items-start gap-2 px-2 py-1.5 rounded-lg bg-rose-50 border border-rose-300">
                   <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
                   <p className="text-xs text-rose-800">
-                    <strong>Salvataggio bloccato:</strong> togli gli istruttori non disponibili ({istruttori_ko_selezionati.map((i: any) => `${i.nome} ${i.cognome}`).join(", ")}).
+                    <strong>{t("corso_wizard.salvataggio_bloccato")}</strong>{" "}
+                    {t("corso_wizard.salvataggio_bloccato_desc", { nomi: istruttori_ko_selezionati.map((i: any) => `${i.nome} ${i.cognome}`).join(", "), interpolation: { escapeValue: false } })}
                   </p>
                 </div>
               )}
@@ -1005,21 +1020,21 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
         <div className="px-6 py-4 border-t border-border flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2">
             <Button variant="ghost" onClick={on_close} disabled={saving || !!deleting}>
-              Annulla
+              {t("corso_wizard.annulla")}
             </Button>
             {is_edit && on_delete && (
               confirm_delete ? (
                 <>
                   <Button variant="outline" size="sm" onClick={() => set_confirm_delete(false)} disabled={!!deleting}>
-                    No
+                    {t("corso_wizard.no")}
                   </Button>
                   <Button variant="destructive" size="sm" onClick={async () => { await on_delete(); }} disabled={!!deleting}>
-                    {deleting ? "..." : "Elimina definitivamente"}
+                    {deleting ? "..." : t("corso_wizard.elimina_definitivamente")}
                   </Button>
                 </>
               ) : (
                 <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => set_confirm_delete(true)} disabled={saving}>
-                  🗑️ Elimina corso
+                  {t("corso_wizard.elimina_corso")}
                 </Button>
               )
             )}
@@ -1027,21 +1042,21 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
           <div className="flex items-center gap-2">
             {step > 1 && (
               <Button variant="outline" onClick={() => set_step((s) => s - 1)} disabled={saving}>
-                <ChevronLeft className="w-4 h-4 mr-1" /> Indietro
+                <ChevronLeft className="w-4 h-4 mr-1" /> {t("corso_wizard.indietro")}
               </Button>
             )}
             {step < 2 && (
               <div className="flex flex-col items-end gap-1">
                 {errors_step1.length > 0 && (
                   <span className="text-[11px] text-destructive">
-                    Manca: {errors_step1.join(", ")}
+                    {t("corso_wizard.manca", { campi: errors_step1.join(", "), interpolation: { escapeValue: false } })}
                   </span>
                 )}
                 <Button
                   onClick={() => set_step((s) => s + 1)}
                   disabled={step === 1 && !can_next_1}
                 >
-                  Avanti <ChevronRight className="w-4 h-4 ml-1" />
+                  {t("corso_wizard.avanti")} <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               </div>
             )}
@@ -1049,8 +1064,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
               <div className="flex flex-col items-end gap-1">
                 {istruttori_ko_selezionati.length > 0 && (
                   <span className="text-[11px] text-destructive max-w-[320px] text-right">
-                    Rimuovi prima gli istruttori non disponibili:{" "}
-                    {istruttori_ko_selezionati.map((i: any) => `${i.nome} ${i.cognome}`).join(", ")}
+                    {t("corso_wizard.rimuovi_prima", { nomi: istruttori_ko_selezionati.map((i: any) => `${i.nome} ${i.cognome}`).join(", "), interpolation: { escapeValue: false } })}
                   </span>
                 )}
                 <Button
@@ -1058,7 +1072,7 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                   disabled={saving || istruttori_ko_selezionati.length > 0}
                   className="bg-primary hover:bg-primary/90"
                 >
-                  {saving ? "Salvataggio..." : "💾 Salva corso"}
+                  {saving ? t("corso_wizard.salvataggio") : t("corso_wizard.salva")}
                 </Button>
               </div>
             )}
