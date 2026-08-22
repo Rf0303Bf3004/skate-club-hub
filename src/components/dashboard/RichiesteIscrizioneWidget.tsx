@@ -9,6 +9,7 @@ import { Inbox, Check, X, UserPlus, CalendarClock, RefreshCw } from "lucide-reac
 import { toast } from "@/hooks/use-toast";
 import { format_data_completa, format_data_lunga, locale_to_bcp47 } from "@/lib/format-data";
 import { useI18n } from "@/lib/i18n";
+import { useTranslation } from "react-i18next";
 
 function fmt_data_breve_localizzata(data_iso: string, locale_code: string): string {
   const dt = new Date(data_iso + "T00:00:00");
@@ -18,21 +19,24 @@ function fmt_data_breve_localizzata(data_iso: string, locale_code: string): stri
 
 const REFETCH_MS = 60_000;
 
-function tempo_relativo(iso: string): string {
+type TFn = (key: string, opts?: Record<string, unknown>) => string;
+
+function tempo_relativo(iso: string, t: TFn): string {
   const diff = Date.now() - new Date(iso).getTime();
   const s = Math.floor(diff / 1000);
-  if (s < 60) return `${s}s fa`;
+  if (s < 60) return t("relative_time.seconds", { count: s });
   const m = Math.floor(s / 60);
-  if (m < 60) return `${m} min fa`;
+  if (m < 60) return t("relative_time.minutes", { count: m });
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h} h fa`;
+  if (h < 24) return t("relative_time.hours", { count: h });
   const d = Math.floor(h / 24);
-  if (d < 7) return `${d} g fa`;
+  if (d < 7) return t("relative_time.days", { count: d });
   return format_data_completa(iso);
 }
 
 // ─── Card 1: Richieste pendenti ──────────────────────────────
 export const RichiesteIscrizioneWidget: React.FC = () => {
+  const { t } = useTranslation("dashboard");
   const club_id = get_current_club_id();
   const qc = useQueryClient();
   const [rifiuto_id, set_rifiuto_id] = useState<string | null>(null);
@@ -87,11 +91,11 @@ export const RichiesteIscrizioneWidget: React.FC = () => {
       if (e2) throw e2;
     },
     onSuccess: () => {
-      toast({ title: "Richiesta approvata" });
+      toast({ title: t("widget_richieste.toast_approved") });
       qc.invalidateQueries({ queryKey: ["richieste_pendenti"] });
       qc.invalidateQueries({ queryKey: ["ultime_iscrizioni"] });
     },
-    onError: (e: any) => toast({ title: "Errore", description: e.message, variant: "destructive" }),
+    onError: (e: any) => toast({ title: t("widget_richieste.toast_error"), description: e.message, variant: "destructive" }),
   });
 
   const rifiuta = useMutation({
@@ -110,12 +114,12 @@ export const RichiesteIscrizioneWidget: React.FC = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: "Richiesta rifiutata" });
+      toast({ title: t("widget_richieste.toast_rejected") });
       set_rifiuto_id(null);
       set_motivo("");
       qc.invalidateQueries({ queryKey: ["richieste_pendenti"] });
     },
-    onError: (e: any) => toast({ title: "Errore", description: e.message, variant: "destructive" }),
+    onError: (e: any) => toast({ title: t("widget_richieste.toast_error"), description: e.message, variant: "destructive" }),
   });
 
   const count = richieste?.length ?? 0;
@@ -125,7 +129,7 @@ export const RichiesteIscrizioneWidget: React.FC = () => {
       <div className="flex items-center gap-2">
         <Inbox className="w-4 h-4 text-primary" />
         <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-          Richieste pendenti
+          {t("widget_richieste.title")}
         </h3>
         {count > 0 && (
           <Badge variant="default">
@@ -136,8 +140,8 @@ export const RichiesteIscrizioneWidget: React.FC = () => {
           onClick={() => refetch()}
           disabled={isFetching}
           className="ml-auto p-1 rounded hover:bg-muted transition-colors disabled:opacity-50"
-          aria-label="Aggiorna"
-          title="Aggiorna"
+          aria-label={t("widget_richieste.refresh")}
+          title={t("widget_richieste.refresh")}
         >
           <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground ${isFetching ? "animate-spin" : ""}`} />
         </button>
@@ -149,7 +153,7 @@ export const RichiesteIscrizioneWidget: React.FC = () => {
           <Skeleton className="h-14 w-full" />
         </div>
       ) : count === 0 ? (
-        <p className="text-sm text-muted-foreground py-2">Nessuna richiesta in attesa</p>
+        <p className="text-sm text-muted-foreground py-2">{t("widget_richieste.empty")}</p>
       ) : (
         <div className="space-y-3">
           {richieste!.map((r: any) => (
@@ -171,7 +175,7 @@ export const RichiesteIscrizioneWidget: React.FC = () => {
                     {r.atleta?.nome} {r.atleta?.cognome}
                     <span className="text-muted-foreground font-normal"> → {r.corso?.nome ?? "—"}</span>
                   </p>
-                  <p className="text-xs text-muted-foreground">{tempo_relativo(r.created_at)}</p>
+                  <p className="text-xs text-muted-foreground">{tempo_relativo(r.created_at, t)}</p>
                 </div>
               </div>
               {r.note_richiesta && (
@@ -184,7 +188,7 @@ export const RichiesteIscrizioneWidget: React.FC = () => {
                     type="text"
                     value={motivo}
                     onChange={(e) => set_motivo(e.target.value)}
-                    placeholder="Motivo del rifiuto"
+                    placeholder={t("widget_richieste.reject_reason")}
                     className="w-full text-xs border border-border rounded px-2 py-1 bg-background"
                     autoFocus
                   />
@@ -195,7 +199,7 @@ export const RichiesteIscrizioneWidget: React.FC = () => {
                       disabled={rifiuta.isPending}
                       onClick={() => rifiuta.mutate({ id: r.id, note: motivo })}
                     >
-                      Conferma rifiuto
+                      {t("widget_richieste.confirm_reject")}
                     </Button>
                     <Button
                       size="sm"
@@ -205,7 +209,7 @@ export const RichiesteIscrizioneWidget: React.FC = () => {
                         set_motivo("");
                       }}
                     >
-                      Annulla
+                      {t("widget_richieste.cancel")}
                     </Button>
                   </div>
                 </div>
@@ -217,7 +221,7 @@ export const RichiesteIscrizioneWidget: React.FC = () => {
                     disabled={approva.isPending}
                     onClick={() => approva.mutate(r)}
                   >
-                    <Check className="w-3 h-3 mr-1" /> Approva
+                    <Check className="w-3 h-3 mr-1" /> {t("widget_richieste.approve")}
                   </Button>
                   <Button
                     size="sm"
@@ -225,7 +229,7 @@ export const RichiesteIscrizioneWidget: React.FC = () => {
                     className="h-7 px-2"
                     onClick={() => set_rifiuto_id(r.id)}
                   >
-                    <X className="w-3 h-3 mr-1" /> Rifiuta
+                    <X className="w-3 h-3 mr-1" /> {t("widget_richieste.reject")}
                   </Button>
                 </div>
               )}
@@ -239,6 +243,7 @@ export const RichiesteIscrizioneWidget: React.FC = () => {
 
 // ─── Card 2: Ultime iscrizioni dirette ───────────────────────
 export const UltimeIscrizioniWidget: React.FC = () => {
+  const { t } = useTranslation("dashboard");
   const club_id = get_current_club_id();
 
   const { data: iscrizioni, isLoading, isFetching, refetch } = useQuery({
@@ -275,14 +280,14 @@ export const UltimeIscrizioniWidget: React.FC = () => {
       <div className="flex items-center gap-2">
         <UserPlus className="w-4 h-4 text-primary" />
         <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-          Ultime iscrizioni
+          {t("widget_iscrizioni.title")}
         </h3>
         <button
           onClick={() => refetch()}
           disabled={isFetching}
           className="ml-auto p-1 rounded hover:bg-muted transition-colors disabled:opacity-50"
-          aria-label="Aggiorna"
-          title="Aggiorna"
+          aria-label={t("widget_richieste.refresh")}
+          title={t("widget_richieste.refresh")}
         >
           <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground ${isFetching ? "animate-spin" : ""}`} />
         </button>
@@ -294,7 +299,7 @@ export const UltimeIscrizioniWidget: React.FC = () => {
           <Skeleton className="h-10 w-full" />
         </div>
       ) : !iscrizioni || iscrizioni.length === 0 ? (
-        <p className="text-sm text-muted-foreground py-2">Nessuna iscrizione recente</p>
+        <p className="text-sm text-muted-foreground py-2">{t("widget_iscrizioni.empty")}</p>
       ) : (
         <div className="space-y-2">
           {iscrizioni.map((i: any) => (
@@ -303,10 +308,10 @@ export const UltimeIscrizioniWidget: React.FC = () => {
                 <span className="font-medium">
                   {i.atleta?.nome} {i.atleta?.cognome}
                 </span>{" "}
-                <span className="text-muted-foreground">si è iscritto a</span>{" "}
+                <span className="text-muted-foreground">{t("widget_iscrizioni.enrolled_in")}</span>{" "}
                 <span className="font-medium">{i.corso?.nome ?? "—"}</span>
               </p>
-              <p className="text-xs text-muted-foreground">{tempo_relativo(i.created_at)}</p>
+              <p className="text-xs text-muted-foreground">{tempo_relativo(i.created_at, t)}</p>
             </div>
           ))}
         </div>
@@ -322,6 +327,7 @@ function fmt_ora(t?: string | null): string {
 }
 
 export const RichiesteLezioniPrivateWidget: React.FC = () => {
+  const { t } = useTranslation("dashboard");
   const club_id = get_current_club_id();
   const qc = useQueryClient();
   const { locale } = useI18n();
@@ -392,10 +398,10 @@ export const RichiesteLezioniPrivateWidget: React.FC = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: "Lezione approvata" });
+      toast({ title: t("widget_lezioni_private.toast_approved") });
       qc.invalidateQueries({ queryKey: ["richieste_lezioni_private"] });
     },
-    onError: (e: any) => toast({ title: "Errore", description: e.message, variant: "destructive" }),
+    onError: (e: any) => toast({ title: t("widget_richieste.toast_error"), description: e.message, variant: "destructive" }),
   });
 
   const rifiuta = useMutation({
@@ -408,12 +414,12 @@ export const RichiesteLezioniPrivateWidget: React.FC = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: "Lezione rifiutata" });
+      toast({ title: t("widget_lezioni_private.toast_rejected") });
       set_rifiuto_id(null);
       set_motivo("");
       qc.invalidateQueries({ queryKey: ["richieste_lezioni_private"] });
     },
-    onError: (e: any) => toast({ title: "Errore", description: e.message, variant: "destructive" }),
+    onError: (e: any) => toast({ title: t("widget_richieste.toast_error"), description: e.message, variant: "destructive" }),
   });
 
   const count = lezioni?.length ?? 0;
@@ -423,7 +429,7 @@ export const RichiesteLezioniPrivateWidget: React.FC = () => {
       <div className="flex items-center gap-2">
         <CalendarClock className="w-4 h-4 text-primary" />
         <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-          Richieste lezioni private
+          {t("widget_lezioni_private.title")}
         </h3>
         {count > 0 && (
           <Badge variant="default">
@@ -434,8 +440,8 @@ export const RichiesteLezioniPrivateWidget: React.FC = () => {
           onClick={() => refetch()}
           disabled={isFetching}
           className="ml-auto p-1 rounded hover:bg-muted transition-colors disabled:opacity-50"
-          aria-label="Aggiorna"
-          title="Aggiorna"
+          aria-label={t("widget_richieste.refresh")}
+          title={t("widget_richieste.refresh")}
         >
           <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground ${isFetching ? "animate-spin" : ""}`} />
         </button>
@@ -447,7 +453,7 @@ export const RichiesteLezioniPrivateWidget: React.FC = () => {
           <Skeleton className="h-14 w-full" />
         </div>
       ) : count === 0 ? (
-        <p className="text-sm text-muted-foreground py-2">Nessuna richiesta in attesa</p>
+        <p className="text-sm text-muted-foreground py-2">{t("widget_richieste.empty")}</p>
       ) : (
         <div className="space-y-3">
           {lezioni!.map((l: any) => {
@@ -479,7 +485,7 @@ export const RichiesteLezioniPrivateWidget: React.FC = () => {
                       {" · "}
                       {fmt_ora(l.ora_inizio)}–{fmt_ora(l.ora_fine)}
                       {l.ricorrente && (
-                        <span className="ml-1 italic">(ricorrente)</span>
+                        <span className="ml-1 italic">{t("widget_lezioni_private.recurring")}</span>
                       )}
                     </p>
                   </div>
@@ -493,7 +499,7 @@ export const RichiesteLezioniPrivateWidget: React.FC = () => {
                     <Textarea
                       value={motivo}
                       onChange={(e) => set_motivo(e.target.value)}
-                      placeholder="Motivo del rifiuto"
+                      placeholder={t("widget_richieste.reject_reason")}
                       className="w-full min-h-[60px] text-xs border border-border rounded px-2 py-1 bg-background resize-none"
                       autoFocus
                     />
@@ -506,7 +512,7 @@ export const RichiesteLezioniPrivateWidget: React.FC = () => {
                           rifiuta.mutate({ id: l.id, note_attuale: l.note, motivo })
                         }
                       >
-                        Conferma rifiuto
+                        {t("widget_richieste.confirm_reject")}
                       </Button>
                       <Button
                         size="sm"
@@ -516,7 +522,7 @@ export const RichiesteLezioniPrivateWidget: React.FC = () => {
                           set_motivo("");
                         }}
                       >
-                        Annulla
+                        {t("widget_richieste.cancel")}
                       </Button>
                     </div>
                   </div>
@@ -528,7 +534,7 @@ export const RichiesteLezioniPrivateWidget: React.FC = () => {
                       disabled={approva.isPending}
                       onClick={() => approva.mutate(l.id)}
                     >
-                      <Check className="w-3 h-3 mr-1" /> Approva
+                      <Check className="w-3 h-3 mr-1" /> {t("widget_richieste.approve")}
                     </Button>
                     <Button
                       size="sm"
@@ -536,7 +542,7 @@ export const RichiesteLezioniPrivateWidget: React.FC = () => {
                       className="h-7 px-2"
                       onClick={() => set_rifiuto_id(l.id)}
                     >
-                      <X className="w-3 h-3 mr-1" /> Rifiuta
+                      <X className="w-3 h-3 mr-1" /> {t("widget_richieste.reject")}
                     </Button>
                   </div>
                 )}

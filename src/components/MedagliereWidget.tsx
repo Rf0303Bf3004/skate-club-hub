@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { use_gare, use_atleti, use_stagioni } from "@/hooks/use-supabase-data";
 import { Trophy, Medal } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface RigaMedagliere {
   atleta_id: string;
@@ -19,6 +20,7 @@ interface Props {
 }
 
 const MedagliereWidget: React.FC<Props> = ({ compact = false, limit }) => {
+  const { t } = useTranslation("dashboard");
   const { data: gare = [] } = use_gare();
   const { data: atleti = [] } = use_atleti();
   const { data: stagioni = [] } = use_stagioni();
@@ -85,8 +87,9 @@ const MedagliereWidget: React.FC<Props> = ({ compact = false, limit }) => {
     return (
       <div className="bg-card rounded-xl shadow-card p-6 text-center text-muted-foreground text-sm">
         <Trophy className="w-6 h-6 mx-auto mb-2 opacity-30" />
-        Nessun risultato registrato
-        {stagione_attiva ? ` per la stagione ${stagione_attiva.nome}` : ""}.
+        {stagione_attiva
+          ? t("widget_medagliere.empty_season", { stagione: stagione_attiva.nome })
+          : t("widget_medagliere.empty")}
       </div>
     );
   }
@@ -96,9 +99,9 @@ const MedagliereWidget: React.FC<Props> = ({ compact = false, limit }) => {
       {!compact && (
         <div className="px-5 py-4 border-b border-border flex items-center justify-between">
           <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-            <Trophy className="w-4 h-4 text-primary" /> Medagliere {stagione_attiva ? stagione_attiva.nome : "stagione"}
+            <Trophy className="w-4 h-4 text-primary" /> {t("widget_medagliere.title", { stagione: stagione_attiva ? stagione_attiva.nome : t("widget_medagliere.season_fallback") })}
           </h3>
-          <span className="text-xs text-muted-foreground">{righe.length} atleti</span>
+          <span className="text-xs text-muted-foreground">{t("widget_medagliere.athletes_count", { count: righe.length })}</span>
         </div>
       )}
       <div className="overflow-x-auto">
@@ -109,17 +112,17 @@ const MedagliereWidget: React.FC<Props> = ({ compact = false, limit }) => {
                 #
               </th>
               <th className="text-left px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                Atleta
+                {t("widget_medagliere.col_athlete")}
               </th>
               <th className="text-center px-2 py-2 text-[10px] font-bold text-yellow-600 uppercase">🥇</th>
               <th className="text-center px-2 py-2 text-[10px] font-bold text-slate-500 uppercase">🥈</th>
               <th className="text-center px-2 py-2 text-[10px] font-bold text-orange-700 uppercase">🥉</th>
               {!compact && (
-                <th className="text-center px-2 py-2 text-[10px] font-bold text-muted-foreground uppercase">Altre</th>
+                <th className="text-center px-2 py-2 text-[10px] font-bold text-muted-foreground uppercase">{t("widget_medagliere.col_other")}</th>
               )}
               {!compact && (
                 <th className="text-right px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider whitespace-nowrap">
-                  Punteggio
+                  {t("widget_medagliere.col_score")}
                 </th>
               )}
             </tr>
@@ -159,7 +162,7 @@ const MedagliereWidget: React.FC<Props> = ({ compact = false, limit }) => {
       </div>
       {limit && righe.length > limit && (
         <div className="px-5 py-2 text-[11px] text-muted-foreground text-center border-t border-border/50">
-          Top {limit} di {righe.length} atleti — vedi pagina Gare per il medagliere completo
+          {t("widget_medagliere.footer_top", { limit, total: righe.length })}
         </div>
       )}
     </div>

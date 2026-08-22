@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { calcola_ore_impegnate_giorno } from "@/lib/availability";
 import { useI18n, type Locale } from "@/lib/i18n";
+import { useTranslation } from "react-i18next";
 
 const LOCALE_BCP47: Record<Locale, string> = {
   it: "it-IT",
@@ -97,6 +98,7 @@ function use_disponibilita_giorno(date_str: string) {
 // ── Widget ──────────────────────────────────────────────────
 export const IstruttoriDisponibiliWidget: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation("dashboard");
   const { locale } = useI18n();
   const locale_code = LOCALE_BCP47[locale] ?? "it-IT";
   const [date_str, set_date_str] = useState<string>(() => to_date_key(new Date()));
@@ -166,7 +168,7 @@ export const IstruttoriDisponibiliWidget: React.FC = () => {
       <div className="flex items-center gap-2">
         <UserCheck className="w-4 h-4 text-primary" />
         <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-          Istruttori disponibili
+          {t("widget_istruttori.title")}
         </h3>
       </div>
 
@@ -177,7 +179,7 @@ export const IstruttoriDisponibiliWidget: React.FC = () => {
           variant="ghost"
           className="h-7 w-7 p-0"
           onClick={() => set_date_str((d) => add_days_str(d, -1))}
-          aria-label="Giorno precedente"
+          aria-label={t("widget_istruttori.prev_day")}
         >
           <ChevronLeft className="w-4 h-4" />
         </Button>
@@ -196,7 +198,7 @@ export const IstruttoriDisponibiliWidget: React.FC = () => {
           variant="ghost"
           className="h-7 w-7 p-0"
           onClick={() => set_date_str((d) => add_days_str(d, 1))}
-          aria-label="Giorno successivo"
+          aria-label={t("widget_istruttori.next_day")}
         >
           <ChevronRight className="w-4 h-4" />
         </Button>
@@ -204,10 +206,10 @@ export const IstruttoriDisponibiliWidget: React.FC = () => {
 
       {/* Lista */}
       {isLoading ? (
-        <p className="text-xs text-muted-foreground text-center py-4">Caricamento…</p>
+        <p className="text-xs text-muted-foreground text-center py-4">{t("widget_istruttori.loading")}</p>
       ) : righe.length === 0 ? (
         <p className="text-xs text-muted-foreground text-center py-4">
-          Nessun istruttore ha disponibilità il {giorno.toLowerCase()}
+          {t("widget_istruttori.empty", { giorno: giorno.toLowerCase() })}
         </p>
       ) : (
         <div className="space-y-1.5">
@@ -232,7 +234,7 @@ export const IstruttoriDisponibiliWidget: React.FC = () => {
                       </p>
                       {completo ? (
                         <Badge className="h-5 text-[10px] px-1.5 bg-success/15 text-success hover:bg-success/15 border-0">
-                          Completo
+                          {t("widget_istruttori.full")}
                         </Badge>
                       ) : (
                         <span className="text-[11px] tabular-nums text-muted-foreground flex-shrink-0">

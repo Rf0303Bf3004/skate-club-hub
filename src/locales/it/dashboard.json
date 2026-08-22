@@ -127,5 +127,54 @@
     "entry_registered": "✅ Entrata registrata",
     "presence_removed": "🗑️ Presenza rimossa",
     "error": "Errore"
+  },
+  "relative_time": {
+    "seconds": "{{count}}s fa",
+    "minutes": "{{count}} min fa",
+    "hours": "{{count}} h fa",
+    "days": "{{count}} g fa"
+  },
+  "widget_richieste": {
+    "title": "Richieste pendenti",
+    "refresh": "Aggiorna",
+    "empty": "Nessuna richiesta in attesa",
+    "reject_reason": "Motivo del rifiuto",
+    "confirm_reject": "Conferma rifiuto",
+    "cancel": "Annulla",
+    "approve": "Approva",
+    "reject": "Rifiuta",
+    "toast_approved": "Richiesta approvata",
+    "toast_rejected": "Richiesta rifiutata",
+    "toast_error": "Errore"
+  },
+  "widget_iscrizioni": {
+    "title": "Ultime iscrizioni",
+    "empty": "Nessuna iscrizione recente",
+    "enrolled_in": "si è iscritto a"
+  },
+  "widget_lezioni_private": {
+    "title": "Richieste lezioni private",
+    "recurring": "(ricorrente)",
+    "toast_approved": "Lezione approvata",
+    "toast_rejected": "Lezione rifiutata"
+  },
+  "widget_istruttori": {
+    "title": "Istruttori disponibili",
+    "prev_day": "Giorno precedente",
+    "next_day": "Giorno successivo",
+    "loading": "Caricamento…",
+    "empty": "Nessun istruttore ha disponibilità il {{giorno}}",
+    "full": "Completo"
+  },
+  "widget_medagliere": {
+    "title": "Medagliere {{stagione}}",
+    "season_fallback": "stagione",
+    "empty": "Nessun risultato registrato.",
+    "empty_season": "Nessun risultato registrato per la stagione {{stagione}}.",
+    "athletes_count": "{{count}} atleti",
+    "col_athlete": "Atleta",
+    "col_other": "Altre",
+    "col_score": "Punteggio",
+    "footer_top": "Top {{limit}} di {{total}} atleti — vedi pagina Gare per il medagliere completo"
   }
 }
