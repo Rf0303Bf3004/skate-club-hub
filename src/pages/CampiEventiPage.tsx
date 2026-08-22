@@ -405,6 +405,7 @@ const CampoInternoDettaglio: React.FC<{ evento: EventoCampo; onBack: () => void;
 // CAMPO ESTERNO: scheda info + comunicazione famiglie
 // ═══════════════════════════════════════════════════════════
 const CampoEsternoSection: React.FC<{ eventi: EventoCampo[] }> = ({ eventi }) => {
+  const { t } = useTranslation("events");
   const club_id = get_current_club_id();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -414,7 +415,7 @@ const CampoEsternoSection: React.FC<{ eventi: EventoCampo[] }> = ({ eventi }) =>
     mutationFn: async () => {
       const payload: any = {
         club_id,
-        nome: form.nome.trim() || "Campo esterno",
+        nome: form.nome.trim() || t("campi_eventi.esterno.name_placeholder_fallback"),
         modalita: "esterno",
         data_inizio: form.data_inizio || null,
         data_fine: form.data_fine || null,
@@ -428,7 +429,7 @@ const CampoEsternoSection: React.FC<{ eventi: EventoCampo[] }> = ({ eventi }) =>
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["eventi_campi"] });
-      toast.success("Campo esterno creato");
+      toast.success(t("campi_eventi.esterno.created_toast"));
       setOpen(false);
       setForm({ nome: "", data_inizio: "", data_fine: "", luogo: "", descrizione: "", costo: "0", contatti: "" });
     },
@@ -444,14 +445,14 @@ const CampoEsternoSection: React.FC<{ eventi: EventoCampo[] }> = ({ eventi }) =>
 
   const inviaComunicazione = useMutation({
     mutationFn: async (e: EventoCampo) => {
-      const titolo = `Campo esterno: ${e.nome}`;
+      const titolo = t("campi_eventi.esterno.communication_title_prefix", { name: e.nome });
       const testo = [
-        `Vi informiamo del seguente campo esterno organizzato esternamente al club:`,
+        t("campi_eventi.esterno.communication_intro"),
         ``,
-        `📍 Luogo: ${e.luogo || "—"}`,
-        `📅 Date: ${fmt_date(e.data_inizio)} → ${fmt_date(e.data_fine)}`,
-        e.costo ? `💰 Costo: CHF ${Number(e.costo).toFixed(2)}` : ``,
-        e.contatti ? `📞 Contatti: ${e.contatti}` : ``,
+        t("campi_eventi.esterno.communication_place_label", { place: e.luogo || "—" }),
+        t("campi_eventi.esterno.communication_dates_label", { start: fmt_date(e.data_inizio), end: fmt_date(e.data_fine) }),
+        e.costo ? t("campi_eventi.esterno.communication_cost_label", { cost: Number(e.costo).toFixed(2) }) : ``,
+        e.contatti ? t("campi_eventi.esterno.communication_contacts_label", { contacts: e.contatti }) : ``,
         ``,
         e.descrizione || ``,
       ].filter(Boolean).join("\n");
@@ -466,7 +467,7 @@ const CampoEsternoSection: React.FC<{ eventi: EventoCampo[] }> = ({ eventi }) =>
       } as any);
       if (error) throw error;
     },
-    onSuccess: () => toast.success("Comunicazione creata e inviata a tutte le famiglie"),
+    onSuccess: () => toast.success(t("campi_eventi.esterno.communication_sent_toast")),
     onError: (err: any) => toast.error(err.message),
   });
 
@@ -474,14 +475,14 @@ const CampoEsternoSection: React.FC<{ eventi: EventoCampo[] }> = ({ eventi }) =>
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle>Campi Esterni</CardTitle>
-          <CardDescription>Schede informative su campi organizzati da terzi, con comunicazione manuale alle famiglie.</CardDescription>
+          <CardTitle>{t("campi_eventi.esterno.title")}</CardTitle>
+          <CardDescription>{t("campi_eventi.esterno.description")}</CardDescription>
         </div>
-        <Button onClick={() => setOpen(true)}><Plus className="w-4 h-4 mr-2" /> Nuovo Campo Esterno</Button>
+        <Button onClick={() => setOpen(true)}><Plus className="w-4 h-4 mr-2" /> {t("campi_eventi.esterno.new_button")}</Button>
       </CardHeader>
       <CardContent>
         {eventi.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-8 text-center">Nessun campo esterno.</p>
+          <p className="text-sm text-muted-foreground py-8 text-center">{t("campi_eventi.esterno.empty")}</p>
         ) : (
           <div className="space-y-3">
             {eventi.map((e) => (
@@ -490,7 +491,7 @@ const CampoEsternoSection: React.FC<{ eventi: EventoCampo[] }> = ({ eventi }) =>
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center gap-2">
                       <h3 className="font-semibold">{e.nome}</h3>
-                      <Badge variant="outline">Esterno</Badge>
+                      <Badge variant="outline">{t("campi_eventi.esterno.badge")}</Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
                       <CalendarIcon className="w-3 h-3 inline mr-1" />{fmt_date(e.data_inizio)} → {fmt_date(e.data_fine)}
@@ -502,9 +503,9 @@ const CampoEsternoSection: React.FC<{ eventi: EventoCampo[] }> = ({ eventi }) =>
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" onClick={() => inviaComunicazione.mutate(e)}>
-                      <Send className="w-4 h-4 mr-1" /> Invia comunicazione famiglie
+                      <Send className="w-4 h-4 mr-1" /> {t("campi_eventi.esterno.send_communication_button")}
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => { if (confirm("Eliminare?")) remove.mutate(e.id); }}>
+                    <Button size="sm" variant="ghost" onClick={() => { if (confirm(t("campi_eventi.esterno.delete_confirm"))) remove.mutate(e.id); }}>
                       <Trash2 className="w-4 h-4 text-destructive" />
                     </Button>
                   </div>
@@ -517,21 +518,21 @@ const CampoEsternoSection: React.FC<{ eventi: EventoCampo[] }> = ({ eventi }) =>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Nuovo Campo Esterno</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("campi_eventi.esterno.dialog_title")}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label>Nome</Label><Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} placeholder="Es: Camp internazionale Milano" /></div>
+            <div><Label>{t("campi_eventi.esterno.name_label")}</Label><Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} placeholder={t("campi_eventi.esterno.name_placeholder")} /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Data inizio</Label><Input type="date" value={form.data_inizio} onChange={(e) => setForm({ ...form, data_inizio: e.target.value })} /></div>
-              <div><Label>Data fine</Label><Input type="date" value={form.data_fine} onChange={(e) => setForm({ ...form, data_fine: e.target.value })} /></div>
+              <div><Label>{t("campi_eventi.esterno.start_date_label")}</Label><Input type="date" value={form.data_inizio} onChange={(e) => setForm({ ...form, data_inizio: e.target.value })} /></div>
+              <div><Label>{t("campi_eventi.esterno.end_date_label")}</Label><Input type="date" value={form.data_fine} onChange={(e) => setForm({ ...form, data_fine: e.target.value })} /></div>
             </div>
-            <div><Label>Luogo</Label><Input value={form.luogo} onChange={(e) => setForm({ ...form, luogo: e.target.value })} /></div>
-            <div><Label>Costo (CHF)</Label><Input type="number" value={form.costo} onChange={(e) => setForm({ ...form, costo: e.target.value })} /></div>
-            <div><Label>Contatti organizzatore</Label><Input value={form.contatti} onChange={(e) => setForm({ ...form, contatti: e.target.value })} placeholder="Email, telefono o sito" /></div>
-            <div><Label>Descrizione</Label><Textarea value={form.descrizione} onChange={(e) => setForm({ ...form, descrizione: e.target.value })} /></div>
+            <div><Label>{t("campi_eventi.esterno.place_label")}</Label><Input value={form.luogo} onChange={(e) => setForm({ ...form, luogo: e.target.value })} /></div>
+            <div><Label>{t("campi_eventi.esterno.cost_label")}</Label><Input type="number" value={form.costo} onChange={(e) => setForm({ ...form, costo: e.target.value })} /></div>
+            <div><Label>{t("campi_eventi.esterno.contacts_label")}</Label><Input value={form.contatti} onChange={(e) => setForm({ ...form, contatti: e.target.value })} placeholder={t("campi_eventi.esterno.contacts_placeholder")} /></div>
+            <div><Label>{t("campi_eventi.esterno.description_label")}</Label><Textarea value={form.descrizione} onChange={(e) => setForm({ ...form, descrizione: e.target.value })} /></div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Annulla</Button>
-            <Button onClick={() => create.mutate()} disabled={create.isPending}>Crea</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>{t("campi_eventi.esterno.cancel")}</Button>
+            <Button onClick={() => create.mutate()} disabled={create.isPending}>{t("campi_eventi.esterno.create")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

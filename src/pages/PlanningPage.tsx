@@ -374,6 +374,7 @@ const LIVELLI = ["pulcini","stellina1","stellina2","stellina3","stellina4","Inte
 function SidebarCard({ corso, istr_map, pick_corso, set_pick_corso }: {
   corso: any; istr_map: Record<string, any>; pick_corso: any; set_pick_corso: (c: any) => void;
 }) {
+  const { t } = useTranslation('planning');
   const istr_ids: string[] = corso.istruttori_ids ?? [];
   const first_istr = istr_ids.length > 0 ? istr_map[istr_ids[0]] : null;
   const istr_id_single = corso.istruttore_id;
@@ -400,7 +401,7 @@ function SidebarCard({ corso, istr_map, pick_corso, set_pick_corso }: {
           {istr_display.nome} {istr_display.cognome}
         </span>
       )}
-      <span className="text-[10px] text-muted-foreground block">{corso.atleti_ids?.length ?? 0} atleti</span>
+      <span className="text-[10px] text-muted-foreground block">{t('sidebar.students_count', { count: corso.atleti_ids?.length ?? 0 })}</span>
     </div>
   );
 }
@@ -432,38 +433,39 @@ function SidebarCostruzione({
   on_pubblica: () => void;
   generating: boolean;
 }) {
+  const { t } = useTranslation('planning');
   return (
     <div data-sidebar className={className}>
       {/* Week actions */}
       {!settimana && (
         <Button size="sm" className="w-full text-xs gap-1.5 mb-2" onClick={on_genera} disabled={generating}>
           {generating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3" />}
-          Genera settimana
+          {t('sidebar.generate_week')}
         </Button>
       )}
       {settimana?.stato === "bozza" && (
         <Button size="sm" variant="outline" className="w-full text-xs gap-1.5 mb-2 border-green-500 text-green-600 hover:bg-green-50" onClick={on_pubblica}>
-          <CheckCircle2 className="h-3 w-3" /> Pubblica settimana
+          <CheckCircle2 className="h-3 w-3" /> {t('sidebar.publish_week')}
         </Button>
       )}
 
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-bold text-foreground uppercase">Da posizionare ({corsiDaPosizionare.length})</span>
+        <span className="text-xs font-bold text-foreground uppercase">{t('sidebar.to_place', { count: corsiDaPosizionare.length })}</span>
       </div>
       <Button size="sm" className="w-full text-xs gap-1.5" onClick={on_wizard}>
-        <Wand2 className="h-3 w-3" /> Posizionamento guidato
+        <Wand2 className="h-3 w-3" /> {t('sidebar.guided_placement')}
       </Button>
       <Button size="sm" variant="outline" className="w-full text-xs" onClick={on_new_corso}>
-        <Plus className="h-3 w-3 mr-1" /> Corso/Pacchetto
+        <Plus className="h-3 w-3 mr-1" /> {t('sidebar.course_package')}
       </Button>
       <Button size="sm" variant="outline" className="w-full text-xs" onClick={on_new_privata}>
-        <Plus className="h-3 w-3 mr-1" /> Lezione privata
+        <Plus className="h-3 w-3 mr-1" /> {t('sidebar.private_lesson')}
       </Button>
 
       {corsiDaPosizionare.length === 0 ? (
         <div className="text-center py-4 text-muted-foreground text-xs">
           <Check className="h-5 w-5 mx-auto text-green-500 mb-1" />
-          Tutti i corsi posizionati
+          {t('sidebar.all_placed')}
         </div>
       ) : (
         corsiDaPosizionare.map((corso: any) => (
