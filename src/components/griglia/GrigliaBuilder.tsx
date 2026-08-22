@@ -996,29 +996,47 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
     try {
       if (tipo === "gruppo") {
         const ids: string[] = active.data?.current?.atleta_ids ?? [];
-        for (const atleta_id of ids) {
-          const a = (atleti as any[]).find((x) => x.id === atleta_id);
-          const nome = a ? `${a.nome} ${a.cognome}` : "Atleta";
-          avvisa_sovrapposizione("atleta", atleta_id, nome, dest);
-        }
         const livello_gruppo: string | undefined = active.data?.current?.livello;
         if (livello_gruppo && livello_gruppo !== LIVELLO_NON_DEFINITO) {
           // Collegamento dinamico: nuova riga in griglia_sessioni_gruppi + atleti taggati.
           const { gruppo_scope, gruppo_ragione_sociale_id } = scope_da_box_id(active.data?.current?.box_id);
+
+          // ⛔ Controllo BLOCCANTE (nessuna scrittura se lo stesso gruppo è già
+          // collegato a un'altra sotto-sessione sovrapposta nello stesso giorno).
+          const conflitto = await verifica_conflitto_gruppo({
+            sessione_id,
+            gruppo_livello: livello_gruppo,
+            gruppo_scope: (gruppo_scope ?? "club") as GruppoScope,
+            gruppo_ragione_sociale_id,
+          });
+          if (conflitto) {
+            set_conflitto_gruppo({ livello: livello_gruppo, conflitto });
+            return;
+          }
+
           const res = await assegna_gruppo.mutateAsync({
             sessione_id,
             gruppo_livello: livello_gruppo,
             gruppo_scope: (gruppo_scope ?? "club") as GruppoScope,
             gruppo_ragione_sociale_id,
           });
+          for (const atleta_id of ids) {
+            const a = (atleti as any[]).find((x) => x.id === atleta_id);
+            const nome = a ? `${a.nome} ${a.cognome}` : "Atleta";
+            avvisa_sovrapposizione("atleta", atleta_id, nome, dest);
+          }
           toast({ title: `🔗 Gruppo «${livello_gruppo}» collegato`, description: `${res.aggiunti} atleti aggiunti.` });
         } else {
           // Livello non definito: nessun gruppo dinamico, assegnazione individuale.
           for (const atleta_id of ids) {
+            const a = (atleti as any[]).find((x) => x.id === atleta_id);
+            const nome = a ? `${a.nome} ${a.cognome}` : "Atleta";
+            avvisa_sovrapposizione("atleta", atleta_id, nome, dest);
             await assegna_atleta.mutateAsync({ sessione_id, atleta_id });
           }
           if (ids.length > 0) toast({ title: `✅ ${ids.length} atleti assegnati alla sessione` });
         }
+
 
       } else if (tipo === "atleta") {
         const a = (atleti as any[]).find((x) => x.id === persona_id);
