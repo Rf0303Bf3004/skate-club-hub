@@ -1034,16 +1034,16 @@ const LezioniPrivatePage: React.FC = () => {
 
       <div className="space-y-6 animate-fade-in">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold tracking-tight text-foreground">Lezioni Private</h1>
+          <h1 className="text-xl font-bold tracking-tight text-foreground">{t("lezioni_private.title")}</h1>
           <Button variant="outline" size="sm" onClick={() => set_durata_modal(true)} className="gap-2 text-xs">
-            <Settings className="w-3.5 h-3.5" /> Slot: {slot_minuti} min
+            <Settings className="w-3.5 h-3.5" /> {t("lezioni_private.slot_button", { min: slot_minuti })}
           </Button>
         </div>
 
         <div className="w-64">
           <Select value={selected_istruttore} onValueChange={set_selected_istruttore}>
             <SelectTrigger>
-              <SelectValue placeholder="Seleziona istruttore" />
+              <SelectValue placeholder={t("lezioni_private.select_istruttore_placeholder")} />
             </SelectTrigger>
             <SelectContent>
               {istruttori
@@ -1116,10 +1116,10 @@ const LezioniPrivatePage: React.FC = () => {
               </div>
               <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-success" /> Libero
+                  <div className="w-2 h-2 rounded-full bg-success" /> {t("lezioni_private.legenda.libero")}
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-destructive/70" /> Prenotato
+                  <div className="w-2 h-2 rounded-full bg-destructive/70" /> {t("lezioni_private.legenda.prenotato")}
                 </div>
               </div>
             </div>
@@ -1130,8 +1130,8 @@ const LezioniPrivatePage: React.FC = () => {
               {selected_slots.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
                   <Clock className="w-8 h-8 mb-2 opacity-30" />
-                  <p className="text-sm">Nessuno slot disponibile</p>
-                  <p className="text-xs mt-1 opacity-70">L'istruttore non è disponibile in questo giorno</p>
+                  <p className="text-sm">{t("lezioni_private.no_slots.title")}</p>
+                  <p className="text-xs mt-1 opacity-70">{t("lezioni_private.no_slots.subtitle")}</p>
                 </div>
               ) : (
                 <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
@@ -1168,13 +1168,13 @@ const LezioniPrivatePage: React.FC = () => {
                               {slot.time} – {slot.end_time}
                             </p>
                             {is_off_ice && (
-                              <p className="text-xs text-sky-600 mt-0.5">⛸️ Fuori ghiaccio</p>
+                              <p className="text-xs text-sky-600 mt-0.5">{t("lezioni_private.slot_status.fuori_ghiaccio_label")}</p>
                             )}
                             {slot.status === "occupato" && slot.lesson && (
                               <p className="text-xs text-muted-foreground mt-0.5">
                                 {slot.lesson.atleti_ids?.length
                                   ? get_atleti_names(slot.lesson.atleti_ids)
-                                  : slot.lesson.note || "Occupato"}
+                                  : slot.lesson.note || t("lezioni_private.slot_status.occupato")}
                               </p>
                             )}
                           </div>
@@ -1182,7 +1182,7 @@ const LezioniPrivatePage: React.FC = () => {
                         <span
                           className={`text-xs font-bold px-2 py-0.5 rounded-full ${is_off_ice ? "bg-sky-500/20 text-sky-600" : is_free ? "bg-success/20 text-success" : is_semiprivata ? "bg-orange-500/20 text-orange-600" : "bg-destructive/20 text-destructive"}`}
                         >
-                          {is_off_ice ? "🏋️ Off-Ice" : is_free ? "+ Prenota" : is_semiprivata ? "👥 Semi" : "Dettagli"}
+                          {is_off_ice ? t("lezioni_private.slot_status.off_ice") : is_free ? t("lezioni_private.slot_status.prenota") : is_semiprivata ? t("lezioni_private.slot_status.semi") : t("lezioni_private.slot_status.dettagli")}
                         </span>
                       </div>
                     );
@@ -1191,23 +1191,23 @@ const LezioniPrivatePage: React.FC = () => {
               )}
               <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground flex-wrap">
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-success" /> Libero (ghiaccio)
+                  <div className="w-2 h-2 rounded-full bg-success" /> {t("lezioni_private.legenda.libero_ghiaccio")}
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-sky-500" /> Fuori ghiaccio
+                  <div className="w-2 h-2 rounded-full bg-sky-500" /> {t("lezioni_private.legenda.fuori_ghiaccio")}
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-destructive" /> Privata
+                  <div className="w-2 h-2 rounded-full bg-destructive" /> {t("lezioni_private.legenda.privata")}
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-orange-500" /> Semiprivata
+                  <div className="w-2 h-2 rounded-full bg-orange-500" /> {t("lezioni_private.legenda.semiprivata")}
                 </div>
               </div>
             </div>
           </div>
         ) : (
           <div className="bg-card rounded-2xl shadow-card p-8 text-center text-muted-foreground">
-            Seleziona un istruttore per vedere le disponibilità
+            {t("lezioni_private.select_istruttore_empty")}
           </div>
         )}
       </div>

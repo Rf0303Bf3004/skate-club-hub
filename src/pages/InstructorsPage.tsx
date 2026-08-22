@@ -474,6 +474,7 @@ const TabOreLavoro: React.FC<{
   corsi: any[];
   campi: any[];
 }> = ({ istruttore, lezioni, corsi, campi }) => {
+  const { t } = useTranslation("istruttori");
   const qc = useQueryClient();
   const { session } = useAuth();
   const can_override = can_override_ore_lavoro(session?.ruolo);
@@ -602,7 +603,7 @@ const TabOreLavoro: React.FC<{
           data: p.data,
           ora_inizio: p.ora_inizio,
           ora_fine: p.ora_fine,
-          corso_nome: corso?.nome || "Corso",
+          corso_nome: corso?.nome || t("ore.corso_generico"),
           ore_previste,
           ore_effettive,
           stato,
@@ -678,10 +679,10 @@ const TabOreLavoro: React.FC<{
       .from("ore_lavorate_dettaglio")
       .upsert(payload, { onConflict: "planning_corso_id,istruttore_id" });
     if (error) {
-      toast({ title: "Errore conferma", description: error.message, variant: "destructive" });
+      toast({ title: t("toast.errore_conferma"), description: error.message, variant: "destructive" });
       return;
     }
-    toast({ title: "✅ Ore confermate", description: `${ore.toFixed(2)}h registrate per ${slot.data}` });
+    toast({ title: t("toast.ore_confermate"), description: t("toast.ore_confermate_desc", { ore: ore.toFixed(2), data: slot.data }) });
     refresh_all();
   };
 
@@ -706,9 +707,9 @@ const TabOreLavoro: React.FC<{
         { onConflict: "istruttore_id,anno,mese" } as any,
       );
       if (error) throw error;
-      toast({ title: "✅ Cache mensile salvata" });
+      toast({ title: t("toast.cache_salvata") });
     } catch (err: any) {
-      toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
+      toast({ title: t("toast.errore_salvataggio"), description: err?.message, variant: "destructive" });
     } finally {
       set_saving(false);
     }
@@ -754,22 +755,22 @@ const TabOreLavoro: React.FC<{
       {/* KPI */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="bg-card rounded-xl shadow-card p-4">
-          <p className="text-xs text-muted-foreground">Ore pianificate</p>
+          <p className="text-xs text-muted-foreground">{t("ore.ore_pianificate")}</p>
           <p className="text-lg font-bold tabular-nums text-foreground">{ore_fmt(ore_previste_totali)}</p>
         </div>
         <div className="bg-card rounded-xl shadow-card p-4">
-          <p className="text-xs text-muted-foreground">Ore effettive (corsi)</p>
+          <p className="text-xs text-muted-foreground">{t("ore.ore_effettive_corsi")}</p>
           <p className="text-lg font-bold tabular-nums text-green-600">{ore_fmt(ore_effettive_totali)}</p>
         </div>
         <div className="bg-card rounded-xl shadow-card p-4">
-          <p className="text-xs text-muted-foreground">Da confermare</p>
+          <p className="text-xs text-muted-foreground">{t("ore.da_confermare")}</p>
           <p className="text-lg font-bold tabular-nums text-amber-600">
             {ore_fmt(ore_mancanti)}
             <span className="text-xs font-normal text-muted-foreground ml-1">({slot_mancanti_count})</span>
           </p>
         </div>
         <div className="bg-card rounded-xl shadow-card p-4">
-          <p className="text-xs text-muted-foreground">Confermate manualmente</p>
+          <p className="text-xs text-muted-foreground">{t("ore.confermate_manualmente")}</p>
           <p className="text-lg font-bold tabular-nums text-sky-600">{slot_override_count}</p>
         </div>
       </div>
@@ -778,40 +779,40 @@ const TabOreLavoro: React.FC<{
       <div className="bg-card rounded-xl shadow-card overflow-hidden">
         <div className="px-5 py-3 border-b border-border flex items-center justify-between">
           <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-            Dettaglio slot corso ({slot_righe.length})
+            {t("ore.dettaglio_slot", { count: slot_righe.length })}
           </h3>
           {!can_override && (
             <span className="text-[10px] text-muted-foreground italic">
-              Conferma manuale riservata a Admin / DT / Presidente
+              {t("ore.conferma_riservata")}
             </span>
           )}
         </div>
         {slot_righe.length === 0 ? (
           <div className="px-5 py-8 text-center text-sm text-muted-foreground">
-            Nessuno slot pianificato per questo mese.
+            {t("ore.nessuno_slot")}
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/20 text-xs text-muted-foreground">
-                  <th className="text-left px-4 py-2 font-bold">Data</th>
-                  <th className="text-left px-4 py-2 font-bold">Corso</th>
-                  <th className="text-left px-4 py-2 font-bold">Orario</th>
-                  <th className="text-right px-4 py-2 font-bold">Previste</th>
-                  <th className="text-right px-4 py-2 font-bold">Effettive</th>
-                  <th className="text-center px-4 py-2 font-bold">Stato</th>
-                  <th className="text-right px-4 py-2 font-bold">Azione</th>
+                  <th className="text-left px-4 py-2 font-bold">{t("ore.col_data")}</th>
+                  <th className="text-left px-4 py-2 font-bold">{t("ore.col_corso")}</th>
+                  <th className="text-left px-4 py-2 font-bold">{t("ore.col_orario")}</th>
+                  <th className="text-right px-4 py-2 font-bold">{t("ore.col_previste")}</th>
+                  <th className="text-right px-4 py-2 font-bold">{t("ore.col_effettive")}</th>
+                  <th className="text-center px-4 py-2 font-bold">{t("ore.col_stato")}</th>
+                  <th className="text-right px-4 py-2 font-bold">{t("ore.col_azione")}</th>
                 </tr>
               </thead>
               <tbody>
                 {slot_righe.map((r) => {
                   const tooltip =
                     r.stato === "override"
-                      ? `Confermato manualmente. Motivo: ${r.motivo || "—"}`
+                      ? t("ore.tooltip_confermato", { motivo: r.motivo || "—" })
                       : r.stato === "presenza"
-                        ? "Presenza registrata dal Dashboard"
-                        : "Nessuna presenza registrata né conferma manuale";
+                        ? t("ore.tooltip_presenza")
+                        : t("ore.tooltip_mancante");
                   return (
                     <tr
                       key={r.id}
@@ -840,7 +841,7 @@ const TabOreLavoro: React.FC<{
                             className="h-7 text-xs"
                             onClick={() => set_modal_slot(r)}
                           >
-                            ✍️ Conferma
+                            {t("ore.btn_conferma")}
                           </Button>
                         )}
                       </td>
@@ -849,7 +850,7 @@ const TabOreLavoro: React.FC<{
                 })}
                 <tr className="bg-muted/20 font-bold">
                   <td className="px-4 py-2" colSpan={3}>
-                    TOTALE CORSI
+                    {t("ore.totale_corsi")}
                   </td>
                   <td className="px-4 py-2 text-right tabular-nums">{ore_fmt(ore_previste_totali)}</td>
                   <td className="px-4 py-2 text-right tabular-nums text-green-600">
@@ -866,22 +867,22 @@ const TabOreLavoro: React.FC<{
       {/* Altre voci + totale pagabile */}
       <div className="bg-card rounded-xl shadow-card overflow-hidden">
         <div className="px-5 py-3 border-b border-border flex items-center justify-between">
-          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Altre voci</h3>
+          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{t("ore.altre_voci")}</h3>
           <Button
             size="sm"
             onClick={handle_save_cache}
             disabled={saving}
             className="h-7 text-xs bg-primary hover:bg-primary/90"
           >
-            {saving ? "..." : "💾 Salva cache"}
+            {saving ? "..." : t("ore.salva_cache")}
           </Button>
         </div>
         <table className="w-full text-sm">
           <tbody>
             <tr className="border-b border-border/50">
               <td className="px-4 py-3">
-                <p className="font-medium text-foreground">Lezioni private</p>
-                <p className="text-xs text-muted-foreground">{lezioni_mese.length} lezioni · automatico</p>
+                <p className="font-medium text-foreground">{t("ore.lezioni_private")}</p>
+                <p className="text-xs text-muted-foreground">{t("ore.lezioni_count", { count: lezioni_mese.length })}</p>
               </td>
               <td className="px-4 py-3 text-right tabular-nums font-medium">{ore_fmt(ore_lezioni)}</td>
               <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
@@ -893,8 +894,8 @@ const TabOreLavoro: React.FC<{
             </tr>
             <tr className="border-b border-border/50">
               <td className="px-4 py-3">
-                <p className="font-medium text-foreground">Campi allenamento</p>
-                <p className="text-xs text-muted-foreground">automatico (8h/giorno)</p>
+                <p className="font-medium text-foreground">{t("ore.campi_allenamento")}</p>
+                <p className="text-xs text-muted-foreground">{t("ore.campi_automatico")}</p>
               </td>
               <td className="px-4 py-3 text-right tabular-nums font-medium">{ore_fmt(ore_campi)}</td>
               <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">—</td>
@@ -902,8 +903,8 @@ const TabOreLavoro: React.FC<{
             </tr>
             <tr className="border-b border-border/50">
               <td className="px-4 py-3">
-                <p className="font-medium text-foreground">Accompagnamento gare</p>
-                <p className="text-xs text-muted-foreground">inserimento manuale</p>
+                <p className="font-medium text-foreground">{t("ore.accompagnamento_gare")}</p>
+                <p className="text-xs text-muted-foreground">{t("ore.inserimento_manuale")}</p>
               </td>
               <td className="px-4 py-3 text-right">
                 <NumInput
@@ -917,12 +918,12 @@ const TabOreLavoro: React.FC<{
             </tr>
             <tr className="border-b border-border/50">
               <td className="px-4 py-3 space-y-1">
-                <p className="font-medium text-foreground">Extra / Riunioni / Altro</p>
+                <p className="font-medium text-foreground">{t("ore.extra_riunioni")}</p>
                 <input
                   type="text"
                   value={note_extra}
                   onChange={(e) => set_note_extra(e.target.value)}
-                  placeholder="Note (opzionale)..."
+                  placeholder={t("ore.note_placeholder")}
                   className="w-full rounded-lg border border-border bg-background px-2 py-1 text-xs"
                 />
               </td>
@@ -937,7 +938,7 @@ const TabOreLavoro: React.FC<{
               <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">—</td>
             </tr>
             <tr className="bg-muted/20">
-              <td className="px-4 py-3 font-bold text-foreground">TOTALE PAGABILE</td>
+              <td className="px-4 py-3 font-bold text-foreground">{t("ore.totale_pagabile")}</td>
               <td className="px-4 py-3 text-right tabular-nums font-bold text-foreground">
                 {ore_fmt(ore_totali_pagabili)}
               </td>
@@ -962,6 +963,7 @@ const TabCompenso: React.FC<{
   on_save_contratto: (data: any) => void;
   saving: boolean;
 }> = ({ istruttore, lezioni, corsi, on_save_contratto, saving }) => {
+  const { t } = useTranslation("istruttori");
   const now = new Date();
   const [anno, set_anno] = useState(now.getFullYear());
   const [mese, set_mese] = useState(now.getMonth() + 1);
@@ -1053,9 +1055,9 @@ const TabCompenso: React.FC<{
       <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
         <div className="flex items-center gap-2">
           <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-            Prezzo di vendita al cliente
+            {t("compenso.prezzo_vendita")}
           </h3>
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">RICAVI</span>
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">{t("compenso.ricavi")}</span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {TIPI_CONTRATTO.map((tc) => (
@@ -1072,40 +1074,40 @@ const TabCompenso: React.FC<{
           {(contratto_form.tipo_contratto === "orario" ||
             contratto_form.tipo_contratto === "fisso_corsi" ||
             contratto_form.tipo_contratto === "misto") && (
-            <Field label="Prezzo al minuto lezioni private (vendita)">
+            <Field label={t("compenso.prezzo_minuto_vendita")}>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF</span>
                 <NumInput
                   value={contratto_form.costo_minuto_lezione_privata}
                   onChange={(v) => upd("costo_minuto_lezione_privata", v)}
                   className="pl-11"
-                  placeholder="es. 1.50"
+                  placeholder={t("compenso.prezzo_placeholder_150")}
                 />
               </div>
             </Field>
           )}
           {(contratto_form.tipo_contratto === "fisso_mensile" || contratto_form.tipo_contratto === "misto") && (
-            <Field label="Compenso fisso mensile">
+            <Field label={t("compenso.fisso_mensile")}>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF</span>
                 <NumInput
                   value={contratto_form.compenso_fisso_mensile}
                   onChange={(v) => upd("compenso_fisso_mensile", v)}
                   className="pl-11"
-                  placeholder="es. 1500"
+                  placeholder={t("compenso.placeholder_1500")}
                 />
               </div>
             </Field>
           )}
           {contratto_form.tipo_contratto === "fisso_corsi" && (
-            <Field label="Compenso fisso corsi">
+            <Field label={t("compenso.fisso_corsi")}>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF</span>
                 <NumInput
                   value={contratto_form.compenso_fisso_corsi}
                   onChange={(v) => upd("compenso_fisso_corsi", v)}
                   className="pl-11"
-                  placeholder="es. 800"
+                  placeholder={t("compenso.placeholder_800")}
                 />
               </div>
             </Field>
@@ -1116,32 +1118,32 @@ const TabCompenso: React.FC<{
       <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
         <div className="flex items-center gap-2">
           <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-            Costo orario club (interno)
+            {t("compenso.costo_orario_club")}
           </h3>
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-destructive/10 text-destructive font-bold">
-            COSTI
+            {t("compenso.costi")}
           </span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Costo orario — lezioni private">
+          <Field label={t("compenso.costo_orario_lezioni")}>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF/h</span>
               <NumInput
                 value={contratto_form.costo_orario_lezioni}
                 onChange={(v) => upd("costo_orario_lezioni", v)}
                 className="pl-14"
-                placeholder="es. 45"
+                placeholder={t("compenso.placeholder_45")}
               />
             </div>
           </Field>
-          <Field label="Costo orario — corsi e altro">
+          <Field label={t("compenso.costo_orario_corsi")}>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF/h</span>
               <NumInput
                 value={contratto_form.costo_orario_corsi}
                 onChange={(v) => upd("costo_orario_corsi", v)}
                 className="pl-14"
-                placeholder="es. 35"
+                placeholder={t("compenso.placeholder_35")}
               />
             </div>
           </Field>
@@ -1149,7 +1151,7 @@ const TabCompenso: React.FC<{
       </div>
 
       <Button onClick={handle_save} disabled={saving} size="sm" className="bg-primary hover:bg-primary/90">
-        {saving ? "..." : "💾 Salva configurazione compenso"}
+        {saving ? "..." : t("compenso.salva_configurazione")}
       </Button>
 
       <div className="flex items-center justify-between">
@@ -1180,11 +1182,11 @@ const TabCompenso: React.FC<{
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: "Ore lezioni", value: ore_fmt(ore_lezioni_private), icon: Clock, color: "text-primary" },
-          { label: "Ore corsi", value: ore_fmt(ore_corsi), icon: Clock, color: "text-orange-500" },
-          { label: "Ore totali", value: ore_fmt(ore_totali), icon: TrendingUp, color: "text-success" },
+          { label: t("compenso.kpi_ore_lezioni"), value: ore_fmt(ore_lezioni_private), icon: Clock, color: "text-primary" },
+          { label: t("compenso.kpi_ore_corsi"), value: ore_fmt(ore_corsi), icon: Clock, color: "text-orange-500" },
+          { label: t("compenso.kpi_ore_totali"), value: ore_fmt(ore_totali), icon: TrendingUp, color: "text-success" },
           {
-            label: "Ricavo stimato",
+            label: t("compenso.kpi_ricavo_stimato"),
             value: `CHF ${compenso_vendita.toFixed(2)}`,
             icon: Euro,
             color: "text-foreground",
@@ -1208,6 +1210,7 @@ const MonitoreDetail: React.FC<{
   monitore: any;
   on_back: () => void;
 }> = ({ monitore, on_back }) => {
+  const { t } = useTranslation("istruttori");
   const qc = useQueryClient();
   const now = new Date();
   const [anno, set_anno] = useState(now.getFullYear());
@@ -1221,7 +1224,7 @@ const MonitoreDetail: React.FC<{
   const [saving, set_saving] = useState(false);
   const [saving_compenso, set_saving_compenso] = useState(false);
 
-  const ruolo_label = monitore.ruolo_pista === "monitore" ? "Monitore" : "Aiuto Monitore";
+  const ruolo_label = monitore.ruolo_pista === "monitore" ? t("monitore.ruolo_monitore") : t("monitore.ruolo_aiuto_monitore");
 
   useEffect(() => {
     const load = async () => {
@@ -1258,9 +1261,9 @@ const MonitoreDetail: React.FC<{
         { onConflict: "atleta_id,anno,mese" },
       );
       if (error) throw error;
-      toast({ title: "✅ Ore salvate" });
+      toast({ title: t("toast.ore_salvate") });
     } catch (err: any) {
-      toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
+      toast({ title: t("toast.errore_salvataggio"), description: err?.message, variant: "destructive" });
     } finally {
       set_saving(false);
     }
@@ -1276,9 +1279,9 @@ const MonitoreDetail: React.FC<{
       if (error) throw error;
       await qc.invalidateQueries({ queryKey: ["atleti"] });
       await qc.invalidateQueries({ queryKey: ["atleti_monitori"] });
-      toast({ title: "✅ Compenso salvato" });
+      toast({ title: t("toast.compenso_salvato") });
     } catch (err: any) {
-      toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
+      toast({ title: t("toast.errore_salvataggio"), description: err?.message, variant: "destructive" });
     } finally {
       set_saving_compenso(false);
     }
@@ -1288,7 +1291,7 @@ const MonitoreDetail: React.FC<{
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center gap-4">
         <Button variant="ghost" onClick={on_back}>
-          <ArrowLeft className="w-4 h-4 mr-2" /> Istruttori
+          <ArrowLeft className="w-4 h-4 mr-2" /> {t("lista.titolo")}
         </Button>
         <div className="flex items-center gap-3">
           {monitore.foto_url ? (
@@ -1316,18 +1319,17 @@ const MonitoreDetail: React.FC<{
 
       {/* Info */}
       <div className="bg-card rounded-xl shadow-card p-5 space-y-3 max-w-lg">
-        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Informazioni</p>
+        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{t("monitore.informazioni")}</p>
         <div className="flex items-start gap-2 p-3 bg-primary/5 border border-primary/20 rounded-lg">
           <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
           <p className="text-xs text-muted-foreground">
-            {monitore.nome} è un atleta del club con ruolo pista <strong>{ruolo_label}</strong>. Per modificare i dati
-            anagrafici vai nella scheda <strong>Atleti</strong>.
+            {t("monitore.info_hint_pre")} <strong>{ruolo_label}</strong>{t("monitore.info_hint_mid")} <strong>{t("monitore.atleti")}</strong>.
           </p>
         </div>
         {[
-          { label: "Livello", value: monitore.percorso_amatori || monitore.livello_amatori || "—" },
-          { label: "Carriera Artistica", value: monitore.carriera_artistica || "—" },
-          { label: "Carriera Stile", value: monitore.carriera_stile || "—" },
+          { label: t("monitore.livello"), value: monitore.percorso_amatori || monitore.livello_amatori || "—" },
+          { label: t("monitore.carriera_artistica"), value: monitore.carriera_artistica || "—" },
+          { label: t("monitore.carriera_stile"), value: monitore.carriera_stile || "—" },
         ].map(({ label, value }) => (
           <div key={label} className="flex justify-between text-sm">
             <span className="text-muted-foreground">{label}</span>
@@ -1339,19 +1341,19 @@ const MonitoreDetail: React.FC<{
       {/* Compenso */}
       <div className="bg-card rounded-xl shadow-card p-5 space-y-4 max-w-lg">
         <div className="flex items-center gap-2">
-          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Compenso orario</h3>
+          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{t("monitore.compenso_orario")}</h3>
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-destructive/10 text-destructive font-bold">
-            COSTI
+            {t("compenso.costi")}
           </span>
         </div>
-        <Field label="Compenso orario (CHF/ora)">
+        <Field label={t("monitore.compenso_orario_field")}>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF/h</span>
             <NumInput
               value={compenso_orario}
               onChange={(v) => set_compenso_orario(v)}
               className="pl-14"
-              placeholder="es. 15.00"
+              placeholder={t("monitore.placeholder_15")}
             />
           </div>
         </Field>
@@ -1361,7 +1363,7 @@ const MonitoreDetail: React.FC<{
           size="sm"
           className="bg-primary hover:bg-primary/90"
         >
-          {saving_compenso ? "..." : "💾 Salva compenso"}
+          {saving_compenso ? "..." : t("monitore.salva_compenso")}
         </Button>
       </div>
 
@@ -1402,28 +1404,28 @@ const MonitoreDetail: React.FC<{
             <div className="bg-muted/20 rounded-xl p-4">
               <div className="flex items-center gap-2 mb-1">
                 <Clock className="w-3.5 h-3.5 text-primary" />
-                <p className="text-xs text-muted-foreground">Ore pista</p>
+                <p className="text-xs text-muted-foreground">{t("monitore.ore_pista")}</p>
               </div>
               <p className="text-lg font-bold tabular-nums text-primary">{ore_fmt(ore_num)}</p>
             </div>
             <div className="bg-muted/20 rounded-xl p-4">
               <div className="flex items-center gap-2 mb-1">
                 <Euro className="w-3.5 h-3.5 text-success" />
-                <p className="text-xs text-muted-foreground">Compenso totale</p>
+                <p className="text-xs text-muted-foreground">{t("monitore.compenso_totale")}</p>
               </div>
               <p className="text-lg font-bold tabular-nums text-success">CHF {compenso_totale.toFixed(2)}</p>
             </div>
           </div>
 
-          <Field label="Ore pista questo mese">
-            <NumInput value={ore_pista} onChange={(v) => set_ore_pista(v)} placeholder="es. 12.5" />
+          <Field label={t("monitore.ore_pista_mese")}>
+            <NumInput value={ore_pista} onChange={(v) => set_ore_pista(v)} placeholder={t("monitore.placeholder_ore")} />
           </Field>
-          <Field label="Note">
+          <Field label={t("monitore.note")}>
             <input
               type="text"
               value={note_extra}
               onChange={(e) => set_note_extra(e.target.value)}
-              placeholder="Note opzionali..."
+              placeholder={t("monitore.note_placeholder")}
               className={input_cls}
             />
           </Field>
@@ -1433,7 +1435,7 @@ const MonitoreDetail: React.FC<{
             size="sm"
             className="w-full bg-primary hover:bg-primary/90"
           >
-            {saving ? "..." : "💾 Salva ore"}
+            {saving ? "..." : t("monitore.salva_ore")}
           </Button>
         </div>
       </div>
