@@ -466,12 +466,6 @@ const SessioneBox: React.FC<{
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessione.atleti?.length, sessione.messaggio_atleti]);
 
-  // ─── Pillola di gruppo: elenco membri risolto dal vivo ───
-  const [gruppo_popover_open, set_gruppo_popover_open] = useState(false);
-  const [membri_live, set_membri_live] = useState<string[] | null>(null);
-  const [membri_live_loading, set_membri_live_loading] = useState(false);
-  const [conferma_rimuovi_gruppo, set_conferma_rimuovi_gruppo] = useState(false);
-
   const nome_atleta = (atleta_id: string): string => {
     const salvato = (sessione.atleti ?? []).find((a) => a.atleta_id === atleta_id);
     if (salvato) return `${salvato.nome ?? ""} ${salvato.cognome ?? ""}`.trim() || atleta_id.slice(0, 8);
@@ -479,27 +473,7 @@ const SessioneBox: React.FC<{
     return `${a?.nome ?? ""} ${a?.cognome ?? ""}`.trim() || atleta_id.slice(0, 8);
   };
 
-  const carica_membri_live = async () => {
-    if (!sessione.gruppo_livello) return;
-    set_membri_live_loading(true);
-    try {
-      const ids = await risolvi_membri_gruppo(
-        get_current_club_id(),
-        sessione.gruppo_scope ?? null,
-        sessione.gruppo_livello,
-        sessione.gruppo_ragione_sociale_id ?? null,
-      );
-      set_membri_live(ids);
-    } catch {
-      set_membri_live(null);
-    } finally {
-      set_membri_live_loading(false);
-    }
-  };
 
-  const salvati_ids = (sessione.atleti ?? []).map((a) => a.atleta_id);
-  const nuovi_non_sincronizzati = (membri_live ?? []).filter((id) => !salvati_ids.includes(id));
-  const non_piu_nel_gruppo = membri_live ? salvati_ids.filter((id) => !membri_live.includes(id)) : [];
 
 
 
