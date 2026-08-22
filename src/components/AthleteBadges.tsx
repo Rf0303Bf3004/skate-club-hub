@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { use_ragioni_sociali } from "@/hooks/use-ragioni-sociali";
 import { VERDE_ESTERNI } from "@/components/ProvenienzaLegenda";
@@ -26,6 +27,7 @@ const AthleteBadges: React.FC<Props> = ({
   ragione_sociale_id,
   className,
 }) => {
+  const { t } = useTranslation("atleti");
   const { data: ragioni_sociali = [] } = use_ragioni_sociali();
   const ragione_sociale = ragione_sociale_id
     ? (ragioni_sociali ?? []).find((r) => r.id === ragione_sociale_id)
@@ -38,17 +40,17 @@ const AthleteBadges: React.FC<Props> = ({
         {atleta_federazione && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className={pill_cls}>FED</span>
+              <span className={pill_cls}>{t("badges.fed")}</span>
             </TooltipTrigger>
-            <TooltipContent>Atleta di Federazione</TooltipContent>
+            <TooltipContent>{t("badges.fed_tooltip")}</TooltipContent>
           </Tooltip>
         )}
         {agonista && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className={pill_cls}>AGO</span>
+              <span className={pill_cls}>{t("badges.ago")}</span>
             </TooltipTrigger>
-            <TooltipContent>Agonista</TooltipContent>
+            <TooltipContent>{t("badges.ago_tooltip")}</TooltipContent>
           </Tooltip>
         )}
         {ragione_sociale && (
@@ -68,7 +70,7 @@ const AthleteBadges: React.FC<Props> = ({
                 {ragione_sociale.nome.toUpperCase()}
               </span>
             </TooltipTrigger>
-            <TooltipContent>Ragione sociale: {ragione_sociale.nome}</TooltipContent>
+            <TooltipContent>{t("badges.ragione_sociale_tooltip", { nome: ragione_sociale.nome })}</TooltipContent>
           </Tooltip>
         )}
         {atleta_esterno && (
@@ -78,10 +80,10 @@ const AthleteBadges: React.FC<Props> = ({
                 className={pill_cls}
                 style={{ borderLeft: `3px solid ${VERDE_ESTERNI}`, backgroundColor: `${VERDE_ESTERNI}1A` }}
               >
-                ESTERNO
+                {t("badges.esterno")}
               </span>
             </TooltipTrigger>
-            <TooltipContent>Pattinatore esterno ospite</TooltipContent>
+            <TooltipContent>{t("badges.esterno_tooltip")}</TooltipContent>
           </Tooltip>
         )}
 
