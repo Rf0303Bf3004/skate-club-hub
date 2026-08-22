@@ -106,7 +106,8 @@ const SpecialitaManager: React.FC = () => {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 flex flex-col min-h-0 flex-1">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain pr-1 max-h-[55vh]">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handle_drag_end}>
         <SortableContext items={lista.map((s) => s.id)} strategy={verticalListSortingStrategy}>
           <div className="space-y-1.5">
@@ -134,8 +135,9 @@ const SpecialitaManager: React.FC = () => {
           </div>
         </SortableContext>
       </DndContext>
+      </div>
 
-      <div className="pt-2 border-t space-y-2">
+      <div className="pt-2 border-t space-y-2 shrink-0">
         <div className="flex items-center gap-2">
         <Input
           value={nuovo_nome}
