@@ -772,7 +772,18 @@ export function use_ripeti_sessione() {
       const giorno = giorno_it_da_data(blocco.data);
       const ora_inizio = sessione.ora_inizio;
       const ora_fine = sessione.ora_fine;
-      const atleti_ids = (sessione.atleti ?? []).map((a) => a.atleta_id);
+      // Sessione collegata a un gruppo → la membership si risolve DAL VIVO adesso,
+      // altrimenti (caso normale) si usa lo snapshot statico della sessione sorgente.
+      const e_gruppo = !!sessione.gruppo_livello;
+      const membri_gruppo = e_gruppo
+        ? await risolvi_membri_gruppo(
+            club_id,
+            sessione.gruppo_scope ?? null,
+            sessione.gruppo_livello ?? null,
+            sessione.gruppo_ragione_sociale_id ?? null,
+          )
+        : [];
+      const atleti_ids = e_gruppo ? membri_gruppo : (sessione.atleti ?? []).map((a) => a.atleta_id);
       const istruttori_ids = (sessione.istruttori ?? []).map((i) => i.istruttore_id);
 
       const etichetta_specialita =
