@@ -48,6 +48,9 @@ export interface GrigliaSessione {
   forzato_at?: string | null;
   corso_id?: string | null;
   corso_nome?: string | null;
+  gruppo_livello?: string | null;
+  gruppo_scope?: GruppoScope | null;
+  gruppo_ragione_sociale_id?: string | null;
   atleti: GrigliaSessioneAtleta[];
   istruttori: GrigliaSessioneIstruttore[];
 }
