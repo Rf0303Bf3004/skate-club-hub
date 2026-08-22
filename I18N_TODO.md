@@ -341,3 +341,37 @@ stati di errore/link non valido e toast.
 - `MedagliereePage.tsx` non contiene stringhe traducibili (redirect puro).
 - Enum DB, costanti tecniche (giorni, tipi slot), nomi di corsi/atleti e contenuti generati dall'utente non sono stati tradotti.
 - Nessuna modifica ai JSON `src/locales/{fr,de,en}/`.
+
+---
+
+## Step 1.5g — `src/components/dashboard/PresidentDashboard.tsx` ✅
+
+Namespace riusato: **`dashboard`**, tutte le chiavi sotto il prefisso **`president.*`**
+(file: `src/locales/it/dashboard.json`). Totale: **180 chiavi nuove**.
+
+Pattern usato (file con molti sotto-componenti non-hook): helper module-level
+`tp(key, opts)` = `i18n.t('president.<key>', { ns: 'dashboard' })`, con
+`useTranslation('dashboard')` nel componente principale per il re-render al cambio lingua.
+
+| Gruppo / sezione | Prefisso chiavi | N. |
+|---|---|---|
+| Saluto, header, hero, stat rapide | `greet.*`, `kicker`, `role_fallback`, `hero.*`, `compare_last_year*`, `stats.*`, `loading`, `disclaimer` | 18 |
+| Fonti ricavo (etichette) | `fonte.*` | 6 |
+| Area Domanda & Ghiaccio | `ice.*` (incl. `ice.table.*`) | 17 |
+| Area Atleti | `athletes.*` | 10 |
+| Area Ricavi & Pacchetti | `revenue.*` | 9 |
+| Area Costi & Istruttori | `costs.*` (incl. `costs.legend.*`) | 10 |
+| Area Lezioni Private | `private.*`, `dow.*` | 13 |
+| Area Sportivo | `sport.*` | 4 |
+| Vetrina atleti | `showcase.*` | 4 |
+| Salute finanziaria | `finance.*` | 6 |
+| Catalogo & Promozione (sezioni 01–06) | `catalog.*` | 44 |
+| Card area + drawer + PDF | `areas.*`, `cards.*`, `card.more`, `tone.*`, `drawer.*`, `pdf_button`, `coming_soon` | 39 |
+
+### Note
+- **Nessuna chiave array/oggetto introdotta**: tutte sincronizzabili in `traduzioni_ui`.
+  I giorni della settimana sono chiavi singole (`president.dow.mon` …), non un array.
+- Placeholder mantenuti in formato i18next: `{{ore}}`, `{{count}}`, `{{pct}}`, `{{importo}}`, `{{eta}}`, `{{anno}}`, `{{n}}`, `{{value}}`.
+- NON tradotti: livelli tecnici DB (`Pulcini`, `Stellina 1-4`, `Bronzo`…`Oro`), livelli sponsor (`Gold/Silver/Bronze`), fasce orarie numeriche (`16-17`…), nomi atleti/istruttori/eventi/sponsor dal DB.
+- Rimane hardcoded il nome club di esempio `Stella del Ghiaccio ASD` (sezione Identità): è un dato, andrà letto da `club_identity`, non tradotto.
+- Nessuna modifica ai JSON `src/locales/{fr,de,en}/`.

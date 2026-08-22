@@ -71,6 +71,12 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import OnboardingBanner from "@/components/dashboard/OnboardingBanner";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
+
+// Helper di traduzione: legge dal namespace `dashboard`, prefisso `president.`
+const tp = (k: string, opts?: Record<string, unknown>): string =>
+  i18n.t(`president.${k}`, { ns: "dashboard", ...(opts || {}) }) as string;
 
 
 
@@ -113,14 +119,7 @@ const LIVELLI_ORDER = [
   "Oro",
 ];
 
-const FONTE_LABEL: Record<string, string> = {
-  quote_corsi: "Quote corsi",
-  pacchetti_opzionali: "Pacchetti opzionali",
-  lezioni_private: "Lezioni private",
-  eventi: "Eventi",
-  sponsor: "Sponsor",
-  altro: "Altro",
-};
+const fonte_label = (k: string) => tp(`fonte.${k}`, { defaultValue: k });
 const FONTE_COLOR: Record<string, string> = {
   quote_corsi: "#0e7490", // cyan-700
   pacchetti_opzionali: "#10b981", // emerald
@@ -324,23 +323,23 @@ const Header: React.FC<{
 }> = ({ nome, stagioni, stagioneId, setStagioneId, confronta, setConfronta, totAtleti, ricavi, cassa, attesa, stagioneNome }) => {
   const greet = (() => {
     const h = new Date().getHours();
-    if (h < 12) return "Buongiorno";
-    if (h < 18) return "Buon pomeriggio";
-    return "Buonasera";
+    if (h < 12) return tp("greet.morning");
+    if (h < 18) return tp("greet.afternoon");
+    return tp("greet.evening");
   })();
   return (
     <header className="px-6 md:px-10 pt-14 md:pt-20 pb-12 max-w-[1400px] mx-auto">
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8">
         <div className="flex-1 min-w-0">
           <div className="text-xs uppercase tracking-[0.2em] text-cyan-700 font-semibold mb-3">
-            Dashboard Presidente
+            {tp("kicker")}
           </div>
           <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl text-slate-900 tracking-tight leading-[1.02]">
-            {greet}, {nome || "Presidente"}.
+            {greet}, {nome || tp("role_fallback")}.
           </h1>
           <p className="mt-5 text-lg md:text-xl text-slate-500 max-w-2xl leading-relaxed">
-            Stagione <span className="text-slate-900 font-medium">{stagioneNome}</span> — il club conta{" "}
-            <span className="text-slate-900 font-medium">{fmt_int(totAtleti)}</span> atleti e ha incassato{" "}
+            {tp("hero.season_prefix")} <span className="text-slate-900 font-medium">{stagioneNome}</span> {tp("hero.club_counts")}{" "}
+            <span className="text-slate-900 font-medium">{fmt_int(totAtleti)}</span> {tp("hero.athletes_and_earned")}{" "}
             <span className="text-slate-900 font-medium">{fmt_chf(ricavi)}</span>.
           </p>
         </div>
@@ -362,17 +361,17 @@ const Header: React.FC<{
           </div>
           <label className="inline-flex items-center gap-3 text-sm text-slate-600 cursor-pointer">
             <Switch checked={confronta} onCheckedChange={setConfronta} />
-            <span>Confronta con anno scorso</span>
+            <span>{tp("compare_last_year")}</span>
           </label>
         </div>
       </div>
 
       {/* mini hero stats */}
       <div className="mt-14 grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4 border-t border-slate-200 pt-10">
-        <MiniHero label="Atleti totali" value={fmt_int(totAtleti)} />
-        <MiniHero label="Ricavi stagione" value={fmt_chf(ricavi)} />
-        <MiniHero label="Saldo cassa" value={fmt_chf(cassa)} accent={cassa >= 0 ? "text-emerald-600" : "text-rose-600"} />
-        <MiniHero label="Lista d'attesa" value={fmt_int(attesa)} accent="text-amber-600" />
+        <MiniHero label={tp("stats.total_athletes")} value={fmt_int(totAtleti)} />
+        <MiniHero label={tp("stats.season_revenue")} value={fmt_chf(ricavi)} />
+        <MiniHero label={tp("stats.cash_balance")} value={fmt_chf(cassa)} accent={cassa >= 0 ? "text-emerald-600" : "text-rose-600"} />
+        <MiniHero label={tp("stats.waiting_list")} value={fmt_int(attesa)} accent="text-amber-600" />
       </div>
     </header>
   );
@@ -409,7 +408,7 @@ const Area1Ghiaccio: React.FC<{ d: any; oreRow: any }> = ({ d, oreRow }) => {
   const corsiMap = new Map<string, any>();
   (d.capacita || []).forEach((c: any) => {
     corsiMap.set(c.corso_id, {
-      nome: c.corsi?.nome || "Corso",
+      nome: c.corsi?.nome || tp("ice.table.course"),
       capacita: c.capacita_max,
       ore: c.ore_settimanali_dedicate,
       iscritti: 0,
@@ -446,19 +445,19 @@ const Area1Ghiaccio: React.FC<{ d: any; oreRow: any }> = ({ d, oreRow }) => {
     <div className="grid lg:grid-cols-3 gap-10">
       <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
         <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">
-          Ore di pista — settimana tipo
+          {tp("ice.hours_title")}
         </h3>
-        <Bar label="Disponibili" value={tot} color="#0e7490" />
-        <Bar label="Utilizzate" value={used} color="#67e8f9" />
-        <Bar label="Richieste se accettassimo tutti" value={req} color="#f59e0b" highlight />
+        <Bar label={tp("ice.available")} value={tot} color="#0e7490" />
+        <Bar label={tp("ice.used")} value={used} color="#67e8f9" />
+        <Bar label={tp("ice.requested_all")} value={req} color="#f59e0b" highlight />
         <div className="mt-8 p-5 rounded-2xl bg-amber-50 border border-amber-100">
           <div className="flex items-start gap-3">
             <Snowflake className="h-5 w-5 text-amber-600 mt-0.5" />
             <div>
-              <div className="font-serif text-2xl text-amber-900">+{oreExtra}h ci servirebbero</div>
+              <div className="font-serif text-2xl text-amber-900">{tp("ice.extra_needed", { ore: oreExtra })}</div>
               <div className="text-sm text-amber-800 mt-1">
-                Costo extra stimato: <strong>{fmt_chf(costoExtra)}</strong>/anno · Ricavi potenziali da{" "}
-                {fmt_int(totAtt)} atleti in attesa: <strong>~{fmt_chf(ricaviExtraPotenziali)}</strong>
+                {tp("ice.extra_cost_label")} <strong>{fmt_chf(costoExtra)}</strong>{tp("ice.per_year_potential", { count: totAtt })}{" "}
+                <strong>~{fmt_chf(ricaviExtraPotenziali)}</strong>
               </div>
             </div>
           </div>
@@ -467,24 +466,24 @@ const Area1Ghiaccio: React.FC<{ d: any; oreRow: any }> = ({ d, oreRow }) => {
 
       <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm flex flex-col justify-between">
         <div>
-          <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">Domanda stagione</h3>
+          <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">{tp("ice.season_demand")}</h3>
           <div className="space-y-6">
             <div>
-              <div className="text-xs text-slate-500 uppercase tracking-wider">Richieste ricevute</div>
+              <div className="text-xs text-slate-500 uppercase tracking-wider">{tp("ice.requests_received")}</div>
               <div className="font-serif text-4xl text-slate-900 tabular-nums">{fmt_int(totRich)}</div>
             </div>
             <div>
-              <div className="text-xs text-slate-500 uppercase tracking-wider">Iscritti accettati</div>
+              <div className="text-xs text-slate-500 uppercase tracking-wider">{tp("ice.accepted")}</div>
               <div className="font-serif text-4xl text-emerald-600 tabular-nums">{fmt_int(totAcc)}</div>
             </div>
             <div>
-              <div className="text-xs text-slate-500 uppercase tracking-wider">In lista d'attesa</div>
+              <div className="text-xs text-slate-500 uppercase tracking-wider">{tp("ice.in_waiting_list")}</div>
               <div className="font-serif text-4xl text-rose-600 tabular-nums">{fmt_int(totAtt)}</div>
             </div>
           </div>
         </div>
         <div className="text-xs text-slate-500 mt-8">
-          Costo orario pista: <strong className="text-slate-700">{fmt_chf(costo)}/h</strong>
+          {tp("ice.hourly_cost")} <strong className="text-slate-700">{fmt_chf(costo)}/h</strong>
         </div>
       </div>
 
@@ -492,11 +491,11 @@ const Area1Ghiaccio: React.FC<{ d: any; oreRow: any }> = ({ d, oreRow }) => {
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-slate-500 uppercase text-xs tracking-wider">
             <tr>
-              <th className="text-left px-6 py-4 font-semibold">Corso</th>
-              <th className="text-right px-6 py-4 font-semibold">Capacità</th>
-              <th className="text-right px-6 py-4 font-semibold">Iscritti</th>
-              <th className="text-right px-6 py-4 font-semibold">Lista attesa</th>
-              <th className="text-right px-6 py-4 font-semibold">Saturazione</th>
+              <th className="text-left px-6 py-4 font-semibold">{tp("ice.table.course")}</th>
+              <th className="text-right px-6 py-4 font-semibold">{tp("ice.table.capacity")}</th>
+              <th className="text-right px-6 py-4 font-semibold">{tp("ice.table.enrolled")}</th>
+              <th className="text-right px-6 py-4 font-semibold">{tp("ice.table.waiting")}</th>
+              <th className="text-right px-6 py-4 font-semibold">{tp("ice.table.saturation")}</th>
             </tr>
           </thead>
           <tbody>
@@ -596,25 +595,25 @@ const Area2Atleti: React.FC<{ d: any; bilancioStorico: any[]; storiciByStagione:
   // diagnostica
   const upper = (counts["Bronzo"] || 0) + (counts["Interargento"] || 0) + (counts["Argento"] || 0) + (counts["Interoro"] || 0) + (counts["Oro"] || 0);
   const lower = (counts["Pulcini"] || 0) + (counts["Stellina 1"] || 0) + (counts["Stellina 2"] || 0);
-  const diagn = lower >= upper * 1.2 ? "Piramide sana" : upper > lower ? "Piramide top-heavy" : "Piramide equilibrata";
+  const diagn = lower >= upper * 1.2 ? tp("athletes.pyramid_healthy") : upper > lower ? tp("athletes.pyramid_top_heavy") : tp("athletes.pyramid_balanced");
 
   return (
     <>
       <div className="grid md:grid-cols-3 gap-10 items-end mb-12">
         <div className="md:col-span-1">
-          <HeroNumber value={total} label="atleti attivi" delta={confronta ? yoyPct : undefined} />
+          <HeroNumber value={total} label={tp("athletes.active_athletes")} delta={confronta ? yoyPct : undefined} />
         </div>
         <div className="md:col-span-2 grid grid-cols-2 lg:grid-cols-4 gap-6">
-          <MiniStat label="Nuovi iscritti" value={fmt_int(newCount)} />
-          <MiniStat label="Abbandoni" value={fmt_int(abbandoni)} accent="text-rose-600" />
-          <MiniStat label="Ritenzione" value={`${ritenzione.toFixed(0)}%`} accent="text-emerald-600" />
-          <MiniStat label="Età media" value={ageAvg ? `${ageAvg.toFixed(1)} a.` : "—"} />
+          <MiniStat label={tp("athletes.new_members")} value={fmt_int(newCount)} />
+          <MiniStat label={tp("athletes.dropouts")} value={fmt_int(abbandoni)} accent="text-rose-600" />
+          <MiniStat label={tp("athletes.retention")} value={`${ritenzione.toFixed(0)}%`} accent="text-emerald-600" />
+          <MiniStat label={tp("athletes.avg_age")} value={ageAvg ? tp("athletes.years_short", { value: ageAvg.toFixed(1) }) : "—"} />
         </div>
       </div>
 
       <div className="bg-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
         <div className="flex items-baseline justify-between mb-8">
-          <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold">Piramide livelli</h3>
+          <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold">{tp("athletes.levels_pyramid")}</h3>
           <span className="inline-flex items-center gap-2 text-sm text-emerald-700 bg-emerald-50 rounded-full px-3 py-1">
             <Sparkles className="h-3.5 w-3.5" /> {diagn}
           </span>
@@ -648,7 +647,7 @@ const Area2Atleti: React.FC<{ d: any; bilancioStorico: any[]; storiciByStagione:
 
       <div className="mt-10 bg-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
         <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-8">
-          Atleti totali — ultime stagioni
+          {tp("athletes.trend_title")}
         </h3>
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
@@ -691,7 +690,7 @@ const Area3Ricavi: React.FC<{ d: any; ricaviCurr: any[]; ricaviPrev: any[]; conf
   const totPrev = ricaviPrev.reduce((s, r) => s + Number(r.importo || 0), 0);
   const yoy = totPrev ? ((tot - totPrev) / totPrev) * 100 : 0;
   const pieData = ricaviCurr
-    .map((r) => ({ name: FONTE_LABEL[r.fonte] || r.fonte, key: r.fonte, value: Number(r.importo) }))
+    .map((r) => ({ name: fonte_label(r.fonte), key: r.fonte, value: Number(r.importo) }))
     .sort((a, b) => b.value - a.value);
 
   // pacchetti
@@ -713,13 +712,13 @@ const Area3Ricavi: React.FC<{ d: any; ricaviCurr: any[]; ricaviPrev: any[]; conf
   return (
     <>
       <div className="mb-12">
-        <HeroNumber value={tot} isCurrency label="ricavi stagione" delta={confronta ? yoy : undefined} />
+        <HeroNumber value={tot} isCurrency label={tp("revenue.season_revenue")} delta={confronta ? yoy : undefined} />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-10">
         <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
           <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">
-            Composizione ricavi
+            {tp("revenue.composition")}
           </h3>
           <div className="grid md:grid-cols-2 gap-6 items-center">
             <div className="h-72">
@@ -756,13 +755,13 @@ const Area3Ricavi: React.FC<{ d: any; ricaviCurr: any[]; ricaviPrev: any[]; conf
 
         <div className="bg-gradient-to-br from-cyan-50 to-emerald-50 rounded-3xl border border-cyan-100 p-8 flex flex-col justify-between">
           <div>
-            <div className="text-xs uppercase tracking-widest text-cyan-700 font-semibold mb-3">Ricavo medio</div>
+            <div className="text-xs uppercase tracking-widest text-cyan-700 font-semibold mb-3">{tp("revenue.avg_revenue")}</div>
             <div className="font-serif text-5xl text-slate-900 tabular-nums">{fmt_chf(ricavoMedio)}</div>
-            <div className="text-sm text-slate-600 mt-2">per atleta attivo</div>
+            <div className="text-sm text-slate-600 mt-2">{tp("revenue.per_active_athlete")}</div>
           </div>
           <p className="text-sm text-slate-600 mt-6 leading-relaxed">
-            Quote corsi è la fonte principale, ma <strong>pacchetti opzionali</strong> e{" "}
-            <strong>lezioni private</strong> insieme superano CHF{" "}
+            {tp("revenue.note_prefix")} <strong>{tp("fonte.pacchetti_opzionali")}</strong> {tp("revenue.note_and")}{" "}
+            <strong>{tp("fonte.lezioni_private")}</strong> {tp("revenue.note_suffix")}{" "}
             {fmt_chf(
               (ricaviCurr.find((r: any) => r.fonte === "pacchetti_opzionali")?.importo || 0) +
                 (ricaviCurr.find((r: any) => r.fonte === "lezioni_private")?.importo || 0)
@@ -774,7 +773,7 @@ const Area3Ricavi: React.FC<{ d: any; ricaviCurr: any[]; ricaviPrev: any[]; conf
 
       <div className="mt-10 bg-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
         <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">
-          Adesione ai pacchetti opzionali
+          {tp("revenue.packages_title")}
         </h3>
         <div className="space-y-4">
           {pkRows.map((p: any) => {
@@ -785,7 +784,7 @@ const Area3Ricavi: React.FC<{ d: any; ricaviCurr: any[]; ricaviPrev: any[]; conf
                   <div>
                     <span className="font-medium text-slate-900">{p.nome}</span>
                     <span className="ml-3 text-sm text-slate-500">
-                      {fmt_chf(Number(p.prezzo))} · {p.iscritti} atleti ({pct.toFixed(0)}%)
+                      {fmt_chf(Number(p.prezzo))} · {tp("revenue.athletes_pct", { count: p.iscritti, pct: pct.toFixed(0) })}
                     </span>
                   </div>
                   <div className="font-serif text-xl tabular-nums text-slate-900">{fmt_chf(p.ricavo)}</div>
@@ -855,7 +854,7 @@ const Area4Istruttori: React.FC<{ d: any; ricaviCurr: any[] }> = ({ d, ricaviCur
   return (
     <>
       <div className="mb-12">
-        <HeroNumber value={costoTotale} isCurrency label="costo istruttori stagione" />
+        <HeroNumber value={costoTotale} isCurrency label={tp("costs.season_instructor_cost")} />
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">
@@ -873,11 +872,11 @@ const Area4Istruttori: React.FC<{ d: any; ricaviCurr: any[] }> = ({ d, ricaviCur
               </div>
             </div>
             <div className="space-y-4">
-              <Row label="Ore lavorate" value={`${c.oreTot.toFixed(0)} h`} />
-              <Row label="Costo stagione" value={fmt_chf(c.costoTot)} />
-              <Row label="Ricavi generati" value={fmt_chf(c.ricaviTot)} accent="text-emerald-700" />
+              <Row label={tp("costs.hours_worked")} value={`${c.oreTot.toFixed(0)} h`} />
+              <Row label={tp("costs.season_cost")} value={fmt_chf(c.costoTot)} />
+              <Row label={tp("costs.revenue_generated")} value={fmt_chf(c.ricaviTot)} accent="text-emerald-700" />
               <div className="pt-3 border-t border-slate-100">
-                <Row label="Margine" value={`${c.margine.toFixed(0)}%`} accent={c.margine > 0 ? "text-emerald-700" : "text-rose-700"} bold />
+                <Row label={tp("costs.margin")} value={`${c.margine.toFixed(0)}%`} accent={c.margine > 0 ? "text-emerald-700" : "text-rose-700"} bold />
               </div>
             </div>
           </div>
@@ -886,7 +885,7 @@ const Area4Istruttori: React.FC<{ d: any; ricaviCurr: any[] }> = ({ d, ricaviCur
 
       <div className="mt-10 bg-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
         <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">
-          Distribuzione ore mensili — tutti gli istruttori
+          {tp("costs.monthly_hours_title")}
         </h3>
         <div className="h-72">
           <ResponsiveContainer>
@@ -895,10 +894,10 @@ const Area4Istruttori: React.FC<{ d: any; ricaviCurr: any[] }> = ({ d, ricaviCur
               <XAxis dataKey="name" tick={{ fill: "#64748b", fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: "#64748b", fontSize: 11 }} axisLine={false} tickLine={false} />
               <RTooltip />
-              <Bar dataKey="corsi" stackId="a" fill="#0e7490" name="Corsi" />
-              <Bar dataKey="lez" stackId="a" fill="#f59e0b" name="Lezioni private" />
-              <Bar dataKey="eventi" stackId="a" fill="#8b5cf6" name="Eventi" />
-              <Bar dataKey="amm" stackId="a" fill="#94a3b8" name="Amministrativo" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="corsi" stackId="a" fill="#0e7490" name={tp("costs.legend.courses")} />
+              <Bar dataKey="lez" stackId="a" fill="#f59e0b" name={tp("costs.legend.private")} />
+              <Bar dataKey="eventi" stackId="a" fill="#8b5cf6" name={tp("costs.legend.events")} />
+              <Bar dataKey="amm" stackId="a" fill="#94a3b8" name={tp("costs.legend.admin")} radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -962,7 +961,7 @@ const Area5Lezioni: React.FC<{ d: any }> = ({ d }) => {
   });
   // fasce orarie sintetiche (deterministic) basate su distribuzione tipica
   const fasce = ["16-17", "17-18", "18-19", "19-20", "20-21"];
-  const dowLabels = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
+  const dowLabels = [tp("dow.sun"), tp("dow.mon"), tp("dow.tue"), tp("dow.wed"), tp("dow.thu"), tp("dow.fri"), tp("dow.sat")];
   const bandWeights = [0.15, 0.22, 0.28, 0.2, 0.15];
   const heat = dowLabels.map((dl, di) => fasce.map((_, fi) => Math.round(dowCounts[di] * bandWeights[fi])));
   const maxHeat = Math.max(1, ...heat.flat());
@@ -970,13 +969,13 @@ const Area5Lezioni: React.FC<{ d: any }> = ({ d }) => {
   return (
     <>
       <div className="mb-12 grid md:grid-cols-2 gap-10">
-        <HeroNumber value={tot} label="lezioni vendute" />
-        <HeroNumber value={fatt} isCurrency label="fatturato lezioni private" />
+        <HeroNumber value={tot} label={tp("private.lessons_sold")} />
+        <HeroNumber value={fatt} isCurrency label={tp("private.turnover")} />
       </div>
 
       <div className="grid lg:grid-cols-2 gap-8">
         <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
-          <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">Top istruttori</h3>
+          <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">{tp("private.top_instructors")}</h3>
           <div className="space-y-5">
             {topIst.map((i: any, idx: number) => (
               <div key={idx} className="flex items-center gap-4">
@@ -988,7 +987,7 @@ const Area5Lezioni: React.FC<{ d: any }> = ({ d }) => {
                   <div className="font-medium text-slate-900">
                     {i.nome} {i.cognome}
                   </div>
-                  <div className="text-xs text-slate-500">{i.ore.toFixed(0)} ore vendute</div>
+                  <div className="text-xs text-slate-500">{tp("private.hours_sold", { count: i.ore.toFixed(0) })}</div>
                 </div>
                 <div className="font-serif text-xl tabular-nums text-slate-900">{fmt_chf(i.ricavo)}</div>
               </div>
@@ -997,7 +996,7 @@ const Area5Lezioni: React.FC<{ d: any }> = ({ d }) => {
         </div>
 
         <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
-          <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">Top clienti</h3>
+          <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">{tp("private.top_clients")}</h3>
           <div className="space-y-4">
             {topAt.map((a: any, idx: number) => (
               <div key={idx} className="flex items-center gap-4">
@@ -1013,7 +1012,7 @@ const Area5Lezioni: React.FC<{ d: any }> = ({ d }) => {
                   <div className="font-medium text-slate-900">
                     {a.nome} {a.cognome}
                   </div>
-                  <div className="text-xs text-slate-500">{a.ore.toFixed(0)} ore</div>
+                  <div className="text-xs text-slate-500">{tp("private.hours", { count: a.ore.toFixed(0) })}</div>
                 </div>
                 <div className="font-serif text-lg tabular-nums text-slate-900">{fmt_chf(a.speso)}</div>
               </div>
@@ -1024,7 +1023,7 @@ const Area5Lezioni: React.FC<{ d: any }> = ({ d }) => {
 
       <div className="mt-10 bg-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
         <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">
-          Quando si vendono — giorno × fascia oraria
+          {tp("private.heatmap_title")}
         </h3>
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -1086,14 +1085,14 @@ const Area6Performance: React.FC<{ d: any }> = ({ d }) => {
   return (
     <>
       <div className="grid md:grid-cols-3 gap-10 mb-12">
-        <HeroNumber value={gareCount} label="partecipazioni gara" />
-        <HeroNumber value={succRate} suffix="%" label="podi sul totale" />
-        <HeroNumber value={podi} label="podi conquistati" />
+        <HeroNumber value={gareCount} label={tp("sport.competition_entries")} />
+        <HeroNumber value={succRate} suffix="%" label={tp("sport.podium_rate")} />
+        <HeroNumber value={podi} label={tp("sport.podiums_won")} />
       </div>
 
       <div className="bg-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
         <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">
-          Trend podi — ultime stagioni
+          {tp("sport.podium_trend")}
         </h3>
         <div className="h-56">
           <ResponsiveContainer>
@@ -1142,7 +1141,7 @@ const AtletiShowcase: React.FC<{ d: any }> = ({ d }) => {
   return (
     <div className="bg-gradient-to-br from-slate-50 to-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
       <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-8">
-        I nostri atleti
+        {tp("showcase.title")}
       </h3>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
         {showcase.map((a: any) => {
@@ -1159,10 +1158,10 @@ const AtletiShowcase: React.FC<{ d: any }> = ({ d }) => {
               <div className="mt-4 font-serif text-lg text-slate-900">
                 {a.nome} {a.cognome}
               </div>
-              <div className="text-xs text-slate-500 mt-1">{a.livello_artistica || a.livello_attuale || "Agonista"}</div>
+              <div className="text-xs text-slate-500 mt-1">{a.livello_artistica || a.livello_attuale || tp("showcase.competitor")}</div>
               {pod > 0 && (
                 <div className="mt-2 inline-flex items-center gap-1 text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
-                  <Trophy className="h-3 w-3" /> {pod} podi
+                  <Trophy className="h-3 w-3" /> {tp("showcase.podiums", { count: pod })}
                 </div>
               )}
             </div>
@@ -1196,15 +1195,15 @@ const Area7Finanze: React.FC<{ d: any; bilancio: any[]; stagioniOrd: Stagione[];
   return (
     <>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-10 mb-12">
-        <BigMoney icon={<Wallet className="h-5 w-5" />} label="Soldi in cassa oggi" value={cassa} accent={cassa >= 0 ? "text-emerald-600" : "text-rose-600"} />
-        <BigMoney icon={<ArrowDown className="h-5 w-5" />} label="Da incassare" value={daIncassare} accent="text-amber-600" />
-        <BigMoney icon={<ArrowUp className="h-5 w-5" />} label="Da pagare 30 gg" value={usciteFutureMese} accent="text-slate-700" />
-        <BigMoney icon={<TrendingUp className="h-5 w-5" />} label="Saldo stagione" value={saldo} accent={saldo >= 0 ? "text-emerald-600" : "text-rose-600"} prefix={saldo > 0 ? "+" : ""} />
+        <BigMoney icon={<Wallet className="h-5 w-5" />} label={tp("finance.cash_today")} value={cassa} accent={cassa >= 0 ? "text-emerald-600" : "text-rose-600"} />
+        <BigMoney icon={<ArrowDown className="h-5 w-5" />} label={tp("finance.to_collect")} value={daIncassare} accent="text-amber-600" />
+        <BigMoney icon={<ArrowUp className="h-5 w-5" />} label={tp("finance.to_pay_30d")} value={usciteFutureMese} accent="text-slate-700" />
+        <BigMoney icon={<TrendingUp className="h-5 w-5" />} label={tp("finance.season_balance")} value={saldo} accent={saldo >= 0 ? "text-emerald-600" : "text-rose-600"} prefix={saldo > 0 ? "+" : ""} />
       </div>
 
       <div className="bg-white rounded-3xl border border-slate-200 p-8 md:p-10 shadow-sm">
         <h3 className="text-sm uppercase tracking-widest text-slate-400 font-semibold mb-6">
-          Andamento cassa — 4 stagioni
+          {tp("finance.cash_trend")}
         </h3>
         <div className="h-80">
           <ResponsiveContainer>
@@ -1224,7 +1223,7 @@ const Area7Finanze: React.FC<{ d: any; bilancio: any[]; stagioniOrd: Stagione[];
           </ResponsiveContainer>
         </div>
         <p className="mt-6 text-slate-600 italic font-serif text-lg">
-          Il saldo cresce per la 4ª stagione consecutiva. Il club è in salute economica.
+          {tp("finance.cash_note")}
         </p>
       </div>
     </>
@@ -1338,10 +1337,10 @@ const Area7Catalogo: React.FC<{
     <div className="space-y-14">
       {/* SEZIONE 1 - IDENTITÀ */}
       <section>
-        <div className="text-[11px] uppercase tracking-[0.2em] text-cyan-700 font-semibold mb-3">01 — Identità</div>
+        <div className="text-[11px] uppercase tracking-[0.2em] text-cyan-700 font-semibold mb-3">{tp("catalog.s1_kicker")}</div>
         <h3 className="font-serif text-3xl text-slate-900 mb-1">Stella del Ghiaccio ASD</h3>
         <div className="text-sm text-slate-500 mb-5 flex flex-wrap items-center gap-3">
-          <span>Dal {identity.anno_fondazione || "—"}</span>
+          <span>{tp("catalog.since", { anno: identity.anno_fondazione || "—" })}</span>
           <span>·</span>
           <span>{identity.federazione || "—"}</span>
           <span>·</span>
@@ -1352,15 +1351,15 @@ const Area7Catalogo: React.FC<{
         </p>
         <div className="grid grid-cols-3 gap-4 max-w-xl">
           <div className="bg-slate-50 rounded-xl p-4">
-            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Atleti</div>
+            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">{tp("catalog.athletes")}</div>
             <div className="font-serif text-2xl text-slate-900 tabular-nums">{fmt_int(totAtleti)}</div>
           </div>
           <div className="bg-slate-50 rounded-xl p-4">
-            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Anni</div>
+            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">{tp("catalog.years")}</div>
             <div className="font-serif text-2xl text-slate-900 tabular-nums">{anni}</div>
           </div>
           <div className="bg-slate-50 rounded-xl p-4">
-            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Giovani &lt;14</div>
+            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">{tp("catalog.youth_under14")}</div>
             <div className="font-serif text-2xl text-slate-900 tabular-nums">{fmt_int(giovani)}</div>
           </div>
         </div>
@@ -1375,60 +1374,60 @@ const Area7Catalogo: React.FC<{
 
       {/* SEZIONE 2 - OFFERTA / CATALOGO */}
       <section>
-        <div className="text-[11px] uppercase tracking-[0.2em] text-cyan-700 font-semibold mb-3">02 — Offerta &amp; Catalogo</div>
-        <h3 className="font-serif text-3xl text-slate-900 mb-6">Cosa offriamo</h3>
+        <div className="text-[11px] uppercase tracking-[0.2em] text-cyan-700 font-semibold mb-3">{tp("catalog.s2_kicker")}</div>
+        <h3 className="font-serif text-3xl text-slate-900 mb-6">{tp("catalog.s2_title")}</h3>
 
         <div className="grid md:grid-cols-2 gap-6">
           <div className="bg-white border border-slate-200 rounded-2xl p-6">
-            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-3">Corsi base</div>
+            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-3">{tp("catalog.base_courses")}</div>
             <div className="space-y-2">
               {corsiAll.slice(0, 6).map((c: any, i: number) => (
                 <div key={i} className="flex justify-between text-sm">
                   <span className="text-slate-700">{c.nome}</span>
                 </div>
               ))}
-              {corsiAll.length === 0 && <div className="text-sm text-slate-400">Pulcini, Stelline 1-4</div>}
+              {corsiAll.length === 0 && <div className="text-sm text-slate-400">{tp("catalog.base_courses_fallback")}</div>}
             </div>
           </div>
 
           <div className="bg-white border border-slate-200 rounded-2xl p-6">
-            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-3">Percorso agonistico</div>
+            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-3">{tp("catalog.competitive_path")}</div>
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-gradient-to-br from-violet-50 to-white border border-violet-100 rounded-xl p-4">
-                <div className="font-serif text-lg text-slate-900">Artistica</div>
-                <div className="text-xs text-slate-500 mt-1">Bronzo → Oro</div>
+                <div className="font-serif text-lg text-slate-900">{tp("catalog.artistic")}</div>
+                <div className="text-xs text-slate-500 mt-1">{tp("catalog.bronze_to_gold")}</div>
               </div>
               <div className="bg-gradient-to-br from-cyan-50 to-white border border-cyan-100 rounded-xl p-4">
-                <div className="font-serif text-lg text-slate-900">Stile</div>
-                <div className="text-xs text-slate-500 mt-1">Bronzo → Oro</div>
+                <div className="font-serif text-lg text-slate-900">{tp("catalog.style")}</div>
+                <div className="text-xs text-slate-500 mt-1">{tp("catalog.bronze_to_gold")}</div>
               </div>
             </div>
           </div>
 
           <div className="bg-white border border-slate-200 rounded-2xl p-6 md:col-span-2">
-            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-3">Pacchetti opzionali</div>
+            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-3">{tp("fonte.pacchetti_opzionali")}</div>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {pacchetti.map((p: any) => (
                 <div key={p.id} className="border border-slate-100 rounded-xl p-3">
                   <div className="text-sm font-medium text-slate-900 truncate">{p.nome}</div>
                   <div className="text-xs text-slate-500 mt-1 tabular-nums">
-                    {p.costo_mensile ? `${fmt_chf(Number(p.costo_mensile))}/mese` : p.costo_annuale ? `${fmt_chf(Number(p.costo_annuale))}/anno` : p.costo_1_sessione ? `${fmt_chf(Number(p.costo_1_sessione))}/sess.` : "—"}
+                    {p.costo_mensile ? `${fmt_chf(Number(p.costo_mensile))}${tp("catalog.per_month")}` : p.costo_annuale ? `${fmt_chf(Number(p.costo_annuale))}${tp("catalog.per_year")}` : p.costo_1_sessione ? `${fmt_chf(Number(p.costo_1_sessione))}${tp("catalog.per_session")}` : "—"}
                   </div>
                 </div>
               ))}
-              {pacchetti.length === 0 && <div className="text-sm text-slate-400">Nessun pacchetto attivo</div>}
+              {pacchetti.length === 0 && <div className="text-sm text-slate-400">{tp("catalog.no_packages")}</div>}
             </div>
           </div>
 
           <div className="bg-white border border-slate-200 rounded-2xl p-6 md:col-span-2">
-            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-3">Lezioni private — tariffe orarie</div>
+            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-3">{tp("catalog.private_rates")}</div>
             <div className="flex gap-6">
               {tariffe.length > 0 ? tariffe.map((t: number, i: number) => (
                 <div key={i}>
-                  <div className="text-xs text-slate-500">Fascia {i + 1}</div>
+                  <div className="text-xs text-slate-500">{tp("catalog.band", { n: i + 1 })}</div>
                   <div className="font-serif text-2xl text-slate-900 tabular-nums">{fmt_chf(t)}</div>
                 </div>
-              )) : <div className="text-sm text-slate-400">Disponibili su richiesta</div>}
+              )) : <div className="text-sm text-slate-400">{tp("catalog.on_request")}</div>}
             </div>
           </div>
         </div>
@@ -1436,24 +1435,24 @@ const Area7Catalogo: React.FC<{
 
       {/* SEZIONE 3 - RISULTATI */}
       <section>
-        <div className="text-[11px] uppercase tracking-[0.2em] text-cyan-700 font-semibold mb-3">03 — Risultati</div>
-        <h3 className="font-serif text-3xl text-slate-900 mb-6">I nostri numeri sportivi</h3>
+        <div className="text-[11px] uppercase tracking-[0.2em] text-cyan-700 font-semibold mb-3">{tp("catalog.s3_kicker")}</div>
+        <h3 className="font-serif text-3xl text-slate-900 mb-6">{tp("catalog.s3_title")}</h3>
         <div className="grid grid-cols-3 gap-4 mb-6 max-w-xl">
           <div className="bg-slate-50 rounded-xl p-4">
-            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Podi</div>
+            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">{tp("catalog.podiums")}</div>
             <div className="font-serif text-2xl text-slate-900 tabular-nums">{fmt_int(podi)}</div>
           </div>
           <div className="bg-slate-50 rounded-xl p-4">
-            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Agonisti</div>
+            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">{tp("catalog.competitors")}</div>
             <div className="font-serif text-2xl text-slate-900 tabular-nums">{fmt_int(agonisti)}</div>
           </div>
           <div className="bg-slate-50 rounded-xl p-4">
-            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Superamento test</div>
+            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">{tp("catalog.test_pass_rate")}</div>
             <div className="font-serif text-2xl text-slate-900 tabular-nums">{Math.round(testSuperamentoPct)}%</div>
           </div>
         </div>
         <div className="bg-white border border-slate-200 rounded-2xl p-5 mb-6">
-          <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-2">Trend podi — 4 stagioni</div>
+          <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-2">{tp("catalog.podium_trend_4")}</div>
           <MiniSparkline data={trendPodi.length ? trendPodi : [0]} color="#8b5cf6" />
         </div>
         <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
@@ -1474,19 +1473,19 @@ const Area7Catalogo: React.FC<{
 
       {/* SEZIONE 4 - IMPATTO SOCIALE */}
       <section>
-        <div className="text-[11px] uppercase tracking-[0.2em] text-cyan-700 font-semibold mb-3">04 — Impatto sociale</div>
-        <h3 className="font-serif text-3xl text-slate-900 mb-6">Quanto restituiamo al territorio</h3>
+        <div className="text-[11px] uppercase tracking-[0.2em] text-cyan-700 font-semibold mb-3">{tp("catalog.s4_kicker")}</div>
+        <h3 className="font-serif text-3xl text-slate-900 mb-6">{tp("catalog.s4_title")}</h3>
         <div className="grid grid-cols-3 gap-4 mb-6 max-w-xl">
           <div className="bg-emerald-50 rounded-xl p-4">
-            <div className="text-[10px] uppercase tracking-widest text-emerald-700 font-semibold">Bambini coinvolti</div>
+            <div className="text-[10px] uppercase tracking-widest text-emerald-700 font-semibold">{tp("catalog.children_involved")}</div>
             <div className="font-serif text-2xl text-slate-900 tabular-nums">{fmt_int(partecipantiTot)}</div>
           </div>
           <div className="bg-emerald-50 rounded-xl p-4">
-            <div className="text-[10px] uppercase tracking-widest text-emerald-700 font-semibold">Ore attività</div>
+            <div className="text-[10px] uppercase tracking-widest text-emerald-700 font-semibold">{tp("catalog.activity_hours")}</div>
             <div className="font-serif text-2xl text-slate-900 tabular-nums">{fmt_int(oreAttivita)}</div>
           </div>
           <div className="bg-emerald-50 rounded-xl p-4">
-            <div className="text-[10px] uppercase tracking-widest text-emerald-700 font-semibold">Eventi aperti</div>
+            <div className="text-[10px] uppercase tracking-widest text-emerald-700 font-semibold">{tp("catalog.open_events")}</div>
             <div className="font-serif text-2xl text-slate-900 tabular-nums">{fmt_int(eventi.length)}</div>
           </div>
         </div>
@@ -1494,9 +1493,9 @@ const Area7Catalogo: React.FC<{
           <table className="w-full text-sm">
             <thead className="bg-slate-50 text-[11px] uppercase tracking-widest text-slate-500">
               <tr>
-                <th className="text-left px-4 py-3 font-semibold">Evento</th>
-                <th className="text-left px-4 py-3 font-semibold">Quando</th>
-                <th className="text-right px-4 py-3 font-semibold">Partecipanti</th>
+                <th className="text-left px-4 py-3 font-semibold">{tp("catalog.event")}</th>
+                <th className="text-left px-4 py-3 font-semibold">{tp("catalog.when")}</th>
+                <th className="text-right px-4 py-3 font-semibold">{tp("catalog.participants")}</th>
               </tr>
             </thead>
             <tbody>
@@ -1511,7 +1510,7 @@ const Area7Catalogo: React.FC<{
                 </tr>
               ))}
               {eventi.length === 0 && (
-                <tr><td colSpan={3} className="px-4 py-6 text-center text-slate-400">Nessun evento</td></tr>
+                <tr><td colSpan={3} className="px-4 py-6 text-center text-slate-400">{tp("catalog.no_events")}</td></tr>
               )}
             </tbody>
           </table>
@@ -1520,11 +1519,11 @@ const Area7Catalogo: React.FC<{
 
       {/* SEZIONE 5 - PARTNER & SPONSOR */}
       <section>
-        <div className="text-[11px] uppercase tracking-[0.2em] text-cyan-700 font-semibold mb-3">05 — Partner &amp; Sponsor</div>
-        <h3 className="font-serif text-3xl text-slate-900 mb-6">Chi crede in noi, chi cerchiamo</h3>
+        <div className="text-[11px] uppercase tracking-[0.2em] text-cyan-700 font-semibold mb-3">{tp("catalog.s5_kicker")}</div>
+        <h3 className="font-serif text-3xl text-slate-900 mb-6">{tp("catalog.s5_title")}</h3>
         <div className="grid md:grid-cols-2 gap-8">
           <div>
-            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-3">Partner attuali</div>
+            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-3">{tp("catalog.current_partners")}</div>
             <div className="space-y-3">
               {sponsor.map((s: any) => {
                 const st = LIVELLO_SPONSOR_STYLE[s.livello] || LIVELLO_SPONSOR_STYLE.bronze;
@@ -1548,7 +1547,7 @@ const Area7Catalogo: React.FC<{
           </div>
 
           <div>
-            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-3">Stiamo cercando</div>
+            <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-3">{tp("catalog.looking_for")}</div>
             <div className="space-y-3">
               {cercate.map((c: any) => (
                 <div key={c.id} className="bg-gradient-to-br from-cyan-50 to-white border border-cyan-100 rounded-xl p-4">
@@ -1566,10 +1565,10 @@ const Area7Catalogo: React.FC<{
             </div>
             <button
               type="button"
-              onClick={() => toast.success("Richiesta inviata", { description: "Ti contatteremo a breve per discutere la partnership." })}
+              onClick={() => toast.success(tp("catalog.toast_request_sent"), { description: tp("catalog.toast_request_sent_desc") })}
               className="mt-4 w-full bg-cyan-700 hover:bg-cyan-800 text-white rounded-full px-5 py-2.5 text-sm font-medium transition-colors"
             >
-              Diventa partner
+              {tp("catalog.become_partner")}
             </button>
           </div>
         </div>
@@ -1577,8 +1576,8 @@ const Area7Catalogo: React.FC<{
 
       {/* SEZIONE 6 - MATERIALI */}
       <section>
-        <div className="text-[11px] uppercase tracking-[0.2em] text-cyan-700 font-semibold mb-3">06 — Materiali</div>
-        <h3 className="font-serif text-3xl text-slate-900 mb-6">Pronti da scaricare</h3>
+        <div className="text-[11px] uppercase tracking-[0.2em] text-cyan-700 font-semibold mb-3">{tp("catalog.s6_kicker")}</div>
+        <h3 className="font-serif text-3xl text-slate-900 mb-6">{tp("catalog.s6_title")}</h3>
         <div className="grid md:grid-cols-3 gap-4">
           {materiali.map((m: any) => (
             <div key={m.id} className="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col">
@@ -1589,10 +1588,10 @@ const Area7Catalogo: React.FC<{
               <div className="text-xs text-slate-500 mt-1 mb-4 flex-1">{m.descrizione}</div>
               <button
                 type="button"
-                onClick={() => toast.info("Download in arrivo", { description: m.titolo })}
+                onClick={() => toast.info(tp("catalog.toast_download"), { description: m.titolo })}
                 className="inline-flex items-center justify-center gap-1.5 text-sm font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-full px-3 py-1.5"
               >
-                <Download className="h-3.5 w-3.5" /> Scarica
+                <Download className="h-3.5 w-3.5" /> {tp("catalog.download")}
               </button>
             </div>
           ))}
@@ -1602,11 +1601,11 @@ const Area7Catalogo: React.FC<{
           onClick={() => {
             const url = `${window.location.origin}/club/stella-del-ghiaccio`;
             if (navigator.clipboard) navigator.clipboard.writeText(url).catch(() => {});
-            toast.success("Link copiato", { description: url });
+            toast.success(tp("catalog.toast_link_copied"), { description: url });
           }}
           className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-cyan-700 hover:text-cyan-800"
         >
-          <Copy className="h-3.5 w-3.5" /> Copia link pubblico del club
+          <Copy className="h-3.5 w-3.5" /> {tp("catalog.copy_public_link")}
         </button>
       </section>
     </div>
@@ -1666,10 +1665,10 @@ const AreaCard: React.FC<{
 
       <div className="mt-auto flex items-center justify-between">
         <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${TONE_BADGE[narration.tone]}`}>
-          {narration.tone === "positive" ? "in crescita" : narration.tone === "concerning" ? "attenzione" : "stabile"}
+          {narration.tone === "positive" ? tp("tone.positive") : narration.tone === "concerning" ? tp("tone.concerning") : tp("tone.neutral")}
         </span>
         <span className="text-sm font-medium" style={{ color: accent }}>
-          Approfondisci →
+          {tp("card.more")}
         </span>
       </div>
     </button>
@@ -1815,6 +1814,7 @@ const MiniSparkline: React.FC<{ data: number[]; color?: string }> = ({ data, col
 
 // ─── MAIN ─────────────────────────────────────────────────────────────
 const PresidentDashboard: React.FC = () => {
+  useTranslation("dashboard"); // sottoscrive il cambio lingua per l'intero albero
   const { session } = useAuth();
   const club_id = session?.club_id;
   const { data: stagioni = [] } = use_stagioni_demo(club_id);
@@ -1840,7 +1840,7 @@ const PresidentDashboard: React.FC = () => {
   if (isLoading || !d || !stagioneId) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-white to-slate-50 flex items-center justify-center">
-        <div className="text-slate-400">Caricamento dashboard...</div>
+        <div className="text-slate-400">{tp("loading")}</div>
       </div>
     );
   }
@@ -1975,7 +1975,7 @@ const PresidentDashboard: React.FC = () => {
   const perFontePrev: Record<string, number> = {};
   ricaviPrev.forEach((r: any) => (perFontePrev[r.fonte] = Number(r.importo || 0)));
   const donutData = ricaviCurr
-    .map((r: any) => ({ name: FONTE_LABEL[r.fonte] || r.fonte, value: Number(r.importo), color: FONTE_COLOR[r.fonte] || "#94a3b8" }))
+    .map((r: any) => ({ name: fonte_label(r.fonte), value: Number(r.importo), color: FONTE_COLOR[r.fonte] || "#94a3b8" }))
     .sort((a: any, b: any) => b.value - a.value);
 
   // ore pista
@@ -2059,11 +2059,11 @@ const PresidentDashboard: React.FC = () => {
 
   const greet = (() => {
     const h = new Date().getHours();
-    if (h < 12) return "Buongiorno";
-    if (h < 18) return "Buon pomeriggio";
-    return "Buonasera";
+    if (h < 12) return tp("greet.morning");
+    if (h < 18) return tp("greet.afternoon");
+    return tp("greet.evening");
   })();
-  const nome = session?.nome || "Presidente";
+  const nome = session?.nome || tp("role_fallback");
 
   // top livelli per mini-piramide (4 livelli più popolosi)
   const topLivelli = Object.entries(livCurr)
@@ -2083,21 +2083,21 @@ const PresidentDashboard: React.FC = () => {
   }[] = [
     {
       id: "domanda",
-      title: "Domanda & Ghiaccio",
+      title: tp("areas.demand.title"),
       accent: "#0e7490",
       icon: <Snowflake className="h-4 w-4" />,
-      drawerTitle: "Domanda & Ghiaccio",
-      drawerSub: "Quanto ghiaccio mi servirebbe davvero?",
+      drawerTitle: tp("areas.demand.title"),
+      drawerSub: tp("areas.demand.sub"),
       narration: nDomanda,
       drawerContent: <Area1Ghiaccio d={d} oreRow={oreRow} />,
     },
     {
       id: "atleti",
-      title: "Atleti",
+      title: tp("areas.athletes.title"),
       accent: "#10b981",
       icon: <Users className="h-4 w-4" />,
-      drawerTitle: "Atleti",
-      drawerSub: `${totAtleti} atleti, una piramide solida.`,
+      drawerTitle: tp("areas.athletes.title"),
+      drawerSub: tp("areas.athletes.sub", { count: totAtleti }),
       narration: nAtleti,
       drawerContent: (
         <Area2Atleti
@@ -2113,51 +2113,51 @@ const PresidentDashboard: React.FC = () => {
     },
     {
       id: "ricavi",
-      title: "Ricavi & Pacchetti",
+      title: tp("areas.revenue.title"),
       accent: "#0e7490",
       icon: <CreditCard className="h-4 w-4" />,
-      drawerTitle: "Ricavi & Pacchetti",
-      drawerSub: "Da dove arrivano i soldi del club.",
+      drawerTitle: tp("areas.revenue.title"),
+      drawerSub: tp("areas.revenue.sub"),
       narration: nRicavi,
       drawerContent: <Area3Ricavi d={d} ricaviCurr={ricaviCurr} ricaviPrev={ricaviPrev} confronta={confronta} totAtleti={totAtleti} />,
     },
     {
       id: "costi",
-      title: "Costi & Istruttori",
+      title: tp("areas.costs.title"),
       accent: "#f59e0b",
       icon: <Briefcase className="h-4 w-4" />,
-      drawerTitle: "Costi & Istruttori",
-      drawerSub: "Efficienza dello staff tecnico.",
+      drawerTitle: tp("areas.costs.title"),
+      drawerSub: tp("areas.costs.sub"),
       narration: nCosti,
       drawerContent: <Area4Istruttori d={d} ricaviCurr={ricaviCurr} />,
     },
     {
       id: "lezioni",
-      title: "Lezioni Private",
+      title: tp("areas.private.title"),
       accent: "#ec4899",
       icon: <Clock className="h-4 w-4" />,
-      drawerTitle: "Lezioni Private",
-      drawerSub: "Top istruttori, top clienti, fasce orarie più richieste.",
+      drawerTitle: tp("areas.private.title"),
+      drawerSub: tp("areas.private.sub"),
       narration: nLezioni,
       drawerContent: <Area5Lezioni d={d} />,
     },
     {
       id: "sportivo",
-      title: "Sportivo",
+      title: tp("areas.sport.title"),
       accent: "#8b5cf6",
       icon: <Trophy className="h-4 w-4" />,
-      drawerTitle: "Sportivo",
-      drawerSub: "Test, gare, medaglie del club.",
+      drawerTitle: tp("areas.sport.title"),
+      drawerSub: tp("areas.sport.sub"),
       narration: nSportivo,
       drawerContent: <Area6Performance d={d} />,
     },
     {
       id: "catalogo",
-      title: "Catalogo & Promozione",
+      title: tp("areas.catalog.title"),
       accent: "#0891b2",
       icon: <Megaphone className="h-4 w-4" />,
-      drawerTitle: "Catalogo & Promozione",
-      drawerSub: "Tutto cio' che serve al Presidente per rappresentare il club fuori.",
+      drawerTitle: tp("areas.catalog.title"),
+      drawerSub: tp("areas.catalog.sub"),
       narration: nCatalogo,
       drawerContent: (
         <Area7Catalogo
@@ -2195,7 +2195,7 @@ const PresidentDashboard: React.FC = () => {
           <div className="px-6 md:px-10 max-w-[1400px] mx-auto">
             <div className="flex items-center justify-between gap-6 py-4">
               <div className="text-xs uppercase tracking-[0.2em] text-cyan-700 font-semibold">
-                Dashboard Presidente
+                {tp("kicker")}
               </div>
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-full pl-3 pr-1 py-1 shadow-sm">
@@ -2213,7 +2213,7 @@ const PresidentDashboard: React.FC = () => {
                 </div>
                 <label className="hidden sm:inline-flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
                   <Switch checked={confronta} onCheckedChange={setConfronta} />
-                  <span>Confronta anno scorso</span>
+                  <span>{tp("compare_last_year_short")}</span>
                 </label>
               </div>
             </div>
@@ -2230,16 +2230,16 @@ const PresidentDashboard: React.FC = () => {
               {greet}, {nome}.
             </h1>
             <p className="mt-3 text-base md:text-lg text-slate-500 max-w-2xl leading-relaxed">
-              Stagione <span className="text-slate-900 font-medium">{stagioneNome}</span> — il club conta{" "}
-              <span className="text-slate-900 font-medium">{fmt_int(totAtleti)}</span> atleti e ha incassato{" "}
+              {tp("hero.season_prefix")} <span className="text-slate-900 font-medium">{stagioneNome}</span> {tp("hero.club_counts")}{" "}
+              <span className="text-slate-900 font-medium">{fmt_int(totAtleti)}</span> {tp("hero.athletes_and_earned")}{" "}
               <span className="text-slate-900 font-medium">{fmt_chf(totRicavi)}</span>.
             </p>
 
             <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-4 border-t border-slate-200 pt-6">
-              <MiniHeroStat label="Atleti totali" value={fmt_int(totAtleti)} delta={confronta ? atletiYoY : undefined} />
-              <MiniHeroStat label="Ricavi" value={fmt_chf(totRicavi)} delta={confronta ? ricaviYoY : undefined} />
-              <MiniHeroStat label="Saldo cassa" value={fmt_chf(cassa)} accent={cassa >= 0 ? "text-emerald-600" : "text-rose-600"} />
-              <MiniHeroStat label="Lista d'attesa" value={fmt_int(totAttesa)} accent="text-amber-600" />
+              <MiniHeroStat label={tp("stats.total_athletes")} value={fmt_int(totAtleti)} delta={confronta ? atletiYoY : undefined} />
+              <MiniHeroStat label={tp("stats.revenue")} value={fmt_chf(totRicavi)} delta={confronta ? ricaviYoY : undefined} />
+              <MiniHeroStat label={tp("stats.cash_balance")} value={fmt_chf(cassa)} accent={cassa >= 0 ? "text-emerald-600" : "text-rose-600"} />
+              <MiniHeroStat label={tp("stats.waiting_list")} value={fmt_int(totAttesa)} accent="text-amber-600" />
             </div>
           </header>
 
@@ -2247,18 +2247,18 @@ const PresidentDashboard: React.FC = () => {
           <section className="mt-10 grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             <AreaCard
               areaId="domanda"
-              title="Domanda & Ghiaccio"
+              title={tp("areas.demand.title")}
               icon={<Snowflake className="h-5 w-5" />}
               accent="#0e7490"
               mainKpi={fmt_int(totAttesa)}
-              subLabel="atleti in lista d'attesa"
+              subLabel={tp("cards.waiting_athletes")}
               narration={nDomanda}
               miniChart={
                 <MiniBarsHoriz
                   items={[
-                    { label: "Disponibili", value: oreDisp, color: "#0e7490" },
-                    { label: "Utilizzate", value: oreUsed, color: "#67e8f9" },
-                    { label: "Richieste", value: oreReq, color: "#f59e0b" },
+                    { label: tp("ice.available"), value: oreDisp, color: "#0e7490" },
+                    { label: tp("ice.used"), value: oreUsed, color: "#67e8f9" },
+                    { label: tp("cards.requested"), value: oreReq, color: "#f59e0b" },
                   ]}
                 />
               }
@@ -2267,11 +2267,11 @@ const PresidentDashboard: React.FC = () => {
 
             <AreaCard
               areaId="atleti"
-              title="Atleti"
+              title={tp("areas.athletes.title")}
               icon={<Users className="h-5 w-5" />}
               accent="#10b981"
               mainKpi={fmt_int(totAtleti)}
-              subLabel={`atleti attivi, eta media ${ageAvg.toFixed(1)} anni`}
+              subLabel={tp("cards.active_avg_age", { eta: ageAvg.toFixed(1) })}
               delta={confronta ? atletiYoY : undefined}
               narration={nAtleti}
               miniChart={<MiniPyramid items={topLivelli} />}
@@ -2280,11 +2280,11 @@ const PresidentDashboard: React.FC = () => {
 
             <AreaCard
               areaId="ricavi"
-              title="Ricavi & Pacchetti"
+              title={tp("areas.revenue.title")}
               icon={<CreditCard className="h-5 w-5" />}
               accent="#0e7490"
               mainKpi={fmt_chf(totRicavi)}
-              subLabel="ricavi totali stagione"
+              subLabel={tp("cards.total_season_revenue")}
               delta={confronta ? ricaviYoY : undefined}
               narration={nRicavi}
               miniChart={<MiniDonut data={donutData} />}
@@ -2293,11 +2293,11 @@ const PresidentDashboard: React.FC = () => {
 
             <AreaCard
               areaId="costi"
-              title="Costi & Istruttori"
+              title={tp("areas.costs.title")}
               icon={<Briefcase className="h-5 w-5" />}
               accent="#f59e0b"
               mainKpi={`${istCards.length}`}
-              subLabel={`istruttori — costo totale ${fmt_chf(costoIstTot)}`}
+              subLabel={tp("cards.instructors_total_cost", { importo: fmt_chf(costoIstTot) })}
               narration={nCosti}
               miniChart={
                 <MiniBarsVert
@@ -2313,11 +2313,11 @@ const PresidentDashboard: React.FC = () => {
 
             <AreaCard
               areaId="lezioni"
-              title="Lezioni Private"
+              title={tp("areas.private.title")}
               icon={<Clock className="h-5 w-5" />}
               accent="#ec4899"
               mainKpi={fmt_chf(fattLez)}
-              subLabel={`${fmt_int(oreLezTot)} ore vendute`}
+              subLabel={tp("private.hours_sold", { count: fmt_int(oreLezTot) })}
               delta={confronta && fattLezPrev ? ((fattLez - fattLezPrev) / fattLezPrev) * 100 : undefined}
               narration={nLezioni}
               miniChart={<MiniHeatmap values={fasceTotali} />}
@@ -2326,11 +2326,11 @@ const PresidentDashboard: React.FC = () => {
 
             <AreaCard
               areaId="sportivo"
-              title="Sportivo"
+              title={tp("areas.sport.title")}
               icon={<Trophy className="h-5 w-5" />}
               accent="#8b5cf6"
               mainKpi={`${podi}`}
-              subLabel={`${podi === 1 ? "podio" : "podi"} in ${igare.length} ${igare.length === 1 ? "gara" : "gare"}`}
+              subLabel={`${podi === 1 ? tp("cards.podium_one") : tp("cards.podium_other")} ${tp("cards.in")} ${igare.length} ${igare.length === 1 ? tp("cards.race_one") : tp("cards.race_other")}`}
               narration={nSportivo}
               miniChart={<MiniSparkline data={trendPodi} color="#8b5cf6" />}
               onOpen={() => setOpenArea("sportivo")}
@@ -2338,11 +2338,11 @@ const PresidentDashboard: React.FC = () => {
 
             <AreaCard
               areaId="catalogo"
-              title="Catalogo & Promozione"
+              title={tp("areas.catalog.title")}
               icon={<Megaphone className="h-5 w-5" />}
               accent="#0891b2"
-              mainKpi={`${sponsorCount} sponsor`}
-              subLabel={`${fmt_chf(totaleAnnuoSponsor)} raccolti annualmente · ${categorieCercateCount} categorie aperte`}
+              mainKpi={tp("cards.sponsor_count", { count: sponsorCount })}
+              subLabel={tp("cards.sponsor_sub", { importo: fmt_chf(totaleAnnuoSponsor), count: categorieCercateCount })}
               narration={nCatalogo}
               miniChart={<MiniCirclesPromo sponsorIniziali={sponsorIniziali} cercateCount={categorieCercateCount} />}
               onOpen={() => setOpenArea("catalogo")}
@@ -2353,7 +2353,7 @@ const PresidentDashboard: React.FC = () => {
           <section className="mt-12">
             <div className="mb-6">
               <h2 className="font-serif text-3xl md:text-4xl text-slate-900 tracking-tight">
-                I nostri atleti — Le promesse del club
+                {tp("showcase.section_title")}
               </h2>
             </div>
             <AtletiShowcase d={d} />
@@ -2363,7 +2363,7 @@ const PresidentDashboard: React.FC = () => {
           <div className="mt-10">
             <p className="text-xs text-slate-400 flex items-start gap-2">
               <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-              I dati storici delle stagioni precedenti sono simulazione. La stagione corrente è reale.
+              {tp("disclaimer")}
             </p>
           </div>
         </div>
@@ -2401,7 +2401,7 @@ const PresidentDashboard: React.FC = () => {
                     onClick={() => setOpenArea(null)}
                     className="text-sm font-medium text-slate-600 hover:text-slate-900"
                   >
-                    Chiudi
+                    {tp("drawer.close")}
                   </button>
                   <a
                     href="#"
@@ -2409,7 +2409,7 @@ const PresidentDashboard: React.FC = () => {
                     className="text-sm font-medium hover:underline"
                     style={{ color: activeArea.accent }}
                   >
-                    Apri pagina dedicata →
+                    {tp("drawer.open_page")}
                   </a>
                 </div>
               </div>
@@ -2426,10 +2426,10 @@ const PresidentDashboard: React.FC = () => {
               onClick={(e) => e.preventDefault()}
             >
               <FileDown className="h-4 w-4" />
-              <span className="hidden sm:inline">Genera relazione PDF</span>
+              <span className="hidden sm:inline">{tp("pdf_button")}</span>
             </button>
           </TooltipTrigger>
-          <TooltipContent>Funzione in arrivo</TooltipContent>
+          <TooltipContent>{tp("coming_soon")}</TooltipContent>
         </Tooltip>
       </div>
     </TooltipProvider>

@@ -176,5 +176,243 @@
     "col_other": "Altre",
     "col_score": "Punteggio",
     "footer_top": "Top {{limit}} di {{total}} atleti — vedi pagina Gare per il medagliere completo"
+  },
+  "president": {
+    "areas": {
+      "athletes": {
+        "sub": "{{count}} atleti, una piramide solida.",
+        "title": "Atleti"
+      },
+      "catalog": {
+        "sub": "Tutto cio' che serve al Presidente per rappresentare il club fuori.",
+        "title": "Catalogo & Promozione"
+      },
+      "costs": {
+        "sub": "Efficienza dello staff tecnico.",
+        "title": "Costi & Istruttori"
+      },
+      "demand": {
+        "sub": "Quanto ghiaccio mi servirebbe davvero?",
+        "title": "Domanda & Ghiaccio"
+      },
+      "private": {
+        "sub": "Top istruttori, top clienti, fasce orarie più richieste.",
+        "title": "Lezioni Private"
+      },
+      "revenue": {
+        "sub": "Da dove arrivano i soldi del club.",
+        "title": "Ricavi & Pacchetti"
+      },
+      "sport": {
+        "sub": "Test, gare, medaglie del club.",
+        "title": "Sportivo"
+      }
+    },
+    "athletes": {
+      "active_athletes": "atleti attivi",
+      "avg_age": "Età media",
+      "dropouts": "Abbandoni",
+      "levels_pyramid": "Piramide livelli",
+      "new_members": "Nuovi iscritti",
+      "pyramid_balanced": "Piramide equilibrata",
+      "pyramid_healthy": "Piramide sana",
+      "pyramid_top_heavy": "Piramide top-heavy",
+      "retention": "Ritenzione",
+      "trend_title": "Atleti totali — ultime stagioni",
+      "years_short": "{{value}} a."
+    },
+    "card": {
+      "more": "Approfondisci →"
+    },
+    "cards": {
+      "active_avg_age": "atleti attivi, età media {{eta}} anni",
+      "in": "in",
+      "instructors_total_cost": "istruttori — costo totale {{importo}}",
+      "podium_one": "podio",
+      "podium_other": "podi",
+      "race_one": "gara",
+      "race_other": "gare",
+      "requested": "Richieste",
+      "sponsor_count": "{{count}} sponsor",
+      "sponsor_sub": "{{importo}} raccolti annualmente · {{count}} categorie aperte",
+      "total_season_revenue": "ricavi totali stagione",
+      "waiting_athletes": "atleti in lista d'attesa"
+    },
+    "catalog": {
+      "activity_hours": "Ore attività",
+      "artistic": "Artistica",
+      "athletes": "Atleti",
+      "band": "Fascia {{n}}",
+      "base_courses": "Corsi base",
+      "base_courses_fallback": "Pulcini, Stelline 1-4",
+      "become_partner": "Diventa partner",
+      "bronze_to_gold": "Bronzo → Oro",
+      "children_involved": "Bambini coinvolti",
+      "competitive_path": "Percorso agonistico",
+      "competitors": "Agonisti",
+      "copy_public_link": "Copia link pubblico del club",
+      "current_partners": "Partner attuali",
+      "download": "Scarica",
+      "event": "Evento",
+      "looking_for": "Stiamo cercando",
+      "no_events": "Nessun evento",
+      "no_packages": "Nessun pacchetto attivo",
+      "on_request": "Disponibili su richiesta",
+      "open_events": "Eventi aperti",
+      "participants": "Partecipanti",
+      "per_month": "/mese",
+      "per_session": "/sess.",
+      "per_year": "/anno",
+      "podium_trend_4": "Trend podi — 4 stagioni",
+      "podiums": "Podi",
+      "private_rates": "Lezioni private — tariffe orarie",
+      "s1_kicker": "01 — Identità",
+      "s2_kicker": "02 — Offerta & Catalogo",
+      "s2_title": "Cosa offriamo",
+      "s3_kicker": "03 — Risultati",
+      "s3_title": "I nostri numeri sportivi",
+      "s4_kicker": "04 — Impatto sociale",
+      "s4_title": "Quanto restituiamo al territorio",
+      "s5_kicker": "05 — Partner & Sponsor",
+      "s5_title": "Chi crede in noi, chi cerchiamo",
+      "s6_kicker": "06 — Materiali",
+      "s6_title": "Pronti da scaricare",
+      "since": "Dal {{anno}}",
+      "style": "Stile",
+      "test_pass_rate": "Superamento test",
+      "toast_download": "Download in arrivo",
+      "toast_link_copied": "Link copiato",
+      "toast_request_sent": "Richiesta inviata",
+      "toast_request_sent_desc": "Ti contatteremo a breve per discutere la partnership.",
+      "when": "Quando",
+      "years": "Anni",
+      "youth_under14": "Giovani <14"
+    },
+    "coming_soon": "Funzione in arrivo",
+    "compare_last_year": "Confronta con anno scorso",
+    "compare_last_year_short": "Confronta anno scorso",
+    "costs": {
+      "hours_worked": "Ore lavorate",
+      "legend": {
+        "admin": "Amministrativo",
+        "courses": "Corsi",
+        "events": "Eventi",
+        "private": "Lezioni private"
+      },
+      "margin": "Margine",
+      "monthly_hours_title": "Distribuzione ore mensili — tutti gli istruttori",
+      "revenue_generated": "Ricavi generati",
+      "season_cost": "Costo stagione",
+      "season_instructor_cost": "costo istruttori stagione"
+    },
+    "disclaimer": "I dati storici delle stagioni precedenti sono simulazione. La stagione corrente è reale.",
+    "dow": {
+      "fri": "Ven",
+      "mon": "Lun",
+      "sat": "Sab",
+      "sun": "Dom",
+      "thu": "Gio",
+      "tue": "Mar",
+      "wed": "Mer"
+    },
+    "drawer": {
+      "close": "Chiudi",
+      "open_page": "Apri pagina dedicata →"
+    },
+    "finance": {
+      "cash_note": "Il saldo cresce per la 4ª stagione consecutiva. Il club è in salute economica.",
+      "cash_today": "Soldi in cassa oggi",
+      "cash_trend": "Andamento cassa — 4 stagioni",
+      "season_balance": "Saldo stagione",
+      "to_collect": "Da incassare",
+      "to_pay_30d": "Da pagare 30 gg"
+    },
+    "fonte": {
+      "altro": "Altro",
+      "eventi": "Eventi",
+      "lezioni_private": "Lezioni private",
+      "pacchetti_opzionali": "Pacchetti opzionali",
+      "quote_corsi": "Quote corsi",
+      "sponsor": "Sponsor"
+    },
+    "greet": {
+      "afternoon": "Buon pomeriggio",
+      "evening": "Buonasera",
+      "morning": "Buongiorno"
+    },
+    "hero": {
+      "athletes_and_earned": "atleti e ha incassato",
+      "club_counts": "— il club conta",
+      "season_prefix": "Stagione"
+    },
+    "ice": {
+      "accepted": "Iscritti accettati",
+      "available": "Disponibili",
+      "extra_cost_label": "Costo extra stimato:",
+      "extra_needed": "+{{ore}}h ci servirebbero",
+      "hourly_cost": "Costo orario pista:",
+      "hours_title": "Ore di pista — settimana tipo",
+      "in_waiting_list": "In lista d'attesa",
+      "per_year_potential": "/anno · Ricavi potenziali da {{count}} atleti in attesa:",
+      "requested_all": "Richieste se accettassimo tutti",
+      "requests_received": "Richieste ricevute",
+      "season_demand": "Domanda stagione",
+      "table": {
+        "capacity": "Capacità",
+        "course": "Corso",
+        "enrolled": "Iscritti",
+        "saturation": "Saturazione",
+        "waiting": "Lista attesa"
+      },
+      "used": "Utilizzate"
+    },
+    "kicker": "Dashboard Presidente",
+    "loading": "Caricamento dashboard...",
+    "pdf_button": "Genera relazione PDF",
+    "private": {
+      "heatmap_title": "Quando si vendono — giorno × fascia oraria",
+      "hours": "{{count}} ore",
+      "hours_sold": "{{count}} ore vendute",
+      "lessons_sold": "lezioni vendute",
+      "top_clients": "Top clienti",
+      "top_instructors": "Top istruttori",
+      "turnover": "fatturato lezioni private"
+    },
+    "revenue": {
+      "athletes_pct": "{{count}} atleti ({{pct}}%)",
+      "avg_revenue": "Ricavo medio",
+      "composition": "Composizione ricavi",
+      "note_and": "e",
+      "note_prefix": "Quote corsi è la fonte principale, ma",
+      "note_suffix": "insieme superano CHF",
+      "packages_title": "Adesione ai pacchetti opzionali",
+      "per_active_athlete": "per atleta attivo",
+      "season_revenue": "ricavi stagione"
+    },
+    "role_fallback": "Presidente",
+    "showcase": {
+      "competitor": "Agonista",
+      "podiums": "{{count}} podi",
+      "section_title": "I nostri atleti — Le promesse del club",
+      "title": "I nostri atleti"
+    },
+    "sport": {
+      "competition_entries": "partecipazioni gara",
+      "podium_rate": "podi sul totale",
+      "podium_trend": "Trend podi — ultime stagioni",
+      "podiums_won": "podi conquistati"
+    },
+    "stats": {
+      "cash_balance": "Saldo cassa",
+      "revenue": "Ricavi",
+      "season_revenue": "Ricavi stagione",
+      "total_athletes": "Atleti totali",
+      "waiting_list": "Lista d'attesa"
+    },
+    "tone": {
+      "concerning": "attenzione",
+      "neutral": "stabile",
+      "positive": "in crescita"
+    }
   }
 }
