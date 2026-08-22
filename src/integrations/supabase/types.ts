@@ -2641,9 +2641,6 @@ export type Database = {
           forzato_at: string | null
           forzato_da: string | null
           fuori_disponibilita: boolean
-          gruppo_livello: string | null
-          gruppo_ragione_sociale_id: string | null
-          gruppo_scope: string | null
           id: string
           messaggio_atleti: string | null
           motivo_forzatura: string | null
@@ -2663,9 +2660,6 @@ export type Database = {
           forzato_at?: string | null
           forzato_da?: string | null
           fuori_disponibilita?: boolean
-          gruppo_livello?: string | null
-          gruppo_ragione_sociale_id?: string | null
-          gruppo_scope?: string | null
           id?: string
           messaggio_atleti?: string | null
           motivo_forzatura?: string | null
@@ -2685,9 +2679,6 @@ export type Database = {
           forzato_at?: string | null
           forzato_da?: string | null
           fuori_disponibilita?: boolean
-          gruppo_livello?: string | null
-          gruppo_ragione_sociale_id?: string | null
-          gruppo_scope?: string | null
           id?: string
           messaggio_atleti?: string | null
           motivo_forzatura?: string | null
@@ -2716,13 +2707,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "griglia_sessioni_gruppo_ragione_sociale_id_fkey"
-            columns: ["gruppo_ragione_sociale_id"]
-            isOneToOne: false
-            referencedRelation: "ragioni_sociali"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "griglia_sessioni_specialita_id_fkey"
             columns: ["specialita_id"]
             isOneToOne: false
@@ -2735,18 +2719,21 @@ export type Database = {
         Row: {
           atleta_id: string
           created_at: string
+          gruppo_sessione_id: string | null
           id: string
           sessione_id: string
         }
         Insert: {
           atleta_id: string
           created_at?: string
+          gruppo_sessione_id?: string | null
           id?: string
           sessione_id: string
         }
         Update: {
           atleta_id?: string
           created_at?: string
+          gruppo_sessione_id?: string | null
           id?: string
           sessione_id?: string
         }
@@ -2766,7 +2753,56 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "griglia_sessioni_atleti_gruppo_sessione_id_fkey"
+            columns: ["gruppo_sessione_id"]
+            isOneToOne: false
+            referencedRelation: "griglia_sessioni_gruppi"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "griglia_sessioni_atleti_sessione_id_fkey"
+            columns: ["sessione_id"]
+            isOneToOne: false
+            referencedRelation: "griglia_sessioni"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      griglia_sessioni_gruppi: {
+        Row: {
+          created_at: string
+          gruppo_livello: string
+          gruppo_ragione_sociale_id: string | null
+          gruppo_scope: string
+          id: string
+          sessione_id: string
+        }
+        Insert: {
+          created_at?: string
+          gruppo_livello: string
+          gruppo_ragione_sociale_id?: string | null
+          gruppo_scope: string
+          id?: string
+          sessione_id: string
+        }
+        Update: {
+          created_at?: string
+          gruppo_livello?: string
+          gruppo_ragione_sociale_id?: string | null
+          gruppo_scope?: string
+          id?: string
+          sessione_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "griglia_sessioni_gruppi_gruppo_ragione_sociale_id_fkey"
+            columns: ["gruppo_ragione_sociale_id"]
+            isOneToOne: false
+            referencedRelation: "ragioni_sociali"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "griglia_sessioni_gruppi_sessione_id_fkey"
             columns: ["sessione_id"]
             isOneToOne: false
             referencedRelation: "griglia_sessioni"
