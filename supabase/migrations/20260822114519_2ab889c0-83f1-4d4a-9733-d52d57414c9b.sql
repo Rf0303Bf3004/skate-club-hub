@@ -1,0 +1,1 @@
+DELETE FROM public.traduzioni_ui WHERE chiave = 'tabellone.mesi_short' AND namespace IN ('segreteria','superadmin');
