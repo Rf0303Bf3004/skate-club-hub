@@ -1465,6 +1465,61 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
         </AlertDialogContent>
       </AlertDialog>
 
+      <AlertDialog open={!!conflitto_atleta} onOpenChange={(o) => !o && set_conflitto_atleta(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>⛔ Atleta già assegnato in questo orario</AlertDialogTitle>
+            <AlertDialogDescription>
+              {conflitto_atleta?.nome} è già assegnato a un'altra sessione sovrapposta (
+              {conflitto_atleta?.conflitto.ora_inizio}–{conflitto_atleta?.conflitto.ora_fine} —{" "}
+              {conflitto_atleta?.conflitto.etichetta}). Lo stesso atleta non può essere in due sessioni
+              contemporanee: rimuovilo prima dall'altra sessione oppure cambia l'orario.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => set_conflitto_atleta(null)}>Ho capito</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!conflitto_istruttore} onOpenChange={(o) => !o && set_conflitto_istruttore(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>⚠️ Istruttore già assegnato in questo orario</AlertDialogTitle>
+            <AlertDialogDescription>
+              {conflitto_istruttore?.nome} è già assegnato a un'altra sessione sovrapposta (
+              {conflitto_istruttore?.conflitto.ora_inizio}–{conflitto_istruttore?.conflitto.ora_fine} —{" "}
+              {conflitto_istruttore?.conflitto.etichetta}). Puoi assegnarlo comunque se deve seguire
+              eccezionalmente due gruppi in contemporanea.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                const c = conflitto_istruttore;
+                set_conflitto_istruttore(null);
+                if (!c) return;
+                try {
+                  await assegna_istruttore.mutateAsync({
+                    sessione_id: c.sessione_id,
+                    istruttore_id: c.istruttore_id,
+                    forza: true,
+                  });
+                  toast({ title: `✅ ${c.nome} assegnato nonostante la sovrapposizione` });
+                } catch (e: any) {
+                  toast({ title: "Errore assegnazione", description: e.message, variant: "destructive" });
+                }
+              }}
+            >
+              Assegna comunque
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+
+
       <RipetiSessioneDialog
 
         open={!!ripeti_sessione}
