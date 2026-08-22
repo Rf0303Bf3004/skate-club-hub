@@ -362,8 +362,15 @@ const SessioneBox: React.FC<{
   on_rimuovi_istruttore: (istruttore_id: string) => void;
   on_ripeti?: () => void;
   on_sync_gruppo?: () => void;
+  on_rimuovi_gruppo?: () => void;
   sync_in_corso?: boolean;
-  atleti_tutti?: { id: string; ragione_sociale_id?: string | null; atleta_esterno?: boolean | null }[];
+  atleti_tutti?: {
+    id: string;
+    nome?: string | null;
+    cognome?: string | null;
+    ragione_sociale_id?: string | null;
+    atleta_esterno?: boolean | null;
+  }[];
   ragioni_sociali?: { id: string; colore_primario: string | null }[];
   data_blocco: string;
 }> = ({
@@ -375,11 +382,13 @@ const SessioneBox: React.FC<{
   on_rimuovi_istruttore,
   on_ripeti,
   on_sync_gruppo,
+  on_rimuovi_gruppo,
   sync_in_corso,
   atleti_tutti = [],
   ragioni_sociali = [],
   data_blocco,
 }) => {
+
   const colore_atleta = (atleta_id: string): string | null => {
     const a = atleti_tutti.find((x) => x.id === atleta_id);
     if (!a) return null;
