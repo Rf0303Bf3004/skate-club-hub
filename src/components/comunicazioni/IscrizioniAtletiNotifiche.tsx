@@ -1,12 +1,17 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Trophy, Sparkles, ClipboardCheck, Archive, ExternalLink, Inbox } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+
+const tk = (key: string, opts?: any) => i18n.t(`iscrizioni_notifiche.${key}`, { ns: "communications", ...(opts ?? {}) }) as string;
+
 
 interface NotificaStaffRow {
   id: string;
@@ -62,7 +67,9 @@ export function use_count_iscrizioni_non_lette() {
 }
 
 export const IscrizioniAtletiNotifiche: React.FC = () => {
+  const { t } = useTranslation("communications");
   const { data = [], isLoading } = use_iscrizioni_atleti_notifiche(false);
+
   const qc = useQueryClient();
   const navigate = useNavigate();
 
@@ -87,7 +94,7 @@ export const IscrizioniAtletiNotifiche: React.FC = () => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["notifiche_staff_iscrizioni"] });
-      toast({ title: "Notifica archiviata" });
+      toast({ title: tk("archived") });
     },
   });
 
@@ -129,9 +136,9 @@ export const IscrizioniAtletiNotifiche: React.FC = () => {
       <div className="bg-card rounded-xl shadow-card p-12 text-center space-y-3">
         <Inbox className="w-12 h-12 text-muted-foreground/50 mx-auto" />
         <div>
-          <h3 className="text-base font-semibold text-foreground">Nessuna iscrizione recente</h3>
+          <h3 className="text-base font-semibold text-foreground">{t("iscrizioni_notifiche.empty_title")}</h3>
           <p className="text-sm text-muted-foreground">
-            Le notifiche di iscrizione degli atleti dall'app appariranno qui.
+            {t("iscrizioni_notifiche.empty_description")}
           </p>
         </div>
       </div>
@@ -163,7 +170,7 @@ export const IscrizioniAtletiNotifiche: React.FC = () => {
                     {c.titolo}
                     {non_letta && (
                       <Badge variant="default" className="ml-2 text-[10px] py-0 px-1.5 align-middle">
-                        Nuovo
+                        {t("iscrizioni_notifiche.new")}
                       </Badge>
                     )}
                   </h3>
@@ -184,7 +191,7 @@ export const IscrizioniAtletiNotifiche: React.FC = () => {
                     className="h-8 text-xs"
                   >
                     <ExternalLink className="w-3.5 h-3.5 mr-1" />
-                    Apri evento
+                    {t("iscrizioni_notifiche.open_event")}
                   </Button>
                   {non_letta && (
                     <Button
@@ -193,7 +200,7 @@ export const IscrizioniAtletiNotifiche: React.FC = () => {
                       onClick={() => mark_read.mutate(n.id)}
                       className="h-8 text-xs"
                     >
-                      Segna come letta
+                      {t("iscrizioni_notifiche.mark_read")}
                     </Button>
                   )}
                   <Button
@@ -203,7 +210,7 @@ export const IscrizioniAtletiNotifiche: React.FC = () => {
                     className="h-8 text-xs ml-auto text-muted-foreground"
                   >
                     <Archive className="w-3.5 h-3.5 mr-1" />
-                    Archivia
+                    {t("iscrizioni_notifiche.archive")}
                   </Button>
                 </div>
               </div>

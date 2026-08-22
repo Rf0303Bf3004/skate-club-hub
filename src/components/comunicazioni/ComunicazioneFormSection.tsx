@@ -8,8 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { Send, X, Search, AlertTriangle } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useI18n } from "@/lib/i18n";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 import { use_livelli } from "@/hooks/use-supabase-data";
+
+const tf = (key: string, opts?: any) => i18n.t(`form_section.${key}`, { ns: "communications", ...(opts ?? {}) }) as string;
+
 
 export type TipoDestinatariMulti = "tutti" | "per_corso" | "per_livello" | "atleti";
 
@@ -56,7 +60,7 @@ export const ComunicazioneFormSection: React.FC<Props> = ({
   label,
   description,
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation("communications");
   const { data: livelli_db = [] } = use_livelli();
 
   const upd = <K extends keyof ComunicazioneFormState>(k: K, v: ComunicazioneFormState[K]) =>
@@ -85,16 +89,16 @@ export const ComunicazioneFormSection: React.FC<Props> = ({
         />
         <div className="flex-1">
           <Label htmlFor="comunicazione-invia" className="cursor-pointer flex items-center gap-2">
-            <Send className="w-4 h-4" /> {label ?? t("comunicazione_invia_subito")}
+            <Send className="w-4 h-4" /> {label ?? t("form_section.send_label")}
           </Label>
-          <p className="text-xs text-muted-foreground">{description ?? t("comunicazione_descrizione")}</p>
+          <p className="text-xs text-muted-foreground">{description ?? t("form_section.send_description")}</p>
         </div>
       </div>
 
       {state.invia && (
         <div className="space-y-3 pl-6">
           <div>
-            <Label>{t("comunicazione_titolo")}</Label>
+            <Label>{t("form_section.title")}</Label>
             <Input value={state.titolo} onChange={(e) => upd("titolo", e.target.value)} />
           </div>
           <TooltipProvider>
@@ -103,10 +107,10 @@ export const ComunicazioneFormSection: React.FC<Props> = ({
                 <TooltipTrigger asChild>
                   <Label htmlFor="comunicazione-urgente" className="cursor-pointer flex items-center gap-2 text-sm font-medium">
                     <AlertTriangle className="w-4 h-4 text-destructive" />
-                    Urgente
+                    {t("form_section.urgent")}
                   </Label>
                 </TooltipTrigger>
-                <TooltipContent>Sarà mostrata come banner urgente nell'app dell'atleta</TooltipContent>
+                <TooltipContent>{t("form_section.urgent_tooltip")}</TooltipContent>
               </Tooltip>
               <Switch
                 id="comunicazione-urgente"
@@ -117,7 +121,7 @@ export const ComunicazioneFormSection: React.FC<Props> = ({
             </div>
           </TooltipProvider>
           <div>
-            <Label>{t("comunicazione_testo")}</Label>
+            <Label>{t("form_section.text")}</Label>
             <Textarea
               value={state.testo}
               onChange={(e) => upd("testo", e.target.value)}
@@ -125,7 +129,7 @@ export const ComunicazioneFormSection: React.FC<Props> = ({
             />
           </div>
           <div>
-            <Label>{t("destinatari")}</Label>
+            <Label>{t("form_section.recipients")}</Label>
             <Select
               value={state.tipo_destinatari}
               onValueChange={(v: TipoDestinatariMulti) =>
@@ -134,19 +138,21 @@ export const ComunicazioneFormSection: React.FC<Props> = ({
             >
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="tutti">Tutto il club</SelectItem>
-                <SelectItem value="per_corso">Per corso</SelectItem>
-                <SelectItem value="per_livello">Per livello</SelectItem>
-                <SelectItem value="atleti">Atleti specifici</SelectItem>
+                <SelectItem value="tutti">{t("form_section.dest_all")}</SelectItem>
+                <SelectItem value="per_corso">{t("form_section.dest_per_corso")}</SelectItem>
+                <SelectItem value="per_livello">{t("form_section.dest_per_livello")}</SelectItem>
+                <SelectItem value="atleti">{t("form_section.dest_atleti")}</SelectItem>
               </SelectContent>
+
             </Select>
           </div>
 
           {state.tipo_destinatari === "per_corso" && (
             <div className="space-y-2">
-              <Label>Seleziona corsi</Label>
+              <Label>{t("form_section.select_courses")}</Label>
               {corsi.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Nessun corso disponibile.</p>
+                <p className="text-sm text-muted-foreground">{t("form_section.no_course")}</p>
+
               ) : (
                 <div className="border rounded-md p-2 max-h-48 overflow-y-auto space-y-1 bg-background">
                   {corsi.map((c) => {
@@ -178,7 +184,7 @@ export const ComunicazioneFormSection: React.FC<Props> = ({
 
           {state.tipo_destinatari === "per_livello" && (
             <div className="space-y-2">
-              <Label>Seleziona livelli</Label>
+              <Label>{t("form_section.select_levels")}</Label>
               <div className="border rounded-md p-2 max-h-48 overflow-y-auto bg-background">
                 <div className="grid grid-cols-2 gap-1">
                   {livelli_db.map((l: any) => {
@@ -207,19 +213,20 @@ export const ComunicazioneFormSection: React.FC<Props> = ({
 
           {state.tipo_destinatari === "atleti" && (
             <div className="space-y-2">
-              <Label>Seleziona atleti</Label>
+              <Label>{t("form_section.select_athletes")}</Label>
               <div className="relative">
                 <Search className="w-4 h-4 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   className="pl-8"
-                  placeholder="Cerca per nome, cognome o livello…"
+                  placeholder={t("form_section.search_athlete_placeholder")}
+
                   value={atleta_search}
                   onChange={(e) => set_atleta_search(e.target.value)}
                 />
               </div>
               <div className="border rounded-md p-2 max-h-56 overflow-y-auto space-y-1 bg-background">
                 {filtered_atleti.length === 0 ? (
-                  <p className="text-sm text-muted-foreground px-2 py-1">Nessun atleta trovato.</p>
+                  <p className="text-sm text-muted-foreground px-2 py-1">{t("form_section.no_athlete_found")}</p>
                 ) : filtered_atleti.map((a) => {
                   const checked = state.atleti_ids.includes(a.id);
                   return (
@@ -232,7 +239,7 @@ export const ComunicazioneFormSection: React.FC<Props> = ({
                 })}
               </div>
               {state.atleti_ids.length > 0 && (
-                <p className="text-xs text-muted-foreground">{state.atleti_ids.length} atleti selezionati</p>
+                <p className="text-xs text-muted-foreground">{t("form_section.athletes_selected", { count: state.atleti_ids.length })}</p>
               )}
             </div>
           )}
@@ -316,16 +323,24 @@ export async function invia_comunicazione_evento(
 }
 
 export const default_testo_gara = (nome: string, luogo: string, data: string) =>
-  `Care atlete, vi convochiamo per ${nome || "la gara"} a ${luogo || "—"} il ${fmt_date_it(data)}. Confermate la partecipazione tramite l'app.`;
+  tf("default_gara_testo", { nome: nome || tf("default_gara_fallback"), luogo: luogo || "—", data: fmt_date_it(data) });
 
-export const default_titolo_gara = (nome: string) => `Convocazione ${nome || "gara"}`;
+export const default_titolo_gara = (nome: string) =>
+  tf("default_gara_titolo", { nome: nome || tf("default_gara_titolo_fallback") });
 
 export const default_testo_test = (nome: string, data: string) =>
-  `Care atlete, è in programma il test ${nome || "di livello"} il ${fmt_date_it(data)}. Iscrivetevi tramite l'app.`;
+  tf("default_test_testo", { nome: nome || tf("default_test_fallback"), data: fmt_date_it(data) });
 
-export const default_titolo_test = (nome: string) => `Test livello ${nome || ""}`.trim();
+export const default_titolo_test = (nome: string) => tf("default_test_titolo", { nome: nome || "" }).trim();
 
 export const default_testo_gala = (titolo: string, data: string, ora?: string | null, luogo?: string | null) =>
-  `Care atlete, vi invitiamo a partecipare a ${titolo || "il nostro evento"} il ${fmt_date_it(data)}${ora ? ` alle ${ora.slice(0, 5)}` : ""}${luogo ? ` presso ${luogo}` : ""}.\n\nConfermate la partecipazione tramite l'app.`;
+  tf("default_gala_testo", {
+    titolo: titolo || tf("default_gala_fallback"),
+    data: fmt_date_it(data),
+    ora: ora ? tf("default_gala_ora", { ora: ora.slice(0, 5) }) : "",
+    luogo: luogo ? tf("default_gala_luogo", { luogo }) : "",
+  });
 
-export const default_titolo_gala = (titolo: string) => `Convocazione ${titolo || "evento"}`;
+export const default_titolo_gala = (titolo: string) =>
+  tf("default_gala_titolo", { titolo: titolo || tf("default_gala_titolo_fallback") });
+

@@ -448,3 +448,22 @@ Pattern usato (file con molti sotto-componenti non-hook): helper module-level
 - Placeholder i18next: `{{count}}`, `{{mese}}`, `{{anno}}`, `{{livello}}`, `{{nome}}`, `{{cognome}}`,
   `{{matched}}`, `{{unmatched}}`, `{{label}}`.
 - Nessuna modifica ai JSON `src/locales/{de,fr,en}/`.
+
+## Step 1.5k — Componenti Comunicazioni (5 file) ✅ COMPLETATO
+
+| File | Namespace | Prefisso chiavi | N. ca. |
+|---|---|---|---|
+| `comunicazioni/ComunicazioneFormSection.tsx` | `communications` | `form_section.*` | 32 |
+| `comunicazioni/ConversazioniTab.tsx` | `communications` | `conversazioni.*` | 15 |
+| `comunicazioni/IscrizioniAtletiNotifiche.tsx` | `communications` | `iscrizioni_notifiche.*` | 7 |
+| `comunicazioni/MieiReminderStaffTab.tsx` | `communications` | `reminder_staff.*` | 10 |
+| `comunicazioni/RegoleComunicazioniSection.tsx` | `communications` | `regole.*` | 20 |
+
+### Note
+- `ComunicazioneFormSection` è passato da `useI18n` legacy a `useTranslation("communications")`;
+  le funzioni esportate `default_testo_*` / `default_titolo_*` usano l'helper module-level `tf`.
+- `ConversazioniTab`, `IscrizioniAtletiNotifiche` e `RegoleComunicazioniSection` usano helper
+  module-level (`tk`) per toast e metadati statici (`REGOLE_META` ora con `titolo_key`/`descrizione_key`).
+- Placeholder i18next: `{{count}}`, `{{data}}`, `{{titolo}}`, `{{testo}}`, `{{nome}}`, `{{luogo}}`, `{{ora}}`.
+- Testi di comunicazione salvati nel DB usano `escapeValue: false` per evitare entity HTML.
+- Nessuna modifica ai JSON `src/locales/{de,fr,en}/`.

@@ -1,10 +1,15 @@
 import React, { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronDown, ChevronRight, Send, MessageSquare } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+
+const tk = (key: string, opts?: any) => i18n.t(`conversazioni.${key}`, { ns: "communications", ...(opts ?? {}) }) as string;
+
 
 type Destinatario = {
   id: string;
@@ -29,8 +34,10 @@ function format_date(iso: string | null) {
 }
 
 export const ConversazioniTab: React.FC = () => {
+  const { t } = useTranslation("communications");
   const qc = useQueryClient();
   const [open_id, set_open_id] = useState<string | null>(null);
+
 
   const { data: conversazioni = [], isLoading } = useQuery({
     queryKey: ["comunicazioni_conversazioni", get_current_club_id()],
@@ -57,11 +64,11 @@ export const ConversazioniTab: React.FC = () => {
   const sollecita = useMutation({
     mutationFn: async (conv: Conversazione) => {
       const in_attesa = conv.destinatari.filter((d) => !d.rsvp_risposta).map((d) => d.atleta_id);
-      if (in_attesa.length === 0) throw new Error("Nessun destinatario in attesa");
+      if (in_attesa.length === 0) throw new Error(tk("no_pending"));
       const { error } = await supabase.from("comunicazioni").insert({
         club_id: get_current_club_id(),
-        titolo: `🔔 Promemoria: ${conv.titolo}`,
-        testo: `Ti ricordiamo di rispondere alla comunicazione:\n\n${conv.testo}`,
+        titolo: tk("reminder_title", { titolo: conv.titolo, interpolation: { escapeValue: false } }),
+        testo: tk("reminder_body", { testo: conv.testo, interpolation: { escapeValue: false } }),
         tipo: "promemoria",
         tipo_destinatari: "atleti",
         atleti_ids: in_attesa,
@@ -72,22 +79,23 @@ export const ConversazioniTab: React.FC = () => {
       return in_attesa.length;
     },
     onSuccess: (n) => {
-      toast({ title: `📨 Sollecito inviato a ${n} destinatari` });
+      toast({ title: tk("reminder_sent", { count: n }) });
       qc.invalidateQueries({ queryKey: ["comunicazioni"] });
       qc.invalidateQueries({ queryKey: ["comunicazioni_conversazioni"] });
     },
-    onError: (err: any) => toast({ title: "Errore", description: err?.message, variant: "destructive" }),
+    onError: (err: any) => toast({ title: tk("error"), description: err?.message, variant: "destructive" }),
   });
 
   if (isLoading) {
-    return <div className="text-sm text-muted-foreground py-8 text-center">Caricamento conversazioni…</div>;
+    return <div className="text-sm text-muted-foreground py-8 text-center">{t("conversazioni.loading")}</div>;
   }
 
   if (conversazioni.length === 0) {
     return (
       <div className="bg-card rounded-xl shadow-card p-12 text-center space-y-3">
         <MessageSquare className="w-12 h-12 text-muted-foreground/40 mx-auto" />
-        <p className="text-sm text-muted-foreground">Nessuna conversazione con risposta richiesta.</p>
+        <p className="text-sm text-muted-foreground">{t("conversazioni.empty")}</p>
+
       </div>
     );
   }
@@ -112,12 +120,13 @@ export const ConversazioniTab: React.FC = () => {
                   <div className="min-w-0 flex-1">
                     <h3 className="font-semibold text-foreground truncate">{conv.titolo}</h3>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Inviata il {format_date(conv.created_at)} a {tot} destinatari
+                      {t("conversazioni.sent_on", { data: format_date(conv.created_at), count: tot })}
                     </p>
                     <div className="flex flex-wrap gap-2 mt-2">
-                      <Badge className="bg-success/15 text-success border-success/30" variant="outline">✓ {conferme} conferme</Badge>
-                      <Badge className="bg-destructive/15 text-destructive border-destructive/30" variant="outline">❌ {rifiuti} rifiuti</Badge>
-                      <Badge className="bg-warning/15 text-warning border-warning/30" variant="outline">⏳ {in_attesa} in attesa</Badge>
+                      <Badge className="bg-success/15 text-success border-success/30" variant="outline">{t("conversazioni.confirmations", { count: conferme })}</Badge>
+                      <Badge className="bg-destructive/15 text-destructive border-destructive/30" variant="outline">{t("conversazioni.refusals", { count: rifiuti })}</Badge>
+                      <Badge className="bg-warning/15 text-warning border-warning/30" variant="outline">{t("conversazioni.pending", { count: in_attesa })}</Badge>
+
                     </div>
                   </div>
                 </button>
@@ -129,7 +138,7 @@ export const ConversazioniTab: React.FC = () => {
                     disabled={sollecita.isPending}
                     className="shrink-0"
                   >
-                    <Send className="w-3.5 h-3.5 mr-1.5" /> Sollecita non rispondenti
+                    <Send className="w-3.5 h-3.5 mr-1.5" /> {t("conversazioni.remind_non_responders")}
                   </Button>
                 )}
               </div>
@@ -139,10 +148,11 @@ export const ConversazioniTab: React.FC = () => {
                 {conv.destinatari.map((d) => {
                   const nome = d.atleti ? `${d.atleti.cognome} ${d.atleti.nome}` : d.atleta_id.slice(0, 8);
                   const stato = d.rsvp_risposta === "si"
-                    ? <span className="text-success">✓ confermato il {format_date(d.rsvp_at)}</span>
+                    ? <span className="text-success">{t("conversazioni.confirmed_on", { data: format_date(d.rsvp_at) })}</span>
                     : d.rsvp_risposta === "no"
-                    ? <span className="text-destructive">❌ rifiutato il {format_date(d.rsvp_at)}</span>
-                    : <span className="text-warning">⏳ in attesa</span>;
+                    ? <span className="text-destructive">{t("conversazioni.refused_on", { data: format_date(d.rsvp_at) })}</span>
+                    : <span className="text-warning">{t("conversazioni.waiting")}</span>;
+
                   return (
                     <div key={d.id} className="flex items-center justify-between gap-3 text-sm py-1 border-b border-border/40 last:border-0">
                       <span className="text-foreground">{nome}</span>

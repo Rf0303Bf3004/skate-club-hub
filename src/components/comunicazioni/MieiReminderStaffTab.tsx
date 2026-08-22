@@ -1,5 +1,6 @@
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -10,11 +11,13 @@ import { toast } from "@/hooks/use-toast";
 // Tab "I miei reminder" — mostra a istruttori/staff i reminder turno del giorno successivo
 // con bottoni Sarò presente / Sarò assente. I trigger DB gestiscono le conseguenze.
 export const MieiReminderStaffTab: React.FC = () => {
+  const { t } = useTranslation("communications");
   const { session } = useAuth();
   const user_id = session?.user_id;
   const club_id = get_current_club_id();
   const qc = useQueryClient();
   const [busy_id, set_busy_id] = React.useState<string | null>(null);
+
 
   const { data: reminders = [], isLoading } = useQuery({
     queryKey: ["miei_reminder_staff", user_id, club_id],
@@ -41,11 +44,12 @@ export const MieiReminderStaffTab: React.FC = () => {
         .update({ rsvp_risposta: risposta, rsvp_at: new Date().toISOString(), stato: risposta === "si" ? "confermato" : "rifiutato" })
         .eq("id", dest_id);
       if (error) throw error;
-      toast({ title: risposta === "si" ? "✅ Presenza confermata" : "❌ Assenza segnalata al club" });
+      toast({ title: risposta === "si" ? t("reminder_staff.presence_confirmed") : t("reminder_staff.absence_sent") });
       qc.invalidateQueries({ queryKey: ["miei_reminder_staff"] });
       qc.invalidateQueries({ queryKey: ["comunicazioni"] });
     } catch (err: any) {
-      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+      toast({ title: t("reminder_staff.error"), description: err?.message, variant: "destructive" });
+
     } finally {
       set_busy_id(null);
     }
@@ -59,8 +63,9 @@ export const MieiReminderStaffTab: React.FC = () => {
     return (
       <div className="bg-card border border-dashed border-border rounded-xl p-10 text-center">
         <BellRing className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
-        <p className="text-sm text-muted-foreground">Nessun reminder o convocazione per te al momento.</p>
-        <p className="text-xs text-muted-foreground mt-1">Qui trovi i reminder turno e le convocazioni della Griglia Ghiaccio.</p>
+        <p className="text-sm text-muted-foreground">{t("reminder_staff.empty_title")}</p>
+        <p className="text-xs text-muted-foreground mt-1">{t("reminder_staff.empty_hint")}</p>
+
       </div>
     );
   }
@@ -81,11 +86,12 @@ export const MieiReminderStaffTab: React.FC = () => {
                 </p>
               </div>
               {sola_lettura ? (
-                <Badge variant="secondary">Convocazione</Badge>
+                <Badge variant="secondary">{t("reminder_staff.convocation")}</Badge>
               ) : (
                 gia_risposto && (
                   <Badge variant={r.rsvp_risposta === "si" ? "default" : "destructive"}>
-                    {r.rsvp_risposta === "si" ? "✅ Confermato" : "❌ Assente"}
+                    {r.rsvp_risposta === "si" ? t("reminder_staff.badge_confirmed") : t("reminder_staff.badge_absent")}
+
                   </Badge>
                 )
               )}
@@ -94,10 +100,11 @@ export const MieiReminderStaffTab: React.FC = () => {
             {!sola_lettura && !gia_risposto && (
               <div className="flex gap-2 pt-2 border-t border-border">
                 <Button size="sm" className="flex-1" onClick={() => handle_rsvp(r.id, "si")} disabled={busy_id === r.id}>
-                  <Check className="w-4 h-4 mr-1" /> Sarò presente
+                  <Check className="w-4 h-4 mr-1" /> {t("reminder_staff.will_attend")}
                 </Button>
                 <Button size="sm" variant="outline" className="flex-1" onClick={() => handle_rsvp(r.id, "no")} disabled={busy_id === r.id}>
-                  <X className="w-4 h-4 mr-1" /> Sarò assente
+                  <X className="w-4 h-4 mr-1" /> {t("reminder_staff.will_be_absent")}
+
                 </Button>
               </div>
             )}
