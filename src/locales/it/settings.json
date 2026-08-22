@@ -185,7 +185,24 @@
     "toast_saved_description": "Si applicheranno al prossimo login degli utenti.",
     "toast_save_error_title": "Errore salvataggio",
     "note_label": "Nota",
-    "note_text": "L'admin e il superadmin vedono sempre tutto. Le modifiche si applicano al prossimo login degli utenti."
+    "note_text": "L'admin e il superadmin vedono sempre tutto. Le modifiche si applicano al prossimo login degli utenti.",
+    "dashboard_cards": {
+      "title": "Card visibili in Dashboard per ruolo",
+      "subtitle": "Per ogni ruolo, scegli quali card sono visibili nella dashboard. Il Presidente vede sempre tutto.",
+      "reset_confirm_title": "Ripristinare la configurazione consigliata?",
+      "reset_confirm_desc": "Le impostazioni attuali delle card verranno sovrascritte.",
+      "reset_confirm_cta": "Ripristina",
+      "reset": "Ripristina configurazione consigliata",
+      "save": "Salva permessi card",
+      "saving": "Salvo...",
+      "column_card": "Card",
+      "sees_all": "vede tutto",
+      "toast_saved_title": "Permessi card salvati",
+      "toast_saved_desc": "Si applicheranno al prossimo login degli utenti.",
+      "toast_reset_done": "Configurazione consigliata applicata",
+      "toast_error": "Errore",
+      "note": "Il Presidente vede sempre tutte le card disponibili. Le modifiche si applicano al prossimo login degli utenti."
+    }
   },
   "users": {
     "title": "Gestione Utenti",
@@ -418,6 +435,29 @@
       "reset_done": "Pacchetti ripristinati ai default",
       "texts_saved": "Testi salvati",
       "error": "Errore"
+    },
+    "pacchetto_form": {
+      "title_edit": "Modifica pacchetto",
+      "title_new": "Nuovo pacchetto",
+      "livello": "Livello (codice)",
+      "livello_placeholder": "gold",
+      "ordine": "Ordine",
+      "nome_visualizzato": "Nome visualizzato",
+      "nome_placeholder": "Sponsor Gold",
+      "prezzo_annuo": "Prezzo annuo (CHF)",
+      "colore_brand": "Colore brand",
+      "benefits": "Benefit (uno per riga)",
+      "benefits_placeholder": "Logo su maglie gara\nBanner pista",
+      "max_sponsor": "Max sponsor disponibili (vuoto = illimitato)",
+      "attivo": "Attivo",
+      "annulla": "Annulla",
+      "salva": "Salva"
+    },
+    "pitch_pdf": {
+      "title": "Anteprima Pitch Sponsor",
+      "download": "Scarica PDF",
+      "preparing": "Preparazione...",
+      "loading": "Caricamento..."
     }
   },
   "catalogo": {
