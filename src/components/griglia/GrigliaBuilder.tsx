@@ -1198,7 +1198,25 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
 
   const handle_pubblica = async () => {
     try {
+      // Sync automatico dei gruppi collegati prima dell'invio (non bloccante per sessione)
+      const con_gruppo = sessioni.filter((s) => !!s.gruppo_livello);
+      const falliti: string[] = [];
+      for (const s of con_gruppo) {
+        try {
+          await sync_gruppo_core(s);
+        } catch {
+          falliti.push(`${hhmm(s.ora_inizio)}–${hhmm(s.ora_fine)}`);
+        }
+      }
+      if (falliti.length > 0) {
+        toast({
+          title: "Alcuni gruppi non sincronizzati",
+          description: `Sessioni: ${falliti.join(", ")}. Pubblico con i dati attuali.`,
+          variant: "destructive",
+        });
+      }
       const res = await pubblica.mutateAsync(blocco);
+
       const n = res?.inviate ?? 0;
       const ni = res?.istruttori_avvisati ?? 0;
       const ns = res?.istruttori_senza_account ?? 0;
