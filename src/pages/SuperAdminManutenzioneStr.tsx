@@ -9,6 +9,7 @@ import {
   Skull, Power, PowerOff, UserX, ArrowRightLeft, CalendarX,
   Building2, ChevronDown,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface Club {
   id: string;
@@ -34,6 +35,7 @@ const TABELLE_DATI = [
 ] as const;
 
 const SuperAdminManutenzioneStr: React.FC = () => {
+  const { t } = useTranslation("superadmin");
   const { session } = useAuth();
   const [clubs, set_clubs] = useState<Club[]>([]);
   const [selected_club, set_selected_club] = useState("");
@@ -76,10 +78,10 @@ const SuperAdminManutenzioneStr: React.FC = () => {
   const operazioni: Operazione[] = [
     {
       id: "disattiva_club",
-      titolo: selected?.attivo === false ? "Riattiva club" : "Disattiva club",
+      titolo: selected?.attivo === false ? t("str.op.toggle.titolo_on") : t("str.op.toggle.titolo_off"),
       descrizione: selected?.attivo === false
-        ? "Riattiva il club permettendo nuovamente l'accesso."
-        : "Impedisce l'accesso al club senza cancellare alcun dato.",
+        ? t("str.op.toggle.desc_on")
+        : t("str.op.toggle.desc_off"),
       icona: selected?.attivo === false ? <Power className="w-5 h-5" /> : <PowerOff className="w-5 h-5" />,
       colore: "border-yellow-300 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950/30",
       parola_chiave: "CONFERMA",
@@ -90,13 +92,13 @@ const SuperAdminManutenzioneStr: React.FC = () => {
         const { error } = await supabase.from("clubs").update({ attivo: nuovo_stato }).eq("id", cid);
         if (error) throw error;
         await reload_clubs();
-        return `Club ${club_nome(cid)} ${nuovo_stato ? "riattivato" : "disattivato"}`;
+        return t("str.op.toggle.result", { nome: club_nome(cid), stato: nuovo_stato ? t("str.op.toggle.stato_on") : t("str.op.toggle.stato_off") });
       },
     },
     {
       id: "reset_utenti",
-      titolo: "Reset utenti/accessi club",
-      descrizione: "Rimuove TUTTI gli utenti_club del club selezionato, resettando gli accessi.",
+      titolo: t("str.op.reset_utenti.titolo"),
+      descrizione: t("str.op.reset_utenti.descrizione"),
       icona: <UserX className="w-5 h-5" />,
       colore: "border-orange-300 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/30",
       parola_chiave: "ELIMINA",
@@ -104,13 +106,13 @@ const SuperAdminManutenzioneStr: React.FC = () => {
       esegui: async (cid) => {
         const { error, count } = await supabase.from("utenti_club").delete({ count: "exact" }).eq("club_id", cid);
         if (error) throw error;
-        return `Rimossi ${count || 0} utenti da ${club_nome(cid)}`;
+        return t("str.op.reset_utenti.result", { count: count || 0, nome: club_nome(cid) });
       },
     },
     {
       id: "wipe_dati",
-      titolo: "Wipe completo dati club",
-      descrizione: "Cancella TUTTI i dati operativi (atleti, corsi, fatture, presenze, gare, istruttori). Mantiene solo l'anagrafica club.",
+      titolo: t("str.op.wipe.titolo"),
+      descrizione: t("str.op.wipe.descrizione"),
       icona: <Skull className="w-5 h-5" />,
       colore: "border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/30",
       parola_chiave: "ELIMINA",
@@ -128,14 +130,14 @@ const SuperAdminManutenzioneStr: React.FC = () => {
         // Elimina anche setup_club
         await supabase.from("setup_club").delete().eq("club_id", cid);
         return risultati.length > 0
-          ? `Wipe completato per ${club_nome(cid)}: ${risultati.join(", ")}`
-          : `Nessun dato da eliminare per ${club_nome(cid)}`;
+          ? t("str.op.wipe.result", { nome: club_nome(cid), dettaglio: risultati.join(", ") })
+          : t("str.op.wipe.empty", { nome: club_nome(cid) });
       },
     },
     {
       id: "elimina_club",
-      titolo: "Eliminazione club definitiva",
-      descrizione: "Elimina il club E tutti i suoi dati dal sistema. IRREVERSIBILE.",
+      titolo: t("str.op.elimina.titolo"),
+      descrizione: t("str.op.elimina.descrizione"),
       icona: <Trash2 className="w-5 h-5" />,
       colore: "border-red-400 bg-red-100 dark:border-red-700 dark:bg-red-950/50",
       parola_chiave: "ELIMINA",
@@ -155,13 +157,13 @@ const SuperAdminManutenzioneStr: React.FC = () => {
         if (error) throw error;
         set_selected_club("");
         await reload_clubs();
-        return `Club "${nome}" eliminato definitivamente`;
+        return t("str.op.elimina.result", { nome });
       },
     },
     {
       id: "reset_stagione",
-      titolo: "Reset stagione corrente",
-      descrizione: "Elimina presenze, lezioni private e iscrizioni corsi della stagione in corso.",
+      titolo: t("str.op.reset_stagione.titolo"),
+      descrizione: t("str.op.reset_stagione.descrizione"),
       icona: <CalendarX className="w-5 h-5" />,
       colore: "border-orange-300 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/30",
       parola_chiave: "ELIMINA",
@@ -175,35 +177,35 @@ const SuperAdminManutenzioneStr: React.FC = () => {
           } catch { /* skip */ }
         }
         return risultati.length > 0
-          ? `Reset stagione per ${club_nome(cid)}: ${risultati.join(", ")}`
-          : `Nessun dato stagionale trovato per ${club_nome(cid)}`;
+          ? t("str.op.reset_stagione.result", { nome: club_nome(cid), dettaglio: risultati.join(", ") })
+          : t("str.op.reset_stagione.empty", { nome: club_nome(cid) });
       },
     },
     {
       id: "trasferisci_atleti",
-      titolo: "Trasferisci atleti tra club",
-      descrizione: "Sposta TUTTI gli atleti dal club selezionato a un altro club.",
+      titolo: t("str.op.trasferisci.titolo"),
+      descrizione: t("str.op.trasferisci.descrizione"),
       icona: <ArrowRightLeft className="w-5 h-5" />,
       colore: "border-blue-300 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30",
       parola_chiave: "CONFERMA",
       richiede_club: true,
       richiede_club_dest: true,
       esegui: async (cid, dest) => {
-        if (!dest) throw new Error("Club destinazione non selezionato");
-        if (cid === dest) throw new Error("Club origine e destinazione sono uguali");
+        if (!dest) throw new Error(t("str.op.trasferisci.err_dest"));
+        if (cid === dest) throw new Error(t("str.op.trasferisci.err_same"));
         const { count, error } = await supabase
           .from("atleti")
           .update({ club_id: dest })
           .eq("club_id", cid);
         if (error) throw error;
-        return `Trasferiti ${count || "tutti gli"} atleti da ${club_nome(cid)} a ${club_nome(dest!)}`;
+        return t("str.op.trasferisci.result", { count: count ?? t("str.op.trasferisci.all"), da: club_nome(cid), a: club_nome(dest!) });
       },
     },
   ];
 
   const handle_esegui = async (op: Operazione) => {
     if (op.richiede_club && !selected_club) {
-      toast({ title: "Seleziona un club", variant: "destructive" });
+      toast({ title: t("str.select_club"), variant: "destructive" });
       return;
     }
     set_running(op.id);
@@ -215,7 +217,7 @@ const SuperAdminManutenzioneStr: React.FC = () => {
       toast({ title: `✅ ${risultato}` });
     } catch (err: any) {
       add_log(`❌ ${op.titolo}: ${err.message}`);
-      toast({ title: "Errore", description: err.message, variant: "destructive" });
+      toast({ title: t("str.error"), description: err.message, variant: "destructive" });
     } finally {
       set_running(null);
     }
@@ -227,17 +229,17 @@ const SuperAdminManutenzioneStr: React.FC = () => {
       <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4">
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
           <AlertTriangle className="w-6 h-6 text-destructive" />
-          Manutenzione Straordinaria
+          {t("str.title")}
         </h1>
         <p className="text-sm text-destructive/80 mt-1">
-          ⚠️ Operazioni irreversibili e distruttive. Procedi con estrema cautela.
+          {t("str.subtitle")}
         </p>
       </div>
 
       {/* Selettore club */}
       <div className="rounded-xl border border-border bg-card p-4">
         <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide block mb-2">
-          Club selezionato
+          {t("str.club_selected")}
         </label>
         <div className="relative">
           <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -246,10 +248,10 @@ const SuperAdminManutenzioneStr: React.FC = () => {
             onChange={(e) => { set_selected_club(e.target.value); set_confirm_id(null); }}
             className="w-full appearance-none pl-10 pr-10 py-2.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
           >
-            <option value="">— Seleziona un club —</option>
+            <option value="">{t("str.select_club_option")}</option>
             {clubs.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.nome} {!c.attivo ? "(inattivo)" : ""}
+                {c.nome} {!c.attivo ? t("str.inactive_suffix") : ""}
               </option>
             ))}
           </select>
@@ -277,20 +279,20 @@ const SuperAdminManutenzioneStr: React.FC = () => {
               </div>
 
               {!selected_club && (
-                <p className="text-xs text-muted-foreground mb-2">Seleziona un club sopra.</p>
+                <p className="text-xs text-muted-foreground mb-2">{t("str.select_above")}</p>
               )}
 
               {is_confirming ? (
                 <div className="space-y-2">
                   {op.richiede_club_dest && (
                     <div>
-                      <label className="text-xs text-muted-foreground block mb-1">Club destinazione:</label>
+                      <label className="text-xs text-muted-foreground block mb-1">{t("str.dest_club")}</label>
                       <select
                         value={club_dest}
                         onChange={(e) => set_club_dest(e.target.value)}
                         className="w-full appearance-none rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                       >
-                        <option value="">— Seleziona —</option>
+                        <option value="">{t("str.select_option")}</option>
                         {clubs.filter((c) => c.id !== selected_club).map((c) => (
                           <option key={c.id} value={c.id}>{c.nome}</option>
                         ))}
@@ -298,7 +300,7 @@ const SuperAdminManutenzioneStr: React.FC = () => {
                     </div>
                   )}
                   <p className="text-xs text-destructive font-medium">
-                    Digita <strong>{op.parola_chiave}</strong> per procedere su <strong>{club_nome(selected_club)}</strong>:
+                    {t("str.confirm_prefix")} <strong>{op.parola_chiave}</strong> {t("str.confirm_middle")} <strong>{club_nome(selected_club)}</strong>:
                   </p>
                   <input
                     value={confirm_text}
@@ -316,10 +318,10 @@ const SuperAdminManutenzioneStr: React.FC = () => {
                       className="gap-1"
                     >
                       {is_running ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-                      Esegui
+                      {t("str.run")}
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => { set_confirm_id(null); set_confirm_text(""); }}>
-                      Annulla
+                      {t("str.cancel")}
                     </Button>
                   </div>
                 </div>
@@ -332,7 +334,7 @@ const SuperAdminManutenzioneStr: React.FC = () => {
                   className="gap-2 w-full"
                 >
                   {is_running ? <RefreshCw className="w-4 h-4 animate-spin" /> : op.icona}
-                  {is_running ? "In esecuzione..." : "Esegui"}
+                  {is_running ? t("str.running") : t("str.run")}
                 </Button>
               )}
             </div>
@@ -343,15 +345,15 @@ const SuperAdminManutenzioneStr: React.FC = () => {
       {/* Log */}
       <div className="rounded-xl border border-border bg-card">
         <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-          <p className="text-sm font-semibold text-foreground">📋 Log operazioni</p>
+          <p className="text-sm font-semibold text-foreground">📋 {t("str.log")}</p>
           {log.length > 0 && (
-            <Button variant="ghost" size="sm" onClick={() => set_log([])}>Pulisci</Button>
+            <Button variant="ghost" size="sm" onClick={() => set_log([])}>{t("str.clear")}</Button>
           )}
         </div>
         <div className="p-4 max-h-48 overflow-y-auto">
           {log.length === 0 ? (
             <p className="text-xs text-muted-foreground text-center py-4">
-              Nessuna operazione eseguita in questa sessione.
+              {t("str.log_empty")}
             </p>
           ) : (
             <div className="space-y-1">
