@@ -665,6 +665,124 @@ async function atleti_presenti_sessione(sessione_id: string): Promise<Set<string
   return new Set(((data ?? []) as any[]).map((r) => r.atleta_id as string));
 }
 
+export interface ConflittoGruppo {
+  ora_inizio: string;
+  ora_fine: string;
+  etichetta: string;
+}
+
+/** "HH:MM[:SS]" → minuti */
+function _min(v: string): number {
+  const [h, m] = String(v ?? "0:0").split(":");
+  return Number(h) * 60 + Number(m);
+}
+
+/**
+ * Verifica BLOCCANTE: lo stesso gruppo (livello + scope + eventuale ragione sociale)
+ * non può essere collegato a due sotto-sessioni sovrapposte nel tempo nello stesso
+ * giorno, indipendentemente dalla risorsa/pista.
+ * Ritorna il conflitto trovato oppure `null` se l'assegnazione è lecita.
+ */
+export async function verifica_conflitto_gruppo(input: {
+  sessione_id: string;
+  gruppo_livello: string;
+  gruppo_scope: GruppoScope;
+  gruppo_ragione_sociale_id?: string | null;
+}): Promise<ConflittoGruppo | null> {
+  const club_id = get_current_club_id();
+  if (!club_id || !input.gruppo_livello) return null;
+
+  // 1. sotto-sessione di destinazione + giorno
+  const { data: dest, error: err_d } = await supabase
+    .from("griglia_sessioni" as any)
+    .select("id,blocco_id,ora_inizio,ora_fine")
+    .eq("id", input.sessione_id)
+    .maybeSingle();
+  if (err_d) throw err_d;
+  if (!dest) return null;
+  const d_start = _min((dest as any).ora_inizio);
+  const d_end = _min((dest as any).ora_fine);
+
+  const { data: blocco_dest, error: err_bd } = await supabase
+    .from("griglia_blocchi" as any)
+    .select("id,data")
+    .eq("id", (dest as any).blocco_id)
+    .maybeSingle();
+  if (err_bd) throw err_bd;
+  if (!blocco_dest) return null;
+
+  // 2. tutte le sotto-sessioni del giorno (tutte le risorse)
+  const { data: blocchi, error: err_b } = await supabase
+    .from("griglia_blocchi" as any)
+    .select("id")
+    .eq("club_id", club_id)
+    .eq("data", (blocco_dest as any).data);
+  if (err_b) throw err_b;
+  const blocchi_ids = ((blocchi ?? []) as any[]).map((b) => b.id);
+  if (blocchi_ids.length === 0) return null;
+
+  const { data: sessioni, error: err_s } = await supabase
+    .from("griglia_sessioni" as any)
+    .select("id,ora_inizio,ora_fine,specialita_id,ordine")
+    .in("blocco_id", blocchi_ids);
+  if (err_s) throw err_s;
+  const candidate = ((sessioni ?? []) as any[]).filter(
+    (s) =>
+      s.id !== input.sessione_id &&
+      _min(s.ora_inizio) < d_end &&
+      _min(s.ora_fine) > d_start,
+  );
+  if (candidate.length === 0) return null;
+
+  // 3. gruppi già collegati a quelle sessioni
+  const { data: gruppi, error: err_g } = await supabase
+    .from("griglia_sessioni_gruppi" as any)
+    .select("sessione_id,gruppo_livello,gruppo_scope,gruppo_ragione_sociale_id")
+    .in(
+      "sessione_id",
+      candidate.map((s) => s.id),
+    );
+  if (err_g) throw err_g;
+
+  const match = ((gruppi ?? []) as any[]).find(
+    (g) =>
+      g.gruppo_livello === input.gruppo_livello &&
+      g.gruppo_scope === input.gruppo_scope &&
+      (g.gruppo_ragione_sociale_id ?? null) === (input.gruppo_ragione_sociale_id ?? null),
+  );
+  if (!match) return null;
+
+  const s_conf = candidate.find((s) => s.id === match.sessione_id)!;
+
+  // 4. etichetta leggibile (specialità e/o istruttori)
+  const parti: string[] = [];
+  if (s_conf.specialita_id) {
+    const { data: sp } = await supabase
+      .from("griglia_specialita" as any)
+      .select("nome")
+      .eq("id", s_conf.specialita_id)
+      .maybeSingle();
+    if (sp && (sp as any).nome) parti.push((sp as any).nome);
+  }
+  const { data: si } = await supabase
+    .from("griglia_sessioni_istruttori" as any)
+    .select("istruttore_id")
+    .eq("sessione_id", s_conf.id);
+  const ist_ids = ((si ?? []) as any[]).map((r) => r.istruttore_id);
+  if (ist_ids.length > 0) {
+    const { data: ist } = await supabase.from("istruttori").select("nome,cognome").in("id", ist_ids);
+    const nomi = ((ist ?? []) as any[]).map((i) => `${i.nome} ${i.cognome}`).join(", ");
+    if (nomi) parti.push(nomi);
+  }
+  if (parti.length === 0) parti.push(`Sessione ${s_conf.ordine ?? ""}`.trim());
+
+  return {
+    ora_inizio: String(s_conf.ora_inizio).slice(0, 5),
+    ora_fine: String(s_conf.ora_fine).slice(0, 5),
+    etichetta: parti.join(" · "),
+  };
+}
+
 /**
  * Aggancia un gruppo alla sotto-sessione: crea la riga in `griglia_sessioni_gruppi`
  * e inserisce gli atleti mancanti taggati con il nuovo gruppo. Gli atleti già
@@ -680,6 +798,17 @@ export function use_assegna_gruppo_sessione() {
       gruppo_ragione_sociale_id?: string | null;
     }) => {
       const club_id = get_current_club_id();
+
+      // Guardia bloccante lato scrittura: nessun insert se il gruppo è già
+      // collegato a un'altra sotto-sessione sovrapposta nello stesso giorno.
+      const conflitto = await verifica_conflitto_gruppo(input);
+      if (conflitto) {
+        throw new Error(
+          `Il gruppo «${input.gruppo_livello}» è già assegnato a un'altra sessione sovrapposta (${conflitto.ora_inizio}–${conflitto.ora_fine} – ${conflitto.etichetta}).`,
+        );
+      }
+
+
       const { data: gruppo, error: err_g } = await supabase
         .from("griglia_sessioni_gruppi" as any)
         .insert({

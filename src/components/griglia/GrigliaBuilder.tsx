@@ -20,6 +20,9 @@ import {
   use_rimuovi_gruppo_sessione,
   use_sync_gruppo_sessione,
   risolvi_membri_gruppo,
+  verifica_conflitto_gruppo,
+  type ConflittoGruppo,
+
   giorno_it_da_data,
   type GruppoScope,
   type GrigliaBlocco,
@@ -865,6 +868,10 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   >(null);
   const [ripeti_sessione, set_ripeti_sessione] = useState<GrigliaSessione | null>(null);
   const [sync_gruppo_ids, set_sync_gruppo_ids] = useState<string[]>([]);
+  const [conflitto_gruppo, set_conflitto_gruppo] = useState<
+    { livello: string; conflitto: ConflittoGruppo } | null
+  >(null);
+
 
   /** Riallinea SOLO gli atleti taggati con quel gruppo alla membership attuale. */
   const sincronizza_gruppo = async (s: GrigliaSessione, gruppo_sessione_id: string) => {
@@ -996,29 +1003,47 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
     try {
       if (tipo === "gruppo") {
         const ids: string[] = active.data?.current?.atleta_ids ?? [];
-        for (const atleta_id of ids) {
-          const a = (atleti as any[]).find((x) => x.id === atleta_id);
-          const nome = a ? `${a.nome} ${a.cognome}` : "Atleta";
-          avvisa_sovrapposizione("atleta", atleta_id, nome, dest);
-        }
         const livello_gruppo: string | undefined = active.data?.current?.livello;
         if (livello_gruppo && livello_gruppo !== LIVELLO_NON_DEFINITO) {
           // Collegamento dinamico: nuova riga in griglia_sessioni_gruppi + atleti taggati.
           const { gruppo_scope, gruppo_ragione_sociale_id } = scope_da_box_id(active.data?.current?.box_id);
+
+          // ⛔ Controllo BLOCCANTE (nessuna scrittura se lo stesso gruppo è già
+          // collegato a un'altra sotto-sessione sovrapposta nello stesso giorno).
+          const conflitto = await verifica_conflitto_gruppo({
+            sessione_id,
+            gruppo_livello: livello_gruppo,
+            gruppo_scope: (gruppo_scope ?? "club") as GruppoScope,
+            gruppo_ragione_sociale_id,
+          });
+          if (conflitto) {
+            set_conflitto_gruppo({ livello: livello_gruppo, conflitto });
+            return;
+          }
+
           const res = await assegna_gruppo.mutateAsync({
             sessione_id,
             gruppo_livello: livello_gruppo,
             gruppo_scope: (gruppo_scope ?? "club") as GruppoScope,
             gruppo_ragione_sociale_id,
           });
+          for (const atleta_id of ids) {
+            const a = (atleti as any[]).find((x) => x.id === atleta_id);
+            const nome = a ? `${a.nome} ${a.cognome}` : "Atleta";
+            avvisa_sovrapposizione("atleta", atleta_id, nome, dest);
+          }
           toast({ title: `🔗 Gruppo «${livello_gruppo}» collegato`, description: `${res.aggiunti} atleti aggiunti.` });
         } else {
           // Livello non definito: nessun gruppo dinamico, assegnazione individuale.
           for (const atleta_id of ids) {
+            const a = (atleti as any[]).find((x) => x.id === atleta_id);
+            const nome = a ? `${a.nome} ${a.cognome}` : "Atleta";
+            avvisa_sovrapposizione("atleta", atleta_id, nome, dest);
             await assegna_atleta.mutateAsync({ sessione_id, atleta_id });
           }
           if (ids.length > 0) toast({ title: `✅ ${ids.length} atleti assegnati alla sessione` });
         }
+
 
       } else if (tipo === "atleta") {
         const a = (atleti as any[]).find((x) => x.id === persona_id);
@@ -1395,7 +1420,25 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
         on_forza={conferma_forzatura_sessione}
       />
 
+      <AlertDialog open={!!conflitto_gruppo} onOpenChange={(o) => !o && set_conflitto_gruppo(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>⛔ Gruppo già assegnato in questo orario</AlertDialogTitle>
+            <AlertDialogDescription>
+              Il gruppo «{conflitto_gruppo?.livello}» è già assegnato a un'altra sessione sovrapposta (
+              {conflitto_gruppo?.conflitto.ora_inizio}–{conflitto_gruppo?.conflitto.ora_fine} —{" "}
+              {conflitto_gruppo?.conflitto.etichetta}). Lo stesso gruppo non può essere in due sessioni
+              contemporanee: rimuovi prima l'altro collegamento oppure cambia l'orario della sessione.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => set_conflitto_gruppo(null)}>Ho capito</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <RipetiSessioneDialog
+
         open={!!ripeti_sessione}
         on_close={() => set_ripeti_sessione(null)}
         giorno={giorno_it_da_data(blocco.data)}
