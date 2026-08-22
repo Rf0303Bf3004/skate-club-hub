@@ -5,14 +5,18 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
+
+const tk = (key: string, opts?: any) => i18n.t(`compenso.${key}`, { ns: "istruttori", ...(opts ?? {}) }) as string;
 
 type TipoContratto = "orario" | "fisso_mensile" | "fisso_corsi" | "misto";
 
-const TIPI: { value: TipoContratto; label: string }[] = [
-  { value: "orario", label: "A ore" },
-  { value: "fisso_mensile", label: "Fisso mensile" },
-  { value: "fisso_corsi", label: "Fisso corsi + variabile lezioni private" },
-  { value: "misto", label: "Fisso mensile + variabile lezioni private" },
+const TIPI: { value: TipoContratto; label_key: string }[] = [
+  { value: "orario", label_key: "tipo_orario" },
+  { value: "fisso_mensile", label_key: "tipo_fisso_mensile" },
+  { value: "fisso_corsi", label_key: "tipo_fisso_corsi" },
+  { value: "misto", label_key: "tipo_misto" },
 ];
 
 // Mappa obbligatorietà campi per modalità
@@ -43,6 +47,7 @@ interface Props {
 }
 
 export const CompensoStaffModal: React.FC<Props> = ({ open, atleta, livello, on_saved, on_cancel }) => {
+  const { t } = useTranslation("istruttori");
   const [tipo, set_tipo] = useState<TipoContratto>("orario");
   const [prezzo_min, set_prezzo_min] = useState("");
   const [costo_lezioni, set_costo_lezioni] = useState("");
@@ -52,7 +57,7 @@ export const CompensoStaffModal: React.FC<Props> = ({ open, atleta, livello, on_
   const [cancelling, set_cancelling] = useState(false);
   const [confirm_cancel, set_confirm_cancel] = useState(false);
 
-  const livello_label = livello === "monitrice" ? "Monitrice" : "Aiuto monitrice";
+  const livello_label = livello === "monitrice" ? t("compenso.livello_monitrice") : t("compenso.livello_aiuto_monitrice");
   const base_req = REQUIRED[tipo];
   // Le aiuto-monitrici di solito affiancano in lezioni collettive senza prezzo di vendita al minuto:
   // rendiamo prezzo_min sempre opzionale per loro (resta visibile, ma non blocca il salvataggio).
@@ -87,10 +92,10 @@ export const CompensoStaffModal: React.FC<Props> = ({ open, atleta, livello, on_
         .update(payload as any)
         .eq("linked_atleta_id", atleta.id);
       if (error) throw error;
-      toast({ title: "✅ Compenso salvato" });
+      toast({ title: t("compenso.toast_saved") });
       on_saved();
     } catch (err: any) {
-      toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
+      toast({ title: t("compenso.toast_error"), description: err?.message, variant: "destructive" });
     } finally {
       set_saving(false);
     }
@@ -122,7 +127,7 @@ export const CompensoStaffModal: React.FC<Props> = ({ open, atleta, livello, on_
         <div className="space-y-1.5 opacity-50">
           <Label className="text-xs">{label}</Label>
           <div className="rounded-lg border border-dashed border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground italic">
-            non applicabile per questa modalità
+            {tk("not_applicable")}
           </div>
         </div>
       );
@@ -130,7 +135,7 @@ export const CompensoStaffModal: React.FC<Props> = ({ open, atleta, livello, on_
     return (
       <div className="space-y-1.5">
         <Label className="text-xs">
-          {label} {required ? "*" : <span className="text-muted-foreground font-normal">(opzionale)</span>}
+          {label} {required ? "*" : <span className="text-muted-foreground font-normal">{tk("optional")}</span>}
         </Label>
         <input
           type="number"
@@ -155,38 +160,38 @@ export const CompensoStaffModal: React.FC<Props> = ({ open, atleta, livello, on_
       >
         <DialogHeader>
           <DialogTitle>
-            Imposta compenso per {atleta.nome} {atleta.cognome} ({livello_label})
+            {t("compenso.title", { nome: atleta.nome, cognome: atleta.cognome, livello: livello_label })}
           </DialogTitle>
-          <DialogDescription>I dati di compenso sono obbligatori prima di chiudere</DialogDescription>
+          <DialogDescription>{t("compenso.description")}</DialogDescription>
         </DialogHeader>
 
         {confirm_cancel ? (
           <div className="space-y-4">
             <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4">
               <p className="text-sm font-medium text-foreground">
-                Annullando, il ruolo "{livello_label}" verrà rimosso da {atleta.nome} {atleta.cognome}.
+                {t("compenso.confirm_remove", { livello: livello_label, nome: atleta.nome, cognome: atleta.cognome })}
               </p>
-              <p className="text-xs text-muted-foreground mt-1">L'atleta resterà nel club, ma non sarà più staff.</p>
+              <p className="text-xs text-muted-foreground mt-1">{t("compenso.confirm_remove_note")}</p>
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => set_confirm_cancel(false)} disabled={cancelling}>
-                Indietro
+                {t("compenso.back")}
               </Button>
               <Button variant="destructive" onClick={handle_cancel_confirm} disabled={cancelling}>
-                {cancelling ? "..." : "Sì, rimuovi ruolo"}
+                {cancelling ? "..." : t("compenso.confirm_remove_cta")}
               </Button>
             </div>
           </div>
         ) : (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Modalità compenso</Label>
+              <Label>{t("compenso.mode_label")}</Label>
               <RadioGroup value={tipo} onValueChange={(v) => set_tipo(v as TipoContratto)}>
-                {TIPI.map((t) => (
-                  <div key={t.value} className="flex items-center gap-2">
-                    <RadioGroupItem value={t.value} id={`tipo_${t.value}`} />
-                    <Label htmlFor={`tipo_${t.value}`} className="cursor-pointer text-sm font-normal">
-                      {t.label}
+                {TIPI.map((item) => (
+                  <div key={item.value} className="flex items-center gap-2">
+                    <RadioGroupItem value={item.value} id={`tipo_${item.value}`} />
+                    <Label htmlFor={`tipo_${item.value}`} className="cursor-pointer text-sm font-normal">
+                      {t(`compenso.${item.label_key}`)}
                     </Label>
                   </div>
                 ))}
@@ -194,22 +199,22 @@ export const CompensoStaffModal: React.FC<Props> = ({ open, atleta, livello, on_
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              {renderField(show_prezzo_min, "Prezzo vendita (CHF/min)", prezzo_min, set_prezzo_min, "es. 0.50", "0.01", req.prezzo_min)}
-              {renderField(req.fisso_mensile, "Compenso fisso mensile (CHF)", fisso_mensile, set_fisso_mensile, "es. 800", "1")}
-              {renderField(req.costo_corsi, "Costo interno corsi (CHF/h)", costo_corsi, set_costo_corsi, "es. 18", "0.5")}
-              {renderField(req.costo_lezioni, "Costo interno lezioni private (CHF/h)", costo_lezioni, set_costo_lezioni, "es. 20", "0.5")}
+              {renderField(show_prezzo_min, t("compenso.field_prezzo_min"), prezzo_min, set_prezzo_min, t("compenso.field_prezzo_min_ph"), "0.01", req.prezzo_min)}
+              {renderField(req.fisso_mensile, t("compenso.field_fisso_mensile"), fisso_mensile, set_fisso_mensile, t("compenso.field_fisso_mensile_ph"), "1")}
+              {renderField(req.costo_corsi, t("compenso.field_costo_corsi"), costo_corsi, set_costo_corsi, t("compenso.field_costo_corsi_ph"), "0.5")}
+              {renderField(req.costo_lezioni, t("compenso.field_costo_lezioni"), costo_lezioni, set_costo_lezioni, t("compenso.field_costo_lezioni_ph"), "0.5")}
             </div>
 
             <p className="text-xs text-muted-foreground">
-              Solo i campi contrassegnati con * per la modalità scelta sono obbligatori. Gli altri vengono salvati come NULL.
+              {t("compenso.required_note")}
             </p>
 
             <div className="flex justify-between gap-2 pt-2">
               <Button variant="outline" onClick={() => set_confirm_cancel(true)} disabled={saving}>
-                Annulla
+                {t("compenso.cancel")}
               </Button>
               <Button onClick={handle_save} disabled={!can_save || saving} className="bg-primary hover:bg-primary/90">
-                {saving ? "..." : "💾 Salva compenso"}
+                {saving ? "..." : t("compenso.save")}
               </Button>
             </div>
           </div>

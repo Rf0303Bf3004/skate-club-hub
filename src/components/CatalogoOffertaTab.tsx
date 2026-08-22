@@ -10,6 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
+
+const tc = (key: string, opts?: any) => i18n.t(`catalogo.${key}`, { ns: "settings", ...(opts ?? {}) }) as string;
 
 // ── Constants ──
 const LIVELLI_ORDINE = [
@@ -111,6 +115,7 @@ interface Props {
 }
 
 const CatalogoOffertaTab: React.FC<Props> = ({ club_id, stagione_id }) => {
+  const { t } = useTranslation("settings");
   const resolved_club_id = club_id || get_current_club_id() || null;
   const queryClient = useQueryClient();
   const { data: livelli_raw = [], isLoading: loading_livelli } = use_catalogo_livelli(resolved_club_id);
@@ -208,10 +213,10 @@ const CatalogoOffertaTab: React.FC<Props> = ({ club_id, stagione_id }) => {
       const results = await Promise.all(promises);
       const err = results.find((r: any) => r.error);
       if (err?.error) throw err.error;
-      toast({ title: "✅ Parametri per livello salvati" });
+      toast({ title: t("catalogo.toast_levels_saved") });
       queryClient.invalidateQueries({ queryKey: ["catalogo_livelli"] });
     } catch (e: any) {
-      toast({ title: "Errore salvataggio", description: e?.message, variant: "destructive" });
+      toast({ title: t("catalogo.toast_save_error"), description: e?.message, variant: "destructive" });
     } finally {
       set_saving_livelli(false);
     }
@@ -235,10 +240,10 @@ const CatalogoOffertaTab: React.FC<Props> = ({ club_id, stagione_id }) => {
       const results = await Promise.all(promises);
       const err = results.find((r: any) => r.error);
       if (err?.error) throw err.error;
-      toast({ title: "✅ Pacchetti opzionali salvati" });
+      toast({ title: t("catalogo.toast_packages_saved") });
       queryClient.invalidateQueries({ queryKey: ["catalogo_pacchetti_opzionali"] });
     } catch (e: any) {
-      toast({ title: "Errore salvataggio", description: e?.message, variant: "destructive" });
+      toast({ title: t("catalogo.toast_save_error"), description: e?.message, variant: "destructive" });
     } finally {
       set_saving_pacchetti(false);
     }
@@ -269,10 +274,10 @@ const CatalogoOffertaTab: React.FC<Props> = ({ club_id, stagione_id }) => {
         usa_corsie: false,
       });
       if (error) throw error;
-      toast({ title: `✅ Livello "${LIVELLI_LABELS[prossimo] || prossimo}" aggiunto` });
+      toast({ title: t("catalogo.toast_level_added", { livello: LIVELLI_LABELS[prossimo] || prossimo }) });
       queryClient.invalidateQueries({ queryKey: ["catalogo_livelli"] });
     } catch (e: any) {
-      toast({ title: "Errore aggiunta livello", description: e?.message, variant: "destructive" });
+      toast({ title: t("catalogo.toast_add_error"), description: e?.message, variant: "destructive" });
     }
   };
 
@@ -289,19 +294,19 @@ const CatalogoOffertaTab: React.FC<Props> = ({ club_id, stagione_id }) => {
       {/* ═══ Sezione 1 — Parametri per livello ═══ */}
       <div className="bg-card rounded-xl shadow-card p-6 space-y-6">
         <div className="flex items-center justify-between gap-4 flex-wrap">
-          <h2 className="text-lg font-bold text-foreground">📊 Parametri per livello</h2>
+          <h2 className="text-lg font-bold text-foreground">{t("catalogo.section_title")}</h2>
           {livelli.length > 0 && (
             <Button size="sm" variant="outline" onClick={add_livello}>
-              + Aggiungi livello
+              {t("catalogo.add_level")}
             </Button>
           )}
         </div>
 
         {livelli.length === 0 ? (
           <div className="text-center py-8 space-y-3">
-            <p className="text-sm text-muted-foreground italic">Nessun livello configurato</p>
+            <p className="text-sm text-muted-foreground italic">{t("catalogo.empty")}</p>
             <Button onClick={add_livello} className="bg-primary hover:bg-primary/90">
-              + Aggiungi livello
+              {t("catalogo.add_level")}
             </Button>
           </div>
         ) : (
@@ -310,17 +315,17 @@ const CatalogoOffertaTab: React.FC<Props> = ({ club_id, stagione_id }) => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="min-w-[120px]">Livello</TableHead>
-                    <TableHead className="w-[70px]">Iscritti</TableHead>
-                    <TableHead className="w-[80px]">Max pista</TableHead>
-                    <TableHead className="w-[85px]">Max/monitr.</TableHead>
-                    <TableHead className="w-[70px]">Lez/sett</TableHead>
-                    <TableHead className="w-[80px]">Durata (min)</TableHead>
-                    <TableHead className="w-[100px]">Costo annuo</TableHead>
-                    <TableHead className="w-[120px]">Tipo sessione</TableHead>
-                    <TableHead className="w-[80px]">Atl/area</TableHead>
-                    <TableHead className="w-[60px]">Gruppi</TableHead>
-                    <TableHead className="w-[70px]">Ore/sett</TableHead>
+                    <TableHead className="min-w-[120px]">{t("catalogo.col_livello")}</TableHead>
+                    <TableHead className="w-[70px]">{t("catalogo.col_iscritti")}</TableHead>
+                    <TableHead className="w-[80px]">{t("catalogo.col_max_pista")}</TableHead>
+                    <TableHead className="w-[85px]">{t("catalogo.col_max_monitrice")}</TableHead>
+                    <TableHead className="w-[70px]">{t("catalogo.col_lezioni_sett")}</TableHead>
+                    <TableHead className="w-[80px]">{t("catalogo.col_durata")}</TableHead>
+                    <TableHead className="w-[100px]">{t("catalogo.col_costo")}</TableHead>
+                    <TableHead className="w-[120px]">{t("catalogo.col_tipo_sessione")}</TableHead>
+                    <TableHead className="w-[80px]">{t("catalogo.col_atleti_area")}</TableHead>
+                    <TableHead className="w-[60px]">{t("catalogo.col_gruppi")}</TableHead>
+                    <TableHead className="w-[70px]">{t("catalogo.col_ore_sett")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -405,9 +410,9 @@ const CatalogoOffertaTab: React.FC<Props> = ({ club_id, stagione_id }) => {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="standard">Standard</SelectItem>
-                              <SelectItem value="aree_pista">Aree pista</SelectItem>
-                              <SelectItem value="officestripe">Officestripe</SelectItem>
+                              <SelectItem value="standard">{t("catalogo.tipo_standard")}</SelectItem>
+                              <SelectItem value="aree_pista">{t("catalogo.tipo_aree_pista")}</SelectItem>
+                              <SelectItem value="officestripe">{t("catalogo.tipo_officestripe")}</SelectItem>
                             </SelectContent>
                           </Select>
                         </TableCell>
@@ -439,12 +444,12 @@ const CatalogoOffertaTab: React.FC<Props> = ({ club_id, stagione_id }) => {
 
             {/* Riepilogo */}
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-4">
-              <SummaryCard label="Totale iscritti" value={String(summary.tot_iscritti)} />
-              <SummaryCard label="Slot ghiaccio/sett" value={String(summary.tot_slot)} />
-              <SummaryCard label="Ore necessarie" value={`${summary.tot_ore.toFixed(1)}h`} />
-              <SummaryCard label="Ore disponibili" value={`${summary.ore_disponibili}h`} />
+              <SummaryCard label={t("catalogo.summary_iscritti")} value={String(summary.tot_iscritti)} />
+              <SummaryCard label={t("catalogo.summary_slot")} value={String(summary.tot_slot)} />
+              <SummaryCard label={t("catalogo.summary_ore_necessarie")} value={`${summary.tot_ore.toFixed(1)}h`} />
+              <SummaryCard label={t("catalogo.summary_ore_disponibili")} value={`${summary.ore_disponibili}h`} />
               <SummaryCard
-                label="Surplus/deficit"
+                label={t("catalogo.summary_surplus")}
                 value={`${summary.surplus >= 0 ? "+" : ""}${summary.surplus.toFixed(1)}h`}
                 color={summary.surplus >= 0 ? "text-green-600" : "text-red-600"}
               />
@@ -452,7 +457,7 @@ const CatalogoOffertaTab: React.FC<Props> = ({ club_id, stagione_id }) => {
 
             <div className="flex justify-end">
               <Button onClick={save_livelli} disabled={saving_livelli}>
-                {saving_livelli ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Salvataggio...</> : "Salva tutto"}
+                {saving_livelli ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {tc("saving")}</> : tc("save_all")}
               </Button>
             </div>
           </>
