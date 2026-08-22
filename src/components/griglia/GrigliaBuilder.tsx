@@ -868,6 +868,10 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   >(null);
   const [ripeti_sessione, set_ripeti_sessione] = useState<GrigliaSessione | null>(null);
   const [sync_gruppo_ids, set_sync_gruppo_ids] = useState<string[]>([]);
+  const [conflitto_gruppo, set_conflitto_gruppo] = useState<
+    { livello: string; conflitto: ConflittoGruppo } | null
+  >(null);
+
 
   /** Riallinea SOLO gli atleti taggati con quel gruppo alla membership attuale. */
   const sincronizza_gruppo = async (s: GrigliaSessione, gruppo_sessione_id: string) => {
