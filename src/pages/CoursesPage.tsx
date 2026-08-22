@@ -3,6 +3,7 @@ import { Calendar } from "lucide-react";
 import { use_persisted_state } from "@/hooks/use-persisted-state";
 import ConfirmButton from "@/components/common/ConfirmButton";
 import { useI18n } from "@/lib/i18n";
+import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   use_corsi,
@@ -244,6 +245,7 @@ const TipoCorsoSelect: React.FC<{
   tipi: string[];
   on_add_tipo: (nome: string) => Promise<void>;
 }> = ({ value, on_change, tipi, on_add_tipo }) => {
+  const { t } = useTranslation("corsi");
   const [show_aggiungi, set_show_aggiungi] = useState(false);
   const [nuovo_tipo, set_nuovo_tipo] = useState("");
   const [adding, set_adding] = useState(false);
@@ -283,13 +285,13 @@ const TipoCorsoSelect: React.FC<{
           }}
           className={`${input_cls} appearance-none pr-8`}
         >
-          <option value="">Nessun tipo</option>
+          <option value="">{t("tipo_corso.none")}</option>
           {tipi.map((t) => (
             <option key={t} value={t}>
               {t}
             </option>
           ))}
-          <option value="__nuovo__">➕ Aggiungi nuovo tipo...</option>
+          <option value="__nuovo__">➕ {t("tipo_corso.add_new")}</option>
         </select>
         <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
       </div>
@@ -300,7 +302,7 @@ const TipoCorsoSelect: React.FC<{
             value={nuovo_tipo}
             onChange={(e) => set_nuovo_tipo(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handle_aggiungi()}
-            placeholder="Nome nuovo tipo..."
+            placeholder={t("tipo_corso.new_name_placeholder")}
             autoFocus
             className={input_cls}
           />
@@ -310,7 +312,7 @@ const TipoCorsoSelect: React.FC<{
             disabled={adding || !nuovo_tipo.trim()}
             className="bg-primary hover:bg-primary/90 h-8"
           >
-            {adding ? "..." : "Aggiungi"}
+            {adding ? "..." : t("tipo_corso.add")}
           </Button>
           <Button
             size="sm"
@@ -503,14 +505,14 @@ const TabIscrizioni: React.FC<{
           <input
             value={query}
             onChange={(e) => set_query(e.target.value)}
-            placeholder="Filtra per nome..."
+            placeholder={t("iscrizioni.filter_by_name")}
             className="w-full rounded-lg border border-border bg-background pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
         <div className="border border-border rounded-xl overflow-hidden divide-y divide-border/50 max-h-56 overflow-y-auto">
           {atleti_disponibili.length === 0 ? (
             <p className="text-xs text-muted-foreground px-3 py-3 text-center">
-              {query ? "Nessuna atleta trovata" : ha_filtro_livello ? "Nessuna atleta con livello compatibile" : "Tutte le atlete sono già iscritte"}
+              {query ? t("iscrizioni.no_athlete_found") : ha_filtro_livello ? t("iscrizioni.no_compatible_athlete") : t("iscrizioni.all_enrolled")}
             </p>
           ) : (
             atleti_disponibili.map((a: any) => {
@@ -538,7 +540,7 @@ const TabIscrizioni: React.FC<{
                     disabled={saving}
                     className="h-7 text-xs gap-1 flex-shrink-0 text-primary hover:bg-primary/10"
                   >
-                    <UserPlus className="w-3.5 h-3.5" /> Iscrivi
+                    <UserPlus className="w-3.5 h-3.5" /> {t("iscrizioni.enroll")}
                   </Button>
                 </div>
               );
@@ -555,7 +557,7 @@ const TabIscrizioni: React.FC<{
           onClick={() => set_show_salto_search(true)}
           className="w-full text-xs gap-1.5 text-orange-600 border-orange-200 hover:bg-orange-50"
         >
-          <ArrowRightLeft className="w-3.5 h-3.5" /> Iscrivi con salto di livello
+          <ArrowRightLeft className="w-3.5 h-3.5" /> {t("iscrizioni.enroll_with_level_jump")}
         </Button>
       )}
 
@@ -564,7 +566,7 @@ const TabIscrizioni: React.FC<{
         <div className="space-y-2 border border-orange-200 rounded-xl p-3 bg-orange-50/30">
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold text-orange-600 uppercase tracking-wide flex items-center gap-1">
-              <AlertTriangle className="w-3 h-3" /> Salto di livello
+              <AlertTriangle className="w-3 h-3" /> {t("iscrizioni.level_jump_title_short")}
             </p>
             <Button variant="ghost" size="sm" onClick={() => { set_show_salto_search(false); set_salto_query(""); }} className="h-6 w-6 p-0">
               <X className="w-3.5 h-3.5" />
@@ -575,7 +577,7 @@ const TabIscrizioni: React.FC<{
             <input
               value={salto_query}
               onChange={(e) => set_salto_query(e.target.value)}
-              placeholder="Cerca atleta..."
+              placeholder={t("iscrizioni.search_athlete")}
               autoFocus
               className="w-full rounded-lg border border-orange-200 bg-background pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
             />
@@ -583,7 +585,7 @@ const TabIscrizioni: React.FC<{
           <div className="border border-orange-200 rounded-xl overflow-hidden divide-y divide-orange-100 max-h-48 overflow-y-auto">
             {atleti_salto.length === 0 ? (
               <p className="text-xs text-muted-foreground px-3 py-3 text-center">
-                {salto_query ? "Nessuna atleta trovata" : "Nessuna atleta disponibile"}
+                {salto_query ? t("iscrizioni.no_athlete_found") : t("iscrizioni.no_athlete_available")}
               </p>
             ) : (
               atleti_salto.map((a: any) => {
@@ -606,7 +608,7 @@ const TabIscrizioni: React.FC<{
                       disabled={saving}
                       className="h-7 text-xs gap-1 flex-shrink-0 text-orange-600 hover:bg-orange-100"
                     >
-                      <UserPlus className="w-3.5 h-3.5" /> Iscrivi
+                      <UserPlus className="w-3.5 h-3.5" /> {t("iscrizioni.enroll")}
                     </Button>
                   </div>
                 );
@@ -619,10 +621,10 @@ const TabIscrizioni: React.FC<{
       {/* Lista iscritti */}
       <div className="space-y-2">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-          Iscritte ({atleti_iscritti.length})
+          {t("iscrizioni.enrolled_count", { count: atleti_iscritti.length })}
         </p>
         {atleti_iscritti.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">Nessuna atleta iscritta.</p>
+          <p className="text-sm text-muted-foreground text-center py-4">{t("iscrizioni.no_enrolled")}</p>
         ) : (
           <div className="border border-border rounded-xl overflow-hidden divide-y divide-border/50">
             {atleti_iscritti.map((a: any) => (
@@ -665,6 +667,7 @@ const TabMonitori: React.FC<{
   tutti_monitori: any[];
   on_refresh: () => void;
 }> = ({ corso, tutti_monitori, on_refresh }) => {
+  const { t } = useTranslation("corsi");
   const [saving, set_saving] = useState(false);
   const [local_monitori, set_local_monitori] = useState<string[]>(corso.monitori || []);
   const [local_aiuto, set_local_aiuto] = useState<string[]>(corso.aiuto_monitori || []);
@@ -689,7 +692,7 @@ const TabMonitori: React.FC<{
     } catch (err: any) {
       set_local_monitori(corso.monitori || []);
       set_local_aiuto(corso.aiuto_monitori || []);
-      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+      toast({ title: t("monitori.toast_error"), description: err?.message, variant: "destructive" });
     } finally {
       set_saving(false);
     }
@@ -727,7 +730,7 @@ const TabMonitori: React.FC<{
       </div>
       {selected && (
         <Badge variant="default" className="text-[10px]">
-          Assegnato
+          {t("monitori.assigned")}
         </Badge>
       )}
     </div>
@@ -738,7 +741,7 @@ const TabMonitori: React.FC<{
       {monitori.length > 0 && (
         <div className="space-y-2">
           <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
-            Monitori ({local_monitori.length} assegnati)
+            {t("monitori.monitors_count", { count: local_monitori.length })}
           </p>
           <div className="space-y-1.5">
             {monitori.map((m) => (
@@ -750,7 +753,7 @@ const TabMonitori: React.FC<{
       {aiuto_monitori.length > 0 && (
         <div className="space-y-2">
           <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
-            Aiuto monitori ({local_aiuto.length} assegnati)
+            {t("monitori.assistants_count", { count: local_aiuto.length })}
           </p>
           <div className="space-y-1.5">
             {aiuto_monitori.map((m) => (
@@ -761,8 +764,8 @@ const TabMonitori: React.FC<{
       )}
       {monitori.length === 0 && aiuto_monitori.length === 0 && (
         <div className="text-center py-8 text-muted-foreground">
-          <p className="text-sm">Nessun monitore o aiuto monitore registrato.</p>
-          <p className="text-xs mt-1">Vai su Atleti e imposta il ruolo pista a "Monitore" o "Aiuto monitore".</p>
+          <p className="text-sm">{t("monitori.no_monitors")}</p>
+          <p className="text-xs mt-1">{t("monitori.no_monitors_hint")}</p>
         </div>
       )}
     </div>
@@ -776,6 +779,7 @@ const TabPresenze: React.FC<{
   tutti_monitori: any[];
   istruttori: any[];
 }> = ({ corso, tutti_atleti, tutti_monitori, istruttori }) => {
+  const { t } = useTranslation("corsi");
   const [data_sel, set_data_sel] = useState(new Date().toISOString().split("T")[0]);
   const { data: presenze = [] } = use_presenze_corso(corso.id, data_sel);
   const upsert_presenza = use_upsert_presenza_corso();
@@ -804,7 +808,7 @@ const TabPresenze: React.FC<{
         sostituto_id,
       });
     } catch (err: any) {
-      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+      toast({ title: t("presenze.toast_error"), description: err?.message, variant: "destructive" });
     }
   };
 
@@ -830,26 +834,26 @@ const TabPresenze: React.FC<{
   };
 
   const stato_label = (stato: string) =>
-    ({ confermato: "Confermato", assente: "Assente", sostituito: "Sostituito" })[stato] || "In attesa";
+    ({ confermato: t("presenze.status_confirmed"), assente: t("presenze.status_absent"), sostituito: t("presenze.status_substituted") })[stato] || t("presenze.status_waiting");
   const monitori_disponibili_sostituzione = tutti_monitori.filter(
     (m) => !monitori_assegnati.find((ma) => ma.id === m.id),
   );
 
   return (
     <div className="space-y-4">
-      <Field label="Data lezione">
+      <Field label={t("presenze.lesson_date")}>
         <input type="date" value={data_sel} onChange={(e) => set_data_sel(e.target.value)} className={input_cls} />
       </Field>
       {monitori_assegnati.length === 0 ? (
         <div className="text-center py-6 text-muted-foreground">
-          <p className="text-sm">Nessun monitore assegnato a questo corso.</p>
-          <p className="text-xs mt-1">Vai alla tab "Monitori" per assegnarli.</p>
+          <p className="text-sm">{t("presenze.no_monitors_assigned")}</p>
+          <p className="text-xs mt-1">{t("presenze.no_monitors_hint")}</p>
         </div>
       ) : (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
-              Presenze —{" "}
+              {t("presenze.attendance_for")} —{" "}
               {new Date(data_sel + "T00:00:00").toLocaleDateString("de-CH", {
                 weekday: "long",
                 day: "numeric",
@@ -863,23 +867,23 @@ const TabPresenze: React.FC<{
               onClick={() => {
                 const non_confermati = monitori_assegnati.filter((m) => get_stato_persona(m.id) === "attesa");
                 if (non_confermati.length === 0) {
-                  toast({ title: "Tutti hanno già confermato!" });
+                  toast({ title: t("presenze.toast_all_confirmed") });
                   return;
                 }
                 non_confermati.forEach((m) => {
-                  const tipo = (corso.monitori || []).includes(m.id) ? "monitore" : "aiuto monitore";
+                  const tipo = (corso.monitori || []).includes(m.id) ? t("presenze.role_monitor").toLowerCase() : t("presenze.role_assistant").toLowerCase();
                   const link = genera_wa_link(m, tipo);
                   if (link) window.open(link, "_blank");
                 });
               }}
             >
               <MessageCircle className="w-3.5 h-3.5" />
-              Remind tutti ({monitori_assegnati.filter((m) => get_stato_persona(m.id) === "attesa").length})
+              {t("presenze.remind_all", { count: monitori_assegnati.filter((m) => get_stato_persona(m.id) === "attesa").length })}
             </Button>
           </div>
           {monitori_assegnati.map((persona) => {
             const tipo = (corso.monitori || []).includes(persona.id) ? "monitore" : "aiuto_monitore";
-            const tipo_label = tipo === "monitore" ? "Monitore" : "Aiuto monitore";
+            const tipo_label = tipo === "monitore" ? t("presenze.role_monitor") : t("presenze.role_assistant");
             const stato = get_stato_persona(persona.id);
             const sostituto_id = get_sostituto_persona(persona.id);
             const sostituto = sostituto_id ? tutti_monitori.find((m) => m.id === sostituto_id) : null;
@@ -917,7 +921,7 @@ const TabPresenze: React.FC<{
                       onClick={() => handle_set_stato(persona.id, tipo as any, s as any)}
                       className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all border ${stato === s ? (s === "confermato" ? "bg-success text-white border-success" : s === "assente" ? "bg-destructive text-white border-destructive" : "bg-muted text-foreground border-border") : "bg-background text-muted-foreground border-border hover:border-primary/40"}`}
                     >
-                      {s === "confermato" ? "✅ Confermato" : s === "assente" ? "❌ Assente" : "⏳ In attesa"}
+                      {s === "confermato" ? `✅ ${t("presenze.status_confirmed")}` : s === "assente" ? `❌ ${t("presenze.status_absent")}` : `⏳ ${t("presenze.status_waiting")}`}
                     </button>
                   ))}
                   {wa_link && (
@@ -927,7 +931,7 @@ const TabPresenze: React.FC<{
                       rel="noopener noreferrer"
                       className="px-2.5 py-1 rounded-lg text-xs font-medium border border-green-300 text-green-700 hover:bg-green-50 transition-all flex items-center gap-1"
                     >
-                      <MessageCircle className="w-3 h-3" /> WhatsApp
+                      <MessageCircle className="w-3 h-3" /> {t("presenze.whatsapp")}
                     </a>
                   )}
                 </div>
@@ -938,7 +942,7 @@ const TabPresenze: React.FC<{
                         <div className="flex items-center gap-2">
                           <ArrowRightLeft className="w-3.5 h-3.5 text-orange-500" />
                           <span className="text-xs text-foreground">
-                            Sostituto:{" "}
+                            {t("presenze.substitute")}:{" "}
                             <strong>
                               {sostituto.nome} {sostituto.cognome}
                             </strong>
@@ -948,12 +952,12 @@ const TabPresenze: React.FC<{
                           onClick={() => handle_set_stato(persona.id, tipo as any, "assente", undefined)}
                           className="text-xs text-destructive hover:underline"
                         >
-                          Rimuovi
+                          {t("presenze.remove")}
                         </button>
                       </div>
                     ) : (
                       <div className="space-y-1.5">
-                        <p className="text-xs font-semibold text-muted-foreground">Assegna sostituto</p>
+                        <p className="text-xs font-semibold text-muted-foreground">{t("presenze.assign_substitute")}</p>
                         <select
                           onChange={(e) => {
                             if (e.target.value) handle_set_stato(persona.id, tipo as any, "sostituito", e.target.value);
@@ -961,7 +965,7 @@ const TabPresenze: React.FC<{
                           defaultValue=""
                           className={`${input_cls} text-xs py-1.5`}
                         >
-                          <option value="">Seleziona sostituto...</option>
+                          <option value="">{t("presenze.select_substitute")}</option>
                           {monitori_disponibili_sostituzione.map((m) => (
                             <option key={m.id} value={m.id}>
                               {m.nome} {m.cognome}
@@ -1001,6 +1005,7 @@ export const GrigliaFasceGhiaccio: React.FC<{
   on_select_istruttore: (id: string) => void;
   istruttori_ids_sel: string[];
 }> = ({ giorno, corso_id, istruttori, corsi, ora_inizio_sel, ora_fine_sel, on_select_fascia, on_select_istruttore, istruttori_ids_sel }) => {
+  const { t } = useTranslation("corsi");
   // Durata corrente (in minuti) per generare gli slot. Default 60 oppure derivata
   // dall'orario già scelto (utile in modifica). Pulsanti rapidi 45/60/90 + input libero.
   const [durata_sel, set_durata_sel] = useState<number>(() => {
@@ -1127,7 +1132,7 @@ export const GrigliaFasceGhiaccio: React.FC<{
       <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 mt-1">
         <div className="flex items-center gap-2">
           <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0" />
-          <p className="text-xs text-orange-700">Nessuna fascia ghiaccio configurata per {giorno}. Vai in Configurazione Club per configurarla.</p>
+          <p className="text-xs text-orange-700">{t("griglia.no_ice_slot", { giorno })}</p>
         </div>
       </div>
     );
@@ -1139,7 +1144,7 @@ export const GrigliaFasceGhiaccio: React.FC<{
     <div className="space-y-3 mt-1">
       {/* Durata selector */}
       <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Durata corso</label>
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("griglia.course_duration")}</label>
         <div className="flex flex-wrap gap-2 items-center">
           {durate_preset.map((d) => (
             <button
@@ -1152,7 +1157,7 @@ export const GrigliaFasceGhiaccio: React.FC<{
                   : "border-border bg-card hover:bg-accent hover:border-primary/40"
               }`}
             >
-              {d} min
+              {d} {t("griglia.min")}
             </button>
           ))}
           <div className="inline-flex items-center gap-1 rounded-lg border-2 border-border px-2 py-1">
@@ -1174,7 +1179,7 @@ export const GrigliaFasceGhiaccio: React.FC<{
               }}
               placeholder="—"
             />
-            <span className="text-xs text-muted-foreground">min custom</span>
+            <span className="text-xs text-muted-foreground">{t("griglia.custom_min")}</span>
           </div>
         </div>
       </div>
@@ -1182,7 +1187,7 @@ export const GrigliaFasceGhiaccio: React.FC<{
       {/* Fasce ghiaccio + slot tiles */}
       <div className="space-y-1.5">
         <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-          Slot proponibili — {giorno} (ghiaccio condiviso)
+          {t("griglia.suggested_slots", { giorno })}
         </label>
         <div className="space-y-2">
           {fasce_with_tiles.map((f: any, idx: number) => (
@@ -1193,13 +1198,13 @@ export const GrigliaFasceGhiaccio: React.FC<{
                 </span>
                 {f.occupanti.length > 0 && (
                   <span className="text-[10px] text-muted-foreground">
-                    {f.occupanti.length} corso/i già in pista
+                    {t("griglia.courses_on_ice", { count: f.occupanti.length })}
                   </span>
                 )}
               </div>
               {f.tiles.length === 0 ? (
                 <p className="text-xs text-muted-foreground italic">
-                  Durata {durata_sel}′ non entra nella fascia.
+                  {t("griglia.duration_not_fit", { durata: durata_sel })}
                 </p>
               ) : (
                 <div className="flex flex-wrap gap-1.5">
@@ -1227,7 +1232,7 @@ export const GrigliaFasceGhiaccio: React.FC<{
               {f.occupanti.length > 0 && (
                 <div className="mt-2 pt-2 border-t border-dashed border-border/60 space-y-0.5">
                   <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
-                    Già in pista (info, non blocca):
+                    {t("griglia.already_on_ice")}
                   </p>
                   {f.occupanti.map((o: any, j: number) => (
                     <p key={j} className="text-xs text-muted-foreground">
@@ -1243,7 +1248,7 @@ export const GrigliaFasceGhiaccio: React.FC<{
         </div>
         {ora_inizio_sel && ora_fine_sel && (
           <p className="text-xs font-medium text-primary">
-            Orario selezionato: {ora_inizio_sel} – {ora_fine_sel}
+            {t("griglia.selected_time", { ora_inizio: ora_inizio_sel, ora_fine: ora_fine_sel })}
           </p>
         )}
       </div>
@@ -1254,7 +1259,7 @@ export const GrigliaFasceGhiaccio: React.FC<{
       {ora_inizio_sel && ora_fine_sel && (
         <div className="sticky bottom-0 z-20 -mx-1 space-y-1.5 rounded-xl border-2 border-primary/30 bg-card/95 backdrop-blur-sm p-3 shadow-lg">
           <label className="text-xs font-semibold text-primary uppercase tracking-wide">
-            Istruttori disponibili — {ora_inizio_sel}–{ora_fine_sel}
+            {t("griglia.available_instructors", { ora_inizio: ora_inizio_sel, ora_fine: ora_fine_sel })}
           </label>
           <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
             {istruttori_status.map((i: any) => {
@@ -1266,11 +1271,11 @@ export const GrigliaFasceGhiaccio: React.FC<{
                   <div
                     key={i.id}
                     className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium border-2 border-border bg-muted/40 opacity-60 cursor-not-allowed"
-                    title={`Occupato in "${i.conflitto_nome ?? '—'}"`}
+                    title={t("griglia.occupied_in", { corso: i.conflitto_nome ?? "—" })}
                   >
                     <span className="w-3 h-3 rounded-full flex-shrink-0 bg-muted-foreground/30" />
                     <span className="text-muted-foreground">{i.nome} {i.cognome}</span>
-                    <span className="text-[9px] text-muted-foreground">(occupato{i.conflitto_nome ? ` in ${i.conflitto_nome}` : ""})</span>
+                    <span className="text-[9px] text-muted-foreground">({t("griglia.occupied")}{i.conflitto_nome ? ` ${t("griglia.in")} ${i.conflitto_nome}` : ""})</span>
                   </div>
                 );
               }
@@ -1281,7 +1286,7 @@ export const GrigliaFasceGhiaccio: React.FC<{
                     key={i.id}
                     type="button"
                     onClick={() => on_select_istruttore(i.id)}
-                    title="Fuori dalla disponibilità dichiarata — il corso resterà segnalato come incompleto"
+                    title={t("griglia.outside_availability_tooltip")}
                     className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium cursor-pointer transition-all border-2 border-dashed ${
                       selected
                         ? "border-amber-500 bg-amber-100 text-amber-900"
@@ -1290,7 +1295,7 @@ export const GrigliaFasceGhiaccio: React.FC<{
                   >
                     <AlertTriangle className="w-3 h-3 flex-shrink-0" />
                     {i.nome} {i.cognome}
-                    <span className="text-[9px] opacity-80">(fuori disponibilità)</span>
+                    <span className="text-[9px] opacity-80">({t("griglia.outside_availability")})</span>
                     {selected && <span className="text-[10px] font-bold">✓</span>}
                   </button>
                 );
@@ -1315,7 +1320,7 @@ export const GrigliaFasceGhiaccio: React.FC<{
               );
             })}
             {istruttori_status.length === 0 && (
-              <p className="text-xs text-muted-foreground">Seleziona una fascia ghiaccio per vedere la disponibilità.</p>
+              <p className="text-xs text-muted-foreground">{t("griglia.select_slot_hint")}</p>
             )}
           </div>
         </div>

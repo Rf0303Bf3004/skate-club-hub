@@ -5,7 +5,14 @@
     "list": "Comunicazioni",
     "conversations": "Conversazioni",
     "reminders": "I miei reminder",
-    "rules": "Regole automatiche"
+    "rules": "Regole automatiche",
+    "sent_emoji": "✉️ Inviate",
+    "received_emoji": "📥 Ricevute",
+    "unread_count_one": "{{count}} non letta",
+    "unread_count_other": "{{count}} non lette",
+    "my_reminders_emoji": "🔔 I miei reminder",
+    "conversations_emoji": "🔁 Conversazioni",
+    "archive_emoji": "📦 Archivio"
   },
   "form": {
     "title": "Titolo",
@@ -13,7 +20,8 @@
     "recipients": "Destinatari",
     "linked_event_type": "Tipo evento collegato",
     "send_now": "Invia subito comunicazione alle famiglie",
-    "linked_event_hint": "La comunicazione verrà collegata all'evento: l'app mobile mostrerà il bottone \"Iscriviti\" inline."
+    "linked_event_hint": "La comunicazione verrà collegata all'evento: l'app mobile mostrerà il bottone \"Iscriviti\" inline.",
+    "date": "Data"
   },
   "recipients": {
     "all_club": "Tutto il club",
@@ -30,5 +38,104 @@
     "competition": "Gara",
     "gala": "Galà / Evento straordinario",
     "level_test": "Test livello"
+  },
+  "templates": {
+    "benvenuto": {
+      "nome": "Benvenuto stagione",
+      "titolo": "Benvenuto alla stagione {anno}!",
+      "testo": "Siamo felici di darvi il benvenuto alla nuova stagione sportiva {anno}. Il calendario corsi è disponibile nell'app. Per qualsiasi informazione non esitate a contattarci."
+    },
+    "corso_annullato": {
+      "nome": "Corso annullato",
+      "titolo": "Corso annullato — {data}",
+      "testo": "Vi informiamo che il corso {nome_corso} di {data} è annullato. Ci scusiamo per l'inconveniente."
+    },
+    "pista_chiusa": {
+      "nome": "Pista chiusa",
+      "titolo": "Pista chiusa — {data}",
+      "testo": "La pista sarà chiusa {data} per {motivo}. Tutti i corsi previsti sono annullati."
+    },
+    "gara": {
+      "nome": "Comunicazione gara",
+      "titolo": "Gara — {nome_gara}",
+      "testo": "Vi ricordiamo la gara {nome_gara} in programma il {data} a {luogo}."
+    },
+    "cambio_orario": {
+      "nome": "Cambio orario",
+      "titolo": "Cambio orario — {corso}",
+      "testo": "Il corso {corso} cambia orario: dal {data} si terrà alle {nuovo_orario} invece di {vecchio_orario}."
+    }
+  },
+  "placeholder_labels": {
+    "anno": "Anno (es. 2026)",
+    "data": "Data",
+    "nome_corso": "Nome corso",
+    "motivo": "Motivo",
+    "nome_gara": "Nome gara",
+    "luogo": "Luogo",
+    "corso": "Nome corso",
+    "nuovo_orario": "Nuovo orario",
+    "vecchio_orario": "Vecchio orario"
+  },
+  "level_labels": {
+    "pulcini_only": "Solo Pulcini",
+    "stellina_1_plus": "Stellina 1 in su",
+    "bronzo_plus": "Bronzo in su",
+    "argento_plus": "Argento in su",
+    "oro_plus": "Oro"
+  },
+  "destinatari": {
+    "course_label": "Corso: {{name}}",
+    "agonisti": "Agonisti",
+    "agoniste": "Atlete che gareggiano",
+    "solo_staff": "Solo staff",
+    "per_livello": "Per livello",
+    "manuale": "Selezione filtrata",
+    "per_corsi": "Per corsi",
+    "per_giorno": "Per giorno",
+    "per_istruttore": "Per istruttore",
+    "corso_fallback": "Corso",
+    "private_lesson": "Lezione privata"
+  },
+  "empty": {
+    "sent": "Nessun messaggio inviato.",
+    "received": "Nessun messaggio ricevuto.",
+    "archive": "Nessun messaggio in archivio."
+  },
+  "dialog": {
+    "athletes_suffix": "atleti",
+    "start_from": "Parti da",
+    "custom_communication": "Comunicazione personalizzata",
+    "fill_fields": "Compila i campi",
+    "urgent": "Urgente",
+    "urgent_hint": "Sarà mostrata come banner urgente nell'app dell'atleta",
+    "specific_athletes": "Atleti specifici",
+    "by_day_option": "Per giorno (data specifica)",
+    "courses_selected_count_one": "{{count}} corso selezionato",
+    "courses_selected_count_other": "{{count}} corsi selezionati",
+    "select_courses": "Seleziona uno o più corsi",
+    "select_all": "Seleziona tutti",
+    "deselect_all": "Deseleziona tutti",
+    "search_course": "Cerca corso...",
+    "no_course_found": "Nessun corso trovato.",
+    "select_date": "Seleziona data",
+    "instructor": "Istruttore",
+    "select_instructor": "Seleziona istruttore",
+    "recipient_level": "Livello destinatari",
+    "level_pulcini_only": "Solo Pulcini (comunicazioni operative)",
+    "level_filter_hint": "Il filtro usa il livello tecnico massimo dell'atleta (artistico o stile). I Pulcini ricevono solo se selezioni esplicitamente \"Solo Pulcini\".",
+    "search_athlete_placeholder": "Cerca per nome o cognome…",
+    "clear_search": "Pulisci ricerca",
+    "deselect": "Deseleziona",
+    "no_athlete_found": "Nessun atleta trovato.",
+    "athletes_selected_count_one": "{{count}} atleta selezionato",
+    "athletes_selected_count_other": "{{count}} atleti selezionati",
+    "recipients_preview_summary": "{{selected}} di {{total}} atleti riceveranno la comunicazione",
+    "all": "Tutti",
+    "none": "Nessuno",
+    "cancel": "Annulla",
+    "send_now": "Invia ora",
+    "view_recipients": "Vedi destinatari",
+    "send": "Invia"
   }
 }

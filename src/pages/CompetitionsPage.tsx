@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useSearchParams, useParams, useNavigate } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
+import { useTranslation } from "react-i18next";
 import { use_gare, use_atleti, get_atleta_name_from_list, use_corsi } from "@/hooks/use-supabase-data";
 import ImportGaraPdf from "@/components/ImportGaraPdf";
 import { days_until } from "@/lib/mock-data";
@@ -41,6 +42,7 @@ import {
   type ComunicazioneFormState,
 } from "@/components/comunicazioni/ComunicazioneFormSection";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import i18n from "@/i18n";
 
 const LIVELLI = [
   "Pulcini",
@@ -65,12 +67,12 @@ function is_passata(data: string): boolean {
 
 function countdown_label(data: string): { testo: string; colore: string } {
   const giorni = days_until(data);
-  if (giorni < 0) return { testo: "Passata", colore: "text-muted-foreground" };
-  if (giorni === 0) return { testo: "🔴 Oggi!", colore: "text-destructive font-bold" };
-  if (giorni === 1) return { testo: "⚡ Domani", colore: "text-orange-500 font-bold" };
-  if (giorni <= 7) return { testo: `⏰ ${giorni} giorni`, colore: "text-orange-500" };
-  if (giorni <= 30) return { testo: `📅 ${giorni} giorni`, colore: "text-primary" };
-  return { testo: `${giorni} giorni`, colore: "text-muted-foreground" };
+  if (giorni < 0) return { testo: i18n.t("competitions.past_badge", { ns: "events" }), colore: "text-muted-foreground" };
+  if (giorni === 0) return { testo: i18n.t("competitions.today_countdown", { ns: "events" }), colore: "text-destructive font-bold" };
+  if (giorni === 1) return { testo: i18n.t("competitions.tomorrow_countdown", { ns: "events" }), colore: "text-orange-500 font-bold" };
+  if (giorni <= 7) return { testo: i18n.t("competitions.week_countdown", { ns: "events", count: giorni }), colore: "text-orange-500" };
+  if (giorni <= 30) return { testo: i18n.t("competitions.month_countdown", { ns: "events", count: giorni }), colore: "text-primary" };
+  return { testo: i18n.t("competitions.days_countdown", { ns: "events", count: giorni }), colore: "text-muted-foreground" };
 }
 
 // ─── NumInput ──────────────────────────────────────────────
@@ -207,6 +209,7 @@ const CountdownBadge: React.FC<{ data: string }> = ({ data }) => {
 // ─── Modal nuova gara ──────────────────────────────────────
 const GaraModal: React.FC<{ onClose: () => void; gara_iniziale?: any | null }> = ({ onClose, gara_iniziale }) => {
   const { t } = useI18n();
+  const { t: te } = useTranslation("events");
   const queryClient = useQueryClient();
   const is_edit = !!gara_iniziale?.id;
   const [form, set_form] = useState<GaraFormData>(() => {
@@ -262,8 +265,8 @@ const GaraModal: React.FC<{ onClose: () => void; gara_iniziale?: any | null }> =
   const handle_submit = async () => {
     if (!form.nome.trim() || !form.data || !form.localita.trim()) {
       toast({
-        title: "Campi obbligatori mancanti",
-        description: "Nome, data e località sono obbligatori.",
+        title: te("competitions.missing_fields_title"),
+        description: te("competitions.missing_fields_description"),
         variant: "destructive",
       });
       return;
@@ -307,11 +310,11 @@ const GaraModal: React.FC<{ onClose: () => void; gara_iniziale?: any | null }> =
             state: com_state,
             fk: { gara_id: nuova_gara_id },
           });
-          toast({ title: `Comunicazione inviata${count ? ` a ${count} destinatari` : ""}` });
+          toast({ title: count ? te("competitions.communication_sent_with_count", { count }) : te("competitions.communication_sent_title") });
           await queryClient.invalidateQueries({ queryKey: ["comunicazioni"] });
         } catch (com_err: any) {
           toast({
-            title: "Gara creata, ma comunicazione fallita",
+            title: te("competitions.communication_failed_title"),
             description: com_err?.message ?? "",
             variant: "destructive",
           });
@@ -319,12 +322,12 @@ const GaraModal: React.FC<{ onClose: () => void; gara_iniziale?: any | null }> =
       }
 
       await queryClient.invalidateQueries({ queryKey: ["gare"] });
-      toast({ title: is_edit ? "Gara aggiornata!" : "Gara creata con successo!" });
+      toast({ title: is_edit ? te("competitions.updated_title") : te("competitions.created_title") });
       onClose();
     } catch (err: any) {
       toast({
-        title: "Errore durante il salvataggio",
-        description: err?.message ?? "Controlla la console.",
+        title: te("competitions.save_error_title"),
+        description: err?.message ?? te("competitions.save_error_fallback"),
         variant: "destructive",
       });
     } finally {
@@ -347,7 +350,7 @@ const GaraModal: React.FC<{ onClose: () => void; gara_iniziale?: any | null }> =
               name="nome"
               value={form.nome}
               onChange={handle_change}
-              placeholder="es. Trofeo Invernale 2025"
+              placeholder={te("competitions.name_placeholder")}
               className={input_cls}
             />
           </Field>
@@ -364,7 +367,7 @@ const GaraModal: React.FC<{ onClose: () => void; gara_iniziale?: any | null }> =
               name="localita"
               value={form.localita}
               onChange={handle_change}
-              placeholder="es. Lugano"
+              placeholder={te("competitions.location_placeholder")}
               className={input_cls}
             />
           </Field>
@@ -373,7 +376,7 @@ const GaraModal: React.FC<{ onClose: () => void; gara_iniziale?: any | null }> =
               name="indirizzo"
               value={form.indirizzo}
               onChange={handle_change}
-              placeholder="es. Via Trevano 12, Lugano"
+              placeholder={te("competitions.address_placeholder")}
               className={input_cls}
             />
           </Field>
@@ -382,7 +385,7 @@ const GaraModal: React.FC<{ onClose: () => void; gara_iniziale?: any | null }> =
               name="club_ospitante"
               value={form.club_ospitante}
               onChange={handle_change}
-              placeholder="es. ASD Ghiaccio Milano"
+              placeholder={te("competitions.host_club_placeholder")}
               className={input_cls}
             />
           </Field>
@@ -418,7 +421,7 @@ const GaraModal: React.FC<{ onClose: () => void; gara_iniziale?: any | null }> =
                   value={form.costo_iscrizione}
                   onChange={(v) => upd("costo_iscrizione", v)}
                   className="pl-11"
-                  placeholder="es. 50"
+                  placeholder={te("competitions.registration_cost_placeholder")}
                 />
               </div>
             </Field>
@@ -431,7 +434,7 @@ const GaraModal: React.FC<{ onClose: () => void; gara_iniziale?: any | null }> =
                   value={form.costo_accompagnamento}
                   onChange={(v) => upd("costo_accompagnamento", v)}
                   className="pl-11"
-                  placeholder="es. 30"
+                  placeholder={te("competitions.companion_cost_placeholder")}
                 />
               </div>
             </Field>
@@ -443,7 +446,7 @@ const GaraModal: React.FC<{ onClose: () => void; gara_iniziale?: any | null }> =
               value={form.note}
               onChange={handle_change}
               rows={3}
-              placeholder="Note aggiuntive..."
+              placeholder={te("competitions.note_placeholder")}
               className={`${input_cls} resize-none`}
             />
           </Field>
@@ -468,7 +471,7 @@ const GaraModal: React.FC<{ onClose: () => void; gara_iniziale?: any | null }> =
                 {t("salvataggio")}…
               </span>
             ) : !is_edit && com_state.invia ? (
-              <span className="flex items-center gap-2"><Send className="w-4 h-4" /> Crea e comunica</span>
+              <span className="flex items-center gap-2"><Send className="w-4 h-4" /> {te("competitions.create_and_communicate")}</span>
             ) : (
               t("salva")
             )}
@@ -486,6 +489,8 @@ const IscrizioneModal: React.FC<{
   atleti_gia_iscritti: string[];
   on_close: () => void;
 }> = ({ gara, atleti, atleti_gia_iscritti, on_close }) => {
+  const { t: te } = useTranslation("events");
+  const { t: tc } = useI18n();
   const queryClient = useQueryClient();
   const [atleta_id, set_atleta_id] = useState("");
   const [carriera, set_carriera] = useState("Artistica");
@@ -494,7 +499,7 @@ const IscrizioneModal: React.FC<{
 
   const handle_submit = async () => {
     if (!atleta_id) {
-      toast({ title: "Seleziona un atleta", variant: "destructive" });
+      toast({ title: te("competitions.select_athlete_toast"), variant: "destructive" });
       return;
     }
     set_saving(true);
@@ -508,10 +513,10 @@ const IscrizioneModal: React.FC<{
       });
       if (error) throw error;
       await queryClient.invalidateQueries({ queryKey: ["gare"] });
-      toast({ title: "✅ Atleta iscritto alla gara" });
+      toast({ title: te("competitions.athlete_registered_toast") });
       on_close();
     } catch (err: any) {
-      toast({ title: "Errore iscrizione", description: err?.message, variant: "destructive" });
+      toast({ title: te("competitions.registration_error_toast"), description: err?.message, variant: "destructive" });
     } finally {
       set_saving(false);
     }
@@ -521,15 +526,15 @@ const IscrizioneModal: React.FC<{
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-          <h2 className="text-base font-bold text-foreground">Iscrivi atleta</h2>
+          <h2 className="text-base font-bold text-foreground">{te("competitions.register_athlete_title")}</h2>
           <button onClick={on_close} className="text-muted-foreground hover:text-foreground">
             <X className="w-5 h-5" />
           </button>
         </div>
         <div className="px-6 py-5 space-y-4">
-          <Field label="Atleta *">
+          <Field label={`${te("competitions.athlete_label")} *`}>
             <select value={atleta_id} onChange={(e) => set_atleta_id(e.target.value)} className={input_cls}>
-              <option value="">Seleziona atleta...</option>
+              <option value="">{te("competitions.select_athlete_placeholder")}</option>
               {atleti_disponibili.map((a: any) => (
                 <option key={a.id} value={a.id}>
                   {a.nome} {a.cognome}
@@ -537,7 +542,7 @@ const IscrizioneModal: React.FC<{
               ))}
             </select>
           </Field>
-          <Field label="Carriera">
+          <Field label={te("competitions.career_label")}>
             <select value={carriera} onChange={(e) => set_carriera(e.target.value)} className={input_cls}>
               {CARRIERE.map((c) => (
                 <option key={c} value={c}>
@@ -549,10 +554,10 @@ const IscrizioneModal: React.FC<{
         </div>
         <div className="flex justify-end gap-3 px-6 py-4 border-t border-border">
           <Button variant="outline" onClick={on_close} disabled={saving}>
-            Annulla
+            {tc("annulla")}
           </Button>
           <Button onClick={handle_submit} disabled={saving || !atleta_id} className="bg-primary hover:bg-primary/90">
-            {saving ? "..." : "Iscrivi"}
+            {saving ? "..." : te("competitions.register_button")}
           </Button>
         </div>
       </div>
@@ -566,6 +571,8 @@ const RisultatoModal: React.FC<{
   atleta_nome: string;
   on_close: () => void;
 }> = ({ iscrizione, atleta_nome, on_close }) => {
+  const { t: te } = useTranslation("events");
+  const { t: tc } = useI18n();
   const queryClient = useQueryClient();
   const [form, set_form] = useState({
     posizione: iscrizione.posizione ?? "",
@@ -595,10 +602,10 @@ const RisultatoModal: React.FC<{
         .eq("id", iscrizione.id);
       if (error) throw error;
       await queryClient.invalidateQueries({ queryKey: ["gare"] });
-      toast({ title: "✅ Risultato salvato" });
+      toast({ title: te("competitions.result_saved_toast") });
       on_close();
     } catch (err: any) {
-      toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
+      toast({ title: te("competitions.save_result_error_toast"), description: err?.message, variant: "destructive" });
     } finally {
       set_saving(false);
     }
@@ -611,7 +618,7 @@ const RisultatoModal: React.FC<{
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <div>
-            <h2 className="text-base font-bold text-foreground">Risultato gara</h2>
+            <h2 className="text-base font-bold text-foreground">{te("competitions.result_modal_title")}</h2>
             <p className="text-xs text-muted-foreground">{atleta_nome}</p>
           </div>
           <button onClick={on_close} className="text-muted-foreground hover:text-foreground">
@@ -620,19 +627,19 @@ const RisultatoModal: React.FC<{
         </div>
         <div className="px-6 py-5 space-y-4">
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Posizione finale">
+            <Field label={te("competitions.final_position_label")}>
               <input
                 type="number"
                 min="1"
                 value={form.posizione}
                 onChange={(e) => set_val("posizione", e.target.value)}
-                placeholder="es. 3"
+                placeholder={te("competitions.final_position_placeholder")}
                 className={input_cls}
               />
             </Field>
-            <Field label="Medaglia">
+            <Field label={te("competitions.medal_label")}>
               <select value={form.medaglia} onChange={(e) => set_val("medaglia", e.target.value)} className={input_cls}>
-                <option value="">Nessuna</option>
+                <option value="">{te("competitions.none_option")}</option>
                 {MEDAGLIE.filter((m) => m).map((m) => (
                   <option key={m} value={m}>
                     {m}
@@ -642,62 +649,62 @@ const RisultatoModal: React.FC<{
             </Field>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Punt. tecnico">
+            <Field label={te("competitions.technical_score_label")}>
               <input
                 type="number"
                 step="0.01"
                 value={form.punteggio_tecnico}
                 onChange={(e) => set_val("punteggio_tecnico", e.target.value)}
-                placeholder="es. 24.50"
+                placeholder={te("competitions.technical_score_placeholder")}
                 className={input_cls}
               />
             </Field>
-            <Field label="Punt. artistico">
+            <Field label={te("competitions.artistic_score_label")}>
               <input
                 type="number"
                 step="0.01"
                 value={form.punteggio_artistico}
                 onChange={(e) => set_val("punteggio_artistico", e.target.value)}
-                placeholder="es. 26.80"
+                placeholder={te("competitions.artistic_score_placeholder")}
                 className={input_cls}
               />
             </Field>
           </div>
-          <Field label="Voto giudici">
+          <Field label={te("competitions.judges_score_label")}>
             <input
               type="number"
               step="0.01"
               value={form.voto_giudici}
               onChange={(e) => set_val("voto_giudici", e.target.value)}
-              placeholder="es. 5.8"
+              placeholder={te("competitions.judges_score_placeholder")}
               className={input_cls}
             />
           </Field>
-          <Field label="Disciplina">
+          <Field label={te("competitions.discipline_label")}>
             <input
               type="text"
               value={form.disciplina}
               onChange={(e) => set_val("disciplina", e.target.value)}
-              placeholder="es. Singolo, Coppia, Danza"
+              placeholder={te("competitions.discipline_placeholder")}
               className={input_cls}
             />
           </Field>
-          <Field label="Note prestazione">
+          <Field label={te("competitions.performance_notes_label")}>
             <textarea
               value={form.note}
               onChange={(e) => set_val("note", e.target.value)}
               rows={2}
-              placeholder="Note sulla prestazione..."
+              placeholder={te("competitions.performance_notes_placeholder")}
               className={`${input_cls} resize-none`}
             />
           </Field>
         </div>
         <div className="flex justify-end gap-3 px-6 py-4 border-t border-border">
           <Button variant="outline" onClick={on_close} disabled={saving}>
-            Annulla
+            {tc("annulla")}
           </Button>
           <Button onClick={handle_save} disabled={saving} className="bg-primary hover:bg-primary/90">
-            {saving ? "..." : "💾 Salva risultato"}
+            {saving ? "..." : te("competitions.save_result_button")}
           </Button>
         </div>
       </div>

@@ -266,7 +266,7 @@ const CommunicationsPage: React.FC = () => {
           .filter((item: any) => item.attiva !== false)
           .map((item: any) => ({
             atleta_id: item.atleta_id,
-            corso_label: corsi_by_id[item.corso_id]?.nome || 'Corso',
+            corso_label: corsi_by_id[item.corso_id]?.nome || t('destinatari.corso_fallback'),
           })),
       );
     }
@@ -304,10 +304,10 @@ const CommunicationsPage: React.FC = () => {
       return merge_rows([
         ...(iscrizioni_res.data ?? [])
           .filter((item: any) => item.attiva !== false)
-          .map((item: any) => ({ atleta_id: item.atleta_id, corso_label: corsi_by_id[item.corso_id]?.nome || 'Corso' })),
+          .map((item: any) => ({ atleta_id: item.atleta_id, corso_label: corsi_by_id[item.corso_id]?.nome || t('destinatari.corso_fallback') })),
         ...(lezioni_atlete_res.data ?? [])
           .filter((item: any) => valid_private_ids.has(item.lezione_id))
-          .map((item: any) => ({ atleta_id: item.atleta_id, corso_label: 'Lezione privata' })),
+          .map((item: any) => ({ atleta_id: item.atleta_id, corso_label: t('destinatari.private_lesson') })),
       ]);
     }
 
@@ -354,10 +354,10 @@ const CommunicationsPage: React.FC = () => {
       return merge_rows([
         ...(iscrizioni_res.data ?? [])
           .filter((item: any) => item.attiva !== false)
-          .map((item: any) => ({ atleta_id: item.atleta_id, corso_label: corsi_by_id[item.corso_id]?.nome || 'Corso' })),
+          .map((item: any) => ({ atleta_id: item.atleta_id, corso_label: corsi_by_id[item.corso_id]?.nome || t('destinatari.corso_fallback') })),
         ...(lezioni_atlete_res.data ?? [])
           .filter((item: any) => valid_private_ids.has(item.lezione_id))
-          .map((item: any) => ({ atleta_id: item.atleta_id, corso_label: 'Lezione privata' })),
+          .map((item: any) => ({ atleta_id: item.atleta_id, corso_label: t('destinatari.private_lesson') })),
       ]);
     }
 
@@ -447,30 +447,30 @@ const CommunicationsPage: React.FC = () => {
   };
 
   const LIVELLO_LABELS: Record<string, string> = {
-    pulcini_only: 'Solo Pulcini',
-    stellina_1_plus: 'Stellina 1 in su',
-    bronzo_plus: 'Bronzo in su',
-    argento_plus: 'Argento in su',
-    oro_plus: 'Oro',
+    pulcini_only: t('level_labels.pulcini_only'),
+    stellina_1_plus: t('level_labels.stellina_1_plus'),
+    bronzo_plus: t('level_labels.bronzo_plus'),
+    argento_plus: t('level_labels.argento_plus'),
+    oro_plus: t('level_labels.oro_plus'),
   };
 
   const get_destinatari_label = (c: any) => {
     const td = c.tipo_destinatari;
-    if (td === 'tutti') return t('tutti');
-    if (td === 'solo_istruttori') return t('solo_istruttori');
+    if (td === 'tutti') return t('recipients.all_club');
+    if (td === 'solo_istruttori') return t('recipients.instructors_only');
     if (td === 'per_corso' || td === 'corso') {
       const corso = corsi.find((co: any) => co.id === c.corso_id);
-      return corso ? `Corso: ${corso.nome}` : t('per_corso');
+      return corso ? t('destinatari.course_label', { name: corso.nome }) : t('recipients.by_course');
     }
-    if (td === 'per_atleta' || td === 'atleta') return t('per_atleta');
-    if (td === 'agonisti') return 'Agonisti';
-    if (td === 'agoniste') return 'Atlete che gareggiano';
-    if (td === 'solo_staff') return 'Solo staff';
-    if (td === 'per_livello') return 'Per livello';
-    if (td === 'manuale') return 'Selezione filtrata';
-    if (td === 'per_corsi') return 'Per corsi';
-    if (td === 'per_giorno') return 'Per giorno';
-    if (td === 'per_istruttore') return 'Per istruttore';
+    if (td === 'per_atleta' || td === 'atleta') return t('recipients.by_athlete');
+    if (td === 'agonisti') return t('destinatari.agonisti');
+    if (td === 'agoniste') return t('destinatari.agoniste');
+    if (td === 'solo_staff') return t('destinatari.solo_staff');
+    if (td === 'per_livello') return t('destinatari.per_livello');
+    if (td === 'manuale') return t('destinatari.manuale');
+    if (td === 'per_corsi') return t('destinatari.per_corsi');
+    if (td === 'per_giorno') return t('destinatari.per_giorno');
+    if (td === 'per_istruttore') return t('destinatari.per_istruttore');
     return td || '—';
   };
 
@@ -572,36 +572,36 @@ const CommunicationsPage: React.FC = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold tracking-tight text-foreground">{t('comunicazioni')}</h1>
-        <Button className="bg-primary hover:bg-primary/90" onClick={open_new}><Plus className="w-4 h-4 mr-2" /> {t('nuova_comunicazione')}</Button>
+        <h1 className="text-xl font-bold tracking-tight text-foreground">{t('title')}</h1>
+        <Button className="bg-primary hover:bg-primary/90" onClick={open_new}><Plus className="w-4 h-4 mr-2" /> {t('new')}</Button>
       </div>
 
       <Tabs defaultValue={non_lette_count > 0 ? 'ricevute' : 'inviate'} className="w-full">
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="inviate" className="gap-2">
-            <Send className="w-4 h-4" /> ✉️ Inviate
+            <Send className="w-4 h-4" /> {t('tabs.sent_emoji')}
             <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">{inviate.length}</Badge>
           </TabsTrigger>
           <TabsTrigger value="ricevute" className="gap-2">
-            <Inbox className="w-4 h-4" /> 📥 Ricevute
+            <Inbox className="w-4 h-4" /> {t('tabs.received_emoji')}
             <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">{ricevute.length}</Badge>
             {non_lette_count > 0 && (
-              <Badge variant="destructive" className="ml-1 h-5 min-w-5 px-1.5 text-[10px]">{non_lette_count} non lette</Badge>
+              <Badge variant="destructive" className="ml-1 h-5 min-w-5 px-1.5 text-[10px]">{t('tabs.unread_count', { count: non_lette_count })}</Badge>
             )}
           </TabsTrigger>
           {can_see_miei_reminder_staff && (
             <TabsTrigger value="miei_reminder" className="gap-2">
-              <Bell className="w-4 h-4" /> 🔔 I miei reminder
+              <Bell className="w-4 h-4" /> {t('tabs.my_reminders_emoji')}
             </TabsTrigger>
           )}
           {can_see_all && (
             <TabsTrigger value="conversazioni" className="gap-2">
-              <MessageSquare className="w-4 h-4" /> 🔁 Conversazioni
+              <MessageSquare className="w-4 h-4" /> {t('tabs.conversations_emoji')}
             </TabsTrigger>
           )}
           {can_see_all && (
             <TabsTrigger value="archivio" className="gap-2">
-              <Archive className="w-4 h-4" /> 📦 Archivio
+              <Archive className="w-4 h-4" /> {t('tabs.archive_emoji')}
               <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">{archivio.length}</Badge>
             </TabsTrigger>
           )}
@@ -613,7 +613,7 @@ const CommunicationsPage: React.FC = () => {
             mode="attive"
             get_destinatari_label={get_destinatari_label}
             get_data_label={get_data_label}
-            empty_text="Nessun messaggio inviato."
+            empty_text={t('empty.sent')}
           />
         </TabsContent>
 
@@ -625,7 +625,7 @@ const CommunicationsPage: React.FC = () => {
             get_destinatari_label={get_destinatari_label}
             get_data_label={get_data_label}
             on_open={(c) => { if (c.categoria === 'ricevuta' && !c.letta) void mark_letta(c.id); }}
-            empty_text="Nessun messaggio ricevuto."
+            empty_text={t('empty.received')}
           />
         </TabsContent>
 
@@ -649,7 +649,7 @@ const CommunicationsPage: React.FC = () => {
               stagioni={stagioni}
               get_destinatari_label={get_destinatari_label}
               get_data_label={get_data_label}
-              empty_text="Nessun messaggio in archivio."
+              empty_text={t('empty.archive')}
             />
           </TabsContent>
         )}
@@ -661,13 +661,13 @@ const CommunicationsPage: React.FC = () => {
       <Dialog open={modal_open} onOpenChange={(o) => !o && set_modal_open(false)}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{t('nuova_comunicazione')}</DialogTitle>
+            <DialogTitle>{t('new')}</DialogTitle>
           </DialogHeader>
 
           {step === 'form' && (
             <div className="space-y-4">
               <div>
-                <Label className="text-xs">Parti da</Label>
+                <Label className="text-xs">{t('dialog.start_from')}</Label>
                 <Select
                   value={selected_template ? selected_template.id : 'custom'}
                   onValueChange={(v) => {
@@ -678,7 +678,7 @@ const CommunicationsPage: React.FC = () => {
                 >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="custom">Comunicazione personalizzata</SelectItem>
+                    <SelectItem value="custom">{t('dialog.custom_communication')}</SelectItem>
                     {TEMPLATES.map((tpl) => (
                       <SelectItem key={tpl.id} value={tpl.id}>{tpl.nome}</SelectItem>
                     ))}
@@ -689,7 +689,7 @@ const CommunicationsPage: React.FC = () => {
               {/* Placeholder inputs */}
               {selected_template && selected_template.placeholders.length > 0 && (
                 <div className="space-y-2 p-3 bg-muted/30 rounded-xl">
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Compila i campi</p>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">{t('dialog.fill_fields')}</p>
                   {selected_template.placeholders.map((ph) => (
                     <div key={ph}>
                       <Label className="text-xs">{PLACEHOLDER_LABELS[ph] || ph}</Label>
@@ -704,7 +704,7 @@ const CommunicationsPage: React.FC = () => {
               )}
 
               <div>
-                <Label className="text-xs">Titolo</Label>
+                <Label className="text-xs">{t('form.title')}</Label>
                 <Input value={selected_template ? titolo_preview : titolo}
                   onChange={(e) => set_titolo(e.target.value)}
                   readOnly={!!selected_template} />
@@ -716,10 +716,10 @@ const CommunicationsPage: React.FC = () => {
                     <TooltipTrigger asChild>
                       <Label htmlFor="comunicazione-urgente-page" className="cursor-pointer flex items-center gap-2 text-sm font-medium">
                         <AlertTriangle className="w-4 h-4 text-destructive" />
-                        Urgente
+                        {t('dialog.urgent')}
                       </Label>
                     </TooltipTrigger>
-                    <TooltipContent>Sarà mostrata come banner urgente nell'app dell'atleta</TooltipContent>
+                    <TooltipContent>{t('dialog.urgent_hint')}</TooltipContent>
                   </Tooltip>
                   <Switch
                     id="comunicazione-urgente-page"
@@ -731,7 +731,7 @@ const CommunicationsPage: React.FC = () => {
               </TooltipProvider>
 
               <div>
-                <Label className="text-xs">Testo</Label>
+                <Label className="text-xs">{t('form.body')}</Label>
                 <textarea
                   value={selected_template ? testo_preview : testo}
                   onChange={(e) => set_testo(e.target.value)}
@@ -743,7 +743,7 @@ const CommunicationsPage: React.FC = () => {
 
               <div className="space-y-3">
                 <div>
-                  <Label className="text-xs">Destinatari</Label>
+                  <Label className="text-xs">{t('form.recipients')}</Label>
                   <Select
                     value={tipo_destinatari}
                     onValueChange={(value) => {
@@ -753,14 +753,14 @@ const CommunicationsPage: React.FC = () => {
                   >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="tutti">Tutto il club</SelectItem>
-                      <SelectItem value="per_corsi">Per corso</SelectItem>
-                      <SelectItem value="per_livello">Per livello</SelectItem>
-                      <SelectItem value="agoniste">Atlete che gareggiano</SelectItem>
-                      <SelectItem value="atleti">Atleti specifici</SelectItem>
-                      <SelectItem value="per_giorno">Per giorno (data specifica)</SelectItem>
-                      <SelectItem value="per_istruttore">Per istruttore</SelectItem>
-                      <SelectItem value="solo_istruttori">Solo istruttori</SelectItem>
+                      <SelectItem value="tutti">{t('recipients.all_club')}</SelectItem>
+                      <SelectItem value="per_corsi">{t('recipients.by_course')}</SelectItem>
+                      <SelectItem value="per_livello">{t('destinatari.per_livello')}</SelectItem>
+                      <SelectItem value="agoniste">{t('destinatari.agoniste')}</SelectItem>
+                      <SelectItem value="atleti">{t('dialog.specific_athletes')}</SelectItem>
+                      <SelectItem value="per_giorno">{t('dialog.by_day_option')}</SelectItem>
+                      <SelectItem value="per_istruttore">{t('destinatari.per_istruttore')}</SelectItem>
+                      <SelectItem value="solo_istruttori">{t('recipients.instructors_only')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -768,7 +768,7 @@ const CommunicationsPage: React.FC = () => {
                 {(tipo_destinatari === 'tutti' || tipo_destinatari === 'per_livello' || tipo_destinatari === 'agoniste') && (
 
                   <div className="rounded-lg border border-border bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
-                    <span className="font-medium text-foreground">{static_count}</span> atleti
+                    <span className="font-medium text-foreground">{static_count}</span> {t('dialog.athletes_suffix')}
                   </div>
                 )}
               </div>
@@ -841,12 +841,12 @@ const CommunicationsPage: React.FC = () => {
               {tipo_destinatari === 'per_corsi' && (
                 <div className="space-y-3 rounded-xl border border-border p-3">
                   <div className="space-y-2">
-                    <Label className="text-xs">Per corsi</Label>
+                    <Label className="text-xs">{t('destinatari.per_corsi')}</Label>
                     <Popover open={corsi_popover_open} onOpenChange={set_corsi_popover_open}>
                       <PopoverTrigger asChild>
                         <Button variant="outline" className="w-full justify-between font-normal">
                           <span className="truncate text-left">
-                            {corsi_ids.length > 0 ? `${corsi_ids.length} corsi selezionati` : 'Seleziona uno o più corsi'}
+                            {corsi_ids.length > 0 ? t('dialog.courses_selected_count', { count: corsi_ids.length }) : t('dialog.select_courses')}
                           </span>
                           <ChevronsUpDown className="h-4 w-4 opacity-50" />
                         </Button>
@@ -855,15 +855,15 @@ const CommunicationsPage: React.FC = () => {
                         <Command>
                           <div className="flex items-center justify-between border-b px-3 py-2">
                             <Button type="button" variant="ghost" size="sm" onClick={() => { set_corsi_ids(corsi.map((c: any) => c.id)); reset_recipient_preview(); }}>
-                              Seleziona tutti
+                              {t('dialog.select_all')}
                             </Button>
                             <Button type="button" variant="ghost" size="sm" onClick={() => { set_corsi_ids([]); reset_recipient_preview(); }}>
-                              Deseleziona tutti
+                              {t('dialog.deselect_all')}
                             </Button>
                           </div>
-                          <CommandInput placeholder="Cerca corso..." />
+                          <CommandInput placeholder={t('dialog.search_course')} />
                           <CommandList>
-                            <CommandEmpty>Nessun corso trovato.</CommandEmpty>
+                            <CommandEmpty>{t('dialog.no_course_found')}</CommandEmpty>
                             <CommandGroup>
                               {corsi.map((corso: any) => {
                                 const checked = corsi_ids.includes(corso.id);
@@ -886,7 +886,7 @@ const CommunicationsPage: React.FC = () => {
                     <div className="flex flex-wrap gap-2">
                       {corsi_ids.map((id) => (
                         <Badge key={id} variant="secondary" className="gap-1 pr-1">
-                          <span>{corsi_by_id[id]?.nome || 'Corso'}</span>
+                          <span>{corsi_by_id[id]?.nome || t('destinatari.corso_fallback')}</span>
                           <button type="button" className="rounded-sm p-0.5 hover:bg-accent" onClick={() => toggle_corso(id)}>
                             <X className="h-3 w-3" />
                           </button>
@@ -899,12 +899,12 @@ const CommunicationsPage: React.FC = () => {
 
               {tipo_destinatari === 'per_giorno' && (
                 <div className="space-y-2 rounded-xl border border-border p-3">
-                  <Label className="text-xs">Data</Label>
+                  <Label className="text-xs">{t('form.date')}</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button variant="outline" className={cn('w-full justify-start text-left font-normal', !giorno_data && 'text-muted-foreground')}>
                         <CalendarIcon className="h-4 w-4" />
-                        {giorno_data ? format_date_label(giorno_data) : 'Seleziona data'}
+                        {giorno_data ? format_date_label(giorno_data) : t('dialog.select_date')}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
@@ -926,9 +926,9 @@ const CommunicationsPage: React.FC = () => {
               {tipo_destinatari === 'per_istruttore' && (
                 <div className="grid gap-3 rounded-xl border border-border p-3 md:grid-cols-2">
                   <div>
-                    <Label className="text-xs">Istruttore</Label>
+                    <Label className="text-xs">{t('dialog.instructor')}</Label>
                     <Select value={istruttore_id} onValueChange={(value) => { set_istruttore_id(value); reset_recipient_preview(); }}>
-                      <SelectTrigger><SelectValue placeholder="Seleziona istruttore" /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder={t('dialog.select_instructor')} /></SelectTrigger>
                       <SelectContent>
                         {istruttori.map((istruttore: any) => (
                           <SelectItem key={istruttore.id} value={istruttore.id}>{istruttore.cognome} {istruttore.nome}</SelectItem>
@@ -937,12 +937,12 @@ const CommunicationsPage: React.FC = () => {
                     </Select>
                   </div>
                   <div>
-                    <Label className="text-xs">Data</Label>
+                    <Label className="text-xs">{t('form.date')}</Label>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button variant="outline" className={cn('w-full justify-start text-left font-normal', !istruttore_data && 'text-muted-foreground')}>
                           <CalendarIcon className="h-4 w-4" />
-                          {istruttore_data ? format_date_label(istruttore_data) : 'Seleziona data'}
+                          {istruttore_data ? format_date_label(istruttore_data) : t('dialog.select_date')}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
@@ -965,31 +965,31 @@ const CommunicationsPage: React.FC = () => {
               {tipo_destinatari === 'per_livello' && (
                 <div className="space-y-2">
                   <div>
-                    <Label className="text-xs">Livello destinatari</Label>
+                    <Label className="text-xs">{t('dialog.recipient_level')}</Label>
                     <Select value={livello_categoria} onValueChange={set_livello_categoria}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="pulcini_only">Solo Pulcini (comunicazioni operative)</SelectItem>
-                        <SelectItem value="stellina_1_plus">Stellina 1 in su</SelectItem>
-                        <SelectItem value="bronzo_plus">Bronzo in su</SelectItem>
-                        <SelectItem value="argento_plus">Argento in su</SelectItem>
-                        <SelectItem value="oro_plus">Oro</SelectItem>
+                        <SelectItem value="pulcini_only">{t('dialog.level_pulcini_only')}</SelectItem>
+                        <SelectItem value="stellina_1_plus">{t('level_labels.stellina_1_plus')}</SelectItem>
+                        <SelectItem value="bronzo_plus">{t('level_labels.bronzo_plus')}</SelectItem>
+                        <SelectItem value="argento_plus">{t('level_labels.argento_plus')}</SelectItem>
+                        <SelectItem value="oro_plus">{t('level_labels.oro_plus')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <p className="text-[11px] text-muted-foreground leading-snug">
-                    Il filtro usa il livello tecnico massimo dell'atleta (artistico o stile). I Pulcini ricevono solo se selezioni esplicitamente "Solo Pulcini".
+                    {t('dialog.level_filter_hint')}
                   </p>
                 </div>
               )}
 
               {tipo_destinatari === 'atleti' && (
                 <div className="space-y-2 rounded-xl border border-border p-3">
-                  <Label className="text-xs">Atleti specifici</Label>
+                  <Label className="text-xs">{t('dialog.specific_athletes')}</Label>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                     <Input
-                      placeholder="Cerca per nome o cognome…"
+                      placeholder={t('dialog.search_athlete_placeholder')}
                       value={atleta_search}
                       onChange={(e) => set_atleta_search(e.target.value)}
                       className="pl-10 pr-10 h-12 text-base"
@@ -997,7 +997,7 @@ const CommunicationsPage: React.FC = () => {
                     {atleta_search && (
                       <button
                         type="button"
-                        aria-label="Pulisci ricerca"
+                        aria-label={t('dialog.clear_search')}
                         onClick={() => set_atleta_search('')}
                         className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-muted text-muted-foreground"
                       >
@@ -1007,15 +1007,15 @@ const CommunicationsPage: React.FC = () => {
                   </div>
                   <div className="flex justify-between">
                     <Button type="button" variant="ghost" size="sm" onClick={() => set_atleti_specifici_ids(atleti.map((a: any) => a.id))}>
-                      Seleziona tutti
+                      {t('dialog.select_all')}
                     </Button>
                     <Button type="button" variant="ghost" size="sm" onClick={() => set_atleti_specifici_ids([])}>
-                      Deseleziona
+                      {t('dialog.deselect')}
                     </Button>
                   </div>
                   <div className="max-h-[280px] overflow-y-auto space-y-1 border rounded-md p-2 bg-background">
                     {filtered_atleti.length === 0 ? (
-                      <p className="text-xs text-muted-foreground px-2 py-1">Nessun atleta trovato.</p>
+                      <p className="text-xs text-muted-foreground px-2 py-1">{t('dialog.no_athlete_found')}</p>
                     ) : (
                       filtered_atleti.map((a: any) => {
                         const checked = atleti_specifici_ids.includes(a.id);
@@ -1034,7 +1034,7 @@ const CommunicationsPage: React.FC = () => {
                       })
                     )}
                   </div>
-                  <p className="text-[11px] text-muted-foreground">{atleti_specifici_ids.length} atleti selezionati</p>
+                  <p className="text-[11px] text-muted-foreground">{t('dialog.athletes_selected_count', { count: atleti_specifici_ids.length })}</p>
                 </div>
               )}
 
@@ -1042,10 +1042,10 @@ const CommunicationsPage: React.FC = () => {
               {['per_corsi', 'per_giorno', 'per_istruttore'].includes(tipo_destinatari) && preview_loaded && (
                 <div className="space-y-3 rounded-xl border border-border p-3">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-medium text-foreground">{preview_selected_count} di {preview_total_count} atleti riceveranno la comunicazione</p>
+                    <p className="text-sm font-medium text-foreground">{t('dialog.recipients_preview_summary', { selected: preview_selected_count, total: preview_total_count })}</p>
                     <div className="flex gap-2">
-                      <Button type="button" variant="ghost" size="sm" onClick={() => set_selected_recipient_ids(recipient_preview.map((item) => item.atleta_id))}>Tutti</Button>
-                      <Button type="button" variant="ghost" size="sm" onClick={() => set_selected_recipient_ids([])}>Nessuno</Button>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => set_selected_recipient_ids(recipient_preview.map((item) => item.atleta_id))}>{t('dialog.all')}</Button>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => set_selected_recipient_ids([])}>{t('dialog.none')}</Button>
                     </div>
                   </div>
                   <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
@@ -1071,14 +1071,14 @@ const CommunicationsPage: React.FC = () => {
               )}
 
               <DialogFooter>
-                <Button variant="outline" onClick={() => set_modal_open(false)}>Annulla</Button>
+                <Button variant="outline" onClick={() => set_modal_open(false)}>{t('dialog.cancel')}</Button>
                 {['per_corsi', 'per_giorno', 'per_istruttore'].includes(tipo_destinatari) ? (
                   preview_loaded ? (
                     <Button
                       onClick={handle_submit}
                       disabled={crea.isPending || !titolo_preview.trim() || !testo_preview.trim() || selected_recipient_ids.length === 0}
                     >
-                      {crea.isPending ? '...' : 'Invia ora'}
+                      {crea.isPending ? '...' : t('dialog.send_now')}
                     </Button>
                   ) : (
                     <Button
@@ -1092,7 +1092,7 @@ const CommunicationsPage: React.FC = () => {
                         (tipo_destinatari === 'per_istruttore' && (!istruttore_id || !istruttore_data))
                       }
                     >
-                      {is_resolving_recipients ? '...' : 'Vedi destinatari'}
+                      {is_resolving_recipients ? '...' : t('dialog.view_recipients')}
                     </Button>
                   )
                 ) : (
@@ -1105,7 +1105,7 @@ const CommunicationsPage: React.FC = () => {
                       (tipo_destinatari === 'atleti' && atleti_specifici_ids.length === 0)
                     }
                   >
-                    {crea.isPending ? '...' : 'Invia'}
+                    {crea.isPending ? '...' : t('dialog.send')}
                   </Button>
                 )}
               </DialogFooter>
