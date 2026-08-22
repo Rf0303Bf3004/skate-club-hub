@@ -20,12 +20,17 @@ import {
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { Loader2, Move } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 
 const format_data_it = (iso: string) => {
   const [y, m, d] = iso.split("-");
   return `${d}/${m}/${y}`;
 };
 
+const tk = (key: string, opts?: any) => i18n.t(`sposta_dialog.${key}`, { ns: "planning", ...(opts ?? {}) }) as string;
+
+/** Valori DB (non tradotti) */
 const GIORNI = [
   "Lunedì",
   "Martedì",
@@ -35,6 +40,7 @@ const GIORNI = [
   "Sabato",
   "Domenica",
 ];
+const GIORNI_KEYS = ["lunedi", "martedi", "mercoledi", "giovedi", "venerdi", "sabato", "domenica"];
 
 interface Props {
   open: boolean;
@@ -74,6 +80,7 @@ const SpostaCorsoDialog: React.FC<Props> = ({
   ghiaccio_slots,
   on_done,
 }) => {
+  const { t } = useTranslation("planning");
   const [giorno, set_giorno] = useState(GIORNI[0]);
   const [ora_inizio, set_ora_inizio] = useState(planning_corso.ora_inizio?.slice(0, 5) || "09:00");
   const [ora_fine, set_ora_fine] = useState(planning_corso.ora_fine?.slice(0, 5) || "10:00");
@@ -105,14 +112,14 @@ const SpostaCorsoDialog: React.FC<Props> = ({
 
   const handle_save = async () => {
     if (!ora_inizio || !ora_fine || ora_fine <= ora_inizio) {
-      toast.error("Orario non valido");
+      toast.error(tk("err_orario"));
       return;
     }
     set_saving(true);
     try {
       const { data: auth_data } = await supabase.auth.getUser();
       const user_id = auth_data?.user?.id ?? null;
-      const motivo_auto = `Spostato a ${new_data} ${ora_inizio}`;
+      const motivo_auto = tk("motivo_auto", { data: new_data, ora: ora_inizio, interpolation: { escapeValue: false } });
 
       // 1. UPSERT annullamento dell'originale (gestisce settimana in bozza)
       const { data: existing_orig, error: sel_err } = await supabase
@@ -192,10 +199,10 @@ const SpostaCorsoDialog: React.FC<Props> = ({
           if (club_id) {
             const data_old_it = format_data_it(planning_corso.data);
             const data_new_it = format_data_it(new_data);
-            const testo = `Il corso "${planning_corso.nome}" del ${data_old_it} è stato spostato al ${data_new_it} dalle ${ora_inizio} alle ${ora_fine}.`;
+            const testo = tk("com_testo", { corso: planning_corso.nome, data_old: data_old_it, data_new: data_new_it, inizio: ora_inizio, fine: ora_fine, interpolation: { escapeValue: false } });
             const { error: com_err } = await supabase.from("comunicazioni").insert({
               club_id,
-              titolo: "Corso spostato",
+              titolo: tk("com_titolo"),
               testo,
               tipo: "corso_spostato",
               tipo_destinatari: "per_corso",
@@ -212,12 +219,12 @@ const SpostaCorsoDialog: React.FC<Props> = ({
         console.error("[SpostaCorsoDialog] errore creazione comunicazione", com_e);
       }
 
-      toast.success("Corso spostato");
+      toast.success(tk("ok"));
       on_done(inserted.id, planning_corso.id, new_data, ora_inizio);
       on_close();
     } catch (e: any) {
       console.error("[SpostaCorsoDialog] errore handle_save", e);
-      toast.error(e.message || "Errore durante lo spostamento");
+      toast.error(e.message || tk("err_generico"));
     } finally {
       set_saving(false);
     }
@@ -229,29 +236,32 @@ const SpostaCorsoDialog: React.FC<Props> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Move className="h-4 w-4 text-primary" />
-            Sposta corso in altro giorno/ora
+            {t("sposta_dialog.titolo")}
           </DialogTitle>
           <DialogDescription>
             <span className="font-medium text-foreground">{planning_corso.nome}</span>
             <br />
             <span className="text-xs">
-              Originale: {planning_corso.data} · {planning_corso.ora_inizio?.slice(0, 5)}–
-              {planning_corso.ora_fine?.slice(0, 5)}
+              {t("sposta_dialog.originale", {
+                data: planning_corso.data,
+                inizio: planning_corso.ora_inizio?.slice(0, 5),
+                fine: planning_corso.ora_fine?.slice(0, 5),
+              })}
             </span>
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
           <div>
-            <Label>Giorno</Label>
+            <Label>{t("sposta_dialog.giorno")}</Label>
             <Select value={giorno} onValueChange={set_giorno}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {GIORNI.map((g) => (
+                {GIORNI.map((g, gi) => (
                   <SelectItem key={g} value={g}>
-                    {g}
+                    {t(`sposta_dialog.${GIORNI_KEYS[gi]}`)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -261,7 +271,7 @@ const SpostaCorsoDialog: React.FC<Props> = ({
           {slots_giorno.length > 0 && (
             <div className="rounded border border-border bg-muted/40 p-2 space-y-1">
               <p className="text-xs font-medium text-muted-foreground">
-                Fasce ghiaccio disponibili:
+                {t("sposta_dialog.fasce_disponibili")}
               </p>
               <div className="flex flex-wrap gap-1">
                 {slots_giorno.map((s, i) => (
@@ -283,23 +293,23 @@ const SpostaCorsoDialog: React.FC<Props> = ({
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <Label>Ora inizio</Label>
+              <Label>{t("sposta_dialog.ora_inizio")}</Label>
               <Input type="time" value={ora_inizio} onChange={(e) => set_ora_inizio(e.target.value)} />
             </div>
             <div>
-              <Label>Ora fine</Label>
+              <Label>{t("sposta_dialog.ora_fine")}</Label>
               <Input type="time" value={ora_fine} onChange={(e) => set_ora_fine(e.target.value)} />
             </div>
           </div>
 
           <div>
-            <Label>Istruttore</Label>
+            <Label>{t("sposta_dialog.istruttore")}</Label>
             <Select value={istruttore_id || "none"} onValueChange={(v) => set_istruttore_id(v === "none" ? "" : v)}>
               <SelectTrigger>
-                <SelectValue placeholder="Nessuno" />
+                <SelectValue placeholder={t("sposta_dialog.nessuno")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">Nessuno</SelectItem>
+                <SelectItem value="none">{t("sposta_dialog.nessuno")}</SelectItem>
                 {istruttori.map((i) => (
                   <SelectItem key={i.id} value={i.id}>
                     {i.nome} {i.cognome}
@@ -310,17 +320,17 @@ const SpostaCorsoDialog: React.FC<Props> = ({
           </div>
 
           <div className="text-xs text-muted-foreground rounded border border-border bg-muted/30 p-2">
-            <strong>Nuova data:</strong> {new_data} · {ora_inizio}–{ora_fine}
+            <strong>{t("sposta_dialog.nuova_data")}</strong> {new_data} · {ora_inizio}–{ora_fine}
           </div>
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={on_close} disabled={saving}>
-            Annulla
+            {t("sposta_dialog.annulla")}
           </Button>
           <Button onClick={handle_save} disabled={saving}>
             {saving && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
-            Conferma spostamento
+            {t("sposta_dialog.conferma")}
           </Button>
         </DialogFooter>
       </DialogContent>

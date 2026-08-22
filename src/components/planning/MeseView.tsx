@@ -3,9 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { AlertTriangle, Pencil, Plus } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useTranslation } from "react-i18next";
 
-const MESI_IT = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
-const GIORNI_LABEL = ["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
+const GIORNI_KEYS = ["lun","mar","mer","gio","ven","sab","dom"];
 
 function formatDateISO(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -42,6 +42,7 @@ interface DayCellAggregato {
 }
 
 const MeseView: React.FC<MeseViewProps> = ({ club_id, stagione_id, current_month, istruttori, on_click_giorno }) => {
+  const { t } = useTranslation("planning");
   // Calcola griglia: parte dal lunedì che contiene/precede il primo del mese
   const grid_start = useMemo(() => {
     const first_day = new Date(current_month.getFullYear(), current_month.getMonth(), 1);
@@ -128,9 +129,9 @@ const MeseView: React.FC<MeseViewProps> = ({ club_id, stagione_id, current_month
     <div className="border border-border rounded-lg overflow-hidden bg-card">
       {/* Header giorni settimana */}
       <div className="grid grid-cols-7 bg-muted/50 border-b border-border">
-        {GIORNI_LABEL.map((g) => (
+        {GIORNI_KEYS.map((g) => (
           <div key={g} className="px-2 py-2 text-xs font-semibold text-muted-foreground text-center">
-            {g}
+            {t(`mese_view.giorno_${g}`)}
           </div>
         ))}
       </div>
@@ -174,7 +175,7 @@ const MeseView: React.FC<MeseViewProps> = ({ club_id, stagione_id, current_month
                       <TooltipTrigger asChild>
                         <AlertTriangle className="h-3 w-3 text-destructive" />
                       </TooltipTrigger>
-                      <TooltipContent>Annullamenti presenti</TooltipContent>
+                      <TooltipContent>{t("mese_view.annullamenti")}</TooltipContent>
                     </Tooltip>
                   )}
                   {cell?.has_eccezioni && (
@@ -182,7 +183,7 @@ const MeseView: React.FC<MeseViewProps> = ({ club_id, stagione_id, current_month
                       <TooltipTrigger asChild>
                         <Pencil className="h-3 w-3 text-amber-500" />
                       </TooltipTrigger>
-                      <TooltipContent>Eccezioni o eventi extra</TooltipContent>
+                      <TooltipContent>{t("mese_view.eccezioni")}</TooltipContent>
                     </Tooltip>
                   )}
                 </div>
@@ -191,7 +192,9 @@ const MeseView: React.FC<MeseViewProps> = ({ club_id, stagione_id, current_month
               {/* Numero corsi */}
               {cell && cell.num_corsi > 0 && (
                 <div className="text-[10px] text-muted-foreground mb-1">
-                  {cell.num_corsi} cors{cell.num_corsi === 1 ? "o" : "i"}
+                  {cell.num_corsi === 1
+                    ? t("mese_view.corsi_uno", { count: cell.num_corsi })
+                    : t("mese_view.corsi_molti", { count: cell.num_corsi })}
                 </div>
               )}
 
@@ -201,7 +204,7 @@ const MeseView: React.FC<MeseViewProps> = ({ club_id, stagione_id, current_month
                   {istr_visible.map((id) => {
                     const istr = istr_map.get(id);
                     const colore = istr?.colore ?? "#9CA3AF";
-                    const nome_completo = istr ? `${istr.nome} ${istr.cognome}`.trim() : "Istruttore";
+                    const nome_completo = istr ? `${istr.nome} ${istr.cognome}`.trim() : t("mese_view.istruttore_fallback");
                     return (
                       <Tooltip key={id}>
                         <TooltipTrigger asChild>
@@ -228,7 +231,7 @@ const MeseView: React.FC<MeseViewProps> = ({ club_id, stagione_id, current_month
 
       {isLoading && (
         <div className="px-3 py-2 text-xs text-muted-foreground border-t border-border">
-          Caricamento dati mensili…
+          {t("mese_view.caricamento")}
         </div>
       )}
     </div>
