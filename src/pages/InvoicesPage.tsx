@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import SearchableListLayout from "@/components/common/SearchableListLayout";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { useI18n } from "@/lib/i18n";
+import { useTranslation } from "react-i18next";
 import {
   use_fatture,
   use_atleti,
@@ -20,7 +20,7 @@ import { get_fattura_stato_ui, get_fattura_stato_label, get_fattura_stato_classe
 
 // ─── Main Page ─────────────────────────────────────────────
 const InvoicesPage: React.FC = () => {
-  const { t } = useI18n();
+  const { t } = useTranslation("fatture");
   const { data: fatture = [], isLoading } = use_fatture();
   const { data: atleti = [] } = use_atleti();
   const genera = use_genera_fatture_mensili();
@@ -89,9 +89,9 @@ const InvoicesPage: React.FC = () => {
   const handle_genera = async () => {
     try {
       const count = await genera.mutateAsync(undefined);
-      toast({ title: `✅ ${count} fatture generate` });
+      toast({ title: t("invoices_page.toast.generated_title", { count }) });
     } catch (err: any) {
-      toast({ title: "Errore generazione", description: err?.message, variant: "destructive" });
+      toast({ title: t("invoices_page.toast.generate_error_title"), description: err?.message, variant: "destructive" });
     }
   };
 
@@ -111,30 +111,30 @@ const InvoicesPage: React.FC = () => {
       <div className="space-y-6 animate-fade-in">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-foreground">{t("fatture")}</h1>
+            <h1 className="text-xl font-bold tracking-tight text-foreground">{t("invoices_page.title")}</h1>
             {totale_da_pagare > 0 && (
               <p
                 className="text-sm text-muted-foreground mt-0.5"
-                title={`${scadute_count} scadute / ${in_arrivo_count} in arrivo`}
+                title={t("invoices_page.due_summary_tooltip", { overdue: scadute_count, upcoming: in_arrivo_count })}
               >
-                Da incassare: <span className="font-bold text-foreground">CHF {totale_da_pagare.toFixed(2)}</span>
+                {t("invoices_page.to_collect")} <span className="font-bold text-foreground">CHF {totale_da_pagare.toFixed(2)}</span>
                 {scadute_count > 0 && (
                   <span className="ml-2 inline-flex items-center gap-1 text-xs font-semibold text-red-700">
-                    · {scadute_count} scadute
+                    · {t("invoices_page.overdue_count", { count: scadute_count })}
                   </span>
                 )}
               </p>
             )}
           </div>
           <Button className="bg-primary hover:bg-primary/90" onClick={handle_genera} disabled={genera.isPending}>
-            <FileText className="w-4 h-4 mr-2" /> {genera.isPending ? "..." : t("genera_fatture")}
+            <FileText className="w-4 h-4 mr-2" /> {genera.isPending ? t("invoices_page.generating") : t("invoices_page.generate_button")}
           </Button>
         </div>
 
         <SearchableListLayout
           search={search_raw}
           on_search_change={set_search_raw}
-          search_placeholder="Cerca per numero, descrizione, nome atleta…"
+          search_placeholder={t("invoices_page.search_placeholder")}
           filters={(() => {
             // Stato data-driven: leggiamo i valori reali presenti nelle fatture
             // del club + l'eventuale stato "scaduta" calcolato a runtime.
@@ -149,27 +149,27 @@ const InvoicesPage: React.FC = () => {
               (f: any) => get_fattura_stato_ui(f, today_iso) === "scaduta"
             );
             const stato_options = [
-              { value: "tutti", label: t("tutti") },
+              { value: "tutti", label: t("invoices_page.filters.all") },
               ...distinct_stati_db
                 .sort()
                 .map((s) => ({ value: s, label: get_fattura_stato_label(s as any) })),
-              ...(ha_scadute ? [{ value: "scaduta", label: "Scadute" }] : []),
+              ...(ha_scadute ? [{ value: "scaduta", label: t("invoices_page.filters.overdue") }] : []),
             ];
             const filtri: any[] = [];
             if (distinct_stati_db.length + (ha_scadute ? 1 : 0) > 1) {
               filtri.push({
-                key: "stato", label: "Stato", value: status_filter,
+                key: "stato", label: t("invoices_page.filters.status_label"), value: status_filter,
                 options: stato_options,
                 onChange: set_status_filter,
               });
             }
             filtri.push({
-              key: "periodo", label: "Periodo", value: periodo_filter,
+              key: "periodo", label: t("invoices_page.filters.period_label"), value: periodo_filter,
               options: [
-                { value: "tutti", label: "Tutti" },
-                { value: "mese", label: "Questo mese" },
-                { value: "trimestre", label: "Ultimo trimestre" },
-                { value: "anno", label: "Anno corrente" },
+                { value: "tutti", label: t("invoices_page.filters.period_all") },
+                { value: "mese", label: t("invoices_page.filters.period_month") },
+                { value: "trimestre", label: t("invoices_page.filters.period_quarter") },
+                { value: "anno", label: t("invoices_page.filters.period_year") },
               ],
               onChange: (v: string) => set_periodo_filter(v as any),
             });
@@ -179,18 +179,18 @@ const InvoicesPage: React.FC = () => {
             value: sort_by,
             onChange: (v) => set_sort_by(v as any),
             options: [
-              { value: "data_desc", label: "Data emissione ↓" },
-              { value: "scadenza", label: "Scadenza ↑" },
-              { value: "importo_desc", label: "Importo ↓" },
+              { value: "data_desc", label: t("invoices_page.sort.date_desc") },
+              { value: "scadenza", label: t("invoices_page.sort.due_asc") },
+              { value: "importo_desc", label: t("invoices_page.sort.amount_desc") },
             ],
           }}
           count_filtered={filtered.length}
           count_total={fatture.length}
           extra_summary={
             <span className="font-semibold text-foreground">
-              Totale: CHF {totale_filtrato.toFixed(2)}
+              {t("invoices_page.summary.total")} CHF {totale_filtrato.toFixed(2)}
               {totale_filtrato_scadute > 0 && (
-                <span className="ml-2 text-red-700">· scadute CHF {totale_filtrato_scadute.toFixed(2)}</span>
+                <span className="ml-2 text-red-700">· {t("invoices_page.summary.overdue_amount")} CHF {totale_filtrato_scadute.toFixed(2)}</span>
               )}
             </span>
           }
@@ -205,22 +205,22 @@ const InvoicesPage: React.FC = () => {
               <thead>
                 <tr className="border-b border-border">
                   <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                    {t("numero_fattura")}
+                    {t("invoices_page.table.number")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                    {t("nome")}
+                    {t("invoices_page.table.name")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden md:table-cell">
-                    {t("descrizione")}
+                    {t("invoices_page.table.description")}
                   </th>
                   <th className="text-right px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                    {t("importo")}
+                    {t("invoices_page.table.amount")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden sm:table-cell">
-                    {t("scadenza")}
+                    {t("invoices_page.table.due_date")}
                   </th>
                   <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                    {t("stato")}
+                    {t("invoices_page.table.status")}
                   </th>
                 </tr>
               </thead>
@@ -230,8 +230,8 @@ const InvoicesPage: React.FC = () => {
                     <td colSpan={6} className="px-4 py-4">
                       <EmptyState
                         icon={Receipt}
-                        titolo="Nessuna fattura da mostrare"
-                        descrizione="Con i filtri attivi non risulta nessuna fattura. Azzera i filtri oppure genera le fatture del mese dalla sezione Fatturazione."
+                        titolo={t("invoices_page.empty.title")}
+                        descrizione={t("invoices_page.empty.description")}
                       />
                     </td>
                   </tr>

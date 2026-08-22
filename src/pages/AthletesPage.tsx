@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { AlertTriangle } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/auth";
 import { use_atleti, use_club, use_adesioni_atleta, is_atleta_attivo_oggi } from "@/hooks/use-supabase-data";
 import { use_upsert_atleta, use_elimina_atleta } from "@/hooks/use-supabase-mutations";
@@ -120,6 +121,7 @@ const AtletaModal: React.FC<{
   saving: boolean;
   deleting: boolean;
 }> = ({ atleta, on_close, on_save, on_delete, saving, deleting }) => {
+  const { t } = useTranslation("atleti");
   const livello_iniziale =
     atleta?.livello_attuale || atleta?.percorso_amatori || atleta?.livello_amatori || "Pulcini";
 
@@ -214,9 +216,9 @@ const AtletaModal: React.FC<{
       if (error) throw error;
       const { data } = supabase.storage.from("foto-atleti").getPublicUrl(path);
       set_val("foto_url", data.publicUrl);
-      toast({ title: "✅ Foto caricata" });
+      toast({ title: t("toast.photo_uploaded") });
     } catch (err: any) {
-      toast({ title: "Errore upload foto", description: err?.message, variant: "destructive" });
+      toast({ title: t("toast.photo_upload_error"), description: err?.message, variant: "destructive" });
     } finally {
       set_uploading_foto(false);
     }
@@ -231,9 +233,9 @@ const AtletaModal: React.FC<{
       if (error) throw error;
       const { data } = supabase.storage.from("dischi-musicali").getPublicUrl(path);
       set_val("disco_url", data.publicUrl);
-      toast({ title: "✅ Disco caricato" });
+      toast({ title: t("toast.disc_uploaded") });
     } catch (err: any) {
-      toast({ title: "Errore upload disco", description: err?.message, variant: "destructive" });
+      toast({ title: t("toast.disc_upload_error"), description: err?.message, variant: "destructive" });
     } finally {
       set_uploading_disco(false);
     }
@@ -243,7 +245,7 @@ const AtletaModal: React.FC<{
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-          <h2 className="text-base font-bold text-foreground">{atleta?.id ? "Modifica atleta" : "Nuova atleta"}</h2>
+          <h2 className="text-base font-bold text-foreground">{atleta?.id ? t("modal.edit_title") : t("modal.new_title")}</h2>
           <button onClick={on_close} className="text-muted-foreground hover:text-foreground">
             <X className="w-5 h-5" />
           </button>
@@ -251,7 +253,7 @@ const AtletaModal: React.FC<{
 
         <div className="px-6 py-5 space-y-4">
           {/* Foto */}
-          <Field label="Foto">
+          <Field label={t("modal.photo")}>
             <div className="flex items-center gap-3">
               {form.foto_url ? (
                 <img
@@ -269,7 +271,7 @@ const AtletaModal: React.FC<{
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg border border-border cursor-pointer hover:bg-muted/30 text-sm text-muted-foreground transition-colors ${uploading_foto ? "opacity-50 pointer-events-none" : ""}`}
               >
                 <Upload className="w-4 h-4" />
-                {uploading_foto ? "Caricamento..." : "Carica foto"}
+                {uploading_foto ? t("modal.uploading") : t("modal.upload_photo")}
                 <input
                   type="file"
                   accept="image/*"
@@ -282,21 +284,21 @@ const AtletaModal: React.FC<{
 
           {/* Nome e Cognome */}
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Nome" required>
+            <Field label={t("modal.name")} required>
               <input value={form.nome} onChange={(e) => set_val("nome", e.target.value)} onBlur={() => normalizza_campo("nome")} className={input_cls} />
             </Field>
-            <Field label="Cognome" required>
+            <Field label={t("modal.surname")} required>
               <input value={form.cognome} onChange={(e) => set_val("cognome", e.target.value)} onBlur={() => normalizza_campo("cognome")} className={input_cls} />
             </Field>
           </div>
 
-          <Field label="Data di nascita" required>
+          <Field label={t("modal.birth_date")} required>
             <DateInput value={form.data_nascita} onChange={(v) => set_val("data_nascita", v)} />
           </Field>
 
           {/* Livello attuale + Livello in preparazione */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-             <Field label="Livello attuale">
+             <Field label={t("modal.current_level")}>
               <SelectLivello
                 value={form.livello_attuale}
                 onChange={(v) => set_val("livello_attuale", v ?? "Pulcini")}
@@ -304,13 +306,13 @@ const AtletaModal: React.FC<{
                 allowNull={false}
               />
             </Field>
-            <Field label="Livello in preparazione">
+            <Field label={t("modal.level_in_preparation")}>
               <SelectLivello
                 value={form.livello_in_preparazione || null}
                 onChange={(v) => set_val("livello_in_preparazione", v ?? "")}
                 fase="comune"
                 allowNull={true}
-                nullLabel="— Nessuno —"
+                nullLabel={t("modal.none_option")}
               />
             </Field>
           </div>
@@ -326,8 +328,8 @@ const AtletaModal: React.FC<{
                 className="w-4 h-4 accent-primary"
               />
               <label htmlFor="attivo_check_top" className="cursor-pointer">
-                <span className="text-sm font-medium text-foreground">Atleta attiva</span>
-                <span className="block text-xs text-muted-foreground">Iscritta e partecipa alle attività del club</span>
+                <span className="text-sm font-medium text-foreground">{t("modal.active_check_label")}</span>
+                <span className="block text-xs text-muted-foreground">{t("modal.active_check_desc")}</span>
               </label>
             </div>
             <div className="flex items-start gap-3 px-3 py-2 bg-muted/30 rounded-lg">
@@ -343,8 +345,8 @@ const AtletaModal: React.FC<{
                 className="w-4 h-4 mt-0.5 accent-primary"
               />
               <label htmlFor="ago_check" className="cursor-pointer">
-                <span className="text-sm font-medium text-foreground">Agonista</span>
-                <span className="block text-xs text-muted-foreground">Partecipa a gare federali con licenza agonistica</span>
+                <span className="text-sm font-medium text-foreground">{t("modal.agonista_check_label")}</span>
+                <span className="block text-xs text-muted-foreground">{t("modal.agonista_check_desc")}</span>
               </label>
             </div>
             <div className="flex items-start gap-3 px-3 py-2 bg-muted/30 rounded-lg">
@@ -360,8 +362,8 @@ const AtletaModal: React.FC<{
                 className="w-4 h-4 mt-0.5 accent-primary"
               />
               <label htmlFor="fed_check" className="cursor-pointer">
-                <span className="text-sm font-medium text-foreground">Atleta di Federazione</span>
-                <span className="block text-xs text-muted-foreground">Rappresenta il Cantone nelle gare federali</span>
+                <span className="text-sm font-medium text-foreground">{t("modal.federation_check_label")}</span>
+                <span className="block text-xs text-muted-foreground">{t("modal.federation_check_desc")}</span>
               </label>
             </div>
           </div>
@@ -377,8 +379,8 @@ const AtletaModal: React.FC<{
                 className="w-4 h-4 mt-0.5 accent-primary"
               />
               <label htmlFor="esterno_check" className="cursor-pointer">
-                <span className="text-sm font-medium text-foreground">Atleta esterno</span>
-                <span className="block text-xs text-muted-foreground">Pattinatore esterno ospite</span>
+                <span className="text-sm font-medium text-foreground">{t("modal.external_check_label")}</span>
+                <span className="block text-xs text-muted-foreground">{t("modal.external_check_desc")}</span>
               </label>
             </div>
           </div>
@@ -393,7 +395,7 @@ const AtletaModal: React.FC<{
             }}
           />
 
-          <Field label="Ore pista stagione">
+          <Field label={t("modal.hours_season")}>
             <input
               type="number"
               min="0"
@@ -403,34 +405,34 @@ const AtletaModal: React.FC<{
             />
           </Field>
 
-          <Field label="TAG NFC">
+          <Field label={t("modal.nfc_tag")}>
             <input
               value={form.tag_nfc}
               onChange={(e) => set_val("tag_nfc", e.target.value)}
-              placeholder="es. 04:A3:B2:C1:D0"
+              placeholder={t("modal.nfc_placeholder")}
               className={input_cls}
             />
           </Field>
 
           {(form.agonista || form.atleta_federazione) && (
             <>
-              <Field label="Disco in preparazione">
+              <Field label={t("modal.disc_in_preparation")}>
                 <input
                   value={form.disco_in_preparazione}
                   onChange={(e) => set_val("disco_in_preparazione", e.target.value)}
-                  placeholder="es. Romeo e Giulietta - Prokofiev"
+                  placeholder={t("modal.disc_placeholder")}
                   className={input_cls}
                 />
               </Field>
 
-              <Field label="File disco audio">
+              <Field label={t("modal.disc_file")}>
                 <div className="flex items-center gap-3">
                   {form.disco_url && <audio controls src={form.disco_url} className="h-8 flex-1" />}
                   <label
                     className={`flex items-center gap-2 px-3 py-2 rounded-lg border border-border cursor-pointer hover:bg-muted/30 text-sm text-muted-foreground transition-colors ${uploading_disco ? "opacity-50 pointer-events-none" : ""}`}
                   >
                     <Upload className="w-4 h-4" />
-                    {uploading_disco ? "Caricamento..." : form.disco_url ? "Sostituisci" : "Carica audio"}
+                    {uploading_disco ? t("modal.uploading") : form.disco_url ? t("modal.replace") : t("modal.upload_audio")}
                     <input
                       type="file"
                       accept="audio/*"
@@ -445,47 +447,47 @@ const AtletaModal: React.FC<{
 
           {/* Dati anagrafici extra */}
           <div className="pt-2 border-t border-border">
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">Dati anagrafici</p>
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">{t("modal.personal_data")}</p>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Sesso">
+              <Field label={t("modal.gender")}>
                 <Select value={form.sesso || ""} onValueChange={(v) => set_val("sesso", v)}>
                   <SelectTrigger className="h-10 w-full rounded-lg">
-                    <SelectValue placeholder="Seleziona" />
+                    <SelectValue placeholder={t("modal.select")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="F">Femmina</SelectItem>
-                    <SelectItem value="M">Maschio</SelectItem>
+                    <SelectItem value="F">{t("modal.female")}</SelectItem>
+                    <SelectItem value="M">{t("modal.male")}</SelectItem>
                   </SelectContent>
                 </Select>
               </Field>
-              <Field label="Telefono">
-                <input value={form.telefono} onChange={(e) => set_val("telefono", e.target.value)} placeholder="+41 79 123 45 67" className={input_cls} />
+              <Field label={t("modal.phone")}>
+                <input value={form.telefono} onChange={(e) => set_val("telefono", e.target.value)} placeholder={t("modal.phone_placeholder")} className={input_cls} />
               </Field>
             </div>
             <div className="mt-3">
-              <Field label="Codice fiscale (opzionale)">
+              <Field label={t("modal.fiscal_code")}>
                 <input value={form.codice_fiscale} onChange={(e) => set_val("codice_fiscale", e.target.value)} className={input_cls} />
               </Field>
             </div>
             <div className="mt-3 space-y-3">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Indirizzo di residenza</p>
-              <Field label="Indirizzo (via e numero)">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("modal.residence_address")}</p>
+              <Field label={t("modal.address")}>
                 <input value={form.indirizzo} onChange={(e) => set_val("indirizzo", e.target.value)} onBlur={() => normalizza_campo("indirizzo", "indirizzo")} className={input_cls} />
               </Field>
               <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,110px)_minmax(0,1fr)_minmax(0,140px)]">
-                <Field label="CAP">
+                <Field label={t("modal.zip")}>
                   <input
                     value={form.cap}
                     onChange={(e) => set_val("cap", e.target.value.replace(/[^0-9]/g, "").slice(0, 5))}
                     onBlur={() => suggerisci_da_nap("cap", "citta", "cantone")}
-                    placeholder="6900"
+                    placeholder={t("modal.zip_placeholder")}
                     className={input_cls}
                   />
                 </Field>
-                <Field label="Città">
+                <Field label={t("modal.city")}>
                   <input value={form.citta} onChange={(e) => set_val("citta", e.target.value)} onBlur={() => normalizza_campo("citta")} className={input_cls} />
                 </Field>
-                <Field label="Cantone">
+                <Field label={t("modal.canton")}>
                   <Select value={form.cantone || ""} onValueChange={(v) => set_val("cantone", v)}>
                     <SelectTrigger className="h-10 w-full rounded-lg">
                       <SelectValue placeholder="—" />
@@ -499,25 +501,25 @@ const AtletaModal: React.FC<{
                 </Field>
               </div>
               {form.cap && form.cap.length > 0 && form.cap.length !== 4 && (
-                <p className="text-xs text-destructive">CAP svizzero: 4 cifre</p>
+                <p className="text-xs text-destructive">{t("modal.zip_error")}</p>
               )}
             </div>
           </div>
 
           {/* Licenza SIS */}
           <div className="pt-2 border-t border-border">
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">Licenza Swiss Ice Skating</p>
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">{t("modal.sis_license")}</p>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="N. Licenza">
-                <input value={form.licenza_sis_numero} onChange={(e) => set_val("licenza_sis_numero", e.target.value)} placeholder="es. SIS-12345" className={input_cls} />
+              <Field label={t("modal.license_number")}>
+                <input value={form.licenza_sis_numero} onChange={(e) => set_val("licenza_sis_numero", e.target.value)} placeholder={t("modal.license_placeholder")} className={input_cls} />
               </Field>
-              <Field label="Categoria">
+              <Field label={t("modal.category")}>
                 <input value={form.licenza_sis_categoria} onChange={(e) => set_val("licenza_sis_categoria", e.target.value)} className={input_cls} />
               </Field>
-              <Field label="Disciplina">
+              <Field label={t("modal.discipline")}>
                 <input value={form.licenza_sis_disciplina} onChange={(e) => set_val("licenza_sis_disciplina", e.target.value)} className={input_cls} />
               </Field>
-              <Field label="Validità fino al">
+              <Field label={t("modal.validity_until")}>
                 <input type="date" value={form.licenza_sis_validita_a} onChange={(e) => set_val("licenza_sis_validita_a", e.target.value)} className={input_cls} />
               </Field>
             </div>
@@ -525,33 +527,33 @@ const AtletaModal: React.FC<{
 
           {/* Genitore 1 */}
           <div className="pt-2 border-t border-border">
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">Genitore 1</p>
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">{t("modal.parent1")}</p>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Nome">
+              <Field label={t("modal.name")}>
                 <input value={form.genitore1_nome} onChange={(e) => set_val("genitore1_nome", e.target.value)} onBlur={() => normalizza_campo("genitore1_nome")} className={input_cls} />
               </Field>
-              <Field label="Cognome">
+              <Field label={t("modal.surname")}>
                 <input value={form.genitore1_cognome} onChange={(e) => set_val("genitore1_cognome", e.target.value)} onBlur={() => normalizza_campo("genitore1_cognome")} className={input_cls} />
               </Field>
-              <Field label="Telefono">
-                <input value={form.genitore1_telefono} onChange={(e) => set_val("genitore1_telefono", e.target.value)} placeholder="+41 ..." className={input_cls} />
+              <Field label={t("modal.phone")}>
+                <input value={form.genitore1_telefono} onChange={(e) => set_val("genitore1_telefono", e.target.value)} placeholder={t("modal.phone_placeholder_intl")} className={input_cls} />
               </Field>
-              <Field label="Email">
+              <Field label={t("modal.email")}>
                 <input type="email" value={form.genitore1_email} onChange={(e) => set_val("genitore1_email", e.target.value)} onBlur={() => normalizza_campo("genitore1_email", "email")} className={input_cls} />
               </Field>
             </div>
             <div className="mt-3 space-y-3">
-              <Field label="Indirizzo (via e numero)">
+              <Field label={t("modal.address")}>
                 <input value={form.genitore1_indirizzo} onChange={(e) => set_val("genitore1_indirizzo", e.target.value)} onBlur={() => normalizza_campo("genitore1_indirizzo", "indirizzo")} className={input_cls} />
               </Field>
               <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,110px)_minmax(0,1fr)_minmax(0,140px)]">
-                <Field label="CAP">
+                <Field label={t("modal.zip")}>
                   <input value={form.genitore1_cap} onChange={(e) => set_val("genitore1_cap", e.target.value.replace(/[^0-9]/g, "").slice(0,5))} onBlur={() => suggerisci_da_nap("genitore1_cap", "genitore1_citta", "genitore1_cantone")} className={input_cls} />
                 </Field>
-                <Field label="Città">
+                <Field label={t("modal.city")}>
                   <input value={form.genitore1_citta} onChange={(e) => set_val("genitore1_citta", e.target.value)} onBlur={() => normalizza_campo("genitore1_citta")} className={input_cls} />
                 </Field>
-                <Field label="Cantone">
+                <Field label={t("modal.canton")}>
                   <Select value={form.genitore1_cantone || ""} onValueChange={(v) => set_val("genitore1_cantone", v)}>
                     <SelectTrigger className="h-10 w-full rounded-lg"><SelectValue placeholder="—" /></SelectTrigger>
                     <SelectContent>
@@ -570,37 +572,37 @@ const AtletaModal: React.FC<{
               onClick={() => set_show_g2((v) => !v)}
               className="w-full flex items-center justify-between text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3 hover:text-foreground"
             >
-              <span>Genitore 2 (opzionale)</span>
+              <span>{t("modal.parent2")}</span>
               <span className="text-base leading-none">{show_g2 ? "−" : "+"}</span>
             </button>
             {show_g2 && (
               <>
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Nome">
+                  <Field label={t("modal.name")}>
                     <input value={form.genitore2_nome} onChange={(e) => set_val("genitore2_nome", e.target.value)} onBlur={() => normalizza_campo("genitore2_nome")} className={input_cls} />
                   </Field>
-                  <Field label="Cognome">
+                  <Field label={t("modal.surname")}>
                     <input value={form.genitore2_cognome} onChange={(e) => set_val("genitore2_cognome", e.target.value)} onBlur={() => normalizza_campo("genitore2_cognome")} className={input_cls} />
                   </Field>
-                  <Field label="Telefono">
-                    <input value={form.genitore2_telefono} onChange={(e) => set_val("genitore2_telefono", e.target.value)} placeholder="+41 ..." className={input_cls} />
+                  <Field label={t("modal.phone")}>
+                    <input value={form.genitore2_telefono} onChange={(e) => set_val("genitore2_telefono", e.target.value)} placeholder={t("modal.phone_placeholder_intl")} className={input_cls} />
                   </Field>
-                  <Field label="Email">
+                  <Field label={t("modal.email")}>
                     <input type="email" value={form.genitore2_email} onChange={(e) => set_val("genitore2_email", e.target.value)} onBlur={() => normalizza_campo("genitore2_email", "email")} className={input_cls} />
                   </Field>
                 </div>
                 <div className="mt-3 space-y-3">
-                  <Field label="Indirizzo (via e numero)">
+                  <Field label={t("modal.address")}>
                     <input value={form.genitore2_indirizzo} onChange={(e) => set_val("genitore2_indirizzo", e.target.value)} onBlur={() => normalizza_campo("genitore2_indirizzo", "indirizzo")} className={input_cls} />
                   </Field>
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,110px)_minmax(0,1fr)_minmax(0,140px)]">
-                    <Field label="CAP">
+                    <Field label={t("modal.zip")}>
                       <input value={form.genitore2_cap} onChange={(e) => set_val("genitore2_cap", e.target.value.replace(/[^0-9]/g, "").slice(0,5))} onBlur={() => suggerisci_da_nap("genitore2_cap", "genitore2_citta", "genitore2_cantone")} className={input_cls} />
                     </Field>
-                    <Field label="Città">
+                    <Field label={t("modal.city")}>
                       <input value={form.genitore2_citta} onChange={(e) => set_val("genitore2_citta", e.target.value)} onBlur={() => normalizza_campo("genitore2_citta")} className={input_cls} />
                     </Field>
-                    <Field label="Cantone">
+                    <Field label={t("modal.canton")}>
                       <Select value={form.genitore2_cantone || ""} onValueChange={(v) => set_val("genitore2_cantone", v)}>
                         <SelectTrigger className="h-10 w-full rounded-lg"><SelectValue placeholder="—" /></SelectTrigger>
                         <SelectContent>
@@ -616,7 +618,7 @@ const AtletaModal: React.FC<{
 
 
 
-          <Field label="Note">
+          <Field label={t("modal.notes")}>
             <textarea
               value={form.note}
               onChange={(e) => set_val("note", e.target.value)}
@@ -629,14 +631,14 @@ const AtletaModal: React.FC<{
         <div className="px-6 py-4 border-t border-border space-y-2">
           <div className="flex gap-2">
             <Button variant="outline" onClick={on_close} disabled={saving} className="flex-1">
-              Annulla
+              {t("modal.cancel")}
             </Button>
             <Button
               onClick={() => on_save({ ...form, id: atleta?.id })}
               disabled={saving}
               className="flex-1 bg-primary hover:bg-primary/90"
             >
-              {saving ? "..." : "💾 Salva"}
+              {saving ? t("modal.saving") : t("modal.save")}
             </Button>
           </div>
           {atleta?.id && !confirm_delete && (
@@ -646,16 +648,16 @@ const AtletaModal: React.FC<{
               onClick={() => set_confirm_delete(true)}
               className="w-full text-destructive hover:bg-destructive/10"
             >
-              <Trash2 className="w-3.5 h-3.5 mr-2" /> Elimina atleta
+              <Trash2 className="w-3.5 h-3.5 mr-2" /> {t("modal.delete_athlete")}
             </Button>
           )}
           {confirm_delete && (
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => set_confirm_delete(false)} className="flex-1">
-                Annulla
+                {t("modal.cancel")}
               </Button>
               <Button variant="destructive" size="sm" onClick={on_delete} disabled={deleting} className="flex-1">
-                {deleting ? "..." : "Elimina definitivamente"}
+                {deleting ? t("modal.saving") : t("modal.delete_confirm")}
               </Button>
             </div>
           )}
@@ -670,6 +672,7 @@ const AtletaModal: React.FC<{
 
 const AthletesPage: React.FC = () => {
   const { t } = useI18n();
+  const { t: t2 } = useTranslation("atleti");
   const navigate = useNavigate();
   const query_client = useQueryClient();
   const { session } = useAuth();
@@ -916,12 +919,12 @@ const AthletesPage: React.FC = () => {
         // Nuovo atleta: mostro subito la scheda con codice atleta, QR e stampa
         set_scheda_atleta_nuovo(res.atleta);
         set_scheda_modo("iscrizione");
-        toast({ title: "✅ Atleta creata", description: `Codice atleta: ${res.atleta.codice_atleta ?? "—"}` });
+        toast({ title: t2("toast.athlete_created"), description: t2("toast.athlete_created_desc", { code: res.atleta.codice_atleta ?? "—" }) });
       } else {
-        toast({ title: data.id ? "✅ Atleta aggiornata" : "✅ Atleta creata" });
+        toast({ title: data.id ? t2("toast.athlete_updated") : t2("toast.athlete_created") });
       }
     } catch (err: any) {
-      toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
+      toast({ title: t2("toast.save_error"), description: err?.message, variant: "destructive" });
     }
   };
 
@@ -931,19 +934,19 @@ const AthletesPage: React.FC = () => {
       await elimina.mutateAsync(selected_atleta.id);
       set_modal_open(false);
       set_selected_id(null);
-      toast({ title: "🗑️ Atleta eliminata correttamente" });
+      toast({ title: t2("toast.deleted") });
     } catch (err: any) {
-      toast({ title: "Errore eliminazione", description: err?.message, variant: "destructive" });
+      toast({ title: t2("toast.delete_error"), description: err?.message, variant: "destructive" });
     }
   };
 
   const crea_atleta_rapido = async () => {
     if (!quick_form.nome.trim() || !quick_form.cognome.trim()) {
-      toast({ title: "Nome e cognome obbligatori", variant: "destructive" });
+      toast({ title: t2("toast.name_surname_required"), variant: "destructive" });
       return;
     }
     if (!quick_form.livello) {
-      toast({ title: "Livello iniziale obbligatorio", description: "Seleziona il livello dell'atleta.", variant: "destructive" });
+      toast({ title: t2("toast.level_required"), description: t2("toast.level_required_desc"), variant: "destructive" });
       return;
     }
     if (quick_saving) return;
@@ -954,7 +957,7 @@ const AthletesPage: React.FC = () => {
         (a.cognome ?? "").trim().toLowerCase() === quick_form.cognome.trim().toLowerCase(),
     );
     if (gia_esiste) {
-      toast({ title: "Atleta già presente", description: "Esiste già una scheda con questo nome e cognome.", variant: "destructive" });
+      toast({ title: t2("toast.already_exists"), description: t2("toast.already_exists_desc"), variant: "destructive" });
       return;
     }
     set_quick_saving(true);
@@ -997,9 +1000,9 @@ const AthletesPage: React.FC = () => {
       set_quick_form({ nome: "", cognome: "", genitore1_email: "", genitore1_telefono: "", livello: "", livello_prep: "" });
       set_scheda_atleta_nuovo(data);
       set_scheda_modo("iscrizione");
-      toast({ title: "✅ Atleta creato", description: `Codice atleta: ${data?.codice_atleta ?? "—"} — scheda di iscrizione pronta` });
+      toast({ title: t2("toast.created_with_code"), description: t2("toast.created_with_code_desc", { code: data?.codice_atleta ?? "—" }) });
     } catch (err: any) {
-      toast({ title: "Errore creazione atleta", description: err?.message, variant: "destructive" });
+      toast({ title: t2("toast.create_error"), description: err?.message, variant: "destructive" });
     } finally {
       set_quick_saving(false);
     }
@@ -1052,36 +1055,33 @@ const AthletesPage: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => !quick_saving && set_quick_open(false)}>
           <div className="w-full max-w-md rounded-2xl bg-card border p-5 space-y-4" onClick={(e) => e.stopPropagation()}>
             <div>
-              <h2 className="text-lg font-semibold">Nuovo atleta</h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Bastano questi dati per creare la scheda: il resto lo completa il genitore dalla pagina di iscrizione.
-                Se preferisci inserire tutto ora, usa "Compila subito la scheda completa".
-              </p>
+              <h2 className="text-lg font-semibold">{t2("quick.title")}</h2>
+              <p className="text-sm text-muted-foreground mt-1">{t2("quick.description")}</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Nome" required>
+              <Field label={t("modal.name")} required>
                 <Input value={quick_form.nome} onChange={(e) => set_quick_form((p) => ({ ...p, nome: e.target.value }))} onBlur={() => set_quick_form((p) => ({ ...p, nome: capitalizza_nome(p.nome) }))} />
               </Field>
-              <Field label="Cognome" required>
+              <Field label={t("modal.surname")} required>
                 <Input value={quick_form.cognome} onChange={(e) => set_quick_form((p) => ({ ...p, cognome: e.target.value }))} onBlur={() => set_quick_form((p) => ({ ...p, cognome: capitalizza_nome(p.cognome) }))} />
               </Field>
-              <Field label="Email genitore">
+              <Field label={t("quick.parent_email")}>
                 <Input type="email" value={quick_form.genitore1_email} onChange={(e) => set_quick_form((p) => ({ ...p, genitore1_email: e.target.value }))} onBlur={() => set_quick_form((p) => ({ ...p, genitore1_email: normalizza_email(p.genitore1_email) }))} />
               </Field>
-              <Field label="Telefono genitore">
+              <Field label={t("quick.parent_phone")}>
                 <Input type="tel" value={quick_form.genitore1_telefono} onChange={(e) => set_quick_form((p) => ({ ...p, genitore1_telefono: e.target.value }))} />
               </Field>
-              <Field label="Livello iniziale" required>
+              <Field label={t("quick.initial_level")} required>
                 <Select value={quick_form.livello || undefined} onValueChange={(v) => set_quick_form((p) => ({ ...p, livello: v }))}>
-                  <SelectTrigger><SelectValue placeholder="Seleziona livello" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={t2("quick.select_level")} /></SelectTrigger>
                   <SelectContent>
                     {LIVELLI_TUTTI.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </Field>
-              <Field label="In preparazione">
+              <Field label={t("quick.in_preparation")}>
                 <Select value={quick_form.livello_prep || undefined} onValueChange={(v) => set_quick_form((p) => ({ ...p, livello_prep: v }))}>
-                  <SelectTrigger><SelectValue placeholder="Opzionale" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={t2("quick.optional")} /></SelectTrigger>
                   <SelectContent>
                     {LIVELLI_TUTTI.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
                   </SelectContent>
@@ -1100,11 +1100,11 @@ const AthletesPage: React.FC = () => {
                   set_modal_open(true);
                 }}
               >
-                Compila subito la scheda completa
+                {t2("quick.full_form_button")}
               </Button>
-              <Button variant="ghost" onClick={() => set_quick_open(false)} disabled={quick_saving}>Annulla</Button>
+              <Button variant="ghost" onClick={() => set_quick_open(false)} disabled={quick_saving}>{t("quick.cancel")}</Button>
               <Button onClick={crea_atleta_rapido} disabled={quick_saving}>
-                {quick_saving ? "Creazione…" : "Crea e stampa scheda"}
+                {quick_saving ? t2("quick.creating") : t2("quick.create_print")}
               </Button>
             </div>
           </div>
@@ -1117,10 +1117,10 @@ const AthletesPage: React.FC = () => {
           <div className="flex items-center gap-3 rounded-lg border border-yellow-300 bg-yellow-50 dark:bg-yellow-950/30 dark:border-yellow-700 px-4 py-3">
             <AlertTriangle className="w-5 h-5 text-yellow-600 shrink-0" />
             <p className="flex-1 text-sm font-medium text-yellow-800 dark:text-yellow-200">
-              {non_iscritti_count} atleti non ancora iscritti alla stagione corrente
+              {t2('banner.not_enrolled', { count: non_iscritti_count })}
             </p>
             <Button size="sm" variant="outline" onClick={() => navigate("/richieste-iscrizione")} className="shrink-0">
-              Gestisci iscrizioni
+              {t2('banner.manage_enrollments')}
             </Button>
           </div>
         )}
@@ -1131,22 +1131,22 @@ const AthletesPage: React.FC = () => {
               <button
                 onClick={() => set_solo_da_verificare((v) => !v)}
                 className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-semibold transition-colors ${solo_da_verificare ? "border-yellow-500 bg-yellow-100 text-yellow-900" : "border-yellow-300 bg-yellow-50 text-yellow-800 hover:bg-yellow-100"}`}
-                title="Mostra solo atleti non ancora verificati"
+                title={t2('header.to_verify_tooltip')}
               >
                 <AlertCircle className="w-3.5 h-3.5" />
-                {da_verificare_count} da verificare
+                {t2('header.to_verify_button', { count: da_verificare_count })}
               </button>
             )}
             <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
               <Switch checked={solo_da_verificare} onCheckedChange={set_solo_da_verificare} />
-              <span>Solo da verificare</span>
+              <span>{t2('header.only_to_verify')}</span>
             </label>
             {(["presidente", "segreteria", "admin", "superadmin"].includes(session?.ruolo as string)) && (
               <Button
                 variant="outline"
                 onClick={() => navigate("/import-atleti")}
               >
-                <Upload className="w-4 h-4 mr-2" /> Importa da Excel
+                <Upload className="w-4 h-4 mr-2" /> {t2('header.import_excel')}
               </Button>
             )}
             <Button
@@ -1163,7 +1163,7 @@ const AthletesPage: React.FC = () => {
           {/* PULCINI — totale unico, sempre presente */}
           <div className="flex items-center gap-3">
             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-28 shrink-0">
-              Pulcini
+              {t2('cards.pulcini')}
             </span>
             <div className="flex gap-2 overflow-x-auto pb-1">
               {(() => {
@@ -1188,7 +1188,7 @@ const AthletesPage: React.FC = () => {
                     }`}
                   >
                     <span className={`block text-2xl font-bold ${empty ? "text-muted-foreground/50" : "text-emerald-800"}`}>{pulcini_count}</span>
-                    <span className={`block text-xs mt-0.5 ${empty ? "text-muted-foreground/50" : "text-emerald-600"}`}>Totale</span>
+                    <span className={`block text-xs mt-0.5 ${empty ? "text-muted-foreground/50" : "text-emerald-600"}`}>{t2('cards.total')}</span>
                   </button>
                 );
               })()}
@@ -1198,7 +1198,7 @@ const AthletesPage: React.FC = () => {
           {/* AMATORI — sempre Stellina 1-4 */}
           <div className="flex items-center gap-3">
             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-28 shrink-0">
-              Amatori
+              {t2('cards.amatori')}
             </span>
             <div className="flex gap-2 overflow-x-auto pb-1">
               {LIVELLI_AMATORI.map((l) => {
@@ -1235,7 +1235,7 @@ const AthletesPage: React.FC = () => {
           {/* ARTISTICA · Percorso Artistica — viola */}
           <div className="flex items-center gap-3">
             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-28 shrink-0">
-              Art. · Artistica
+              {t2('cards.artistica_art')}
             </span>
             <div className="flex gap-2 overflow-x-auto pb-1">
               {/* Tassello "In preparazione" — atleti già artistica ma senza livello battezzato */}
@@ -1262,10 +1262,10 @@ const AthletesPage: React.FC = () => {
                         ? "border-2 border-purple-500 bg-purple-100"
                         : `border border-purple-200 bg-purple-50/50 ${empty ? "opacity-60" : ""}`
                     }`}
-                    title="Atleti che hanno superato Stellina 4 ma non ancora Interbronzo"
+                    title={t2('cards.in_prep_tooltip')}
                   >
                     <span className={`block text-2xl font-bold ${empty ? "text-muted-foreground/50" : "text-purple-700"}`}>{artistica_in_prep_count}</span>
-                    <span className={`block text-[11px] mt-0.5 italic ${empty ? "text-muted-foreground/50" : "text-purple-600"}`}>In prep. Interbronzo</span>
+                    <span className={`block text-[11px] mt-0.5 italic ${empty ? "text-muted-foreground/50" : "text-purple-600"}`}>{t2('cards.in_prep_label')}</span>
                   </button>
                 );
               })()}
@@ -1306,7 +1306,7 @@ const AthletesPage: React.FC = () => {
           {/* ARTISTICA · Percorso Stile — rosa */}
           <div className="flex items-center gap-3">
             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-28 shrink-0">
-              Art. · Stile
+              {t2('cards.artistica_sti')}
             </span>
             <div className="flex gap-2 overflow-x-auto pb-1">
               {LIVELLI_CARRIERA_NUOVI.map((l) => {
@@ -1355,7 +1355,7 @@ const AthletesPage: React.FC = () => {
             )
           ).sort() as string[];
           const cat_options = [
-            { value: "tutti", label: "Tutte le categorie" },
+            { value: "tutti", label: t2("filters.all_categories") },
             ...distinct_categorie.map((c) => ({ value: c, label: get_categoria_label(c) })),
           ];
           // Per il livello, distinct sulla colonna corretta in base alla categoria scelta.
@@ -1376,14 +1376,14 @@ const AthletesPage: React.FC = () => {
               ) as string[]).sort()
             : [];
           const liv_options = [
-            { value: "tutti", label: "Tutti i livelli" },
+            { value: "tutti", label: t2("filters.all_levels") },
             ...distinct_livelli.map((l) => ({ value: l, label: l })),
           ];
           const filtri: any[] = [];
           // Mostro il filtro categoria solo se ci sono almeno 2 valori distinti.
           if (distinct_categorie.length > 1) {
             filtri.push({
-              key: "categoria", label: "Categoria", value: categoria_filter, options: cat_options,
+              key: "categoria", label: t2("list.filters.category"), value: categoria_filter, options: cat_options,
               onChange: (v: string) => {
                 set_categoria_filter(v as any);
                 set_level_filter("tutti");
@@ -1394,58 +1394,58 @@ const AthletesPage: React.FC = () => {
           }
           if (categoria_filter === "artistica") {
             filtri.push({
-              key: "percorso", label: "Percorso", value: percorso_filter,
+              key: "percorso", label: t2("filters.path"), value: percorso_filter,
               options: [
-                { value: "tutti", label: "Tutti i percorsi" },
-                { value: "artistica", label: "Solo Artistica" },
-                { value: "stile", label: "Solo Stile" },
-                { value: "entrambi", label: "Entrambi" },
+                { value: "tutti", label: t2("filters.all_paths") },
+                { value: "artistica", label: t2("filters.only_artistic") },
+                { value: "stile", label: t2("filters.only_style") },
+                { value: "entrambi", label: t2("filters.both") },
               ],
               onChange: (v: string) => set_percorso_filter(v as any),
             });
           }
           if (liv_column && distinct_livelli.length > 1) {
             filtri.push({
-              key: "livello", label: "Livello", value: level_filter, options: liv_options,
+              key: "livello", label: t2("list.filters.level"), value: level_filter, options: liv_options,
               onChange: set_level_filter,
             });
           }
           filtri.push(
             {
-              key: "status", label: "Status", value: status_filter,
+              key: "status", label: t2("list.filters.status"), value: status_filter,
               options: [
-                { value: "tutti", label: "Tutti" },
-                { value: "scuola", label: "Solo scuola" },
-                { value: "agoniste", label: "Solo agoniste" },
-                { value: "federazione", label: "Solo Federazione" },
+                { value: "tutti", label: t2("list.filters.all") },
+                { value: "scuola", label: t2("filters.only_scuola") },
+                { value: "agoniste", label: t2("filters.only_agoniste") },
+                { value: "federazione", label: t2("filters.only_federazione") },
               ],
               onChange: set_status_filter,
             },
             {
-              key: "agonista", label: "Agonista", value: agonista_filter,
+              key: "agonista", label: t2("list.filters.agonista"), value: agonista_filter,
               options: [
-                { value: "tutti", label: "Tutti" },
-                { value: "si", label: "Sì" },
-                { value: "no", label: "No" },
+                { value: "tutti", label: t2("list.filters.all") },
+                { value: "si", label: t2("filters.yes") },
+                { value: "no", label: t2("filters.no") },
               ],
               onChange: (v: string) => set_agonista_filter(v as any),
             },
             {
-              key: "attivo", label: "Stato", value: attivo_filter,
+              key: "attivo", label: t2("list.filters.active"), value: attivo_filter,
               options: [
-                { value: "tutti", label: "Tutti" },
-                { value: "attivi", label: "Attivi" },
-                { value: "inattivi", label: "Inattivi" },
+                { value: "tutti", label: t2("list.filters.all") },
+                { value: "attivi", label: t2("list.filters.only_active") },
+                { value: "inattivi", label: t2("list.filters.only_inactive") },
               ],
               onChange: (v: string) => set_attivo_filter(v as any),
             },
             {
-              key: "eta", label: "Età", value: eta_filter,
+              key: "eta", label: t2("list.filters.age"), value: eta_filter,
               options: [
-                { value: "tutti", label: "Tutte" },
-                { value: "5-8", label: "5–8" },
-                { value: "9-12", label: "9–12" },
-                { value: "13+", label: "13+" },
+                { value: "tutti", label: t2("filters.all_ages") },
+                { value: "5-8", label: t2("filters.age_5_8") },
+                { value: "9-12", label: t2("filters.age_9_12") },
+                { value: "13+", label: t2("filters.age_13_plus") },
               ],
               onChange: (v: string) => set_eta_filter(v as any),
             },
@@ -1454,17 +1454,17 @@ const AthletesPage: React.FC = () => {
             <SearchableListLayout
               search={search_raw}
               on_search_change={set_search_raw}
-              search_placeholder="Cerca per nome, cognome, codice atleta, email genitori…"
+              search_placeholder={t2("filters.search_placeholder")}
               filters={filtri}
               sort={{
                 value: sort_by,
                 onChange: (v) => set_sort_by(v as any),
                 options: [
-                  { value: "cognome", label: "Cognome A-Z" },
-                  { value: "livello", label: "Livello" },
-                  { value: "eta", label: "Età ↓" },
-                  { value: "recente", label: "Iscrizione recente" },
-                  { value: "codice", label: "Codice atleta" },
+                  { value: "cognome", label: t2("sort.surname_az") },
+                  { value: "livello", label: t2("sort.level") },
+                  { value: "eta", label: t2("sort.age_desc") },
+                  { value: "recente", label: t2("sort.recent_enrollment") },
+                  { value: "codice", label: t2("sort.athlete_code") },
                 ],
               }}
               count_filtered={filtered.length}
@@ -1474,10 +1474,10 @@ const AthletesPage: React.FC = () => {
                   onClick={() => set_card_filter(null)}
                   className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 border border-primary/30 text-[11px] font-semibold text-primary hover:bg-primary/20"
                 >
-                  {card_filter.sezione === "pulcini" && "Pulcini"}
-                  {card_filter.sezione === "amatori" && `Amatori · ${card_filter.livello}`}
-                  {card_filter.sezione === "artistica" && `${card_filter.percorso === "artistica" ? "Artistica" : "Stile"} · ${card_filter.livello}`}
-                  {card_filter.sezione === "in_prep" && `In prep · ${card_filter.livello}`}
+                  {card_filter.sezione === "pulcini" && t2("summary.pulcini")}
+                  {card_filter.sezione === "amatori" && t2("summary.amatori", { level: card_filter.livello })}
+                  {card_filter.sezione === "artistica" && (card_filter.percorso === "artistica" ? t2("summary.artistica", { level: card_filter.livello }) : t2("summary.stile", { level: card_filter.livello }))}
+                  {card_filter.sezione === "in_prep" && t2("summary.in_prep", { level: card_filter.livello })}
                   <span>✕</span>
                 </button>
               ) : null}
@@ -1501,7 +1501,7 @@ const AthletesPage: React.FC = () => {
                     {t("eta")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                    Livello / Carriera
+                    {t2("table.level_career")}
                   </th>
                   <th className="text-right px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">
                     {t("ore_pista")}
@@ -1513,7 +1513,7 @@ const AthletesPage: React.FC = () => {
                     {t("stato")}
                   </th>
                   <th className="text-right px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                    Azioni
+                    {t2("table.actions")}
                   </th>
                 </tr>
               </thead>
@@ -1521,7 +1521,7 @@ const AthletesPage: React.FC = () => {
                 {filtered.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground text-sm">
-                      Nessuna atleta trovata.
+                      {t2("table.no_athletes_found")}
                     </td>
                   </tr>
                 ) : (
@@ -1549,7 +1549,7 @@ const AthletesPage: React.FC = () => {
                                 />
                                 {a.verificato === false && (
                                   <span className="inline-flex items-center gap-1 rounded-md bg-yellow-100 px-1.5 py-0.5 text-[10px] font-semibold text-yellow-800 ring-1 ring-inset ring-yellow-300">
-                                    ⚠️ Da verificare
+                                    ⚠️ {t2("table.to_verify_badge")}
                                   </span>
                                 )}
                               </p>
@@ -1596,7 +1596,7 @@ const AthletesPage: React.FC = () => {
                           onClick={() => { set_scheda_modo("foto"); set_scheda_id(a.id); }}
                           className="text-xs h-7"
                         >
-                          Scheda
+                          {t2("table.card_button")}
                         </Button>
                         <Button
                           variant="ghost"
@@ -1604,7 +1604,7 @@ const AthletesPage: React.FC = () => {
                           onClick={() => { set_scheda_modo("iscrizione"); set_scheda_id(a.id); }}
                           className="text-xs h-7"
                         >
-                          Iscrizione
+                          {t2("table.enrollment_button")}
                         </Button>
                         <Button
                           variant="ghost"
@@ -1615,7 +1615,7 @@ const AthletesPage: React.FC = () => {
                           }}
                           className="text-xs h-7"
                         >
-                          Modifica
+                          {t2("table.edit_button")}
                         </Button>
                       </td>
                     </tr>

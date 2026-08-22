@@ -28,11 +28,11 @@ Lo shim `useI18n()` / `t()` in `src/lib/i18n.tsx` continua a funzionare per i fi
 ## File ancora hard-coded (priorità ALTA)
 
 ### Pagine principali
-- [ ] `src/pages/AthletesPage.tsx` (parte già usa shim)
-- [ ] `src/pages/InvoicesPage.tsx` (parte già usa shim)
-- [ ] `src/pages/CommunicationsPage.tsx`
-- [ ] `src/pages/CompetitionsPage.tsx`
-- [ ] `src/pages/CoursesPage.tsx`
+- [x] `src/pages/AthletesPage.tsx` → `atleti.*`
+- [x] `src/pages/InvoicesPage.tsx` → `fatture.invoices_page.*`
+- [x] `src/pages/CommunicationsPage.tsx` → `communications.*`
+- [x] `src/pages/CompetitionsPage.tsx` → `events.competitions.*`
+- [x] `src/pages/CoursesPage.tsx` → `corsi.*` (nuovo namespace)
 - [ ] `src/pages/PrivateLessonsPage.tsx`
 - [ ] `src/pages/EventiPage.tsx`
 - [ ] `src/pages/TestLivelloPage.tsx`
@@ -170,3 +170,60 @@ Il seed/estrazione le serializzerebbe come stringa JSON (`'["Gen","Feb",...]'`) 
 il valore a runtime (`t(..., { returnObjects: true })` restituirebbe una stringa e non un array).
 La griglia editabile per lingua ha senso solo per testi semplici: `TraduzioniTab.tsx` filtra
 e nasconde eventuali righe con valori non semplici.
+
+
+## Step 1.5c — Estrazione 5 pagine principali (turno corrente)
+
+File completati: `AthletesPage.tsx`, `InvoicesPage.tsx`, `CommunicationsPage.tsx`,
+`CompetitionsPage.tsx`, `CoursesPage.tsx`. Tutti migrati a `useTranslation(<ns>)`
+(shim `useI18n` rimosso dove non più necessario). Solo il JSON IT è stato aggiornato:
+FR/DE/EN vanno sincronizzati da Roberto in `traduzioni_ui`.
+
+**Nuovo namespace**: `corsi` (registrato in `src/i18n/index.ts`, file `src/locales/it/corsi.json`).
+
+### Chiavi nuove per namespace
+
+#### `atleti` (src/locales/it/atleti.json)
+- `modal.*`: edit_title, new_title, photo, uploading, upload_photo, name, surname, birth_date, current_level, level_in_preparation, none_option, hours_season, nfc_tag, nfc_placeholder, disc_in_preparation, disc_placeholder, disc_file, replace, upload_audio, personal_data, gender, select, female, male, phone, phone_placeholder, phone_placeholder_intl, fiscal_code, residence_address, address, zip, zip_placeholder, city, canton, zip_error, sis_license, license_number, license_placeholder, category, discipline, validity_until, parent1, parent2, email, notes, cancel, saving, save, delete_athlete, delete_confirm, active_check_label, active_check_desc, agonista_check_label, agonista_check_desc, federation_check_label, federation_check_desc, external_check_label, external_check_desc
+- `toast.*`: photo_uploaded, photo_upload_error, disc_uploaded, disc_upload_error, athlete_created, athlete_created_desc, athlete_updated, save_error, deleted, delete_error, name_surname_required, level_required, level_required_desc, already_exists, already_exists_desc, created_with_code, created_with_code_desc, create_error
+- `quick.*`: title, description, parent_email, parent_phone, initial_level, select_level, in_preparation, optional, full_form_button, cancel, creating, create_print
+- `banner.*`: not_enrolled, manage_enrollments
+- `header.*`: to_verify_tooltip, to_verify_button, only_to_verify, import_excel
+- `cards.*`: pulcini, total, amatori, artistica_art, artistica_sti, in_prep_tooltip, in_prep_label
+- `table.*`: level_career, actions, no_athletes_found, to_verify_badge, card_button, enrollment_button, edit_button
+- `filters.*`: all_categories, all_levels, path, all_paths, only_artistic, only_style, both, only_scuola, only_agoniste, only_federazione, yes, no, age_5_8, age_9_12, age_13_plus, all_ages, search_placeholder
+- `sort.*`: surname_az, level, age_desc, recent_enrollment, athlete_code
+- `summary.*`: pulcini, amatori, artistica, stile, in_prep
+
+#### `fatture` (src/locales/it/fatture.json) — tutte sotto `invoices_page.*`
+title, to_collect, due_summary_tooltip, overdue_count_one/_other, generate_button, generating,
+search_placeholder, filters.{all, overdue, status_label, period_label, period_all, period_month,
+period_quarter, period_year}, sort.{date_desc, due_asc, amount_desc}, summary.{total, overdue_amount},
+table.{number, name, description, amount, due_date, status}, empty.{title, description},
+toast.{generated_title_one/_other, generate_error_title}
+
+#### `communications` (src/locales/it/communications.json)
+- `templates.<id>.{nome,titolo,testo}` per: benvenuto, corso_annullato, pista_chiusa, gara, cambio_orario
+- `placeholder_labels.*`: anno, data, nome_corso, motivo, nome_gara, luogo, corso, nuovo_orario, vecchio_orario
+- `level_labels.*`: pulcini_only, stellina_1_plus, bronzo_plus, argento_plus, oro_plus
+- `destinatari.*`: course_label, agonisti, agoniste, solo_staff, per_livello, manuale, per_corsi, per_giorno, per_istruttore, corso_fallback, private_lesson
+- `tabs.*`: sent_emoji, received_emoji, unread_count_one/_other, my_reminders_emoji, conversations_emoji, archive_emoji
+- `empty.*`: sent, received, archive
+- `dialog.*`: athletes_suffix, start_from, custom_communication, fill_fields, urgent, urgent_hint, specific_athletes, by_day_option, courses_selected_count_one/_other, select_courses, select_all, deselect_all, search_course, no_course_found, select_date, instructor, select_instructor, recipient_level, level_pulcini_only, level_filter_hint, search_athlete_placeholder, clear_search, deselect, no_athlete_found, athletes_selected_count_one/_other, recipients_preview_summary, all, none, cancel, send_now, view_recipients, send
+- `form.date`
+- Riutilizzate: title, new, recipients.*, form.{recipients,title,body,linked_event_type}, event_types.*
+
+#### `events` (src/locales/it/events.json)
+- Nuova: `competitions.countdown_header` (+ le ~60 chiavi `competitions.*` aggiunte durante la migrazione della pagina)
+- Tutte le altre stringhe riutilizzano chiavi `competitions.*` già esistenti
+
+#### `corsi` (src/locales/it/corsi.json — NUOVO namespace, da creare in `traduzioni_ui`)
+- `tipo_corso.*`: none, add_new, new_name_placeholder, add
+- `iscrizioni.*`: filter_by_name, no_athlete_found, no_compatible_athlete, all_enrolled, enroll, enroll_with_level_jump, level_jump_title_short, search_athlete, no_athlete_available, enrolled_count, no_enrolled
+- `monitori.*`: toast_error, assigned, monitors_count, assistants_count, no_monitors, no_monitors_hint
+- `presenze.*`: toast_error, status_confirmed, status_absent, status_substituted, status_waiting, lesson_date, no_monitors_assigned, no_monitors_hint, attendance_for, toast_all_confirmed, role_monitor, role_assistant, remind_all, whatsapp, substitute, remove, assign_substitute, select_substitute
+- `griglia.*`: no_ice_slot, course_duration, min, custom_min, suggested_slots, courses_on_ice, duration_not_fit, already_on_ice, selected_time, available_instructors, occupied_in, occupied, in, outside_availability_tooltip, outside_availability, select_slot_hint
+- `modal.*`: new_course, edit_course, configure_ice_first, select_slot_first, ice_warning_cleaning_overlap, toast_name_required, ice_error_uncovered_time, ice_error_select_slot, ice_error_no_availability, toast_ice_check_error, toast_invalid_path_title, toast_invalid_path_desc, redefine_tooltip, redefine_course, fix_time, fix, proceed_anyway, availability_issues_title, save_anyway, tab_info, tab_enrollments, tab_monitors, tab_attendance, incomplete_course, enrollments_disabled, capacity_exceeded, capacity_exceeded_detail, name, name_placeholder, type, type_ice, type_off_ice, type_not_set, change, required_level, open_to_all_levels, path, path_common, path_artistica, path_stile, path_invalid_hint, place_in_planning_now, will_be_placed_later, day, instructors, active_course, notes, notes_placeholder, cancel, checking, save, delete_course, delete_permanently, change_type_title, change_type_warning, category, category_placeholder, category_suggestions, save_plain, other_course, instructor_conflict
+- `card.*`: to_be_scheduled, price_not_set, enrolled_count, manage_enrollments
+- `filters.*`: all_types, all_instructors, reset
+- `page.*`: duplicate_season, new_course, by_day, by_instructor, search_placeholder, clear_search, no_courses_filtered, no_courses_empty, to_be_scheduled_header, no_instructor, toast_type_added, toast_course_updated, toast_course_created, toast_planning_updated, toast_course_saved_planning_error, toast_save_error, toast_no_valid_season, toast_no_valid_season_desc, error_create_week, error_no_slot, error_insert_planning, error_not_in_planning, toast_course_deleted, toast_course_deleted_short, toast_delete_error, incomplete, fix_action, confirm_delete_title, confirm_delete_desc, delete_course_title

@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { Calendar } from "lucide-react";
 import { use_persisted_state } from "@/hooks/use-persisted-state";
 import ConfirmButton from "@/components/common/ConfirmButton";
-import { useI18n } from "@/lib/i18n";
+import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   use_corsi,
@@ -244,6 +244,7 @@ const TipoCorsoSelect: React.FC<{
   tipi: string[];
   on_add_tipo: (nome: string) => Promise<void>;
 }> = ({ value, on_change, tipi, on_add_tipo }) => {
+  const { t } = useTranslation("corsi");
   const [show_aggiungi, set_show_aggiungi] = useState(false);
   const [nuovo_tipo, set_nuovo_tipo] = useState("");
   const [adding, set_adding] = useState(false);
@@ -283,13 +284,13 @@ const TipoCorsoSelect: React.FC<{
           }}
           className={`${input_cls} appearance-none pr-8`}
         >
-          <option value="">Nessun tipo</option>
+          <option value="">{t("tipo_corso.none")}</option>
           {tipi.map((t) => (
             <option key={t} value={t}>
               {t}
             </option>
           ))}
-          <option value="__nuovo__">➕ Aggiungi nuovo tipo...</option>
+          <option value="__nuovo__">➕ {t("tipo_corso.add_new")}</option>
         </select>
         <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
       </div>
@@ -300,7 +301,7 @@ const TipoCorsoSelect: React.FC<{
             value={nuovo_tipo}
             onChange={(e) => set_nuovo_tipo(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handle_aggiungi()}
-            placeholder="Nome nuovo tipo..."
+            placeholder={t("tipo_corso.new_name_placeholder")}
             autoFocus
             className={input_cls}
           />
@@ -310,7 +311,7 @@ const TipoCorsoSelect: React.FC<{
             disabled={adding || !nuovo_tipo.trim()}
             className="bg-primary hover:bg-primary/90 h-8"
           >
-            {adding ? "..." : "Aggiungi"}
+            {adding ? "..." : t("tipo_corso.add")}
           </Button>
           <Button
             size="sm"
@@ -337,6 +338,7 @@ const TabIscrizioni: React.FC<{
   tutti_atleti: any[];
   on_refresh: () => void;
 }> = ({ corso_id, livello_richiesto, atleti_iscritti_ids, tutti_atleti, on_refresh }) => {
+  const { t } = useTranslation("corsi");
   const [query, set_query] = useState("");
   const [saving, set_saving] = useState(false);
   const [removing, set_removing] = useState<string | null>(null);
@@ -503,14 +505,14 @@ const TabIscrizioni: React.FC<{
           <input
             value={query}
             onChange={(e) => set_query(e.target.value)}
-            placeholder="Filtra per nome..."
+            placeholder={t("iscrizioni.filter_by_name")}
             className="w-full rounded-lg border border-border bg-background pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
         <div className="border border-border rounded-xl overflow-hidden divide-y divide-border/50 max-h-56 overflow-y-auto">
           {atleti_disponibili.length === 0 ? (
             <p className="text-xs text-muted-foreground px-3 py-3 text-center">
-              {query ? "Nessuna atleta trovata" : ha_filtro_livello ? "Nessuna atleta con livello compatibile" : "Tutte le atlete sono già iscritte"}
+              {query ? t("iscrizioni.no_athlete_found") : ha_filtro_livello ? t("iscrizioni.no_compatible_athlete") : t("iscrizioni.all_enrolled")}
             </p>
           ) : (
             atleti_disponibili.map((a: any) => {
@@ -538,7 +540,7 @@ const TabIscrizioni: React.FC<{
                     disabled={saving}
                     className="h-7 text-xs gap-1 flex-shrink-0 text-primary hover:bg-primary/10"
                   >
-                    <UserPlus className="w-3.5 h-3.5" /> Iscrivi
+                    <UserPlus className="w-3.5 h-3.5" /> {t("iscrizioni.enroll")}
                   </Button>
                 </div>
               );
@@ -555,7 +557,7 @@ const TabIscrizioni: React.FC<{
           onClick={() => set_show_salto_search(true)}
           className="w-full text-xs gap-1.5 text-orange-600 border-orange-200 hover:bg-orange-50"
         >
-          <ArrowRightLeft className="w-3.5 h-3.5" /> Iscrivi con salto di livello
+          <ArrowRightLeft className="w-3.5 h-3.5" /> {t("iscrizioni.enroll_with_level_jump")}
         </Button>
       )}
 
@@ -564,7 +566,7 @@ const TabIscrizioni: React.FC<{
         <div className="space-y-2 border border-orange-200 rounded-xl p-3 bg-orange-50/30">
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold text-orange-600 uppercase tracking-wide flex items-center gap-1">
-              <AlertTriangle className="w-3 h-3" /> Salto di livello
+              <AlertTriangle className="w-3 h-3" /> {t("iscrizioni.level_jump_title_short")}
             </p>
             <Button variant="ghost" size="sm" onClick={() => { set_show_salto_search(false); set_salto_query(""); }} className="h-6 w-6 p-0">
               <X className="w-3.5 h-3.5" />
@@ -575,7 +577,7 @@ const TabIscrizioni: React.FC<{
             <input
               value={salto_query}
               onChange={(e) => set_salto_query(e.target.value)}
-              placeholder="Cerca atleta..."
+              placeholder={t("iscrizioni.search_athlete")}
               autoFocus
               className="w-full rounded-lg border border-orange-200 bg-background pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
             />
@@ -583,7 +585,7 @@ const TabIscrizioni: React.FC<{
           <div className="border border-orange-200 rounded-xl overflow-hidden divide-y divide-orange-100 max-h-48 overflow-y-auto">
             {atleti_salto.length === 0 ? (
               <p className="text-xs text-muted-foreground px-3 py-3 text-center">
-                {salto_query ? "Nessuna atleta trovata" : "Nessuna atleta disponibile"}
+                {salto_query ? t("iscrizioni.no_athlete_found") : t("iscrizioni.no_athlete_available")}
               </p>
             ) : (
               atleti_salto.map((a: any) => {
@@ -606,7 +608,7 @@ const TabIscrizioni: React.FC<{
                       disabled={saving}
                       className="h-7 text-xs gap-1 flex-shrink-0 text-orange-600 hover:bg-orange-100"
                     >
-                      <UserPlus className="w-3.5 h-3.5" /> Iscrivi
+                      <UserPlus className="w-3.5 h-3.5" /> {t("iscrizioni.enroll")}
                     </Button>
                   </div>
                 );
@@ -619,10 +621,10 @@ const TabIscrizioni: React.FC<{
       {/* Lista iscritti */}
       <div className="space-y-2">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-          Iscritte ({atleti_iscritti.length})
+          {t("iscrizioni.enrolled_count", { count: atleti_iscritti.length })}
         </p>
         {atleti_iscritti.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">Nessuna atleta iscritta.</p>
+          <p className="text-sm text-muted-foreground text-center py-4">{t("iscrizioni.no_enrolled")}</p>
         ) : (
           <div className="border border-border rounded-xl overflow-hidden divide-y divide-border/50">
             {atleti_iscritti.map((a: any) => (
@@ -665,6 +667,7 @@ const TabMonitori: React.FC<{
   tutti_monitori: any[];
   on_refresh: () => void;
 }> = ({ corso, tutti_monitori, on_refresh }) => {
+  const { t } = useTranslation("corsi");
   const [saving, set_saving] = useState(false);
   const [local_monitori, set_local_monitori] = useState<string[]>(corso.monitori || []);
   const [local_aiuto, set_local_aiuto] = useState<string[]>(corso.aiuto_monitori || []);
@@ -689,7 +692,7 @@ const TabMonitori: React.FC<{
     } catch (err: any) {
       set_local_monitori(corso.monitori || []);
       set_local_aiuto(corso.aiuto_monitori || []);
-      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+      toast({ title: t("monitori.toast_error"), description: err?.message, variant: "destructive" });
     } finally {
       set_saving(false);
     }
@@ -727,7 +730,7 @@ const TabMonitori: React.FC<{
       </div>
       {selected && (
         <Badge variant="default" className="text-[10px]">
-          Assegnato
+          {t("monitori.assigned")}
         </Badge>
       )}
     </div>
@@ -738,7 +741,7 @@ const TabMonitori: React.FC<{
       {monitori.length > 0 && (
         <div className="space-y-2">
           <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
-            Monitori ({local_monitori.length} assegnati)
+            {t("monitori.monitors_count", { count: local_monitori.length })}
           </p>
           <div className="space-y-1.5">
             {monitori.map((m) => (
@@ -750,7 +753,7 @@ const TabMonitori: React.FC<{
       {aiuto_monitori.length > 0 && (
         <div className="space-y-2">
           <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
-            Aiuto monitori ({local_aiuto.length} assegnati)
+            {t("monitori.assistants_count", { count: local_aiuto.length })}
           </p>
           <div className="space-y-1.5">
             {aiuto_monitori.map((m) => (
@@ -761,8 +764,8 @@ const TabMonitori: React.FC<{
       )}
       {monitori.length === 0 && aiuto_monitori.length === 0 && (
         <div className="text-center py-8 text-muted-foreground">
-          <p className="text-sm">Nessun monitore o aiuto monitore registrato.</p>
-          <p className="text-xs mt-1">Vai su Atleti e imposta il ruolo pista a "Monitore" o "Aiuto monitore".</p>
+          <p className="text-sm">{t("monitori.no_monitors")}</p>
+          <p className="text-xs mt-1">{t("monitori.no_monitors_hint")}</p>
         </div>
       )}
     </div>
@@ -776,6 +779,7 @@ const TabPresenze: React.FC<{
   tutti_monitori: any[];
   istruttori: any[];
 }> = ({ corso, tutti_atleti, tutti_monitori, istruttori }) => {
+  const { t } = useTranslation("corsi");
   const [data_sel, set_data_sel] = useState(new Date().toISOString().split("T")[0]);
   const { data: presenze = [] } = use_presenze_corso(corso.id, data_sel);
   const upsert_presenza = use_upsert_presenza_corso();
@@ -804,7 +808,7 @@ const TabPresenze: React.FC<{
         sostituto_id,
       });
     } catch (err: any) {
-      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+      toast({ title: t("presenze.toast_error"), description: err?.message, variant: "destructive" });
     }
   };
 
@@ -830,26 +834,26 @@ const TabPresenze: React.FC<{
   };
 
   const stato_label = (stato: string) =>
-    ({ confermato: "Confermato", assente: "Assente", sostituito: "Sostituito" })[stato] || "In attesa";
+    ({ confermato: t("presenze.status_confirmed"), assente: t("presenze.status_absent"), sostituito: t("presenze.status_substituted") })[stato] || t("presenze.status_waiting");
   const monitori_disponibili_sostituzione = tutti_monitori.filter(
     (m) => !monitori_assegnati.find((ma) => ma.id === m.id),
   );
 
   return (
     <div className="space-y-4">
-      <Field label="Data lezione">
+      <Field label={t("presenze.lesson_date")}>
         <input type="date" value={data_sel} onChange={(e) => set_data_sel(e.target.value)} className={input_cls} />
       </Field>
       {monitori_assegnati.length === 0 ? (
         <div className="text-center py-6 text-muted-foreground">
-          <p className="text-sm">Nessun monitore assegnato a questo corso.</p>
-          <p className="text-xs mt-1">Vai alla tab "Monitori" per assegnarli.</p>
+          <p className="text-sm">{t("presenze.no_monitors_assigned")}</p>
+          <p className="text-xs mt-1">{t("presenze.no_monitors_hint")}</p>
         </div>
       ) : (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
-              Presenze —{" "}
+              {t("presenze.attendance_for")} —{" "}
               {new Date(data_sel + "T00:00:00").toLocaleDateString("de-CH", {
                 weekday: "long",
                 day: "numeric",
@@ -863,23 +867,23 @@ const TabPresenze: React.FC<{
               onClick={() => {
                 const non_confermati = monitori_assegnati.filter((m) => get_stato_persona(m.id) === "attesa");
                 if (non_confermati.length === 0) {
-                  toast({ title: "Tutti hanno già confermato!" });
+                  toast({ title: t("presenze.toast_all_confirmed") });
                   return;
                 }
                 non_confermati.forEach((m) => {
-                  const tipo = (corso.monitori || []).includes(m.id) ? "monitore" : "aiuto monitore";
+                  const tipo = (corso.monitori || []).includes(m.id) ? t("presenze.role_monitor").toLowerCase() : t("presenze.role_assistant").toLowerCase();
                   const link = genera_wa_link(m, tipo);
                   if (link) window.open(link, "_blank");
                 });
               }}
             >
               <MessageCircle className="w-3.5 h-3.5" />
-              Remind tutti ({monitori_assegnati.filter((m) => get_stato_persona(m.id) === "attesa").length})
+              {t("presenze.remind_all", { count: monitori_assegnati.filter((m) => get_stato_persona(m.id) === "attesa").length })}
             </Button>
           </div>
           {monitori_assegnati.map((persona) => {
             const tipo = (corso.monitori || []).includes(persona.id) ? "monitore" : "aiuto_monitore";
-            const tipo_label = tipo === "monitore" ? "Monitore" : "Aiuto monitore";
+            const tipo_label = tipo === "monitore" ? t("presenze.role_monitor") : t("presenze.role_assistant");
             const stato = get_stato_persona(persona.id);
             const sostituto_id = get_sostituto_persona(persona.id);
             const sostituto = sostituto_id ? tutti_monitori.find((m) => m.id === sostituto_id) : null;
@@ -917,7 +921,7 @@ const TabPresenze: React.FC<{
                       onClick={() => handle_set_stato(persona.id, tipo as any, s as any)}
                       className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all border ${stato === s ? (s === "confermato" ? "bg-success text-white border-success" : s === "assente" ? "bg-destructive text-white border-destructive" : "bg-muted text-foreground border-border") : "bg-background text-muted-foreground border-border hover:border-primary/40"}`}
                     >
-                      {s === "confermato" ? "✅ Confermato" : s === "assente" ? "❌ Assente" : "⏳ In attesa"}
+                      {s === "confermato" ? `✅ ${t("presenze.status_confirmed")}` : s === "assente" ? `❌ ${t("presenze.status_absent")}` : `⏳ ${t("presenze.status_waiting")}`}
                     </button>
                   ))}
                   {wa_link && (
@@ -927,7 +931,7 @@ const TabPresenze: React.FC<{
                       rel="noopener noreferrer"
                       className="px-2.5 py-1 rounded-lg text-xs font-medium border border-green-300 text-green-700 hover:bg-green-50 transition-all flex items-center gap-1"
                     >
-                      <MessageCircle className="w-3 h-3" /> WhatsApp
+                      <MessageCircle className="w-3 h-3" /> {t("presenze.whatsapp")}
                     </a>
                   )}
                 </div>
@@ -938,7 +942,7 @@ const TabPresenze: React.FC<{
                         <div className="flex items-center gap-2">
                           <ArrowRightLeft className="w-3.5 h-3.5 text-orange-500" />
                           <span className="text-xs text-foreground">
-                            Sostituto:{" "}
+                            {t("presenze.substitute")}:{" "}
                             <strong>
                               {sostituto.nome} {sostituto.cognome}
                             </strong>
@@ -948,12 +952,12 @@ const TabPresenze: React.FC<{
                           onClick={() => handle_set_stato(persona.id, tipo as any, "assente", undefined)}
                           className="text-xs text-destructive hover:underline"
                         >
-                          Rimuovi
+                          {t("presenze.remove")}
                         </button>
                       </div>
                     ) : (
                       <div className="space-y-1.5">
-                        <p className="text-xs font-semibold text-muted-foreground">Assegna sostituto</p>
+                        <p className="text-xs font-semibold text-muted-foreground">{t("presenze.assign_substitute")}</p>
                         <select
                           onChange={(e) => {
                             if (e.target.value) handle_set_stato(persona.id, tipo as any, "sostituito", e.target.value);
@@ -961,7 +965,7 @@ const TabPresenze: React.FC<{
                           defaultValue=""
                           className={`${input_cls} text-xs py-1.5`}
                         >
-                          <option value="">Seleziona sostituto...</option>
+                          <option value="">{t("presenze.select_substitute")}</option>
                           {monitori_disponibili_sostituzione.map((m) => (
                             <option key={m.id} value={m.id}>
                               {m.nome} {m.cognome}
@@ -1001,6 +1005,7 @@ export const GrigliaFasceGhiaccio: React.FC<{
   on_select_istruttore: (id: string) => void;
   istruttori_ids_sel: string[];
 }> = ({ giorno, corso_id, istruttori, corsi, ora_inizio_sel, ora_fine_sel, on_select_fascia, on_select_istruttore, istruttori_ids_sel }) => {
+  const { t } = useTranslation("corsi");
   // Durata corrente (in minuti) per generare gli slot. Default 60 oppure derivata
   // dall'orario già scelto (utile in modifica). Pulsanti rapidi 45/60/90 + input libero.
   const [durata_sel, set_durata_sel] = useState<number>(() => {
@@ -1127,7 +1132,7 @@ export const GrigliaFasceGhiaccio: React.FC<{
       <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 mt-1">
         <div className="flex items-center gap-2">
           <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0" />
-          <p className="text-xs text-orange-700">Nessuna fascia ghiaccio configurata per {giorno}. Vai in Configurazione Club per configurarla.</p>
+          <p className="text-xs text-orange-700">{t("griglia.no_ice_slot", { giorno })}</p>
         </div>
       </div>
     );
@@ -1139,7 +1144,7 @@ export const GrigliaFasceGhiaccio: React.FC<{
     <div className="space-y-3 mt-1">
       {/* Durata selector */}
       <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Durata corso</label>
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("griglia.course_duration")}</label>
         <div className="flex flex-wrap gap-2 items-center">
           {durate_preset.map((d) => (
             <button
@@ -1152,7 +1157,7 @@ export const GrigliaFasceGhiaccio: React.FC<{
                   : "border-border bg-card hover:bg-accent hover:border-primary/40"
               }`}
             >
-              {d} min
+              {d} {t("griglia.min")}
             </button>
           ))}
           <div className="inline-flex items-center gap-1 rounded-lg border-2 border-border px-2 py-1">
@@ -1174,7 +1179,7 @@ export const GrigliaFasceGhiaccio: React.FC<{
               }}
               placeholder="—"
             />
-            <span className="text-xs text-muted-foreground">min custom</span>
+            <span className="text-xs text-muted-foreground">{t("griglia.custom_min")}</span>
           </div>
         </div>
       </div>
@@ -1182,7 +1187,7 @@ export const GrigliaFasceGhiaccio: React.FC<{
       {/* Fasce ghiaccio + slot tiles */}
       <div className="space-y-1.5">
         <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-          Slot proponibili — {giorno} (ghiaccio condiviso)
+          {t("griglia.suggested_slots", { giorno })}
         </label>
         <div className="space-y-2">
           {fasce_with_tiles.map((f: any, idx: number) => (
@@ -1193,13 +1198,13 @@ export const GrigliaFasceGhiaccio: React.FC<{
                 </span>
                 {f.occupanti.length > 0 && (
                   <span className="text-[10px] text-muted-foreground">
-                    {f.occupanti.length} corso/i già in pista
+                    {t("griglia.courses_on_ice", { count: f.occupanti.length })}
                   </span>
                 )}
               </div>
               {f.tiles.length === 0 ? (
                 <p className="text-xs text-muted-foreground italic">
-                  Durata {durata_sel}′ non entra nella fascia.
+                  {t("griglia.duration_not_fit", { durata: durata_sel })}
                 </p>
               ) : (
                 <div className="flex flex-wrap gap-1.5">
@@ -1227,7 +1232,7 @@ export const GrigliaFasceGhiaccio: React.FC<{
               {f.occupanti.length > 0 && (
                 <div className="mt-2 pt-2 border-t border-dashed border-border/60 space-y-0.5">
                   <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
-                    Già in pista (info, non blocca):
+                    {t("griglia.already_on_ice")}
                   </p>
                   {f.occupanti.map((o: any, j: number) => (
                     <p key={j} className="text-xs text-muted-foreground">
@@ -1243,7 +1248,7 @@ export const GrigliaFasceGhiaccio: React.FC<{
         </div>
         {ora_inizio_sel && ora_fine_sel && (
           <p className="text-xs font-medium text-primary">
-            Orario selezionato: {ora_inizio_sel} – {ora_fine_sel}
+            {t("griglia.selected_time", { ora_inizio: ora_inizio_sel, ora_fine: ora_fine_sel })}
           </p>
         )}
       </div>
@@ -1254,7 +1259,7 @@ export const GrigliaFasceGhiaccio: React.FC<{
       {ora_inizio_sel && ora_fine_sel && (
         <div className="sticky bottom-0 z-20 -mx-1 space-y-1.5 rounded-xl border-2 border-primary/30 bg-card/95 backdrop-blur-sm p-3 shadow-lg">
           <label className="text-xs font-semibold text-primary uppercase tracking-wide">
-            Istruttori disponibili — {ora_inizio_sel}–{ora_fine_sel}
+            {t("griglia.available_instructors", { ora_inizio: ora_inizio_sel, ora_fine: ora_fine_sel })}
           </label>
           <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
             {istruttori_status.map((i: any) => {
@@ -1266,11 +1271,11 @@ export const GrigliaFasceGhiaccio: React.FC<{
                   <div
                     key={i.id}
                     className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium border-2 border-border bg-muted/40 opacity-60 cursor-not-allowed"
-                    title={`Occupato in "${i.conflitto_nome ?? '—'}"`}
+                    title={t("griglia.occupied_in", { corso: i.conflitto_nome ?? "—" })}
                   >
                     <span className="w-3 h-3 rounded-full flex-shrink-0 bg-muted-foreground/30" />
                     <span className="text-muted-foreground">{i.nome} {i.cognome}</span>
-                    <span className="text-[9px] text-muted-foreground">(occupato{i.conflitto_nome ? ` in ${i.conflitto_nome}` : ""})</span>
+                    <span className="text-[9px] text-muted-foreground">({t("griglia.occupied")}{i.conflitto_nome ? ` ${t("griglia.in")} ${i.conflitto_nome}` : ""})</span>
                   </div>
                 );
               }
@@ -1281,7 +1286,7 @@ export const GrigliaFasceGhiaccio: React.FC<{
                     key={i.id}
                     type="button"
                     onClick={() => on_select_istruttore(i.id)}
-                    title="Fuori dalla disponibilità dichiarata — il corso resterà segnalato come incompleto"
+                    title={t("griglia.outside_availability_tooltip")}
                     className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium cursor-pointer transition-all border-2 border-dashed ${
                       selected
                         ? "border-amber-500 bg-amber-100 text-amber-900"
@@ -1290,7 +1295,7 @@ export const GrigliaFasceGhiaccio: React.FC<{
                   >
                     <AlertTriangle className="w-3 h-3 flex-shrink-0" />
                     {i.nome} {i.cognome}
-                    <span className="text-[9px] opacity-80">(fuori disponibilità)</span>
+                    <span className="text-[9px] opacity-80">({t("griglia.outside_availability")})</span>
                     {selected && <span className="text-[10px] font-bold">✓</span>}
                   </button>
                 );
@@ -1315,7 +1320,7 @@ export const GrigliaFasceGhiaccio: React.FC<{
               );
             })}
             {istruttori_status.length === 0 && (
-              <p className="text-xs text-muted-foreground">Seleziona una fascia ghiaccio per vedere la disponibilità.</p>
+              <p className="text-xs text-muted-foreground">{t("griglia.select_slot_hint")}</p>
             )}
           </div>
         </div>
@@ -1355,8 +1360,9 @@ const CorsoModal: React.FC<{
   deleting,
 }) => {
   const qc = useQueryClient();
+  const { t } = useTranslation("corsi");
   const { data: disp_ghiaccio_modal = [] } = use_disponibilita_ghiaccio();
-  const corso_completezza = corso ? check_corso_completo(corso, disp_ghiaccio_modal, istruttori) : { completo: false, motivo: "Nuovo corso" };
+  const corso_completezza = corso ? check_corso_completo(corso, disp_ghiaccio_modal, istruttori) : { completo: false, motivo: t("modal.new_course") };
 
   // Capienza pista (alert NON bloccante): legge max_atleti_contemporanei e
   // conteggio iscritti per corso del club, NON entra in check_corso_completo.
@@ -1470,9 +1476,9 @@ const CorsoModal: React.FC<{
   const has_ora_fine = !!(form.ora_fine && form.ora_fine !== "");
   const toggle_disabled = !has_fasce_for_day || !has_ora_fine;
   const toggle_tooltip = !has_fasce_for_day
-    ? "Configura prima la disponibilità ghiaccio per questo giorno in Configurazione Club"
+    ? t("modal.configure_ice_first")
     : !has_ora_fine
-      ? "Seleziona una fascia ghiaccio e scegli la durata per abilitare"
+      ? t("modal.select_slot_first")
       : "";
 
   // Auto-disable toggle when conditions are not met
@@ -1570,8 +1576,8 @@ const CorsoModal: React.FC<{
       );
       if (conflitto) {
         const istr = istruttori.find((i: any) => i.id === id);
-        const corso_nome = corsi.find((c: any) => c.id === conflitto.corso_id)?.nome || "altro corso";
-        warnings.push(`${istr?.nome} ${istr?.cognome} — conflitto con "${corso_nome}" (${conflitto.ora_inizio?.slice(0, 5)}–${conflitto.ora_fine?.slice(0, 5)})`);
+        const corso_nome = corsi.find((c: any) => c.id === conflitto.corso_id)?.nome || t("modal.other_course");
+        warnings.push(t("modal.instructor_conflict", { instructor: `${istr?.nome} ${istr?.cognome}`, course: corso_nome, start: conflitto.ora_inizio?.slice(0, 5), end: conflitto.ora_fine?.slice(0, 5) }));
       }
     });
     return warnings;
@@ -1627,14 +1633,14 @@ const CorsoModal: React.FC<{
     return {
       blocked: false,
       warning: has_pulizia_overlap
-        ? "Attenzione: parte di questo slot è occupata dalla pulizia ghiaccio."
+        ? t("modal.ice_warning_cleaning_overlap")
         : null,
     };
   };
 
   const handle_save_click = async () => {
     if (!form.nome.trim()) {
-      toast({ title: "Il nome del corso è obbligatorio", variant: "destructive" });
+      toast({ title: t("modal.toast_name_required"), variant: "destructive" });
       return;
     }
 
@@ -1656,11 +1662,11 @@ const CorsoModal: React.FC<{
           time_to_min(f.ora_inizio) <= corso_start && time_to_min(f.ora_fine) >= corso_end
         );
         if (!coperto) {
-          set_ghiaccio_error("Orario non coperto dalla disponibilità ghiaccio. Seleziona una fascia valida.");
+          set_ghiaccio_error(t("modal.ice_error_uncovered_time"));
           return;
         }
       } else {
-        set_ghiaccio_error("Seleziona una fascia ghiaccio e scegli la durata prima di posizionare nel planning.");
+        set_ghiaccio_error(t("modal.ice_error_select_slot"));
         return;
       }
     }
@@ -1672,7 +1678,7 @@ const CorsoModal: React.FC<{
     try {
       const result = await validate_ghiaccio();
       if (result.blocked) {
-        set_ghiaccio_error("Nessun ghiaccio disponibile in questo orario. Configura prima la disponibilità ghiaccio in Configurazione Club.");
+        set_ghiaccio_error(t("modal.ice_error_no_availability"));
         set_validating_ghiaccio(false);
         return;
       }
@@ -1681,7 +1687,7 @@ const CorsoModal: React.FC<{
       }
     } catch {
       set_validating_ghiaccio(false);
-      toast({ title: "Errore verifica ghiaccio", variant: "destructive" });
+      toast({ title: t("modal.toast_ice_check_error"), variant: "destructive" });
       return;
     }
     set_validating_ghiaccio(false);
@@ -1697,8 +1703,8 @@ const CorsoModal: React.FC<{
   const do_save = () => {
     if (percorso_invalido_modal) {
       toast({
-        title: "Percorso non valido",
-        description: "Il percorso può essere impostato solo per livelli di carriera.",
+        title: t("modal.toast_invalid_path_title"),
+        description: t("modal.toast_invalid_path_desc"),
         variant: "destructive",
       });
       return;
@@ -1723,7 +1729,7 @@ const CorsoModal: React.FC<{
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-lg flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
-          <h2 className="text-base font-bold text-foreground">{corso?.id ? "Modifica corso" : "Nuovo corso"}</h2>
+          <h2 className="text-base font-bold text-foreground">{corso?.id ? t("modal.edit_course") : t("modal.new_course")}</h2>
           <div className="flex items-center gap-2">
             {corso?.id && on_ridefinisci && (
               <Button
@@ -1731,10 +1737,10 @@ const CorsoModal: React.FC<{
                 size="sm"
                 onClick={on_ridefinisci}
                 className="h-8 gap-1.5 text-xs"
-                title="Riapri il wizard a 4 step pre-compilato per modifiche strutturali (giorno/ora/istruttore)"
+                title={t("modal.redefine_tooltip")}
               >
                 <ArrowRightLeft className="w-3.5 h-3.5" />
-                Ridefinisci corso
+                {t("modal.redefine_course")}
               </Button>
             )}
             <button onClick={on_close} className="text-muted-foreground hover:text-foreground">
@@ -1751,7 +1757,7 @@ const CorsoModal: React.FC<{
               <p className="text-sm font-semibold text-destructive">{ghiaccio_error}</p>
             </div>
             <Button variant="outline" size="sm" onClick={() => set_ghiaccio_error(null)} className="w-full">
-              ← Correggi orario
+              ← {t("modal.fix_time")}
             </Button>
           </div>
         )}
@@ -1765,7 +1771,7 @@ const CorsoModal: React.FC<{
             </div>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => { set_ghiaccio_warning(null); }} className="flex-1">
-                ← Correggi
+                ← {t("modal.fix")}
               </Button>
               <Button
                 size="sm"
@@ -1781,7 +1787,7 @@ const CorsoModal: React.FC<{
                 disabled={saving}
                 className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
               >
-                {saving ? "..." : "Procedi comunque"}
+                {saving ? "..." : t("modal.proceed_anyway")}
               </Button>
             </div>
           </div>
@@ -1792,7 +1798,7 @@ const CorsoModal: React.FC<{
             <div className="flex items-start gap-2">
               <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
               <div className="space-y-1">
-                <p className="text-sm font-bold text-orange-700">Attenzione — Problemi di disponibilità</p>
+                <p className="text-sm font-bold text-orange-700">{t("modal.availability_issues_title")}</p>
                 {avviso_istruttori.map((msg, i) => (
                   <p key={i} className="text-xs text-orange-600">
                     • {msg}
@@ -1802,7 +1808,7 @@ const CorsoModal: React.FC<{
             </div>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => set_confirm_forzatura(false)} className="flex-1">
-                ← Correggi
+                ← {t("modal.fix")}
               </Button>
               <Button
                 size="sm"
@@ -1813,7 +1819,7 @@ const CorsoModal: React.FC<{
                 disabled={saving}
                 className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
               >
-                {saving ? "..." : "Salva comunque"}
+                {saving ? "..." : t("modal.save_anyway")}
               </Button>
             </div>
           </div>
@@ -1822,16 +1828,16 @@ const CorsoModal: React.FC<{
         <Tabs defaultValue="info" className="px-6 pt-4 flex flex-col flex-1 overflow-hidden">
           <TabsList className="w-full flex flex-shrink-0">
             <TabsTrigger value="info" className="flex-1">
-              Informazioni
+              {t("modal.tab_info")}
             </TabsTrigger>
             <TabsTrigger value="iscrizioni" className="flex-1" disabled={!corso?.id || !corso_completezza.completo}>
-              Iscrizioni {corso?.id ? `(${corso.atleti_ids?.length || 0})` : ""}
+              {t("modal.tab_enrollments")} {corso?.id ? `(${corso.atleti_ids?.length || 0})` : ""}
             </TabsTrigger>
             <TabsTrigger value="monitori" className="flex-1" disabled={!corso?.id}>
-              Monitori {corso?.id ? `(${(corso.monitori?.length || 0) + (corso.aiuto_monitori?.length || 0)})` : ""}
+              {t("modal.tab_monitors")} {corso?.id ? `(${(corso.monitori?.length || 0) + (corso.aiuto_monitori?.length || 0)})` : ""}
             </TabsTrigger>
             <TabsTrigger value="presenze" className="flex-1" disabled={!corso?.id}>
-              Presenze
+              {t("modal.tab_attendance")}
             </TabsTrigger>
           </TabsList>
 
@@ -1839,7 +1845,7 @@ const CorsoModal: React.FC<{
             <div className="flex items-start gap-2 px-3 py-2.5 mt-2 rounded-lg bg-orange-50 border border-orange-200">
               <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
               <p className="text-xs text-orange-700">
-                <strong>Corso incompleto:</strong> {corso_completezza.motivo}. Le iscrizioni sono disabilitate finché il corso non è completo.
+                <strong>{t("modal.incomplete_course")}:</strong> {corso_completezza.motivo}. {t("modal.enrollments_disabled")}
               </p>
             </div>
           )}
@@ -1848,37 +1854,37 @@ const CorsoModal: React.FC<{
             <div className="flex items-start gap-2 px-3 py-2.5 mt-2 rounded-lg bg-yellow-50 border border-yellow-300">
               <AlertTriangle className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
               <p className="text-xs text-yellow-800">
-                <strong>Attenzione: capienza pista superata</strong> ({capienza.totale} atleti su {capienza.max} consentiti in contemporanea). Salvataggio non bloccato.
+                <strong>{t("modal.capacity_exceeded")}</strong> {t("modal.capacity_exceeded_detail", { totale: capienza.totale, max: capienza.max })}
               </p>
             </div>
           )}
 
           <div className="overflow-y-auto flex-1">
             <TabsContent value="info" className="py-4 space-y-4">
-              <Field label="Nome" required>
+              <Field label={t("modal.name")} required>
                 <input
                   value={form.nome}
                   onChange={(e) => set_val("nome", e.target.value)}
-                  placeholder="es. Corso Avanzato"
+                  placeholder={t("modal.name_placeholder")}
                   className={input_cls}
                 />
               </Field>
-              <Field label="Tipo">
+              <Field label={t("modal.type")}>
                 <div className="flex items-center gap-2 flex-wrap">
                   {form.tipo === "Ghiaccio" ? (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200 text-sm font-medium">
                       <Snowflake className="w-3.5 h-3.5" />
-                      <span>Ghiaccio</span>
+                      <span>{t("modal.type_ice")}</span>
                     </span>
                   ) : form.tipo === "Off-Ice" ? (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 text-gray-700 border border-gray-200 text-sm font-medium">
                       <Dumbbell className="w-3.5 h-3.5" />
-                      <span>Off-Ice{form.categoria ? ` · ${form.categoria}` : ""}</span>
+                      <span>{t("modal.type_off_ice")}{form.categoria ? ` · ${form.categoria}` : ""}</span>
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-100 text-orange-800 border border-orange-200 text-sm font-medium">
                       <AlertTriangle className="w-3.5 h-3.5" />
-                      <span>Tipo non impostato</span>
+                      <span>{t("modal.type_not_set")}</span>
                     </span>
                   )}
                   <button
@@ -1890,32 +1896,32 @@ const CorsoModal: React.FC<{
                     }}
                     className="text-xs text-primary hover:underline font-medium"
                   >
-                    Cambia
+                    {t("modal.change")}
                   </button>
                 </div>
               </Field>
 
-              <Field label="Livello richiesto">
+              <Field label={t("modal.required_level")}>
                 <SelectLivello
                   value={form.livello_richiesto}
                   onChange={(v) => set_val("livello_richiesto", v)}
                   fase="qualsiasi"
                   allowNull={true}
-                  nullLabel="— Aperto a tutti i livelli —"
+                  nullLabel={t("modal.open_to_all_levels")}
                 />
               </Field>
 
               {is_carriera_modal && (
-                <Field label="Percorso">
+                <Field label={t("modal.path")}>
                   <div className="relative">
                     <select
                       value={form.percorso ?? ""}
                       onChange={(e) => set_val("percorso", e.target.value || null)}
                       className={`${input_cls} appearance-none pr-8`}
                     >
-                      <option value="">Comune (no percorso)</option>
-                      <option value="artistica">Artistica</option>
-                      <option value="stile">Stile</option>
+                      <option value="">{t("modal.path_common")}</option>
+                      <option value="artistica">{t("modal.path_artistica")}</option>
+                      <option value="stile">{t("modal.path_stile")}</option>
                     </select>
                     <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
@@ -1924,16 +1930,16 @@ const CorsoModal: React.FC<{
 
               {percorso_invalido_modal && (
                 <p className="text-xs text-destructive px-1">
-                  Il percorso può essere impostato solo per livelli di carriera (Interbronzo → Oro).
+                  {t("modal.path_invalid_hint")}
                 </p>
               )}
               <div className="flex items-center justify-between px-3 py-2 bg-muted/30 rounded-lg">
                 <div className="space-y-0.5">
                   <label htmlFor="posiziona_planning" className={`text-sm font-medium cursor-pointer ${toggle_disabled ? "text-muted-foreground" : "text-foreground"}`}>
-                    Posiziona subito nel planning
+                    {t("modal.place_in_planning_now")}
                   </label>
                   {!posiziona_planning && !toggle_disabled && (
-                    <p className="text-xs text-muted-foreground">Il corso verrà posizionato nel planning in seguito</p>
+                    <p className="text-xs text-muted-foreground">{t("modal.will_be_placed_later")}</p>
                   )}
                   {toggle_disabled && toggle_tooltip && (
                     <p className="text-xs text-orange-600">{toggle_tooltip}</p>
@@ -1960,7 +1966,7 @@ const CorsoModal: React.FC<{
                 </TooltipProvider>
               </div>
               {/* Always show day selector and ice grid so user can pick a fascia */}
-              <Field label="Giorno">
+              <Field label={t("modal.day")}>
                 <select value={form.giorno} onChange={(e) => set_val("giorno", e.target.value)} className={input_cls}>
                   {GIORNI_DB.map((g) => (
                     <option key={g} value={g}>{g}</option>
@@ -1982,7 +1988,7 @@ const CorsoModal: React.FC<{
                 istruttori_ids_sel={form.istruttori_ids}
               />
               {!posiziona_planning && (
-                <Field label="Istruttori">
+                <Field label={t("modal.instructors")}>
                   <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
                     {istruttori_attivi.map((i) => {
                       const selected = form.istruttori_ids.includes(i.id);
@@ -2017,15 +2023,15 @@ const CorsoModal: React.FC<{
                   className="w-4 h-4 accent-primary"
                 />
                 <label htmlFor="attivo_corso" className="text-sm font-medium text-foreground cursor-pointer">
-                  Corso attivo
+                  {t("modal.active_course")}
                 </label>
               </div>
-              <Field label="Note">
+              <Field label={t("modal.notes")}>
                 <textarea
                   value={form.note}
                   onChange={(e) => set_val("note", e.target.value)}
                   rows={2}
-                  placeholder="Note aggiuntive..."
+                  placeholder={t("modal.notes_placeholder")}
                   className={`${input_cls} resize-none`}
                 />
               </Field>
@@ -2062,14 +2068,14 @@ const CorsoModal: React.FC<{
         <div className="px-6 py-4 border-t border-border space-y-2 flex-shrink-0">
           <div className="flex gap-2">
             <Button variant="outline" onClick={on_close} disabled={saving} className="flex-1">
-              Annulla
+              {t("modal.cancel")}
             </Button>
             <Button
               onClick={handle_save_click}
               disabled={saving || confirm_forzatura || validating_ghiaccio || !!ghiaccio_error}
               className="flex-1 bg-primary hover:bg-primary/90"
             >
-              {validating_ghiaccio ? "Verifica..." : saving ? "..." : "💾 Salva"}
+              {validating_ghiaccio ? t("modal.checking") : saving ? "..." : t("modal.save")}
             </Button>
           </div>
           {corso?.id && !confirm_delete && (
@@ -2079,16 +2085,16 @@ const CorsoModal: React.FC<{
               onClick={() => set_confirm_delete(true)}
               className="w-full text-destructive hover:bg-destructive/10"
             >
-              🗑️ Elimina corso
+              {t("modal.delete_course")}
             </Button>
           )}
           {confirm_delete && (
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => set_confirm_delete(false)} className="flex-1">
-                Annulla
+                {t("modal.cancel")}
               </Button>
               <Button variant="destructive" size="sm" onClick={on_delete} disabled={deleting} className="flex-1">
-                {deleting ? "..." : "Elimina definitivamente"}
+                {deleting ? "..." : t("modal.delete_permanently")}
               </Button>
             </div>
           )}
@@ -2106,7 +2112,7 @@ const CorsoModal: React.FC<{
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-foreground">Cambia tipo del corso</h3>
+              <h3 className="text-base font-bold text-foreground">{t("modal.change_type_title")}</h3>
               <button onClick={() => set_tipo_dialog_open(false)} className="text-muted-foreground hover:text-foreground">
                 <X className="w-5 h-5" />
               </button>
@@ -2115,12 +2121,12 @@ const CorsoModal: React.FC<{
             <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 flex items-start gap-2">
               <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
               <p className="text-xs text-orange-700">
-                Cambiare il tipo impatta dove il corso viene piazzato nel planning (ghiaccio vs off-ice). Sei sicuro?
+                {t("modal.change_type_warning")}
               </p>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Tipo</label>
+              <label className="text-sm font-medium text-foreground">{t("modal.type")}</label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
@@ -2131,7 +2137,7 @@ const CorsoModal: React.FC<{
                       : "border-border bg-background text-foreground hover:bg-muted/50"
                   }`}
                 >
-                  <Snowflake className="w-4 h-4" /> Ghiaccio
+                  <Snowflake className="w-4 h-4" /> {t("modal.type_ice")}
                 </button>
                 <button
                   type="button"
@@ -2142,20 +2148,20 @@ const CorsoModal: React.FC<{
                       : "border-border bg-background text-foreground hover:bg-muted/50"
                   }`}
                 >
-                  <Dumbbell className="w-4 h-4" /> Off-Ice
+                  <Dumbbell className="w-4 h-4" /> {t("modal.type_off_ice")}
                 </button>
               </div>
             </div>
 
             {tipo_dialog_tipo === "Off-Ice" && (
               <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Categoria</label>
+                <label className="text-sm font-medium text-foreground">{t("modal.category")}</label>
                 <input
                   type="text"
                   list="categorie_off_ice"
                   value={tipo_dialog_categoria}
                   onChange={(e) => set_tipo_dialog_categoria(e.target.value)}
-                  placeholder="es. Danza, Stretching, Pilates..."
+                  placeholder={t("modal.category_placeholder")}
                   className={input_cls}
                 />
                 <datalist id="categorie_off_ice">
@@ -2165,13 +2171,13 @@ const CorsoModal: React.FC<{
                   <option value="Preparazione atletica" />
                   <option value="Yoga" />
                 </datalist>
-                <p className="text-xs text-muted-foreground">Suggerimenti: Danza, Stretching, Pilates, Preparazione atletica, Yoga.</p>
+                <p className="text-xs text-muted-foreground">{t("modal.category_suggestions")}</p>
               </div>
             )}
 
             <div className="flex gap-2 pt-2">
               <Button variant="outline" onClick={() => set_tipo_dialog_open(false)} className="flex-1">
-                Annulla
+                {t("modal.cancel")}
               </Button>
               <Button
                 onClick={() => {
@@ -2184,7 +2190,7 @@ const CorsoModal: React.FC<{
                 }}
                 className="flex-1 bg-primary hover:bg-primary/90"
               >
-                Salva
+                {t("modal.save_plain")}
               </Button>
             </div>
           </div>
@@ -2211,6 +2217,7 @@ const CorsoCard: React.FC<{
   onGestisciIscrizioni: () => void;
   onClick: () => void;
 }> = ({ corso, istruttori, onGestisciIscrizioni, onClick }) => {
+  const { t } = useTranslation("corsi");
   const istruttori_corso = (corso.istruttori_ids || [])
     .map((id: string) => istruttori.find((i: any) => i.id === id))
     .filter(Boolean);
@@ -2231,7 +2238,7 @@ const CorsoCard: React.FC<{
             {corso.giorno} {corso.ora_inizio?.slice(0, 5)} – {corso.ora_fine?.slice(0, 5)}
           </p>
         ) : (
-          <Badge variant="secondary" className="text-[10px] bg-muted text-muted-foreground">Da posizionare</Badge>
+          <Badge variant="secondary" className="text-[10px] bg-muted text-muted-foreground">{t("card.to_be_scheduled")}</Badge>
         )}
       </div>
 
@@ -2255,7 +2262,7 @@ const CorsoCard: React.FC<{
         })()}
         {prezzo_non_impostato(corso) && (
           <Badge variant="outline" className="text-[10px] border-amber-300 bg-amber-50 text-amber-700 flex-shrink-0">
-            <AlertTriangle className="w-3 h-3 mr-1" /> Prezzo non impostato
+            <AlertTriangle className="w-3 h-3 mr-1" /> {t("card.price_not_set")}
           </Badge>
         )}
       </div>
@@ -2269,7 +2276,7 @@ const CorsoCard: React.FC<{
       <div className="flex items-center justify-between pt-2 border-t border-border/50">
         <div className="flex items-center gap-2">
           <Users className="w-4 h-4 text-muted-foreground" />
-          <span className="text-sm font-medium text-foreground">{num_iscritti} iscritti</span>
+          <span className="text-sm font-medium text-foreground">{t("card.enrolled_count", { count: num_iscritti })}</span>
         </div>
         <Button
           size="sm"
@@ -2280,7 +2287,7 @@ const CorsoCard: React.FC<{
             onGestisciIscrizioni();
           }}
         >
-          Gestisci iscrizioni
+          {t("card.manage_enrollments")}
         </Button>
       </div>
     </div>
@@ -2301,7 +2308,9 @@ const FilterBar: React.FC<{
   istruttori: any[];
   onReset: () => void;
   hasFilters: boolean;
-}> = ({ giorno, setGiorno, tipo, setTipo, istruttoreId, setIstruttoreId, tipi, istruttori, onReset, hasFilters }) => (
+}> = ({ giorno, setGiorno, tipo, setTipo, istruttoreId, setIstruttoreId, tipi, istruttori, onReset, hasFilters }) => {
+  const { t } = useTranslation("corsi");
+  return (
   <div className="bg-card rounded-xl border border-border p-4 space-y-3">
     {/* Day pills */}
     <div className="flex flex-wrap gap-1.5">
@@ -2328,7 +2337,7 @@ const FilterBar: React.FC<{
           onChange={(e) => setTipo(e.target.value)}
           className={`${input_cls} appearance-none pr-8 min-w-[160px]`}
         >
-          <option value="">Tutti i tipi</option>
+          <option value="">{t("filters.all_types")}</option>
           {tipi.map((t) => (
             <option key={t} value={t}>{t}</option>
           ))}
@@ -2343,7 +2352,7 @@ const FilterBar: React.FC<{
           onChange={(e) => setIstruttoreId(e.target.value)}
           className={`${input_cls} appearance-none pr-8 min-w-[180px]`}
         >
-          <option value="">Tutti gli istruttori</option>
+          <option value="">{t("filters.all_instructors")}</option>
           {istruttori.filter((i: any) => i.attivo).map((i: any) => (
             <option key={i.id} value={i.id}>{i.nome} {i.cognome}</option>
           ))}
@@ -2353,16 +2362,17 @@ const FilterBar: React.FC<{
 
       {hasFilters && (
         <Button variant="ghost" size="sm" onClick={onReset} className="text-xs text-muted-foreground">
-          <X className="w-3.5 h-3.5 mr-1" /> Azzera filtri
+          <X className="w-3.5 h-3.5 mr-1" /> {t("filters.reset")}
         </Button>
       )}
     </div>
   </div>
-);
+  );
+};
 
 // ─── Main Page ─────────────────────────────────────────────
 const CoursesPage: React.FC = () => {
-  const { t } = useI18n();
+  const { t } = useTranslation("corsi");
   const qc = useQueryClient();
   const { data: corsi = [], isLoading } = use_corsi();
   const { data: istruttori = [] } = use_istruttori();
@@ -2453,7 +2463,7 @@ const CoursesPage: React.FC = () => {
 
   const corsi_per_istruttore = useMemo(() => {
     const groups: Record<string, { label: string; corsi: any[] }> = {};
-    groups["_none"] = { label: "Senza istruttore", corsi: [] };
+    groups["_none"] = { label: t("page.no_instructor"), corsi: [] };
     istruttori.filter((i: any) => i.attivo).forEach((i: any) => {
       groups[i.id] = { label: `${i.nome} ${i.cognome}`, corsi: [] };
     });
@@ -2469,14 +2479,14 @@ const CoursesPage: React.FC = () => {
     const { error } = await supabase.from("tipi_corso").insert({ club_id: get_current_club_id(), nome });
     if (error) throw error;
     await qc.invalidateQueries({ queryKey: ["tipi_corso"] });
-    toast({ title: `✅ Tipo "${nome}" aggiunto` });
+    toast({ title: t("page.toast_type_added", { name: nome }) });
   };
 
   const handle_save = async (data: any) => {
     try {
       const corso_id = await upsert.mutateAsync({ ...data, istruttori_ids: Array.from(new Set(data.istruttori_ids || [])) });
       set_modal_open(false);
-      toast({ title: data.id ? "✅ Corso aggiornato" : "✅ Corso creato" });
+      toast({ title: data.id ? t("page.toast_course_updated") : t("page.toast_course_created") });
 
       // Auto-generate planning slots if posiziona_planning is active
       if (corso_id && data.giorno && data.ora_inizio && data.ora_fine) {
@@ -2487,14 +2497,14 @@ const CoursesPage: React.FC = () => {
             qc.invalidateQueries({ queryKey: ["planning_settimana"] }),
             qc.invalidateQueries({ queryKey: ["planning_corsi_settimana"] }),
           ]);
-          toast({ title: "📅 Planning aggiornato per tutta la stagione" });
+          toast({ title: t("page.toast_planning_updated") });
         } catch (err: any) {
           console.error("Errore generazione planning:", err);
-          toast({ title: "⚠️ Corso salvato ma errore nel planning", description: err?.message, variant: "destructive" });
+          toast({ title: t("page.toast_course_saved_planning_error"), description: err?.message, variant: "destructive" });
         }
       }
     } catch (err: any) {
-      toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
+      toast({ title: t("page.toast_save_error"), description: err?.message, variant: "destructive" });
     }
   };
 
@@ -2526,8 +2536,8 @@ const CoursesPage: React.FC = () => {
 
     if (!stagione?.id || !stagione?.data_fine) {
       toast({
-        title: "⚠️ Nessuna stagione valida",
-        description: "Serve una stagione con data fine per generare il planning automatico",
+        title: t("page.toast_no_valid_season"),
+        description: t("page.toast_no_valid_season_desc"),
         variant: "destructive",
       });
       return;
@@ -2598,7 +2608,7 @@ const CoursesPage: React.FC = () => {
           .single();
         if (create_err) {
           console.error("Errore creazione settimana planning:", create_err);
-          throw new Error(`Impossibile creare settimana ${monday}: ${create_err.message}`);
+          throw new Error(t("page.error_create_week", { monday, message: create_err.message }));
         }
         existing_map.set(monday, created);
       }
@@ -2625,7 +2635,7 @@ const CoursesPage: React.FC = () => {
     });
 
     if (slot_rows.length === 0) {
-      throw new Error("Nessuno slot da generare: controlla le date della stagione");
+      throw new Error(t("page.error_no_slot"));
     }
 
     // Delete existing slots for this course in these weeks
@@ -2643,7 +2653,7 @@ const CoursesPage: React.FC = () => {
       const { error } = await supabase.from("planning_corsi_settimana").insert(batch);
       if (error) {
         console.error("Errore inserimento planning_corsi_settimana:", error, "batch:", batch);
-        throw new Error(`Errore inserimento nel planning: ${error.message}`);
+        throw new Error(t("page.error_insert_planning", { message: error.message }));
       }
     }
 
@@ -2653,7 +2663,7 @@ const CoursesPage: React.FC = () => {
       .select("*", { count: "exact", head: true })
       .eq("corso_id", corso_id);
     if (!count || count === 0) {
-      throw new Error("Il corso è stato salvato ma non risulta nel planning. Riprova.");
+      throw new Error(t("page.error_not_in_planning"));
     }
   };
 
@@ -2661,9 +2671,9 @@ const CoursesPage: React.FC = () => {
     try {
       await elimina.mutateAsync(selected_corso.id);
       set_modal_open(false);
-      toast({ title: "🗑️ Corso eliminato correttamente" });
+      toast({ title: t("page.toast_course_deleted") });
     } catch (err: any) {
-      toast({ title: "Errore eliminazione", description: err?.message, variant: "destructive" });
+      toast({ title: t("page.toast_delete_error"), description: err?.message, variant: "destructive" });
     }
   };
 
@@ -2704,9 +2714,9 @@ const CoursesPage: React.FC = () => {
                   try {
                     await elimina.mutateAsync(wizard_corso.id);
                     set_wizard_open(false);
-                    toast({ title: "🗑️ Corso eliminato correttamente" });
+                    toast({ title: t("page.toast_course_deleted") });
                   } catch (err: any) {
-                    toast({ title: "Errore eliminazione", description: err?.message, variant: "destructive" });
+                    toast({ title: t("page.toast_delete_error"), description: err?.message, variant: "destructive" });
                   }
                 }
               : undefined
@@ -2757,7 +2767,7 @@ const CoursesPage: React.FC = () => {
           <h1 className="text-xl font-bold tracking-tight text-foreground">{t("corsi")}</h1>
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => set_duplica_open(true)}>
-              <Copy className="w-4 h-4 mr-2" /> Duplica stagione
+              <Copy className="w-4 h-4 mr-2" /> {t("page.duplicate_season")}
             </Button>
             <Button
               className="bg-primary hover:bg-primary/90"
@@ -2766,7 +2776,7 @@ const CoursesPage: React.FC = () => {
                 set_wizard_open(true);
               }}
             >
-              <Plus className="w-4 h-4 mr-2" /> {t("nuovo_corso")}
+              <Plus className="w-4 h-4 mr-2" /> {t("page.new_course")}
             </Button>
           </div>
         </div>
@@ -2784,7 +2794,7 @@ const CoursesPage: React.FC = () => {
             {(["giorno", "istruttore"] as const).map((v) => (
               <button key={v} onClick={() => set_vista(v)}
                 className={`px-4 py-1.5 text-sm font-medium transition-colors ${vista === v ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"}`}>
-                {v === "giorno" ? "Per giorno" : "Per istruttore"}
+                {v === "giorno" ? t("page.by_day") : t("page.by_instructor")}
               </button>
             ))}
           </div>
@@ -2796,13 +2806,13 @@ const CoursesPage: React.FC = () => {
           <Input
             value={ricerca_corso}
             onChange={(e) => set_ricerca_corso(e.target.value)}
-            placeholder="Cerca corso per nome o tipo…"
+            placeholder={t("page.search_placeholder")}
             className="pl-9 pr-9 h-11"
           />
           {ricerca_corso && (
             <button
               type="button"
-              aria-label="Cancella ricerca"
+              aria-label={t("page.clear_search")}
               onClick={() => set_ricerca_corso("")}
               className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md hover:bg-muted"
             >
@@ -2828,8 +2838,8 @@ const CoursesPage: React.FC = () => {
           <div className="bg-card rounded-xl shadow-card p-12 text-center text-muted-foreground">
             <p className="text-sm">
               {has_filters
-                ? "Nessun corso trovato con questi filtri."
-                : "Nessun corso. Clicca \"Nuovo corso\" per aggiungerne uno."}
+                ? t("page.no_courses_filtered")
+                : t("page.no_courses_empty")}
             </p>
           </div>
         ) : vista === "giorno" ? (
@@ -2840,7 +2850,7 @@ const CoursesPage: React.FC = () => {
               return (
                 <div key={giorno}>
                   <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-3 border-b border-border pb-1">
-                    {giorno === "Da posizionare" ? "📋 Da posizionare" : giorno}
+                    {giorno === "Da posizionare" ? t("page.to_be_scheduled_header") : giorno}
                     <span className="text-xs font-normal ml-2 text-muted-foreground">({group.length})</span>
                   </h2>
                   <div className="space-y-2">
@@ -2862,41 +2872,41 @@ const CoursesPage: React.FC = () => {
                           {!completezza.completo && (
                             <>
                               <Badge variant="outline" className="text-[10px] border-orange-300 bg-orange-50 text-orange-700 flex-shrink-0" title={completezza.motivo}>
-                                <AlertTriangle className="w-3 h-3 mr-1" />Incompleto
+                                <AlertTriangle className="w-3 h-3 mr-1" />{t("page.incomplete")}
                               </Badge>
                               <button
                                 onClick={(e) => { e.stopPropagation(); set_wizard_corso(c); set_wizard_open(true); }}
                                 className="flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline flex-shrink-0"
                                 title={completezza.motivo}
                               >
-                                <Wand2 className="w-3.5 h-3.5" /> Sistema
+                                <Wand2 className="w-3.5 h-3.5" /> {t("page.fix_action")}
                               </button>
                             </>
                           )}
                           {c.tipo && <Badge variant="secondary" className="text-xs flex-shrink-0">{c.tipo}</Badge>}
                           {prezzo_non_impostato(c) && (
                             <Badge variant="outline" className="text-[10px] border-amber-300 bg-amber-50 text-amber-700 flex-shrink-0">
-                              <AlertTriangle className="w-3 h-3 mr-1" /> Prezzo non impostato
+                              <AlertTriangle className="w-3 h-3 mr-1" /> {t("card.price_not_set")}
                             </Badge>
                           )}
-                          <span className="text-xs text-muted-foreground flex-shrink-0">{(c.atleti_ids||[]).length} iscritti</span>
+                          <span className="text-xs text-muted-foreground flex-shrink-0">{t("card.enrolled_count", { count: (c.atleti_ids||[]).length })}</span>
                           <ConfirmButton
-                            titolo={`Eliminare il corso "${c.nome}"?`}
-                            descrizione="Questa azione non è reversibile."
+                            titolo={t("page.confirm_delete_title", { name: c.nome })}
+                            descrizione={t("page.confirm_delete_desc")}
                             on_conferma={async () => {
                               try {
                                 await elimina.mutateAsync(c.id);
-                                toast({ title: "🗑️ Corso eliminato" });
+                                toast({ title: t("page.toast_course_deleted_short") });
                               } catch (err: any) {
-                                toast({ title: "Errore eliminazione", description: err?.message, variant: "destructive" });
+                                toast({ title: t("page.toast_delete_error"), description: err?.message, variant: "destructive" });
                               }
                             }}
                           >
                             <button
                               onClick={(e) => e.stopPropagation()}
                               className="text-muted-foreground hover:text-destructive p-1 rounded flex-shrink-0"
-                              title="Elimina corso"
-                              aria-label="Elimina corso"
+                              title={t("page.delete_course_title")}
+                              aria-label={t("page.delete_course_title")}
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -2935,36 +2945,36 @@ const CoursesPage: React.FC = () => {
                           {!completezza.completo && (
                             <>
                               <Badge variant="outline" className="text-[10px] border-orange-300 bg-orange-50 text-orange-700 flex-shrink-0" title={completezza.motivo}>
-                                <AlertTriangle className="w-3 h-3 mr-1" />Incompleto
+                                <AlertTriangle className="w-3 h-3 mr-1" />{t("page.incomplete")}
                               </Badge>
                               <button
                                 onClick={(e) => { e.stopPropagation(); set_wizard_corso(c); set_wizard_open(true); }}
                                 className="flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline flex-shrink-0"
                                 title={completezza.motivo}
                               >
-                                <Wand2 className="w-3.5 h-3.5" /> Sistema
+                                <Wand2 className="w-3.5 h-3.5" /> {t("page.fix_action")}
                               </button>
                             </>
                           )}
                           {c.tipo && <Badge variant="secondary" className="text-xs flex-shrink-0">{c.tipo}</Badge>}
-                          <span className="text-xs text-muted-foreground flex-shrink-0">{(c.atleti_ids||[]).length} iscritti</span>
+                          <span className="text-xs text-muted-foreground flex-shrink-0">{t("card.enrolled_count", { count: (c.atleti_ids||[]).length })}</span>
                           <ConfirmButton
-                            titolo={`Eliminare il corso "${c.nome}"?`}
-                            descrizione="Questa azione non è reversibile."
+                            titolo={t("page.confirm_delete_title", { name: c.nome })}
+                            descrizione={t("page.confirm_delete_desc")}
                             on_conferma={async () => {
                               try {
                                 await elimina.mutateAsync(c.id);
-                                toast({ title: "🗑️ Corso eliminato" });
+                                toast({ title: t("page.toast_course_deleted_short") });
                               } catch (err: any) {
-                                toast({ title: "Errore eliminazione", description: err?.message, variant: "destructive" });
+                                toast({ title: t("page.toast_delete_error"), description: err?.message, variant: "destructive" });
                               }
                             }}
                           >
                             <button
                               onClick={(e) => e.stopPropagation()}
                               className="text-muted-foreground hover:text-destructive p-1 rounded flex-shrink-0"
-                              title="Elimina corso"
-                              aria-label="Elimina corso"
+                              title={t("page.delete_course_title")}
+                              aria-label={t("page.delete_course_title")}
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
