@@ -1119,6 +1119,8 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
                       rimuovi_istruttore.mutateAsync({ sessione_id: s.id, istruttore_id })
                     }
                     on_ripeti={() => set_ripeti_sessione(s)}
+                    on_sync_gruppo={() => sincronizza_dal_gruppo(s)}
+                    sync_in_corso={sync_gruppo_id === s.id}
                     data_blocco={blocco.data}
                     atleti_tutti={atleti as any[]}
                     ragioni_sociali={ragioni_attive}
