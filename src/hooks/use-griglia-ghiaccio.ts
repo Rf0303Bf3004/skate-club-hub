@@ -576,10 +576,6 @@ export function use_upsert_sessione() {
       messaggio_atleti?: string | null;
       fuori_disponibilita?: boolean;
       motivo_forzatura?: string | null;
-      /** Collegamento dinamico al gruppo: passato SOLO dal drag di gruppo. */
-      gruppo_livello?: string | null;
-      gruppo_scope?: GruppoScope | null;
-      gruppo_ragione_sociale_id?: string | null;
     }) => {
       // XOR: mai entrambi valorizzati
       const usa_testo = !!input.specialita_testo_libero && !input.specialita_id;
@@ -592,18 +588,6 @@ export function use_upsert_sessione() {
               forzato_da: input.fuori_disponibilita ? session?.user_id ?? null : null,
               forzato_at: input.fuori_disponibilita ? new Date().toISOString() : null,
             };
-      // I campi gruppo vengono scritti solo se esplicitamente passati:
-      // un salvataggio normale (o un drag individuale) non li tocca mai.
-      const gruppo =
-        input.gruppo_livello === undefined
-          ? {}
-          : {
-              gruppo_livello: input.gruppo_livello,
-              gruppo_scope: input.gruppo_livello ? input.gruppo_scope ?? null : null,
-              gruppo_ragione_sociale_id: input.gruppo_livello
-                ? input.gruppo_ragione_sociale_id ?? null
-                : null,
-            };
       const payload = {
         blocco_id: input.blocco_id,
         ordine: input.ordine,
@@ -615,8 +599,8 @@ export function use_upsert_sessione() {
         pista: input.pista ?? null,
         messaggio_atleti: input.messaggio_atleti ?? null,
         ...forzatura,
-        ...gruppo,
       };
+
       if (input.id) {
         const { error } = await supabase.from("griglia_sessioni" as any).update(payload as any).eq("id", input.id);
         if (error) throw error;
