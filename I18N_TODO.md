@@ -421,3 +421,30 @@ Pattern usato (file con molti sotto-componenti non-hook): helper module-level
 - Genere dinamico gestito con chiavi separate (`status_attiva`/`status_attivo`, `federata`/`federato`).
 - Placeholder preservati: `{{atleta}}`, `{{data}}`, `{{nome}}`, `{{cognome}}`, `{{eta}}`, `{{livello}}`, `{{categoria}}`, `{{id}}`, `{{quando}}`.
 - Nessuna chiave array/oggetto; nessuna modifica ai JSON `de/fr/en`.
+
+## Step 1.5j — Componenti trasversali / utility (10 file) ✅ COMPLETATO
+
+| File | Namespace | Prefisso chiavi | N. ca. |
+|---|---|---|---|
+| `common/GlobalSearchPalette.tsx` | `common` | `search_palette.*` | 18 |
+| `common/SearchableListLayout.tsx` | `common` | `list_layout.*` | 7 |
+| `forms/DateInput.tsx` | `common` | `date_input.*` | 3 |
+| `FatturazioneTab.tsx` | `fatture` | `billing_tab.*` (incl. `billing_tab.month_1..12`) | 41 |
+| `CatalogoOffertaTab.tsx` | `settings` | `catalogo.*` | 29 |
+| `CompensoStaffModal.tsx` | `istruttori` | `compenso.*` | 29 |
+| `SessioniCampoEstivo.tsx` | `events` | `sessioni_campo.*` | 25 |
+| `ImportGaraPdf.tsx` | `events` | `import_pdf.*` | 34 |
+| `dashboard/OnboardingBanner.tsx` | `dashboard` | `onboarding_banner.*` | 8 |
+| `NavLink.tsx` | — | — | 0 (nessuna stringa visibile: wrapper tecnico) |
+
+### Note
+- L'array `MESI` in `FatturazioneTab` è stato convertito in chiavi singole `billing_tab.month_1..month_12`
+  (nessun array nel DB traduzioni).
+- `CatalogoOffertaTab` e `CompensoStaffModal` usano helper module-level (`tc`, `tk`) per le stringhe
+  usate fuori dal corpo del componente/render helper, con `useTranslation` nel componente principale.
+- `SearchableListLayout` ora accetta `search_placeholder` opzionale con fallback tradotto.
+- NON tradotti: livelli tecnici DB (`Pulcini`, `Stellina 1-4`, `Bronzo`…`Oro`), valori enum
+  `standard`/`aree_pista`/`officestripe` (solo le label), sigle punteggi ISU (TOT/TES/PCS).
+- Placeholder i18next: `{{count}}`, `{{mese}}`, `{{anno}}`, `{{livello}}`, `{{nome}}`, `{{cognome}}`,
+  `{{matched}}`, `{{unmatched}}`, `{{label}}`.
+- Nessuna modifica ai JSON `src/locales/{de,fr,en}/`.
