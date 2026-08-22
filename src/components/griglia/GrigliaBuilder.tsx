@@ -158,18 +158,33 @@ const PillolaDraggable: React.FC<{
   );
 };
 
+// ─── Scope del gruppo (mappa i 4 box sorgente) ─────────────
+const LIVELLO_NON_DEFINITO = "Senza livello";
+
+export function scope_da_box_id(box_id?: string): {
+  gruppo_scope: GruppoScope;
+  gruppo_ragione_sociale_id: string | null;
+} {
+  if (box_id === "club") return { gruppo_scope: "club", gruppo_ragione_sociale_id: null };
+  if (box_id === "senza_rs")
+    return { gruppo_scope: "senza_ragione_sociale", gruppo_ragione_sociale_id: null };
+  if (box_id === "esterni") return { gruppo_scope: "esterni", gruppo_ragione_sociale_id: null };
+  return { gruppo_scope: "ragione_sociale", gruppo_ragione_sociale_id: box_id ?? null };
+}
+
 // ─── Intestazione gruppo (livello) draggable ───────────────
 const GruppoDraggable: React.FC<{
   drag_id: string;
   livello: string;
   atleta_ids: string[];
+  box_id?: string;
   colore?: string | null;
   aperto?: boolean;
   on_toggle?: () => void;
-}> = ({ drag_id, livello, atleta_ids, colore, aperto, on_toggle }) => {
+}> = ({ drag_id, livello, atleta_ids, box_id, colore, aperto, on_toggle }) => {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: drag_id,
-    data: { tipo: "gruppo", atleta_ids },
+    data: { tipo: "gruppo", atleta_ids, livello, box_id },
   });
   const down_ref = React.useRef<{ x: number; y: number } | null>(null);
   return (
