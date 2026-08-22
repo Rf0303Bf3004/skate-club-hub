@@ -322,6 +322,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/superadmin/app-mobile" ? "bg-purple-600 text-white shadow-sm" : "text-purple-500 hover:bg-purple-100 hover:text-purple-700"}`}>
                 <Smartphone className="w-4 h-4 shrink-0" /><span>App Mobile</span>
               </NavLink>
+              <NavLink to="/superadmin/traduzioni" onClick={() => set_sidebar_open(false)}
+                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/superadmin/traduzioni" ? "bg-purple-600 text-white shadow-sm" : "text-purple-500 hover:bg-purple-100 hover:text-purple-700"}`}>
+                <Globe className="w-4 h-4 shrink-0" /><span>Traduzioni</span>
+              </NavLink>
               <NavLink to="/superadmin/manutenzione" onClick={() => set_sidebar_open(false)}
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/superadmin/manutenzione" ? "bg-purple-600 text-white shadow-sm" : "text-purple-500 hover:bg-purple-100 hover:text-purple-700"}`}>
                 <Settings className="w-4 h-4 shrink-0" /><span>{tc("menu.superadmin_manutenzione")}</span>

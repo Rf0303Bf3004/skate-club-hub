@@ -17,6 +17,18 @@ interface Riga extends RigaTraduzione {
   id: string;
 }
 
+// Le chiavi i18n il cui valore non è una stringa semplice (array/oggetto, es. liste di mesi o giorni)
+// NON vanno gestite in traduzioni_ui: restano solo nei JSON statici. Qui vengono escluse dalla griglia.
+function is_valore_non_semplice(v: unknown): boolean {
+  if (typeof v !== "string") return v != null;
+  const t = v.trim();
+  return (t.startsWith("[") && t.endsWith("]")) || (t.startsWith("{") && t.endsWith("}"));
+}
+
+function e_riga_lista(r: Riga) {
+  return LINGUE.some((l) => is_valore_non_semplice(r[l]));
+}
+
 function is_incompleta(r: Riga) {
   return (["de", "fr", "rm", "en"] as Lingua[]).some((l) => !((r[l] ?? "").toString().trim()));
 }
@@ -48,7 +60,7 @@ export default function TraduzioniTab({ on_log }: Props) {
           .range(from, from + page - 1);
         if (error) throw error;
         const batch = (data ?? []) as Riga[];
-        acc.push(...batch);
+        acc.push(...batch.filter((r) => !e_riga_lista(r)));
         if (batch.length < page) break;
       }
       set_righe(acc);
