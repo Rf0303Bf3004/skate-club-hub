@@ -375,3 +375,30 @@ Pattern usato (file con molti sotto-componenti non-hook): helper module-level
 - NON tradotti: livelli tecnici DB (`Pulcini`, `Stellina 1-4`, `Bronzo`…`Oro`), livelli sponsor (`Gold/Silver/Bronze`), fasce orarie numeriche (`16-17`…), nomi atleti/istruttori/eventi/sponsor dal DB.
 - Rimane hardcoded il nome club di esempio `Stella del Ghiaccio ASD` (sezione Identità): è un dato, andrà letto da `club_identity`, non tradotto.
 - Nessuna modifica ai JSON `src/locales/{fr,de,en}/`.
+
+---
+
+## Step 1.5h — Pagine secondarie / superadmin (11 file) ✅ COMPLETATO
+
+| File | Namespace | Prefisso chiavi | N. ca. |
+|---|---|---|---|
+| `AdvancedManagementPage.tsx` | `settings` | `advanced.*` | 60 |
+| `PacchettiSponsorPage.tsx` | `settings` | `sponsor.*` | 35 |
+| `NotFound.tsx` | `common` | `not_found.*` | 3 |
+| `LegalPlaceholderPage.tsx` | `common` | `legal.*` | 3 |
+| `PresidentRelazione.tsx` | `dashboard` | `relazione.*` | 10 |
+| `PresidentRelazioneGestione.tsx` | `dashboard` | `relazione.*` | 8 |
+| `SuperAdminClubPage.tsx` | `superadmin` | `clubs.*` | 45 |
+| `SuperAdminManutenzione.tsx` | `superadmin` | `manutenzione.*` | 40 |
+| `SuperAdminManutenzioneStr.tsx` | `superadmin` | `str.*` | 45 |
+| `SuperAdminPage.tsx` | `superadmin` | `panel.*` (incl. `panel.action.*`, `panel.users.*`, `panel.new_club.*`, `panel.tab.*`, `panel.roles.*`) | 95 |
+| `ImportAtletiPage.tsx` | `atleti` | `import.*` (incl. `import.step.*`, `import.field.*`, `import.col.*`, `import.err.*`, `import.toast.*`) | 60 |
+
+### Note
+- Pattern per i file con sotto-componenti fuori dagli hook: helper module-level
+  (`ts` per `superadmin`, `ti` per `atleti`) = `i18n.t('<prefisso>.<key>', { ns })`,
+  con `useTranslation(ns)` nel componente principale per il re-render al cambio lingua.
+- `TARGET_FIELDS` in `ImportAtletiPage` ora espone `label_key` invece di `label` hardcoded.
+- Nessuna chiave array/oggetto introdotta: tutte sincronizzabili in `traduzioni_ui`.
+- Placeholder i18next mantenuti: `{{count}}`, `{{nome}}`, `{{email}}`, `{{msg}}`, `{{riga}}`, `{{livello}}`, `{{codice}}`.
+- Nessuna modifica ai JSON `src/locales/{de,fr,en}/`.
