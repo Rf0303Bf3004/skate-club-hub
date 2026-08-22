@@ -5711,6 +5711,45 @@ export type Database = {
         }
         Relationships: []
       }
+      traduzioni_ui: {
+        Row: {
+          aggiornato_da: string | null
+          aggiornato_il: string
+          chiave: string
+          de: string | null
+          en: string | null
+          fr: string | null
+          id: string
+          it: string | null
+          namespace: string
+          rm: string | null
+        }
+        Insert: {
+          aggiornato_da?: string | null
+          aggiornato_il?: string
+          chiave: string
+          de?: string | null
+          en?: string | null
+          fr?: string | null
+          id?: string
+          it?: string | null
+          namespace: string
+          rm?: string | null
+        }
+        Update: {
+          aggiornato_da?: string | null
+          aggiornato_il?: string
+          chiave?: string
+          de?: string | null
+          en?: string | null
+          fr?: string | null
+          id?: string
+          it?: string | null
+          namespace?: string
+          rm?: string | null
+        }
+        Relationships: []
+      }
       utenti_club: {
         Row: {
           attivo: boolean
