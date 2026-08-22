@@ -11,6 +11,7 @@ import SortableItem from "./SortableItem";
 import { CompositoreItem } from "./types-compositore";
 import { supabase } from "@/lib/supabase";
 import type { Tono } from "@/lib/paragraphGenerator";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   items: CompositoreItem[];
@@ -36,6 +37,7 @@ function icon_for(kind: CompositoreItem["kind"], sezione_id?: string) {
 }
 
 function ParagrafiNarrativiSub({ area_id, paragrafi }: { area_id: string; paragrafi: ParagrafoPreview[] | undefined }) {
+  const { t } = useTranslation("dashboard");
   const by_ord = new Map<number, string>();
   (paragrafi ?? []).forEach((p) => by_ord.set(p.paragrafo_ordine, p.contenuto));
   const trunc = (s: string) => (s.length > 75 ? s.substring(0, 75) + "..." : s);
@@ -49,7 +51,7 @@ function ParagrafiNarrativiSub({ area_id, paragrafi }: { area_id: string; paragr
               {c ? (
                 <span>&ldquo;{trunc(c)}&rdquo;</span>
               ) : (
-                <span className="italic text-slate-400">Paragrafo non ancora generato</span>
+                <span className="italic text-slate-400">{t("relazione.indice.paragrafo_non_generato")}</span>
               )}
             </li>
           );
@@ -61,7 +63,7 @@ function ParagrafiNarrativiSub({ area_id, paragrafi }: { area_id: string; paragr
           className="text-[11px] text-teal-700 hover:text-teal-900 hover:underline"
           onClick={(e) => e.stopPropagation()}
         >
-          Modifica i paragrafi
+          {t("relazione.indice.modifica_paragrafi")}
         </Link>
       </div>
     </div>
@@ -69,6 +71,7 @@ function ParagrafiNarrativiSub({ area_id, paragrafi }: { area_id: string; paragr
 }
 
 export default function IndiceComponibile({ items, on_reorder, on_toggle, on_select, selected_id, on_reset, club_id, stagione_id, tono }: Props) {
+  const { t } = useTranslation("dashboard");
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -136,13 +139,13 @@ export default function IndiceComponibile({ items, on_reorder, on_toggle, on_sel
     <div className="flex flex-col h-full">
       <div className="flex items-start justify-between mb-3">
         <div>
-          <h3 className="font-serif text-lg text-foreground">Struttura relazione</h3>
+          <h3 className="font-serif text-lg text-foreground">{t("relazione.indice.titolo")}</h3>
           <p className="text-xs text-slate-500 mt-1">
-            Trascina per riordinare. Disattiva per escludere dal PDF. Sotto ogni area vedi i paragrafi che verranno inclusi.
+            {t("relazione.indice.sottotitolo")}
           </p>
         </div>
         <Button variant="ghost" size="sm" onClick={on_reset} className="gap-1.5 text-xs h-7">
-          <RotateCcw className="w-3 h-3" /> Reset
+          <RotateCcw className="w-3 h-3" /> {t("relazione.indice.reset")}
         </Button>
       </div>
 
@@ -186,6 +189,7 @@ export default function IndiceComponibile({ items, on_reorder, on_toggle, on_sel
 }
 
 function ItemRow({ item, selected, on_toggle, on_select }: { item: CompositoreItem; selected: boolean; on_toggle: (v: boolean) => void; on_select: () => void }) {
+  const { t } = useTranslation("dashboard");
   const Icon = icon_for(item.kind, item.sezione_id);
   return (
     <Card
@@ -206,7 +210,7 @@ function ItemRow({ item, selected, on_toggle, on_select }: { item: CompositoreIt
           />
         )}
         {item.locked && (
-          <span className="text-[9px] uppercase tracking-wider text-muted-foreground border border-border rounded px-1.5 py-0.5">sistema</span>
+          <span className="text-[9px] uppercase tracking-wider text-muted-foreground border border-border rounded px-1.5 py-0.5">{t("relazione.indice.badge_sistema")}</span>
         )}
       </div>
     </Card>
