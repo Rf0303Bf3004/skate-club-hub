@@ -16,12 +16,17 @@ import {
   use_pubblica_blocco,
   use_disponibilita_giorno,
   use_ripeti_sessione,
+  use_assegna_gruppo_sessione,
+  use_rimuovi_gruppo_sessione,
+  use_sync_gruppo_sessione,
   risolvi_membri_gruppo,
   giorno_it_da_data,
   type GruppoScope,
   type GrigliaBlocco,
   type GrigliaSessione,
+  type GrigliaSessioneGruppo,
 } from "@/hooks/use-griglia-ghiaccio";
+
 import { use_risorse_strutture } from "@/hooks/use-risorse-strutture";
 
 import { Button } from "@/components/ui/button";
@@ -365,6 +370,150 @@ const PoolBox: React.FC<{
 };
 
 
+// ─── Pillola di un gruppo agganciato alla sotto-sessione ───
+const GruppoPill: React.FC<{
+  gruppo: GrigliaSessioneGruppo;
+  n_atleti: number;
+  salvati_ids: string[];
+  nome_atleta: (atleta_id: string) => string;
+  colore: string | null;
+  in_sync?: boolean;
+  on_sync?: () => void;
+  on_rimuovi?: () => void;
+}> = ({ gruppo, n_atleti, salvati_ids, nome_atleta, colore, in_sync, on_sync, on_rimuovi }) => {
+  const [open, set_open] = useState(false);
+  const [membri_live, set_membri_live] = useState<string[] | null>(null);
+  const [loading, set_loading] = useState(false);
+  const [conferma, set_conferma] = useState(false);
+
+  const carica = async () => {
+    set_loading(true);
+    try {
+      const ids = await risolvi_membri_gruppo(
+        get_current_club_id(),
+        gruppo.gruppo_scope,
+        gruppo.gruppo_livello,
+        gruppo.gruppo_ragione_sociale_id,
+      );
+      set_membri_live(ids);
+    } catch {
+      set_membri_live(null);
+    } finally {
+      set_loading(false);
+    }
+  };
+
+  const nuovi = (membri_live ?? []).filter((id) => !salvati_ids.includes(id));
+  const usciti = membri_live ? salvati_ids.filter((id) => !membri_live.includes(id)) : [];
+
+  return (
+    <>
+      <Popover
+        open={open}
+        onOpenChange={(v) => {
+          set_open(v);
+          if (v) void carica();
+        }}
+      >
+        <PopoverTrigger asChild>
+          <span
+            role="button"
+            tabIndex={0}
+            onMouseEnter={() => {
+              set_open(true);
+              void carica();
+            }}
+            className={cn(
+              "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs border cursor-pointer",
+              colore ? "border-border" : "border-border bg-background",
+            )}
+            style={colore ? { borderLeft: `3px solid ${colore}`, backgroundColor: `${colore}1A` } : undefined}
+          >
+            <Link2 className="w-3 h-3" />
+            <span className="font-medium">{gruppo.gruppo_livello}</span>
+            <span className="text-muted-foreground">· {n_atleti} atleti</span>
+            {on_sync && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  on_sync();
+                }}
+                disabled={in_sync}
+                aria-label="Aggiorna dal gruppo"
+                title="Aggiorna dal gruppo"
+              >
+                <RefreshCw className={cn("w-3 h-3 text-muted-foreground", in_sync && "animate-spin")} />
+              </button>
+            )}
+            {on_rimuovi && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  set_conferma(true);
+                }}
+                aria-label="Rimuovi collegamento al gruppo"
+              >
+                <X className="w-3 h-3 text-muted-foreground hover:text-destructive" />
+              </button>
+            )}
+          </span>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-64 text-xs" onMouseLeave={() => set_open(false)}>
+          <p className="font-semibold mb-1">Membri attuali del gruppo</p>
+          {loading && <p className="text-muted-foreground">Caricamento…</p>}
+          {!loading && (
+            <ul className="space-y-0.5 max-h-48 overflow-y-auto">
+              {(membri_live ?? salvati_ids).map((id) => (
+                <li key={id} className="flex items-center gap-1">
+                  {nuovi.includes(id) && <span className="text-amber-600">★</span>}
+                  {nome_atleta(id)}
+                </li>
+              ))}
+              {(membri_live ?? salvati_ids).length === 0 && (
+                <li className="text-muted-foreground">Nessun atleta nel gruppo.</li>
+              )}
+            </ul>
+          )}
+          {!loading && membri_live && (nuovi.length > 0 || usciti.length > 0) && (
+            <p className="mt-2 pt-2 border-t text-amber-700">
+              {nuovi.length > 0 && `★ ${nuovi.length} nuovi non ancora sincronizzati`}
+              {nuovi.length > 0 && usciti.length > 0 && " · "}
+              {usciti.length > 0 && `${usciti.length} non più nel gruppo`}
+              {" — usa «Aggiorna dal gruppo»."}
+            </p>
+          )}
+        </PopoverContent>
+      </Popover>
+
+      <AlertDialog open={conferma} onOpenChange={set_conferma}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Rimuovere il collegamento al gruppo?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Verranno rimossi i {n_atleti} atleti provenienti dal gruppo «{gruppo.gruppo_livello}». Gli atleti
+              aggiunti manualmente e gli altri gruppi restano invariati.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                set_conferma(false);
+                on_rimuovi?.();
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Rimuovi gruppo
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+};
+
 // ─── Box sessione (droppable) ──────────────────────────────
 const SessioneBox: React.FC<{
   sessione: GrigliaSessione;
@@ -374,9 +523,9 @@ const SessioneBox: React.FC<{
   on_rimuovi_atleta: (atleta_id: string) => void;
   on_rimuovi_istruttore: (istruttore_id: string) => void;
   on_ripeti?: () => void;
-  on_sync_gruppo?: () => void;
-  on_rimuovi_gruppo?: () => void;
-  sync_in_corso?: boolean;
+  on_sync_gruppo?: (gruppo_sessione_id: string) => void;
+  on_rimuovi_gruppo?: (gruppo_sessione_id: string) => void;
+  sync_gruppo_ids?: string[];
   atleti_tutti?: {
     id: string;
     nome?: string | null;
@@ -396,7 +545,8 @@ const SessioneBox: React.FC<{
   on_ripeti,
   on_sync_gruppo,
   on_rimuovi_gruppo,
-  sync_in_corso,
+  sync_gruppo_ids,
+
   atleti_tutti = [],
   ragioni_sociali = [],
   data_blocco,
@@ -466,12 +616,6 @@ const SessioneBox: React.FC<{
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessione.atleti?.length, sessione.messaggio_atleti]);
 
-  // ─── Pillola di gruppo: elenco membri risolto dal vivo ───
-  const [gruppo_popover_open, set_gruppo_popover_open] = useState(false);
-  const [membri_live, set_membri_live] = useState<string[] | null>(null);
-  const [membri_live_loading, set_membri_live_loading] = useState(false);
-  const [conferma_rimuovi_gruppo, set_conferma_rimuovi_gruppo] = useState(false);
-
   const nome_atleta = (atleta_id: string): string => {
     const salvato = (sessione.atleti ?? []).find((a) => a.atleta_id === atleta_id);
     if (salvato) return `${salvato.nome ?? ""} ${salvato.cognome ?? ""}`.trim() || atleta_id.slice(0, 8);
@@ -479,27 +623,7 @@ const SessioneBox: React.FC<{
     return `${a?.nome ?? ""} ${a?.cognome ?? ""}`.trim() || atleta_id.slice(0, 8);
   };
 
-  const carica_membri_live = async () => {
-    if (!sessione.gruppo_livello) return;
-    set_membri_live_loading(true);
-    try {
-      const ids = await risolvi_membri_gruppo(
-        get_current_club_id(),
-        sessione.gruppo_scope ?? null,
-        sessione.gruppo_livello,
-        sessione.gruppo_ragione_sociale_id ?? null,
-      );
-      set_membri_live(ids);
-    } catch {
-      set_membri_live(null);
-    } finally {
-      set_membri_live_loading(false);
-    }
-  };
 
-  const salvati_ids = (sessione.atleti ?? []).map((a) => a.atleta_id);
-  const nuovi_non_sincronizzati = (membri_live ?? []).filter((id) => !salvati_ids.includes(id));
-  const non_piu_nel_gruppo = membri_live ? salvati_ids.filter((id) => !membri_live.includes(id)) : [];
 
 
 
@@ -568,34 +692,25 @@ const SessioneBox: React.FC<{
             </Tooltip>
           </TooltipProvider>
         )}
-        {sessione.gruppo_livello && (
+        {(sessione.gruppi ?? []).length > 0 && (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Badge variant="outline" className="gap-1 text-[10px]">
-                  <Link2 className="w-3 h-3" /> Gruppo: {sessione.gruppo_livello}
+                  <Link2 className="w-3 h-3" />
+                  {(sessione.gruppi ?? []).length === 1
+                    ? `Gruppo: ${sessione.gruppi[0].gruppo_livello}`
+                    : `${sessione.gruppi.length} gruppi collegati`}
                 </Badge>
               </TooltipTrigger>
               <TooltipContent className="max-w-xs">
-                Collegata dinamicamente al gruppo «{sessione.gruppo_livello}»
-                {sessione.gruppo_scope === "esterni" && " (esterni)"}
-                {sessione.gruppo_scope === "senza_ragione_sociale" && " (senza ragione sociale)"}.
-                Usa «Aggiorna dal gruppo» per riallineare gli atleti alla composizione attuale.
+                Collegata dinamicamente a: {(sessione.gruppi ?? []).map((g) => g.gruppo_livello).join(", ")}.
+                Usa «Aggiorna dal gruppo» su ciascuna pillola per riallineare gli atleti.
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         )}
-        {sessione.gruppo_livello && on_sync_gruppo && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={on_sync_gruppo}
-            disabled={sync_in_corso}
-            title="Aggiorna dal gruppo"
-          >
-            <RefreshCw className={cn("w-4 h-4", sync_in_corso && "animate-spin")} />
-          </Button>
-        )}
+
         {on_ripeti && (
           <Button variant="ghost" size="icon" onClick={on_ripeti} title="Ripeti questa sessione">
             <Repeat className="w-4 h-4" />
@@ -637,93 +752,29 @@ const SessioneBox: React.FC<{
             </button>
           </span>
         ))}
-        {sessione.gruppo_livello ? (
-          (() => {
-            const colore: string | null =
-              (sessione.gruppo_scope === "esterni" ? VERDE_ESTERNI : null) ||
-              (sessione.gruppo_ragione_sociale_id
-                ? ragioni_sociali.find((r) => r.id === sessione.gruppo_ragione_sociale_id)?.colore_primario ?? null
-                : null) ||
-              (atleti_ordinati[0] ? colore_atleta(atleti_ordinati[0].atleta_id) : null);
-
-            return (
-              <Popover
-                open={gruppo_popover_open}
-                onOpenChange={(v) => {
-                  set_gruppo_popover_open(v);
-                  if (v) void carica_membri_live();
-                }}
-              >
-                <PopoverTrigger asChild>
-                  <span
-                    role="button"
-                    tabIndex={0}
-                    onMouseEnter={() => {
-                      set_gruppo_popover_open(true);
-                      void carica_membri_live();
-                    }}
-                    className={cn(
-                      "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs border cursor-pointer",
-                      colore ? "border-border" : "border-border bg-background",
-                    )}
-                    style={
-                      colore ? { borderLeft: `3px solid ${colore}`, backgroundColor: `${colore}1A` } : undefined
-                    }
-                  >
-                    <Link2 className="w-3 h-3" />
-                    <span className="font-medium">{sessione.gruppo_livello}</span>
-                    <span className="text-muted-foreground">· {sessione.atleti.length} atleti</span>
-                    {on_rimuovi_gruppo && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          set_conferma_rimuovi_gruppo(true);
-                        }}
-                        aria-label="Rimuovi collegamento al gruppo"
-                      >
-                        <X className="w-3 h-3 text-muted-foreground hover:text-destructive" />
-                      </button>
-                    )}
-                  </span>
-                </PopoverTrigger>
-                <PopoverContent
-                  align="start"
-                  className="w-64 text-xs"
-                  onMouseLeave={() => set_gruppo_popover_open(false)}
-                >
-                  <p className="font-semibold mb-1">Membri attuali del gruppo</p>
-                  {membri_live_loading && <p className="text-muted-foreground">Caricamento…</p>}
-                  {!membri_live_loading && (
-                    <ul className="space-y-0.5 max-h-48 overflow-y-auto">
-                      {(membri_live ?? salvati_ids).map((id) => (
-                        <li key={id} className="flex items-center gap-1">
-                          {nuovi_non_sincronizzati.includes(id) && <span className="text-amber-600">★</span>}
-                          {nome_atleta(id)}
-                        </li>
-                      ))}
-                      {(membri_live ?? salvati_ids).length === 0 && (
-                        <li className="text-muted-foreground">Nessun atleta nel gruppo.</li>
-                      )}
-                    </ul>
-                  )}
-                  {!membri_live_loading &&
-                    membri_live &&
-                    (nuovi_non_sincronizzati.length > 0 || non_piu_nel_gruppo.length > 0) && (
-                      <p className="mt-2 pt-2 border-t text-amber-700">
-                        {nuovi_non_sincronizzati.length > 0 &&
-                          `★ ${nuovi_non_sincronizzati.length} nuovi non ancora sincronizzati`}
-                        {nuovi_non_sincronizzati.length > 0 && non_piu_nel_gruppo.length > 0 && " · "}
-                        {non_piu_nel_gruppo.length > 0 && `${non_piu_nel_gruppo.length} non più nel gruppo`}
-                        {" — usa «Aggiorna dal gruppo»."}
-                      </p>
-                    )}
-                </PopoverContent>
-              </Popover>
-            );
-          })()
-        ) : (
-          atleti_ordinati.map((a) => {
+        {(sessione.gruppi ?? []).map((g) => (
+          <GruppoPill
+            key={g.id}
+            gruppo={g}
+            n_atleti={(sessione.atleti ?? []).filter((a) => a.gruppo_sessione_id === g.id).length}
+            salvati_ids={(sessione.atleti ?? [])
+              .filter((a) => a.gruppo_sessione_id === g.id)
+              .map((a) => a.atleta_id)}
+            nome_atleta={nome_atleta}
+            colore={
+              (g.gruppo_scope === "esterni" ? VERDE_ESTERNI : null) ||
+              (g.gruppo_ragione_sociale_id
+                ? ragioni_sociali.find((r) => r.id === g.gruppo_ragione_sociale_id)?.colore_primario ?? null
+                : null)
+            }
+            in_sync={!!sync_gruppo_ids?.includes(g.id)}
+            on_sync={on_sync_gruppo ? () => on_sync_gruppo(g.id) : undefined}
+            on_rimuovi={on_rimuovi_gruppo ? () => on_rimuovi_gruppo(g.id) : undefined}
+          />
+        ))}
+        {atleti_ordinati
+          .filter((a) => !a.gruppo_sessione_id)
+          .map((a) => {
             const colore = colore_atleta(a.atleta_id);
             return (
               <span
@@ -740,8 +791,8 @@ const SessioneBox: React.FC<{
                 </button>
               </span>
             );
-          })
-        )}
+          })}
+
 
       </div>
 
@@ -787,31 +838,8 @@ const SessioneBox: React.FC<{
           />
         </div>
       )}
-
-      <AlertDialog open={conferma_rimuovi_gruppo} onOpenChange={set_conferma_rimuovi_gruppo}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Rimuovere il collegamento al gruppo?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Verranno rimossi tutti gli atleti della sessione ({sessione.atleti.length}) e il collegamento al gruppo
-              «{sessione.gruppo_livello}». La sessione tornerà vuota e gestibile manualmente.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annulla</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                set_conferma_rimuovi_gruppo(false);
-                on_rimuovi_gruppo?.();
-              }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Rimuovi gruppo
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
+
 
   );
 };
@@ -837,6 +865,9 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   const rimuovi_istruttore = use_rimuovi_istruttore_sessione();
   const pubblica = use_pubblica_blocco();
   const ripeti = use_ripeti_sessione();
+  const assegna_gruppo = use_assegna_gruppo_sessione();
+  const rimuovi_gruppo = use_rimuovi_gruppo_sessione();
+  const sync_gruppo = use_sync_gruppo_sessione();
 
   const [open_specialita, set_open_specialita] = useState(false);
   const [riepilogo_aperto, set_riepilogo_aperto] = useState(false);
@@ -847,67 +878,44 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
     { sessione: GrigliaSessione; patch: Partial<GrigliaSessione> } | null
   >(null);
   const [ripeti_sessione, set_ripeti_sessione] = useState<GrigliaSessione | null>(null);
-  const [sync_gruppo_id, set_sync_gruppo_id] = useState<string | null>(null);
+  const [sync_gruppo_ids, set_sync_gruppo_ids] = useState<string[]>([]);
 
-  /**
-   * Riallinea gli atleti della sessione alla composizione ATTUALE del gruppo
-   * collegato: aggiunge i nuovi membri e rimuove chi non ne fa più parte.
-   */
-  const sync_gruppo_core = async (s: GrigliaSessione) => {
-    const membri = await risolvi_membri_gruppo(
-      get_current_club_id(),
-      s.gruppo_scope ?? null,
-      s.gruppo_livello!,
-      s.gruppo_ragione_sociale_id ?? null,
-    );
-    const attuali = (s.atleti ?? []).map((a) => a.atleta_id);
-    const da_aggiungere = membri.filter((id) => !attuali.includes(id));
-    const da_rimuovere = attuali.filter((id) => !membri.includes(id));
-    for (const atleta_id of da_aggiungere) {
-      await assegna_atleta.mutateAsync({ sessione_id: s.id, atleta_id });
-    }
-    for (const atleta_id of da_rimuovere) {
-      await rimuovi_atleta.mutateAsync({ sessione_id: s.id, atleta_id });
-    }
-    return { da_aggiungere: da_aggiungere.length, da_rimuovere: da_rimuovere.length };
-  };
-
-  const sincronizza_dal_gruppo = async (s: GrigliaSessione) => {
-    if (!s.gruppo_livello) return;
-    set_sync_gruppo_id(s.id);
+  /** Riallinea SOLO gli atleti taggati con quel gruppo alla membership attuale. */
+  const sincronizza_gruppo = async (s: GrigliaSessione, gruppo_sessione_id: string) => {
+    const g = (s.gruppi ?? []).find((x) => x.id === gruppo_sessione_id);
+    if (!g) return;
+    set_sync_gruppo_ids((v) => [...v, gruppo_sessione_id]);
     try {
-      const { da_aggiungere, da_rimuovere } = await sync_gruppo_core(s);
+      const { da_aggiungere, da_rimuovere } = await sync_gruppo.mutateAsync({
+        gruppo_sessione_id,
+        sessione_id: s.id,
+        gruppo: g,
+      });
       toast({
-        title: "Gruppo aggiornato",
+        title: `Gruppo «${g.gruppo_livello}» aggiornato`,
         description:
           da_aggiungere === 0 && da_rimuovere === 0
-            ? "Nessuna variazione: la sessione è già allineata."
+            ? "Nessuna variazione: già allineato."
             : `+${da_aggiungere} aggiunti, −${da_rimuovere} rimossi.`,
       });
     } catch (e: any) {
       toast({ title: "Errore aggiornamento gruppo", description: e.message, variant: "destructive" });
     } finally {
-      set_sync_gruppo_id(null);
+      set_sync_gruppo_ids((v) => v.filter((x) => x !== gruppo_sessione_id));
     }
   };
 
-  /** Rimuove il collegamento al gruppo: svuota gli atleti e azzera i metadati. */
-  const rimuovi_collegamento_gruppo = async (s: GrigliaSessione) => {
+  /** Sgancia un gruppo: rimuove solo gli atleti che ne provengono. */
+  const rimuovi_collegamento_gruppo = async (gruppo_sessione_id: string) => {
     try {
-      for (const a of s.atleti ?? []) {
-        await rimuovi_atleta.mutateAsync({ sessione_id: s.id, atleta_id: a.atleta_id });
-      }
-      await upsert_sessione.mutateAsync({
-        id: s.id,
-        gruppo_livello: null,
-        gruppo_scope: null,
-        gruppo_ragione_sociale_id: null,
-      } as any);
-      toast({ title: "Collegamento rimosso", description: "La sessione è tornata gestibile manualmente." });
+      await rimuovi_gruppo.mutateAsync(gruppo_sessione_id);
+      toast({ title: "Collegamento rimosso", description: "Gli atleti di quel gruppo sono stati rimossi." });
     } catch (e: any) {
       toast({ title: "Errore rimozione gruppo", description: e.message, variant: "destructive" });
     }
   };
+
+
 
 
   const giorno_blocco = useMemo(() => (blocco.data ? giorno_it_da_data(blocco.data) : null), [blocco.data]);
@@ -1006,31 +1014,26 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
           const a = (atleti as any[]).find((x) => x.id === atleta_id);
           const nome = a ? `${a.nome} ${a.cognome}` : "Atleta";
           avvisa_sovrapposizione("atleta", atleta_id, nome, dest);
-          await assegna_atleta.mutateAsync({ sessione_id, atleta_id });
         }
-        // Collegamento dinamico: la sessione "ricorda" da quale gruppo arriva
         const livello_gruppo: string | undefined = active.data?.current?.livello;
         if (livello_gruppo && livello_gruppo !== LIVELLO_NON_DEFINITO) {
-          const { gruppo_scope, gruppo_ragione_sociale_id } = scope_da_box_id(
-            active.data?.current?.box_id,
-          );
-          await upsert_sessione.mutateAsync({
-            id: dest.id,
-            blocco_id: dest.blocco_id,
-            ordine: dest.ordine,
-            ora_inizio: dest.ora_inizio,
-            ora_fine: dest.ora_fine,
-            specialita_id: dest.specialita_id ?? null,
-            specialita_testo_libero: dest.specialita_testo_libero ?? null,
-            note: dest.note ?? null,
-            pista: dest.pista ?? null,
-            messaggio_atleti: dest.messaggio_atleti ?? null,
+          // Collegamento dinamico: nuova riga in griglia_sessioni_gruppi + atleti taggati.
+          const { gruppo_scope, gruppo_ragione_sociale_id } = scope_da_box_id(active.data?.current?.box_id);
+          const res = await assegna_gruppo.mutateAsync({
+            sessione_id,
             gruppo_livello: livello_gruppo,
-            gruppo_scope,
+            gruppo_scope: (gruppo_scope ?? "club") as GruppoScope,
             gruppo_ragione_sociale_id,
           });
+          toast({ title: `🔗 Gruppo «${livello_gruppo}» collegato`, description: `${res.aggiunti} atleti aggiunti.` });
+        } else {
+          // Livello non definito: nessun gruppo dinamico, assegnazione individuale.
+          for (const atleta_id of ids) {
+            await assegna_atleta.mutateAsync({ sessione_id, atleta_id });
+          }
+          if (ids.length > 0) toast({ title: `✅ ${ids.length} atleti assegnati alla sessione` });
         }
-        if (ids.length > 0) toast({ title: `✅ ${ids.length} atleti assegnati alla sessione` });
+
       } else if (tipo === "atleta") {
         const a = (atleti as any[]).find((x) => x.id === persona_id);
         const nome = a ? `${a.nome} ${a.cognome}` : "Atleta";
@@ -1198,16 +1201,18 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
 
   const handle_pubblica = async () => {
     try {
-      // Sync automatico dei gruppi collegati prima dell'invio (non bloccante per sessione)
-      const con_gruppo = sessioni.filter((s) => !!s.gruppo_livello);
+      // Sync automatico di TUTTI i gruppi collegati prima dell'invio (non bloccante)
       const falliti: string[] = [];
-      for (const s of con_gruppo) {
-        try {
-          await sync_gruppo_core(s);
-        } catch {
-          falliti.push(`${hhmm(s.ora_inizio)}–${hhmm(s.ora_fine)}`);
+      for (const s of sessioni) {
+        for (const g of s.gruppi ?? []) {
+          try {
+            await sync_gruppo.mutateAsync({ gruppo_sessione_id: g.id, sessione_id: s.id, gruppo: g });
+          } catch {
+            falliti.push(`${hhmm(s.ora_inizio)}–${hhmm(s.ora_fine)} (${g.gruppo_livello})`);
+          }
         }
       }
+
       if (falliti.length > 0) {
         toast({
           title: "Alcuni gruppi non sincronizzati",
@@ -1372,10 +1377,11 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
                       rimuovi_istruttore.mutateAsync({ sessione_id: s.id, istruttore_id })
                     }
                     on_ripeti={() => set_ripeti_sessione(s)}
-                    on_sync_gruppo={() => sincronizza_dal_gruppo(s)}
-                    on_rimuovi_gruppo={() => rimuovi_collegamento_gruppo(s)}
+                    on_sync_gruppo={(gid) => sincronizza_gruppo(s, gid)}
+                    on_rimuovi_gruppo={(gid) => rimuovi_collegamento_gruppo(gid)}
 
-                    sync_in_corso={sync_gruppo_id === s.id}
+                    sync_gruppo_ids={sync_gruppo_ids}
+
                     data_blocco={blocco.data}
                     atleti_tutti={atleti as any[]}
                     ragioni_sociali={ragioni_attive}

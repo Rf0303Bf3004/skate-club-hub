@@ -65,6 +65,15 @@ export interface GrigliaSessioneAtleta {
   nome: string;
   cognome: string;
   provenienza: string | null;
+  /** null = atleta aggiunto manualmente (mai toccato dalla logica di gruppo) */
+  gruppo_sessione_id?: string | null;
+}
+
+export interface GrigliaSessioneGruppo {
+  id: string;
+  gruppo_livello: string;
+  gruppo_scope: GruppoScope;
+  gruppo_ragione_sociale_id: string | null;
 }
 
 export interface GrigliaSessioneIstruttore {
@@ -94,12 +103,11 @@ export interface GrigliaSessione {
   forzato_at?: string | null;
   corso_id?: string | null;
   corso_nome?: string | null;
-  gruppo_livello?: string | null;
-  gruppo_scope?: GruppoScope | null;
-  gruppo_ragione_sociale_id?: string | null;
+  gruppi: GrigliaSessioneGruppo[];
   atleti: GrigliaSessioneAtleta[];
   istruttori: GrigliaSessioneIstruttore[];
 }
+
 
 export interface GrigliaBlocco {
   id: string;
@@ -211,13 +219,16 @@ export async function fetch_blocchi_giorno(
   const lista_sessioni = (sessioni ?? []) as any[];
   const sessioni_ids = lista_sessioni.map((s: any) => s.id);
 
-  const [spec_res, sa_res, si_res, atleti_res, ist_res, rs_res, corsi_res] = await Promise.all([
+  const [spec_res, sa_res, si_res, sg_res, atleti_res, ist_res, rs_res, corsi_res] = await Promise.all([
     supabase.from("griglia_specialita" as any).select("id,nome,descrizione_messaggio").eq("club_id", club_id),
     sessioni_ids.length
       ? supabase.from("griglia_sessioni_atleti" as any).select("*").in("sessione_id", sessioni_ids)
       : Promise.resolve({ data: [], error: null } as any),
     sessioni_ids.length
       ? supabase.from("griglia_sessioni_istruttori" as any).select("*").in("sessione_id", sessioni_ids)
+      : Promise.resolve({ data: [], error: null } as any),
+    sessioni_ids.length
+      ? supabase.from("griglia_sessioni_gruppi" as any).select("*").in("sessione_id", sessioni_ids)
       : Promise.resolve({ data: [], error: null } as any),
     supabase.from("atleti").select("id,nome,cognome,ragione_sociale_id,atleta_esterno").eq("club_id", club_id),
     supabase.from("istruttori").select("id,nome,cognome,user_id").eq("club_id", club_id),
@@ -237,6 +248,8 @@ export async function fetch_blocchi_giorno(
   ((corsi_res.data ?? []) as any[]).forEach((c: any) => corsi_map.set(c.id, c.nome));
   const sa = (sa_res.data ?? []) as any[];
   const si = (si_res.data ?? []) as any[];
+  const sg = (sg_res.data ?? []) as any[];
+
 
   return lista_blocchi.map((b: any) => ({
     ...b,
@@ -264,8 +277,18 @@ export async function fetch_blocchi_giorno(
               nome: at?.nome ?? "",
               cognome: at?.cognome ?? x.atleta_id.slice(0, 8),
               provenienza,
+              gruppo_sessione_id: x.gruppo_sessione_id ?? null,
             };
           }),
+        gruppi: sg
+          .filter((g: any) => g.sessione_id === s.id)
+          .map((g: any) => ({
+            id: g.id,
+            gruppo_livello: g.gruppo_livello,
+            gruppo_scope: g.gruppo_scope as GruppoScope,
+            gruppo_ragione_sociale_id: g.gruppo_ragione_sociale_id ?? null,
+          })),
+
         istruttori: si
           .filter((x: any) => x.sessione_id === s.id)
           .map((x: any) => ({
@@ -553,10 +576,6 @@ export function use_upsert_sessione() {
       messaggio_atleti?: string | null;
       fuori_disponibilita?: boolean;
       motivo_forzatura?: string | null;
-      /** Collegamento dinamico al gruppo: passato SOLO dal drag di gruppo. */
-      gruppo_livello?: string | null;
-      gruppo_scope?: GruppoScope | null;
-      gruppo_ragione_sociale_id?: string | null;
     }) => {
       // XOR: mai entrambi valorizzati
       const usa_testo = !!input.specialita_testo_libero && !input.specialita_id;
@@ -569,18 +588,6 @@ export function use_upsert_sessione() {
               forzato_da: input.fuori_disponibilita ? session?.user_id ?? null : null,
               forzato_at: input.fuori_disponibilita ? new Date().toISOString() : null,
             };
-      // I campi gruppo vengono scritti solo se esplicitamente passati:
-      // un salvataggio normale (o un drag individuale) non li tocca mai.
-      const gruppo =
-        input.gruppo_livello === undefined
-          ? {}
-          : {
-              gruppo_livello: input.gruppo_livello,
-              gruppo_scope: input.gruppo_livello ? input.gruppo_scope ?? null : null,
-              gruppo_ragione_sociale_id: input.gruppo_livello
-                ? input.gruppo_ragione_sociale_id ?? null
-                : null,
-            };
       const payload = {
         blocco_id: input.blocco_id,
         ordine: input.ordine,
@@ -592,8 +599,8 @@ export function use_upsert_sessione() {
         pista: input.pista ?? null,
         messaggio_atleti: input.messaggio_atleti ?? null,
         ...forzatura,
-        ...gruppo,
       };
+
       if (input.id) {
         const { error } = await supabase.from("griglia_sessioni" as any).update(payload as any).eq("id", input.id);
         if (error) throw error;
@@ -650,6 +657,146 @@ export function use_rimuovi_atleta_sessione() {
     onSuccess: invalidate,
   });
 }
+
+// ─── Gruppi collegati alla sotto-sessione (1:N) ────────────
+/** Atleti già presenti nella sessione, indipendentemente dal tag di gruppo. */
+async function atleti_presenti_sessione(sessione_id: string): Promise<Set<string>> {
+  const { data, error } = await supabase
+    .from("griglia_sessioni_atleti" as any)
+    .select("atleta_id")
+    .eq("sessione_id", sessione_id);
+  if (error) throw error;
+  return new Set(((data ?? []) as any[]).map((r) => r.atleta_id as string));
+}
+
+/**
+ * Aggancia un gruppo alla sotto-sessione: crea la riga in `griglia_sessioni_gruppi`
+ * e inserisce gli atleti mancanti taggati con il nuovo gruppo. Gli atleti già
+ * presenti (manuali o di altri gruppi) NON vengono duplicati né ri-taggati.
+ */
+export function use_assegna_gruppo_sessione() {
+  const invalidate = use_invalidate_griglia();
+  return useMutation({
+    mutationFn: async (input: {
+      sessione_id: string;
+      gruppo_livello: string;
+      gruppo_scope: GruppoScope;
+      gruppo_ragione_sociale_id?: string | null;
+    }) => {
+      const club_id = get_current_club_id();
+      const { data: gruppo, error: err_g } = await supabase
+        .from("griglia_sessioni_gruppi" as any)
+        .insert({
+          sessione_id: input.sessione_id,
+          gruppo_livello: input.gruppo_livello,
+          gruppo_scope: input.gruppo_scope,
+          gruppo_ragione_sociale_id: input.gruppo_ragione_sociale_id ?? null,
+        } as any)
+        .select("id")
+        .single();
+      if (err_g) throw err_g;
+      const gruppo_sessione_id = (gruppo as any).id as string;
+
+      const membri = await risolvi_membri_gruppo(
+        club_id,
+        input.gruppo_scope,
+        input.gruppo_livello,
+        input.gruppo_ragione_sociale_id ?? null,
+      );
+      const presenti = await atleti_presenti_sessione(input.sessione_id);
+      const mancanti = membri.filter((id) => !presenti.has(id));
+      if (mancanti.length > 0) {
+        const { error } = await supabase
+          .from("griglia_sessioni_atleti" as any)
+          .insert(
+            mancanti.map((atleta_id) => ({
+              sessione_id: input.sessione_id,
+              atleta_id,
+              gruppo_sessione_id,
+            })) as any,
+          );
+        if (error && !`${error.message}`.includes("duplicate")) throw error;
+      }
+      return { gruppo_sessione_id, aggiunti: mancanti.length, membri: membri.length };
+    },
+    onSuccess: invalidate,
+  });
+}
+
+/** Sgancia un gruppo: la CASCADE rimuove SOLO gli atleti taggati con quel gruppo. */
+export function use_rimuovi_gruppo_sessione() {
+  const invalidate = use_invalidate_griglia();
+  return useMutation({
+    mutationFn: async (gruppo_sessione_id: string) => {
+      const { error } = await supabase
+        .from("griglia_sessioni_gruppi" as any)
+        .delete()
+        .eq("id", gruppo_sessione_id);
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
+  });
+}
+
+/**
+ * Riallinea SOLO gli atleti taggati con questo gruppo alla membership live:
+ * aggiunge i nuovi, rimuove chi non ne fa più parte. Atleti manuali o di altri
+ * gruppi restano intoccati.
+ */
+export function use_sync_gruppo_sessione() {
+  const invalidate = use_invalidate_griglia();
+  return useMutation({
+    mutationFn: async (input: {
+      gruppo_sessione_id: string;
+      sessione_id: string;
+      gruppo: { gruppo_livello: string; gruppo_scope: GruppoScope; gruppo_ragione_sociale_id: string | null };
+    }) => {
+      const club_id = get_current_club_id();
+      const membri = await risolvi_membri_gruppo(
+        club_id,
+        input.gruppo.gruppo_scope,
+        input.gruppo.gruppo_livello,
+        input.gruppo.gruppo_ragione_sociale_id,
+      );
+
+      const { data: righe, error: err_r } = await supabase
+        .from("griglia_sessioni_atleti" as any)
+        .select("id,atleta_id,gruppo_sessione_id")
+        .eq("sessione_id", input.sessione_id);
+      if (err_r) throw err_r;
+      const tutte = (righe ?? []) as any[];
+      const presenti_tutti = new Set(tutte.map((r) => r.atleta_id as string));
+      const del_gruppo = tutte.filter((r) => r.gruppo_sessione_id === input.gruppo_sessione_id);
+
+      const da_aggiungere = membri.filter((id) => !presenti_tutti.has(id));
+      const da_rimuovere = del_gruppo.filter((r) => !membri.includes(r.atleta_id));
+
+      if (da_aggiungere.length > 0) {
+        const { error } = await supabase
+          .from("griglia_sessioni_atleti" as any)
+          .insert(
+            da_aggiungere.map((atleta_id) => ({
+              sessione_id: input.sessione_id,
+              atleta_id,
+              gruppo_sessione_id: input.gruppo_sessione_id,
+            })) as any,
+          );
+        if (error && !`${error.message}`.includes("duplicate")) throw error;
+      }
+      if (da_rimuovere.length > 0) {
+        const { error } = await supabase
+          .from("griglia_sessioni_atleti" as any)
+          .delete()
+          .in("id", da_rimuovere.map((r) => r.id));
+        if (error) throw error;
+      }
+      return { da_aggiungere: da_aggiungere.length, da_rimuovere: da_rimuovere.length };
+    },
+    onSuccess: invalidate,
+  });
+}
+
+
 
 export function use_assegna_istruttore_sessione() {
   const invalidate = use_invalidate_griglia();
@@ -772,18 +919,27 @@ export function use_ripeti_sessione() {
       const giorno = giorno_it_da_data(blocco.data);
       const ora_inizio = sessione.ora_inizio;
       const ora_fine = sessione.ora_fine;
-      // Sessione collegata a un gruppo → la membership si risolve DAL VIVO adesso,
-      // altrimenti (caso normale) si usa lo snapshot statico della sessione sorgente.
-      const e_gruppo = !!sessione.gruppo_livello;
-      const membri_gruppo = e_gruppo
-        ? await risolvi_membri_gruppo(
-            club_id,
-            sessione.gruppo_scope ?? null,
-            sessione.gruppo_livello ?? null,
-            sessione.gruppo_ragione_sociale_id ?? null,
-          )
-        : [];
-      const atleti_ids = e_gruppo ? membri_gruppo : (sessione.atleti ?? []).map((a) => a.atleta_id);
+      // Sessione con gruppi collegati → la membership di OGNI gruppo si risolve
+      // DAL VIVO adesso; gli atleti manuali (senza tag di gruppo) restano comunque.
+      const gruppi_sessione = sessione.gruppi ?? [];
+      const e_gruppo = gruppi_sessione.length > 0;
+      const membri_per_gruppo: { gruppo: GrigliaSessioneGruppo; ids: string[] }[] = [];
+      for (const g of gruppi_sessione) {
+        const ids = await risolvi_membri_gruppo(
+          club_id,
+          g.gruppo_scope,
+          g.gruppo_livello,
+          g.gruppo_ragione_sociale_id,
+        );
+        membri_per_gruppo.push({ gruppo: g, ids });
+      }
+      const atleti_manuali = (sessione.atleti ?? [])
+        .filter((a) => !a.gruppo_sessione_id)
+        .map((a) => a.atleta_id);
+      const atleti_ids = e_gruppo
+        ? Array.from(new Set([...atleti_manuali, ...membri_per_gruppo.flatMap((m) => m.ids)]))
+        : (sessione.atleti ?? []).map((a) => a.atleta_id);
+
       const istruttori_ids = (sessione.istruttori ?? []).map((i) => i.istruttore_id);
 
       const etichetta_specialita =
@@ -934,21 +1090,46 @@ export function use_ripeti_sessione() {
             note: sessione.note ?? null,
             messaggio_atleti: sessione.messaggio_atleti ?? null,
             corso_id,
-            gruppo_livello: sessione.gruppo_livello ?? null,
-            gruppo_scope: sessione.gruppo_scope ?? null,
-            gruppo_ragione_sociale_id: sessione.gruppo_ragione_sociale_id ?? null,
           } as any)
           .select("id")
           .single();
         if (err_ns) throw err_ns;
         const nuova_id = (nuova_sess as any).id as string;
 
+        // Replica i gruppi collegati sulla nuova sotto-sessione e tagga gli atleti
+        // risolti dal vivo con il gruppo corrispondente.
+        const tag_per_atleta = new Map<string, string>();
+        for (const m of membri_per_gruppo) {
+          const { data: g_new, error: e_g } = await supabase
+            .from("griglia_sessioni_gruppi" as any)
+            .insert({
+              sessione_id: nuova_id,
+              gruppo_livello: m.gruppo.gruppo_livello,
+              gruppo_scope: m.gruppo.gruppo_scope,
+              gruppo_ragione_sociale_id: m.gruppo.gruppo_ragione_sociale_id,
+            } as any)
+            .select("id")
+            .single();
+          if (e_g) throw e_g;
+          const nuovo_gruppo_id = (g_new as any).id as string;
+          for (const atleta_id of m.ids) {
+            if (!tag_per_atleta.has(atleta_id)) tag_per_atleta.set(atleta_id, nuovo_gruppo_id);
+          }
+        }
+
         if (atleti_ids.length > 0) {
           const { error: e } = await supabase
             .from("griglia_sessioni_atleti" as any)
-            .insert(atleti_ids.map((atleta_id) => ({ sessione_id: nuova_id, atleta_id })) as any);
+            .insert(
+              atleti_ids.map((atleta_id) => ({
+                sessione_id: nuova_id,
+                atleta_id,
+                gruppo_sessione_id: tag_per_atleta.get(atleta_id) ?? null,
+              })) as any,
+            );
           if (e && !`${e.message}`.includes("duplicate")) throw e;
         }
+
         if (istruttori_ids.length > 0) {
           const { error: e } = await supabase
             .from("griglia_sessioni_istruttori" as any)
