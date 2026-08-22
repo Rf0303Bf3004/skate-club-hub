@@ -467,3 +467,31 @@ Pattern usato (file con molti sotto-componenti non-hook): helper module-level
 - Placeholder i18next: `{{count}}`, `{{data}}`, `{{titolo}}`, `{{testo}}`, `{{nome}}`, `{{luogo}}`, `{{ora}}`.
 - Testi di comunicazione salvati nel DB usano `escapeValue: false` per evitare entity HTML.
 - Nessuna modifica ai JSON `src/locales/{de,fr,en}/`.
+
+## Step 1.5l — Componenti corsi/planning (5 file) ✅ COMPLETATO
+
+| File | Namespace | Prefisso chiavi | N. chiavi |
+|---|---|---|---|
+| `corsi/CorsoWizard.tsx` | `corsi` | `corso_wizard.*` | 92 |
+| `planning/AnnullaCorsoDialog.tsx` | `planning` | `annulla_dialog.*` | 13 |
+| `planning/AvvisaAtletiDialog.tsx` | `planning` | `avvisa_dialog.*` | 24 |
+| `planning/MeseView.tsx` | `planning` | `mese_view.*` | 13 |
+| `planning/SpostaCorsoDialog.tsx` | `planning` | `sposta_dialog.*` | 24 |
+
+**Totale: 166 chiavi IT.**
+
+### Note
+- `AnnullaCorsoDialog`, `AvvisaAtletiDialog` e `SpostaCorsoDialog` usano un helper module-level
+  `tk` (`i18n.t(..., { ns: "planning" })`) per toast, testi salvati nel DB (comunicazioni) e
+  default generati fuori dal render; il JSX usa `useTranslation("planning")`.
+- Testi persistiti in `comunicazioni` (titolo/testo) usano `interpolation: { escapeValue: false }`
+  per evitare entity HTML nei nomi corso.
+- Array convertiti in chiavi singole: `GIORNI_LABEL` di `MeseView` → `mese_view.giorno_lun..dom`;
+  i giorni di `SpostaCorsoDialog` → `sposta_dialog.lunedi..domenica` (i **valori DB** in `GIORNI`
+  restano in italiano non tradotto, si traduce solo la label mostrata).
+- Plurali gestiti con chiavi esplicite (`corsi_uno`/`corsi_molti`, `slot_rimossi_uno`/`_molti`).
+- NON tradotti: valori enum DB `Ghiaccio`/`Off-Ice` (solo le label UI), livelli tecnici,
+  `artistica`/`stile` come value delle option.
+- Placeholder i18next: `{{count}}`, `{{giorno}}`, `{{data}}`, `{{ora}}`, `{{inizio}}`, `{{fine}}`,
+  `{{corso}}`, `{{motivo}}`, `{{istruttore}}`, `{{nomi}}`, `{{campi}}`, `{{step}}`, `{{label}}`.
+- Nessuna modifica ai JSON `src/locales/{de,fr,en}/`.
