@@ -2063,7 +2063,7 @@ const PresidentDashboard: React.FC = () => {
     if (h < 18) return tp("greet.afternoon");
     return tp("greet.evening");
   })();
-  const nome = session?.nome || "Presidente";
+  const nome = session?.nome || tp("role_fallback");
 
   // top livelli per mini-piramide (4 livelli più popolosi)
   const topLivelli = Object.entries(livCurr)
