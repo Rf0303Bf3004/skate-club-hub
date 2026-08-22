@@ -149,9 +149,10 @@ export const ComunicazioneFormSection: React.FC<Props> = ({
 
           {state.tipo_destinatari === "per_corso" && (
             <div className="space-y-2">
-              <Label>Seleziona corsi</Label>
+              <Label>{t("form_section.select_courses")}</Label>
               {corsi.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Nessun corso disponibile.</p>
+                <p className="text-sm text-muted-foreground">{t("form_section.no_course")}</p>
+
               ) : (
                 <div className="border rounded-md p-2 max-h-48 overflow-y-auto space-y-1 bg-background">
                   {corsi.map((c) => {
@@ -183,7 +184,7 @@ export const ComunicazioneFormSection: React.FC<Props> = ({
 
           {state.tipo_destinatari === "per_livello" && (
             <div className="space-y-2">
-              <Label>Seleziona livelli</Label>
+              <Label>{t("form_section.select_levels")}</Label>
               <div className="border rounded-md p-2 max-h-48 overflow-y-auto bg-background">
                 <div className="grid grid-cols-2 gap-1">
                   {livelli_db.map((l: any) => {
@@ -212,19 +213,20 @@ export const ComunicazioneFormSection: React.FC<Props> = ({
 
           {state.tipo_destinatari === "atleti" && (
             <div className="space-y-2">
-              <Label>Seleziona atleti</Label>
+              <Label>{t("form_section.select_athletes")}</Label>
               <div className="relative">
                 <Search className="w-4 h-4 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   className="pl-8"
-                  placeholder="Cerca per nome, cognome o livello…"
+                  placeholder={t("form_section.search_athlete_placeholder")}
+
                   value={atleta_search}
                   onChange={(e) => set_atleta_search(e.target.value)}
                 />
               </div>
               <div className="border rounded-md p-2 max-h-56 overflow-y-auto space-y-1 bg-background">
                 {filtered_atleti.length === 0 ? (
-                  <p className="text-sm text-muted-foreground px-2 py-1">Nessun atleta trovato.</p>
+                  <p className="text-sm text-muted-foreground px-2 py-1">{t("form_section.no_athlete_found")}</p>
                 ) : filtered_atleti.map((a) => {
                   const checked = state.atleti_ids.includes(a.id);
                   return (
@@ -237,7 +239,7 @@ export const ComunicazioneFormSection: React.FC<Props> = ({
                 })}
               </div>
               {state.atleti_ids.length > 0 && (
-                <p className="text-xs text-muted-foreground">{state.atleti_ids.length} atleti selezionati</p>
+                <p className="text-xs text-muted-foreground">{t("form_section.athletes_selected", { count: state.atleti_ids.length })}</p>
               )}
             </div>
           )}
