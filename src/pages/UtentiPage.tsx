@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -21,23 +22,22 @@ import {
 } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
 
-const RUOLI_BASE = [
-  { value: "presidente", label: "Presidente" },
-  { value: "vicepresidente", label: "Vicepresidente" },
-  { value: "segreteria", label: "Segreteria" },
-  { value: "dt", label: "Direttore Tecnico" },
-  { value: "istruttore", label: "Istruttore" },
-  { value: "aiuto_monitore", label: "Aiuto Monitore" },
+const RUOLI_BASE_VALUES = [
+  "presidente",
+  "vicepresidente",
+  "segreteria",
+  "dt",
+  "istruttore",
+  "aiuto_monitore",
 ];
-const RUOLI_ESTESI = [
-  ...RUOLI_BASE,
-  { value: "admin", label: "Admin" },
-  { value: "superadmin", label: "Superadmin" },
-];
+const RUOLI_ESTESI_VALUES = [...RUOLI_BASE_VALUES, "admin", "superadmin"];
 
-const RUOLO_LABEL: Record<string, string> = Object.fromEntries(
-  RUOLI_ESTESI.map((r) => [r.value, r.label]),
-);
+function build_ruoli_base(t: (k: string) => string) {
+  return RUOLI_BASE_VALUES.map((value) => ({ value, label: t(`users.role.${value}`) }));
+}
+function build_ruoli_estesi(t: (k: string) => string) {
+  return RUOLI_ESTESI_VALUES.map((value) => ({ value, label: t(`users.role.${value}`) }));
+}
 
 const RUOLO_BADGE: Record<string, string> = {
   presidente: "bg-blue-100 text-blue-700 border-blue-200",
@@ -64,14 +64,14 @@ interface UtenteRow {
   last_sign_in_at?: string | null;
 }
 
-function format_relative(date_str?: string | null): string {
-  if (!date_str) return "mai";
+function format_relative(date_str: string | null | undefined, t: (k: string, opts?: any) => string): string {
+  if (!date_str) return t("users.relative_time.never");
   const d = new Date(date_str);
   const now = new Date();
   const diff_min = Math.floor((now.getTime() - d.getTime()) / 60000);
-  if (diff_min < 1) return "ora";
-  if (diff_min < 60) return `${diff_min} min fa`;
-  if (diff_min < 60 * 24) return `${Math.floor(diff_min / 60)} ore fa`;
+  if (diff_min < 1) return t("users.relative_time.now");
+  if (diff_min < 60) return t("users.relative_time.minutes_ago", { count: diff_min });
+  if (diff_min < 60 * 24) return t("users.relative_time.hours_ago", { count: Math.floor(diff_min / 60) });
   return d.toLocaleString("it-IT", {
     day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
   });
@@ -87,8 +87,11 @@ function rand_password(len = 12): string {
 }
 
 const UtentiPage: React.FC = () => {
+  const { t } = useTranslation("settings");
   const { session } = useAuth();
   const qc = useQueryClient();
+  const RUOLI_BASE = useMemo(() => build_ruoli_base(t), [t]);
+  const RUOLI_ESTESI = useMemo(() => build_ruoli_estesi(t), [t]);
 
   const allowed = session && ["superadmin", "admin", "presidente"].includes(session.ruolo);
   const club_id = session?.club_id;
@@ -184,7 +187,7 @@ const UtentiPage: React.FC = () => {
   const submit = async () => {
     if (!club_id) return;
     if (!form.nome.trim() || !form.cognome.trim() || !form.ruolo) {
-      toast.error("Compila tutti i campi obbligatori");
+      toast.error(t("users.toast.required_fields"));
       return;
     }
     set_submitting(true);
@@ -203,7 +206,7 @@ const UtentiPage: React.FC = () => {
         if (error) throw error;
 
         if (form.password.trim()) {
-          if (form.password.trim().length < 8) throw new Error("Password troppo corta (min 8)");
+          if (form.password.trim().length < 8) throw new Error(t("users.toast.password_too_short"));
           const { data: sess_data } = await supabase.auth.getSession();
           const r = await supabase.functions.invoke("manage-user", {
             body: {
@@ -217,15 +220,15 @@ const UtentiPage: React.FC = () => {
           if (r.error) throw new Error(r.error.message);
           if ((r.data as any)?.error) throw new Error((r.data as any).error);
         }
-        toast.success(`Utente ${form.nome} ${form.cognome} aggiornato`);
+        toast.success(t("users.toast.updated", { nome: form.nome, cognome: form.cognome }));
       } else {
         if (!form.email.trim() || !form.password.trim()) {
-          toast.error("Email e password obbligatorie");
+          toast.error(t("users.toast.email_password_required"));
           set_submitting(false);
           return;
         }
         if (form.password.trim().length < 8) {
-          toast.error("Password troppo corta (min 8)");
+          toast.error(t("users.toast.password_too_short"));
           set_submitting(false);
           return;
         }
@@ -245,12 +248,12 @@ const UtentiPage: React.FC = () => {
         });
         if (r.error) throw new Error(r.error.message);
         if ((r.data as any)?.error) throw new Error((r.data as any).error);
-        toast.success(`Utente ${form.nome} ${form.cognome} creato. Password: ${form.password}`);
+        toast.success(t("users.toast.created", { nome: form.nome, cognome: form.cognome, password: form.password }));
       }
       set_dialog_open(false);
       qc.invalidateQueries({ queryKey: ["utenti_club_admin", club_id] });
     } catch (e: any) {
-      toast.error(e?.message || "Errore");
+      toast.error(e?.message || t("users.toast.generic_error"));
     } finally {
       set_submitting(false);
     }
@@ -263,10 +266,10 @@ const UtentiPage: React.FC = () => {
         .update({ attivo: !u.attivo })
         .eq("id", u.id);
       if (error) throw error;
-      toast.success(u.attivo ? "Utente disattivato" : "Utente riattivato");
+      toast.success(u.attivo ? t("users.toast.deactivated") : t("users.toast.reactivated"));
       qc.invalidateQueries({ queryKey: ["utenti_club_admin", club_id] });
     } catch (e: any) {
-      toast.error(e?.message || "Errore");
+      toast.error(e?.message || t("users.toast.generic_error"));
     } finally {
       set_confirm_state(null);
     }
@@ -290,7 +293,7 @@ const UtentiPage: React.FC = () => {
       set_confirm_state(null);
       set_pwd_dialog({ password: new_pwd, nome: `${u.nome ?? ""} ${u.cognome ?? ""}`.trim() });
     } catch (e: any) {
-      toast.error(e?.message || "Errore");
+      toast.error(e?.message || t("users.toast.generic_error"));
       set_confirm_state(null);
     }
   };
@@ -376,10 +379,10 @@ const UtentiPage: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border ${RUOLO_BADGE[u.ruolo] ?? "bg-muted text-muted-foreground border-border"}`}>
-                        {RUOLO_LABEL[u.ruolo] ?? u.ruolo}
+                        {t(`users.role.${u.ruolo}`, { defaultValue: u.ruolo })}
                       </span>
                     </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{format_relative(u.last_sign_in_at)}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{format_relative(u.last_sign_in_at, t)}</TableCell>
                     <TableCell className="text-center">
                       <Switch checked={!!u.attivo} disabled />
                     </TableCell>
@@ -415,13 +418,13 @@ const UtentiPage: React.FC = () => {
                     <p className="text-xs text-muted-foreground">{u.email ?? "—"}</p>
                   </div>
                   <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border ${RUOLO_BADGE[u.ruolo] ?? "bg-muted text-muted-foreground border-border"}`}>
-                    {RUOLO_LABEL[u.ruolo] ?? u.ruolo}
+                    {t(`users.role.${u.ruolo}`, { defaultValue: u.ruolo })}
                   </span>
                 </div>
                 {u.telefono && (
                   <a href={`tel:${u.telefono}`} className="text-sm text-primary block">{u.telefono}</a>
                 )}
-                <p className="text-[11px] text-muted-foreground">Ultimo accesso: {format_relative(u.last_sign_in_at)}</p>
+                <p className="text-[11px] text-muted-foreground">Ultimo accesso: {format_relative(u.last_sign_in_at, t)}</p>
                 <div className="flex items-center justify-between pt-1">
                   <div className="flex items-center gap-2 text-xs">
                     <Switch checked={!!u.attivo} disabled />
@@ -561,7 +564,7 @@ const UtentiPage: React.FC = () => {
               onClick={() => {
                 if (pwd_dialog) {
                   navigator.clipboard.writeText(pwd_dialog.password);
-                  toast.success("Password copiata");
+                  toast.success(t("users.toast.password_copied"));
                 }
               }}
             >

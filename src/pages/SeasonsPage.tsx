@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useI18n } from "@/lib/i18n";
+import { useTranslation } from "react-i18next";
 import { use_stagioni } from "@/hooks/use-supabase-data";
 import { use_upsert_stagione, use_elimina_stagione } from "@/hooks/use-supabase-mutations";
 import { Button } from "@/components/ui/button";
@@ -8,13 +9,6 @@ import { Plus, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
-
-const TIPI_STAGIONE = [
-  { value: "Regolare", label: "Regolare" },
-  { value: "Pre-Season", label: "Pre-Season" },
-  { value: "Post-Season", label: "Post-Season" },
-  { value: "Campo", label: "Campo" },
-];
 
 const input_cls =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
@@ -30,8 +24,17 @@ const StagioneModal: React.FC<{
   stagione?: any;
   on_close: () => void;
 }> = ({ stagione, on_close }) => {
+  const { t } = useTranslation("settings");
   const qc = useQueryClient();
   const elimina = use_elimina_stagione();
+
+  const TIPI_STAGIONE = [
+    { value: "Regolare", label: t("seasons.type_regolare") },
+    { value: "Pre-Season", label: t("seasons.type_pre_season") },
+    { value: "Post-Season", label: t("seasons.type_post_season") },
+    { value: "Campo", label: t("seasons.type_campo") },
+  ];
+
   const [form, set_form] = useState({
     nome: stagione?.nome || "",
     tipo: stagione?.tipo || "Regolare",
@@ -47,16 +50,16 @@ const StagioneModal: React.FC<{
   const handle_save = async () => {
     if (!form.nome.trim() || !form.data_inizio || !form.data_fine) {
       toast({
-        title: "Campi obbligatori mancanti",
-        description: "Nome, data inizio e data fine sono obbligatori.",
+        title: t("seasons.required_title"),
+        description: t("seasons.required_desc"),
         variant: "destructive",
       });
       return;
     }
     if (form.data_fine < form.data_inizio) {
       toast({
-        title: "Date non valide",
-        description: "La data fine deve essere successiva alla data inizio.",
+        title: t("seasons.invalid_dates_title"),
+        description: t("seasons.invalid_dates_desc"),
         variant: "destructive",
       });
       return;
@@ -79,10 +82,10 @@ const StagioneModal: React.FC<{
         if (error) throw error;
       }
       await qc.invalidateQueries({ queryKey: ["stagioni"] });
-      toast({ title: stagione?.id ? "✅ Stagione aggiornata" : "✅ Stagione creata" });
+      toast({ title: stagione?.id ? t("seasons.updated_toast") : t("seasons.created_toast") });
       on_close();
     } catch (err: any) {
-      toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
+      toast({ title: t("seasons.save_error_title"), description: err?.message, variant: "destructive" });
     } finally {
       set_saving(false);
     }
@@ -91,10 +94,10 @@ const StagioneModal: React.FC<{
   const handle_delete = async () => {
     try {
       await elimina.mutateAsync(stagione.id);
-      toast({ title: "🗑️ Stagione eliminata" });
+      toast({ title: t("seasons.deleted_toast") });
       on_close();
     } catch (err: any) {
-      toast({ title: "Errore eliminazione", description: err?.message, variant: "destructive" });
+      toast({ title: t("seasons.delete_error_title"), description: err?.message, variant: "destructive" });
     }
   };
 
@@ -103,7 +106,7 @@ const StagioneModal: React.FC<{
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-md flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
           <h2 className="text-base font-bold text-foreground">
-            {stagione?.id ? "Modifica stagione" : "Nuova stagione"}
+            {stagione?.id ? t("seasons.edit_title") : t("seasons.new_title")}
           </h2>
           <button onClick={on_close} className="text-muted-foreground hover:text-foreground">
             <X className="w-5 h-5" />
@@ -111,25 +114,25 @@ const StagioneModal: React.FC<{
         </div>
 
         <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
-          <Field label="Nome *">
+          <Field label={t("seasons.field_nome")}>
             <input
               value={form.nome}
               onChange={(e) => set_val("nome", e.target.value)}
-              placeholder="es. Stagione 2025-2026"
+              placeholder={t("seasons.name_placeholder")}
               className={input_cls}
             />
           </Field>
-          <Field label="Tipo">
+          <Field label={t("seasons.field_tipo")}>
             <select value={form.tipo} onChange={(e) => set_val("tipo", e.target.value)} className={input_cls}>
-              {TIPI_STAGIONE.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
+              {TIPI_STAGIONE.map((tp) => (
+                <option key={tp.value} value={tp.value}>
+                  {tp.label}
                 </option>
               ))}
             </select>
           </Field>
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Data inizio *">
+            <Field label={t("seasons.field_data_inizio")}>
               <input
                 type="date"
                 value={form.data_inizio}
@@ -137,7 +140,7 @@ const StagioneModal: React.FC<{
                 className={input_cls}
               />
             </Field>
-            <Field label="Data fine *">
+            <Field label={t("seasons.field_data_fine")}>
               <input
                 type="date"
                 value={form.data_fine}
@@ -155,7 +158,7 @@ const StagioneModal: React.FC<{
               className="w-4 h-4 accent-primary"
             />
             <label htmlFor="attiva" className="text-sm font-medium text-foreground cursor-pointer">
-              Stagione attiva
+              {t("seasons.active_checkbox_label")}
             </label>
           </div>
         </div>
@@ -163,10 +166,10 @@ const StagioneModal: React.FC<{
         <div className="px-6 py-4 border-t border-border space-y-2 flex-shrink-0">
           <div className="flex gap-2">
             <Button variant="outline" onClick={on_close} disabled={saving} className="flex-1">
-              Annulla
+              {t("seasons.cancel")}
             </Button>
             <Button onClick={handle_save} disabled={saving} className="flex-1 bg-primary hover:bg-primary/90">
-              {saving ? "..." : "💾 Salva"}
+              {saving ? t("seasons.saving") : t("seasons.save")}
             </Button>
           </div>
           {stagione?.id && !confirm_delete && (
@@ -176,13 +179,13 @@ const StagioneModal: React.FC<{
               onClick={() => set_confirm_delete(true)}
               className="w-full text-destructive hover:bg-destructive/10"
             >
-              🗑️ Elimina stagione
+              {t("seasons.delete_season")}
             </Button>
           )}
           {confirm_delete && (
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => set_confirm_delete(false)} className="flex-1">
-                Annulla
+                {t("seasons.cancel")}
               </Button>
               <Button
                 variant="destructive"
@@ -191,7 +194,7 @@ const StagioneModal: React.FC<{
                 disabled={elimina.isPending}
                 className="flex-1"
               >
-                {elimina.isPending ? "..." : "Elimina definitivamente"}
+                {elimina.isPending ? t("seasons.saving") : t("seasons.delete_confirm")}
               </Button>
             </div>
           )}
@@ -202,7 +205,8 @@ const StagioneModal: React.FC<{
 };
 
 const SeasonsPage: React.FC = () => {
-  const { t } = useI18n();
+  const { t: t_old } = useI18n();
+  const { t } = useTranslation("settings");
   const { data: stagioni = [], isLoading } = use_stagioni();
   const [modal_open, set_modal_open] = useState(false);
   const [selected, set_selected] = useState<any>(null);
@@ -228,9 +232,9 @@ const SeasonsPage: React.FC = () => {
       {modal_open && <StagioneModal stagione={selected} on_close={() => set_modal_open(false)} />}
       <div className="space-y-6 animate-fade-in">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold tracking-tight text-foreground">{t("stagioni")}</h1>
+          <h1 className="text-xl font-bold tracking-tight text-foreground">{t_old("stagioni")}</h1>
           <Button className="bg-primary hover:bg-primary/90" onClick={open_new}>
-            <Plus className="w-4 h-4 mr-2" /> {t("nuova_stagione")}
+            <Plus className="w-4 h-4 mr-2" /> {t_old("nuova_stagione")}
           </Button>
         </div>
 
@@ -239,19 +243,19 @@ const SeasonsPage: React.FC = () => {
             <thead>
               <tr className="border-b border-border">
                 <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                  {t("nome")}
+                  {t_old("nome")}
                 </th>
                 <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                  {t("tipo")}
+                  {t_old("tipo")}
                 </th>
                 <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden sm:table-cell">
-                  {t("data_inizio")}
+                  {t_old("data_inizio")}
                 </th>
                 <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden sm:table-cell">
-                  {t("data_fine")}
+                  {t_old("data_fine")}
                 </th>
                 <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                  {t("stato")}
+                  {t_old("stato")}
                 </th>
               </tr>
             </thead>
@@ -259,7 +263,7 @@ const SeasonsPage: React.FC = () => {
               {stagioni.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-12 text-center text-muted-foreground text-sm">
-                    Nessuna stagione. Clicca "Nuova stagione" per aggiungerne una.
+                    {t("seasons.empty_state")}
                   </td>
                 </tr>
               ) : (
@@ -283,7 +287,7 @@ const SeasonsPage: React.FC = () => {
                     </td>
                     <td className="px-4 py-3 text-center">
                       <Badge variant={s.attiva ? "default" : "secondary"} className="text-xs">
-                        {s.attiva ? "Attiva" : "Inattiva"}
+                        {s.attiva ? t("seasons.status_active") : t("seasons.status_inactive")}
                       </Badge>
                     </td>
                   </tr>

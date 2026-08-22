@@ -9,19 +9,20 @@ import { Button } from "@/components/ui/button";
 import DashboardCardsPermessi from "@/components/ruoli-permessi/DashboardCardsPermessi";
 import { MENU_SECTIONS } from "@/config/menuSections";
 import { is_admin_like } from "@/lib/roles";
+import { useTranslation } from "react-i18next";
 
 const RUOLI = [
-  { codice: "presidente", label: "Presidente", forced: false },
-  { codice: "segreteria", label: "Segreteria", forced: false },
-  { codice: "dt", label: "Direttore Tecnico", forced: false },
-  { codice: "istruttore", label: "Istruttore", forced: false },
-  { codice: "aiuto_monitore", label: "Aiuto Monitore", forced: false },
+  { codice: "presidente", label_key: "roles.role_presidente", forced: false },
+  { codice: "segreteria", label_key: "roles.role_segreteria", forced: false },
+  { codice: "dt", label_key: "roles.role_dt", forced: false },
+  { codice: "istruttore", label_key: "roles.role_istruttore", forced: false },
+  { codice: "aiuto_monitore", label_key: "roles.role_aiuto_monitore", forced: false },
 ];
 
 // Permessi extra non legati a una voce di menu (ma a sezioni interne)
 const PERMESSI_EXTRA = [
-  { codice: "ore_lavorate",     label: "Ore lavorate",     icon: Clock },
-  { codice: "costi_istruttori", label: "Costi istruttori", icon: DollarSign },
+  { codice: "ore_lavorate",     label_key: "roles.permesso_ore_lavorate",     icon: Clock },
+  { codice: "costi_istruttori", label_key: "roles.permesso_costi_istruttori", icon: DollarSign },
 ];
 
 const ALL_PERMESSI_CODES = [
@@ -30,6 +31,7 @@ const ALL_PERMESSI_CODES = [
 ];
 
 const RuoliPermessiPage: React.FC = () => {
+  const { t } = useTranslation("settings");
   const { session } = useAuth();
   const qc = useQueryClient();
   const club_id = session?.club_id;
@@ -88,9 +90,9 @@ const RuoliPermessiPage: React.FC = () => {
         .upsert(rows, { onConflict: "club_id,ruolo,codice_sezione" });
       if (error) throw error;
       qc.invalidateQueries({ queryKey: ["ruoli_permessi_sezioni"] });
-      toast({ title: "Permessi salvati", description: "Si applicheranno al prossimo login degli utenti." });
+      toast({ title: t("roles.toast_saved_title"), description: t("roles.toast_saved_description") });
     } catch (err: any) {
-      toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
+      toast({ title: t("roles.toast_save_error_title"), description: err?.message, variant: "destructive" });
     } finally {
       set_saving(false);
     }
@@ -106,13 +108,13 @@ const RuoliPermessiPage: React.FC = () => {
         <div className="flex items-center gap-3">
           <Shield className="w-6 h-6 text-primary" />
           <div>
-            <h1 className="text-xl font-bold text-foreground">Gestione Ruoli e Permessi</h1>
-            <p className="text-sm text-muted-foreground">Configura cosa vede ogni ruolo nel menu di sinistra</p>
+            <h1 className="text-xl font-bold text-foreground">{t("roles.page_title")}</h1>
+            <p className="text-sm text-muted-foreground">{t("roles.page_subtitle")}</p>
           </div>
         </div>
         <Button onClick={salva} disabled={saving} className="gap-2">
           <Save className="w-4 h-4" />
-          {saving ? "Salvo..." : "Salva permessi"}
+          {saving ? t("roles.saving") : t("roles.save_permissions")}
         </Button>
       </div>
 
@@ -120,10 +122,10 @@ const RuoliPermessiPage: React.FC = () => {
         <table className="w-full min-w-[700px]">
           <thead>
             <tr className="border-b border-border bg-muted/30">
-              <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wide w-56">Sezione</th>
+              <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wide w-56">{t("roles.column_section")}</th>
               {RUOLI.map((r) => (
                 <th key={r.codice} className="text-center px-3 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wide">
-                  {r.label}
+                  {t(r.label_key)}
                 </th>
               ))}
             </tr>
@@ -133,7 +135,7 @@ const RuoliPermessiPage: React.FC = () => {
               <React.Fragment key={gruppo}>
                 <tr className="bg-muted/20 border-b border-border">
                   <td colSpan={1 + RUOLI.length} className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    {gruppo === "principale" ? "Menu principale" : "Setup"}
+                    {gruppo === "principale" ? t("roles.group_main_menu") : t("roles.group_setup")}
                   </td>
                 </tr>
                 {MENU_SECTIONS.filter((s) => s.gruppo === gruppo).map((sezione, idx) => (
@@ -159,14 +161,14 @@ const RuoliPermessiPage: React.FC = () => {
             {/* Permessi extra (sezioni interne, non in menu) */}
             <tr className="bg-muted/20 border-b border-border">
               <td colSpan={1 + RUOLI.length} className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                Permessi sensibili
+                {t("roles.group_sensitive")}
               </td>
             </tr>
             {PERMESSI_EXTRA.map((sezione, idx) => (
               <tr key={sezione.codice} className={`border-b border-border/50 ${idx % 2 === 0 ? "bg-background" : "bg-muted/10"}`}>
                 <td className="px-4 py-3 text-sm font-medium text-foreground flex items-center gap-2">
                   <sezione.icon className="w-4 h-4 text-muted-foreground" />
-                  {sezione.label}
+                  {t(sezione.label_key)}
                 </td>
                 {RUOLI.map((r) => (
                   <td key={r.codice} className="px-3 py-3 text-center">
@@ -185,8 +187,8 @@ const RuoliPermessiPage: React.FC = () => {
       </div>
 
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-        <p className="text-sm text-blue-700 font-medium">Nota</p>
-        <p className="text-xs text-blue-600 mt-1">L'admin e il superadmin vedono sempre tutto. Le modifiche si applicano al prossimo login degli utenti.</p>
+        <p className="text-sm text-blue-700 font-medium">{t("roles.note_label")}</p>
+        <p className="text-xs text-blue-600 mt-1">{t("roles.note_text")}</p>
       </div>
 
       <div className="pt-4 border-t border-border">
