@@ -323,16 +323,24 @@ export async function invia_comunicazione_evento(
 }
 
 export const default_testo_gara = (nome: string, luogo: string, data: string) =>
-  `Care atlete, vi convochiamo per ${nome || "la gara"} a ${luogo || "—"} il ${fmt_date_it(data)}. Confermate la partecipazione tramite l'app.`;
+  tf("default_gara_testo", { nome: nome || tf("default_gara_fallback"), luogo: luogo || "—", data: fmt_date_it(data) });
 
-export const default_titolo_gara = (nome: string) => `Convocazione ${nome || "gara"}`;
+export const default_titolo_gara = (nome: string) =>
+  tf("default_gara_titolo", { nome: nome || tf("default_gara_titolo_fallback") });
 
 export const default_testo_test = (nome: string, data: string) =>
-  `Care atlete, è in programma il test ${nome || "di livello"} il ${fmt_date_it(data)}. Iscrivetevi tramite l'app.`;
+  tf("default_test_testo", { nome: nome || tf("default_test_fallback"), data: fmt_date_it(data) });
 
-export const default_titolo_test = (nome: string) => `Test livello ${nome || ""}`.trim();
+export const default_titolo_test = (nome: string) => tf("default_test_titolo", { nome: nome || "" }).trim();
 
 export const default_testo_gala = (titolo: string, data: string, ora?: string | null, luogo?: string | null) =>
-  `Care atlete, vi invitiamo a partecipare a ${titolo || "il nostro evento"} il ${fmt_date_it(data)}${ora ? ` alle ${ora.slice(0, 5)}` : ""}${luogo ? ` presso ${luogo}` : ""}.\n\nConfermate la partecipazione tramite l'app.`;
+  tf("default_gala_testo", {
+    titolo: titolo || tf("default_gala_fallback"),
+    data: fmt_date_it(data),
+    ora: ora ? tf("default_gala_ora", { ora: ora.slice(0, 5) }) : "",
+    luogo: luogo ? tf("default_gala_luogo", { luogo }) : "",
+  });
 
-export const default_titolo_gala = (titolo: string) => `Convocazione ${titolo || "evento"}`;
+export const default_titolo_gala = (titolo: string) =>
+  tf("default_gala_titolo", { titolo: titolo || tf("default_gala_titolo_fallback") });
+
