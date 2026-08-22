@@ -59,6 +59,7 @@ import {
   RichiesteLezioniPrivateWidget,
 } from "@/components/dashboard/RichiesteIscrizioneWidget";
 import PresidentDashboard from "@/components/dashboard/PresidentDashboard";
+import BannerDisponibilitaScaduta from "@/components/common/BannerDisponibilitaScaduta";
 import OnboardingBanner from "@/components/dashboard/OnboardingBanner";
 import { useAuth } from "@/lib/auth";
 
