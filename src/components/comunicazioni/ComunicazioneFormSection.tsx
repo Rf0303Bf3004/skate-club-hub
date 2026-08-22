@@ -60,7 +60,7 @@ export const ComunicazioneFormSection: React.FC<Props> = ({
   label,
   description,
 }) => {
-  const { t } = useI18n();
+  const { t } = useTranslation("communications");
   const { data: livelli_db = [] } = use_livelli();
 
   const upd = <K extends keyof ComunicazioneFormState>(k: K, v: ComunicazioneFormState[K]) =>
