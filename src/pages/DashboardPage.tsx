@@ -1429,6 +1429,7 @@ const DashboardPage: React.FC = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       <OnboardingBanner />
+      <BannerDisponibilitaScaduta />
       {/* Header */}
       <div className="flex items-center gap-4">
         {club?.logo_url ? (
