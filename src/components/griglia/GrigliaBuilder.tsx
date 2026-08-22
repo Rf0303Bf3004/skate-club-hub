@@ -1201,16 +1201,18 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
 
   const handle_pubblica = async () => {
     try {
-      // Sync automatico dei gruppi collegati prima dell'invio (non bloccante per sessione)
-      const con_gruppo = sessioni.filter((s) => !!s.gruppo_livello);
+      // Sync automatico di TUTTI i gruppi collegati prima dell'invio (non bloccante)
       const falliti: string[] = [];
-      for (const s of con_gruppo) {
-        try {
-          await sync_gruppo_core(s);
-        } catch {
-          falliti.push(`${hhmm(s.ora_inizio)}–${hhmm(s.ora_fine)}`);
+      for (const s of sessioni) {
+        for (const g of s.gruppi ?? []) {
+          try {
+            await sync_gruppo.mutateAsync({ gruppo_sessione_id: g.id, sessione_id: s.id, gruppo: g });
+          } catch {
+            falliti.push(`${hhmm(s.ora_inizio)}–${hhmm(s.ora_fine)} (${g.gruppo_livello})`);
+          }
         }
       }
+
       if (falliti.length > 0) {
         toast({
           title: "Alcuni gruppi non sincronizzati",
