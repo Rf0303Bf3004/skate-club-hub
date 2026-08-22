@@ -120,12 +120,13 @@ export const ConversazioniTab: React.FC = () => {
                   <div className="min-w-0 flex-1">
                     <h3 className="font-semibold text-foreground truncate">{conv.titolo}</h3>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Inviata il {format_date(conv.created_at)} a {tot} destinatari
+                      {t("conversazioni.sent_on", { data: format_date(conv.created_at), count: tot })}
                     </p>
                     <div className="flex flex-wrap gap-2 mt-2">
-                      <Badge className="bg-success/15 text-success border-success/30" variant="outline">✓ {conferme} conferme</Badge>
-                      <Badge className="bg-destructive/15 text-destructive border-destructive/30" variant="outline">❌ {rifiuti} rifiuti</Badge>
-                      <Badge className="bg-warning/15 text-warning border-warning/30" variant="outline">⏳ {in_attesa} in attesa</Badge>
+                      <Badge className="bg-success/15 text-success border-success/30" variant="outline">{t("conversazioni.confirmations", { count: conferme })}</Badge>
+                      <Badge className="bg-destructive/15 text-destructive border-destructive/30" variant="outline">{t("conversazioni.refusals", { count: rifiuti })}</Badge>
+                      <Badge className="bg-warning/15 text-warning border-warning/30" variant="outline">{t("conversazioni.pending", { count: in_attesa })}</Badge>
+
                     </div>
                   </div>
                 </button>
@@ -137,7 +138,7 @@ export const ConversazioniTab: React.FC = () => {
                     disabled={sollecita.isPending}
                     className="shrink-0"
                   >
-                    <Send className="w-3.5 h-3.5 mr-1.5" /> Sollecita non rispondenti
+                    <Send className="w-3.5 h-3.5 mr-1.5" /> {t("conversazioni.remind_non_responders")}
                   </Button>
                 )}
               </div>
@@ -147,10 +148,11 @@ export const ConversazioniTab: React.FC = () => {
                 {conv.destinatari.map((d) => {
                   const nome = d.atleti ? `${d.atleti.cognome} ${d.atleti.nome}` : d.atleta_id.slice(0, 8);
                   const stato = d.rsvp_risposta === "si"
-                    ? <span className="text-success">✓ confermato il {format_date(d.rsvp_at)}</span>
+                    ? <span className="text-success">{t("conversazioni.confirmed_on", { data: format_date(d.rsvp_at) })}</span>
                     : d.rsvp_risposta === "no"
-                    ? <span className="text-destructive">❌ rifiutato il {format_date(d.rsvp_at)}</span>
-                    : <span className="text-warning">⏳ in attesa</span>;
+                    ? <span className="text-destructive">{t("conversazioni.refused_on", { data: format_date(d.rsvp_at) })}</span>
+                    : <span className="text-warning">{t("conversazioni.waiting")}</span>;
+
                   return (
                     <div key={d.id} className="flex items-center justify-between gap-3 text-sm py-1 border-b border-border/40 last:border-0">
                       <span className="text-foreground">{nome}</span>
