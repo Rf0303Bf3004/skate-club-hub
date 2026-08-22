@@ -877,6 +877,39 @@ export function use_assegna_gruppo_sessione() {
     }) => {
       const club_id = get_current_club_id();
 
+      // Idempotenza: se lo stesso gruppo è GIÀ collegato a questa stessa
+      // sotto-sessione, non creiamo un duplicato — trattiamo il drag come una
+      // richiesta di risincronizzazione della membership.
+      const { data: esistenti, error: err_e } = await supabase
+        .from("griglia_sessioni_gruppi" as any)
+        .select("id,gruppo_livello,gruppo_scope,gruppo_ragione_sociale_id")
+        .eq("sessione_id", input.sessione_id);
+      if (err_e) throw err_e;
+      const gia = ((esistenti ?? []) as any[]).find(
+        (g) =>
+          g.gruppo_livello === input.gruppo_livello &&
+          g.gruppo_scope === input.gruppo_scope &&
+          (g.gruppo_ragione_sociale_id ?? null) === (input.gruppo_ragione_sociale_id ?? null),
+      );
+
+      if (gia) {
+        const res = await sync_gruppo_sessione({
+          gruppo_sessione_id: gia.id as string,
+          sessione_id: input.sessione_id,
+          gruppo: {
+            gruppo_livello: input.gruppo_livello,
+            gruppo_scope: input.gruppo_scope,
+            gruppo_ragione_sociale_id: input.gruppo_ragione_sociale_id ?? null,
+          },
+        });
+        return {
+          gruppo_sessione_id: gia.id as string,
+          aggiunti: res.da_aggiungere,
+          membri: res.da_aggiungere,
+          gia_presente: true,
+        };
+      }
+
       // Guardia bloccante lato scrittura: nessun insert se il gruppo è già
       // collegato a un'altra sotto-sessione sovrapposta nello stesso giorno.
       const conflitto = await verifica_conflitto_gruppo(input);
@@ -899,6 +932,7 @@ export function use_assegna_gruppo_sessione() {
         .single();
       if (err_g) throw err_g;
       const gruppo_sessione_id = (gruppo as any).id as string;
+
 
       const membri = await risolvi_membri_gruppo(
         club_id,
