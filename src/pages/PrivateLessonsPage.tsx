@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { use_lezioni_private, use_istruttori, use_atleti, use_corsi, use_setup_club } from "@/hooks/use-supabase-data";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -170,6 +171,7 @@ const AtletaSearch: React.FC<{
   on_change: (ids: string[]) => void;
   escludi_ids?: string[];
 }> = ({ atleti, selected_ids, on_change, escludi_ids = [] }) => {
+  const { t } = useTranslation('corsi');
   const [query, set_query] = useState("");
   const [open, set_open] = useState(false);
 
@@ -193,7 +195,7 @@ const AtletaSearch: React.FC<{
         <Search className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
         <input
           className="flex-1 bg-transparent outline-none text-sm placeholder:text-muted-foreground"
-          placeholder="Cerca atleta per nome..."
+          placeholder={t("lezioni_private.atleta_search.placeholder")}
           value={query}
           onChange={(e) => {
             set_query(e.target.value);
@@ -213,7 +215,7 @@ const AtletaSearch: React.FC<{
           />
           <div className="absolute z-20 top-full mt-1 w-full bg-card border border-border rounded-lg shadow-xl overflow-hidden">
             {filtered.length === 0 ? (
-              <p className="text-sm text-muted-foreground px-3 py-2">Nessun atleta trovato</p>
+              <p className="text-sm text-muted-foreground px-3 py-2">{t("lezioni_private.atleta_search.nessun_atleta_trovato")}</p>
             ) : (
               filtered.map((a: any) => {
                 const sel = selected_ids.includes(a.id);
@@ -271,6 +273,7 @@ const SlotModal: React.FC<{
   on_close: () => void;
   loading: boolean;
 }> = ({ form, atleti, slot_minuti, on_change, on_submit, on_close, loading }) => {
+  const { t } = useTranslation('corsi');
   const date_obj = new Date(form.data + "T00:00:00");
   const date_label = date_obj.toLocaleDateString("de-CH", {
     weekday: "long",
@@ -286,7 +289,7 @@ const SlotModal: React.FC<{
         <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
           <div>
             <h2 className="text-base font-bold text-foreground">
-              Prenota {form.ora_inizio}–{form.ora_fine}
+              {t("lezioni_private.slot_modal.title", { ora_inizio: form.ora_inizio, ora_fine: form.ora_fine })}
             </h2>
             <p className="text-xs text-muted-foreground capitalize">{date_label}</p>
           </div>
@@ -300,11 +303,11 @@ const SlotModal: React.FC<{
           <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 rounded-lg">
             <Clock className="w-3.5 h-3.5 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">
-              Durata slot: <strong>{slot_minuti} minuti</strong>
+              {t("lezioni_private.slot_modal.durata_slot", { minuti: slot_minuti })}
             </span>
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Atleta/e *</label>
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("lezioni_private.slot_modal.atleta_label")}</label>
             <AtletaSearch
               atleti={atleti}
               selected_ids={form.atleti_ids || []}
@@ -312,7 +315,7 @@ const SlotModal: React.FC<{
             />
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Costo totale</label>
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("lezioni_private.slot_modal.costo_totale_label")}</label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-medium pointer-events-none">
                 CHF
@@ -337,17 +340,17 @@ const SlotModal: React.FC<{
               {form.ricorrente && <Check className="w-3 h-3 text-white" />}
             </div>
             <div>
-              <p className="text-sm font-medium">Lezione ricorrente</p>
-              <p className="text-xs opacity-70">Ogni settimana alla stessa ora fino a fine stagione</p>
+              <p className="text-sm font-medium">{t("lezioni_private.slot_modal.lezione_ricorrente")}</p>
+              <p className="text-xs opacity-70">{t("lezioni_private.slot_modal.lezione_ricorrente_desc")}</p>
             </div>
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Note</label>
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("lezioni_private.slot_modal.note_label")}</label>
             <textarea
               value={form.note || ""}
               onChange={(e) => on_change("note", e.target.value)}
               rows={2}
-              placeholder="Note opzionali..."
+              placeholder={t("lezioni_private.slot_modal.note_placeholder")}
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
           </div>
@@ -356,7 +359,7 @@ const SlotModal: React.FC<{
         {/* Footer fisso */}
         <div className="flex justify-end gap-3 px-6 py-4 border-t border-border flex-shrink-0">
           <Button variant="outline" onClick={on_close} disabled={loading}>
-            Annulla
+            {t("lezioni_private.slot_modal.annulla")}
           </Button>
           <Button
             onClick={on_submit}
@@ -366,12 +369,12 @@ const SlotModal: React.FC<{
             {loading ? (
               <span className="flex items-center gap-2">
                 <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                Salvo...
+                {t("lezioni_private.slot_modal.salvo")}
               </span>
             ) : form.ricorrente ? (
-              "📅 Crea ricorrente"
+              t("lezioni_private.slot_modal.crea_ricorrente")
             ) : (
-              "Prenota"
+              t("lezioni_private.slot_modal.prenota")
             )}
           </Button>
         </div>
@@ -389,6 +392,7 @@ const AggiungiAtletaModal: React.FC<{
   on_confirm: (atleta_id: string, nuovo_costo: number, modalita: "dividi" | "manuale") => void;
   loading: boolean;
 }> = ({ slot, atleti, costo_attuale, on_close, on_confirm, loading }) => {
+  const { t } = useTranslation('corsi');
   const [atleta_id, set_atleta_id] = useState<string>("");
   const [modalita, set_modalita] = useState<"dividi" | "manuale">("dividi");
   const [costo_manuale_str, set_costo_manuale_str] = useState<string>(costo_attuale.toFixed(2));
@@ -403,8 +407,8 @@ const AggiungiAtletaModal: React.FC<{
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
           <div>
-            <h2 className="text-base font-bold text-foreground">Aggiungi atleta</h2>
-            <p className="text-xs text-muted-foreground">La lezione diventerà semiprivata</p>
+            <h2 className="text-base font-bold text-foreground">{t("lezioni_private.aggiungi_atleta_modal.title")}</h2>
+            <p className="text-xs text-muted-foreground">{t("lezioni_private.aggiungi_atleta_modal.subtitle")}</p>
           </div>
           <button onClick={on_close} className="text-muted-foreground hover:text-foreground">
             <X className="w-5 h-5" />
@@ -413,11 +417,11 @@ const AggiungiAtletaModal: React.FC<{
         <div className="px-6 py-5 space-y-5 overflow-y-auto flex-1">
           <div className="flex items-center gap-2 px-3 py-2 bg-orange-500/10 border border-orange-500/20 rounded-xl">
             <span className="text-orange-500 text-sm">👥</span>
-            <span className="text-xs font-medium text-orange-600">Diventerà una lezione semiprivata</span>
+            <span className="text-xs font-medium text-orange-600">{t("lezioni_private.aggiungi_atleta_modal.banner")}</span>
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              Nuova atleta *
+              {t("lezioni_private.aggiungi_atleta_modal.nuova_atleta_label")}
             </label>
             <AtletaSearch
               atleti={atleti}
@@ -428,7 +432,7 @@ const AggiungiAtletaModal: React.FC<{
           </div>
           <div className="space-y-3">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              Gestione costo
+              {t("lezioni_private.aggiungi_atleta_modal.gestione_costo_label")}
             </label>
             <div className="grid grid-cols-2 gap-2">
               <div
@@ -436,16 +440,16 @@ const AggiungiAtletaModal: React.FC<{
                 className={`p-3 rounded-xl border-2 cursor-pointer transition-all text-center
                   ${modalita === "dividi" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
               >
-                <p className="text-sm font-medium">÷ Dividi</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Costo attuale diviso per {n_totale}</p>
+                <p className="text-sm font-medium">{t("lezioni_private.aggiungi_atleta_modal.dividi")}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{t("lezioni_private.aggiungi_atleta_modal.dividi_desc", { n: n_totale })}</p>
               </div>
               <div
                 onClick={() => set_modalita("manuale")}
                 className={`p-3 rounded-xl border-2 cursor-pointer transition-all text-center
                   ${modalita === "manuale" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
               >
-                <p className="text-sm font-medium">✏️ Manuale</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Imposta nuovo totale</p>
+                <p className="text-sm font-medium">{t("lezioni_private.aggiungi_atleta_modal.manuale")}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{t("lezioni_private.aggiungi_atleta_modal.manuale_desc")}</p>
               </div>
             </div>
             {modalita === "manuale" && (
@@ -462,13 +466,13 @@ const AggiungiAtletaModal: React.FC<{
               </div>
             )}
             <div className="bg-muted/30 rounded-xl px-4 py-3 space-y-1.5">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Riepilogo quote</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("lezioni_private.aggiungi_atleta_modal.riepilogo_quote")}</p>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Totale lezione</span>
+                <span className="text-muted-foreground">{t("lezioni_private.aggiungi_atleta_modal.totale_lezione")}</span>
                 <span className="font-semibold">CHF {costo_diviso.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Quota per atleta ({n_totale})</span>
+                <span className="text-muted-foreground">{t("lezioni_private.aggiungi_atleta_modal.quota_per_atleta", { n: n_totale })}</span>
                 <span className="font-semibold text-primary">CHF {quota_per_atleta.toFixed(2)}</span>
               </div>
             </div>
@@ -476,7 +480,7 @@ const AggiungiAtletaModal: React.FC<{
         </div>
         <div className="flex justify-end gap-3 px-6 py-4 border-t border-border flex-shrink-0">
           <Button variant="outline" onClick={on_close} disabled={loading}>
-            Annulla
+            {t("lezioni_private.aggiungi_atleta_modal.annulla")}
           </Button>
           <Button
             onClick={() => atleta_id && on_confirm(atleta_id, costo_diviso, modalita)}
@@ -486,10 +490,10 @@ const AggiungiAtletaModal: React.FC<{
             {loading ? (
               <span className="flex items-center gap-2">
                 <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                Salvo...
+                {t("lezioni_private.aggiungi_atleta_modal.salvo")}
               </span>
             ) : (
-              "👥 Aggiungi atleta"
+              t("lezioni_private.aggiungi_atleta_modal.aggiungi_atleta")
             )}
           </Button>
         </div>
@@ -508,6 +512,7 @@ const SlotDetailModal: React.FC<{
   on_aggiungi_atleta: () => void;
   loading: boolean;
 }> = ({ slot, atleti, on_close, on_annulla, on_modifica, on_aggiungi_atleta, loading }) => {
+  const { t } = useTranslation('corsi');
   const atleti_ids: string[] = slot.lesson?.atleti_ids || [];
   const tipo = get_tipo_lezione(atleti_ids);
   const is_semiprivata = tipo === "semiprivata";
@@ -523,14 +528,14 @@ const SlotDetailModal: React.FC<{
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
           <div className="flex items-center gap-2">
-            <h2 className="text-base font-bold text-foreground">Dettaglio lezione</h2>
+            <h2 className="text-base font-bold text-foreground">{t("lezioni_private.slot_detail_modal.title")}</h2>
             {is_semiprivata ? (
               <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-orange-500/15 text-orange-600 border border-orange-500/20">
-                👥 Semiprivata
+                {t("lezioni_private.slot_detail_modal.badge_semiprivata")}
               </span>
             ) : (
               <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-destructive/10 text-destructive border border-destructive/20">
-                🔒 Privata
+                {t("lezioni_private.slot_detail_modal.badge_privata")}
               </span>
             )}
           </div>
@@ -546,7 +551,7 @@ const SlotDetailModal: React.FC<{
             </span>
           </div>
           <div className="space-y-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Atleta/e</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("lezioni_private.slot_detail_modal.atleta_label")}</p>
             {nomi_atleti.length > 0 ? (
               nomi_atleti.map((nome: string, i: number) => (
                 <div key={i} className="flex items-center gap-2 px-3 py-2 bg-primary/5 rounded-lg">
@@ -555,18 +560,18 @@ const SlotDetailModal: React.FC<{
                 </div>
               ))
             ) : (
-              <p className="text-sm text-muted-foreground italic">Nessun atleta registrato</p>
+              <p className="text-sm text-muted-foreground italic">{t("lezioni_private.slot_detail_modal.nessun_atleta_registrato")}</p>
             )}
           </div>
           {slot.lesson?.costo > 0 && (
             <div className="flex items-center justify-between px-3 py-2 bg-muted/30 rounded-xl">
-              <span className="text-xs text-muted-foreground font-medium">Costo totale</span>
+              <span className="text-xs text-muted-foreground font-medium">{t("lezioni_private.slot_detail_modal.costo_totale")}</span>
               <span className="text-sm font-bold text-foreground">CHF {Number(slot.lesson.costo).toFixed(2)}</span>
             </div>
           )}
           {slot.lesson?.note && (
             <div className="space-y-1">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Note</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("lezioni_private.slot_detail_modal.note_label")}</p>
               <p className="text-sm text-foreground bg-muted/30 px-3 py-2 rounded-lg">{slot.lesson.note}</p>
             </div>
           )}
@@ -578,14 +583,14 @@ const SlotDetailModal: React.FC<{
             disabled={loading}
             className="w-full border-orange-500/40 text-orange-600 hover:bg-orange-500/10"
           >
-            <UserPlus className="w-4 h-4 mr-2" /> Aggiungi atleta (semiprivata)
+            <UserPlus className="w-4 h-4 mr-2" /> {t("lezioni_private.slot_detail_modal.aggiungi_atleta_semiprivata")}
           </Button>
           <div className="flex gap-2">
             <Button variant="outline" onClick={on_modifica} disabled={loading} className="flex-1">
-              ✏️ Modifica
+              {t("lezioni_private.slot_detail_modal.modifica")}
             </Button>
             <Button variant="destructive" onClick={on_annulla} disabled={loading} className="flex-1">
-              {loading ? <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" /> : "× Annulla"}
+              {loading ? <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" /> : t("lezioni_private.slot_detail_modal.annulla")}
             </Button>
           </div>
         </div>
@@ -601,6 +606,7 @@ const CambioDurataModal: React.FC<{
   on_confirm: (nuova_durata: number, aggiorna_esistenti: boolean) => Promise<void>;
   saving: boolean;
 }> = ({ durata_attuale, on_close, on_confirm, saving }) => {
+  const { t } = useTranslation('corsi');
   const [nuova_durata, set_nuova_durata] = useState(durata_attuale);
   const [aggiorna_esistenti, set_aggiorna_esistenti] = useState(false);
 
@@ -608,7 +614,7 @@ const CambioDurataModal: React.FC<{
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
-          <h2 className="text-base font-bold text-foreground">Cambia durata slot</h2>
+          <h2 className="text-base font-bold text-foreground">{t("lezioni_private.cambio_durata_modal.title")}</h2>
           <button onClick={on_close} className="text-muted-foreground hover:text-foreground">
             <X className="w-5 h-5" />
           </button>
@@ -616,7 +622,7 @@ const CambioDurataModal: React.FC<{
         <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              Nuova durata (minuti)
+              {t("lezioni_private.cambio_durata_modal.nuova_durata_label")}
             </label>
             <div className="flex gap-2">
               {[15, 20, 30, 45, 60].map((m) => (
@@ -632,7 +638,7 @@ const CambioDurataModal: React.FC<{
             </div>
           </div>
           <div className="bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 space-y-3">
-            <p className="text-xs font-bold text-orange-700">Cosa fare con le lezioni già esistenti?</p>
+            <p className="text-xs font-bold text-orange-700">{t("lezioni_private.cambio_durata_modal.domanda_esistenti")}</p>
             <div className="space-y-2">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -641,7 +647,7 @@ const CambioDurataModal: React.FC<{
                   onChange={() => set_aggiorna_esistenti(false)}
                   className="accent-primary"
                 />
-                <span className="text-sm text-foreground">Solo nuove prenotazioni (consigliato)</span>
+                <span className="text-sm text-foreground">{t("lezioni_private.cambio_durata_modal.solo_nuove")}</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -650,21 +656,21 @@ const CambioDurataModal: React.FC<{
                   onChange={() => set_aggiorna_esistenti(true)}
                   className="accent-primary"
                 />
-                <span className="text-sm text-foreground">Aggiorna anche le lezioni future esistenti</span>
+                <span className="text-sm text-foreground">{t("lezioni_private.cambio_durata_modal.aggiorna_future")}</span>
               </label>
             </div>
           </div>
         </div>
         <div className="flex gap-2 px-6 py-4 border-t border-border flex-shrink-0">
           <Button variant="outline" onClick={on_close} disabled={saving} className="flex-1">
-            Annulla
+            {t("lezioni_private.cambio_durata_modal.annulla")}
           </Button>
           <Button
             onClick={() => on_confirm(nuova_durata, aggiorna_esistenti)}
             disabled={saving || nuova_durata === durata_attuale}
             className="flex-1 bg-primary hover:bg-primary/90"
           >
-            {saving ? "..." : "💾 Salva durata"}
+            {saving ? t("lezioni_private.cambio_durata_modal.salvando") : t("lezioni_private.cambio_durata_modal.salva_durata")}
           </Button>
         </div>
       </div>
@@ -674,6 +680,7 @@ const CambioDurataModal: React.FC<{
 
 // ─── Main Page ─────────────────────────────────────────────
 const LezioniPrivatePage: React.FC = () => {
+  const { t } = useTranslation('corsi');
   const { data: lezioni = [], isLoading } = use_lezioni_private();
   const { data: istruttori = [] } = use_istruttori();
   const { data: atleti = [] } = use_atleti();
@@ -834,13 +841,13 @@ const LezioniPrivatePage: React.FC = () => {
 
   const handle_annulla = async () => {
     if (!detail_slot?.lesson) return;
-    if (!window.confirm("Annullare questa lezione e liberare lo slot?")) return;
+    if (!window.confirm(t("lezioni_private.confirm.annulla_lezione"))) return;
     try {
       await annulla_lezione.mutateAsync(detail_slot.lesson.id);
       set_detail_slot(null);
-      toast({ title: "Lezione annullata — slot liberato" });
+      toast({ title: t("lezioni_private.toast.lezione_annullata") });
     } catch (err: any) {
-      toast({ title: "Errore annullamento", description: err?.message, variant: "destructive" });
+      toast({ title: t("lezioni_private.toast.errore_annullamento"), description: err?.message, variant: "destructive" });
     }
   };
 
@@ -874,15 +881,15 @@ const LezioniPrivatePage: React.FC = () => {
       });
       set_aggiungi_open(false);
       set_detail_slot(null);
-      toast({ title: "👥 Atleta aggiunta — lezione diventata semiprivata!" });
+      toast({ title: t("lezioni_private.toast.atleta_aggiunta") });
     } catch (err: any) {
-      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+      toast({ title: t("lezioni_private.toast.errore_generico"), description: err?.message, variant: "destructive" });
     }
   };
 
   const handle_submit = async () => {
     if (!form_data.atleti_ids?.length) {
-      toast({ title: "Seleziona almeno un atleta", variant: "destructive" });
+      toast({ title: t("lezioni_private.toast.seleziona_atleta"), variant: "destructive" });
       return;
     }
     set_saving(true);
@@ -907,12 +914,12 @@ const LezioniPrivatePage: React.FC = () => {
       });
       set_form_open(false);
       toast({
-        title: form_data.ricorrente ? "📅 Lezioni ricorrenti create fino a fine stagione!" : "✅ Lezione prenotata!",
+        title: form_data.ricorrente ? t("lezioni_private.toast.lezioni_ricorrenti_create") : t("lezioni_private.toast.lezione_prenotata"),
       });
     } catch (err: any) {
       toast({
-        title: "Errore durante il salvataggio",
-        description: err?.message ?? "Controlla la console.",
+        title: t("lezioni_private.toast.errore_salvataggio"),
+        description: err?.message ?? t("lezioni_private.toast.errore_salvataggio_default"),
         variant: "destructive",
       });
     } finally {
@@ -942,13 +949,13 @@ const LezioniPrivatePage: React.FC = () => {
       await qc.invalidateQueries({ queryKey: ["setup_club"] });
       set_durata_modal(false);
       toast({
-        title: `✅ Durata slot aggiornata a ${nuova_durata} minuti`,
+        title: t("lezioni_private.toast.durata_aggiornata", { minuti: nuova_durata }),
         description: aggiorna_esistenti
-          ? "Le lezioni future sono state aggiornate."
-          : "Valida per le nuove prenotazioni.",
+          ? t("lezioni_private.toast.durata_aggiornata_future")
+          : t("lezioni_private.toast.durata_aggiornata_nuove"),
       });
     } catch (err: any) {
-      toast({ title: "Errore salvataggio durata", description: err?.message, variant: "destructive" });
+      toast({ title: t("lezioni_private.toast.errore_salvataggio_durata"), description: err?.message, variant: "destructive" });
     } finally {
       set_saving_durata(false);
     }
@@ -1027,16 +1034,16 @@ const LezioniPrivatePage: React.FC = () => {
 
       <div className="space-y-6 animate-fade-in">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold tracking-tight text-foreground">Lezioni Private</h1>
+          <h1 className="text-xl font-bold tracking-tight text-foreground">{t("lezioni_private.title")}</h1>
           <Button variant="outline" size="sm" onClick={() => set_durata_modal(true)} className="gap-2 text-xs">
-            <Settings className="w-3.5 h-3.5" /> Slot: {slot_minuti} min
+            <Settings className="w-3.5 h-3.5" /> {t("lezioni_private.slot_button", { min: slot_minuti })}
           </Button>
         </div>
 
         <div className="w-64">
           <Select value={selected_istruttore} onValueChange={set_selected_istruttore}>
             <SelectTrigger>
-              <SelectValue placeholder="Seleziona istruttore" />
+              <SelectValue placeholder={t("lezioni_private.select_istruttore_placeholder")} />
             </SelectTrigger>
             <SelectContent>
               {istruttori
@@ -1109,10 +1116,10 @@ const LezioniPrivatePage: React.FC = () => {
               </div>
               <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-success" /> Libero
+                  <div className="w-2 h-2 rounded-full bg-success" /> {t("lezioni_private.legenda.libero")}
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-destructive/70" /> Prenotato
+                  <div className="w-2 h-2 rounded-full bg-destructive/70" /> {t("lezioni_private.legenda.prenotato")}
                 </div>
               </div>
             </div>
@@ -1123,8 +1130,8 @@ const LezioniPrivatePage: React.FC = () => {
               {selected_slots.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
                   <Clock className="w-8 h-8 mb-2 opacity-30" />
-                  <p className="text-sm">Nessuno slot disponibile</p>
-                  <p className="text-xs mt-1 opacity-70">L'istruttore non è disponibile in questo giorno</p>
+                  <p className="text-sm">{t("lezioni_private.no_slots.title")}</p>
+                  <p className="text-xs mt-1 opacity-70">{t("lezioni_private.no_slots.subtitle")}</p>
                 </div>
               ) : (
                 <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
@@ -1161,13 +1168,13 @@ const LezioniPrivatePage: React.FC = () => {
                               {slot.time} – {slot.end_time}
                             </p>
                             {is_off_ice && (
-                              <p className="text-xs text-sky-600 mt-0.5">⛸️ Fuori ghiaccio</p>
+                              <p className="text-xs text-sky-600 mt-0.5">{t("lezioni_private.slot_status.fuori_ghiaccio_label")}</p>
                             )}
                             {slot.status === "occupato" && slot.lesson && (
                               <p className="text-xs text-muted-foreground mt-0.5">
                                 {slot.lesson.atleti_ids?.length
                                   ? get_atleti_names(slot.lesson.atleti_ids)
-                                  : slot.lesson.note || "Occupato"}
+                                  : slot.lesson.note || t("lezioni_private.slot_status.occupato")}
                               </p>
                             )}
                           </div>
@@ -1175,7 +1182,7 @@ const LezioniPrivatePage: React.FC = () => {
                         <span
                           className={`text-xs font-bold px-2 py-0.5 rounded-full ${is_off_ice ? "bg-sky-500/20 text-sky-600" : is_free ? "bg-success/20 text-success" : is_semiprivata ? "bg-orange-500/20 text-orange-600" : "bg-destructive/20 text-destructive"}`}
                         >
-                          {is_off_ice ? "🏋️ Off-Ice" : is_free ? "+ Prenota" : is_semiprivata ? "👥 Semi" : "Dettagli"}
+                          {is_off_ice ? t("lezioni_private.slot_status.off_ice") : is_free ? t("lezioni_private.slot_status.prenota") : is_semiprivata ? t("lezioni_private.slot_status.semi") : t("lezioni_private.slot_status.dettagli")}
                         </span>
                       </div>
                     );
@@ -1184,23 +1191,23 @@ const LezioniPrivatePage: React.FC = () => {
               )}
               <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground flex-wrap">
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-success" /> Libero (ghiaccio)
+                  <div className="w-2 h-2 rounded-full bg-success" /> {t("lezioni_private.legenda.libero_ghiaccio")}
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-sky-500" /> Fuori ghiaccio
+                  <div className="w-2 h-2 rounded-full bg-sky-500" /> {t("lezioni_private.legenda.fuori_ghiaccio")}
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-destructive" /> Privata
+                  <div className="w-2 h-2 rounded-full bg-destructive" /> {t("lezioni_private.legenda.privata")}
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-orange-500" /> Semiprivata
+                  <div className="w-2 h-2 rounded-full bg-orange-500" /> {t("lezioni_private.legenda.semiprivata")}
                 </div>
               </div>
             </div>
           </div>
         ) : (
           <div className="bg-card rounded-2xl shadow-card p-8 text-center text-muted-foreground">
-            Seleziona un istruttore per vedere le disponibilità
+            {t("lezioni_private.select_istruttore_empty")}
           </div>
         )}
       </div>

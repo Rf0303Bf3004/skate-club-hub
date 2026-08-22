@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase, get_current_club_id } from "@/lib/supabase";
@@ -80,12 +81,14 @@ type Gara = {
   club_ospitante: string | null;
 };
 
-const ESITO_OPTIONS: { value: TestAtleta["esito"]; label: string; cls: string }[] = [
-  { value: "in_attesa",     label: "In attesa",     cls: "bg-muted text-muted-foreground" },
-  { value: "superato",      label: "Superato",      cls: "bg-green-100 text-green-800" },
-  { value: "non_superato",  label: "Non superato",  cls: "bg-destructive/10 text-destructive" },
-  { value: "non_sostenuto", label: "Non sostenuto", cls: "bg-muted text-muted-foreground italic" },
-];
+function get_esito_options(t: (k: string) => string): { value: TestAtleta["esito"]; label: string; cls: string }[] {
+  return [
+    { value: "in_attesa",     label: t("level_tests.esito_in_attesa"),     cls: "bg-muted text-muted-foreground" },
+    { value: "superato",      label: t("level_tests.passed"),      cls: "bg-green-100 text-green-800" },
+    { value: "non_superato",  label: t("level_tests.failed"),  cls: "bg-destructive/10 text-destructive" },
+    { value: "non_sostenuto", label: t("level_tests.esito_non_sostenuto"), cls: "bg-muted text-muted-foreground italic" },
+  ];
+}
 
 // ─── Form state nuovo test ───────────────────────────────────────────────
 type NuovoTestForm = {
@@ -113,11 +116,11 @@ const empty_form: NuovoTestForm = {
 };
 
 // Riepilogo livelli convocate per la card di lista
-function summarize_livelli(rows: { livello_target: string; disciplina: string | null }[]): string {
-  if (rows.length === 0) return "0 atlete";
+function summarize_livelli(t: (k: string, o?: any) => string, rows: { livello_target: string; disciplina: string | null }[]): string {
+  if (rows.length === 0) return t("level_tests.count_athletes_zero");
   const counts = new Map<string, number>();
   for (const r of rows) {
-    const key = r.disciplina ? `${r.livello_target} ${r.disciplina === "artistica" ? "Artistica" : "Stile"}` : r.livello_target;
+    const key = r.disciplina ? `${r.livello_target} ${r.disciplina === "artistica" ? t("level_tests.discipline_artistica") : t("level_tests.discipline_stile")}` : r.livello_target;
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
   // unique atleti = rows distinte per ordine=1 idealmente; qui contiamo step totali
@@ -127,6 +130,7 @@ function summarize_livelli(rows: { livello_target: string; disciplina: string | 
 
 // ─── Componente principale ──────────────────────────────────────────────
 export default function TestLivelloPage() {
+  const { t } = useTranslation("events");
   const club_id = get_current_club_id();
   const qc = useQueryClient();
   const route_params = useParams<{ id?: string }>();
@@ -248,6 +252,8 @@ export default function TestLivelloPage() {
     },
   });
 
+  const ESITO_OPTIONS = useMemo(() => get_esito_options(t), [t]);
+
   const selected_test = tests.find((t) => t.id === selected_test_id);
 
   // Filtro Attivi (oggi/futuri o senza data) vs Passati/Archiviati (data < oggi).
@@ -315,10 +321,10 @@ export default function TestLivelloPage() {
             state: com_state,
             fk: { test_livello_id: data.id },
           });
-          toast.success(`Comunicazione inviata${count ? ` a ${count} destinatari` : ""}`);
+          toast.success(count ? t("level_tests.toast_communication_sent_to", { count }) : t("level_tests.toast_communication_sent"));
           qc.invalidateQueries({ queryKey: ["comunicazioni"] });
         } catch (com_err: any) {
-          toast.error("Test creato, ma comunicazione fallita: " + (com_err?.message ?? ""));
+          toast.error(t("level_tests.toast_test_created_comm_failed", { error: com_err?.message ?? "" }));
         }
       }
 
@@ -328,9 +334,9 @@ export default function TestLivelloPage() {
       qc.invalidateQueries({ queryKey: ["test_livello"] });
       set_selected_test_id(data.id);
       navigate(`/test/${data.id}`);
-      toast.success("Test creato");
+      toast.success(t("level_tests.toast_test_created"));
     },
-    onError: (e: any) => toast.error("Errore creazione: " + (e?.message ?? "")),
+    onError: (e: any) => toast.error(t("level_tests.toast_create_error", { error: e?.message ?? "" })),
   });
 
   const delete_test = useMutation({
@@ -342,7 +348,7 @@ export default function TestLivelloPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["test_livello"] });
       navigate("/test");
-      toast.success("Test eliminato");
+      toast.success(t("level_tests.toast_test_deleted"));
     },
   });
 
@@ -351,7 +357,7 @@ export default function TestLivelloPage() {
       const { error } = await supabase.from("test_livello_atleti").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { refetch_atleti(); toast.success("Convocazione rimossa"); },
+    onSuccess: () => { refetch_atleti(); toast.success(t("level_tests.toast_convocation_removed")); },
   });
 
   const update_field = useMutation({
@@ -377,7 +383,7 @@ export default function TestLivelloPage() {
             disciplina: prev_row.disciplina ?? null,
           });
           if (result.promosso) {
-            toast.success(`${atleta.cognome} ${atleta.nome}: promosso da ${result.from} a ${result.to}`);
+            toast.success(t("level_tests.toast_promotion_success", { cognome: atleta.cognome, nome: atleta.nome, from: result.from, to: result.to }));
             const aid = prev_row.atleta_id;
             await Promise.all([
               qc.invalidateQueries({ queryKey: ["atleti_test"], refetchType: "all" }),
@@ -388,14 +394,14 @@ export default function TestLivelloPage() {
               qc.invalidateQueries({ queryKey: ["calendario-interattivo", aid], refetchType: "all" }),
             ]);
           } else {
-            toast.info(`Promozione non applicata: ${(result as any).skipped_motivo}`);
+            toast.info(t("level_tests.toast_promotion_skipped", { motivo: (result as any).skipped_motivo }));
           }
         } catch (e: any) {
-          toast.error("Errore promozione: " + (e?.message ?? ""));
+          toast.error(t("level_tests.toast_promotion_error", { error: e?.message ?? "" }));
         }
       }
     } else if (prev_esito === "superato" && nuovo !== "superato") {
-      toast.warning("Esito modificato — il livello dell'atleta NON è stato cambiato. Modifica manualmente la scheda atleta se necessario.");
+      toast.warning(t("level_tests.toast_esito_changed_warning"));
     }
     refetch_atleti();
   };
@@ -433,7 +439,7 @@ export default function TestLivelloPage() {
 
   const add_chain_step = () => {
     const next = next_passaggio_for_chain();
-    if (!next) { toast.info("Nessun passaggio successivo disponibile"); return; }
+    if (!next) { toast.info(t("level_tests.toast_no_next_step")); return; }
     // Se l'ultimo step aveva una disciplina (artistica/stile), il nuovo step la eredita
     const last_disc = chain[chain.length - 1]?.disciplina;
     set_chain([
@@ -472,9 +478,9 @@ export default function TestLivelloPage() {
     onSuccess: () => {
       refetch_atleti();
       set_show_add(false);
-      toast.success("Atleta convocata");
+      toast.success(t("level_tests.toast_athlete_convoked"));
     },
-    onError: (e: any) => toast.error("Errore: " + (e?.message ?? "")),
+    onError: (e: any) => toast.error(t("level_tests.toast_generic_error", { error: e?.message ?? "" })),
   });
 
   // Atlete già convocate (almeno uno step) per evitare doppia selezione del primo step
@@ -508,9 +514,9 @@ export default function TestLivelloPage() {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-foreground">Test di Livello</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t("level_tests.page_title")}</h1>
           <Button onClick={() => { set_form({ ...empty_form }); set_view("new"); }}>
-            <Plus className="w-4 h-4 mr-2" /> Nuovo Test
+            <Plus className="w-4 h-4 mr-2" /> {t("level_tests.new")}
           </Button>
         </div>
         <div className="flex items-center gap-2">
@@ -519,14 +525,14 @@ export default function TestLivelloPage() {
             size="sm"
             onClick={() => set_mostra_passati(false)}
           >
-            Attivi ({tests_attivi.length})
+            {t("level_tests.active_count", { count: tests_attivi.length })}
           </Button>
           <Button
             variant={mostra_passati ? "default" : "outline"}
             size="sm"
             onClick={() => set_mostra_passati(true)}
           >
-            Passati / Archiviati ({tests_passati.length})
+            {t("level_tests.archived_count", { count: tests_passati.length })}
           </Button>
         </div>
         {isLoading ? (
@@ -535,33 +541,33 @@ export default function TestLivelloPage() {
           </div>
         ) : tests_visibili.length === 0 ? (
           <Card><CardContent className="py-12 text-center text-muted-foreground">
-            {mostra_passati ? "Nessun test passato" : "Nessun test di livello attivo"}
+            {mostra_passati ? t("level_tests.no_past_tests") : t("level_tests.no_active_tests")}
           </CardContent></Card>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {tests_visibili.map((t) => {
-              const rows = counters[t.id] ?? [];
-              const n_atleti = new Set(test_atleti.filter((x) => x.test_id === t.id).map((x) => x.atleta_id)).size;
+            {tests_visibili.map((tv) => {
+              const rows = counters[tv.id] ?? [];
+              const n_atleti = new Set(test_atleti.filter((x) => x.test_id === tv.id).map((x) => x.atleta_id)).size;
               // se non ho ancora i test_atleti del test corrente, uso la lunghezza dei raw (step) per fallback
-              const tipo_label = t.tipo === "in_gara"
-                ? (gare.find((g) => g.id === t.gara_id)?.nome ? `Test in ${gare.find((g) => g.id === t.gara_id)?.nome}` : "Test in gara")
-                : "Test base";
+              const tipo_label = tv.tipo === "in_gara"
+                ? (gare.find((g) => g.id === tv.gara_id)?.nome ? t("level_tests.test_in_gara_named", { name: gare.find((g) => g.id === tv.gara_id)?.nome }) : t("level_tests.test_in_gara"))
+                : t("level_tests.test_base");
               return (
-                <Card key={t.id} className="cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => navigate(`/test/${t.id}`)}>
+                <Card key={tv.id} className="cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => navigate(`/test/${tv.id}`)}>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base flex items-center justify-between">
-                      <span className="truncate">{t.nome || tipo_label}</span>
-                      <Badge variant="outline" className="capitalize ml-2 shrink-0">{t.tipo === "in_gara" ? "in gara" : "base"}</Badge>
+                      <span className="truncate">{tv.nome || tipo_label}</span>
+                      <Badge variant="outline" className="capitalize ml-2 shrink-0">{tv.tipo === "in_gara" ? t("level_tests.type_in_gara_badge") : t("level_tests.type_base_badge")}</Badge>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-1 text-sm text-muted-foreground">
-                    {t.data && <p>📅 {new Date(t.data).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}</p>}
-                    {t.luogo && <p>📍 {t.luogo}{t.club_ospitante ? ` · ${t.club_ospitante}` : ""}</p>}
+                    {tv.data && <p>📅 {new Date(tv.data).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}</p>}
+                    {tv.luogo && <p>📍 {tv.luogo}{tv.club_ospitante ? ` · ${tv.club_ospitante}` : ""}</p>}
                     <p className="text-xs">
                       {rows.length === 0
-                        ? "Nessuna convocata"
-                        : `${new Set(rows.map((_, i) => i)).size > 0 ? rows.length + " step" : ""} · ${summarize_livelli(rows)}`}
+                        ? t("level_tests.no_convocations")
+                        : t("level_tests.steps_and_summary", { count: rows.length, summary: summarize_livelli(t, rows) })}
                     </p>
                   </CardContent>
                 </Card>
@@ -582,54 +588,54 @@ export default function TestLivelloPage() {
           <Button variant="ghost" size="icon" onClick={() => set_view("list")}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <h1 className="text-2xl font-bold text-foreground">Nuovo Test di Livello</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t("level_tests.new_test_title")}</h1>
         </div>
         <Card>
           <CardContent className="pt-6 space-y-4">
             {/* Step 1: tipo */}
             <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">Tipo di test *</label>
+              <label className="text-sm font-medium text-foreground mb-2 block">{t("level_tests.type_label")}</label>
               <div className="grid gap-2 md:grid-cols-2">
                 <label className={`border rounded-md p-3 cursor-pointer transition ${form.tipo === "base" ? "border-primary bg-primary/5" : "border-input"}`}>
                   <input type="radio" name="tipo" className="mr-2" checked={form.tipo === "base"} onChange={() => set_form({ ...form, tipo: "base", gara_id: "" })} />
-                  <span className="font-medium">Test base</span>
-                  <p className="text-xs text-muted-foreground mt-1">Pulcini → Interbronzo. Organizzato dal club o presso altri club.</p>
+                  <span className="font-medium">{t("level_tests.test_base")}</span>
+                  <p className="text-xs text-muted-foreground mt-1">{t("level_tests.type_base_desc")}</p>
                 </label>
                 <label className={`border rounded-md p-3 cursor-pointer transition ${form.tipo === "in_gara" ? "border-primary bg-primary/5" : "border-input"}`}>
                   <input type="radio" name="tipo" className="mr-2" checked={form.tipo === "in_gara"} onChange={() => set_form({ ...form, tipo: "in_gara" })} />
-                  <span className="font-medium">Test in gara</span>
-                  <p className="text-xs text-muted-foreground mt-1">Passaggi Artistica/Stile durante una gara ufficiale.</p>
+                  <span className="font-medium">{t("level_tests.test_in_gara")}</span>
+                  <p className="text-xs text-muted-foreground mt-1">{t("level_tests.type_in_gara_desc")}</p>
                 </label>
               </div>
             </div>
 
             {/* Nome */}
             <div>
-              <label className="text-sm font-medium text-foreground">Nome *</label>
-              <Input value={form.nome} onChange={(e) => set_form({ ...form, nome: e.target.value })} placeholder="es. Test Stelline marzo" />
+              <label className="text-sm font-medium text-foreground">{t("level_tests.name_label")}</label>
+              <Input value={form.nome} onChange={(e) => set_form({ ...form, nome: e.target.value })} placeholder={t("level_tests.name_placeholder")} />
             </div>
 
             {/* Step 2A: base */}
             {form.tipo === "base" && (
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="text-sm font-medium text-foreground">Data</label>
+                  <label className="text-sm font-medium text-foreground">{t("level_tests.date_label")}</label>
                   <Input type="date" value={form.data} onChange={(e) => set_form({ ...form, data: e.target.value })} />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-foreground">Ora</label>
+                  <label className="text-sm font-medium text-foreground">{t("level_tests.time_label")}</label>
                   <Input type="time" value={form.ora} onChange={(e) => set_form({ ...form, ora: e.target.value })} />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-foreground">Luogo</label>
-                  <Input value={form.luogo} onChange={(e) => set_form({ ...form, luogo: e.target.value })} placeholder="es. Pista del Ghiaccio - Stella" />
+                  <label className="text-sm font-medium text-foreground">{t("level_tests.place_label")}</label>
+                  <Input value={form.luogo} onChange={(e) => set_form({ ...form, luogo: e.target.value })} placeholder={t("level_tests.place_placeholder")} />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-foreground">Club ospitante</label>
-                  <Input value={form.club_ospitante} onChange={(e) => set_form({ ...form, club_ospitante: e.target.value })} placeholder="Stella del Ghiaccio" />
+                  <label className="text-sm font-medium text-foreground">{t("level_tests.host_club_label")}</label>
+                  <Input value={form.club_ospitante} onChange={(e) => set_form({ ...form, club_ospitante: e.target.value })} placeholder={t("level_tests.host_club_placeholder")} />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-foreground">Costo iscrizione (CHF)</label>
+                  <label className="text-sm font-medium text-foreground">{t("level_tests.cost_label")}</label>
                   <Input type="number" step="0.01" value={form.costo_iscrizione} onChange={(e) => set_form({ ...form, costo_iscrizione: e.target.value })} />
                 </div>
               </div>
@@ -639,12 +645,12 @@ export default function TestLivelloPage() {
             {form.tipo === "in_gara" && (
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="md:col-span-2">
-                  <label className="text-sm font-medium text-foreground">Gara *</label>
+                  <label className="text-sm font-medium text-foreground">{t("level_tests.race_label")}</label>
                   <Select value={form.gara_id} onValueChange={(v) => set_form({ ...form, gara_id: v })}>
-                    <SelectTrigger><SelectValue placeholder="Seleziona una gara dal calendario" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder={t("level_tests.race_placeholder")} /></SelectTrigger>
                     <SelectContent>
                       {gare.length === 0 ? (
-                        <div className="px-3 py-2 text-sm text-muted-foreground">Nessuna gara futura nel calendario</div>
+                        <div className="px-3 py-2 text-sm text-muted-foreground">{t("level_tests.no_future_races")}</div>
                       ) : gare.map((g) => (
                         <SelectItem key={g.id} value={g.id}>
                           {g.nome} {g.data ? `· ${new Date(g.data).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}` : ""}
@@ -658,18 +664,18 @@ export default function TestLivelloPage() {
                     <div><span className="text-muted-foreground">Data:</span> {gara_sel.data ? new Date(gara_sel.data).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" }) : "-"}</div>
                     <div><span className="text-muted-foreground">Ora:</span> {gara_sel.ora?.slice(0, 5) || "-"}</div>
                     <div><span className="text-muted-foreground">Luogo:</span> {gara_sel.luogo || "-"}</div>
-                    {gara_sel.club_ospitante && <div className="md:col-span-3"><span className="text-muted-foreground">Club ospitante:</span> {gara_sel.club_ospitante}</div>}
+                    {gara_sel.club_ospitante && <div className="md:col-span-3"><span className="text-muted-foreground">{t("level_tests.race_host_club_prefix")}</span> {gara_sel.club_ospitante}</div>}
                   </div>
                 )}
                 <div>
-                  <label className="text-sm font-medium text-foreground">Costo iscrizione (CHF)</label>
+                  <label className="text-sm font-medium text-foreground">{t("level_tests.cost_label")}</label>
                   <Input type="number" step="0.01" value={form.costo_iscrizione} onChange={(e) => set_form({ ...form, costo_iscrizione: e.target.value })} />
                 </div>
               </div>
             )}
 
             <div>
-              <label className="text-sm font-medium text-foreground">Note</label>
+              <label className="text-sm font-medium text-foreground">{t("level_tests.notes_label")}</label>
               <Textarea value={form.note} onChange={(e) => set_form({ ...form, note: e.target.value })} />
             </div>
 
@@ -681,7 +687,7 @@ export default function TestLivelloPage() {
             />
 
             <div className="flex gap-3 justify-end pt-2">
-              <Button variant="outline" onClick={() => set_view("list")}>Annulla</Button>
+              <Button variant="outline" onClick={() => set_view("list")}>{t("level_tests.cancel")}</Button>
               <Button
                 disabled={
                   !form.nome ||
@@ -690,7 +696,7 @@ export default function TestLivelloPage() {
                 }
                 onClick={() => create_test.mutate()}
               >
-                {com_state.invia ? (<><Send className="w-4 h-4 mr-1" /> Crea e comunica</>) : "Crea Test"}
+                {com_state.invia ? (<><Send className="w-4 h-4 mr-1" /> {t("level_tests.create_and_communicate")}</>) : t("level_tests.create_test")}
               </Button>
             </div>
           </CardContent>
@@ -702,7 +708,7 @@ export default function TestLivelloPage() {
   // ─── DETAIL VIEW ────────────────────────────────────────────────────
   if (!selected_test) {
     return (
-      <div className="py-12 text-center text-muted-foreground">Test non trovato.</div>
+      <div className="py-12 text-center text-muted-foreground">{t("level_tests.test_not_found")}</div>
     );
   }
 
@@ -716,15 +722,15 @@ export default function TestLivelloPage() {
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <h1 className="text-2xl font-bold text-foreground">{selected_test.nome}</h1>
-        <Badge variant="outline" className="capitalize">{selected_test.tipo === "in_gara" ? "in gara" : "base"}</Badge>
+        <Badge variant="outline" className="capitalize">{selected_test.tipo === "in_gara" ? t("level_tests.type_in_gara_badge") : t("level_tests.type_base_badge")}</Badge>
         <div className="ml-auto flex gap-2">
           <ConfirmButton
-            titolo="Eliminare questo test?"
-            descrizione="Verranno eliminate definitivamente anche tutte le convocazioni collegate."
+            titolo={t("level_tests.delete_confirm_title")}
+            descrizione={t("level_tests.delete_confirm_desc")}
             on_conferma={() => delete_test.mutate(selected_test.id)}
           >
             <Button variant="destructive" size="sm">
-              <Trash2 className="w-4 h-4 mr-1" /> Elimina
+              <Trash2 className="w-4 h-4 mr-1" /> {t("level_tests.delete")}
             </Button>
           </ConfirmButton>
         </div>
@@ -732,17 +738,17 @@ export default function TestLivelloPage() {
 
       <Card>
         <CardContent className="pt-4 grid gap-2 md:grid-cols-4 text-sm">
-          <div><span className="text-muted-foreground">Data:</span> {selected_test.data ? new Date(selected_test.data).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" }) : "-"}</div>
-          <div><span className="text-muted-foreground">Ora:</span> {selected_test.ora?.slice(0, 5) || "-"}</div>
-          <div><span className="text-muted-foreground">Luogo:</span> {selected_test.luogo || "-"}</div>
-          <div><span className="text-muted-foreground">Club:</span> {selected_test.club_ospitante || "-"}</div>
+          <div><span className="text-muted-foreground">{t("level_tests.detail_date")}</span> {selected_test.data ? new Date(selected_test.data).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" }) : "-"}</div>
+          <div><span className="text-muted-foreground">{t("level_tests.detail_time")}</span> {selected_test.ora?.slice(0, 5) || "-"}</div>
+          <div><span className="text-muted-foreground">{t("level_tests.detail_place")}</span> {selected_test.luogo || "-"}</div>
+          <div><span className="text-muted-foreground">{t("level_tests.detail_club")}</span> {selected_test.club_ospitante || "-"}</div>
           {gara_link && (
             <div className="md:col-span-4 text-xs text-muted-foreground">
-              Test in gara: <strong>{gara_link.nome}</strong>
+              {t("level_tests.detail_in_gara_label")} <strong>{gara_link.nome}</strong>
             </div>
           )}
           {selected_test.costo_iscrizione != null && (
-            <div className="md:col-span-4"><span className="text-muted-foreground">Costo iscrizione:</span> CHF {Number(selected_test.costo_iscrizione).toFixed(2)}</div>
+            <div className="md:col-span-4"><span className="text-muted-foreground">{t("level_tests.detail_cost")}</span> CHF {Number(selected_test.costo_iscrizione).toFixed(2)}</div>
           )}
         </CardContent>
       </Card>
@@ -750,15 +756,15 @@ export default function TestLivelloPage() {
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Atlete convocate ({grouped_chains.length})</CardTitle>
+            <CardTitle className="text-base">{t("level_tests.athletes_convoked_count", { count: grouped_chains.length })}</CardTitle>
             <Button size="sm" onClick={() => set_show_add(true)}>
-              <Plus className="w-4 h-4 mr-1" /> Convoca Atleta
+              <Plus className="w-4 h-4 mr-1" /> {t("level_tests.convoke_athlete")}
             </Button>
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
           {grouped_chains.length === 0 ? (
-            <p className="text-center text-muted-foreground py-6">Nessuna atleta convocata</p>
+            <p className="text-center text-muted-foreground py-6">{t("level_tests.no_athlete_convoked")}</p>
           ) : grouped_chains.map(([atleta_id, chain_rows]) => {
             const atleta = atleti.find((a) => a.id === atleta_id);
             const display_liv = atleta ? get_livello_gara(atleta as any) : "—";
@@ -768,7 +774,7 @@ export default function TestLivelloPage() {
                   <div className="flex items-center justify-between">
                     <div className="font-medium">
                       {atleta ? `${atleta.cognome} ${atleta.nome}` : "—"}
-                      <span className="ml-2 text-xs text-muted-foreground">livello attuale: {display_liv}</span>
+                      <span className="ml-2 text-xs text-muted-foreground">{t("level_tests.current_level_prefix")} {display_liv}</span>
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -810,12 +816,12 @@ export default function TestLivelloPage() {
                             className="h-8 text-xs"
                             defaultValue={step.note_istruttore || ""}
                             onBlur={(e) => update_field.mutate({ id: step.id, patch: { note_istruttore: e.target.value } as any })}
-                            placeholder="Note istruttore..."
+                            placeholder={t("level_tests.note_istruttore_placeholder")}
                           />
                           <ConfirmButton
-                            titolo={`Rimuovere lo step #${step.ordine}?`}
+                            titolo={t("level_tests.remove_step_confirm_title", { ordine: step.ordine })}
                             descrizione={`${step.livello_accesso} → ${step.livello_target}`}
-                            conferma_label="Rimuovi"
+                            conferma_label={t("level_tests.remove_step_confirm_label")}
                             on_conferma={() => remove_step.mutate(step.id)}
                           >
                             <Button variant="ghost" size="icon" className="h-7 w-7">
@@ -837,17 +843,17 @@ export default function TestLivelloPage() {
       <Dialog open={show_add} onOpenChange={set_show_add}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Convoca atleta a {selected_test.nome}</DialogTitle>
+            <DialogTitle>{t("level_tests.convoke_athlete_to", { name: selected_test.nome })}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-foreground">Atleta *</label>
+              <label className="text-sm font-medium text-foreground">{t("level_tests.athlete_label")}</label>
               {!add_atleta_id ? (
                 <div className="mt-1 border rounded-md overflow-hidden">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                     <Input
-                      placeholder="Cerca per nome o cognome…"
+                      placeholder={t("level_tests.search_athlete_placeholder")}
                       value={search_atleta}
                       onChange={(e) => set_search_atleta(e.target.value)}
                       className="h-12 pl-9 pr-9 text-base border-0 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -864,7 +870,7 @@ export default function TestLivelloPage() {
                   </div>
                   <div className="max-h-[280px] overflow-y-auto">
                     {atleti_filtrati.length === 0 ? (
-                      <p className="px-3 py-4 text-sm text-muted-foreground text-center">Nessuna atleta trovata</p>
+                      <p className="px-3 py-4 text-sm text-muted-foreground text-center">{t("level_tests.no_athlete_found")}</p>
                     ) : (
                       atleti_filtrati.map((a) => (
                         <button
@@ -885,7 +891,7 @@ export default function TestLivelloPage() {
                   <span className="text-sm font-medium">
                     {(() => {
                       const a = atleti.find((x) => x.id === add_atleta_id);
-                      return a ? `${a.cognome} ${a.nome}` : "Atleta selezionato";
+                      return a ? `${a.cognome} ${a.nome}` : t("level_tests.athlete_selected_default");
                     })()}
                   </span>
                   <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => { set_add_atleta_id(""); set_search_atleta(""); }}>
@@ -897,7 +903,7 @@ export default function TestLivelloPage() {
 
             {chain.length > 0 && (
               <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Catena multitest</label>
+                <label className="text-sm font-medium text-foreground">{t("level_tests.chain_label")}</label>
                 {chain.map((c, idx) => (
                   <div key={idx} className="grid gap-2 md:grid-cols-[auto_1fr_auto_auto] items-center bg-muted/30 rounded-md px-3 py-2 text-sm">
                     <Badge variant="outline" className="font-mono">#{idx + 1}</Badge>
@@ -920,8 +926,8 @@ export default function TestLivelloPage() {
                       >
                         <SelectTrigger className="w-32 h-8 text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="artistica">Artistica</SelectItem>
-                          <SelectItem value="stile">Stile</SelectItem>
+                          <SelectItem value="artistica">{t("level_tests.discipline_artistica")}</SelectItem>
+                          <SelectItem value="stile">{t("level_tests.discipline_stile")}</SelectItem>
                         </SelectContent>
                       </Select>
                     ) : <div />}
@@ -932,23 +938,23 @@ export default function TestLivelloPage() {
                 ))}
                 {next_for_dialog && (
                   <Button variant="outline" size="sm" onClick={add_chain_step}>
-                    <Plus className="w-3.5 h-3.5 mr-1" /> Aggiungi step ({next_for_dialog.accesso} → {next_for_dialog.target})
+                    <Plus className="w-3.5 h-3.5 mr-1" /> {t("level_tests.add_step_button", { accesso: next_for_dialog.accesso, target: next_for_dialog.target })}
                   </Button>
                 )}
               </div>
             )}
 
             {add_atleta_id && chain.length === 0 && (
-              <p className="text-sm text-muted-foreground">Nessun passaggio valido per questa atleta.</p>
+              <p className="text-sm text-muted-foreground">{t("level_tests.no_valid_step")}</p>
             )}
 
             <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={() => set_show_add(false)}>Annulla</Button>
+              <Button variant="outline" onClick={() => set_show_add(false)}>{t("level_tests.cancel")}</Button>
               <Button
                 disabled={!add_atleta_id || chain.length === 0 || submit_add_chain.isPending}
                 onClick={() => submit_add_chain.mutate()}
               >
-                <CheckCircle className="w-4 h-4 mr-1" /> Convoca
+                <CheckCircle className="w-4 h-4 mr-1" /> {t("level_tests.convoke")}
               </Button>
             </div>
           </div>

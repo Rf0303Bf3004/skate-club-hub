@@ -170,5 +170,106 @@
     "confirm_delete_title": "Eliminare il corso \"{{name}}\"?",
     "confirm_delete_desc": "Questa azione non è reversibile.",
     "delete_course_title": "Elimina corso"
+  },
+  "lezioni_private": {
+    "title": "Lezioni Private",
+    "slot_button": "Slot: {{min}} min",
+    "select_istruttore_placeholder": "Seleziona istruttore",
+    "select_istruttore_empty": "Seleziona un istruttore per vedere le disponibilità",
+    "legenda": {
+      "libero": "Libero",
+      "prenotato": "Prenotato",
+      "libero_ghiaccio": "Libero (ghiaccio)",
+      "fuori_ghiaccio": "Fuori ghiaccio",
+      "privata": "Privata",
+      "semiprivata": "Semiprivata"
+    },
+    "slot_status": {
+      "off_ice": "🏋️ Off-Ice",
+      "prenota": "+ Prenota",
+      "semi": "👥 Semi",
+      "dettagli": "Dettagli",
+      "occupato": "Occupato",
+      "fuori_ghiaccio_label": "⛸️ Fuori ghiaccio"
+    },
+    "no_slots": {
+      "title": "Nessuno slot disponibile",
+      "subtitle": "L'istruttore non è disponibile in questo giorno"
+    },
+    "atleta_search": {
+      "placeholder": "Cerca atleta per nome...",
+      "nessun_atleta_trovato": "Nessun atleta trovato"
+    },
+    "slot_modal": {
+      "title": "Prenota {{ora_inizio}}–{{ora_fine}}",
+      "durata_slot": "Durata slot: {{minuti}} minuti",
+      "atleta_label": "Atleta/e *",
+      "costo_totale_label": "Costo totale",
+      "lezione_ricorrente": "Lezione ricorrente",
+      "lezione_ricorrente_desc": "Ogni settimana alla stessa ora fino a fine stagione",
+      "note_label": "Note",
+      "note_placeholder": "Note opzionali...",
+      "annulla": "Annulla",
+      "salvo": "Salvo...",
+      "crea_ricorrente": "📅 Crea ricorrente",
+      "prenota": "Prenota"
+    },
+    "aggiungi_atleta_modal": {
+      "title": "Aggiungi atleta",
+      "subtitle": "La lezione diventerà semiprivata",
+      "banner": "Diventerà una lezione semiprivata",
+      "nuova_atleta_label": "Nuova atleta *",
+      "gestione_costo_label": "Gestione costo",
+      "dividi": "÷ Dividi",
+      "dividi_desc": "Costo attuale diviso per {{n}}",
+      "manuale": "✏️ Manuale",
+      "manuale_desc": "Imposta nuovo totale",
+      "riepilogo_quote": "Riepilogo quote",
+      "totale_lezione": "Totale lezione",
+      "quota_per_atleta": "Quota per atleta ({{n}})",
+      "annulla": "Annulla",
+      "salvo": "Salvo...",
+      "aggiungi_atleta": "👥 Aggiungi atleta"
+    },
+    "slot_detail_modal": {
+      "title": "Dettaglio lezione",
+      "badge_semiprivata": "👥 Semiprivata",
+      "badge_privata": "🔒 Privata",
+      "atleta_label": "Atleta/e",
+      "nessun_atleta_registrato": "Nessun atleta registrato",
+      "costo_totale": "Costo totale",
+      "note_label": "Note",
+      "aggiungi_atleta_semiprivata": "Aggiungi atleta (semiprivata)",
+      "modifica": "✏️ Modifica",
+      "annulla": "× Annulla"
+    },
+    "cambio_durata_modal": {
+      "title": "Cambia durata slot",
+      "nuova_durata_label": "Nuova durata (minuti)",
+      "domanda_esistenti": "Cosa fare con le lezioni già esistenti?",
+      "solo_nuove": "Solo nuove prenotazioni (consigliato)",
+      "aggiorna_future": "Aggiorna anche le lezioni future esistenti",
+      "annulla": "Annulla",
+      "salva_durata": "💾 Salva durata",
+      "salvando": "..."
+    },
+    "toast": {
+      "lezione_annullata": "Lezione annullata — slot liberato",
+      "errore_annullamento": "Errore annullamento",
+      "atleta_aggiunta": "👥 Atleta aggiunta — lezione diventata semiprivata!",
+      "errore_generico": "Errore",
+      "seleziona_atleta": "Seleziona almeno un atleta",
+      "lezioni_ricorrenti_create": "📅 Lezioni ricorrenti create fino a fine stagione!",
+      "lezione_prenotata": "✅ Lezione prenotata!",
+      "errore_salvataggio": "Errore durante il salvataggio",
+      "errore_salvataggio_default": "Controlla la console.",
+      "durata_aggiornata": "✅ Durata slot aggiornata a {{minuti}} minuti",
+      "durata_aggiornata_future": "Le lezioni future sono state aggiornate.",
+      "durata_aggiornata_nuove": "Valida per le nuove prenotazioni.",
+      "errore_salvataggio_durata": "Errore salvataggio durata"
+    },
+    "confirm": {
+      "annulla_lezione": "Annullare questa lezione e liberare lo slot?"
+    }
   }
 }
