@@ -630,6 +630,14 @@ export function use_assegna_atleta_sessione() {
   const invalidate = use_invalidate_griglia();
   return useMutation({
     mutationFn: async (input: { sessione_id: string; atleta_id: string }) => {
+      // Guardia bloccante lato scrittura (anti race condition): nessun insert se
+      // l'atleta è già in un'altra sotto-sessione sovrapposta dello stesso giorno.
+      const conflitto = await verifica_conflitto_atleta(input);
+      if (conflitto) {
+        throw new Error(
+          `Atleta già assegnato a un'altra sessione sovrapposta (${conflitto.ora_inizio}–${conflitto.ora_fine} — ${conflitto.etichetta}).`,
+        );
+      }
       const { error } = await supabase
         .from("griglia_sessioni_atleti" as any)
         .insert({ sessione_id: input.sessione_id, atleta_id: input.atleta_id } as any);
@@ -638,6 +646,7 @@ export function use_assegna_atleta_sessione() {
     onSuccess: invalidate,
   });
 }
+
 
 export function use_rimuovi_atleta_sessione() {
   const invalidate = use_invalidate_griglia();
