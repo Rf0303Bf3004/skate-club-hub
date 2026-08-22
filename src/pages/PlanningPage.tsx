@@ -1903,7 +1903,7 @@ function PlanningPageInner() {
                       border: "1px dashed #9CA3AF",
                       borderRadius: 4,
                     }} />
-                    <span className="absolute left-1 top-1/2 -translate-y-1/2 text-[9px] font-bold tracking-wider px-1 rounded" style={{ background: "#9CA3AF", color: "#fff", zIndex: 2 }}>OFF-ICE</span>
+                    <span className="absolute left-1 top-1/2 -translate-y-1/2 text-[9px] font-bold tracking-wider px-1 rounded" style={{ background: "#9CA3AF", color: "#fff", zIndex: 2 }}>{t('slot_block.off_ice_badge')}</span>
                     {day_corsi_off.map((c: any) => {
                       const cs = time_to_min(c.ora_inizio);
                       const ce = time_to_min(c.ora_fine);
@@ -2638,21 +2638,26 @@ function ConfirmPlaceDialog({ confirm, saving, on_confirm, on_cancel }: {
   confirm: { corso: any; giorno: string; ora_inizio: string; ora_fine: string } | null;
   saving: boolean; on_confirm: () => void; on_cancel: () => void;
 }) {
+  const { t } = useTranslation('planning');
   if (!confirm) return null;
   return (
     <Dialog open={!!confirm} onOpenChange={(o) => !o && on_cancel()}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Conferma posizionamento</DialogTitle>
+          <DialogTitle>{t('confirm_place_dialog.title')}</DialogTitle>
           <DialogDescription>
-            Posizionare <strong>{confirm.corso.nome}</strong> il <strong>{confirm.giorno}</strong> dalle <strong>{confirm.ora_inizio}</strong> alle <strong>{confirm.ora_fine}</strong>?
+            <Trans
+              i18nKey="planning:confirm_place_dialog.description"
+              values={{ nome: confirm.corso.nome, giorno: confirm.giorno, inizio: confirm.ora_inizio, fine: confirm.ora_fine }}
+              components={{ 1: <strong />, 3: <strong />, 5: <strong />, 7: <strong /> }}
+            />
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="outline" onClick={on_cancel}>Annulla</Button>
+          <Button variant="outline" onClick={on_cancel}>{t('confirm_place_dialog.cancel')}</Button>
           <Button onClick={on_confirm} disabled={saving}>
             {saving && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-            Conferma
+            {t('confirm_place_dialog.confirm')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -2671,6 +2676,7 @@ function DetailPanel({ corso, warnings, istr_map, atleti, build_mode, exception_
   on_ripristina_template?: () => void;
   on_delete_privata?: () => void;
 }) {
+  const { t } = useTranslation('planning');
   const [confirm_restore, set_confirm_restore] = React.useState(false);
   const is_private = (corso.tipo || "").toLowerCase() === "privata";
   const corso_id_for_query = corso.corso_id || corso.id;
@@ -2777,16 +2783,16 @@ function DetailPanel({ corso, warnings, istr_map, atleti, build_mode, exception_
         <button onClick={on_close} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
       </div>
       <div className="space-y-1 text-xs text-muted-foreground">
-        {corso.tipo && <p>Tipo: <span className="text-foreground font-medium">{corso.tipo}</span></p>}
+        {corso.tipo && <p>{t('detail_panel.type')} <span className="text-foreground font-medium">{corso.tipo}</span></p>}
         <p>{corso.giorno} · {corso.ora_inizio?.slice(0, 5)} – {corso.ora_fine?.slice(0, 5)}</p>
-        <p>Durata: {corso.ora_inizio && corso.ora_fine ? time_to_min(corso.ora_fine) - time_to_min(corso.ora_inizio) : "?"} min</p>
+        <p>{t('detail_panel.duration', { min: corso.ora_inizio && corso.ora_fine ? time_to_min(corso.ora_fine) - time_to_min(corso.ora_inizio) : "?" })}</p>
         {first_istr && (
           <div className="flex items-center gap-1.5 pt-1">
             <span className="w-3 h-3 rounded-full" style={{ backgroundColor: first_istr.colore || "#6B7280" }} />
             <span className="text-foreground font-medium">{first_istr.nome} {first_istr.cognome}</span>
           </div>
         )}
-        {corso.costo_mensile > 0 && <p>Costo mensile: CHF {corso.costo_mensile}</p>}
+        {corso.costo_mensile > 0 && <p>{t('detail_panel.monthly_cost', { value: corso.costo_mensile })}</p>}
         {corso.note && <p className="italic">{corso.note}</p>}
       </div>
 
@@ -2799,7 +2805,7 @@ function DetailPanel({ corso, warnings, istr_map, atleti, build_mode, exception_
           <div className="flex items-center gap-1.5">
             <AlertTriangle className="h-4 w-4 flex-shrink-0" style={{ color: "#991B1B" }} />
             <span className="text-xs font-bold" style={{ color: "#991B1B" }}>
-              Problemi rilevati ({warnings.hard.length + warnings.soft.length})
+              {t('detail_panel.issues_found', { count: warnings.hard.length + warnings.soft.length })}
             </span>
           </div>
           <ul className="space-y-1">
@@ -2822,7 +2828,7 @@ function DetailPanel({ corso, warnings, istr_map, atleti, build_mode, exception_
                         className="mt-0.5 text-[10px] font-semibold underline hover:no-underline"
                         style={{ color: "#991B1B" }}
                       >
-                        → Sposta in altro orario
+                        {t('detail_panel.move_to_other_time')}
                       </button>
                     )}
                   </div>
@@ -2835,7 +2841,7 @@ function DetailPanel({ corso, warnings, istr_map, atleti, build_mode, exception_
 
       {/* Enrolled */}
       <div>
-        <p className="text-xs font-bold text-foreground mb-1">{is_private ? "Atlete" : "Iscritti"} ({enrolled.length})</p>
+        <p className="text-xs font-bold text-foreground mb-1">{is_private ? t('detail_panel.athletes') : t('detail_panel.enrolled')} ({enrolled.length})</p>
         <div className="space-y-0.5 max-h-40 overflow-y-auto">
           {enrolled.map((a) => (
             <div key={a.id} className="flex items-center gap-1.5 text-xs text-foreground">
@@ -2850,7 +2856,7 @@ function DetailPanel({ corso, warnings, istr_map, atleti, build_mode, exception_
       {corso._is_plan_row && !is_private && exception_diff && exception_diff.length > 0 && (
         <div className="space-y-1.5 pt-2 border-t border-border">
           <p className="text-xs font-bold flex items-center gap-1" style={{ color: "#B45309" }}>
-            <Pencil className="h-3 w-3" /> Modifiche rispetto al template
+            <Pencil className="h-3 w-3" /> {t('detail_panel.changes_from_template')}
           </p>
           <div className="rounded border p-2 space-y-1" style={{ background: "#FFFBEB", borderColor: "#F59E0B" }}>
             {exception_diff.map((d, i) => (
@@ -2864,21 +2870,21 @@ function DetailPanel({ corso, warnings, istr_map, atleti, build_mode, exception_
           {on_ripristina_template && !corso.sostituisce_id && (
             confirm_restore ? (
               <div className="flex gap-1.5">
-                <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={() => set_confirm_restore(false)}>Annulla</Button>
+                <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={() => set_confirm_restore(false)}>{t('detail_panel.cancel')}</Button>
                 <Button size="sm" className="flex-1 text-xs" style={{ background: "#F59E0B", color: "#fff" }}
                   onClick={() => { set_confirm_restore(false); on_ripristina_template(); }}>
-                  Sì, ripristina
+                  {t('detail_panel.confirm_restore')}
                 </Button>
               </div>
             ) : (
               <Button size="sm" variant="outline" className="w-full justify-start text-xs gap-1.5"
                 onClick={() => set_confirm_restore(true)}>
-                <Undo2 className="h-3 w-3" /> Ripristina template
+                <Undo2 className="h-3 w-3" /> {t('detail_panel.restore_template')}
               </Button>
             )
           )}
           {corso.sostituisce_id && (
-            <p className="text-[10px] italic text-muted-foreground">Spostamento: usa Sposta per riportarlo al giorno originale</p>
+            <p className="text-[10px] italic text-muted-foreground">{t('detail_panel.move_restore_hint')}</p>
           )}
         </div>
       )}
@@ -2886,19 +2892,19 @@ function DetailPanel({ corso, warnings, istr_map, atleti, build_mode, exception_
       {/* Eccezioni di settimana — solo per planning rows non-private */}
       {corso._is_plan_row && !is_private && (
         <div className="space-y-1.5 pt-2 border-t border-border">
-          <p className="text-xs font-semibold text-muted-foreground">Eccezioni questa settimana</p>
+          <p className="text-xs font-semibold text-muted-foreground">{t('detail_panel.week_exceptions')}</p>
           {on_annulla_settimana && (
             <Button size="sm" variant="outline" className="w-full justify-start text-xs gap-1.5 text-destructive border-destructive/40 hover:bg-destructive/10" onClick={on_annulla_settimana}>
-              <Undo2 className="h-3 w-3" /> Annulla questo corso
+              <Undo2 className="h-3 w-3" /> {t('detail_panel.cancel_this_course')}
             </Button>
           )}
           {on_sposta && (
             <Button size="sm" variant="outline" className="w-full justify-start text-xs gap-1.5" onClick={on_sposta}>
-              <Move className="h-3 w-3" /> Sposta in altro giorno/ora
+              <Move className="h-3 w-3" /> {t('detail_panel.move_to_other_day_time')}
             </Button>
           )}
           {corso.sostituisce_id && (
-            <p className="text-[10px] italic text-muted-foreground pt-1">↔ Spostato dal giorno originale</p>
+            <p className="text-[10px] italic text-muted-foreground pt-1">{t('detail_panel.moved_from_original_day')}</p>
           )}
         </div>
       )}
@@ -2907,10 +2913,10 @@ function DetailPanel({ corso, warnings, istr_map, atleti, build_mode, exception_
       {build_mode && (
         <div className="space-y-1.5 pt-2 border-t border-border">
           <Button size="sm" variant="outline" className="w-full justify-start text-xs gap-1.5" onClick={on_edit}>
-            <Pencil className="h-3 w-3" /> Modifica
+            <Pencil className="h-3 w-3" /> {t('detail_panel.edit')}
           </Button>
           <Button size="sm" variant="outline" className="w-full justify-start text-xs gap-1.5 text-destructive" onClick={on_remove}>
-            <Undo2 className="h-3 w-3" /> {corso._is_plan_row ? "Annulla dalla settimana" : "Rimuovi dalla griglia"}
+            <Undo2 className="h-3 w-3" /> {corso._is_plan_row ? t('detail_panel.cancel_from_week') : t('detail_panel.remove_from_grid')}
           </Button>
         </div>
       )}
@@ -2919,9 +2925,9 @@ function DetailPanel({ corso, warnings, istr_map, atleti, build_mode, exception_
       {is_private && on_delete_privata && (
         <div className="space-y-1.5 pt-2 border-t border-destructive/30">
           <Button size="sm" variant="destructive" className="w-full justify-start text-xs gap-1.5" onClick={on_delete_privata}>
-            <Undo2 className="h-3 w-3" /> 🗑️ Elimina lezione privata
+            <Undo2 className="h-3 w-3" /> {t('detail_panel.delete_private_lesson')}
           </Button>
-          <p className="text-[10px] italic text-muted-foreground">Rimuove la lezione privata e tutte le sue occorrenze in modo definitivo.</p>
+          <p className="text-[10px] italic text-muted-foreground">{t('detail_panel.delete_private_lesson_hint')}</p>
         </div>
       )}
     </div>
@@ -2935,6 +2941,7 @@ function SlotManagerPanel({ giorno, slots, istruttori, disp_istr, on_close, quer
   giorno: string; slots: any[]; istruttori: any[]; disp_istr: any[];
   on_close: () => void; queryClient: any;
 }) {
+  const { t } = useTranslation('planning');
   const [new_tipo, set_new_tipo] = useState("ghiaccio");
   const [new_start, set_new_start] = useState("08:00");
   const [new_end, set_new_end] = useState("09:00");
@@ -2948,7 +2955,7 @@ function SlotManagerPanel({ giorno, slots, istruttori, disp_istr, on_close, quer
       });
       if (error) throw error;
       await queryClient.invalidateQueries({ queryKey: ["disponibilita_ghiaccio"] });
-      toast.success("Slot aggiunto");
+      toast.success(t('toast.slot_added'));
     } catch (e: any) {
       toast.error(e.message);
     } finally {
@@ -2961,7 +2968,7 @@ function SlotManagerPanel({ giorno, slots, istruttori, disp_istr, on_close, quer
     if (error) toast.error(error.message);
     else {
       await queryClient.invalidateQueries({ queryKey: ["disponibilita_ghiaccio"] });
-      toast.info("Slot eliminato");
+      toast.info(t('toast.slot_deleted'));
     }
   };
 
@@ -2974,7 +2981,7 @@ function SlotManagerPanel({ giorno, slots, istruttori, disp_istr, on_close, quer
   return (
     <div className="w-[260px] flex-shrink-0 border-l border-border overflow-y-auto p-4 bg-card space-y-3">
       <div className="flex items-center justify-between">
-        <span className="font-bold text-foreground text-sm">Slot Ghiaccio</span>
+        <span className="font-bold text-foreground text-sm">{t('slot_manager.title')}</span>
         <button onClick={on_close} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
       </div>
 
@@ -2993,8 +3000,8 @@ function SlotManagerPanel({ giorno, slots, istruttori, disp_istr, on_close, quer
         <Select value={new_tipo} onValueChange={set_new_tipo}>
           <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="ghiaccio">Ghiaccio</SelectItem>
-            <SelectItem value="pulizia">Pulizia</SelectItem>
+            <SelectItem value="ghiaccio">{t('slot_manager.ice_type')}</SelectItem>
+            <SelectItem value="pulizia">{t('slot_manager.cleaning_type')}</SelectItem>
           </SelectContent>
         </Select>
         <div className="flex gap-2">
@@ -3002,13 +3009,13 @@ function SlotManagerPanel({ giorno, slots, istruttori, disp_istr, on_close, quer
           <Input type="time" value={new_end} onChange={(e) => set_new_end(e.target.value)} className="h-8 text-xs" />
         </div>
         <Button size="sm" className="w-full text-xs" onClick={add_slot} disabled={saving}>
-          <Plus className="h-3 w-3 mr-1" /> Aggiungi
+          <Plus className="h-3 w-3 mr-1" /> {t('slot_manager.add')}
         </Button>
       </div>
 
       {/* Instructor availability */}
       <div className="pt-2 border-t border-border space-y-2">
-        <p className="text-xs font-bold text-foreground">Disponibilità istruttori</p>
+        <p className="text-xs font-bold text-foreground">{t('slot_manager.instructor_availability')}</p>
         {day_istr.map((ist) => (
           <div key={ist.id} className="space-y-0.5">
             <div className="flex items-center gap-1.5 text-xs">
@@ -3023,7 +3030,7 @@ function SlotManagerPanel({ giorno, slots, istruttori, disp_istr, on_close, quer
             ))}
           </div>
         ))}
-        {day_istr.length === 0 && <p className="text-xs text-muted-foreground italic">Nessun istruttore disponibile</p>}
+        {day_istr.length === 0 && <p className="text-xs text-muted-foreground italic">{t('slot_manager.no_instructor_available')}</p>}
       </div>
     </div>
   );
@@ -3035,6 +3042,7 @@ function SlotManagerPanel({ giorno, slots, istruttori, disp_istr, on_close, quer
 function AtletaSearchPlanning({ atleti, selected_ids, on_change, max }: {
   atleti: any[]; selected_ids: string[]; on_change: (ids: string[]) => void; max?: number;
 }) {
+  const { t } = useTranslation('planning');
   const [query, set_query] = useState("");
   const [open_dd, set_open_dd] = useState(false);
   const filtered = useMemo(() => {
@@ -3055,7 +3063,7 @@ function AtletaSearchPlanning({ atleti, selected_ids, on_change, max }: {
   return (
     <div className="relative">
       <div className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm flex items-center gap-2 cursor-text min-h-[38px]" onClick={() => set_open_dd(true)}>
-        <input className="flex-1 bg-transparent outline-none text-sm placeholder:text-muted-foreground" placeholder="Cerca atleta..." value={query}
+        <input className="flex-1 bg-transparent outline-none text-sm placeholder:text-muted-foreground" placeholder={t('athlete_search.search_placeholder')} value={query}
           onChange={(e) => { set_query(e.target.value); set_open_dd(true); }} onFocus={() => set_open_dd(true)} />
       </div>
       {open_dd && (
@@ -3063,7 +3071,7 @@ function AtletaSearchPlanning({ atleti, selected_ids, on_change, max }: {
           <div className="fixed inset-0 z-10" onClick={() => { set_open_dd(false); set_query(""); }} />
           <div className="absolute z-20 top-full mt-1 w-full bg-card border border-border rounded-lg shadow-xl overflow-hidden max-h-48 overflow-y-auto">
             {filtered.length === 0 ? (
-              <p className="text-sm text-muted-foreground px-3 py-2">Nessun atleta</p>
+              <p className="text-sm text-muted-foreground px-3 py-2">{t('athlete_search.no_athlete')}</p>
             ) : filtered.map((a: any) => {
               const sel = selected_ids.includes(a.id);
               const disabled_max = !sel && max != null && selected_ids.length >= max;
@@ -3101,6 +3109,7 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti, 
   open: boolean; on_close: () => void; istruttori: any[]; queryClient: any;
   tipo: "corso" | "privata"; atleti?: any[]; stagione_id?: string | null;
 }) {
+  const { t } = useTranslation('planning');
   const [nome, set_nome] = useState("");
   const [corso_tipo, set_corso_tipo] = useState(tipo === "privata" ? "privata" : "");
   const [istr_id, set_istr_id] = useState("");
@@ -3118,7 +3127,7 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti, 
   const quota_per_atleta = atleti_ids.length > 0 ? costo_totale / atleti_ids.length : 0;
 
   const save = async () => {
-    if (tipo === "privata" && atleti_ids.length === 0) { toast.error("Seleziona almeno un atleta"); return; }
+    if (tipo === "privata" && atleti_ids.length === 0) { toast.error(t('toast.select_at_least_one_athlete')); return; }
     const nomi_atleti = atleti_ids.map((id) => {
       const a = (atleti ?? []).find((x: any) => x.id === id);
       return a ? a.nome : "?";
@@ -3126,7 +3135,7 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti, 
     const final_nome = tipo === "privata"
       ? `${is_semiprivata ? "Semi" : "Privata"} · ${nomi_atleti.join(", ")}`
       : nome;
-    if (!final_nome.trim()) { toast.error("Nome obbligatorio"); return; }
+    if (!final_nome.trim()) { toast.error(t('toast.name_required')); return; }
     set_saving(true);
     try {
       let lezione_id: string | null = null;
@@ -3177,7 +3186,7 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti, 
         queryClient.invalidateQueries({ queryKey: ["planning_settimana"] }),
         queryClient.invalidateQueries({ queryKey: ["planning_corsi_settimana"] }),
       ]);
-      toast.success(tipo === "privata" ? "Lezione privata creata" : "Corso creato");
+      toast.success(tipo === "privata" ? t('toast.private_lesson_created') : t('toast.course_created'));
       on_close();
       set_nome(""); set_corso_tipo(""); set_istr_id(""); set_note(""); set_costo(""); set_costo_min(""); set_atleti_ids([]);
     } catch (e: any) {
@@ -3191,31 +3200,31 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti, 
     <Dialog open={open} onOpenChange={(o) => !o && on_close()}>
       <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{tipo === "privata" ? "Nuova lezione privata" : "Nuovo corso"}</DialogTitle>
+          <DialogTitle>{tipo === "privata" ? t('new_corso_modal.title_private') : t('new_corso_modal.title_corso')}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           {tipo === "privata" && atleti ? (
             <div>
-              <Label className="text-xs">Atleta/e {is_semiprivata && <Badge variant="outline" className="ml-2 text-[10px] border-green-500 text-green-600">SEMIPRIVATA</Badge>}</Label>
+              <Label className="text-xs">{t('new_corso_modal.athletes_label')} {is_semiprivata && <Badge variant="outline" className="ml-2 text-[10px] border-green-500 text-green-600">{t('new_corso_modal.semi_private_badge')}</Badge>}</Label>
               <AtletaSearchPlanning atleti={atleti} selected_ids={atleti_ids} on_change={set_atleti_ids} max={MAX_ATLETI_SEMI} />
-              {atleti_ids.length >= MAX_ATLETI_SEMI && <p className="text-xs text-muted-foreground mt-1">Massimo {MAX_ATLETI_SEMI} atleti per lezione semiprivata</p>}
+              {atleti_ids.length >= MAX_ATLETI_SEMI && <p className="text-xs text-muted-foreground mt-1">{t('new_corso_modal.max_athletes_hint', { max: MAX_ATLETI_SEMI })}</p>}
             </div>
           ) : (
             <div>
-              <Label className="text-xs">Nome</Label>
+              <Label className="text-xs">{t('new_corso_modal.name')}</Label>
               <Input value={nome} onChange={(e) => set_nome(e.target.value)} />
             </div>
           )}
           {tipo === "corso" && (
             <div>
-              <Label className="text-xs">Tipo</Label>
-              <Input value={corso_tipo} onChange={(e) => set_corso_tipo(e.target.value)} placeholder="es. Ghiaccio, Danza..." />
+              <Label className="text-xs">{t('new_corso_modal.type')}</Label>
+              <Input value={corso_tipo} onChange={(e) => set_corso_tipo(e.target.value)} placeholder={t('new_corso_modal.type_placeholder')} />
             </div>
           )}
           <div>
-            <Label className="text-xs">Istruttore</Label>
+            <Label className="text-xs">{t('new_corso_modal.instructor')}</Label>
             <Select value={istr_id} onValueChange={set_istr_id}>
-              <SelectTrigger className="h-9"><SelectValue placeholder="Seleziona" /></SelectTrigger>
+              <SelectTrigger className="h-9"><SelectValue placeholder={t('new_corso_modal.select_placeholder')} /></SelectTrigger>
               <SelectContent>
                 {istruttori.map((i: any) => <SelectItem key={i.id} value={i.id}>{i.nome} {i.cognome}</SelectItem>)}
               </SelectContent>
@@ -3223,11 +3232,11 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti, 
           </div>
           {tipo !== "privata" && (
             <div>
-              <Label className="text-xs">Livello</Label>
+              <Label className="text-xs">{t('new_corso_modal.level')}</Label>
               <Select value={livello} onValueChange={set_livello}>
                 <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="tutti">Tutti</SelectItem>
+                  <SelectItem value="tutti">{t('new_corso_modal.level_all')}</SelectItem>
                   {LIVELLI.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
                 </SelectContent>
               </Select>
@@ -3235,18 +3244,18 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti, 
           )}
           <div className="flex gap-3">
             <div className="flex-1">
-              <Label className="text-xs">Durata (min)</Label>
+              <Label className="text-xs">{t('new_corso_modal.duration_min')}</Label>
               <Input type="number" value={durata} onChange={(e) => set_durata(+e.target.value)} min={15} step={5} />
             </div>
             <div className="flex-1">
               {tipo === "privata" ? (
                 <>
-                  <Label className="text-xs">Costo al minuto (CHF/min)</Label>
-                  <Input type="number" value={costo_min} onChange={(e) => set_costo_min(e.target.value)} step="0.10" placeholder="es. 1.50" onFocus={(e) => e.target.select()} />
+                  <Label className="text-xs">{t('new_corso_modal.cost_per_minute')}</Label>
+                  <Input type="number" value={costo_min} onChange={(e) => set_costo_min(e.target.value)} step="0.10" placeholder={t('new_corso_modal.cost_per_minute_placeholder')} onFocus={(e) => e.target.select()} />
                 </>
               ) : (
                 <>
-                  <Label className="text-xs">Costo mensile (CHF)</Label>
+                  <Label className="text-xs">{t('new_corso_modal.monthly_cost')}</Label>
                   <Input type="number" value={costo} onChange={(e) => set_costo(e.target.value)} min={0} onFocus={(e) => e.target.select()} />
                 </>
               )}
@@ -3254,18 +3263,18 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti, 
           </div>
           {tipo === "privata" && atleti_ids.length > 0 && (
             <div className="bg-muted/30 rounded-xl px-4 py-3 space-y-1">
-              <p className="text-xs text-muted-foreground">Costo totale lezione: <strong className="text-foreground">CHF {costo_totale.toFixed(2)}</strong></p>
-              <p className="text-xs text-muted-foreground">Quota per atleta ({atleti_ids.length}): <strong className="text-foreground">CHF {quota_per_atleta.toFixed(2)}</strong></p>
+              <p className="text-xs text-muted-foreground">{t('new_corso_modal.total_lesson_cost')} <strong className="text-foreground">CHF {costo_totale.toFixed(2)}</strong></p>
+              <p className="text-xs text-muted-foreground">{t('new_corso_modal.quota_per_athlete', { count: atleti_ids.length })} <strong className="text-foreground">CHF {quota_per_atleta.toFixed(2)}</strong></p>
             </div>
           )}
           <div>
-            <Label className="text-xs">Note</Label>
+            <Label className="text-xs">{t('new_corso_modal.notes')}</Label>
             <Input value={note} onChange={(e) => set_note(e.target.value)} />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={on_close}>Annulla</Button>
-          <Button onClick={save} disabled={saving}>{saving && <Loader2 className="h-4 w-4 animate-spin mr-1" />}Crea</Button>
+          <Button variant="outline" onClick={on_close}>{t('new_corso_modal.cancel')}</Button>
+          <Button onClick={save} disabled={saving}>{saving && <Loader2 className="h-4 w-4 animate-spin mr-1" />}{t('new_corso_modal.create')}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -3278,6 +3287,7 @@ function NewCorsoModal({ open, on_close, istruttori, queryClient, tipo, atleti, 
 function EditCorsoModal({ corso, on_close, istruttori, queryClient, posizionati }: {
   corso: any; on_close: () => void; istruttori: any[]; queryClient: any; posizionati: any[];
 }) {
+  const { t } = useTranslation('planning');
   const elimina_corso = use_elimina_corso();
   const [nome, set_nome] = useState(corso.nome || "");
   const [tipo, set_tipo] = useState(corso.tipo || "");
@@ -3296,10 +3306,10 @@ function EditCorsoModal({ corso, on_close, istruttori, queryClient, posizionati 
     try {
       await elimina_corso.mutateAsync(master_corso_id);
       await queryClient.invalidateQueries({ queryKey: ["planning_corsi_settimana"] });
-      toast.success("Corso eliminato definitivamente");
+      toast.success(t('toast.course_deleted'));
       on_close();
     } catch (e: any) {
-      toast.error(e?.message || "Errore eliminazione corso");
+      toast.error(e?.message || t('toast.course_delete_error'));
     }
   };
 
@@ -3315,7 +3325,7 @@ function EditCorsoModal({ corso, on_close, istruttori, queryClient, posizionati 
         const { error } = await supabase.from("planning_corsi_settimana").update(update).eq("id", corso.id);
         if (error) throw error;
         queryClient.invalidateQueries({ queryKey: ["planning_corsi_settimana"] });
-        toast.success("Corso aggiornato nella settimana");
+        toast.success(t('toast.course_updated_in_week'));
       } else {
         // Template mode
         const update: any = { nome, tipo, livello_richiesto: livello, costo_mensile: parseFloat(String(costo)) || 0, note };
@@ -3330,7 +3340,7 @@ function EditCorsoModal({ corso, on_close, istruttori, queryClient, posizionati 
             return s < ce && e > cs;
           });
           if (conflicts.length > 0) {
-            if (!window.confirm(`Conflitto con: ${conflicts.map((c: any) => c.nome).join(", ")}. Continuare?`)) {
+            if (!window.confirm(t('confirm.conflict_with_continue_short', { names: conflicts.map((c: any) => c.nome).join(", ") }))) {
               set_saving(false);
               return;
             }
@@ -3349,7 +3359,7 @@ function EditCorsoModal({ corso, on_close, istruttori, queryClient, posizionati 
         }
 
         await queryClient.invalidateQueries({ queryKey: ["corsi"] });
-        toast.success("Corso aggiornato");
+        toast.success(t('toast.course_updated'));
       }
       on_close();
     } catch (e: any) {
@@ -3363,74 +3373,74 @@ function EditCorsoModal({ corso, on_close, istruttori, queryClient, posizionati 
     <Dialog open onOpenChange={(o) => !o && on_close()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Modifica corso</DialogTitle>
+          <DialogTitle>{t('edit_corso_modal.title')}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
-          <div><Label className="text-xs">Nome</Label><Input value={nome} onChange={(e) => set_nome(e.target.value)} /></div>
-          <div><Label className="text-xs">Tipo</Label><Input value={tipo} onChange={(e) => set_tipo(e.target.value)} /></div>
+          <div><Label className="text-xs">{t('edit_corso_modal.name')}</Label><Input value={nome} onChange={(e) => set_nome(e.target.value)} /></div>
+          <div><Label className="text-xs">{t('edit_corso_modal.type')}</Label><Input value={tipo} onChange={(e) => set_tipo(e.target.value)} /></div>
           <div>
-            <Label className="text-xs">Istruttore</Label>
+            <Label className="text-xs">{t('edit_corso_modal.instructor')}</Label>
             <Select value={istr_id} onValueChange={set_istr_id}>
-              <SelectTrigger className="h-9"><SelectValue placeholder="Seleziona" /></SelectTrigger>
+              <SelectTrigger className="h-9"><SelectValue placeholder={t('edit_corso_modal.select_placeholder')} /></SelectTrigger>
               <SelectContent>
                 {istruttori.map((i: any) => <SelectItem key={i.id} value={i.id}>{i.nome} {i.cognome}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
           <div>
-            <Label className="text-xs">Livello</Label>
+            <Label className="text-xs">{t('edit_corso_modal.level')}</Label>
             <Select value={livello} onValueChange={set_livello}>
               <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="tutti">Tutti</SelectItem>
+                <SelectItem value="tutti">{t('edit_corso_modal.level_all')}</SelectItem>
                 {LIVELLI.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
           <div className="flex gap-3">
             <div className="flex-1">
-              <Label className="text-xs">Giorno</Label>
+              <Label className="text-xs">{t('edit_corso_modal.day')}</Label>
               <Select value={giorno} onValueChange={set_giorno}>
-                <SelectTrigger className="h-9"><SelectValue placeholder="—" /></SelectTrigger>
+                <SelectTrigger className="h-9"><SelectValue placeholder={t('edit_corso_modal.day_placeholder')} /></SelectTrigger>
                 <SelectContent>
                   {GIORNI.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div className="flex-1">
-              <Label className="text-xs">Inizio</Label>
+              <Label className="text-xs">{t('edit_corso_modal.start')}</Label>
               <Input type="time" value={ora_inizio} onChange={(e) => set_ora_inizio(e.target.value)} className="h-9" />
             </div>
             <div className="flex-1">
-              <Label className="text-xs">Fine</Label>
+              <Label className="text-xs">{t('edit_corso_modal.end')}</Label>
               <Input type="time" value={ora_fine} onChange={(e) => set_ora_fine(e.target.value)} className="h-9" />
             </div>
           </div>
           <div className="flex gap-3">
-            <div className="flex-1"><Label className="text-xs">Costo mensile (CHF)</Label><Input type="number" value={costo} onChange={(e) => set_costo(e.target.value)} onFocus={(e) => e.target.select()} /></div>
+            <div className="flex-1"><Label className="text-xs">{t('edit_corso_modal.monthly_cost')}</Label><Input type="number" value={costo} onChange={(e) => set_costo(e.target.value)} onFocus={(e) => e.target.select()} /></div>
           </div>
-          <div><Label className="text-xs">Note</Label><Input value={note} onChange={(e) => set_note(e.target.value)} /></div>
+          <div><Label className="text-xs">{t('edit_corso_modal.notes')}</Label><Input value={note} onChange={(e) => set_note(e.target.value)} /></div>
         </div>
         <DialogFooter>
           <div className="flex w-full flex-col gap-2">
             {confirm_delete ? (
               <div className="rounded-md border border-destructive/30 bg-destructive/10 p-2 space-y-2">
-                <p className="text-xs font-medium text-destructive">Eliminare definitivamente questo corso?</p>
+                <p className="text-xs font-medium text-destructive">{t('edit_corso_modal.confirm_delete_question')}</p>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => set_confirm_delete(false)} disabled={elimina_corso.isPending}>No</Button>
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => set_confirm_delete(false)} disabled={elimina_corso.isPending}>{t('edit_corso_modal.no')}</Button>
                   <Button variant="destructive" size="sm" className="flex-1" onClick={delete_course} disabled={elimina_corso.isPending}>
-                    {elimina_corso.isPending && <Loader2 className="h-4 w-4 animate-spin mr-1" />}Elimina
+                    {elimina_corso.isPending && <Loader2 className="h-4 w-4 animate-spin mr-1" />}{t('edit_corso_modal.delete')}
                   </Button>
                 </div>
               </div>
             ) : (
               <Button variant="destructive" onClick={() => set_confirm_delete(true)} disabled={saving || elimina_corso.isPending} className="w-full justify-start gap-2">
-                <Trash2 className="h-4 w-4" /> Elimina corso
+                <Trash2 className="h-4 w-4" /> {t('edit_corso_modal.delete_course')}
               </Button>
             )}
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={on_close}>Annulla</Button>
-              <Button onClick={save} disabled={saving || elimina_corso.isPending}>{saving && <Loader2 className="h-4 w-4 animate-spin mr-1" />}Salva</Button>
+              <Button variant="outline" onClick={on_close}>{t('edit_corso_modal.cancel')}</Button>
+              <Button onClick={save} disabled={saving || elimina_corso.isPending}>{saving && <Loader2 className="h-4 w-4 animate-spin mr-1" />}{t('edit_corso_modal.save')}</Button>
             </div>
           </div>
         </DialogFooter>
