@@ -1360,8 +1360,9 @@ const CorsoModal: React.FC<{
   deleting,
 }) => {
   const qc = useQueryClient();
+  const { t } = useTranslation("corsi");
   const { data: disp_ghiaccio_modal = [] } = use_disponibilita_ghiaccio();
-  const corso_completezza = corso ? check_corso_completo(corso, disp_ghiaccio_modal, istruttori) : { completo: false, motivo: "Nuovo corso" };
+  const corso_completezza = corso ? check_corso_completo(corso, disp_ghiaccio_modal, istruttori) : { completo: false, motivo: t("modal.new_course") };
 
   // Capienza pista (alert NON bloccante): legge max_atleti_contemporanei e
   // conteggio iscritti per corso del club, NON entra in check_corso_completo.
@@ -1475,9 +1476,9 @@ const CorsoModal: React.FC<{
   const has_ora_fine = !!(form.ora_fine && form.ora_fine !== "");
   const toggle_disabled = !has_fasce_for_day || !has_ora_fine;
   const toggle_tooltip = !has_fasce_for_day
-    ? "Configura prima la disponibilità ghiaccio per questo giorno in Configurazione Club"
+    ? t("modal.configure_ice_first")
     : !has_ora_fine
-      ? "Seleziona una fascia ghiaccio e scegli la durata per abilitare"
+      ? t("modal.select_slot_first")
       : "";
 
   // Auto-disable toggle when conditions are not met
@@ -1632,14 +1633,14 @@ const CorsoModal: React.FC<{
     return {
       blocked: false,
       warning: has_pulizia_overlap
-        ? "Attenzione: parte di questo slot è occupata dalla pulizia ghiaccio."
+        ? t("modal.ice_warning_cleaning_overlap")
         : null,
     };
   };
 
   const handle_save_click = async () => {
     if (!form.nome.trim()) {
-      toast({ title: "Il nome del corso è obbligatorio", variant: "destructive" });
+      toast({ title: t("modal.toast_name_required"), variant: "destructive" });
       return;
     }
 
@@ -1661,11 +1662,11 @@ const CorsoModal: React.FC<{
           time_to_min(f.ora_inizio) <= corso_start && time_to_min(f.ora_fine) >= corso_end
         );
         if (!coperto) {
-          set_ghiaccio_error("Orario non coperto dalla disponibilità ghiaccio. Seleziona una fascia valida.");
+          set_ghiaccio_error(t("modal.ice_error_uncovered_time"));
           return;
         }
       } else {
-        set_ghiaccio_error("Seleziona una fascia ghiaccio e scegli la durata prima di posizionare nel planning.");
+        set_ghiaccio_error(t("modal.ice_error_select_slot"));
         return;
       }
     }
@@ -1677,7 +1678,7 @@ const CorsoModal: React.FC<{
     try {
       const result = await validate_ghiaccio();
       if (result.blocked) {
-        set_ghiaccio_error("Nessun ghiaccio disponibile in questo orario. Configura prima la disponibilità ghiaccio in Configurazione Club.");
+        set_ghiaccio_error(t("modal.ice_error_no_availability"));
         set_validating_ghiaccio(false);
         return;
       }
@@ -1686,7 +1687,7 @@ const CorsoModal: React.FC<{
       }
     } catch {
       set_validating_ghiaccio(false);
-      toast({ title: "Errore verifica ghiaccio", variant: "destructive" });
+      toast({ title: t("modal.toast_ice_check_error"), variant: "destructive" });
       return;
     }
     set_validating_ghiaccio(false);
@@ -1702,8 +1703,8 @@ const CorsoModal: React.FC<{
   const do_save = () => {
     if (percorso_invalido_modal) {
       toast({
-        title: "Percorso non valido",
-        description: "Il percorso può essere impostato solo per livelli di carriera.",
+        title: t("modal.toast_invalid_path_title"),
+        description: t("modal.toast_invalid_path_desc"),
         variant: "destructive",
       });
       return;
@@ -1728,7 +1729,7 @@ const CorsoModal: React.FC<{
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-lg flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
-          <h2 className="text-base font-bold text-foreground">{corso?.id ? "Modifica corso" : "Nuovo corso"}</h2>
+          <h2 className="text-base font-bold text-foreground">{corso?.id ? t("modal.edit_course") : t("modal.new_course")}</h2>
           <div className="flex items-center gap-2">
             {corso?.id && on_ridefinisci && (
               <Button
@@ -1736,10 +1737,10 @@ const CorsoModal: React.FC<{
                 size="sm"
                 onClick={on_ridefinisci}
                 className="h-8 gap-1.5 text-xs"
-                title="Riapri il wizard a 4 step pre-compilato per modifiche strutturali (giorno/ora/istruttore)"
+                title={t("modal.redefine_tooltip")}
               >
                 <ArrowRightLeft className="w-3.5 h-3.5" />
-                Ridefinisci corso
+                {t("modal.redefine_course")}
               </Button>
             )}
             <button onClick={on_close} className="text-muted-foreground hover:text-foreground">
@@ -1756,7 +1757,7 @@ const CorsoModal: React.FC<{
               <p className="text-sm font-semibold text-destructive">{ghiaccio_error}</p>
             </div>
             <Button variant="outline" size="sm" onClick={() => set_ghiaccio_error(null)} className="w-full">
-              ← Correggi orario
+              ← {t("modal.fix_time")}
             </Button>
           </div>
         )}
@@ -1770,7 +1771,7 @@ const CorsoModal: React.FC<{
             </div>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => { set_ghiaccio_warning(null); }} className="flex-1">
-                ← Correggi
+                ← {t("modal.fix")}
               </Button>
               <Button
                 size="sm"
@@ -1786,7 +1787,7 @@ const CorsoModal: React.FC<{
                 disabled={saving}
                 className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
               >
-                {saving ? "..." : "Procedi comunque"}
+                {saving ? "..." : t("modal.proceed_anyway")}
               </Button>
             </div>
           </div>
@@ -1797,7 +1798,7 @@ const CorsoModal: React.FC<{
             <div className="flex items-start gap-2">
               <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
               <div className="space-y-1">
-                <p className="text-sm font-bold text-orange-700">Attenzione — Problemi di disponibilità</p>
+                <p className="text-sm font-bold text-orange-700">{t("modal.availability_issues_title")}</p>
                 {avviso_istruttori.map((msg, i) => (
                   <p key={i} className="text-xs text-orange-600">
                     • {msg}
@@ -1807,7 +1808,7 @@ const CorsoModal: React.FC<{
             </div>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => set_confirm_forzatura(false)} className="flex-1">
-                ← Correggi
+                ← {t("modal.fix")}
               </Button>
               <Button
                 size="sm"
@@ -1818,7 +1819,7 @@ const CorsoModal: React.FC<{
                 disabled={saving}
                 className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
               >
-                {saving ? "..." : "Salva comunque"}
+                {saving ? "..." : t("modal.save_anyway")}
               </Button>
             </div>
           </div>
@@ -1906,7 +1907,7 @@ const CorsoModal: React.FC<{
                   onChange={(v) => set_val("livello_richiesto", v)}
                   fase="qualsiasi"
                   allowNull={true}
-                  nullLabel="— Aperto a tutti i livelli —"
+                  nullLabel={t("modal.open_to_all_levels")}
                 />
               </Field>
 

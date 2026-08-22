@@ -719,6 +719,7 @@ const GraficoAndamento: React.FC<{
   gare: any[];
   on_close: () => void;
 }> = ({ atleta_id, atleta_nome, gare, on_close }) => {
+  const { t: te } = useTranslation("events");
   const dati = useMemo(() => {
     return gare
       .filter((g) => g.atleti_iscritti?.some((ai: any) => ai.atleta_id === atleta_id))
@@ -745,7 +746,7 @@ const GraficoAndamento: React.FC<{
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <div>
-            <h2 className="text-base font-bold text-foreground">Andamento gare</h2>
+            <h2 className="text-base font-bold text-foreground">{te("competitions.chart_title")}</h2>
             <p className="text-xs text-muted-foreground">{atleta_nome}</p>
           </div>
           <button onClick={on_close} className="text-muted-foreground hover:text-foreground">
@@ -756,13 +757,13 @@ const GraficoAndamento: React.FC<{
           {dati.length < 2 ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <TrendingUp className="w-10 h-10 mb-3 opacity-30" />
-              <p className="text-sm">Servono almeno 2 gare con risultati per mostrare il grafico.</p>
+              <p className="text-sm">{te("competitions.chart_empty_state")}</p>
             </div>
           ) : (
             <>
               <div>
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">
-                  📊 Andamento punteggio
+                  {te("competitions.score_trend_title")}
                 </p>
                 <ResponsiveContainer width="100%" height={200}>
                   <LineChart data={dati}>
@@ -781,7 +782,7 @@ const GraficoAndamento: React.FC<{
                     <Line
                       type="monotone"
                       dataKey="punteggio"
-                      name="Totale"
+                      name={te("competitions.total_legend")}
                       stroke="hsl(var(--primary))"
                       strokeWidth={2}
                       dot={{ r: 4 }}
@@ -789,7 +790,7 @@ const GraficoAndamento: React.FC<{
                     <Line
                       type="monotone"
                       dataKey="tecnico"
-                      name="Tecnico"
+                      name={te("competitions.technical_legend")}
                       stroke="#f59e0b"
                       strokeWidth={2}
                       dot={{ r: 3 }}
@@ -798,7 +799,7 @@ const GraficoAndamento: React.FC<{
                     <Line
                       type="monotone"
                       dataKey="artistico"
-                      name="Artistico"
+                      name={te("competitions.artistic_legend")}
                       stroke="#10b981"
                       strokeWidth={2}
                       dot={{ r: 3 }}
@@ -809,7 +810,7 @@ const GraficoAndamento: React.FC<{
               </div>
               <div>
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">
-                  🏆 Andamento posizione
+                  {te("competitions.position_trend_title")}
                 </p>
                 <ResponsiveContainer width="100%" height={200}>
                   <LineChart data={dati.filter((d) => d.posizione !== null)}>
@@ -823,12 +824,12 @@ const GraficoAndamento: React.FC<{
                         borderRadius: 8,
                       }}
                       labelFormatter={(l, p) => p?.[0]?.payload?.nome_gara || l}
-                      formatter={(v: any) => [`${v}° posto`, "Posizione"]}
+                      formatter={(v: any) => [`${v}${te("competitions.place_suffix")}`, te("competitions.position_legend")]}
                     />
                     <Line
                       type="monotone"
                       dataKey="posizione"
-                      name="Posizione"
+                      name={te("competitions.position_legend")}
                       stroke="#ef4444"
                       strokeWidth={2}
                       dot={{ r: 4 }}
@@ -838,16 +839,16 @@ const GraficoAndamento: React.FC<{
               </div>
               <div>
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">
-                  Riepilogo risultati
+                  {te("competitions.results_summary_title")}
                 </p>
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-border">
-                      <th className="text-left px-3 py-2 font-bold text-muted-foreground">Gara</th>
-                      <th className="text-center px-3 py-2 font-bold text-muted-foreground">Pos.</th>
-                      <th className="text-center px-3 py-2 font-bold text-muted-foreground">Tecnico</th>
-                      <th className="text-center px-3 py-2 font-bold text-muted-foreground">Artistico</th>
-                      <th className="text-center px-3 py-2 font-bold text-muted-foreground">Totale</th>
+                      <th className="text-left px-3 py-2 font-bold text-muted-foreground">{te("competitions.competition_header")}</th>
+                      <th className="text-center px-3 py-2 font-bold text-muted-foreground">{te("competitions.position_short_header")}</th>
+                      <th className="text-center px-3 py-2 font-bold text-muted-foreground">{te("competitions.technical_short_header")}</th>
+                      <th className="text-center px-3 py-2 font-bold text-muted-foreground">{te("competitions.artistic_short_header")}</th>
+                      <th className="text-center px-3 py-2 font-bold text-muted-foreground">{te("competitions.total_short_header")}</th>
                     </tr>
                   </thead>
                   <tbody>
