@@ -304,12 +304,12 @@ const UtentiPage: React.FC = () => {
         <div className="flex items-center gap-3">
           <Users className="w-6 h-6 text-primary" />
           <div>
-            <h1 className="text-xl font-bold text-foreground">Gestione Utenti</h1>
-            <p className="text-sm text-muted-foreground">Crea e gestisci gli utenti del club</p>
+            <h1 className="text-xl font-bold text-foreground">{t("users.title")}</h1>
+            <p className="text-sm text-muted-foreground">{t("users.subtitle")}</p>
           </div>
         </div>
         <Button onClick={open_create} className="gap-2">
-          <Plus className="w-4 h-4" /> Nuovo utente
+          <Plus className="w-4 h-4" /> {t("users.new_user")}
         </Button>
       </div>
 
@@ -317,7 +317,7 @@ const UtentiPage: React.FC = () => {
         <div className="flex-1 relative">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Cerca per nome, cognome o email"
+            placeholder={t("users.search_placeholder")}
             value={search}
             onChange={(e) => set_search(e.target.value)}
             className="pl-9"
@@ -326,7 +326,7 @@ const UtentiPage: React.FC = () => {
         <Select value={filtro_ruolo} onValueChange={set_filtro_ruolo}>
           <SelectTrigger className="w-full sm:w-56"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="tutti">Tutti i ruoli</SelectItem>
+            <SelectItem value="tutti">{t("users.all_roles")}</SelectItem>
             {RUOLI_ESTESI.map((r) => (
               <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
             ))}
@@ -334,7 +334,7 @@ const UtentiPage: React.FC = () => {
         </Select>
         <div className="flex items-center gap-2">
           <Switch checked={solo_attivi} onCheckedChange={set_solo_attivi} id="solo-attivi" />
-          <Label htmlFor="solo-attivi" className="text-sm">Solo attivi</Label>
+          <Label htmlFor="solo-attivi" className="text-sm">{t("users.only_active")}</Label>
         </div>
       </div>
 
@@ -349,21 +349,21 @@ const UtentiPage: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/30">
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Cognome</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Telefono</TableHead>
-                  <TableHead>Ruolo</TableHead>
-                  <TableHead>Ultimo accesso</TableHead>
-                  <TableHead className="text-center">Attivo</TableHead>
-                  <TableHead className="text-right">Azioni</TableHead>
+                  <TableHead>{t("users.table.nome")}</TableHead>
+                  <TableHead>{t("users.table.cognome")}</TableHead>
+                  <TableHead>{t("users.table.email")}</TableHead>
+                  <TableHead>{t("users.table.telefono")}</TableHead>
+                  <TableHead>{t("users.table.ruolo")}</TableHead>
+                  <TableHead>{t("users.table.last_access")}</TableHead>
+                  <TableHead className="text-center">{t("users.table.attivo")}</TableHead>
+                  <TableHead className="text-right">{t("users.table.azioni")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-8">
-                      Nessun utente trovato
+                      {t("users.none_found")}
                     </TableCell>
                   </TableRow>
                 )}
@@ -388,13 +388,13 @@ const UtentiPage: React.FC = () => {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="inline-flex gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => open_edit(u)} title="Modifica">
+                        <Button variant="ghost" size="icon" onClick={() => open_edit(u)} title={t("users.tooltip.modifica")}>
                           <Pencil className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => set_confirm_state({ type: "reset", user: u })} title="Reset password">
+                        <Button variant="ghost" size="icon" onClick={() => set_confirm_state({ type: "reset", user: u })} title={t("users.tooltip.reset_password")}>
                           <KeyRound className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => set_confirm_state({ type: "toggle", user: u })} title={u.attivo ? "Disattiva" : "Riattiva"}>
+                        <Button variant="ghost" size="icon" onClick={() => set_confirm_state({ type: "toggle", user: u })} title={u.attivo ? t("users.tooltip.disattiva") : t("users.tooltip.riattiva")}>
                           <Power className={`w-4 h-4 ${u.attivo ? "text-emerald-600" : "text-muted-foreground"}`} />
                         </Button>
                       </div>
@@ -408,7 +408,7 @@ const UtentiPage: React.FC = () => {
           {/* Mobile cards */}
           <div className="md:hidden space-y-2">
             {filtered.length === 0 && (
-              <p className="text-center text-sm text-muted-foreground py-8">Nessun utente trovato</p>
+              <p className="text-center text-sm text-muted-foreground py-8">{t("users.none_found")}</p>
             )}
             {filtered.map((u) => (
               <div key={u.id} className="bg-card rounded-xl shadow-card p-4 space-y-2">
@@ -424,11 +424,11 @@ const UtentiPage: React.FC = () => {
                 {u.telefono && (
                   <a href={`tel:${u.telefono}`} className="text-sm text-primary block">{u.telefono}</a>
                 )}
-                <p className="text-[11px] text-muted-foreground">Ultimo accesso: {format_relative(u.last_sign_in_at, t)}</p>
+                <p className="text-[11px] text-muted-foreground">{t("users.table.last_access")}: {format_relative(u.last_sign_in_at, t)}</p>
                 <div className="flex items-center justify-between pt-1">
                   <div className="flex items-center gap-2 text-xs">
                     <Switch checked={!!u.attivo} disabled />
-                    <span>{u.attivo ? "Attivo" : "Disattivato"}</span>
+                    <span>{u.attivo ? t("users.status.attivo") : t("users.status.disattivato")}</span>
                   </div>
                   <div className="inline-flex gap-1">
                     <Button variant="ghost" size="icon" onClick={() => open_edit(u)}><Pencil className="w-4 h-4" /></Button>
