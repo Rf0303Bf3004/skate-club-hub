@@ -1,12 +1,17 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Trophy, Sparkles, ClipboardCheck, Archive, ExternalLink, Inbox } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+
+const tk = (key: string, opts?: any) => i18n.t(`iscrizioni_notifiche.${key}`, { ns: "communications", ...(opts ?? {}) }) as string;
+
 
 interface NotificaStaffRow {
   id: string;
