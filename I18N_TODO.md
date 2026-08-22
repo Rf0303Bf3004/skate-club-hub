@@ -227,3 +227,43 @@ toast.{generated_title_one/_other, generate_error_title}
 - `card.*`: to_be_scheduled, price_not_set, enrolled_count, manage_enrollments
 - `filters.*`: all_types, all_instructors, reset
 - `page.*`: duplicate_season, new_course, by_day, by_instructor, search_placeholder, clear_search, no_courses_filtered, no_courses_empty, to_be_scheduled_header, no_instructor, toast_type_added, toast_course_updated, toast_course_created, toast_planning_updated, toast_course_saved_planning_error, toast_save_error, toast_no_valid_season, toast_no_valid_season_desc, error_create_week, error_no_slot, error_insert_planning, error_not_in_planning, toast_course_deleted, toast_course_deleted_short, toast_delete_error, incomplete, fix_action, confirm_delete_title, confirm_delete_desc, delete_course_title
+
+## Step 1.5d — Estrazione 5 pagine (PrivateLessons, Eventi, TestLivello, TrainingCamps, Instructors)
+
+File completati e migrati a `useTranslation(<ns>)` (solo JSON IT aggiornato; FR/DE/EN da sincronizzare in `traduzioni_ui`):
+
+- [x] `src/pages/PrivateLessonsPage.tsx` → `corsi.lezioni_private.*`
+- [x] `src/pages/EventiPage.tsx` → `events.events.*`
+- [x] `src/pages/TestLivelloPage.tsx` → `events.level_tests.*`
+- [x] `src/pages/TrainingCampsPage.tsx` → `events.training_camps.*`
+- [x] `src/pages/InstructorsPage.tsx` → `istruttori.*` (NUOVO namespace, registrato in `src/i18n/index.ts`)
+
+### Chiavi nuove per namespace
+
+#### `corsi` (+79 chiavi, tutte sotto `lezioni_private.`)
+`title`, `slot_button`, `select_istruttore_placeholder`, `select_istruttore_empty`,
+`legenda.*` (libero, prenotato, libero_ghiaccio, fuori_ghiaccio, privata, semiprivata),
+`slot_status.*` (off_ice, prenota, semi, dettagli, occupato, fuori_ghiaccio_label),
+`no_slots.*` (title, subtitle), `atleta_search.*` (placeholder, nessun_atleta_trovato),
+`slot_modal.*`, `aggiungi_atleta_modal.*`, `slot_detail_modal.*`, `cambio_durata_modal.*`,
+`toast.*`, `confirm.annulla_lezione`
+
+#### `events` (+155 chiavi)
+- `events.*` (+35): subtitle, back_to_list, not_found, edit, delete, delete_confirm_title/desc,
+  date, time, place, registered_count, no_registrations, registrations_short_one/_other,
+  form_title_edit/new, field_* (title, type, date, start, end, place, description + placeholder),
+  season_label, cancel, save, create, empty_title, empty_desc, toast_created/updated/deleted/error
+- `level_tests.*` (+78): titoli, form nuovo test, catena passaggi, esiti, badge, empty state,
+  conferme di eliminazione, placeholder e toast
+- `training_camps.*` (+42): header, form camp, sessioni, iscrizioni, opzioni partecipazione,
+  empty state e toast (riutilizzate `day_only` / `full` già esistenti)
+
+#### `istruttori` (NUOVO, 145 chiavi)
+`modal.*` (form istruttore), `ore.*` (tab Ore Lavoro), `compenso.*` (tab Compenso),
+`monitore.*` (scheda monitore), `dettaglio.*` (header + tab), `badge.*` (ruoli),
+`lista.*` (elenco/filtri/ricerca), `toast.*`
+
+### Note
+- Nessuna chiave con valore array/oggetto introdotta in questo turno: tutte sincronizzabili in `traduzioni_ui`.
+- Le costanti tecniche (`GIORNI`, `TIPI_CONTRATTO`, enum DB, discipline) NON sono state tradotte.
+- Nessuna modifica ai JSON `src/locales/{fr,de,en}/`.
