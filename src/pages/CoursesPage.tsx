@@ -1828,16 +1828,16 @@ const CorsoModal: React.FC<{
         <Tabs defaultValue="info" className="px-6 pt-4 flex flex-col flex-1 overflow-hidden">
           <TabsList className="w-full flex flex-shrink-0">
             <TabsTrigger value="info" className="flex-1">
-              Informazioni
+              {t("modal.tab_info")}
             </TabsTrigger>
             <TabsTrigger value="iscrizioni" className="flex-1" disabled={!corso?.id || !corso_completezza.completo}>
-              Iscrizioni {corso?.id ? `(${corso.atleti_ids?.length || 0})` : ""}
+              {t("modal.tab_enrollments")} {corso?.id ? `(${corso.atleti_ids?.length || 0})` : ""}
             </TabsTrigger>
             <TabsTrigger value="monitori" className="flex-1" disabled={!corso?.id}>
-              Monitori {corso?.id ? `(${(corso.monitori?.length || 0) + (corso.aiuto_monitori?.length || 0)})` : ""}
+              {t("modal.tab_monitors")} {corso?.id ? `(${(corso.monitori?.length || 0) + (corso.aiuto_monitori?.length || 0)})` : ""}
             </TabsTrigger>
             <TabsTrigger value="presenze" className="flex-1" disabled={!corso?.id}>
-              Presenze
+              {t("modal.tab_attendance")}
             </TabsTrigger>
           </TabsList>
 
@@ -1845,7 +1845,7 @@ const CorsoModal: React.FC<{
             <div className="flex items-start gap-2 px-3 py-2.5 mt-2 rounded-lg bg-orange-50 border border-orange-200">
               <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
               <p className="text-xs text-orange-700">
-                <strong>Corso incompleto:</strong> {corso_completezza.motivo}. Le iscrizioni sono disabilitate finché il corso non è completo.
+                <strong>{t("modal.incomplete_course")}:</strong> {corso_completezza.motivo}. {t("modal.enrollments_disabled")}
               </p>
             </div>
           )}
@@ -1854,37 +1854,37 @@ const CorsoModal: React.FC<{
             <div className="flex items-start gap-2 px-3 py-2.5 mt-2 rounded-lg bg-yellow-50 border border-yellow-300">
               <AlertTriangle className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
               <p className="text-xs text-yellow-800">
-                <strong>Attenzione: capienza pista superata</strong> ({capienza.totale} atleti su {capienza.max} consentiti in contemporanea). Salvataggio non bloccato.
+                <strong>{t("modal.capacity_exceeded")}</strong> {t("modal.capacity_exceeded_detail", { totale: capienza.totale, max: capienza.max })}
               </p>
             </div>
           )}
 
           <div className="overflow-y-auto flex-1">
             <TabsContent value="info" className="py-4 space-y-4">
-              <Field label="Nome" required>
+              <Field label={t("modal.name")} required>
                 <input
                   value={form.nome}
                   onChange={(e) => set_val("nome", e.target.value)}
-                  placeholder="es. Corso Avanzato"
+                  placeholder={t("modal.name_placeholder")}
                   className={input_cls}
                 />
               </Field>
-              <Field label="Tipo">
+              <Field label={t("modal.type")}>
                 <div className="flex items-center gap-2 flex-wrap">
                   {form.tipo === "Ghiaccio" ? (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200 text-sm font-medium">
                       <Snowflake className="w-3.5 h-3.5" />
-                      <span>Ghiaccio</span>
+                      <span>{t("modal.type_ice")}</span>
                     </span>
                   ) : form.tipo === "Off-Ice" ? (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 text-gray-700 border border-gray-200 text-sm font-medium">
                       <Dumbbell className="w-3.5 h-3.5" />
-                      <span>Off-Ice{form.categoria ? ` · ${form.categoria}` : ""}</span>
+                      <span>{t("modal.type_off_ice")}{form.categoria ? ` · ${form.categoria}` : ""}</span>
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-100 text-orange-800 border border-orange-200 text-sm font-medium">
                       <AlertTriangle className="w-3.5 h-3.5" />
-                      <span>Tipo non impostato</span>
+                      <span>{t("modal.type_not_set")}</span>
                     </span>
                   )}
                   <button
@@ -1896,12 +1896,12 @@ const CorsoModal: React.FC<{
                     }}
                     className="text-xs text-primary hover:underline font-medium"
                   >
-                    Cambia
+                    {t("modal.change")}
                   </button>
                 </div>
               </Field>
 
-              <Field label="Livello richiesto">
+              <Field label={t("modal.required_level")}>
                 <SelectLivello
                   value={form.livello_richiesto}
                   onChange={(v) => set_val("livello_richiesto", v)}
@@ -1912,16 +1912,16 @@ const CorsoModal: React.FC<{
               </Field>
 
               {is_carriera_modal && (
-                <Field label="Percorso">
+                <Field label={t("modal.path")}>
                   <div className="relative">
                     <select
                       value={form.percorso ?? ""}
                       onChange={(e) => set_val("percorso", e.target.value || null)}
                       className={`${input_cls} appearance-none pr-8`}
                     >
-                      <option value="">Comune (no percorso)</option>
-                      <option value="artistica">Artistica</option>
-                      <option value="stile">Stile</option>
+                      <option value="">{t("modal.path_common")}</option>
+                      <option value="artistica">{t("modal.path_artistica")}</option>
+                      <option value="stile">{t("modal.path_stile")}</option>
                     </select>
                     <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
@@ -1930,7 +1930,7 @@ const CorsoModal: React.FC<{
 
               {percorso_invalido_modal && (
                 <p className="text-xs text-destructive px-1">
-                  Il percorso può essere impostato solo per livelli di carriera (Interbronzo → Oro).
+                  {t("modal.path_invalid_hint")}
                 </p>
               )}
               <div className="flex items-center justify-between px-3 py-2 bg-muted/30 rounded-lg">
