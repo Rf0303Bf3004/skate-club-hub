@@ -480,6 +480,7 @@ function SidebarCostruzione({
 // MAIN COMPONENT
 // ══════════════════════════════════════════════════════════════
 function PlanningPageInner() {
+  const { t } = useTranslation('planning');
   const queryClient = useQueryClient();
   const configQuery = use_config_ghiaccio();
   const ghiaccioQuery = use_disponibilita_ghiaccio();
@@ -580,7 +581,7 @@ function PlanningPageInner() {
           const lun = new Date(`${dataLunediISO}T00:00:00`);
           const dom = addDays(lun, 6);
           const fmt = (d: Date) => d.toLocaleDateString("de-CH", { day: "numeric", month: "short" });
-          toast.success(`Settimana ${fmt(lun)}-${fmt(dom)} generata da template (${inseriti} corsi)`, {
+          toast.success(t('toast.week_generated_from_template', { start: fmt(lun), end: fmt(dom), count: inseriti }), {
             duration: 3000,
           });
           queryClient.invalidateQueries({ queryKey: ["planning_corsi_settimana", settimana_id] });
@@ -1038,16 +1039,16 @@ function PlanningPageInner() {
           const fuori = dur - covered;
           const fasce_lbl = day_ice.length > 0
             ? day_ice.map(([gs, ge]) => `${min_to_time(gs)}–${min_to_time(ge)}`).join(", ")
-            : "nessuna fascia ghiaccio configurata";
+            : t('warnings.no_ice_slot_configured');
           w.hard.push(
-            `Fuori ghiaccio: lo slot (${min_to_time(cs)}–${min_to_time(ce)}) eccede di ${fuori} min. Ghiaccio ${c.giorno}: ${fasce_lbl}.`
+            t('warnings.off_ice_hard', { start: min_to_time(cs), end: min_to_time(ce), excess: fuori, giorno: c.giorno, fasce: fasce_lbl })
           );
         }
         // Durante pulizia: messaggio con fascia di pulizia coinvolta
         const day_clean = pulizia_by_day[c.giorno] ?? [];
         const clash = day_clean.find(([ps, pe]) => cs < pe && ps < ce);
         if (clash) {
-          w.hard.push(`Durante pulizia: lo slot si sovrappone alla fascia di pulizia ${min_to_time(clash[0])}–${min_to_time(clash[1])}.`);
+          w.hard.push(t('warnings.during_cleaning', { start: min_to_time(clash[0]), end: min_to_time(clash[1]) }));
         }
       }
 
@@ -1063,11 +1064,11 @@ function PlanningPageInner() {
           ora_fine: c.ora_fine,
         });
         if (!check.disponibile) {
-          const nome_ist = ist ? `${ist.nome ?? ""} ${ist.cognome ?? ""}`.trim() : "Istruttore";
+          const nome_ist = ist ? `${ist.nome ?? ""} ${ist.cognome ?? ""}`.trim() : t('warnings.instructor_default_name');
           const dettaglio = check.fasce_label
-            ? `Fascia dichiarata: ${c.giorno} ${check.fasce_label}.`
-            : `Nessuna disponibilità il ${c.giorno}.`;
-          w.hard.push(`Istruttore non disponibile: ${nome_ist} non ha disponibilità il ${c.giorno} ${c.ora_inizio?.slice(0,5)}–${c.ora_fine?.slice(0,5)}. ${dettaglio}`);
+            ? t('warnings.instructor_declared_slot', { giorno: c.giorno, fasce: check.fasce_label })
+            : t('warnings.instructor_no_availability', { giorno: c.giorno });
+          w.hard.push(t('warnings.instructor_not_available', { nome: nome_ist, giorno: c.giorno, start: c.ora_inizio?.slice(0,5), end: c.ora_fine?.slice(0,5), dettaglio }));
         }
       }
 
@@ -1076,7 +1077,7 @@ function PlanningPageInner() {
       istr_ids_w.forEach((iid) => {
         if (!iid) return;
         const ist = istr_map[iid];
-        const nome_ist = ist ? `${ist.nome ?? ""} ${ist.cognome ?? ""}`.trim() : "Istruttore";
+        const nome_ist = ist ? `${ist.nome ?? ""} ${ist.cognome ?? ""}`.trim() : t('warnings.instructor_default_name');
         posizionati.forEach((o: any) => {
           if (o.id === c.id) return;
           if (o.giorno !== c.giorno) return;
@@ -1085,7 +1086,7 @@ function PlanningPageInner() {
           const os = time_to_min(o.ora_inizio), oe = time_to_min(o.ora_fine);
           if (cs < oe && os < ce) {
             w.hard.push(
-              `Conflitto istruttore: ${nome_ist} è già assegnato/a a "${o.nome}" lo stesso ${c.giorno} ${o.ora_inizio?.slice(0,5)}–${o.ora_fine?.slice(0,5)}.`
+              t('warnings.instructor_conflict', { nome: nome_ist, corso: o.nome, giorno: c.giorno, start: o.ora_inizio?.slice(0,5), end: o.ora_fine?.slice(0,5) })
             );
           }
         });
@@ -1093,13 +1094,13 @@ function PlanningPageInner() {
 
       if (min_iscritti != null) {
         const n_isc = iscritti_per_corso[c.corso_id_originale ?? c.id] ?? iscritti_per_corso[c.id] ?? 0;
-        if (n_isc < min_iscritti) w.soft.push(`Sotto soglia attivazione: il corso ha ${n_isc} iscritti, la soglia minima è ${min_iscritti}.`);
+        if (n_isc < min_iscritti) w.soft.push(t('warnings.below_activation_threshold', { n: n_isc, soglia: min_iscritti }));
       }
       // SOFT: sovraccarico istruttore (atleti / istruttori)
       if (max_per_istr != null) {
         const n_isc = iscritti_per_corso[c.corso_id_originale ?? c.id] ?? iscritti_per_corso[c.id] ?? 0;
         const n_istr = Math.max(1, (c.istruttori_ids ?? []).length);
-        if (n_isc / n_istr > max_per_istr) w.soft.push(`Sovraccarico istruttore: ${n_isc} atlete per ${n_istr} istruttore/i, il limite configurato è ${max_per_istr} per istruttore.`);
+        if (n_isc / n_istr > max_per_istr) w.soft.push(t('warnings.instructor_overload', { n: n_isc, n_istr, limite: max_per_istr }));
       }
 
       if (w.hard.length || w.soft.length) out[c.id] = w;
@@ -1116,13 +1117,13 @@ function PlanningPageInner() {
         const tot_atleti = overlapping.reduce((a: number, o: any) =>
           a + (iscritti_per_corso[o.corso_id_originale ?? o.id] ?? iscritti_per_corso[o.id] ?? 0), 0);
         if (tot_atleti > cap_max) {
-          (out[c.id] ??= { hard: [], soft: [] }).soft.push(`Capienza pista superata: ${tot_atleti} atlete contemporaneamente in pista, il massimo configurato è ${cap_max}.`);
+          (out[c.id] ??= { hard: [], soft: [] }).soft.push(t('warnings.rink_capacity_exceeded', { n: tot_atleti, cap: cap_max }));
         }
       });
     }
 
     return out;
-  }, [posizionati, slots, iscritti_per_corso, cap_max, max_per_istr, min_iscritti, is_off_ice, istr_map]);
+  }, [posizionati, slots, iscritti_per_corso, cap_max, max_per_istr, min_iscritti, is_off_ice, istr_map, t]);
 
   const has_warning = useCallback((id: string) => {
     const w = warnings_by_id[id];
@@ -1194,7 +1195,7 @@ function PlanningPageInner() {
   const ensure_settimana_id = useCallback(async (): Promise<string | null> => {
     if (settimana_id) return settimana_id;
     if (!stagione_id) {
-      toast.error("Nessuna stagione attiva trovata.");
+      toast.error(t('toast.no_active_season'));
       return null;
     }
     // SELECT prima per evitare duplicati (race / vincoli mancanti)
@@ -1237,7 +1238,7 @@ function PlanningPageInner() {
   // ── Genera settimana ──
   const generaSettimana = async () => {
     if (!stagione_id) {
-      toast.error("Nessuna stagione attiva trovata.");
+      toast.error(t('toast.no_active_season'));
       return;
     }
 
@@ -1381,7 +1382,7 @@ function PlanningPageInner() {
       }
 
       refetchSettimana();
-      toast.success("Settimana generata!");
+      toast.success(t('toast.week_generated'));
     } catch (e: any) {
       toast.error(e.message);
     } finally {
@@ -1396,7 +1397,7 @@ function PlanningPageInner() {
       const { error } = await supabase.from("planning_settimane").update({ stato: "pubblicata" }).eq("id", settimana.id);
       if (error) throw error;
       refetchSettimana();
-      toast.success("Settimana pubblicata!");
+      toast.success(t('toast.week_published'));
     } catch (e: any) {
       toast.error(e.message);
     }
@@ -1430,7 +1431,7 @@ function PlanningPageInner() {
         await supabase.from("corsi_istruttori").insert({ corso_id, istruttore_id });
         await queryClient.invalidateQueries({ queryKey: ["corsi"] });
       }
-      toast.success(`${corso.nome} posizionato`);
+      toast.success(t('toast.course_placed', { name: corso.nome }));
     } catch (e: any) {
       toast.error(e.message);
     } finally {
@@ -1456,7 +1457,7 @@ function PlanningPageInner() {
         });
         if (error) throw error;
         refetchSettimana();
-        toast.success(`${corso.nome} posizionato`);
+        toast.success(t('toast.course_placed', { name: corso.nome }));
         set_pick_corso(null);
       } catch (e: any) {
         toast.error(e.message);
@@ -1481,14 +1482,14 @@ function PlanningPageInner() {
     });
     if (conflicts.length > 0) {
       const names = conflicts.map((c: any) => c.nome).join(", ");
-      if (!window.confirm(`Conflitto con: ${names}. Continuare comunque?`)) return;
+      if (!window.confirm(t('confirm.conflict_with_continue', { names }))) return;
     }
     set_saving(true);
     try {
       const { error } = await supabase.from("corsi").update({ giorno, ora_inizio, ora_fine }).eq("id", corso.id);
       if (error) throw error;
       await queryClient.invalidateQueries({ queryKey: ["corsi"] });
-      toast.success(`${corso.nome} posizionato`);
+      toast.success(t('toast.course_placed', { name: corso.nome }));
       set_pick_corso(null);
     } catch (e: any) {
       toast.error(e.message);
@@ -1507,12 +1508,12 @@ function PlanningPageInner() {
           const { error } = await supabase.from(table).delete().eq("id", corso.id);
           if (error) throw error;
           refetchSettimana();
-          toast.info(`${corso.nome} rimossa dalla settimana`);
+          toast.info(t('toast.course_removed_from_week', { name: corso.nome }));
         } else {
           const { error } = await supabase.from("planning_corsi_settimana").update({ annullato: true }).eq("id", corso.id);
           if (error) throw error;
           refetchSettimana();
-          toast.info(`${corso.nome} annullato`);
+          toast.info(t('toast.course_cancelled', { name: corso.nome }));
         }
       } else {
         const { error } = await supabase.from("corsi").update({
@@ -1520,7 +1521,7 @@ function PlanningPageInner() {
         }).eq("id", corso.id);
         if (error) throw error;
         await queryClient.invalidateQueries({ queryKey: ["corsi"] });
-        toast.info(`${corso.nome} rimosso dal planning`);
+        toast.info(t('toast.course_removed_from_planning', { name: corso.nome }));
       }
       set_selected_corso_id(null);
     } catch (e: any) {
@@ -1657,27 +1658,27 @@ function PlanningPageInner() {
           {/* Toolbar */}
           <div className="flex items-center gap-3 px-4 py-2 border-b border-border bg-card">
             <Button variant="ghost" size="sm" onClick={() => { set_focus_day(null); set_selected_corso_id(null); set_pick_corso(null); set_slot_manager_open(false); }}>
-              <ArrowLeft className="h-4 w-4 mr-1" /> Settimana
+              <ArrowLeft className="h-4 w-4 mr-1" /> {t('toolbar.back_to_week')}
             </Button>
             <h2 className="text-lg font-bold text-foreground flex-1">
               {focus_day} {focus_date && <span className="text-sm font-normal text-muted-foreground ml-1">{focus_date}</span>}
             </h2>
             {settimana && (
               <Badge variant={settimana.stato === "pubblicata" ? "default" : "secondary"} className={`text-xs ${settimana.stato === "pubblicata" ? "bg-green-600" : ""}`}>
-                {settimana.stato === "pubblicata" ? "PUBBLICATA" : "BOZZA"}
+                {settimana.stato === "pubblicata" ? t('toolbar.published') : t('toolbar.draft')}
               </Badge>
             )}
-            {pick_corso && <Badge variant="outline" className="border-primary text-primary text-xs">Selezionato: {pick_corso.nome}</Badge>}
-            <span className="text-sm text-muted-foreground">{(day_ice_min / 60).toFixed(1)}h ghiaccio</span>
+            {pick_corso && <Badge variant="outline" className="border-primary text-primary text-xs">{t('toolbar.selected', { name: pick_corso.nome })}</Badge>}
+            <span className="text-sm text-muted-foreground">{t('toolbar.ice_hours', { hours: (day_ice_min / 60).toFixed(1) })}</span>
             <div className="flex items-center gap-1 border border-border rounded-md px-1 py-0.5 bg-background">
-              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => change_zoom(-1)} title="Zoom -">−</Button>
+              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => change_zoom(-1)} title={t('toolbar.zoom_out')}>−</Button>
               <span className="text-xs text-muted-foreground tabular-nums w-10 text-center">{Math.round((ppm_focus / PPM_FOCUS) * 100)}%</span>
-              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => change_zoom(1)} title="Zoom +">+</Button>
-              <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => set_fit_focus(true)} title="Adatta alla finestra">Adatta</Button>
+              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => change_zoom(1)} title={t('toolbar.zoom_in')}>+</Button>
+              <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => set_fit_focus(true)} title={t('toolbar.fit_to_window')}>{t('toolbar.fit')}</Button>
             </div>
             {build_mode && (
               <Button size="sm" variant="outline" onClick={() => set_slot_manager_open(!slot_manager_open)}>
-                <LayoutGrid className="h-4 w-4 mr-1" /> Slot ghiaccio
+                <LayoutGrid className="h-4 w-4 mr-1" /> {t('toolbar.ice_slots')}
               </Button>
             )}
           </div>

@@ -394,34 +394,34 @@ const RichiesteIscrizionePage: React.FC = () => {
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>
-                {modal.azione === "approvata" ? "Approva richieste" : "Rifiuta richieste"}
+                {modal.azione === "approvata" ? t("richieste_iscrizione.modal.approva_title") : t("richieste_iscrizione.modal.rifiuta_title")}
                 {modal.richieste.length > 1 ? ` (${modal.richieste.length})` : ""}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">
                 {modal.azione === "approvata"
-                  ? `${modal.richieste.length > 1 ? "Gli atleti verranno iscritti" : "L'atleta verrà iscritto"} al corso e riceveranno una comunicazione di conferma.`
-                  : `${modal.richieste.length > 1 ? "Gli atleti riceveranno" : "L'atleta riceverà"} una comunicazione di rifiuto.`}
+                  ? t(modal.richieste.length > 1 ? "richieste_iscrizione.modal.approva_desc_plural" : "richieste_iscrizione.modal.approva_desc_singular")
+                  : t(modal.richieste.length > 1 ? "richieste_iscrizione.modal.rifiuta_desc_plural" : "richieste_iscrizione.modal.rifiuta_desc_singular")}
               </p>
               <div>
-                <Label className="text-xs">Note (opzionale)</Label>
+                <Label className="text-xs">{t("richieste_iscrizione.modal.note_label")}</Label>
                 <Input
                   value={note_risposta}
                   onChange={(e) => set_note_risposta(e.target.value)}
-                  placeholder={modal.azione === "rifiutata" ? "Motivo del rifiuto..." : "Note aggiuntive..."}
+                  placeholder={modal.azione === "rifiutata" ? t("richieste_iscrizione.modal.note_placeholder_rifiuto") : t("richieste_iscrizione.modal.note_placeholder_generico")}
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => set_modal(null)} disabled={gestisci.isPending}>Annulla</Button>
+              <Button variant="outline" onClick={() => set_modal(null)} disabled={gestisci.isPending}>{t("richieste_iscrizione.modal.annulla")}</Button>
               <Button
                 onClick={conferma}
                 disabled={gestisci.isPending}
                 className={modal.azione === "approvata" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
                 variant={modal.azione === "rifiutata" ? "destructive" : "default"}
               >
-                {gestisci.isPending ? "..." : modal.azione === "approvata" ? "Approva" : "Rifiuta"}
+                {gestisci.isPending ? t("richieste_iscrizione.modal.elaborazione") : modal.azione === "approvata" ? t("richieste_iscrizione.modal.approva") : t("richieste_iscrizione.modal.rifiuta")}
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -557,15 +557,16 @@ type EventoStraordinario = {
 };
 
 const TIPI_EVENTO = ["gala", "saggio", "spettacolo", "festa", "altro"] as const;
-const TIPI_EVENTO_LABEL: Record<string, string> = {
-  gala: "Galà",
-  saggio: "Saggio",
-  spettacolo: "Spettacolo",
-  festa: "Festa",
-  altro: "Altro",
-};
 
 const GalaSpettacoliSection: React.FC = () => {
+  const { t } = useTranslation("events");
+  const TIPI_EVENTO_LABEL: Record<string, string> = {
+    gala: t("campi_eventi.gala.type_gala"),
+    saggio: t("campi_eventi.gala.type_saggio"),
+    spettacolo: t("campi_eventi.gala.type_spettacolo"),
+    festa: t("campi_eventi.gala.type_festa"),
+    altro: t("campi_eventi.gala.type_altro"),
+  };
   const club_id = get_current_club_id();
   const qc = useQueryClient();
   const { data: stagioni = [] } = use_stagioni();
@@ -642,7 +643,7 @@ const GalaSpettacoliSection: React.FC = () => {
 
   const create = useMutation({
     mutationFn: async () => {
-      if (!form.titolo.trim() || !form.data) throw new Error("Titolo e data sono obbligatori");
+      if (!form.titolo.trim() || !form.data) throw new Error(t("campi_eventi.gala.missing_fields_error"));
       const tipo_finale = form.tipo_evento === "altro" && form.tipo_evento_altro.trim()
         ? form.tipo_evento_altro.trim()
         : form.tipo_evento;
@@ -676,7 +677,7 @@ const GalaSpettacoliSection: React.FC = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["eventi_straordinari_gala"] });
       qc.invalidateQueries({ queryKey: ["comunicazioni"] });
-      toast.success(com_state.invia ? "Evento creato e comunicazione inviata" : "Evento creato");
+      toast.success(com_state.invia ? t("campi_eventi.gala.created_toast_with_comm") : t("campi_eventi.gala.created_toast"));
       setOpen(false);
       reset_form();
     },
@@ -690,7 +691,7 @@ const GalaSpettacoliSection: React.FC = () => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["eventi_straordinari_gala"] });
-      toast.success("Evento eliminato");
+      toast.success(t("campi_eventi.gala.deleted_toast"));
     },
   });
 
@@ -717,7 +718,7 @@ const GalaSpettacoliSection: React.FC = () => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["comunicazioni"] });
-      toast.success("Comunicazione inviata alle famiglie");
+      toast.success(t("campi_eventi.gala.post_comm_sent_toast"));
     },
     onError: (err: any) => toast.error(err.message),
   });
@@ -726,14 +727,14 @@ const GalaSpettacoliSection: React.FC = () => {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle>Galà & Spettacoli</CardTitle>
-          <CardDescription>Crea galà, saggi, spettacoli e feste; opzionalmente invia subito una comunicazione collegata alle famiglie.</CardDescription>
+          <CardTitle>{t("campi_eventi.gala.title")}</CardTitle>
+          <CardDescription>{t("campi_eventi.gala.description")}</CardDescription>
         </div>
-        <Button onClick={() => setOpen(true)}><Plus className="w-4 h-4 mr-2" /> Nuovo Evento</Button>
+        <Button onClick={() => setOpen(true)}><Plus className="w-4 h-4 mr-2" /> {t("campi_eventi.gala.new_button")}</Button>
       </CardHeader>
       <CardContent>
         {eventi.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-8 text-center">Nessun evento creato.</p>
+          <p className="text-sm text-muted-foreground py-8 text-center">{t("campi_eventi.gala.empty")}</p>
         ) : (
           <div className="space-y-3">
             {eventi.map((e) => (
@@ -753,9 +754,9 @@ const GalaSpettacoliSection: React.FC = () => {
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" onClick={() => invia_comunicazione_post.mutate(e)} disabled={invia_comunicazione_post.isPending}>
-                      <Send className="w-4 h-4 mr-1" /> Comunica
+                      <Send className="w-4 h-4 mr-1" /> {t("campi_eventi.gala.communicate_button")}
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => { if (confirm("Eliminare l'evento?")) remove.mutate(e.id); }}>
+                    <Button size="sm" variant="ghost" onClick={() => { if (confirm(t("campi_eventi.gala.delete_confirm"))) remove.mutate(e.id); }}>
                       <Trash2 className="w-4 h-4 text-destructive" />
                     </Button>
                   </div>
@@ -768,12 +769,12 @@ const GalaSpettacoliSection: React.FC = () => {
 
       <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset_form(); }}>
         <DialogContent className="max-h-[85vh] overflow-y-auto max-w-xl">
-          <DialogHeader><DialogTitle>Nuovo Galà / Spettacolo</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("campi_eventi.gala.dialog_title")}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label>Titolo *</Label><Input value={form.titolo} onChange={(e) => setForm({ ...form, titolo: e.target.value })} placeholder="Es: Galà di Natale 2026" /></div>
+            <div><Label>{t("campi_eventi.gala.title_label")}</Label><Input value={form.titolo} onChange={(e) => setForm({ ...form, titolo: e.target.value })} placeholder={t("campi_eventi.gala.title_placeholder")} /></div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Tipo evento *</Label>
+                <Label>{t("campi_eventi.gala.event_type_label")}</Label>
                 <Select value={form.tipo_evento} onValueChange={(v) => setForm({ ...form, tipo_evento: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -785,27 +786,27 @@ const GalaSpettacoliSection: React.FC = () => {
               </div>
               {form.tipo_evento === "altro" && (
                 <div>
-                  <Label>Specifica tipo *</Label>
-                  <Input value={form.tipo_evento_altro} onChange={(e) => setForm({ ...form, tipo_evento_altro: e.target.value })} placeholder="Es: Open day" />
+                  <Label>{t("campi_eventi.gala.other_type_label")}</Label>
+                  <Input value={form.tipo_evento_altro} onChange={(e) => setForm({ ...form, tipo_evento_altro: e.target.value })} placeholder={t("campi_eventi.gala.other_type_placeholder")} />
                 </div>
               )}
             </div>
             <div className="grid grid-cols-3 gap-3">
-              <div><Label>Data *</Label><Input type="date" value={form.data} onChange={(e) => setForm({ ...form, data: e.target.value })} /></div>
-              <div><Label>Ora inizio</Label><Input type="time" value={form.ora_inizio} onChange={(e) => setForm({ ...form, ora_inizio: e.target.value })} /></div>
-              <div><Label>Ora fine</Label><Input type="time" value={form.ora_fine} onChange={(e) => setForm({ ...form, ora_fine: e.target.value })} /></div>
+              <div><Label>{t("campi_eventi.gala.date_label")}</Label><Input type="date" value={form.data} onChange={(e) => setForm({ ...form, data: e.target.value })} /></div>
+              <div><Label>{t("campi_eventi.gala.start_time_label")}</Label><Input type="time" value={form.ora_inizio} onChange={(e) => setForm({ ...form, ora_inizio: e.target.value })} /></div>
+              <div><Label>{t("campi_eventi.gala.end_time_label")}</Label><Input type="time" value={form.ora_fine} onChange={(e) => setForm({ ...form, ora_fine: e.target.value })} /></div>
             </div>
-            <div><Label>Luogo</Label><Input value={form.luogo} onChange={(e) => setForm({ ...form, luogo: e.target.value })} placeholder="Es: Pista del Resega" /></div>
+            <div><Label>{t("campi_eventi.gala.place_label")}</Label><Input value={form.luogo} onChange={(e) => setForm({ ...form, luogo: e.target.value })} placeholder={t("campi_eventi.gala.place_placeholder")} /></div>
             <div>
-              <Label>Stagione di riferimento</Label>
+              <Label>{t("campi_eventi.gala.season_label")}</Label>
               <Select value={form.stagione_id} onValueChange={(v) => setForm({ ...form, stagione_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Nessuna" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t("campi_eventi.gala.season_placeholder")} /></SelectTrigger>
                 <SelectContent>
                   {stagioni.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
-            <div><Label>Descrizione</Label><Textarea value={form.descrizione} onChange={(e) => setForm({ ...form, descrizione: e.target.value })} placeholder="Programma, dress code, info aggiuntive…" /></div>
+            <div><Label>{t("campi_eventi.gala.description_label")}</Label><Textarea value={form.descrizione} onChange={(e) => setForm({ ...form, descrizione: e.target.value })} placeholder={t("campi_eventi.gala.description_placeholder")} /></div>
 
             <ComunicazioneFormSection
               state={com_state}
@@ -819,12 +820,12 @@ const GalaSpettacoliSection: React.FC = () => {
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>{t("campi_eventi.gala.cancel")}</Button>
             <Button
               onClick={() => create.mutate()}
               disabled={create.isPending || !form.titolo.trim() || !form.data || (form.tipo_evento === "altro" && !form.tipo_evento_altro.trim())}
             >
-              {com_state.invia ? <><Send className="w-4 h-4 mr-1" /> Crea e comunica</> : "Crea"}
+              {com_state.invia ? <><Send className="w-4 h-4 mr-1" /> {t("campi_eventi.gala.create_and_communicate")}</> : t("campi_eventi.gala.create")}
             </Button>
           </DialogFooter>
         </DialogContent>

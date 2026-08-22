@@ -10,8 +10,7 @@ import { AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, ExternalLink, I
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-
-const STEPS = ["Nuova Stagione", "Disponibilità Ghiaccio", "Istruttori", "Catalogo Corsi", "Attiva Stagione"];
+import { useTranslation } from "react-i18next";
 
 /** Conferma esplicita di presa visione: evita di attivare una stagione "saltando" i passaggi. */
 const AckStep: React.FC<{
@@ -33,6 +32,14 @@ const AckStep: React.FC<{
 );
 
 export default function NuovaStagionePage() {
+  const { t } = useTranslation("settings");
+  const STEPS = [
+    t("nuova_stagione.steps.nuova_stagione"),
+    t("nuova_stagione.steps.disponibilita_ghiaccio"),
+    t("nuova_stagione.steps.istruttori"),
+    t("nuova_stagione.steps.catalogo_corsi"),
+    t("nuova_stagione.steps.attiva_stagione"),
+  ];
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const club_id = get_current_club_id();
@@ -109,17 +116,17 @@ export default function NuovaStagionePage() {
         queryClient.invalidateQueries({ queryKey: ["disponibilita_ghiaccio", club_id] }),
       ]);
 
-      toast.success(`Nuova stagione "${nome.trim()}" creata! Configura la disponibilità ghiaccio per iniziare.`);
+      toast.success(t("nuova_stagione.toast.success", { nome: nome.trim() }));
       navigate("/setup-club", { replace: true });
     } catch (e: any) {
-      toast.error("Errore: " + (e?.message || "operazione fallita"));
+      toast.error(t("nuova_stagione.toast.error", { message: e?.message || t("nuova_stagione.toast.error_generic") }));
     } finally {
       set_submitting(false);
     }
   };
 
   const format_date = (d?: string | null) => {
-    if (!d) return "—";
+    if (!d) return t("nuova_stagione.date_placeholder");
     try {
       return format(new Date(d), "d MMMM yyyy", { locale: it });
     } catch {
@@ -131,9 +138,9 @@ export default function NuovaStagionePage() {
     <div className="max-w-2xl mx-auto py-8 px-4 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Nuova Stagione</h1>
+        <h1 className="text-2xl font-bold text-foreground">{t("nuova_stagione.page_title")}</h1>
         <p className="text-muted-foreground mt-1">
-          Passo {step + 1} di {STEPS.length} — {STEPS[step]}
+          {t("nuova_stagione.step_indicator", { current: step + 1, total: STEPS.length, label: STEPS[step] })}
         </p>
         <div className="flex gap-1.5 mt-3">
           {STEPS.map((_, i) => (
@@ -153,21 +160,19 @@ export default function NuovaStagionePage() {
             <>
               {stagione_attiva ? (
                 <div className="rounded-md border p-4 bg-muted/50 space-y-1">
-                  <p className="text-sm font-medium text-foreground">Stagione corrente (verrà archiviata)</p>
+                  <p className="text-sm font-medium text-foreground">{t("nuova_stagione.step1.current_season_title")}</p>
                   <p className="text-sm text-muted-foreground">
-                    <strong>{stagione_attiva.nome}</strong> — dal{" "}
-                    {format_date(stagione_attiva.data_inizio)} al{" "}
-                    {format_date(stagione_attiva.data_fine)}
+                    {t("nuova_stagione.step1.current_season_desc", { nome: stagione_attiva.nome, inizio: format_date(stagione_attiva.data_inizio), fine: format_date(stagione_attiva.data_fine) })}
                   </p>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">Nessuna stagione attiva trovata.</p>
+                <p className="text-sm text-muted-foreground">{t("nuova_stagione.step1.no_active_season")}</p>
               )}
               <div className="space-y-3 pt-2">
                 <div>
-                  <label className="text-sm font-medium text-foreground">Nome nuova stagione</label>
+                  <label className="text-sm font-medium text-foreground">{t("nuova_stagione.step1.name_label")}</label>
                   <Input
-                    placeholder="es. Stagione 2026-2027"
+                    placeholder={t("nuova_stagione.step1.name_placeholder")}
                     value={nome}
                     onChange={(e) => set_nome(e.target.value)}
                     className="mt-1"
@@ -175,11 +180,11 @@ export default function NuovaStagionePage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-foreground">Data inizio</label>
+                    <label className="text-sm font-medium text-foreground">{t("nuova_stagione.step1.start_date_label")}</label>
                     <Input type="date" value={data_inizio} onChange={(e) => set_data_inizio(e.target.value)} className="mt-1" />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-foreground">Data fine</label>
+                    <label className="text-sm font-medium text-foreground">{t("nuova_stagione.step1.end_date_label")}</label>
                     <Input type="date" value={data_fine} onChange={(e) => set_data_fine(e.target.value)} className="mt-1" />
                   </div>
                 </div>
@@ -193,14 +198,13 @@ export default function NuovaStagionePage() {
               <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-4 flex items-start gap-2">
                 <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
                 <div className="text-sm text-amber-800 space-y-1">
-                  <p className="font-semibold">Azzeramento fasce ghiaccio</p>
+                  <p className="font-semibold">{t("nuova_stagione.step2.warning_title")}</p>
                   <p>
-                    Le fasce orario ghiaccio verranno azzerate. Potrai configurarle da zero in{" "}
-                    <strong>Configurazione Club</strong> dopo aver creato la stagione.
+                    {t("nuova_stagione.step2.warning_desc", { club_config: t("nuova_stagione.step2.club_config_label") })}
                   </p>
                 </div>
               </div>
-              <AckStep step={1} ack={ack} set_ack={set_ack} label="Ho capito: le fasce ghiaccio verranno azzerate" />
+              <AckStep step={1} ack={ack} set_ack={set_ack} label={t("nuova_stagione.step2.ack_label")} />
             </div>
           )}
 
@@ -210,14 +214,13 @@ export default function NuovaStagionePage() {
               <div className="rounded-md border p-4 bg-muted/50 flex items-start gap-2">
                 <Info className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                 <p className="text-sm text-foreground">
-                  Gli istruttori esistenti restano disponibili. Verifica e aggiorna disponibilità e costi in{" "}
-                  <strong>Istruttori</strong>.
+                  {t("nuova_stagione.step3.info", { istruttori: t("nuova_stagione.step3.istruttori_label") })}
                 </p>
               </div>
               <Button variant="outline" size="sm" onClick={() => navigate("/istruttori")}>
-                <ExternalLink className="mr-1 h-3.5 w-3.5" /> Vai a Istruttori
+                <ExternalLink className="mr-1 h-3.5 w-3.5" /> {t("nuova_stagione.step3.go_to_istruttori")}
               </Button>
-              <AckStep step={2} ack={ack} set_ack={set_ack} label="Ho verificato gli istruttori per la nuova stagione" />
+              <AckStep step={2} ack={ack} set_ack={set_ack} label={t("nuova_stagione.step3.ack_label")} />
             </div>
           )}
 
@@ -227,13 +230,13 @@ export default function NuovaStagionePage() {
               <div className="rounded-md border p-4 bg-muted/50 flex items-start gap-2">
                 <Info className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                 <p className="text-sm text-foreground">
-                  Dovrai creare i nuovi corsi per la nuova stagione. I corsi della stagione precedente restano archiviati.
+                  {t("nuova_stagione.step4.info")}
                 </p>
               </div>
               <Button variant="outline" size="sm" onClick={() => navigate("/corsi")}>
-                <ExternalLink className="mr-1 h-3.5 w-3.5" /> Vai a Corsi
+                <ExternalLink className="mr-1 h-3.5 w-3.5" /> {t("nuova_stagione.step4.go_to_corsi")}
               </Button>
-              <AckStep step={3} ack={ack} set_ack={set_ack} label="Ho capito che dovrò creare i corsi della nuova stagione" />
+              <AckStep step={3} ack={ack} set_ack={set_ack} label={t("nuova_stagione.step4.ack_label")} />
             </div>
           )}
 
@@ -245,13 +248,13 @@ export default function NuovaStagionePage() {
                 <div className="flex items-start gap-2">
                   <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
                   <div className="text-sm text-green-800 space-y-1">
-                    <p className="font-semibold">Riepilogo nuova stagione</p>
+                    <p className="font-semibold">{t("nuova_stagione.step5.summary_title")}</p>
                     <ul className="list-disc list-inside space-y-0.5">
-                      <li><strong>Nome:</strong> {nome}</li>
-                      <li><strong>Inizio:</strong> {format_date(data_inizio)}</li>
-                      <li><strong>Fine:</strong> {format_date(data_fine)}</li>
+                      <li><strong>{t("nuova_stagione.step5.summary_name")}</strong> {nome}</li>
+                      <li><strong>{t("nuova_stagione.step5.summary_start")}</strong> {format_date(data_inizio)}</li>
+                      <li><strong>{t("nuova_stagione.step5.summary_end")}</strong> {format_date(data_fine)}</li>
                     </ul>
-                    <p className="pt-1">Le fasce ghiaccio verranno azzerate. Istruttori e storico corsi restano disponibili.</p>
+                    <p className="pt-1">{t("nuova_stagione.step5.summary_note")}</p>
                   </div>
                 </div>
               </div>
@@ -262,7 +265,7 @@ export default function NuovaStagionePage() {
                   onCheckedChange={(v) => set_conferma(!!v)}
                 />
                 <label htmlFor="conferma" className="text-sm text-foreground cursor-pointer">
-                  Confermo di voler creare la nuova stagione
+                  {t("nuova_stagione.step5.confirm_label")}
                 </label>
               </div>
             </div>
@@ -273,16 +276,16 @@ export default function NuovaStagionePage() {
       {/* Navigation */}
       <div className="flex justify-between">
         <Button variant="outline" disabled={step === 0} onClick={() => set_step((s) => s - 1)}>
-          <ChevronLeft className="mr-1 h-4 w-4" /> Indietro
+          <ChevronLeft className="mr-1 h-4 w-4" /> {t("nuova_stagione.nav.back")}
         </Button>
 
         {step < 4 ? (
           <Button disabled={!can_advance()} onClick={() => set_step((s) => s + 1)}>
-            Avanti <ChevronRight className="ml-1 h-4 w-4" />
+            {t("nuova_stagione.nav.next")} <ChevronRight className="ml-1 h-4 w-4" />
           </Button>
         ) : (
           <Button disabled={!conferma || submitting} onClick={handle_complete}>
-            {submitting ? "Creazione..." : "Crea e Attiva Nuova Stagione"}
+            {submitting ? t("nuova_stagione.nav.creating") : t("nuova_stagione.nav.create_activate")}
           </Button>
         )}
       </div>
