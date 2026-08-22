@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useSearchParams, useParams, useNavigate } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
-import { useTranslation } from "react-i18next";
+import { useTranslation, Trans } from "react-i18next";
 import { use_gare, use_atleti, get_atleta_name_from_list, use_corsi } from "@/hooks/use-supabase-data";
 import ImportGaraPdf from "@/components/ImportGaraPdf";
 import { days_until } from "@/lib/mock-data";
