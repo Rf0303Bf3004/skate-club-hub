@@ -2648,7 +2648,6 @@ export type Database = {
           ora_fine: string
           ora_inizio: string
           ordine: number
-          pista: string | null
           specialita_id: string | null
           specialita_testo_libero: string | null
           updated_at: string
@@ -2667,7 +2666,6 @@ export type Database = {
           ora_fine: string
           ora_inizio: string
           ordine?: number
-          pista?: string | null
           specialita_id?: string | null
           specialita_testo_libero?: string | null
           updated_at?: string
@@ -2686,7 +2684,6 @@ export type Database = {
           ora_fine?: string
           ora_inizio?: string
           ordine?: number
-          pista?: string | null
           specialita_id?: string | null
           specialita_testo_libero?: string | null
           updated_at?: string
