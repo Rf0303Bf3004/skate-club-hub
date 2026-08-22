@@ -1,5 +1,6 @@
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -10,11 +11,13 @@ import { toast } from "@/hooks/use-toast";
 // Tab "I miei reminder" — mostra a istruttori/staff i reminder turno del giorno successivo
 // con bottoni Sarò presente / Sarò assente. I trigger DB gestiscono le conseguenze.
 export const MieiReminderStaffTab: React.FC = () => {
+  const { t } = useTranslation("communications");
   const { session } = useAuth();
   const user_id = session?.user_id;
   const club_id = get_current_club_id();
   const qc = useQueryClient();
   const [busy_id, set_busy_id] = React.useState<string | null>(null);
+
 
   const { data: reminders = [], isLoading } = useQuery({
     queryKey: ["miei_reminder_staff", user_id, club_id],
