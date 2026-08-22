@@ -627,7 +627,8 @@ const SessioneBox: React.FC<{
         {sessione.gruppo_livello ? (
           (() => {
             const colore =
-              (sessione.gruppo_scope === "esterni" ? VERDE_ESTERNI : null) ??
+              (sessione.gruppo_scope === "esterni" ? VERDE_ESTERNI : null) ||
+
               (sessione.gruppo_ragione_sociale_id
                 ? ragioni_sociali.find((r) => r.id === sessione.gruppo_ragione_sociale_id)?.colore_primario ?? null
                 : null) ??
