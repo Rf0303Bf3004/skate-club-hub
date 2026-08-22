@@ -4,6 +4,9 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import i18n from "@/i18n";
+
+const tk = (key: string, opts?: any) => i18n.t(`regole.${key}`, { ns: "communications", ...(opts ?? {}) }) as string;
 
 type Regola = {
   id: string;
@@ -13,24 +16,24 @@ type Regola = {
   destinatario_notifica: string;
 };
 
-const REGOLE_META: Record<string, { titolo: string; descrizione: string; param_key?: string; param_label?: string; param_default?: number; param_suffix?: string }> = {
+const REGOLE_META: Record<string, { titolo_key: string; descrizione_key: string; param_key?: string; param_label_key?: string; param_default?: number; param_suffix?: string }> = {
   assenze_ripetute: {
-    titolo: "⚠️ Assenze ripetute atleta",
-    descrizione: "Quando un atleta accumula N assenze consecutive, viene marcato 'a rischio' e generata una notifica allo staff.",
+    titolo_key: "assenze_ripetute_titolo",
+    descrizione_key: "assenze_ripetute_descrizione",
     param_key: "soglia_consecutive",
-    param_label: "Soglia assenze consecutive",
+    param_label_key: "assenze_ripetute_param",
     param_default: 3,
     param_suffix: "assenze",
   },
   rifiuto_staff: {
-    titolo: "🔄 Rifiuto turno staff",
-    descrizione: "Quando un membro dello staff rifiuta un turno, genera notifica urgente con i 3 sostituti suggeriti (ordinati per chi ha lavorato meno).",
+    titolo_key: "rifiuto_staff_titolo",
+    descrizione_key: "rifiuto_staff_descrizione",
   },
   saturazione_bassa: {
-    titolo: "📉 Saturazione corso bassa",
-    descrizione: "Controllo settimanale (lunedì): se un corso ha saturazione (presenti / iscritti attivi) sotto soglia, notifica lo staff.",
+    titolo_key: "saturazione_bassa_titolo",
+    descrizione_key: "saturazione_bassa_descrizione",
     param_key: "soglia_percentuale",
-    param_label: "Soglia saturazione",
+    param_label_key: "saturazione_bassa_param",
     param_default: 50,
     param_suffix: "%",
   },
@@ -53,7 +56,7 @@ export function RegoleComunicazioniSection({ club_id }: { club_id: string | null
         .select("*")
         .eq("club_id", club_id);
       if (error) {
-        toast.error("Errore caricamento regole");
+        toast.error(tk("load_error"));
       } else {
         const lista = ((data as unknown) as Regola[]) ?? [];
         // crea regole mancanti localmente con default
@@ -95,14 +98,14 @@ export function RegoleComunicazioniSection({ club_id }: { club_id: string | null
       .upsert(payload as never, { onConflict: "club_id,codice" });
     set_saving_id(null);
     if (error) {
-      toast.error("Errore salvataggio regola");
+      toast.error(tk("save_error"));
     } else {
-      toast.success("Regola aggiornata");
+      toast.success(tk("saved"));
     }
   };
 
   if (!club_id) return null;
-  if (loading) return <p className="text-xs text-muted-foreground">Caricamento regole…</p>;
+  if (loading) return <p className="text-xs text-muted-foreground">{tk("loading")}</p>;
 
   return (
     <div className="space-y-4">
@@ -114,8 +117,8 @@ export function RegoleComunicazioniSection({ club_id }: { club_id: string | null
           <div key={r.id} className="rounded-md border p-3 space-y-2 bg-muted/30">
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1">
-                <h4 className="text-sm font-semibold">{meta.titolo}</h4>
-                <p className="text-xs text-muted-foreground mt-1">{meta.descrizione}</p>
+                <h4 className="text-sm font-semibold">{tk(meta.titolo_key)}</h4>
+                <p className="text-xs text-muted-foreground mt-1">{tk(meta.descrizione_key)}</p>
               </div>
               <Switch
                 checked={r.attiva}
@@ -126,7 +129,7 @@ export function RegoleComunicazioniSection({ club_id }: { club_id: string | null
 
             {meta.param_key && (
               <div className="flex items-center gap-2 pt-1">
-                <label className="text-xs text-muted-foreground">{meta.param_label}:</label>
+                <label className="text-xs text-muted-foreground">{tk(meta.param_label_key as string)}:</label>
                 <Input
                   type="number"
                   min={1}
@@ -144,7 +147,7 @@ export function RegoleComunicazioniSection({ club_id }: { club_id: string | null
                     );
                   }}
                 />
-                <span className="text-xs text-muted-foreground">{meta.param_suffix}</span>
+                <span className="text-xs text-muted-foreground">{meta.param_suffix === "%" ? "%" : tk("assenze_ripetute_suffix")}</span>
                 <Button
                   size="sm"
                   variant="outline"
@@ -158,25 +161,25 @@ export function RegoleComunicazioniSection({ club_id }: { club_id: string | null
                     set_regole_originali((prev) => ({ ...prev, [r.id]: JSON.stringify(r.parametri ?? {}) }));
                   }}
                 >
-                  Salva soglia
+                  {tk("save_threshold")}
                 </Button>
               </div>
             )}
 
             <div className="flex items-center gap-2 pt-1">
-              <label className="text-xs text-muted-foreground">Destinatario notifica:</label>
+              <label className="text-xs text-muted-foreground">{tk("notify_recipient")}:</label>
               <select
                 className="h-8 rounded-md border border-input bg-background px-2 text-xs"
                 value={r.destinatario_notifica}
                 disabled={saving_id === r.id}
                 onChange={(e) => update_regola(r, { destinatario_notifica: e.target.value })}
               >
-                <option value="admin">Admin</option>
-                <option value="dt">Direttore Tecnico</option>
-                <option value="presidente">Presidente</option>
-                <option value="segreteria">Segreteria</option>
-                <option value="staff">Staff (tutti)</option>
-                <option value="entrambi">Entrambi</option>
+                <option value="admin">{tk("role_admin")}</option>
+                <option value="dt">{tk("role_dt")}</option>
+                <option value="presidente">{tk("role_presidente")}</option>
+                <option value="segreteria">{tk("role_segreteria")}</option>
+                <option value="staff">{tk("role_staff")}</option>
+                <option value="entrambi">{tk("role_entrambi")}</option>
               </select>
             </div>
           </div>
