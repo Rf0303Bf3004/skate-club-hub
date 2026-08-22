@@ -1807,7 +1807,7 @@ function PlanningPageInner() {
                               <AlertTriangle className="absolute top-0.5 right-0.5 h-3 w-3 text-white drop-shadow" style={{ filter: "drop-shadow(0 0 1px #DC2626)" }} />
                             )}
                             {has_exc && (
-                              <span title="Modificato per questa settimana" style={{ position: "absolute", bottom: 2, right: 2, background: "#F59E0B", color: "#fff", borderRadius: 3, width: 14, height: 14, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, lineHeight: 1, zIndex: 4 }}>✎</span>
+                              <span title={t('slot_block.modified_for_this_week_title')} style={{ position: "absolute", bottom: 2, right: 2, background: "#F59E0B", color: "#fff", borderRadius: 3, width: 14, height: 14, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, lineHeight: 1, zIndex: 4 }}>✎</span>
                             )}
                             {is_private ? (
                               <div className="flex flex-col gap-0 px-1 py-0.5 overflow-hidden">
@@ -1847,7 +1847,7 @@ function PlanningPageInner() {
                           )}
                           {has_exc && (
                             <div className="mt-1 pt-1 border-t border-border/40">
-                              <p className="text-[10px] font-bold" style={{ color: "#B45309" }}>✎ Eccezione settimanale</p>
+                              <p className="text-[10px] font-bold" style={{ color: "#B45309" }}>{t('slot_block.weekly_exception')}</p>
                               {exc!.map((d, i) => (
                                 <p key={i} className="text-[10px]" style={{ color: "#B45309" }}>{d.label}: {d.da} → {d.a}</p>
                               ))}
@@ -1884,9 +1884,9 @@ function PlanningPageInner() {
                         </div>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p className="line-through">{c.nome} (annullato)</p>
-                        {c.motivo && <p className="text-xs">Motivo: {c.motivo}</p>}
-                        {c.sostituito_da && <p className="text-xs text-primary">Spostato a {c.sostituito_da.data} {c.sostituito_da.ora_inizio?.slice(0,5)}</p>}
+                        <p className="line-through">{c.nome} {t('slot_block.cancelled')}</p>
+                        {c.motivo && <p className="text-xs">{t('slot_block.reason', { reason: c.motivo })}</p>}
+                        {c.sostituito_da && <p className="text-xs text-primary">{t('slot_block.moved_to', { date: c.sostituito_da.data, time: c.sostituito_da.ora_inizio?.slice(0,5) })}</p>}
                       </TooltipContent>
                     </Tooltip>
                   );
@@ -2106,30 +2106,30 @@ function PlanningPageInner() {
       }}>
         {/* Toolbar */}
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <h1 className="text-xl font-bold text-foreground">Planning Ghiaccio</h1>
+          <h1 className="text-xl font-bold text-foreground">{t('toolbar.title')}</h1>
           <div className="flex items-center gap-2">
             {settimana && (
               <Badge variant={settimana.stato === "pubblicata" ? "default" : "secondary"} className={`text-xs ${settimana.stato === "pubblicata" ? "bg-green-600" : ""}`}>
-                {settimana.stato === "pubblicata" ? "PUBBLICATA" : "BOZZA"}
+                {settimana.stato === "pubblicata" ? t('toolbar.published') : t('toolbar.draft')}
               </Badge>
             )}
-            {pick_corso && <Badge variant="outline" className="border-primary text-primary text-xs">Selezionato: {pick_corso.nome}</Badge>}
+            {pick_corso && <Badge variant="outline" className="border-primary text-primary text-xs">{t('toolbar.selected', { name: pick_corso.nome })}</Badge>}
             <Button
               size="sm"
               onClick={() => { set_build_mode(!build_mode); set_pick_corso(null); }}
               className={`gap-1.5 ${build_mode
                 ? "bg-amber-500 hover:bg-amber-600 text-white border-amber-600"
                 : "bg-card hover:bg-muted text-foreground border border-input"}`}
-              title={build_mode ? "Passa a Visualizzazione" : "Passa a Costruzione"}
+              title={build_mode ? t('toolbar.switch_to_view_mode_title') : t('toolbar.switch_to_build_mode_title')}
             >
               {build_mode ? <Hammer className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               <span className="hidden lg:inline">
                 {build_mode
-                  ? "Sei in Costruzione — passa a Visualizzazione"
-                  : "Sei in Visualizzazione — passa a Costruzione"}
+                  ? t('toolbar.in_build_mode')
+                  : t('toolbar.in_view_mode')}
               </span>
               <span className="lg:hidden">
-                Modalità: {build_mode ? "Costruzione" : "Visualizzazione"}
+                {t('toolbar.mode_label', { mode: build_mode ? t('toolbar.mode_build') : t('toolbar.mode_view') })}
               </span>
             </Button>
           </div>
@@ -2144,18 +2144,18 @@ function PlanningPageInner() {
                 {MESI_IT[mese_corrente.getMonth()]} {mese_corrente.getFullYear()}
               </span>
               <Button variant="outline" size="sm" onClick={go_next_month}><ChevronRight className="h-4 w-4" /></Button>
-              <Button variant="ghost" size="sm" onClick={go_today_month} className="text-xs"><Calendar className="h-3.5 w-3.5 mr-1" />Oggi</Button>
+              <Button variant="ghost" size="sm" onClick={go_today_month} className="text-xs"><Calendar className="h-3.5 w-3.5 mr-1" />{t('toolbar.today')}</Button>
             </div>
           ) : (
             <div className="inline-flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={go_prev_week}><ChevronLeft className="h-4 w-4" /></Button>
               <span className="text-sm font-semibold text-foreground min-w-[220px] text-center">{formatWeekLabel(dataLunedi)}</span>
               <Button variant="outline" size="sm" onClick={go_next_week}><ChevronRight className="h-4 w-4" /></Button>
-              <Button variant="ghost" size="sm" onClick={go_today} className="text-xs"><Calendar className="h-3.5 w-3.5 mr-1" />Oggi</Button>
+              <Button variant="ghost" size="sm" onClick={go_today} className="text-xs"><Calendar className="h-3.5 w-3.5 mr-1" />{t('toolbar.today')}</Button>
             </div>
           )}
           <span className="hidden lg:inline text-[11px] text-muted-foreground ml-auto">
-            Tocca o clicca su un corso per le azioni
+            {t('toolbar.tap_hint')}
           </span>
           <div className="inline-flex rounded-lg border border-border overflow-hidden lg:ml-3 ml-auto">
             {(["giorno", "settimana", "mese"] as ViewMode[]).map((m, idx) => (
@@ -2179,13 +2179,13 @@ function PlanningPageInner() {
         {!is_generated && (
           <div className="flex items-center gap-2 rounded-lg border border-yellow-400/60 bg-yellow-50 dark:bg-yellow-900/20 px-4 py-2.5 text-sm text-yellow-800 dark:text-yellow-200">
             <span>📋</span>
-            <span><strong>Template</strong> — questa settimana non è ancora stata generata. {build_mode ? "Clicca 'Genera settimana' nella sidebar per crearla." : "Attiva la modalità Costruzione per generarla."}</span>
+            <span><strong>{t('template_banner.label')}</strong> {t('template_banner.not_generated')} {build_mode ? t('template_banner.build_mode_hint') : t('template_banner.view_mode_hint')}</span>
           </div>
         )}
 
         {/* Instructor legend with hour bars */}
         <div className="space-y-1">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Istruttori</p>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t('instructors.title')}</p>
           <div className="flex flex-wrap gap-2">
             {istruttori.map((ist: any) => {
               const h = istr_hours[ist.id] || { disp: 0, assegnate: 0, libere: 0, pct: 0 };
@@ -2205,9 +2205,9 @@ function PlanningPageInner() {
                     </span>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Disponibile: {h.disp.toFixed(1)}h</p>
-                    <p>Assegnato: {h.assegnate.toFixed(1)}h</p>
-                    <p>Libero: {h.libere.toFixed(1)}h</p>
+                    <p>{t('instructors.available', { hours: h.disp.toFixed(1) })}</p>
+                    <p>{t('instructors.assigned', { hours: h.assegnate.toFixed(1) })}</p>
+                    <p>{t('instructors.free', { hours: h.libere.toFixed(1) })}</p>
                   </TooltipContent>
                 </Tooltip>
               );
@@ -2217,18 +2217,18 @@ function PlanningPageInner() {
 
         {/* Legend badges */}
         <div className="flex flex-wrap gap-2 text-xs items-center">
-          <Tooltip><TooltipTrigger asChild><span className="px-2 py-0.5 rounded font-medium cursor-help" style={{ background: "#EEEDFE", color: "#7F77DD", border: "1px solid #AFA9EC" }}>Ghiaccio</span></TooltipTrigger><TooltipContent>Ghiaccio disponibile</TooltipContent></Tooltip>
-          <Tooltip><TooltipTrigger asChild><span className="px-2 py-0.5 rounded font-medium cursor-help" style={{ backgroundColor: "#f0ede6", backgroundImage: "radial-gradient(#8a8780 1.2px, transparent 1.6px)", backgroundSize: "7px 7px", border: "1px solid #b0ada4" }}>Pulizia</span></TooltipTrigger><TooltipContent>Pulizia ghiaccio (pattern a puntini)</TooltipContent></Tooltip>
-          <Tooltip><TooltipTrigger asChild><span className="px-2 py-0.5 rounded font-medium cursor-help" style={{ background: "#F5F4F0", border: "1px solid #9CA3AF" }}>Off-ice</span></TooltipTrigger><TooltipContent>Sotto-fascia inferiore di ogni giorno (corsi fuori ghiaccio)</TooltipContent></Tooltip>
-          <Tooltip><TooltipTrigger asChild><span className="px-2 py-0.5 rounded font-medium cursor-help" style={{ background: "repeating-linear-gradient(-45deg, #6B7280 0px, #6B7280 3px, transparent 3px, transparent 8px)", border: "1px dashed #6B7280" }}>Privata</span></TooltipTrigger><TooltipContent>Lezione privata (pattern diagonale, colore istruttore)</TooltipContent></Tooltip>
-          <Tooltip><TooltipTrigger asChild><span className="px-2 py-0.5 rounded font-medium cursor-help inline-flex items-center gap-1" style={{ background: "#fff", border: "2px solid #DC2626", color: "#DC2626" }}><AlertTriangle className="h-3 w-3" />Conflitto</span></TooltipTrigger><TooltipContent>Stesso istruttore impegnato in due attività sovrapposte</TooltipContent></Tooltip>
+          <Tooltip><TooltipTrigger asChild><span className="px-2 py-0.5 rounded font-medium cursor-help" style={{ background: "#EEEDFE", color: "#7F77DD", border: "1px solid #AFA9EC" }}>{t('legend.ice')}</span></TooltipTrigger><TooltipContent>{t('legend.ice_tooltip')}</TooltipContent></Tooltip>
+          <Tooltip><TooltipTrigger asChild><span className="px-2 py-0.5 rounded font-medium cursor-help" style={{ backgroundColor: "#f0ede6", backgroundImage: "radial-gradient(#8a8780 1.2px, transparent 1.6px)", backgroundSize: "7px 7px", border: "1px solid #b0ada4" }}>{t('legend.cleaning')}</span></TooltipTrigger><TooltipContent>{t('legend.cleaning_tooltip')}</TooltipContent></Tooltip>
+          <Tooltip><TooltipTrigger asChild><span className="px-2 py-0.5 rounded font-medium cursor-help" style={{ background: "#F5F4F0", border: "1px solid #9CA3AF" }}>{t('legend.off_ice')}</span></TooltipTrigger><TooltipContent>{t('legend.off_ice_tooltip')}</TooltipContent></Tooltip>
+          <Tooltip><TooltipTrigger asChild><span className="px-2 py-0.5 rounded font-medium cursor-help" style={{ background: "repeating-linear-gradient(-45deg, #6B7280 0px, #6B7280 3px, transparent 3px, transparent 8px)", border: "1px dashed #6B7280" }}>{t('legend.private')}</span></TooltipTrigger><TooltipContent>{t('legend.private_tooltip')}</TooltipContent></Tooltip>
+          <Tooltip><TooltipTrigger asChild><span className="px-2 py-0.5 rounded font-medium cursor-help inline-flex items-center gap-1" style={{ background: "#fff", border: "2px solid #DC2626", color: "#DC2626" }}><AlertTriangle className="h-3 w-3" />{t('legend.conflict')}</span></TooltipTrigger><TooltipContent>{t('legend.conflict_tooltip')}</TooltipContent></Tooltip>
         </div>
 
         {/* Build mode banner — sticky in cima alla griglia */}
         {build_mode && (
           <div className="sticky top-0 z-30 -mx-1 flex items-center gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 shadow-sm dark:bg-amber-900/20 dark:text-amber-200 dark:border-amber-700">
             <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-            <span><strong>Modalità Costruzione attiva.</strong> Stai modificando il planning — ogni modifica viene salvata automaticamente.</span>
+            <span><strong>{t('build_banner.active_title')}</strong> {t('build_banner.active_desc')}</span>
           </div>
         )}
 
@@ -2237,10 +2237,10 @@ function PlanningPageInner() {
           <button
             onClick={() => { set_build_mode(false); set_pick_corso(null); }}
             className="fixed bottom-5 right-5 z-50 inline-flex items-center gap-2 rounded-full border border-amber-600 bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg hover:bg-amber-600"
-            title="Esci dalla modalità Costruzione"
+            title={t('build_banner.exit_title')}
           >
             <Hammer className="h-4 w-4" />
-            Costruzione attiva — esci
+            {t('build_banner.exit_label')}
           </button>
         )}
 
@@ -2407,7 +2407,7 @@ function PlanningPageInner() {
                           const w = has_warning(c.id);
                           // Outline "sandwich" bianco+colore+bianco — visibile su qualsiasi sfondo
                           const alarm_color = (w.hard || is_conflict) ? "#DC2626" : (w.soft ? "#CA8A04" : null);
-                          const alarm_short = w.hard || is_conflict ? (is_conflict ? "Conflitto" : (warnings_by_id[c.id]?.hard[0] ?? "Allarme").split(" (")[0]) : (w.soft ? (warnings_by_id[c.id]?.soft[0] ?? "Attenzione").split(" (")[0] : null);
+                          const alarm_short = w.hard || is_conflict ? (is_conflict ? t('slot_block.conflict') : (warnings_by_id[c.id]?.hard[0] ?? t('slot_block.alarm_default')).split(" (")[0]) : (w.soft ? (warnings_by_id[c.id]?.soft[0] ?? t('slot_block.attention_default')).split(" (")[0] : null);
                           const sandwich_shadow = alarm_color
                             ? `inset 0 0 0 1px #fff, 0 0 0 2px ${alarm_color}, 0 0 0 3px #fff`
                             : (is_private ? `inset 0 0 0 1px ${colore}` : undefined);
@@ -2448,15 +2448,15 @@ function PlanningPageInner() {
                                 {first_istr && <p className="text-xs">{first_istr.nome} {first_istr.cognome}</p>}
                                 <p className="text-xs">{c.ora_inizio?.slice(0, 5)} – {c.ora_fine?.slice(0, 5)}</p>
                                 {is_private && (
-                                  <p className="text-xs">{is_shared ? `Condivisa (${n_atlete} atlete)` : "Privata (1 atleta)"}</p>
+                                  <p className="text-xs">{is_shared ? t('slot_block.shared_athletes', { count: n_atlete }) : t('slot_block.private_single')}</p>
                                 )}
-                                {is_conflict && <p className="text-xs font-bold mt-1" style={{ color: "#DC2626" }}>⚠ Conflitto istruttore (anche su Off-Ice)</p>}
+                                {is_conflict && <p className="text-xs font-bold mt-1" style={{ color: "#DC2626" }}>{t('slot_block.instructor_conflict_off_ice')}</p>}
                                 {w.all.map((msg, i) => (
                                   <p key={i} className="text-xs font-semibold mt-0.5" style={{ color: w.hard && i < (warnings_by_id[c.id]?.hard.length ?? 0) ? "#DC2626" : "#CA8A04" }}>⚠ {msg}</p>
                                 ))}
                                 {has_exc && (
                                   <div className="mt-1 pt-1 border-t border-border/40">
-                                    <p className="text-[10px] font-bold" style={{ color: "#B45309" }}>✎ Eccezione settimanale</p>
+                                    <p className="text-[10px] font-bold" style={{ color: "#B45309" }}>{t('slot_block.weekly_exception')}</p>
                                     {exc!.map((d, i) => (
                                       <p key={i} className="text-[10px]" style={{ color: "#B45309" }}>{d.label}: {d.da} → {d.a}</p>
                                     ))}
@@ -2484,7 +2484,7 @@ function PlanningPageInner() {
                                 opacity: 0.6,
                               }} />
                             </TooltipTrigger>
-                            <TooltipContent><p className="line-through">{c.nome} (annullato)</p></TooltipContent>
+                            <TooltipContent><p className="line-through">{c.nome} {t('slot_block.cancelled')}</p></TooltipContent>
                           </Tooltip>
                         );
                       })}
@@ -2496,11 +2496,11 @@ function PlanningPageInner() {
                     {/* ─── SUB-ROW: OFF-ICE ─── */}
                     <div className="relative" style={{ height: off_h, background: "#F5F4F0" }}>
                       <span className="absolute left-1 top-1/2 -translate-y-1/2 text-[8px] font-bold tracking-wider px-1 rounded z-[1]"
-                        style={{ background: "#9CA3AF", color: "#fff" }}>OFF-ICE</span>
+                        style={{ background: "#9CA3AF", color: "#fff" }}>{t('slot_block.off_ice_badge')}</span>
 
                       {!has_off && (
                         <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[9px] italic text-muted-foreground">
-                          — nessun off-ice —
+                          {t('slot_block.no_off_ice')}
                         </span>
                       )}
 
@@ -2513,7 +2513,7 @@ function PlanningPageInner() {
                           const is_conflict = conflict_ids.has(c.id);
                           const w = has_warning(c.id);
                           const alarm_color = (w.hard || is_conflict) ? "#DC2626" : (w.soft ? "#CA8A04" : null);
-                          const alarm_short = w.hard || is_conflict ? (is_conflict ? "Conflitto" : (warnings_by_id[c.id]?.hard[0] ?? "Allarme").split(" (")[0]) : (w.soft ? (warnings_by_id[c.id]?.soft[0] ?? "Attenzione").split(" (")[0] : null);
+                          const alarm_short = w.hard || is_conflict ? (is_conflict ? t('slot_block.conflict') : (warnings_by_id[c.id]?.hard[0] ?? t('slot_block.alarm_default')).split(" (")[0]) : (w.soft ? (warnings_by_id[c.id]?.soft[0] ?? t('slot_block.attention_default')).split(" (")[0] : null);
                           const sandwich_shadow = alarm_color ? `inset 0 0 0 1px #fff, 0 0 0 2px ${alarm_color}, 0 0 0 3px #fff` : undefined;
                           const pulse = is_conflict || w.hard;
                           const exc = exceptions_by_id[c.id];
@@ -2540,16 +2540,16 @@ function PlanningPageInner() {
                                 </div>
                               </TooltipTrigger>
                               <TooltipContent side="top">
-                                <p className="font-bold">{c.nome} <span className="text-[10px] font-normal opacity-70">(OFF-ICE)</span></p>
+                                <p className="font-bold">{c.nome} <span className="text-[10px] font-normal opacity-70">{t('slot_block.off_ice_suffix')}</span></p>
                                 {first_istr && <p className="text-xs">{first_istr.nome} {first_istr.cognome}</p>}
                                 <p className="text-xs">{c.ora_inizio?.slice(0, 5)} – {c.ora_fine?.slice(0, 5)}</p>
-                                {is_conflict && <p className="text-xs font-bold mt-1" style={{ color: "#DC2626" }}>⚠ Conflitto istruttore (anche su Ghiaccio)</p>}
+                                {is_conflict && <p className="text-xs font-bold mt-1" style={{ color: "#DC2626" }}>{t('slot_block.instructor_conflict_ice')}</p>}
                                 {w.all.map((msg, i) => (
                                   <p key={i} className="text-xs font-semibold mt-0.5" style={{ color: w.hard && i < (warnings_by_id[c.id]?.hard.length ?? 0) ? "#DC2626" : "#CA8A04" }}>⚠ {msg}</p>
                                 ))}
                                 {has_exc && (
                                   <div className="mt-1 pt-1 border-t border-border/40">
-                                    <p className="text-[10px] font-bold" style={{ color: "#B45309" }}>✎ Eccezione settimanale</p>
+                                    <p className="text-[10px] font-bold" style={{ color: "#B45309" }}>{t('slot_block.weekly_exception')}</p>
                                     {exc!.map((d, i) => (
                                       <p key={i} className="text-[10px]" style={{ color: "#B45309" }}>{d.label}: {d.da} → {d.a}</p>
                                     ))}
