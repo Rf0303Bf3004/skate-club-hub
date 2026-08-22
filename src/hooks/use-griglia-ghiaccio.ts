@@ -835,7 +835,26 @@ export function use_ripeti_sessione() {
           .update({ corso_id } as any)
           .eq("id", sessione.id);
         if (err_link) throw err_link;
+      } else if (e_gruppo && atleti_ids.length > 0) {
+        // Corso già esistente + sessione collegata a un gruppo: allinea le iscrizioni
+        // ai membri attuali in modo SOLO ADDITIVO (mai rimozioni: le fatture già
+        // emesse non vanno toccate retroattivamente).
+        const { data: isc_esistenti, error: err_isc_sel } = await supabase
+          .from("iscrizioni_corsi")
+          .select("atleta_id")
+          .eq("corso_id", corso_id as string);
+        if (err_isc_sel) throw err_isc_sel;
+        const gia_iscritti = new Set(((isc_esistenti ?? []) as any[]).map((r) => r.atleta_id));
+        const mancanti = atleti_ids.filter((id) => !gia_iscritti.has(id));
+        if (mancanti.length > 0) {
+          const { error: err_isc } = await supabase
+            .from("iscrizioni_corsi")
+            .insert(mancanti.map((atleta_id) => ({ corso_id, atleta_id, attiva: true })) as any);
+          if (err_isc) throw err_isc;
+        }
       }
+
+
 
       // 2) Occorrenze nel Planning classico (stesso schema, idempotente)
       const date = date_settimanali(blocco.data, input.fino_a);
