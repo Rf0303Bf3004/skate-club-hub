@@ -2641,6 +2641,9 @@ export type Database = {
           forzato_at: string | null
           forzato_da: string | null
           fuori_disponibilita: boolean
+          gruppo_livello: string | null
+          gruppo_ragione_sociale_id: string | null
+          gruppo_scope: string | null
           id: string
           messaggio_atleti: string | null
           motivo_forzatura: string | null
@@ -2660,6 +2663,9 @@ export type Database = {
           forzato_at?: string | null
           forzato_da?: string | null
           fuori_disponibilita?: boolean
+          gruppo_livello?: string | null
+          gruppo_ragione_sociale_id?: string | null
+          gruppo_scope?: string | null
           id?: string
           messaggio_atleti?: string | null
           motivo_forzatura?: string | null
@@ -2679,6 +2685,9 @@ export type Database = {
           forzato_at?: string | null
           forzato_da?: string | null
           fuori_disponibilita?: boolean
+          gruppo_livello?: string | null
+          gruppo_ragione_sociale_id?: string | null
+          gruppo_scope?: string | null
           id?: string
           messaggio_atleti?: string | null
           motivo_forzatura?: string | null
@@ -2704,6 +2713,13 @@ export type Database = {
             columns: ["corso_id"]
             isOneToOne: false
             referencedRelation: "corsi"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "griglia_sessioni_gruppo_ragione_sociale_id_fkey"
+            columns: ["gruppo_ragione_sociale_id"]
+            isOneToOne: false
+            referencedRelation: "ragioni_sociali"
             referencedColumns: ["id"]
           },
           {
