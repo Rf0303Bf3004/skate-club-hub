@@ -504,6 +504,34 @@ const SessioneBox: React.FC<{
             </Tooltip>
           </TooltipProvider>
         )}
+        {sessione.gruppo_livello && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge variant="outline" className="gap-1 text-[10px]">
+                  <Link2 className="w-3 h-3" /> Gruppo: {sessione.gruppo_livello}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                Collegata dinamicamente al gruppo «{sessione.gruppo_livello}»
+                {sessione.gruppo_scope === "esterni" && " (esterni)"}
+                {sessione.gruppo_scope === "senza_ragione_sociale" && " (senza ragione sociale)"}.
+                Usa «Aggiorna dal gruppo» per riallineare gli atleti alla composizione attuale.
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+        {sessione.gruppo_livello && on_sync_gruppo && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={on_sync_gruppo}
+            disabled={sync_in_corso}
+            title="Aggiorna dal gruppo"
+          >
+            <RefreshCw className={cn("w-4 h-4", sync_in_corso && "animate-spin")} />
+          </Button>
+        )}
         {on_ripeti && (
           <Button variant="ghost" size="icon" onClick={on_ripeti} title="Ripeti questa sessione">
             <Repeat className="w-4 h-4" />
