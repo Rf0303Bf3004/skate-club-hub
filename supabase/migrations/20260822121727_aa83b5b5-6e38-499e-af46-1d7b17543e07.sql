@@ -1,0 +1,1 @@
+DROP TRIGGER IF EXISTS trg_traduzioni_ui_updated ON public.traduzioni_ui;
