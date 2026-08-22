@@ -10,6 +10,7 @@ import {
   AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { cat_blocco } from "./categorie";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   blocco: any;
@@ -19,6 +20,7 @@ interface Props {
 }
 
 export default function BloccoCard({ blocco, on_toggle, on_edit, on_delete }: Props) {
+  const { t } = useTranslation("dashboard");
   const cat = cat_blocco(blocco.categoria);
   const preview = (blocco.contenuto ?? "").slice(0, 200);
   const truncated = (blocco.contenuto ?? "").length > 200;
@@ -29,8 +31,12 @@ export default function BloccoCard({ blocco, on_toggle, on_edit, on_delete }: Pr
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <Badge variant="outline" className={cat.color}>{cat.label}</Badge>
-            <span className="text-xs text-muted-foreground">ordine {blocco.ordine}</span>
-            {!blocco.stagione_id && <Badge variant="outline" className="text-xs">Permanente</Badge>}
+            <span className="text-xs text-muted-foreground">
+              {t("relazione.blocco_card.ordine", { ordine: blocco.ordine })}
+            </span>
+            {!blocco.stagione_id && (
+              <Badge variant="outline" className="text-xs">{t("relazione.blocco_card.permanente")}</Badge>
+            )}
           </div>
           <h3 className="text-lg font-semibold text-foreground">{blocco.titolo}</h3>
           <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
@@ -43,7 +49,7 @@ export default function BloccoCard({ blocco, on_toggle, on_edit, on_delete }: Pr
           </div>
           <div className="flex items-center gap-1">
             <Button size="sm" variant="outline" onClick={on_edit} className="gap-1.5">
-              <Pencil className="w-3.5 h-3.5" />Modifica
+              <Pencil className="w-3.5 h-3.5" />{t("relazione.blocco_card.modifica")}
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -53,14 +59,14 @@ export default function BloccoCard({ blocco, on_toggle, on_edit, on_delete }: Pr
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Eliminare il blocco?</AlertDialogTitle>
+                  <AlertDialogTitle>{t("relazione.blocco_card.confirm_title")}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Stai per eliminare "{blocco.titolo}". L'operazione e' irreversibile.
+                    {t("relazione.blocco_card.confirm_desc", { titolo: blocco.titolo })}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Annulla</AlertDialogCancel>
-                  <AlertDialogAction onClick={on_delete}>Elimina</AlertDialogAction>
+                  <AlertDialogCancel>{t("relazione.blocco_card.annulla")}</AlertDialogCancel>
+                  <AlertDialogAction onClick={on_delete}>{t("relazione.blocco_card.elimina")}</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
