@@ -54,9 +54,9 @@ Lo shim `useI18n()` / `t()` in `src/lib/i18n.tsx` continua a funzionare per i fi
 - [ ] `src/components/dashboard/PresidentDashboard.tsx`
 
 ### Widget dashboard (visibili nella colonna destra)
-- [ ] `src/components/dashboard/RichiesteIscrizioneWidget.tsx` (header "RICHIESTE PENDENTI", "Nessuna richiesta in attesa", "ULTIME ISCRIZIONI", template stringa "{atleta} si è iscritto a {corso}")
-- [ ] `src/components/dashboard/IstruttoriDisponibiliWidget.tsx`
-- [ ] `src/components/MedagliereWidget.tsx`
+- [x] `src/components/dashboard/RichiesteIscrizioneWidget.tsx` → `dashboard.widget_richieste.*`, `widget_iscrizioni.*`, `widget_lezioni_private.*`, `relative_time.*`
+- [x] `src/components/dashboard/IstruttoriDisponibiliWidget.tsx` → `dashboard.widget_istruttori.*`
+- [x] `src/components/MedagliereWidget.tsx` → `dashboard.widget_medagliere.*`
 
 ### Pagine secondarie / superadmin
 - [ ] `src/pages/AdvancedManagementPage.tsx`
@@ -140,3 +140,23 @@ Continuare estrazione partendo da:
 
 ## Da estrarre — Banner onboarding
 - src/components/dashboard/OnboardingBanner.tsx (titolo, sottotitolo, 3 CTA, toast)
+
+
+## Step 2 — Traduzioni gestite da DB (superadmin)
+
+- Nuova tabella `public.traduzioni_ui` (namespace, chiave, it/de/fr/rm/en), unique su (namespace, chiave).
+  Lettura pubblica (anche anon, serve prima del login), scrittura solo superadmin.
+- Seed iniziale: 733 chiavi importate dai JSON `src/locales/{it,fr,de,en}/*.json` (14 namespace).
+- Runtime: `src/i18n/db-loader.ts` (`carica_traduzioni_db`) viene invocato in `src/main.tsx` dopo l'init di
+  i18next e fa merge sopra le resource statiche via `addResourceBundle`. Se il fetch fallisce, l'app continua
+  con i soli JSON bundlati.
+- UI: nuova tab "🌐 Traduzioni" in `SuperAdminPage.tsx` → `src/components/superadmin/TraduzioniTab.tsx`
+  (filtro namespace con badge di incomplete, ricerca libera, toggle "Solo incomplete", editing inline con
+  salvataggio al blur e aggiornamento immediato del bundle i18next in sessione).
+
+**Regola per i prossimi turni**: ogni nuova chiave estratta va aggiunta sia al JSON IT sia a `traduzioni_ui`
+(stesso namespace/chiave), altrimenti non compare nella pagina di gestione.
+
+### Stato traduzioni mancanti
+Le chiavi dei widget dashboard estratte in questo turno hanno solo il valore IT: DE/FR/RM/EN sono da
+completare dalla tab "🌐 Traduzioni" (filtro "Solo incomplete", namespace `dashboard`).
