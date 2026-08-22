@@ -9,6 +9,7 @@ import {
   RefreshCw, Check, X, Pencil, ChevronRight, Search,
   UserCheck, BookOpen, CreditCard, AlertTriangle,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface Club {
   id: string;
@@ -37,6 +38,7 @@ interface ClubStats {
 }
 
 const SuperAdminClubPage: React.FC = () => {
+  const { t } = useTranslation("superadmin");
   const { session } = useAuth();
   const [clubs, set_clubs] = useState<Club[]>([]);
   const [stats, set_stats] = useState<Record<string, ClubStats>>({});
@@ -85,7 +87,7 @@ const SuperAdminClubPage: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Shield className="w-12 h-12 text-destructive mx-auto" />
-        <p className="text-muted-foreground mt-2">Accesso negato.</p>
+        <p className="text-muted-foreground mt-2">{t("clubs.access_denied")}</p>
       </div>
     );
   }
@@ -122,11 +124,11 @@ const SuperAdminClubPage: React.FC = () => {
         attivo: form.attivo,
       }).eq("id", selected_id);
       if (error) throw error;
-      toast({ title: "✅ Club aggiornato" });
+      toast({ title: t("clubs.toast.updated") });
       set_editing(false);
       load_clubs();
     } catch (err: any) {
-      toast({ title: "Errore", description: err.message, variant: "destructive" });
+      toast({ title: t("clubs.toast.error"), description: err.message, variant: "destructive" });
     } finally {
       set_saving(false);
     }
@@ -141,19 +143,19 @@ const SuperAdminClubPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Building2 className="w-6 h-6 text-primary" />
-            Gestione Club
+            {t("clubs.title")}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {clubs.length} club registrati
+            {t("clubs.count", { count: clubs.length })}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Button size="sm" onClick={() => (window.location.href = "/superadmin/clubs/nuovo")} className="gap-2">
-            <Building2 className="w-4 h-4" /> Nuovo club
+            <Building2 className="w-4 h-4" /> {t("clubs.new")}
           </Button>
           <Button variant="outline" size="sm" onClick={load_clubs} disabled={loading} className="gap-2">
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-            Aggiorna
+            {t("clubs.refresh")}
           </Button>
         </div>
       </div>
@@ -164,7 +166,7 @@ const SuperAdminClubPage: React.FC = () => {
         <input
           value={search}
           onChange={(e) => set_search(e.target.value)}
-          placeholder="Cerca per nome o città..."
+          placeholder={t("clubs.search_placeholder")}
           className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
         />
       </div>
@@ -177,7 +179,7 @@ const SuperAdminClubPage: React.FC = () => {
               <RefreshCw className="w-6 h-6 animate-spin text-muted-foreground" />
             </div>
           ) : filtered.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8 text-sm">Nessun club trovato.</p>
+            <p className="text-center text-muted-foreground py-8 text-sm">{t("clubs.empty")}</p>
           ) : (
             filtered.map((club) => {
               const cs = stats[club.id];
@@ -198,16 +200,16 @@ const SuperAdminClubPage: React.FC = () => {
                       <p className="text-xs text-muted-foreground">{club.citta || "—"}</p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      {!club.attivo && <Badge variant="destructive" className="text-[10px]">Inattivo</Badge>}
+                      {!club.attivo && <Badge variant="destructive" className="text-[10px]">{t("clubs.inactive")}</Badge>}
                       <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform ${is_selected ? "rotate-90" : ""}`} />
                     </div>
                   </div>
                   {cs && (
                     <div className="grid grid-cols-3 gap-1.5 mt-3 text-center">
                       {[
-                        { label: "Atleti", value: cs.atleti },
-                        { label: "Istruttori", value: cs.istruttori },
-                        { label: "Corsi", value: cs.corsi },
+                        { label: t("clubs.stats.atleti"), value: cs.atleti },
+                        { label: t("clubs.stats.istruttori"), value: cs.istruttori },
+                        { label: t("clubs.stats.corsi"), value: cs.corsi },
                       ].map(({ label, value }) => (
                         <div key={label} className="rounded-md bg-muted/50 py-1.5">
                           <p className="text-sm font-bold text-foreground">{value}</p>
@@ -219,7 +221,7 @@ const SuperAdminClubPage: React.FC = () => {
                   {cs && cs.fatture_da_pagare > 0 && (
                     <div className="mt-2 flex items-center gap-1 text-xs text-orange-600">
                       <AlertTriangle className="w-3 h-3" />
-                      {cs.fatture_da_pagare} fatture da pagare
+                      {t("clubs.unpaid_invoices", { count: cs.fatture_da_pagare })}
                     </div>
                   )}
                 </div>
@@ -232,34 +234,34 @@ const SuperAdminClubPage: React.FC = () => {
         <div className="lg:col-span-2">
           {!selected ? (
             <div className="flex items-center justify-center h-64 rounded-xl border border-dashed border-border">
-              <p className="text-muted-foreground text-sm">Seleziona un club dalla lista per vedere i dettagli.</p>
+              <p className="text-muted-foreground text-sm">{t("clubs.select_hint")}</p>
             </div>
           ) : editing ? (
             /* ── Modifica ── */
             <div className="rounded-xl border border-border bg-card p-6 space-y-4">
               <div className="flex items-center justify-between mb-2">
-                <h2 className="text-lg font-bold text-foreground">Modifica club</h2>
+                <h2 className="text-lg font-bold text-foreground">{t("clubs.edit_title")}</h2>
                 <Button variant="ghost" size="sm" onClick={() => set_editing(false)}>
                   <X className="w-4 h-4" />
                 </Button>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                <input value={form.nome || ""} onChange={(e) => set_form({ ...form, nome: e.target.value })} placeholder="Nome club *" className={input_cls} />
-                <input value={form.citta || ""} onChange={(e) => set_form({ ...form, citta: e.target.value })} placeholder="Città" className={input_cls} />
-                <input value={form.paese || ""} onChange={(e) => set_form({ ...form, paese: e.target.value })} placeholder="Paese" className={input_cls} />
-                <input value={form.email || ""} onChange={(e) => set_form({ ...form, email: e.target.value })} placeholder="Email" type="email" className={input_cls} />
-                <input value={form.telefono || ""} onChange={(e) => set_form({ ...form, telefono: e.target.value })} placeholder="Telefono" className={input_cls} />
-                <input value={form.indirizzo || ""} onChange={(e) => set_form({ ...form, indirizzo: e.target.value })} placeholder="Indirizzo" className={input_cls} />
-                <input value={form.sito_web || ""} onChange={(e) => set_form({ ...form, sito_web: e.target.value })} placeholder="Sito web" className={input_cls} />
-                <input value={form.numero_tessera_federale || ""} onChange={(e) => set_form({ ...form, numero_tessera_federale: e.target.value })} placeholder="N° tessera federale" className={input_cls} />
+                <input value={form.nome || ""} onChange={(e) => set_form({ ...form, nome: e.target.value })} placeholder={t("clubs.form.nome")} className={input_cls} />
+                <input value={form.citta || ""} onChange={(e) => set_form({ ...form, citta: e.target.value })} placeholder={t("clubs.form.citta")} className={input_cls} />
+                <input value={form.paese || ""} onChange={(e) => set_form({ ...form, paese: e.target.value })} placeholder={t("clubs.form.paese")} className={input_cls} />
+                <input value={form.email || ""} onChange={(e) => set_form({ ...form, email: e.target.value })} placeholder={t("clubs.form.email")} type="email" className={input_cls} />
+                <input value={form.telefono || ""} onChange={(e) => set_form({ ...form, telefono: e.target.value })} placeholder={t("clubs.form.telefono")} className={input_cls} />
+                <input value={form.indirizzo || ""} onChange={(e) => set_form({ ...form, indirizzo: e.target.value })} placeholder={t("clubs.form.indirizzo")} className={input_cls} />
+                <input value={form.sito_web || ""} onChange={(e) => set_form({ ...form, sito_web: e.target.value })} placeholder={t("clubs.form.sito_web")} className={input_cls} />
+                <input value={form.numero_tessera_federale || ""} onChange={(e) => set_form({ ...form, numero_tessera_federale: e.target.value })} placeholder={t("clubs.form.tessera")} className={input_cls} />
               </div>
               <div className="flex items-center gap-3">
-                <label className="text-sm text-muted-foreground">Colore:</label>
+                <label className="text-sm text-muted-foreground">{t("clubs.form.colore")}</label>
                 <input type="color" value={form.colore_primario || "#3B82F6"} onChange={(e) => set_form({ ...form, colore_primario: e.target.value })} className="w-10 h-8 rounded cursor-pointer border border-border" />
               </div>
-              <textarea value={form.descrizione || ""} onChange={(e) => set_form({ ...form, descrizione: e.target.value })} placeholder="Descrizione" rows={2} className={input_cls} />
+              <textarea value={form.descrizione || ""} onChange={(e) => set_form({ ...form, descrizione: e.target.value })} placeholder={t("clubs.form.descrizione")} rows={2} className={input_cls} />
               <div className="flex items-center gap-3">
-                <label className="text-sm text-muted-foreground">Attivo:</label>
+                <label className="text-sm text-muted-foreground">{t("clubs.form.attivo")}</label>
                 <button
                   onClick={() => set_form({ ...form, attivo: !form.attivo })}
                   className={`w-10 h-6 rounded-full transition-colors ${form.attivo ? "bg-green-500" : "bg-muted"}`}
@@ -270,9 +272,9 @@ const SuperAdminClubPage: React.FC = () => {
               <div className="flex gap-3 pt-2">
                 <Button onClick={handle_save} disabled={saving} className="gap-2">
                   {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                  {saving ? "Salvataggio..." : "Salva modifiche"}
+                  {saving ? t("clubs.saving") : t("clubs.save")}
                 </Button>
-                <Button variant="outline" onClick={() => set_editing(false)}>Annulla</Button>
+                <Button variant="outline" onClick={() => set_editing(false)}>{t("clubs.cancel")}</Button>
               </div>
             </div>
           ) : (
@@ -281,7 +283,7 @@ const SuperAdminClubPage: React.FC = () => {
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
                   {selected.logo_url ? (
-                    <img src={selected.logo_url} alt="Logo" className="w-12 h-12 rounded-lg object-cover border border-border" />
+                    <img src={selected.logo_url} alt={t("clubs.logo_alt")} className="w-12 h-12 rounded-lg object-cover border border-border" />
                   ) : (
                     <div className="w-12 h-12 rounded-lg flex items-center justify-center text-lg font-bold text-primary-foreground" style={{ backgroundColor: selected.colore_primario }}>
                       {selected.nome[0]}
@@ -291,15 +293,15 @@ const SuperAdminClubPage: React.FC = () => {
                     <h2 className="text-xl font-bold text-foreground">{selected.nome}</h2>
                     <div className="flex items-center gap-2 mt-1">
                       <Badge variant={selected.attivo ? "default" : "destructive"}>
-                        {selected.attivo ? "Attivo" : "Inattivo"}
+                        {selected.attivo ? t("clubs.active") : t("clubs.inactive")}
                       </Badge>
-                      {selected.is_demo && <Badge variant="outline">Demo</Badge>}
+                      {selected.is_demo && <Badge variant="outline">{t("clubs.demo")}</Badge>}
                     </div>
                   </div>
                 </div>
                 <Button variant="outline" size="sm" onClick={start_edit} className="gap-2">
                   <Pencil className="w-4 h-4" />
-                  Modifica
+                  {t("clubs.edit")}
                 </Button>
               </div>
 
@@ -307,11 +309,11 @@ const SuperAdminClubPage: React.FC = () => {
               {selected_stats && (
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                   {[
-                    { label: "Atleti", value: selected_stats.atleti, icon: Users, color: "text-blue-600" },
-                    { label: "Istruttori", value: selected_stats.istruttori, icon: UserCheck, color: "text-green-600" },
-                    { label: "Corsi", value: selected_stats.corsi, icon: BookOpen, color: "text-purple-600" },
-                    { label: "Utenti", value: selected_stats.utenti, icon: Users, color: "text-primary" },
-                    { label: "Fatture aperte", value: selected_stats.fatture_da_pagare, icon: CreditCard, color: selected_stats.fatture_da_pagare > 0 ? "text-orange-600" : "text-muted-foreground" },
+                    { label: t("clubs.stats.atleti"), value: selected_stats.atleti, icon: Users, color: "text-blue-600" },
+                    { label: t("clubs.stats.istruttori"), value: selected_stats.istruttori, icon: UserCheck, color: "text-green-600" },
+                    { label: t("clubs.stats.corsi"), value: selected_stats.corsi, icon: BookOpen, color: "text-purple-600" },
+                    { label: t("clubs.stats.utenti"), value: selected_stats.utenti, icon: Users, color: "text-primary" },
+                    { label: t("clubs.stats.fatture_aperte"), value: selected_stats.fatture_da_pagare, icon: CreditCard, color: selected_stats.fatture_da_pagare > 0 ? "text-orange-600" : "text-muted-foreground" },
                   ].map(({ label, value, icon: Icon, color }) => (
                     <div key={label} className="rounded-lg bg-muted/40 p-3 text-center">
                       <Icon className={`w-5 h-5 mx-auto mb-1 ${color}`} />
@@ -325,12 +327,12 @@ const SuperAdminClubPage: React.FC = () => {
               {/* Info */}
               <div className="grid sm:grid-cols-2 gap-3">
                 {[
-                  { icon: MapPin, label: "Città", value: selected.citta },
-                  { icon: MapPin, label: "Indirizzo", value: selected.indirizzo },
-                  { icon: Mail, label: "Email", value: selected.email },
-                  { icon: Phone, label: "Telefono", value: selected.telefono },
-                  { icon: Globe, label: "Sito web", value: selected.sito_web },
-                  { icon: Shield, label: "Paese", value: selected.paese },
+                  { icon: MapPin, label: t("clubs.form.citta"), value: selected.citta },
+                  { icon: MapPin, label: t("clubs.form.indirizzo"), value: selected.indirizzo },
+                  { icon: Mail, label: t("clubs.form.email"), value: selected.email },
+                  { icon: Phone, label: t("clubs.form.telefono"), value: selected.telefono },
+                  { icon: Globe, label: t("clubs.form.sito_web"), value: selected.sito_web },
+                  { icon: Shield, label: t("clubs.form.paese"), value: selected.paese },
                 ].map(({ icon: Icon, label, value }) => (
                   <div key={label} className="flex items-center gap-3 rounded-lg bg-muted/30 px-3 py-2">
                     <Icon className="w-4 h-4 text-muted-foreground shrink-0" />
@@ -344,13 +346,13 @@ const SuperAdminClubPage: React.FC = () => {
 
               {selected.descrizione && (
                 <div className="rounded-lg bg-muted/30 p-3">
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Descrizione</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">{t("clubs.form.descrizione")}</p>
                   <p className="text-sm text-foreground">{selected.descrizione}</p>
                 </div>
               )}
 
               <p className="text-[10px] text-muted-foreground">
-                Creato il {new Date(selected.created_at).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                {t("clubs.created_on", { data: new Date(selected.created_at).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" }) })}
               </p>
             </div>
           )}

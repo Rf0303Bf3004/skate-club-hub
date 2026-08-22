@@ -281,5 +281,78 @@
     },
     "default_atleta_label": "Atleta",
     "default_corso_label": "Corso"
+  },
+  "import": {
+    "title": "Import atleti da Excel",
+    "subtitle": "Importa un elenco di atleti da un file .xlsx o .xls",
+    "back_athletes": "Torna ad Atleti",
+    "dropzone": "Trascina qui il file Excel oppure clicca per selezionarlo",
+    "formats": "Formati supportati: .xlsx, .xls",
+    "download_template": "Scarica template Excel",
+    "file": "File:",
+    "rows_found": "{{count}} righe trovate",
+    "target_field": "Campo target",
+    "file_column": "Colonna del file",
+    "not_mapped": "— Non mappare —",
+    "back": "Indietro",
+    "continue": "Continua",
+    "required_hint": "I campi obbligatori (Nome, Cognome, Data di nascita) devono essere mappati.",
+    "count_new": "{{count}} nuovi",
+    "count_updates": "{{count}} aggiornamenti",
+    "count_errors": "{{count}} errori",
+    "count_warn_livello": "{{count}} warning livello",
+    "total_rows": "Totale: {{count}} righe",
+    "livello_warn": "Livello \"{{livello}}\" non riconosciuto",
+    "livello_warn_tooltip": "Livello \"{{livello}}\" non riconosciuto: l'atleta sarà importato senza livello",
+    "do_import": "Importa {{count}} atleti",
+    "in_progress": "Importazione in corso… non chiudere la pagina.",
+    "completed": "Import completato",
+    "report_created": "atleti creati",
+    "report_updated": "atleti aggiornati (solo campi vuoti)",
+    "report_errors": "errori",
+    "codes_assigned": "Codici assegnati:",
+    "another_file": "Importa un altro file",
+    "no_report": "Nessun report disponibile.",
+    "unknown": "sconosciuto",
+    "step": {
+      "upload": "Upload file",
+      "mapping": "Mapping colonne",
+      "preview": "Anteprima",
+      "import": "Importa"
+    },
+    "field": {
+      "nome": "Nome",
+      "cognome": "Cognome",
+      "data_nascita": "Data di nascita",
+      "sesso": "Sesso (M/F)",
+      "email": "Email",
+      "telefono": "Telefono",
+      "livello": "Livello"
+    },
+    "col": {
+      "stato": "Stato",
+      "data_nasc": "Data nasc.",
+      "sesso": "Sesso",
+      "note": "Note"
+    },
+    "status": {
+      "nuovo": "Nuovo",
+      "aggiornamento": "Aggiornamento",
+      "errore": "Errore"
+    },
+    "err": {
+      "nome": "Nome mancante",
+      "cognome": "Cognome mancante",
+      "data_invalid": "Data nascita non valida",
+      "data_missing": "Data nascita mancante",
+      "sesso": "Sesso non valido",
+      "email": "Email malformata"
+    },
+    "toast": {
+      "no_rows": "Il file non contiene righe",
+      "read_error": "Errore lettura file: {{msg}}",
+      "created": "Creato {{nome}} {{cognome}} ({{codice}})",
+      "row_error": "Errore riga {{riga}}: {{msg}}"
+    }
   }
 }

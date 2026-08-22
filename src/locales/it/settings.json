@@ -334,5 +334,90 @@
       "error_generic": "operazione fallita"
     },
     "date_placeholder": "—"
+  },
+  "advanced": {
+    "title": "Gestione Avanzata",
+    "subtitle": "Operazioni irreversibili. Tutte le eliminazioni richiedono conferma esplicita.",
+    "banner": "Le operazioni in questa pagina eliminano dati in modo definitivo e non possono essere annullate.",
+    "lezione_one": "lezione",
+    "lezione_other": "lezioni",
+    "no_athletes": "Nessuna atleta",
+    "semi": "Semi",
+    "cancel": "Annulla",
+    "deleting": "Elimino...",
+    "delete_n": "Elimina {{count}} {{lezioni}}",
+    "confirm": {
+      "title": "Conferma eliminazione definitiva",
+      "warn": "Stai per eliminare {{count}} {{lezioni}} in modo definitivo.",
+      "irreversible": "Questa operazione non può essere annullata.",
+      "type_prefix": "Scrivi",
+      "type_suffix": "per confermare:"
+    },
+    "toast": {
+      "deleted_one": "{{count}} lezione eliminata correttamente",
+      "deleted_other": "{{count}} lezioni eliminate correttamente",
+      "error": "Errore eliminazione"
+    },
+    "recurring": {
+      "title": "Annulla lezioni ricorrenti",
+      "subtitle": "Elimina una lezione e/o le sue ricorrenze future",
+      "step1": "1. Seleziona istruttore",
+      "choose_instructor": "Scegli istruttore...",
+      "step2": "2. Seleziona la lezione di partenza",
+      "no_future": "Nessuna lezione futura per questo istruttore",
+      "step3": "3. Cosa vuoi eliminare?",
+      "mode_only": "Solo questa lezione",
+      "mode_only_desc": "1 lezione eliminata",
+      "mode_future": "Questa e tutte le future",
+      "mode_future_desc": "{{count}} lezioni collegate trovate",
+      "mode_n": "Questa e le prossime N",
+      "mode_n_desc": "Scegli quante",
+      "delete_next": "Elimina le prossime",
+      "of_total": "lezioni (su {{count}} totali)",
+      "preview": "Anteprima lezioni che verranno eliminate:",
+      "preview_row": "{{data}} alle {{ora}}",
+      "and_more": "... e altre {{count}} lezioni",
+      "proceed": "Procedi con l'eliminazione ({{count}} {{lezioni}})"
+    },
+    "bulk": {
+      "title": "Eliminazione multipla",
+      "subtitle": "Seleziona e elimina più lezioni contemporaneamente",
+      "instructor": "Istruttore",
+      "all": "Tutti",
+      "from": "Dal",
+      "to": "Al",
+      "found": "{{count}} lezioni trovate · {{sel}} selezionate",
+      "select_all": "Seleziona tutte",
+      "deselect_all": "Deseleziona tutte",
+      "no_results": "Nessuna lezione trovata con i filtri applicati",
+      "delete_selected_one": "Elimina {{count}} lezione selezionata",
+      "delete_selected_other": "Elimina {{count}} lezioni selezionate"
+    }
+  },
+  "sponsor": {
+    "title": "Pacchetti Sponsor",
+    "subtitle": "Configura i pacchetti e genera il Pitch PDF per i tuoi sponsor potenziali.",
+    "edit_pitch_text": "Modifica testo Pitch",
+    "reset": "Ripristina configurazione consigliata",
+    "reset_confirm_title": "Ripristinare la configurazione consigliata?",
+    "reset_confirm_desc": "I 3 pacchetti predefiniti verranno ricreati e quelli attuali eliminati.",
+    "reset_confirm_cta": "Ripristina",
+    "add": "Aggiungi pacchetto",
+    "generate_pitch": "Genera Pitch Sponsor",
+    "per_year": "/anno",
+    "slots": "{{occ}} / {{max}} sponsor collegati",
+    "slots_unlimited": "{{occ}} sponsor collegati (illimitato)",
+    "edit": "Modifica",
+    "delete_confirm_title": "Eliminare il pacchetto?",
+    "delete_confirm_desc": "\"{{nome}}\" verrà rimosso definitivamente.",
+    "delete_aria": "Elimina pacchetto",
+    "empty": "Nessun pacchetto configurato. Usa \"Reset ai default\" per creare Gold/Silver/Bronze.",
+    "toast": {
+      "saved": "Pacchetto salvato",
+      "deleted": "Pacchetto eliminato",
+      "reset_done": "Pacchetti ripristinati ai default",
+      "texts_saved": "Testi salvati",
+      "error": "Errore"
+    }
   }
 }

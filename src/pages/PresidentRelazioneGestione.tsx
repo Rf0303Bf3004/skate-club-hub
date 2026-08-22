@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/button";
 import BlocchiTestoTab from "@/components/relazione/BlocchiTestoTab";
 import AllegatiTab from "@/components/relazione/AllegatiTab";
 import ParagrafiTab from "@/components/relazione/ParagrafiTab";
+import { useTranslation } from "react-i18next";
 
 export default function PresidentRelazioneGestione() {
+  const { t } = useTranslation("dashboard");
   const { session } = useAuth();
   const loc = useLocation();
   const embedded = loc.pathname.startsWith("/presidente/relazione");
@@ -35,14 +37,14 @@ export default function PresidentRelazioneGestione() {
       {!embedded && (
         <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <h1 className="text-3xl font-serif tracking-tight text-foreground">Gestione Relazione</h1>
+            <h1 className="text-3xl font-serif tracking-tight text-foreground">{t("relazione.gestione_title")}</h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-              Configura i contenuti redazionali e gli allegati che andranno nella relazione PDF di fine stagione.
+              {t("relazione.gestione_subtitle")}
             </p>
           </div>
           <div className="flex items-center gap-2">
             <Select value={stagione_id} onValueChange={set_stagione_id}>
-              <SelectTrigger className="w-44 h-9 text-sm"><SelectValue placeholder="Stagione" /></SelectTrigger>
+              <SelectTrigger className="w-44 h-9 text-sm"><SelectValue placeholder={t("relazione.season")} /></SelectTrigger>
               <SelectContent>
                 {(stagioni as any[]).map((s) => (
                   <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
@@ -64,9 +66,9 @@ export default function PresidentRelazioneGestione() {
           className="w-full"
         >
           <TabsList>
-            <TabsTrigger value="blocchi">Notizie del Presidente</TabsTrigger>
-            <TabsTrigger value="paragrafi">Racconto dei dati</TabsTrigger>
-            <TabsTrigger value="allegati">Documenti allegati</TabsTrigger>
+            <TabsTrigger value="blocchi">{t("relazione.tab_blocchi")}</TabsTrigger>
+            <TabsTrigger value="paragrafi">{t("relazione.tab_paragrafi")}</TabsTrigger>
+            <TabsTrigger value="allegati">{t("relazione.tab_allegati")}</TabsTrigger>
           </TabsList>
           <TabsContent value="blocchi" className="mt-4">
             <BlocchiTestoTab club_id={session.club_id} stagione_id={stagione_id} />

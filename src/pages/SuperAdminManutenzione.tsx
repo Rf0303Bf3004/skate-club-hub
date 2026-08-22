@@ -8,6 +8,7 @@ import {
   Shield, Trash2, Database, Copy, Download, RefreshCw,
   Check, AlertTriangle, Wrench, Building2, ChevronDown,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface Club {
   id: string;
@@ -25,6 +26,7 @@ interface Operazione {
 }
 
 const SuperAdminManutenzione: React.FC = () => {
+  const { t } = useTranslation("superadmin");
   const { session } = useAuth();
   const [clubs, set_clubs] = useState<Club[]>([]);
   const [selected_club, set_selected_club] = useState<string>("__tutti__");
@@ -56,13 +58,13 @@ const SuperAdminManutenzione: React.FC = () => {
   }
 
   const club_id = selected_club === "__tutti__" ? null : selected_club;
-  const club_nome = club_id ? clubs.find((c) => c.id === club_id)?.nome || "—" : "tutti i club";
+  const club_nome = club_id ? clubs.find((c) => c.id === club_id)?.nome || "—" : t("manutenzione.all_clubs_label");
 
   const operazioni: Operazione[] = [
     {
       id: "fatture_pagate",
-      titolo: "Pulizia fatture pagate",
-      descrizione: "Elimina le fatture già saldate per alleggerire il database.",
+      titolo: t("manutenzione.op.fatture_pagate.titolo"),
+      descrizione: t("manutenzione.op.fatture_pagate.descrizione"),
       icona: <Trash2 className="w-5 h-5" />,
       colore: "border-orange-200 bg-orange-50 dark:border-orange-900 dark:bg-orange-950/30",
       richiede_club: false,
@@ -71,13 +73,13 @@ const SuperAdminManutenzione: React.FC = () => {
         if (cid) q = q.eq("club_id", cid);
         const { error, count } = await q;
         if (error) throw error;
-        return `Eliminate ${count || 0} fatture pagate`;
+        return t("manutenzione.op.fatture_pagate.result", { count: count || 0 });
       },
     },
     {
       id: "presenze_vecchie",
-      titolo: "Pulizia presenze vecchie (> 12 mesi)",
-      descrizione: "Rimuove le presenze più vecchie di un anno.",
+      titolo: t("manutenzione.op.presenze.titolo"),
+      descrizione: t("manutenzione.op.presenze.descrizione"),
       icona: <Database className="w-5 h-5" />,
       colore: "border-orange-200 bg-orange-50 dark:border-orange-900 dark:bg-orange-950/30",
       richiede_club: false,
@@ -88,13 +90,13 @@ const SuperAdminManutenzione: React.FC = () => {
         if (cid) q = q.eq("club_id", cid);
         const { error, count } = await q;
         if (error) throw error;
-        return `Eliminate ${count || 0} presenze vecchie`;
+        return t("manutenzione.op.presenze.result", { count: count || 0 });
       },
     },
     {
       id: "gare_archiviate",
-      titolo: "Elimina gare archiviate",
-      descrizione: "Rimuove gare archiviate e relative iscrizioni.",
+      titolo: t("manutenzione.op.gare.titolo"),
+      descrizione: t("manutenzione.op.gare.descrizione"),
       icona: <Trash2 className="w-5 h-5" />,
       colore: "border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30",
       richiede_club: false,
@@ -102,7 +104,7 @@ const SuperAdminManutenzione: React.FC = () => {
         let q = (supabase as any).from("gare_calendario").select("id").eq("archiviata", true);
         if (cid) q = q.eq("club_id", cid);
         const { data: gare } = await q;
-        if (!gare?.length) return "Nessuna gara archiviata trovata";
+        if (!gare?.length) return t("manutenzione.op.gare.empty");
         for (const g of gare) {
           await supabase.from("iscrizioni_gare").delete().eq("gara_id", g.id);
         }
@@ -110,13 +112,13 @@ const SuperAdminManutenzione: React.FC = () => {
         if (cid) dq = dq.eq("club_id", cid);
         const { error, count } = await dq;
         if (error) throw error;
-        return `Eliminate ${count || 0} gare archiviate e relative iscrizioni`;
+        return t("manutenzione.op.gare.result", { count: count || 0 });
       },
     },
     {
       id: "setup_club",
-      titolo: "Crea setup club mancanti",
-      descrizione: "Genera un record setup_club per i club che non ce l'hanno.",
+      titolo: t("manutenzione.op.setup.titolo"),
+      descrizione: t("manutenzione.op.setup.descrizione"),
       icona: <Copy className="w-5 h-5" />,
       colore: "border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/30",
       richiede_club: false,
@@ -131,18 +133,18 @@ const SuperAdminManutenzione: React.FC = () => {
             creati++;
           }
         }
-        return creati > 0 ? `Creati ${creati} setup club mancanti` : "Tutti i club hanno già un setup";
+        return creati > 0 ? t("manutenzione.op.setup.result", { count: creati }) : t("manutenzione.op.setup.none");
       },
     },
     {
       id: "export_dati",
-      titolo: "Esporta dati club (Backup CSV)",
-      descrizione: "Scarica i dati principali (atleti, istruttori, corsi) in formato CSV.",
+      titolo: t("manutenzione.op.export.titolo"),
+      descrizione: t("manutenzione.op.export.descrizione"),
       icona: <Download className="w-5 h-5" />,
       colore: "border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/30",
       richiede_club: true,
       esegui: async (cid) => {
-        if (!cid) return "Seleziona un club specifico per l'esportazione";
+        if (!cid) return t("manutenzione.op.export.need_club");
         const club = clubs.find((c) => c.id === cid);
         const tables = ["atleti", "istruttori", "corsi", "fatture"] as const;
         let all_csv = `=== BACKUP ${club?.nome?.toUpperCase()} — ${new Date().toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })} ===\n\n`;
@@ -169,14 +171,14 @@ const SuperAdminManutenzione: React.FC = () => {
         a.download = `backup_${club?.nome?.replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.csv`;
         a.click();
         URL.revokeObjectURL(url);
-        return `Backup scaricato per ${club?.nome}`;
+        return t("manutenzione.op.export.result", { nome: club?.nome });
       },
     },
   ];
 
   const handle_esegui = async (op: Operazione) => {
     if (op.richiede_club && !club_id) {
-      toast({ title: "Seleziona un club", description: "Questa operazione richiede un club specifico.", variant: "destructive" });
+      toast({ title: t("manutenzione.toast.select_club"), description: t("manutenzione.toast.select_club_desc"), variant: "destructive" });
       return;
     }
     set_running(op.id);
@@ -188,7 +190,7 @@ const SuperAdminManutenzione: React.FC = () => {
       toast({ title: `✅ ${risultato}` });
     } catch (err: any) {
       add_log(`❌ ${op.titolo}: ${err.message}`);
-      toast({ title: "Errore", description: err.message, variant: "destructive" });
+      toast({ title: t("manutenzione.toast.error"), description: err.message, variant: "destructive" });
     } finally {
       set_running(null);
     }
@@ -200,17 +202,17 @@ const SuperAdminManutenzione: React.FC = () => {
       <div>
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
           <Wrench className="w-6 h-6 text-primary" />
-          Manutenzione Ordinaria
+          {t("manutenzione.title")}
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Operazioni di pulizia e manutenzione del database.
+          {t("manutenzione.subtitle")}
         </p>
       </div>
 
       {/* Selettore club */}
       <div className="rounded-xl border border-border bg-card p-4">
         <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide block mb-2">
-          Ambito operazione
+          {t("manutenzione.scope")}
         </label>
         <div className="relative">
           <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -219,7 +221,7 @@ const SuperAdminManutenzione: React.FC = () => {
             onChange={(e) => set_selected_club(e.target.value)}
             className="w-full appearance-none pl-10 pr-10 py-2.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
           >
-            <option value="__tutti__">🌐 Tutti i club</option>
+            <option value="__tutti__">🌐 {t("manutenzione.all_clubs")}</option>
             {clubs.map((c) => (
               <option key={c.id} value={c.id}>{c.nome}</option>
             ))}
@@ -250,14 +252,14 @@ const SuperAdminManutenzione: React.FC = () => {
               {needs_club && (
                 <p className="text-xs text-orange-600 mb-2 flex items-center gap-1">
                   <AlertTriangle className="w-3 h-3" />
-                  Richiede un club specifico
+                  {t("manutenzione.needs_club")}
                 </p>
               )}
 
               {is_confirming ? (
                 <div className="space-y-2">
                   <p className="text-xs text-destructive font-medium">
-                    Digita <strong>CONFERMA</strong> per procedere su <strong>{club_nome}</strong>:
+                    {t("manutenzione.confirm_prefix")} <strong>CONFERMA</strong> {t("manutenzione.confirm_middle")} <strong>{club_nome}</strong>:
                   </p>
                   <input
                     value={confirm_text}
@@ -275,10 +277,10 @@ const SuperAdminManutenzione: React.FC = () => {
                       className="gap-1"
                     >
                       {is_running ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-                      Esegui
+                      {t("manutenzione.run")}
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => { set_confirm_id(null); set_confirm_text(""); }}>
-                      Annulla
+                      {t("manutenzione.cancel")}
                     </Button>
                   </div>
                 </div>
@@ -298,7 +300,7 @@ const SuperAdminManutenzione: React.FC = () => {
                   className="gap-2 w-full"
                 >
                   {is_running ? <RefreshCw className="w-4 h-4 animate-spin" /> : op.icona}
-                  {is_running ? "In esecuzione..." : "Esegui"}
+                  {is_running ? t("manutenzione.running") : t("manutenzione.run")}
                 </Button>
               )}
             </div>
@@ -309,17 +311,17 @@ const SuperAdminManutenzione: React.FC = () => {
       {/* Log */}
       <div className="rounded-xl border border-border bg-card">
         <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-          <p className="text-sm font-semibold text-foreground">📋 Log operazioni</p>
+          <p className="text-sm font-semibold text-foreground">📋 {t("manutenzione.log")}</p>
           {log.length > 0 && (
             <Button variant="ghost" size="sm" onClick={() => set_log([])}>
-              Pulisci
+              {t("manutenzione.clear")}
             </Button>
           )}
         </div>
         <div className="p-4 max-h-48 overflow-y-auto">
           {log.length === 0 ? (
             <p className="text-xs text-muted-foreground text-center py-4">
-              Nessuna operazione eseguita in questa sessione.
+              {t("manutenzione.log_empty")}
             </p>
           ) : (
             <div className="space-y-1">

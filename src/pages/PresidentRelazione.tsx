@@ -12,8 +12,10 @@ import { FileDown, Maximize2 } from "lucide-react";
 import Compositore from "@/components/relazione/Compositore";
 import SavingIndicator from "@/components/relazione/SavingIndicator";
 import PresidentRelazioneGestione from "./PresidentRelazioneGestione";
+import { useTranslation } from "react-i18next";
 
 export default function PresidentRelazione() {
+  const { t } = useTranslation("dashboard");
   const { session } = useAuth();
   const nav = useNavigate();
   const loc = useLocation();
@@ -48,15 +50,15 @@ export default function PresidentRelazione() {
     <div className={fullscreen ? "fixed inset-0 z-50 bg-background p-6 overflow-auto" : "space-y-4"}>
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-3xl font-serif tracking-tight text-foreground">Relazione di fine stagione</h1>
+          <h1 className="text-3xl font-serif tracking-tight text-foreground">{t("relazione.title")}</h1>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-            Componi visualmente la relazione PDF che andrà ai soci e agli stakeholder.
+            {t("relazione.subtitle")}
           </p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           <SavingIndicator />
           <Select value={stagione_id} onValueChange={set_stagione_id}>
-            <SelectTrigger className="w-44 h-9 text-sm"><SelectValue placeholder="Stagione" /></SelectTrigger>
+            <SelectTrigger className="w-44 h-9 text-sm"><SelectValue placeholder={t("relazione.season")} /></SelectTrigger>
             <SelectContent>
               {(stagioni as any[]).map((s) => (
                 <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
@@ -64,7 +66,7 @@ export default function PresidentRelazione() {
             </SelectContent>
           </Select>
           <Button variant="outline" size="sm" className="gap-2 h-9" onClick={() => set_fullscreen((f) => !f)}>
-            <Maximize2 className="w-4 h-4" />{fullscreen ? "Esci fullscreen" : "Fullscreen"}
+            <Maximize2 className="w-4 h-4" />{fullscreen ? t("relazione.exit_fullscreen") : t("relazione.fullscreen")}
           </Button>
         </div>
       </header>
@@ -74,8 +76,8 @@ export default function PresidentRelazione() {
         else nav("/presidente/relazione/contenuti");
       }}>
         <TabsList>
-          <TabsTrigger value="compositore">Compositore</TabsTrigger>
-          <TabsTrigger value="contenuti">Contenuti</TabsTrigger>
+          <TabsTrigger value="compositore">{t("relazione.tab_compositore")}</TabsTrigger>
+          <TabsTrigger value="contenuti">{t("relazione.tab_contenuti")}</TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -87,7 +89,7 @@ export default function PresidentRelazione() {
             club_id={session.club_id}
             stagione_id={stagione_id}
             club={club}
-            presidente={`${session.nome ?? ""} ${session.cognome ?? ""}`.trim() || session.email || "Presidente"}
+            presidente={`${session.nome ?? ""} ${session.cognome ?? ""}`.trim() || session.email || t("relazione.presidente_fallback")}
             stagione_nome={stagione_nome}
           />
         )

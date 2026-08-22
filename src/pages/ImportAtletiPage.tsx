@@ -12,19 +12,23 @@ import {
   Upload, FileSpreadsheet, Download, ArrowRight, ArrowLeft,
   CheckCircle2, AlertCircle, Loader2, Home,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
+
+const ti = (key: string, opts?: any) => i18n.t(`import.${key}`, { ns: "atleti", ...(opts || {}) }) as string;
 
 // ──────────────────────────────────────────────────────────────────
 // Tipi & costanti
 // ──────────────────────────────────────────────────────────────────
 
 const TARGET_FIELDS = [
-  { key: "nome",          label: "Nome",          required: true  },
-  { key: "cognome",       label: "Cognome",       required: true  },
-  { key: "data_nascita",  label: "Data di nascita", required: true },
-  { key: "sesso",         label: "Sesso (M/F)",     required: false },
-  { key: "email",         label: "Email",         required: false },
-  { key: "telefono",      label: "Telefono",      required: false },
-  { key: "livello",       label: "Livello",       required: false },
+  { key: "nome",          label_key: "field.nome",         required: true  },
+  { key: "cognome",       label_key: "field.cognome",      required: true  },
+  { key: "data_nascita",  label_key: "field.data_nascita", required: true },
+  { key: "sesso",         label_key: "field.sesso",        required: false },
+  { key: "email",         label_key: "field.email",        required: false },
+  { key: "telefono",      label_key: "field.telefono",     required: false },
+  { key: "livello",       label_key: "field.livello",      required: false },
 ] as const;
 
 type TargetKey = typeof TARGET_FIELDS[number]["key"];
@@ -178,7 +182,7 @@ function dup_key(nome: string, cognome: string, data_nascita: string): string {
 // ──────────────────────────────────────────────────────────────────
 
 const StepIndicator: React.FC<{ step: number }> = ({ step }) => {
-  const steps = ["Upload file", "Mapping colonne", "Anteprima", "Importa"];
+  const steps = [ti("step.upload"), ti("step.mapping"), ti("step.preview"), ti("step.import")];
   return (
     <div className="flex items-center gap-2 mb-6 overflow-x-auto">
       {steps.map((s, i) => {
@@ -210,6 +214,7 @@ const StepIndicator: React.FC<{ step: number }> = ({ step }) => {
 // ──────────────────────────────────────────────────────────────────
 
 const ImportAtletiPage: React.FC = () => {
+  const { t } = useTranslation("atleti");
   const navigate = useNavigate();
   const club_id = get_current_club_id();
 
@@ -264,7 +269,7 @@ const ImportAtletiPage: React.FC = () => {
       const ws = wb.Sheets[wb.SheetNames[0]];
       const json = XLSX.utils.sheet_to_json<RowRecord>(ws, { defval: "", raw: true });
       if (json.length === 0) {
-        toast.error("Il file non contiene righe");
+        toast.error(ti("toast.no_rows"));
         return;
       }
       const hdrs = Object.keys(json[0]);
@@ -283,7 +288,7 @@ const ImportAtletiPage: React.FC = () => {
       });
       set_step(2);
     } catch (e: any) {
-      toast.error("Errore lettura file: " + (e?.message || "sconosciuto"));
+      toast.error(ti("toast.read_error", { msg: e?.message || ti("unknown") }));
     }
   }, []);
 
@@ -337,12 +342,12 @@ const ImportAtletiPage: React.FC = () => {
       }
 
       const errors: string[] = [];
-      if (!nome) errors.push("Nome mancante");
-      if (!cognome) errors.push("Cognome mancante");
-      if (mapping.data_nascita && !data_nascita) errors.push("Data nascita non valida");
-      else if (!data_nascita) errors.push("Data nascita mancante");
-      if (sesso_raw && !["M", "F"].includes(sesso_raw)) errors.push("Sesso non valido");
-      if (email && !valid_email(email)) errors.push("Email malformata");
+      if (!nome) errors.push(ti("err.nome"));
+      if (!cognome) errors.push(ti("err.cognome"));
+      if (mapping.data_nascita && !data_nascita) errors.push(ti("err.data_invalid"));
+      else if (!data_nascita) errors.push(ti("err.data_missing"));
+      if (sesso_raw && !["M", "F"].includes(sesso_raw)) errors.push(ti("err.sesso"));
+      if (email && !valid_email(email)) errors.push(ti("err.email"));
 
       const existing = (nome && cognome && data_nascita)
         ? atleti_index.get(dup_key(nome, cognome, data_nascita))
@@ -422,11 +427,11 @@ const ImportAtletiPage: React.FC = () => {
           if (error) throw error;
           creati++;
           codici.push(codice_atleta);
-          toast.success(`Creato ${row.normalized.nome} ${row.normalized.cognome} (${codice_atleta})`);
+          toast.success(ti("toast.created", { nome: row.normalized.nome, cognome: row.normalized.cognome, codice: codice_atleta }));
         }
       } catch (e: any) {
         errori++;
-        toast.error(`Errore riga ${row.idx + 2}: ${e?.message || "sconosciuto"}`);
+        toast.error(ti("toast.row_error", { riga: row.idx + 2, msg: e?.message || ti("unknown") }));
       }
     }
 
@@ -440,12 +445,12 @@ const ImportAtletiPage: React.FC = () => {
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
-            <FileSpreadsheet className="w-5 h-5 text-primary" /> Import atleti da Excel
+            <FileSpreadsheet className="w-5 h-5 text-primary" /> {t("import.title")}
           </h1>
-          <p className="text-sm text-muted-foreground">Importa un elenco di atleti da un file .xlsx o .xls</p>
+          <p className="text-sm text-muted-foreground">{t("import.subtitle")}</p>
         </div>
         <Button variant="outline" onClick={() => navigate("/atleti")}>
-          <ArrowLeft className="w-4 h-4 mr-2" /> Torna ad Atleti
+          <ArrowLeft className="w-4 h-4 mr-2" /> {t("import.back_athletes")}
         </Button>
       </div>
 
@@ -464,8 +469,8 @@ const ImportAtletiPage: React.FC = () => {
             onClick={() => file_input_ref.current?.click()}
           >
             <Upload className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-            <p className="text-sm font-medium text-foreground mb-1">Trascina qui il file Excel oppure clicca per selezionarlo</p>
-            <p className="text-xs text-muted-foreground">Formati supportati: .xlsx, .xls</p>
+            <p className="text-sm font-medium text-foreground mb-1">{t("import.dropzone")}</p>
+            <p className="text-xs text-muted-foreground">{t("import.formats")}</p>
             <input
               ref={file_input_ref}
               type="file"
@@ -476,7 +481,7 @@ const ImportAtletiPage: React.FC = () => {
           </div>
           <div className="flex justify-center">
             <Button variant="outline" onClick={download_template}>
-              <Download className="w-4 h-4 mr-2" /> Scarica template Excel
+              <Download className="w-4 h-4 mr-2" /> {t("import.download_template")}
             </Button>
           </div>
         </div>
@@ -486,32 +491,32 @@ const ImportAtletiPage: React.FC = () => {
       {step === 2 && (
         <div className="space-y-4">
           <div className="rounded-lg border border-border p-4 bg-muted/30">
-            <p className="text-sm"><strong>File:</strong> {file_name} — {rows.length} righe trovate</p>
+            <p className="text-sm"><strong>{t("import.file")}</strong> {file_name} — {t("import.rows_found", { count: rows.length })}</p>
           </div>
           <div className="rounded-lg border border-border overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-xs uppercase">
                 <tr>
-                  <th className="px-4 py-2 text-left">Campo target</th>
-                  <th className="px-4 py-2 text-left">Colonna del file</th>
+                  <th className="px-4 py-2 text-left">{t("import.target_field")}</th>
+                  <th className="px-4 py-2 text-left">{t("import.file_column")}</th>
                 </tr>
               </thead>
               <tbody>
-                {TARGET_FIELDS.map((t) => (
-                  <tr key={t.key} className="border-t border-border">
+                {TARGET_FIELDS.map((f) => (
+                  <tr key={f.key} className="border-t border-border">
                     <td className="px-4 py-2 font-medium">
-                      {t.label} {t.required && <span className="text-destructive">*</span>}
+                      {ti(f.label_key)} {f.required && <span className="text-destructive">*</span>}
                     </td>
                     <td className="px-4 py-2">
                       <Select
-                        value={mapping[t.key] || "__none__"}
-                        onValueChange={(v) => set_mapping((m) => ({ ...m, [t.key]: v === "__none__" ? "" : v }))}
+                        value={mapping[f.key] || "__none__"}
+                        onValueChange={(v) => set_mapping((m) => ({ ...m, [f.key]: v === "__none__" ? "" : v }))}
                       >
                         <SelectTrigger className="w-full max-w-md">
-                          <SelectValue placeholder="— Non mappare —" />
+                          <SelectValue placeholder={t("import.not_mapped")} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="__none__">— Non mappare —</SelectItem>
+                          <SelectItem value="__none__">{t("import.not_mapped")}</SelectItem>
                           {headers.map((h) => (
                             <SelectItem key={h} value={h}>{h}</SelectItem>
                           ))}
@@ -524,13 +529,13 @@ const ImportAtletiPage: React.FC = () => {
             </table>
           </div>
           <div className="flex justify-between">
-            <Button variant="outline" onClick={() => set_step(1)}><ArrowLeft className="w-4 h-4 mr-2" /> Indietro</Button>
+            <Button variant="outline" onClick={() => set_step(1)}><ArrowLeft className="w-4 h-4 mr-2" /> {t("import.back")}</Button>
             <Button disabled={!mapping_valido} onClick={build_parsed}>
-              Continua <ArrowRight className="w-4 h-4 ml-2" />
+              {t("import.continue")} <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
           {!mapping_valido && (
-            <p className="text-xs text-destructive">I campi obbligatori (Nome, Cognome, Data di nascita) devono essere mappati.</p>
+            <p className="text-xs text-destructive">{t("import.required_hint")}</p>
           )}
         </div>
       )}
@@ -539,28 +544,28 @@ const ImportAtletiPage: React.FC = () => {
       {step === 3 && (
         <div className="space-y-4">
           <div className="flex flex-wrap gap-2 items-center">
-            <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">🟢 {counts.nuovi} nuovi</Badge>
-            <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">🟡 {counts.aggiornamenti} aggiornamenti</Badge>
-            <Badge className="bg-red-100 text-red-700 hover:bg-red-100">🔴 {counts.errori} errori</Badge>
+            <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">🟢 {t("import.count_new", { count: counts.nuovi })}</Badge>
+            <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">🟡 {t("import.count_updates", { count: counts.aggiornamenti })}</Badge>
+            <Badge className="bg-red-100 text-red-700 hover:bg-red-100">🔴 {t("import.count_errors", { count: counts.errori })}</Badge>
             {counts.warning_livello > 0 && (
-              <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">⚠️ {counts.warning_livello} warning livello</Badge>
+              <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">⚠️ {t("import.count_warn_livello", { count: counts.warning_livello })}</Badge>
             )}
-            <span className="text-xs text-muted-foreground ml-2">Totale: {parsed.length} righe</span>
+            <span className="text-xs text-muted-foreground ml-2">{t("import.total_rows", { count: parsed.length })}</span>
           </div>
           <div className="rounded-lg border border-border overflow-x-auto max-h-[60vh] overflow-y-auto">
             <table className="w-full text-xs">
               <thead className="bg-muted/50 sticky top-0">
                 <tr>
                   <th className="px-2 py-2 text-left">#</th>
-                  <th className="px-2 py-2 text-left">Stato</th>
-                  <th className="px-2 py-2 text-left">Nome</th>
-                  <th className="px-2 py-2 text-left">Cognome</th>
-                  <th className="px-2 py-2 text-left">Data nasc.</th>
-                  <th className="px-2 py-2 text-left">Sesso</th>
-                  <th className="px-2 py-2 text-left">Email</th>
-                  <th className="px-2 py-2 text-left">Telefono</th>
-                  <th className="px-2 py-2 text-left">Livello</th>
-                  <th className="px-2 py-2 text-left">Note</th>
+                  <th className="px-2 py-2 text-left">{t("import.col.stato")}</th>
+                  <th className="px-2 py-2 text-left">{t("import.field.nome")}</th>
+                  <th className="px-2 py-2 text-left">{t("import.field.cognome")}</th>
+                  <th className="px-2 py-2 text-left">{t("import.col.data_nasc")}</th>
+                  <th className="px-2 py-2 text-left">{t("import.col.sesso")}</th>
+                  <th className="px-2 py-2 text-left">{t("import.field.email")}</th>
+                  <th className="px-2 py-2 text-left">{t("import.field.telefono")}</th>
+                  <th className="px-2 py-2 text-left">{t("import.field.livello")}</th>
+                  <th className="px-2 py-2 text-left">{t("import.col.note")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -568,9 +573,9 @@ const ImportAtletiPage: React.FC = () => {
                   <tr key={p.idx} className={`border-t border-border ${p.livello_warning && p.status !== "errore" ? "bg-yellow-50/60 dark:bg-yellow-950/10" : ""}`}>
                     <td className="px-2 py-1.5">{p.idx + 2}</td>
                     <td className="px-2 py-1.5">
-                      {p.status === "nuovo" && <span title="Nuovo">🟢</span>}
-                      {p.status === "aggiornamento" && <span title="Aggiornamento">🟡</span>}
-                      {p.status === "errore" && <span title="Errore">🔴</span>}
+                      {p.status === "nuovo" && <span title={t("import.status.nuovo")}>🟢</span>}
+                      {p.status === "aggiornamento" && <span title={t("import.status.aggiornamento")}>🟡</span>}
+                      {p.status === "errore" && <span title={t("import.status.errore")}>🔴</span>}
                     </td>
                     <td className="px-2 py-1.5">{p.normalized.nome}</td>
                     <td className="px-2 py-1.5">{p.normalized.cognome}</td>
@@ -580,7 +585,7 @@ const ImportAtletiPage: React.FC = () => {
                     <td className="px-2 py-1.5">{p.normalized.telefono}</td>
                     <td className="px-2 py-1.5">
                       {p.livello_warning ? (
-                        <span className="inline-flex items-center gap-1 text-yellow-700 dark:text-yellow-400" title={`Livello "${p.livello_raw}" non riconosciuto: l'atleta sarà importato senza livello`}>
+                        <span className="inline-flex items-center gap-1 text-yellow-700 dark:text-yellow-400" title={t("import.livello_warn_tooltip", { livello: p.livello_raw })}>
                           <span>⚠️</span>
                           <span className="line-through opacity-70">{p.livello_raw}</span>
                           <span className="text-muted-foreground">→ —</span>
@@ -592,7 +597,7 @@ const ImportAtletiPage: React.FC = () => {
                     <td className="px-2 py-1.5">
                       {p.errors.length > 0 && <span className="text-destructive">{p.errors.join("; ")}</span>}
                       {p.errors.length === 0 && p.livello_warning && (
-                        <span className="text-yellow-700 dark:text-yellow-400">Livello "{p.livello_raw}" non riconosciuto</span>
+                        <span className="text-yellow-700 dark:text-yellow-400">{t("import.livello_warn", { livello: p.livello_raw })}</span>
                       )}
                     </td>
                   </tr>
@@ -606,7 +611,7 @@ const ImportAtletiPage: React.FC = () => {
             </Button>
             <Button onClick={run_import} disabled={importing || (counts.nuovi + counts.aggiornamenti) === 0}>
               <CheckCircle2 className="w-4 h-4 mr-2" />
-              Importa {counts.nuovi + counts.aggiornamenti} atleti
+              {t("import.do_import", { count: counts.nuovi + counts.aggiornamenti })}
             </Button>
           </div>
         </div>
@@ -618,25 +623,25 @@ const ImportAtletiPage: React.FC = () => {
           {importing && (
             <div className="flex items-center gap-3 p-6 rounded-lg border border-border bg-muted/30">
               <Loader2 className="w-5 h-5 animate-spin text-primary" />
-              <span className="text-sm font-medium">Importazione in corso… non chiudere la pagina.</span>
+              <span className="text-sm font-medium">{t("import.in_progress")}</span>
             </div>
           )}
           {report && (
             <div className="space-y-4">
               <div className="rounded-lg border border-border p-6 bg-emerald-50 dark:bg-emerald-950/20">
                 <h2 className="text-lg font-bold mb-3 flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
-                  <CheckCircle2 className="w-5 h-5" /> Import completato
+                  <CheckCircle2 className="w-5 h-5" /> {t("import.completed")}
                 </h2>
                 <ul className="space-y-1 text-sm">
-                  <li>✅ <strong>{report.creati}</strong> atleti creati</li>
-                  <li>🟡 <strong>{report.aggiornati}</strong> atleti aggiornati (solo campi vuoti)</li>
+                  <li>✅ <strong>{report.creati}</strong> {t("import.report_created")}</li>
+                  <li>🟡 <strong>{report.aggiornati}</strong> {t("import.report_updated")}</li>
                   {report.errori > 0 && (
-                    <li className="text-destructive">🔴 <strong>{report.errori}</strong> errori</li>
+                    <li className="text-destructive">🔴 <strong>{report.errori}</strong> {t("import.report_errors")}</li>
                   )}
                 </ul>
                 {report.codici.length > 0 && (
                   <div className="mt-3">
-                    <p className="text-xs text-muted-foreground mb-1">Codici assegnati:</p>
+                    <p className="text-xs text-muted-foreground mb-1">{t("import.codes_assigned")}</p>
                     <div className="flex flex-wrap gap-1">
                       {report.codici.map((c) => (
                         <code key={c} className="text-[10px] px-1.5 py-0.5 rounded bg-background border border-border">{c}</code>
@@ -647,12 +652,12 @@ const ImportAtletiPage: React.FC = () => {
               </div>
               <div className="flex gap-2">
                 <Button onClick={() => navigate("/atleti")}>
-                  <Home className="w-4 h-4 mr-2" /> Torna ad Atleti
+                  <Home className="w-4 h-4 mr-2" /> {t("import.back_athletes")}
                 </Button>
                 <Button variant="outline" onClick={() => {
                   set_step(1); set_file_name(""); set_headers([]); set_rows([]); set_parsed([]); set_report(null);
                 }}>
-                  Importa un altro file
+                  {t("import.another_file")}
                 </Button>
               </div>
             </div>
@@ -660,7 +665,7 @@ const ImportAtletiPage: React.FC = () => {
           {!importing && !report && (
             <div className="flex items-center gap-3 p-6 rounded-lg border border-border bg-muted/30">
               <AlertCircle className="w-5 h-5 text-muted-foreground" />
-              <span className="text-sm">Nessun report disponibile.</span>
+              <span className="text-sm">{t("import.no_report")}</span>
             </div>
           )}
         </div>
