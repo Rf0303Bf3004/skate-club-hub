@@ -3,6 +3,7 @@ import { CheckCircle2, Loader2, AlertCircle, Info } from "lucide-react";
 import { useSavingState, saving_store } from "@/stores/savingState";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 
 function format_time(d: Date | null): string {
   if (!d) return "";
@@ -10,6 +11,7 @@ function format_time(d: Date | null): string {
 }
 
 export default function SavingIndicator() {
+  const { t } = useTranslation("dashboard");
   const s = useSavingState();
 
   let icon: React.ReactNode;
@@ -18,18 +20,20 @@ export default function SavingIndicator() {
 
   if (s.error) {
     icon = <AlertCircle className="w-4 h-4" />;
-    text = "Errore di salvataggio";
+    text = t("relazione.saving_indicator.error");
     color = "text-red-600";
   } else if (s.pending > 0) {
     icon = <Loader2 className="w-4 h-4 animate-spin" />;
-    text = "Salvataggio in corso...";
+    text = t("relazione.saving_indicator.saving");
     color = "text-muted-foreground";
   } else if (s.just_saved) {
     icon = <CheckCircle2 className="w-4 h-4" />;
-    text = "Salvato";
+    text = t("relazione.saving_indicator.saved");
   } else {
     icon = <CheckCircle2 className="w-4 h-4" />;
-    text = s.last_saved_at ? `Tutto salvato alle ${format_time(s.last_saved_at)}` : "Tutto salvato";
+    text = s.last_saved_at
+      ? t("relazione.saving_indicator.all_saved_at", { ora: format_time(s.last_saved_at) })
+      : t("relazione.saving_indicator.all_saved");
   }
 
   return (
@@ -44,19 +48,23 @@ export default function SavingIndicator() {
             className="h-6 px-2 text-[12px] text-red-600 hover:text-red-700"
             onClick={() => saving_store.clear_error()}
           >
-            Riprova
+            {t("relazione.saving_indicator.retry")}
           </Button>
         )}
       </div>
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <button type="button" className="text-muted-foreground hover:text-foreground" aria-label="Info">
+            <button
+              type="button"
+              className="text-muted-foreground hover:text-foreground"
+              aria-label={t("relazione.saving_indicator.info_aria")}
+            >
               <Info className="w-3.5 h-3.5" />
             </button>
           </TooltipTrigger>
           <TooltipContent className="max-w-xs text-xs">
-            Le tue modifiche vengono salvate automaticamente. Puoi chiudere questa pagina e tornarci in qualsiasi momento.
+            {t("relazione.saving_indicator.info_tooltip")}
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>

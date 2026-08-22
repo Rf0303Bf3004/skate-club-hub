@@ -3,6 +3,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   id: string;
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export default function SortableItem({ id, children, className, handle_class, disabled }: Props) {
+  const { t } = useTranslation("dashboard");
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id, disabled });
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -30,7 +32,7 @@ export default function SortableItem({ id, children, className, handle_class, di
           disabled && "opacity-30 cursor-not-allowed",
           handle_class,
         )}
-        aria-label="Trascina per riordinare"
+        aria-label={t("relazione.sortable_item.drag_handle")}
       >
         <GripVertical className="w-4 h-4" />
       </button>

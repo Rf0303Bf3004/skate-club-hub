@@ -10,6 +10,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { CATEGORIE_BLOCCO } from "./categorie";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   open: boolean;
@@ -21,6 +22,7 @@ interface Props {
 }
 
 export default function BloccoForm({ open, on_close, club_id, stagione_id, blocco, default_ordine }: Props) {
+  const { t } = useTranslation("dashboard");
   const qc = useQueryClient();
   const [categoria, set_categoria] = useState<string>("staff");
   const [titolo, set_titolo] = useState("");
@@ -58,22 +60,22 @@ export default function BloccoForm({ open, on_close, club_id, stagione_id, blocc
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["relazioni_blocchi", club_id, stagione_id] });
-      toast.success(blocco ? "Blocco aggiornato" : "Blocco creato");
+      toast.success(blocco ? t("relazione.blocco_form.toast_aggiornato") : t("relazione.blocco_form.toast_creato"));
       on_close();
     },
-    onError: (e: any) => toast.error(e.message ?? "Errore salvataggio"),
+    onError: (e: any) => toast.error(e.message ?? t("relazione.blocco_form.toast_errore")),
   });
 
   return (
     <Sheet open={open} onOpenChange={(o) => !o && on_close()}>
       <SheetContent className="sm:max-w-xl overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>{blocco ? "Modifica blocco" : "Nuovo blocco"}</SheetTitle>
-          <SheetDescription>Contenuto redazionale per la relazione del Presidente.</SheetDescription>
+          <SheetTitle>{blocco ? t("relazione.blocco_form.title_edit") : t("relazione.blocco_form.title_new")}</SheetTitle>
+          <SheetDescription>{t("relazione.blocco_form.description")}</SheetDescription>
         </SheetHeader>
         <div className="space-y-4 mt-6">
           <div>
-            <Label>Categoria</Label>
+            <Label>{t("relazione.blocco_form.categoria")}</Label>
             <Select value={categoria} onValueChange={set_categoria}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -82,34 +84,40 @@ export default function BloccoForm({ open, on_close, club_id, stagione_id, blocc
             </Select>
           </div>
           <div>
-            <Label>Titolo</Label>
-            <Input value={titolo} onChange={(e) => set_titolo(e.target.value)} placeholder="Titolo del blocco" />
+            <Label>{t("relazione.blocco_form.titolo")}</Label>
+            <Input
+              value={titolo}
+              onChange={(e) => set_titolo(e.target.value)}
+              placeholder={t("relazione.blocco_form.titolo_placeholder")}
+            />
           </div>
           <div>
-            <Label>Contenuto</Label>
+            <Label>{t("relazione.blocco_form.contenuto")}</Label>
             <Textarea
               value={contenuto}
               onChange={(e) => set_contenuto(e.target.value)}
               rows={10}
-              placeholder="Scrivi qui il testo. Supporta markdown semplice."
+              placeholder={t("relazione.blocco_form.contenuto_placeholder")}
             />
-            <p className="text-xs text-muted-foreground mt-1">Markdown: **grassetto**, *corsivo*, righe vuote per nuovi paragrafi.</p>
+            <p className="text-xs text-muted-foreground mt-1">{t("relazione.blocco_form.markdown_hint")}</p>
           </div>
           <div>
-            <Label>Ordine</Label>
+            <Label>{t("relazione.blocco_form.ordine")}</Label>
             <Input type="number" value={ordine} onChange={(e) => set_ordine(parseInt(e.target.value) || 0)} />
           </div>
           <div className="flex items-center justify-between rounded-md border p-3">
             <div>
-              <Label className="text-sm">Permanente (tutte le stagioni)</Label>
-              <p className="text-xs text-muted-foreground">Se attivo, non viene legato alla stagione corrente.</p>
+              <Label className="text-sm">{t("relazione.blocco_form.permanente")}</Label>
+              <p className="text-xs text-muted-foreground">{t("relazione.blocco_form.permanente_hint")}</p>
             </div>
             <Switch checked={permanente} onCheckedChange={set_permanente} />
           </div>
         </div>
         <SheetFooter className="mt-6">
-          <Button variant="outline" onClick={on_close}>Annulla</Button>
-          <Button onClick={() => m_save.mutate()} disabled={!titolo.trim() || m_save.isPending}>Salva</Button>
+          <Button variant="outline" onClick={on_close}>{t("relazione.blocco_form.annulla")}</Button>
+          <Button onClick={() => m_save.mutate()} disabled={!titolo.trim() || m_save.isPending}>
+            {t("relazione.blocco_form.salva")}
+          </Button>
         </SheetFooter>
       </SheetContent>
     </Sheet>
