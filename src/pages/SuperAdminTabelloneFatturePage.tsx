@@ -41,7 +41,13 @@ const SuperAdminTabelloneFatturePage: React.FC = () => {
   const [bulk_total, set_bulk_total] = useState(0);
   const [bulk_done, set_bulk_done] = useState<{ ok: number; err: number }>({ ok: 0, err: 0 });
   const [bulk_running, set_bulk_running] = useState(false);
-  const mesi = t("tabellone.mesi_short", { returnObjects: true }) as string[];
+  const MESI_FALLBACK = ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"];
+  const mesi_raw = t("tabellone.mesi_short", { returnObjects: true }) as unknown;
+  const mesi: string[] = Array.isArray(mesi_raw)
+    ? (mesi_raw as string[])
+    : typeof mesi_raw === "string" && mesi_raw.includes(",")
+      ? mesi_raw.split(",").map((s) => s.trim())
+      : MESI_FALLBACK;
 
   const { data: clubs = [] } = useQuery({
     queryKey: ["sa_clubs_tab"],
