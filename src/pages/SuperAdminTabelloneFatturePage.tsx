@@ -43,11 +43,9 @@ const SuperAdminTabelloneFatturePage: React.FC = () => {
   const [bulk_running, set_bulk_running] = useState(false);
   const MESI_FALLBACK = ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"];
   const mesi_raw = t("tabellone.mesi_short", { returnObjects: true }) as unknown;
-  const mesi: string[] = Array.isArray(mesi_raw)
-    ? (mesi_raw as string[])
-    : typeof mesi_raw === "string" && mesi_raw.includes(",")
-      ? mesi_raw.split(",").map((s) => s.trim())
-      : MESI_FALLBACK;
+  // Le liste (array) restano gestite solo nei JSON statici: se il valore non è un array, usa il fallback.
+  const mesi: string[] = Array.isArray(mesi_raw) ? (mesi_raw as string[]) : MESI_FALLBACK;
+
 
   const { data: clubs = [] } = useQuery({
     queryKey: ["sa_clubs_tab"],
