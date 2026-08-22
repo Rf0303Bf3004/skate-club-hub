@@ -16,12 +16,17 @@ import {
   use_pubblica_blocco,
   use_disponibilita_giorno,
   use_ripeti_sessione,
+  use_assegna_gruppo_sessione,
+  use_rimuovi_gruppo_sessione,
+  use_sync_gruppo_sessione,
   risolvi_membri_gruppo,
   giorno_it_da_data,
   type GruppoScope,
   type GrigliaBlocco,
   type GrigliaSessione,
+  type GrigliaSessioneGruppo,
 } from "@/hooks/use-griglia-ghiaccio";
+
 import { use_risorse_strutture } from "@/hooks/use-risorse-strutture";
 
 import { Button } from "@/components/ui/button";
