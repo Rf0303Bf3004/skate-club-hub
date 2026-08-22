@@ -677,6 +677,90 @@ function _min(v: string): number {
   return Number(h) * 60 + Number(m);
 }
 
+interface _SessioneCandidata {
+  id: string;
+  ora_inizio: string;
+  ora_fine: string;
+  specialita_id: string | null;
+  ordine: number | null;
+}
+
+/**
+ * Tutte le sotto-sessioni dello stesso giorno (su qualunque risorsa) che si
+ * sovrappongono nel tempo alla sessione di destinazione, esclusa se stessa.
+ */
+async function _sessioni_sovrapposte(sessione_id: string): Promise<_SessioneCandidata[]> {
+  const club_id = get_current_club_id();
+  if (!club_id) return [];
+
+  const { data: dest, error: err_d } = await supabase
+    .from("griglia_sessioni" as any)
+    .select("id,blocco_id,ora_inizio,ora_fine")
+    .eq("id", sessione_id)
+    .maybeSingle();
+  if (err_d) throw err_d;
+  if (!dest) return [];
+  const d_start = _min((dest as any).ora_inizio);
+  const d_end = _min((dest as any).ora_fine);
+
+  const { data: blocco_dest, error: err_bd } = await supabase
+    .from("griglia_blocchi" as any)
+    .select("id,data")
+    .eq("id", (dest as any).blocco_id)
+    .maybeSingle();
+  if (err_bd) throw err_bd;
+  if (!blocco_dest) return [];
+
+  const { data: blocchi, error: err_b } = await supabase
+    .from("griglia_blocchi" as any)
+    .select("id")
+    .eq("club_id", club_id)
+    .eq("data", (blocco_dest as any).data);
+  if (err_b) throw err_b;
+  const blocchi_ids = ((blocchi ?? []) as any[]).map((b) => b.id);
+  if (blocchi_ids.length === 0) return [];
+
+  const { data: sessioni, error: err_s } = await supabase
+    .from("griglia_sessioni" as any)
+    .select("id,ora_inizio,ora_fine,specialita_id,ordine")
+    .in("blocco_id", blocchi_ids);
+  if (err_s) throw err_s;
+
+  return ((sessioni ?? []) as any[]).filter(
+    (s) => s.id !== sessione_id && _min(s.ora_inizio) < d_end && _min(s.ora_fine) > d_start,
+  ) as _SessioneCandidata[];
+}
+
+/** Etichetta leggibile di una sotto-sessione (specialità e/o istruttori). */
+async function _etichetta_sessione(s: _SessioneCandidata): Promise<ConflittoGruppo> {
+  const parti: string[] = [];
+  if (s.specialita_id) {
+    const { data: sp } = await supabase
+      .from("griglia_specialita" as any)
+      .select("nome")
+      .eq("id", s.specialita_id)
+      .maybeSingle();
+    if (sp && (sp as any).nome) parti.push((sp as any).nome);
+  }
+  const { data: si } = await supabase
+    .from("griglia_sessioni_istruttori" as any)
+    .select("istruttore_id")
+    .eq("sessione_id", s.id);
+  const ist_ids = ((si ?? []) as any[]).map((r) => r.istruttore_id);
+  if (ist_ids.length > 0) {
+    const { data: ist } = await supabase.from("istruttori").select("nome,cognome").in("id", ist_ids);
+    const nomi = ((ist ?? []) as any[]).map((i) => `${i.nome} ${i.cognome}`).join(", ");
+    if (nomi) parti.push(nomi);
+  }
+  if (parti.length === 0) parti.push(`Sessione ${s.ordine ?? ""}`.trim());
+
+  return {
+    ora_inizio: String(s.ora_inizio).slice(0, 5),
+    ora_fine: String(s.ora_fine).slice(0, 5),
+    etichetta: parti.join(" · "),
+  };
+}
+
 /**
  * Verifica BLOCCANTE: lo stesso gruppo (livello + scope + eventuale ragione sociale)
  * non può essere collegato a due sotto-sessioni sovrapposte nel tempo nello stesso
@@ -689,52 +773,10 @@ export async function verifica_conflitto_gruppo(input: {
   gruppo_scope: GruppoScope;
   gruppo_ragione_sociale_id?: string | null;
 }): Promise<ConflittoGruppo | null> {
-  const club_id = get_current_club_id();
-  if (!club_id || !input.gruppo_livello) return null;
-
-  // 1. sotto-sessione di destinazione + giorno
-  const { data: dest, error: err_d } = await supabase
-    .from("griglia_sessioni" as any)
-    .select("id,blocco_id,ora_inizio,ora_fine")
-    .eq("id", input.sessione_id)
-    .maybeSingle();
-  if (err_d) throw err_d;
-  if (!dest) return null;
-  const d_start = _min((dest as any).ora_inizio);
-  const d_end = _min((dest as any).ora_fine);
-
-  const { data: blocco_dest, error: err_bd } = await supabase
-    .from("griglia_blocchi" as any)
-    .select("id,data")
-    .eq("id", (dest as any).blocco_id)
-    .maybeSingle();
-  if (err_bd) throw err_bd;
-  if (!blocco_dest) return null;
-
-  // 2. tutte le sotto-sessioni del giorno (tutte le risorse)
-  const { data: blocchi, error: err_b } = await supabase
-    .from("griglia_blocchi" as any)
-    .select("id")
-    .eq("club_id", club_id)
-    .eq("data", (blocco_dest as any).data);
-  if (err_b) throw err_b;
-  const blocchi_ids = ((blocchi ?? []) as any[]).map((b) => b.id);
-  if (blocchi_ids.length === 0) return null;
-
-  const { data: sessioni, error: err_s } = await supabase
-    .from("griglia_sessioni" as any)
-    .select("id,ora_inizio,ora_fine,specialita_id,ordine")
-    .in("blocco_id", blocchi_ids);
-  if (err_s) throw err_s;
-  const candidate = ((sessioni ?? []) as any[]).filter(
-    (s) =>
-      s.id !== input.sessione_id &&
-      _min(s.ora_inizio) < d_end &&
-      _min(s.ora_fine) > d_start,
-  );
+  if (!input.gruppo_livello) return null;
+  const candidate = await _sessioni_sovrapposte(input.sessione_id);
   if (candidate.length === 0) return null;
 
-  // 3. gruppi già collegati a quelle sessioni
   const { data: gruppi, error: err_g } = await supabase
     .from("griglia_sessioni_gruppi" as any)
     .select("sessione_id,gruppo_livello,gruppo_scope,gruppo_ragione_sociale_id")
@@ -752,36 +794,63 @@ export async function verifica_conflitto_gruppo(input: {
   );
   if (!match) return null;
 
-  const s_conf = candidate.find((s) => s.id === match.sessione_id)!;
-
-  // 4. etichetta leggibile (specialità e/o istruttori)
-  const parti: string[] = [];
-  if (s_conf.specialita_id) {
-    const { data: sp } = await supabase
-      .from("griglia_specialita" as any)
-      .select("nome")
-      .eq("id", s_conf.specialita_id)
-      .maybeSingle();
-    if (sp && (sp as any).nome) parti.push((sp as any).nome);
-  }
-  const { data: si } = await supabase
-    .from("griglia_sessioni_istruttori" as any)
-    .select("istruttore_id")
-    .eq("sessione_id", s_conf.id);
-  const ist_ids = ((si ?? []) as any[]).map((r) => r.istruttore_id);
-  if (ist_ids.length > 0) {
-    const { data: ist } = await supabase.from("istruttori").select("nome,cognome").in("id", ist_ids);
-    const nomi = ((ist ?? []) as any[]).map((i) => `${i.nome} ${i.cognome}`).join(", ");
-    if (nomi) parti.push(nomi);
-  }
-  if (parti.length === 0) parti.push(`Sessione ${s_conf.ordine ?? ""}`.trim());
-
-  return {
-    ora_inizio: String(s_conf.ora_inizio).slice(0, 5),
-    ora_fine: String(s_conf.ora_fine).slice(0, 5),
-    etichetta: parti.join(" · "),
-  };
+  return _etichetta_sessione(candidate.find((s) => s.id === match.sessione_id)!);
 }
+
+/**
+ * Verifica BLOCCANTE: lo stesso atleta non può essere assegnato a due sotto-sessioni
+ * sovrapposte nel tempo nello stesso giorno, su qualunque risorsa.
+ */
+export async function verifica_conflitto_atleta(input: {
+  sessione_id: string;
+  atleta_id: string;
+}): Promise<ConflittoGruppo | null> {
+  if (!input.atleta_id) return null;
+  const candidate = await _sessioni_sovrapposte(input.sessione_id);
+  if (candidate.length === 0) return null;
+
+  const { data: righe, error } = await supabase
+    .from("griglia_sessioni_atleti" as any)
+    .select("sessione_id,atleta_id")
+    .eq("atleta_id", input.atleta_id)
+    .in(
+      "sessione_id",
+      candidate.map((s) => s.id),
+    );
+  if (error) throw error;
+  const match = ((righe ?? []) as any[])[0];
+  if (!match) return null;
+
+  return _etichetta_sessione(candidate.find((s) => s.id === match.sessione_id)!);
+}
+
+/**
+ * Verifica (non bloccante d'ufficio: l'utente può forzare) sullo stesso istruttore
+ * assegnato a due sotto-sessioni sovrapposte nello stesso giorno.
+ */
+export async function verifica_conflitto_istruttore(input: {
+  sessione_id: string;
+  istruttore_id: string;
+}): Promise<ConflittoGruppo | null> {
+  if (!input.istruttore_id) return null;
+  const candidate = await _sessioni_sovrapposte(input.sessione_id);
+  if (candidate.length === 0) return null;
+
+  const { data: righe, error } = await supabase
+    .from("griglia_sessioni_istruttori" as any)
+    .select("sessione_id,istruttore_id")
+    .eq("istruttore_id", input.istruttore_id)
+    .in(
+      "sessione_id",
+      candidate.map((s) => s.id),
+    );
+  if (error) throw error;
+  const match = ((righe ?? []) as any[])[0];
+  if (!match) return null;
+
+  return _etichetta_sessione(candidate.find((s) => s.id === match.sessione_id)!);
+}
+
 
 /**
  * Aggancia un gruppo alla sotto-sessione: crea la riga in `griglia_sessioni_gruppi`
