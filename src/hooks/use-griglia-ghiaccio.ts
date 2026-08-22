@@ -13,6 +13,52 @@ export interface GrigliaSpecialita {
   descrizione_messaggio?: string | null;
 }
 
+/**
+ * Origine del gruppo trascinato: rispecchia i 4 box sorgente del GrigliaBuilder
+ * (`pool_ragioni`, `pool_club_fallback`, `pool_senza_ragione_sociale`, `pool_esterni`).
+ */
+export type GruppoScope = "ragione_sociale" | "club" | "senza_ragione_sociale" | "esterni";
+
+/**
+ * Risolve DAL VIVO gli id degli atleti che oggi appartengono a un gruppo
+ * (livello + scope di provenienza). Riproduce esattamente la logica di filtro
+ * dei pool sorgente in `GrigliaBuilder.tsx`.
+ */
+export async function risolvi_membri_gruppo(
+  club_id: string,
+  gruppo_scope: GruppoScope | string | null | undefined,
+  gruppo_livello: string | null | undefined,
+  gruppo_ragione_sociale_id?: string | null,
+): Promise<string[]> {
+  if (!club_id || !gruppo_livello) return [];
+  const { data, error } = await supabase
+    .from("atleti")
+    .select("id,livello_attuale,ragione_sociale_id,atleta_esterno")
+    .eq("club_id", club_id);
+  if (error) throw error;
+
+  const righe = (data ?? []) as any[];
+  return righe
+    .filter((a) => {
+      // stesso fallback applicato in `transform_atleta` (use-supabase-data)
+      const livello = a.livello_attuale ?? "Pulcini";
+      if (livello !== gruppo_livello) return false;
+      switch (gruppo_scope) {
+        case "ragione_sociale":
+          return !!gruppo_ragione_sociale_id && a.ragione_sociale_id === gruppo_ragione_sociale_id;
+        case "club":
+          return !a.atleta_esterno;
+        case "senza_ragione_sociale":
+          return !a.atleta_esterno && !a.ragione_sociale_id;
+        case "esterni":
+          return !!a.atleta_esterno;
+        default:
+          return false;
+      }
+    })
+    .map((a) => a.id as string);
+}
+
 export interface GrigliaSessioneAtleta {
   id: string;
   atleta_id: string;
@@ -48,6 +94,9 @@ export interface GrigliaSessione {
   forzato_at?: string | null;
   corso_id?: string | null;
   corso_nome?: string | null;
+  gruppo_livello?: string | null;
+  gruppo_scope?: GruppoScope | null;
+  gruppo_ragione_sociale_id?: string | null;
   atleti: GrigliaSessioneAtleta[];
   istruttori: GrigliaSessioneIstruttore[];
 }
@@ -504,6 +553,10 @@ export function use_upsert_sessione() {
       messaggio_atleti?: string | null;
       fuori_disponibilita?: boolean;
       motivo_forzatura?: string | null;
+      /** Collegamento dinamico al gruppo: passato SOLO dal drag di gruppo. */
+      gruppo_livello?: string | null;
+      gruppo_scope?: GruppoScope | null;
+      gruppo_ragione_sociale_id?: string | null;
     }) => {
       // XOR: mai entrambi valorizzati
       const usa_testo = !!input.specialita_testo_libero && !input.specialita_id;
@@ -516,6 +569,18 @@ export function use_upsert_sessione() {
               forzato_da: input.fuori_disponibilita ? session?.user_id ?? null : null,
               forzato_at: input.fuori_disponibilita ? new Date().toISOString() : null,
             };
+      // I campi gruppo vengono scritti solo se esplicitamente passati:
+      // un salvataggio normale (o un drag individuale) non li tocca mai.
+      const gruppo =
+        input.gruppo_livello === undefined
+          ? {}
+          : {
+              gruppo_livello: input.gruppo_livello,
+              gruppo_scope: input.gruppo_livello ? input.gruppo_scope ?? null : null,
+              gruppo_ragione_sociale_id: input.gruppo_livello
+                ? input.gruppo_ragione_sociale_id ?? null
+                : null,
+            };
       const payload = {
         blocco_id: input.blocco_id,
         ordine: input.ordine,
@@ -527,6 +592,7 @@ export function use_upsert_sessione() {
         pista: input.pista ?? null,
         messaggio_atleti: input.messaggio_atleti ?? null,
         ...forzatura,
+        ...gruppo,
       };
       if (input.id) {
         const { error } = await supabase.from("griglia_sessioni" as any).update(payload as any).eq("id", input.id);
@@ -706,7 +772,18 @@ export function use_ripeti_sessione() {
       const giorno = giorno_it_da_data(blocco.data);
       const ora_inizio = sessione.ora_inizio;
       const ora_fine = sessione.ora_fine;
-      const atleti_ids = (sessione.atleti ?? []).map((a) => a.atleta_id);
+      // Sessione collegata a un gruppo → la membership si risolve DAL VIVO adesso,
+      // altrimenti (caso normale) si usa lo snapshot statico della sessione sorgente.
+      const e_gruppo = !!sessione.gruppo_livello;
+      const membri_gruppo = e_gruppo
+        ? await risolvi_membri_gruppo(
+            club_id,
+            sessione.gruppo_scope ?? null,
+            sessione.gruppo_livello ?? null,
+            sessione.gruppo_ragione_sociale_id ?? null,
+          )
+        : [];
+      const atleti_ids = e_gruppo ? membri_gruppo : (sessione.atleti ?? []).map((a) => a.atleta_id);
       const istruttori_ids = (sessione.istruttori ?? []).map((i) => i.istruttore_id);
 
       const etichetta_specialita =
@@ -758,7 +835,26 @@ export function use_ripeti_sessione() {
           .update({ corso_id } as any)
           .eq("id", sessione.id);
         if (err_link) throw err_link;
+      } else if (e_gruppo && atleti_ids.length > 0) {
+        // Corso già esistente + sessione collegata a un gruppo: allinea le iscrizioni
+        // ai membri attuali in modo SOLO ADDITIVO (mai rimozioni: le fatture già
+        // emesse non vanno toccate retroattivamente).
+        const { data: isc_esistenti, error: err_isc_sel } = await supabase
+          .from("iscrizioni_corsi")
+          .select("atleta_id")
+          .eq("corso_id", corso_id as string);
+        if (err_isc_sel) throw err_isc_sel;
+        const gia_iscritti = new Set(((isc_esistenti ?? []) as any[]).map((r) => r.atleta_id));
+        const mancanti = atleti_ids.filter((id) => !gia_iscritti.has(id));
+        if (mancanti.length > 0) {
+          const { error: err_isc } = await supabase
+            .from("iscrizioni_corsi")
+            .insert(mancanti.map((atleta_id) => ({ corso_id, atleta_id, attiva: true })) as any);
+          if (err_isc) throw err_isc;
+        }
       }
+
+
 
       // 2) Occorrenze nel Planning classico (stesso schema, idempotente)
       const date = date_settimanali(blocco.data, input.fino_a);
@@ -838,6 +934,9 @@ export function use_ripeti_sessione() {
             note: sessione.note ?? null,
             messaggio_atleti: sessione.messaggio_atleti ?? null,
             corso_id,
+            gruppo_livello: sessione.gruppo_livello ?? null,
+            gruppo_scope: sessione.gruppo_scope ?? null,
+            gruppo_ragione_sociale_id: sessione.gruppo_ragione_sociale_id ?? null,
           } as any)
           .select("id")
           .single();

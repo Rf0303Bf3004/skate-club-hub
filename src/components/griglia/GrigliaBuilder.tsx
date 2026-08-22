@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { get_current_club_id } from "@/lib/supabase";
 import { DndContext, useDraggable, useDroppable, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { use_atleti, use_istruttori } from "@/hooks/use-supabase-data";
 import { use_ragioni_sociali } from "@/hooks/use-ragioni-sociali";
@@ -15,7 +16,9 @@ import {
   use_pubblica_blocco,
   use_disponibilita_giorno,
   use_ripeti_sessione,
+  risolvi_membri_gruppo,
   giorno_it_da_data,
+  type GruppoScope,
   type GrigliaBlocco,
   type GrigliaSessione,
 } from "@/hooks/use-griglia-ghiaccio";
@@ -35,7 +38,7 @@ import { verifica_orario_disponibilita } from "@/lib/availability";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { Settings, Plus, Trash2, X, GraduationCap, Send, CheckCircle2, GripVertical, HelpCircle, ChevronDown, ChevronRight, AlertTriangle, Repeat } from "lucide-react";
+import { Settings, Plus, Trash2, X, GraduationCap, Send, CheckCircle2, GripVertical, HelpCircle, ChevronDown, ChevronRight, AlertTriangle, Repeat, Link2, RefreshCw } from "lucide-react";
 
 const DURATA_DEFAULT_MIN = 20;
 const ALTRO = "__altro__";
@@ -158,18 +161,33 @@ const PillolaDraggable: React.FC<{
   );
 };
 
+// ─── Scope del gruppo (mappa i 4 box sorgente) ─────────────
+const LIVELLO_NON_DEFINITO = "Senza livello";
+
+export function scope_da_box_id(box_id?: string): {
+  gruppo_scope: GruppoScope;
+  gruppo_ragione_sociale_id: string | null;
+} {
+  if (box_id === "club") return { gruppo_scope: "club", gruppo_ragione_sociale_id: null };
+  if (box_id === "senza_rs")
+    return { gruppo_scope: "senza_ragione_sociale", gruppo_ragione_sociale_id: null };
+  if (box_id === "esterni") return { gruppo_scope: "esterni", gruppo_ragione_sociale_id: null };
+  return { gruppo_scope: "ragione_sociale", gruppo_ragione_sociale_id: box_id ?? null };
+}
+
 // ─── Intestazione gruppo (livello) draggable ───────────────
 const GruppoDraggable: React.FC<{
   drag_id: string;
   livello: string;
   atleta_ids: string[];
+  box_id?: string;
   colore?: string | null;
   aperto?: boolean;
   on_toggle?: () => void;
-}> = ({ drag_id, livello, atleta_ids, colore, aperto, on_toggle }) => {
+}> = ({ drag_id, livello, atleta_ids, box_id, colore, aperto, on_toggle }) => {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: drag_id,
-    data: { tipo: "gruppo", atleta_ids },
+    data: { tipo: "gruppo", atleta_ids, livello, box_id },
   });
   const down_ref = React.useRef<{ x: number; y: number } | null>(null);
   return (
@@ -293,6 +311,7 @@ const PoolBox: React.FC<{
                     drag_id={`gruppo:${box_id ?? titolo}:${livello}`}
                     livello={livello}
                     atleta_ids={membri.map((m) => m.id)}
+                    box_id={box_id}
                     colore={colore}
                     aperto={gruppo_aperto}
                     on_toggle={() =>
@@ -342,6 +361,8 @@ const SessioneBox: React.FC<{
   on_rimuovi_atleta: (atleta_id: string) => void;
   on_rimuovi_istruttore: (istruttore_id: string) => void;
   on_ripeti?: () => void;
+  on_sync_gruppo?: () => void;
+  sync_in_corso?: boolean;
   atleti_tutti?: { id: string; ragione_sociale_id?: string | null; atleta_esterno?: boolean | null }[];
   ragioni_sociali?: { id: string; colore_primario: string | null }[];
   data_blocco: string;
@@ -353,6 +374,8 @@ const SessioneBox: React.FC<{
   on_rimuovi_atleta,
   on_rimuovi_istruttore,
   on_ripeti,
+  on_sync_gruppo,
+  sync_in_corso,
   atleti_tutti = [],
   ragioni_sociali = [],
   data_blocco,
@@ -485,6 +508,34 @@ const SessioneBox: React.FC<{
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+        )}
+        {sessione.gruppo_livello && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge variant="outline" className="gap-1 text-[10px]">
+                  <Link2 className="w-3 h-3" /> Gruppo: {sessione.gruppo_livello}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                Collegata dinamicamente al gruppo «{sessione.gruppo_livello}»
+                {sessione.gruppo_scope === "esterni" && " (esterni)"}
+                {sessione.gruppo_scope === "senza_ragione_sociale" && " (senza ragione sociale)"}.
+                Usa «Aggiorna dal gruppo» per riallineare gli atleti alla composizione attuale.
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+        {sessione.gruppo_livello && on_sync_gruppo && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={on_sync_gruppo}
+            disabled={sync_in_corso}
+            title="Aggiorna dal gruppo"
+          >
+            <RefreshCw className={cn("w-4 h-4", sync_in_corso && "animate-spin")} />
+          </Button>
         )}
         {on_ripeti && (
           <Button variant="ghost" size="icon" onClick={on_ripeti} title="Ripeti questa sessione">
@@ -624,6 +675,44 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
     { sessione: GrigliaSessione; patch: Partial<GrigliaSessione> } | null
   >(null);
   const [ripeti_sessione, set_ripeti_sessione] = useState<GrigliaSessione | null>(null);
+  const [sync_gruppo_id, set_sync_gruppo_id] = useState<string | null>(null);
+
+  /**
+   * Riallinea gli atleti della sessione alla composizione ATTUALE del gruppo
+   * collegato: aggiunge i nuovi membri e rimuove chi non ne fa più parte.
+   */
+  const sincronizza_dal_gruppo = async (s: GrigliaSessione) => {
+    if (!s.gruppo_livello) return;
+    set_sync_gruppo_id(s.id);
+    try {
+      const membri = await risolvi_membri_gruppo(
+        get_current_club_id(),
+        s.gruppo_scope ?? null,
+        s.gruppo_livello,
+        s.gruppo_ragione_sociale_id ?? null,
+      );
+      const attuali = (s.atleti ?? []).map((a) => a.atleta_id);
+      const da_aggiungere = membri.filter((id) => !attuali.includes(id));
+      const da_rimuovere = attuali.filter((id) => !membri.includes(id));
+      for (const atleta_id of da_aggiungere) {
+        await assegna_atleta.mutateAsync({ sessione_id: s.id, atleta_id });
+      }
+      for (const atleta_id of da_rimuovere) {
+        await rimuovi_atleta.mutateAsync({ sessione_id: s.id, atleta_id });
+      }
+      toast({
+        title: "Gruppo aggiornato",
+        description:
+          da_aggiungere.length === 0 && da_rimuovere.length === 0
+            ? "Nessuna variazione: la sessione è già allineata."
+            : `+${da_aggiungere.length} aggiunti, −${da_rimuovere.length} rimossi.`,
+      });
+    } catch (e: any) {
+      toast({ title: "Errore aggiornamento gruppo", description: e.message, variant: "destructive" });
+    } finally {
+      set_sync_gruppo_id(null);
+    }
+  };
 
   const giorno_blocco = useMemo(() => (blocco.data ? giorno_it_da_data(blocco.data) : null), [blocco.data]);
   const { data: risorse_tutte = [] } = use_risorse_strutture();
@@ -722,6 +811,28 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
           const nome = a ? `${a.nome} ${a.cognome}` : "Atleta";
           avvisa_sovrapposizione("atleta", atleta_id, nome, dest);
           await assegna_atleta.mutateAsync({ sessione_id, atleta_id });
+        }
+        // Collegamento dinamico: la sessione "ricorda" da quale gruppo arriva
+        const livello_gruppo: string | undefined = active.data?.current?.livello;
+        if (livello_gruppo && livello_gruppo !== LIVELLO_NON_DEFINITO) {
+          const { gruppo_scope, gruppo_ragione_sociale_id } = scope_da_box_id(
+            active.data?.current?.box_id,
+          );
+          await upsert_sessione.mutateAsync({
+            id: dest.id,
+            blocco_id: dest.blocco_id,
+            ordine: dest.ordine,
+            ora_inizio: dest.ora_inizio,
+            ora_fine: dest.ora_fine,
+            specialita_id: dest.specialita_id ?? null,
+            specialita_testo_libero: dest.specialita_testo_libero ?? null,
+            note: dest.note ?? null,
+            pista: dest.pista ?? null,
+            messaggio_atleti: dest.messaggio_atleti ?? null,
+            gruppo_livello: livello_gruppo,
+            gruppo_scope,
+            gruppo_ragione_sociale_id,
+          });
         }
         if (ids.length > 0) toast({ title: `✅ ${ids.length} atleti assegnati alla sessione` });
       } else if (tipo === "atleta") {
@@ -1047,6 +1158,8 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
                       rimuovi_istruttore.mutateAsync({ sessione_id: s.id, istruttore_id })
                     }
                     on_ripeti={() => set_ripeti_sessione(s)}
+                    on_sync_gruppo={() => sincronizza_dal_gruppo(s)}
+                    sync_in_corso={sync_gruppo_id === s.id}
                     data_blocco={blocco.data}
                     atleti_tutti={atleti as any[]}
                     ragioni_sociali={ragioni_attive}
