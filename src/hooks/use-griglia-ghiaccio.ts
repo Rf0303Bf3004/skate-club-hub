@@ -65,6 +65,15 @@ export interface GrigliaSessioneAtleta {
   nome: string;
   cognome: string;
   provenienza: string | null;
+  /** null = atleta aggiunto manualmente (mai toccato dalla logica di gruppo) */
+  gruppo_sessione_id?: string | null;
+}
+
+export interface GrigliaSessioneGruppo {
+  id: string;
+  gruppo_livello: string;
+  gruppo_scope: GruppoScope;
+  gruppo_ragione_sociale_id: string | null;
 }
 
 export interface GrigliaSessioneIstruttore {
@@ -94,12 +103,11 @@ export interface GrigliaSessione {
   forzato_at?: string | null;
   corso_id?: string | null;
   corso_nome?: string | null;
-  gruppo_livello?: string | null;
-  gruppo_scope?: GruppoScope | null;
-  gruppo_ragione_sociale_id?: string | null;
+  gruppi: GrigliaSessioneGruppo[];
   atleti: GrigliaSessioneAtleta[];
   istruttori: GrigliaSessioneIstruttore[];
 }
+
 
 export interface GrigliaBlocco {
   id: string;
