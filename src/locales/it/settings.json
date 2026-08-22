@@ -419,5 +419,36 @@
       "texts_saved": "Testi salvati",
       "error": "Errore"
     }
+  },
+  "catalogo": {
+    "section_title": "📊 Parametri per livello",
+    "add_level": "+ Aggiungi livello",
+    "empty": "Nessun livello configurato",
+    "col_livello": "Livello",
+    "col_iscritti": "Iscritti",
+    "col_max_pista": "Max pista",
+    "col_max_monitrice": "Max/monitr.",
+    "col_lezioni_sett": "Lez/sett",
+    "col_durata": "Durata (min)",
+    "col_costo": "Costo annuo",
+    "col_tipo_sessione": "Tipo sessione",
+    "col_atleti_area": "Atl/area",
+    "col_gruppi": "Gruppi",
+    "col_ore_sett": "Ore/sett",
+    "tipo_standard": "Standard",
+    "tipo_aree_pista": "Aree pista",
+    "tipo_officestripe": "Officestripe",
+    "summary_iscritti": "Totale iscritti",
+    "summary_slot": "Slot ghiaccio/sett",
+    "summary_ore_necessarie": "Ore necessarie",
+    "summary_ore_disponibili": "Ore disponibili",
+    "summary_surplus": "Surplus/deficit",
+    "saving": "Salvataggio...",
+    "save_all": "Salva tutto",
+    "toast_levels_saved": "✅ Parametri per livello salvati",
+    "toast_packages_saved": "✅ Pacchetti opzionali salvati",
+    "toast_save_error": "Errore salvataggio",
+    "toast_level_added": "✅ Livello \"{{livello}}\" aggiunto",
+    "toast_add_error": "Errore aggiunta livello"
   }
 }

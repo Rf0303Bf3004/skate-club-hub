@@ -429,5 +429,15 @@
     "tab_blocchi": "Notizie del Presidente",
     "tab_paragrafi": "Racconto dei dati",
     "tab_allegati": "Documenti allegati"
+  },
+  "onboarding_banner": {
+    "close": "Chiudi banner",
+    "title": "Configurazione completata",
+    "desc": "Il tuo club è pronto. Inizia ad aggiungere atleti, corsi e istruttori per partire.",
+    "cta_atleta": "Aggiungi il primo atleta",
+    "cta_corso": "Crea un corso",
+    "cta_staff": "Invita uno staff",
+    "toast_error": "Impossibile chiudere il banner. Riprova.",
+    "toast_success": "Benvenuto, buon lavoro! 🎉"
   }
 }
