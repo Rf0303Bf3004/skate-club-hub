@@ -874,6 +874,13 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   const [conflitto_gruppo, set_conflitto_gruppo] = useState<
     { livello: string; conflitto: ConflittoGruppo } | null
   >(null);
+  const [conflitto_atleta, set_conflitto_atleta] = useState<
+    { nome: string; conflitto: ConflittoGruppo } | null
+  >(null);
+  const [conflitto_istruttore, set_conflitto_istruttore] = useState<
+    { nome: string; istruttore_id: string; sessione_id: string; conflitto: ConflittoGruppo } | null
+  >(null);
+
 
 
   /** Riallinea SOLO gli atleti taggati con quel gruppo alla membership attuale. */
