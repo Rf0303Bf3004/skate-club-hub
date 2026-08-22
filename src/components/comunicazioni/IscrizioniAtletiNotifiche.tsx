@@ -67,7 +67,9 @@ export function use_count_iscrizioni_non_lette() {
 }
 
 export const IscrizioniAtletiNotifiche: React.FC = () => {
+  const { t } = useTranslation("communications");
   const { data = [], isLoading } = use_iscrizioni_atleti_notifiche(false);
+
   const qc = useQueryClient();
   const navigate = useNavigate();
 
