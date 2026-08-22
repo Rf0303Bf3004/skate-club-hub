@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 
 /**
  * Banner di benvenuto post-onboarding.
@@ -12,6 +13,7 @@ import { Button } from "@/components/ui/button";
  * NOTE i18n: stringhe in italiano (vedi I18N_TODO.md — estrazione futura).
  */
 export default function OnboardingBanner() {
+  const { t } = useTranslation("dashboard");
   const { session } = useAuth();
   const club_id = session?.club_id;
   const [visible, set_visible] = useState(false);
@@ -45,10 +47,10 @@ export default function OnboardingBanner() {
     if (error) {
       set_visible(true); // rollback
       set_closing(false);
-      toast.error("Impossibile chiudere il banner. Riprova.");
+      toast.error(t("onboarding_banner.toast_error"));
       return;
     }
-    toast.success("Benvenuto, buon lavoro! 🎉");
+    toast.success(t("onboarding_banner.toast_success"));
   };
 
   if (!visible) return null;
@@ -62,7 +64,7 @@ export default function OnboardingBanner() {
       <button
         type="button"
         onClick={handle_close}
-        aria-label="Chiudi banner"
+        aria-label={t("onboarding_banner.close")}
         className="absolute top-3 right-3 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-background/60 transition-colors"
       >
         <X className="w-4 h-4" />
@@ -75,26 +77,26 @@ export default function OnboardingBanner() {
         <div className="flex-1 min-w-0">
           <h2 className="text-lg md:text-xl font-bold text-foreground flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary sm:hidden" />
-            Configurazione completata
+            {t("onboarding_banner.title")}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground max-w-2xl">
-            Il tuo club è pronto. Inizia ad aggiungere atleti, corsi e istruttori per partire.
+            {t("onboarding_banner.desc")}
           </p>
 
           <div className="mt-4 flex flex-wrap gap-2">
             <Button asChild size="sm" variant="default" className="gap-1.5">
               <Link to="/atleti?new=true">
-                <UserPlus className="w-4 h-4" /> Aggiungi il primo atleta
+                <UserPlus className="w-4 h-4" /> {t("onboarding_banner.cta_atleta")}
               </Link>
             </Button>
             <Button asChild size="sm" variant="outline" className="gap-1.5">
               <Link to="/corsi?new=true">
-                <BookOpen className="w-4 h-4" /> Crea un corso
+                <BookOpen className="w-4 h-4" /> {t("onboarding_banner.cta_corso")}
               </Link>
             </Button>
             <Button asChild size="sm" variant="outline" className="gap-1.5">
               <Link to="/utenti">
-                <Users className="w-4 h-4" /> Invita uno staff
+                <Users className="w-4 h-4" /> {t("onboarding_banner.cta_staff")}
               </Link>
             </Button>
           </div>
