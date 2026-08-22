@@ -249,5 +249,130 @@
         "result": "Trasferiti {{count}} atleti da {{da}} a {{a}}"
       }
     }
+  },
+  "panel": {
+    "title": "Super Admin Panel",
+    "logged_as": "Logged as {{email}} · SUPERADMIN",
+    "reload": "Ricarica",
+    "denied_title": "Accesso negato",
+    "denied_desc": "Questa pagina è riservata ai Super Admin.",
+    "users_count": "{{count}} utenti",
+    "unpaid_invoices": "{{count}} fatture da pagare",
+    "stats": {
+      "atleti": "Atleti",
+      "istruttori": "Istruttori",
+      "corsi": "Corsi"
+    },
+    "select_club_first": "Seleziona prima un club",
+    "run": "Esegui",
+    "sure": "Sei sicuro?",
+    "yes_run": "Sì, esegui",
+    "error": "Errore",
+    "loading": "Caricamento...",
+    "cancel": "Annulla",
+    "clubs_registered": "Club registrati ({{count}})",
+    "selected_club": "Club selezionato: {{nome}}",
+    "actions_hint": "Club selezionato: {{nome}}. Le azioni che richiedono un club useranno questo.",
+    "actions_no_club": "Seleziona un club nella tab 🏢 Club per abilitare le azioni specifiche per club.",
+    "users_no_club": "Seleziona un club nella tab 🏢 Club per gestire gli utenti.",
+    "log": "Log operazioni",
+    "clear": "Pulisci",
+    "log_empty": "Nessuna operazione eseguita ancora",
+    "tab": {
+      "clubs": "Club",
+      "azioni": "Azioni",
+      "utenti": "Utenti",
+      "app_mobile": "App Mobile",
+      "traduzioni": "Traduzioni",
+      "log": "Log"
+    },
+    "roles": {
+      "admin": "Admin",
+      "presidente": "Presidente",
+      "dt": "Direttore Tecnico",
+      "segreteria": "Segreteria",
+      "istruttore": "Istruttore",
+      "aiuto_monitore": "Aiuto Monitore"
+    },
+    "users": {
+      "title": "Utenti",
+      "empty": "Nessun utente collegato.",
+      "add": "Aggiungi utente",
+      "nome": "Nome",
+      "cognome": "Cognome",
+      "email": "Email",
+      "password": "Password",
+      "removed": "✅ Utente rimosso",
+      "created": "✅ Utente creato e collegato al club",
+      "create_error": "Errore creazione utente",
+      "email_pwd_required": "Email e password obbligatori"
+    },
+    "new_club": {
+      "button": "Nuovo Club",
+      "title": "Crea nuovo club",
+      "section_club": "Dati club",
+      "section_admin": "Utente admin del club (opzionale)",
+      "nome": "Nome club *",
+      "citta": "Città",
+      "paese": "Paese (es. CH)",
+      "email": "Email club",
+      "telefono": "Telefono",
+      "indirizzo": "Indirizzo",
+      "sito_web": "Sito web",
+      "tessera": "N° tessera federale",
+      "colore": "Colore primario:",
+      "descrizione": "Descrizione (opzionale)",
+      "admin_nome": "Nome admin",
+      "admin_cognome": "Cognome admin",
+      "admin_email": "Email admin",
+      "admin_password": "Password admin",
+      "saving": "Creazione...",
+      "submit": "Crea club",
+      "name_required": "Il nome del club è obbligatorio",
+      "admin_error": "⚠️ Club creato ma errore utente admin",
+      "created": "✅ Club \"{{nome}}\" creato con successo!",
+      "error": "Errore creazione club"
+    },
+    "action": {
+      "fatture": {
+        "titolo": "Elimina fatture pagate",
+        "descrizione": "Rimuove tutte le fatture già pagate del club selezionato per alleggerire il DB.",
+        "log": "Eliminate {{count}} fatture pagate da {{nome}}",
+        "toast": "{{count}} fatture pagate eliminate"
+      },
+      "presenze": {
+        "titolo": "Elimina presenze vecchie (> 1 anno)",
+        "descrizione": "Rimuove le presenze più vecchie di 12 mesi dal club selezionato.",
+        "log": "Eliminate {{count}} presenze vecchie da {{nome}}",
+        "toast": "{{count}} presenze eliminate"
+      },
+      "setup": {
+        "titolo": "Crea setup club mancante",
+        "descrizione": "Crea un record setup_club vuoto se manca per il club selezionato.",
+        "exists": "Setup già esistente",
+        "log": "Setup creato per {{nome}}",
+        "toast": "✅ Setup club creato"
+      },
+      "rls": {
+        "titolo": "Ricrea policy RLS",
+        "descrizione": "Disabilita e riabilita RLS su tutte le tabelle principali.",
+        "log": "RLS reset — operazione manuale richiesta sull'SQL Editor",
+        "toast_title": "⚠️ Esegui manualmente sull'SQL Editor",
+        "toast_desc": "Le policy RLS vanno gestite dall'SQL Editor del backend."
+      },
+      "gare": {
+        "titolo": "Elimina gare archiviate",
+        "descrizione": "Rimuove tutte le gare archiviate e le relative iscrizioni del club selezionato.",
+        "empty": "Nessuna gara archiviata",
+        "log": "Eliminate {{count}} gare archiviate da {{nome}}",
+        "toast": "{{count}} gare archiviate eliminate"
+      },
+      "wipe": {
+        "titolo": "Elimina TUTTI i dati del club",
+        "descrizione": "⚠️ IRREVERSIBILE — Elimina tutti atleti, istruttori, corsi, gare, fatture del club selezionato.",
+        "log": "TUTTI i dati eliminati da {{nome}}",
+        "toast": "Tutti i dati di {{nome}} eliminati"
+      }
+    }
   }
 }
