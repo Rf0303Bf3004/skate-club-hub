@@ -160,3 +160,13 @@ Continuare estrazione partendo da:
 ### Stato traduzioni mancanti
 Le chiavi dei widget dashboard estratte in questo turno hanno solo il valore IT: DE/FR/RM/EN sono da
 completare dalla tab "🌐 Traduzioni" (filtro "Solo incomplete", namespace `dashboard`).
+
+## Regola: chiavi con valori non-stringa (liste/oggetti)
+
+Le chiavi i18n il cui valore NON è una stringa semplice (array o oggetto — tipico di liste
+come `mesi_short`, giorni della settimana, ecc.) **non vanno mai inserite in `traduzioni_ui`**:
+restano gestite esclusivamente nei file JSON statici in `src/locales/`.
+Il seed/estrazione le serializzerebbe come stringa JSON (`'["Gen","Feb",...]'`) corrompendo
+il valore a runtime (`t(..., { returnObjects: true })` restituirebbe una stringa e non un array).
+La griglia editabile per lingua ha senso solo per testi semplici: `TraduzioniTab.tsx` filtra
+e nasconde eventuali righe con valori non semplici.
