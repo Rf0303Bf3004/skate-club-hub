@@ -919,18 +919,27 @@ export function use_ripeti_sessione() {
       const giorno = giorno_it_da_data(blocco.data);
       const ora_inizio = sessione.ora_inizio;
       const ora_fine = sessione.ora_fine;
-      // Sessione collegata a un gruppo → la membership si risolve DAL VIVO adesso,
-      // altrimenti (caso normale) si usa lo snapshot statico della sessione sorgente.
-      const e_gruppo = !!sessione.gruppo_livello;
-      const membri_gruppo = e_gruppo
-        ? await risolvi_membri_gruppo(
-            club_id,
-            sessione.gruppo_scope ?? null,
-            sessione.gruppo_livello ?? null,
-            sessione.gruppo_ragione_sociale_id ?? null,
-          )
-        : [];
-      const atleti_ids = e_gruppo ? membri_gruppo : (sessione.atleti ?? []).map((a) => a.atleta_id);
+      // Sessione con gruppi collegati → la membership di OGNI gruppo si risolve
+      // DAL VIVO adesso; gli atleti manuali (senza tag di gruppo) restano comunque.
+      const gruppi_sessione = sessione.gruppi ?? [];
+      const e_gruppo = gruppi_sessione.length > 0;
+      const membri_per_gruppo: { gruppo: GrigliaSessioneGruppo; ids: string[] }[] = [];
+      for (const g of gruppi_sessione) {
+        const ids = await risolvi_membri_gruppo(
+          club_id,
+          g.gruppo_scope,
+          g.gruppo_livello,
+          g.gruppo_ragione_sociale_id,
+        );
+        membri_per_gruppo.push({ gruppo: g, ids });
+      }
+      const atleti_manuali = (sessione.atleti ?? [])
+        .filter((a) => !a.gruppo_sessione_id)
+        .map((a) => a.atleta_id);
+      const atleti_ids = e_gruppo
+        ? Array.from(new Set([...atleti_manuali, ...membri_per_gruppo.flatMap((m) => m.ids)]))
+        : (sessione.atleti ?? []).map((a) => a.atleta_id);
+
       const istruttori_ids = (sessione.istruttori ?? []).map((i) => i.istruttore_id);
 
       const etichetta_specialita =
