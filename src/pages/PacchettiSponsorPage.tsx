@@ -14,10 +14,12 @@ import { PitchTextEditorDialog, type SezionePitch } from "@/components/sponsor/P
 import { PitchPDFPreview } from "@/components/sponsor/PitchPDFPreview";
 import { useKpiPitch } from "@/lib/kpiPitch";
 import { format_chf, type PitchData, type PacchettoSponsor } from "@/lib/pitchPDF";
+import { useTranslation } from "react-i18next";
 
 const SEZIONI: SezionePitch[] = ["intro", "storia", "audience", "call_to_action", "contatti"];
 
 export default function PacchettiSponsorPage() {
+  const { t } = useTranslation("settings");
   const { session } = useAuth();
   const club_id = session?.club_id;
   const qc = useQueryClient();
@@ -125,9 +127,9 @@ export default function PacchettiSponsorPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["pacchetti_sponsor", club_id] });
       set_dlg_open(false);
-      toast({ title: "Pacchetto salvato" });
+      toast({ title: t("sponsor.toast.saved") });
     },
-    onError: (e: any) => toast({ title: "Errore", description: e.message, variant: "destructive" }),
+    onError: (e: any) => toast({ title: t("sponsor.toast.error"), description: e.message, variant: "destructive" }),
   });
 
   const toggle_mut = useMutation({
@@ -145,7 +147,7 @@ export default function PacchettiSponsorPage() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["pacchetti_sponsor", club_id] });
-      toast({ title: "Pacchetto eliminato" });
+      toast({ title: t("sponsor.toast.deleted") });
     },
   });
 
@@ -158,9 +160,9 @@ export default function PacchettiSponsorPage() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["pacchetti_sponsor", club_id] });
-      toast({ title: "Pacchetti ripristinati ai default" });
+      toast({ title: t("sponsor.toast.reset_done") });
     },
-    onError: (e: any) => toast({ title: "Errore", description: e.message, variant: "destructive" }),
+    onError: (e: any) => toast({ title: t("sponsor.toast.error"), description: e.message, variant: "destructive" }),
   });
 
   const save_overrides_mut = useMutation({
@@ -172,9 +174,9 @@ export default function PacchettiSponsorPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["pitch_overrides", club_id] });
       set_text_open(false);
-      toast({ title: "Testi salvati" });
+      toast({ title: t("sponsor.toast.texts_saved") });
     },
-    onError: (e: any) => toast({ title: "Errore", description: e.message, variant: "destructive" }),
+    onError: (e: any) => toast({ title: t("sponsor.toast.error"), description: e.message, variant: "destructive" }),
   });
 
   const pitch_data: PitchData | null = React.useMemo(() => {
@@ -228,28 +230,28 @@ export default function PacchettiSponsorPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Pacchetti Sponsor</h1>
-          <p className="text-muted-foreground text-sm">Configura i pacchetti e genera il Pitch PDF per i tuoi sponsor potenziali.</p>
+          <h1 className="text-2xl font-bold">{t("sponsor.title")}</h1>
+          <p className="text-muted-foreground text-sm">{t("sponsor.subtitle")}</p>
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={() => set_text_open(true)}>
-            <FileEdit className="w-4 h-4 mr-2" /> Modifica testo Pitch
+            <FileEdit className="w-4 h-4 mr-2" /> {t("sponsor.edit_pitch_text")}
           </Button>
           <ConfirmButton
-            titolo="Ripristinare la configurazione consigliata?"
-            descrizione="I 3 pacchetti predefiniti verranno ricreati e quelli attuali eliminati."
-            conferma_label="Ripristina"
+            titolo={t("sponsor.reset_confirm_title")}
+            descrizione={t("sponsor.reset_confirm_desc")}
+            conferma_label={t("sponsor.reset_confirm_cta")}
             on_conferma={() => reset_mut.mutate()}
           >
             <Button variant="outline" size="sm">
-              <RotateCcw className="w-4 h-4 mr-2" /> Ripristina configurazione consigliata
+              <RotateCcw className="w-4 h-4 mr-2" /> {t("sponsor.reset")}
             </Button>
           </ConfirmButton>
           <Button size="sm" onClick={() => { set_dlg_initial(undefined); set_dlg_open(true); }}>
-            <Plus className="w-4 h-4 mr-2" /> Aggiungi pacchetto
+            <Plus className="w-4 h-4 mr-2" /> {t("sponsor.add")}
           </Button>
           <Button size="sm" className="bg-primary" onClick={() => set_pdf_open(true)}>
-            <FileText className="w-4 h-4 mr-2" /> Genera Pitch Sponsor
+            <FileText className="w-4 h-4 mr-2" /> {t("sponsor.generate_pitch")}
           </Button>
         </div>
       </div>
@@ -268,7 +270,7 @@ export default function PacchettiSponsorPage() {
               </div>
               <div>
                 <h3 className="font-bold text-lg">{p.nome_visualizzato}</h3>
-                <p className="text-2xl font-bold text-primary">{format_chf(Number(p.prezzo_annuo))}<span className="text-xs text-muted-foreground font-normal">/anno</span></p>
+                <p className="text-2xl font-bold text-primary">{format_chf(Number(p.prezzo_annuo))}<span className="text-xs text-muted-foreground font-normal">{t("sponsor.per_year")}</span></p>
               </div>
               <ul className="text-sm space-y-1 flex-1">
                 {(Array.isArray(p.benefits) ? p.benefits : []).map((b: string, i: number) => (
@@ -276,18 +278,18 @@ export default function PacchettiSponsorPage() {
                 ))}
               </ul>
               <div className="text-xs text-muted-foreground">
-                {max != null ? `${occ} / ${max} sponsor collegati` : `${occ} sponsor collegati (illimitato)`}
+                {max != null ? t("sponsor.slots", { occ, max }) : t("sponsor.slots_unlimited", { occ })}
               </div>
               <div className="flex gap-2 pt-2 border-t">
                 <Button size="sm" variant="outline" className="flex-1" onClick={() => apri_modifica(p)}>
-                  <Pencil className="w-3 h-3 mr-1" /> Modifica
+                  <Pencil className="w-3 h-3 mr-1" /> {t("sponsor.edit")}
                 </Button>
                 <ConfirmButton
-                  titolo="Eliminare il pacchetto?"
-                  descrizione={`"${p.nome_visualizzato}" verrà rimosso definitivamente.`}
+                  titolo={t("sponsor.delete_confirm_title")}
+                  descrizione={t("sponsor.delete_confirm_desc", { nome: p.nome_visualizzato })}
                   on_conferma={() => del_mut.mutate(p.id)}
                 >
-                  <Button size="sm" variant="ghost" className="text-destructive" aria-label="Elimina pacchetto">
+                  <Button size="sm" variant="ghost" className="text-destructive" aria-label={t("sponsor.delete_aria")}>
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </ConfirmButton>
@@ -297,7 +299,7 @@ export default function PacchettiSponsorPage() {
         })}
         {pacchetti.length === 0 && (
           <Card className="p-8 col-span-full text-center text-muted-foreground">
-            Nessun pacchetto configurato. Usa "Reset ai default" per creare Gold/Silver/Bronze.
+            {t("sponsor.empty")}
           </Card>
         )}
       </div>
