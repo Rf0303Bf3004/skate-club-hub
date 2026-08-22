@@ -2,7 +2,6 @@ import React, { useState, useMemo, useEffect } from "react";
 import { Calendar } from "lucide-react";
 import { use_persisted_state } from "@/hooks/use-persisted-state";
 import ConfirmButton from "@/components/common/ConfirmButton";
-import { useI18n } from "@/lib/i18n";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -2873,41 +2872,41 @@ const CoursesPage: React.FC = () => {
                           {!completezza.completo && (
                             <>
                               <Badge variant="outline" className="text-[10px] border-orange-300 bg-orange-50 text-orange-700 flex-shrink-0" title={completezza.motivo}>
-                                <AlertTriangle className="w-3 h-3 mr-1" />Incompleto
+                                <AlertTriangle className="w-3 h-3 mr-1" />{t("page.incomplete")}
                               </Badge>
                               <button
                                 onClick={(e) => { e.stopPropagation(); set_wizard_corso(c); set_wizard_open(true); }}
                                 className="flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline flex-shrink-0"
                                 title={completezza.motivo}
                               >
-                                <Wand2 className="w-3.5 h-3.5" /> Sistema
+                                <Wand2 className="w-3.5 h-3.5" /> {t("page.fix_action")}
                               </button>
                             </>
                           )}
                           {c.tipo && <Badge variant="secondary" className="text-xs flex-shrink-0">{c.tipo}</Badge>}
                           {prezzo_non_impostato(c) && (
                             <Badge variant="outline" className="text-[10px] border-amber-300 bg-amber-50 text-amber-700 flex-shrink-0">
-                              <AlertTriangle className="w-3 h-3 mr-1" /> Prezzo non impostato
+                              <AlertTriangle className="w-3 h-3 mr-1" /> {t("card.price_not_set")}
                             </Badge>
                           )}
-                          <span className="text-xs text-muted-foreground flex-shrink-0">{(c.atleti_ids||[]).length} iscritti</span>
+                          <span className="text-xs text-muted-foreground flex-shrink-0">{t("card.enrolled_count", { count: (c.atleti_ids||[]).length })}</span>
                           <ConfirmButton
-                            titolo={`Eliminare il corso "${c.nome}"?`}
-                            descrizione="Questa azione non è reversibile."
+                            titolo={t("page.confirm_delete_title", { name: c.nome })}
+                            descrizione={t("page.confirm_delete_desc")}
                             on_conferma={async () => {
                               try {
                                 await elimina.mutateAsync(c.id);
-                                toast({ title: "🗑️ Corso eliminato" });
+                                toast({ title: t("page.toast_course_deleted_short") });
                               } catch (err: any) {
-                                toast({ title: "Errore eliminazione", description: err?.message, variant: "destructive" });
+                                toast({ title: t("page.toast_delete_error"), description: err?.message, variant: "destructive" });
                               }
                             }}
                           >
                             <button
                               onClick={(e) => e.stopPropagation()}
                               className="text-muted-foreground hover:text-destructive p-1 rounded flex-shrink-0"
-                              title="Elimina corso"
-                              aria-label="Elimina corso"
+                              title={t("page.delete_course_title")}
+                              aria-label={t("page.delete_course_title")}
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -2946,36 +2945,36 @@ const CoursesPage: React.FC = () => {
                           {!completezza.completo && (
                             <>
                               <Badge variant="outline" className="text-[10px] border-orange-300 bg-orange-50 text-orange-700 flex-shrink-0" title={completezza.motivo}>
-                                <AlertTriangle className="w-3 h-3 mr-1" />Incompleto
+                                <AlertTriangle className="w-3 h-3 mr-1" />{t("page.incomplete")}
                               </Badge>
                               <button
                                 onClick={(e) => { e.stopPropagation(); set_wizard_corso(c); set_wizard_open(true); }}
                                 className="flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline flex-shrink-0"
                                 title={completezza.motivo}
                               >
-                                <Wand2 className="w-3.5 h-3.5" /> Sistema
+                                <Wand2 className="w-3.5 h-3.5" /> {t("page.fix_action")}
                               </button>
                             </>
                           )}
                           {c.tipo && <Badge variant="secondary" className="text-xs flex-shrink-0">{c.tipo}</Badge>}
-                          <span className="text-xs text-muted-foreground flex-shrink-0">{(c.atleti_ids||[]).length} iscritti</span>
+                          <span className="text-xs text-muted-foreground flex-shrink-0">{t("card.enrolled_count", { count: (c.atleti_ids||[]).length })}</span>
                           <ConfirmButton
-                            titolo={`Eliminare il corso "${c.nome}"?`}
-                            descrizione="Questa azione non è reversibile."
+                            titolo={t("page.confirm_delete_title", { name: c.nome })}
+                            descrizione={t("page.confirm_delete_desc")}
                             on_conferma={async () => {
                               try {
                                 await elimina.mutateAsync(c.id);
-                                toast({ title: "🗑️ Corso eliminato" });
+                                toast({ title: t("page.toast_course_deleted_short") });
                               } catch (err: any) {
-                                toast({ title: "Errore eliminazione", description: err?.message, variant: "destructive" });
+                                toast({ title: t("page.toast_delete_error"), description: err?.message, variant: "destructive" });
                               }
                             }}
                           >
                             <button
                               onClick={(e) => e.stopPropagation()}
                               className="text-muted-foreground hover:text-destructive p-1 rounded flex-shrink-0"
-                              title="Elimina corso"
-                              aria-label="Elimina corso"
+                              title={t("page.delete_course_title")}
+                              aria-label={t("page.delete_course_title")}
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
