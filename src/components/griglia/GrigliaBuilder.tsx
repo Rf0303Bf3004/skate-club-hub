@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { get_current_club_id } from "@/lib/supabase";
 import { DndContext, useDraggable, useDroppable, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { use_atleti, use_istruttori } from "@/hooks/use-supabase-data";
 import { use_ragioni_sociali } from "@/hooks/use-ragioni-sociali";
