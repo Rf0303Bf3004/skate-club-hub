@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import AppMobileTab from "@/components/superadmin/AppMobileTab";
+import TraduzioniTab from "@/components/superadmin/TraduzioniTab";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
@@ -449,7 +450,7 @@ const SuperAdminPage: React.FC = () => {
   const [clubs, set_clubs] = useState<ClubStats[]>([]);
   const [selected_club, set_selected_club] = useState<string | null>(null);
   const [loading, set_loading] = useState(true);
-  const [tab, set_tab] = useState<"clubs" | "azioni" | "utenti" | "app_mobile" | "db">("clubs");
+  const [tab, set_tab] = useState<"clubs" | "azioni" | "utenti" | "app_mobile" | "traduzioni" | "db">("clubs");
   const [log, set_log] = useState<string[]>([]);
 
   const add_log = (msg: string) => {
@@ -681,6 +682,7 @@ const SuperAdminPage: React.FC = () => {
               { key: "azioni", label: "⚙️ Azioni", icon: Database },
               { key: "utenti", label: "👥 Utenti", icon: UserCheck },
               { key: "app_mobile", label: "📱 App Mobile", icon: Database },
+              { key: "traduzioni", label: "🌐 Traduzioni", icon: Database },
               { key: "db", label: "📋 Log", icon: BarChart3 },
             ] as const
           ).map((t) => (
@@ -773,6 +775,9 @@ const SuperAdminPage: React.FC = () => {
 
         {/* Tab: App Mobile */}
         {tab === "app_mobile" && <AppMobileTab on_log={add_log} />}
+
+        {/* Tab: Traduzioni */}
+        {tab === "traduzioni" && <TraduzioniTab on_log={add_log} />}
 
         {/* Tab: Log */}
         {tab === "db" && (
