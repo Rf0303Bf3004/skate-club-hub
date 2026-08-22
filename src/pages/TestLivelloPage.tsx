@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase, get_current_club_id } from "@/lib/supabase";
@@ -80,12 +81,14 @@ type Gara = {
   club_ospitante: string | null;
 };
 
-const ESITO_OPTIONS: { value: TestAtleta["esito"]; label: string; cls: string }[] = [
-  { value: "in_attesa",     label: "In attesa",     cls: "bg-muted text-muted-foreground" },
-  { value: "superato",      label: "Superato",      cls: "bg-green-100 text-green-800" },
-  { value: "non_superato",  label: "Non superato",  cls: "bg-destructive/10 text-destructive" },
-  { value: "non_sostenuto", label: "Non sostenuto", cls: "bg-muted text-muted-foreground italic" },
-];
+function get_esito_options(t: (k: string) => string): { value: TestAtleta["esito"]; label: string; cls: string }[] {
+  return [
+    { value: "in_attesa",     label: t("level_tests.esito_in_attesa"),     cls: "bg-muted text-muted-foreground" },
+    { value: "superato",      label: t("level_tests.passed"),      cls: "bg-green-100 text-green-800" },
+    { value: "non_superato",  label: t("level_tests.failed"),  cls: "bg-destructive/10 text-destructive" },
+    { value: "non_sostenuto", label: t("level_tests.esito_non_sostenuto"), cls: "bg-muted text-muted-foreground italic" },
+  ];
+}
 
 // ─── Form state nuovo test ───────────────────────────────────────────────
 type NuovoTestForm = {
@@ -113,11 +116,11 @@ const empty_form: NuovoTestForm = {
 };
 
 // Riepilogo livelli convocate per la card di lista
-function summarize_livelli(rows: { livello_target: string; disciplina: string | null }[]): string {
-  if (rows.length === 0) return "0 atlete";
+function summarize_livelli(t: (k: string, o?: any) => string, rows: { livello_target: string; disciplina: string | null }[]): string {
+  if (rows.length === 0) return t("level_tests.count_athletes_zero");
   const counts = new Map<string, number>();
   for (const r of rows) {
-    const key = r.disciplina ? `${r.livello_target} ${r.disciplina === "artistica" ? "Artistica" : "Stile"}` : r.livello_target;
+    const key = r.disciplina ? `${r.livello_target} ${r.disciplina === "artistica" ? t("level_tests.discipline_artistica") : t("level_tests.discipline_stile")}` : r.livello_target;
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
   // unique atleti = rows distinte per ordine=1 idealmente; qui contiamo step totali
@@ -127,6 +130,7 @@ function summarize_livelli(rows: { livello_target: string; disciplina: string | 
 
 // ─── Componente principale ──────────────────────────────────────────────
 export default function TestLivelloPage() {
+  const { t } = useTranslation("events");
   const club_id = get_current_club_id();
   const qc = useQueryClient();
   const route_params = useParams<{ id?: string }>();
@@ -315,10 +319,10 @@ export default function TestLivelloPage() {
             state: com_state,
             fk: { test_livello_id: data.id },
           });
-          toast.success(`Comunicazione inviata${count ? ` a ${count} destinatari` : ""}`);
+          toast.success(count ? t("level_tests.toast_communication_sent_to", { count }) : t("level_tests.toast_communication_sent"));
           qc.invalidateQueries({ queryKey: ["comunicazioni"] });
         } catch (com_err: any) {
-          toast.error("Test creato, ma comunicazione fallita: " + (com_err?.message ?? ""));
+          toast.error(t("level_tests.toast_test_created_comm_failed", { error: com_err?.message ?? "" }));
         }
       }
 
@@ -328,9 +332,9 @@ export default function TestLivelloPage() {
       qc.invalidateQueries({ queryKey: ["test_livello"] });
       set_selected_test_id(data.id);
       navigate(`/test/${data.id}`);
-      toast.success("Test creato");
+      toast.success(t("level_tests.toast_test_created"));
     },
-    onError: (e: any) => toast.error("Errore creazione: " + (e?.message ?? "")),
+    onError: (e: any) => toast.error(t("level_tests.toast_create_error", { error: e?.message ?? "" })),
   });
 
   const delete_test = useMutation({
@@ -342,7 +346,7 @@ export default function TestLivelloPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["test_livello"] });
       navigate("/test");
-      toast.success("Test eliminato");
+      toast.success(t("level_tests.toast_test_deleted"));
     },
   });
 
@@ -351,7 +355,7 @@ export default function TestLivelloPage() {
       const { error } = await supabase.from("test_livello_atleti").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { refetch_atleti(); toast.success("Convocazione rimossa"); },
+    onSuccess: () => { refetch_atleti(); toast.success(t("level_tests.toast_convocation_removed")); },
   });
 
   const update_field = useMutation({
@@ -377,7 +381,7 @@ export default function TestLivelloPage() {
             disciplina: prev_row.disciplina ?? null,
           });
           if (result.promosso) {
-            toast.success(`${atleta.cognome} ${atleta.nome}: promosso da ${result.from} a ${result.to}`);
+            toast.success(t("level_tests.toast_promotion_success", { cognome: atleta.cognome, nome: atleta.nome, from: result.from, to: result.to }));
             const aid = prev_row.atleta_id;
             await Promise.all([
               qc.invalidateQueries({ queryKey: ["atleti_test"], refetchType: "all" }),
@@ -388,14 +392,14 @@ export default function TestLivelloPage() {
               qc.invalidateQueries({ queryKey: ["calendario-interattivo", aid], refetchType: "all" }),
             ]);
           } else {
-            toast.info(`Promozione non applicata: ${(result as any).skipped_motivo}`);
+            toast.info(t("level_tests.toast_promotion_skipped", { motivo: (result as any).skipped_motivo }));
           }
         } catch (e: any) {
-          toast.error("Errore promozione: " + (e?.message ?? ""));
+          toast.error(t("level_tests.toast_promotion_error", { error: e?.message ?? "" }));
         }
       }
     } else if (prev_esito === "superato" && nuovo !== "superato") {
-      toast.warning("Esito modificato — il livello dell'atleta NON è stato cambiato. Modifica manualmente la scheda atleta se necessario.");
+      toast.warning(t("level_tests.toast_esito_changed_warning"));
     }
     refetch_atleti();
   };
@@ -433,7 +437,7 @@ export default function TestLivelloPage() {
 
   const add_chain_step = () => {
     const next = next_passaggio_for_chain();
-    if (!next) { toast.info("Nessun passaggio successivo disponibile"); return; }
+    if (!next) { toast.info(t("level_tests.toast_no_next_step")); return; }
     // Se l'ultimo step aveva una disciplina (artistica/stile), il nuovo step la eredita
     const last_disc = chain[chain.length - 1]?.disciplina;
     set_chain([
@@ -472,9 +476,9 @@ export default function TestLivelloPage() {
     onSuccess: () => {
       refetch_atleti();
       set_show_add(false);
-      toast.success("Atleta convocata");
+      toast.success(t("level_tests.toast_athlete_convoked"));
     },
-    onError: (e: any) => toast.error("Errore: " + (e?.message ?? "")),
+    onError: (e: any) => toast.error(t("level_tests.toast_generic_error", { error: e?.message ?? "" })),
   });
 
   // Atlete già convocate (almeno uno step) per evitare doppia selezione del primo step
@@ -544,8 +548,8 @@ export default function TestLivelloPage() {
               const n_atleti = new Set(test_atleti.filter((x) => x.test_id === t.id).map((x) => x.atleta_id)).size;
               // se non ho ancora i test_atleti del test corrente, uso la lunghezza dei raw (step) per fallback
               const tipo_label = t.tipo === "in_gara"
-                ? (gare.find((g) => g.id === t.gara_id)?.nome ? `Test in ${gare.find((g) => g.id === t.gara_id)?.nome}` : "Test in gara")
-                : "Test base";
+                ? (gare.find((g) => g.id === t_row.gara_id)?.nome ? t("level_tests.test_in_gara_named", { name: gare.find((g) => g.id === t_row.gara_id)?.nome }) : t("level_tests.test_in_gara"))
+                : t("level_tests.test_base");
               return (
                 <Card key={t.id} className="cursor-pointer hover:shadow-md transition-shadow"
                   onClick={() => navigate(`/test/${t.id}`)}>

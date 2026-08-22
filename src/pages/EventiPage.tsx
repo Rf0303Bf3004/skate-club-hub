@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Plus, ArrowLeft, Trash2, Sparkles, MapPin, Calendar as CalendarIcon, Clock, Users as UsersIcon, Pencil } from "lucide-react";
 import ConfirmButton from "@/components/common/ConfirmButton";
+import { useTranslation } from "react-i18next";
 
 type Evento = {
   id: string;
@@ -53,6 +54,7 @@ export default function EventiPage() {
   const params = useParams<{ id?: string }>();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { t } = useTranslation("events");
 
   const [show_form, set_show_form] = useState(false);
   const [editing_id, set_editing_id] = useState<string | null>(null);
@@ -165,9 +167,9 @@ export default function EventiPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["eventi_straordinari"] });
       set_show_form(false);
-      toast.success(editing_id ? "Evento aggiornato" : "Evento creato");
+      toast.success(editing_id ? t("events.toast_updated") : t("events.toast_created"));
     },
-    onError: (e: any) => toast.error("Errore: " + (e?.message ?? "")),
+    onError: (e: any) => toast.error(t("events.toast_error", { message: e?.message ?? "" })),
   });
 
   const delete_evento = useMutation({
@@ -179,7 +181,7 @@ export default function EventiPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["eventi_straordinari"] });
       navigate("/eventi");
-      toast.success("Evento eliminato");
+      toast.success(t("events.toast_deleted"));
     },
   });
 
@@ -192,8 +194,8 @@ export default function EventiPage() {
     if (!evento) {
       return (
         <div className="space-y-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate("/eventi")}><ArrowLeft className="w-4 h-4 mr-1" /> Torna agli eventi</Button>
-          <div className="py-12 text-center text-muted-foreground">Evento non trovato.</div>
+          <Button variant="ghost" size="sm" onClick={() => navigate("/eventi")}><ArrowLeft className="w-4 h-4 mr-1" /> {t("events.back_to_list")}</Button>
+          <div className="py-12 text-center text-muted-foreground">{t("events.not_found")}</div>
         </div>
       );
     }
@@ -205,31 +207,31 @@ export default function EventiPage() {
           <h1 className="text-2xl font-bold text-foreground">{evento.titolo}</h1>
           {evento.tipo && <Badge variant="outline">{evento.tipo}</Badge>}
           <div className="ml-auto flex gap-2">
-            <Button size="sm" variant="outline" onClick={() => open_edit(evento)}><Pencil className="w-4 h-4 mr-1" /> Modifica</Button>
+            <Button size="sm" variant="outline" onClick={() => open_edit(evento)}><Pencil className="w-4 h-4 mr-1" /> {t("events.edit")}</Button>
             <ConfirmButton
-              titolo="Eliminare questo evento?"
-              descrizione="Verranno eliminate definitivamente anche tutte le iscrizioni collegate."
+              titolo={t("events.delete_confirm_title")}
+              descrizione={t("events.delete_confirm_desc")}
               on_conferma={() => delete_evento.mutate(evento.id)}
             >
-              <Button size="sm" variant="destructive"><Trash2 className="w-4 h-4 mr-1" /> Elimina</Button>
+              <Button size="sm" variant="destructive"><Trash2 className="w-4 h-4 mr-1" /> {t("events.delete")}</Button>
             </ConfirmButton>
           </div>
         </div>
 
         <Card>
           <CardContent className="pt-4 grid gap-3 md:grid-cols-4 text-sm">
-            <div><span className="text-muted-foreground">Data:</span> {fmt_date(evento.data)}</div>
-            <div><span className="text-muted-foreground">Orario:</span> {evento.ora_inizio?.slice(0, 5) || "—"}{evento.ora_fine ? ` – ${evento.ora_fine.slice(0, 5)}` : ""}</div>
-            <div className="md:col-span-2"><span className="text-muted-foreground">Luogo:</span> {evento.luogo || "—"}</div>
+            <div><span className="text-muted-foreground">{t("events.date")}:</span> {fmt_date(evento.data)}</div>
+            <div><span className="text-muted-foreground">{t("events.time")}:</span> {evento.ora_inizio?.slice(0, 5) || "—"}{evento.ora_fine ? ` – ${evento.ora_fine.slice(0, 5)}` : ""}</div>
+            <div className="md:col-span-2"><span className="text-muted-foreground">{t("events.place")}:</span> {evento.luogo || "—"}</div>
             {evento.descrizione && <div className="md:col-span-4 text-muted-foreground whitespace-pre-wrap">{evento.descrizione}</div>}
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><UsersIcon className="w-4 h-4" /> Iscritti ({iscrizioni_evento.length})</CardTitle></CardHeader>
+          <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><UsersIcon className="w-4 h-4" /> {t("events.registered_count", { count: iscrizioni_evento.length })}</CardTitle></CardHeader>
           <CardContent>
             {iscrizioni_evento.length === 0 ? (
-              <p className="text-center text-muted-foreground py-6 text-sm">Nessun atleta iscritto a questo evento.</p>
+              <p className="text-center text-muted-foreground py-6 text-sm">{t("events.no_registrations")}</p>
             ) : (
               <div className="divide-y">
                 {iscrizioni_evento.map((i) => {
@@ -256,14 +258,14 @@ export default function EventiPage() {
     return (
       <Dialog open={show_form} onOpenChange={set_show_form}>
         <DialogContent className="max-w-xl">
-          <DialogHeader><DialogTitle>{editing_id ? "Modifica evento" : "Nuovo evento"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editing_id ? t("events.form_title_edit") : t("events.form_title_new")}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div>
-              <label className="text-sm font-medium">Titolo *</label>
-              <Input value={form.titolo} onChange={(e) => set_form({ ...form, titolo: e.target.value })} placeholder="es. Galà di Natale" />
+              <label className="text-sm font-medium">{t("events.field_title")}</label>
+              <Input value={form.titolo} onChange={(e) => set_form({ ...form, titolo: e.target.value })} placeholder={t("events.field_title_placeholder")} />
             </div>
             <div>
-              <label className="text-sm font-medium">Tipo</label>
+              <label className="text-sm font-medium">{t("events.field_type")}</label>
               <Select value={form.tipo} onValueChange={(v) => set_form({ ...form, tipo: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{TIPI.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
@@ -271,33 +273,33 @@ export default function EventiPage() {
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="text-sm font-medium">Data</label>
+                <label className="text-sm font-medium">{t("events.field_date")}</label>
                 <Input type="date" value={form.data} onChange={(e) => set_form({ ...form, data: e.target.value })} />
               </div>
               <div>
-                <label className="text-sm font-medium">Ora inizio</label>
+                <label className="text-sm font-medium">{t("events.field_start")}</label>
                 <Input type="time" value={form.ora_inizio} onChange={(e) => set_form({ ...form, ora_inizio: e.target.value })} />
               </div>
               <div>
-                <label className="text-sm font-medium">Ora fine</label>
+                <label className="text-sm font-medium">{t("events.field_end")}</label>
                 <Input type="time" value={form.ora_fine} onChange={(e) => set_form({ ...form, ora_fine: e.target.value })} />
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium">Luogo</label>
-              <Input value={form.luogo} onChange={(e) => set_form({ ...form, luogo: e.target.value })} placeholder="es. Pista del Ghiaccio" />
+              <label className="text-sm font-medium">{t("events.field_place")}</label>
+              <Input value={form.luogo} onChange={(e) => set_form({ ...form, luogo: e.target.value })} placeholder={t("events.field_place_placeholder")} />
             </div>
             <div>
-              <label className="text-sm font-medium">Descrizione</label>
+              <label className="text-sm font-medium">{t("events.field_description")}</label>
               <Textarea value={form.descrizione} onChange={(e) => set_form({ ...form, descrizione: e.target.value })} rows={3} />
             </div>
             {stagione_corrente && (
-              <p className="text-xs text-muted-foreground">Stagione: <strong>{stagione_corrente.nome}</strong></p>
+              <p className="text-xs text-muted-foreground">{t("events.season_label")}: <strong>{stagione_corrente.nome}</strong></p>
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => set_show_form(false)}>Annulla</Button>
-            <Button disabled={!form.titolo || save.isPending} onClick={() => save.mutate()}>{editing_id ? "Salva" : "Crea evento"}</Button>
+            <Button variant="outline" onClick={() => set_show_form(false)}>{t("events.cancel")}</Button>
+            <Button disabled={!form.titolo || save.isPending} onClick={() => save.mutate()}>{editing_id ? t("events.save") : t("events.create")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -308,10 +310,10 @@ export default function EventiPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><Sparkles className="w-6 h-6 text-primary" /> Eventi e Galà</h1>
-          <p className="text-sm text-muted-foreground">Galà, saggi, esibizioni e altri eventi straordinari del club.</p>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><Sparkles className="w-6 h-6 text-primary" /> {t("events.title")}</h1>
+          <p className="text-sm text-muted-foreground">{t("events.subtitle")}</p>
         </div>
-        <Button onClick={open_new}><Plus className="w-4 h-4 mr-2" /> Nuovo Evento</Button>
+        <Button onClick={open_new}><Plus className="w-4 h-4 mr-2" /> {t("events.new")}</Button>
       </div>
 
       {isLoading ? (
@@ -319,8 +321,8 @@ export default function EventiPage() {
       ) : eventi.length === 0 ? (
         <Card><CardContent className="py-16 text-center text-muted-foreground">
           <Sparkles className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p className="text-sm font-medium">Nessun evento creato</p>
-          <p className="text-xs mt-1">Crea il primo evento del club per iniziare.</p>
+          <p className="text-sm font-medium">{t("events.empty_title")}</p>
+          <p className="text-xs mt-1">{t("events.empty_desc")}</p>
         </CardContent></Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -339,7 +341,7 @@ export default function EventiPage() {
                 )}
                 {e.luogo && <p className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" /> {e.luogo}</p>}
                 {e.descrizione && <p className="text-xs line-clamp-2 pt-1">{e.descrizione}</p>}
-                <p className="flex items-center gap-1.5 pt-1 text-xs"><UsersIcon className="w-3.5 h-3.5" /> {counts.get(e.id) ?? 0} iscritti</p>
+                <p className="flex items-center gap-1.5 pt-1 text-xs"><UsersIcon className="w-3.5 h-3.5" /> {t("events.registrations_short", { count: counts.get(e.id) ?? 0 })}</p>
               </CardContent>
             </Card>
           ))}

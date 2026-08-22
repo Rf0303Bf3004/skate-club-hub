@@ -171,6 +171,7 @@ const AtletaSearch: React.FC<{
   on_change: (ids: string[]) => void;
   escludi_ids?: string[];
 }> = ({ atleti, selected_ids, on_change, escludi_ids = [] }) => {
+  const { t } = useTranslation('corsi');
   const [query, set_query] = useState("");
   const [open, set_open] = useState(false);
 
@@ -194,7 +195,7 @@ const AtletaSearch: React.FC<{
         <Search className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
         <input
           className="flex-1 bg-transparent outline-none text-sm placeholder:text-muted-foreground"
-          placeholder="Cerca atleta per nome..."
+          placeholder={t("lezioni_private.atleta_search.placeholder")}
           value={query}
           onChange={(e) => {
             set_query(e.target.value);
@@ -214,7 +215,7 @@ const AtletaSearch: React.FC<{
           />
           <div className="absolute z-20 top-full mt-1 w-full bg-card border border-border rounded-lg shadow-xl overflow-hidden">
             {filtered.length === 0 ? (
-              <p className="text-sm text-muted-foreground px-3 py-2">Nessun atleta trovato</p>
+              <p className="text-sm text-muted-foreground px-3 py-2">{t("lezioni_private.atleta_search.nessun_atleta_trovato")}</p>
             ) : (
               filtered.map((a: any) => {
                 const sel = selected_ids.includes(a.id);
@@ -272,6 +273,7 @@ const SlotModal: React.FC<{
   on_close: () => void;
   loading: boolean;
 }> = ({ form, atleti, slot_minuti, on_change, on_submit, on_close, loading }) => {
+  const { t } = useTranslation('corsi');
   const date_obj = new Date(form.data + "T00:00:00");
   const date_label = date_obj.toLocaleDateString("de-CH", {
     weekday: "long",
@@ -287,7 +289,7 @@ const SlotModal: React.FC<{
         <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
           <div>
             <h2 className="text-base font-bold text-foreground">
-              Prenota {form.ora_inizio}–{form.ora_fine}
+              {t("lezioni_private.slot_modal.title", { ora_inizio: form.ora_inizio, ora_fine: form.ora_fine })}
             </h2>
             <p className="text-xs text-muted-foreground capitalize">{date_label}</p>
           </div>
@@ -301,11 +303,11 @@ const SlotModal: React.FC<{
           <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 rounded-lg">
             <Clock className="w-3.5 h-3.5 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">
-              Durata slot: <strong>{slot_minuti} minuti</strong>
+              {t("lezioni_private.slot_modal.durata_slot", { minuti: slot_minuti })}
             </span>
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Atleta/e *</label>
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("lezioni_private.slot_modal.atleta_label")}</label>
             <AtletaSearch
               atleti={atleti}
               selected_ids={form.atleti_ids || []}
@@ -313,7 +315,7 @@ const SlotModal: React.FC<{
             />
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Costo totale</label>
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("lezioni_private.slot_modal.costo_totale_label")}</label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-medium pointer-events-none">
                 CHF
@@ -338,17 +340,17 @@ const SlotModal: React.FC<{
               {form.ricorrente && <Check className="w-3 h-3 text-white" />}
             </div>
             <div>
-              <p className="text-sm font-medium">Lezione ricorrente</p>
-              <p className="text-xs opacity-70">Ogni settimana alla stessa ora fino a fine stagione</p>
+              <p className="text-sm font-medium">{t("lezioni_private.slot_modal.lezione_ricorrente")}</p>
+              <p className="text-xs opacity-70">{t("lezioni_private.slot_modal.lezione_ricorrente_desc")}</p>
             </div>
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Note</label>
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("lezioni_private.slot_modal.note_label")}</label>
             <textarea
               value={form.note || ""}
               onChange={(e) => on_change("note", e.target.value)}
               rows={2}
-              placeholder="Note opzionali..."
+              placeholder={t("lezioni_private.slot_modal.note_placeholder")}
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
           </div>
@@ -357,7 +359,7 @@ const SlotModal: React.FC<{
         {/* Footer fisso */}
         <div className="flex justify-end gap-3 px-6 py-4 border-t border-border flex-shrink-0">
           <Button variant="outline" onClick={on_close} disabled={loading}>
-            Annulla
+            {t("lezioni_private.slot_modal.annulla")}
           </Button>
           <Button
             onClick={on_submit}
@@ -367,12 +369,12 @@ const SlotModal: React.FC<{
             {loading ? (
               <span className="flex items-center gap-2">
                 <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                Salvo...
+                {t("lezioni_private.slot_modal.salvo")}
               </span>
             ) : form.ricorrente ? (
-              "📅 Crea ricorrente"
+              t("lezioni_private.slot_modal.crea_ricorrente")
             ) : (
-              "Prenota"
+              t("lezioni_private.slot_modal.prenota")
             )}
           </Button>
         </div>
@@ -390,6 +392,7 @@ const AggiungiAtletaModal: React.FC<{
   on_confirm: (atleta_id: string, nuovo_costo: number, modalita: "dividi" | "manuale") => void;
   loading: boolean;
 }> = ({ slot, atleti, costo_attuale, on_close, on_confirm, loading }) => {
+  const { t } = useTranslation('corsi');
   const [atleta_id, set_atleta_id] = useState<string>("");
   const [modalita, set_modalita] = useState<"dividi" | "manuale">("dividi");
   const [costo_manuale_str, set_costo_manuale_str] = useState<string>(costo_attuale.toFixed(2));
@@ -404,8 +407,8 @@ const AggiungiAtletaModal: React.FC<{
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
           <div>
-            <h2 className="text-base font-bold text-foreground">Aggiungi atleta</h2>
-            <p className="text-xs text-muted-foreground">La lezione diventerà semiprivata</p>
+            <h2 className="text-base font-bold text-foreground">{t("lezioni_private.aggiungi_atleta_modal.title")}</h2>
+            <p className="text-xs text-muted-foreground">{t("lezioni_private.aggiungi_atleta_modal.subtitle")}</p>
           </div>
           <button onClick={on_close} className="text-muted-foreground hover:text-foreground">
             <X className="w-5 h-5" />
@@ -414,11 +417,11 @@ const AggiungiAtletaModal: React.FC<{
         <div className="px-6 py-5 space-y-5 overflow-y-auto flex-1">
           <div className="flex items-center gap-2 px-3 py-2 bg-orange-500/10 border border-orange-500/20 rounded-xl">
             <span className="text-orange-500 text-sm">👥</span>
-            <span className="text-xs font-medium text-orange-600">Diventerà una lezione semiprivata</span>
+            <span className="text-xs font-medium text-orange-600">{t("lezioni_private.aggiungi_atleta_modal.banner")}</span>
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              Nuova atleta *
+              {t("lezioni_private.aggiungi_atleta_modal.nuova_atleta_label")}
             </label>
             <AtletaSearch
               atleti={atleti}
@@ -429,7 +432,7 @@ const AggiungiAtletaModal: React.FC<{
           </div>
           <div className="space-y-3">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              Gestione costo
+              {t("lezioni_private.aggiungi_atleta_modal.gestione_costo_label")}
             </label>
             <div className="grid grid-cols-2 gap-2">
               <div
@@ -437,16 +440,16 @@ const AggiungiAtletaModal: React.FC<{
                 className={`p-3 rounded-xl border-2 cursor-pointer transition-all text-center
                   ${modalita === "dividi" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
               >
-                <p className="text-sm font-medium">÷ Dividi</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Costo attuale diviso per {n_totale}</p>
+                <p className="text-sm font-medium">{t("lezioni_private.aggiungi_atleta_modal.dividi")}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{t("lezioni_private.aggiungi_atleta_modal.dividi_desc", { n: n_totale })}</p>
               </div>
               <div
                 onClick={() => set_modalita("manuale")}
                 className={`p-3 rounded-xl border-2 cursor-pointer transition-all text-center
                   ${modalita === "manuale" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
               >
-                <p className="text-sm font-medium">✏️ Manuale</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Imposta nuovo totale</p>
+                <p className="text-sm font-medium">{t("lezioni_private.aggiungi_atleta_modal.manuale")}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{t("lezioni_private.aggiungi_atleta_modal.manuale_desc")}</p>
               </div>
             </div>
             {modalita === "manuale" && (
@@ -463,13 +466,13 @@ const AggiungiAtletaModal: React.FC<{
               </div>
             )}
             <div className="bg-muted/30 rounded-xl px-4 py-3 space-y-1.5">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Riepilogo quote</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("lezioni_private.aggiungi_atleta_modal.riepilogo_quote")}</p>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Totale lezione</span>
+                <span className="text-muted-foreground">{t("lezioni_private.aggiungi_atleta_modal.totale_lezione")}</span>
                 <span className="font-semibold">CHF {costo_diviso.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Quota per atleta ({n_totale})</span>
+                <span className="text-muted-foreground">{t("lezioni_private.aggiungi_atleta_modal.quota_per_atleta", { n: n_totale })}</span>
                 <span className="font-semibold text-primary">CHF {quota_per_atleta.toFixed(2)}</span>
               </div>
             </div>
@@ -477,7 +480,7 @@ const AggiungiAtletaModal: React.FC<{
         </div>
         <div className="flex justify-end gap-3 px-6 py-4 border-t border-border flex-shrink-0">
           <Button variant="outline" onClick={on_close} disabled={loading}>
-            Annulla
+            {t("lezioni_private.aggiungi_atleta_modal.annulla")}
           </Button>
           <Button
             onClick={() => atleta_id && on_confirm(atleta_id, costo_diviso, modalita)}
@@ -487,10 +490,10 @@ const AggiungiAtletaModal: React.FC<{
             {loading ? (
               <span className="flex items-center gap-2">
                 <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                Salvo...
+                {t("lezioni_private.aggiungi_atleta_modal.salvo")}
               </span>
             ) : (
-              "👥 Aggiungi atleta"
+              t("lezioni_private.aggiungi_atleta_modal.aggiungi_atleta")
             )}
           </Button>
         </div>
