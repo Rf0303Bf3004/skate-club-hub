@@ -1,10 +1,15 @@
 import React, { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronDown, ChevronRight, Send, MessageSquare } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+
+const tk = (key: string, opts?: any) => i18n.t(`conversazioni.${key}`, { ns: "communications", ...(opts ?? {}) }) as string;
+
 
 type Destinatario = {
   id: string;
