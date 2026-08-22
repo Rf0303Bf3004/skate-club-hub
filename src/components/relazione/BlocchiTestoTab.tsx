@@ -15,10 +15,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { DndContext, PointerSensor, KeyboardSensor, useSensor, useSensors, closestCenter, DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 
 interface Props { club_id: string; stagione_id: string; }
 
+const tk = (key: string, opts?: any) => i18n.t(`relazione.blocchi_tab.${key}`, { ns: "dashboard", ...(opts ?? {}) }) as string;
+
 export default function BlocchiTestoTab({ club_id, stagione_id }: Props) {
+  const { t } = useTranslation("dashboard");
   const qc = useQueryClient();
   const [editing, set_editing] = useState<any | null>(null);
   const [open_form, set_open_form] = useState(false);
@@ -58,7 +63,7 @@ export default function BlocchiTestoTab({ club_id, stagione_id }: Props) {
           .eq("club_id", club_id)
           .in("categoria", ["apertura", "conclusioni"]);
         if (error) throw error;
-        toast.success(`${blocchi_legacy.length} blocchi spostati nella categoria "Altro"`);
+        toast.success(tk("toast_spostati", { count: blocchi_legacy.length }));
       } else {
         const { error } = await supabase
           .from("relazioni_blocchi_testo" as any)
@@ -66,13 +71,13 @@ export default function BlocchiTestoTab({ club_id, stagione_id }: Props) {
           .eq("club_id", club_id)
           .in("categoria", ["apertura", "conclusioni"]);
         if (error) throw error;
-        toast.success(`${blocchi_legacy.length} blocchi eliminati`);
+        toast.success(tk("toast_eliminati", { count: blocchi_legacy.length }));
       }
       await qc.invalidateQueries({ queryKey: ["relazioni_blocchi", club_id, stagione_id] });
       await qc.invalidateQueries({ queryKey: ["relazione_comp_blocchi", club_id, stagione_id] });
       set_open_migration(false);
     } catch (e: any) {
-      toast.error(e.message ?? "Errore durante la migrazione");
+      toast.error(e.message ?? tk("toast_migrazione_ko"));
     } finally {
       set_migrating(false);
     }
@@ -93,7 +98,7 @@ export default function BlocchiTestoTab({ club_id, stagione_id }: Props) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["relazioni_blocchi", club_id, stagione_id] });
-      toast.success("Blocco eliminato");
+      toast.success(tk("toast_blocco_eliminato"));
     },
   });
 
@@ -132,9 +137,9 @@ export default function BlocchiTestoTab({ club_id, stagione_id }: Props) {
     },
     onError: (_error, _ids, context) => {
       context?.previous.forEach(({ queryKey, data }) => qc.setQueryData(queryKey, data));
-      toast.error("Riordino non salvato");
+      toast.error(tk("toast_riordino_ko"));
     },
-    onSuccess: () => toast.success("Ordine salvato"),
+    onSuccess: () => toast.success(tk("toast_ordine_ok")),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["relazioni_blocchi", club_id, stagione_id] });
       qc.invalidateQueries({ queryKey: ["relazione_comp_blocchi", club_id, stagione_id] });
@@ -165,38 +170,38 @@ export default function BlocchiTestoTab({ club_id, stagione_id }: Props) {
     <div className="space-y-4">
       <TabHeaderInfo
         icon={Newspaper}
-        titolo="Notizie e messaggi del Presidente"
-        testo="Qui scrivi le notizie e i messaggi che NON si trovano nei dati della dashboard: cambi di staff, trattative in corso, progetti futuri, decisioni del consiglio. Queste pagine vengono inserite nel PDF come capitoli redazionali separati, dopo le sezioni dati."
-        collapsible_label="Quando usare cosa? Vedi esempi"
+        titolo={t("relazione.blocchi_tab.header_titolo")}
+        testo={t("relazione.blocchi_tab.header_testo")}
+        collapsible_label={t("relazione.blocchi_tab.header_esempi_label")}
       >
         <div className="overflow-x-auto rounded-md border border-teal-200 bg-white/60">
           <table className="w-full text-sm">
             <thead className="bg-teal-50 text-teal-900">
               <tr>
-                <th className="text-left px-3 py-2 font-medium">Esempio</th>
-                <th className="text-left px-3 py-2 font-medium">Dove va</th>
+                <th className="text-left px-3 py-2 font-medium">{t("relazione.blocchi_tab.tabella_esempio")}</th>
+                <th className="text-left px-3 py-2 font-medium">{t("relazione.blocchi_tab.tabella_dove")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-teal-100">
               <tr>
-                <td className="px-3 py-2">"Barbara Sella lascia il club"</td>
-                <td className="px-3 py-2 text-teal-800">Notizie (categoria <em>Staff</em>)</td>
+                <td className="px-3 py-2">{t("relazione.blocchi_tab.esempio_1")}</td>
+                <td className="px-3 py-2 text-teal-800">{t("relazione.blocchi_tab.esempio_1_dove")}</td>
               </tr>
               <tr>
-                <td className="px-3 py-2">"Stiamo trattando con la pista per +2h"</td>
-                <td className="px-3 py-2 text-teal-800">Notizie (categoria <em>Trattative</em>)</td>
+                <td className="px-3 py-2">{t("relazione.blocchi_tab.esempio_2")}</td>
+                <td className="px-3 py-2 text-teal-800">{t("relazione.blocchi_tab.esempio_2_dove")}</td>
               </tr>
               <tr>
-                <td className="px-3 py-2">"Vogliamo lanciare un Gala a Settembre 2026"</td>
-                <td className="px-3 py-2 text-teal-800">Notizie (categoria <em>Eventi futuri</em>)</td>
+                <td className="px-3 py-2">{t("relazione.blocchi_tab.esempio_3")}</td>
+                <td className="px-3 py-2 text-teal-800">{t("relazione.blocchi_tab.esempio_3_dove")}</td>
               </tr>
               <tr>
-                <td className="px-3 py-2">"Quest'anno abbiamo 145 atleti"</td>
-                <td className="px-3 py-2 text-muted-foreground">NO: gia' nel Racconto dei dati area <em>Atleti</em></td>
+                <td className="px-3 py-2">{t("relazione.blocchi_tab.esempio_4")}</td>
+                <td className="px-3 py-2 text-muted-foreground">{t("relazione.blocchi_tab.esempio_4_dove")}</td>
               </tr>
               <tr>
-                <td className="px-3 py-2">"I ricavi crescono dell'11%"</td>
-                <td className="px-3 py-2 text-muted-foreground">NO: gia' nel Racconto dei dati area <em>Economia</em></td>
+                <td className="px-3 py-2">{t("relazione.blocchi_tab.esempio_5")}</td>
+                <td className="px-3 py-2 text-muted-foreground">{t("relazione.blocchi_tab.esempio_5_dove")}</td>
               </tr>
             </tbody>
           </table>
@@ -205,14 +210,14 @@ export default function BlocchiTestoTab({ club_id, stagione_id }: Props) {
 
       <div className="flex justify-end">
         <Button onClick={() => { set_editing(null); set_open_form(true); }} className="gap-2">
-          <Plus className="w-4 h-4" />Nuovo blocco
+          <Plus className="w-4 h-4" />{t("relazione.blocchi_tab.nuovo")}
         </Button>
       </div>
 
-      {isLoading && <p className="text-sm text-muted-foreground">Caricamento...</p>}
+      {isLoading && <p className="text-sm text-muted-foreground">{t("relazione.blocchi_tab.caricamento")}</p>}
       {!isLoading && (blocchi as any[]).length === 0 && (
         <p className="text-sm text-muted-foreground py-12 text-center border border-dashed rounded-md">
-          Nessun blocco. Aggiungi il primo blocco redazionale.
+          {t("relazione.blocchi_tab.empty")}
         </p>
       )}
 
@@ -236,12 +241,12 @@ export default function BlocchiTestoTab({ club_id, stagione_id }: Props) {
       <div className="rounded-md border border-border bg-muted/40 p-3 text-sm text-muted-foreground flex items-start gap-2">
         <ArrowRight className="w-4 h-4 mt-0.5 shrink-0" />
         <div>
-          Cerchi il messaggio di apertura o di chiusura? Quelli si modificano nel <strong>Racconto dei dati</strong>:{" "}
+          {t("relazione.blocchi_tab.rimando_testo")}{" "}
           <Link
             to="/presidente/relazione/contenuti?tab=paragrafi"
             className="text-teal-700 hover:text-teal-900 underline font-medium"
           >
-            vai alla tab e cerca area "Apertura" o "Chiusura"
+            {t("relazione.blocchi_tab.rimando_link")}
           </Link>.
         </div>
       </div>
@@ -258,15 +263,10 @@ export default function BlocchiTestoTab({ club_id, stagione_id }: Props) {
       <AlertDialog open={open_migration} onOpenChange={set_open_migration}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Riorganizzazione delle notizie</AlertDialogTitle>
+            <AlertDialogTitle>{t("relazione.blocchi_tab.migrazione_title")}</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-3 text-sm">
-                <p>
-                  Abbiamo riorganizzato la struttura delle notizie. {blocchi_legacy.length === 1 ? "Il blocco" : `${blocchi_legacy.length} blocchi`}{" "}
-                  con categoria <strong>Apertura</strong> o <strong>Conclusioni</strong> ora{" "}
-                  {blocchi_legacy.length === 1 ? "e' gestito automaticamente" : "sono gestiti automaticamente"} nel{" "}
-                  <strong>Racconto dei dati</strong> (aree "Apertura" e "Chiusura").
-                </p>
+                <p>{t("relazione.blocchi_tab.migrazione_desc", { count: blocchi_legacy.length })}</p>
                 {blocchi_legacy.length > 0 && (
                   <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
                     {blocchi_legacy.slice(0, 5).map((b) => (
@@ -277,19 +277,19 @@ export default function BlocchiTestoTab({ club_id, stagione_id }: Props) {
                     ))}
                   </ul>
                 )}
-                <p>Cosa vuoi fare?</p>
+                <p>{t("relazione.blocchi_tab.migrazione_domanda")}</p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col sm:flex-row gap-2">
             <Button variant="ghost" disabled={migrating} onClick={() => set_open_migration(false)}>
-              Decido dopo
+              {t("relazione.blocchi_tab.decido_dopo")}
             </Button>
             <Button variant="outline" disabled={migrating} onClick={() => run_migration("elimina")}>
-              Elimina
+              {t("relazione.blocchi_tab.elimina")}
             </Button>
             <Button disabled={migrating} onClick={() => run_migration("sposta")}>
-              Sposta in "Altro"
+              {t("relazione.blocchi_tab.sposta_altro")}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
