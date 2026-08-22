@@ -462,10 +462,10 @@ const ClubSetupPage: React.FC = () => {
       {/* Statistiche live */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { icon: Users, label: "Atleti", value: atleti.length, color: "text-primary" },
-          { icon: UserCheck, label: "Istruttori", value: istruttori.filter((i: any) => i.attivo).length, color: "text-success" },
-          { icon: Calendar, label: "Stagione attiva", value: stagione_attiva?.nome || "—", color: "text-orange-500" },
-          { icon: Hash, label: "Club ID", value: get_current_club_id().slice(0, 8) + "...", color: "text-muted-foreground" },
+          { icon: Users, label: t("club.stats.atleti"), value: atleti.length, color: "text-primary" },
+          { icon: UserCheck, label: t("club.stats.istruttori"), value: istruttori.filter((i: any) => i.attivo).length, color: "text-success" },
+          { icon: Calendar, label: t("club.stats.stagione_attiva"), value: stagione_attiva?.nome || "—", color: "text-orange-500" },
+          { icon: Hash, label: t("club.stats.club_id"), value: get_current_club_id().slice(0, 8) + "...", color: "text-muted-foreground" },
         ].map((stat, i) => (
           <div key={i} className="bg-card rounded-xl shadow-card p-4 flex items-center gap-3">
             <div className={`w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center ${stat.color}`}>
@@ -481,19 +481,19 @@ const ClubSetupPage: React.FC = () => {
 
       <Tabs defaultValue="configurazione" className="w-full">
         <TabsList className="mb-4">
-          <TabsTrigger value="configurazione">{tab_label("configurazione", "Configurazione")}</TabsTrigger>
-          <TabsTrigger value="ghiaccio">{tab_label("ghiaccio", "Ghiaccio e Planning")}</TabsTrigger>
-          <TabsTrigger value="catalogo">{tab_label("catalogo", "Catalogo Offerta")}</TabsTrigger>
-          <TabsTrigger value="fatturazione">{tab_label("fatturazione", "Fatturazione")}</TabsTrigger>
+          <TabsTrigger value="configurazione">{tab_label("configurazione", t("club.tabs.configurazione"))}</TabsTrigger>
+          <TabsTrigger value="ghiaccio">{tab_label("ghiaccio", t("club.tabs.ghiaccio"))}</TabsTrigger>
+          <TabsTrigger value="catalogo">{tab_label("catalogo", t("club.tabs.catalogo"))}</TabsTrigger>
+          <TabsTrigger value="fatturazione">{tab_label("fatturazione", t("club.tabs.fatturazione"))}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="configurazione">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { icon: Users, label: "Atleti", value: atleti.length, color: "text-primary" },
-          { icon: UserCheck, label: "Istruttori", value: istruttori.filter((i: any) => i.attivo).length, color: "text-success" },
-          { icon: Calendar, label: "Stagione attiva", value: stagione_attiva?.nome || "—", color: "text-orange-500" },
-          { icon: Hash, label: "Club ID", value: get_current_club_id().slice(0, 8) + "...", color: "text-muted-foreground" },
+          { icon: Users, label: t("club.stats.atleti"), value: atleti.length, color: "text-primary" },
+          { icon: UserCheck, label: t("club.stats.istruttori"), value: istruttori.filter((i: any) => i.attivo).length, color: "text-success" },
+          { icon: Calendar, label: t("club.stats.stagione_attiva"), value: stagione_attiva?.nome || "—", color: "text-orange-500" },
+          { icon: Hash, label: t("club.stats.club_id"), value: get_current_club_id().slice(0, 8) + "...", color: "text-muted-foreground" },
         ].map((stat, i) => (
           <div key={i} className="bg-card rounded-xl shadow-card p-4 flex items-center gap-3">
             <div className={`w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center ${stat.color}`}>
@@ -510,7 +510,7 @@ const ClubSetupPage: React.FC = () => {
       <div className="bg-card rounded-xl shadow-card p-6 space-y-8 max-w-2xl">
         {/* Logo */}
         <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Logo Club</h2>
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.logo")}</h2>
           <div className="flex items-center gap-6">
             <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-border flex items-center justify-center overflow-hidden bg-muted/30 flex-shrink-0">
               {current_logo ? (
@@ -518,17 +518,17 @@ const ClubSetupPage: React.FC = () => {
               ) : (
                 <div className="text-center">
                   <Upload className="w-6 h-6 text-muted-foreground mx-auto mb-1" />
-                  <p className="text-[10px] text-muted-foreground">Logo</p>
+                  <p className="text-[10px] text-muted-foreground">{t("club.fields.logo_placeholder")}</p>
                 </div>
               )}
             </div>
             <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Formato consigliato: PNG o SVG, sfondo trasparente</p>
+              <p className="text-sm text-muted-foreground">{t("club.fields.logo_formato")}</p>
               <label className="cursor-pointer">
                 <input type="file" accept="image/*" onChange={handle_logo_upload} className="hidden" />
                 <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm font-medium transition-colors ${uploading ? "opacity-50 cursor-not-allowed" : "hover:bg-muted/50"}`}>
                   <Upload className="w-4 h-4" />
-                  {uploading ? "Caricamento..." : "Carica logo"}
+                  {uploading ? t("club.azioni.caricamento") : t("club.azioni.carica_logo")}
                 </span>
               </label>
             </div>
@@ -549,13 +549,13 @@ const ClubSetupPage: React.FC = () => {
             </Field>
           </div>
           <div className="grid gap-4" style={{ gridTemplateColumns: "60% 15% 25%" }}>
-            <Field label="Via / Strada *" icon={<MapPin className="w-3.5 h-3.5" />}>
+            <Field label={t("club.fields.via")} icon={<MapPin className="w-3.5 h-3.5" />}>
               <Input required value={get_val("indirizzo")} onChange={(e) => set_val("indirizzo", e.target.value)} placeholder="Via del Ghiaccio 7" />
             </Field>
-            <Field label="NAP *" icon={<MapPin className="w-3.5 h-3.5" />}>
+            <Field label={t("club.fields.nap")} icon={<MapPin className="w-3.5 h-3.5" />}>
               <Input required maxLength={10} value={get_val("cap")} onChange={(e) => set_val("cap", e.target.value)} placeholder="6900" />
             </Field>
-            <Field label="Città *" icon={<MapPin className="w-3.5 h-3.5" />}>
+            <Field label={t("club.fields.citta")} icon={<MapPin className="w-3.5 h-3.5" />}>
               <Input required value={get_val("citta")} onChange={(e) => set_val("citta", e.target.value)} placeholder="Lugano" />
             </Field>
           </div>
@@ -566,10 +566,10 @@ const ClubSetupPage: React.FC = () => {
             <Field label={t_old("telefono")} icon={<Phone className="w-3.5 h-3.5" />}>
               <Input value={get_val("telefono")} onChange={(e) => set_val("telefono", e.target.value)} />
             </Field>
-            <Field label="Sito web" icon={<Globe className="w-3.5 h-3.5" />}>
+            <Field label={t("club.fields.sito_web")} icon={<Globe className="w-3.5 h-3.5" />}>
               <Input value={get_val("sito_web")} onChange={(e) => set_val("sito_web", e.target.value)} placeholder="https://www.clubname.ch" />
             </Field>
-            <Field label="Tessera federale" icon={<Hash className="w-3.5 h-3.5" />}>
+            <Field label={t("club.fields.tessera_federale")} icon={<Hash className="w-3.5 h-3.5" />}>
               <Input value={get_val("numero_tessera_federale")} onChange={(e) => set_val("numero_tessera_federale", e.target.value)} />
             </Field>
           </div>
@@ -579,7 +579,7 @@ const ClubSetupPage: React.FC = () => {
 
         {/* Colore primario */}
         <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Colore primario</h2>
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.colore_primario")}</h2>
           <div className="flex items-center gap-4">
             <input
               type="color"
@@ -595,13 +595,13 @@ const ClubSetupPage: React.FC = () => {
 
         {/* Descrizione */}
         <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Descrizione</h2>
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.descrizione")}</h2>
           <textarea
             value={get_val("descrizione")}
             onChange={(e) => set_val("descrizione", e.target.value)}
             rows={3}
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-            placeholder="Descrizione del club..."
+            placeholder={t("club.fields.descrizione_placeholder")}
           />
         </section>
 
@@ -610,17 +610,17 @@ const ClubSetupPage: React.FC = () => {
         {/* Clausole aggiuntive al contratto di adesione */}
         <section className="space-y-4">
           <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">
-            Clausole aggiuntive al contratto di adesione
+            {t("club.sezioni.clausole_contratto")}
           </h2>
           <textarea
             value={get_val("clausole_contratto")}
             onChange={(e) => set_val("clausole_contratto", e.target.value)}
             rows={5}
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-            placeholder="Testo libero mostrato come articolo 12 del contratto di adesione (lascia vuoto per non mostrarlo)..."
+            placeholder={t("club.fields.clausole_placeholder")}
           />
           <p className="text-xs text-muted-foreground">
-            Appare come Art. 12 nella pagina pubblica di iscrizione e nella scheda stampabile. Se vuoto, l'articolo non viene mostrato.
+            {t("club.testi.clausole_info")}
           </p>
         </section>
 

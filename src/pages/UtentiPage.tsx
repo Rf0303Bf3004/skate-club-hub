@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { useTranslation, Trans } from "react-i18next";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -517,23 +517,38 @@ const UtentiPage: React.FC = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {confirm_state?.type === "reset" && "Reset password"}
-              {confirm_state?.type === "toggle" && (confirm_state.user.attivo ? "Disattivare utente" : "Riattivare utente")}
+              {confirm_state?.type === "reset" && t("users.confirm.reset_title")}
+              {confirm_state?.type === "toggle" && (confirm_state.user.attivo ? t("users.confirm.deactivate_title") : t("users.confirm.reactivate_title"))}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {confirm_state?.type === "reset" && (
-                <>Vuoi resettare la password di <strong>{confirm_state.user.nome} {confirm_state.user.cognome}</strong>? La nuova password sarà mostrata una sola volta.</>
+                <Trans
+                  i18nKey="users.confirm.reset_description"
+                  ns="settings"
+                  values={{ nome: `${confirm_state.user.nome ?? ""} ${confirm_state.user.cognome ?? ""}`.trim() }}
+                  components={{ strong: <strong /> }}
+                />
               )}
               {confirm_state?.type === "toggle" && confirm_state.user.attivo && (
-                <>Disattivare <strong>{confirm_state.user.nome} {confirm_state.user.cognome}</strong>? Non potrà più accedere al portale.</>
+                <Trans
+                  i18nKey="users.confirm.deactivate_description"
+                  ns="settings"
+                  values={{ nome: `${confirm_state.user.nome ?? ""} ${confirm_state.user.cognome ?? ""}`.trim() }}
+                  components={{ strong: <strong /> }}
+                />
               )}
               {confirm_state?.type === "toggle" && !confirm_state.user.attivo && (
-                <>Riattivare <strong>{confirm_state.user.nome} {confirm_state.user.cognome}</strong>? Potrà accedere di nuovo al portale.</>
+                <Trans
+                  i18nKey="users.confirm.reactivate_description"
+                  ns="settings"
+                  values={{ nome: `${confirm_state.user.nome ?? ""} ${confirm_state.user.cognome ?? ""}`.trim() }}
+                  components={{ strong: <strong /> }}
+                />
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogCancel>{t("users.confirm.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (!confirm_state) return;
@@ -541,7 +556,7 @@ const UtentiPage: React.FC = () => {
                 else do_toggle_attivo(confirm_state.user);
               }}
             >
-              Conferma
+              {t("users.confirm.confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -551,9 +566,14 @@ const UtentiPage: React.FC = () => {
       <Dialog open={!!pwd_dialog} onOpenChange={(o) => !o && set_pwd_dialog(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Nuova password generata</DialogTitle>
+            <DialogTitle>{t("users.password_dialog.title")}</DialogTitle>
             <DialogDescription>
-              Comunica questa password a <strong>{pwd_dialog?.nome}</strong>. Non sarà più visibile.
+              <Trans
+                i18nKey="users.password_dialog.description"
+                ns="settings"
+                values={{ nome: pwd_dialog?.nome ?? "" }}
+                components={{ strong: <strong /> }}
+              />
             </DialogDescription>
           </DialogHeader>
           <div className="flex items-center gap-2">
@@ -572,7 +592,7 @@ const UtentiPage: React.FC = () => {
             </Button>
           </div>
           <DialogFooter>
-            <Button onClick={() => set_pwd_dialog(null)}>Chiudi</Button>
+            <Button onClick={() => set_pwd_dialog(null)}>{t("users.password_dialog.close")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
