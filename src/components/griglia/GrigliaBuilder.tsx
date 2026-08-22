@@ -365,6 +365,150 @@ const PoolBox: React.FC<{
 };
 
 
+// ─── Pillola di un gruppo agganciato alla sotto-sessione ───
+const GruppoPill: React.FC<{
+  gruppo: GrigliaSessioneGruppo;
+  n_atleti: number;
+  salvati_ids: string[];
+  nome_atleta: (atleta_id: string) => string;
+  colore: string | null;
+  in_sync?: boolean;
+  on_sync?: () => void;
+  on_rimuovi?: () => void;
+}> = ({ gruppo, n_atleti, salvati_ids, nome_atleta, colore, in_sync, on_sync, on_rimuovi }) => {
+  const [open, set_open] = useState(false);
+  const [membri_live, set_membri_live] = useState<string[] | null>(null);
+  const [loading, set_loading] = useState(false);
+  const [conferma, set_conferma] = useState(false);
+
+  const carica = async () => {
+    set_loading(true);
+    try {
+      const ids = await risolvi_membri_gruppo(
+        get_current_club_id(),
+        gruppo.gruppo_scope,
+        gruppo.gruppo_livello,
+        gruppo.gruppo_ragione_sociale_id,
+      );
+      set_membri_live(ids);
+    } catch {
+      set_membri_live(null);
+    } finally {
+      set_loading(false);
+    }
+  };
+
+  const nuovi = (membri_live ?? []).filter((id) => !salvati_ids.includes(id));
+  const usciti = membri_live ? salvati_ids.filter((id) => !membri_live.includes(id)) : [];
+
+  return (
+    <>
+      <Popover
+        open={open}
+        onOpenChange={(v) => {
+          set_open(v);
+          if (v) void carica();
+        }}
+      >
+        <PopoverTrigger asChild>
+          <span
+            role="button"
+            tabIndex={0}
+            onMouseEnter={() => {
+              set_open(true);
+              void carica();
+            }}
+            className={cn(
+              "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs border cursor-pointer",
+              colore ? "border-border" : "border-border bg-background",
+            )}
+            style={colore ? { borderLeft: `3px solid ${colore}`, backgroundColor: `${colore}1A` } : undefined}
+          >
+            <Link2 className="w-3 h-3" />
+            <span className="font-medium">{gruppo.gruppo_livello}</span>
+            <span className="text-muted-foreground">· {n_atleti} atleti</span>
+            {on_sync && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  on_sync();
+                }}
+                disabled={in_sync}
+                aria-label="Aggiorna dal gruppo"
+                title="Aggiorna dal gruppo"
+              >
+                <RefreshCw className={cn("w-3 h-3 text-muted-foreground", in_sync && "animate-spin")} />
+              </button>
+            )}
+            {on_rimuovi && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  set_conferma(true);
+                }}
+                aria-label="Rimuovi collegamento al gruppo"
+              >
+                <X className="w-3 h-3 text-muted-foreground hover:text-destructive" />
+              </button>
+            )}
+          </span>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-64 text-xs" onMouseLeave={() => set_open(false)}>
+          <p className="font-semibold mb-1">Membri attuali del gruppo</p>
+          {loading && <p className="text-muted-foreground">Caricamento…</p>}
+          {!loading && (
+            <ul className="space-y-0.5 max-h-48 overflow-y-auto">
+              {(membri_live ?? salvati_ids).map((id) => (
+                <li key={id} className="flex items-center gap-1">
+                  {nuovi.includes(id) && <span className="text-amber-600">★</span>}
+                  {nome_atleta(id)}
+                </li>
+              ))}
+              {(membri_live ?? salvati_ids).length === 0 && (
+                <li className="text-muted-foreground">Nessun atleta nel gruppo.</li>
+              )}
+            </ul>
+          )}
+          {!loading && membri_live && (nuovi.length > 0 || usciti.length > 0) && (
+            <p className="mt-2 pt-2 border-t text-amber-700">
+              {nuovi.length > 0 && `★ ${nuovi.length} nuovi non ancora sincronizzati`}
+              {nuovi.length > 0 && usciti.length > 0 && " · "}
+              {usciti.length > 0 && `${usciti.length} non più nel gruppo`}
+              {" — usa «Aggiorna dal gruppo»."}
+            </p>
+          )}
+        </PopoverContent>
+      </Popover>
+
+      <AlertDialog open={conferma} onOpenChange={set_conferma}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Rimuovere il collegamento al gruppo?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Verranno rimossi i {n_atleti} atleti provenienti dal gruppo «{gruppo.gruppo_livello}». Gli atleti
+              aggiunti manualmente e gli altri gruppi restano invariati.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                set_conferma(false);
+                on_rimuovi?.();
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Rimuovi gruppo
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+};
+
 // ─── Box sessione (droppable) ──────────────────────────────
 const SessioneBox: React.FC<{
   sessione: GrigliaSessione;
@@ -374,9 +518,9 @@ const SessioneBox: React.FC<{
   on_rimuovi_atleta: (atleta_id: string) => void;
   on_rimuovi_istruttore: (istruttore_id: string) => void;
   on_ripeti?: () => void;
-  on_sync_gruppo?: () => void;
-  on_rimuovi_gruppo?: () => void;
-  sync_in_corso?: boolean;
+  on_sync_gruppo?: (gruppo_sessione_id: string) => void;
+  on_rimuovi_gruppo?: (gruppo_sessione_id: string) => void;
+  sync_gruppo_ids?: string[];
   atleti_tutti?: {
     id: string;
     nome?: string | null;
@@ -396,7 +540,8 @@ const SessioneBox: React.FC<{
   on_ripeti,
   on_sync_gruppo,
   on_rimuovi_gruppo,
-  sync_in_corso,
+  sync_gruppo_ids,
+
   atleti_tutti = [],
   ragioni_sociali = [],
   data_blocco,
