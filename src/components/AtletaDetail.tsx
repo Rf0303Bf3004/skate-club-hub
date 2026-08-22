@@ -13,6 +13,7 @@ import StoricoTestAtleta from "@/components/StoricoTestAtleta";
 import DateInput from "@/components/forms/DateInput";
 import AthleteBadges from "@/components/AthleteBadges";
 import { useI18n } from "@/lib/i18n";
+import { useTranslation } from "react-i18next";
 import {
   use_corsi,
   use_gare,
@@ -141,6 +142,7 @@ const MigraModal: React.FC<{
   on_migra: (club_id: string, note: string) => Promise<void>;
   saving: boolean;
 }> = ({ atleta, on_close, on_migra, saving }) => {
+  const { t: td } = useTranslation("atleti");
   const { data: tutti_club = [] } = use_tutti_club();
   const [club_dest, set_club_dest] = useState("");
   const [note, set_note] = useState("");
@@ -153,7 +155,7 @@ const MigraModal: React.FC<{
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-md">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <div>
-            <h2 className="text-base font-bold text-foreground">Migra atleta</h2>
+            <h2 className="text-base font-bold text-foreground">{td("detail.migra_title")}</h2>
             <p className="text-xs text-muted-foreground">
               {atleta.nome} {atleta.cognome}
             </p>
@@ -165,25 +167,25 @@ const MigraModal: React.FC<{
 
         <div className="px-6 py-5 space-y-4">
           <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 space-y-1.5">
-            <p className="text-xs font-bold text-primary uppercase tracking-wide">Cosa viene migrato</p>
-            <p className="text-xs text-muted-foreground">✅ Anagrafica completa</p>
-            <p className="text-xs text-muted-foreground">✅ Storico gare e medagliere</p>
-            <p className="text-xs text-muted-foreground">✅ Storico livelli</p>
-            <p className="text-xs text-muted-foreground">✅ Foto e disco audio</p>
-            <p className="text-xs text-muted-foreground">❌ Iscrizioni corsi (da rifare nel nuovo club)</p>
-            <p className="text-xs text-muted-foreground">❌ Fatture (rimangono nel vecchio club)</p>
+            <p className="text-xs font-bold text-primary uppercase tracking-wide">{td("detail.migra_what")}</p>
+            <p className="text-xs text-muted-foreground">{td("detail.migra_item_1")}</p>
+            <p className="text-xs text-muted-foreground">{td("detail.migra_item_2")}</p>
+            <p className="text-xs text-muted-foreground">{td("detail.migra_item_3")}</p>
+            <p className="text-xs text-muted-foreground">{td("detail.migra_item_4")}</p>
+            <p className="text-xs text-muted-foreground">{td("detail.migra_item_5")}</p>
+            <p className="text-xs text-muted-foreground">{td("detail.migra_item_6")}</p>
           </div>
 
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              Club di destinazione *
+              {td("detail.migra_club_dest")}
             </label>
             <select
               value={club_dest}
               onChange={(e) => set_club_dest(e.target.value)}
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
             >
-              <option value="">Seleziona club...</option>
+              <option value="">{td("detail.migra_select_club")}</option>
               {altri_club.map((c: any) => (
                 <option key={c.id} value={c.id}>
                   {c.nome} {c.citta ? `— ${c.citta}` : ""}
@@ -191,17 +193,17 @@ const MigraModal: React.FC<{
               ))}
             </select>
             {altri_club.length === 0 && (
-              <p className="text-xs text-muted-foreground">Nessun altro club registrato nella piattaforma.</p>
+              <p className="text-xs text-muted-foreground">{td("detail.migra_no_clubs")}</p>
             )}
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Note</label>
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{td("detail.migra_note")}</label>
             <textarea
               value={note}
               onChange={(e) => set_note(e.target.value)}
               rows={2}
-              placeholder="Motivo della migrazione (opzionale)..."
+              placeholder={td("detail.migra_note_placeholder")}
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
           </div>
@@ -209,11 +211,7 @@ const MigraModal: React.FC<{
           {club_dest && !confirm && (
             <div className="bg-orange-50 border border-orange-200 rounded-xl p-3">
               <p className="text-xs text-orange-700">
-                ⚠️ Questa operazione sposterà{" "}
-                <strong>
-                  {atleta.nome} {atleta.cognome}
-                </strong>{" "}
-                nel club selezionato. Non sarà più visibile in questo club.
+                {td("detail.migra_warning", { atleta: `${atleta.nome} ${atleta.cognome}` })}
               </p>
             </div>
           )}
@@ -223,29 +221,29 @@ const MigraModal: React.FC<{
           {!confirm ? (
             <div className="flex gap-2">
               <Button variant="outline" onClick={on_close} className="flex-1">
-                Annulla
+                {td("detail.cancel")}
               </Button>
               <Button
                 onClick={() => set_confirm(true)}
                 disabled={!club_dest}
                 className="flex-1 bg-primary hover:bg-primary/90"
               >
-                Continua →
+                {td("detail.continue")}
               </Button>
             </div>
           ) : (
             <div className="space-y-2">
-              <p className="text-xs text-center text-muted-foreground">Sei sicuro? L'operazione non è reversibile.</p>
+              <p className="text-xs text-center text-muted-foreground">{td("detail.migra_sure")}</p>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => set_confirm(false)} className="flex-1">
-                  ← Indietro
+                  {td("detail.back")}
                 </Button>
                 <Button
                   onClick={() => on_migra(club_dest, note)}
                   disabled={saving}
                   className="flex-1 bg-destructive hover:bg-destructive/90 text-white"
                 >
-                  {saving ? "..." : "🚀 Conferma migrazione"}
+                  {saving ? "..." : td("detail.migra_confirm")}
                 </Button>
               </div>
             </div>
@@ -258,6 +256,7 @@ const MigraModal: React.FC<{
 
 const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   const { t } = useI18n();
+  const { t: td } = useTranslation("atleti");
   const upsert = use_upsert_atleta();
   const migra = use_migra_atleta();
   const [show_migra, set_show_migra] = useState(false);
@@ -291,19 +290,19 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
     genitori: t("genitori"),
     corsi: t("corsi"),
     lezioni: t("lezioni"),
-    calendario: "Calendario",
+    calendario: td("detail.tab_calendario"),
     livello: t("livello"),
-    storico_test: "Storico test",
+    storico_test: td("detail.tab_storico_test"),
     gare: t("gare"),
     medagliere: t("medagliere"),
     fatture: t("fatture"),
   };
   // 4 macro-aree che raggruppano le sotto-sezioni
   const MACRO_AREE: { id: string; label: string; tabs: string[] }[] = [
-    { id: "profilo", label: "Profilo", tabs: ["anagrafica", "genitori"] },
-    { id: "attivita", label: "Attività", tabs: ["corsi", "lezioni", "calendario"] },
-    { id: "sportivo", label: "Sportivo", tabs: ["livello", "storico_test", "gare", "medagliere"] },
-    { id: "amministrativo", label: "Amministrativo", tabs: ["fatture"] },
+    { id: "profilo", label: td("detail.area_profilo"), tabs: ["anagrafica", "genitori"] },
+    { id: "attivita", label: td("detail.area_attivita"), tabs: ["corsi", "lezioni", "calendario"] },
+    { id: "sportivo", label: td("detail.area_sportivo"), tabs: ["livello", "storico_test", "gare", "medagliere"] },
+    { id: "amministrativo", label: td("detail.area_amministrativo"), tabs: ["fatture"] },
   ];
   const [search_params, set_search_params] = useSearchParams();
   const navigate = useNavigate();
@@ -433,12 +432,12 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
     set_generating_portal(true);
     try {
       if (!codice_atleta_value) {
-        toast({ title: "Codice atleta mancante", description: "Salva l'atleta per generare il codice di accesso.", variant: "destructive" });
+        toast({ title: td("detail.toast_missing_code"), description: td("detail.toast_missing_code_desc"), variant: "destructive" });
         return;
       }
       set_show_qr_portal(true);
     } catch (err: any) {
-      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+      toast({ title: td("detail.toast_error"), description: err?.message, variant: "destructive" });
     } finally {
       set_generating_portal(false);
     }
@@ -450,17 +449,17 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
     if (!portal_url) return;
     try {
       await navigator.clipboard.writeText(portal_url);
-      toast({ title: "🔗 Link copiato negli appunti" });
+      toast({ title: td("detail.toast_link_copied") });
     } catch {
-      toast({ title: "Impossibile copiare", variant: "destructive" });
+      toast({ title: td("detail.toast_copy_failed"), variant: "destructive" });
     }
   };
 
   const handle_share_portal_link = async () => {
     if (!portal_url) return;
     const share_data = {
-      title: "Portale atleta",
-      text: `Accesso portale di ${form.nome} ${form.cognome}`,
+      title: td("detail.toast_share_title"),
+      text: td("detail.toast_share_text", { nome: form.nome, cognome: form.cognome }),
       url: portal_url,
     };
     try {
@@ -468,11 +467,11 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
         await (navigator as any).share(share_data);
       } else {
         await navigator.clipboard.writeText(portal_url);
-        toast({ title: "🔗 Link copiato", description: "Condivisione non supportata, link copiato negli appunti" });
+        toast({ title: td("detail.toast_link_copied_short"), description: td("detail.toast_share_fallback") });
       }
     } catch (err: any) {
       if (err?.name !== "AbortError") {
-        toast({ title: "Impossibile condividere", description: err?.message, variant: "destructive" });
+        toast({ title: td("detail.toast_share_failed"), description: err?.message, variant: "destructive" });
       }
     }
   };
@@ -486,9 +485,9 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
       if (error) throw error;
       const { data } = supabase.storage.from("foto-atleti").getPublicUrl(path);
       upd("foto_url", data.publicUrl);
-      toast({ title: "✅ Foto caricata" });
+      toast({ title: td("detail.toast_photo_uploaded") });
     } catch (err: any) {
-      toast({ title: "Errore upload foto", description: err?.message, variant: "destructive" });
+      toast({ title: td("detail.toast_photo_error"), description: err?.message, variant: "destructive" });
     } finally {
       set_uploading_foto(false);
     }
@@ -503,9 +502,9 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
       if (error) throw error;
       const { data } = supabase.storage.from("dischi-audio").getPublicUrl(path);
       upd("disco_url", data.publicUrl);
-      toast({ title: "✅ Disco caricato" });
+      toast({ title: td("detail.toast_disc_uploaded") });
     } catch (err: any) {
-      toast({ title: "Errore upload disco", description: err?.message, variant: "destructive" });
+      toast({ title: td("detail.toast_disc_error"), description: err?.message, variant: "destructive" });
     } finally {
       set_uploading_disco(false);
     }
@@ -532,10 +531,10 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
       }));
       a.verificato = true;
       await query_client.invalidateQueries({ queryKey: ["atleti"] });
-      toast({ title: "✅ Atleta marcato come verificato" });
+      toast({ title: td("detail.toast_verified") });
       set_confirm_verifica(false);
     } catch (err: any) {
-      toast({ title: "Errore verifica", description: err?.message, variant: "destructive" });
+      toast({ title: td("detail.toast_verify_error"), description: err?.message, variant: "destructive" });
     } finally {
       set_verifying(false);
     }
@@ -610,7 +609,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
         e_aiuto_monitrice: !!form.e_aiuto_monitrice,
         e_monitrice: !!form.e_monitrice,
       });
-      toast({ title: "✅ Atleta salvata" });
+      toast({ title: td("detail.toast_saved") });
       // Aggiorna lo snapshot locale così che un secondo save non riapra il modale
       a.e_aiuto_monitrice = !!form.e_aiuto_monitrice;
       a.e_monitrice = !!form.e_monitrice;
@@ -622,7 +621,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
         });
       }
     } catch (err: any) {
-      toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
+      toast({ title: td("detail.toast_save_error"), description: err?.message, variant: "destructive" });
     }
   };
 
@@ -636,9 +635,9 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
       (a as any)[field] = false;
       await query_client.invalidateQueries({ queryKey: ["atleti"] });
       await query_client.invalidateQueries({ queryKey: ["istruttori"] });
-      toast({ title: "Ruolo rimosso" });
+      toast({ title: td("detail.toast_role_removed") });
     } catch (err: any) {
-      toast({ title: "Errore rollback", description: err?.message, variant: "destructive" });
+      toast({ title: td("detail.toast_rollback_error"), description: err?.message, variant: "destructive" });
     } finally {
       set_pending_compenso(null);
     }
@@ -652,11 +651,11 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
         club_destinazione_id: club_dest_id,
         note,
       });
-      toast({ title: "🚀 Atleta migrata con successo" });
+      toast({ title: td("detail.toast_migrated") });
       set_show_migra(false);
       on_back();
     } catch (err: any) {
-      toast({ title: "Errore migrazione", description: err?.message, variant: "destructive" });
+      toast({ title: td("detail.toast_migra_error"), description: err?.message, variant: "destructive" });
     }
   };
 
@@ -705,7 +704,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <AlertTriangle className="w-5 h-5 text-yellow-600 shrink-0" />
               <p className="flex-1 text-sm font-medium text-yellow-900 dark:text-yellow-100">
-                ⚠️ Atleta importato da Excel{a.created_at ? ` il ${format_data_completa(a.created_at)}` : ""}, non ancora verificato
+                {td("detail.not_verified", { quando: a.created_at ? td("detail.not_verified_when", { data: format_data_completa(a.created_at) }) : "" })}
               </p>
               {can_verificare && !confirm_verifica && (
                 <Button
@@ -713,17 +712,17 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                   onClick={() => set_confirm_verifica(true)}
                   className="bg-yellow-600 hover:bg-yellow-700 text-white shrink-0"
                 >
-                  <CheckCircle2 className="w-4 h-4 mr-1.5" /> Marca come verificato
+                  <CheckCircle2 className="w-4 h-4 mr-1.5" /> {td("detail.mark_verified")}
                 </Button>
               )}
               {can_verificare && confirm_verifica && (
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-xs text-yellow-900 dark:text-yellow-100">Tutti i dati sono stati controllati?</span>
+                  <span className="text-xs text-yellow-900 dark:text-yellow-100">{td("detail.verify_question")}</span>
                   <Button size="sm" variant="outline" onClick={() => set_confirm_verifica(false)} disabled={verifying}>
-                    No
+                    {td("detail.no")}
                   </Button>
                   <Button size="sm" onClick={handle_marca_verificato} disabled={verifying} className="bg-green-600 hover:bg-green-700 text-white">
-                    {verifying ? "..." : "Sì, conferma"}
+                    {verifying ? "..." : td("detail.yes_confirm")}
                   </Button>
                 </div>
               )}
@@ -733,8 +732,8 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
         {form.verificato === true && form.verificato_at && form.verificato_da_user_id && (
           <p className="text-xs text-muted-foreground -mb-2">
             <CheckCircle2 className="w-3 h-3 inline-block mr-1 text-green-600" />
-            Verificato il {format_data_completa(form.verificato_at)}
-            {verificato_da_nome ? ` da ${verificato_da_nome}` : ""}
+            {td("detail.verified_on", { data: format_data_completa(form.verificato_at) })}
+            {verificato_da_nome ? td("detail.verified_by", { nome: verificato_da_nome }) : ""}
           </p>
         )}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -748,9 +747,9 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
               onClick={handle_genera_portal}
               disabled={generating_portal}
               className="gap-1.5 text-xs border-primary/40 text-primary hover:bg-primary/5"
-              title={portal_url ?? "Genera QR di accesso al portale"}
+              title={portal_url ?? td("detail.qr_portal_title_default")}
             >
-              <QrCode className="w-3.5 h-3.5" /> 📱 QR Accesso Portale
+              <QrCode className="w-3.5 h-3.5" /> {td("detail.qr_portal_button")}
             </Button>
             <Button
               variant="outline"
@@ -758,7 +757,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
               onClick={() => set_show_migra(true)}
               className="gap-1.5 text-xs border-primary/40 text-primary hover:bg-primary/5"
             >
-              <ArrowRightLeft className="w-3.5 h-3.5" /> Migra
+              <ArrowRightLeft className="w-3.5 h-3.5" /> {td("detail.migra_button")}
             </Button>
             <Button onClick={handle_save} disabled={upsert.isPending} className="bg-primary hover:bg-primary/90">
               <Save className="w-4 h-4 mr-2" /> {upsert.isPending ? "..." : t("salva")}
@@ -793,41 +792,41 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
           <div className="flex-1 min-w-0">
             {(() => {
               const is_f = form.sesso === "F";
-              const attiva = is_f ? "Attiva" : "Attivo";
-              const inattiva = is_f ? "Inattiva" : "Inattivo";
-              const federata = is_f ? "Federata" : "Federato";
+              const attiva = is_f ? td("detail.status_attiva") : td("detail.status_attivo");
+              const inattiva = is_f ? td("detail.status_inattiva") : td("detail.status_inattivo");
+              const federata = is_f ? td("detail.federata") : td("detail.federato");
 
               const cat = form.categoria;
               type Tile = { titolo: string; sottotitolo: string; bg: string; titolo_color: string; sub_color: string; extra?: string };
               const tiles: Tile[] = [];
               if (cat === "pulcini") {
-                tiles.push({ titolo: "Pulcini", sottotitolo: "Categoria iniziale", bg: "#E6F1FB", titolo_color: "#042C53", sub_color: "#185FA5" });
+                tiles.push({ titolo: td("detail.tile_pulcini"), sottotitolo: td("detail.tile_pulcini_sub"), bg: "#E6F1FB", titolo_color: "#042C53", sub_color: "#185FA5" });
               } else if (cat === "amatori") {
                 if (form.livello_amatori) {
-                  tiles.push({ titolo: form.livello_amatori, sottotitolo: "Categoria Amatori", bg: "#E1F5EE", titolo_color: "#04342C", sub_color: "#0F6E56" });
+                  tiles.push({ titolo: form.livello_amatori, sottotitolo: td("detail.tile_amatori_sub"), bg: "#E1F5EE", titolo_color: "#04342C", sub_color: "#0F6E56" });
                 }
               } else if (cat === "artistica") {
                 if (form.livello_artistica) {
                   tiles.push({
                     titolo: form.livello_artistica,
-                    sottotitolo: "Percorso Artistica",
+                    sottotitolo: td("detail.tile_artistica_sub"),
                     bg: "#EEEDFE",
                     titolo_color: "#26215C",
                     sub_color: "#534AB7",
-                    extra: form.livello_artistica_in_preparazione ? `Prepara ${form.livello_artistica_in_preparazione}` : undefined,
+                    extra: form.livello_artistica_in_preparazione ? td("detail.tile_prepara", { livello: form.livello_artistica_in_preparazione }) : undefined,
                   });
                 } else if (form.livello_artistica_in_preparazione) {
                   // Stato di transizione: ha superato Stellina 4 ma non ancora Interbronzo
                   tiles.push({
-                    titolo: `In preparazione ${form.livello_artistica_in_preparazione}`,
-                    sottotitolo: "Artistica · In preparazione del primo test",
+                    titolo: td("detail.tile_in_prep", { livello: form.livello_artistica_in_preparazione }),
+                    sottotitolo: td("detail.tile_in_prep_sub"),
                     bg: "#F6F5FE",
                     titolo_color: "#534AB7",
                     sub_color: "#7B73C9",
                   });
                 }
                 if (form.livello_stile) {
-                  tiles.push({ titolo: form.livello_stile, sottotitolo: "Percorso Stile", bg: "#FBEAF0", titolo_color: "#4B1528", sub_color: "#993556" });
+                  tiles.push({ titolo: form.livello_stile, sottotitolo: td("detail.tile_stile_sub"), bg: "#FBEAF0", titolo_color: "#4B1528", sub_color: "#993556" });
                 }
               }
 
@@ -892,7 +891,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                       {form.agonista && (
                         <span className="inline-flex items-center gap-1">
                           <Trophy className="w-[14px] h-[14px]" />
-                          Agonista
+                          {td("detail.flag_agonista")}
                         </span>
                       )}
                       {form.atleta_federazione && (
@@ -904,14 +903,14 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                       {form.attivo_come_monitore && (
                         <span className="inline-flex items-center gap-1">
                           <UserCog className="w-[14px] h-[14px]" />
-                          Monitore
+                          {td("detail.flag_monitore")}
                         </span>
                       )}
                       {ragione_sociale_atleta && (
                         <span className="inline-flex items-center gap-1">{ragione_sociale_atleta.nome}</span>
                       )}
                       {form.atleta_esterno && (
-                        <span className="inline-flex items-center gap-1">Esterno</span>
+                        <span className="inline-flex items-center gap-1">{td("detail.flag_esterno")}</span>
                       )}
                     </div>
                   )}
@@ -974,7 +973,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
               </div>
               <div className="flex justify-between items-center py-1">
                 <span className="text-sm text-muted-foreground">{t("eta")}</span>
-                <span className="text-sm font-medium text-foreground">{calculate_age(form.data_nascita)} anni</span>
+                <span className="text-sm font-medium text-foreground">{td("detail.age_years", { eta: calculate_age(form.data_nascita) })}</span>
               </div>
               <EditRow
                 label={t("ore_pista")}
@@ -982,36 +981,36 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                 onChange={(v) => upd("ore_pista_stagione", Number(v))}
                 type="number"
               />
-              <EditRow label="TAG NFC" value={form.tag_nfc || ""} onChange={(v) => upd("tag_nfc", v)} />
+              <EditRow label={td("detail.nfc_tag_label")} value={form.tag_nfc || ""} onChange={(v) => upd("tag_nfc", v)} />
 
               <div className="pt-3 border-t border-border space-y-3">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Indirizzo atleta</p>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">{td("detail.address_section")}</p>
                 <div className="space-y-1.5">
-                  <Label className="text-sm text-muted-foreground">Sesso</Label>
+                  <Label className="text-sm text-muted-foreground">{td("detail.sesso")}</Label>
                   <Select value={form.sesso || ""} onValueChange={(v) => upd("sesso", v)}>
                     <SelectTrigger className="h-9"><SelectValue placeholder="—" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="F">Femmina</SelectItem>
-                      <SelectItem value="M">Maschio</SelectItem>
+                      <SelectItem value="F">{td("detail.female")}</SelectItem>
+                      <SelectItem value="M">{td("detail.male")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-sm text-muted-foreground">Indirizzo</Label>
-                  <Input value={form.indirizzo || ""} onChange={(e) => upd("indirizzo", e.target.value)} className="h-9" placeholder="Via, numero" />
+                  <Label className="text-sm text-muted-foreground">{td("detail.address")}</Label>
+                  <Input value={form.indirizzo || ""} onChange={(e) => upd("indirizzo", e.target.value)} className="h-9" placeholder={td("detail.address_placeholder")} />
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   <div className="space-y-1.5">
-                    <Label className="text-sm text-muted-foreground">CAP</Label>
+                    <Label className="text-sm text-muted-foreground">{td("detail.zip")}</Label>
                     <Input value={form.cap || ""} onChange={(e) => upd("cap", e.target.value)} maxLength={4} className="h-9" />
                   </div>
                   <div className="col-span-2 space-y-1.5">
-                    <Label className="text-sm text-muted-foreground">Città</Label>
+                    <Label className="text-sm text-muted-foreground">{td("detail.city")}</Label>
                     <Input value={form.citta || ""} onChange={(e) => upd("citta", e.target.value)} className="h-9" />
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-sm text-muted-foreground">Cantone</Label>
+                  <Label className="text-sm text-muted-foreground">{td("detail.canton")}</Label>
                   <Select value={form.cantone || ""} onValueChange={(v) => upd("cantone", v)}>
                     <SelectTrigger className="h-9"><SelectValue placeholder="—" /></SelectTrigger>
                     <SelectContent>
@@ -1023,11 +1022,11 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label className="text-sm text-muted-foreground">Telefono</Label>
+                    <Label className="text-sm text-muted-foreground">{td("detail.phone")}</Label>
                     <Input type="tel" value={form.telefono || ""} onChange={(e) => upd("telefono", e.target.value)} className="h-9" placeholder="+41 ..." />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-sm text-muted-foreground">Codice fiscale</Label>
+                    <Label className="text-sm text-muted-foreground">{td("detail.fiscal_code")}</Label>
                     <Input value={form.codice_fiscale || ""} onChange={(e) => upd("codice_fiscale", e.target.value)} className="h-9" />
                   </div>
                 </div>
@@ -1035,25 +1034,25 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
 
 
               <div className="pt-3 border-t border-border space-y-3">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Licenza Swiss Ice Skating</p>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">{td("detail.license_section")}</p>
                 <EditRow
-                  label="N° licenza SIS"
+                  label={td("detail.license_number")}
                   value={form.licenza_sis_numero || ""}
                   onChange={(v) => upd("licenza_sis_numero", v)}
                 />
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <EditRow
-                    label="Categoria SIS"
+                    label={td("detail.license_category")}
                     value={form.licenza_sis_categoria || ""}
                     onChange={(v) => upd("licenza_sis_categoria", v)}
                   />
                   <EditRow
-                    label="Disciplina SIS"
+                    label={td("detail.license_discipline")}
                     value={form.licenza_sis_disciplina || ""}
                     onChange={(v) => upd("licenza_sis_disciplina", v)}
                   />
                   <div className="flex justify-between items-center py-1 gap-3">
-                    <span className="text-sm text-muted-foreground">Validità fino al</span>
+                    <span className="text-sm text-muted-foreground">{td("detail.license_validity")}</span>
                     <DateInput
                       value={form.licenza_sis_validita_a?.split("T")[0] || ""}
                       onChange={(v) => upd("licenza_sis_validita_a", v)}
@@ -1065,16 +1064,16 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-sm text-muted-foreground">Disco in preparazione</Label>
+                <Label className="text-sm text-muted-foreground">{td("detail.disc_in_prep")}</Label>
                 <Input
                   value={form.disco_in_preparazione || ""}
                   onChange={(e) => upd("disco_in_preparazione", e.target.value)}
-                  placeholder="es. Romeo e Giulietta - Prokofiev"
+                  placeholder={td("detail.disc_placeholder")}
                   className="h-9"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-sm text-muted-foreground">File audio disco</Label>
+                <Label className="text-sm text-muted-foreground">{td("detail.disc_file")}</Label>
                 {form.disco_url && (
                   <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg">
                     <Music className="w-4 h-4 text-primary flex-shrink-0" />
@@ -1085,7 +1084,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg border border-border cursor-pointer hover:bg-muted/30 text-sm text-muted-foreground transition-colors w-fit ${uploading_disco ? "opacity-50 pointer-events-none" : ""}`}
                 >
                   <Upload className="w-4 h-4" />
-                  {uploading_disco ? "Caricamento..." : form.disco_url ? "Sostituisci disco" : "Carica disco audio"}
+                  {uploading_disco ? td("detail.uploading") : form.disco_url ? td("detail.replace_disc") : td("detail.upload_disc")}
                   <input
                     type="file"
                     accept="audio/*"
@@ -1107,7 +1106,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                   className="w-4 h-4 accent-primary"
                 />
                 <label htmlFor="attivo_atleta" className="text-sm font-medium text-foreground cursor-pointer">
-                  Atleta attiva
+                  {td("detail.active_athlete")}
                 </label>
               </div>
             </div>
@@ -1119,11 +1118,11 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
               {/* ─── Sezione Categoria ─── */}
               <div className="bg-card rounded-xl shadow-card p-6 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-foreground">Categoria</h3>
+                  <h3 className="text-sm font-bold text-foreground">{td("detail.category")}</h3>
                   <Badge variant="outline" className="capitalize">{form.categoria}</Badge>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-sm text-muted-foreground">Stadio della carriera</Label>
+                  <Label className="text-sm text-muted-foreground">{td("detail.career_stage")}</Label>
                   <Select
                     value={form.categoria}
                     onValueChange={(v) => {
@@ -1137,9 +1136,9 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                   >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pulcini">Pulcini</SelectItem>
-                      <SelectItem value="amatori">Amatori</SelectItem>
-                      <SelectItem value="artistica">Artistica</SelectItem>
+                      <SelectItem value="pulcini">{td("detail.cat_pulcini")}</SelectItem>
+                      <SelectItem value="amatori">{td("detail.cat_amatori")}</SelectItem>
+                      <SelectItem value="artistica">{td("detail.cat_artistica")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1150,25 +1149,25 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                     onClick={() => {
                       if (form.categoria === "pulcini") {
                         set_form((p: any) => ({ ...p, categoria: "amatori", livello_amatori: p.livello_amatori || "Stellina 1" }));
-                        toast({ title: "🎉 Promosso ad Amatori", description: "Livello iniziale: Stellina 1" });
+                        toast({ title: td("detail.promoted_amatori"), description: td("detail.promoted_amatori_desc") });
                       } else if (form.categoria === "amatori") {
                         set_form((p: any) => ({ ...p, categoria: "artistica" }));
                         toast({
-                          title: "🎉 Promosso ad Artistica",
-                          description: "Livello amatori mantenuto come fallback fino al superamento di Interbronzo",
+                          title: td("detail.promoted_artistica"),
+                          description: td("detail.promoted_artistica_desc"),
                         });
                       }
                     }}
                   >
                     <ArrowRightLeft className="w-4 h-4" />
-                    Promuovi a {form.categoria === "pulcini" ? "Amatori" : "Artistica"}
+                    {td("detail.promote_to", { categoria: form.categoria === "pulcini" ? td("detail.cat_amatori") : td("detail.cat_artistica") })}
                   </Button>
                 )}
               </div>
 
               {/* ─── Sezione Atleta esterno ─── */}
               <div className="bg-card rounded-xl shadow-card p-6 space-y-4">
-                <h3 className="text-sm font-bold text-foreground">Atleta esterno</h3>
+                <h3 className="text-sm font-bold text-foreground">{td("detail.external_section")}</h3>
                 <div className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
                   <input
                     type="checkbox"
@@ -1178,7 +1177,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                     className="w-4 h-4 accent-primary"
                   />
                   <label htmlFor="esterno_check" className="text-sm font-medium text-foreground cursor-pointer">
-                    Pattinatore esterno ospite
+                    {td("detail.external_check")}
                   </label>
                 </div>
               </div>
@@ -1198,20 +1197,20 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
               {/* ─── Sezione Livelli ─── */}
               {form.categoria !== "pulcini" && (
                 <div className="bg-card rounded-xl shadow-card p-6 space-y-4">
-                  <h3 className="text-sm font-bold text-foreground">Livelli</h3>
+                  <h3 className="text-sm font-bold text-foreground">{td("detail.levels_section")}</h3>
 
                   {(form.categoria === "amatori" || form.categoria === "artistica") && (
                     <div className="space-y-1.5">
                       <Label className="text-sm text-muted-foreground">
-                        Livello amatori {form.categoria === "artistica" && <span className="italic text-xs">(fallback)</span>}
+                        {td("detail.level_amatori")} {form.categoria === "artistica" && <span className="italic text-xs">{td("detail.fallback")}</span>}
                       </Label>
                       <Select
                         value={form.livello_amatori || "__none__"}
                         onValueChange={(v) => upd("livello_amatori", v === "__none__" ? null : v)}
                       >
-                        <SelectTrigger><SelectValue placeholder="Nessuno" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder={td("detail.none")} /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="__none__">— Nessuno —</SelectItem>
+                          <SelectItem value="__none__">{td("detail.none_option")}</SelectItem>
                           {["Stellina 1", "Stellina 2", "Stellina 3", "Stellina 4"].map((l) => (
                             <SelectItem key={l} value={l}>{l}</SelectItem>
                           ))}
@@ -1224,45 +1223,45 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                     <>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div className="space-y-1.5">
-                          <Label className="text-sm text-muted-foreground">Livello artistica</Label>
+                          <Label className="text-sm text-muted-foreground">{td("detail.level_artistica")}</Label>
                           <SelectLivello
                             value={form.livello_artistica}
                             onChange={(v) => upd("livello_artistica", v)}
                             fase="carriera"
                             allowNull={true}
-                            nullLabel="— Nessuno —"
+                            nullLabel={td("detail.none_option")}
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <Label className="text-sm text-muted-foreground">In preparazione</Label>
+                          <Label className="text-sm text-muted-foreground">{td("detail.in_preparation")}</Label>
                           <SelectLivello
                             value={form.livello_artistica_in_preparazione}
                             onChange={(v) => upd("livello_artistica_in_preparazione", v)}
                             fase="carriera"
                             allowNull={true}
-                            nullLabel="— Nessuno —"
+                            nullLabel={td("detail.none_option")}
                           />
                         </div>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div className="space-y-1.5">
-                          <Label className="text-sm text-muted-foreground">Livello stile</Label>
+                          <Label className="text-sm text-muted-foreground">{td("detail.level_stile")}</Label>
                           <SelectLivello
                             value={form.livello_stile}
                             onChange={(v) => upd("livello_stile", v)}
                             fase="carriera"
                             allowNull={true}
-                            nullLabel="— Nessuno —"
+                            nullLabel={td("detail.none_option")}
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <Label className="text-sm text-muted-foreground">In preparazione</Label>
+                          <Label className="text-sm text-muted-foreground">{td("detail.in_preparation")}</Label>
                           <SelectLivello
                             value={form.livello_stile_in_preparazione}
                             onChange={(v) => upd("livello_stile_in_preparazione", v)}
                             fase="carriera"
                             allowNull={true}
-                            nullLabel="— Nessuno —"
+                            nullLabel={td("detail.none_option")}
                           />
                         </div>
                       </div>
@@ -1276,7 +1275,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                           className="w-4 h-4 accent-primary"
                         />
                       <label htmlFor="fed_check" className="text-sm font-medium text-foreground cursor-pointer">
-                          Atleta federazione
+                          {td("detail.federation_check")}
                         </label>
                       </div>
                     </>
@@ -1287,22 +1286,22 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
 
               {/* ─── Storico Test ─── */}
               <div className="bg-card rounded-xl shadow-card p-6 space-y-3">
-                <h3 className="text-sm font-bold text-foreground">Storico Test</h3>
+                <h3 className="text-sm font-bold text-foreground">{td("detail.tests_history")}</h3>
                 <StoricoTestAtleta atleta_id={a.id} />
               </div>
 
               {/* ─── Ruolo in pista ─── */}
               <div className="bg-card rounded-xl shadow-card p-6 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-foreground">Ruolo in pista</h3>
+                  <h3 className="text-sm font-bold text-foreground">{td("detail.rink_role")}</h3>
                   {staff_disabled && (
-                    <span className="text-[10px] text-muted-foreground">Disponibile dai 12 anni</span>
+                    <span className="text-[10px] text-muted-foreground">{td("detail.from_12")}</span>
                   )}
                 </div>
                 <div className="space-y-2">
                   <label
                     className={`flex items-center gap-2 p-2 rounded-lg border ${staff_disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:bg-muted/30"}`}
-                    title={staff_disabled ? "Disponibile dai 12 anni di età" : ""}
+                    title={staff_disabled ? td("detail.from_12_title") : ""}
                   >
                     <input
                       type="checkbox"
@@ -1314,12 +1313,12 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                         set_form((p: any) => ({ ...p, e_aiuto_monitrice: v, e_monitrice: v ? false : p.e_monitrice }));
                       }}
                     />
-                    <span className="text-sm">Aiuto monitrice</span>
-                    <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700">aiuto</span>
+                    <span className="text-sm">{td("detail.aiuto_monitrice")}</span>
+                    <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700">{td("detail.aiuto_badge")}</span>
                   </label>
                   <label
                     className={`flex items-center gap-2 p-2 rounded-lg border ${staff_disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:bg-muted/30"}`}
-                    title={staff_disabled ? "Disponibile dai 12 anni di età" : ""}
+                    title={staff_disabled ? td("detail.from_12_title") : ""}
                   >
                     <input
                       type="checkbox"
@@ -1331,13 +1330,13 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                         set_form((p: any) => ({ ...p, e_monitrice: v, e_aiuto_monitrice: v ? false : p.e_aiuto_monitrice }));
                       }}
                     />
-                    <span className="text-sm">Monitrice</span>
-                    <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700">monitrice</span>
+                    <span className="text-sm">{td("detail.monitrice")}</span>
+                    <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700">{td("detail.monitrice_badge")}</span>
                   </label>
                 </div>
                 {(form.e_monitrice || form.e_aiuto_monitrice) && (
                   <p className="text-[11px] text-muted-foreground">
-                    Dopo il salvataggio si aprirà il modulo per impostare il compenso.
+                    {td("detail.compenso_hint")}
                   </p>
                 )}
               </div>
@@ -1368,7 +1367,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                   {athlete_corsi.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground text-sm">
-                        Nessun corso iscritto.
+                        {td("detail.no_courses")}
                       </td>
                     </tr>
                   ) : (
@@ -1401,10 +1400,10 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                       {t("data")}
                     </th>
                     <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                      Tecnico
+                      {td("detail.col_tecnico")}
                     </th>
                     <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                      Artistico
+                      {td("detail.col_artistico")}
                     </th>
                     <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
                       {t("posizione")}
@@ -1418,7 +1417,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                   {athlete_gare.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground text-sm">
-                        Nessuna gara registrata.
+                        {td("detail.no_races")}
                       </td>
                     </tr>
                   ) : (
@@ -1455,9 +1454,9 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
           <TabsContent value="medagliere" className="mt-6 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
-                { tipo: "Oro", color: "bg-yellow-50 text-yellow-700 border-yellow-200" },
-                { tipo: "Argento", color: "bg-slate-50 text-slate-600 border-slate-200" },
-                { tipo: "Bronzo", color: "bg-orange-50 text-orange-700 border-orange-200" },
+                { tipo: td("detail.medal_gold"), color: "bg-yellow-50 text-yellow-700 border-yellow-200" },
+                { tipo: td("detail.medal_silver"), color: "bg-slate-50 text-slate-600 border-slate-200" },
+                { tipo: td("detail.medal_bronze"), color: "bg-orange-50 text-orange-700 border-orange-200" },
               ].map(({ tipo, color }) => (
                 <div key={tipo} className={`rounded-xl border p-6 text-center ${color}`}>
                   <Medal className="w-8 h-8 mx-auto mb-2" />
@@ -1489,7 +1488,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
             ) : (
               <div className="bg-card rounded-xl shadow-card p-8 text-center text-muted-foreground">
                 <Medal className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                <p className="text-sm">Nessuna medaglia ancora.</p>
+                <p className="text-sm">{td("detail.no_medals")}</p>
               </div>
             )}
           </TabsContent>
@@ -1521,21 +1520,21 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                     ))}
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-sm text-muted-foreground">Indirizzo</Label>
-                    <Input value={form[`${prefix}_indirizzo`] || ""} onChange={(e) => upd(`${prefix}_indirizzo`, e.target.value)} className="h-9" placeholder="Via, numero" />
+                    <Label className="text-sm text-muted-foreground">{td("detail.address")}</Label>
+                    <Input value={form[`${prefix}_indirizzo`] || ""} onChange={(e) => upd(`${prefix}_indirizzo`, e.target.value)} className="h-9" placeholder={td("detail.address_placeholder")} />
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     <div className="space-y-1.5">
-                      <Label className="text-sm text-muted-foreground">CAP</Label>
+                      <Label className="text-sm text-muted-foreground">{td("detail.zip")}</Label>
                       <Input value={form[`${prefix}_cap`] || ""} onChange={(e) => upd(`${prefix}_cap`, e.target.value)} maxLength={4} className="h-9" />
                     </div>
                     <div className="col-span-2 space-y-1.5">
-                      <Label className="text-sm text-muted-foreground">Città</Label>
+                      <Label className="text-sm text-muted-foreground">{td("detail.city")}</Label>
                       <Input value={form[`${prefix}_citta`] || ""} onChange={(e) => upd(`${prefix}_citta`, e.target.value)} className="h-9" />
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-sm text-muted-foreground">Cantone</Label>
+                    <Label className="text-sm text-muted-foreground">{td("detail.canton")}</Label>
                     <Select value={form[`${prefix}_cantone`] || ""} onValueChange={(v) => upd(`${prefix}_cantone`, v)}>
                       <SelectTrigger className="h-9"><SelectValue placeholder="—" /></SelectTrigger>
                       <SelectContent>
@@ -1567,14 +1566,14 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
           {/* ── Fatture ── */}
           <TabsContent value="fatture" className="mt-6">
             <div className="flex justify-between items-center mb-3">
-              <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Fatture atleta</h3>
+              <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">{td("detail.invoices_title")}</h3>
               <Button
                 size="sm"
                 className="bg-sky-600 hover:bg-sky-700"
                 onClick={async () => {
                   try {
                     const club_id = await get_current_club_id();
-                    if (!club_id) throw new Error("Club non identificato");
+                    if (!club_id) throw new Error(td("detail.club_not_identified"));
                     const oggi = new Date().toISOString().slice(0, 10);
                     const scad = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
                     const { data, error } = await supabase
@@ -1587,7 +1586,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                         data_scadenza: scad,
                         importo: 0,
                         righe: [],
-                        descrizione: "Nuova fattura",
+                        descrizione: td("detail.new_invoice_desc"),
                         intestatario_nome: form.genitore1_nome || a.nome || null,
                         intestatario_cognome: (form as any).genitore1_cognome || a.cognome || null,
                         intestatario_email: form.genitore1_email || null,
@@ -1601,16 +1600,16 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                     if (error) throw error;
                     navigate(`/segreteria/fatture/${data.id}`);
                   } catch (e: any) {
-                    toast({ title: "Errore", description: e?.message, variant: "destructive" });
+                    toast({ title: td("detail.toast_error"), description: e?.message, variant: "destructive" });
                   }
                 }}
               >
-                + Nuova fattura
+                {td("detail.new_invoice")}
               </Button>
             </div>
             {athlete_fatture.length === 0 ? (
               <div className="bg-card rounded-xl shadow-card p-8 text-center text-muted-foreground text-sm">
-                Nessuna fattura.
+                {td("detail.no_invoices")}
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1631,7 +1630,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                     >
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <div>
-                          <div className="font-semibold text-foreground">{f.numero || `Bozza ${f.id.slice(0, 6)}`}</div>
+                          <div className="font-semibold text-foreground">{f.numero || td("detail.invoice_draft", { id: f.id.slice(0, 6) })}</div>
                           {f.periodo && <div className="text-xs text-muted-foreground">{f.periodo}</div>}
                         </div>
                         <span className={`text-xs px-2 py-1 rounded-md border font-medium ${stato_cls[f.stato] || stato_cls.da_pagare}`}>
@@ -1641,7 +1640,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                       {f.descrizione && <p className="text-sm text-muted-foreground mb-2 line-clamp-2">{f.descrizione}</p>}
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">
-                          {f.data_scadenza ? `Scad. ${new Date(f.data_scadenza + "T00:00:00").toLocaleDateString("de-CH")}` : "—"}
+                          {f.data_scadenza ? td("detail.invoice_due", { data: new Date(f.data_scadenza + "T00:00:00").toLocaleDateString("de-CH") }) : "—"}
                         </span>
                         <span className="font-bold tabular-nums text-foreground">CHF {Number(f.importo || 0).toFixed(2)}</span>
                       </div>
@@ -1677,7 +1676,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                   {athlete_lezioni.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground text-sm">
-                        Nessuna lezione privata.
+                        {td("detail.no_private_lessons")}
                       </td>
                     </tr>
                   ) : (
@@ -1718,25 +1717,25 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
         <DialogContent className="max-w-md print:max-w-full print:shadow-none">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <QrCode className="w-5 h-5 text-primary" /> QR Accesso Portale
+              <QrCode className="w-5 h-5 text-primary" /> {td("detail.qr_portal_dialog_title")}
             </DialogTitle>
           </DialogHeader>
           <div id="qr-portale-print" className="space-y-4">
             <div className="text-center space-y-1">
               <p className="text-sm text-muted-foreground">
-                Scansiona per accedere al portale personale di{" "}
+                {td("detail.qr_portal_scan")}{" "}
                 <span className="font-semibold text-foreground">{form.nome} {form.cognome}</span>
               </p>
             </div>
             <div className="flex justify-center">
               {portal_qr_src ? (
-                <img src={portal_qr_src} alt="QR portale atleta" className="w-64 h-64 rounded-xl border border-border bg-background p-2" />
+                <img src={portal_qr_src} alt={td("detail.qr_portal_alt")} className="w-64 h-64 rounded-xl border border-border bg-background p-2" />
               ) : (
                 <div className="w-64 h-64 bg-muted rounded-xl animate-pulse" />
               )}
             </div>
             <div className="space-y-1.5 print:hidden">
-              <Label className="text-xs text-muted-foreground">Link diretto</Label>
+              <Label className="text-xs text-muted-foreground">{td("detail.direct_link")}</Label>
               <div className="flex gap-2">
                 <Input readOnly value={portal_url ?? ""} className="font-mono text-xs h-9" onFocus={(e) => e.currentTarget.select()} />
                 <Button size="sm" variant="outline" onClick={handle_copy_portal_link} className="shrink-0">
@@ -1748,12 +1747,12 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
           </div>
           <div className="flex flex-wrap gap-2 justify-end pt-2 print:hidden">
             <Button variant="outline" size="sm" onClick={() => window.print()}>
-              <Printer className="w-4 h-4 mr-1.5" /> Stampa QR
+              <Printer className="w-4 h-4 mr-1.5" /> {td("detail.print_qr")}
             </Button>
             <Button variant="outline" size="sm" onClick={handle_share_portal_link}>
-              <Share2 className="w-4 h-4 mr-1.5" /> Condividi link
+              <Share2 className="w-4 h-4 mr-1.5" /> {td("detail.share_link")}
             </Button>
-            <Button size="sm" onClick={() => set_show_qr_portal(false)}>Chiudi</Button>
+            <Button size="sm" onClick={() => set_show_qr_portal(false)}>{td("detail.close")}</Button>
           </div>
         </DialogContent>
       </Dialog>
