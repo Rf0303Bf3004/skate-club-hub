@@ -184,6 +184,8 @@ const ClubSetupPage: React.FC = () => {
         "nome", "citta", "cap", "paese", "email", "telefono", "indirizzo",
         "sito_web", "numero_tessera_federale", "colore_primario", "descrizione", "logo_url",
         "reminder_allenamenti_attivo", "reminder_staff_attivo", "reminder_orario_invio", "reminder_anticipo_giorni",
+        "reminder_planning_atleti_attivo", "reminder_planning_istruttori_attivo",
+        "reminder_planning_orario_invio", "reminder_planning_anticipo_giorni",
       ];
       for (const f of club_fields) {
         if (f in form) club_payload[f] = form[f];
