@@ -2,13 +2,14 @@ import React from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, FileText, Upload } from "lucide-react";
+import { Trash2, FileText, Upload } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
   AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { cat_allegato, format_bytes } from "./categorie";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   allegato: any;
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export default function AllegatoCard({ allegato, on_edit, on_delete }: Props) {
+  const { t } = useTranslation("dashboard");
   const cat = cat_allegato(allegato.categoria);
   const is_placeholder = (allegato.file_url ?? "").startsWith("placeholder://");
 
@@ -29,9 +31,17 @@ export default function AllegatoCard({ allegato, on_edit, on_delete }: Props) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <Badge variant="outline" className={cat.color}>{cat.label}</Badge>
-            <span className="text-xs text-muted-foreground">ordine {allegato.ordine}</span>
-            {!allegato.stagione_id && <Badge variant="outline" className="text-xs">Permanente</Badge>}
-            {is_placeholder && <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">Placeholder</Badge>}
+            <span className="text-xs text-muted-foreground">
+              {t("relazione.allegato_card.ordine", { ordine: allegato.ordine })}
+            </span>
+            {!allegato.stagione_id && (
+              <Badge variant="outline" className="text-xs">{t("relazione.allegato_card.permanente")}</Badge>
+            )}
+            {is_placeholder && (
+              <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+                {t("relazione.allegato_card.placeholder")}
+              </Badge>
+            )}
           </div>
           <h3 className="text-base font-semibold text-foreground">{allegato.titolo}</h3>
           {allegato.descrizione && (
@@ -41,24 +51,24 @@ export default function AllegatoCard({ allegato, on_edit, on_delete }: Props) {
         </div>
         <div className="flex flex-col items-end gap-1">
           <Button size="sm" variant="outline" onClick={on_edit} className="gap-1.5">
-            <Upload className="w-3.5 h-3.5" />Sostituisci / Modifica
+            <Upload className="w-3.5 h-3.5" />{t("relazione.allegato_card.sostituisci")}
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button size="sm" variant="ghost" className="text-destructive gap-1.5">
-                <Trash2 className="w-3.5 h-3.5" />Elimina
+                <Trash2 className="w-3.5 h-3.5" />{t("relazione.allegato_card.elimina")}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Eliminare l'allegato?</AlertDialogTitle>
+                <AlertDialogTitle>{t("relazione.allegato_card.confirm_title")}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Stai per eliminare "{allegato.titolo}". L'operazione e' irreversibile.
+                  {t("relazione.allegato_card.confirm_desc", { titolo: allegato.titolo })}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Annulla</AlertDialogCancel>
-                <AlertDialogAction onClick={on_delete}>Elimina</AlertDialogAction>
+                <AlertDialogCancel>{t("relazione.allegato_card.annulla")}</AlertDialogCancel>
+                <AlertDialogAction onClick={on_delete}>{t("relazione.allegato_card.elimina")}</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
