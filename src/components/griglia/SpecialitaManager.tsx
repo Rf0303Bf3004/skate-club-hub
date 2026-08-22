@@ -135,8 +135,9 @@ const SpecialitaManager: React.FC = () => {
           </div>
         </SortableContext>
       </DndContext>
+      </div>
 
-      <div className="pt-2 border-t space-y-2">
+      <div className="pt-2 border-t space-y-2 shrink-0">
         <div className="flex items-center gap-2">
         <Input
           value={nuovo_nome}
