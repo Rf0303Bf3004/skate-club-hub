@@ -1446,6 +1446,7 @@ const MonitoreDetail: React.FC<{
 // ─── Main Page ─────────────────────────────────────────────
 const InstructorsPage: React.FC = () => {
   const { t } = useI18n();
+  const { t: ti } = useTranslation("istruttori");
   const navigate = useNavigate();
   const { data: istruttori = [], isLoading } = use_istruttori();
   const { data: monitori_atleti = [] } = use_atleti_monitori();
@@ -1510,9 +1511,9 @@ const InstructorsPage: React.FC = () => {
     try {
       await upsert.mutateAsync(data);
       set_modal_open(false);
-      toast({ title: data.id ? "✅ Salvato" : "✅ Creato" });
+      toast({ title: data.id ? ti("toast.salvato") : ti("toast.creato") });
     } catch (err: any) {
-      toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
+      toast({ title: ti("toast.errore_salvataggio"), description: err?.message, variant: "destructive" });
     }
   };
 
@@ -1521,9 +1522,9 @@ const InstructorsPage: React.FC = () => {
       await elimina.mutateAsync(selected_modal.id);
       set_modal_open(false);
       set_selected_id(null);
-      toast({ title: "🗑️ Eliminato correttamente" });
+      toast({ title: ti("toast.eliminato") });
     } catch (err: any) {
-      toast({ title: "Errore eliminazione", description: err?.message, variant: "destructive" });
+      toast({ title: ti("toast.errore_eliminazione"), description: err?.message, variant: "destructive" });
     }
   };
 
@@ -1543,9 +1544,9 @@ const InstructorsPage: React.FC = () => {
         })
         .eq("id", selected_id);
       if (error) throw error;
-      toast({ title: "✅ Compenso salvato" });
+      toast({ title: ti("toast.compenso_salvato") });
     } catch (err: any) {
-      toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
+      toast({ title: ti("toast.errore_salvataggio"), description: err?.message, variant: "destructive" });
     } finally {
       set_saving_contratto(false);
     }
@@ -1577,7 +1578,7 @@ const InstructorsPage: React.FC = () => {
   const save_disponibilita = async () => {
     if (!selected_id) return;
     await save_disp.mutateAsync({ istruttore_id: selected_id, disponibilita: disp_local });
-    toast({ title: "✅ Disponibilità salvata" });
+    toast({ title: ti("toast.disponibilita_salvata") });
   };
 
   const selected = istruttori_veri.find((i: any) => i.id === selected_id);
@@ -1639,7 +1640,7 @@ const InstructorsPage: React.FC = () => {
                         : liv === "aiuto_monitrice"
                           ? "bg-orange-100 text-orange-700 border-orange-200"
                           : "bg-blue-100 text-blue-700 border-blue-200";
-                    const lbl = liv === "monitrice" ? "Monitrice" : liv === "aiuto_monitrice" ? "Aiuto monitrice" : "Istruttore";
+                    const lbl = liv === "monitrice" ? ti("badge.monitrice") : liv === "aiuto_monitrice" ? ti("badge.aiuto_monitrice") : ti("badge.istruttore");
                     return (
                       <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${cls}`}>
                         {lbl}
@@ -1651,7 +1652,7 @@ const InstructorsPage: React.FC = () => {
                       onClick={() => navigate(`/atleti?id=${selected.linked_atleta_id}`)}
                       className="text-xs text-primary hover:underline"
                     >
-                      Vedi scheda atleta →
+                      {ti("dettaglio.vedi_scheda_atleta")}
                     </button>
                   )}
                 </div>
@@ -1672,16 +1673,16 @@ const InstructorsPage: React.FC = () => {
 
           {selected.stato_staff === "sospeso" && (
             <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
-              ⚠️ Questa persona ha smesso di lavorare in pista. Storico ore visibile.
+              {ti("dettaglio.avviso_sospeso")}
             </div>
           )}
 
           <Tabs defaultValue="info">
             <TabsList>
-              <TabsTrigger value="info">Informazioni</TabsTrigger>
-              <TabsTrigger value="compenso">💶 Compenso</TabsTrigger>
-              <TabsTrigger value="ore">⏱️ Ore Lavoro</TabsTrigger>
-              <TabsTrigger value="disponibilita">Disponibilità</TabsTrigger>
+              <TabsTrigger value="info">{ti("dettaglio.tab_info")}</TabsTrigger>
+              <TabsTrigger value="compenso">{ti("dettaglio.tab_compenso")}</TabsTrigger>
+              <TabsTrigger value="ore">{ti("dettaglio.tab_ore")}</TabsTrigger>
+              <TabsTrigger value="disponibilita">{t("disponibilita")}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="info" className="mt-6">
@@ -1689,8 +1690,8 @@ const InstructorsPage: React.FC = () => {
                 {[
                   { label: t("email"), value: selected.email },
                   { label: t("telefono"), value: selected.telefono },
-                  { label: "TAG NFC", value: selected.tag_nfc || "—" },
-                  { label: "Prezzo vendita/min", value: `CHF ${(selected.costo_minuto || 0).toFixed(2)}/min` },
+                  { label: ti("dettaglio.tag_nfc"), value: selected.tag_nfc || "—" },
+                  { label: ti("dettaglio.prezzo_vendita_min"), value: `CHF ${(selected.costo_minuto || 0).toFixed(2)}/min` },
                 ].map(({ label, value }) => (
                   <div key={label} className="flex justify-between text-sm">
                     <span className="text-muted-foreground">{label}</span>
@@ -1705,7 +1706,7 @@ const InstructorsPage: React.FC = () => {
                 </div>
                 {selected.note && (
                   <div className="pt-2 border-t border-border">
-                    <p className="text-xs text-muted-foreground mb-1">Note</p>
+                    <p className="text-xs text-muted-foreground mb-1">{ti("dettaglio.note")}</p>
                     <p className="text-sm text-foreground">{selected.note}</p>
                   </div>
                 )}
@@ -1747,10 +1748,10 @@ const InstructorsPage: React.FC = () => {
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-sm font-medium text-foreground">{giorno}</span>
                           <Button variant="ghost" size="sm" onClick={() => add_slot(giorno)} className="h-7 text-xs">
-                            <Plus className="w-3 h-3 mr-1" /> Slot
+                            <Plus className="w-3 h-3 mr-1" /> {ti("dettaglio.slot")}
                           </Button>
                         </div>
-                        {slots.length === 0 && <p className="text-xs text-muted-foreground">Nessuno slot</p>}
+                        {slots.length === 0 && <p className="text-xs text-muted-foreground">{ti("dettaglio.nessuno_slot")}</p>}
                         {slots.map((s, idx) => (
                           <div key={idx} className="flex items-center gap-2 mb-1">
                             <Input
@@ -1819,10 +1820,10 @@ const InstructorsPage: React.FC = () => {
         {/* Tabs filtro per livello */}
         <div className="flex flex-wrap gap-2 border-b border-border pb-3">
           {[
-            { key: "tutti", label: `Tutti (${counts.tutti})` },
-            { key: "istruttore", label: `Istruttori (${counts.istruttore})` },
-            { key: "monitrice", label: `Monitrici (${counts.monitrice})` },
-            { key: "aiuto_monitrice", label: `Aiuto monitrici (${counts.aiuto_monitrice})` },
+            { key: "tutti", label: ti("lista.filtro_tutti", { count: counts.tutti }) },
+            { key: "istruttore", label: ti("lista.filtro_istruttori", { count: counts.istruttore }) },
+            { key: "monitrice", label: ti("lista.filtro_monitrici", { count: counts.monitrice }) },
+            { key: "aiuto_monitrice", label: ti("lista.filtro_aiuto_monitrici", { count: counts.aiuto_monitrice }) },
           ].map((tab) => (
             <button
               key={tab.key}
@@ -1841,16 +1842,16 @@ const InstructorsPage: React.FC = () => {
         <SearchableListLayout
           search={search_istruttori}
           on_search_change={set_search_istruttori}
-          search_placeholder="Cerca per nome, cognome o email…"
+          search_placeholder={ti("lista.search_placeholder")}
           count_filtered={istruttori_filtrati.length}
           count_total={istruttori.length}
           sticky={false}
         >
         {istruttori_filtrati.length === 0 ? (
           <div className="bg-card rounded-xl shadow-card p-12 text-center text-muted-foreground">
-            <p className="text-sm">Nessun istruttore corrisponde ai criteri.</p>
+            <p className="text-sm">{ti("lista.empty_title")}</p>
             <p className="text-xs mt-1">
-              Crea un nuovo istruttore con il bottone in alto, o vai in <strong>Atleti</strong> e spunta "Monitrice" / "Aiuto monitrice".
+              {ti("lista.empty_hint_pre")} <strong>{ti("monitore.atleti")}</strong> {ti("lista.empty_hint_post")}
             </p>
           </div>
         ) : (
@@ -1866,7 +1867,7 @@ const InstructorsPage: React.FC = () => {
                     ? "bg-orange-100 text-orange-700 border-orange-200"
                     : "bg-blue-100 text-blue-700 border-blue-200";
               const badge_label =
-                liv === "monitrice" ? "Monitrice" : liv === "aiuto_monitrice" ? "Aiuto monitrice" : "Istruttore";
+                liv === "monitrice" ? ti("badge.monitrice") : liv === "aiuto_monitrice" ? ti("badge.aiuto_monitrice") : ti("badge.istruttore");
               return (
                 <div
                   key={i.id}
@@ -1885,7 +1886,7 @@ const InstructorsPage: React.FC = () => {
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-foreground truncate">
                         {i.nome} {i.cognome}
-                        {sospeso && <span className="ml-1 text-xs text-muted-foreground">(sospeso)</span>}
+                        {sospeso && <span className="ml-1 text-xs text-muted-foreground">{ti("lista.sospeso")}</span>}
                       </p>
                       {linked_atleta && (
                         <button
@@ -1895,7 +1896,7 @@ const InstructorsPage: React.FC = () => {
                           }}
                           className="text-[11px] text-primary hover:underline"
                         >
-                          ↗ Anche atleta del club
+                          {ti("lista.anche_atleta")}
                         </button>
                       )}
                       {!linked_atleta && i.email && (
@@ -1910,13 +1911,13 @@ const InstructorsPage: React.FC = () => {
                   </div>
                   <div className="space-y-1.5 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Vendita/min</span>
+                      <span className="text-muted-foreground">{ti("lista.vendita_min")}</span>
                       <span className="text-foreground tabular-nums">CHF {(i.costo_minuto || 0).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Costo/h club</span>
+                      <span className="text-muted-foreground">{ti("lista.costo_ora_club")}</span>
                       <span className="text-foreground tabular-nums text-xs">
-                        L: CHF {(i.costo_orario_lezioni || 0).toFixed(2)} · C: CHF{" "}
+                        {ti("lista.lezioni_abbr")}: CHF {(i.costo_orario_lezioni || 0).toFixed(2)} · {ti("lista.corsi_abbr")}: CHF{" "}
                         {(i.costo_orario_corsi || 0).toFixed(2)}
                       </span>
                     </div>
