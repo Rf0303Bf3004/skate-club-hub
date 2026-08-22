@@ -2,6 +2,11 @@ import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Calendar, Clock, MapPin, User, X } from "lucide-react";
 import { supabase, get_current_club_id } from "@/lib/supabase";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
+
+const tk = (key: string, opts?: Record<string, unknown>) =>
+  i18n.t(`calendario.${key}`, { ns: "atleti", ...(opts ?? {}) }) as string;
 
 // ─── Types ─────────────────────────────────────────────────
 type CalEvent = {
@@ -25,17 +30,16 @@ const EVENT_COLORS: Record<string, { bg: string; dot: string; text: string; bord
   comunicazione:     { bg: "bg-[#0F6E56]/10", dot: "bg-[#0F6E56]", text: "text-[#0F6E56]", border: "border-[#0F6E56]/30" },
 };
 
-const EVENT_LABELS: Record<string, string> = {
-  corso: "Corso", corso_cancelled: "Corso annullato", gara: "Gara", test: "Test livello", comunicazione: "Comunicazione",
-};
+const event_label = (tipo: string) => tk(`type_${tipo}`);
 
 // ─── Helpers ───────────────────────────────────────────────
 const GIORNO_MAP: Record<string, number> = {
   "Lunedì": 1, "Martedì": 2, "Mercoledì": 3, "Giovedì": 4,
   "Venerdì": 5, "Sabato": 6, "Domenica": 0,
 };
-const GIORNI_LABEL = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
-const MESI = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
+const DOW_KEYS = ["dow_sun", "dow_mon", "dow_tue", "dow_wed", "dow_thu", "dow_fri", "dow_sat"];
+const giorno_label = (dow: number) => tk(DOW_KEYS[dow]);
+const mese_label = (m: number) => tk(`month_${m + 1}`);
 
 function fmt_date(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
@@ -169,7 +173,7 @@ function use_calendar_events(atleta_id: string) {
               date: g.data,
               time_start: "",
               time_end: "",
-              title: is_campo ? `Campo estivo: ${g.nome}` : g.nome,
+              title: is_campo ? tk("campo_estivo_named", { nome: g.nome }) : g.nome,
               type: "gara",
               status: "confermato",
               location: g.luogo || g.localita || "",
@@ -202,7 +206,7 @@ function use_calendar_events(atleta_id: string) {
               date: s.data,
               time_start: (s.ora_inizio || "").slice(0, 5),
               time_end: (s.ora_fine || "").slice(0, 5),
-              title: `Campo estivo${gara_map[s.gara_id] ? ": " + gara_map[s.gara_id] : ""}`,
+              title: gara_map[s.gara_id] ? tk("campo_estivo_named", { nome: gara_map[s.gara_id] }) : tk("campo_estivo"),
               type: "gara",
               status: "confermato",
               location: s.luogo || "",
@@ -262,7 +266,7 @@ const DayBottomSheet: React.FC<{
               </button>
             </div>
             {day_events.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">Nessun impegno in questa giornata</p>
+              <p className="text-sm text-muted-foreground py-4 text-center">{tk("no_events_day")}</p>
             ) : (
               <div className="divide-y divide-border">
                 {day_events.map((ev, i) => {
@@ -283,7 +287,7 @@ const DayBottomSheet: React.FC<{
                         {ev.instructor && <p className="text-xs text-muted-foreground">{ev.instructor}</p>}
                       </div>
                       <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${colors.bg} ${colors.text}`}>
-                        {EVENT_LABELS[ev.type]}
+                        {event_label(ev.type)}
                       </span>
                       <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
                     </button>
@@ -303,7 +307,7 @@ const DayBottomSheet: React.FC<{
 const EventBottomSheet: React.FC<{ event: CalEvent | null; on_close: () => void }> = ({ event, on_close }) => {
   if (!event) return null;
   const colors = EVENT_COLORS[event.type] ?? EVENT_COLORS.corso;
-  const status_label = event.status === "annullato" ? "Annullato" : event.status === "confermato" ? "Confermato" : "Previsto";
+  const status_label = tk(`status_${event.status}`);
 
   return (
     <>
@@ -317,7 +321,7 @@ const EventBottomSheet: React.FC<{ event: CalEvent | null; on_close: () => void 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span className={`inline-block w-3 h-3 rounded-full ${colors.dot}`} />
-                  <span className={`text-xs font-medium ${colors.text}`}>{EVENT_LABELS[event.type]}</span>
+                  <span className={`text-xs font-medium ${colors.text}`}>{event_label(event.type)}</span>
                 </div>
                 <h3 className="text-lg font-bold text-foreground leading-tight">{event.title}</h3>
               </div>
@@ -383,7 +387,7 @@ const MonthView: React.FC<{ year: number; month: number; events: CalEvent[]; on_
     <div>
       {/* Day headers */}
       <div className="grid grid-cols-7 mb-1">
-        {["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"].map(d => (
+        {[1, 2, 3, 4, 5, 6, 0].map(dow => giorno_label(dow)).map(d => (
           <div key={d} className="text-center text-xs font-semibold text-muted-foreground py-2">{d}</div>
         ))}
       </div>
@@ -455,7 +459,7 @@ const WeekView: React.FC<{ base_date: Date; events: CalEvent[]; on_event: (e: Ca
             const is_today = d === today;
             return (
               <div key={d} className={`text-center py-2 ${is_today ? "bg-[#185FA5]/5" : ""}`}>
-                <div className="text-[10px] uppercase font-medium text-muted-foreground">{GIORNI_LABEL[dt.getDay()]}</div>
+                <div className="text-[10px] uppercase font-medium text-muted-foreground">{giorno_label(dt.getDay())}</div>
                 <div className={`text-sm font-bold ${is_today ? "bg-[#185FA5] text-white rounded-full w-7 h-7 flex items-center justify-center mx-auto" : "text-foreground"}`}>
                   {dt.getDate()}
                 </div>
@@ -513,7 +517,7 @@ const WeekView: React.FC<{ base_date: Date; events: CalEvent[]; on_event: (e: Ca
 // ─── Agenda List ───────────────────────────────────────────
 const AgendaList: React.FC<{ events: CalEvent[]; on_event: (e: CalEvent) => void }> = ({ events, on_event }) => {
   if (!events.length) return (
-    <div className="text-center text-muted-foreground py-6 text-sm">Nessun evento in questo periodo</div>
+    <div className="text-center text-muted-foreground py-6 text-sm">{tk("no_events_period")}</div>
   );
 
   let last_date = "";
@@ -542,7 +546,7 @@ const AgendaList: React.FC<{ events: CalEvent[]; on_event: (e: CalEvent) => void
                 {ev.time_start && <p className="text-xs text-muted-foreground">{ev.time_start}{ev.time_end ? ` — ${ev.time_end}` : ""}</p>}
               </div>
               <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${colors.bg} ${colors.text}`}>
-                {EVENT_LABELS[ev.type]}
+                {event_label(ev.type)}
               </span>
             </button>
           </React.Fragment>
@@ -554,6 +558,7 @@ const AgendaList: React.FC<{ events: CalEvent[]; on_event: (e: CalEvent) => void
 
 // ─── Main Component ────────────────────────────────────────
 const CalendarioAtletaInterattivo: React.FC<{ atleta_id: string }> = ({ atleta_id }) => {
+  const { t } = useTranslation("atleti");
   const [view, set_view] = useState<"month" | "week">("month");
   const [current_date, set_current_date] = useState(new Date());
   const [selected_event, set_selected_event] = useState<CalEvent | null>(null);
@@ -589,19 +594,19 @@ const CalendarioAtletaInterattivo: React.FC<{ atleta_id: string }> = ({ atleta_i
   const go_today = () => set_current_date(new Date());
 
   const title = view === "month"
-    ? `${MESI[month]} ${year}`
+    ? `${mese_label(month)} ${year}`
     : (() => {
         const week = get_week_dates(current_date);
         const s = new Date(week[0] + "T00:00:00");
         const e = new Date(week[6] + "T00:00:00");
-        return `${s.getDate()} ${MESI[s.getMonth()].slice(0,3)} — ${e.getDate()} ${MESI[e.getMonth()].slice(0,3)} ${e.getFullYear()}`;
+        return `${s.getDate()} ${mese_label(s.getMonth()).slice(0,3)} — ${e.getDate()} ${mese_label(e.getMonth()).slice(0,3)} ${e.getFullYear()}`;
       })();
 
   if (isLoading) {
     return (
       <div className="bg-card rounded-xl shadow-card p-8 text-center text-muted-foreground">
         <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mx-auto mb-3" />
-        <p className="text-sm">Caricamento calendario...</p>
+        <p className="text-sm">{t("calendario.loading")}</p>
       </div>
     );
   }
@@ -617,13 +622,13 @@ const CalendarioAtletaInterattivo: React.FC<{ atleta_id: string }> = ({ atleta_i
               onClick={() => set_view("month")}
               className={`px-3 py-1.5 text-xs font-semibold transition-colors ${view === "month" ? "bg-[#185FA5] text-white" : "bg-card text-muted-foreground hover:bg-muted"}`}
             >
-              Mese
+              {t("calendario.view_month")}
             </button>
             <button
               onClick={() => set_view("week")}
               className={`px-3 py-1.5 text-xs font-semibold transition-colors ${view === "week" ? "bg-[#185FA5] text-white" : "bg-card text-muted-foreground hover:bg-muted"}`}
             >
-              Settimana
+              {t("calendario.view_week")}
             </button>
           </div>
 
@@ -633,7 +638,7 @@ const CalendarioAtletaInterattivo: React.FC<{ atleta_id: string }> = ({ atleta_i
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button onClick={go_today} className="px-2 py-1 text-xs font-medium text-[#185FA5] hover:bg-[#185FA5]/10 rounded-lg">
-              Oggi
+              {t("calendario.today")}
             </button>
             <button onClick={() => navigate(1)} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground">
               <ChevronRight className="w-4 h-4" />
@@ -651,7 +656,7 @@ const CalendarioAtletaInterattivo: React.FC<{ atleta_id: string }> = ({ atleta_i
           return (
             <div key={type} className="flex items-center gap-1.5">
               <span className={`w-2.5 h-2.5 rounded-full ${c.dot}`} />
-              <span className="text-[10px] text-muted-foreground font-medium">{EVENT_LABELS[type]}</span>
+              <span className="text-[10px] text-muted-foreground font-medium">{event_label(type)}</span>
             </div>
           );
         })}
@@ -674,7 +679,7 @@ const CalendarioAtletaInterattivo: React.FC<{ atleta_id: string }> = ({ atleta_i
       <div className="bg-card rounded-xl shadow-card overflow-hidden">
         <div className="px-4 py-3 border-b border-border">
           <h4 className="text-sm font-bold text-foreground">
-            Agenda {view === "month" ? MESI[month] : "settimana"}
+            {t("calendario.agenda", { periodo: view === "month" ? mese_label(month) : t("calendario.agenda_week") })}
           </h4>
         </div>
         <AgendaList events={visible_events} on_event={set_selected_event} />

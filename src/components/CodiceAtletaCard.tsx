@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 import { Copy, Check, QrCode, Printer, Download, RefreshCw, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -10,11 +12,15 @@ interface Props {
   on_updated?: (nuovo_codice: string) => void;
 }
 
+const tc = (key: string, opts?: Record<string, unknown>) =>
+  i18n.t(`codice_card.${key}`, { ns: "atleti", ...(opts ?? {}) }) as string;
+
 function qr_url(codice: string, size = 320) {
   return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&margin=8&data=${encodeURIComponent(codice)}`;
 }
 
 export default function CodiceAtletaCard({ atleta, on_updated }: Props) {
+  const { t } = useTranslation("atleti");
   const [copied, set_copied] = useState(false);
   const [show_qr, set_show_qr] = useState(false);
   const [rigenerando, set_rigenerando] = useState(false);
@@ -44,9 +50,9 @@ export default function CodiceAtletaCard({ atleta, on_updated }: Props) {
       await navigator.clipboard.writeText(codice);
       set_copied(true);
       setTimeout(() => set_copied(false), 1800);
-      toast({ title: "✅ Codice copiato" });
+      toast({ title: t("codice_card.toast_copied") });
     } catch {
-      toast({ title: "Impossibile copiare", variant: "destructive" });
+      toast({ title: t("codice_card.toast_copy_error"), variant: "destructive" });
     }
   };
 
@@ -67,7 +73,7 @@ export default function CodiceAtletaCard({ atleta, on_updated }: Props) {
     const box_store = (etichetta: string, url: string) =>
       url
         ? `<div class="store"><div class="store-title">${etichetta}</div><img class="store-qr" src="${qr_url(url, 320)}" alt="QR ${etichetta}" /><div class="store-link">${url}</div></div>`
-        : `<div class="store"><div class="store-title">${etichetta}</div><div class="store-todo">Link non ancora disponibile</div></div>`;
+        : `<div class="store"><div class="store-title">${etichetta}</div><div class="store-todo">${tc("link_unavailable")}</div></div>`;
     const html = `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Codice atleta ${codice}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,Helvetica,Arial,sans-serif;}
@@ -92,25 +98,25 @@ ol li::marker{color:#0284C7;font-weight:700;}
 .footer{margin-top:28px;font-size:10px;color:#94A3B8;text-align:center;}
 @media print{@page{margin:0;size:A4;}body{padding:24mm;}}
 </style></head><body>
-<div class="brand"><div class="brand-icon">⛸️</div><div><div class="brand-name">Ice Arena</div><div class="brand-sub">Codice atleta per app mobile</div></div></div>
+<div class="brand"><div class="brand-icon">⛸️</div><div><div class="brand-name">${tc("print_brand")}</div><div class="brand-sub">${tc("print_brand_sub")}</div></div></div>
 <div class="card">
-  <div class="atleta">${nome_completo || "Atleta"}</div>
-  <div class="label">Codice personale</div>
+  <div class="atleta">${nome_completo || tc("print_athlete_fallback")}</div>
+  <div class="label">${tc("print_personal_code")}</div>
   <div class="codice">${codice}</div>
   <div><img class="qr" src="${qr_url(codice, 440)}" alt="QR ${codice}" /></div>
   <ol>
-    <li>Scarica l'app <strong>Ice Arena</strong> dallo store (QR qui sotto).</li>
-    <li>Apri l'app e tocca <strong>Inserisci codice</strong>.</li>
-    <li>Digita o scansiona <strong>${codice}</strong>.</li>
-    <li>Il profilo dell'atleta verrà collegato al dispositivo.</li>
+    <li>${tc("print_step_1")}</li>
+    <li>${tc("print_step_2")}</li>
+    <li>${tc("print_step_3", { codice })}</li>
+    <li>${tc("print_step_4")}</li>
   </ol>
-  <div class="label">Scarica l'app Ice Arena</div>
+  <div class="label">${tc("download_app")}</div>
   <div class="stores">
-    ${box_store("📲 iPhone — App Store", ios)}
-    ${box_store("🤖 Android — Google Play", android)}
+    ${box_store(tc("store_ios"), ios)}
+    ${box_store(tc("store_android"), android)}
   </div>
 </div>
-<div class="footer">Codice permanente — non scade. In caso di smarrimento, il club può rigenerarlo dalla scheda atleta.</div>
+<div class="footer">${tc("print_footer")}</div>
 <script>window.onload=function(){setTimeout(function(){window.print();},300);};</script>
 </body></html>`;
     const w = window.open("", "_blank");
@@ -125,11 +131,11 @@ ol li::marker{color:#0284C7;font-weight:700;}
       const nuovo = String(data);
       const { error: up_err } = await supabase.from("atleti").update({ codice_atleta: nuovo }).eq("id", atleta.id);
       if (up_err) throw up_err;
-      toast({ title: "🔄 Codice rigenerato", description: nuovo });
+      toast({ title: t("codice_card.toast_regenerated"), description: nuovo });
       on_updated?.(nuovo);
       set_conferma_rigen(false);
     } catch (err: any) {
-      toast({ title: "Errore rigenerazione", description: err?.message, variant: "destructive" });
+      toast({ title: t("codice_card.toast_regen_error"), description: err?.message, variant: "destructive" });
     } finally {
       set_rigenerando(false);
     }
@@ -138,7 +144,7 @@ ol li::marker{color:#0284C7;font-weight:700;}
   if (!codice) {
     return (
       <div className="rounded-xl border border-dashed border-border bg-muted/30 p-5 text-sm text-muted-foreground">
-        Codice atleta non ancora assegnato. Salva l'atleta per generarlo automaticamente.
+        {t("codice_card.not_assigned")}
       </div>
     );
   }
@@ -148,14 +154,13 @@ ol li::marker{color:#0284C7;font-weight:700;}
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <div className="text-[10px] font-bold uppercase tracking-[1.6px] text-primary mb-1.5">
-            Codice atleta per app mobile
+            {t("codice_card.title")}
           </div>
           <div className="font-mono text-2xl font-black tracking-[4px] text-foreground select-all">
             {codice}
           </div>
           <p className="text-xs text-muted-foreground mt-2 max-w-md leading-relaxed">
-            Comunica questo codice ai genitori. Lo useranno una sola volta nell'app Ice Arena per
-            collegare il dispositivo al profilo dell'atleta. Il codice è <strong>permanente</strong>.
+            {t("codice_card.description")}
           </p>
         </div>
       </div>
@@ -163,34 +168,34 @@ ol li::marker{color:#0284C7;font-weight:700;}
       <div className="flex flex-wrap gap-2">
         <Button size="sm" variant="outline" onClick={copia} className="gap-1.5">
           {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
-          {copied ? "Copiato" : "Copia codice"}
+          {copied ? t("codice_card.copied") : t("codice_card.copy_code")}
         </Button>
         <Button size="sm" variant="outline" onClick={() => set_show_qr(true)} className="gap-1.5">
-          <QrCode className="w-4 h-4" /> Mostra QR
+          <QrCode className="w-4 h-4" /> {t("codice_card.show_qr")}
         </Button>
         <Button size="sm" variant="outline" onClick={stampa_scheda} className="gap-1.5">
-          <Printer className="w-4 h-4" /> Stampa scheda genitori
+          <Printer className="w-4 h-4" /> {t("codice_card.print_sheet")}
         </Button>
         <Button
           size="sm"
           variant="ghost"
           onClick={() => set_conferma_rigen(true)}
           className="gap-1.5 text-muted-foreground hover:text-destructive"
-          title="Rigenera codice (es. codice compromesso)"
+          title={t("codice_card.regenerate_title")}
         >
-          <RefreshCw className="w-3.5 h-3.5" /> Rigenera
+          <RefreshCw className="w-3.5 h-3.5" /> {t("codice_card.regenerate")}
         </Button>
       </div>
 
       {/* Download app */}
       <div className="space-y-2 border-t border-primary/15 pt-3">
         <div className="text-[10px] font-bold uppercase tracking-[1.4px] text-primary">
-          Scarica l'app Ice Arena
+          {t("codice_card.download_app")}
         </div>
         <div className="flex flex-wrap gap-2">
           {[
-            { etichetta: "📲 iPhone — App Store", url: ios_store_url.trim() },
-            { etichetta: "🤖 Android — Google Play", url: android_store_url.trim() },
+            { etichetta: t("codice_card.store_ios"), url: ios_store_url.trim() },
+            { etichetta: t("codice_card.store_android"), url: android_store_url.trim() },
           ].map((s) => (
             <Button
               key={s.etichetta}
@@ -199,13 +204,13 @@ ol li::marker{color:#0284C7;font-weight:700;}
               disabled={!s.url}
               onClick={() => s.url && window.open(s.url, "_blank", "noopener,noreferrer")}
               className="gap-1.5"
-              title={s.url || "Link non ancora disponibile"}
+              title={s.url || t("codice_card.link_unavailable")}
             >
               {s.etichetta}
               {s.url ? (
                 <ExternalLink className="w-3.5 h-3.5" />
               ) : (
-                <span className="text-[10px] font-normal">(link non ancora disponibile)</span>
+                <span className="text-[10px] font-normal">{t("codice_card.link_unavailable_short")}</span>
               )}
             </Button>
           ))}
@@ -217,23 +222,23 @@ ol li::marker{color:#0284C7;font-weight:700;}
         <DialogContent className="max-w-sm max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <QrCode className="w-5 h-5 text-primary" /> QR codice atleta
+              <QrCode className="w-5 h-5 text-primary" /> {t("codice_card.qr_dialog_title")}
             </DialogTitle>
           </DialogHeader>
           <div className="text-center space-y-3">
             <img src={qr_url(codice, 320)} alt={`QR ${codice}`} className="mx-auto rounded-xl border" />
             <div className="font-mono text-lg font-bold tracking-[3px]">{codice}</div>
             <p className="text-xs text-muted-foreground">
-              Scansiona o digita il codice nell'app Ice Arena.
+              {t("codice_card.qr_dialog_hint")}
             </p>
             <Button onClick={scarica_qr} variant="outline" className="w-full gap-1.5">
-              <Download className="w-4 h-4" /> Scarica PNG
+              <Download className="w-4 h-4" /> {t("codice_card.download_png")}
             </Button>
 
             <div className="grid grid-cols-2 gap-3 border-t pt-3">
               {[
-                { etichetta: "Scansiona per iPhone", url: ios_store_url.trim() },
-                { etichetta: "Scansiona per Android", url: android_store_url.trim() },
+                { etichetta: t("codice_card.scan_ios"), url: ios_store_url.trim() },
+                { etichetta: t("codice_card.scan_android"), url: android_store_url.trim() },
               ].map((s) => (
                 <div key={s.etichetta} className="space-y-1.5">
                   <p className="text-[11px] font-semibold text-foreground">{s.etichetta}</p>
@@ -245,7 +250,7 @@ ol li::marker{color:#0284C7;font-weight:700;}
                     />
                   ) : (
                     <div className="mx-auto w-28 h-28 rounded-lg border border-dashed flex items-center justify-center text-[10px] text-muted-foreground px-2 text-center">
-                      Link non ancora disponibile
+                      {t("codice_card.link_unavailable")}
                     </div>
                   )}
                 </div>
@@ -260,23 +265,22 @@ ol li::marker{color:#0284C7;font-weight:700;}
       <Dialog open={conferma_rigen} onOpenChange={(o) => !rigenerando && set_conferma_rigen(o)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Rigenerare il codice atleta?</DialogTitle>
+            <DialogTitle>{t("codice_card.confirm_title")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 text-sm">
             <p className="text-muted-foreground">
-              Il codice attuale <span className="font-mono font-bold text-foreground">{codice}</span> non
-              funzionerà più. I dispositivi già collegati dovranno re-inserire il nuovo codice.
+              {t("codice_card.confirm_desc", { codice })}
             </p>
             <p className="text-xs text-muted-foreground">
-              Procedi solo se il codice è stato compromesso o smarrito.
+              {t("codice_card.confirm_hint")}
             </p>
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="ghost" onClick={() => set_conferma_rigen(false)} disabled={rigenerando}>
-                Annulla
+                {t("codice_card.cancel")}
               </Button>
               <Button variant="destructive" onClick={rigenera} disabled={rigenerando} className="gap-1.5">
                 <RefreshCw className={`w-4 h-4 ${rigenerando ? "animate-spin" : ""}`} />
-                {rigenerando ? "Rigenero..." : "Sì, rigenera"}
+                {rigenerando ? t("codice_card.regenerating") : t("codice_card.confirm_yes")}
               </Button>
             </div>
           </div>

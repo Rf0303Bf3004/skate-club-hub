@@ -1,5 +1,6 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -22,10 +23,10 @@ type Riga = {
   } | null;
 };
 
-const ESITO_BADGE: Record<string, { label: string; cls: string; icon: React.ReactNode }> = {
-  superato: { label: "Promosso", cls: "bg-green-100 text-green-800 border-green-200", icon: <CheckCircle2 className="w-3 h-3" /> },
-  non_superato: { label: "Non promosso", cls: "bg-destructive/10 text-destructive border-destructive/20", icon: <XCircle className="w-3 h-3" /> },
-  in_attesa: { label: "In attesa", cls: "bg-muted text-muted-foreground border-border", icon: <Clock className="w-3 h-3" /> },
+const ESITO_BADGE: Record<string, { key: string; cls: string; icon: React.ReactNode }> = {
+  superato: { key: "storico_test.esito_superato", cls: "bg-green-100 text-green-800 border-green-200", icon: <CheckCircle2 className="w-3 h-3" /> },
+  non_superato: { key: "storico_test.esito_non_superato", cls: "bg-destructive/10 text-destructive border-destructive/20", icon: <XCircle className="w-3 h-3" /> },
+  in_attesa: { key: "storico_test.esito_in_attesa", cls: "bg-muted text-muted-foreground border-border", icon: <Clock className="w-3 h-3" /> },
 };
 
 interface Props {
@@ -33,6 +34,7 @@ interface Props {
 }
 
 export default function StoricoTestAtleta({ atleta_id }: Props) {
+  const { t } = useTranslation("atleti");
   const { data: righe = [], isLoading } = useQuery({
     queryKey: ["storico_test_atleta", atleta_id],
     enabled: !!atleta_id,
@@ -62,7 +64,7 @@ export default function StoricoTestAtleta({ atleta_id }: Props) {
   if (righe.length === 0) {
     return (
       <div className="bg-card rounded-xl shadow-card p-8 text-center text-muted-foreground text-sm">
-        Nessun test sostenuto
+        {t("storico_test.empty")}
       </div>
     );
   }
@@ -72,12 +74,12 @@ export default function StoricoTestAtleta({ atleta_id }: Props) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Data</TableHead>
-            <TableHead>Test</TableHead>
-            <TableHead>Tipo</TableHead>
-            <TableHead>Livello</TableHead>
-            <TableHead>Risultato</TableHead>
-            <TableHead>Note</TableHead>
+            <TableHead>{t("storico_test.col_data")}</TableHead>
+            <TableHead>{t("storico_test.col_test")}</TableHead>
+            <TableHead>{t("storico_test.col_tipo")}</TableHead>
+            <TableHead>{t("storico_test.col_livello")}</TableHead>
+            <TableHead>{t("storico_test.col_risultato")}</TableHead>
+            <TableHead>{t("storico_test.col_note")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -97,7 +99,7 @@ export default function StoricoTestAtleta({ atleta_id }: Props) {
                 <TableCell>
                   <Badge variant="outline" className={`gap-1 ${esito.cls}`}>
                     {esito.icon}
-                    {esito.label}
+                    {t(esito.key)}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
