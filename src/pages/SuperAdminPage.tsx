@@ -11,6 +11,10 @@ import {
   ChevronDown, ChevronUp, AlertTriangle, Check, X,
   Building2, UserCheck, BarChart3, Plus
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
+
+const ts = (key: string, opts?: any) => i18n.t(`panel.${key}`, { ns: "superadmin", ...(opts || {}) }) as string;
 
 // ─── Tipi ─────────────────────────────────────────────────
 interface ClubStats {
@@ -44,14 +48,14 @@ const ClubCard: React.FC<{
         <p className="text-xs text-muted-foreground">{club.citta || "—"}</p>
       </div>
       <Badge variant="secondary" className="text-[10px]">
-        {club.utenti} utenti
+        {ts("users_count", { count: club.utenti })}
       </Badge>
     </div>
     <div className="grid grid-cols-3 gap-2 text-center">
       {[
-        { label: "Atleti", value: club.atleti },
-        { label: "Istruttori", value: club.istruttori },
-        { label: "Corsi", value: club.corsi },
+        { label: ts("stats.atleti"), value: club.atleti },
+        { label: ts("stats.istruttori"), value: club.istruttori },
+        { label: ts("stats.corsi"), value: club.corsi },
       ].map(({ label, value }) => (
         <div key={label} className="rounded-lg bg-muted/50 p-2">
           <p className="text-lg font-bold text-foreground">{value}</p>
@@ -62,7 +66,7 @@ const ClubCard: React.FC<{
     {club.fatture_da_pagare > 0 && (
       <div className="mt-2 flex items-center gap-1 text-xs text-orange-600">
         <AlertTriangle className="w-3 h-3" />
-        {club.fatture_da_pagare} fatture da pagare
+        {ts("unpaid_invoices", { count: club.fatture_da_pagare })}
       </div>
     )}
   </div>
@@ -115,7 +119,7 @@ const AzioneCard: React.FC<{
           <p className="font-semibold text-sm">{titolo}</p>
           <p className="text-xs opacity-70 mt-0.5">{descrizione}</p>
           {disabled && (
-            <p className="text-[10px] mt-1 opacity-60">⚠️ Seleziona prima un club</p>
+            <p className="text-[10px] mt-1 opacity-60">⚠️ {ts("select_club_first")}</p>
           )}
         </div>
       </div>
@@ -125,18 +129,18 @@ const AzioneCard: React.FC<{
           onClick={() => set_confirm(true)}
           className={`w-full text-xs h-8 ${disabled ? "opacity-40" : btn_colori[colore]}`}
         >
-          Esegui
+          {ts("run")}
         </Button>
       ) : (
         <div className="space-y-2">
-          <p className="text-xs font-bold text-center">Sei sicuro?</p>
+          <p className="text-xs font-bold text-center">{ts("sure")}</p>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => set_confirm(false)} className="flex-1 h-7 text-xs">
               <X className="w-3 h-3 mr-1" /> No
             </Button>
             <Button onClick={handle_esegui} disabled={loading} className={`flex-1 h-7 text-xs ${btn_colori[colore]}`}>
               {loading ? <RefreshCw className="w-3 h-3 mr-1 animate-spin" /> : <Check className="w-3 h-3 mr-1" />}
-              {loading ? "..." : "Sì, esegui"}
+              {loading ? "..." : ts("yes_run")}
             </Button>
           </div>
         </div>
@@ -173,16 +177,16 @@ const GestoreUtenti: React.FC<{ club_id: string; club_nome: string }> = ({ club_
   const handle_elimina_utente = async (id: string) => {
     const { error } = await supabase.from("utenti_club").delete().eq("id", id);
     if (error) {
-      toast({ title: "Errore", description: error.message, variant: "destructive" });
+      toast({ title: ts("error"), description: error.message, variant: "destructive" });
       return;
     }
-    toast({ title: "✅ Utente rimosso" });
+    toast({ title: ts("users.removed") });
     load_utenti();
   };
 
   const handle_aggiungi_utente = async () => {
     if (!nuovo_email || !nuovo_password) {
-      toast({ title: "Email e password obbligatori", variant: "destructive" });
+      toast({ title: ts("users.email_pwd_required"), variant: "destructive" });
       return;
     }
     set_adding(true);
@@ -201,14 +205,14 @@ const GestoreUtenti: React.FC<{ club_id: string; club_nome: string }> = ({ club_
         cognome: nuovo_cognome,
       });
       if (uc_err) throw uc_err;
-      toast({ title: "✅ Utente creato e collegato al club" });
+      toast({ title: ts("users.created") });
       set_nuovo_email("");
       set_nuovo_password("");
       set_nuovo_nome("");
       set_nuovo_cognome("");
       load_utenti();
     } catch (err: any) {
-      toast({ title: "Errore creazione utente", description: err?.message, variant: "destructive" });
+      toast({ title: ts("users.create_error"), description: err?.message, variant: "destructive" });
     } finally {
       set_adding(false);
     }
@@ -221,15 +225,15 @@ const GestoreUtenti: React.FC<{ club_id: string; club_nome: string }> = ({ club_
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <Users className="w-5 h-5 text-primary" />
-        <h3 className="font-semibold text-foreground">Utenti — {club_nome}</h3>
+        <h3 className="font-semibold text-foreground">{ts("users.title")} — {club_nome}</h3>
       </div>
 
       {/* Lista utenti */}
       <div className="space-y-2">
         {loading ? (
-          <p className="text-sm text-muted-foreground">Caricamento...</p>
+          <p className="text-sm text-muted-foreground">{ts("loading")}</p>
         ) : utenti.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nessun utente collegato.</p>
+          <p className="text-sm text-muted-foreground">{ts("users.empty")}</p>
         ) : (
           utenti.map((u) => (
             <div key={u.id} className="flex items-center justify-between rounded-lg border border-border bg-card p-3">
@@ -259,44 +263,44 @@ const GestoreUtenti: React.FC<{ club_id: string; club_nome: string }> = ({ club_
 
       {/* Aggiungi utente */}
       <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-3">
-        <p className="text-sm font-semibold text-foreground">Aggiungi utente</p>
+        <p className="text-sm font-semibold text-foreground">{ts("users.add")}</p>
         <div className="grid grid-cols-2 gap-2">
           <input
             value={nuovo_nome}
             onChange={(e) => set_nuovo_nome(e.target.value)}
-            placeholder="Nome"
+            placeholder={ts("users.nome")}
             className={input_cls}
           />
           <input
             value={nuovo_cognome}
             onChange={(e) => set_nuovo_cognome(e.target.value)}
-            placeholder="Cognome"
+            placeholder={ts("users.cognome")}
             className={input_cls}
           />
         </div>
         <input
           value={nuovo_email}
           onChange={(e) => set_nuovo_email(e.target.value)}
-          placeholder="Email"
+          placeholder={ts("users.email")}
           className={input_cls}
         />
         <input
           type="password"
           value={nuovo_password}
           onChange={(e) => set_nuovo_password(e.target.value)}
-          placeholder="Password"
+          placeholder={ts("users.password")}
           className={input_cls}
         />
         <select value={nuovo_ruolo} onChange={(e) => set_nuovo_ruolo(e.target.value)} className={input_cls}>
-          <option value="admin">Admin</option>
-          <option value="presidente">Presidente</option>
-          <option value="dt">Direttore Tecnico</option>
-          <option value="segreteria">Segreteria</option>
-          <option value="istruttore">Istruttore</option>
-          <option value="aiuto_monitore">Aiuto Monitore</option>
+          <option value="admin">{ts("roles.admin")}</option>
+          <option value="presidente">{ts("roles.presidente")}</option>
+          <option value="dt">{ts("roles.dt")}</option>
+          <option value="segreteria">{ts("roles.segreteria")}</option>
+          <option value="istruttore">{ts("roles.istruttore")}</option>
+          <option value="aiuto_monitore">{ts("roles.aiuto_monitore")}</option>
         </select>
         <Button onClick={handle_aggiungi_utente} disabled={adding} className="w-full">
-          {adding ? "..." : "➕ Aggiungi utente"}
+          {adding ? "..." : `➕ ${ts("users.add")}`}
         </Button>
       </div>
     </div>
@@ -319,7 +323,7 @@ const CreaClubForm: React.FC<{ on_created: () => void }> = ({ on_created }) => {
 
   const handle_crea = async () => {
     if (!form.nome.trim()) {
-      toast({ title: "Il nome del club è obbligatorio", variant: "destructive" });
+      toast({ title: ts("new_club.name_required"), variant: "destructive" });
       return;
     }
     set_saving(true);
@@ -353,7 +357,7 @@ const CreaClubForm: React.FC<{ on_created: () => void }> = ({ on_created }) => {
           email_confirm: true,
         });
         if (auth_err) {
-          toast({ title: "⚠️ Club creato ma errore utente admin", description: auth_err.message, variant: "destructive" });
+          toast({ title: ts("new_club.admin_error"), description: auth_err.message, variant: "destructive" });
         } else {
           await supabase.from("utenti_club").insert({
             user_id: auth_data.user.id,
@@ -365,7 +369,7 @@ const CreaClubForm: React.FC<{ on_created: () => void }> = ({ on_created }) => {
         }
       }
 
-      toast({ title: `✅ Club "${club.nome}" creato con successo!` });
+      toast({ title: ts("new_club.created", { nome: club.nome }) });
       set_form({
         nome: "", citta: "", paese: "CH", email: "", telefono: "",
         indirizzo: "", sito_web: "", numero_tessera_federale: "",
@@ -375,7 +379,7 @@ const CreaClubForm: React.FC<{ on_created: () => void }> = ({ on_created }) => {
       set_open(false);
       on_created();
     } catch (err: any) {
-      toast({ title: "Errore creazione club", description: err?.message, variant: "destructive" });
+      toast({ title: ts("new_club.error"), description: err?.message, variant: "destructive" });
     } finally {
       set_saving(false);
     }
@@ -384,7 +388,7 @@ const CreaClubForm: React.FC<{ on_created: () => void }> = ({ on_created }) => {
   if (!open) {
     return (
       <Button onClick={() => set_open(true)} className="gap-2">
-        <Plus className="w-4 h-4" /> Nuovo Club
+        <Plus className="w-4 h-4" /> {ts("new_club.button")}
       </Button>
     );
   }
@@ -394,7 +398,7 @@ const CreaClubForm: React.FC<{ on_created: () => void }> = ({ on_created }) => {
       <div className="flex items-center justify-between">
         <h3 className="text-base font-bold text-foreground flex items-center gap-2">
           <Building2 className="w-5 h-5 text-primary" />
-          Crea nuovo club
+          {ts("new_club.title")}
         </h3>
         <Button variant="ghost" size="icon" onClick={() => set_open(false)} className="h-7 w-7">
           <X className="w-4 h-4" />
@@ -403,42 +407,42 @@ const CreaClubForm: React.FC<{ on_created: () => void }> = ({ on_created }) => {
 
       {/* Dati club */}
       <div className="space-y-3">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Dati club</p>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{ts("new_club.section_club")}</p>
         <div className="grid gap-3 sm:grid-cols-2">
-          <input value={form.nome} onChange={(e) => update("nome", e.target.value)} placeholder="Nome club *" className={input_cls} />
-          <input value={form.citta} onChange={(e) => update("citta", e.target.value)} placeholder="Città" className={input_cls} />
-          <input value={form.paese} onChange={(e) => update("paese", e.target.value)} placeholder="Paese (es. CH)" className={input_cls} />
-          <input value={form.email} onChange={(e) => update("email", e.target.value)} placeholder="Email club" type="email" className={input_cls} />
-          <input value={form.telefono} onChange={(e) => update("telefono", e.target.value)} placeholder="Telefono" className={input_cls} />
-          <input value={form.indirizzo} onChange={(e) => update("indirizzo", e.target.value)} placeholder="Indirizzo" className={input_cls} />
-          <input value={form.sito_web} onChange={(e) => update("sito_web", e.target.value)} placeholder="Sito web" className={input_cls} />
-          <input value={form.numero_tessera_federale} onChange={(e) => update("numero_tessera_federale", e.target.value)} placeholder="N° tessera federale" className={input_cls} />
+          <input value={form.nome} onChange={(e) => update("nome", e.target.value)} placeholder={ts("new_club.nome")} className={input_cls} />
+          <input value={form.citta} onChange={(e) => update("citta", e.target.value)} placeholder={ts("new_club.citta")} className={input_cls} />
+          <input value={form.paese} onChange={(e) => update("paese", e.target.value)} placeholder={ts("new_club.paese")} className={input_cls} />
+          <input value={form.email} onChange={(e) => update("email", e.target.value)} placeholder={ts("new_club.email")} type="email" className={input_cls} />
+          <input value={form.telefono} onChange={(e) => update("telefono", e.target.value)} placeholder={ts("new_club.telefono")} className={input_cls} />
+          <input value={form.indirizzo} onChange={(e) => update("indirizzo", e.target.value)} placeholder={ts("new_club.indirizzo")} className={input_cls} />
+          <input value={form.sito_web} onChange={(e) => update("sito_web", e.target.value)} placeholder={ts("new_club.sito_web")} className={input_cls} />
+          <input value={form.numero_tessera_federale} onChange={(e) => update("numero_tessera_federale", e.target.value)} placeholder={ts("new_club.tessera")} className={input_cls} />
         </div>
         <div className="flex items-center gap-3">
-          <label className="text-sm text-muted-foreground">Colore primario:</label>
+          <label className="text-sm text-muted-foreground">{ts("new_club.colore")}</label>
           <input type="color" value={form.colore_primario} onChange={(e) => update("colore_primario", e.target.value)} className="w-10 h-8 rounded cursor-pointer border border-border" />
           <span className="text-xs text-muted-foreground font-mono">{form.colore_primario}</span>
         </div>
-        <textarea value={form.descrizione} onChange={(e) => update("descrizione", e.target.value)} placeholder="Descrizione (opzionale)" rows={2} className={input_cls} />
+        <textarea value={form.descrizione} onChange={(e) => update("descrizione", e.target.value)} placeholder={ts("new_club.descrizione")} rows={2} className={input_cls} />
       </div>
 
       {/* Admin del club */}
       <div className="space-y-3 border-t border-border pt-4">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Utente admin del club (opzionale)</p>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{ts("new_club.section_admin")}</p>
         <div className="grid gap-3 sm:grid-cols-2">
-          <input value={form.admin_nome} onChange={(e) => update("admin_nome", e.target.value)} placeholder="Nome admin" className={input_cls} />
-          <input value={form.admin_cognome} onChange={(e) => update("admin_cognome", e.target.value)} placeholder="Cognome admin" className={input_cls} />
-          <input value={form.admin_email} onChange={(e) => update("admin_email", e.target.value)} placeholder="Email admin" type="email" className={input_cls} />
-          <input value={form.admin_password} onChange={(e) => update("admin_password", e.target.value)} placeholder="Password admin" type="password" className={input_cls} />
+          <input value={form.admin_nome} onChange={(e) => update("admin_nome", e.target.value)} placeholder={ts("new_club.admin_nome")} className={input_cls} />
+          <input value={form.admin_cognome} onChange={(e) => update("admin_cognome", e.target.value)} placeholder={ts("new_club.admin_cognome")} className={input_cls} />
+          <input value={form.admin_email} onChange={(e) => update("admin_email", e.target.value)} placeholder={ts("new_club.admin_email")} type="email" className={input_cls} />
+          <input value={form.admin_password} onChange={(e) => update("admin_password", e.target.value)} placeholder={ts("new_club.admin_password")} type="password" className={input_cls} />
         </div>
       </div>
 
       <div className="flex gap-3 pt-2">
         <Button onClick={handle_crea} disabled={saving} className="gap-2">
           {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-          {saving ? "Creazione..." : "Crea club"}
+          {saving ? ts("new_club.saving") : ts("new_club.submit")}
         </Button>
-        <Button variant="outline" onClick={() => set_open(false)}>Annulla</Button>
+        <Button variant="outline" onClick={() => set_open(false)}>{ts("cancel")}</Button>
       </div>
     </div>
   );
@@ -446,6 +450,7 @@ const CreaClubForm: React.FC<{ on_created: () => void }> = ({ on_created }) => {
 
 // ─── Main SuperAdmin Page ──────────────────────────────────
 const SuperAdminPage: React.FC = () => {
+  const { t } = useTranslation("superadmin");
   const { session } = useAuth();
   const [clubs, set_clubs] = useState<ClubStats[]>([]);
   const [selected_club, set_selected_club] = useState<string | null>(null);
@@ -503,8 +508,8 @@ const SuperAdminPage: React.FC = () => {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center space-y-3">
           <Shield className="w-12 h-12 text-destructive mx-auto" />
-          <h2 className="text-xl font-bold text-foreground">Accesso negato</h2>
-          <p className="text-muted-foreground">Questa pagina è riservata ai Super Admin.</p>
+          <h2 className="text-xl font-bold text-foreground">{t("panel.denied_title")}</h2>
+          <p className="text-muted-foreground">{t("panel.denied_desc")}</p>
         </div>
       </div>
     );
@@ -513,8 +518,8 @@ const SuperAdminPage: React.FC = () => {
   // ─── Azioni di manutenzione ───────────────────────────────
   const azioni = [
     {
-      titolo: "Elimina fatture pagate",
-      descrizione: "Rimuove tutte le fatture già pagate del club selezionato per alleggerire il DB.",
+      titolo: t("panel.action.fatture.titolo"),
+      descrizione: t("panel.action.fatture.descrizione"),
       colore: "orange" as const,
       icon: <Trash2 className="w-4 h-4" />,
       richiede_club: true,
@@ -525,13 +530,13 @@ const SuperAdminPage: React.FC = () => {
           .eq("club_id", selected_club!)
           .eq("pagata", true);
         if (error) throw error;
-        add_log(`✅ Eliminato ${count} fatture pagate da ${selected_club_data?.nome}`);
-        toast({ title: `✅ ${count} fatture pagate eliminate` });
+        add_log(`✅ ${t("panel.action.fatture.log", { count, nome: selected_club_data?.nome })}`);
+        toast({ title: `✅ ${t("panel.action.fatture.toast", { count })}` });
       },
     },
     {
-      titolo: "Elimina presenze vecchie (> 1 anno)",
-      descrizione: "Rimuove le presenze più vecchie di 12 mesi dal club selezionato.",
+      titolo: t("panel.action.presenze.titolo"),
+      descrizione: t("panel.action.presenze.descrizione"),
       colore: "orange" as const,
       icon: <Database className="w-4 h-4" />,
       richiede_club: true,
@@ -544,13 +549,13 @@ const SuperAdminPage: React.FC = () => {
           .eq("club_id", selected_club!)
           .lt("data", un_anno_fa.toISOString().split("T")[0]);
         if (error) throw error;
-        add_log(`✅ Eliminate ${count} presenze vecchie da ${selected_club_data?.nome}`);
-        toast({ title: `✅ ${count} presenze eliminate` });
+        add_log(`✅ ${t("panel.action.presenze.log", { count, nome: selected_club_data?.nome })}`);
+        toast({ title: `✅ ${t("panel.action.presenze.toast", { count })}` });
       },
     },
     {
-      titolo: "Crea setup club mancante",
-      descrizione: "Crea un record setup_club vuoto se manca per il club selezionato.",
+      titolo: t("panel.action.setup.titolo"),
+      descrizione: t("panel.action.setup.descrizione"),
       colore: "blue" as const,
       icon: <Copy className="w-4 h-4" />,
       richiede_club: true,
@@ -561,32 +566,32 @@ const SuperAdminPage: React.FC = () => {
           .eq("club_id", selected_club!)
           .maybeSingle();
         if (existing) {
-          toast({ title: "Setup già esistente" });
+          toast({ title: t("panel.action.setup.exists") });
           return;
         }
         const { error } = await supabase.from("setup_club").insert({ club_id: selected_club! });
         if (error) throw error;
-        add_log(`✅ Setup creato per ${selected_club_data?.nome}`);
-        toast({ title: "✅ Setup club creato" });
+        add_log(`✅ ${t("panel.action.setup.log", { nome: selected_club_data?.nome })}`);
+        toast({ title: t("panel.action.setup.toast") });
       },
     },
     {
-      titolo: "Ricrea policy RLS",
-      descrizione: "Disabilita e riabilita RLS su tutte le tabelle principali.",
+      titolo: t("panel.action.rls.titolo"),
+      descrizione: t("panel.action.rls.descrizione"),
       colore: "blue" as const,
       icon: <Shield className="w-4 h-4" />,
       richiede_club: false,
       on_esegui: async () => {
-        add_log("⚠️ RLS reset — operazione manuale richiesta su Supabase SQL Editor");
+        add_log(`⚠️ ${t("panel.action.rls.log")}`);
         toast({
-          title: "⚠️ Esegui manualmente su Supabase SQL Editor",
-          description: "Le policy RLS vanno gestite dal SQL Editor di Supabase.",
+          title: t("panel.action.rls.toast_title"),
+          description: t("panel.action.rls.toast_desc"),
         });
       },
     },
     {
-      titolo: "Elimina gare archiviate",
-      descrizione: "Rimuove tutte le gare archiviate e le relative iscrizioni del club selezionato.",
+      titolo: t("panel.action.gare.titolo"),
+      descrizione: t("panel.action.gare.descrizione"),
       colore: "red" as const,
       icon: <Trash2 className="w-4 h-4" />,
       richiede_club: true,
@@ -597,7 +602,7 @@ const SuperAdminPage: React.FC = () => {
           .eq("club_id", selected_club!)
           .eq("archiviata", true);
         if (!gare?.length) {
-          toast({ title: "Nessuna gara archiviata" });
+          toast({ title: t("panel.action.gare.empty") });
           return;
         }
         for (const g of gare) {
@@ -608,13 +613,13 @@ const SuperAdminPage: React.FC = () => {
           .delete({ count: "exact" })
           .eq("club_id", selected_club!)
           .eq("archiviata", true);
-        add_log(`✅ Eliminate ${count} gare archiviate da ${selected_club_data?.nome}`);
-        toast({ title: `✅ ${count} gare archiviate eliminate` });
+        add_log(`✅ ${t("panel.action.gare.log", { count, nome: selected_club_data?.nome })}`);
+        toast({ title: `✅ ${t("panel.action.gare.toast", { count })}` });
       },
     },
     {
-      titolo: "Elimina TUTTI i dati del club",
-      descrizione: "⚠️ IRREVERSIBILE — Elimina tutti atleti, istruttori, corsi, gare, fatture del club selezionato.",
+      titolo: t("panel.action.wipe.titolo"),
+      descrizione: t("panel.action.wipe.descrizione"),
       colore: "red" as const,
       icon: <AlertTriangle className="w-4 h-4" />,
       richiede_club: true,
@@ -646,8 +651,8 @@ const SuperAdminPage: React.FC = () => {
         for (const t of tabelle) {
           await (supabase.from(t as any) as any).delete().eq("club_id", cid);
         }
-        add_log(`⚠️ TUTTI i dati eliminati da ${selected_club_data?.nome}`);
-        toast({ title: `⚠️ Tutti i dati di ${selected_club_data?.nome} eliminati` });
+        add_log(`⚠️ ${t("panel.action.wipe.log", { nome: selected_club_data?.nome })}`);
+        toast({ title: `⚠️ ${t("panel.action.wipe.toast", { nome: selected_club_data?.nome })}` });
         await load_clubs();
       },
     },
@@ -661,14 +666,14 @@ const SuperAdminPage: React.FC = () => {
           <div className="flex items-center gap-3">
             <Shield className="w-8 h-8 text-primary" />
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Super Admin Panel</h1>
+              <h1 className="text-2xl font-bold text-foreground">{t("panel.title")}</h1>
               <p className="text-xs text-muted-foreground">
-                Logged as {session.email} · SUPERADMIN
+                {t("panel.logged_as", { email: session.email })}
               </p>
             </div>
           </div>
           <Button variant="outline" onClick={load_clubs} className="gap-2">
-            <RefreshCw className="w-4 h-4" /> Ricarica
+            <RefreshCw className="w-4 h-4" /> {t("panel.reload")}
           </Button>
         </div>
       </div>
@@ -678,12 +683,12 @@ const SuperAdminPage: React.FC = () => {
         <div className="flex gap-1 bg-muted/50 rounded-xl p-1">
           {(
             [
-              { key: "clubs", label: "🏢 Club", icon: Building2 },
-              { key: "azioni", label: "⚙️ Azioni", icon: Database },
-              { key: "utenti", label: "👥 Utenti", icon: UserCheck },
-              { key: "app_mobile", label: "📱 App Mobile", icon: Database },
-              { key: "traduzioni", label: "🌐 Traduzioni", icon: Database },
-              { key: "db", label: "📋 Log", icon: BarChart3 },
+              { key: "clubs", label: `🏢 ${t("panel.tab.clubs")}`, icon: Building2 },
+              { key: "azioni", label: `⚙️ ${t("panel.tab.azioni")}`, icon: Database },
+              { key: "utenti", label: `👥 ${t("panel.tab.utenti")}`, icon: UserCheck },
+              { key: "app_mobile", label: `📱 ${t("panel.tab.app_mobile")}`, icon: Database },
+              { key: "traduzioni", label: `🌐 ${t("panel.tab.traduzioni")}`, icon: Database },
+              { key: "db", label: `📋 ${t("panel.tab.log")}`, icon: BarChart3 },
             ] as const
           ).map((t) => (
             <button
@@ -702,7 +707,7 @@ const SuperAdminPage: React.FC = () => {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-muted-foreground">
-                Club registrati ({clubs.length})
+                {t("panel.clubs_registered", { count: clubs.length })}
               </h3>
               <CreaClubForm on_created={load_clubs} />
             </div>
@@ -726,7 +731,7 @@ const SuperAdminPage: React.FC = () => {
               <div className="flex items-center gap-2 rounded-lg bg-primary/5 border border-primary/20 px-4 py-2">
                 <Check className="w-4 h-4 text-primary" />
                 <span className="text-sm font-medium text-foreground">
-                  Club selezionato: {selected_club_data?.nome}
+                  {t("panel.selected_club", { nome: selected_club_data?.nome })}
                 </span>
                 <Button
                   variant="ghost"
@@ -746,8 +751,8 @@ const SuperAdminPage: React.FC = () => {
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
               {selected_club
-                ? `Club selezionato: ${selected_club_data?.nome}. Le azioni che richiedono un club useranno questo.`
-                : "Seleziona un club nella tab 🏢 Club per abilitare le azioni specifiche per club."}
+                ? t("panel.actions_hint", { nome: selected_club_data?.nome })
+                : t("panel.actions_no_club")}
             </p>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {azioni.map((a, i) => (
@@ -764,7 +769,7 @@ const SuperAdminPage: React.FC = () => {
               <div className="text-center py-12 space-y-2">
                 <Users className="w-10 h-10 text-muted-foreground mx-auto" />
                 <p className="text-muted-foreground">
-                  Seleziona un club nella tab 🏢 Club per gestire gli utenti.
+                  {t("panel.users_no_club")}
                 </p>
               </div>
             ) : (
@@ -783,14 +788,14 @@ const SuperAdminPage: React.FC = () => {
         {tab === "db" && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-muted-foreground">Log operazioni</h3>
+              <h3 className="text-sm font-semibold text-muted-foreground">{t("panel.log")}</h3>
               <Button variant="ghost" onClick={() => set_log([])} className="text-xs h-7">
-                Pulisci
+                {t("panel.clear")}
               </Button>
             </div>
             <div className="rounded-xl border border-border bg-card p-4 font-mono text-xs space-y-1 max-h-96 overflow-y-auto">
               {log.length === 0 ? (
-                <p className="text-muted-foreground">{"// Nessuna operazione eseguita ancora"}</p>
+                <p className="text-muted-foreground">{`// ${t("panel.log_empty")}`}</p>
               ) : (
                 log.map((l, i) => (
                   <p key={i} className="text-foreground">
