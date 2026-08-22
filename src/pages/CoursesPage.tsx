@@ -2373,7 +2373,7 @@ const FilterBar: React.FC<{
 
 // ─── Main Page ─────────────────────────────────────────────
 const CoursesPage: React.FC = () => {
-  const { t } = useI18n();
+  const { t } = useTranslation("corsi");
   const qc = useQueryClient();
   const { data: corsi = [], isLoading } = use_corsi();
   const { data: istruttori = [] } = use_istruttori();
@@ -2464,7 +2464,7 @@ const CoursesPage: React.FC = () => {
 
   const corsi_per_istruttore = useMemo(() => {
     const groups: Record<string, { label: string; corsi: any[] }> = {};
-    groups["_none"] = { label: "Senza istruttore", corsi: [] };
+    groups["_none"] = { label: t("page.no_instructor"), corsi: [] };
     istruttori.filter((i: any) => i.attivo).forEach((i: any) => {
       groups[i.id] = { label: `${i.nome} ${i.cognome}`, corsi: [] };
     });
@@ -2480,14 +2480,14 @@ const CoursesPage: React.FC = () => {
     const { error } = await supabase.from("tipi_corso").insert({ club_id: get_current_club_id(), nome });
     if (error) throw error;
     await qc.invalidateQueries({ queryKey: ["tipi_corso"] });
-    toast({ title: `✅ Tipo "${nome}" aggiunto` });
+    toast({ title: t("page.toast_type_added", { name: nome }) });
   };
 
   const handle_save = async (data: any) => {
     try {
       const corso_id = await upsert.mutateAsync({ ...data, istruttori_ids: Array.from(new Set(data.istruttori_ids || [])) });
       set_modal_open(false);
-      toast({ title: data.id ? "✅ Corso aggiornato" : "✅ Corso creato" });
+      toast({ title: data.id ? t("page.toast_course_updated") : t("page.toast_course_created") });
 
       // Auto-generate planning slots if posiziona_planning is active
       if (corso_id && data.giorno && data.ora_inizio && data.ora_fine) {
@@ -2498,14 +2498,14 @@ const CoursesPage: React.FC = () => {
             qc.invalidateQueries({ queryKey: ["planning_settimana"] }),
             qc.invalidateQueries({ queryKey: ["planning_corsi_settimana"] }),
           ]);
-          toast({ title: "📅 Planning aggiornato per tutta la stagione" });
+          toast({ title: t("page.toast_planning_updated") });
         } catch (err: any) {
           console.error("Errore generazione planning:", err);
-          toast({ title: "⚠️ Corso salvato ma errore nel planning", description: err?.message, variant: "destructive" });
+          toast({ title: t("page.toast_course_saved_planning_error"), description: err?.message, variant: "destructive" });
         }
       }
     } catch (err: any) {
-      toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
+      toast({ title: t("page.toast_save_error"), description: err?.message, variant: "destructive" });
     }
   };
 
@@ -2537,8 +2537,8 @@ const CoursesPage: React.FC = () => {
 
     if (!stagione?.id || !stagione?.data_fine) {
       toast({
-        title: "⚠️ Nessuna stagione valida",
-        description: "Serve una stagione con data fine per generare il planning automatico",
+        title: t("page.toast_no_valid_season"),
+        description: t("page.toast_no_valid_season_desc"),
         variant: "destructive",
       });
       return;
@@ -2609,7 +2609,7 @@ const CoursesPage: React.FC = () => {
           .single();
         if (create_err) {
           console.error("Errore creazione settimana planning:", create_err);
-          throw new Error(`Impossibile creare settimana ${monday}: ${create_err.message}`);
+          throw new Error(t("page.error_create_week", { monday, message: create_err.message }));
         }
         existing_map.set(monday, created);
       }
@@ -2636,7 +2636,7 @@ const CoursesPage: React.FC = () => {
     });
 
     if (slot_rows.length === 0) {
-      throw new Error("Nessuno slot da generare: controlla le date della stagione");
+      throw new Error(t("page.error_no_slot"));
     }
 
     // Delete existing slots for this course in these weeks
@@ -2654,7 +2654,7 @@ const CoursesPage: React.FC = () => {
       const { error } = await supabase.from("planning_corsi_settimana").insert(batch);
       if (error) {
         console.error("Errore inserimento planning_corsi_settimana:", error, "batch:", batch);
-        throw new Error(`Errore inserimento nel planning: ${error.message}`);
+        throw new Error(t("page.error_insert_planning", { message: error.message }));
       }
     }
 
@@ -2664,7 +2664,7 @@ const CoursesPage: React.FC = () => {
       .select("*", { count: "exact", head: true })
       .eq("corso_id", corso_id);
     if (!count || count === 0) {
-      throw new Error("Il corso è stato salvato ma non risulta nel planning. Riprova.");
+      throw new Error(t("page.error_not_in_planning"));
     }
   };
 
@@ -2672,9 +2672,9 @@ const CoursesPage: React.FC = () => {
     try {
       await elimina.mutateAsync(selected_corso.id);
       set_modal_open(false);
-      toast({ title: "🗑️ Corso eliminato correttamente" });
+      toast({ title: t("page.toast_course_deleted") });
     } catch (err: any) {
-      toast({ title: "Errore eliminazione", description: err?.message, variant: "destructive" });
+      toast({ title: t("page.toast_delete_error"), description: err?.message, variant: "destructive" });
     }
   };
 
@@ -2715,9 +2715,9 @@ const CoursesPage: React.FC = () => {
                   try {
                     await elimina.mutateAsync(wizard_corso.id);
                     set_wizard_open(false);
-                    toast({ title: "🗑️ Corso eliminato correttamente" });
+                    toast({ title: t("page.toast_course_deleted") });
                   } catch (err: any) {
-                    toast({ title: "Errore eliminazione", description: err?.message, variant: "destructive" });
+                    toast({ title: t("page.toast_delete_error"), description: err?.message, variant: "destructive" });
                   }
                 }
               : undefined
@@ -2768,7 +2768,7 @@ const CoursesPage: React.FC = () => {
           <h1 className="text-xl font-bold tracking-tight text-foreground">{t("corsi")}</h1>
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => set_duplica_open(true)}>
-              <Copy className="w-4 h-4 mr-2" /> Duplica stagione
+              <Copy className="w-4 h-4 mr-2" /> {t("page.duplicate_season")}
             </Button>
             <Button
               className="bg-primary hover:bg-primary/90"
@@ -2777,7 +2777,7 @@ const CoursesPage: React.FC = () => {
                 set_wizard_open(true);
               }}
             >
-              <Plus className="w-4 h-4 mr-2" /> {t("nuovo_corso")}
+              <Plus className="w-4 h-4 mr-2" /> {t("page.new_course")}
             </Button>
           </div>
         </div>
@@ -2795,7 +2795,7 @@ const CoursesPage: React.FC = () => {
             {(["giorno", "istruttore"] as const).map((v) => (
               <button key={v} onClick={() => set_vista(v)}
                 className={`px-4 py-1.5 text-sm font-medium transition-colors ${vista === v ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"}`}>
-                {v === "giorno" ? "Per giorno" : "Per istruttore"}
+                {v === "giorno" ? t("page.by_day") : t("page.by_instructor")}
               </button>
             ))}
           </div>
@@ -2807,13 +2807,13 @@ const CoursesPage: React.FC = () => {
           <Input
             value={ricerca_corso}
             onChange={(e) => set_ricerca_corso(e.target.value)}
-            placeholder="Cerca corso per nome o tipo…"
+            placeholder={t("page.search_placeholder")}
             className="pl-9 pr-9 h-11"
           />
           {ricerca_corso && (
             <button
               type="button"
-              aria-label="Cancella ricerca"
+              aria-label={t("page.clear_search")}
               onClick={() => set_ricerca_corso("")}
               className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md hover:bg-muted"
             >
@@ -2839,8 +2839,8 @@ const CoursesPage: React.FC = () => {
           <div className="bg-card rounded-xl shadow-card p-12 text-center text-muted-foreground">
             <p className="text-sm">
               {has_filters
-                ? "Nessun corso trovato con questi filtri."
-                : "Nessun corso. Clicca \"Nuovo corso\" per aggiungerne uno."}
+                ? t("page.no_courses_filtered")
+                : t("page.no_courses_empty")}
             </p>
           </div>
         ) : vista === "giorno" ? (
@@ -2851,7 +2851,7 @@ const CoursesPage: React.FC = () => {
               return (
                 <div key={giorno}>
                   <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-3 border-b border-border pb-1">
-                    {giorno === "Da posizionare" ? "📋 Da posizionare" : giorno}
+                    {giorno === "Da posizionare" ? t("page.to_be_scheduled_header") : giorno}
                     <span className="text-xs font-normal ml-2 text-muted-foreground">({group.length})</span>
                   </h2>
                   <div className="space-y-2">
