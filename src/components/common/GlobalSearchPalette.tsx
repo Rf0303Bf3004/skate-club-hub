@@ -14,6 +14,7 @@ import { supabase } from "@/lib/supabase";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useQuery } from "@tanstack/react-query";
 import { Users, MessageSquare, CreditCard, Trophy, Calendar, UserCheck } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   open: boolean;
@@ -28,17 +29,18 @@ type Hit = {
   route: string;
 };
 
-const CATEGORY_META: Record<Hit["category"], { label: string; Icon: any }> = {
-  atleti: { label: "Atleti", Icon: Users },
-  comunicazioni: { label: "Comunicazioni", Icon: MessageSquare },
-  fatture: { label: "Fatture", Icon: CreditCard },
-  gare: { label: "Gare", Icon: Trophy },
-  eventi: { label: "Eventi", Icon: Calendar },
-  istruttori: { label: "Istruttori", Icon: UserCheck },
+const CATEGORY_META: Record<Hit["category"], { label_key: string; Icon: any }> = {
+  atleti: { label_key: "search_palette.cat_atleti", Icon: Users },
+  comunicazioni: { label_key: "search_palette.cat_comunicazioni", Icon: MessageSquare },
+  fatture: { label_key: "search_palette.cat_fatture", Icon: CreditCard },
+  gare: { label_key: "search_palette.cat_gare", Icon: Trophy },
+  eventi: { label_key: "search_palette.cat_eventi", Icon: Calendar },
+  istruttori: { label_key: "search_palette.cat_istruttori", Icon: UserCheck },
 };
 
 const GlobalSearchPalette: React.FC<Props> = ({ open, on_open_change }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation("common");
   const { session } = useAuth();
   const [q, set_q] = React.useState("");
   const debounced = useDebouncedValue(q, 200);
@@ -100,7 +102,7 @@ const GlobalSearchPalette: React.FC<Props> = ({ open, on_open_change }) => {
       (atl.data ?? []).forEach((a: any) =>
         hits.push({
           id: a.id,
-          label: `${a.cognome ?? ""} ${a.nome ?? ""}`.trim() || "Atleta",
+          label: `${a.cognome ?? ""} ${a.nome ?? ""}`.trim() || t("search_palette.fallback_atleta"),
           sub: a.codice_atleta ?? undefined,
           category: "atleti",
           route: `/atleti?focus=${a.id}`,
@@ -109,7 +111,7 @@ const GlobalSearchPalette: React.FC<Props> = ({ open, on_open_change }) => {
       (com.data ?? []).forEach((c: any) =>
         hits.push({
           id: c.id,
-          label: c.titolo || "(senza titolo)",
+          label: c.titolo || t("search_palette.fallback_comunicazione"),
           sub: c.tipo,
           category: "comunicazioni",
           route: `/comunicazioni?focus=${c.id}`,
@@ -118,7 +120,7 @@ const GlobalSearchPalette: React.FC<Props> = ({ open, on_open_change }) => {
       (fat.data ?? []).forEach((f: any) =>
         hits.push({
           id: f.id,
-          label: f.numero || f.descrizione || "Fattura",
+          label: f.numero || f.descrizione || t("search_palette.fallback_fattura"),
           sub: f.importo != null ? `CHF ${Number(f.importo).toFixed(2)}` : undefined,
           category: "fatture",
           route: `/fatture?focus=${f.id}`,
@@ -127,7 +129,7 @@ const GlobalSearchPalette: React.FC<Props> = ({ open, on_open_change }) => {
       (gar.data ?? []).forEach((g: any) =>
         hits.push({
           id: g.id,
-          label: g.nome || "Gara",
+          label: g.nome || t("search_palette.fallback_gara"),
           sub: [g.data, g.luogo].filter(Boolean).join(" · "),
           category: "gare",
           route: `/gare?focus=${g.id}`,
@@ -136,7 +138,7 @@ const GlobalSearchPalette: React.FC<Props> = ({ open, on_open_change }) => {
       (eve.data ?? []).forEach((e: any) =>
         hits.push({
           id: e.id,
-          label: e.titolo || "Evento",
+          label: e.titolo || t("search_palette.fallback_evento"),
           sub: [e.data, e.luogo].filter(Boolean).join(" · "),
           category: "eventi",
           route: `/eventi?focus=${e.id}`,
@@ -145,7 +147,7 @@ const GlobalSearchPalette: React.FC<Props> = ({ open, on_open_change }) => {
       (ist.data ?? []).forEach((i: any) =>
         hits.push({
           id: i.id,
-          label: `${i.cognome ?? ""} ${i.nome ?? ""}`.trim() || "Istruttore",
+          label: `${i.cognome ?? ""} ${i.nome ?? ""}`.trim() || t("search_palette.fallback_istruttore"),
           sub: i.email ?? undefined,
           category: "istruttori",
           route: `/istruttori?focus=${i.id}`,
@@ -174,7 +176,7 @@ const GlobalSearchPalette: React.FC<Props> = ({ open, on_open_change }) => {
   return (
     <CommandDialog open={open} onOpenChange={on_open_change}>
       <CommandInput
-        placeholder="Cerca atleti, comunicazioni, fatture…"
+        placeholder={t("search_palette.placeholder")}
         value={q}
         onValueChange={set_q}
         autoFocus
@@ -182,18 +184,18 @@ const GlobalSearchPalette: React.FC<Props> = ({ open, on_open_change }) => {
       <CommandList>
         {debounced.trim().length < 2 && (
           <div className="py-6 text-center text-xs text-muted-foreground">
-            Digita almeno 2 caratteri per cercare in tutto il club.
+            {t("search_palette.hint_min_chars")}
           </div>
         )}
         {debounced.trim().length >= 2 && !isFetching && results.length === 0 && (
-          <CommandEmpty>Nessun risultato.</CommandEmpty>
+          <CommandEmpty>{t("search_palette.empty")}</CommandEmpty>
         )}
         {grouped.map(([cat, items], idx) => {
           const meta = CATEGORY_META[cat];
           return (
             <React.Fragment key={cat}>
               {idx > 0 && <CommandSeparator />}
-              <CommandGroup heading={meta.label}>
+              <CommandGroup heading={t(meta.label_key)}>
                 {items.map((h) => (
                   <CommandItem
                     key={`${cat}-${h.id}`}
@@ -216,13 +218,13 @@ const GlobalSearchPalette: React.FC<Props> = ({ open, on_open_change }) => {
       </CommandList>
       <div className="flex items-center justify-between gap-2 px-3 py-2 border-t border-border text-[10px] text-muted-foreground">
         <span>
-          <kbd className="px-1.5 py-0.5 rounded border border-border bg-muted">↑↓</kbd> naviga
+          <kbd className="px-1.5 py-0.5 rounded border border-border bg-muted">↑↓</kbd> {t("search_palette.hint_nav")}
           <span className="mx-2">·</span>
-          <kbd className="px-1.5 py-0.5 rounded border border-border bg-muted">Enter</kbd> apri
+          <kbd className="px-1.5 py-0.5 rounded border border-border bg-muted">Enter</kbd> {t("search_palette.hint_open")}
           <span className="mx-2">·</span>
-          <kbd className="px-1.5 py-0.5 rounded border border-border bg-muted">Esc</kbd> chiudi
+          <kbd className="px-1.5 py-0.5 rounded border border-border bg-muted">Esc</kbd> {t("search_palette.hint_close")}
         </span>
-        {isFetching && <span>Caricamento…</span>}
+        {isFetching && <span>{t("search_palette.loading")}</span>}
       </div>
     </CommandDialog>
   );
