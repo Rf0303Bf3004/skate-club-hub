@@ -853,31 +853,36 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
    * Riallinea gli atleti della sessione alla composizione ATTUALE del gruppo
    * collegato: aggiunge i nuovi membri e rimuove chi non ne fa più parte.
    */
+  const sync_gruppo_core = async (s: GrigliaSessione) => {
+    const membri = await risolvi_membri_gruppo(
+      get_current_club_id(),
+      s.gruppo_scope ?? null,
+      s.gruppo_livello!,
+      s.gruppo_ragione_sociale_id ?? null,
+    );
+    const attuali = (s.atleti ?? []).map((a) => a.atleta_id);
+    const da_aggiungere = membri.filter((id) => !attuali.includes(id));
+    const da_rimuovere = attuali.filter((id) => !membri.includes(id));
+    for (const atleta_id of da_aggiungere) {
+      await assegna_atleta.mutateAsync({ sessione_id: s.id, atleta_id });
+    }
+    for (const atleta_id of da_rimuovere) {
+      await rimuovi_atleta.mutateAsync({ sessione_id: s.id, atleta_id });
+    }
+    return { da_aggiungere: da_aggiungere.length, da_rimuovere: da_rimuovere.length };
+  };
+
   const sincronizza_dal_gruppo = async (s: GrigliaSessione) => {
     if (!s.gruppo_livello) return;
     set_sync_gruppo_id(s.id);
     try {
-      const membri = await risolvi_membri_gruppo(
-        get_current_club_id(),
-        s.gruppo_scope ?? null,
-        s.gruppo_livello,
-        s.gruppo_ragione_sociale_id ?? null,
-      );
-      const attuali = (s.atleti ?? []).map((a) => a.atleta_id);
-      const da_aggiungere = membri.filter((id) => !attuali.includes(id));
-      const da_rimuovere = attuali.filter((id) => !membri.includes(id));
-      for (const atleta_id of da_aggiungere) {
-        await assegna_atleta.mutateAsync({ sessione_id: s.id, atleta_id });
-      }
-      for (const atleta_id of da_rimuovere) {
-        await rimuovi_atleta.mutateAsync({ sessione_id: s.id, atleta_id });
-      }
+      const { da_aggiungere, da_rimuovere } = await sync_gruppo_core(s);
       toast({
         title: "Gruppo aggiornato",
         description:
-          da_aggiungere.length === 0 && da_rimuovere.length === 0
+          da_aggiungere === 0 && da_rimuovere === 0
             ? "Nessuna variazione: la sessione è già allineata."
-            : `+${da_aggiungere.length} aggiunti, −${da_rimuovere.length} rimossi.`,
+            : `+${da_aggiungere} aggiunti, −${da_rimuovere} rimossi.`,
       });
     } catch (e: any) {
       toast({ title: "Errore aggiornamento gruppo", description: e.message, variant: "destructive" });
@@ -885,6 +890,25 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
       set_sync_gruppo_id(null);
     }
   };
+
+  /** Rimuove il collegamento al gruppo: svuota gli atleti e azzera i metadati. */
+  const rimuovi_collegamento_gruppo = async (s: GrigliaSessione) => {
+    try {
+      for (const a of s.atleti ?? []) {
+        await rimuovi_atleta.mutateAsync({ sessione_id: s.id, atleta_id: a.atleta_id });
+      }
+      await upsert_sessione.mutateAsync({
+        id: s.id,
+        gruppo_livello: null,
+        gruppo_scope: null,
+        gruppo_ragione_sociale_id: null,
+      } as any);
+      toast({ title: "Collegamento rimosso", description: "La sessione è tornata gestibile manualmente." });
+    } catch (e: any) {
+      toast({ title: "Errore rimozione gruppo", description: e.message, variant: "destructive" });
+    }
+  };
+
 
   const giorno_blocco = useMemo(() => (blocco.data ? giorno_it_da_data(blocco.data) : null), [blocco.data]);
   const { data: risorse_tutte = [] } = use_risorse_strutture();
