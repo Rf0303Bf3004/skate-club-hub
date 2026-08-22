@@ -1532,7 +1532,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
       />
 
       <Dialog open={open_specialita} onOpenChange={set_open_specialita}>
-        <DialogContent>
+        <DialogContent className="max-h-[85vh] flex flex-col overflow-hidden">
           <DialogHeader>
             <DialogTitle>Gestisci specialità</DialogTitle>
           </DialogHeader>
