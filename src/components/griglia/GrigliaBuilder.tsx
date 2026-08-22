@@ -1035,27 +1035,45 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
           toast({ title: `🔗 Gruppo «${livello_gruppo}» collegato`, description: `${res.aggiunti} atleti aggiunti.` });
         } else {
           // Livello non definito: nessun gruppo dinamico, assegnazione individuale.
+          let assegnati = 0;
           for (const atleta_id of ids) {
             const a = (atleti as any[]).find((x) => x.id === atleta_id);
             const nome = a ? `${a.nome} ${a.cognome}` : "Atleta";
-            avvisa_sovrapposizione("atleta", atleta_id, nome, dest);
+            // ⛔ Controllo BLOCCANTE per singolo atleta.
+            const conflitto = await verifica_conflitto_atleta({ sessione_id, atleta_id });
+            if (conflitto) {
+              set_conflitto_atleta({ nome, conflitto });
+              return;
+            }
             await assegna_atleta.mutateAsync({ sessione_id, atleta_id });
+            assegnati += 1;
           }
-          if (ids.length > 0) toast({ title: `✅ ${ids.length} atleti assegnati alla sessione` });
+          if (assegnati > 0) toast({ title: `✅ ${assegnati} atleti assegnati alla sessione` });
         }
 
 
       } else if (tipo === "atleta") {
         const a = (atleti as any[]).find((x) => x.id === persona_id);
         const nome = a ? `${a.nome} ${a.cognome}` : "Atleta";
-        avvisa_sovrapposizione("atleta", persona_id, nome, dest);
+        // ⛔ Controllo BLOCCANTE: nessuna mutation se già in sessione sovrapposta.
+        const conflitto = await verifica_conflitto_atleta({ sessione_id, atleta_id: persona_id });
+        if (conflitto) {
+          set_conflitto_atleta({ nome, conflitto });
+          return;
+        }
         await assegna_atleta.mutateAsync({ sessione_id, atleta_id: persona_id });
       } else if (tipo === "istruttore") {
         const i = (istruttori as any[]).find((x) => x.id === persona_id);
         const nome = i ? `${i.nome} ${i.cognome}` : "Istruttore";
-        avvisa_sovrapposizione("istruttore", persona_id, nome, dest);
+        // ⚠️ Blocco di default, ma sbloccabile manualmente dall'utente.
+        const conflitto = await verifica_conflitto_istruttore({ sessione_id, istruttore_id: persona_id });
+        if (conflitto) {
+          set_conflitto_istruttore({ nome, istruttore_id: persona_id, sessione_id, conflitto });
+          return;
+        }
         await assegna_istruttore.mutateAsync({ sessione_id, istruttore_id: persona_id });
       }
+
     } catch (e: any) {
       toast({ title: "Errore assegnazione", description: e.message, variant: "destructive" });
     }
