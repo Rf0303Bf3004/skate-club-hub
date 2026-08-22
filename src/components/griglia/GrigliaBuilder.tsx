@@ -626,13 +626,13 @@ const SessioneBox: React.FC<{
         ))}
         {sessione.gruppo_livello ? (
           (() => {
-            const colore =
+            const colore: string | null =
               (sessione.gruppo_scope === "esterni" ? VERDE_ESTERNI : null) ||
-
               (sessione.gruppo_ragione_sociale_id
                 ? ragioni_sociali.find((r) => r.id === sessione.gruppo_ragione_sociale_id)?.colore_primario ?? null
-                : null) ??
+                : null) ||
               (atleti_ordinati[0] ? colore_atleta(atleti_ordinati[0].atleta_id) : null);
+
             return (
               <Popover
                 open={gruppo_popover_open}
