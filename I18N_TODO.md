@@ -299,3 +299,45 @@ File completati e migrati a `useTranslation(<ns>)` (solo JSON IT aggiornato; FR/
 - Le label di ruoli/permessi in `RuoliPermessiPage` (array a livello di modulo) sono state convertite in `label_key` risolte con `t()` nel render.
 - Enum DB, codici tecnici e contenuti generati dall'utente non sono stati tradotti.
 - Nessuna modifica ai JSON `src/locales/{fr,de,en}/`.
+
+## Step 1.5f — Estrazione 6 pagine principali rimanenti (Portale Atleta, Richieste Iscrizione, Planning, Nuova Stagione, Medagliere, Campi Eventi)
+
+File completati e migrati a `useTranslation(<ns>)` (solo JSON IT aggiornato; FR/DE/EN da sincronizzare in `traduzioni_ui`):
+
+- [x] `src/pages/PortaleAtletaPage.tsx` → `portale.atleta_page.*` (55 chiavi)
+- [x] `src/pages/RichiesteIscrizionePage.tsx` → `atleti.richieste_iscrizione.*` (54 chiavi)
+- [x] `src/pages/PlanningPage.tsx` → NUOVO namespace `planning` (178 chiavi)
+- [x] `src/pages/NuovaStagionePage.tsx` → `settings.nuova_stagione.*` (39 chiavi)
+- [x] `src/pages/MedagliereePage.tsx` → nessuna stringa (solo `<Navigate to="/gare?tab=medagliere" />`)
+- [x] `src/pages/CampiEventiPage.tsx` → `events.campi_eventi.*` (111 chiavi)
+
+### Chiavi nuove per namespace
+
+#### `planning` (NUOVO — `src/locales/it/planning.json`, registrato in `src/i18n/index.ts`)
+Gruppi: `error_boundary.*`, `toast.*`, `confirm.*`, `toolbar.*`, `template_banner.*`, `instructors.*`,
+`legend.*`, `build_banner.*`, `sidebar.*`, `slot_block.*`, `warnings.*`, `detail_panel.*`,
+`slot_manager.*`, `confirm_place_dialog.*`, `new_corso_modal.*`, `edit_corso_modal.*`, `athlete_search.*`
+
+#### `events` → `campi_eventi.*`
+`page_title`, `page_subtitle`, `tab_interno`, `tab_esterno`, `tab_gala`,
+`interno.*`, `detail.*`, `esterno.*`, `gala.*` (titoli, label, placeholder, toast, conferme, bottoni)
+
+#### `portale` → `atleta_page.*`
+Header e tab (`header_titolo`, `tab_atleta`, `tab_agenda`, `tab_avvisi`, `tab_fatture`, `tab_iscriviti`),
+dati anagrafici, livello tecnico, licenza SIS, agenda, avvisi + RSVP, fatture, corsi disponibili,
+stati di errore/link non valido e toast.
+
+#### `atleti` → `richieste_iscrizione.*`
+`page_title`, `page_subtitle`, `badge_in_attesa`, `error_loading`, `filters.*`, `search_placeholder`,
+`corso_placeholder`, `tutti_corsi`, `periodo_*`, `selezionate`, `approva_selezionate`,
+`rifiuta_selezionate`, `annulla_selezione`, `empty_title`, `empty_desc`, `no_match`, `table.*`,
+`pagination.*`, `stato_badge.*`, `modal.*`, `toast.*`, `default_atleta_label`, `default_corso_label`
+
+#### `settings` → `nuova_stagione.*`
+`page_title`, `step_indicator`, `steps.*`, `step1.*` … `step5.*`, `date_placeholder`, `nav.*`, `toast.*`
+
+### Note
+- Nessuna chiave con valore array/oggetto introdotta in questo turno: **tutte sincronizzabili in `traduzioni_ui`**.
+- `MedagliereePage.tsx` non contiene stringhe traducibili (redirect puro).
+- Enum DB, costanti tecniche (giorni, tipi slot), nomi di corsi/atleti e contenuti generati dall'utente non sono stati tradotti.
+- Nessuna modifica ai JSON `src/locales/{fr,de,en}/`.
