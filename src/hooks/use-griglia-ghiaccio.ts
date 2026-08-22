@@ -13,6 +13,52 @@ export interface GrigliaSpecialita {
   descrizione_messaggio?: string | null;
 }
 
+/**
+ * Origine del gruppo trascinato: rispecchia i 4 box sorgente del GrigliaBuilder
+ * (`pool_ragioni`, `pool_club_fallback`, `pool_senza_ragione_sociale`, `pool_esterni`).
+ */
+export type GruppoScope = "ragione_sociale" | "club" | "senza_ragione_sociale" | "esterni";
+
+/**
+ * Risolve DAL VIVO gli id degli atleti che oggi appartengono a un gruppo
+ * (livello + scope di provenienza). Riproduce esattamente la logica di filtro
+ * dei pool sorgente in `GrigliaBuilder.tsx`.
+ */
+export async function risolvi_membri_gruppo(
+  club_id: string,
+  gruppo_scope: GruppoScope | string | null | undefined,
+  gruppo_livello: string | null | undefined,
+  gruppo_ragione_sociale_id?: string | null,
+): Promise<string[]> {
+  if (!club_id || !gruppo_livello) return [];
+  const { data, error } = await supabase
+    .from("atleti")
+    .select("id,livello_attuale,ragione_sociale_id,atleta_esterno")
+    .eq("club_id", club_id);
+  if (error) throw error;
+
+  const righe = (data ?? []) as any[];
+  return righe
+    .filter((a) => {
+      // stesso fallback applicato in `transform_atleta` (use-supabase-data)
+      const livello = a.livello_attuale ?? "Pulcini";
+      if (livello !== gruppo_livello) return false;
+      switch (gruppo_scope) {
+        case "ragione_sociale":
+          return !!gruppo_ragione_sociale_id && a.ragione_sociale_id === gruppo_ragione_sociale_id;
+        case "club":
+          return !a.atleta_esterno;
+        case "senza_ragione_sociale":
+          return !a.atleta_esterno && !a.ragione_sociale_id;
+        case "esterni":
+          return !!a.atleta_esterno;
+        default:
+          return false;
+      }
+    })
+    .map((a) => a.id as string);
+}
+
 export interface GrigliaSessioneAtleta {
   id: string;
   atleta_id: string;
