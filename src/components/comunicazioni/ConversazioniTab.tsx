@@ -64,11 +64,11 @@ export const ConversazioniTab: React.FC = () => {
   const sollecita = useMutation({
     mutationFn: async (conv: Conversazione) => {
       const in_attesa = conv.destinatari.filter((d) => !d.rsvp_risposta).map((d) => d.atleta_id);
-      if (in_attesa.length === 0) throw new Error("Nessun destinatario in attesa");
+      if (in_attesa.length === 0) throw new Error(tk("no_pending"));
       const { error } = await supabase.from("comunicazioni").insert({
         club_id: get_current_club_id(),
-        titolo: `🔔 Promemoria: ${conv.titolo}`,
-        testo: `Ti ricordiamo di rispondere alla comunicazione:\n\n${conv.testo}`,
+        titolo: tk("reminder_title", { titolo: conv.titolo, interpolation: { escapeValue: false } }),
+        testo: tk("reminder_body", { testo: conv.testo, interpolation: { escapeValue: false } }),
         tipo: "promemoria",
         tipo_destinatari: "atleti",
         atleti_ids: in_attesa,
@@ -79,22 +79,23 @@ export const ConversazioniTab: React.FC = () => {
       return in_attesa.length;
     },
     onSuccess: (n) => {
-      toast({ title: `📨 Sollecito inviato a ${n} destinatari` });
+      toast({ title: tk("reminder_sent", { count: n }) });
       qc.invalidateQueries({ queryKey: ["comunicazioni"] });
       qc.invalidateQueries({ queryKey: ["comunicazioni_conversazioni"] });
     },
-    onError: (err: any) => toast({ title: "Errore", description: err?.message, variant: "destructive" }),
+    onError: (err: any) => toast({ title: tk("error"), description: err?.message, variant: "destructive" }),
   });
 
   if (isLoading) {
-    return <div className="text-sm text-muted-foreground py-8 text-center">Caricamento conversazioni…</div>;
+    return <div className="text-sm text-muted-foreground py-8 text-center">{t("conversazioni.loading")}</div>;
   }
 
   if (conversazioni.length === 0) {
     return (
       <div className="bg-card rounded-xl shadow-card p-12 text-center space-y-3">
         <MessageSquare className="w-12 h-12 text-muted-foreground/40 mx-auto" />
-        <p className="text-sm text-muted-foreground">Nessuna conversazione con risposta richiesta.</p>
+        <p className="text-sm text-muted-foreground">{t("conversazioni.empty")}</p>
+
       </div>
     );
   }
