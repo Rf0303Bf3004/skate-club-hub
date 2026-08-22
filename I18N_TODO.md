@@ -560,3 +560,20 @@ Namespace unico: **`dashboard`**, prefisso `relazione.<nome_componente>.*` (coer
   appiattito in testo semplice per mantenere le chiavi traducibili senza `Trans`.
 - NON tradotti: valori DB (`categoria` dei blocchi/allegati), path di routing, nomi file.
 - Nessuna modifica ai JSON `src/locales/{de,fr,en}/`.
+
+## Step 1.5n — Componenti sponsor + permessi card (3 file)
+
+| File | Namespace | Prefisso | Chiavi nuove |
+|---|---|---|---|
+| `sponsor/PacchettoFormDialog.tsx` | `settings` | `sponsor.pacchetto_form.*` | 14 |
+| `sponsor/PitchPDFPreview.tsx` | `settings` | `sponsor.pitch_pdf.*` | 4 |
+| `ruoli-permessi/DashboardCardsPermessi.tsx` | `settings` | `roles.dashboard_cards.*` | 15 |
+
+**Totale: 33 chiavi IT** aggiunte solo in `src/locales/it/settings.json` (DE/FR/EN non toccati).
+
+### Note
+- Riutilizzati i namespace/prefissi esistenti `sponsor.*` (da `PacchettiSponsorPage.tsx`) e
+  `roles.*` (da `RuoliPermessiPage.tsx`); nessun duplicato di chiavi già presenti.
+- Nessuna chiave con valore array/oggetto: le liste restano chiavi singole.
+- NON tradotti: titoli/descrizioni delle card provenienti da `src/config/dashboardCards.ts`,
+  i codici ruolo e i valori DB (`livello`, `codice_card`).
