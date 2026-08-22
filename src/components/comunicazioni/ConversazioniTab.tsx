@@ -34,8 +34,10 @@ function format_date(iso: string | null) {
 }
 
 export const ConversazioniTab: React.FC = () => {
+  const { t } = useTranslation("communications");
   const qc = useQueryClient();
   const [open_id, set_open_id] = useState<string | null>(null);
+
 
   const { data: conversazioni = [], isLoading } = useQuery({
     queryKey: ["comunicazioni_conversazioni", get_current_club_id()],
