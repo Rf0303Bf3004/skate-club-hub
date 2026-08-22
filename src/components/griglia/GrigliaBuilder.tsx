@@ -1018,23 +1018,36 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
           // Collegamento dinamico: nuova riga in griglia_sessioni_gruppi + atleti taggati.
           const { gruppo_scope, gruppo_ragione_sociale_id } = scope_da_box_id(active.data?.current?.box_id);
 
+          const scope_norm = (gruppo_scope ?? "club") as GruppoScope;
+
+          // ℹ️ Stesso gruppo già collegato a QUESTA sessione: non duplichiamo,
+          // trattiamo il drag come risincronizzazione.
+          const gia_collegato = (dest.gruppi ?? []).find(
+            (g) =>
+              g.gruppo_livello === livello_gruppo &&
+              g.gruppo_scope === scope_norm &&
+              (g.gruppo_ragione_sociale_id ?? null) === (gruppo_ragione_sociale_id ?? null),
+          );
+
           // ⛔ Controllo BLOCCANTE (nessuna scrittura se lo stesso gruppo è già
           // collegato a un'altra sotto-sessione sovrapposta nello stesso giorno).
-          const conflitto = await verifica_conflitto_gruppo({
-            sessione_id,
-            gruppo_livello: livello_gruppo,
-            gruppo_scope: (gruppo_scope ?? "club") as GruppoScope,
-            gruppo_ragione_sociale_id,
-          });
-          if (conflitto) {
-            set_conflitto_gruppo({ livello: livello_gruppo, conflitto });
-            return;
+          if (!gia_collegato) {
+            const conflitto = await verifica_conflitto_gruppo({
+              sessione_id,
+              gruppo_livello: livello_gruppo,
+              gruppo_scope: scope_norm,
+              gruppo_ragione_sociale_id,
+            });
+            if (conflitto) {
+              set_conflitto_gruppo({ livello: livello_gruppo, conflitto });
+              return;
+            }
           }
 
           const res = await assegna_gruppo.mutateAsync({
             sessione_id,
             gruppo_livello: livello_gruppo,
-            gruppo_scope: (gruppo_scope ?? "club") as GruppoScope,
+            gruppo_scope: scope_norm,
             gruppo_ragione_sociale_id,
           });
           for (const atleta_id of ids) {
@@ -1042,7 +1055,15 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
             const nome = a ? `${a.nome} ${a.cognome}` : "Atleta";
             avvisa_sovrapposizione("atleta", atleta_id, nome, dest);
           }
-          toast({ title: `🔗 Gruppo «${livello_gruppo}» collegato`, description: `${res.aggiunti} atleti aggiunti.` });
+          if (gia_collegato || (res as any).gia_presente) {
+            toast({
+              title: `ℹ️ Il gruppo «${livello_gruppo}» è già collegato a questa sessione`,
+              description: "Membership risincronizzata.",
+            });
+          } else {
+            toast({ title: `🔗 Gruppo «${livello_gruppo}» collegato`, description: `${res.aggiunti} atleti aggiunti.` });
+          }
+
         } else {
           // Livello non definito: nessun gruppo dinamico, assegnazione individuale.
           let assegnati = 0;
