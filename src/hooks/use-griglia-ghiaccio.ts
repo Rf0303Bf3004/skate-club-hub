@@ -658,6 +658,146 @@ export function use_rimuovi_atleta_sessione() {
   });
 }
 
+// ─── Gruppi collegati alla sotto-sessione (1:N) ────────────
+/** Atleti già presenti nella sessione, indipendentemente dal tag di gruppo. */
+async function atleti_presenti_sessione(sessione_id: string): Promise<Set<string>> {
+  const { data, error } = await supabase
+    .from("griglia_sessioni_atleti" as any)
+    .select("atleta_id")
+    .eq("sessione_id", sessione_id);
+  if (error) throw error;
+  return new Set(((data ?? []) as any[]).map((r) => r.atleta_id as string));
+}
+
+/**
+ * Aggancia un gruppo alla sotto-sessione: crea la riga in `griglia_sessioni_gruppi`
+ * e inserisce gli atleti mancanti taggati con il nuovo gruppo. Gli atleti già
+ * presenti (manuali o di altri gruppi) NON vengono duplicati né ri-taggati.
+ */
+export function use_assegna_gruppo_sessione() {
+  const invalidate = use_invalidate_griglia();
+  return useMutation({
+    mutationFn: async (input: {
+      sessione_id: string;
+      gruppo_livello: string;
+      gruppo_scope: GruppoScope;
+      gruppo_ragione_sociale_id?: string | null;
+    }) => {
+      const club_id = get_current_club_id();
+      const { data: gruppo, error: err_g } = await supabase
+        .from("griglia_sessioni_gruppi" as any)
+        .insert({
+          sessione_id: input.sessione_id,
+          gruppo_livello: input.gruppo_livello,
+          gruppo_scope: input.gruppo_scope,
+          gruppo_ragione_sociale_id: input.gruppo_ragione_sociale_id ?? null,
+        } as any)
+        .select("id")
+        .single();
+      if (err_g) throw err_g;
+      const gruppo_sessione_id = (gruppo as any).id as string;
+
+      const membri = await risolvi_membri_gruppo(
+        club_id,
+        input.gruppo_scope,
+        input.gruppo_livello,
+        input.gruppo_ragione_sociale_id ?? null,
+      );
+      const presenti = await atleti_presenti_sessione(input.sessione_id);
+      const mancanti = membri.filter((id) => !presenti.has(id));
+      if (mancanti.length > 0) {
+        const { error } = await supabase
+          .from("griglia_sessioni_atleti" as any)
+          .insert(
+            mancanti.map((atleta_id) => ({
+              sessione_id: input.sessione_id,
+              atleta_id,
+              gruppo_sessione_id,
+            })) as any,
+          );
+        if (error && !`${error.message}`.includes("duplicate")) throw error;
+      }
+      return { gruppo_sessione_id, aggiunti: mancanti.length, membri: membri.length };
+    },
+    onSuccess: invalidate,
+  });
+}
+
+/** Sgancia un gruppo: la CASCADE rimuove SOLO gli atleti taggati con quel gruppo. */
+export function use_rimuovi_gruppo_sessione() {
+  const invalidate = use_invalidate_griglia();
+  return useMutation({
+    mutationFn: async (gruppo_sessione_id: string) => {
+      const { error } = await supabase
+        .from("griglia_sessioni_gruppi" as any)
+        .delete()
+        .eq("id", gruppo_sessione_id);
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
+  });
+}
+
+/**
+ * Riallinea SOLO gli atleti taggati con questo gruppo alla membership live:
+ * aggiunge i nuovi, rimuove chi non ne fa più parte. Atleti manuali o di altri
+ * gruppi restano intoccati.
+ */
+export function use_sync_gruppo_sessione() {
+  const invalidate = use_invalidate_griglia();
+  return useMutation({
+    mutationFn: async (input: {
+      gruppo_sessione_id: string;
+      sessione_id: string;
+      gruppo: { gruppo_livello: string; gruppo_scope: GruppoScope; gruppo_ragione_sociale_id: string | null };
+    }) => {
+      const club_id = get_current_club_id();
+      const membri = await risolvi_membri_gruppo(
+        club_id,
+        input.gruppo.gruppo_scope,
+        input.gruppo.gruppo_livello,
+        input.gruppo.gruppo_ragione_sociale_id,
+      );
+
+      const { data: righe, error: err_r } = await supabase
+        .from("griglia_sessioni_atleti" as any)
+        .select("id,atleta_id,gruppo_sessione_id")
+        .eq("sessione_id", input.sessione_id);
+      if (err_r) throw err_r;
+      const tutte = (righe ?? []) as any[];
+      const presenti_tutti = new Set(tutte.map((r) => r.atleta_id as string));
+      const del_gruppo = tutte.filter((r) => r.gruppo_sessione_id === input.gruppo_sessione_id);
+
+      const da_aggiungere = membri.filter((id) => !presenti_tutti.has(id));
+      const da_rimuovere = del_gruppo.filter((r) => !membri.includes(r.atleta_id));
+
+      if (da_aggiungere.length > 0) {
+        const { error } = await supabase
+          .from("griglia_sessioni_atleti" as any)
+          .insert(
+            da_aggiungere.map((atleta_id) => ({
+              sessione_id: input.sessione_id,
+              atleta_id,
+              gruppo_sessione_id: input.gruppo_sessione_id,
+            })) as any,
+          );
+        if (error && !`${error.message}`.includes("duplicate")) throw error;
+      }
+      if (da_rimuovere.length > 0) {
+        const { error } = await supabase
+          .from("griglia_sessioni_atleti" as any)
+          .delete()
+          .in("id", da_rimuovere.map((r) => r.id));
+        if (error) throw error;
+      }
+      return { da_aggiungere: da_aggiungere.length, da_rimuovere: da_rimuovere.length };
+    },
+    onSuccess: invalidate,
+  });
+}
+
+
+
 export function use_assegna_istruttore_sessione() {
   const invalidate = use_invalidate_griglia();
   return useMutation({
