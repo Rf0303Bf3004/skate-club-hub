@@ -9,7 +9,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
   AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { cat_blocco } from "./categorie";
+import { cat_blocco, label_blocco } from "./categorie";
 import { useTranslation } from "react-i18next";
 
 interface Props {
@@ -30,7 +30,7 @@ export default function BloccoCard({ blocco, on_toggle, on_edit, on_delete }: Pr
       <div className="flex items-start gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <Badge variant="outline" className={cat.color}>{cat.label}</Badge>
+            <Badge variant="outline" className={cat.color}>{label_blocco(blocco.categoria)}</Badge>
             <span className="text-xs text-muted-foreground">
               {t("relazione.blocco_card.ordine", { ordine: blocco.ordine })}
             </span>

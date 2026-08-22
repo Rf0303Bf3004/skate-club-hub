@@ -8,7 +8,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
   AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { cat_allegato, format_bytes } from "./categorie";
+import { cat_allegato, label_allegato, format_bytes } from "./categorie";
 import { useTranslation } from "react-i18next";
 
 interface Props {
@@ -30,7 +30,7 @@ export default function AllegatoCard({ allegato, on_edit, on_delete }: Props) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <Badge variant="outline" className={cat.color}>{cat.label}</Badge>
+            <Badge variant="outline" className={cat.color}>{label_allegato(allegato.categoria)}</Badge>
             <span className="text-xs text-muted-foreground">
               {t("relazione.allegato_card.ordine", { ordine: allegato.ordine })}
             </span>

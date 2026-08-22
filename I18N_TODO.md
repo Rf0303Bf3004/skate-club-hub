@@ -496,7 +496,7 @@ Pattern usato (file con molti sotto-componenti non-hook): helper module-level
   `{{corso}}`, `{{motivo}}`, `{{istruttore}}`, `{{nomi}}`, `{{campi}}`, `{{step}}`, `{{label}}`.
 - Nessuna modifica ai JSON `src/locales/{de,fr,en}/`.
 
-## Step 1.5m — Componenti relazione (~15 file) 🟡 PARZIALE (9/15)
+## Step 1.5m — Componenti relazione (15 file) ✅ COMPLETO (15/15)
 
 Namespace unico: **`dashboard`**, prefisso `relazione.<nome_componente>.*` (coerente con le chiavi
 `relazione.*` già create da `PresidentRelazione.tsx` e `PresidentRelazioneGestione.tsx`).
@@ -515,8 +515,24 @@ Namespace unico: **`dashboard`**, prefisso `relazione.<nome_componente>.*` (coer
 | `relazione/BlocchiTestoTab.tsx` | `relazione.blocchi_tab.*` | 32 |
 | `relazione/AnteprimaFedele.tsx` | `relazione.anteprima_fedele.*` | 10 |
 | `relazione/PdfViewer.tsx` | `relazione.pdf_viewer.*` | 8 |
+| `relazione/Compositore.tsx` | `relazione.compositore.*` | 22 |
+| `relazione/ParagrafiTab.tsx` | `relazione.paragrafi_tab.*` | 33 |
+| `relazione/IndiceComponibile.tsx` | `relazione.indice.*` | 6 |
+| `relazione/MockSezionePDF.tsx` | `relazione.mock_pdf.*` | 13 + 7 aree (titolo/kpi/insight) |
+| `relazione/categorie.ts` | `relazione.categorie.*` | 13 |
 
-**Totale: 121 chiavi IT aggiunte** in `src/locales/it/dashboard.json` sotto `relazione`.
+**Totale: 121 + ~108 = ~229 chiavi IT** in `src/locales/it/dashboard.json` sotto `relazione`.
+
+### Note sul secondo giro (5 file finali)
+- `MockSezionePDF.tsx`: `AREA_DEFINITIONS` sostituita da `AREA_NUMERI` + funzione `area_def(sezione_id)`
+  che risolve `titolo`/`kpi`/`insight` a runtime via i18n. Gli id area (`sintesi`, `domanda`, ...) restano
+  costanti runtime invariate. Aggiornati i consumer `Compositore.tsx` e `AnteprimaPDF.tsx`.
+- `categorie.ts`: i `value` delle categorie sono valori salvati nel DB e NON sono stati toccati.
+  Aggiunto `label_key` a ogni voce e gli helper `label_blocco(value)` / `label_allegato(value)`
+  che risolvono la label a runtime; aggiornati `BloccoCard`, `BloccoForm`, `AllegatoCard`,
+  `AllegatoForm`, `Compositore`.
+- `Compositore.tsx`: i titoli delle sezioni di sistema (`SISTEMA_LABELS`) sono ora risolti via
+  `relazione.compositore.sistema.<id>`, mantenendo l'id DB invariato.
 
 ### File senza stringhe hardcoded (nessun intervento necessario)
 - `relazione/TabHeaderInfo.tsx` — riceve `titolo`/`testo`/`collapsible_label` via props (già tradotti dal chiamante).

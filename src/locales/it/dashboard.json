@@ -569,6 +569,149 @@
       "errore_canvas": "Canvas context non disponibile",
       "errore_caricamento": "Errore caricamento PDF",
       "errore_viewer": "Errore visualizzatore PDF: {{errore}}. Puoi comunque scaricare il file."
+    },
+    "compositore": {
+      "sistema": {
+        "copertina": "Copertina",
+        "indice": "Indice",
+        "chiusura": "Chiusura"
+      },
+      "sezione_sistema": "Sezione di sistema",
+      "area_dashboard_sub": "Area dashboard · {{kpi}}",
+      "blocco_sub": "Blocco · {{categoria}}",
+      "allegato_sub": "Allegato · {{categoria}}",
+      "tono_label": "Tono relazione",
+      "tono_soci": "Per i Soci (caldo)",
+      "tono_formale": "Per Istituzioni / Banche / Sponsor (formale)",
+      "genera_pdf": "Genera PDF",
+      "generazione_in_corso": "Generazione in corso...",
+      "aggiorna": "Aggiorna",
+      "aggiorna_tooltip": "Ricarica i contenuti più recenti (le modifiche sono già salvate in automatico)",
+      "autosave_hint": "Le modifiche all'indice sono salvate in automatico.",
+      "tab_rapida": "Anteprima rapida",
+      "tab_fedele": "Anteprima fedele (PDF)",
+      "toast_pdf_ok": "Relazione PDF generata ({{pages}} pagine, {{size}}). File scaricato come '{{filename}}'",
+      "toast_pdf_errore": "Errore nella generazione del PDF. Riprova tra qualche secondo.",
+      "riordino_ko": "Riordino non salvato",
+      "errore": "Errore",
+      "ordine_ripristinato": "Ordine ripristinato",
+      "salvataggio_in_corso": "Salvataggio in corso, attendi...",
+      "dati_aggiornati": "Dati aggiornati"
+    },
+    "paragrafi_tab": {
+      "header_titolo": "Racconto automatico dei dati",
+      "header_testo": "Questi paragrafi sono il racconto generato automaticamente dai dati della tua dashboard, organizzati per le 9 sezioni della relazione. Sono gia' pronti, ma puoi modificarli quando vuoi cambiare un'espressione o aggiungere un dettaglio. Le tue modifiche vengono rispettate quando ricrei i paragrafi dai dati.",
+      "header_collapsible": "Quando modificare un paragrafo?",
+      "help_intro": "Modifica un paragrafo quando:",
+      "help_1": "Vuoi cambiare il tono di una frase",
+      "help_2": "Vuoi aggiungere una sfumatura che i dati non possono cogliere",
+      "help_3": "Vuoi correggere un'interpretazione automatica",
+      "help_warn_strong": "NON modificare paragrafi",
+      "help_warn": "quando si tratta di notizie completamente nuove (es. cambio staff): in quel caso vai nella tab",
+      "help_warn_tab": "Notizie del Presidente",
+      "mostra_tono": "Mostra tono:",
+      "tono_soci": "Per i Soci (caldo)",
+      "tono_formale": "Per Istituzioni / Sponsor (formale)",
+      "contatore": "{{count}} / 36 paragrafi popolati per questo tono",
+      "rigenera_tutti": "Rigenera tutti i paragrafi automatici",
+      "generazione_in_corso": "Generazione in corso...",
+      "progress": "Generazione paragrafi: area {{area}} di {{total}}",
+      "popolati_one": "{{count}}/4 paragrafi",
+      "popolati_other": "{{count}}/4 paragrafi",
+      "non_generato": "Paragrafo {{label}} non ancora generato.",
+      "badge_modificato": "Modificato",
+      "badge_auto": "Auto",
+      "modifica": "Modifica",
+      "rigenera": "Rigenera",
+      "confirm_titolo": "Sovrascrivere il testo modificato?",
+      "confirm_desc": "Questo paragrafo è stato modificato a mano: verrà sostituito dalla versione generata automaticamente.",
+      "parole_one": "{{count}} parola",
+      "parole_other": "{{count}} parole",
+      "annulla": "Annulla",
+      "salva": "Salva",
+      "toast_generati": "Generati {{inserted}} paragrafi ({{skipped}} modificati manualmente preservati)",
+      "toast_errore_generazione": "Errore generazione paragrafi: {{errore}}",
+      "toast_salvato": "Paragrafo salvato",
+      "toast_rigenerato": "Paragrafo rigenerato",
+      "toast_errore": "Errore: {{errore}}"
+    },
+    "indice": {
+      "titolo": "Struttura relazione",
+      "sottotitolo": "Trascina per riordinare. Disattiva per escludere dal PDF. Sotto ogni area vedi i paragrafi che verranno inclusi.",
+      "reset": "Reset",
+      "paragrafo_non_generato": "Paragrafo non ancora generato",
+      "modifica_paragrafi": "Modifica i paragrafi",
+      "badge_sistema": "sistema"
+    },
+    "mock_pdf": {
+      "area_numero": "Area {{numero}}",
+      "grafico_placeholder": "[grafico verrà incluso nel PDF finale]",
+      "pdf": "PDF",
+      "allegato_badge": "Allegato",
+      "allegato_nota": "Il PDF allegato sarà incluso nelle pagine successive del documento finale.",
+      "club_fallback": "Club",
+      "stagione_fallback": "Stagione",
+      "copertina_titolo": "Relazione di fine stagione",
+      "presidente": "Presidente",
+      "indice_kicker": "Indice",
+      "indice_titolo": "Sommario",
+      "chiusura": "{{club}} — {{stagione}} — Relazione del Presidente",
+      "aree": {
+        "sintesi": {
+          "titolo": "Sintesi della stagione",
+          "kpi": "Quadro generale coerente",
+          "insight": "La stagione mostra crescita della domanda e tenuta economica; le aree critiche sono presidiate."
+        },
+        "domanda": {
+          "titolo": "Domanda & Ghiaccio",
+          "kpi": "92% saturazione ghiaccio · 14 in lista d'attesa",
+          "insight": "La domanda supera la capacità: una fascia oraria aggiuntiva consentirebbe di assorbire la lista d'attesa."
+        },
+        "atleti": {
+          "titolo": "Atleti",
+          "kpi": "145 atleti attivi (-2% YoY)",
+          "insight": "Pulcini in calo, Interbronzo in crescita: i ragazzi avanzano verso l'agonismo."
+        },
+        "economia": {
+          "titolo": "Economia",
+          "kpi": "Ricavi CHF 218'400 · Cassa CHF 41'200",
+          "insight": "Margine positivo del 6%, generato in particolare da corsi base e pacchetti opzionali."
+        },
+        "lezioni": {
+          "titolo": "Lezioni private",
+          "kpi": "412 ore erogate (+18% YoY)",
+          "insight": "Le lezioni private trainano i ricavi e fidelizzano gli agonisti."
+        },
+        "sportivo": {
+          "titolo": "Risultati sportivi",
+          "kpi": "27 podi · 9 medaglie d'oro",
+          "insight": "Stagione record: la maturazione del gruppo Argento porta i suoi frutti in gara."
+        },
+        "catalogo": {
+          "titolo": "Catalogo & Promozione",
+          "kpi": "5 sponsor attivi · CHF 19'000",
+          "insight": "Cinque partner sostengono il club; cerchiamo uno sponsor pista per coprire le ore aggiuntive."
+        }
+      }
+    },
+    "categorie": {
+      "blocco": {
+        "staff": "Staff",
+        "eventi_futuri": "Eventi futuri",
+        "trattative": "Trattative",
+        "progetti": "Progetti",
+        "altro": "Altro",
+        "apertura_legacy": "Apertura (legacy)",
+        "conclusioni_legacy": "Conclusioni (legacy)"
+      },
+      "allegato": {
+        "bilancio": "Bilancio",
+        "federazione": "Federazione",
+        "certificazione": "Certificazione",
+        "contratto_sponsor": "Contratto sponsor",
+        "verbale": "Verbale",
+        "altro": "Altro"
+      }
     }
   },
   "onboarding_banner": {

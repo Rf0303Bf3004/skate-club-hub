@@ -1,6 +1,6 @@
 import React from "react";
 import { CompositoreItem } from "./types-compositore";
-import { MockAreaDashboard, MockAllegato, MockBlocco, MockChiusura, MockCopertina, MockIndice, AREA_DEFINITIONS } from "./MockSezionePDF";
+import { MockAreaDashboard, MockAllegato, MockBlocco, MockChiusura, MockCopertina, MockIndice, area_def } from "./MockSezionePDF";
 
 interface Props {
   items: CompositoreItem[];
@@ -19,7 +19,7 @@ export default function AnteprimaPDF({ items, club, presidente, stagione_nome, s
   for (const it of attivi) {
     pages_map.push({ item: it, pagina: p });
     let title = it.titolo;
-    if (it.kind === "area") title = `${AREA_DEFINITIONS[it.sezione_id!]?.numero ?? ""}. ${AREA_DEFINITIONS[it.sezione_id!]?.titolo ?? it.titolo}`;
+    if (it.kind === "area") { const def = area_def(it.sezione_id!); title = `${def?.numero ?? ""}. ${def?.titolo ?? it.titolo}`; }
     indice_entries.push({ titolo: title, pagina: p, item_id: it.id });
     p += 1;
   }
