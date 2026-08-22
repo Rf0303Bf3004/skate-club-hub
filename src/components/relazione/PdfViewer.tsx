@@ -5,6 +5,10 @@ import type { PDFDocumentProxy } from "pdfjs-dist/types/src/pdf";
 import { Button } from "@/components/ui/button";
 import { Loader2, ZoomIn, ZoomOut, Download, AlertTriangle, ExternalLink } from "lucide-react";
 import "pdfjs-dist/web/pdf_viewer.css";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
+
+const tk = (key: string, opts?: any) => i18n.t(`relazione.pdf_viewer.${key}`, { ns: "dashboard", ...(opts ?? {}) }) as string;
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
@@ -44,7 +48,7 @@ async function render_page(pdf: PDFDocumentProxy, page_num: number, canvas: HTML
   canvas.width = viewport.width;
   canvas.height = viewport.height;
   const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("Canvas context non disponibile");
+  if (!ctx) throw new Error(tk("errore_canvas"));
   const render_task = page.render({ canvasContext: ctx, viewport, canvas });
   await render_task.promise;
 }
@@ -94,6 +98,7 @@ function PdfPageCanvas({ pdf, page_num, total_pages, scale }: PdfPageCanvasProps
 }
 
 export default function PdfViewer({ blob, on_download }: Props) {
+  const { t } = useTranslation("dashboard");
   const [scale, set_scale] = useState(1.3);
   const [pdf_doc, set_pdf_doc] = useState<PDFDocumentProxy | null>(null);
   const [total_pages, set_total_pages] = useState(0);
@@ -130,7 +135,7 @@ export default function PdfViewer({ blob, on_download }: Props) {
       } catch (e: any) {
         if (!cancelled) {
           console.error("[PdfViewer] Errore:", e);
-          set_error(e?.message ?? "Errore caricamento PDF");
+          set_error(e?.message ?? tk("errore_caricamento"));
           set_is_loading(false);
         }
       }
@@ -182,7 +187,7 @@ export default function PdfViewer({ blob, on_download }: Props) {
     <div className="flex flex-col h-full bg-muted">
       <div className="sticky top-0 z-10 flex items-center justify-between gap-2 h-12 px-3 bg-background border-b border-border">
         <div className="text-xs text-muted-foreground font-medium">
-          {total_pages > 0 ? `Pagina ${current_page} di ${total_pages}` : "Caricamento..."}
+          {total_pages > 0 ? t("relazione.pdf_viewer.pagina_di", { current: current_page, total: total_pages }) : t("relazione.pdf_viewer.caricamento")}
         </div>
         <div className="flex items-center gap-1">
           <Button size="sm" variant="ghost" onClick={zoom_out} disabled={scale <= 0.6} className="h-8 w-8 p-0">
@@ -195,7 +200,7 @@ export default function PdfViewer({ blob, on_download }: Props) {
           {on_download && (
             <Button size="sm" variant="outline" onClick={on_download} className="ml-2 gap-1 h-8 text-xs">
               <Download className="w-3.5 h-3.5" />
-              Scarica PDF
+              {t("relazione.pdf_viewer.scarica")}
             </Button>
           )}
         </div>
@@ -205,7 +210,7 @@ export default function PdfViewer({ blob, on_download }: Props) {
           <div className="absolute inset-0 flex items-center justify-center bg-muted/80 z-20">
             <div className="flex flex-col items-center gap-2 text-muted-foreground">
               <Loader2 className="w-6 h-6 animate-spin text-primary" />
-              <p className="text-xs">Caricamento anteprima...</p>
+              <p className="text-xs">{t("relazione.pdf_viewer.caricamento_anteprima")}</p>
             </div>
           </div>
         )}
@@ -213,15 +218,15 @@ export default function PdfViewer({ blob, on_download }: Props) {
           <div className="mx-auto max-w-md p-4 bg-amber-50 border border-amber-200 rounded-md flex items-start gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
             <div className="flex-1 text-xs text-amber-900">
-              <p>Errore visualizzatore PDF: {error}. Puoi comunque scaricare il file.</p>
+              <p>{t("relazione.pdf_viewer.errore_viewer", { errore: error })}</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {on_download && (
                   <Button size="sm" variant="outline" onClick={on_download} className="gap-1 h-8 text-xs">
-                    <Download className="w-3 h-3" /> Scarica PDF
+                    <Download className="w-3 h-3" /> {t("relazione.pdf_viewer.scarica")}
                   </Button>
                 )}
                 <Button size="sm" variant="secondary" onClick={open_in_new_tab} className="gap-1 h-8 text-xs">
-                  <ExternalLink className="w-3 h-3" /> Apri in nuova scheda
+                  <ExternalLink className="w-3 h-3" /> {t("relazione.pdf_viewer.apri_nuova_scheda")}
                 </Button>
               </div>
             </div>

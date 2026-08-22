@@ -7,6 +7,10 @@ import { toast } from "sonner";
 import type { Tono } from "@/lib/paragraphGenerator";
 import { CompositoreItem } from "./types-compositore";
 import PdfViewer from "./PdfViewer";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
+
+const tk = (key: string, opts?: any) => i18n.t(`relazione.anteprima_fedele.${key}`, { ns: "dashboard", ...(opts ?? {}) }) as string;
 
 interface Props {
   items: CompositoreItem[];
@@ -22,6 +26,7 @@ interface Props {
 export default function AnteprimaFedele({
   items, club, presidente, stagione_nome, club_id, stagione_id, tono, structural_signature,
 }: Props) {
+  const { t } = useTranslation("dashboard");
   const [loading, set_loading] = useState(false);
   const [blob, set_blob] = useState<Blob | null>(null);
   const [url, set_url] = useState<string | null>(null);
@@ -56,7 +61,7 @@ export default function AnteprimaFedele({
     } catch (e: any) {
       if (e?.message !== "Generazione gia in corso. Attendi il completamento.") {
         console.error(e);
-        toast.error("Errore nella generazione dell'anteprima.");
+        toast.error(tk("toast_errore"));
       }
     } finally {
       generating_ref.current = false;
@@ -76,8 +81,8 @@ export default function AnteprimaFedele({
     return (
       <div className="flex flex-col items-center justify-center h-full min-h-[600px] text-slate-500 gap-3">
         <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
-        <p className="text-sm">Generazione anteprima in corso...</p>
-        <p className="text-xs text-slate-400">Richiede 2-3 secondi</p>
+        <p className="text-sm">{t("relazione.anteprima_fedele.generazione")}</p>
+        <p className="text-xs text-slate-400">{t("relazione.anteprima_fedele.durata")}</p>
       </div>
     );
   }
@@ -87,14 +92,14 @@ export default function AnteprimaFedele({
       <div className="flex flex-col items-center justify-center h-full min-h-[600px] text-slate-500 gap-4 p-6 text-center">
         <FileText className="w-12 h-12 text-slate-300" />
         <div>
-          <p className="text-sm font-medium text-slate-700">Anteprima fedele del PDF</p>
+          <p className="text-sm font-medium text-slate-700">{t("relazione.anteprima_fedele.empty_titolo")}</p>
           <p className="text-xs text-slate-500 mt-1 max-w-sm">
-            Genera il PDF reale (con grafici e paragrafi narrativi) per vedere esattamente come apparira' il documento finale.
+            {t("relazione.anteprima_fedele.empty_testo")}
           </p>
         </div>
         <Button onClick={generate} className="gap-2">
           <FileText className="w-4 h-4" />
-          Genera anteprima fedele
+          {t("relazione.anteprima_fedele.genera")}
         </Button>
       </div>
     );
@@ -106,11 +111,11 @@ export default function AnteprimaFedele({
         <div className="m-3 mb-2 p-3 bg-amber-50 border border-amber-200 rounded-md flex items-start gap-2">
           <FileWarning className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
           <div className="flex-1 text-xs text-amber-900">
-            Hai modificato la struttura. Aggiorna l'anteprima per vedere le ultime modifiche.
+            {t("relazione.anteprima_fedele.stale")}
           </div>
           <Button size="sm" variant="outline" onClick={generate} disabled={loading} className="h-7 text-xs gap-1">
             {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-            Aggiorna
+            {t("relazione.anteprima_fedele.aggiorna")}
           </Button>
         </div>
       )}
@@ -120,11 +125,11 @@ export default function AnteprimaFedele({
       <div className="flex gap-2 p-3 border-t border-slate-200 bg-white">
         <Button variant="outline" size="sm" onClick={generate} disabled={loading} className="gap-2 rounded-full">
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-          Aggiorna anteprima
+          {t("relazione.anteprima_fedele.aggiorna_anteprima")}
         </Button>
         <Button variant="outline" size="sm" onClick={download} disabled={!blob} className="gap-2 rounded-full">
           <Download className="w-4 h-4" />
-          Scarica PDF
+          {t("relazione.anteprima_fedele.scarica")}
         </Button>
       </div>
     </div>
