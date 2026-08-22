@@ -184,6 +184,8 @@ const ClubSetupPage: React.FC = () => {
         "nome", "citta", "cap", "paese", "email", "telefono", "indirizzo",
         "sito_web", "numero_tessera_federale", "colore_primario", "descrizione", "logo_url",
         "reminder_allenamenti_attivo", "reminder_staff_attivo", "reminder_orario_invio", "reminder_anticipo_giorni",
+        "reminder_planning_atleti_attivo", "reminder_planning_istruttori_attivo",
+        "reminder_planning_orario_invio", "reminder_planning_anticipo_giorni",
       ];
       for (const f of club_fields) {
         if (f in form) club_payload[f] = form[f];
@@ -786,6 +788,59 @@ const ClubSetupPage: React.FC = () => {
                 <option value="2">2 giorni prima</option>
               </select>
             </Field>
+          </div>
+
+          <div className="pt-2 space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">📅 Planning giornaliero (Griglia Ghiaccio)</h3>
+            <p className="text-xs text-muted-foreground">
+              Un unico messaggio con tutto il programma della giornata, per chi ha sessioni sulla griglia ghiaccio.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label="Planning giornaliero — atleti">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={get_val("reminder_planning_atleti_attivo", (club as any)?.reminder_planning_atleti_attivo ?? false)}
+                    onCheckedChange={(v) => set_val("reminder_planning_atleti_attivo", v)}
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    {get_val("reminder_planning_atleti_attivo", (club as any)?.reminder_planning_atleti_attivo ?? false) ? "Attivo" : "Disattivo"}
+                  </span>
+                </div>
+              </Field>
+              <Field label="Planning giornaliero — istruttori">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={get_val("reminder_planning_istruttori_attivo", (club as any)?.reminder_planning_istruttori_attivo ?? false)}
+                    onCheckedChange={(v) => set_val("reminder_planning_istruttori_attivo", v)}
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    {get_val("reminder_planning_istruttori_attivo", (club as any)?.reminder_planning_istruttori_attivo ?? false) ? "Attivo" : "Disattivo"}
+                  </span>
+                </div>
+              </Field>
+              <Field label="Orario invio planning (Europe/Zurich)">
+                <select
+                  className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                  value={String(get_val("reminder_planning_orario_invio", (club as any)?.reminder_planning_orario_invio ?? 7))}
+                  onChange={(e) => set_val("reminder_planning_orario_invio", Number(e.target.value))}
+                >
+                  {Array.from({ length: 24 }, (_, h) => h).map((h) => (
+                    <option key={h} value={h}>{String(h).padStart(2, "0")}:00</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Anticipo planning">
+                <select
+                  className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                  value={String(get_val("reminder_planning_anticipo_giorni", (club as any)?.reminder_planning_anticipo_giorni ?? 0))}
+                  onChange={(e) => set_val("reminder_planning_anticipo_giorni", Number(e.target.value))}
+                >
+                  <option value="0">Stesso giorno</option>
+                  <option value="1">1 giorno prima</option>
+                  <option value="2">2 giorni prima</option>
+                </select>
+              </Field>
+            </div>
           </div>
         </section>
 

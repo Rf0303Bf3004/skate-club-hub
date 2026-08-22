@@ -844,6 +844,11 @@ export type Database = {
           reminder_anticipo_giorni: number
           reminder_last_run_date: string | null
           reminder_orario_invio: number
+          reminder_planning_anticipo_giorni: number
+          reminder_planning_atleti_attivo: boolean
+          reminder_planning_istruttori_attivo: boolean
+          reminder_planning_last_run_date: string | null
+          reminder_planning_orario_invio: number
           reminder_staff_attivo: boolean
           setup_fatturato: boolean
           sigla: string | null
@@ -886,6 +891,11 @@ export type Database = {
           reminder_anticipo_giorni?: number
           reminder_last_run_date?: string | null
           reminder_orario_invio?: number
+          reminder_planning_anticipo_giorni?: number
+          reminder_planning_atleti_attivo?: boolean
+          reminder_planning_istruttori_attivo?: boolean
+          reminder_planning_last_run_date?: string | null
+          reminder_planning_orario_invio?: number
           reminder_staff_attivo?: boolean
           setup_fatturato?: boolean
           sigla?: string | null
@@ -928,6 +938,11 @@ export type Database = {
           reminder_anticipo_giorni?: number
           reminder_last_run_date?: string | null
           reminder_orario_invio?: number
+          reminder_planning_anticipo_giorni?: number
+          reminder_planning_atleti_attivo?: boolean
+          reminder_planning_istruttori_attivo?: boolean
+          reminder_planning_last_run_date?: string | null
+          reminder_planning_orario_invio?: number
           reminder_staff_attivo?: boolean
           setup_fatturato?: boolean
           sigla?: string | null
@@ -5980,6 +5995,7 @@ export type Database = {
         }[]
       }
       genera_codice_atleta: { Args: never; Returns: string }
+      genera_planning_giornaliero: { Args: never; Returns: number }
       genera_reminder_giornalieri: { Args: never; Returns: number }
       genera_settimana_planning: {
         Args: { p_settimana_id: string }
