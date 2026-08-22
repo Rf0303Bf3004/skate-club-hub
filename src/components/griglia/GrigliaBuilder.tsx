@@ -15,7 +15,9 @@ import {
   use_pubblica_blocco,
   use_disponibilita_giorno,
   use_ripeti_sessione,
+  risolvi_membri_gruppo,
   giorno_it_da_data,
+  type GruppoScope,
   type GrigliaBlocco,
   type GrigliaSessione,
 } from "@/hooks/use-griglia-ghiaccio";
