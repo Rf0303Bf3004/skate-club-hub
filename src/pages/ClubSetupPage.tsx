@@ -1015,15 +1015,15 @@ const ClubSetupPage: React.FC = () => {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">
-              Disponibilità strutture settimanale
+              {t("club.sezioni.disponibilita_strutture")}
             </h3>
             <Button size="sm" onClick={save_disponibilita} disabled={saving_disp || !risorsa_sel_id}>
-              {saving_disp ? "..." : "Salva disponibilità"}
+              {saving_disp ? t("club.azioni.salvando") : t("club.azioni.salva_disponibilita")}
             </Button>
           </div>
           <div className="mb-4 max-w-sm">
             <Label className="text-xs text-muted-foreground">
-              Valida fino al (opzionale, lascia vuoto se la disponibilità non cambia mai)
+              {t("club.fields.valida_fino_al")}
             </Label>
             <Input
               type="date"
@@ -1032,27 +1032,26 @@ const ClubSetupPage: React.FC = () => {
               onChange={(e) => set_val("disponibilita_valida_fino_al", e.target.value || null)}
             />
             <p className="text-xs text-muted-foreground mt-1">
-              Superata questa data comparirà un avviso in Dashboard e in Griglia Ghiaccio per rivedere la
-              disponibilità. Si salva con "Salva dati club".
+              {t("club.testi.disponibilita_scadenza_info")}
             </p>
           </div>
           <div className="mb-4 max-w-sm">
-            <Label className="text-xs text-muted-foreground">Risorsa</Label>
+            <Label className="text-xs text-muted-foreground">{t("club.fields.risorsa")}</Label>
             <Select value={risorsa_sel_id} onValueChange={set_risorsa_sel_id}>
               <SelectTrigger className="h-9 mt-1">
-                <SelectValue placeholder="Seleziona una risorsa" />
+                <SelectValue placeholder={t("club.fields.seleziona_risorsa_placeholder")} />
               </SelectTrigger>
               <SelectContent>
                 {risorse_attive.map((r: any) => (
                   <SelectItem key={r.id} value={r.id}>
-                    {r.nome} · {r.tipo === "palestra" ? "Palestra" : "Ghiaccio"}
+                    {r.nome} · {r.tipo === "palestra" ? t("club.opzioni.palestra") : t("club.opzioni.ghiaccio")}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             {risorse_attive.length === 0 && (
               <p className="text-xs text-muted-foreground italic mt-1">
-                Nessuna risorsa configurata — aggiungine una in "Risorse e strutture".
+                {t("club.testi.nessuna_risorsa")}
               </p>
             )}
           </div>
@@ -1065,10 +1064,10 @@ const ClubSetupPage: React.FC = () => {
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-foreground">{giorno}</span>
                     <Button variant="ghost" size="sm" onClick={() => add_slot(giorno)} className="h-7 text-xs">
-                      <Plus className="w-3 h-3 mr-1" /> Slot
+                      <Plus className="w-3 h-3 mr-1" /> {t("club.azioni.slot")}
                     </Button>
                   </div>
-                  {slots.length === 0 && <p className="text-xs text-muted-foreground italic py-1">— nessuno slot — clicca <strong>+ Slot</strong> per aggiungere una fascia oraria</p>}
+                  {slots.length === 0 && <p className="text-xs text-muted-foreground italic py-1">{t("club.testi.nessuno_slot_prefix")} <strong>{t("club.azioni.plus_slot")}</strong> {t("club.testi.nessuno_slot_suffix")}</p>}
                   {slots.map((s, idx) => (
                     <div key={idx} className="flex items-center gap-2 mb-1">
                       <Input
@@ -1108,7 +1107,7 @@ const ClubSetupPage: React.FC = () => {
         <div>
 
           <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">
-            🧹 Pulizia Ghiaccio
+            {t("club.sezioni.pulizia_ghiaccio")}
           </h3>
           <div className="space-y-4">
             {GIORNI.map((giorno) => {
@@ -1118,10 +1117,10 @@ const ClubSetupPage: React.FC = () => {
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-foreground">{giorno}</span>
                     <Button variant="ghost" size="sm" onClick={() => add_slot_pulizia(giorno)} className="h-7 text-xs">
-                      <Plus className="w-3 h-3 mr-1" /> Slot
+                      <Plus className="w-3 h-3 mr-1" /> {t("club.azioni.slot")}
                     </Button>
                   </div>
-                  {slots.length === 0 && <p className="text-xs text-muted-foreground italic py-1">— nessuno slot — clicca <strong>+ Slot</strong> per aggiungere una fascia oraria</p>}
+                  {slots.length === 0 && <p className="text-xs text-muted-foreground italic py-1">{t("club.testi.nessuno_slot_prefix")} <strong>{t("club.azioni.plus_slot")}</strong> {t("club.testi.nessuno_slot_suffix")}</p>}
                   {slots.map((s, idx) => (
                     <div key={idx} className="flex items-center gap-2 mb-1">
                       <Input
