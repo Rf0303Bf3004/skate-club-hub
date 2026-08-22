@@ -875,6 +875,7 @@ const GraficoAndamento: React.FC<{
 // ─── Main Page ─────────────────────────────────────────────
 const CompetitionsPage: React.FC = () => {
   const { t } = useI18n();
+  const { t: te } = useTranslation("events");
   const { data: gare = [], isLoading } = use_gare();
   const { data: atleti = [] } = use_atleti();
   const elimina = use_elimina_gara();
@@ -953,9 +954,9 @@ const CompetitionsPage: React.FC = () => {
       await elimina.mutateAsync(selected_id);
       set_selected_id(null);
       set_confirm_delete(false);
-      toast({ title: "🗑️ Gara eliminata correttamente" });
+      toast({ title: te("competitions.deleted_toast") });
     } catch (err: any) {
-      toast({ title: "Errore eliminazione", description: err?.message, variant: "destructive" });
+      toast({ title: te("competitions.delete_error_toast"), description: err?.message, variant: "destructive" });
     }
   };
 
@@ -964,9 +965,9 @@ const CompetitionsPage: React.FC = () => {
       const { error } = await (supabase as any).from("gare_calendario").update({ archiviata: archivia }).eq("id", id);
       if (error) throw error;
       await queryClient.invalidateQueries({ queryKey: ["gare"] });
-      toast({ title: archivia ? "📦 Gara archiviata" : "✅ Gara ripristinata" });
+      toast({ title: archivia ? te("competitions.archived_toast") : te("competitions.restored_toast") });
     } catch (err: any) {
-      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+      toast({ title: te("competitions.generic_error_toast"), description: err?.message, variant: "destructive" });
     }
   };
 
@@ -1027,7 +1028,7 @@ const CompetitionsPage: React.FC = () => {
                 onClick={() => set_edit_gara(selected)}
                 className="text-muted-foreground hover:text-foreground gap-1.5"
               >
-                <Pencil className="w-4 h-4" /> Modifica
+                <Pencil className="w-4 h-4" /> {te("competitions.edit_button")}
               </Button>
               <Button
                 variant="ghost"
@@ -1035,7 +1036,7 @@ const CompetitionsPage: React.FC = () => {
                 onClick={() => handle_archivia(selected.id, !selected.archiviata)}
                 className="text-muted-foreground hover:text-foreground gap-1.5"
               >
-                <Archive className="w-4 h-4" /> {selected.archiviata ? "Ripristina" : "Archivia"}
+                <Archive className="w-4 h-4" /> {selected.archiviata ? te("competitions.restore_button") : te("competitions.archive_button")}
               </Button>
               <Button
                 variant="ghost"
@@ -1043,7 +1044,7 @@ const CompetitionsPage: React.FC = () => {
                 onClick={() => set_confirm_delete(true)}
                 className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-1.5"
               >
-                <Trash2 className="w-4 h-4" /> Elimina
+                <Trash2 className="w-4 h-4" /> {te("competitions.delete_button")}
               </Button>
             </div>
           </div>
@@ -1052,10 +1053,10 @@ const CompetitionsPage: React.FC = () => {
             <div className="bg-destructive/5 border border-destructive/20 rounded-xl px-4 py-4 space-y-3">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0" />
-                <p className="text-sm font-semibold text-destructive">Conferma eliminazione</p>
+                <p className="text-sm font-semibold text-destructive">{te("competitions.confirm_delete_title")}</p>
               </div>
               <p className="text-xs text-muted-foreground">
-                Stai per eliminare <strong>{selected.nome}</strong> e tutte le iscrizioni collegate.
+                <Trans i18nKey="competitions.confirm_delete_description" ns="events" values={{ nome: selected.nome }} components={{ 1: <strong /> }} />
               </p>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => set_confirm_delete(false)} className="flex-1">
