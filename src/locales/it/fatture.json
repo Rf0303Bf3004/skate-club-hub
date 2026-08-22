@@ -32,5 +32,51 @@
     "send_reminder": "Invia sollecito",
     "download_pdf": "Scarica PDF",
     "view_details": "Dettagli"
+  },
+  "invoices_page": {
+    "title": "Fatture",
+    "to_collect": "Da incassare:",
+    "due_summary_tooltip": "{{overdue}} scadute / {{upcoming}} in arrivo",
+    "overdue_count_one": "{{count}} scaduta",
+    "overdue_count_other": "{{count}} scadute",
+    "generate_button": "Genera fatture",
+    "generating": "...",
+    "search_placeholder": "Cerca per numero, descrizione, nome atleta…",
+    "filters": {
+      "all": "Tutti",
+      "overdue": "Scadute",
+      "status_label": "Stato",
+      "period_label": "Periodo",
+      "period_all": "Tutti",
+      "period_month": "Questo mese",
+      "period_quarter": "Ultimo trimestre",
+      "period_year": "Anno corrente"
+    },
+    "sort": {
+      "date_desc": "Data emissione ↓",
+      "due_asc": "Scadenza ↑",
+      "amount_desc": "Importo ↓"
+    },
+    "summary": {
+      "total": "Totale:",
+      "overdue_amount": "scadute"
+    },
+    "table": {
+      "number": "N. Fattura",
+      "name": "Nome",
+      "description": "Descrizione",
+      "amount": "Importo",
+      "due_date": "Scadenza",
+      "status": "Stato"
+    },
+    "empty": {
+      "title": "Nessuna fattura da mostrare",
+      "description": "Con i filtri attivi non risulta nessuna fattura. Azzera i filtri oppure genera le fatture del mese dalla sezione Fatturazione."
+    },
+    "toast": {
+      "generated_title_one": "✅ {{count}} fattura generata",
+      "generated_title_other": "✅ {{count}} fatture generate",
+      "generate_error_title": "Errore generazione"
+    }
   }
 }
