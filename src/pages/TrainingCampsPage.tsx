@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useI18n } from "@/lib/i18n";
+import { useTranslation } from "react-i18next";
 import { use_campi, use_atleti, get_atleta_name_from_list } from "@/hooks/use-supabase-data";
 import { use_upsert_campo, use_iscrivi_atleta_campo, use_elimina_campo } from "@/hooks/use-supabase-mutations";
 import { Button } from "@/components/ui/button";
@@ -93,6 +94,7 @@ const IscrizioneModal: React.FC<{
   atleti: any[];
   on_close: () => void;
 }> = ({ campo, atleti, on_close }) => {
+  const { t } = useTranslation("events");
   const iscrivi = use_iscrivi_atleta_campo();
   const [atleta_id, set_atleta_id] = useState("");
   const [tipo, set_tipo] = useState<"diurno" | "completo">("diurno");
@@ -113,16 +115,16 @@ const IscrizioneModal: React.FC<{
 
   const handle_submit = async () => {
     if (!atleta_id) {
-      toast({ title: "Seleziona un atleta", variant: "destructive" });
+      toast({ title: t("training_camps.enroll_modal.select_athlete_error"), variant: "destructive" });
       return;
     }
     set_saving(true);
     try {
       await iscrivi.mutateAsync({ campo_id: campo.id, atleta_id, tipo, costo_totale: to_num(costo_str) });
-      toast({ title: "✅ Atleta iscritto al campo" });
+      toast({ title: t("training_camps.enroll_modal.enrolled_success") });
       on_close();
     } catch (err: any) {
-      toast({ title: "Errore iscrizione", description: err?.message, variant: "destructive" });
+      toast({ title: t("training_camps.enroll_modal.enroll_error"), description: err?.message, variant: "destructive" });
     } finally {
       set_saving(false);
     }
@@ -133,7 +135,7 @@ const IscrizioneModal: React.FC<{
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
           <div>
-            <h2 className="text-base font-bold text-foreground">Iscrivi atleta</h2>
+            <h2 className="text-base font-bold text-foreground">{t("training_camps.enroll_modal.title")}</h2>
             <p className="text-xs text-muted-foreground">{campo.nome}</p>
           </div>
           <button onClick={on_close} className="text-muted-foreground hover:text-foreground">
@@ -141,9 +143,9 @@ const IscrizioneModal: React.FC<{
           </button>
         </div>
         <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
-          <Field label="Atleta *">
+          <Field label={t("training_camps.enroll_modal.athlete_label")}>
             <select value={atleta_id} onChange={(e) => set_atleta_id(e.target.value)} className={input_cls}>
-              <option value="">Seleziona atleta...</option>
+              <option value="">{t("training_camps.enroll_modal.select_athlete_placeholder")}</option>
               {atleti_non_iscritti.map((a: any) => (
                 <option key={a.id} value={a.id}>
                   {a.nome} {a.cognome}
@@ -151,11 +153,11 @@ const IscrizioneModal: React.FC<{
               ))}
             </select>
           </Field>
-          <Field label="Tipo partecipazione">
+          <Field label={t("training_camps.enroll_modal.participation_type_label")}>
             <div className="grid grid-cols-2 gap-2">
               {[
-                { val: "diurno", label: "Diurno", costo: campo.costo_diurno },
-                { val: "completo", label: "Completo", costo: campo.costo_completo },
+                { val: "diurno", label: t("training_camps.day_only"), costo: campo.costo_diurno },
+                { val: "completo", label: t("training_camps.full"), costo: campo.costo_completo },
               ].map((opt) => (
                 <button
                   key={opt.val}
@@ -169,26 +171,26 @@ const IscrizioneModal: React.FC<{
               ))}
             </div>
           </Field>
-          <Field label="Importo (modificabile)">
+          <Field label={t("training_camps.enroll_modal.amount_label")}>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">
                 CHF
               </span>
               <NumInput value={costo_str} onChange={(v) => set_costo_str(v)} className="pl-11" placeholder="0.00" />
             </div>
-            <p className="text-xs text-muted-foreground">Precompilato dal costo del campo, modificabile manualmente</p>
+            <p className="text-xs text-muted-foreground">{t("training_camps.enroll_modal.amount_hint")}</p>
           </Field>
         </div>
         <div className="flex gap-2 px-6 py-4 border-t border-border flex-shrink-0">
           <Button variant="outline" onClick={on_close} disabled={saving} className="flex-1">
-            Annulla
+            {t("training_camps.cancel")}
           </Button>
           <Button
             onClick={handle_submit}
             disabled={saving || !atleta_id}
             className="flex-1 bg-primary hover:bg-primary/90"
           >
-            {saving ? "..." : "Iscrivi"}
+            {saving ? t("training_camps.saving") : t("training_camps.enroll_modal.enroll_confirm_button")}
           </Button>
         </div>
       </div>
@@ -201,6 +203,7 @@ const CampoModal: React.FC<{
   campo?: any;
   on_close: () => void;
 }> = ({ campo, on_close }) => {
+  const { t } = useTranslation("events");
   const upsert = use_upsert_campo();
   const elimina = use_elimina_campo();
   const [form, set_form] = useState({
@@ -226,7 +229,7 @@ const CampoModal: React.FC<{
 
   const handle_save = async () => {
     if (!form.nome.trim() || !form.data_inizio || !form.data_fine) {
-      toast({ title: "Campi obbligatori mancanti", variant: "destructive" });
+      toast({ title: t("training_camps.camp_modal.missing_fields"), variant: "destructive" });
       return;
     }
     set_saving(true);
@@ -242,10 +245,10 @@ const CampoModal: React.FC<{
         costo_completo: to_num(form.costo_completo_str),
         note: form.note,
       });
-      toast({ title: campo?.id ? "✅ Campo aggiornato" : "✅ Campo creato" });
+      toast({ title: campo?.id ? t("training_camps.camp_modal.updated_success") : t("training_camps.camp_modal.created_success") });
       on_close();
     } catch (err: any) {
-      toast({ title: "Errore salvataggio", description: err?.message, variant: "destructive" });
+      toast({ title: t("training_camps.camp_modal.save_error"), description: err?.message, variant: "destructive" });
     } finally {
       set_saving(false);
     }
@@ -254,10 +257,10 @@ const CampoModal: React.FC<{
   const handle_delete = async () => {
     try {
       await elimina.mutateAsync(campo.id);
-      toast({ title: "🗑️ Campo eliminato" });
+      toast({ title: t("training_camps.camp_modal.deleted_success") });
       on_close();
     } catch (err: any) {
-      toast({ title: "Errore eliminazione", description: err?.message, variant: "destructive" });
+      toast({ title: t("training_camps.camp_modal.delete_error"), description: err?.message, variant: "destructive" });
     }
   };
 
@@ -265,22 +268,22 @@ const CampoModal: React.FC<{
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-lg flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
-          <h2 className="text-base font-bold text-foreground">{campo?.id ? "Modifica campo" : "Nuovo campo"}</h2>
+          <h2 className="text-base font-bold text-foreground">{campo?.id ? t("training_camps.camp_modal.edit_title") : t("training_camps.camp_modal.new_title")}</h2>
           <button onClick={on_close} className="text-muted-foreground hover:text-foreground">
             <X className="w-5 h-5" />
           </button>
         </div>
         <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
-          <Field label="Nome *">
+          <Field label={t("training_camps.camp_modal.name_label")}>
             <input
               value={form.nome}
               onChange={(e) => set_val("nome", e.target.value)}
-              placeholder="es. Campo estivo 2025"
+              placeholder={t("training_camps.camp_modal.name_placeholder")}
               className={input_cls}
             />
           </Field>
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Data inizio *">
+            <Field label={t("training_camps.camp_modal.start_date_label")}>
               <input
                 type="date"
                 value={form.data_inizio}
@@ -288,7 +291,7 @@ const CampoModal: React.FC<{
                 className={input_cls}
               />
             </Field>
-            <Field label="Data fine *">
+            <Field label={t("training_camps.camp_modal.end_date_label")}>
               <input
                 type="date"
                 value={form.data_fine}
@@ -297,24 +300,24 @@ const CampoModal: React.FC<{
               />
             </Field>
           </div>
-          <Field label="Luogo">
+          <Field label={t("training_camps.camp_modal.place_label")}>
             <input
               value={form.luogo}
               onChange={(e) => set_val("luogo", e.target.value)}
-              placeholder="es. Lugano"
+              placeholder={t("training_camps.camp_modal.place_placeholder")}
               className={input_cls}
             />
           </Field>
-          <Field label="Club ospitante">
+          <Field label={t("training_camps.camp_modal.host_club_label")}>
             <input
               value={form.club_ospitante}
               onChange={(e) => set_val("club_ospitante", e.target.value)}
-              placeholder="es. Hockey Club Lugano"
+              placeholder={t("training_camps.camp_modal.host_club_placeholder")}
               className={input_cls}
             />
           </Field>
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Costo diurno">
+            <Field label={t("training_camps.camp_modal.day_cost_label")}>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">
                   CHF
@@ -327,7 +330,7 @@ const CampoModal: React.FC<{
                 />
               </div>
             </Field>
-            <Field label="Costo completo">
+            <Field label={t("training_camps.camp_modal.full_cost_label")}>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">
                   CHF
@@ -341,12 +344,12 @@ const CampoModal: React.FC<{
               </div>
             </Field>
           </div>
-          <Field label="Note">
+          <Field label={t("training_camps.camp_modal.notes_label")}>
             <textarea
               value={form.note}
               onChange={(e) => set_val("note", e.target.value)}
               rows={2}
-              placeholder="Note aggiuntive..."
+              placeholder={t("training_camps.camp_modal.notes_placeholder")}
               className={`${input_cls} resize-none`}
             />
           </Field>
@@ -354,10 +357,10 @@ const CampoModal: React.FC<{
         <div className="px-6 py-4 border-t border-border space-y-2 flex-shrink-0">
           <div className="flex gap-2">
             <Button variant="outline" onClick={on_close} disabled={saving} className="flex-1">
-              Annulla
+              {t("training_camps.cancel")}
             </Button>
             <Button onClick={handle_save} disabled={saving} className="flex-1 bg-primary hover:bg-primary/90">
-              {saving ? "..." : "💾 Salva"}
+              {saving ? t("training_camps.saving") : t("training_camps.camp_modal.save_button")}
             </Button>
           </div>
           {campo?.id && !confirm_delete && (
@@ -367,18 +370,18 @@ const CampoModal: React.FC<{
               onClick={() => set_confirm_delete(true)}
               className="w-full text-destructive hover:bg-destructive/10"
             >
-              🗑️ Elimina campo
+              {t("training_camps.camp_modal.delete_button")}
             </Button>
           )}
           {confirm_delete && (
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-destructive">
                 <AlertTriangle className="w-4 h-4" />
-                <p className="text-xs font-semibold">Elimina anche tutte le iscrizioni collegate?</p>
+                <p className="text-xs font-semibold">{t("training_camps.camp_modal.delete_confirm_question")}</p>
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => set_confirm_delete(false)} className="flex-1">
-                  Annulla
+                  {t("training_camps.cancel")}
                 </Button>
                 <Button
                   variant="destructive"
@@ -387,7 +390,7 @@ const CampoModal: React.FC<{
                   disabled={elimina.isPending}
                   className="flex-1"
                 >
-                  {elimina.isPending ? "..." : "Elimina definitivamente"}
+                  {elimina.isPending ? t("training_camps.saving") : t("training_camps.camp_modal.delete_permanently_button")}
                 </Button>
               </div>
             </div>

@@ -512,6 +512,7 @@ const SlotDetailModal: React.FC<{
   on_aggiungi_atleta: () => void;
   loading: boolean;
 }> = ({ slot, atleti, on_close, on_annulla, on_modifica, on_aggiungi_atleta, loading }) => {
+  const { t } = useTranslation('corsi');
   const atleti_ids: string[] = slot.lesson?.atleti_ids || [];
   const tipo = get_tipo_lezione(atleti_ids);
   const is_semiprivata = tipo === "semiprivata";
@@ -527,14 +528,14 @@ const SlotDetailModal: React.FC<{
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
           <div className="flex items-center gap-2">
-            <h2 className="text-base font-bold text-foreground">Dettaglio lezione</h2>
+            <h2 className="text-base font-bold text-foreground">{t("lezioni_private.slot_detail_modal.title")}</h2>
             {is_semiprivata ? (
               <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-orange-500/15 text-orange-600 border border-orange-500/20">
-                👥 Semiprivata
+                {t("lezioni_private.slot_detail_modal.badge_semiprivata")}
               </span>
             ) : (
               <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-destructive/10 text-destructive border border-destructive/20">
-                🔒 Privata
+                {t("lezioni_private.slot_detail_modal.badge_privata")}
               </span>
             )}
           </div>
@@ -550,7 +551,7 @@ const SlotDetailModal: React.FC<{
             </span>
           </div>
           <div className="space-y-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Atleta/e</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("lezioni_private.slot_detail_modal.atleta_label")}</p>
             {nomi_atleti.length > 0 ? (
               nomi_atleti.map((nome: string, i: number) => (
                 <div key={i} className="flex items-center gap-2 px-3 py-2 bg-primary/5 rounded-lg">
@@ -559,18 +560,18 @@ const SlotDetailModal: React.FC<{
                 </div>
               ))
             ) : (
-              <p className="text-sm text-muted-foreground italic">Nessun atleta registrato</p>
+              <p className="text-sm text-muted-foreground italic">{t("lezioni_private.slot_detail_modal.nessun_atleta_registrato")}</p>
             )}
           </div>
           {slot.lesson?.costo > 0 && (
             <div className="flex items-center justify-between px-3 py-2 bg-muted/30 rounded-xl">
-              <span className="text-xs text-muted-foreground font-medium">Costo totale</span>
+              <span className="text-xs text-muted-foreground font-medium">{t("lezioni_private.slot_detail_modal.costo_totale")}</span>
               <span className="text-sm font-bold text-foreground">CHF {Number(slot.lesson.costo).toFixed(2)}</span>
             </div>
           )}
           {slot.lesson?.note && (
             <div className="space-y-1">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Note</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("lezioni_private.slot_detail_modal.note_label")}</p>
               <p className="text-sm text-foreground bg-muted/30 px-3 py-2 rounded-lg">{slot.lesson.note}</p>
             </div>
           )}
@@ -582,14 +583,14 @@ const SlotDetailModal: React.FC<{
             disabled={loading}
             className="w-full border-orange-500/40 text-orange-600 hover:bg-orange-500/10"
           >
-            <UserPlus className="w-4 h-4 mr-2" /> Aggiungi atleta (semiprivata)
+            <UserPlus className="w-4 h-4 mr-2" /> {t("lezioni_private.slot_detail_modal.aggiungi_atleta_semiprivata")}
           </Button>
           <div className="flex gap-2">
             <Button variant="outline" onClick={on_modifica} disabled={loading} className="flex-1">
-              ✏️ Modifica
+              {t("lezioni_private.slot_detail_modal.modifica")}
             </Button>
             <Button variant="destructive" onClick={on_annulla} disabled={loading} className="flex-1">
-              {loading ? <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" /> : "× Annulla"}
+              {loading ? <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" /> : t("lezioni_private.slot_detail_modal.annulla")}
             </Button>
           </div>
         </div>
@@ -605,6 +606,7 @@ const CambioDurataModal: React.FC<{
   on_confirm: (nuova_durata: number, aggiorna_esistenti: boolean) => Promise<void>;
   saving: boolean;
 }> = ({ durata_attuale, on_close, on_confirm, saving }) => {
+  const { t } = useTranslation('corsi');
   const [nuova_durata, set_nuova_durata] = useState(durata_attuale);
   const [aggiorna_esistenti, set_aggiorna_esistenti] = useState(false);
 
@@ -612,7 +614,7 @@ const CambioDurataModal: React.FC<{
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
-          <h2 className="text-base font-bold text-foreground">Cambia durata slot</h2>
+          <h2 className="text-base font-bold text-foreground">{t("lezioni_private.cambio_durata_modal.title")}</h2>
           <button onClick={on_close} className="text-muted-foreground hover:text-foreground">
             <X className="w-5 h-5" />
           </button>
@@ -620,7 +622,7 @@ const CambioDurataModal: React.FC<{
         <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              Nuova durata (minuti)
+              {t("lezioni_private.cambio_durata_modal.nuova_durata_label")}
             </label>
             <div className="flex gap-2">
               {[15, 20, 30, 45, 60].map((m) => (
@@ -636,7 +638,7 @@ const CambioDurataModal: React.FC<{
             </div>
           </div>
           <div className="bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 space-y-3">
-            <p className="text-xs font-bold text-orange-700">Cosa fare con le lezioni già esistenti?</p>
+            <p className="text-xs font-bold text-orange-700">{t("lezioni_private.cambio_durata_modal.domanda_esistenti")}</p>
             <div className="space-y-2">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -645,7 +647,7 @@ const CambioDurataModal: React.FC<{
                   onChange={() => set_aggiorna_esistenti(false)}
                   className="accent-primary"
                 />
-                <span className="text-sm text-foreground">Solo nuove prenotazioni (consigliato)</span>
+                <span className="text-sm text-foreground">{t("lezioni_private.cambio_durata_modal.solo_nuove")}</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -654,21 +656,21 @@ const CambioDurataModal: React.FC<{
                   onChange={() => set_aggiorna_esistenti(true)}
                   className="accent-primary"
                 />
-                <span className="text-sm text-foreground">Aggiorna anche le lezioni future esistenti</span>
+                <span className="text-sm text-foreground">{t("lezioni_private.cambio_durata_modal.aggiorna_future")}</span>
               </label>
             </div>
           </div>
         </div>
         <div className="flex gap-2 px-6 py-4 border-t border-border flex-shrink-0">
           <Button variant="outline" onClick={on_close} disabled={saving} className="flex-1">
-            Annulla
+            {t("lezioni_private.cambio_durata_modal.annulla")}
           </Button>
           <Button
             onClick={() => on_confirm(nuova_durata, aggiorna_esistenti)}
             disabled={saving || nuova_durata === durata_attuale}
             className="flex-1 bg-primary hover:bg-primary/90"
           >
-            {saving ? "..." : "💾 Salva durata"}
+            {saving ? t("lezioni_private.cambio_durata_modal.salvando") : t("lezioni_private.cambio_durata_modal.salva_durata")}
           </Button>
         </div>
       </div>
@@ -678,6 +680,7 @@ const CambioDurataModal: React.FC<{
 
 // ─── Main Page ─────────────────────────────────────────────
 const LezioniPrivatePage: React.FC = () => {
+  const { t } = useTranslation('corsi');
   const { data: lezioni = [], isLoading } = use_lezioni_private();
   const { data: istruttori = [] } = use_istruttori();
   const { data: atleti = [] } = use_atleti();
@@ -838,13 +841,13 @@ const LezioniPrivatePage: React.FC = () => {
 
   const handle_annulla = async () => {
     if (!detail_slot?.lesson) return;
-    if (!window.confirm("Annullare questa lezione e liberare lo slot?")) return;
+    if (!window.confirm(t("lezioni_private.confirm.annulla_lezione"))) return;
     try {
       await annulla_lezione.mutateAsync(detail_slot.lesson.id);
       set_detail_slot(null);
-      toast({ title: "Lezione annullata — slot liberato" });
+      toast({ title: t("lezioni_private.toast.lezione_annullata") });
     } catch (err: any) {
-      toast({ title: "Errore annullamento", description: err?.message, variant: "destructive" });
+      toast({ title: t("lezioni_private.toast.errore_annullamento"), description: err?.message, variant: "destructive" });
     }
   };
 
@@ -878,15 +881,15 @@ const LezioniPrivatePage: React.FC = () => {
       });
       set_aggiungi_open(false);
       set_detail_slot(null);
-      toast({ title: "👥 Atleta aggiunta — lezione diventata semiprivata!" });
+      toast({ title: t("lezioni_private.toast.atleta_aggiunta") });
     } catch (err: any) {
-      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+      toast({ title: t("lezioni_private.toast.errore_generico"), description: err?.message, variant: "destructive" });
     }
   };
 
   const handle_submit = async () => {
     if (!form_data.atleti_ids?.length) {
-      toast({ title: "Seleziona almeno un atleta", variant: "destructive" });
+      toast({ title: t("lezioni_private.toast.seleziona_atleta"), variant: "destructive" });
       return;
     }
     set_saving(true);
@@ -911,12 +914,12 @@ const LezioniPrivatePage: React.FC = () => {
       });
       set_form_open(false);
       toast({
-        title: form_data.ricorrente ? "📅 Lezioni ricorrenti create fino a fine stagione!" : "✅ Lezione prenotata!",
+        title: form_data.ricorrente ? t("lezioni_private.toast.lezioni_ricorrenti_create") : t("lezioni_private.toast.lezione_prenotata"),
       });
     } catch (err: any) {
       toast({
-        title: "Errore durante il salvataggio",
-        description: err?.message ?? "Controlla la console.",
+        title: t("lezioni_private.toast.errore_salvataggio"),
+        description: err?.message ?? t("lezioni_private.toast.errore_salvataggio_default"),
         variant: "destructive",
       });
     } finally {
@@ -946,13 +949,13 @@ const LezioniPrivatePage: React.FC = () => {
       await qc.invalidateQueries({ queryKey: ["setup_club"] });
       set_durata_modal(false);
       toast({
-        title: `✅ Durata slot aggiornata a ${nuova_durata} minuti`,
+        title: t("lezioni_private.toast.durata_aggiornata", { minuti: nuova_durata }),
         description: aggiorna_esistenti
-          ? "Le lezioni future sono state aggiornate."
-          : "Valida per le nuove prenotazioni.",
+          ? t("lezioni_private.toast.durata_aggiornata_future")
+          : t("lezioni_private.toast.durata_aggiornata_nuove"),
       });
     } catch (err: any) {
-      toast({ title: "Errore salvataggio durata", description: err?.message, variant: "destructive" });
+      toast({ title: t("lezioni_private.toast.errore_salvataggio_durata"), description: err?.message, variant: "destructive" });
     } finally {
       set_saving_durata(false);
     }

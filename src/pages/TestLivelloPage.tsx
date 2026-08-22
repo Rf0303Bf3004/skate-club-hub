@@ -543,29 +543,29 @@ export default function TestLivelloPage() {
           </CardContent></Card>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {tests_visibili.map((t) => {
-              const rows = counters[t.id] ?? [];
-              const n_atleti = new Set(test_atleti.filter((x) => x.test_id === t.id).map((x) => x.atleta_id)).size;
+            {tests_visibili.map((tv) => {
+              const rows = counters[tv.id] ?? [];
+              const n_atleti = new Set(test_atleti.filter((x) => x.test_id === tv.id).map((x) => x.atleta_id)).size;
               // se non ho ancora i test_atleti del test corrente, uso la lunghezza dei raw (step) per fallback
-              const tipo_label = t.tipo === "in_gara"
-                ? (gare.find((g) => g.id === t_row.gara_id)?.nome ? t("level_tests.test_in_gara_named", { name: gare.find((g) => g.id === t_row.gara_id)?.nome }) : t("level_tests.test_in_gara"))
+              const tipo_label = tv.tipo === "in_gara"
+                ? (gare.find((g) => g.id === tv.gara_id)?.nome ? t("level_tests.test_in_gara_named", { name: gare.find((g) => g.id === tv.gara_id)?.nome }) : t("level_tests.test_in_gara"))
                 : t("level_tests.test_base");
               return (
-                <Card key={t.id} className="cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => navigate(`/test/${t.id}`)}>
+                <Card key={tv.id} className="cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => navigate(`/test/${tv.id}`)}>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base flex items-center justify-between">
-                      <span className="truncate">{t.nome || tipo_label}</span>
-                      <Badge variant="outline" className="capitalize ml-2 shrink-0">{t.tipo === "in_gara" ? "in gara" : "base"}</Badge>
+                      <span className="truncate">{tv.nome || tipo_label}</span>
+                      <Badge variant="outline" className="capitalize ml-2 shrink-0">{tv.tipo === "in_gara" ? t("level_tests.type_in_gara_badge") : t("level_tests.type_base_badge")}</Badge>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-1 text-sm text-muted-foreground">
-                    {t.data && <p>📅 {new Date(t.data).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}</p>}
-                    {t.luogo && <p>📍 {t.luogo}{t.club_ospitante ? ` · ${t.club_ospitante}` : ""}</p>}
+                    {tv.data && <p>📅 {new Date(tv.data).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}</p>}
+                    {tv.luogo && <p>📍 {tv.luogo}{tv.club_ospitante ? ` · ${tv.club_ospitante}` : ""}</p>}
                     <p className="text-xs">
                       {rows.length === 0
-                        ? "Nessuna convocata"
-                        : `${new Set(rows.map((_, i) => i)).size > 0 ? rows.length + " step" : ""} · ${summarize_livelli(rows)}`}
+                        ? t("level_tests.no_convocations")
+                        : t("level_tests.steps_and_summary", { count: rows.length, summary: summarize_livelli(t, rows) })}
                     </p>
                   </CardContent>
                 </Card>

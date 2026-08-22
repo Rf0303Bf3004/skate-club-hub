@@ -2,6 +2,7 @@ import TariffeRagioniSocialiSection from "@/components/istruttori/TariffeRagioni
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
+import { useTranslation } from "react-i18next";
 import {
   use_istruttori,
   use_atleti_monitori,
@@ -137,6 +138,7 @@ const IstruttoreModal: React.FC<{
   saving: boolean;
   deleting: boolean;
 }> = ({ istruttore, on_close, on_save, on_delete, saving, deleting }) => {
+  const { t } = useTranslation("istruttori");
   const [form, set_form] = useState({
     nome: istruttore?.nome || "",
     cognome: istruttore?.cognome || "",
@@ -183,9 +185,9 @@ const IstruttoreModal: React.FC<{
       if (error) throw error;
       const { data } = supabase.storage.from("foto-istruttori").getPublicUrl(path);
       set_val("foto_url", data.publicUrl);
-      toast({ title: "✅ Foto caricata" });
+      toast({ title: t("toast.foto_caricata") });
     } catch (err: any) {
-      toast({ title: "Errore upload foto", description: err?.message, variant: "destructive" });
+      toast({ title: t("toast.errore_upload_foto"), description: err?.message, variant: "destructive" });
     } finally {
       set_uploading_foto(false);
     }
@@ -206,7 +208,7 @@ const IstruttoreModal: React.FC<{
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <h2 className="text-base font-bold text-foreground">
-            {istruttore?.id ? "Modifica istruttore" : "Nuovo istruttore"}
+            {istruttore?.id ? t("modal.titolo_modifica") : t("modal.titolo_nuovo")}
           </h2>
           <button onClick={on_close} className="text-muted-foreground hover:text-foreground">
             <X className="w-5 h-5" />
@@ -214,7 +216,7 @@ const IstruttoreModal: React.FC<{
         </div>
 
         <div className="px-6 py-5 space-y-4">
-          <Field label="Foto">
+          <Field label={t("modal.foto")}>
             <div className="flex items-center gap-3">
               {form.foto_url ? (
                 <img
@@ -232,7 +234,7 @@ const IstruttoreModal: React.FC<{
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg border border-border cursor-pointer hover:bg-muted/30 text-sm text-muted-foreground transition-colors ${uploading_foto ? "opacity-50 pointer-events-none" : ""}`}
               >
                 <Upload className="w-4 h-4" />
-                {uploading_foto ? "Caricamento..." : "Carica foto"}
+                {uploading_foto ? t("modal.caricamento") : t("modal.carica_foto")}
                 <input
                   type="file"
                   accept="image/*"
@@ -244,15 +246,15 @@ const IstruttoreModal: React.FC<{
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Nome *">
+            <Field label={t("modal.nome")}>
               <input value={form.nome} onChange={(e) => set_val("nome", e.target.value)} className={input_cls} />
             </Field>
-            <Field label="Cognome *">
+            <Field label={t("modal.cognome")}>
               <input value={form.cognome} onChange={(e) => set_val("cognome", e.target.value)} className={input_cls} />
             </Field>
           </div>
 
-          <Field label="Email">
+          <Field label={t("modal.email")}>
             <input
               type="email"
               value={form.email}
@@ -261,17 +263,17 @@ const IstruttoreModal: React.FC<{
             />
           </Field>
 
-          <Field label="Telefono">
+          <Field label={t("modal.telefono")}>
             <input value={form.telefono} onChange={(e) => set_val("telefono", e.target.value)} className={input_cls} />
           </Field>
 
-          <Field label="Utente collegato (accesso app)">
+          <Field label={t("modal.utente_collegato")}>
             <select
               value={form.user_id}
               onChange={(e) => set_val("user_id", e.target.value)}
               className={input_cls}
             >
-              <option value="">— Nessun utente collegato —</option>
+              <option value="">{t("modal.nessun_utente_collegato")}</option>
               {utenti_staff.map((u: any) => (
                 <option key={u.user_id} value={u.user_id}>
                   {`${u.cognome ?? ""} ${u.nome ?? ""}`.trim() || u.user_id.slice(0, 8)} ({u.ruolo})
@@ -279,28 +281,28 @@ const IstruttoreModal: React.FC<{
               ))}
             </select>
             <p className="text-xs text-muted-foreground mt-1">
-              Serve per ricevere in app le convocazioni della Griglia Ghiaccio.
+              {t("modal.hint_utente_collegato")}
             </p>
           </Field>
 
 
-          <Field label="TAG NFC">
+          <Field label={t("modal.tag_nfc")}>
             <input
               value={form.tag_nfc}
               onChange={(e) => set_val("tag_nfc", e.target.value)}
-              placeholder="es. 04:A3:B2:C1:D0"
+              placeholder={t("modal.tag_nfc_placeholder")}
               className={input_cls}
             />
           </Field>
 
-          <Field label="Prezzo al minuto lezioni private (vendita al cliente)">
+          <Field label={t("modal.prezzo_minuto_lezioni")}>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">CHF/min</span>
               <NumInput
                 value={form.costo_minuto_lezione_privata}
                 onChange={(v) => set_val("costo_minuto_lezione_privata", v)}
                 className="pl-16"
-                placeholder="es. 1.50"
+                placeholder={t("modal.prezzo_placeholder")}
               />
             </div>
           </Field>
@@ -314,11 +316,11 @@ const IstruttoreModal: React.FC<{
               className="w-4 h-4 accent-primary"
             />
             <label htmlFor="attivo_istr" className="text-sm font-medium text-foreground cursor-pointer">
-              Attivo
+              {t("modal.attivo")}
             </label>
           </div>
 
-          <Field label="Note">
+          <Field label={t("modal.note")}>
             <textarea
               value={form.note}
               onChange={(e) => set_val("note", e.target.value)}
@@ -331,10 +333,10 @@ const IstruttoreModal: React.FC<{
         <div className="px-6 py-4 border-t border-border space-y-2">
           <div className="flex gap-2">
             <Button variant="outline" onClick={on_close} disabled={saving} className="flex-1">
-              Annulla
+              {t("modal.annulla")}
             </Button>
             <Button onClick={handle_save} disabled={saving} className="flex-1 bg-primary hover:bg-primary/90">
-              {saving ? "..." : "💾 Salva"}
+              {saving ? "..." : t("modal.salva")}
             </Button>
           </div>
           {istruttore?.id && !confirm_delete && (
@@ -344,16 +346,16 @@ const IstruttoreModal: React.FC<{
               onClick={() => set_confirm_delete(true)}
               className="w-full text-destructive hover:bg-destructive/10"
             >
-              <Trash2 className="w-3.5 h-3.5 mr-2" /> Elimina
+              <Trash2 className="w-3.5 h-3.5 mr-2" /> {t("modal.elimina")}
             </Button>
           )}
           {confirm_delete && (
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => set_confirm_delete(false)} className="flex-1">
-                Annulla
+                {t("modal.annulla")}
               </Button>
               <Button variant="destructive" size="sm" onClick={on_delete} disabled={deleting} className="flex-1">
-                {deleting ? "..." : "Elimina definitivamente"}
+                {deleting ? "..." : t("modal.elimina_definitivamente")}
               </Button>
             </div>
           )}
@@ -385,21 +387,22 @@ const time_diff_h = (a?: string | null, b?: string | null): number => {
 };
 
 const StatoBadge: React.FC<{ stato: SlotRiga["stato"] }> = ({ stato }) => {
+  const { t } = useTranslation("istruttori");
   if (stato === "presenza")
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700 border border-green-200">
-        <CheckCircle2 className="w-3 h-3" /> Presenza
+        <CheckCircle2 className="w-3 h-3" /> {t("ore.stato_presenza")}
       </span>
     );
   if (stato === "override")
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-700 border border-sky-200">
-        <ShieldCheck className="w-3 h-3" /> Confermato
+        <ShieldCheck className="w-3 h-3" /> {t("ore.stato_confermato")}
       </span>
     );
   return (
     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200">
-      <AlertTriangle className="w-3 h-3" /> Mancante
+      <AlertTriangle className="w-3 h-3" /> {t("ore.stato_mancante")}
     </span>
   );
 };
@@ -409,6 +412,7 @@ const ConfermaModal: React.FC<{
   onClose: () => void;
   onConfirm: (ore: number, motivo: string) => Promise<void>;
 }> = ({ slot, onClose, onConfirm }) => {
+  const { t } = useTranslation("istruttori");
   const [ore, set_ore] = useState(String(slot.ore_previste.toFixed(2)));
   const [motivo, set_motivo] = useState("");
   const [busy, set_busy] = useState(false);
@@ -417,7 +421,7 @@ const ConfermaModal: React.FC<{
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-card rounded-2xl shadow-xl w-full max-w-md">
         <div className="flex items-center justify-between px-5 py-3 border-b border-border">
-          <h3 className="text-sm font-bold text-foreground">Conferma manualmente</h3>
+          <h3 className="text-sm font-bold text-foreground">{t("ore.conferma_manualmente")}</h3>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
             <X className="w-4 h-4" />
           </button>
@@ -426,22 +430,22 @@ const ConfermaModal: React.FC<{
           <p className="text-xs text-muted-foreground">
             {slot.data} · {slot.ora_inizio.slice(0, 5)}–{slot.ora_fine.slice(0, 5)} · {slot.corso_nome}
           </p>
-          <Field label="Ore confermate">
-            <NumInput value={ore} onChange={set_ore} placeholder="es. 1.5" />
+          <Field label={t("ore.ore_confermate")}>
+            <NumInput value={ore} onChange={set_ore} placeholder={t("ore.ore_placeholder")} />
           </Field>
-          <Field label="Motivo *">
+          <Field label={t("ore.motivo")}>
             <textarea
               value={motivo}
               onChange={(e) => set_motivo(e.target.value)}
               rows={2}
-              placeholder="es. Presente, dimenticato di registrare l'entrata"
+              placeholder={t("ore.motivo_placeholder")}
               className={`${input_cls} resize-none`}
             />
           </Field>
         </div>
         <div className="px-5 py-3 border-t border-border flex gap-2">
           <Button variant="outline" onClick={onClose} disabled={busy} className="flex-1">
-            Annulla
+            {t("modal.annulla")}
           </Button>
           <Button
             onClick={async () => {
@@ -456,7 +460,7 @@ const ConfermaModal: React.FC<{
             disabled={!can_save || busy}
             className="flex-1 bg-primary hover:bg-primary/90"
           >
-            {busy ? "..." : "Conferma"}
+            {busy ? "..." : t("ore.conferma")}
           </Button>
         </div>
       </div>
