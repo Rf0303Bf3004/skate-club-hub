@@ -414,5 +414,20 @@
       "neutral": "stabile",
       "positive": "in crescita"
     }
+  },
+  "relazione": {
+    "title": "Relazione di fine stagione",
+    "subtitle": "Componi visualmente la relazione PDF che andrà ai soci e agli stakeholder.",
+    "season": "Stagione",
+    "fullscreen": "Fullscreen",
+    "exit_fullscreen": "Esci fullscreen",
+    "tab_compositore": "Compositore",
+    "tab_contenuti": "Contenuti",
+    "presidente_fallback": "Presidente",
+    "gestione_title": "Gestione Relazione",
+    "gestione_subtitle": "Configura i contenuti redazionali e gli allegati che andranno nella relazione PDF di fine stagione.",
+    "tab_blocchi": "Notizie del Presidente",
+    "tab_paragrafi": "Racconto dei dati",
+    "tab_allegati": "Documenti allegati"
   }
 }

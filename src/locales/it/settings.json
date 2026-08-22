@@ -393,5 +393,31 @@
       "delete_selected_one": "Elimina {{count}} lezione selezionata",
       "delete_selected_other": "Elimina {{count}} lezioni selezionate"
     }
+  },
+  "sponsor": {
+    "title": "Pacchetti Sponsor",
+    "subtitle": "Configura i pacchetti e genera il Pitch PDF per i tuoi sponsor potenziali.",
+    "edit_pitch_text": "Modifica testo Pitch",
+    "reset": "Ripristina configurazione consigliata",
+    "reset_confirm_title": "Ripristinare la configurazione consigliata?",
+    "reset_confirm_desc": "I 3 pacchetti predefiniti verranno ricreati e quelli attuali eliminati.",
+    "reset_confirm_cta": "Ripristina",
+    "add": "Aggiungi pacchetto",
+    "generate_pitch": "Genera Pitch Sponsor",
+    "per_year": "/anno",
+    "slots": "{{occ}} / {{max}} sponsor collegati",
+    "slots_unlimited": "{{occ}} sponsor collegati (illimitato)",
+    "edit": "Modifica",
+    "delete_confirm_title": "Eliminare il pacchetto?",
+    "delete_confirm_desc": "\"{{nome}}\" verrà rimosso definitivamente.",
+    "delete_aria": "Elimina pacchetto",
+    "empty": "Nessun pacchetto configurato. Usa \"Reset ai default\" per creare Gold/Silver/Bronze.",
+    "toast": {
+      "saved": "Pacchetto salvato",
+      "deleted": "Pacchetto eliminato",
+      "reset_done": "Pacchetti ripristinati ai default",
+      "texts_saved": "Testi salvati",
+      "error": "Errore"
+    }
   }
 }

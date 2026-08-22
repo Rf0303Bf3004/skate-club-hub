@@ -266,6 +266,14 @@
     "superadmin_manutenzione_str": "Manutenzione Straordinaria"
   },
   "pending_requests_tooltip_one": "{{count}} richiesta in attesa",
-  "pending_requests_tooltip_other": "{{count}} richieste in attesa"
+  "pending_requests_tooltip_other": "{{count}} richieste in attesa",
+  "not_found": {
+    "message": "Pagina non trovata",
+    "back_home": "Torna alla home"
+  },
+  "legal": {
+    "coming_soon": "Versione finale in arrivo.",
+    "info": "Per info",
+    "back_register": "← Torna alla registrazione"
+  }
 }
-
