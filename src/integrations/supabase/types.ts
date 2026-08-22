@@ -161,7 +161,6 @@ export type Database = {
           a_rischio: boolean
           a_rischio_da: string | null
           agonista: boolean
-          atleta_bmetod: boolean | null
           atleta_club: boolean | null
           atleta_esterno: boolean | null
           atleta_federazione: boolean | null
@@ -245,7 +244,6 @@ export type Database = {
           a_rischio?: boolean
           a_rischio_da?: string | null
           agonista?: boolean
-          atleta_bmetod?: boolean | null
           atleta_club?: boolean | null
           atleta_esterno?: boolean | null
           atleta_federazione?: boolean | null
@@ -329,7 +327,6 @@ export type Database = {
           a_rischio?: boolean
           a_rischio_da?: string | null
           agonista?: boolean
-          atleta_bmetod?: boolean | null
           atleta_club?: boolean | null
           atleta_esterno?: boolean | null
           atleta_federazione?: boolean | null
