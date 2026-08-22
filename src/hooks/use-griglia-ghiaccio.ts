@@ -277,8 +277,18 @@ export async function fetch_blocchi_giorno(
               nome: at?.nome ?? "",
               cognome: at?.cognome ?? x.atleta_id.slice(0, 8),
               provenienza,
+              gruppo_sessione_id: x.gruppo_sessione_id ?? null,
             };
           }),
+        gruppi: sg
+          .filter((g: any) => g.sessione_id === s.id)
+          .map((g: any) => ({
+            id: g.id,
+            gruppo_livello: g.gruppo_livello,
+            gruppo_scope: g.gruppo_scope as GruppoScope,
+            gruppo_ragione_sociale_id: g.gruppo_ragione_sociale_id ?? null,
+          })),
+
         istruttori: si
           .filter((x: any) => x.sessione_id === s.id)
           .map((x: any) => ({
