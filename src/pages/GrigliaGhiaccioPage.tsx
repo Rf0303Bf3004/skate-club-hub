@@ -127,15 +127,23 @@ const GrigliaGhiaccioPage: React.FC = () => {
 
   const eventi_tableau = useMemo<TableauEvento[]>(() => {
     const out: TableauEvento[] = [];
+    let progressivo = 0;
     for (const b of blocchi_giorno) {
       if (!b.risorsa_id) continue;
       for (const s of b.sessioni ?? []) {
+        progressivo += 1;
+        const gruppi = (s.gruppi ?? []).map((g) => g.gruppo_livello).filter(Boolean).join(" + ");
         out.push({
           id: s.id,
           risorsa_id: b.risorsa_id,
           inizio_min: min_da_hhmm(s.ora_inizio),
           fine_min: min_da_hhmm(s.ora_fine),
-          titolo: s.corso_nome || s.specialita_nome || s.specialita_testo_libero || "Allenamento",
+          titolo:
+            s.corso_nome ||
+            s.specialita_nome ||
+            s.specialita_testo_libero ||
+            gruppi ||
+            `Sessione ${progressivo}`,
           istruttori: (s.istruttori ?? []).map((i) => `${i.nome} ${i.cognome}`.trim()).join(", "),
           fuori_disponibilita: !!s.fuori_disponibilita,
         });
