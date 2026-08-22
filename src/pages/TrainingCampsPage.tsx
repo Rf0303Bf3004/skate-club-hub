@@ -404,6 +404,7 @@ const CampoModal: React.FC<{
 // ─── Main Page ─────────────────────────────────────────────
 const TrainingCampsPage: React.FC = () => {
   const { t } = useI18n();
+  const { t: tt } = useTranslation("events");
   const { data: campi = [], isLoading } = use_campi();
   const { data: atleti = [] } = use_atleti();
   const [campo_modal, set_campo_modal] = useState<any>(null);
@@ -441,7 +442,7 @@ const TrainingCampsPage: React.FC = () => {
         <SearchableListLayout
           search={search_campi}
           on_search_change={set_search_campi}
-          search_placeholder="Cerca campo per nome o luogo…"
+          search_placeholder={tt("training_camps.search_placeholder")}
           count_filtered={campi_filtrati.length}
           count_total={campi.length}
           sticky={false}
@@ -451,8 +452,8 @@ const TrainingCampsPage: React.FC = () => {
             <MapPin className="w-8 h-8 mx-auto mb-2 opacity-30" />
             <p className="text-sm">
               {campi.length === 0
-                ? 'Nessun campo di allenamento. Clicca "Nuovo campo" per aggiungerne uno.'
-                : "Nessun campo corrisponde alla ricerca."}
+                ? tt("training_camps.empty_no_camps")
+                : tt("training_camps.empty_no_results")}
             </p>
           </div>
         ) : (
@@ -480,7 +481,7 @@ const TrainingCampsPage: React.FC = () => {
                   onClick={() => set_campo_modal(camp)}
                   className="text-xs text-muted-foreground hover:text-foreground"
                 >
-                  Modifica
+                  {tt("training_camps.edit_button")}
                 </Button>
               </div>
 
@@ -511,11 +512,11 @@ const TrainingCampsPage: React.FC = () => {
                     {t("iscrizioni")}
                   </h3>
                   <Button size="sm" variant="outline" onClick={() => set_isc_campo(camp)}>
-                    <Plus className="w-3 h-3 mr-1" /> Iscrivi
+                    <Plus className="w-3 h-3 mr-1" /> {tt("training_camps.enroll_button")}
                   </Button>
                 </div>
                 {camp.iscrizioni.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">Nessun atleta iscritto.</p>
+                  <p className="text-xs text-muted-foreground">{tt("training_camps.no_athletes_enrolled")}</p>
                 ) : (
                   <div className="space-y-2">
                     {camp.iscrizioni.map((isc: any, idx: number) => (
