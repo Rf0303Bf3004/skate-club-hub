@@ -1004,7 +1004,16 @@ export function use_sync_gruppo_sessione() {
 export function use_assegna_istruttore_sessione() {
   const invalidate = use_invalidate_griglia();
   return useMutation({
-    mutationFn: async (input: { sessione_id: string; istruttore_id: string }) => {
+    mutationFn: async (input: { sessione_id: string; istruttore_id: string; forza?: boolean }) => {
+      // Blocco di default, con override esplicito consentito (`forza`).
+      if (!input.forza) {
+        const conflitto = await verifica_conflitto_istruttore(input);
+        if (conflitto) {
+          throw new Error(
+            `Istruttore già assegnato a un'altra sessione sovrapposta (${conflitto.ora_inizio}–${conflitto.ora_fine} — ${conflitto.etichetta}).`,
+          );
+        }
+      }
       const { error } = await supabase
         .from("griglia_sessioni_istruttori" as any)
         .insert({ sessione_id: input.sessione_id, istruttore_id: input.istruttore_id } as any);
@@ -1013,6 +1022,7 @@ export function use_assegna_istruttore_sessione() {
     onSuccess: invalidate,
   });
 }
+
 
 export function use_rimuovi_istruttore_sessione() {
   const invalidate = use_invalidate_griglia();
