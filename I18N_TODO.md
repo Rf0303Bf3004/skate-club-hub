@@ -402,3 +402,22 @@ Pattern usato (file con molti sotto-componenti non-hook): helper module-level
 - Nessuna chiave array/oggetto introdotta: tutte sincronizzabili in `traduzioni_ui`.
 - Placeholder i18next mantenuti: `{{count}}`, `{{nome}}`, `{{email}}`, `{{msg}}`, `{{riga}}`, `{{livello}}`, `{{codice}}`.
 - Nessuna modifica ai JSON `src/locales/{de,fr,en}/`.
+
+## Step 1.5i — Componenti atleti (6 file) ✅ COMPLETATO
+
+| File | Namespace | Prefisso chiavi | N. ca. |
+|---|---|---|---|
+| `AthleteBadges.tsx` | `atleti` | `badges.*` | 6 |
+| `StoricoTestAtleta.tsx` | `atleti` | `storico_test.*` | 12 |
+| `SchedaAnagrafica.tsx` | `atleti` | `anagrafica.*` | 35 |
+| `CodiceAtletaCard.tsx` | `atleti` | `codice_card.*` | 25 |
+| `CalendarioAtletaInterattivo.tsx` | `atleti` | `calendario.*` (incl. `dow_*`, `month_*`) | 35 |
+| `AtletaDetail.tsx` | `atleti` | `detail.*` (incl. `detail.migra_*`, `detail.toast_*`, `detail.tile_*`) | 150 |
+
+### Note
+- `AtletaDetail.tsx` mantiene il legacy `useI18n()` (`t`) per le chiavi flat già esistenti
+  e aggiunge `useTranslation("atleti")` come `td` per le nuove chiavi `detail.*`.
+- `MigraModal` (sotto-componente nello stesso file) usa il proprio `useTranslation("atleti")`.
+- Genere dinamico gestito con chiavi separate (`status_attiva`/`status_attivo`, `federata`/`federato`).
+- Placeholder preservati: `{{atleta}}`, `{{data}}`, `{{nome}}`, `{{cognome}}`, `{{eta}}`, `{{livello}}`, `{{categoria}}`, `{{id}}`, `{{quando}}`.
+- Nessuna chiave array/oggetto; nessuna modifica ai JSON `de/fr/en`.
