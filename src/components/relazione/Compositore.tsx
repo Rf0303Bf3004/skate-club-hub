@@ -7,7 +7,7 @@ import AnteprimaPDF from "./AnteprimaPDF";
 import AnteprimaFedele from "./AnteprimaFedele";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CompositoreItem, SISTEMA_LABELS } from "./types-compositore";
-import { AREA_DEFINITIONS } from "./MockSezionePDF";
+import { area_def } from "./MockSezionePDF";
 import { label_blocco, label_allegato } from "./categorie";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,10 @@ import { saveAs } from "file-saver";
 import { generateRelazionePDF, buildRelazioneFilename } from "@/lib/pdfGenerator";
 import { saving_store, useSavingState } from "@/stores/savingState";
 import type { Tono } from "@/lib/paragraphGenerator";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
+
+const tk = (key: string, opts?: any) => i18n.t(`relazione.compositore.${key}`, { ns: "dashboard", ...(opts ?? {}) }) as string;
 
 interface Props {
   club_id: string;
@@ -40,6 +44,7 @@ const DEFAULT_PREFS: Array<{ sezione_tipo: string; sezione_id: string; ordine: n
 ];
 
 export default function Compositore({ club_id, stagione_id, club, presidente, stagione_nome }: Props) {
+  const { t } = useTranslation("dashboard");
   const qc = useQueryClient();
   const [selected_id, set_selected_id] = useState<string | null>(null);
   const [generating, set_generating] = useState(false);
@@ -74,13 +79,13 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
       const filename = buildRelazioneFilename(club?.nome ?? "Club", stagione_nome);
       saveAs(blob, filename);
       const sizeStr = formatBytes(blob.size);
-      toast.success(`Relazione PDF generata (${pages} pagine, ${sizeStr}). File scaricato come '${filename}'`);
+      toast.success(tk("toast_pdf_ok", { pages, size: sizeStr, filename }));
     } catch (e: any) {
       if (e?.message === "Generazione gia in corso. Attendi il completamento.") {
         return;
       }
       console.error(e);
-      toast.error("Errore nella generazione del PDF. Riprova tra qualche secondo.");
+      toast.error(tk("toast_pdf_errore"));
     } finally {
       is_generating_ref.current = false;
       set_generating(false);
@@ -138,10 +143,11 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
     for (const p of prefs as any[]) {
       const locked = p.sezione_tipo === "sistema";
       const kind = locked ? "sistema" : "area";
+      const def = locked ? null : area_def(p.sezione_id);
       const titolo = locked
-        ? SISTEMA_LABELS[p.sezione_id] ?? p.sezione_id
-        : AREA_DEFINITIONS[p.sezione_id]?.titolo ?? p.sezione_id;
-      const sottotitolo = locked ? "Sezione di sistema" : `Area dashboard · ${AREA_DEFINITIONS[p.sezione_id]?.kpi ?? ""}`;
+        ? (SISTEMA_LABELS[p.sezione_id] ? tk(`sistema.${p.sezione_id}`) : p.sezione_id)
+        : def?.titolo ?? p.sezione_id;
+      const sottotitolo = locked ? tk("sezione_sistema") : tk("area_dashboard_sub", { kpi: def?.kpi ?? "" });
       list.push({
         id: `${kind === "sistema" ? "sis" : "area"}:${p.sezione_id}`,
         kind,
@@ -160,7 +166,7 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
         kind: "blocco",
         ref_id: b.id,
         titolo: b.titolo,
-        sottotitolo: `Blocco · ${label_blocco(b.categoria)}`,
+        sottotitolo: tk("blocco_sub", { categoria: label_blocco(b.categoria) }),
         attivo: !!b.attivo,
         ordine: b.ordine ?? 0,
         payload: b,
@@ -172,7 +178,7 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
         kind: "allegato",
         ref_id: a.id,
         titolo: a.titolo,
-        sottotitolo: `Allegato · ${label_allegato(a.categoria)}`,
+        sottotitolo: tk("allegato_sub", { categoria: label_allegato(a.categoria) }),
         attivo: a.attivo !== false,
         ordine: a.ordine ?? 0,
         payload: a,
@@ -240,8 +246,8 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
     },
     onError: (error: any, _ids, context) => {
       context?.previous.forEach(({ queryKey, data }) => qc.setQueryData(queryKey, data));
-      saving_store.error(error?.message ?? "Riordino non salvato");
-      toast.error("Riordino non salvato");
+      saving_store.error(error?.message ?? tk("riordino_ko"));
+      toast.error(tk("riordino_ko"));
     },
     onSuccess: () => { saving_store.success(); },
     onSettled: () => {
@@ -268,7 +274,7 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
       }
     },
     onMutate: () => { saving_store.begin(); },
-    onError: (e: any) => { saving_store.error(e?.message ?? "Errore"); },
+    onError: (e: any) => { saving_store.error(e?.message ?? tk("errore")); },
     onSuccess: () => {
       saving_store.success();
       qc.invalidateQueries({ queryKey: ["relazione_prefs", club_id, stagione_id] });
@@ -285,17 +291,17 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
       }
     },
     onMutate: () => { saving_store.begin(); },
-    onError: (e: any) => { saving_store.error(e?.message ?? "Errore"); },
+    onError: (e: any) => { saving_store.error(e?.message ?? tk("errore")); },
     onSuccess: () => {
       saving_store.success();
-      toast.success("Ordine ripristinato");
+      toast.success(tk("ordine_ripristinato"));
       qc.invalidateQueries({ queryKey: ["relazione_prefs", club_id, stagione_id] });
     },
   });
 
   const handle_save_all = async () => {
     if (saving.pending > 0) {
-      toast.info("Salvataggio in corso, attendi...");
+      toast.info(tk("salvataggio_in_corso"));
       return;
     }
     await Promise.all([
@@ -304,7 +310,7 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
       qc.invalidateQueries({ queryKey: ["relazione_comp_allegati", club_id, stagione_id] }),
     ]);
     saving_store.success();
-    toast.success("Dati aggiornati");
+    toast.success(tk("dati_aggiornati"));
   };
 
   const select = (id: string) => {
@@ -342,12 +348,12 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
       <div className="border border-border rounded-md bg-card p-4 overflow-hidden flex flex-col">
         <div className="flex flex-col">
           <div className="mb-3">
-            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Tono relazione</label>
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("relazione.compositore.tono_label")}</label>
             <Select value={tono} onValueChange={(v) => set_tono(v as Tono)}>
               <SelectTrigger className="h-9 mt-1"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="soci">Per i Soci (caldo)</SelectItem>
-                <SelectItem value="formale">Per Istituzioni / Banche / Sponsor (formale)</SelectItem>
+                <SelectItem value="soci">{t("relazione.compositore.tono_soci")}</SelectItem>
+                <SelectItem value="formale">{t("relazione.compositore.tono_formale")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -358,21 +364,21 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
               className={`gap-2 flex-1 ${generating ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
-              <span className="hidden sm:inline">{generating ? "Generazione in corso..." : "Genera PDF"}</span>
+              <span className="hidden sm:inline">{generating ? t("relazione.compositore.generazione_in_corso") : t("relazione.compositore.genera_pdf")}</span>
             </Button>
             <Button
               variant="outline"
               onClick={handle_save_all}
               disabled={saving.pending > 0}
               className="gap-2"
-              title="Ricarica i contenuti più recenti (le modifiche sono già salvate in automatico)"
+              title={t("relazione.compositore.aggiorna_tooltip")}
             >
               {saving.pending > 0 ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              <span className="hidden sm:inline">Aggiorna</span>
+              <span className="hidden sm:inline">{t("relazione.compositore.aggiorna")}</span>
             </Button>
           </div>
           <p className="text-xs text-slate-500 text-center">
-            Le modifiche all'indice sono salvate in automatico.
+            {t("relazione.compositore.autosave_hint")}
           </p>
         </div>
         <IndiceComponibile
@@ -391,8 +397,8 @@ export default function Compositore({ club_id, stagione_id, club, presidente, st
         <Tabs defaultValue="rapida" className="flex flex-col h-full">
           <div className="px-3 pt-3">
             <TabsList className="rounded-full">
-              <TabsTrigger value="rapida" className="rounded-full text-xs">Anteprima rapida</TabsTrigger>
-              <TabsTrigger value="fedele" className="rounded-full text-xs">Anteprima fedele (PDF)</TabsTrigger>
+              <TabsTrigger value="rapida" className="rounded-full text-xs">{t("relazione.compositore.tab_rapida")}</TabsTrigger>
+              <TabsTrigger value="fedele" className="rounded-full text-xs">{t("relazione.compositore.tab_fedele")}</TabsTrigger>
             </TabsList>
           </div>
           <TabsContent value="rapida" className="flex-1 overflow-y-auto mt-2">
