@@ -628,23 +628,23 @@ const ClubSetupPage: React.FC = () => {
 
         {/* Date stagione */}
         <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">📅 Stagione</h2>
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.stagione")}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Data inizio stagione" icon={<Calendar className="w-3.5 h-3.5" />}>
+            <Field label={t("club.fields.data_inizio_stagione")} icon={<Calendar className="w-3.5 h-3.5" />}>
               <Input
                 type="date"
                 value={get_val("data_inizio_stagione", "")}
                 onChange={(e) => set_val("data_inizio_stagione", e.target.value || null)}
               />
             </Field>
-            <Field label="Data fine stagione" icon={<Calendar className="w-3.5 h-3.5" />}>
+            <Field label={t("club.fields.data_fine_stagione")} icon={<Calendar className="w-3.5 h-3.5" />}>
               <Input
                 type="date"
                 value={get_val("data_fine_stagione", "")}
                 onChange={(e) => set_val("data_fine_stagione", e.target.value || null)}
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Un banner apparirà in Dashboard quando mancano 30 giorni o meno
+                {t("club.testi.banner_scadenza_stagione")}
               </p>
             </Field>
           </div>
@@ -654,9 +654,9 @@ const ClubSetupPage: React.FC = () => {
 
         {/* Dati bancari */}
         <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">💳 Dati bancari per pagamenti</h2>
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.dati_bancari")}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="IBAN" icon={<Hash className="w-3.5 h-3.5" />}>
+            <Field label={t("club.fields.iban")} icon={<Hash className="w-3.5 h-3.5" />}>
               <Input
                 value={get_val("iban")}
                 onChange={(e) => {
@@ -669,18 +669,18 @@ const ClubSetupPage: React.FC = () => {
               {(() => {
                 const iban = get_val("iban", "").replace(/\s/g, "");
                 if (iban && (!iban.startsWith("CH") || iban.length !== 21)) {
-                  return <p className="text-xs text-destructive mt-1">IBAN svizzero: inizia con CH, 21 caratteri</p>;
+                  return <p className="text-xs text-destructive mt-1">{t("club.testi.iban_invalido")}</p>;
                 }
                 return null;
               })()}
             </Field>
-            <Field label="Intestatario conto" icon={<Building2 className="w-3.5 h-3.5" />}>
+            <Field label={t("club.fields.intestatario_conto")} icon={<Building2 className="w-3.5 h-3.5" />}>
               <Input value={get_val("intestatario_conto")} onChange={(e) => set_val("intestatario_conto", e.target.value)} placeholder="Club Pattinaggio Ascona" />
             </Field>
-            <Field label="Banca" icon={<Building2 className="w-3.5 h-3.5" />}>
+            <Field label={t("club.fields.banca")} icon={<Building2 className="w-3.5 h-3.5" />}>
               <Input value={get_val("banca")} onChange={(e) => set_val("banca", e.target.value)} placeholder="UBS, Raiffeisen, PostFinance..." />
             </Field>
-            <Field label="TWINT Paylink" icon={<Globe className="w-3.5 h-3.5" />}>
+            <Field label={t("club.fields.twint_paylink")} icon={<Globe className="w-3.5 h-3.5" />}>
               <Input value={get_val("twint_paylink")} onChange={(e) => set_val("twint_paylink", e.target.value)} placeholder="https://pay.raisenow.io/xxxxx" />
             </Field>
           </div>
@@ -690,9 +690,9 @@ const ClubSetupPage: React.FC = () => {
 
         {/* Medagliere club — punti per posizione */}
         <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">🏆 Medagliere club — Punteggio per posizione</h2>
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.medagliere")}</h2>
           <p className="text-xs text-muted-foreground">
-            Configura quanti punti vale ogni posizione finale nelle gare. I punti vengono sommati nel medagliere stagionale.
+            {t("club.testi.medagliere_info")}
           </p>
           {(() => {
             const default_punti: Record<string, number> = { "1": 10, "2": 7, "3": 5, "4": 3, "5": 2, "6": 1 };
@@ -733,7 +733,7 @@ const ClubSetupPage: React.FC = () => {
                   ))}
                 </div>
                 <Button variant="outline" size="sm" onClick={add_pos} className="gap-1">
-                  <Plus className="w-3 h-3" /> Aggiungi posizione
+                  <Plus className="w-3 h-3" /> {t("club.azioni.aggiungi_posizione")}
                 </Button>
               </div>
             );
@@ -744,34 +744,34 @@ const ClubSetupPage: React.FC = () => {
 
         {/* Reminder automatici */}
         <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">🔔 Reminder automatici</h2>
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.reminder")}</h2>
           <p className="text-xs text-muted-foreground">
-            Invio giornaliero automatico: gli atleti ricevono il reminder allenamento, lo staff riceve il turno. Possono confermare o segnalare assenza.
+            {t("club.testi.reminder_info")}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Reminder allenamenti atleta">
+            <Field label={t("club.fields.reminder_allenamenti")}>
               <div className="flex items-center gap-2">
                 <Switch
                   checked={get_val("reminder_allenamenti_attivo", club?.reminder_allenamenti_attivo ?? true)}
                   onCheckedChange={(v) => set_val("reminder_allenamenti_attivo", v)}
                 />
                 <span className="text-xs text-muted-foreground">
-                  {get_val("reminder_allenamenti_attivo", club?.reminder_allenamenti_attivo ?? true) ? "Attivo" : "Disattivo"}
+                  {get_val("reminder_allenamenti_attivo", club?.reminder_allenamenti_attivo ?? true) ? t("club.stato.attivo") : t("club.stato.disattivo")}
                 </span>
               </div>
             </Field>
-            <Field label="Reminder turno staff">
+            <Field label={t("club.fields.reminder_staff")}>
               <div className="flex items-center gap-2">
                 <Switch
                   checked={get_val("reminder_staff_attivo", club?.reminder_staff_attivo ?? true)}
                   onCheckedChange={(v) => set_val("reminder_staff_attivo", v)}
                 />
                 <span className="text-xs text-muted-foreground">
-                  {get_val("reminder_staff_attivo", club?.reminder_staff_attivo ?? true) ? "Attivo" : "Disattivo"}
+                  {get_val("reminder_staff_attivo", club?.reminder_staff_attivo ?? true) ? t("club.stato.attivo") : t("club.stato.disattivo")}
                 </span>
               </div>
             </Field>
-            <Field label="Orario invio (Europe/Zurich)">
+            <Field label={t("club.fields.orario_invio")}>
               <select
                 className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
                 value={String(get_val("reminder_orario_invio", club?.reminder_orario_invio ?? 18))}
@@ -782,47 +782,47 @@ const ClubSetupPage: React.FC = () => {
                 ))}
               </select>
             </Field>
-            <Field label="Anticipo">
+            <Field label={t("club.fields.anticipo")}>
               <select
                 className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
                 value={String(get_val("reminder_anticipo_giorni", club?.reminder_anticipo_giorni ?? 1))}
                 onChange={(e) => set_val("reminder_anticipo_giorni", Number(e.target.value))}
               >
-                <option value="1">1 giorno prima</option>
-                <option value="2">2 giorni prima</option>
+                <option value="1">{t("club.opzioni.un_giorno_prima")}</option>
+                <option value="2">{t("club.opzioni.due_giorni_prima")}</option>
               </select>
             </Field>
           </div>
 
           <div className="pt-2 space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">📅 Planning giornaliero (Griglia Ghiaccio)</h3>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t("club.sezioni.planning_giornaliero")}</h3>
             <p className="text-xs text-muted-foreground">
-              Un unico messaggio con tutto il programma della giornata, per chi ha sessioni sulla griglia ghiaccio.
+              {t("club.testi.planning_giornaliero_info")}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field label="Planning giornaliero — atleti">
+              <Field label={t("club.fields.planning_atleti")}>
                 <div className="flex items-center gap-2">
                   <Switch
                     checked={get_val("reminder_planning_atleti_attivo", (club as any)?.reminder_planning_atleti_attivo ?? false)}
                     onCheckedChange={(v) => set_val("reminder_planning_atleti_attivo", v)}
                   />
                   <span className="text-xs text-muted-foreground">
-                    {get_val("reminder_planning_atleti_attivo", (club as any)?.reminder_planning_atleti_attivo ?? false) ? "Attivo" : "Disattivo"}
+                    {get_val("reminder_planning_atleti_attivo", (club as any)?.reminder_planning_atleti_attivo ?? false) ? t("club.stato.attivo") : t("club.stato.disattivo")}
                   </span>
                 </div>
               </Field>
-              <Field label="Planning giornaliero — istruttori">
+              <Field label={t("club.fields.planning_istruttori")}>
                 <div className="flex items-center gap-2">
                   <Switch
                     checked={get_val("reminder_planning_istruttori_attivo", (club as any)?.reminder_planning_istruttori_attivo ?? false)}
                     onCheckedChange={(v) => set_val("reminder_planning_istruttori_attivo", v)}
                   />
                   <span className="text-xs text-muted-foreground">
-                    {get_val("reminder_planning_istruttori_attivo", (club as any)?.reminder_planning_istruttori_attivo ?? false) ? "Attivo" : "Disattivo"}
+                    {get_val("reminder_planning_istruttori_attivo", (club as any)?.reminder_planning_istruttori_attivo ?? false) ? t("club.stato.attivo") : t("club.stato.disattivo")}
                   </span>
                 </div>
               </Field>
-              <Field label="Orario invio planning (Europe/Zurich)">
+              <Field label={t("club.fields.orario_invio_planning")}>
                 <select
                   className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
                   value={String(get_val("reminder_planning_orario_invio", (club as any)?.reminder_planning_orario_invio ?? 7))}
@@ -833,15 +833,15 @@ const ClubSetupPage: React.FC = () => {
                   ))}
                 </select>
               </Field>
-              <Field label="Anticipo planning">
+              <Field label={t("club.fields.anticipo_planning")}>
                 <select
                   className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
                   value={String(get_val("reminder_planning_anticipo_giorni", (club as any)?.reminder_planning_anticipo_giorni ?? 0))}
                   onChange={(e) => set_val("reminder_planning_anticipo_giorni", Number(e.target.value))}
                 >
-                  <option value="0">Stesso giorno</option>
-                  <option value="1">1 giorno prima</option>
-                  <option value="2">2 giorni prima</option>
+                  <option value="0">{t("club.opzioni.stesso_giorno")}</option>
+                  <option value="1">{t("club.opzioni.un_giorno_prima")}</option>
+                  <option value="2">{t("club.opzioni.due_giorni_prima")}</option>
                 </select>
               </Field>
             </div>
@@ -852,9 +852,9 @@ const ClubSetupPage: React.FC = () => {
 
         {/* Regole comunicazioni intelligenti */}
         <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">🧠 Comunicazioni intelligenti</h2>
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.comunicazioni_intelligenti")}</h2>
           <p className="text-xs text-muted-foreground">
-            Il sistema monitora pattern (assenze, rifiuti, saturazione) e quando rileva un trigger emette automaticamente comunicazioni.
+            {t("club.testi.comunicazioni_intelligenti_info")}
           </p>
           <RegoleComunicazioniSection club_id={club?.id || get_current_club_id() || null} />
         </section>
@@ -863,9 +863,9 @@ const ClubSetupPage: React.FC = () => {
 
         {/* Messaggi predefiniti */}
         <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">💬 Messaggi predefiniti</h2>
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.messaggi_predefiniti")}</h2>
           <p className="text-xs text-muted-foreground">
-            Sono i testi pronti proposti nel menù a tendina della "Comunicazione rapida" in Dashboard.
+            {t("club.testi.messaggi_predefiniti_info")}
           </p>
           <TemplateComunicazioniSection club_id={club?.id || get_current_club_id() || null} />
         </section>
@@ -875,7 +875,7 @@ const ClubSetupPage: React.FC = () => {
         {/* Salva dati club */}
         <div className="flex justify-end">
           <Button onClick={handle_save} disabled={saving || Object.keys(form).length === 0}>
-            {saving ? "Salvataggio..." : "Salva modifiche"}
+            {saving ? t("club.azioni.salvataggio") : t("club.azioni.salva_modifiche")}
           </Button>
         </div>
 
@@ -885,10 +885,10 @@ const ClubSetupPage: React.FC = () => {
 
         <ModalitaGestioneSection
           area="fatturazione"
-          label="Fatturazione"
+          label={t("club.tabs.fatturazione")}
           opzioni={[
-            { value: "standard", label: "Standard (un solo profilo di fatturazione)" },
-            { value: "multi_ragione_sociale", label: "Ragioni sociali multiple" },
+            { value: "standard", label: t("club.opzioni.fatturazione_standard") },
+            { value: "multi_ragione_sociale", label: t("club.opzioni.fatturazione_multi") },
           ]}
         />
         </div>
@@ -898,26 +898,26 @@ const ClubSetupPage: React.FC = () => {
         <TabsContent value="ghiaccio">
       <div className="bg-card rounded-xl shadow-card p-6 space-y-8 max-w-2xl border-2 border-primary/20">
         <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-          🧊 Ghiaccio e Planning
+          {t("club.sezioni.ghiaccio_planning")}
         </h2>
 
         {/* Config fields */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Ora apertura pista">
+          <Field label={t("club.fields.ora_apertura")}>
             <Input
               type="time"
               value={get_ghiaccio_val("ora_apertura_default", "06:00")}
               onChange={(e) => set_ghiaccio_val("ora_apertura_default", e.target.value)}
             />
           </Field>
-          <Field label="Ora chiusura pista">
+          <Field label={t("club.fields.ora_chiusura")}>
             <Input
               type="time"
               value={get_ghiaccio_val("ora_chiusura_default", "22:30")}
               onChange={(e) => set_ghiaccio_val("ora_chiusura_default", e.target.value)}
             />
           </Field>
-          <Field label="Durata pulizia ghiaccio (min)">
+          <Field label={t("club.fields.durata_pulizia")}>
             <Input
               type="number"
               min={0}
@@ -925,40 +925,40 @@ const ClubSetupPage: React.FC = () => {
               onChange={(e) => set_ghiaccio_val("durata_pulizia_minuti", e.target.value)}
             />
           </Field>
-          <Field label="Max atleti contemporanei (alert, opzionale)">
+          <Field label={t("club.fields.max_atleti_contemporanei")}>
             <Input
               type="number"
               min={1}
-              placeholder="Lascia vuoto per disattivare l'allarme"
+              placeholder={t("club.fields.placeholder_lascia_vuoto_allarme")}
               value={get_ghiaccio_val("max_atleti_contemporanei", config_ghiaccio?.max_atleti_contemporanei ?? "")}
               onChange={(e) => set_ghiaccio_val("max_atleti_contemporanei", e.target.value)}
             />
             {!get_ghiaccio_val("max_atleti_contemporanei", config_ghiaccio?.max_atleti_contemporanei ?? "") && (
-              <p className="text-[11px] text-muted-foreground italic">ℹ Non configurato — gli allarmi correlati sono disattivati. Consigliamo di impostare un valore.</p>
+              <p className="text-[11px] text-muted-foreground italic">{t("club.testi.allarme_non_configurato")}</p>
             )}
           </Field>
-          <Field label="Max atleti per istruttore (alert, opzionale)">
+          <Field label={t("club.fields.max_atleti_per_istruttore")}>
             <Input
               type="number"
               min={1}
-              placeholder="Lascia vuoto per disattivare l'allarme"
+              placeholder={t("club.fields.placeholder_lascia_vuoto_allarme")}
               value={get_ghiaccio_val("max_atleti_per_istruttore", config_ghiaccio?.max_atleti_per_istruttore ?? "")}
               onChange={(e) => set_ghiaccio_val("max_atleti_per_istruttore", e.target.value)}
             />
             {!get_ghiaccio_val("max_atleti_per_istruttore", config_ghiaccio?.max_atleti_per_istruttore ?? "") && (
-              <p className="text-[11px] text-muted-foreground italic">ℹ Non configurato — gli allarmi correlati sono disattivati. Consigliamo di impostare un valore.</p>
+              <p className="text-[11px] text-muted-foreground italic">{t("club.testi.allarme_non_configurato")}</p>
             )}
           </Field>
-          <Field label="Min iscritti attivazione corso (alert, opzionale)">
+          <Field label={t("club.fields.min_iscritti_attivazione")}>
             <Input
               type="number"
               min={0}
-              placeholder="Lascia vuoto per disattivare l'allarme"
+              placeholder={t("club.fields.placeholder_lascia_vuoto_allarme")}
               value={get_ghiaccio_val("min_iscritti_attivazione_corso", (config_ghiaccio as any)?.min_iscritti_attivazione_corso ?? "")}
               onChange={(e) => set_ghiaccio_val("min_iscritti_attivazione_corso", e.target.value)}
             />
             {!get_ghiaccio_val("min_iscritti_attivazione_corso", (config_ghiaccio as any)?.min_iscritti_attivazione_corso ?? "") && (
-              <p className="text-[11px] text-muted-foreground italic">ℹ Non configurato — gli allarmi correlati sono disattivati. Consigliamo di impostare un valore.</p>
+              <p className="text-[11px] text-muted-foreground italic">{t("club.testi.allarme_non_configurato")}</p>
             )}
           </Field>
         </div>
@@ -968,10 +968,10 @@ const ClubSetupPage: React.FC = () => {
         {/* Lezioni Private */}
         <div>
           <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">
-            🎿 Lezioni Private
+            {t("club.sezioni.lezioni_private")}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Max atleti per lezione privata">
+            <Field label={t("club.fields.max_atleti_lezione_privata")}>
               <Input
                 type="number"
                 min={1}
@@ -979,7 +979,7 @@ const ClubSetupPage: React.FC = () => {
                 onChange={(e) => set_ghiaccio_val("max_atleti_lezione_privata", e.target.value)}
               />
             </Field>
-            <Field label="Modalità costo privata">
+            <Field label={t("club.fields.modalita_costo_privata")}>
               <RadioGroup
                 value={get_ghiaccio_val("modalita_costo_privata", (config_ghiaccio as any)?.modalita_costo_privata ?? "tariffa_fissa")}
                 onValueChange={(v) => set_ghiaccio_val("modalita_costo_privata", v)}
@@ -987,25 +987,25 @@ const ClubSetupPage: React.FC = () => {
               >
                 <label className="flex items-center gap-2 text-sm cursor-pointer">
                   <RadioGroupItem value="tariffa_fissa" id="mcp_fissa" />
-                  <span>Tariffa fissa per atleta</span>
+                  <span>{t("club.opzioni.tariffa_fissa")}</span>
                 </label>
                 <label className="flex items-center gap-2 text-sm cursor-pointer">
                   <RadioGroupItem value="diviso_atleti" id="mcp_diviso" />
-                  <span>Diviso tra atleti</span>
+                  <span>{t("club.opzioni.diviso_atleti")}</span>
                 </label>
               </RadioGroup>
             </Field>
           </div>
           <div className="flex justify-end mt-4">
             <Button onClick={handle_save_private} disabled={saving_private}>
-              {saving_private ? "Salvataggio..." : "Salva configurazione private"}
+              {saving_private ? t("club.azioni.salvataggio") : t("club.azioni.salva_config_private")}
             </Button>
           </div>
         </div>
 
         <div className="flex justify-end">
           <Button onClick={handle_save_ghiaccio} disabled={saving_ghiaccio}>
-            {saving_ghiaccio ? "Salvataggio..." : "Salva configurazione ghiaccio"}
+            {saving_ghiaccio ? t("club.azioni.salvataggio") : t("club.azioni.salva_config_ghiaccio")}
           </Button>
         </div>
 
