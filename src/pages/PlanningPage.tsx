@@ -1,4 +1,6 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect, useLayoutEffect, Component, ErrorInfo, ReactNode } from "react";
+import { useTranslation, Trans } from "react-i18next";
+import i18n from "@/i18n";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { use_corsi, use_istruttori, use_stagioni, use_atleti } from "@/hooks/use-supabase-data";
@@ -47,9 +49,9 @@ class PlanningErrorBoundary extends Component<{ children: ReactNode }, { hasErro
       return (
         <div className="flex flex-col items-center justify-center h-64 gap-3">
           <AlertTriangle className="h-8 w-8 text-destructive" />
-          <p className="text-foreground font-bold">Errore nel Planning</p>
+          <p className="text-foreground font-bold">{i18n.t('planning:error_boundary.title')}</p>
           <p className="text-sm text-muted-foreground max-w-md text-center">{this.state.error?.message}</p>
-          <button className="text-sm text-primary underline" onClick={() => this.setState({ hasError: false, error: null })}>Riprova</button>
+          <button className="text-sm text-primary underline" onClick={() => this.setState({ hasError: false, error: null })}>{i18n.t('planning:error_boundary.retry')}</button>
         </div>
       );
     }
@@ -75,9 +77,9 @@ class SidebarErrorBoundary extends Component<{ children: ReactNode; className: s
           <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-card p-3 text-sm text-destructive">
             <AlertTriangle className="h-4 w-4 flex-shrink-0" />
             <div className="space-y-2">
-              <p className="font-medium">Errore nella sidebar costruzione</p>
+              <p className="font-medium">{i18n.t('planning:error_boundary.sidebar_title')}</p>
               <Button size="sm" variant="outline" onClick={() => this.setState({ hasError: false })}>
-                Riprova
+                {i18n.t('planning:error_boundary.retry')}
               </Button>
             </div>
           </div>

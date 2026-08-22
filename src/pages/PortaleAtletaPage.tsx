@@ -4,6 +4,7 @@ import { Loader2, User, Calendar as CalIcon, FileText, Trophy, BookOpen, AlertCi
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 // Portale pubblico mobile-first: l'identificativo è il `codice_atleta` (AT-XXXX-XXXX),
 // lo stesso usato dall'app mobile genitori. Tutte le query passano dall'edge function `portale-atleta`.
@@ -26,6 +27,7 @@ async function call_portale(token: string, action: string, extra: Record<string,
 }
 
 const PortaleAtletaPage: React.FC = () => {
+  const { t } = useTranslation("portale");
   const { token: token_param } = useParams<{ token: string }>();
   const [search_params] = useSearchParams();
   const token = token_param || search_params.get("token") || "";
@@ -46,7 +48,7 @@ const PortaleAtletaPage: React.FC = () => {
   useEffect(() => {
     (async () => {
       if (!token) {
-        set_errore("Link non valido");
+        set_errore(t("atleta_page.link_non_valido"));
         set_loading(false);
         return;
       }
@@ -55,7 +57,7 @@ const PortaleAtletaPage: React.FC = () => {
         set_atleta(data.atleta);
         set_club(data.club);
       } catch (err: any) {
-        set_errore(err?.message === "invalid_token" ? "Link non valido o scaduto" : "Errore di caricamento");
+        set_errore(err?.message === "invalid_token" ? t("atleta_page.link_non_valido_scaduto") : t("atleta_page.errore_caricamento"));
       } finally {
         set_loading(false);
       }
@@ -98,9 +100,9 @@ const PortaleAtletaPage: React.FC = () => {
             : c,
         ),
       );
-      toast({ title: `✅ Risposta inviata: ${risposta === "si" ? "Sì" : "No"}` });
+      toast({ title: t("atleta_page.risposta_inviata", { risposta: risposta === "si" ? t("atleta_page.si") : t("atleta_page.no") }) });
     } catch (err: any) {
-      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+      toast({ title: t("atleta_page.errore"), description: err?.message, variant: "destructive" });
     } finally {
       set_busy_id(null);
     }
@@ -111,9 +113,9 @@ const PortaleAtletaPage: React.FC = () => {
     try {
       await call_portale(token, "richiedi_iscrizione", { corso_id: corso.id });
       set_richieste_inviate((prev) => new Set([...prev, corso.id]));
-      toast({ title: "📨 Richiesta inviata", description: `${corso.nome} — l'admin la valuterà` });
+      toast({ title: t("atleta_page.richiesta_inviata_titolo"), description: t("atleta_page.richiesta_inviata_desc", { nome_corso: corso.nome }) });
     } catch (err: any) {
-      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+      toast({ title: t("atleta_page.errore"), description: err?.message, variant: "destructive" });
     } finally {
       set_busy_id(null);
     }
@@ -132,9 +134,9 @@ const PortaleAtletaPage: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center bg-background p-6">
         <div className="max-w-sm w-full bg-card border border-border rounded-2xl p-6 text-center space-y-3 shadow-card">
           <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
-          <h1 className="text-lg font-bold text-foreground">Accesso non disponibile</h1>
+          <h1 className="text-lg font-bold text-foreground">{t("atleta_page.accesso_non_disponibile")}</h1>
           <p className="text-sm text-muted-foreground">
-            {errore ?? "Il link non è valido. Contatta il club per ricevere un nuovo link."}
+            {errore ?? t("atleta_page.link_non_valido_contatta")}
           </p>
         </div>
       </div>
@@ -145,11 +147,11 @@ const PortaleAtletaPage: React.FC = () => {
   const iniziali = `${atleta.nome?.[0] ?? ""}${atleta.cognome?.[0] ?? ""}`.toUpperCase();
 
   const tabs: { key: TabKey; label: string; icon: any }[] = [
-    { key: "dati", label: "Atleta", icon: User },
-    { key: "calendario", label: "Agenda", icon: CalIcon },
-    { key: "comunicazioni", label: "Avvisi", icon: BookOpen },
-    { key: "fatture", label: "Fatture", icon: FileText },
-    { key: "iscrivi", label: "Iscriviti", icon: Trophy },
+    { key: "dati", label: t("atleta_page.tab_atleta"), icon: User },
+    { key: "calendario", label: t("atleta_page.tab_agenda"), icon: CalIcon },
+    { key: "comunicazioni", label: t("atleta_page.tab_avvisi"), icon: BookOpen },
+    { key: "fatture", label: t("atleta_page.tab_fatture"), icon: FileText },
+    { key: "iscrivi", label: t("atleta_page.tab_iscriviti"), icon: Trophy },
   ];
 
   return (
@@ -160,7 +162,7 @@ const PortaleAtletaPage: React.FC = () => {
             {iniziali || "?"}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs uppercase tracking-wider text-primary-foreground/70">Portale atleta</p>
+            <p className="text-xs uppercase tracking-wider text-primary-foreground/70">{t("atleta_page.header_titolo")}</p>
             <h1 className="text-base sm:text-lg font-bold truncate">{nome_completo}</h1>
             {club?.nome && <p className="text-xs text-primary-foreground/80 truncate">{club.nome}</p>}
           </div>
@@ -194,41 +196,41 @@ const PortaleAtletaPage: React.FC = () => {
         {tab === "dati" && (
           <div className="space-y-4">
             <div className="bg-card border border-border rounded-xl p-4 shadow-card">
-              <h2 className="text-sm font-bold text-foreground mb-3">Dati anagrafici</h2>
+              <h2 className="text-sm font-bold text-foreground mb-3">{t("atleta_page.dati_anagrafici")}</h2>
               <dl className="space-y-2 text-sm">
-                <Row label="Nome">{nome_completo}</Row>
-                <Row label="Data di nascita">
+                <Row label={t("atleta_page.nome")}>{nome_completo}</Row>
+                <Row label={t("atleta_page.data_nascita")}>
                   {atleta.data_nascita
                     ? new Date(atleta.data_nascita + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })
                     : "—"}
                 </Row>
-                <Row label="Luogo di nascita">{atleta.luogo_nascita || "—"}</Row>
-                <Row label="Indirizzo">{atleta.indirizzo || "—"}</Row>
-                <Row label="Telefono">{atleta.telefono || "—"}</Row>
-                <Row label="Codice fiscale">{atleta.codice_fiscale || "—"}</Row>
+                <Row label={t("atleta_page.luogo_nascita")}>{atleta.luogo_nascita || "—"}</Row>
+                <Row label={t("atleta_page.indirizzo")}>{atleta.indirizzo || "—"}</Row>
+                <Row label={t("atleta_page.telefono")}>{atleta.telefono || "—"}</Row>
+                <Row label={t("atleta_page.codice_fiscale")}>{atleta.codice_fiscale || "—"}</Row>
               </dl>
             </div>
 
             <div className="bg-card border border-border rounded-xl p-4 shadow-card">
-              <h2 className="text-sm font-bold text-foreground mb-3">Livello tecnico</h2>
+              <h2 className="text-sm font-bold text-foreground mb-3">{t("atleta_page.livello_tecnico")}</h2>
               <div className="flex flex-wrap gap-2">
-                {atleta.percorso_amatori && <Badge variant="outline">Amatori: {atleta.percorso_amatori}</Badge>}
-                {atleta.carriera_artistica && <Badge variant="outline">Artistica: {atleta.carriera_artistica}</Badge>}
-                {atleta.carriera_stile && <Badge variant="outline">Stile: {atleta.carriera_stile}</Badge>}
+                {atleta.percorso_amatori && <Badge variant="outline">{t("atleta_page.amatori_label")}: {atleta.percorso_amatori}</Badge>}
+                {atleta.carriera_artistica && <Badge variant="outline">{t("atleta_page.artistica_label")}: {atleta.carriera_artistica}</Badge>}
+                {atleta.carriera_stile && <Badge variant="outline">{t("atleta_page.stile_label")}: {atleta.carriera_stile}</Badge>}
                 {!atleta.percorso_amatori && !atleta.carriera_artistica && !atleta.carriera_stile && (
-                  <p className="text-sm text-muted-foreground">Nessun livello assegnato</p>
+                  <p className="text-sm text-muted-foreground">{t("atleta_page.nessun_livello")}</p>
                 )}
               </div>
             </div>
 
             {(atleta.licenza_sis_numero || atleta.licenza_sis_disciplina) && (
               <div className="bg-card border border-border rounded-xl p-4 shadow-card">
-                <h2 className="text-sm font-bold text-foreground mb-3">Licenza Swiss Ice Skating</h2>
+                <h2 className="text-sm font-bold text-foreground mb-3">{t("atleta_page.licenza_sis_titolo")}</h2>
                 <dl className="space-y-2 text-sm">
-                  <Row label="Numero">{atleta.licenza_sis_numero || "—"}</Row>
-                  <Row label="Disciplina">{atleta.licenza_sis_disciplina || "—"}</Row>
-                  <Row label="Categoria">{atleta.licenza_sis_categoria || "—"}</Row>
-                  <Row label="Validità">
+                  <Row label={t("atleta_page.numero")}>{atleta.licenza_sis_numero || "—"}</Row>
+                  <Row label={t("atleta_page.disciplina")}>{atleta.licenza_sis_disciplina || "—"}</Row>
+                  <Row label={t("atleta_page.categoria")}>{atleta.licenza_sis_categoria || "—"}</Row>
+                  <Row label={t("atleta_page.validita")}>
                     {atleta.licenza_sis_validita_a
                       ? new Date(atleta.licenza_sis_validita_a + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })
                       : "—"}
@@ -241,9 +243,9 @@ const PortaleAtletaPage: React.FC = () => {
 
         {tab === "calendario" && (
           <div className="space-y-3">
-            <h2 className="text-sm font-bold text-foreground">Prossimi impegni</h2>
+            <h2 className="text-sm font-bold text-foreground">{t("atleta_page.prossimi_impegni")}</h2>
             {eventi_calendario.length === 0 ? (
-              <EmptyState icon={CalIcon} text="Nessun impegno futuro programmato" />
+              <EmptyState icon={CalIcon} text={t("atleta_page.nessun_impegno_futuro")} />
             ) : (
               eventi_calendario.map((e, i) => (
                 <div key={i} className="bg-card border border-border rounded-xl p-3 shadow-card flex gap-3">
@@ -272,9 +274,9 @@ const PortaleAtletaPage: React.FC = () => {
 
         {tab === "comunicazioni" && (
           <div className="space-y-3">
-            <h2 className="text-sm font-bold text-foreground">Avvisi dal club</h2>
+            <h2 className="text-sm font-bold text-foreground">{t("atleta_page.avvisi_dal_club")}</h2>
             {comunicazioni.length === 0 ? (
-              <EmptyState icon={BookOpen} text="Nessun avviso ricevuto" />
+              <EmptyState icon={BookOpen} text={t("atleta_page.nessun_avviso")} />
             ) : (
               comunicazioni.map((c) => {
                 const com = c.comunicazioni;
@@ -297,16 +299,16 @@ const PortaleAtletaPage: React.FC = () => {
                           <div className="flex items-center gap-2 text-sm">
                             <Check className="w-4 h-4 text-success" />
                             <span className="text-muted-foreground">
-                              Risposto: <strong className="text-foreground">{c.rsvp_risposta === "si" ? "Sì" : "No"}</strong>
+                              {t("atleta_page.risposto_label")} <strong className="text-foreground">{c.rsvp_risposta === "si" ? t("atleta_page.si") : t("atleta_page.no")}</strong>
                             </span>
                           </div>
                         ) : (
                           <div className="flex gap-2">
                             <Button size="sm" className="flex-1 bg-success hover:bg-success/90 text-white" onClick={() => handle_rsvp(c.id, "si")} disabled={busy_id === c.id}>
-                              ✅ Sì, partecipo
+                              {t("atleta_page.si_partecipo")}
                             </Button>
                             <Button size="sm" variant="outline" className="flex-1" onClick={() => handle_rsvp(c.id, "no")} disabled={busy_id === c.id}>
-                              ❌ No
+                              {t("atleta_page.no_button")}
                             </Button>
                           </div>
                         )}
@@ -321,15 +323,15 @@ const PortaleAtletaPage: React.FC = () => {
 
         {tab === "fatture" && (
           <div className="space-y-3">
-            <h2 className="text-sm font-bold text-foreground">Le tue fatture</h2>
+            <h2 className="text-sm font-bold text-foreground">{t("atleta_page.le_tue_fatture")}</h2>
             {fatture.length === 0 ? (
-              <EmptyState icon={FileText} text="Nessuna fattura emessa" />
+              <EmptyState icon={FileText} text={t("atleta_page.nessuna_fattura")} />
             ) : (
               fatture.map((f) => (
                 <div key={f.id} className="bg-card border border-border rounded-xl p-4 shadow-card">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-muted-foreground">{f.numero || "Fattura"}</p>
+                      <p className="text-xs text-muted-foreground">{f.numero || t("atleta_page.fattura_label")}</p>
                       <p className="text-sm font-semibold text-foreground truncate">{f.descrizione || f.tipo}</p>
                       <p className="text-xs text-muted-foreground mt-1">
                         {f.data_emissione
@@ -340,7 +342,7 @@ const PortaleAtletaPage: React.FC = () => {
                     <div className="text-right">
                       <p className="text-base font-bold text-foreground tabular-nums">CHF {Number(f.importo || 0).toFixed(2)}</p>
                       <Badge className={f.pagata ? "bg-success/15 text-success border-success/30" : "bg-warning/15 text-warning border-warning/30"} variant="outline">
-                        {f.pagata ? "Pagata" : "Da pagare"}
+                        {f.pagata ? t("atleta_page.pagata") : t("atleta_page.da_pagare")}
                       </Badge>
                     </div>
                   </div>
@@ -352,12 +354,12 @@ const PortaleAtletaPage: React.FC = () => {
 
         {tab === "iscrivi" && (
           <div className="space-y-3">
-            <h2 className="text-sm font-bold text-foreground">Corsi disponibili</h2>
+            <h2 className="text-sm font-bold text-foreground">{t("atleta_page.corsi_disponibili")}</h2>
             <p className="text-xs text-muted-foreground">
-              Seleziona un corso per inviare richiesta di iscrizione. L'admin la valuterà e ti risponderà.
+              {t("atleta_page.corsi_disponibili_desc")}
             </p>
             {corsi_disponibili.length === 0 ? (
-              <EmptyState icon={Trophy} text="Nessun corso disponibile" />
+              <EmptyState icon={Trophy} text={t("atleta_page.nessun_corso_disponibile")} />
             ) : (
               corsi_disponibili.map((corso) => {
                 const gia_iscritto = iscrizioni_attive.has(corso.id);
@@ -368,28 +370,28 @@ const PortaleAtletaPage: React.FC = () => {
                       <div className="flex-1 min-w-0">
                         <h3 className="text-sm font-bold text-foreground">{corso.nome}</h3>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {corso.giorno || "Da posizionare"}
+                          {corso.giorno || t("atleta_page.da_posizionare")}
                           {corso.ora_inizio && ` · ${corso.ora_inizio.slice(0, 5)}`}
                           {corso.ora_fine && ` - ${corso.ora_fine.slice(0, 5)}`}
                         </p>
                         {corso.livello_richiesto && corso.livello_richiesto !== "tutti" && (
-                          <Badge variant="outline" className="mt-2 text-[10px]">Livello: {corso.livello_richiesto}</Badge>
+                          <Badge variant="outline" className="mt-2 text-[10px]">{t("atleta_page.livello_label")}: {corso.livello_richiesto}</Badge>
                         )}
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-bold text-primary tabular-nums">CHF {Number(corso.costo_mensile || 0).toFixed(2)}</p>
-                        <p className="text-[10px] text-muted-foreground">/mese</p>
+                        <p className="text-[10px] text-muted-foreground">{t("atleta_page.mese_suffisso")}</p>
                       </div>
                     </div>
                     {gia_iscritto ? (
                       <Button disabled variant="outline" className="w-full" size="sm">
-                        <Check className="w-4 h-4 mr-1" /> Già iscritto
+                        <Check className="w-4 h-4 mr-1" /> {t("atleta_page.gia_iscritto")}
                       </Button>
                     ) : richiesta ? (
-                      <Button disabled variant="outline" className="w-full" size="sm">⏳ Richiesta in attesa</Button>
+                      <Button disabled variant="outline" className="w-full" size="sm">{t("atleta_page.richiesta_in_attesa")}</Button>
                     ) : (
                       <Button className="w-full" size="sm" onClick={() => handle_richiedi_iscrizione(corso)} disabled={busy_id === corso.id}>
-                        {busy_id === corso.id ? <Loader2 className="w-4 h-4 animate-spin" /> : "📨 Richiedi iscrizione"}
+                        {busy_id === corso.id ? <Loader2 className="w-4 h-4 animate-spin" /> : t("atleta_page.richiedi_iscrizione")}
                       </Button>
                     )}
                   </div>

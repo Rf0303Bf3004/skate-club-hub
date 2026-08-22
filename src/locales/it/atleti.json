@@ -213,5 +213,73 @@
     "artistica": "Artistica · {{level}}",
     "stile": "Stile · {{level}}",
     "in_prep": "In prep · {{level}}"
+  },
+  "richieste_iscrizione": {
+    "page_title": "Richieste Iscrizione",
+    "page_subtitle": "Gestisci le richieste di iscrizione ai corsi",
+    "badge_in_attesa": "{{count}} in attesa",
+    "error_loading": "Errore nel caricamento delle richieste.",
+    "filters": {
+      "in_attesa": "In attesa",
+      "approvate": "Approvate",
+      "rifiutate": "Rifiutate",
+      "tutte": "Tutte",
+      "archivio": "Archivio"
+    },
+    "search_placeholder": "Cerca atleta o corso...",
+    "corso_placeholder": "Corso",
+    "tutti_corsi": "Tutti i corsi",
+    "periodo_placeholder": "Periodo",
+    "periodo_tutto": "Tutto il periodo",
+    "periodo_7": "Ultimi 7 giorni",
+    "periodo_30": "Ultimi 30 giorni",
+    "periodo_90": "Ultimi 90 giorni",
+    "selezionate": "{{count}} selezionate",
+    "annulla_selezione": "Annulla selezione",
+    "approva_selezionate": "Approva selezionate",
+    "rifiuta_selezionate": "Rifiuta selezionate",
+    "empty_title": "Nessuna richiesta di iscrizione",
+    "empty_desc": "Le richieste inviate dai genitori appariranno qui.",
+    "no_match": "Nessuna richiesta corrispondente ai filtri.",
+    "table": {
+      "atleta": "Atleta",
+      "corso": "Corso",
+      "data": "Data",
+      "stato": "Stato"
+    },
+    "pagination": {
+      "range": "{{da}}–{{a}} di {{totale}}",
+      "per_pagina": "{{size}} per pagina",
+      "pagina_di": "Pagina {{corrente}} di {{totale}}"
+    },
+    "stato_badge": {
+      "in_attesa": "In attesa",
+      "approvata": "Approvata",
+      "rifiutata": "Rifiutata"
+    },
+    "modal": {
+      "approva_title": "Approva richieste",
+      "rifiuta_title": "Rifiuta richieste",
+      "approva_desc_plural": "Gli atleti verranno iscritti al corso e riceveranno una comunicazione di conferma.",
+      "approva_desc_singular": "L'atleta verrà iscritto al corso e riceveranno una comunicazione di conferma.",
+      "rifiuta_desc_plural": "Gli atleti riceveranno una comunicazione di rifiuto.",
+      "rifiuta_desc_singular": "L'atleta riceverà una comunicazione di rifiuto.",
+      "note_label": "Note (opzionale)",
+      "note_placeholder_rifiuto": "Motivo del rifiuto...",
+      "note_placeholder_generico": "Note aggiuntive...",
+      "annulla": "Annulla",
+      "approva": "Approva",
+      "rifiuta": "Rifiuta",
+      "elaborazione": "..."
+    },
+    "toast": {
+      "approvate_one": "{{count}} richiesta approvata",
+      "approvate_other": "{{count}} richieste approvate",
+      "rifiutate_one": "{{count}} richiesta rifiutata",
+      "rifiutate_other": "{{count}} richieste rifiutate",
+      "completate_errori": "{{ok}} completate, {{ko}} errori"
+    },
+    "default_atleta_label": "Atleta",
+    "default_corso_label": "Corso"
   }
 }

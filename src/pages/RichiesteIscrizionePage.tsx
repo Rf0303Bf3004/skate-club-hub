@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 type Filtro = "tutte" | "in_attesa" | "approvata" | "rifiutata" | "archivio";
 
@@ -20,6 +21,7 @@ const GIORNI_ARCHIVIO = 30;
 const PAGE_SIZES = [25, 50, 100];
 
 const RichiesteIscrizionePage: React.FC = () => {
+  const { t } = useTranslation("atleti");
   const { session } = useAuth();
   const { visibile_set, is_admin_like, is_loading: is_loading_permessi } = usePermessiSezioniMatrix();
   const allowed = is_admin_like || visibile_set.has("richieste_iscrizione");
@@ -134,9 +136,9 @@ const RichiesteIscrizionePage: React.FC = () => {
           richiesta_id: r.id,
           azione: modal.azione,
           atleta_id: r.atleta_id,
-          atleta_nome: atleta ? `${atleta.nome} ${atleta.cognome}` : "Atleta",
+          atleta_nome: atleta ? `${atleta.nome} ${atleta.cognome}` : t("richieste_iscrizione.default_atleta_label"),
           corso_id: r.corso_id,
-          corso_nome: corso?.nome || "Corso",
+          corso_nome: corso?.nome || t("richieste_iscrizione.default_corso_label"),
           note_risposta,
           gestita_da: session?.email || "",
         });
@@ -147,8 +149,8 @@ const RichiesteIscrizionePage: React.FC = () => {
     }
     toast({
       title: ko === 0
-        ? `${ok} richiest${ok === 1 ? "a" : "e"} ${modal.azione === "approvata" ? "approvate" : "rifiutate"}`.replace("richiesta approvate", "richiesta approvata").replace("richiesta rifiutate", "richiesta rifiutata")
-        : `${ok} completate, ${ko} errori`,
+        ? t(modal.azione === "approvata" ? "richieste_iscrizione.toast.approvate" : "richieste_iscrizione.toast.rifiutate", { count: ok })
+        : t("richieste_iscrizione.toast.completate_errori", { ok, ko }),
       variant: ko > 0 ? "destructive" : undefined,
     });
     set_selezione([]);
@@ -156,9 +158,9 @@ const RichiesteIscrizionePage: React.FC = () => {
   };
 
   const stato_badge = (stato: string) => {
-    if (stato === "in_attesa") return <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-600"><Clock className="w-3 h-3 mr-1" />In attesa</Badge>;
-    if (stato === "approvata") return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200"><Check className="w-3 h-3 mr-1" />Approvata</Badge>;
-    return <Badge variant="destructive"><X className="w-3 h-3 mr-1" />Rifiutata</Badge>;
+    if (stato === "in_attesa") return <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-600"><Clock className="w-3 h-3 mr-1" />{t("richieste_iscrizione.stato_badge.in_attesa")}</Badge>;
+    if (stato === "approvata") return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200"><Check className="w-3 h-3 mr-1" />{t("richieste_iscrizione.stato_badge.approvata")}</Badge>;
+    return <Badge variant="destructive"><X className="w-3 h-3 mr-1" />{t("richieste_iscrizione.stato_badge.rifiutata")}</Badge>;
   };
 
   const render_riga = (r: any) => {
