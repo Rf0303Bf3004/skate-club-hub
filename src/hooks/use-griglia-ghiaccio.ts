@@ -219,13 +219,16 @@ export async function fetch_blocchi_giorno(
   const lista_sessioni = (sessioni ?? []) as any[];
   const sessioni_ids = lista_sessioni.map((s: any) => s.id);
 
-  const [spec_res, sa_res, si_res, atleti_res, ist_res, rs_res, corsi_res] = await Promise.all([
+  const [spec_res, sa_res, si_res, sg_res, atleti_res, ist_res, rs_res, corsi_res] = await Promise.all([
     supabase.from("griglia_specialita" as any).select("id,nome,descrizione_messaggio").eq("club_id", club_id),
     sessioni_ids.length
       ? supabase.from("griglia_sessioni_atleti" as any).select("*").in("sessione_id", sessioni_ids)
       : Promise.resolve({ data: [], error: null } as any),
     sessioni_ids.length
       ? supabase.from("griglia_sessioni_istruttori" as any).select("*").in("sessione_id", sessioni_ids)
+      : Promise.resolve({ data: [], error: null } as any),
+    sessioni_ids.length
+      ? supabase.from("griglia_sessioni_gruppi" as any).select("*").in("sessione_id", sessioni_ids)
       : Promise.resolve({ data: [], error: null } as any),
     supabase.from("atleti").select("id,nome,cognome,ragione_sociale_id,atleta_esterno").eq("club_id", club_id),
     supabase.from("istruttori").select("id,nome,cognome,user_id").eq("club_id", club_id),
@@ -245,6 +248,8 @@ export async function fetch_blocchi_giorno(
   ((corsi_res.data ?? []) as any[]).forEach((c: any) => corsi_map.set(c.id, c.nome));
   const sa = (sa_res.data ?? []) as any[];
   const si = (si_res.data ?? []) as any[];
+  const sg = (sg_res.data ?? []) as any[];
+
 
   return lista_blocchi.map((b: any) => ({
     ...b,
