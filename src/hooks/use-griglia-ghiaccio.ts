@@ -1090,21 +1090,46 @@ export function use_ripeti_sessione() {
             note: sessione.note ?? null,
             messaggio_atleti: sessione.messaggio_atleti ?? null,
             corso_id,
-            gruppo_livello: sessione.gruppo_livello ?? null,
-            gruppo_scope: sessione.gruppo_scope ?? null,
-            gruppo_ragione_sociale_id: sessione.gruppo_ragione_sociale_id ?? null,
           } as any)
           .select("id")
           .single();
         if (err_ns) throw err_ns;
         const nuova_id = (nuova_sess as any).id as string;
 
+        // Replica i gruppi collegati sulla nuova sotto-sessione e tagga gli atleti
+        // risolti dal vivo con il gruppo corrispondente.
+        const tag_per_atleta = new Map<string, string>();
+        for (const m of membri_per_gruppo) {
+          const { data: g_new, error: e_g } = await supabase
+            .from("griglia_sessioni_gruppi" as any)
+            .insert({
+              sessione_id: nuova_id,
+              gruppo_livello: m.gruppo.gruppo_livello,
+              gruppo_scope: m.gruppo.gruppo_scope,
+              gruppo_ragione_sociale_id: m.gruppo.gruppo_ragione_sociale_id,
+            } as any)
+            .select("id")
+            .single();
+          if (e_g) throw e_g;
+          const nuovo_gruppo_id = (g_new as any).id as string;
+          for (const atleta_id of m.ids) {
+            if (!tag_per_atleta.has(atleta_id)) tag_per_atleta.set(atleta_id, nuovo_gruppo_id);
+          }
+        }
+
         if (atleti_ids.length > 0) {
           const { error: e } = await supabase
             .from("griglia_sessioni_atleti" as any)
-            .insert(atleti_ids.map((atleta_id) => ({ sessione_id: nuova_id, atleta_id })) as any);
+            .insert(
+              atleti_ids.map((atleta_id) => ({
+                sessione_id: nuova_id,
+                atleta_id,
+                gruppo_sessione_id: tag_per_atleta.get(atleta_id) ?? null,
+              })) as any,
+            );
           if (e && !`${e.message}`.includes("duplicate")) throw e;
         }
+
         if (istruttori_ids.length > 0) {
           const { error: e } = await supabase
             .from("griglia_sessioni_istruttori" as any)
