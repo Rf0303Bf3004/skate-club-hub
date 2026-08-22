@@ -117,7 +117,8 @@
     "tomorrow_countdown": "⚡ Domani",
     "week_countdown": "⏰ {{count}} giorni",
     "month_countdown": "📅 {{count}} giorni",
-    "days_countdown": "{{count}} giorni"
+    "days_countdown": "{{count}} giorni",
+    "countdown_header": "Countdown"
   },
   "level_tests": {
     "title": "Test Livello",

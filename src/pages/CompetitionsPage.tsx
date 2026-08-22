@@ -1060,7 +1060,7 @@ const CompetitionsPage: React.FC = () => {
               </p>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => set_confirm_delete(false)} className="flex-1">
-                  Annulla
+                  {t("annulla")}
                 </Button>
                 <Button
                   variant="destructive"
@@ -1069,7 +1069,7 @@ const CompetitionsPage: React.FC = () => {
                   disabled={elimina.isPending}
                   className="flex-1"
                 >
-                  {elimina.isPending ? "..." : "🗑️ Elimina definitivamente"}
+                  {elimina.isPending ? "..." : te("competitions.delete_permanently_button")}
                 </Button>
               </div>
             </div>
@@ -1080,7 +1080,7 @@ const CompetitionsPage: React.FC = () => {
               <h1 className="text-xl font-bold tracking-tight text-foreground">{selected.nome}</h1>
               {passata ? (
                 <Badge variant="secondary" className="text-xs gap-1">
-                  <Archive className="w-3 h-3" /> Passata
+                  <Archive className="w-3 h-3" /> {te("competitions.past_badge")}
                 </Badge>
               ) : (
                 <CountdownBadge data={selected.data} />
@@ -1100,7 +1100,7 @@ const CompetitionsPage: React.FC = () => {
             <div className="bg-muted/30 border border-border rounded-xl px-4 py-3 flex items-center gap-2">
               <Archive className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               <p className="text-sm text-muted-foreground">
-                Questa gara è già avvenuta. Puoi consultare i risultati ma non è possibile iscrivere nuovi atleti.
+                {te("competitions.past_info_message")}
               </p>
             </div>
           )}
@@ -1114,7 +1114,7 @@ const CompetitionsPage: React.FC = () => {
                 {t("atleti_iscritti")} ({selected.atleti_iscritti?.length ?? 0})
               </TabsTrigger>
               <TabsTrigger value="risultati">
-                Risultati ({(selected.atleti_iscritti ?? []).filter((ai: any) => ai.posizione || ai.medaglia).length})
+                {te("competitions.results_tab", { count: (selected.atleti_iscritti ?? []).filter((ai: any) => ai.posizione || ai.medaglia).length })}
               </TabsTrigger>
               <TabsTrigger value="dettagli">{t("dettagli")}</TabsTrigger>
             </TabsList>
@@ -1123,7 +1123,7 @@ const CompetitionsPage: React.FC = () => {
               {!passata && (
                 <div className="flex justify-end">
                   <Button onClick={() => set_show_iscrizione(true)} className="bg-primary hover:bg-primary/90 gap-2">
-                    <UserPlus className="w-4 h-4" /> Iscrivi atleta
+                    <UserPlus className="w-4 h-4" /> {te("competitions.register_athlete_button")}
                   </Button>
                 </div>
               )}
@@ -1131,7 +1131,7 @@ const CompetitionsPage: React.FC = () => {
                 <div className="bg-card rounded-xl shadow-card p-8 text-center text-muted-foreground">
                   <Trophy className="w-8 h-8 mx-auto mb-2 opacity-30" />
                   <p className="text-sm">
-                    {passata ? "Nessun atleta era iscritto a questa gara." : "Nessun atleta iscritto."}
+                    {passata ? te("competitions.empty_athletes_past") : te("competitions.empty_athletes_future")}
                   </p>
                 </div>
               ) : (
@@ -1140,28 +1140,28 @@ const CompetitionsPage: React.FC = () => {
                     <thead>
                       <tr className="border-b border-border">
                         <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                          Nome
+                          {te("competitions.name_header")}
                         </th>
                         <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden sm:table-cell">
-                          Pos.
+                          {te("competitions.position_short_header")}
                         </th>
                         <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">
-                          Disciplina
+                          {te("competitions.discipline_header")}
                         </th>
                         <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden md:table-cell">
-                          Tecnico
+                          {te("competitions.technical_header")}
                         </th>
                         <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden md:table-cell">
-                          Artistico
+                          {te("competitions.artistic_header")}
                         </th>
                         <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden sm:table-cell">
-                          Voto
+                          {te("competitions.vote_header")}
                         </th>
                         <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                          Medaglia
+                          {te("competitions.medal")}
                         </th>
                         <th className="text-right px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                          Azioni
+                          {te("competitions.actions_header")}
                         </th>
                       </tr>
                     </thead>
@@ -1200,7 +1200,7 @@ const CompetitionsPage: React.FC = () => {
                                 onClick={() => set_risultato_iscrizione(ai)}
                                 className="h-7 text-xs"
                               >
-                                ✏️ Risultato
+                                {te("competitions.result_button")}
                               </Button>
                               <Button
                                 variant="ghost"
@@ -1208,7 +1208,7 @@ const CompetitionsPage: React.FC = () => {
                                 onClick={() => set_grafico_atleta(ai)}
                                 className="h-7 text-xs text-primary"
                               >
-                                📈 Trend
+                                {te("competitions.trend_button")}
                               </Button>
                             </div>
                           </td>
@@ -1227,8 +1227,8 @@ const CompetitionsPage: React.FC = () => {
                   return (
                     <div className="bg-card rounded-xl shadow-card p-8 text-center text-muted-foreground">
                       <Trophy className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                      <p className="text-sm">Nessun risultato registrato per questa gara.</p>
-                      <p className="text-xs mt-1">Usa il pulsante "Risultato" nella tab Atleti per inserire posizione e punteggi.</p>
+                      <p className="text-sm">{te("competitions.empty_results")}</p>
+                      <p className="text-xs mt-1">{te("competitions.empty_results_hint")}</p>
                     </div>
                   );
                 }
@@ -1242,11 +1242,11 @@ const CompetitionsPage: React.FC = () => {
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b border-border bg-muted/20">
-                          <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Pos.</th>
-                          <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Atleta</th>
-                          <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Disciplina</th>
-                          <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Punteggio</th>
-                          <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Medaglia</th>
+                          <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">{te("competitions.position_short_header")}</th>
+                          <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">{te("competitions.athlete_header")}</th>
+                          <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">{te("competitions.discipline_header")}</th>
+                          <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">{te("competitions.score")}</th>
+                          <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">{te("competitions.medal")}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1311,7 +1311,7 @@ const CompetitionsPage: React.FC = () => {
                     rel="noopener noreferrer"
                     className="text-xs text-primary underline"
                   >
-                    Apri in Google Maps →
+                    {te("competitions.open_in_maps")}
                   </a>
                 </div>
               )}
@@ -1337,8 +1337,8 @@ const CompetitionsPage: React.FC = () => {
 
         <Tabs value={active_tab} onValueChange={handle_tab_change} className="w-full">
           <TabsList>
-            <TabsTrigger value="elenco">Elenco gare</TabsTrigger>
-            <TabsTrigger value="medagliere">🏆 Medagliere stagione</TabsTrigger>
+            <TabsTrigger value="elenco">{te("competitions.list_tab")}</TabsTrigger>
+            <TabsTrigger value="medagliere">{te("competitions.medals_tab")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="elenco" className="mt-4 space-y-6">
@@ -1352,7 +1352,7 @@ const CompetitionsPage: React.FC = () => {
             <SearchableListLayout
               search={search_gare}
               on_search_change={set_search_gare}
-              search_placeholder="Cerca per nome gara, luogo o club ospitante…"
+              search_placeholder={te("competitions.search_placeholder")}
               count_filtered={gare_future.length + gare_archivio.length}
               count_total={gare_totali_lista}
               sticky={false}
@@ -1361,7 +1361,7 @@ const CompetitionsPage: React.FC = () => {
         <div className="bg-card rounded-xl shadow-card overflow-hidden">
           <div className="px-4 py-3 border-b border-border flex items-center justify-between">
             <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-              <Clock className="w-3.5 h-3.5" /> Prossime gare ({gare_future.length})
+              <Clock className="w-3.5 h-3.5" /> {te("competitions.upcoming_heading", { count: gare_future.length })}
             </h2>
           </div>
           <div className="overflow-x-auto">
@@ -1375,7 +1375,7 @@ const CompetitionsPage: React.FC = () => {
                     {t("data")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                    Countdown
+                    {te("competitions.countdown_header")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden sm:table-cell">
                     {t("luogo")}
@@ -1392,7 +1392,7 @@ const CompetitionsPage: React.FC = () => {
                 {gare_future.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground text-sm">
-                      Nessuna gara in programma.
+                      {te("competitions.no_upcoming")}
                     </td>
                   </tr>
                 ) : (
@@ -1433,7 +1433,7 @@ const CompetitionsPage: React.FC = () => {
               className="w-full px-4 py-3 border-b border-border flex items-center justify-between hover:bg-muted/20 transition-colors"
             >
               <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                <Archive className="w-3.5 h-3.5" /> Archivio ({gare_archivio.length})
+                <Archive className="w-3.5 h-3.5" /> {te("competitions.archive_heading", { count: gare_archivio.length })}
               </h2>
               {show_archivio ? (
                 <ChevronUp className="w-4 h-4 text-muted-foreground" />
@@ -1456,13 +1456,13 @@ const CompetitionsPage: React.FC = () => {
                         {t("luogo")}
                       </th>
                       <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                        Segmenti
+                        {te("competitions.segments_header")}
                       </th>
                       <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
                         {t("iscritti")}
                       </th>
                       <th className="text-center px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                        Risultati PDF
+                        {te("competitions.results_pdf_header")}
                       </th>
                     </tr>
                   </thead>
@@ -1502,11 +1502,11 @@ const CompetitionsPage: React.FC = () => {
                           <td className="px-4 py-3 text-center">
                             {risultati.length > 0 ? (
                               <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
-                                ✓ {risultati.length} atleti
+                                {te("competitions.results_count_badge", { count: risultati.length })}
                               </span>
                             ) : con_risultati ? (
                               <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
-                                ✓ Registrati
+                                {te("competitions.registered_badge")}
                               </span>
                             ) : (
                               <span className="text-xs text-muted-foreground">—</span>

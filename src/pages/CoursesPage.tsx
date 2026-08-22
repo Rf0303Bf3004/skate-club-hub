@@ -339,6 +339,7 @@ const TabIscrizioni: React.FC<{
   tutti_atleti: any[];
   on_refresh: () => void;
 }> = ({ corso_id, livello_richiesto, atleti_iscritti_ids, tutti_atleti, on_refresh }) => {
+  const { t } = useTranslation("corsi");
   const [query, set_query] = useState("");
   const [saving, set_saving] = useState(false);
   const [removing, set_removing] = useState<string | null>(null);
@@ -1576,8 +1577,8 @@ const CorsoModal: React.FC<{
       );
       if (conflitto) {
         const istr = istruttori.find((i: any) => i.id === id);
-        const corso_nome = corsi.find((c: any) => c.id === conflitto.corso_id)?.nome || "altro corso";
-        warnings.push(`${istr?.nome} ${istr?.cognome} — conflitto con "${corso_nome}" (${conflitto.ora_inizio?.slice(0, 5)}–${conflitto.ora_fine?.slice(0, 5)})`);
+        const corso_nome = corsi.find((c: any) => c.id === conflitto.corso_id)?.nome || t("modal.other_course");
+        warnings.push(t("modal.instructor_conflict", { instructor: `${istr?.nome} ${istr?.cognome}`, course: corso_nome, start: conflitto.ora_inizio?.slice(0, 5), end: conflitto.ora_fine?.slice(0, 5) }));
       }
     });
     return warnings;
@@ -1936,10 +1937,10 @@ const CorsoModal: React.FC<{
               <div className="flex items-center justify-between px-3 py-2 bg-muted/30 rounded-lg">
                 <div className="space-y-0.5">
                   <label htmlFor="posiziona_planning" className={`text-sm font-medium cursor-pointer ${toggle_disabled ? "text-muted-foreground" : "text-foreground"}`}>
-                    Posiziona subito nel planning
+                    {t("modal.place_in_planning_now")}
                   </label>
                   {!posiziona_planning && !toggle_disabled && (
-                    <p className="text-xs text-muted-foreground">Il corso verrà posizionato nel planning in seguito</p>
+                    <p className="text-xs text-muted-foreground">{t("modal.will_be_placed_later")}</p>
                   )}
                   {toggle_disabled && toggle_tooltip && (
                     <p className="text-xs text-orange-600">{toggle_tooltip}</p>
@@ -1966,7 +1967,7 @@ const CorsoModal: React.FC<{
                 </TooltipProvider>
               </div>
               {/* Always show day selector and ice grid so user can pick a fascia */}
-              <Field label="Giorno">
+              <Field label={t("modal.day")}>
                 <select value={form.giorno} onChange={(e) => set_val("giorno", e.target.value)} className={input_cls}>
                   {GIORNI_DB.map((g) => (
                     <option key={g} value={g}>{g}</option>
@@ -1988,7 +1989,7 @@ const CorsoModal: React.FC<{
                 istruttori_ids_sel={form.istruttori_ids}
               />
               {!posiziona_planning && (
-                <Field label="Istruttori">
+                <Field label={t("modal.instructors")}>
                   <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
                     {istruttori_attivi.map((i) => {
                       const selected = form.istruttori_ids.includes(i.id);
@@ -2023,15 +2024,15 @@ const CorsoModal: React.FC<{
                   className="w-4 h-4 accent-primary"
                 />
                 <label htmlFor="attivo_corso" className="text-sm font-medium text-foreground cursor-pointer">
-                  Corso attivo
+                  {t("modal.active_course")}
                 </label>
               </div>
-              <Field label="Note">
+              <Field label={t("modal.notes")}>
                 <textarea
                   value={form.note}
                   onChange={(e) => set_val("note", e.target.value)}
                   rows={2}
-                  placeholder="Note aggiuntive..."
+                  placeholder={t("modal.notes_placeholder")}
                   className={`${input_cls} resize-none`}
                 />
               </Field>
@@ -2068,14 +2069,14 @@ const CorsoModal: React.FC<{
         <div className="px-6 py-4 border-t border-border space-y-2 flex-shrink-0">
           <div className="flex gap-2">
             <Button variant="outline" onClick={on_close} disabled={saving} className="flex-1">
-              Annulla
+              {t("modal.cancel")}
             </Button>
             <Button
               onClick={handle_save_click}
               disabled={saving || confirm_forzatura || validating_ghiaccio || !!ghiaccio_error}
               className="flex-1 bg-primary hover:bg-primary/90"
             >
-              {validating_ghiaccio ? "Verifica..." : saving ? "..." : "💾 Salva"}
+              {validating_ghiaccio ? t("modal.checking") : saving ? "..." : t("modal.save")}
             </Button>
           </div>
           {corso?.id && !confirm_delete && (
@@ -2085,16 +2086,16 @@ const CorsoModal: React.FC<{
               onClick={() => set_confirm_delete(true)}
               className="w-full text-destructive hover:bg-destructive/10"
             >
-              🗑️ Elimina corso
+              {t("modal.delete_course")}
             </Button>
           )}
           {confirm_delete && (
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => set_confirm_delete(false)} className="flex-1">
-                Annulla
+                {t("modal.cancel")}
               </Button>
               <Button variant="destructive" size="sm" onClick={on_delete} disabled={deleting} className="flex-1">
-                {deleting ? "..." : "Elimina definitivamente"}
+                {deleting ? "..." : t("modal.delete_permanently")}
               </Button>
             </div>
           )}
@@ -2112,7 +2113,7 @@ const CorsoModal: React.FC<{
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-foreground">Cambia tipo del corso</h3>
+              <h3 className="text-base font-bold text-foreground">{t("modal.change_type_title")}</h3>
               <button onClick={() => set_tipo_dialog_open(false)} className="text-muted-foreground hover:text-foreground">
                 <X className="w-5 h-5" />
               </button>
@@ -2121,12 +2122,12 @@ const CorsoModal: React.FC<{
             <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 flex items-start gap-2">
               <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
               <p className="text-xs text-orange-700">
-                Cambiare il tipo impatta dove il corso viene piazzato nel planning (ghiaccio vs off-ice). Sei sicuro?
+                {t("modal.change_type_warning")}
               </p>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Tipo</label>
+              <label className="text-sm font-medium text-foreground">{t("modal.type")}</label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
@@ -2137,7 +2138,7 @@ const CorsoModal: React.FC<{
                       : "border-border bg-background text-foreground hover:bg-muted/50"
                   }`}
                 >
-                  <Snowflake className="w-4 h-4" /> Ghiaccio
+                  <Snowflake className="w-4 h-4" /> {t("modal.type_ice")}
                 </button>
                 <button
                   type="button"
@@ -2148,20 +2149,20 @@ const CorsoModal: React.FC<{
                       : "border-border bg-background text-foreground hover:bg-muted/50"
                   }`}
                 >
-                  <Dumbbell className="w-4 h-4" /> Off-Ice
+                  <Dumbbell className="w-4 h-4" /> {t("modal.type_off_ice")}
                 </button>
               </div>
             </div>
 
             {tipo_dialog_tipo === "Off-Ice" && (
               <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Categoria</label>
+                <label className="text-sm font-medium text-foreground">{t("modal.category")}</label>
                 <input
                   type="text"
                   list="categorie_off_ice"
                   value={tipo_dialog_categoria}
                   onChange={(e) => set_tipo_dialog_categoria(e.target.value)}
-                  placeholder="es. Danza, Stretching, Pilates..."
+                  placeholder={t("modal.category_placeholder")}
                   className={input_cls}
                 />
                 <datalist id="categorie_off_ice">
@@ -2171,13 +2172,13 @@ const CorsoModal: React.FC<{
                   <option value="Preparazione atletica" />
                   <option value="Yoga" />
                 </datalist>
-                <p className="text-xs text-muted-foreground">Suggerimenti: Danza, Stretching, Pilates, Preparazione atletica, Yoga.</p>
+                <p className="text-xs text-muted-foreground">{t("modal.category_suggestions")}</p>
               </div>
             )}
 
             <div className="flex gap-2 pt-2">
               <Button variant="outline" onClick={() => set_tipo_dialog_open(false)} className="flex-1">
-                Annulla
+                {t("modal.cancel")}
               </Button>
               <Button
                 onClick={() => {
@@ -2190,7 +2191,7 @@ const CorsoModal: React.FC<{
                 }}
                 className="flex-1 bg-primary hover:bg-primary/90"
               >
-                Salva
+                {t("modal.save_plain")}
               </Button>
             </div>
           </div>
@@ -2217,6 +2218,7 @@ const CorsoCard: React.FC<{
   onGestisciIscrizioni: () => void;
   onClick: () => void;
 }> = ({ corso, istruttori, onGestisciIscrizioni, onClick }) => {
+  const { t } = useTranslation("corsi");
   const istruttori_corso = (corso.istruttori_ids || [])
     .map((id: string) => istruttori.find((i: any) => i.id === id))
     .filter(Boolean);
@@ -2237,7 +2239,7 @@ const CorsoCard: React.FC<{
             {corso.giorno} {corso.ora_inizio?.slice(0, 5)} – {corso.ora_fine?.slice(0, 5)}
           </p>
         ) : (
-          <Badge variant="secondary" className="text-[10px] bg-muted text-muted-foreground">Da posizionare</Badge>
+          <Badge variant="secondary" className="text-[10px] bg-muted text-muted-foreground">{t("card.to_be_scheduled")}</Badge>
         )}
       </div>
 
@@ -2261,7 +2263,7 @@ const CorsoCard: React.FC<{
         })()}
         {prezzo_non_impostato(corso) && (
           <Badge variant="outline" className="text-[10px] border-amber-300 bg-amber-50 text-amber-700 flex-shrink-0">
-            <AlertTriangle className="w-3 h-3 mr-1" /> Prezzo non impostato
+            <AlertTriangle className="w-3 h-3 mr-1" /> {t("card.price_not_set")}
           </Badge>
         )}
       </div>
@@ -2275,7 +2277,7 @@ const CorsoCard: React.FC<{
       <div className="flex items-center justify-between pt-2 border-t border-border/50">
         <div className="flex items-center gap-2">
           <Users className="w-4 h-4 text-muted-foreground" />
-          <span className="text-sm font-medium text-foreground">{num_iscritti} iscritti</span>
+          <span className="text-sm font-medium text-foreground">{t("card.enrolled_count", { count: num_iscritti })}</span>
         </div>
         <Button
           size="sm"
@@ -2286,7 +2288,7 @@ const CorsoCard: React.FC<{
             onGestisciIscrizioni();
           }}
         >
-          Gestisci iscrizioni
+          {t("card.manage_enrollments")}
         </Button>
       </div>
     </div>
@@ -2307,7 +2309,9 @@ const FilterBar: React.FC<{
   istruttori: any[];
   onReset: () => void;
   hasFilters: boolean;
-}> = ({ giorno, setGiorno, tipo, setTipo, istruttoreId, setIstruttoreId, tipi, istruttori, onReset, hasFilters }) => (
+}> = ({ giorno, setGiorno, tipo, setTipo, istruttoreId, setIstruttoreId, tipi, istruttori, onReset, hasFilters }) => {
+  const { t } = useTranslation("corsi");
+  return (
   <div className="bg-card rounded-xl border border-border p-4 space-y-3">
     {/* Day pills */}
     <div className="flex flex-wrap gap-1.5">
@@ -2334,7 +2338,7 @@ const FilterBar: React.FC<{
           onChange={(e) => setTipo(e.target.value)}
           className={`${input_cls} appearance-none pr-8 min-w-[160px]`}
         >
-          <option value="">Tutti i tipi</option>
+          <option value="">{t("filters.all_types")}</option>
           {tipi.map((t) => (
             <option key={t} value={t}>{t}</option>
           ))}
@@ -2349,7 +2353,7 @@ const FilterBar: React.FC<{
           onChange={(e) => setIstruttoreId(e.target.value)}
           className={`${input_cls} appearance-none pr-8 min-w-[180px]`}
         >
-          <option value="">Tutti gli istruttori</option>
+          <option value="">{t("filters.all_instructors")}</option>
           {istruttori.filter((i: any) => i.attivo).map((i: any) => (
             <option key={i.id} value={i.id}>{i.nome} {i.cognome}</option>
           ))}
@@ -2359,12 +2363,13 @@ const FilterBar: React.FC<{
 
       {hasFilters && (
         <Button variant="ghost" size="sm" onClick={onReset} className="text-xs text-muted-foreground">
-          <X className="w-3.5 h-3.5 mr-1" /> Azzera filtri
+          <X className="w-3.5 h-3.5 mr-1" /> {t("filters.reset")}
         </Button>
       )}
     </div>
   </div>
-);
+  );
+};
 
 // ─── Main Page ─────────────────────────────────────────────
 const CoursesPage: React.FC = () => {

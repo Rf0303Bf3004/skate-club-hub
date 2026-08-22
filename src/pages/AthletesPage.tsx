@@ -312,7 +312,7 @@ const AtletaModal: React.FC<{
                 onChange={(v) => set_val("livello_in_preparazione", v ?? "")}
                 fase="comune"
                 allowNull={true}
-                nullLabel="— Nessuno —"
+                nullLabel={t("modal.none_option")}
               />
             </Field>
           </div>
@@ -328,8 +328,8 @@ const AtletaModal: React.FC<{
                 className="w-4 h-4 accent-primary"
               />
               <label htmlFor="attivo_check_top" className="cursor-pointer">
-                <span className="text-sm font-medium text-foreground">Atleta attiva</span>
-                <span className="block text-xs text-muted-foreground">Iscritta e partecipa alle attività del club</span>
+                <span className="text-sm font-medium text-foreground">{t("modal.active_check_label")}</span>
+                <span className="block text-xs text-muted-foreground">{t("modal.active_check_desc")}</span>
               </label>
             </div>
             <div className="flex items-start gap-3 px-3 py-2 bg-muted/30 rounded-lg">
@@ -345,8 +345,8 @@ const AtletaModal: React.FC<{
                 className="w-4 h-4 mt-0.5 accent-primary"
               />
               <label htmlFor="ago_check" className="cursor-pointer">
-                <span className="text-sm font-medium text-foreground">Agonista</span>
-                <span className="block text-xs text-muted-foreground">Partecipa a gare federali con licenza agonistica</span>
+                <span className="text-sm font-medium text-foreground">{t("modal.agonista_check_label")}</span>
+                <span className="block text-xs text-muted-foreground">{t("modal.agonista_check_desc")}</span>
               </label>
             </div>
             <div className="flex items-start gap-3 px-3 py-2 bg-muted/30 rounded-lg">
@@ -362,8 +362,8 @@ const AtletaModal: React.FC<{
                 className="w-4 h-4 mt-0.5 accent-primary"
               />
               <label htmlFor="fed_check" className="cursor-pointer">
-                <span className="text-sm font-medium text-foreground">Atleta di Federazione</span>
-                <span className="block text-xs text-muted-foreground">Rappresenta il Cantone nelle gare federali</span>
+                <span className="text-sm font-medium text-foreground">{t("modal.federation_check_label")}</span>
+                <span className="block text-xs text-muted-foreground">{t("modal.federation_check_desc")}</span>
               </label>
             </div>
           </div>
@@ -379,8 +379,8 @@ const AtletaModal: React.FC<{
                 className="w-4 h-4 mt-0.5 accent-primary"
               />
               <label htmlFor="esterno_check" className="cursor-pointer">
-                <span className="text-sm font-medium text-foreground">Atleta esterno</span>
-                <span className="block text-xs text-muted-foreground">Pattinatore esterno ospite</span>
+                <span className="text-sm font-medium text-foreground">{t("modal.external_check_label")}</span>
+                <span className="block text-xs text-muted-foreground">{t("modal.external_check_desc")}</span>
               </label>
             </div>
           </div>
@@ -631,7 +631,7 @@ const AtletaModal: React.FC<{
         <div className="px-6 py-4 border-t border-border space-y-2">
           <div className="flex gap-2">
             <Button variant="outline" onClick={on_close} disabled={saving} className="flex-1">
-              t("modal.cancel")
+              {t("modal.cancel")}
             </Button>
             <Button
               onClick={() => on_save({ ...form, id: atleta?.id })}
@@ -1355,7 +1355,7 @@ const AthletesPage: React.FC = () => {
             )
           ).sort() as string[];
           const cat_options = [
-            { value: "tutti", label: "Tutte le categorie" },
+            { value: "tutti", label: t2("filters.all_categories") },
             ...distinct_categorie.map((c) => ({ value: c, label: get_categoria_label(c) })),
           ];
           // Per il livello, distinct sulla colonna corretta in base alla categoria scelta.
@@ -1376,14 +1376,14 @@ const AthletesPage: React.FC = () => {
               ) as string[]).sort()
             : [];
           const liv_options = [
-            { value: "tutti", label: "Tutti i livelli" },
+            { value: "tutti", label: t2("filters.all_levels") },
             ...distinct_livelli.map((l) => ({ value: l, label: l })),
           ];
           const filtri: any[] = [];
           // Mostro il filtro categoria solo se ci sono almeno 2 valori distinti.
           if (distinct_categorie.length > 1) {
             filtri.push({
-              key: "categoria", label: "Categoria", value: categoria_filter, options: cat_options,
+              key: "categoria", label: t2("list.filters.category"), value: categoria_filter, options: cat_options,
               onChange: (v: string) => {
                 set_categoria_filter(v as any);
                 set_level_filter("tutti");
@@ -1394,58 +1394,58 @@ const AthletesPage: React.FC = () => {
           }
           if (categoria_filter === "artistica") {
             filtri.push({
-              key: "percorso", label: "Percorso", value: percorso_filter,
+              key: "percorso", label: t2("filters.path"), value: percorso_filter,
               options: [
-                { value: "tutti", label: "Tutti i percorsi" },
-                { value: "artistica", label: "Solo Artistica" },
-                { value: "stile", label: "Solo Stile" },
-                { value: "entrambi", label: "Entrambi" },
+                { value: "tutti", label: t2("filters.all_paths") },
+                { value: "artistica", label: t2("filters.only_artistic") },
+                { value: "stile", label: t2("filters.only_style") },
+                { value: "entrambi", label: t2("filters.both") },
               ],
               onChange: (v: string) => set_percorso_filter(v as any),
             });
           }
           if (liv_column && distinct_livelli.length > 1) {
             filtri.push({
-              key: "livello", label: "Livello", value: level_filter, options: liv_options,
+              key: "livello", label: t2("list.filters.level"), value: level_filter, options: liv_options,
               onChange: set_level_filter,
             });
           }
           filtri.push(
             {
-              key: "status", label: "Status", value: status_filter,
+              key: "status", label: t2("list.filters.status"), value: status_filter,
               options: [
-                { value: "tutti", label: "Tutti" },
-                { value: "scuola", label: "Solo scuola" },
-                { value: "agoniste", label: "Solo agoniste" },
-                { value: "federazione", label: "Solo Federazione" },
+                { value: "tutti", label: t2("list.filters.all") },
+                { value: "scuola", label: t2("filters.only_scuola") },
+                { value: "agoniste", label: t2("filters.only_agoniste") },
+                { value: "federazione", label: t2("filters.only_federazione") },
               ],
               onChange: set_status_filter,
             },
             {
-              key: "agonista", label: "Agonista", value: agonista_filter,
+              key: "agonista", label: t2("list.filters.agonista"), value: agonista_filter,
               options: [
-                { value: "tutti", label: "Tutti" },
-                { value: "si", label: "Sì" },
-                { value: "no", label: "No" },
+                { value: "tutti", label: t2("list.filters.all") },
+                { value: "si", label: t2("filters.yes") },
+                { value: "no", label: t2("filters.no") },
               ],
               onChange: (v: string) => set_agonista_filter(v as any),
             },
             {
-              key: "attivo", label: "Stato", value: attivo_filter,
+              key: "attivo", label: t2("list.filters.active"), value: attivo_filter,
               options: [
-                { value: "tutti", label: "Tutti" },
-                { value: "attivi", label: "Attivi" },
-                { value: "inattivi", label: "Inattivi" },
+                { value: "tutti", label: t2("list.filters.all") },
+                { value: "attivi", label: t2("list.filters.only_active") },
+                { value: "inattivi", label: t2("list.filters.only_inactive") },
               ],
               onChange: (v: string) => set_attivo_filter(v as any),
             },
             {
-              key: "eta", label: "Età", value: eta_filter,
+              key: "eta", label: t2("list.filters.age"), value: eta_filter,
               options: [
-                { value: "tutti", label: "Tutte" },
-                { value: "5-8", label: "5–8" },
-                { value: "9-12", label: "9–12" },
-                { value: "13+", label: "13+" },
+                { value: "tutti", label: t2("filters.all_ages") },
+                { value: "5-8", label: t2("filters.age_5_8") },
+                { value: "9-12", label: t2("filters.age_9_12") },
+                { value: "13+", label: t2("filters.age_13_plus") },
               ],
               onChange: (v: string) => set_eta_filter(v as any),
             },
@@ -1454,17 +1454,17 @@ const AthletesPage: React.FC = () => {
             <SearchableListLayout
               search={search_raw}
               on_search_change={set_search_raw}
-              search_placeholder="Cerca per nome, cognome, codice atleta, email genitori…"
+              search_placeholder={t2("filters.search_placeholder")}
               filters={filtri}
               sort={{
                 value: sort_by,
                 onChange: (v) => set_sort_by(v as any),
                 options: [
-                  { value: "cognome", label: "Cognome A-Z" },
-                  { value: "livello", label: "Livello" },
-                  { value: "eta", label: "Età ↓" },
-                  { value: "recente", label: "Iscrizione recente" },
-                  { value: "codice", label: "Codice atleta" },
+                  { value: "cognome", label: t2("sort.surname_az") },
+                  { value: "livello", label: t2("sort.level") },
+                  { value: "eta", label: t2("sort.age_desc") },
+                  { value: "recente", label: t2("sort.recent_enrollment") },
+                  { value: "codice", label: t2("sort.athlete_code") },
                 ],
               }}
               count_filtered={filtered.length}
@@ -1474,10 +1474,10 @@ const AthletesPage: React.FC = () => {
                   onClick={() => set_card_filter(null)}
                   className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 border border-primary/30 text-[11px] font-semibold text-primary hover:bg-primary/20"
                 >
-                  {card_filter.sezione === "pulcini" && "Pulcini"}
-                  {card_filter.sezione === "amatori" && `Amatori · ${card_filter.livello}`}
-                  {card_filter.sezione === "artistica" && `${card_filter.percorso === "artistica" ? "Artistica" : "Stile"} · ${card_filter.livello}`}
-                  {card_filter.sezione === "in_prep" && `In prep · ${card_filter.livello}`}
+                  {card_filter.sezione === "pulcini" && t2("summary.pulcini")}
+                  {card_filter.sezione === "amatori" && t2("summary.amatori", { level: card_filter.livello })}
+                  {card_filter.sezione === "artistica" && (card_filter.percorso === "artistica" ? t2("summary.artistica", { level: card_filter.livello }) : t2("summary.stile", { level: card_filter.livello }))}
+                  {card_filter.sezione === "in_prep" && t2("summary.in_prep", { level: card_filter.livello })}
                   <span>✕</span>
                 </button>
               ) : null}
@@ -1501,7 +1501,7 @@ const AthletesPage: React.FC = () => {
                     {t("eta")}
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                    Livello / Carriera
+                    {t2("table.level_career")}
                   </th>
                   <th className="text-right px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">
                     {t("ore_pista")}
@@ -1513,7 +1513,7 @@ const AthletesPage: React.FC = () => {
                     {t("stato")}
                   </th>
                   <th className="text-right px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                    Azioni
+                    {t2("table.actions")}
                   </th>
                 </tr>
               </thead>
@@ -1521,7 +1521,7 @@ const AthletesPage: React.FC = () => {
                 {filtered.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground text-sm">
-                      Nessuna atleta trovata.
+                      {t2("table.no_athletes_found")}
                     </td>
                   </tr>
                 ) : (
@@ -1549,7 +1549,7 @@ const AthletesPage: React.FC = () => {
                                 />
                                 {a.verificato === false && (
                                   <span className="inline-flex items-center gap-1 rounded-md bg-yellow-100 px-1.5 py-0.5 text-[10px] font-semibold text-yellow-800 ring-1 ring-inset ring-yellow-300">
-                                    ⚠️ Da verificare
+                                    ⚠️ {t2("table.to_verify_badge")}
                                   </span>
                                 )}
                               </p>
@@ -1596,7 +1596,7 @@ const AthletesPage: React.FC = () => {
                           onClick={() => { set_scheda_modo("foto"); set_scheda_id(a.id); }}
                           className="text-xs h-7"
                         >
-                          Scheda
+                          {t2("table.card_button")}
                         </Button>
                         <Button
                           variant="ghost"
@@ -1604,7 +1604,7 @@ const AthletesPage: React.FC = () => {
                           onClick={() => { set_scheda_modo("iscrizione"); set_scheda_id(a.id); }}
                           className="text-xs h-7"
                         >
-                          Iscrizione
+                          {t2("table.enrollment_button")}
                         </Button>
                         <Button
                           variant="ghost"
@@ -1615,7 +1615,7 @@ const AthletesPage: React.FC = () => {
                           }}
                           className="text-xs h-7"
                         >
-                          Modifica
+                          {t2("table.edit_button")}
                         </Button>
                       </td>
                     </tr>
