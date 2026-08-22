@@ -22,6 +22,7 @@ import {
   ChevronUp,
   Users,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   gara_id: string;
@@ -49,6 +50,7 @@ const empty_session = (): SessioneForm => ({
 });
 
 const SessioniCampoEstivo: React.FC<Props> = ({ gara_id }) => {
+  const { t } = useTranslation("events");
   const qc = useQueryClient();
   const [open_form, set_open_form] = useState(false);
   const [form, set_form] = useState<SessioneForm>(empty_session());
@@ -119,7 +121,7 @@ const SessioniCampoEstivo: React.FC<Props> = ({ gara_id }) => {
 
   const handle_save_session = async () => {
     if (!form.data) {
-      toast({ title: "Data obbligatoria", variant: "destructive" });
+      toast({ title: t("sessioni_campo.toast_data_required"), variant: "destructive" });
       return;
     }
     set_saving(true);
@@ -135,12 +137,12 @@ const SessioniCampoEstivo: React.FC<Props> = ({ gara_id }) => {
       });
       if (error) throw error;
       await qc.invalidateQueries({ queryKey: ["sessioni-campo", gara_id] });
-      toast({ title: "Sessione aggiunta!" });
+      toast({ title: t("sessioni_campo.toast_added") });
       set_open_form(false);
       set_form(empty_session());
     } catch (err: any) {
       toast({
-        title: "Errore",
+        title: t("sessioni_campo.toast_error"),
         description: err?.message,
         variant: "destructive",
       });
@@ -150,7 +152,7 @@ const SessioniCampoEstivo: React.FC<Props> = ({ gara_id }) => {
   };
 
   const handle_delete_session = async (id: string) => {
-    if (!confirm("Eliminare questa sessione e tutte le presenze collegate?")) return;
+    if (!confirm(t("sessioni_campo.confirm_delete"))) return;
     try {
       const { error } = await (supabase as any)
         .from("sessioni_campo")
@@ -159,9 +161,9 @@ const SessioniCampoEstivo: React.FC<Props> = ({ gara_id }) => {
       if (error) throw error;
       await qc.invalidateQueries({ queryKey: ["sessioni-campo", gara_id] });
       if (expanded_id === id) set_expanded_id(null);
-      toast({ title: "Sessione eliminata" });
+      toast({ title: t("sessioni_campo.toast_deleted") });
     } catch (err: any) {
-      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+      toast({ title: t("sessioni_campo.toast_error"), description: err?.message, variant: "destructive" });
     }
   };
 
@@ -184,7 +186,7 @@ const SessioniCampoEstivo: React.FC<Props> = ({ gara_id }) => {
       }
       await qc.invalidateQueries({ queryKey: ["presenze-campo", sessione_id] });
     } catch (err: any) {
-      toast({ title: "Errore presenza", description: err?.message, variant: "destructive" });
+      toast({ title: t("sessioni_campo.toast_presenza_error"), description: err?.message, variant: "destructive" });
     }
   };
 
@@ -198,19 +200,19 @@ const SessioniCampoEstivo: React.FC<Props> = ({ gara_id }) => {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-          <Calendar className="w-4 h-4" /> Sessioni ({sessioni.length})
+          <Calendar className="w-4 h-4" /> {t("sessioni_campo.title", { count: sessioni.length })}
         </h3>
         <Button onClick={() => set_open_form(true)} size="sm" className="gap-2">
-          <Plus className="w-4 h-4" /> Aggiungi sessione
+          <Plus className="w-4 h-4" /> {t("sessioni_campo.add")}
         </Button>
       </div>
 
       {isLoading ? (
-        <div className="text-sm text-muted-foreground py-4">Caricamento…</div>
+        <div className="text-sm text-muted-foreground py-4">{t("sessioni_campo.loading")}</div>
       ) : sessioni.length === 0 ? (
         <div className="bg-muted/20 rounded-xl p-8 text-center text-muted-foreground">
           <Calendar className="w-8 h-8 mx-auto mb-2 opacity-30" />
-          <p className="text-sm">Nessuna sessione ancora aggiunta.</p>
+          <p className="text-sm">{t("sessioni_campo.empty")}</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -247,7 +249,7 @@ const SessioniCampoEstivo: React.FC<Props> = ({ gara_id }) => {
                       {presenti_count !== null && (
                         <Badge className="text-[10px] gap-1 bg-primary/10 text-primary hover:bg-primary/10">
                           <Users className="w-3 h-3" />
-                          {presenti_count} presenti
+                          {t("sessioni_campo.presenti", { count: presenti_count })}
                         </Badge>
                       )}
                     </div>
@@ -287,11 +289,11 @@ const SessioniCampoEstivo: React.FC<Props> = ({ gara_id }) => {
                 {is_open && (
                   <div className="border-t border-border bg-muted/10 px-4 py-3 space-y-2">
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                      Presenze atleti ({atleti.length})
+                      {t("sessioni_campo.presenze_title", { count: atleti.length })}
                     </p>
                     {atleti.length === 0 ? (
                       <p className="text-sm text-muted-foreground py-3">
-                        Nessun atleta attivo nel club.
+                        {t("sessioni_campo.no_athletes")}
                       </p>
                     ) : (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-80 overflow-y-auto">
@@ -331,12 +333,12 @@ const SessioniCampoEstivo: React.FC<Props> = ({ gara_id }) => {
       <Dialog open={open_form} onOpenChange={set_open_form}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Nuova sessione</DialogTitle>
+            <DialogTitle>{t("sessioni_campo.modal_title")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                Data *
+                {t("sessioni_campo.field_data")}
               </label>
               <input
                 type="date"
@@ -348,7 +350,7 @@ const SessioniCampoEstivo: React.FC<Props> = ({ gara_id }) => {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  Ora inizio
+                  {t("sessioni_campo.field_ora_inizio")}
                 </label>
                 <input
                   type="time"
@@ -359,7 +361,7 @@ const SessioniCampoEstivo: React.FC<Props> = ({ gara_id }) => {
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  Ora fine
+                  {t("sessioni_campo.field_ora_fine")}
                 </label>
                 <input
                   type="time"
@@ -371,25 +373,25 @@ const SessioniCampoEstivo: React.FC<Props> = ({ gara_id }) => {
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                Luogo
+                {t("sessioni_campo.field_luogo")}
               </label>
               <input
                 value={form.luogo}
                 onChange={(e) => set_form((p) => ({ ...p, luogo: e.target.value }))}
-                placeholder="es. Pista Lugano"
+                placeholder={t("sessioni_campo.field_luogo_ph")}
                 className={input_cls}
               />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                Istruttore
+                {t("sessioni_campo.field_istruttore")}
               </label>
               <select
                 value={form.istruttore_id}
                 onChange={(e) => set_form((p) => ({ ...p, istruttore_id: e.target.value }))}
                 className={input_cls}
               >
-                <option value="">— Nessuno —</option>
+                <option value="">{t("sessioni_campo.istruttore_none")}</option>
                 {istruttori.map((i: any) => (
                   <option key={i.id} value={i.id}>
                     {i.nome} {i.cognome}
@@ -399,22 +401,22 @@ const SessioniCampoEstivo: React.FC<Props> = ({ gara_id }) => {
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                Note
+                {t("sessioni_campo.field_note")}
               </label>
               <textarea
                 value={form.note}
                 onChange={(e) => set_form((p) => ({ ...p, note: e.target.value }))}
                 rows={2}
-                placeholder="Note sulla sessione..."
+                placeholder={t("sessioni_campo.field_note_ph")}
                 className={`${input_cls} resize-none`}
               />
             </div>
             <div className="flex justify-end gap-3 pt-2">
               <Button variant="outline" onClick={() => set_open_form(false)} disabled={saving}>
-                Annulla
+                {t("sessioni_campo.cancel")}
               </Button>
               <Button onClick={handle_save_session} disabled={saving}>
-                {saving ? "..." : "Salva"}
+                {saving ? "..." : t("sessioni_campo.save")}
               </Button>
             </div>
           </div>

@@ -7,6 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { Upload, FileText, Search, CheckCircle2, AlertCircle, Loader2, X, ChevronDown, ChevronUp } from "lucide-react";
 import * as pdfjs_lib from "pdfjs-dist";
+import { useTranslation } from "react-i18next";
 
 pdfjs_lib.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.mjs",
@@ -72,6 +73,7 @@ function match_atleta(ai_name: string, db_atleti: AtletaDB[]): AtletaDB | null {
 }
 
 const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = ({ atleti_db, on_done }) => {
+  const { t } = useTranslation("events");
   const qc = useQueryClient();
   const [file, set_file] = useState<File | null>(null);
   const [nome_gara, set_nome_gara] = useState("");
@@ -115,7 +117,7 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
       const pdf_text = await extract_text_from_pdf(file);
 
       if (!pdf_text) {
-        throw new Error("Non sono riuscito a estrarre testo dal PDF.");
+        throw new Error(t("import_pdf.err_no_text"));
       }
 
       const { data, error } = await supabase.functions.invoke("parse-gara-pdf", {
@@ -123,7 +125,7 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
       });
 
       if (error) {
-        throw new Error(error.message || "Errore chiamando la edge function");
+        throw new Error(error.message || t("import_pdf.err_edge"));
       }
 
       const result: ParsedResult = data;
@@ -144,11 +146,11 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
       });
       set_matches(ms);
 
-      toast({ title: `✅ ${ms.length} atleti estratti dal PDF` });
+      toast({ title: t("import_pdf.toast_extracted", { count: ms.length }) });
     } catch (err: any) {
       toast({
-        title: "Errore analisi PDF",
-        description: err?.message ?? "Controlla il file e riprova.",
+        title: t("import_pdf.toast_parse_error"),
+        description: err?.message ?? t("import_pdf.toast_parse_error_desc"),
         variant: "destructive",
       });
     } finally {
@@ -167,7 +169,7 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
   const handle_save = async () => {
     if (!parsed || !matches.length) return;
     if (!nome_gara.trim()) {
-      toast({ title: "Nome gara obbligatorio", variant: "destructive" });
+      toast({ title: t("import_pdf.toast_nome_required"), variant: "destructive" });
       return;
     }
     set_saving(true);
@@ -267,7 +269,7 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
 
       await qc.invalidateQueries({ queryKey: ["gare"] });
 
-      toast({ title: `✅ Gara salvata con ${saved_count} atleti!` });
+      toast({ title: t("import_pdf.toast_saved", { count: saved_count }) });
       set_parsed(null);
       set_matches([]);
       set_file(null);
@@ -278,8 +280,8 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
       on_done();
     } catch (err: any) {
       toast({
-        title: "Errore salvataggio",
-        description: err?.message ?? "Controlla i dati e riprova.",
+        title: t("import_pdf.toast_save_error"),
+        description: err?.message ?? t("import_pdf.toast_save_error_desc"),
         variant: "destructive",
       });
     } finally {
@@ -302,8 +304,8 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
               <FileText className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-base">Importa risultati da PDF ufficiale ISU</CardTitle>
-              <CardDescription>Carica il PDF dei risultati e l'AI estrarrà tutti i dati</CardDescription>
+              <CardTitle className="text-base">{t("import_pdf.title")}</CardTitle>
+              <CardDescription>{t("import_pdf.description")}</CardDescription>
             </div>
           </div>
           {expanded ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
@@ -316,7 +318,7 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-3">
               <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                File PDF *
+                {t("import_pdf.field_file")}
               </label>
               <div className="relative">
                 <input
@@ -328,7 +330,7 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
                 <div className={`flex items-center gap-3 px-4 py-3 rounded-lg border-2 border-dashed transition-colors ${file ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}>
                   <Upload className="w-5 h-5 text-muted-foreground shrink-0" />
                   <span className="text-sm text-muted-foreground truncate">
-                    {file ? file.name : "Seleziona PDF risultati..."}
+                    {file ? file.name : t("import_pdf.file_placeholder")}
                   </span>
                 </div>
               </div>
@@ -336,12 +338,12 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
 
             <div className="space-y-3">
               <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                Nome Gara *
+                {t("import_pdf.field_nome")}
               </label>
               <input
                 value={nome_gara}
                 onChange={(e) => set_nome_gara(e.target.value)}
-                placeholder="es. Trofeo Invernale 2025"
+                placeholder={t("import_pdf.field_nome_ph")}
                 className={input_cls}
               />
             </div>
@@ -350,7 +352,7 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                Data Gara
+                {t("import_pdf.field_data")}
               </label>
               <input
                 type="date"
@@ -361,23 +363,23 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                Luogo
+                {t("import_pdf.field_luogo")}
               </label>
               <input
                 value={luogo_gara}
                 onChange={(e) => set_luogo_gara(e.target.value)}
-                placeholder="es. Lugano"
+                placeholder={t("import_pdf.field_luogo_ph")}
                 className={input_cls}
               />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                Segmento
+                {t("import_pdf.field_segmento")}
               </label>
               <input
                 value={segmento}
                 onChange={(e) => set_segmento(e.target.value)}
-                placeholder="es. Short Program, Free Skating"
+                placeholder={t("import_pdf.field_segmento_ph")}
                 className={input_cls}
               />
             </div>
@@ -391,12 +393,12 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
             {parsing ? (
               <span className="flex items-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Analisi in corso… (può richiedere 30-60s)
+                {t("import_pdf.analyzing")}
               </span>
             ) : (
               <span className="flex items-center gap-2">
                 <Search className="w-4 h-4" />
-                Analizza PDF
+                {t("import_pdf.analyze")}
               </span>
             )}
           </Button>
@@ -405,7 +407,7 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
           {parsed && matches.length > 0 && (
             <div className="space-y-4">
               <div className="flex items-center gap-3 flex-wrap">
-                <h3 className="text-sm font-bold text-foreground">Anteprima risultati</h3>
+                <h3 className="text-sm font-bold text-foreground">{t("import_pdf.preview_title")}</h3>
                 {parsed.categoria && (
                   <Badge variant="outline">{parsed.categoria}</Badge>
                 )}
@@ -416,7 +418,7 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
                   <Badge variant="outline">{parsed.disciplina}</Badge>
                 )}
                 <span className="text-xs text-muted-foreground ml-auto">
-                  {matched_count} trovati · {unmatched_count} da abbinare
+                  {t("import_pdf.match_summary", { matched: matched_count, unmatched: unmatched_count })}
                 </span>
               </div>
 
@@ -425,13 +427,13 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
                   <thead>
                     <tr className="bg-muted/50">
                       <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground">#</th>
-                      <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground">Atleta</th>
-                      <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground">Club</th>
+                      <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground">{t("import_pdf.col_atleta")}</th>
+                      <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground">{t("import_pdf.col_club")}</th>
                       <th className="text-right px-3 py-2 text-xs font-semibold text-muted-foreground">TOT</th>
                       <th className="text-right px-3 py-2 text-xs font-semibold text-muted-foreground">TES</th>
                       <th className="text-right px-3 py-2 text-xs font-semibold text-muted-foreground">PCS</th>
-                      <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground">Stato</th>
-                      <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground">Abbinamento</th>
+                      <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground">{t("import_pdf.col_stato")}</th>
+                      <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground">{t("import_pdf.col_abbinamento")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -451,12 +453,12 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
                             {m.matched_id ? (
                               <Badge className="bg-green-100 text-green-700 hover:bg-green-100 text-[10px]">
                                 <CheckCircle2 className="w-3 h-3 mr-1" />
-                                Trovato in DB
+                                {t("import_pdf.found_in_db")}
                               </Badge>
                             ) : (
                               <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100 text-[10px]">
                                 <AlertCircle className="w-3 h-3 mr-1" />
-                                Da abbinare
+                                {t("import_pdf.to_match")}
                               </Badge>
                             )}
                           </td>
@@ -469,7 +471,7 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
                                 }
                                 className="text-xs rounded border border-border bg-background px-2 py-1 max-w-[180px]"
                               >
-                                <option value="">Nessun abbinamento (esterno)</option>
+                                <option value="">{t("import_pdf.no_match_option")}</option>
                                 {atleti_db.map((a) => (
                                   <option key={a.id} value={a.id}>
                                     {a.cognome} {a.nome}
@@ -492,7 +494,7 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
                           <tr>
                             <td colSpan={8} className="px-3 py-2 bg-muted/20">
                               <div className="text-xs">
-                                <p className="font-semibold text-muted-foreground mb-1">Elementi tecnici:</p>
+                                <p className="font-semibold text-muted-foreground mb-1">{t("import_pdf.elementi_tecnici")}</p>
                                 <div className="flex flex-wrap gap-1">
                                   {m.atleta_ai.elementi.map((el, ei) => (
                                     <span
@@ -526,18 +528,18 @@ const ImportGaraPdf: React.FC<{ atleti_db: AtletaDB[]; on_done: () => void }> = 
                   }}
                 >
                   <X className="w-4 h-4 mr-1" />
-                  Annulla
+                  {t("import_pdf.cancel")}
                 </Button>
                 <Button onClick={handle_save} disabled={saving}>
                   {saving ? (
                     <span className="flex items-center gap-2">
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Salvataggio…
+                      {t("import_pdf.saving")}
                     </span>
                   ) : (
                     <span className="flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4" />
-                      Conferma e salva ({matches.length} atleti)
+                      {t("import_pdf.confirm_save", { count: matches.length })}
                     </span>
                   )}
                 </Button>
