@@ -9,7 +9,6 @@ export interface AtletaStampa {
 export interface RigaSessioneStampa {
   ora_inizio: string;
   ora_fine: string;
-  pista: string | null;
   specialita: string;
   specialita_descrizione: string | null;
   atleti: AtletaStampa[];
@@ -75,12 +74,12 @@ const StampaRiepilogoIstruttori: React.FC<Props> = ({ istruttori, data_label }) 
               {si === 0 ? (
                 <p className="text-[24pt] font-extrabold leading-tight">
                   {s.ora_inizio}–{s.ora_fine}
-                  {s.pista ? ` — ${s.pista}` : ""} — {s.specialita}
+                  — {s.specialita}
                 </p>
               ) : (
                 <p className="text-[20pt] font-bold leading-tight">
                   ↓ E poi, dalle {s.ora_inizio} alle {s.ora_fine}
-                  {s.pista ? ` — ${s.pista}` : ""} — {s.specialita}
+                  — {s.specialita}
                 </p>
               )}
               {dettaglio(s)}

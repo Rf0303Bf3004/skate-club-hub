@@ -1,0 +1,1 @@
+ALTER TABLE public.griglia_sessioni DROP COLUMN IF EXISTS pista;

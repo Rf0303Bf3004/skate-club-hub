@@ -590,16 +590,11 @@ const SessioneBox: React.FC<{
   const usa_testo = !sessione.specialita_id && !!sessione.specialita_testo_libero;
   const [modo_libero, set_modo_libero] = useState(usa_testo);
   const [messaggio, set_messaggio] = useState(sessione.messaggio_atleti ?? "");
-  const [pista, set_pista] = useState(sessione.pista ?? "");
   const prefill_fatto = React.useRef(false);
 
   React.useEffect(() => {
     set_messaggio(sessione.messaggio_atleti ?? "");
   }, [sessione.messaggio_atleti]);
-
-  React.useEffect(() => {
-    set_pista(sessione.pista ?? "");
-  }, [sessione.pista]);
 
   // Pre-riempimento automatico solo alla prima volta (messaggio ancora vuoto).
   React.useEffect(() => {
@@ -640,15 +635,6 @@ const SessioneBox: React.FC<{
           value={hhmm(sessione.ora_fine)}
           onChange={(v) => on_change({ ora_fine: v })}
           aria_label="Ora fine"
-        />
-        <Input
-          value={pista}
-          onChange={(e) => set_pista(e.target.value)}
-          onBlur={() => {
-            if ((sessione.pista ?? "") !== pista) on_change({ pista: pista.trim() || null });
-          }}
-          placeholder="Pista (facoltativa)"
-          className="h-8 w-[9.5rem]"
         />
         <div className="flex-1 min-w-[12rem]">
           <Select
@@ -1153,7 +1139,6 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
         specialita_id: merged.specialita_id,
         specialita_testo_libero: merged.specialita_testo_libero,
         note: merged.note,
-        pista: merged.pista,
         messaggio_atleti: merged.messaggio_atleti,
         ...(forzatura ? { fuori_disponibilita: true, motivo_forzatura: forzatura } : {}),
       });

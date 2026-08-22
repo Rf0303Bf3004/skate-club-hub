@@ -4,6 +4,7 @@ import {
   impacchetta_sottorighe,
   type TableauCorsia,
   type TableauEvento,
+  colore_evento,
 } from "@/components/griglia/TableauPosterStampa";
 import { use_disponibilita_giorno } from "@/hooks/use-griglia-ghiaccio";
 import { Snowflake, Dumbbell, AlertTriangle } from "lucide-react";
@@ -122,6 +123,7 @@ const CorsiaRiga: React.FC<{
           const a = Math.min(e.fine_min, min_fine);
           if (a <= da) return null;
           const riga = riga_per_evento[e.id] ?? 0;
+          const colore_ev = n_righe > 1 ? colore_evento(e.titolo) : colore;
           return (
             <div
               key={e.id}
@@ -131,9 +133,9 @@ const CorsiaRiga: React.FC<{
                 width: Math.max(48, (a - da) * PX_PER_MIN - 3),
                 top: riga * ALTEZZA_SOTTORIGA_PX + 4,
                 height: ALTEZZA_SOTTORIGA_PX - 8,
-                borderColor: colore,
+                borderColor: colore_ev,
                 borderLeftWidth: 4,
-                borderLeftColor: colore,
+                borderLeftColor: colore_ev,
               }}
               title={`${hhmm_da_min(e.inizio_min)}–${hhmm_da_min(e.fine_min)} · ${e.titolo}${e.istruttori ? ` · ${e.istruttori}` : ""}`}
             >

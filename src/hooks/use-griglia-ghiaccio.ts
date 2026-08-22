@@ -94,7 +94,6 @@ export interface GrigliaSessione {
   specialita_testo_libero: string | null;
   specialita_nome: string | null;
   specialita_descrizione: string | null;
-  pista: string | null;
   messaggio_atleti: string | null;
   note: string | null;
   fuori_disponibilita?: boolean | null;
@@ -395,9 +394,8 @@ function hhmm_short(t?: string | null): string {
 export function riga_sessione_istruttore(s: GrigliaSessione): string {
   const spec = s.specialita_nome || s.specialita_testo_libero || "Allenamento";
   const desc = s.specialita_descrizione ? ` (${s.specialita_descrizione})` : "";
-  const pista = s.pista ? `${s.pista} ` : "";
   const atleti = (s.atleti ?? []).map((a) => `${a.nome} ${a.cognome}`.trim()).join(", ");
-  return `${hhmm_short(s.ora_inizio)}–${hhmm_short(s.ora_fine)} ${pista}${spec}${desc} — Atleti: ${atleti || "—"}`;
+  return `${hhmm_short(s.ora_inizio)}–${hhmm_short(s.ora_fine)} ${spec}${desc} — Atleti: ${atleti || "—"}`;
 }
 
 export interface RiepilogoIstruttore {
@@ -572,7 +570,6 @@ export function use_upsert_sessione() {
       specialita_id?: string | null;
       specialita_testo_libero?: string | null;
       note?: string | null;
-      pista?: string | null;
       messaggio_atleti?: string | null;
       fuori_disponibilita?: boolean;
       motivo_forzatura?: string | null;
@@ -596,7 +593,6 @@ export function use_upsert_sessione() {
         specialita_id: usa_testo ? null : input.specialita_id ?? null,
         specialita_testo_libero: usa_testo ? input.specialita_testo_libero : null,
         note: input.note ?? null,
-        pista: input.pista ?? null,
         messaggio_atleti: input.messaggio_atleti ?? null,
         ...forzatura,
       };
@@ -1086,7 +1082,6 @@ export function use_ripeti_sessione() {
             ora_fine,
             specialita_id: sessione.specialita_id ?? null,
             specialita_testo_libero: sessione.specialita_id ? null : sessione.specialita_testo_libero ?? null,
-            pista: sessione.pista ?? null,
             note: sessione.note ?? null,
             messaggio_atleti: sessione.messaggio_atleti ?? null,
             corso_id,

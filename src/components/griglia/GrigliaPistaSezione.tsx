@@ -69,7 +69,7 @@ const GrigliaPistaSezione: React.FC<Props> = ({ risorsa, data_sel, is_editor }) 
   const [fascia_scelta, set_fascia_scelta] = useState<string>("custom");
   const [modo_suddivisione, set_modo_suddivisione] = useState<"unico" | "sequenziale" | "parallelo">("unico");
   const [n_sessioni, set_n_sessioni] = useState(3);
-  const [corsie, set_corsie] = useState<string[]>(["Pista 1", "Pista 2"]);
+  const [n_contemporanee, set_n_contemporanee] = useState(2);
   const [creazione_in_corso, set_creazione_in_corso] = useState(false);
   const [forzatura_open, set_forzatura_open] = useState(false);
   const [motivo_blocco, set_motivo_blocco] = useState<string | null>(null);
@@ -101,7 +101,7 @@ const GrigliaPistaSezione: React.FC<Props> = ({ risorsa, data_sel, is_editor }) 
     set_passo("a");
     set_modo_suddivisione("unico");
     set_n_sessioni(3);
-    set_corsie(["Pista 1", "Pista 2"]);
+    set_n_contemporanee(2);
     set_fascia_scelta(fasce.length > 0 ? "0" : "custom");
     if (fasce.length > 0) {
       set_form({ ora_inizio: hhmm(fasce[0].ora_inizio), ora_fine: hhmm(fasce[0].ora_fine), titolo: "" });
@@ -167,13 +167,13 @@ const GrigliaPistaSezione: React.FC<Props> = ({ risorsa, data_sel, is_editor }) 
       }
 
       if (id && modo_suddivisione === "parallelo") {
-        for (let i = 0; i < corsie.length; i++) {
+        const n = Math.max(1, Math.min(12, n_contemporanee));
+        for (let i = 0; i < n; i++) {
           await upsert_sessione.mutateAsync({
             blocco_id: id,
             ordine: i + 1,
             ora_inizio: form.ora_inizio,
             ora_fine: form.ora_fine,
-            pista: corsie[i].trim() || `Pista ${i + 1}`,
             ...(forzatura ? { fuori_disponibilita: true, motivo_forzatura: forzatura } : {}),
           });
         }
@@ -470,7 +470,7 @@ const GrigliaPistaSezione: React.FC<Props> = ({ risorsa, data_sel, is_editor }) 
                   variant={modo_suddivisione === "parallelo" ? "default" : "outline"}
                   onClick={() => set_modo_suddivisione("parallelo")}
                 >
-                  Dividi per pista/corsia in parallelo
+                  Più sessioni in contemporanea
                 </Button>
               </div>
 
@@ -488,30 +488,18 @@ const GrigliaPistaSezione: React.FC<Props> = ({ risorsa, data_sel, is_editor }) 
               )}
 
               {modo_suddivisione === "parallelo" && (
-                <div className="space-y-2">
-                  <div className="space-y-1">
-                    <Label className="text-xs">Numero corsie</Label>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={12}
-                      value={corsie.length}
-                      onChange={(e) => {
-                        const n = Math.max(1, Math.min(12, Number(e.target.value) || 1));
-                        set_corsie((prev) => Array.from({ length: n }, (_, i) => prev[i] ?? `Pista ${i + 1}`));
-                      }}
-                    />
-                  </div>
-                  {corsie.map((c, i) => (
-                    <Input
-                      key={i}
-                      value={c}
-                      onChange={(e) =>
-                        set_corsie((prev) => prev.map((v, idx) => (idx === i ? e.target.value : v)))
-                      }
-                      placeholder={`Pista ${i + 1}`}
-                    />
-                  ))}
+                <div className="space-y-1">
+                  <Label className="text-xs">Quante sessioni in contemporanea</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={12}
+                    value={n_contemporanee}
+                    onChange={(e) => set_n_contemporanee(Math.max(1, Math.min(12, Number(e.target.value) || 1)))}
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    Più gruppi condividono l'intera superficie nello stesso orario: nessuna corsia o zona assegnata.
+                  </p>
                 </div>
               )}
             </div>

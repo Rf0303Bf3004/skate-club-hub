@@ -42,6 +42,13 @@ const HEADER_MM = 20;
 const ALTEZZA_SOTTORIGA_MM = 11;
 const ALTEZZA_CORSIA_MM = 22;
 
+/** Colore stabile e ben distinguibile derivato dall'etichetta (gruppo/specialità). */
+export function colore_evento(chiave: string): string {
+  let h = 0;
+  for (let i = 0; i < chiave.length; i++) h = (h * 31 + chiave.charCodeAt(i)) % 360;
+  return `hsl(${h} 65% 45%)`;
+}
+
 export function hhmm_da_min(m: number): string {
   const h = Math.floor(m / 60);
   const mm = m % 60;
