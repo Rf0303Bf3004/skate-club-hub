@@ -4,6 +4,7 @@ import { PDFViewer, PDFDownloadLink } from "@react-pdf/renderer";
 import { PitchDocument, type PitchData } from "@/lib/pitchPDF";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   open: boolean;
@@ -12,19 +13,20 @@ interface Props {
 }
 
 export const PitchPDFPreview: React.FC<Props> = ({ open, on_open_change, data }) => {
+  const { t } = useTranslation("settings");
   const filename = data ? `Pitch_Sponsor_${data.club.nome.replace(/\s+/g, "_")}_${data.anno_stagione}.pdf` : "Pitch.pdf";
   return (
     <Dialog open={open} onOpenChange={on_open_change}>
       <DialogContent className="max-w-6xl h-[92vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
-            <span>Anteprima Pitch Sponsor</span>
+            <span>{t("sponsor.pitch_pdf.title")}</span>
             {data && (
               <PDFDownloadLink document={<PitchDocument data={data} />} fileName={filename}>
                 {({ loading }) => (
                   <Button size="sm" disabled={loading}>
                     <Download className="w-4 h-4 mr-2" />
-                    {loading ? "Preparazione..." : "Scarica PDF"}
+                    {loading ? t("sponsor.pitch_pdf.preparing") : t("sponsor.pitch_pdf.download")}
                   </Button>
                 )}
               </PDFDownloadLink>
@@ -37,7 +39,7 @@ export const PitchPDFPreview: React.FC<Props> = ({ open, on_open_change, data })
               <PitchDocument data={data} />
             </PDFViewer>
           ) : (
-            <div className="flex items-center justify-center h-full text-muted-foreground">Caricamento...</div>
+            <div className="flex items-center justify-center h-full text-muted-foreground">{t("sponsor.pitch_pdf.loading")}</div>
           )}
         </div>
       </DialogContent>

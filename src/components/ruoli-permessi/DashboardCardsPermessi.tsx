@@ -7,6 +7,7 @@ import { Save, RotateCcw, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ConfirmButton from "@/components/common/ConfirmButton";
 import { Switch } from "@/components/ui/switch";
+import { useTranslation } from "react-i18next";
 import { CARDS, AREE, RUOLI_DASHBOARD, type AreaDashboard } from "@/config/dashboardCards";
 
 type RuoloKey = "presidente" | "segreteria" | "dt" | "istruttore" | "aiuto_monitore";
@@ -41,6 +42,7 @@ const AREA_HEADER_BG: Record<AreaDashboard, string> = {
 };
 
 const DashboardCardsPermessi: React.FC = () => {
+  const { t } = useTranslation("settings");
   const { session } = useAuth();
   const qc = useQueryClient();
   const club_id = session?.club_id;
@@ -110,9 +112,9 @@ const DashboardCardsPermessi: React.FC = () => {
         .upsert(rows, { onConflict: "club_id,ruolo,codice_card" });
       if (error) throw error;
       qc.invalidateQueries({ queryKey: ["dashboard_card_permessi_admin"] });
-      toast({ title: "Permessi card salvati", description: "Si applicheranno al prossimo login degli utenti." });
+      toast({ title: t("roles.dashboard_cards.toast_saved_title"), description: t("roles.dashboard_cards.toast_saved_desc") });
     } catch (err: any) {
-      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+      toast({ title: t("roles.dashboard_cards.toast_error"), description: err?.message, variant: "destructive" });
     } finally {
       set_saving(false);
     }
@@ -142,9 +144,9 @@ const DashboardCardsPermessi: React.FC = () => {
       if (error) throw error;
       set_matrix(m);
       qc.invalidateQueries({ queryKey: ["dashboard_card_permessi_admin"] });
-      toast({ title: "Configurazione consigliata applicata" });
+      toast({ title: t("roles.dashboard_cards.toast_reset_done") });
     } catch (err: any) {
-      toast({ title: "Errore", description: err?.message, variant: "destructive" });
+      toast({ title: t("roles.dashboard_cards.toast_error"), description: err?.message, variant: "destructive" });
     } finally {
       set_saving(false);
     }
@@ -164,27 +166,27 @@ const DashboardCardsPermessi: React.FC = () => {
         <div className="flex items-center gap-3">
           <LayoutDashboard className="w-5 h-5 text-primary" />
           <div>
-            <h2 className="text-lg font-bold text-foreground">Card visibili in Dashboard per ruolo</h2>
+            <h2 className="text-lg font-bold text-foreground">{t("roles.dashboard_cards.title")}</h2>
             <p className="text-xs text-muted-foreground">
-              Per ogni ruolo, scegli quali card sono visibili nella dashboard. Il Presidente vede sempre tutto.
+              {t("roles.dashboard_cards.subtitle")}
             </p>
           </div>
         </div>
         <div className="flex gap-2">
           <ConfirmButton
-            titolo="Ripristinare la configurazione consigliata?"
-            descrizione="Le impostazioni attuali delle card verranno sovrascritte."
-            conferma_label="Ripristina"
+            titolo={t("roles.dashboard_cards.reset_confirm_title")}
+            descrizione={t("roles.dashboard_cards.reset_confirm_desc")}
+            conferma_label={t("roles.dashboard_cards.reset_confirm_cta")}
             on_conferma={() => { void ripristina(); }}
           >
             <Button variant="outline" size="sm" disabled={saving} className="gap-2">
               <RotateCcw className="w-4 h-4" />
-              Ripristina configurazione consigliata
+              {t("roles.dashboard_cards.reset")}
             </Button>
           </ConfirmButton>
           <Button size="sm" onClick={salva} disabled={saving} className="gap-2">
             <Save className="w-4 h-4" />
-            {saving ? "Salvo..." : "Salva permessi card"}
+            {saving ? t("roles.dashboard_cards.saving") : t("roles.dashboard_cards.save")}
           </Button>
         </div>
       </div>
@@ -194,12 +196,12 @@ const DashboardCardsPermessi: React.FC = () => {
           <table className="w-full min-w-[720px]">
             <thead>
               <tr className="border-b border-border bg-muted/30">
-                <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wide w-[42%]">Card</th>
+                <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wide w-[42%]">{t("roles.dashboard_cards.column_card")}</th>
                 {RUOLI_DASHBOARD.map((r) => (
                   <th key={r.codice} className="text-center px-3 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wide">
                     {r.label}
                     {r.codice === "presidente" && (
-                      <div className="text-[10px] font-normal normal-case text-muted-foreground/70 mt-0.5">vede tutto</div>
+                      <div className="text-[10px] font-normal normal-case text-muted-foreground/70 mt-0.5">{t("roles.dashboard_cards.sees_all")}</div>
                     )}
                   </th>
                 ))}
@@ -248,7 +250,7 @@ const DashboardCardsPermessi: React.FC = () => {
 
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
         <p className="text-xs text-blue-600">
-          Il Presidente vede sempre tutte le card disponibili. Le modifiche si applicano al prossimo login degli utenti.
+          {t("roles.dashboard_cards.note")}
         </p>
       </div>
     </div>
