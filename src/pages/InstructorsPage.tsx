@@ -689,10 +689,22 @@ const TabOreLavoro: React.FC<{
   const handle_save_cache = async () => {
     set_saving(true);
     try {
+      const { data: stagione, error: season_err } = await supabase
+        .from("stagioni")
+        .select("id")
+        .eq("club_id", club_id)
+        .eq("attiva", true)
+        .maybeSingle();
+      if (season_err) throw season_err;
+      if (!stagione?.id) {
+        toast({ title: t("toast.nessuna_stagione_attiva"), variant: "destructive" });
+        return;
+      }
       const { error } = await supabase.from("ore_lavorate_istruttori").upsert(
         {
           club_id,
           istruttore_id: istruttore.id,
+          stagione_id: stagione.id,
           anno,
           mese,
           periodo: `${anno}-${String(mese).padStart(2, "0")}`,
@@ -704,7 +716,7 @@ const TabOreLavoro: React.FC<{
           note_extra,
           updated_at: new Date().toISOString(),
         } as any,
-        { onConflict: "istruttore_id,anno,mese" } as any,
+        { onConflict: "istruttore_id,stagione_id,periodo" } as any,
       );
       if (error) throw error;
       toast({ title: t("toast.cache_salvata") });
