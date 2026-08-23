@@ -102,6 +102,8 @@ export interface GrigliaSessione {
   forzato_at?: string | null;
   corso_id?: string | null;
   corso_nome?: string | null;
+  proposta_nome?: string | null;
+
   gruppi: GrigliaSessioneGruppo[];
   atleti: GrigliaSessioneAtleta[];
   istruttori: GrigliaSessioneIstruttore[];
@@ -218,7 +220,7 @@ export async function fetch_blocchi_giorno(
   const lista_sessioni = (sessioni ?? []) as any[];
   const sessioni_ids = lista_sessioni.map((s: any) => s.id);
 
-  const [spec_res, sa_res, si_res, sg_res, atleti_res, ist_res, rs_res, corsi_res] = await Promise.all([
+  const [spec_res, sa_res, si_res, sg_res, atleti_res, ist_res, rs_res, corsi_res, proposte_res] = await Promise.all([
     supabase.from("griglia_specialita" as any).select("id,nome,descrizione_messaggio").eq("club_id", club_id),
     sessioni_ids.length
       ? supabase.from("griglia_sessioni_atleti" as any).select("*").in("sessione_id", sessioni_ids)
@@ -232,7 +234,9 @@ export async function fetch_blocchi_giorno(
     supabase.from("atleti").select("id,nome,cognome,ragione_sociale_id,atleta_esterno").eq("club_id", club_id),
     supabase.from("istruttori").select("id,nome,cognome,user_id").eq("club_id", club_id),
     supabase.from("ragioni_sociali" as any).select("id,nome").eq("club_id", club_id),
-    supabase.from("corsi").select("id,nome").eq("club_id", club_id),
+    supabase.from("corsi").select("id,nome,proposta_id").eq("club_id", club_id),
+    supabase.from("proposte" as any).select("id,nome").eq("club_id", club_id),
+
   ]);
 
   const spec_map = new Map<string, any>();
@@ -245,6 +249,13 @@ export async function fetch_blocchi_giorno(
   ((ist_res.data ?? []) as any[]).forEach((i: any) => ist_map.set(i.id, i));
   const corsi_map = new Map<string, string>();
   ((corsi_res.data ?? []) as any[]).forEach((c: any) => corsi_map.set(c.id, c.nome));
+  const proposte_nome_map = new Map<string, string>();
+  (((proposte_res as any)?.data ?? []) as any[]).forEach((p: any) => proposte_nome_map.set(p.id, p.nome));
+  const corso_proposta_map = new Map<string, string>();
+  ((corsi_res.data ?? []) as any[]).forEach((c: any) => {
+    const nome_p = c.proposta_id ? proposte_nome_map.get(c.proposta_id) : null;
+    if (nome_p) corso_proposta_map.set(c.id, nome_p);
+  });
   const sa = (sa_res.data ?? []) as any[];
   const si = (si_res.data ?? []) as any[];
   const sg = (sg_res.data ?? []) as any[];
@@ -258,6 +269,7 @@ export async function fetch_blocchi_giorno(
         ...s,
         specialita_nome: s.specialita_id ? spec_map.get(s.specialita_id)?.nome ?? null : null,
         corso_nome: s.corso_id ? corsi_map.get(s.corso_id) ?? null : null,
+        proposta_nome: s.corso_id ? corso_proposta_map.get(s.corso_id) ?? null : null,
         specialita_descrizione: s.specialita_id
           ? spec_map.get(s.specialita_id)?.descrizione_messaggio ?? null
           : null,
@@ -1150,6 +1162,12 @@ export function use_ripeti_sessione() {
       blocco: GrigliaBlocco;
       fino_a: string;
       nome_risorsa?: string | null;
+      /** Proposta commerciale a cui collegare il corso creato (Fase 5 — Proposte). */
+      proposta_id?: string | null;
+      /** Nome del corso creato: se assente viene auto-generato come oggi. */
+      nome_corso?: string | null;
+      /** Prezzo mensile del corso creato (default 0 come oggi). */
+      prezzo_mensile?: number | null;
     }): Promise<RipetiSessioneResult> => {
       const club_id = get_current_club_id();
       if (!club_id) throw new Error("Club non disponibile");
@@ -1194,7 +1212,9 @@ export function use_ripeti_sessione() {
 
       const etichetta_specialita =
         sessione.specialita_nome || sessione.specialita_testo_libero || "Sessione ghiaccio";
-      const nome_corso = `${etichetta_specialita} — ${input.nome_risorsa ?? "Pista"}, ${giorno} ${ora_inizio.slice(0, 5)}`;
+      const nome_corso =
+        (input.nome_corso ?? "").trim() ||
+        `${etichetta_specialita} — ${input.nome_risorsa ?? "Pista"}, ${giorno} ${ora_inizio.slice(0, 5)}`;
 
       // 1) Corso collegato: riusa quello esistente, altrimenti crealo
       let corso_id = sessione.corso_id ?? null;
@@ -1211,11 +1231,12 @@ export function use_ripeti_sessione() {
             giorno,
             ora_inizio,
             ora_fine,
-            costo_mensile: 0,
+            costo_mensile: input.prezzo_mensile ?? 0,
             costo_annuale: 0,
             attivo: true,
             stagione_id: stagione.id,
             usa_ghiaccio: true,
+            ...(input.proposta_id ? { proposta_id: input.proposta_id } : {}),
           } as any)
           .select("id,nome")
           .single();

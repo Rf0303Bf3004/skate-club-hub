@@ -58,11 +58,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SpecialitaManager from "@/components/griglia/SpecialitaManager";
 import ConfermaForzaturaDisponibilita from "@/components/griglia/ConfermaForzaturaDisponibilita";
 import RipetiSessioneDialog from "@/components/griglia/RipetiSessioneDialog";
+import NuovaPropostaDialog, { type ConfermaProposta } from "@/components/griglia/NuovaPropostaDialog";
+import { use_pool_proposte, use_crea_proposta } from "@/hooks/use-proposte";
+import { Link as RouterLink } from "react-router-dom";
 import { verifica_orario_disponibilita } from "@/lib/availability";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { Settings, Plus, Trash2, X, GraduationCap, Send, CheckCircle2, GripVertical, HelpCircle, ChevronDown, ChevronRight, AlertTriangle, Repeat, Link2, RefreshCw } from "lucide-react";
+import { Settings, Plus, Trash2, X, GraduationCap, Send, CheckCircle2, GripVertical, HelpCircle, ChevronDown, ChevronRight, AlertTriangle, Repeat, Link2, RefreshCw, Package } from "lucide-react";
 
 const DURATA_DEFAULT_MIN = 20;
 const ALTRO = "__altro__";
@@ -375,6 +378,83 @@ const PoolBox: React.FC<{
   );
 };
 
+// ─── Box pool "per proposta" ───────────────────────────────
+const PoolPropostaBox: React.FC<{
+  proposta_id: string;
+  titolo: string;
+  items: { id: string; nome: string; cognome: string }[];
+}> = ({ proposta_id, titolo, items }) => {
+  const [aperto, set_aperto] = useState(true);
+  const vuoto = items.length === 0;
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `gruppo:proposta:${proposta_id}`,
+    disabled: vuoto,
+    data: { tipo: "gruppo", atleta_ids: items.map((i) => i.id), individuale: true, etichetta: titolo },
+  });
+
+  return (
+    <div className="rounded-xl border p-3 flex flex-col gap-2 bg-muted/20 border-border">
+      <button
+        type="button"
+        onClick={() => set_aperto((v) => !v)}
+        className="flex items-center justify-between gap-2 text-left"
+      >
+        <h4 className="text-sm font-semibold flex items-center gap-1.5 min-w-0">
+          {aperto ? (
+            <ChevronDown className="w-3.5 h-3.5 shrink-0" />
+          ) : (
+            <ChevronRight className="w-3.5 h-3.5 shrink-0" />
+          )}
+          <Package className="w-4 h-4 text-primary" />
+          <span className="truncate">{titolo}</span>
+        </h4>
+        <Badge variant="secondary" className="text-[10px] shrink-0">{items.length}</Badge>
+      </button>
+
+      {vuoto ? (
+        <p className="text-xs text-muted-foreground">
+          0 iscritti ·{" "}
+          <RouterLink to="/corsi" className="underline underline-offset-2">
+            Gestisci adesioni
+          </RouterLink>
+        </p>
+      ) : (
+        <div
+          ref={setNodeRef}
+          {...attributes}
+          {...listeners}
+          title={`Trascina tutta la proposta «${titolo}» (${items.length} iscritti)`}
+          className={cn(
+            "flex items-center gap-1.5 px-2 py-1 rounded-md border border-dashed border-muted-foreground/40 bg-muted/30",
+            "text-[11px] font-semibold uppercase tracking-wide text-muted-foreground",
+            "cursor-grab active:cursor-grabbing select-none",
+            isDragging && "opacity-40",
+          )}
+        >
+          <GripVertical className="w-3 h-3 shrink-0" />
+          <span className="truncate">Iscritti</span>
+          <span className="ml-auto text-[10px] font-normal">· {items.length}</span>
+        </div>
+      )}
+
+      {aperto && !vuoto && (
+        <div className="flex flex-col gap-1.5 max-h-44 overflow-y-auto pr-1">
+          {items.map((i) => (
+            <PillolaDraggable
+              key={i.id}
+              drag_id={`atleta:${i.id}`}
+              label={`${i.nome} ${i.cognome}`}
+              sigla={iniziali(i.nome, i.cognome)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+
+
 
 // ─── Pillola di un gruppo agganciato alla sotto-sessione ───
 const GruppoPill: React.FC<{
@@ -529,6 +609,7 @@ const SessioneBox: React.FC<{
   on_rimuovi_atleta: (atleta_id: string) => void;
   on_rimuovi_istruttore: (istruttore_id: string) => void;
   on_ripeti?: () => void;
+  on_proposta?: () => void;
   on_sync_gruppo?: (gruppo_sessione_id: string) => void;
   on_rimuovi_gruppo?: (gruppo_sessione_id: string) => void;
   sync_gruppo_ids?: string[];
@@ -549,6 +630,7 @@ const SessioneBox: React.FC<{
   on_rimuovi_atleta,
   on_rimuovi_istruttore,
   on_ripeti,
+  on_proposta,
   on_sync_gruppo,
   on_rimuovi_gruppo,
   sync_gruppo_ids,
@@ -679,7 +761,9 @@ const SessioneBox: React.FC<{
                 </Badge>
               </TooltipTrigger>
               <TooltipContent className="max-w-xs">
-                Collegata al corso: {sessione.corso_nome ?? "corso ricorrente"}
+                {sessione.proposta_nome
+                  ? `Proposta: ${sessione.proposta_nome} — collegata al corso: ${sessione.corso_nome ?? "corso ricorrente"}`
+                  : `Collegata al corso: ${sessione.corso_nome ?? "corso ricorrente"}`}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -703,6 +787,16 @@ const SessioneBox: React.FC<{
           </TooltipProvider>
         )}
 
+        {on_proposta && !sessione.corso_id && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={on_proposta}
+            title="Crea proposta da questa sessione"
+          >
+            <Package className="w-4 h-4" />
+          </Button>
+        )}
         {on_ripeti && (
           <Button variant="ghost" size="icon" onClick={on_ripeti} title="Ripeti questa sessione">
             <Repeat className="w-4 h-4" />
@@ -857,6 +951,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   const rimuovi_istruttore = use_rimuovi_istruttore_sessione();
   const pubblica = use_pubblica_blocco();
   const ripeti = use_ripeti_sessione();
+  const crea_proposta = use_crea_proposta();
   const assegna_gruppo = use_assegna_gruppo_sessione();
   const rimuovi_gruppo = use_rimuovi_gruppo_sessione();
   const sync_gruppo = use_sync_gruppo_sessione();
@@ -870,6 +965,9 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
     { sessione: GrigliaSessione; patch: Partial<GrigliaSessione> } | null
   >(null);
   const [ripeti_sessione, set_ripeti_sessione] = useState<GrigliaSessione | null>(null);
+  const [proposta_sessione, set_proposta_sessione] = useState<GrigliaSessione | null>(null);
+  /** Fonte dei pool laterali, per singola sotto-sessione (tab). */
+  const [fonte_pool, set_fonte_pool] = useState<Record<string, "livello" | "proposta">>({});
   const [sync_gruppo_ids, set_sync_gruppo_ids] = useState<string[]>([]);
   const [conflitto_gruppo, set_conflitto_gruppo] = useState<
     { livello: string; conflitto: ConflittoGruppo } | null
@@ -971,7 +1069,25 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   const pool_esterni = useMemo(() => (atleti as any[]).filter((a) => a.atleta_esterno), [atleti]);
   const pool_istruttori = useMemo(() => (istruttori as any[]).filter((i) => i.attivo), [istruttori]);
 
+  // Pool "per proposta": contenitori nominati con gli iscritti all'occorrenza di oggi.
+  const { data: pool_proposte = [] } = use_pool_proposte(giorno_blocco);
+  const pool_proposte_items = useMemo(
+    () =>
+      pool_proposte.map((p) => ({
+        proposta_id: p.proposta.id,
+        titolo: p.proposta.nome,
+        items: p.atleta_ids
+          .map((id) => (atleti as any[]).find((a) => a.id === id))
+          .filter(Boolean)
+          .map((a: any) => ({ id: a.id, nome: a.nome ?? "", cognome: a.cognome ?? "" })),
+      })),
+    [pool_proposte, atleti],
+  );
+
   const sessioni = blocco.sessioni ?? [];
+  const tab_corrente = tab_attivo ?? sessioni[0]?.id ?? null;
+  const fonte_pool_attiva: "livello" | "proposta" =
+    (tab_corrente && fonte_pool[tab_corrente]) || "livello";
 
   /** Avvisa (non blocca) se la persona è già in un'altra sessione sovrapposta nello stesso giorno. */
   const avvisa_sovrapposizione = (
@@ -1014,6 +1130,28 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
       if (tipo === "gruppo") {
         const ids: string[] = active.data?.current?.atleta_ids ?? [];
         const livello_gruppo: string | undefined = active.data?.current?.livello;
+        // Contenitore "per proposta": assegnazione individuale degli iscritti,
+        // nessun gruppo dinamico per livello.
+        if (active.data?.current?.individuale) {
+          let assegnati = 0;
+          for (const atleta_id of ids) {
+            const a = (atleti as any[]).find((x) => x.id === atleta_id);
+            const nome = a ? `${a.nome} ${a.cognome}` : "Atleta";
+            const conflitto = await verifica_conflitto_atleta({ sessione_id, atleta_id });
+            if (conflitto) {
+              set_conflitto_atleta({ nome, conflitto });
+              return;
+            }
+            await assegna_atleta.mutateAsync({ sessione_id, atleta_id });
+            assegnati += 1;
+          }
+          if (assegnati > 0)
+            toast({
+              title: `✅ ${assegnati} iscritti assegnati`,
+              description: active.data?.current?.etichetta ?? undefined,
+            });
+          return;
+        }
         if (livello_gruppo && livello_gruppo !== LIVELLO_NON_DEFINITO) {
           // Collegamento dinamico: nuova riga in griglia_sessioni_gruppi + atleti taggati.
           const { gruppo_scope, gruppo_ragione_sociale_id } = scope_da_box_id(active.data?.current?.box_id);
@@ -1175,6 +1313,50 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
       toast({ title: "Errore ricorrenza", description: e?.message, variant: "destructive" });
     }
   };
+
+  /**
+   * Proposte: crea (o riusa) la proposta, poi delega a `use_ripeti_sessione`
+   * la creazione del corso collegato e delle occorrenze (stessa logica di «Ripeti»).
+   */
+  const conferma_proposta = async (dati: ConfermaProposta) => {
+    const sess = proposta_sessione;
+    if (!sess) return;
+    try {
+      const proposta =
+        dati.proposta_esistente ??
+        (await crea_proposta.mutateAsync({
+          nome: dati.nome,
+          prezzo_mensile: dati.prezzo_mensile,
+          livello_id: dati.livello_id,
+        }));
+
+      const res = await ripeti.mutateAsync({
+        sessione: sess,
+        blocco,
+        // "Solo oggi": nessuna data futura, ma corso + collegamento vengono comunque creati.
+        fino_a: dati.fino_a ?? blocco.data,
+        nome_risorsa: risorsa_blocco?.nome ?? null,
+        proposta_id: proposta.id,
+        nome_corso: proposta.nome,
+        prezzo_mensile: proposta.prezzo_mensile ?? null,
+      });
+
+      const parti: string[] = [];
+      if (res.settimane_create > 0) parti.push(`${res.settimane_create} occorrenze create`);
+      if (res.settimane_esistenti > 0) parti.push(`${res.settimane_esistenti} già esistenti`);
+      toast({
+        title: dati.proposta_esistente
+          ? `📦 Occorrenza aggiunta a «${proposta.nome}»`
+          : `📦 Proposta «${proposta.nome}» creata`,
+        description: parti.length > 0 ? parti.join(", ") : "Sessione collegata alla proposta.",
+      });
+      set_proposta_sessione(null);
+    } catch (e: any) {
+      toast({ title: "Errore proposta", description: e?.message, variant: "destructive" });
+    }
+  };
+
+
 
   const salva_sessione = async (
     s: GrigliaSessione,
@@ -1346,27 +1528,78 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
 
 
       <DndContext sensors={sensors} onDragEnd={handle_drag_end}>
+        {/* Toggle fonte dei pool per la sotto-sessione attiva */}
+        {sessioni.length > 0 && (
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs text-muted-foreground">Contenitori:</span>
+            <Button
+              size="sm"
+              variant={fonte_pool_attiva === "livello" ? "default" : "outline"}
+              className="h-7 text-xs"
+              onClick={() =>
+                tab_corrente && set_fonte_pool((v) => ({ ...v, [tab_corrente]: "livello" }))
+              }
+            >
+              Per livello
+            </Button>
+            <Button
+              size="sm"
+              variant={fonte_pool_attiva === "proposta" ? "default" : "outline"}
+              className="h-7 text-xs"
+              onClick={() =>
+                tab_corrente && set_fonte_pool((v) => ({ ...v, [tab_corrente]: "proposta" }))
+              }
+            >
+              <Package className="w-3.5 h-3.5 mr-1" /> Per proposta
+            </Button>
+          </div>
+        )}
+
         {/* Fascia superiore: pool sorgente */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          {pool_ragioni.length > 0 ? (
-            pool_ragioni.map((p) => (
-              <PoolBox key={p.id} box_id={p.id} titolo={p.titolo} items={p.items} prefisso="atleta" colore={p.colore} />
-            ))
+          {fonte_pool_attiva === "proposta" ? (
+            <>
+              {pool_proposte_items.length === 0 ? (
+                <p className="text-xs text-muted-foreground md:col-span-3 self-center">
+                  Nessuna proposta attiva per il club. Creane una da una sotto-sessione con il pulsante
+                  «Crea proposta».
+                </p>
+              ) : (
+                pool_proposte_items.map((p) => (
+                  <PoolPropostaBox
+                    key={p.proposta_id}
+                    proposta_id={p.proposta_id}
+                    titolo={p.titolo}
+                    items={p.items}
+                  />
+                ))
+              )}
+              <PoolBox titolo="Istruttori" items={pool_istruttori} prefisso="istruttore" variante_istruttori />
+            </>
           ) : (
-            <PoolBox box_id="club" titolo="Club" items={pool_club_fallback} prefisso="atleta" />
+            <>
+              {pool_ragioni.length > 0 ? (
+                pool_ragioni.map((p) => (
+                  <PoolBox key={p.id} box_id={p.id} titolo={p.titolo} items={p.items} prefisso="atleta" colore={p.colore} />
+                ))
+              ) : (
+                <PoolBox box_id="club" titolo="Club" items={pool_club_fallback} prefisso="atleta" />
+              )}
+              {pool_senza_ragione_sociale.length > 0 && (
+                <PoolBox
+                  box_id="senza_rs"
+                  titolo="Senza ragione sociale"
+                  items={pool_senza_ragione_sociale}
+                  prefisso="atleta"
+                  neutro
+                />
+              )}
+              <PoolBox box_id="esterni" titolo="Esterni" items={pool_esterni} prefisso="atleta" colore={VERDE_ESTERNI} />
+              <PoolBox titolo="Istruttori" items={pool_istruttori} prefisso="istruttore" variante_istruttori />
+            </>
           )}
-          {pool_senza_ragione_sociale.length > 0 && (
-            <PoolBox
-              box_id="senza_rs"
-              titolo="Senza ragione sociale"
-              items={pool_senza_ragione_sociale}
-              prefisso="atleta"
-              neutro
-            />
-          )}
-          <PoolBox box_id="esterni" titolo="Esterni" items={pool_esterni} prefisso="atleta" colore={VERDE_ESTERNI} />
-          <PoolBox titolo="Istruttori" items={pool_istruttori} prefisso="istruttore" variante_istruttori />
         </div>
+
 
         {/* Fascia inferiore: sotto-sessioni a tab */}
         <div className="mt-4">
@@ -1436,6 +1669,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
                       rimuovi_istruttore.mutateAsync({ sessione_id: s.id, istruttore_id })
                     }
                     on_ripeti={() => set_ripeti_sessione(s)}
+                    on_proposta={() => set_proposta_sessione(s)}
                     on_sync_gruppo={(gid) => sincronizza_gruppo(s, gid)}
                     on_rimuovi_gruppo={(gid) => rimuovi_collegamento_gruppo(gid)}
 
@@ -1551,6 +1785,17 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
         in_corso={ripeti.isPending}
         on_conferma={conferma_ripetizione}
       />
+
+      <NuovaPropostaDialog
+        open={!!proposta_sessione}
+        on_close={() => set_proposta_sessione(null)}
+        giorno={giorno_it_da_data(blocco.data)}
+        data_blocco={blocco.data}
+        in_corso={ripeti.isPending || crea_proposta.isPending}
+        on_conferma={conferma_proposta}
+      />
+
+
 
       <Dialog open={open_specialita} onOpenChange={set_open_specialita}>
         <DialogContent className="max-h-[85vh] flex flex-col overflow-hidden">
