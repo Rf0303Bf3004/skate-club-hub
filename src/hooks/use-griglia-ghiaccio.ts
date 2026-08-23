@@ -1028,12 +1028,17 @@ export async function verifica_conflitto_istruttore(input: {
  */
 export function use_assegna_gruppo_sessione() {
   const invalidate = use_invalidate_griglia();
+  const { session } = useAuth();
   return useMutation({
     mutationFn: async (input: {
       sessione_id: string;
       gruppo_livello: string;
       gruppo_scope: GruppoScope;
       gruppo_ragione_sociale_id?: string | null;
+      /** Se valorizzata, i conflitti orari degli atleti vengono forzati e tracciati. */
+      forzatura?: ForzaturaConflitto | null;
+      /** Atleti da escludere dall'inserimento (in conflitto, non forzati). */
+      escludi_atleta_ids?: string[];
     }) => {
       const club_id = get_current_club_id();
 
@@ -1079,6 +1084,27 @@ export function use_assegna_gruppo_sessione() {
         );
       }
 
+      const membri = await risolvi_membri_gruppo(
+        club_id,
+        input.gruppo_scope,
+        input.gruppo_livello,
+        input.gruppo_ragione_sociale_id ?? null,
+      );
+
+      // Guardia bloccante per singolo atleta (motore unificato): se non è stata
+      // autorizzata una forzatura, nessuna scrittura con atleti in conflitto.
+      const esclusi = new Set(input.escludi_atleta_ids ?? []);
+      if (!input.forzatura) {
+        const conflitti = await verifica_conflitti_atleti(input.sessione_id, membri);
+        const bloccanti = conflitti.filter((c) => !esclusi.has(c.atleta_id));
+        if (bloccanti.length > 0) {
+          throw new Error(
+            `${bloccanti.length} atleti del gruppo sono già in una sessione sovrapposta (${bloccanti
+              .map((c) => c.nome_atleta)
+              .join(", ")}).`,
+          );
+        }
+      }
 
       const { data: gruppo, error: err_g } = await supabase
         .from("griglia_sessioni_gruppi" as any)
@@ -1093,28 +1119,31 @@ export function use_assegna_gruppo_sessione() {
       if (err_g) throw err_g;
       const gruppo_sessione_id = (gruppo as any).id as string;
 
-
-      const membri = await risolvi_membri_gruppo(
-        club_id,
-        input.gruppo_scope,
-        input.gruppo_livello,
-        input.gruppo_ragione_sociale_id ?? null,
-      );
       const presenti = await atleti_presenti_sessione(input.sessione_id);
-      const mancanti = membri.filter((id) => !presenti.has(id));
+      const mancanti = membri.filter((id) => !presenti.has(id) && !esclusi.has(id));
       if (mancanti.length > 0) {
-        const { error } = await supabase
-          .from("griglia_sessioni_atleti" as any)
-          .insert(
-            mancanti.map((atleta_id) => ({
+        const forzatura = input.forzatura
+          ? { motivo: input.forzatura.motivo, forzato_da: input.forzatura.forzato_da ?? session?.user_id ?? null }
+          : null;
+        const { error } = await supabase.from("griglia_sessioni_atleti" as any).insert(
+          mancanti.map((atleta_id) =>
+            _payload_assegnazione({
               sessione_id: input.sessione_id,
               atleta_id,
+              origine: "gruppo",
               gruppo_sessione_id,
-            })) as any,
-          );
+              forzatura,
+            }),
+          ) as any,
+        );
         if (error && !`${error.message}`.includes("duplicate")) throw error;
       }
-      return { gruppo_sessione_id, aggiunti: mancanti.length, membri: membri.length };
+      return {
+        gruppo_sessione_id,
+        aggiunti: mancanti.length,
+        membri: membri.length,
+        esclusi: esclusi.size,
+      };
     },
     onSuccess: invalidate,
   });
