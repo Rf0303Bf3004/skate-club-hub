@@ -69,7 +69,9 @@ const PortaleNotiziePage: React.FC = () => {
         <div key={it.id} className="bg-white border border-slate-200 rounded-2xl p-4">
           <div className="flex items-start justify-between gap-3 mb-2">
             <div className="min-w-0 flex-1">
-              <h3 className="font-semibold text-slate-800">{it.comunicazioni?.titolo ?? "—"}</h3>
+              <h3 className="font-semibold text-slate-800">
+                {traduci(it.comunicazioni?.id, "titolo", it.comunicazioni?.titolo) || "—"}
+              </h3>
               <p className="text-[11px] text-slate-400 mt-0.5">
                 {new Date(it.creato_at).toLocaleDateString("it-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
               </p>
