@@ -951,6 +951,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   const rimuovi_istruttore = use_rimuovi_istruttore_sessione();
   const pubblica = use_pubblica_blocco();
   const ripeti = use_ripeti_sessione();
+  const crea_proposta = use_crea_proposta();
   const assegna_gruppo = use_assegna_gruppo_sessione();
   const rimuovi_gruppo = use_rimuovi_gruppo_sessione();
   const sync_gruppo = use_sync_gruppo_sessione();
