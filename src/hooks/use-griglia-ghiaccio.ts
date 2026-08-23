@@ -234,7 +234,9 @@ export async function fetch_blocchi_giorno(
     supabase.from("atleti").select("id,nome,cognome,ragione_sociale_id,atleta_esterno").eq("club_id", club_id),
     supabase.from("istruttori").select("id,nome,cognome,user_id").eq("club_id", club_id),
     supabase.from("ragioni_sociali" as any).select("id,nome").eq("club_id", club_id),
-    supabase.from("corsi").select("id,nome").eq("club_id", club_id),
+    supabase.from("corsi").select("id,nome,proposta_id").eq("club_id", club_id),
+    supabase.from("proposte" as any).select("id,nome").eq("club_id", club_id),
+
   ]);
 
   const spec_map = new Map<string, any>();
