@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { use_contenuti_traduzioni } from "@/hooks/use-contenuti-traduzioni";
 
 // Portale pubblico mobile-first: l'identificativo è il `codice_atleta` (AT-XXXX-XXXX),
 // lo stesso usato dall'app mobile genitori. Tutte le query passano dall'edge function `portale-atleta`.
