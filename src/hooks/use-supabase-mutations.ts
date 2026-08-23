@@ -515,7 +515,7 @@ export function use_upsert_presenza_corso() {
       sostituto_id?: string;
       note?: string;
     }) => {
-      const { error } = await supabase.from("presenze_corso").upsert(
+      const { error } = await supabase.from("presenze_staff_corso").upsert(
         {
           corso_id: data.corso_id,
           persona_id: data.persona_id,
@@ -530,6 +530,7 @@ export function use_upsert_presenza_corso() {
       if (error) throw error;
     },
     onSuccess: (_d, vars) => {
+      qc.invalidateQueries({ queryKey: ["presenze_staff_corso", vars.corso_id, vars.data] });
       qc.invalidateQueries({ queryKey: ["presenze_corso", vars.corso_id, vars.data] });
     },
   });
