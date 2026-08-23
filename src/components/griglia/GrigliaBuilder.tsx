@@ -529,6 +529,7 @@ const SessioneBox: React.FC<{
   on_rimuovi_atleta: (atleta_id: string) => void;
   on_rimuovi_istruttore: (istruttore_id: string) => void;
   on_ripeti?: () => void;
+  on_proposta?: () => void;
   on_sync_gruppo?: (gruppo_sessione_id: string) => void;
   on_rimuovi_gruppo?: (gruppo_sessione_id: string) => void;
   sync_gruppo_ids?: string[];
