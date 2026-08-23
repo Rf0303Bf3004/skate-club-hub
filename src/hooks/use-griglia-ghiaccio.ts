@@ -1312,13 +1312,27 @@ export function use_ripeti_sessione() {
         // sessione equivalente già presente?
         const { data: sess_esistenti, error: err_se } = await supabase
           .from("griglia_sessioni" as any)
-          .select("id,corso_id,ora_inizio")
+          .select("id,corso_id,ora_inizio,ora_fine,specialita_id,specialita_testo_libero")
           .eq("blocco_id", blocco_dest_id)
           .eq("ora_inizio", ora_inizio);
         if (err_se) throw err_se;
-        const gia = ((sess_esistenti ?? []) as any[]).find(
-          (s) => s.corso_id === corso_id || !s.corso_id,
-        );
+        const lista_sess = (sess_esistenti ?? []) as any[];
+        // Match forte: stessa sessione già generata da questo corso.
+        const gia_corso = lista_sess.find((s) => s.corso_id === corso_id);
+        // Adozione di una sessione SENZA corso solo se è davvero identica
+        // (stesso orario completo e stessa specialità): mai "rubare" sessioni
+        // manuali diverse create per altri scopi.
+        const gia_equivalente =
+          gia_corso ??
+          lista_sess.find(
+            (s) =>
+              !s.corso_id &&
+              s.ora_fine === ora_fine &&
+              (s.specialita_id ?? null) === (sessione.specialita_id ?? null) &&
+              (s.specialita_testo_libero ?? null) ===
+                (sessione.specialita_id ? null : sessione.specialita_testo_libero ?? null),
+          );
+        const gia = gia_equivalente;
         if (gia) {
           settimane_esistenti += 1;
           if (!gia.corso_id) {
@@ -1326,6 +1340,7 @@ export function use_ripeti_sessione() {
           }
           continue;
         }
+
 
         const { data: nuova_sess, error: err_ns } = await supabase
           .from("griglia_sessioni" as any)
