@@ -284,8 +284,10 @@ export function use_elimina_atleta() {
       if (e8) throw e8;
       const { error: e9 } = await supabase.from("corsi_monitori").delete().eq("persona_id", id);
       if (e9) throw e9;
-      const { error: e10 } = await supabase.from("presenze_corso").delete().eq("persona_id", id);
-      if (e10) throw e10;
+      const { error: e10a } = await supabase.from("presenze_corso").delete().eq("atleta_id", id);
+      if (e10a) throw e10a;
+      const { error: e10b } = await supabase.from("presenze_staff_corso").delete().eq("persona_id", id);
+      if (e10b) throw e10b;
       const { error: e11 } = await supabase.from("atleti").delete().eq("id", id);
       if (e11) throw e11;
     },
