@@ -1785,6 +1785,17 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
         on_conferma={conferma_ripetizione}
       />
 
+      <NuovaPropostaDialog
+        open={!!proposta_sessione}
+        on_close={() => set_proposta_sessione(null)}
+        giorno={giorno_it_da_data(blocco.data)}
+        data_blocco={blocco.data}
+        in_corso={ripeti.isPending || crea_proposta.isPending}
+        on_conferma={conferma_proposta}
+      />
+
+
+
       <Dialog open={open_specialita} onOpenChange={set_open_specialita}>
         <DialogContent className="max-h-[85vh] flex flex-col overflow-hidden">
           <DialogHeader>
