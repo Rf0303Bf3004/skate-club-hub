@@ -437,9 +437,20 @@ const TabIscrizioni: React.FC<{
     do_iscrivi(atleta.id);
   };
 
-  const handle_iscrivi_salto = (atleta: any) => {
+  const handle_iscrivi_salto = async (atleta: any) => {
     set_salto_dialog(atleta);
     set_note_salto("");
+    try {
+      const conflitti = await verifica_conflitti_iscrizione(atleta.id, corso_id);
+      if (conflitti.length > 0) {
+        toast({
+          title: `⚠️ ${atleta.nome} ha già un corso sovrapposto in questo orario`,
+          description: conflitti.map((c) => `${c.nome_corso} ${c.ora_inizio}–${c.ora_fine}`).join(" · "),
+        });
+      }
+    } catch {
+      // Avviso non bloccante.
+    }
   };
 
   const handle_rimuovi = async (atleta_id: string) => {
