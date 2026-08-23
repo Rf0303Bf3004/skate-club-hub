@@ -220,7 +220,7 @@ export async function fetch_blocchi_giorno(
   const lista_sessioni = (sessioni ?? []) as any[];
   const sessioni_ids = lista_sessioni.map((s: any) => s.id);
 
-  const [spec_res, sa_res, si_res, sg_res, atleti_res, ist_res, rs_res, corsi_res] = await Promise.all([
+  const [spec_res, sa_res, si_res, sg_res, atleti_res, ist_res, rs_res, corsi_res, proposte_res] = await Promise.all([
     supabase.from("griglia_specialita" as any).select("id,nome,descrizione_messaggio").eq("club_id", club_id),
     sessioni_ids.length
       ? supabase.from("griglia_sessioni_atleti" as any).select("*").in("sessione_id", sessioni_ids)
