@@ -305,24 +305,14 @@ export function use_migra_atleta() {
       club_destinazione_id: string;
       note?: string;
     }) => {
-      const { error: e1 } = await supabase
-        .from("atleti")
-        .update({ club_id: data.club_destinazione_id })
-        .eq("id", data.atleta_id);
-      if (e1) throw e1;
-      const { error: e2 } = await supabase.from("iscrizioni_corsi").delete().eq("atleta_id", data.atleta_id);
-      if (e2) throw e2;
-      const { error: e3 } = await supabase.from("corsi_monitori").delete().eq("persona_id", data.atleta_id);
-      if (e3) throw e3;
-      const { error: e4 } = await supabase.from("migrazioni").insert({
-        tipo: "atleta",
-        persona_id: data.atleta_id,
-        persona_nome: data.atleta_nome,
-        club_origine_id: cid(),
-        club_destinazione_id: data.club_destinazione_id,
-        note: data.note || null,
+      const { error } = await supabase.rpc("migra_atleta", {
+        p_atleta_id: data.atleta_id,
+        p_atleta_nome: data.atleta_nome,
+        p_club_origine_id: cid(),
+        p_club_destinazione_id: data.club_destinazione_id,
+        p_note: data.note || null,
       });
-      if (e4) throw e4;
+      if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["atleti"] }),
   });
