@@ -1294,6 +1294,51 @@ export type Database = {
         }
         Relationships: []
       }
+      contenuti_traduzioni: {
+        Row: {
+          aggiornato_da: string | null
+          aggiornato_il: string
+          campo: string
+          de: string | null
+          en: string | null
+          fr: string | null
+          id: string
+          it: string | null
+          record_id: string
+          rm: string | null
+          stato: string
+          tabella: string
+        }
+        Insert: {
+          aggiornato_da?: string | null
+          aggiornato_il?: string
+          campo: string
+          de?: string | null
+          en?: string | null
+          fr?: string | null
+          id?: string
+          it?: string | null
+          record_id: string
+          rm?: string | null
+          stato?: string
+          tabella: string
+        }
+        Update: {
+          aggiornato_da?: string | null
+          aggiornato_il?: string
+          campo?: string
+          de?: string | null
+          en?: string | null
+          fr?: string | null
+          id?: string
+          it?: string | null
+          record_id?: string
+          rm?: string | null
+          stato?: string
+          tabella?: string
+        }
+        Relationships: []
+      }
       convenzioni: {
         Row: {
           area_id: string | null
