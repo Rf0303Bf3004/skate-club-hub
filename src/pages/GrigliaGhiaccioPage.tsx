@@ -68,7 +68,9 @@ const GrigliaGhiaccioPage: React.FC = () => {
   const [riepilogo_open, set_riepilogo_open] = useState(false);
   const [tableau_open, set_tableau_open] = useState(false);
   const [formato_carta, set_formato_carta] = useState<FormatoCarta>("A4");
+  const [periodo, set_periodo] = useState<"giorno" | "settimana" | "mese" | "stagione">("giorno");
   const [vista, set_vista] = useState<"impilata" | "tableau">("impilata");
+  const navigate = useNavigate();
 
   const { data: risorse = [] } = use_risorse_strutture();
   const risorse_ghiaccio = useMemo(
