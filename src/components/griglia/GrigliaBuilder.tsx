@@ -1085,6 +1085,9 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   );
 
   const sessioni = blocco.sessioni ?? [];
+  const tab_corrente = tab_attivo ?? sessioni[0]?.id ?? null;
+  const fonte_pool_attiva: "livello" | "proposta" =
+    (tab_corrente && fonte_pool[tab_corrente]) || "livello";
 
   /** Avvisa (non blocca) se la persona è già in un'altra sessione sovrapposta nello stesso giorno. */
   const avvisa_sovrapposizione = (
