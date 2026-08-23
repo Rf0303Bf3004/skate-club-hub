@@ -284,8 +284,10 @@ export function use_elimina_atleta() {
       if (e8) throw e8;
       const { error: e9 } = await supabase.from("corsi_monitori").delete().eq("persona_id", id);
       if (e9) throw e9;
-      const { error: e10 } = await supabase.from("presenze_corso").delete().eq("persona_id", id);
-      if (e10) throw e10;
+      const { error: e10a } = await supabase.from("presenze_corso").delete().eq("atleta_id", id);
+      if (e10a) throw e10a;
+      const { error: e10b } = await supabase.from("presenze_staff_corso").delete().eq("persona_id", id);
+      if (e10b) throw e10b;
       const { error: e11 } = await supabase.from("atleti").delete().eq("id", id);
       if (e11) throw e11;
     },
@@ -303,24 +305,14 @@ export function use_migra_atleta() {
       club_destinazione_id: string;
       note?: string;
     }) => {
-      const { error: e1 } = await supabase
-        .from("atleti")
-        .update({ club_id: data.club_destinazione_id })
-        .eq("id", data.atleta_id);
-      if (e1) throw e1;
-      const { error: e2 } = await supabase.from("iscrizioni_corsi").delete().eq("atleta_id", data.atleta_id);
-      if (e2) throw e2;
-      const { error: e3 } = await supabase.from("corsi_monitori").delete().eq("persona_id", data.atleta_id);
-      if (e3) throw e3;
-      const { error: e4 } = await supabase.from("migrazioni").insert({
-        tipo: "atleta",
-        persona_id: data.atleta_id,
-        persona_nome: data.atleta_nome,
-        club_origine_id: cid(),
-        club_destinazione_id: data.club_destinazione_id,
-        note: data.note || null,
+      const { error } = await supabase.rpc("migra_atleta", {
+        p_atleta_id: data.atleta_id,
+        p_atleta_nome: data.atleta_nome,
+        p_club_origine_id: cid(),
+        p_club_destinazione_id: data.club_destinazione_id,
+        p_note: data.note || null,
       });
-      if (e4) throw e4;
+      if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["atleti"] }),
   });
@@ -474,6 +466,8 @@ export function use_elimina_corso() {
       if (e3) throw e3;
       const { error: e4 } = await supabase.from("presenze_corso").delete().eq("corso_id", id);
       if (e4) throw e4;
+      const { error: e4b } = await supabase.from("presenze_staff_corso").delete().eq("corso_id", id);
+      if (e4b) throw e4b;
       const { error: e5 } = await supabase.from("corsi").delete().eq("id", id);
       if (e5) throw e5;
     },
@@ -521,7 +515,7 @@ export function use_upsert_presenza_corso() {
       sostituto_id?: string;
       note?: string;
     }) => {
-      const { error } = await supabase.from("presenze_corso").upsert(
+      const { error } = await supabase.from("presenze_staff_corso").upsert(
         {
           corso_id: data.corso_id,
           persona_id: data.persona_id,
@@ -536,6 +530,7 @@ export function use_upsert_presenza_corso() {
       if (error) throw error;
     },
     onSuccess: (_d, vars) => {
+      qc.invalidateQueries({ queryKey: ["presenze_staff_corso", vars.corso_id, vars.data] });
       qc.invalidateQueries({ queryKey: ["presenze_corso", vars.corso_id, vars.data] });
     },
   });
