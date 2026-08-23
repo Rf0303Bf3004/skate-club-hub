@@ -1127,6 +1127,28 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
       if (tipo === "gruppo") {
         const ids: string[] = active.data?.current?.atleta_ids ?? [];
         const livello_gruppo: string | undefined = active.data?.current?.livello;
+        // Contenitore "per proposta": assegnazione individuale degli iscritti,
+        // nessun gruppo dinamico per livello.
+        if (active.data?.current?.individuale) {
+          let assegnati = 0;
+          for (const atleta_id of ids) {
+            const a = (atleti as any[]).find((x) => x.id === atleta_id);
+            const nome = a ? `${a.nome} ${a.cognome}` : "Atleta";
+            const conflitto = await verifica_conflitto_atleta({ sessione_id, atleta_id });
+            if (conflitto) {
+              set_conflitto_atleta({ nome, conflitto });
+              return;
+            }
+            await assegna_atleta.mutateAsync({ sessione_id, atleta_id });
+            assegnati += 1;
+          }
+          if (assegnati > 0)
+            toast({
+              title: `✅ ${assegnati} iscritti assegnati`,
+              description: active.data?.current?.etichetta ?? undefined,
+            });
+          return;
+        }
         if (livello_gruppo && livello_gruppo !== LIVELLO_NON_DEFINITO) {
           // Collegamento dinamico: nuova riga in griglia_sessioni_gruppi + atleti taggati.
           const { gruppo_scope, gruppo_ragione_sociale_id } = scope_da_box_id(active.data?.current?.box_id);
