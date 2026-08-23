@@ -12,6 +12,8 @@ import { is_pubblicata, stato_validita } from "@/lib/convenzioni-date";
 import { use_nazioni, use_regioni, raggruppa_per_nazione } from "@/lib/convenzioni-territori";
 import { e_area_alloggio, e_area_ristorazione } from "@/lib/convenzioni-tipologie";
 import MappaConvenzioni from "@/components/convenzioni/MappaConvenzioni";
+import { use_contenuti_traduzioni } from "@/hooks/use-contenuti-traduzioni";
+
 
 interface Area { id: string; nome: string; icona: string | null; ordine: number; attiva: boolean; }
 interface Tipo { id: string; nome: string; formato: string | null; }
