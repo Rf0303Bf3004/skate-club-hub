@@ -5756,6 +5756,27 @@ export type Database = {
         }
         Relationships: []
       }
+      traduzioni_jobs: {
+        Row: {
+          created_at: string
+          id: string
+          record_id: string
+          tabella: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          record_id: string
+          tabella: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          record_id?: string
+          tabella?: string
+        }
+        Relationships: []
+      }
       traduzioni_ui: {
         Row: {
           aggiornato_da: string | null
