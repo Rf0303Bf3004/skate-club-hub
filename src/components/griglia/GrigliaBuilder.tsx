@@ -1524,6 +1524,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
       </div>
 
 
+      {(() => null)()}
       <DndContext sensors={sensors} onDragEnd={handle_drag_end}>
         {/* Toggle fonte dei pool per la sotto-sessione attiva */}
         {sessioni.length > 0 && (
