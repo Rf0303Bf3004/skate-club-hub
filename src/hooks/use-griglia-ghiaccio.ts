@@ -939,6 +939,60 @@ export async function verifica_conflitto_atleta(input: {
   return _etichetta_sessione(candidate.find((s) => s.id === match.sessione_id)!);
 }
 
+export interface ConflittoAtleta extends ConflittoGruppo {
+  atleta_id: string;
+  nome_atleta: string;
+}
+
+/**
+ * MOTORE UNIFICATO dei conflitti atleta (punti 1 e 3 della Fase 5):
+ * dato un insieme di atleti e la sotto-sessione di destinazione, restituisce
+ * l'elenco di chi è già presente in un'altra sotto-sessione SOVRAPPOSTA nel
+ * tempo, lo stesso giorno, su qualunque risorsa — indipendentemente dal fatto
+ * che l'assegnazione sia manuale, per livello o per proposta.
+ */
+export async function verifica_conflitti_atleti(
+  sessione_id: string,
+  atleta_ids: string[],
+): Promise<ConflittoAtleta[]> {
+  const ids = Array.from(new Set(atleta_ids.filter(Boolean)));
+  if (ids.length === 0) return [];
+  const candidate = await _sessioni_sovrapposte(sessione_id);
+  if (candidate.length === 0) return [];
+
+  const { data: righe, error } = await supabase
+    .from("griglia_sessioni_atleti" as any)
+    .select("sessione_id,atleta_id")
+    .in("atleta_id", ids)
+    .in(
+      "sessione_id",
+      candidate.map((s) => s.id),
+    );
+  if (error) throw error;
+  const matches = (righe ?? []) as any[];
+  if (matches.length === 0) return [];
+
+  // Una sola etichetta per sessione in conflitto (evita query ripetute).
+  const etichette = new Map<string, ConflittoGruppo>();
+  for (const sid of Array.from(new Set(matches.map((m) => m.sessione_id as string)))) {
+    etichette.set(sid, await _etichetta_sessione(candidate.find((s) => s.id === sid)!));
+  }
+
+  const nomi = new Map<string, string>();
+  const { data: atl } = await supabase.from("atleti").select("id,nome,cognome").in("id", ids);
+  ((atl ?? []) as any[]).forEach((a) => nomi.set(a.id, `${a.nome} ${a.cognome}`));
+
+  const visti = new Set<string>();
+  const out: ConflittoAtleta[] = [];
+  for (const m of matches) {
+    if (visti.has(m.atleta_id)) continue;
+    visti.add(m.atleta_id);
+    const e = etichette.get(m.sessione_id)!;
+    out.push({ ...e, atleta_id: m.atleta_id, nome_atleta: nomi.get(m.atleta_id) ?? "Atleta" });
+  }
+  return out;
+}
+
 /**
  * Verifica (non bloccante d'ufficio: l'utente può forzare) sullo stesso istruttore
  * assegnato a due sotto-sessioni sovrapposte nello stesso giorno.
