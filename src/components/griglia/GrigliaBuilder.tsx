@@ -681,7 +681,9 @@ const SessioneBox: React.FC<{
                 </Badge>
               </TooltipTrigger>
               <TooltipContent className="max-w-xs">
-                Collegata al corso: {sessione.corso_nome ?? "corso ricorrente"}
+                {sessione.proposta_nome
+                  ? `Proposta: ${sessione.proposta_nome} — collegata al corso: ${sessione.corso_nome ?? "corso ricorrente"}`
+                  : `Collegata al corso: ${sessione.corso_nome ?? "corso ricorrente"}`}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
