@@ -1083,6 +1083,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
       pool_proposte.map((p) => ({
         proposta_id: p.proposta.id,
         titolo: p.proposta.nome,
+        corso_id: p.corso_id ?? null,
         items: p.atleta_ids
           .map((id) => (atleti as any[]).find((a) => a.id === id))
           .filter(Boolean)
@@ -1577,6 +1578,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
                     key={p.proposta_id}
                     proposta_id={p.proposta_id}
                     titolo={p.titolo}
+                    corso_id={p.corso_id}
                     items={p.items}
                   />
                 ))
