@@ -466,6 +466,8 @@ export function use_elimina_corso() {
       if (e3) throw e3;
       const { error: e4 } = await supabase.from("presenze_corso").delete().eq("corso_id", id);
       if (e4) throw e4;
+      const { error: e4b } = await supabase.from("presenze_staff_corso").delete().eq("corso_id", id);
+      if (e4b) throw e4b;
       const { error: e5 } = await supabase.from("corsi").delete().eq("id", id);
       if (e5) throw e5;
     },
