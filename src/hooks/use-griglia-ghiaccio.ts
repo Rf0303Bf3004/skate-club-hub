@@ -648,22 +648,106 @@ export function use_elimina_sessione() {
 }
 
 // ─── Assegnazioni ──────────────────────────────────────────
+/** Dati di forzatura di un conflitto orario (solo Presidente/DT). */
+export interface ForzaturaConflitto {
+  motivo: string;
+  forzato_da?: string | null;
+}
+
+export interface AssegnaAtletaInput {
+  sessione_id: string;
+  atleta_id: string;
+  origine?: "manuale" | "gruppo" | "proposta";
+  origine_corso_id?: string | null;
+  gruppo_sessione_id?: string | null;
+  /** Se valorizzata, salta il blocco e registra l'audit trail della forzatura. */
+  forzatura?: ForzaturaConflitto | null;
+}
+
+function _payload_assegnazione(input: AssegnaAtletaInput) {
+  return {
+    sessione_id: input.sessione_id,
+    atleta_id: input.atleta_id,
+    provenienza: input.origine ?? "manuale",
+    origine_corso_id: input.origine_corso_id ?? null,
+    gruppo_sessione_id: input.gruppo_sessione_id ?? null,
+    conflitto_forzato: !!input.forzatura,
+    motivo_forzatura: input.forzatura?.motivo ?? null,
+    forzato_da: input.forzatura?.forzato_da ?? null,
+    forzato_at: input.forzatura ? new Date().toISOString() : null,
+  };
+}
+
 export function use_assegna_atleta_sessione() {
   const invalidate = use_invalidate_griglia();
+  const { session } = useAuth();
   return useMutation({
-    mutationFn: async (input: { sessione_id: string; atleta_id: string }) => {
+    mutationFn: async (input: AssegnaAtletaInput) => {
       // Guardia bloccante lato scrittura (anti race condition): nessun insert se
       // l'atleta è già in un'altra sotto-sessione sovrapposta dello stesso giorno.
-      const conflitto = await verifica_conflitto_atleta(input);
-      if (conflitto) {
-        throw new Error(
-          `Atleta già assegnato a un'altra sessione sovrapposta (${conflitto.ora_inizio}–${conflitto.ora_fine} — ${conflitto.etichetta}).`,
-        );
+      if (!input.forzatura) {
+        const conflitto = await verifica_conflitto_atleta(input);
+        if (conflitto) {
+          throw new Error(
+            `Atleta già assegnato a un'altra sessione sovrapposta (${conflitto.ora_inizio}–${conflitto.ora_fine} — ${conflitto.etichetta}).`,
+          );
+        }
       }
+      const forzatura = input.forzatura
+        ? { motivo: input.forzatura.motivo, forzato_da: input.forzatura.forzato_da ?? session?.user_id ?? null }
+        : null;
       const { error } = await supabase
         .from("griglia_sessioni_atleti" as any)
-        .insert({ sessione_id: input.sessione_id, atleta_id: input.atleta_id } as any);
+        .insert(_payload_assegnazione({ ...input, forzatura }) as any);
       if (error && !`${error.message}`.includes("duplicate")) throw error;
+    },
+    onSuccess: invalidate,
+  });
+}
+
+/**
+ * Assegnazione IN BLOCCO di più atleti alla stessa sotto-sessione: verifica
+ * preventiva unica dei conflitti, poi una sola scrittura (mai parziale).
+ */
+export function use_assegna_atleti_sessione() {
+  const invalidate = use_invalidate_griglia();
+  const { session } = useAuth();
+  return useMutation({
+    mutationFn: async (input: {
+      sessione_id: string;
+      atleta_ids: string[];
+      origine?: "manuale" | "gruppo" | "proposta";
+      origine_corso_id?: string | null;
+      gruppo_sessione_id?: string | null;
+      forzatura?: ForzaturaConflitto | null;
+    }) => {
+      if (input.atleta_ids.length === 0) return { inseriti: 0 };
+      if (!input.forzatura) {
+        const conflitti = await verifica_conflitti_atleti(input.sessione_id, input.atleta_ids);
+        if (conflitti.length > 0) {
+          throw new Error(`${conflitti.length} atleti sono già in una sessione sovrapposta.`);
+        }
+      }
+      const presenti = await atleti_presenti_sessione(input.sessione_id);
+      const da_inserire = input.atleta_ids.filter((id) => !presenti.has(id));
+      if (da_inserire.length === 0) return { inseriti: 0 };
+      const forzatura = input.forzatura
+        ? { motivo: input.forzatura.motivo, forzato_da: input.forzatura.forzato_da ?? session?.user_id ?? null }
+        : null;
+      const { error } = await supabase.from("griglia_sessioni_atleti" as any).insert(
+        da_inserire.map((atleta_id) =>
+          _payload_assegnazione({
+            sessione_id: input.sessione_id,
+            atleta_id,
+            origine: input.origine,
+            origine_corso_id: input.origine_corso_id,
+            gruppo_sessione_id: input.gruppo_sessione_id,
+            forzatura,
+          }),
+        ) as any,
+      );
+      if (error && !`${error.message}`.includes("duplicate")) throw error;
+      return { inseriti: da_inserire.length };
     },
     onSuccess: invalidate,
   });
