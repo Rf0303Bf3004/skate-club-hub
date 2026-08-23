@@ -46,6 +46,11 @@ const PortaleAtletaPage: React.FC = () => {
   const [richieste_inviate, set_richieste_inviate] = useState<Set<string>>(new Set());
   const [busy_id, set_busy_id] = useState<string | null>(null);
 
+  const { traduci } = use_contenuti_traduzioni(
+    "comunicazioni",
+    comunicazioni.map((c: any) => c?.comunicazioni?.id).filter(Boolean),
+  );
+
   useEffect(() => {
     (async () => {
       if (!token) {
