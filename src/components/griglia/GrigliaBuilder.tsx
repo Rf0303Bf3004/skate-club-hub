@@ -22,6 +22,8 @@ import {
   risolvi_membri_gruppo,
   verifica_conflitto_gruppo,
   verifica_conflitto_atleta,
+  verifica_conflitti_atleti,
+  use_assegna_atleti_sessione,
   verifica_conflitto_istruttore,
 
   type ConflittoGruppo,
@@ -953,6 +955,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   const upsert_sessione = use_upsert_sessione();
   const elimina_sessione = use_elimina_sessione();
   const assegna_atleta = use_assegna_atleta_sessione();
+  const assegna_atleti = use_assegna_atleti_sessione();
   const rimuovi_atleta = use_rimuovi_atleta_sessione();
   const assegna_istruttore = use_assegna_istruttore_sessione();
   const rimuovi_istruttore = use_rimuovi_istruttore_sessione();
@@ -985,6 +988,13 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   const [conflitto_istruttore, set_conflitto_istruttore] = useState<
     { nome: string; istruttore_id: string; sessione_id: string; conflitto: ConflittoGruppo } | null
   >(null);
+  /** Blocco duro sulle sovrapposizioni orarie degli atleti (con override motivato). */
+  const [conflitto_batch, set_conflitto_batch] = useState<{
+    conflitti: ConflittoAtleta[];
+    assegnabili: number;
+    esegui_liberi?: () => Promise<void>;
+    esegui_forza?: (motivo: string) => Promise<void>;
+  } | null>(null);
 
 
 
@@ -1124,6 +1134,52 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
     }
   };
 
+  /**
+   * Assegnazione atleti con BLOCCO DURO unificato sulle sovrapposizioni orarie
+   * (Fase 5, punti 1 e 3): un atleta non può mai stare in due sotto-sessioni
+   * sovrapposte dello stesso giorno, qualunque sia la modalità (manuale,
+   * livello o proposta). Presidente/DT possono forzare indicando un motivo.
+   */
+  const assegna_batch = async (input: {
+    sessione_id: string;
+    atleta_ids: string[];
+    origine: "manuale" | "gruppo" | "proposta";
+    origine_corso_id?: string | null;
+    etichetta?: string;
+  }) => {
+    const ids = Array.from(new Set(input.atleta_ids.filter(Boolean)));
+    if (ids.length === 0) return;
+
+    const esegui = async (lista: string[], forzatura: { motivo: string } | null) => {
+      if (lista.length === 0) return;
+      const res = await assegna_atleti.mutateAsync({
+        sessione_id: input.sessione_id,
+        atleta_ids: lista,
+        origine: input.origine,
+        origine_corso_id: input.origine_corso_id ?? null,
+        forzatura: forzatura ? { motivo: forzatura.motivo } : null,
+      });
+      toast({
+        title: `✅ ${(res as any).inseriti ?? lista.length} atleti assegnati alla sessione`,
+        description: input.etichetta,
+      });
+    };
+
+    const conflitti = await verifica_conflitti_atleti(input.sessione_id, ids);
+    if (conflitti.length === 0) {
+      await esegui(ids, null);
+      return;
+    }
+    const in_conflitto = new Set(conflitti.map((c) => c.atleta_id));
+    const liberi = ids.filter((id) => !in_conflitto.has(id));
+    set_conflitto_batch({
+      conflitti,
+      assegnabili: liberi.length,
+      esegui_liberi: liberi.length > 0 ? async () => esegui(liberi, null) : undefined,
+      esegui_forza: async (motivo) => esegui(ids, { motivo }),
+    });
+  };
+
   const handle_drag_end = async (event: any) => {
     const { active, over } = event;
     if (!over) return;
@@ -1141,23 +1197,13 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
         // Contenitore "per proposta": assegnazione individuale degli iscritti,
         // nessun gruppo dinamico per livello.
         if (active.data?.current?.individuale) {
-          let assegnati = 0;
-          for (const atleta_id of ids) {
-            const a = (atleti as any[]).find((x) => x.id === atleta_id);
-            const nome = a ? `${a.nome} ${a.cognome}` : "Atleta";
-            const conflitto = await verifica_conflitto_atleta({ sessione_id, atleta_id });
-            if (conflitto) {
-              set_conflitto_atleta({ nome, conflitto });
-              return;
-            }
-            await assegna_atleta.mutateAsync({ sessione_id, atleta_id });
-            assegnati += 1;
-          }
-          if (assegnati > 0)
-            toast({
-              title: `✅ ${assegnati} iscritti assegnati`,
-              description: active.data?.current?.etichetta ?? undefined,
-            });
+          await assegna_batch({
+            sessione_id,
+            atleta_ids: ids,
+            origine: "proposta",
+            origine_corso_id: active.data?.current?.corso_id ?? null,
+            etichetta: active.data?.current?.etichetta ?? undefined,
+          });
           return;
         }
         if (livello_gruppo && livello_gruppo !== LIVELLO_NON_DEFINITO) {
@@ -1190,17 +1236,37 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
             }
           }
 
+          // ⛔ Blocco duro atomico: nessun collegamento se anche un solo atleta
+          // del gruppo è già in un'altra sotto-sessione sovrapposta.
+          const conflitti_atleti = await verifica_conflitti_atleti(sessione_id, ids);
+          if (conflitti_atleti.length > 0) {
+            const esegui = async (forzatura: { motivo: string } | null) => {
+              const res_f = await assegna_gruppo.mutateAsync({
+                sessione_id,
+                gruppo_livello: livello_gruppo,
+                gruppo_scope: scope_norm,
+                gruppo_ragione_sociale_id,
+                forzatura: forzatura ? { motivo: forzatura.motivo } : null,
+              } as any);
+              toast({
+                title: `🔗 Gruppo «${livello_gruppo}» collegato`,
+                description: `${(res_f as any).aggiunti ?? 0} atleti aggiunti.`,
+              });
+            };
+            set_conflitto_batch({
+              conflitti: conflitti_atleti,
+              assegnabili: 0,
+              esegui_forza: async (motivo) => esegui({ motivo }),
+            });
+            return;
+          }
+
           const res = await assegna_gruppo.mutateAsync({
             sessione_id,
             gruppo_livello: livello_gruppo,
             gruppo_scope: scope_norm,
             gruppo_ragione_sociale_id,
           });
-          for (const atleta_id of ids) {
-            const a = (atleti as any[]).find((x) => x.id === atleta_id);
-            const nome = a ? `${a.nome} ${a.cognome}` : "Atleta";
-            avvisa_sovrapposizione("atleta", atleta_id, nome, dest);
-          }
           if (gia_collegato || (res as any).gia_presente) {
             toast({
               title: `ℹ️ Il gruppo «${livello_gruppo}» è già collegato a questa sessione`,
@@ -1212,33 +1278,12 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
 
         } else {
           // Livello non definito: nessun gruppo dinamico, assegnazione individuale.
-          let assegnati = 0;
-          for (const atleta_id of ids) {
-            const a = (atleti as any[]).find((x) => x.id === atleta_id);
-            const nome = a ? `${a.nome} ${a.cognome}` : "Atleta";
-            // ⛔ Controllo BLOCCANTE per singolo atleta.
-            const conflitto = await verifica_conflitto_atleta({ sessione_id, atleta_id });
-            if (conflitto) {
-              set_conflitto_atleta({ nome, conflitto });
-              return;
-            }
-            await assegna_atleta.mutateAsync({ sessione_id, atleta_id });
-            assegnati += 1;
-          }
-          if (assegnati > 0) toast({ title: `✅ ${assegnati} atleti assegnati alla sessione` });
+          await assegna_batch({ sessione_id, atleta_ids: ids, origine: "manuale" });
         }
 
 
       } else if (tipo === "atleta") {
-        const a = (atleti as any[]).find((x) => x.id === persona_id);
-        const nome = a ? `${a.nome} ${a.cognome}` : "Atleta";
-        // ⛔ Controllo BLOCCANTE: nessuna mutation se già in sessione sovrapposta.
-        const conflitto = await verifica_conflitto_atleta({ sessione_id, atleta_id: persona_id });
-        if (conflitto) {
-          set_conflitto_atleta({ nome, conflitto });
-          return;
-        }
-        await assegna_atleta.mutateAsync({ sessione_id, atleta_id: persona_id });
+        await assegna_batch({ sessione_id, atleta_ids: [persona_id], origine: "manuale" });
       } else if (tipo === "istruttore") {
         const i = (istruttori as any[]).find((x) => x.id === persona_id);
         const nome = i ? `${i.nome} ${i.cognome}` : "Istruttore";
