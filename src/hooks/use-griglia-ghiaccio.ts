@@ -269,6 +269,7 @@ export async function fetch_blocchi_giorno(
         ...s,
         specialita_nome: s.specialita_id ? spec_map.get(s.specialita_id)?.nome ?? null : null,
         corso_nome: s.corso_id ? corsi_map.get(s.corso_id) ?? null : null,
+        proposta_nome: s.corso_id ? corso_proposta_map.get(s.corso_id) ?? null : null,
         specialita_descrizione: s.specialita_id
           ? spec_map.get(s.specialita_id)?.descrizione_messaggio ?? null
           : null,
