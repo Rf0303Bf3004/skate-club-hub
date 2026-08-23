@@ -190,6 +190,8 @@ const ClubSetupPage: React.FC = () => {
         "reminder_planning_atleti_attivo", "reminder_planning_istruttori_attivo",
         "reminder_planning_orario_invio", "reminder_planning_anticipo_giorni",
         "disponibilita_valida_fino_al",
+        "disponibilita_tipo_pianificazione", "disponibilita_periodo_giorni", "disponibilita_giorni_preavviso",
+
       ];
       for (const f of club_fields) {
         if (f in form) club_payload[f] = form[f];
