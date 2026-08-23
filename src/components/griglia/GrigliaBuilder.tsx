@@ -382,14 +382,21 @@ const PoolBox: React.FC<{
 const PoolPropostaBox: React.FC<{
   proposta_id: string;
   titolo: string;
+  corso_id: string | null;
   items: { id: string; nome: string; cognome: string }[];
-}> = ({ proposta_id, titolo, items }) => {
+}> = ({ proposta_id, titolo, corso_id, items }) => {
   const [aperto, set_aperto] = useState(true);
   const vuoto = items.length === 0;
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `gruppo:proposta:${proposta_id}`,
     disabled: vuoto,
-    data: { tipo: "gruppo", atleta_ids: items.map((i) => i.id), individuale: true, etichetta: titolo },
+    data: {
+      tipo: "gruppo",
+      atleta_ids: items.map((i) => i.id),
+      individuale: true,
+      etichetta: titolo,
+      corso_id,
+    },
   });
 
   return (
