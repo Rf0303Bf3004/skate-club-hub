@@ -64,6 +64,8 @@ interface Convenzione {
   logo_url: string | null;
   immagine_url: string | null;
   indirizzo: string | null;
+  telefono: string | null;
+  sito_web: string | null;
   geo_cantone: string | null;
   geo_citta: string | null;
   regione_id: string | null;
