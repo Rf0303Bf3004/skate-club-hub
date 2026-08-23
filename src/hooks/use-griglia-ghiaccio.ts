@@ -1162,6 +1162,12 @@ export function use_ripeti_sessione() {
       blocco: GrigliaBlocco;
       fino_a: string;
       nome_risorsa?: string | null;
+      /** Proposta commerciale a cui collegare il corso creato (Fase 5 — Proposte). */
+      proposta_id?: string | null;
+      /** Nome del corso creato: se assente viene auto-generato come oggi. */
+      nome_corso?: string | null;
+      /** Prezzo mensile del corso creato (default 0 come oggi). */
+      prezzo_mensile?: number | null;
     }): Promise<RipetiSessioneResult> => {
       const club_id = get_current_club_id();
       if (!club_id) throw new Error("Club non disponibile");
