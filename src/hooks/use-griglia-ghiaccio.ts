@@ -1201,6 +1201,7 @@ export async function sync_gruppo_sessione(input: {
         da_aggiungere.map((atleta_id) => ({
           sessione_id: input.sessione_id,
           atleta_id,
+          provenienza: "gruppo",
           gruppo_sessione_id: input.gruppo_sessione_id,
         })) as any,
       );
