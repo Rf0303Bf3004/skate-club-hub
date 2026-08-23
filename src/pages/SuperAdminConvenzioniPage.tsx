@@ -790,6 +790,14 @@ function ConvenzioneFormModal({
             <Input value={form.indirizzo ?? ""} onChange={e => update("indirizzo", e.target.value)} />
           </div>
           <div>
+            <Label>Telefono</Label>
+            <Input value={form.telefono ?? ""} onChange={e => update("telefono", e.target.value)} placeholder="+41 ..." />
+          </div>
+          <div>
+            <Label>Sito web</Label>
+            <Input value={form.sito_web ?? ""} onChange={e => update("sito_web", e.target.value)} placeholder="https://..." />
+          </div>
+          <div>
             <Label>Nazione</Label>
             <TerritorioCombobox
               value={nazione_sel}
