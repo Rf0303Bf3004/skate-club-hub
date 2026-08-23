@@ -1525,27 +1525,78 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
 
 
       <DndContext sensors={sensors} onDragEnd={handle_drag_end}>
+        {/* Toggle fonte dei pool per la sotto-sessione attiva */}
+        {sessioni.length > 0 && (
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs text-muted-foreground">Contenitori:</span>
+            <Button
+              size="sm"
+              variant={fonte_pool_attiva === "livello" ? "default" : "outline"}
+              className="h-7 text-xs"
+              onClick={() =>
+                tab_corrente && set_fonte_pool((v) => ({ ...v, [tab_corrente]: "livello" }))
+              }
+            >
+              Per livello
+            </Button>
+            <Button
+              size="sm"
+              variant={fonte_pool_attiva === "proposta" ? "default" : "outline"}
+              className="h-7 text-xs"
+              onClick={() =>
+                tab_corrente && set_fonte_pool((v) => ({ ...v, [tab_corrente]: "proposta" }))
+              }
+            >
+              <Package className="w-3.5 h-3.5 mr-1" /> Per proposta
+            </Button>
+          </div>
+        )}
+
         {/* Fascia superiore: pool sorgente */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          {pool_ragioni.length > 0 ? (
-            pool_ragioni.map((p) => (
-              <PoolBox key={p.id} box_id={p.id} titolo={p.titolo} items={p.items} prefisso="atleta" colore={p.colore} />
-            ))
+          {fonte_pool_attiva === "proposta" ? (
+            <>
+              {pool_proposte_items.length === 0 ? (
+                <p className="text-xs text-muted-foreground md:col-span-3 self-center">
+                  Nessuna proposta attiva per il club. Creane una da una sotto-sessione con il pulsante
+                  «Crea proposta».
+                </p>
+              ) : (
+                pool_proposte_items.map((p) => (
+                  <PoolPropostaBox
+                    key={p.proposta_id}
+                    proposta_id={p.proposta_id}
+                    titolo={p.titolo}
+                    items={p.items}
+                  />
+                ))
+              )}
+              <PoolBox titolo="Istruttori" items={pool_istruttori} prefisso="istruttore" variante_istruttori />
+            </>
           ) : (
-            <PoolBox box_id="club" titolo="Club" items={pool_club_fallback} prefisso="atleta" />
+            <>
+              {pool_ragioni.length > 0 ? (
+                pool_ragioni.map((p) => (
+                  <PoolBox key={p.id} box_id={p.id} titolo={p.titolo} items={p.items} prefisso="atleta" colore={p.colore} />
+                ))
+              ) : (
+                <PoolBox box_id="club" titolo="Club" items={pool_club_fallback} prefisso="atleta" />
+              )}
+              {pool_senza_ragione_sociale.length > 0 && (
+                <PoolBox
+                  box_id="senza_rs"
+                  titolo="Senza ragione sociale"
+                  items={pool_senza_ragione_sociale}
+                  prefisso="atleta"
+                  neutro
+                />
+              )}
+              <PoolBox box_id="esterni" titolo="Esterni" items={pool_esterni} prefisso="atleta" colore={VERDE_ESTERNI} />
+              <PoolBox titolo="Istruttori" items={pool_istruttori} prefisso="istruttore" variante_istruttori />
+            </>
           )}
-          {pool_senza_ragione_sociale.length > 0 && (
-            <PoolBox
-              box_id="senza_rs"
-              titolo="Senza ragione sociale"
-              items={pool_senza_ragione_sociale}
-              prefisso="atleta"
-              neutro
-            />
-          )}
-          <PoolBox box_id="esterni" titolo="Esterni" items={pool_esterni} prefisso="atleta" colore={VERDE_ESTERNI} />
-          <PoolBox titolo="Istruttori" items={pool_istruttori} prefisso="istruttore" variante_istruttori />
         </div>
+
 
         {/* Fascia inferiore: sotto-sessioni a tab */}
         <div className="mt-4">
