@@ -64,6 +64,8 @@ interface Convenzione {
   logo_url: string | null;
   immagine_url: string | null;
   indirizzo: string | null;
+  telefono: string | null;
+  sito_web: string | null;
   geo_cantone: string | null;
   geo_citta: string | null;
   regione_id: string | null;
@@ -601,6 +603,8 @@ function ConvenzioneFormModal({
         logo_url: logo_path,
         immagine_url: imm_path,
         indirizzo: form.indirizzo ?? null,
+        telefono: form.telefono || null,
+        sito_web: form.sito_web || null,
         geo_cantone: form.geo_cantone ?? null,
         geo_citta: form.geo_citta ?? null,
         regione_id: form.regione_id ?? null,
@@ -784,6 +788,14 @@ function ConvenzioneFormModal({
           <div className="md:col-span-2">
             <Label>Indirizzo</Label>
             <Input value={form.indirizzo ?? ""} onChange={e => update("indirizzo", e.target.value)} />
+          </div>
+          <div>
+            <Label>Telefono</Label>
+            <Input value={form.telefono ?? ""} onChange={e => update("telefono", e.target.value)} placeholder="+41 ..." />
+          </div>
+          <div>
+            <Label>Sito web</Label>
+            <Input value={form.sito_web ?? ""} onChange={e => update("sito_web", e.target.value)} placeholder="https://..." />
           </div>
           <div>
             <Label>Nazione</Label>
