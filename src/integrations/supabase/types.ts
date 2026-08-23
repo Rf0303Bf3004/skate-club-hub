@@ -1659,6 +1659,7 @@ export type Database = {
           ora_fine: string | null
           ora_inizio: string | null
           percorso: string | null
+          proposta_id: string | null
           richiede_approvazione: boolean
           stagione_id: string | null
           tipo: string | null
@@ -1681,6 +1682,7 @@ export type Database = {
           ora_fine?: string | null
           ora_inizio?: string | null
           percorso?: string | null
+          proposta_id?: string | null
           richiede_approvazione?: boolean
           stagione_id?: string | null
           tipo?: string | null
@@ -1703,6 +1705,7 @@ export type Database = {
           ora_fine?: string | null
           ora_inizio?: string | null
           percorso?: string | null
+          proposta_id?: string | null
           richiede_approvazione?: boolean
           stagione_id?: string | null
           tipo?: string | null
@@ -1728,6 +1731,13 @@ export type Database = {
             columns: ["livello_id"]
             isOneToOne: false
             referencedRelation: "livelli"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "corsi_proposta_id_fkey"
+            columns: ["proposta_id"]
+            isOneToOne: false
+            referencedRelation: "proposte"
             referencedColumns: ["id"]
           },
           {
@@ -4594,6 +4604,71 @@ export type Database = {
             columns: ["corso_id"]
             isOneToOne: false
             referencedRelation: "corsi"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      proposte: {
+        Row: {
+          attiva: boolean
+          club_id: string
+          created_at: string
+          descrizione: string | null
+          id: string
+          livello_id: string | null
+          nome: string
+          prezzo_mensile: number | null
+          stagione_id: string | null
+        }
+        Insert: {
+          attiva?: boolean
+          club_id: string
+          created_at?: string
+          descrizione?: string | null
+          id?: string
+          livello_id?: string | null
+          nome: string
+          prezzo_mensile?: number | null
+          stagione_id?: string | null
+        }
+        Update: {
+          attiva?: boolean
+          club_id?: string
+          created_at?: string
+          descrizione?: string | null
+          id?: string
+          livello_id?: string | null
+          nome?: string
+          prezzo_mensile?: number | null
+          stagione_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposte_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposte_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "kpi_pitch_sponsor"
+            referencedColumns: ["club_id"]
+          },
+          {
+            foreignKeyName: "proposte_livello_id_fkey"
+            columns: ["livello_id"]
+            isOneToOne: false
+            referencedRelation: "livelli"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposte_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
             referencedColumns: ["id"]
           },
         ]
