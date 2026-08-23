@@ -14,7 +14,9 @@
       "configurazione_ghiaccio_salvata": "✅ Configurazione ghiaccio salvata",
       "configurazione_private_salvata": "✅ Configurazione lezioni private salvata",
       "seleziona_risorsa": "Seleziona una risorsa",
-      "disponibilita_salvata_per": "✅ Disponibilità salvata per {{risorsa}}"
+      "disponibilita_salvata_per": "✅ Disponibilità salvata per {{risorsa}}",
+      "periodo_mancante": "Imposta prima ogni quanti giorni va rinnovata",
+      "disponibilita_rinnovata": "✅ Disponibilità rinnovata"
     },
     "stats": {
       "atleti": "Atleti",
@@ -43,7 +45,8 @@
       "ghiaccio_planning": "🧊 Ghiaccio e Planning",
       "lezioni_private": "🎿 Lezioni Private",
       "disponibilita_strutture": "Disponibilità strutture settimanale",
-      "pulizia_ghiaccio": "🧹 Pulizia Ghiaccio"
+      "pulizia_ghiaccio": "🧹 Pulizia Ghiaccio",
+      "tipo_pianificazione": "🗓️ Tipo di pianificazione disponibilità"
     },
     "fields": {
       "logo_placeholder": "Logo",
@@ -80,7 +83,10 @@
       "modalita_costo_privata": "Modalità costo privata",
       "valida_fino_al": "Valida fino al (opzionale, lascia vuoto se la disponibilità non cambia mai)",
       "risorsa": "Risorsa",
-      "seleziona_risorsa_placeholder": "Seleziona una risorsa"
+      "seleziona_risorsa_placeholder": "Seleziona una risorsa",
+      "tipo_pianificazione": "Tipo di pianificazione",
+      "periodo_giorni": "Ogni quanti giorni va rinnovata",
+      "giorni_preavviso": "Preavviso (giorni prima della scadenza)"
     },
     "testi": {
       "clausole_info": "Appare come Art. 12 nella pagina pubblica di iscrizione e nella scheda stampabile. Se vuoto, l'articolo non viene mostrato.",
@@ -95,7 +101,10 @@
       "disponibilita_scadenza_info": "Superata questa data comparirà un avviso in Dashboard e in Griglia Ghiaccio per rivedere la disponibilità. Si salva con \"Salva dati club\".",
       "nessuna_risorsa": "Nessuna risorsa configurata — aggiungine una in \"Risorse e strutture\".",
       "nessuno_slot_prefix": "— nessuno slot — clicca",
-      "nessuno_slot_suffix": "per aggiungere una fascia oraria"
+      "nessuno_slot_suffix": "per aggiungere una fascia oraria",
+      "tipo_pianificazione_info": "Con la modalità periodica il sistema avvisa lo staff qualche giorno prima della scadenza che la disponibilità va rinnovata.",
+      "prossima_scadenza": "Prossima scadenza",
+      "scadenza_non_impostata": "non ancora impostata"
     },
     "stato": {
       "attivo": "Attivo",
@@ -110,7 +119,9 @@
       "tariffa_fissa": "Tariffa fissa per atleta",
       "diviso_atleti": "Diviso tra atleti",
       "palestra": "Palestra",
-      "ghiaccio": "Ghiaccio"
+      "ghiaccio": "Ghiaccio",
+      "pianificazione_stagionale": "Stagionale (valida tutta la stagione)",
+      "pianificazione_periodica": "Periodica (va rivista ogni N giorni)"
     },
     "azioni": {
       "caricamento": "Caricamento...",
@@ -123,7 +134,8 @@
       "salvando": "...",
       "salva_disponibilita": "Salva disponibilità",
       "slot": "Slot",
-      "plus_slot": "+ Slot"
+      "plus_slot": "+ Slot",
+      "rinnova_disponibilita": "Rinnova disponibilità per il prossimo periodo"
     }
   },
   "seasons": {
