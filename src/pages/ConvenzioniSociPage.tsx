@@ -340,7 +340,7 @@ export default function ConvenzioniSociPage() {
     },
   });
 
-  const { data: aree = [] } = useQuery({
+  const { data: aree_src = [] } = useQuery({
     queryKey: ["convenzioni_aree_attive"],
     queryFn: async () => {
       const { data } = await supabase
@@ -355,7 +355,7 @@ export default function ConvenzioniSociPage() {
   const { data: nazioni = [] } = use_nazioni();
   const { data: regioni_all = [] } = use_regioni();
 
-  const { data: convenzioni = [], isLoading } = useQuery({
+  const { data: convenzioni_src = [], isLoading } = useQuery({
     queryKey: ["convenzioni_attive"],
     queryFn: async () => {
       const { data } = await supabase
@@ -365,6 +365,39 @@ export default function ConvenzioniSociPage() {
       return ((data ?? []) as unknown as Convenzione[]).filter((c) => is_pubblicata(c));
     },
   });
+
+  // Traduzione automatica del CONTENUTO (fallback silenzioso all'italiano)
+  const { traduci: t_conv, mappa: mappa_conv } = use_contenuti_traduzioni(
+    "convenzioni",
+    useMemo(() => convenzioni_src.map((c) => c.id), [convenzioni_src]),
+  );
+  const { traduci: t_area, mappa: mappa_aree } = use_contenuti_traduzioni(
+    "convenzioni_aree",
+    useMemo(
+      () => [...aree_src.map((a) => a.id), ...convenzioni_src.map((c) => c.convenzioni_aree?.id).filter(Boolean) as string[]],
+      [aree_src, convenzioni_src],
+    ),
+  );
+
+  const aree = useMemo(
+    () => aree_src.map((a) => ({ ...a, nome: t_area(a.id, "nome", a.nome) })),
+    [aree_src, mappa_aree],
+  );
+
+  const convenzioni = useMemo(
+    () =>
+      convenzioni_src.map((c) => ({
+        ...c,
+        titolo: t_conv(c.id, "titolo", c.titolo),
+        descrizione: t_conv(c.id, "descrizione", c.descrizione),
+        valore_proposta: t_conv(c.id, "valore_proposta", c.valore_proposta),
+        convenzioni_aree: c.convenzioni_aree
+          ? { ...c.convenzioni_aree, nome: t_area(c.convenzioni_aree.id, "nome", c.convenzioni_aree.nome) }
+          : c.convenzioni_aree,
+      })) as Convenzione[],
+    [convenzioni_src, mappa_conv, mappa_aree],
+  );
+
 
   const match_search = (c: Convenzione, q: string) =>
     !q ||
