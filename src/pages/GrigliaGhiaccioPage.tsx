@@ -11,6 +11,10 @@ import ProvenienzaLegenda from "@/components/ProvenienzaLegenda";
 import DisponibilitaResiduaPopover from "@/components/griglia/DisponibilitaResiduaPopover";
 import BannerDisponibilitaScaduta from "@/components/common/BannerDisponibilitaScaduta";
 import TableauSchermo from "@/components/griglia/TableauSchermo";
+import SettimanaView from "@/components/griglia/SettimanaView";
+import MeseGrigliaView from "@/components/griglia/MeseGrigliaView";
+import StagioneView from "@/components/griglia/StagioneView";
+import LegendaFonti from "@/components/griglia/LegendaFonti";
 import StampaRiepilogoIstruttori, {
   type IstruttoreStampa,
   type RigaSessioneStampa,
