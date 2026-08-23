@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { usePermessiSezioniMatrix } from "@/hooks/usePermessi";
 import { useModalitaArea } from "@/hooks/useModalitaArea";
