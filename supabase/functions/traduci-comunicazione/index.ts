@@ -21,17 +21,29 @@ Deno.serve(async (req) => {
   try {
     const service_key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const auth = req.headers.get("authorization") || "";
-    if (auth !== `Bearer ${service_key}`) {
-      return json({ error: "forbidden" }, 403);
-    }
+    const is_service = auth === `Bearer ${service_key}`;
 
     const body = await req.json().catch(() => ({}));
     const record_id = body?.record_id;
+    const job_id = body?.job_id;
     if (typeof record_id !== "string" || !/^[0-9a-f-]{36}$/i.test(record_id)) {
       return json({ error: "record_id (uuid) obbligatorio" }, 400);
     }
 
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, service_key);
+
+    // Autorizzazione: chiamata interna (service role) oppure job creato dal
+    // trigger DB (tabella accessibile solo a service_role → prova di origine).
+    if (!is_service) {
+      if (typeof job_id !== "string") return json({ error: "forbidden" }, 403);
+      const { data: job } = await supabase
+        .from("traduzioni_jobs")
+        .select("id, record_id")
+        .eq("id", job_id)
+        .maybeSingle();
+      if (!job || job.record_id !== record_id) return json({ error: "forbidden" }, 403);
+      await supabase.from("traduzioni_jobs").delete().eq("id", job_id);
+    }
 
     const { data: com, error: com_err } = await supabase
       .from("comunicazioni")
