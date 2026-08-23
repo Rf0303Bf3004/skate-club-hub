@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { verifica_conflitti_iscrizione, type ConflittoIscrizione } from "@/lib/conflitti-iscrizioni";
 import { Calendar } from "lucide-react";
 import { use_persisted_state } from "@/hooks/use-persisted-state";
 import ConfirmButton from "@/components/common/ConfirmButton";
@@ -384,6 +385,10 @@ const TabIscrizioni: React.FC<{
       .slice(0, 30);
   }, [tutti_atleti, ids_esclusi, salto_query, livello_richiesto, show_salto_search, ha_filtro_livello]);
 
+  const [conflitto_dialog, set_conflitto_dialog] = useState<
+    { atleta: any; conflitti: ConflittoIscrizione[] } | null
+  >(null);
+
   const do_iscrivi = async (atleta_id: string, salto_livello = false, note_sl = "") => {
     set_saving(true);
     try {
@@ -418,13 +423,34 @@ const TabIscrizioni: React.FC<{
     }
   };
 
-  const handle_iscrivi = (atleta: any) => {
+  /** Avviso SOFT: sovrapposizione oraria con un altro corso attivo nello stesso giorno. */
+  const handle_iscrivi = async (atleta: any) => {
+    try {
+      const conflitti = await verifica_conflitti_iscrizione(atleta.id, corso_id);
+      if (conflitti.length > 0) {
+        set_conflitto_dialog({ atleta, conflitti });
+        return;
+      }
+    } catch {
+      // L'avviso è non bloccante: in caso di errore si procede con l'iscrizione.
+    }
     do_iscrivi(atleta.id);
   };
 
-  const handle_iscrivi_salto = (atleta: any) => {
+  const handle_iscrivi_salto = async (atleta: any) => {
     set_salto_dialog(atleta);
     set_note_salto("");
+    try {
+      const conflitti = await verifica_conflitti_iscrizione(atleta.id, corso_id);
+      if (conflitti.length > 0) {
+        toast({
+          title: `⚠️ ${atleta.nome} ha già un corso sovrapposto in questo orario`,
+          description: conflitti.map((c) => `${c.nome_corso} ${c.ora_inizio}–${c.ora_fine}`).join(" · "),
+        });
+      }
+    } catch {
+      // Avviso non bloccante.
+    }
   };
 
   const handle_rimuovi = async (atleta_id: string) => {
@@ -487,6 +513,45 @@ const TabIscrizioni: React.FC<{
               className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
             >
               {saving ? "..." : "Conferma salto di livello"}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Avviso SOFT (non bloccante) di sovrapposizione oraria */}
+      {conflitto_dialog && (
+        <div className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 space-y-3">
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">
+              ⚠️ Sovrapposizione oraria per {conflitto_dialog.atleta.nome} {conflitto_dialog.atleta.cognome}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              È già iscritta a {conflitto_dialog.conflitti.length === 1 ? "un altro corso" : "altri corsi"} nello
+              stesso giorno con orario sovrapposto:
+            </p>
+            <ul className="text-xs text-muted-foreground pl-4 list-disc">
+              {conflitto_dialog.conflitti.map((c) => (
+                <li key={c.corso_id}>
+                  {c.nome_corso} — {c.giorno} {c.ora_inizio}–{c.ora_fine}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="flex-1" onClick={() => set_conflitto_dialog(null)}>
+              Annulla
+            </Button>
+            <Button
+              size="sm"
+              disabled={saving}
+              className="flex-1 bg-amber-500 hover:bg-amber-600 text-white"
+              onClick={() => {
+                const a = conflitto_dialog.atleta;
+                set_conflitto_dialog(null);
+                do_iscrivi(a.id);
+              }}
+            >
+              {saving ? "..." : "Iscrivi comunque"}
             </Button>
           </div>
         </div>

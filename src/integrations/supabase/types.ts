@@ -2797,23 +2797,41 @@ export type Database = {
       griglia_sessioni_atleti: {
         Row: {
           atleta_id: string
+          conflitto_forzato: boolean
           created_at: string
+          forzato_at: string | null
+          forzato_da: string | null
           gruppo_sessione_id: string | null
           id: string
+          motivo_forzatura: string | null
+          origine_corso_id: string | null
+          provenienza: string
           sessione_id: string
         }
         Insert: {
           atleta_id: string
+          conflitto_forzato?: boolean
           created_at?: string
+          forzato_at?: string | null
+          forzato_da?: string | null
           gruppo_sessione_id?: string | null
           id?: string
+          motivo_forzatura?: string | null
+          origine_corso_id?: string | null
+          provenienza?: string
           sessione_id: string
         }
         Update: {
           atleta_id?: string
+          conflitto_forzato?: boolean
           created_at?: string
+          forzato_at?: string | null
+          forzato_da?: string | null
           gruppo_sessione_id?: string | null
           id?: string
+          motivo_forzatura?: string | null
+          origine_corso_id?: string | null
+          provenienza?: string
           sessione_id?: string
         }
         Relationships: [
@@ -2836,6 +2854,13 @@ export type Database = {
             columns: ["gruppo_sessione_id"]
             isOneToOne: false
             referencedRelation: "griglia_sessioni_gruppi"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "griglia_sessioni_atleti_origine_corso_id_fkey"
+            columns: ["origine_corso_id"]
+            isOneToOne: false
+            referencedRelation: "corsi"
             referencedColumns: ["id"]
           },
           {

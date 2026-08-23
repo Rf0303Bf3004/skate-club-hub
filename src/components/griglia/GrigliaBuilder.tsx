@@ -22,9 +22,15 @@ import {
   risolvi_membri_gruppo,
   verifica_conflitto_gruppo,
   verifica_conflitto_atleta,
+  verifica_conflitti_atleti,
+  use_assegna_atleti_sessione,
+  use_disallineamento_proposte,
+  use_risincronizza_proposta,
   verifica_conflitto_istruttore,
 
   type ConflittoGruppo,
+  type ConflittoAtleta,
+  type DisallineamentoProposta,
 
   giorno_it_da_data,
   type GruppoScope,
@@ -58,6 +64,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SpecialitaManager from "@/components/griglia/SpecialitaManager";
 import ConfermaForzaturaDisponibilita from "@/components/griglia/ConfermaForzaturaDisponibilita";
 import RipetiSessioneDialog from "@/components/griglia/RipetiSessioneDialog";
+import ConfermaConflittoAtleti from "@/components/griglia/ConfermaConflittoAtleti";
+import DisallineamentoPropostaPill from "@/components/griglia/DisallineamentoPropostaPill";
 import NuovaPropostaDialog, { type ConfermaProposta } from "@/components/griglia/NuovaPropostaDialog";
 import { use_pool_proposte, use_crea_proposta } from "@/hooks/use-proposte";
 import { Link as RouterLink } from "react-router-dom";
@@ -382,14 +390,21 @@ const PoolBox: React.FC<{
 const PoolPropostaBox: React.FC<{
   proposta_id: string;
   titolo: string;
+  corso_id: string | null;
   items: { id: string; nome: string; cognome: string }[];
-}> = ({ proposta_id, titolo, items }) => {
+}> = ({ proposta_id, titolo, corso_id, items }) => {
   const [aperto, set_aperto] = useState(true);
   const vuoto = items.length === 0;
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `gruppo:proposta:${proposta_id}`,
     disabled: vuoto,
-    data: { tipo: "gruppo", atleta_ids: items.map((i) => i.id), individuale: true, etichetta: titolo },
+    data: {
+      tipo: "gruppo",
+      atleta_ids: items.map((i) => i.id),
+      individuale: true,
+      etichetta: titolo,
+      corso_id,
+    },
   });
 
   return (
@@ -611,6 +626,10 @@ const SessioneBox: React.FC<{
   on_ripeti?: () => void;
   on_proposta?: () => void;
   on_sync_gruppo?: (gruppo_sessione_id: string) => void;
+  /** Divergenza snapshot proposta ↔ iscrizioni correnti (se presente). */
+  disallineamento?: DisallineamentoProposta | null;
+  on_risincronizza_proposta?: () => void;
+  risincronizzazione_in_corso?: boolean;
   on_rimuovi_gruppo?: (gruppo_sessione_id: string) => void;
   sync_gruppo_ids?: string[];
   atleti_tutti?: {
@@ -634,6 +653,9 @@ const SessioneBox: React.FC<{
   on_sync_gruppo,
   on_rimuovi_gruppo,
   sync_gruppo_ids,
+  disallineamento,
+  on_risincronizza_proposta,
+  risincronizzazione_in_corso,
 
   atleti_tutti = [],
   ragioni_sociali = [],
@@ -838,6 +860,13 @@ const SessioneBox: React.FC<{
             </button>
           </span>
         ))}
+        {disallineamento && on_risincronizza_proposta && (
+          <DisallineamentoPropostaPill
+            disallineamento={disallineamento}
+            in_corso={risincronizzazione_in_corso}
+            on_risincronizza={on_risincronizza_proposta}
+          />
+        )}
         {(sessione.gruppi ?? []).map((g) => (
           <GruppoPill
             key={g.id}
@@ -946,6 +975,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   const upsert_sessione = use_upsert_sessione();
   const elimina_sessione = use_elimina_sessione();
   const assegna_atleta = use_assegna_atleta_sessione();
+  const assegna_atleti = use_assegna_atleti_sessione();
   const rimuovi_atleta = use_rimuovi_atleta_sessione();
   const assegna_istruttore = use_assegna_istruttore_sessione();
   const rimuovi_istruttore = use_rimuovi_istruttore_sessione();
@@ -955,6 +985,9 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   const assegna_gruppo = use_assegna_gruppo_sessione();
   const rimuovi_gruppo = use_rimuovi_gruppo_sessione();
   const sync_gruppo = use_sync_gruppo_sessione();
+  const { data: disallineamenti = {} } = use_disallineamento_proposte([blocco]);
+  const risincronizza_proposta = use_risincronizza_proposta();
+  const [risync_sessione_id, set_risync_sessione_id] = useState<string | null>(null);
 
   const [open_specialita, set_open_specialita] = useState(false);
   const [riepilogo_aperto, set_riepilogo_aperto] = useState(false);
@@ -978,6 +1011,13 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   const [conflitto_istruttore, set_conflitto_istruttore] = useState<
     { nome: string; istruttore_id: string; sessione_id: string; conflitto: ConflittoGruppo } | null
   >(null);
+  /** Blocco duro sulle sovrapposizioni orarie degli atleti (con override motivato). */
+  const [conflitto_batch, set_conflitto_batch] = useState<{
+    conflitti: ConflittoAtleta[];
+    assegnabili: number;
+    esegui_liberi?: () => Promise<void>;
+    esegui_forza?: (motivo: string) => Promise<void>;
+  } | null>(null);
 
 
 
@@ -1076,6 +1116,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
       pool_proposte.map((p) => ({
         proposta_id: p.proposta.id,
         titolo: p.proposta.nome,
+        corso_id: p.corso_id ?? null,
         items: p.atleta_ids
           .map((id) => (atleti as any[]).find((a) => a.id === id))
           .filter(Boolean)
@@ -1116,6 +1157,80 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
     }
   };
 
+  /** Risincronizzazione ESPLICITA dello snapshot proposta (mai automatica). */
+  const risincronizza = async (d: DisallineamentoProposta) => {
+    set_risync_sessione_id(d.sessione_id);
+    try {
+      const res = await risincronizza_proposta.mutateAsync({
+        sessione_id: d.sessione_id,
+        corso_id: d.corso_id,
+        aggiungi_atleta_ids: d.nuovi.map((n) => n.atleta_id),
+        rimuovi_riga_ids: d.rimossi.map((r) => r.riga_id),
+      });
+      toast({
+        title: "Sessione risincronizzata",
+        description:
+          `+${res.aggiunti} aggiunti, −${res.rimossi} rimossi` +
+          (res.saltati.length > 0
+            ? ` · ${res.saltati.length} saltati per sovrapposizione oraria (${res.saltati
+                .map((c) => c.nome_atleta)
+                .join(", ")})`
+            : ""),
+        variant: res.saltati.length > 0 ? "destructive" : undefined,
+      });
+    } catch (e: any) {
+      toast({ title: "Errore risincronizzazione", description: e.message, variant: "destructive" });
+    } finally {
+      set_risync_sessione_id(null);
+    }
+  };
+
+  /**
+   * Assegnazione atleti con BLOCCO DURO unificato sulle sovrapposizioni orarie
+   * (Fase 5, punti 1 e 3): un atleta non può mai stare in due sotto-sessioni
+   * sovrapposte dello stesso giorno, qualunque sia la modalità (manuale,
+   * livello o proposta). Presidente/DT possono forzare indicando un motivo.
+   */
+  const assegna_batch = async (input: {
+    sessione_id: string;
+    atleta_ids: string[];
+    origine: "manuale" | "gruppo" | "proposta";
+    origine_corso_id?: string | null;
+    etichetta?: string;
+  }) => {
+    const ids = Array.from(new Set(input.atleta_ids.filter(Boolean)));
+    if (ids.length === 0) return;
+
+    const esegui = async (lista: string[], forzatura: { motivo: string } | null) => {
+      if (lista.length === 0) return;
+      const res = await assegna_atleti.mutateAsync({
+        sessione_id: input.sessione_id,
+        atleta_ids: lista,
+        origine: input.origine,
+        origine_corso_id: input.origine_corso_id ?? null,
+        forzatura: forzatura ? { motivo: forzatura.motivo } : null,
+      });
+      toast({
+        title: `✅ ${(res as any).inseriti ?? lista.length} atleti assegnati alla sessione`,
+        description: input.etichetta,
+      });
+    };
+
+    const conflitti = await verifica_conflitti_atleti(input.sessione_id, ids);
+    if (conflitti.length === 0) {
+      await esegui(ids, null);
+      return;
+    }
+    const in_conflitto = new Set(conflitti.map((c) => c.atleta_id));
+    const liberi = ids.filter((id) => !in_conflitto.has(id));
+    set_conflitto_batch({
+      conflitti,
+      assegnabili: liberi.length,
+      esegui_liberi: liberi.length > 0 ? async () => esegui(liberi, null) : undefined,
+      esegui_forza: async (motivo) => esegui(ids, { motivo }),
+    });
+  };
+
   const handle_drag_end = async (event: any) => {
     const { active, over } = event;
     if (!over) return;
@@ -1133,23 +1248,13 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
         // Contenitore "per proposta": assegnazione individuale degli iscritti,
         // nessun gruppo dinamico per livello.
         if (active.data?.current?.individuale) {
-          let assegnati = 0;
-          for (const atleta_id of ids) {
-            const a = (atleti as any[]).find((x) => x.id === atleta_id);
-            const nome = a ? `${a.nome} ${a.cognome}` : "Atleta";
-            const conflitto = await verifica_conflitto_atleta({ sessione_id, atleta_id });
-            if (conflitto) {
-              set_conflitto_atleta({ nome, conflitto });
-              return;
-            }
-            await assegna_atleta.mutateAsync({ sessione_id, atleta_id });
-            assegnati += 1;
-          }
-          if (assegnati > 0)
-            toast({
-              title: `✅ ${assegnati} iscritti assegnati`,
-              description: active.data?.current?.etichetta ?? undefined,
-            });
+          await assegna_batch({
+            sessione_id,
+            atleta_ids: ids,
+            origine: "proposta",
+            origine_corso_id: active.data?.current?.corso_id ?? null,
+            etichetta: active.data?.current?.etichetta ?? undefined,
+          });
           return;
         }
         if (livello_gruppo && livello_gruppo !== LIVELLO_NON_DEFINITO) {
@@ -1182,17 +1287,37 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
             }
           }
 
+          // ⛔ Blocco duro atomico: nessun collegamento se anche un solo atleta
+          // del gruppo è già in un'altra sotto-sessione sovrapposta.
+          const conflitti_atleti = await verifica_conflitti_atleti(sessione_id, ids);
+          if (conflitti_atleti.length > 0) {
+            const esegui = async (forzatura: { motivo: string } | null) => {
+              const res_f = await assegna_gruppo.mutateAsync({
+                sessione_id,
+                gruppo_livello: livello_gruppo,
+                gruppo_scope: scope_norm,
+                gruppo_ragione_sociale_id,
+                forzatura: forzatura ? { motivo: forzatura.motivo } : null,
+              } as any);
+              toast({
+                title: `🔗 Gruppo «${livello_gruppo}» collegato`,
+                description: `${(res_f as any).aggiunti ?? 0} atleti aggiunti.`,
+              });
+            };
+            set_conflitto_batch({
+              conflitti: conflitti_atleti,
+              assegnabili: 0,
+              esegui_forza: async (motivo) => esegui({ motivo }),
+            });
+            return;
+          }
+
           const res = await assegna_gruppo.mutateAsync({
             sessione_id,
             gruppo_livello: livello_gruppo,
             gruppo_scope: scope_norm,
             gruppo_ragione_sociale_id,
           });
-          for (const atleta_id of ids) {
-            const a = (atleti as any[]).find((x) => x.id === atleta_id);
-            const nome = a ? `${a.nome} ${a.cognome}` : "Atleta";
-            avvisa_sovrapposizione("atleta", atleta_id, nome, dest);
-          }
           if (gia_collegato || (res as any).gia_presente) {
             toast({
               title: `ℹ️ Il gruppo «${livello_gruppo}» è già collegato a questa sessione`,
@@ -1204,33 +1329,12 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
 
         } else {
           // Livello non definito: nessun gruppo dinamico, assegnazione individuale.
-          let assegnati = 0;
-          for (const atleta_id of ids) {
-            const a = (atleti as any[]).find((x) => x.id === atleta_id);
-            const nome = a ? `${a.nome} ${a.cognome}` : "Atleta";
-            // ⛔ Controllo BLOCCANTE per singolo atleta.
-            const conflitto = await verifica_conflitto_atleta({ sessione_id, atleta_id });
-            if (conflitto) {
-              set_conflitto_atleta({ nome, conflitto });
-              return;
-            }
-            await assegna_atleta.mutateAsync({ sessione_id, atleta_id });
-            assegnati += 1;
-          }
-          if (assegnati > 0) toast({ title: `✅ ${assegnati} atleti assegnati alla sessione` });
+          await assegna_batch({ sessione_id, atleta_ids: ids, origine: "manuale" });
         }
 
 
       } else if (tipo === "atleta") {
-        const a = (atleti as any[]).find((x) => x.id === persona_id);
-        const nome = a ? `${a.nome} ${a.cognome}` : "Atleta";
-        // ⛔ Controllo BLOCCANTE: nessuna mutation se già in sessione sovrapposta.
-        const conflitto = await verifica_conflitto_atleta({ sessione_id, atleta_id: persona_id });
-        if (conflitto) {
-          set_conflitto_atleta({ nome, conflitto });
-          return;
-        }
-        await assegna_atleta.mutateAsync({ sessione_id, atleta_id: persona_id });
+        await assegna_batch({ sessione_id, atleta_ids: [persona_id], origine: "manuale" });
       } else if (tipo === "istruttore") {
         const i = (istruttori as any[]).find((x) => x.id === persona_id);
         const nome = i ? `${i.nome} ${i.cognome}` : "Istruttore";
@@ -1570,6 +1674,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
                     key={p.proposta_id}
                     proposta_id={p.proposta_id}
                     titolo={p.titolo}
+                    corso_id={p.corso_id}
                     items={p.items}
                   />
                 ))
@@ -1671,6 +1776,11 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
                     on_ripeti={() => set_ripeti_sessione(s)}
                     on_proposta={() => set_proposta_sessione(s)}
                     on_sync_gruppo={(gid) => sincronizza_gruppo(s, gid)}
+                    disallineamento={disallineamenti[s.id] ?? null}
+                    on_risincronizza_proposta={
+                      disallineamenti[s.id] ? () => risincronizza(disallineamenti[s.id]) : undefined
+                    }
+                    risincronizzazione_in_corso={risync_sessione_id === s.id}
                     on_rimuovi_gruppo={(gid) => rimuovi_collegamento_gruppo(gid)}
 
                     sync_gruppo_ids={sync_gruppo_ids}
@@ -1701,6 +1811,39 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
           set_pending_patch(null);
         }}
         on_forza={conferma_forzatura_sessione}
+      />
+
+      <ConfermaConflittoAtleti
+        open={!!conflitto_batch}
+        conflitti={conflitto_batch?.conflitti ?? []}
+        assegnabili={conflitto_batch?.assegnabili ?? 0}
+        on_close={() => set_conflitto_batch(null)}
+        on_solo_liberi={
+          conflitto_batch?.esegui_liberi
+            ? async () => {
+                const fn = conflitto_batch.esegui_liberi!;
+                set_conflitto_batch(null);
+                try {
+                  await fn();
+                } catch (e: any) {
+                  toast({ title: "Errore assegnazione", description: e.message, variant: "destructive" });
+                }
+              }
+            : undefined
+        }
+        on_forza={
+          conflitto_batch?.esegui_forza
+            ? async (motivo) => {
+                const fn = conflitto_batch.esegui_forza!;
+                set_conflitto_batch(null);
+                try {
+                  await fn(motivo);
+                } catch (e: any) {
+                  toast({ title: "Errore assegnazione", description: e.message, variant: "destructive" });
+                }
+              }
+            : undefined
+        }
       />
 
       <AlertDialog open={!!conflitto_gruppo} onOpenChange={(o) => !o && set_conflitto_gruppo(null)}>
