@@ -34,7 +34,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { LayoutGrid, Printer, AlertTriangle, Columns3, Rows3 } from "lucide-react";
+import { LayoutGrid, Printer, AlertTriangle, Columns3, Rows3, CalendarDays, CalendarRange, CalendarClock } from "lucide-react";
 
 function oggi_iso(): string {
   const d = new Date();
