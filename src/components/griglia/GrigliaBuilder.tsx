@@ -27,6 +27,7 @@ import {
   verifica_conflitto_istruttore,
 
   type ConflittoGruppo,
+  type ConflittoAtleta,
 
   giorno_it_da_data,
   type GruppoScope,
@@ -60,6 +61,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SpecialitaManager from "@/components/griglia/SpecialitaManager";
 import ConfermaForzaturaDisponibilita from "@/components/griglia/ConfermaForzaturaDisponibilita";
 import RipetiSessioneDialog from "@/components/griglia/RipetiSessioneDialog";
+import ConfermaConflittoAtleti from "@/components/griglia/ConfermaConflittoAtleti";
 import NuovaPropostaDialog, { type ConfermaProposta } from "@/components/griglia/NuovaPropostaDialog";
 import { use_pool_proposte, use_crea_proposta } from "@/hooks/use-proposte";
 import { Link as RouterLink } from "react-router-dom";
@@ -1755,6 +1757,39 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
           set_pending_patch(null);
         }}
         on_forza={conferma_forzatura_sessione}
+      />
+
+      <ConfermaConflittoAtleti
+        open={!!conflitto_batch}
+        conflitti={conflitto_batch?.conflitti ?? []}
+        assegnabili={conflitto_batch?.assegnabili ?? 0}
+        on_close={() => set_conflitto_batch(null)}
+        on_solo_liberi={
+          conflitto_batch?.esegui_liberi
+            ? async () => {
+                const fn = conflitto_batch.esegui_liberi!;
+                set_conflitto_batch(null);
+                try {
+                  await fn();
+                } catch (e: any) {
+                  toast({ title: "Errore assegnazione", description: e.message, variant: "destructive" });
+                }
+              }
+            : undefined
+        }
+        on_forza={
+          conflitto_batch?.esegui_forza
+            ? async (motivo) => {
+                const fn = conflitto_batch.esegui_forza!;
+                set_conflitto_batch(null);
+                try {
+                  await fn(motivo);
+                } catch (e: any) {
+                  toast({ title: "Errore assegnazione", description: e.message, variant: "destructive" });
+                }
+              }
+            : undefined
+        }
       />
 
       <AlertDialog open={!!conflitto_gruppo} onOpenChange={(o) => !o && set_conflitto_gruppo(null)}>
