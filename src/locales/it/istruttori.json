@@ -179,6 +179,7 @@
     "ore_confermate": "✅ Ore confermate",
     "ore_confermate_desc": "{{ore}}h registrate per {{data}}",
     "cache_salvata": "✅ Cache mensile salvata",
+    "nessuna_stagione_attiva": "Nessuna stagione attiva per il club. Imposta una stagione attiva prima di salvare.",
     "errore_salvataggio": "Errore salvataggio",
     "ore_salvate": "✅ Ore salvate",
     "compenso_salvato": "✅ Compenso salvato",
