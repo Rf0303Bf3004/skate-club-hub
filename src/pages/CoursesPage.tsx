@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { verifica_conflitti_iscrizione, type ConflittoIscrizione } from "@/lib/conflitti-iscrizioni";
 import { Calendar } from "lucide-react";
 import { use_persisted_state } from "@/hooks/use-persisted-state";
 import ConfirmButton from "@/components/common/ConfirmButton";
@@ -384,6 +385,10 @@ const TabIscrizioni: React.FC<{
       .slice(0, 30);
   }, [tutti_atleti, ids_esclusi, salto_query, livello_richiesto, show_salto_search, ha_filtro_livello]);
 
+  const [conflitto_dialog, set_conflitto_dialog] = useState<
+    { atleta: any; conflitti: ConflittoIscrizione[] } | null
+  >(null);
+
   const do_iscrivi = async (atleta_id: string, salto_livello = false, note_sl = "") => {
     set_saving(true);
     try {
@@ -418,7 +423,17 @@ const TabIscrizioni: React.FC<{
     }
   };
 
-  const handle_iscrivi = (atleta: any) => {
+  /** Avviso SOFT: sovrapposizione oraria con un altro corso attivo nello stesso giorno. */
+  const handle_iscrivi = async (atleta: any) => {
+    try {
+      const conflitti = await verifica_conflitti_iscrizione(atleta.id, corso_id);
+      if (conflitti.length > 0) {
+        set_conflitto_dialog({ atleta, conflitti });
+        return;
+      }
+    } catch {
+      // L'avviso è non bloccante: in caso di errore si procede con l'iscrizione.
+    }
     do_iscrivi(atleta.id);
   };
 
