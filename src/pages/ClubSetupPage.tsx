@@ -385,6 +385,36 @@ const ClubSetupPage: React.FC = () => {
     }));
   };
 
+  const [rinnovando_disp, set_rinnovando_disp] = useState(false);
+
+  const rinnova_disponibilita = async () => {
+    const giorni = Number(get_val("disponibilita_periodo_giorni", 0)) || 0;
+    if (giorni <= 0) {
+      toast({ title: t("club.toast.periodo_mancante"), variant: "destructive" });
+      return;
+    }
+    set_rinnovando_disp(true);
+    try {
+      const d = new Date();
+      d.setDate(d.getDate() + giorni);
+      const nuova = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const { error } = await supabase
+        .from("clubs")
+        .update({ disponibilita_valida_fino_al: nuova, disponibilita_notifica_inviata_per: null })
+        .eq("id", get_current_club_id());
+      if (error) throw error;
+      set_val("disponibilita_valida_fino_al", nuova);
+      await queryClient.invalidateQueries({ queryKey: ["club"] });
+      toast({ title: t("club.toast.disponibilita_rinnovata") });
+    } catch (err: any) {
+      toast({ title: t("club.toast.errore_salvataggio"), description: err?.message, variant: "destructive" });
+    } finally {
+      set_rinnovando_disp(false);
+    }
+  };
+
+
+
   const save_disponibilita = async () => {
     if (!risorsa_sel_id) {
       toast({ title: t("club.toast.seleziona_risorsa"), variant: "destructive" });
