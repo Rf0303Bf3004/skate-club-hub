@@ -65,6 +65,12 @@ export interface GrigliaSessioneAtleta {
   nome: string;
   cognome: string;
   provenienza: string | null;
+  /** Origine dell'inserimento in sessione: 'manuale' | 'gruppo' | 'proposta' */
+  origine: string;
+  /** Corso/proposta da cui proviene lo snapshot (solo se origine = 'proposta') */
+  origine_corso_id: string | null;
+  conflitto_forzato?: boolean;
+  motivo_forzatura?: string | null;
   /** null = atleta aggiunto manualmente (mai toccato dalla logica di gruppo) */
   gruppo_sessione_id?: string | null;
 }
