@@ -24,10 +24,13 @@ import {
   verifica_conflitto_atleta,
   verifica_conflitti_atleti,
   use_assegna_atleti_sessione,
+  use_disallineamento_proposte,
+  use_risincronizza_proposta,
   verifica_conflitto_istruttore,
 
   type ConflittoGruppo,
   type ConflittoAtleta,
+  type DisallineamentoProposta,
 
   giorno_it_da_data,
   type GruppoScope,
@@ -62,6 +65,7 @@ import SpecialitaManager from "@/components/griglia/SpecialitaManager";
 import ConfermaForzaturaDisponibilita from "@/components/griglia/ConfermaForzaturaDisponibilita";
 import RipetiSessioneDialog from "@/components/griglia/RipetiSessioneDialog";
 import ConfermaConflittoAtleti from "@/components/griglia/ConfermaConflittoAtleti";
+import DisallineamentoPropostaPill from "@/components/griglia/DisallineamentoPropostaPill";
 import NuovaPropostaDialog, { type ConfermaProposta } from "@/components/griglia/NuovaPropostaDialog";
 import { use_pool_proposte, use_crea_proposta } from "@/hooks/use-proposte";
 import { Link as RouterLink } from "react-router-dom";
@@ -622,6 +626,10 @@ const SessioneBox: React.FC<{
   on_ripeti?: () => void;
   on_proposta?: () => void;
   on_sync_gruppo?: (gruppo_sessione_id: string) => void;
+  /** Divergenza snapshot proposta ↔ iscrizioni correnti (se presente). */
+  disallineamento?: DisallineamentoProposta | null;
+  on_risincronizza_proposta?: () => void;
+  risincronizzazione_in_corso?: boolean;
   on_rimuovi_gruppo?: (gruppo_sessione_id: string) => void;
   sync_gruppo_ids?: string[];
   atleti_tutti?: {
@@ -645,6 +653,9 @@ const SessioneBox: React.FC<{
   on_sync_gruppo,
   on_rimuovi_gruppo,
   sync_gruppo_ids,
+  disallineamento,
+  on_risincronizza_proposta,
+  risincronizzazione_in_corso,
 
   atleti_tutti = [],
   ragioni_sociali = [],
@@ -849,6 +860,13 @@ const SessioneBox: React.FC<{
             </button>
           </span>
         ))}
+        {disallineamento && on_risincronizza_proposta && (
+          <DisallineamentoPropostaPill
+            disallineamento={disallineamento}
+            in_corso={risincronizzazione_in_corso}
+            on_risincronizza={on_risincronizza_proposta}
+          />
+        )}
         {(sessione.gruppi ?? []).map((g) => (
           <GruppoPill
             key={g.id}
@@ -967,6 +985,9 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   const assegna_gruppo = use_assegna_gruppo_sessione();
   const rimuovi_gruppo = use_rimuovi_gruppo_sessione();
   const sync_gruppo = use_sync_gruppo_sessione();
+  const { data: disallineamenti = {} } = use_disallineamento_proposte([blocco]);
+  const risincronizza_proposta = use_risincronizza_proposta();
+  const [risync_sessione_id, set_risync_sessione_id] = useState<string | null>(null);
 
   const [open_specialita, set_open_specialita] = useState(false);
   const [riepilogo_aperto, set_riepilogo_aperto] = useState(false);
@@ -1133,6 +1154,34 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
         title: `⚠️ ${nome} è già assegnato a un'altra sessione in questo orario`,
         variant: "destructive",
       });
+    }
+  };
+
+  /** Risincronizzazione ESPLICITA dello snapshot proposta (mai automatica). */
+  const risincronizza = async (d: DisallineamentoProposta) => {
+    set_risync_sessione_id(d.sessione_id);
+    try {
+      const res = await risincronizza_proposta.mutateAsync({
+        sessione_id: d.sessione_id,
+        corso_id: d.corso_id,
+        aggiungi_atleta_ids: d.nuovi.map((n) => n.atleta_id),
+        rimuovi_riga_ids: d.rimossi.map((r) => r.riga_id),
+      });
+      toast({
+        title: "Sessione risincronizzata",
+        description:
+          `+${res.aggiunti} aggiunti, −${res.rimossi} rimossi` +
+          (res.saltati.length > 0
+            ? ` · ${res.saltati.length} saltati per sovrapposizione oraria (${res.saltati
+                .map((c) => c.nome_atleta)
+                .join(", ")})`
+            : ""),
+        variant: res.saltati.length > 0 ? "destructive" : undefined,
+      });
+    } catch (e: any) {
+      toast({ title: "Errore risincronizzazione", description: e.message, variant: "destructive" });
+    } finally {
+      set_risync_sessione_id(null);
     }
   };
 
@@ -1727,6 +1776,11 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
                     on_ripeti={() => set_ripeti_sessione(s)}
                     on_proposta={() => set_proposta_sessione(s)}
                     on_sync_gruppo={(gid) => sincronizza_gruppo(s, gid)}
+                    disallineamento={disallineamenti[s.id] ?? null}
+                    on_risincronizza_proposta={
+                      disallineamenti[s.id] ? () => risincronizza(disallineamenti[s.id]) : undefined
+                    }
+                    risincronizzazione_in_corso={risync_sessione_id === s.id}
                     on_rimuovi_gruppo={(gid) => rimuovi_collegamento_gruppo(gid)}
 
                     sync_gruppo_ids={sync_gruppo_ids}
