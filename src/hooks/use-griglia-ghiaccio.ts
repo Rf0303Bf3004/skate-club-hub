@@ -1618,3 +1618,135 @@ export function use_ripeti_sessione() {
     },
   });
 }
+
+// ─── Disallineamento proposta ↔ sessione (Fase 5, punto 2) ─
+export interface DisallineamentoProposta {
+  sessione_id: string;
+  corso_id: string;
+  /** Iscritti attivi al corso non ancora presenti nella sessione. */
+  nuovi: { atleta_id: string; nome: string }[];
+  /** Atleti presenti come snapshot della proposta ma non più iscritti al corso. */
+  rimossi: { riga_id: string; atleta_id: string; nome: string }[];
+}
+
+/**
+ * Confronta lo snapshot "per proposta" di ciascuna sessione con le iscrizioni
+ * correnti del corso collegato. Nessuna azione automatica: serve solo a
+ * mostrare l'indicatore e ad alimentare la risincronizzazione esplicita.
+ */
+export function use_disallineamento_proposte(blocchi: GrigliaBlocco[] | undefined) {
+  const club_id = get_current_club_id();
+  const sessioni = (blocchi ?? []).flatMap((b) => b.sessioni ?? []).filter((s) => !!s.corso_id);
+  const chiave = sessioni.map((s) => `${s.id}:${s.corso_id}:${s.atleti.length}`).join("|");
+
+  return useQuery({
+    enabled: !!club_id && sessioni.length > 0,
+    staleTime: 15_000,
+    queryKey: ["disallineamento_proposte", club_id, chiave],
+    queryFn: async (): Promise<Record<string, DisallineamentoProposta>> => {
+      const corsi_ids = Array.from(new Set(sessioni.map((s) => s.corso_id as string)));
+      const { data: isc, error } = await supabase
+        .from("iscrizioni_corsi")
+        .select("corso_id,atleta_id,attiva")
+        .in("corso_id", corsi_ids);
+      if (error) throw error;
+      const per_corso = new Map<string, Set<string>>();
+      ((isc ?? []) as any[])
+        .filter((r) => r.attiva !== false)
+        .forEach((r) => {
+          const set = per_corso.get(r.corso_id) ?? new Set<string>();
+          set.add(r.atleta_id);
+          per_corso.set(r.corso_id, set);
+        });
+
+      const tutti_ids = Array.from(new Set(((isc ?? []) as any[]).map((r) => r.atleta_id)));
+      const nomi = new Map<string, string>();
+      if (tutti_ids.length > 0) {
+        const { data: atl } = await supabase.from("atleti").select("id,nome,cognome").in("id", tutti_ids);
+        ((atl ?? []) as any[]).forEach((a) => nomi.set(a.id, `${a.nome} ${a.cognome}`));
+      }
+
+      const out: Record<string, DisallineamentoProposta> = {};
+      for (const s of sessioni) {
+        const corso_id = s.corso_id as string;
+        const iscritti = per_corso.get(corso_id) ?? new Set<string>();
+        const presenti = new Set(s.atleti.map((a) => a.atleta_id));
+        // Snapshot proposta = SOLO chi è entrato dal pool proposta di questo corso.
+        const snapshot = s.atleti.filter((a) => a.origine === "proposta" && a.origine_corso_id === corso_id);
+
+        const nuovi = Array.from(iscritti)
+          .filter((id) => !presenti.has(id))
+          .map((id) => ({ atleta_id: id, nome: nomi.get(id) ?? "Atleta" }));
+        const rimossi = snapshot
+          .filter((a) => !iscritti.has(a.atleta_id))
+          .map((a) => ({ riga_id: a.id, atleta_id: a.atleta_id, nome: `${a.nome} ${a.cognome}`.trim() }));
+
+        if (nuovi.length > 0 || rimossi.length > 0) {
+          out[s.id] = { sessione_id: s.id, corso_id, nuovi, rimossi };
+        }
+      }
+      return out;
+    },
+  });
+}
+
+/**
+ * Risincronizzazione ESPLICITA (mai automatica) dello snapshot proposta:
+ * aggiunge i nuovi iscritti selezionati (applicando il controllo conflitti) e
+ * rimuove le righe indicate. Gli atleti aggiunti a mano non vengono mai toccati.
+ */
+export function use_risincronizza_proposta() {
+  const invalidate = use_invalidate_griglia();
+  const qc = useQueryClient();
+  const { session } = useAuth();
+  return useMutation({
+    mutationFn: async (input: {
+      sessione_id: string;
+      corso_id: string;
+      aggiungi_atleta_ids: string[];
+      rimuovi_riga_ids: string[];
+      forzatura?: ForzaturaConflitto | null;
+    }) => {
+      let saltati: ConflittoAtleta[] = [];
+      let da_aggiungere = input.aggiungi_atleta_ids;
+
+      if (da_aggiungere.length > 0 && !input.forzatura) {
+        saltati = await verifica_conflitti_atleti(input.sessione_id, da_aggiungere);
+        const bloccati = new Set(saltati.map((c) => c.atleta_id));
+        da_aggiungere = da_aggiungere.filter((id) => !bloccati.has(id));
+      }
+
+      if (da_aggiungere.length > 0) {
+        const forzatura = input.forzatura
+          ? { motivo: input.forzatura.motivo, forzato_da: input.forzatura.forzato_da ?? session?.user_id ?? null }
+          : null;
+        const { error } = await supabase.from("griglia_sessioni_atleti" as any).insert(
+          da_aggiungere.map((atleta_id) =>
+            _payload_assegnazione({
+              sessione_id: input.sessione_id,
+              atleta_id,
+              origine: "proposta",
+              origine_corso_id: input.corso_id,
+              forzatura,
+            }),
+          ) as any,
+        );
+        if (error && !`${error.message}`.includes("duplicate")) throw error;
+      }
+
+      if (input.rimuovi_riga_ids.length > 0) {
+        const { error } = await supabase
+          .from("griglia_sessioni_atleti" as any)
+          .delete()
+          .in("id", input.rimuovi_riga_ids);
+        if (error) throw error;
+      }
+
+      return { aggiunti: da_aggiungere.length, rimossi: input.rimuovi_riga_ids.length, saltati };
+    },
+    onSuccess: () => {
+      invalidate();
+      qc.invalidateQueries({ queryKey: ["disallineamento_proposte"] });
+    },
+  });
+}
