@@ -279,26 +279,83 @@ const GrigliaGhiaccioPage: React.FC = () => {
 
       <BannerDisponibilitaScaduta />
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <ToggleGroup
           type="single"
-          value={vista}
-          onValueChange={(v) => v && set_vista(v as "impilata" | "tableau")}
+          value={periodo}
+          onValueChange={(v) => v && set_periodo(v as typeof periodo)}
           variant="outline"
           size="sm"
         >
-          <ToggleGroupItem value="impilata" aria-label="Vista impilata">
-            <Rows3 className="mr-1 h-4 w-4" /> Vista impilata
+          <ToggleGroupItem value="giorno" aria-label="Vista giorno">
+            <CalendarDays className="mr-1 h-4 w-4" /> Giorno
           </ToggleGroupItem>
-          <ToggleGroupItem value="tableau" aria-label="Vista tableau">
-            <Columns3 className="mr-1 h-4 w-4" /> Vista tableau
+          <ToggleGroupItem value="settimana" aria-label="Vista settimana">
+            <CalendarRange className="mr-1 h-4 w-4" /> Settimana
+          </ToggleGroupItem>
+          <ToggleGroupItem value="mese" aria-label="Vista mese">
+            <CalendarDays className="mr-1 h-4 w-4" /> Mese
+          </ToggleGroupItem>
+          <ToggleGroupItem value="stagione" aria-label="Vista stagione">
+            <CalendarClock className="mr-1 h-4 w-4" /> Stagione
           </ToggleGroupItem>
         </ToggleGroup>
+
+        {periodo === "giorno" && (
+          <ToggleGroup
+            type="single"
+            value={vista}
+            onValueChange={(v) => v && set_vista(v as "impilata" | "tableau")}
+            variant="outline"
+            size="sm"
+          >
+            <ToggleGroupItem value="impilata" aria-label="Vista impilata">
+              <Rows3 className="mr-1 h-4 w-4" /> Impilata
+            </ToggleGroupItem>
+            <ToggleGroupItem value="tableau" aria-label="Vista tableau">
+              <Columns3 className="mr-1 h-4 w-4" /> Tableau
+            </ToggleGroupItem>
+          </ToggleGroup>
+        )}
       </div>
 
       <ProvenienzaLegenda />
+      {periodo !== "giorno" && <LegendaFonti />}
 
-      {vista === "tableau" ? (
+      {periodo === "settimana" ? (
+        <SettimanaView
+          data_sel={data_sel}
+          includi_ospiti={includi_ospiti}
+          on_cambia_data={set_data_sel}
+          on_apri_giorno={(d) => {
+            set_data_sel(d);
+            set_periodo("giorno");
+          }}
+          on_apri_planning={() => navigate("/planning")}
+        />
+      ) : periodo === "mese" ? (
+        <MeseGrigliaView
+          data_sel={data_sel}
+          includi_ospiti={includi_ospiti}
+          on_cambia_data={set_data_sel}
+          on_apri_settimana={(d) => {
+            set_data_sel(d);
+            set_periodo("settimana");
+          }}
+          on_apri_giorno={(d) => {
+            set_data_sel(d);
+            set_periodo("giorno");
+          }}
+        />
+      ) : periodo === "stagione" ? (
+        <StagioneView
+          includi_ospiti={includi_ospiti}
+          on_apri_settimana={(d) => {
+            set_data_sel(d);
+            set_periodo("settimana");
+          }}
+        />
+      ) : vista === "tableau" ? (
         <TableauSchermo
           corsie={corsie_tableau}
           eventi={eventi_tableau}
