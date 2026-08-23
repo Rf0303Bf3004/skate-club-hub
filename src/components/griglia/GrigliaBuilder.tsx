@@ -378,6 +378,83 @@ const PoolBox: React.FC<{
   );
 };
 
+// ─── Box pool "per proposta" ───────────────────────────────
+const PoolPropostaBox: React.FC<{
+  proposta_id: string;
+  titolo: string;
+  items: { id: string; nome: string; cognome: string }[];
+}> = ({ proposta_id, titolo, items }) => {
+  const [aperto, set_aperto] = useState(true);
+  const vuoto = items.length === 0;
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `gruppo:proposta:${proposta_id}`,
+    disabled: vuoto,
+    data: { tipo: "gruppo", atleta_ids: items.map((i) => i.id), individuale: true, etichetta: titolo },
+  });
+
+  return (
+    <div className="rounded-xl border p-3 flex flex-col gap-2 bg-muted/20 border-border">
+      <button
+        type="button"
+        onClick={() => set_aperto((v) => !v)}
+        className="flex items-center justify-between gap-2 text-left"
+      >
+        <h4 className="text-sm font-semibold flex items-center gap-1.5 min-w-0">
+          {aperto ? (
+            <ChevronDown className="w-3.5 h-3.5 shrink-0" />
+          ) : (
+            <ChevronRight className="w-3.5 h-3.5 shrink-0" />
+          )}
+          <Package className="w-4 h-4 text-primary" />
+          <span className="truncate">{titolo}</span>
+        </h4>
+        <Badge variant="secondary" className="text-[10px] shrink-0">{items.length}</Badge>
+      </button>
+
+      {vuoto ? (
+        <p className="text-xs text-muted-foreground">
+          0 iscritti ·{" "}
+          <RouterLink to="/corsi" className="underline underline-offset-2">
+            Gestisci adesioni
+          </RouterLink>
+        </p>
+      ) : (
+        <div
+          ref={setNodeRef}
+          {...attributes}
+          {...listeners}
+          title={`Trascina tutta la proposta «${titolo}» (${items.length} iscritti)`}
+          className={cn(
+            "flex items-center gap-1.5 px-2 py-1 rounded-md border border-dashed border-muted-foreground/40 bg-muted/30",
+            "text-[11px] font-semibold uppercase tracking-wide text-muted-foreground",
+            "cursor-grab active:cursor-grabbing select-none",
+            isDragging && "opacity-40",
+          )}
+        >
+          <GripVertical className="w-3 h-3 shrink-0" />
+          <span className="truncate">Iscritti</span>
+          <span className="ml-auto text-[10px] font-normal">· {items.length}</span>
+        </div>
+      )}
+
+      {aperto && !vuoto && (
+        <div className="flex flex-col gap-1.5 max-h-44 overflow-y-auto pr-1">
+          {items.map((i) => (
+            <PillolaDraggable
+              key={i.id}
+              drag_id={`atleta:${i.id}`}
+              label={`${i.nome} ${i.cognome}`}
+              sigla={iniziali(i.nome, i.cognome)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+
+
 
 // ─── Pillola di un gruppo agganciato alla sotto-sessione ───
 const GruppoPill: React.FC<{
