@@ -190,6 +190,8 @@ const ClubSetupPage: React.FC = () => {
         "reminder_planning_atleti_attivo", "reminder_planning_istruttori_attivo",
         "reminder_planning_orario_invio", "reminder_planning_anticipo_giorni",
         "disponibilita_valida_fino_al",
+        "disponibilita_tipo_pianificazione", "disponibilita_periodo_giorni", "disponibilita_giorni_preavviso",
+
       ];
       for (const f of club_fields) {
         if (f in form) club_payload[f] = form[f];
@@ -384,6 +386,36 @@ const ClubSetupPage: React.FC = () => {
       [giorno]: (prev[giorno] || []).map((s, i) => (i === idx ? { ...s, [field]: value } : s)),
     }));
   };
+
+  const [rinnovando_disp, set_rinnovando_disp] = useState(false);
+
+  const rinnova_disponibilita = async () => {
+    const giorni = Number(get_val("disponibilita_periodo_giorni", 0)) || 0;
+    if (giorni <= 0) {
+      toast({ title: t("club.toast.periodo_mancante"), variant: "destructive" });
+      return;
+    }
+    set_rinnovando_disp(true);
+    try {
+      const d = new Date();
+      d.setDate(d.getDate() + giorni);
+      const nuova = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const { error } = await supabase
+        .from("clubs")
+        .update({ disponibilita_valida_fino_al: nuova, disponibilita_notifica_inviata_per: null })
+        .eq("id", get_current_club_id());
+      if (error) throw error;
+      set_val("disponibilita_valida_fino_al", nuova);
+      await queryClient.invalidateQueries({ queryKey: ["club"] });
+      toast({ title: t("club.toast.disponibilita_rinnovata") });
+    } catch (err: any) {
+      toast({ title: t("club.toast.errore_salvataggio"), description: err?.message, variant: "destructive" });
+    } finally {
+      set_rinnovando_disp(false);
+    }
+  };
+
+
 
   const save_disponibilita = async () => {
     if (!risorsa_sel_id) {
@@ -1010,6 +1042,76 @@ const ClubSetupPage: React.FC = () => {
         </div>
 
         <Separator />
+
+        {/* Tipo di pianificazione disponibilità */}
+        <div>
+          <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">
+            {t("club.sezioni.tipo_pianificazione")}
+          </h3>
+          <div className="max-w-sm">
+            <Label className="text-xs text-muted-foreground">{t("club.fields.tipo_pianificazione")}</Label>
+            <Select
+              value={get_val("disponibilita_tipo_pianificazione", "stagionale") || "stagionale"}
+              onValueChange={(v) => {
+                set_val("disponibilita_tipo_pianificazione", v);
+                if (v === "stagionale") set_val("disponibilita_valida_fino_al", null);
+              }}
+            >
+              <SelectTrigger className="h-9 mt-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="stagionale">{t("club.opzioni.pianificazione_stagionale")}</SelectItem>
+                <SelectItem value="periodica">{t("club.opzioni.pianificazione_periodica")}</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-1">{t("club.testi.tipo_pianificazione_info")}</p>
+          </div>
+
+          {get_val("disponibilita_tipo_pianificazione", "stagionale") === "periodica" && (
+            <div className="mt-4 space-y-4 max-w-sm">
+              <div>
+                <Label className="text-xs text-muted-foreground">{t("club.fields.periodo_giorni")}</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  className="h-9 mt-1"
+                  value={get_val("disponibilita_periodo_giorni", "") ?? ""}
+                  onChange={(e) =>
+                    set_val("disponibilita_periodo_giorni", e.target.value === "" ? null : Number(e.target.value))
+                  }
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">{t("club.fields.giorni_preavviso")}</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  className="h-9 mt-1"
+                  value={get_val("disponibilita_giorni_preavviso", 5) ?? 5}
+                  onChange={(e) =>
+                    set_val("disponibilita_giorni_preavviso", e.target.value === "" ? 5 : Number(e.target.value))
+                  }
+                />
+              </div>
+              <p className="text-sm">
+                <span className="text-muted-foreground">{t("club.testi.prossima_scadenza")}: </span>
+                <strong>
+                  {get_val("disponibilita_valida_fino_al", "")
+                    ? new Date(`${get_val("disponibilita_valida_fino_al", "")}T00:00:00`).toLocaleDateString("it-CH")
+                    : t("club.testi.scadenza_non_impostata")}
+                </strong>
+              </p>
+              <Button size="sm" variant="outline" onClick={rinnova_disponibilita} disabled={rinnovando_disp}>
+                {rinnovando_disp ? t("club.azioni.salvando") : t("club.azioni.rinnova_disponibilita")}
+              </Button>
+            </div>
+          )}
+        </div>
+
+        <Separator />
+
+
 
         {/* Disponibilità strutture settimanale */}
         <div>
