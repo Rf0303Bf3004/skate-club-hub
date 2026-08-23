@@ -707,6 +707,16 @@ const SessioneBox: React.FC<{
           </TooltipProvider>
         )}
 
+        {on_proposta && !sessione.corso_id && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={on_proposta}
+            title="Crea proposta da questa sessione"
+          >
+            <Package className="w-4 h-4" />
+          </Button>
+        )}
         {on_ripeti && (
           <Button variant="ghost" size="icon" onClick={on_ripeti} title="Ripeti questa sessione">
             <Repeat className="w-4 h-4" />
