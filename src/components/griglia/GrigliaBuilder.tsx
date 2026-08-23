@@ -550,6 +550,7 @@ const SessioneBox: React.FC<{
   on_rimuovi_atleta,
   on_rimuovi_istruttore,
   on_ripeti,
+  on_proposta,
   on_sync_gruppo,
   on_rimuovi_gruppo,
   sync_gruppo_ids,
