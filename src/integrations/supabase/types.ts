@@ -820,6 +820,10 @@ export type Database = {
           costo_setup_chf: number
           created_at: string
           descrizione: string | null
+          disponibilita_giorni_preavviso: number
+          disponibilita_notifica_inviata_per: string | null
+          disponibilita_periodo_giorni: number | null
+          disponibilita_tipo_pianificazione: string
           disponibilita_valida_fino_al: string | null
           email: string | null
           fee_fissa_chf: number
@@ -868,6 +872,10 @@ export type Database = {
           costo_setup_chf?: number
           created_at?: string
           descrizione?: string | null
+          disponibilita_giorni_preavviso?: number
+          disponibilita_notifica_inviata_per?: string | null
+          disponibilita_periodo_giorni?: number | null
+          disponibilita_tipo_pianificazione?: string
           disponibilita_valida_fino_al?: string | null
           email?: string | null
           fee_fissa_chf?: number
@@ -916,6 +924,10 @@ export type Database = {
           costo_setup_chf?: number
           created_at?: string
           descrizione?: string | null
+          disponibilita_giorni_preavviso?: number
+          disponibilita_notifica_inviata_per?: string | null
+          disponibilita_periodo_giorni?: number | null
+          disponibilita_tipo_pianificazione?: string
           disponibilita_valida_fino_al?: string | null
           email?: string | null
           fee_fissa_chf?: number
@@ -6337,6 +6349,7 @@ export type Database = {
       genera_codice_atleta: { Args: never; Returns: string }
       genera_planning_giornaliero: { Args: never; Returns: number }
       genera_reminder_giornalieri: { Args: never; Returns: number }
+      genera_reminder_scadenza_ghiaccio: { Args: never; Returns: number }
       genera_settimana_planning: {
         Args: { p_settimana_id: string }
         Returns: number
