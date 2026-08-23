@@ -249,6 +249,13 @@ export async function fetch_blocchi_giorno(
   ((ist_res.data ?? []) as any[]).forEach((i: any) => ist_map.set(i.id, i));
   const corsi_map = new Map<string, string>();
   ((corsi_res.data ?? []) as any[]).forEach((c: any) => corsi_map.set(c.id, c.nome));
+  const proposte_nome_map = new Map<string, string>();
+  (((proposte_res as any)?.data ?? []) as any[]).forEach((p: any) => proposte_nome_map.set(p.id, p.nome));
+  const corso_proposta_map = new Map<string, string>();
+  ((corsi_res.data ?? []) as any[]).forEach((c: any) => {
+    const nome_p = c.proposta_id ? proposte_nome_map.get(c.proposta_id) : null;
+    if (nome_p) corso_proposta_map.set(c.id, nome_p);
+  });
   const sa = (sa_res.data ?? []) as any[];
   const si = (si_res.data ?? []) as any[];
   const sg = (sg_res.data ?? []) as any[];
