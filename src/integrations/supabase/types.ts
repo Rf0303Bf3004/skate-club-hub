@@ -3813,6 +3813,68 @@ export type Database = {
         }
         Relationships: []
       }
+      migrazioni: {
+        Row: {
+          club_destinazione_id: string | null
+          club_origine_id: string | null
+          created_at: string
+          id: string
+          note: string | null
+          persona_id: string
+          persona_nome: string | null
+          tipo: string
+        }
+        Insert: {
+          club_destinazione_id?: string | null
+          club_origine_id?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          persona_id: string
+          persona_nome?: string | null
+          tipo: string
+        }
+        Update: {
+          club_destinazione_id?: string | null
+          club_origine_id?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          persona_id?: string
+          persona_nome?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "migrazioni_club_destinazione_id_fkey"
+            columns: ["club_destinazione_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "migrazioni_club_destinazione_id_fkey"
+            columns: ["club_destinazione_id"]
+            isOneToOne: false
+            referencedRelation: "kpi_pitch_sponsor"
+            referencedColumns: ["club_id"]
+          },
+          {
+            foreignKeyName: "migrazioni_club_origine_id_fkey"
+            columns: ["club_origine_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "migrazioni_club_origine_id_fkey"
+            columns: ["club_origine_id"]
+            isOneToOne: false
+            referencedRelation: "kpi_pitch_sponsor"
+            referencedColumns: ["club_id"]
+          },
+        ]
+      }
       moduli_gestione_club: {
         Row: {
           area: string
@@ -4034,6 +4096,54 @@ export type Database = {
           stagione_id?: string | null
         }
         Relationships: []
+      }
+      ore_pista_monitors: {
+        Row: {
+          anno: number
+          atleta_id: string
+          created_at: string
+          id: string
+          mese: number
+          note_extra: string | null
+          ore_extra: number
+          updated_at: string
+        }
+        Insert: {
+          anno: number
+          atleta_id: string
+          created_at?: string
+          id?: string
+          mese: number
+          note_extra?: string | null
+          ore_extra?: number
+          updated_at?: string
+        }
+        Update: {
+          anno?: number
+          atleta_id?: string
+          created_at?: string
+          id?: string
+          mese?: number
+          note_extra?: string | null
+          ore_extra?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ore_pista_monitors_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ore_pista_monitors_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti_con_completezza"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pacchetti_opzionali: {
         Row: {
@@ -4440,6 +4550,53 @@ export type Database = {
           presente?: boolean | null
         }
         Relationships: []
+      }
+      presenze_staff_corso: {
+        Row: {
+          corso_id: string
+          created_at: string
+          data: string
+          id: string
+          note: string | null
+          persona_id: string
+          sostituto_id: string | null
+          stato: string
+          tipo_persona: string
+          updated_at: string
+        }
+        Insert: {
+          corso_id: string
+          created_at?: string
+          data: string
+          id?: string
+          note?: string | null
+          persona_id: string
+          sostituto_id?: string | null
+          stato?: string
+          tipo_persona: string
+          updated_at?: string
+        }
+        Update: {
+          corso_id?: string
+          created_at?: string
+          data?: string
+          id?: string
+          note?: string | null
+          persona_id?: string
+          sostituto_id?: string | null
+          stato?: string
+          tipo_persona?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presenze_staff_corso_corso_id_fkey"
+            columns: ["corso_id"]
+            isOneToOne: false
+            referencedRelation: "corsi"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ragioni_sociali: {
         Row: {
@@ -6135,6 +6292,16 @@ export type Database = {
       }
       is_mobile_parent: { Args: never; Returns: boolean }
       is_superadmin: { Args: never; Returns: boolean }
+      migra_atleta: {
+        Args: {
+          p_atleta_id: string
+          p_atleta_nome: string
+          p_club_destinazione_id: string
+          p_club_origine_id: string
+          p_note?: string
+        }
+        Returns: undefined
+      }
       migra_atleta_livello: {
         Args: { p_atleta_id: string }
         Returns: undefined
