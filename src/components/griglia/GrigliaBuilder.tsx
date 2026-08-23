@@ -1069,6 +1069,21 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   const pool_esterni = useMemo(() => (atleti as any[]).filter((a) => a.atleta_esterno), [atleti]);
   const pool_istruttori = useMemo(() => (istruttori as any[]).filter((i) => i.attivo), [istruttori]);
 
+  // Pool "per proposta": contenitori nominati con gli iscritti all'occorrenza di oggi.
+  const { data: pool_proposte = [] } = use_pool_proposte(giorno_blocco);
+  const pool_proposte_items = useMemo(
+    () =>
+      pool_proposte.map((p) => ({
+        proposta_id: p.proposta.id,
+        titolo: p.proposta.nome,
+        items: p.atleta_ids
+          .map((id) => (atleti as any[]).find((a) => a.id === id))
+          .filter(Boolean)
+          .map((a: any) => ({ id: a.id, nome: a.nome ?? "", cognome: a.cognome ?? "" })),
+      })),
+    [pool_proposte, atleti],
+  );
+
   const sessioni = blocco.sessioni ?? [];
 
   /** Avvisa (non blocca) se la persona è già in un'altra sessione sovrapposta nello stesso giorno. */
