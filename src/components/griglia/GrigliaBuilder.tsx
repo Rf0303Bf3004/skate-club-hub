@@ -965,6 +965,9 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
     { sessione: GrigliaSessione; patch: Partial<GrigliaSessione> } | null
   >(null);
   const [ripeti_sessione, set_ripeti_sessione] = useState<GrigliaSessione | null>(null);
+  const [proposta_sessione, set_proposta_sessione] = useState<GrigliaSessione | null>(null);
+  /** Fonte dei pool laterali, per singola sotto-sessione (tab). */
+  const [fonte_pool, set_fonte_pool] = useState<Record<string, "livello" | "proposta">>({});
   const [sync_gruppo_ids, set_sync_gruppo_ids] = useState<string[]>([]);
   const [conflitto_gruppo, set_conflitto_gruppo] = useState<
     { livello: string; conflitto: ConflittoGruppo } | null
