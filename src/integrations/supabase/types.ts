@@ -1371,8 +1371,10 @@ export type Database = {
           pubblicazione_da: string | null
           qr_token: string
           regione_id: string | null
+          sito_web: string | null
           stato: string
           stelle: number | null
+          telefono: string | null
           tipo_cucina: string | null
           tipo_proposta_id: string | null
           titolo: string
@@ -1399,8 +1401,10 @@ export type Database = {
           pubblicazione_da?: string | null
           qr_token?: string
           regione_id?: string | null
+          sito_web?: string | null
           stato?: string
           stelle?: number | null
+          telefono?: string | null
           tipo_cucina?: string | null
           tipo_proposta_id?: string | null
           titolo: string
@@ -1427,8 +1431,10 @@ export type Database = {
           pubblicazione_da?: string | null
           qr_token?: string
           regione_id?: string | null
+          sito_web?: string | null
           stato?: string
           stelle?: number | null
+          telefono?: string | null
           tipo_cucina?: string | null
           tipo_proposta_id?: string | null
           titolo?: string
