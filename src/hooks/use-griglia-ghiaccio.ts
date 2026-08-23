@@ -102,6 +102,8 @@ export interface GrigliaSessione {
   forzato_at?: string | null;
   corso_id?: string | null;
   corso_nome?: string | null;
+  proposta_nome?: string | null;
+
   gruppi: GrigliaSessioneGruppo[];
   atleti: GrigliaSessioneAtleta[];
   istruttori: GrigliaSessioneIstruttore[];
