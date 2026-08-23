@@ -81,7 +81,7 @@ const PortaleNotiziePage: React.FC = () => {
             </Button>
           </div>
           <p className="text-sm text-slate-600 whitespace-pre-wrap">
-            {it.comunicazioni?.testo ?? it.comunicazioni?.corpo ?? ""}
+            {traduci(it.comunicazioni?.id, "testo", it.comunicazioni?.testo ?? it.comunicazioni?.corpo ?? "")}
           </p>
         </div>
       ))}
