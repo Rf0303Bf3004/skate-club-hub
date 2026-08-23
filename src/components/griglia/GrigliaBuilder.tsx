@@ -1311,6 +1311,50 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
     }
   };
 
+  /**
+   * Proposte: crea (o riusa) la proposta, poi delega a `use_ripeti_sessione`
+   * la creazione del corso collegato e delle occorrenze (stessa logica di «Ripeti»).
+   */
+  const conferma_proposta = async (dati: ConfermaProposta) => {
+    const sess = proposta_sessione;
+    if (!sess) return;
+    try {
+      const proposta =
+        dati.proposta_esistente ??
+        (await crea_proposta.mutateAsync({
+          nome: dati.nome,
+          prezzo_mensile: dati.prezzo_mensile,
+          livello_id: dati.livello_id,
+        }));
+
+      const res = await ripeti.mutateAsync({
+        sessione: sess,
+        blocco,
+        // "Solo oggi": nessuna data futura, ma corso + collegamento vengono comunque creati.
+        fino_a: dati.fino_a ?? blocco.data,
+        nome_risorsa: risorsa_blocco?.nome ?? null,
+        proposta_id: proposta.id,
+        nome_corso: proposta.nome,
+        prezzo_mensile: proposta.prezzo_mensile ?? null,
+      });
+
+      const parti: string[] = [];
+      if (res.settimane_create > 0) parti.push(`${res.settimane_create} occorrenze create`);
+      if (res.settimane_esistenti > 0) parti.push(`${res.settimane_esistenti} già esistenti`);
+      toast({
+        title: dati.proposta_esistente
+          ? `📦 Occorrenza aggiunta a «${proposta.nome}»`
+          : `📦 Proposta «${proposta.nome}» creata`,
+        description: parti.length > 0 ? parti.join(", ") : "Sessione collegata alla proposta.",
+      });
+      set_proposta_sessione(null);
+    } catch (e: any) {
+      toast({ title: "Errore proposta", description: e?.message, variant: "destructive" });
+    }
+  };
+
+
+
   const salva_sessione = async (
     s: GrigliaSessione,
     patch: Partial<GrigliaSessione>,
