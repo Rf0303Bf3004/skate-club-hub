@@ -603,6 +603,8 @@ function ConvenzioneFormModal({
         logo_url: logo_path,
         immagine_url: imm_path,
         indirizzo: form.indirizzo ?? null,
+        telefono: form.telefono || null,
+        sito_web: form.sito_web || null,
         geo_cantone: form.geo_cantone ?? null,
         geo_citta: form.geo_citta ?? null,
         regione_id: form.regione_id ?? null,
