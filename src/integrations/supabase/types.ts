@@ -1294,6 +1294,51 @@ export type Database = {
         }
         Relationships: []
       }
+      contenuti_traduzioni: {
+        Row: {
+          aggiornato_da: string | null
+          aggiornato_il: string
+          campo: string
+          de: string | null
+          en: string | null
+          fr: string | null
+          id: string
+          it: string | null
+          record_id: string
+          rm: string | null
+          stato: string
+          tabella: string
+        }
+        Insert: {
+          aggiornato_da?: string | null
+          aggiornato_il?: string
+          campo: string
+          de?: string | null
+          en?: string | null
+          fr?: string | null
+          id?: string
+          it?: string | null
+          record_id: string
+          rm?: string | null
+          stato?: string
+          tabella: string
+        }
+        Update: {
+          aggiornato_da?: string | null
+          aggiornato_il?: string
+          campo?: string
+          de?: string | null
+          en?: string | null
+          fr?: string | null
+          id?: string
+          it?: string | null
+          record_id?: string
+          rm?: string | null
+          stato?: string
+          tabella?: string
+        }
+        Relationships: []
+      }
       convenzioni: {
         Row: {
           area_id: string | null
@@ -5708,6 +5753,27 @@ export type Database = {
           created_at?: string
           id?: string
           nome?: string
+        }
+        Relationships: []
+      }
+      traduzioni_jobs: {
+        Row: {
+          created_at: string
+          id: string
+          record_id: string
+          tabella: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          record_id: string
+          tabella: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          record_id?: string
+          tabella?: string
         }
         Relationships: []
       }

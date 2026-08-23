@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { use_contenuti_traduzioni } from "@/hooks/use-contenuti-traduzioni";
 
 // Portale pubblico mobile-first: l'identificativo è il `codice_atleta` (AT-XXXX-XXXX),
 // lo stesso usato dall'app mobile genitori. Tutte le query passano dall'edge function `portale-atleta`.
@@ -44,6 +45,11 @@ const PortaleAtletaPage: React.FC = () => {
   const [iscrizioni_attive, set_iscrizioni_attive] = useState<Set<string>>(new Set());
   const [richieste_inviate, set_richieste_inviate] = useState<Set<string>>(new Set());
   const [busy_id, set_busy_id] = useState<string | null>(null);
+
+  const { traduci } = use_contenuti_traduzioni(
+    "comunicazioni",
+    comunicazioni.map((c: any) => c?.comunicazioni?.id).filter(Boolean),
+  );
 
   useEffect(() => {
     (async () => {
@@ -285,13 +291,13 @@ const PortaleAtletaPage: React.FC = () => {
                 return (
                   <div key={c.id} className="bg-card border border-border rounded-xl p-4 shadow-card">
                     <div className="flex items-start justify-between gap-2 mb-1.5">
-                      <h3 className="text-sm font-bold text-foreground">{com?.titolo}</h3>
+                      <h3 className="text-sm font-bold text-foreground">{traduci(com?.id, "titolo", com?.titolo)}</h3>
                       <span className="text-[10px] text-muted-foreground whitespace-nowrap">
                         {new Date(c.creato_at).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                      {com?.testo || com?.corpo}
+                      {traduci(com?.id, "testo", com?.testo || com?.corpo)}
                     </p>
                     {richiede_rsvp && (
                       <div className="mt-3 pt-3 border-t border-border">

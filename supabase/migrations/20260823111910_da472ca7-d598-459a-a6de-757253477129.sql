@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.trg_traduci_comunicazione() FROM PUBLIC, anon, authenticated;

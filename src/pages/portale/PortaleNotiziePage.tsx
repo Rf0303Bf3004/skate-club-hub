@@ -7,12 +7,13 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import type { PortaleSession } from "@/lib/portale-auth";
 import { useTranslation } from "react-i18next";
+import { use_contenuti_traduzioni } from "@/hooks/use-contenuti-traduzioni";
 
 interface Dest {
   id: string;
   archiviato_at: string | null;
   creato_at: string;
-  comunicazioni: { titolo: string; testo: string | null; corpo?: string | null } | null;
+  comunicazioni: { id: string; titolo: string; testo: string | null; corpo?: string | null } | null;
 }
 
 const PortaleNotiziePage: React.FC = () => {
@@ -21,11 +22,16 @@ const PortaleNotiziePage: React.FC = () => {
   const [loading, set_loading] = useState(true);
   const [items, set_items] = useState<Dest[]>([]);
 
+  const { traduci } = use_contenuti_traduzioni(
+    "comunicazioni",
+    items.map((i) => i.comunicazioni?.id).filter(Boolean) as string[],
+  );
+
   const load = async () => {
     set_loading(true);
     const { data } = await supabase
       .from("comunicazioni_destinatari")
-      .select("id, archiviato_at, creato_at, comunicazioni(titolo, testo, corpo)")
+      .select("id, archiviato_at, creato_at, comunicazioni(id, titolo, testo, corpo)")
       .eq("atleta_id", session.atleta.id)
       .order("creato_at", { ascending: false });
     set_items((data ?? []) as any);
@@ -63,7 +69,9 @@ const PortaleNotiziePage: React.FC = () => {
         <div key={it.id} className="bg-white border border-slate-200 rounded-2xl p-4">
           <div className="flex items-start justify-between gap-3 mb-2">
             <div className="min-w-0 flex-1">
-              <h3 className="font-semibold text-slate-800">{it.comunicazioni?.titolo ?? "—"}</h3>
+              <h3 className="font-semibold text-slate-800">
+                {traduci(it.comunicazioni?.id, "titolo", it.comunicazioni?.titolo) || "—"}
+              </h3>
               <p className="text-[11px] text-slate-400 mt-0.5">
                 {new Date(it.creato_at).toLocaleDateString("it-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
               </p>
@@ -73,7 +81,7 @@ const PortaleNotiziePage: React.FC = () => {
             </Button>
           </div>
           <p className="text-sm text-slate-600 whitespace-pre-wrap">
-            {it.comunicazioni?.testo ?? it.comunicazioni?.corpo ?? ""}
+            {traduci(it.comunicazioni?.id, "testo", it.comunicazioni?.testo ?? it.comunicazioni?.corpo ?? "")}
           </p>
         </div>
       ))}
