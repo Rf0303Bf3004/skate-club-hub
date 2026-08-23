@@ -1212,7 +1212,9 @@ export function use_ripeti_sessione() {
 
       const etichetta_specialita =
         sessione.specialita_nome || sessione.specialita_testo_libero || "Sessione ghiaccio";
-      const nome_corso = `${etichetta_specialita} — ${input.nome_risorsa ?? "Pista"}, ${giorno} ${ora_inizio.slice(0, 5)}`;
+      const nome_corso =
+        (input.nome_corso ?? "").trim() ||
+        `${etichetta_specialita} — ${input.nome_risorsa ?? "Pista"}, ${giorno} ${ora_inizio.slice(0, 5)}`;
 
       // 1) Corso collegato: riusa quello esistente, altrimenti crealo
       let corso_id = sessione.corso_id ?? null;
@@ -1229,11 +1231,12 @@ export function use_ripeti_sessione() {
             giorno,
             ora_inizio,
             ora_fine,
-            costo_mensile: 0,
+            costo_mensile: input.prezzo_mensile ?? 0,
             costo_annuale: 0,
             attivo: true,
             stagione_id: stagione.id,
             usa_ghiaccio: true,
+            ...(input.proposta_id ? { proposta_id: input.proposta_id } : {}),
           } as any)
           .select("id,nome")
           .single();
