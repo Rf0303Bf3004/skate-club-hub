@@ -294,6 +294,10 @@ export async function fetch_blocchi_giorno(
               nome: at?.nome ?? "",
               cognome: at?.cognome ?? x.atleta_id.slice(0, 8),
               provenienza,
+              origine: x.provenienza ?? "manuale",
+              origine_corso_id: x.origine_corso_id ?? null,
+              conflitto_forzato: !!x.conflitto_forzato,
+              motivo_forzatura: x.motivo_forzatura ?? null,
               gruppo_sessione_id: x.gruppo_sessione_id ?? null,
             };
           }),
