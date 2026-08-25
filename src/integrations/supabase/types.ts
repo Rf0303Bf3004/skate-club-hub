@@ -6662,6 +6662,10 @@ export type Database = {
       }
       is_mobile_parent: { Args: never; Returns: boolean }
       is_superadmin: { Args: never; Returns: boolean }
+      lezione_privata_appartiene_al_club: {
+        Args: { _club_id: string; _lezione_id: string }
+        Returns: boolean
+      }
       migra_atleta: {
         Args: {
           p_atleta_id: string
