@@ -1,0 +1,846 @@
+import React, { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
+import { get_current_club_id } from "@/lib/supabase";
+import {
+  use_campi_ospitati,
+  use_campi_invitati,
+  use_rispondi_invito_campo,
+  use_aggiorna_campo,
+  use_campo_gruppi,
+  use_salva_gruppo,
+  use_elimina_gruppo,
+  use_riordina_gruppi,
+  use_campo_partecipanti,
+  use_clubs_opzioni,
+  use_invita_club,
+  use_aggiorna_partecipante,
+  use_elimina_partecipante,
+  use_campo_adesioni,
+  STATI_CAMPO,
+  type EventoCampoInterClub,
+  type CampoGruppo,
+  type CampoClubPartecipante,
+} from "@/hooks/use-campi-interclub";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Users,
+  Plus,
+  Trash2,
+  ChevronRight,
+  ArrowUp,
+  ArrowDown,
+  Check,
+  X,
+  Building2,
+  MapPin,
+  Construction,
+} from "lucide-react";
+
+const fmt_date = (d: string | null) =>
+  d ? new Date(d + "T00:00:00").toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—";
+
+const stato_variant = (stato: string): "default" | "secondary" | "destructive" | "outline" => {
+  if (stato === "accettato" || stato === "aperto") return "default";
+  if (stato === "rifiutato" || stato === "ritirato") return "destructive";
+  if (stato === "concluso" || stato === "chiuso") return "outline";
+  return "secondary";
+};
+
+// ═══════════════════════════════ SEZIONE PRINCIPALE ═══════════════════════════════
+const CampiInterClubSection: React.FC = () => {
+  const { t } = useTranslation("events");
+  const club_id = get_current_club_id();
+  const { data: ospitati = [] } = use_campi_ospitati();
+  const { data: invitati = [] } = use_campi_invitati();
+  const rispondi = use_rispondi_invito_campo();
+  const [campo_selezionato, set_campo_selezionato] = useState<EventoCampoInterClub | null>(null);
+
+  if (campo_selezionato) {
+    const aggiornato = ospitati.find((c) => c.id === campo_selezionato.id) ?? campo_selezionato;
+    return (
+      <CampoScheda
+        campo={aggiornato}
+        is_ospitante={aggiornato.club_id === club_id}
+        on_back={() => set_campo_selezionato(null)}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Building2 className="w-5 h-5" /> {t("campi_interclub.ospito.title")}
+          </CardTitle>
+          <CardDescription>{t("campi_interclub.ospito.description")}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {ospitati.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">{t("campi_interclub.ospito.empty")}</p>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {ospitati.map((c) => (
+                <Card
+                  key={c.id}
+                  className="cursor-pointer hover:border-primary transition-colors"
+                  onClick={() => set_campo_selezionato(c)}
+                >
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center justify-between gap-2">
+                      <span className="truncate">{c.nome}</span>
+                      <Badge variant={stato_variant(c.stato)}>{t(`campi_interclub.stati.${c.stato}`)}</Badge>
+                    </CardTitle>
+                    <CardDescription>
+                      {fmt_date(c.data_inizio)} → {fmt_date(c.data_fine)}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="text-sm space-y-1">
+                    {c.luogo && (
+                      <p className="text-muted-foreground">
+                        <MapPin className="w-3 h-3 inline mr-1" />
+                        {c.luogo}
+                      </p>
+                    )}
+                    {c.scadenza_adesioni && (
+                      <p className="text-muted-foreground">
+                        {t("campi_interclub.info.scadenza_adesioni")}: {fmt_date(c.scadenza_adesioni)}
+                      </p>
+                    )}
+                    <Button variant="ghost" size="sm" className="mt-1 -mx-2 w-full justify-end">
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="w-5 h-5" /> {t("campi_interclub.invitato.title")}
+          </CardTitle>
+          <CardDescription>{t("campi_interclub.invitato.description")}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {invitati.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">{t("campi_interclub.invitato.empty")}</p>
+          ) : (
+            <div className="space-y-3">
+              {invitati.map(({ partecipazione, evento }) => (
+                <div
+                  key={partecipazione.id}
+                  className="flex flex-wrap items-center justify-between gap-3 p-3 border rounded-lg"
+                >
+                  <div>
+                    <p className="font-medium">{evento?.nome ?? t("campi_interclub.invitato.campo_sconosciuto")}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {fmt_date(evento?.data_inizio ?? null)} → {fmt_date(evento?.data_fine ?? null)}
+                      {evento?.luogo ? ` • ${evento.luogo}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={stato_variant(partecipazione.stato)}>
+                      {t(`campi_interclub.stati_partecipante.${partecipazione.stato}`)}
+                    </Badge>
+                    {partecipazione.stato === "invitato" && (
+                      <>
+                        <Button
+                          size="sm"
+                          disabled={rispondi.isPending}
+                          onClick={() =>
+                            rispondi.mutate(
+                              { id: partecipazione.id, accetta: true },
+                              { onSuccess: () => toast.success(t("campi_interclub.invitato.accettato_toast")) },
+                            )
+                          }
+                        >
+                          <Check className="w-4 h-4 mr-1" /> {t("campi_interclub.invitato.accetta")}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={rispondi.isPending}
+                          onClick={() =>
+                            rispondi.mutate(
+                              { id: partecipazione.id, accetta: false },
+                              { onSuccess: () => toast.success(t("campi_interclub.invitato.rifiutato_toast")) },
+                            )
+                          }
+                        >
+                          <X className="w-4 h-4 mr-1" /> {t("campi_interclub.invitato.rifiuta")}
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+// ═══════════════════════════════ SCHEDA CAMPO ═══════════════════════════════
+const CampoScheda: React.FC<{ campo: EventoCampoInterClub; is_ospitante: boolean; on_back: () => void }> = ({
+  campo,
+  is_ospitante,
+  on_back,
+}) => {
+  const { t } = useTranslation("events");
+  const [tab, set_tab] = useState("informazioni");
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <Button variant="ghost" onClick={on_back}>
+          {t("campi_interclub.back")}
+        </Button>
+        <h2 className="text-2xl font-bold mt-2">{campo.nome}</h2>
+        <p className="text-sm text-muted-foreground">
+          {fmt_date(campo.data_inizio)} → {fmt_date(campo.data_fine)}
+          {campo.luogo ? ` • ${campo.luogo}` : ""}
+        </p>
+      </div>
+
+      <Tabs value={tab} onValueChange={set_tab} className="space-y-4">
+        <TabsList className="grid grid-cols-5 w-full">
+          <TabsTrigger value="informazioni">{t("campi_interclub.tabs.informazioni")}</TabsTrigger>
+          <TabsTrigger value="gruppi">{t("campi_interclub.tabs.gruppi")}</TabsTrigger>
+          <TabsTrigger value="club">{t("campi_interclub.tabs.club")}</TabsTrigger>
+          <TabsTrigger value="adesioni">{t("campi_interclub.tabs.adesioni")}</TabsTrigger>
+          <TabsTrigger value="istruttori">{t("campi_interclub.tabs.istruttori")}</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="informazioni">
+          <TabInformazioni campo={campo} is_ospitante={is_ospitante} />
+        </TabsContent>
+        <TabsContent value="gruppi">
+          <TabGruppi campo={campo} is_ospitante={is_ospitante} />
+        </TabsContent>
+        <TabsContent value="club">
+          <TabClubPartecipanti campo={campo} is_ospitante={is_ospitante} />
+        </TabsContent>
+        <TabsContent value="adesioni">
+          <TabAdesioni campo={campo} />
+        </TabsContent>
+        <TabsContent value="istruttori">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Construction className="w-4 h-4" /> {t("campi_interclub.istruttori.title")}
+              </CardTitle>
+              <CardDescription>{t("campi_interclub.istruttori.placeholder")}</CardDescription>
+            </CardHeader>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+
+// ── Tab 1: informazioni ──────────────────────────────────────
+const TabInformazioni: React.FC<{ campo: EventoCampoInterClub; is_ospitante: boolean }> = ({ campo, is_ospitante }) => {
+  const { t } = useTranslation("events");
+  const aggiorna = use_aggiorna_campo();
+  const [form, set_form] = useState({
+    nome: campo.nome ?? "",
+    stato: campo.stato ?? "bozza",
+    data_inizio: campo.data_inizio ?? "",
+    data_fine: campo.data_fine ?? "",
+    scadenza_adesioni: campo.scadenza_adesioni ?? "",
+    luogo: campo.luogo ?? "",
+    quota_atleta: campo.quota_atleta != null ? String(campo.quota_atleta) : "",
+    quota_club_default: campo.quota_club_default != null ? String(campo.quota_club_default) : "",
+    contatti: campo.contatti ?? "",
+    descrizione: campo.descrizione ?? "",
+    note: campo.note ?? "",
+  });
+
+  const salva = () =>
+    aggiorna.mutate(
+      {
+        id: campo.id,
+        patch: {
+          nome: form.nome.trim(),
+          stato: form.stato,
+          data_inizio: form.data_inizio || null,
+          data_fine: form.data_fine || null,
+          scadenza_adesioni: form.scadenza_adesioni || null,
+          luogo: form.luogo || null,
+          quota_atleta: form.quota_atleta === "" ? null : Number(form.quota_atleta),
+          quota_club_default: form.quota_club_default === "" ? null : Number(form.quota_club_default),
+          contatti: form.contatti || null,
+          descrizione: form.descrizione || null,
+          note: form.note || null,
+        },
+      },
+      {
+        onSuccess: () => toast.success(t("campi_interclub.info.salvato_toast")),
+        onError: (e: any) => toast.error(e.message),
+      },
+    );
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">{t("campi_interclub.info.title")}</CardTitle>
+        <CardDescription>{t("campi_interclub.info.description")}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <fieldset disabled={!is_ospitante} className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <Label>{t("campi_interclub.info.nome")}</Label>
+              <Input value={form.nome} onChange={(e) => set_form({ ...form, nome: e.target.value })} />
+            </div>
+            <div>
+              <Label>{t("campi_interclub.info.stato")}</Label>
+              <Select value={form.stato} onValueChange={(v) => set_form({ ...form, stato: v })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATI_CAMPO.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {t(`campi_interclub.stati.${s}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>{t("campi_interclub.info.data_inizio")}</Label>
+              <Input
+                type="date"
+                value={form.data_inizio}
+                onChange={(e) => set_form({ ...form, data_inizio: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label>{t("campi_interclub.info.data_fine")}</Label>
+              <Input
+                type="date"
+                value={form.data_fine}
+                onChange={(e) => set_form({ ...form, data_fine: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label>{t("campi_interclub.info.scadenza_adesioni")}</Label>
+              <Input
+                type="date"
+                value={form.scadenza_adesioni}
+                onChange={(e) => set_form({ ...form, scadenza_adesioni: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label>{t("campi_interclub.info.luogo")}</Label>
+              <Input value={form.luogo} onChange={(e) => set_form({ ...form, luogo: e.target.value })} />
+            </div>
+            <div>
+              <Label>{t("campi_interclub.info.quota_atleta")}</Label>
+              <Input
+                type="number"
+                step="0.05"
+                value={form.quota_atleta}
+                onChange={(e) => set_form({ ...form, quota_atleta: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label>{t("campi_interclub.info.quota_club_default")}</Label>
+              <Input
+                type="number"
+                step="0.05"
+                value={form.quota_club_default}
+                onChange={(e) => set_form({ ...form, quota_club_default: e.target.value })}
+              />
+            </div>
+            <div className="md:col-span-2">
+              <Label>{t("campi_interclub.info.contatti")}</Label>
+              <Input value={form.contatti} onChange={(e) => set_form({ ...form, contatti: e.target.value })} />
+            </div>
+            <div className="md:col-span-2">
+              <Label>{t("campi_interclub.info.descrizione")}</Label>
+              <Textarea value={form.descrizione} onChange={(e) => set_form({ ...form, descrizione: e.target.value })} />
+            </div>
+            <div className="md:col-span-2">
+              <Label>{t("campi_interclub.info.note")}</Label>
+              <Textarea value={form.note} onChange={(e) => set_form({ ...form, note: e.target.value })} />
+            </div>
+          </div>
+          <Button onClick={salva} disabled={aggiorna.isPending}>
+            {t("campi_interclub.info.salva")}
+          </Button>
+        </fieldset>
+        {!is_ospitante && <p className="text-sm text-muted-foreground">{t("campi_interclub.solo_ospitante")}</p>}
+      </CardContent>
+    </Card>
+  );
+};
+
+// ── Tab 2: gruppi ────────────────────────────────────────────
+const TabGruppi: React.FC<{ campo: EventoCampoInterClub; is_ospitante: boolean }> = ({ campo, is_ospitante }) => {
+  const { t } = useTranslation("events");
+  const { data: gruppi = [] } = use_campo_gruppi(campo.id);
+  const salva = use_salva_gruppo();
+  const elimina = use_elimina_gruppo();
+  const riordina = use_riordina_gruppi();
+  const [open, set_open] = useState(false);
+  const [in_modifica, set_in_modifica] = useState<CampoGruppo | null>(null);
+  const [form, set_form] = useState({ nome: "", criterio: "", capienza_max: "" });
+
+  const apri = (g: CampoGruppo | null) => {
+    set_in_modifica(g);
+    set_form({
+      nome: g?.nome ?? "",
+      criterio: g?.criterio ?? "",
+      capienza_max: g?.capienza_max != null ? String(g.capienza_max) : "",
+    });
+    set_open(true);
+  };
+
+  const conferma = () =>
+    salva.mutate(
+      {
+        id: in_modifica?.id,
+        evento_campo_id: campo.id,
+        nome: form.nome.trim(),
+        criterio: form.criterio.trim() || null,
+        capienza_max: form.capienza_max === "" ? null : Number(form.capienza_max),
+        ordine: in_modifica?.ordine ?? gruppi.length + 1,
+      },
+      {
+        onSuccess: () => {
+          toast.success(t("campi_interclub.gruppi.salvato_toast"));
+          set_open(false);
+        },
+        onError: (e: any) => toast.error(e.message),
+      },
+    );
+
+  const sposta = (index: number, delta: number) => {
+    const nuovo = [...gruppi];
+    const target = index + delta;
+    if (target < 0 || target >= nuovo.length) return;
+    [nuovo[index], nuovo[target]] = [nuovo[target], nuovo[index]];
+    riordina.mutate({ gruppi: nuovo, evento_campo_id: campo.id });
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle className="text-base">{t("campi_interclub.gruppi.title")}</CardTitle>
+          <CardDescription>{t("campi_interclub.gruppi.description")}</CardDescription>
+        </div>
+        {is_ospitante && (
+          <Button size="sm" onClick={() => apri(null)}>
+            <Plus className="w-4 h-4 mr-1" /> {t("campi_interclub.gruppi.nuovo")}
+          </Button>
+        )}
+      </CardHeader>
+      <CardContent>
+        {gruppi.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-6">{t("campi_interclub.gruppi.empty")}</p>
+        ) : (
+          <div className="space-y-2">
+            {gruppi.map((g, index) => (
+              <div key={g.id} className="flex items-center justify-between gap-3 p-3 border rounded-lg">
+                <div className="min-w-0">
+                  <p className="font-medium">{g.nome}</p>
+                  <p className="text-sm text-muted-foreground truncate">
+                    {g.criterio || t("campi_interclub.gruppi.senza_criterio")}
+                    {g.capienza_max != null ? ` • ${t("campi_interclub.gruppi.capienza")}: ${g.capienza_max}` : ""}
+                  </p>
+                </div>
+                {is_ospitante && (
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button variant="ghost" size="icon" onClick={() => sposta(index, -1)} disabled={index === 0}>
+                      <ArrowUp className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => sposta(index, 1)}
+                      disabled={index === gruppi.length - 1}
+                    >
+                      <ArrowDown className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => apri(g)}>
+                      {t("campi_interclub.gruppi.modifica")}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => elimina.mutate({ id: g.id, evento_campo_id: campo.id })}
+                    >
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+
+      <Dialog open={open} onOpenChange={set_open}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {in_modifica ? t("campi_interclub.gruppi.dialog_modifica") : t("campi_interclub.gruppi.dialog_nuovo")}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>{t("campi_interclub.gruppi.nome")}</Label>
+              <Input value={form.nome} onChange={(e) => set_form({ ...form, nome: e.target.value })} />
+            </div>
+            <div>
+              <Label>{t("campi_interclub.gruppi.criterio")}</Label>
+              <Input
+                value={form.criterio}
+                onChange={(e) => set_form({ ...form, criterio: e.target.value })}
+                placeholder={t("campi_interclub.gruppi.criterio_placeholder")}
+              />
+            </div>
+            <div>
+              <Label>{t("campi_interclub.gruppi.capienza")}</Label>
+              <Input
+                type="number"
+                value={form.capienza_max}
+                onChange={(e) => set_form({ ...form, capienza_max: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => set_open(false)}>
+              {t("campi_interclub.annulla")}
+            </Button>
+            <Button onClick={conferma} disabled={salva.isPending || !form.nome.trim()}>
+              {t("campi_interclub.salva")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+};
+
+// ── Tab 3: club partecipanti ─────────────────────────────────
+const TabClubPartecipanti: React.FC<{ campo: EventoCampoInterClub; is_ospitante: boolean }> = ({
+  campo,
+  is_ospitante,
+}) => {
+  const { t } = useTranslation("events");
+  const { data: partecipanti = [] } = use_campo_partecipanti(campo.id);
+  const { data: clubs = [] } = use_clubs_opzioni();
+  const invita = use_invita_club();
+  const aggiorna = use_aggiorna_partecipante();
+  const elimina = use_elimina_partecipante();
+  const [open, set_open] = useState(false);
+  const [modalita_invito, set_modalita_invito] = useState<"esistente" | "esterno">("esistente");
+  const [form, set_form] = useState({
+    club_id: "",
+    club_esterno_nome: "",
+    quota_club: campo.quota_club_default != null ? String(campo.quota_club_default) : "",
+    valido_dal: campo.data_inizio ?? "",
+    valido_al: campo.data_fine ?? "",
+  });
+
+  const nome_partecipante = (p: CampoClubPartecipante) =>
+    p.clubs?.nome || p.club_esterno_nome || t("campi_interclub.club.senza_nome");
+
+  const conferma_invito = () =>
+    invita.mutate(
+      {
+        evento_campo_id: campo.id,
+        club_id: modalita_invito === "esistente" ? form.club_id || null : null,
+        club_esterno_nome: modalita_invito === "esterno" ? form.club_esterno_nome.trim() || null : null,
+        quota_club: form.quota_club === "" ? null : Number(form.quota_club),
+        valido_dal: form.valido_dal || campo.data_inizio || new Date().toISOString().slice(0, 10),
+        valido_al: form.valido_al || campo.data_fine || new Date().toISOString().slice(0, 10),
+      },
+      {
+        onSuccess: () => {
+          toast.success(t("campi_interclub.club.invitato_toast"));
+          set_open(false);
+        },
+        onError: (e: any) => toast.error(e.message),
+      },
+    );
+
+  const invito_valido =
+    modalita_invito === "esistente" ? !!form.club_id : form.club_esterno_nome.trim().length > 0;
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle className="text-base">{t("campi_interclub.club.title")}</CardTitle>
+          <CardDescription>{t("campi_interclub.club.description")}</CardDescription>
+        </div>
+        {is_ospitante && (
+          <Button size="sm" onClick={() => set_open(true)}>
+            <Plus className="w-4 h-4 mr-1" /> {t("campi_interclub.club.invita")}
+          </Button>
+        )}
+      </CardHeader>
+      <CardContent>
+        {partecipanti.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-6">{t("campi_interclub.club.empty")}</p>
+        ) : (
+          <div className="space-y-2">
+            {partecipanti.map((p) => (
+              <div key={p.id} className="flex flex-wrap items-center justify-between gap-3 p-3 border rounded-lg">
+                <div>
+                  <p className="font-medium">
+                    {nome_partecipante(p)}
+                    {!p.club_id && (
+                      <Badge variant="outline" className="ml-2">
+                        {t("campi_interclub.club.esterno_badge")}
+                      </Badge>
+                    )}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {fmt_date(p.valido_dal)} → {fmt_date(p.valido_al)} •{" "}
+                    {p.quota_club != null ? `CHF ${Number(p.quota_club).toFixed(2)}` : t("campi_interclub.club.senza_quota")}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant={stato_variant(p.stato)}>{t(`campi_interclub.stati_partecipante.${p.stato}`)}</Badge>
+                  {is_ospitante && (
+                    <>
+                      <Select
+                        value={p.stato}
+                        onValueChange={(v) =>
+                          aggiorna.mutate({ id: p.id, evento_campo_id: campo.id, patch: { stato: v } })
+                        }
+                      >
+                        <SelectTrigger className="w-40">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {["invitato", "accettato", "rifiutato", "ritirato"].map((s) => (
+                            <SelectItem key={s} value={s}>
+                              {t(`campi_interclub.stati_partecipante.${s}`)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => elimina.mutate({ id: p.id, evento_campo_id: campo.id })}
+                      >
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+
+      <Dialog open={open} onOpenChange={set_open}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("campi_interclub.club.dialog_title")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>{t("campi_interclub.club.modalita")}</Label>
+              <Select value={modalita_invito} onValueChange={(v) => set_modalita_invito(v as "esistente" | "esterno")}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="esistente">{t("campi_interclub.club.modalita_esistente")}</SelectItem>
+                  <SelectItem value="esterno">{t("campi_interclub.club.modalita_esterno")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {modalita_invito === "esistente" ? (
+              <div>
+                <Label>{t("campi_interclub.club.club_label")}</Label>
+                <Select value={form.club_id} onValueChange={(v) => set_form({ ...form, club_id: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("campi_interclub.club.club_placeholder")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clubs
+                      .filter((c) => c.id !== campo.club_id)
+                      .map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.nome}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div>
+                <Label>{t("campi_interclub.club.esterno_label")}</Label>
+                <Input
+                  value={form.club_esterno_nome}
+                  onChange={(e) => set_form({ ...form, club_esterno_nome: e.target.value })}
+                  placeholder={t("campi_interclub.club.esterno_placeholder")}
+                />
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>{t("campi_interclub.club.valido_dal")}</Label>
+                <Input
+                  type="date"
+                  value={form.valido_dal}
+                  onChange={(e) => set_form({ ...form, valido_dal: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>{t("campi_interclub.club.valido_al")}</Label>
+                <Input
+                  type="date"
+                  value={form.valido_al}
+                  onChange={(e) => set_form({ ...form, valido_al: e.target.value })}
+                />
+              </div>
+            </div>
+            <div>
+              <Label>{t("campi_interclub.club.quota_club")}</Label>
+              <Input
+                type="number"
+                step="0.05"
+                value={form.quota_club}
+                onChange={(e) => set_form({ ...form, quota_club: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => set_open(false)}>
+              {t("campi_interclub.annulla")}
+            </Button>
+            <Button onClick={conferma_invito} disabled={invita.isPending || !invito_valido}>
+              {t("campi_interclub.club.invia_invito")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+};
+
+// ── Tab 4: adesioni (matrice gruppo × club) ──────────────────
+const TabAdesioni: React.FC<{ campo: EventoCampoInterClub }> = ({ campo }) => {
+  const { t } = useTranslation("events");
+  const { data: gruppi = [] } = use_campo_gruppi(campo.id);
+  const { data: partecipanti = [] } = use_campo_partecipanti(campo.id);
+  const gruppi_ids = useMemo(() => gruppi.map((g) => g.id), [gruppi]);
+  const { data: adesioni = [] } = use_campo_adesioni(campo.id, gruppi_ids);
+
+  const colonne = useMemo(
+    () => partecipanti.filter((p) => p.stato === "accettato"),
+    [partecipanti],
+  );
+  const in_attesa = useMemo(() => partecipanti.filter((p) => p.stato === "invitato"), [partecipanti]);
+
+  const chiave_colonna = (p: CampoClubPartecipante) => p.club_id ?? `esterno:${p.id}`;
+  const nome_colonna = (p: CampoClubPartecipante) =>
+    p.clubs?.nome || p.club_esterno_nome || t("campi_interclub.club.senza_nome");
+
+  const conta = (gruppo_id: string | null, club_id: string | null) =>
+    adesioni.filter((a) => a.campo_gruppo_id === gruppo_id && a.club_id === club_id).length;
+
+  const righe = [...gruppi.map((g) => ({ id: g.id as string | null, nome: g.nome })), { id: null, nome: t("campi_interclub.adesioni.senza_gruppo") }];
+
+  const totale_colonna = (club_id: string | null) => adesioni.filter((a) => a.club_id === club_id).length;
+  const totale_riga = (gruppo_id: string | null) => adesioni.filter((a) => a.campo_gruppo_id === gruppo_id).length;
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">{t("campi_interclub.adesioni.title")}</CardTitle>
+          <CardDescription>{t("campi_interclub.adesioni.description")}</CardDescription>
+        </CardHeader>
+        <CardContent className="overflow-x-auto">
+          {colonne.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">{t("campi_interclub.adesioni.empty")}</p>
+          ) : (
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-2">{t("campi_interclub.adesioni.gruppo")}</th>
+                  {colonne.map((p) => (
+                    <th key={chiave_colonna(p)} className="p-2 text-center whitespace-nowrap">
+                      {nome_colonna(p)}
+                    </th>
+                  ))}
+                  <th className="p-2 text-center font-semibold">{t("campi_interclub.adesioni.totale")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {righe.map((r) => (
+                  <tr key={r.id ?? "senza_gruppo"} className="border-b">
+                    <td className="p-2">{r.nome}</td>
+                    {colonne.map((p) => (
+                      <td key={chiave_colonna(p)} className="p-2 text-center">
+                        {conta(r.id, p.club_id)}
+                      </td>
+                    ))}
+                    <td className="p-2 text-center font-semibold">{totale_riga(r.id)}</td>
+                  </tr>
+                ))}
+                <tr className="font-semibold">
+                  <td className="p-2">{t("campi_interclub.adesioni.totale")}</td>
+                  {colonne.map((p) => (
+                    <td key={chiave_colonna(p)} className="p-2 text-center">
+                      {totale_colonna(p.club_id)}
+                    </td>
+                  ))}
+                  <td className="p-2 text-center">{adesioni.length}</td>
+                </tr>
+              </tbody>
+            </table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">{t("campi_interclub.adesioni.in_attesa_title")}</CardTitle>
+          <CardDescription>
+            {t("campi_interclub.adesioni.in_attesa_desc", { count: in_attesa.length })}
+          </CardDescription>
+        </CardHeader>
+        {in_attesa.length > 0 && (
+          <CardContent className="flex flex-wrap gap-2">
+            {in_attesa.map((p) => (
+              <Badge key={p.id} variant="secondary">
+                {nome_colonna(p)}
+              </Badge>
+            ))}
+          </CardContent>
+        )}
+      </Card>
+    </div>
+  );
+};
+
+export default CampiInterClubSection;
