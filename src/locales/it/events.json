@@ -482,5 +482,114 @@
     "toast_saved": "✅ Gara salvata con {{count}} atleti!",
     "toast_save_error": "Errore salvataggio",
     "toast_save_error_desc": "Controlla i dati e riprova."
+  },
+  "campi_interclub": {
+    "back": "← Torna",
+    "annulla": "Annulla",
+    "salva": "Salva",
+    "solo_ospitante": "Solo il club ospitante può modificare questi dati.",
+    "tab_label": "Inter-club",
+    "stati": {
+      "bozza": "Bozza",
+      "aperto": "Aperto",
+      "chiuso": "Chiuso",
+      "concluso": "Concluso"
+    },
+    "stati_partecipante": {
+      "invitato": "Invitato",
+      "accettato": "Accettato",
+      "rifiutato": "Rifiutato",
+      "ritirato": "Ritirato"
+    },
+    "ospito": {
+      "title": "Campi che ospito",
+      "description": "Campi organizzati dal tuo club, aperti anche ad altre società.",
+      "empty": "Nessun campo ospitato."
+    },
+    "invitato": {
+      "title": "Campi a cui sono invitato",
+      "description": "Inviti ricevuti da altre società.",
+      "empty": "Nessun invito ricevuto.",
+      "accetta": "Accetta",
+      "rifiuta": "Rifiuta",
+      "accettato_toast": "Invito accettato",
+      "rifiutato_toast": "Invito rifiutato",
+      "campo_sconosciuto": "Campo"
+    },
+    "tabs": {
+      "informazioni": "Informazioni",
+      "gruppi": "Gruppi",
+      "club": "Club partecipanti",
+      "adesioni": "Adesioni",
+      "istruttori": "Istruttori"
+    },
+    "info": {
+      "title": "Informazioni del campo",
+      "description": "Dati generali, stato e quote.",
+      "nome": "Nome",
+      "stato": "Stato",
+      "data_inizio": "Data inizio",
+      "data_fine": "Data fine",
+      "scadenza_adesioni": "Scadenza adesioni",
+      "luogo": "Luogo",
+      "quota_atleta": "Quota atleta (CHF)",
+      "quota_club_default": "Quota club predefinita (CHF)",
+      "contatti": "Contatti",
+      "descrizione": "Descrizione",
+      "note": "Note",
+      "salva": "Salva",
+      "salvato_toast": "Campo aggiornato"
+    },
+    "gruppi": {
+      "title": "Gruppi del campo",
+      "description": "I gruppi sono definiti dal campo, non dai singoli club: i livelli non sono confrontabili fra società.",
+      "nuovo": "Nuovo gruppo",
+      "empty": "Nessun gruppo definito.",
+      "nome": "Nome",
+      "criterio": "Criterio",
+      "criterio_placeholder": "Es: doppio salchow acquisito",
+      "capienza": "Capienza massima",
+      "senza_criterio": "Nessun criterio",
+      "modifica": "Modifica",
+      "dialog_nuovo": "Nuovo gruppo",
+      "dialog_modifica": "Modifica gruppo",
+      "salvato_toast": "Gruppo salvato"
+    },
+    "club": {
+      "title": "Club partecipanti",
+      "description": "Società invitate al campo, con stato e quota.",
+      "invita": "Invita club",
+      "empty": "Nessun club invitato.",
+      "dialog_title": "Invita un club",
+      "modalita": "Modalità",
+      "modalita_esistente": "Club presente in piattaforma",
+      "modalita_esterno": "Club che non usa il gestionale",
+      "club_label": "Club",
+      "club_placeholder": "Seleziona un club",
+      "esterno_label": "Nome del club",
+      "esterno_placeholder": "Es: Skating Club Lugano",
+      "valido_dal": "Valido dal",
+      "valido_al": "Valido al",
+      "quota_club": "Quota club (CHF)",
+      "invia_invito": "Invia invito",
+      "invitato_toast": "Club invitato",
+      "esterno_badge": "Esterno",
+      "senza_nome": "Club senza nome",
+      "senza_quota": "Quota non definita"
+    },
+    "adesioni": {
+      "title": "Adesioni per gruppo e club",
+      "description": "Numero di atleti iscritti per ciascun gruppo e club partecipante.",
+      "empty": "Nessun club ha ancora accettato l'invito.",
+      "gruppo": "Gruppo",
+      "totale": "Totale",
+      "senza_gruppo": "Senza gruppo",
+      "in_attesa_title": "In attesa di risposta",
+      "in_attesa_desc": "{{count}} club non hanno ancora risposto all'invito."
+    },
+    "istruttori": {
+      "title": "Istruttori per club",
+      "placeholder": "Gli istruttori dichiarati da ciascun club partecipante saranno gestiti in una fase successiva."
+    }
   }
 }

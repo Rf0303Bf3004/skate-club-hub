@@ -29,5 +29,114 @@
     "day_only": "Day only",
     "full": "Full",
     "partial": "Partial"
+  },
+  "campi_interclub": {
+    "back": "← Back",
+    "annulla": "Cancel",
+    "salva": "Save",
+    "solo_ospitante": "Only the hosting club can edit this data.",
+    "tab_label": "Inter-club",
+    "stati": {
+      "bozza": "Draft",
+      "aperto": "Open",
+      "chiuso": "Closed",
+      "concluso": "Completed"
+    },
+    "stati_partecipante": {
+      "invitato": "Invited",
+      "accettato": "Accepted",
+      "rifiutato": "Declined",
+      "ritirato": "Withdrawn"
+    },
+    "ospito": {
+      "title": "Camps I host",
+      "description": "Camps organised by your club, open to other clubs too.",
+      "empty": "No hosted camps."
+    },
+    "invitato": {
+      "title": "Camps I am invited to",
+      "description": "Invitations received from other clubs.",
+      "empty": "No invitations received.",
+      "accetta": "Accept",
+      "rifiuta": "Decline",
+      "accettato_toast": "Invitation accepted",
+      "rifiutato_toast": "Invitation declined",
+      "campo_sconosciuto": "Camp"
+    },
+    "tabs": {
+      "informazioni": "Information",
+      "gruppi": "Groups",
+      "club": "Participating clubs",
+      "adesioni": "Sign-ups",
+      "istruttori": "Instructors"
+    },
+    "info": {
+      "title": "Camp information",
+      "description": "General data, status and fees.",
+      "nome": "Name",
+      "stato": "Status",
+      "data_inizio": "Start date",
+      "data_fine": "End date",
+      "scadenza_adesioni": "Sign-up deadline",
+      "luogo": "Location",
+      "quota_atleta": "Athlete fee (CHF)",
+      "quota_club_default": "Default club fee (CHF)",
+      "contatti": "Contacts",
+      "descrizione": "Description",
+      "note": "Notes",
+      "salva": "Save",
+      "salvato_toast": "Camp updated"
+    },
+    "gruppi": {
+      "title": "Camp groups",
+      "description": "Groups are defined by the camp, not by each club: levels are not comparable across clubs.",
+      "nuovo": "New group",
+      "empty": "No groups defined.",
+      "nome": "Name",
+      "criterio": "Criterion",
+      "criterio_placeholder": "E.g. double salchow acquired",
+      "capienza": "Maximum capacity",
+      "senza_criterio": "No criterion",
+      "modifica": "Edit",
+      "dialog_nuovo": "New group",
+      "dialog_modifica": "Edit group",
+      "salvato_toast": "Group saved"
+    },
+    "club": {
+      "title": "Participating clubs",
+      "description": "Clubs invited to the camp, with status and fee.",
+      "invita": "Invite club",
+      "empty": "No clubs invited.",
+      "dialog_title": "Invite a club",
+      "modalita": "Mode",
+      "modalita_esistente": "Club on the platform",
+      "modalita_esterno": "Club not using the platform",
+      "club_label": "Club",
+      "club_placeholder": "Select a club",
+      "esterno_label": "Club name",
+      "esterno_placeholder": "E.g. Skating Club Lugano",
+      "valido_dal": "Valid from",
+      "valido_al": "Valid to",
+      "quota_club": "Club fee (CHF)",
+      "invia_invito": "Send invitation",
+      "invitato_toast": "Club invited",
+      "esterno_badge": "External",
+      "senza_nome": "Unnamed club",
+      "senza_quota": "Fee not set"
+    },
+    "adesioni": {
+      "title": "Sign-ups by group and club",
+      "description": "Number of athletes enrolled per group and participating club.",
+      "empty": "No club has accepted the invitation yet.",
+      "gruppo": "Group",
+      "totale": "Total",
+      "senza_gruppo": "No group",
+      "in_attesa_title": "Awaiting reply",
+      "in_attesa_desc": "{{count}} clubs have not replied yet."
+    },
+    "istruttori": {
+      "title": "Instructors per club",
+      "placeholder": "Instructors declared by each participating club will be managed in a later phase."
+    }
   }
 }

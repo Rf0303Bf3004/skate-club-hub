@@ -29,5 +29,114 @@
     "day_only": "En journée",
     "full": "Complet",
     "partial": "Partiel"
+  },
+  "campi_interclub": {
+    "back": "← Retour",
+    "annulla": "Annuler",
+    "salva": "Enregistrer",
+    "solo_ospitante": "Seul le club organisateur peut modifier ces données.",
+    "tab_label": "Inter-club",
+    "stati": {
+      "bozza": "Brouillon",
+      "aperto": "Ouvert",
+      "chiuso": "Fermé",
+      "concluso": "Terminé"
+    },
+    "stati_partecipante": {
+      "invitato": "Invité",
+      "accettato": "Accepté",
+      "rifiutato": "Refusé",
+      "ritirato": "Retiré"
+    },
+    "ospito": {
+      "title": "Camps que j'organise",
+      "description": "Camps organisés par votre club, ouverts aussi à d'autres clubs.",
+      "empty": "Aucun camp organisé."
+    },
+    "invitato": {
+      "title": "Camps auxquels je suis invité",
+      "description": "Invitations reçues d'autres clubs.",
+      "empty": "Aucune invitation reçue.",
+      "accetta": "Accepter",
+      "rifiuta": "Refuser",
+      "accettato_toast": "Invitation acceptée",
+      "rifiutato_toast": "Invitation refusée",
+      "campo_sconosciuto": "Camp"
+    },
+    "tabs": {
+      "informazioni": "Informations",
+      "gruppi": "Groupes",
+      "club": "Clubs participants",
+      "adesioni": "Inscriptions",
+      "istruttori": "Moniteurs"
+    },
+    "info": {
+      "title": "Informations du camp",
+      "description": "Données générales, statut et tarifs.",
+      "nome": "Nom",
+      "stato": "Statut",
+      "data_inizio": "Date de début",
+      "data_fine": "Date de fin",
+      "scadenza_adesioni": "Délai d'inscription",
+      "luogo": "Lieu",
+      "quota_atleta": "Tarif athlète (CHF)",
+      "quota_club_default": "Tarif club par défaut (CHF)",
+      "contatti": "Contacts",
+      "descrizione": "Description",
+      "note": "Notes",
+      "salva": "Enregistrer",
+      "salvato_toast": "Camp mis à jour"
+    },
+    "gruppi": {
+      "title": "Groupes du camp",
+      "description": "Les groupes sont définis par le camp, pas par chaque club : les niveaux ne sont pas comparables entre clubs.",
+      "nuovo": "Nouveau groupe",
+      "empty": "Aucun groupe défini.",
+      "nome": "Nom",
+      "criterio": "Critère",
+      "criterio_placeholder": "Ex : double salchow acquis",
+      "capienza": "Capacité maximale",
+      "senza_criterio": "Aucun critère",
+      "modifica": "Modifier",
+      "dialog_nuovo": "Nouveau groupe",
+      "dialog_modifica": "Modifier le groupe",
+      "salvato_toast": "Groupe enregistré"
+    },
+    "club": {
+      "title": "Clubs participants",
+      "description": "Clubs invités au camp, avec statut et tarif.",
+      "invita": "Inviter un club",
+      "empty": "Aucun club invité.",
+      "dialog_title": "Inviter un club",
+      "modalita": "Mode",
+      "modalita_esistente": "Club présent sur la plateforme",
+      "modalita_esterno": "Club hors plateforme",
+      "club_label": "Club",
+      "club_placeholder": "Sélectionner un club",
+      "esterno_label": "Nom du club",
+      "esterno_placeholder": "Ex : Skating Club Lugano",
+      "valido_dal": "Valable du",
+      "valido_al": "Valable au",
+      "quota_club": "Tarif club (CHF)",
+      "invia_invito": "Envoyer l'invitation",
+      "invitato_toast": "Club invité",
+      "esterno_badge": "Externe",
+      "senza_nome": "Club sans nom",
+      "senza_quota": "Tarif non défini"
+    },
+    "adesioni": {
+      "title": "Inscriptions par groupe et club",
+      "description": "Nombre d'athlètes inscrits par groupe et club participant.",
+      "empty": "Aucun club n'a encore accepté l'invitation.",
+      "gruppo": "Groupe",
+      "totale": "Total",
+      "senza_gruppo": "Sans groupe",
+      "in_attesa_title": "En attente de réponse",
+      "in_attesa_desc": "{{count}} clubs n'ont pas encore répondu."
+    },
+    "istruttori": {
+      "title": "Moniteurs par club",
+      "placeholder": "Les moniteurs déclarés par chaque club participant seront gérés dans une phase ultérieure."
+    }
   }
 }

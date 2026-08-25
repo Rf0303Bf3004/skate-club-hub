@@ -29,5 +29,114 @@
     "day_only": "Tag",
     "full": "Vollständig",
     "partial": "Teilweise"
+  },
+  "campi_interclub": {
+    "back": "← Zurück",
+    "annulla": "Abbrechen",
+    "salva": "Speichern",
+    "solo_ospitante": "Nur der gastgebende Club kann diese Daten bearbeiten.",
+    "tab_label": "Inter-Club",
+    "stati": {
+      "bozza": "Entwurf",
+      "aperto": "Offen",
+      "chiuso": "Geschlossen",
+      "concluso": "Abgeschlossen"
+    },
+    "stati_partecipante": {
+      "invitato": "Eingeladen",
+      "accettato": "Angenommen",
+      "rifiutato": "Abgelehnt",
+      "ritirato": "Zurückgezogen"
+    },
+    "ospito": {
+      "title": "Camps, die ich ausrichte",
+      "description": "Von deinem Club organisierte Camps, auch für andere Clubs offen.",
+      "empty": "Keine ausgerichteten Camps."
+    },
+    "invitato": {
+      "title": "Camps, zu denen ich eingeladen bin",
+      "description": "Einladungen von anderen Clubs.",
+      "empty": "Keine Einladungen erhalten.",
+      "accetta": "Annehmen",
+      "rifiuta": "Ablehnen",
+      "accettato_toast": "Einladung angenommen",
+      "rifiutato_toast": "Einladung abgelehnt",
+      "campo_sconosciuto": "Camp"
+    },
+    "tabs": {
+      "informazioni": "Informationen",
+      "gruppi": "Gruppen",
+      "club": "Teilnehmende Clubs",
+      "adesioni": "Anmeldungen",
+      "istruttori": "Trainer"
+    },
+    "info": {
+      "title": "Camp-Informationen",
+      "description": "Allgemeine Daten, Status und Gebühren.",
+      "nome": "Name",
+      "stato": "Status",
+      "data_inizio": "Startdatum",
+      "data_fine": "Enddatum",
+      "scadenza_adesioni": "Anmeldeschluss",
+      "luogo": "Ort",
+      "quota_atleta": "Gebühr Athlet (CHF)",
+      "quota_club_default": "Standard-Clubgebühr (CHF)",
+      "contatti": "Kontakte",
+      "descrizione": "Beschreibung",
+      "note": "Notizen",
+      "salva": "Speichern",
+      "salvato_toast": "Camp aktualisiert"
+    },
+    "gruppi": {
+      "title": "Camp-Gruppen",
+      "description": "Die Gruppen definiert das Camp, nicht die einzelnen Clubs: Niveaus sind clubübergreifend nicht vergleichbar.",
+      "nuovo": "Neue Gruppe",
+      "empty": "Keine Gruppen definiert.",
+      "nome": "Name",
+      "criterio": "Kriterium",
+      "criterio_placeholder": "z.B. Doppel-Salchow erworben",
+      "capienza": "Maximale Kapazität",
+      "senza_criterio": "Kein Kriterium",
+      "modifica": "Bearbeiten",
+      "dialog_nuovo": "Neue Gruppe",
+      "dialog_modifica": "Gruppe bearbeiten",
+      "salvato_toast": "Gruppe gespeichert"
+    },
+    "club": {
+      "title": "Teilnehmende Clubs",
+      "description": "Zum Camp eingeladene Clubs, mit Status und Gebühr.",
+      "invita": "Club einladen",
+      "empty": "Keine Clubs eingeladen.",
+      "dialog_title": "Club einladen",
+      "modalita": "Modus",
+      "modalita_esistente": "Club auf der Plattform",
+      "modalita_esterno": "Club ohne Plattform",
+      "club_label": "Club",
+      "club_placeholder": "Club auswählen",
+      "esterno_label": "Clubname",
+      "esterno_placeholder": "z.B. Skating Club Lugano",
+      "valido_dal": "Gültig ab",
+      "valido_al": "Gültig bis",
+      "quota_club": "Clubgebühr (CHF)",
+      "invia_invito": "Einladung senden",
+      "invitato_toast": "Club eingeladen",
+      "esterno_badge": "Extern",
+      "senza_nome": "Club ohne Namen",
+      "senza_quota": "Gebühr nicht definiert"
+    },
+    "adesioni": {
+      "title": "Anmeldungen nach Gruppe und Club",
+      "description": "Anzahl angemeldeter Athleten pro Gruppe und teilnehmendem Club.",
+      "empty": "Noch kein Club hat die Einladung angenommen.",
+      "gruppo": "Gruppe",
+      "totale": "Total",
+      "senza_gruppo": "Ohne Gruppe",
+      "in_attesa_title": "Warten auf Antwort",
+      "in_attesa_desc": "{{count}} Clubs haben noch nicht geantwortet."
+    },
+    "istruttori": {
+      "title": "Trainer pro Club",
+      "placeholder": "Die von den teilnehmenden Clubs gemeldeten Trainer werden in einer späteren Phase verwaltet."
+    }
   }
 }
