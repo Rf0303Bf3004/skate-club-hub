@@ -21,7 +21,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Tent, MapPin, Calendar as CalendarIcon, Trash2, Plus, Send, ChevronRight, Sparkles, Clock } from "lucide-react";
+import CampiInterClubSection from "@/components/campi/CampiInterClubSection";
+import { Tent, MapPin, Users, Calendar as CalendarIcon, Trash2, Plus, Send, ChevronRight, Sparkles, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 type EventoCampo = {
@@ -97,10 +98,11 @@ const CampiEventiPage = () => {
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className="space-y-4">
-        <TabsList className="grid grid-cols-3 w-full">
+        <TabsList className="grid grid-cols-4 w-full">
           <TabsTrigger value="interno" className="gap-2"><Tent className="w-4 h-4" /> {t("campi_eventi.tab_interno")}</TabsTrigger>
           <TabsTrigger value="esterno" className="gap-2"><MapPin className="w-4 h-4" /> {t("campi_eventi.tab_esterno")}</TabsTrigger>
           <TabsTrigger value="gala" className="gap-2"><Sparkles className="w-4 h-4" /> {t("campi_eventi.tab_gala")}</TabsTrigger>
+          <TabsTrigger value="interclub" className="gap-2"><Users className="w-4 h-4" /> {t("campi_interclub.tab_label")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="interno">
@@ -108,6 +110,9 @@ const CampiEventiPage = () => {
         </TabsContent>
         <TabsContent value="esterno">
           <CampoEsternoSection eventi={eventi_esterni} />
+        </TabsContent>
+        <TabsContent value="interclub">
+          <CampiInterClubSection />
         </TabsContent>
         <TabsContent value="gala">
           <GalaSpettacoliSection />
