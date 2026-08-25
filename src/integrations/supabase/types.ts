@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.4"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -547,6 +547,117 @@ export type Database = {
           note?: string | null
         }
         Relationships: []
+      }
+      campi_club_partecipanti: {
+        Row: {
+          accettato_at: string | null
+          club_esterno_nome: string | null
+          club_id: string | null
+          created_at: string
+          evento_campo_id: string
+          id: string
+          invitato_at: string
+          invitato_da: string | null
+          quota_club: number | null
+          stato: string
+          stato_pagamento: string
+          updated_at: string
+          valido_al: string
+          valido_dal: string
+        }
+        Insert: {
+          accettato_at?: string | null
+          club_esterno_nome?: string | null
+          club_id?: string | null
+          created_at?: string
+          evento_campo_id: string
+          id?: string
+          invitato_at?: string
+          invitato_da?: string | null
+          quota_club?: number | null
+          stato?: string
+          stato_pagamento?: string
+          updated_at?: string
+          valido_al: string
+          valido_dal: string
+        }
+        Update: {
+          accettato_at?: string | null
+          club_esterno_nome?: string | null
+          club_id?: string | null
+          created_at?: string
+          evento_campo_id?: string
+          id?: string
+          invitato_at?: string
+          invitato_da?: string | null
+          quota_club?: number | null
+          stato?: string
+          stato_pagamento?: string
+          updated_at?: string
+          valido_al?: string
+          valido_dal?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campi_club_partecipanti_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campi_club_partecipanti_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "kpi_pitch_sponsor"
+            referencedColumns: ["club_id"]
+          },
+          {
+            foreignKeyName: "campi_club_partecipanti_evento_campo_id_fkey"
+            columns: ["evento_campo_id"]
+            isOneToOne: false
+            referencedRelation: "eventi_campi"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campi_gruppi: {
+        Row: {
+          capienza_max: number | null
+          created_at: string
+          criterio: string | null
+          evento_campo_id: string
+          id: string
+          nome: string
+          ordine: number
+        }
+        Insert: {
+          capienza_max?: number | null
+          created_at?: string
+          criterio?: string | null
+          evento_campo_id: string
+          id?: string
+          nome: string
+          ordine?: number
+        }
+        Update: {
+          capienza_max?: number | null
+          created_at?: string
+          criterio?: string | null
+          evento_campo_id?: string
+          id?: string
+          nome?: string
+          ordine?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campi_gruppi_evento_campo_id_fkey"
+            columns: ["evento_campo_id"]
+            isOneToOne: false
+            referencedRelation: "eventi_campi"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       capacita_corsi: {
         Row: {
@@ -2130,7 +2241,11 @@ export type Database = {
           modalita: string
           nome: string
           note: string | null
+          quota_atleta: number | null
+          quota_club_default: number | null
+          scadenza_adesioni: string | null
           stagione_id: string | null
+          stato: string
         }
         Insert: {
           club_id: string
@@ -2145,7 +2260,11 @@ export type Database = {
           modalita?: string
           nome?: string
           note?: string | null
+          quota_atleta?: number | null
+          quota_club_default?: number | null
+          scadenza_adesioni?: string | null
           stagione_id?: string | null
+          stato?: string
         }
         Update: {
           club_id?: string
@@ -2160,7 +2279,11 @@ export type Database = {
           modalita?: string
           nome?: string
           note?: string | null
+          quota_atleta?: number | null
+          quota_club_default?: number | null
+          scadenza_adesioni?: string | null
           stagione_id?: string | null
+          stato?: string
         }
         Relationships: []
       }
@@ -2648,6 +2771,7 @@ export type Database = {
           created_at: string
           creato_da: string | null
           data: string
+          evento_campo_id: string | null
           forzato_at: string | null
           forzato_da: string | null
           fuori_disponibilita: boolean
@@ -2666,6 +2790,7 @@ export type Database = {
           created_at?: string
           creato_da?: string | null
           data: string
+          evento_campo_id?: string | null
           forzato_at?: string | null
           forzato_da?: string | null
           fuori_disponibilita?: boolean
@@ -2684,6 +2809,7 @@ export type Database = {
           created_at?: string
           creato_da?: string | null
           data?: string
+          evento_campo_id?: string | null
           forzato_at?: string | null
           forzato_da?: string | null
           fuori_disponibilita?: boolean
@@ -2711,6 +2837,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "kpi_pitch_sponsor"
             referencedColumns: ["club_id"]
+          },
+          {
+            foreignKeyName: "griglia_blocchi_evento_campo_id_fkey"
+            columns: ["evento_campo_id"]
+            isOneToOne: false
+            referencedRelation: "eventi_campi"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "griglia_blocchi_risorsa_id_fkey"
@@ -2803,8 +2936,11 @@ export type Database = {
       griglia_sessioni_atleti: {
         Row: {
           atleta_id: string
+          campo_gruppo_id: string | null
+          club_id: string | null
           conflitto_forzato: boolean
           created_at: string
+          etichetta: string | null
           forzato_at: string | null
           forzato_da: string | null
           gruppo_sessione_id: string | null
@@ -2816,8 +2952,11 @@ export type Database = {
         }
         Insert: {
           atleta_id: string
+          campo_gruppo_id?: string | null
+          club_id?: string | null
           conflitto_forzato?: boolean
           created_at?: string
+          etichetta?: string | null
           forzato_at?: string | null
           forzato_da?: string | null
           gruppo_sessione_id?: string | null
@@ -2829,8 +2968,11 @@ export type Database = {
         }
         Update: {
           atleta_id?: string
+          campo_gruppo_id?: string | null
+          club_id?: string | null
           conflitto_forzato?: boolean
           created_at?: string
+          etichetta?: string | null
           forzato_at?: string | null
           forzato_da?: string | null
           gruppo_sessione_id?: string | null
@@ -2854,6 +2996,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "atleti_con_completezza"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "griglia_sessioni_atleti_campo_gruppo_id_fkey"
+            columns: ["campo_gruppo_id"]
+            isOneToOne: false
+            referencedRelation: "campi_gruppi"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "griglia_sessioni_atleti_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "griglia_sessioni_atleti_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "kpi_pitch_sponsor"
+            referencedColumns: ["club_id"]
           },
           {
             foreignKeyName: "griglia_sessioni_atleti_gruppo_sessione_id_fkey"
@@ -6313,6 +6476,91 @@ export type Database = {
           },
         ]
       }
+      griglia_sessioni_atleti_vista: {
+        Row: {
+          atleta_id: string | null
+          campo_gruppo_id: string | null
+          club_id: string | null
+          conflitto_forzato: boolean | null
+          created_at: string | null
+          etichetta: string | null
+          gruppo_sessione_id: string | null
+          id: string | null
+          origine_corso_id: string | null
+          provenienza: string | null
+          sessione_id: string | null
+        }
+        Insert: {
+          atleta_id?: never
+          campo_gruppo_id?: string | null
+          club_id?: string | null
+          conflitto_forzato?: boolean | null
+          created_at?: string | null
+          etichetta?: string | null
+          gruppo_sessione_id?: string | null
+          id?: string | null
+          origine_corso_id?: string | null
+          provenienza?: string | null
+          sessione_id?: string | null
+        }
+        Update: {
+          atleta_id?: never
+          campo_gruppo_id?: string | null
+          club_id?: string | null
+          conflitto_forzato?: boolean | null
+          created_at?: string | null
+          etichetta?: string | null
+          gruppo_sessione_id?: string | null
+          id?: string | null
+          origine_corso_id?: string | null
+          provenienza?: string | null
+          sessione_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "griglia_sessioni_atleti_campo_gruppo_id_fkey"
+            columns: ["campo_gruppo_id"]
+            isOneToOne: false
+            referencedRelation: "campi_gruppi"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "griglia_sessioni_atleti_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "griglia_sessioni_atleti_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "kpi_pitch_sponsor"
+            referencedColumns: ["club_id"]
+          },
+          {
+            foreignKeyName: "griglia_sessioni_atleti_gruppo_sessione_id_fkey"
+            columns: ["gruppo_sessione_id"]
+            isOneToOne: false
+            referencedRelation: "griglia_sessioni_gruppi"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "griglia_sessioni_atleti_origine_corso_id_fkey"
+            columns: ["origine_corso_id"]
+            isOneToOne: false
+            referencedRelation: "corsi"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "griglia_sessioni_atleti_sessione_id_fkey"
+            columns: ["sessione_id"]
+            isOneToOne: false
+            referencedRelation: "griglia_sessioni"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       iscrizioni_gare_mobile: {
         Row: {
           atleta_id: string | null
@@ -6350,11 +6598,14 @@ export type Database = {
     }
     Functions: {
       archivia_comunicazioni_vecchie: { Args: never; Returns: number }
+      campo_club_ospitante: { Args: { p_campo: string }; Returns: string }
       cancel_corso_atleta: {
         Args: { p_atleta_id: string; p_corso_id: string }
         Returns: undefined
       }
       cleanup_archived_communications: { Args: never; Returns: number }
+      club_invitato_a_campo: { Args: { p_campo: string }; Returns: boolean }
+      club_partecipa_a_campo: { Args: { p_campo: string }; Returns: boolean }
       controlla_saturazione_corsi: { Args: never; Returns: number }
       corsi_per_atleta: {
         Args: { p_atleta_id: string }
