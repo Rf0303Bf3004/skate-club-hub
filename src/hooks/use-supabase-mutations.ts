@@ -531,7 +531,6 @@ export function use_upsert_presenza_corso() {
     },
     onSuccess: (_d, vars) => {
       qc.invalidateQueries({ queryKey: ["presenze_staff_corso", vars.corso_id, vars.data] });
-      qc.invalidateQueries({ queryKey: ["presenze_corso", vars.corso_id, vars.data] });
     },
   });
 }
