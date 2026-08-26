@@ -93,9 +93,9 @@ const GlobalSearchPalette: React.FC<Props> = ({ open, on_open_change }) => {
           .limit(5),
         supabase
           .from("istruttori")
-          .select("id, nome, cognome, email")
+          .select("id, nome, cognome")
           .eq("club_id", club_id)
-          .or(`nome.ilike.${like},cognome.ilike.${like},email.ilike.${like}`)
+          .or(`nome.ilike.${like},cognome.ilike.${like}`)
           .limit(5),
       ]);
 

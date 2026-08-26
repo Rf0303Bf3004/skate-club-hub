@@ -327,8 +327,10 @@ export function use_upsert_istruttore() {
         club_id: cid(),
         nome: data.nome,
         cognome: data.cognome,
-        email: data.email || "",
-        telefono: data.telefono || "",
+        // email/telefono possono essere non visibili al chiamante (column-level REVOKE):
+        // includili nel payload solo se effettivamente forniti, per non sovrascriverli con "".
+        ...(data.email !== undefined ? { email: data.email || "" } : {}),
+        ...(data.telefono !== undefined ? { telefono: data.telefono || "" } : {}),
         costo_minuto_lezione_privata: data.costo_minuto_lezione_privata || 0,
         attivo: data.attivo !== false,
         note: data.note || "",
