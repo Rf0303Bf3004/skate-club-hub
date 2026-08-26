@@ -105,7 +105,7 @@ export const FatturaAtletaDocument: React.FC<{ data: FatturaAtletaData }> = ({ d
       <Page size="A4" style={s.page}>
         <View style={s.header}>
           <View style={s.mittente}>
-            {mostra_logo ? <Image src={data.club.logo_url as string} style={s.logo} /> : null}
+            {mostra_logo ? <Image src={(data.club.logo_url as string).split("?")[0]} style={s.logo} /> : null}
             <Text style={[s.mittenteName, acc_style]}>{data.club.nome}</Text>
             {data.club.indirizzo ? <Text>{data.club.indirizzo}</Text> : null}
             {(data.club.cap || data.club.citta) ? <Text>{[data.club.cap, data.club.citta].filter(Boolean).join(" ")}</Text> : null}
