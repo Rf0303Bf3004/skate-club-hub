@@ -165,13 +165,15 @@ export function use_istruttori() {
     enabled: !!get_current_club_id(),
     queryKey: ["istruttori", get_current_club_id()],
     queryFn: async () => {
-      const [ist_res, disp_res, costi_res] = await Promise.all([
-        // NB: i campi di costo (costo_orario_*, compenso_fisso_*, costo_minuto_lezione_privata) sono
-        // hidden via column-level REVOKE; vengono recuperati separatamente con la RPC get_istruttori_costi
-        // e fusi solo se l'utente ha i ruoli finanziari.
-        supabase.from("istruttori").select("id,club_id,nome,cognome,email,telefono,colore,attivo,created_at,linked_atleta_id,livello_istruttore,stato_staff,note,tipo_contratto,specialita,user_id").eq("club_id", get_current_club_id()).order("cognome"),
+      const [ist_res, disp_res, costi_res, contatti_res] = await Promise.all([
+        // NB: i campi di costo (costo_orario_*, compenso_fisso_*, costo_minuto_lezione_privata) e i
+        // contatti personali (email, telefono) sono hidden via column-level REVOKE; vengono recuperati
+        // separatamente con le RPC get_istruttori_costi / get_istruttori_contatti e fusi solo se
+        // l'utente ha i ruoli autorizzati (finance/admin o l'istruttore stesso).
+        supabase.from("istruttori").select("id,club_id,nome,cognome,colore,attivo,created_at,linked_atleta_id,livello_istruttore,stato_staff,note,tipo_contratto,specialita,user_id").eq("club_id", get_current_club_id()).order("cognome"),
         supabase.from("disponibilita_istruttori").select("*"),
         supabase.rpc("get_istruttori_costi", { p_club_id: get_current_club_id() } as any),
+        supabase.rpc("get_istruttori_contatti" as any, { p_club_id: get_current_club_id() } as any),
       ]);
       if (ist_res.error) throw ist_res.error;
       if (disp_res.error) throw disp_res.error;
@@ -179,6 +181,10 @@ export function use_istruttori() {
       const costi_map = new Map<string, any>();
       if (!costi_res.error && Array.isArray(costi_res.data)) {
         (costi_res.data as any[]).forEach((c) => costi_map.set(c.id ?? c.istruttore_id, c));
+      }
+      const contatti_map = new Map<string, any>();
+      if (!contatti_res.error && Array.isArray(contatti_res.data)) {
+        (contatti_res.data as any[]).forEach((c) => contatti_map.set(c.id, c));
       }
       return ((ist_res.data ?? []) as any[]).map((i: any) => {
         const disp_map: Record<string, { ora_inizio: string; ora_fine: string }[]> = {};
@@ -189,8 +195,11 @@ export function use_istruttori() {
             disp_map[d.giorno].push({ ora_inizio: d.ora_inizio, ora_fine: d.ora_fine });
           });
         const c = costi_map.get(i.id) ?? {};
+        const ct = contatti_map.get(i.id) ?? {};
         return {
           ...i,
+          email: ct.email ?? null,
+          telefono: ct.telefono ?? null,
           costo_orario_lezioni: c.costo_orario_lezioni ?? null,
           costo_orario_corsi: c.costo_orario_corsi ?? null,
           compenso_fisso_mensile: c.compenso_fisso_mensile ?? null,
