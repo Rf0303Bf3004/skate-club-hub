@@ -58,5 +58,12 @@
     "inactive": "Inactive",
     "agonista": "Competitive",
     "amatoriale": "Amateur"
+  },
+  "table": {
+    "select_all": "Select all",
+    "select_row": "Select athlete",
+    "print_cards": "Print cards ({{count}})",
+    "print_many_confirm": "You are about to print {{count}} cards. Continue?",
+    "print_no_code": "None of the selected athletes has an athlete code."
   }
 }
