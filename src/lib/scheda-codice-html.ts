@@ -116,9 +116,8 @@ ${corpo}
 <script>window.onload=function(){setTimeout(function(){window.print();},300);};</script>
 </body></html>`;
 
-  const w = window.open("", "_blank");
-  if (w) {
-    w.document.write(html);
-    w.document.close();
-  }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+  return { ok: true };
 }
