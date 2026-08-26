@@ -165,7 +165,7 @@ function use_calendar_events(atleta_id: string) {
       const { data: isc_gare } = await supabase.from("iscrizioni_gare").select("gara_id").eq("atleta_id", atleta_id);
       if (isc_gare?.length) {
         const ids = isc_gare.map((i: any) => i.gara_id);
-        const { data: gare } = await (supabase as any).from("gare_calendario").select("*").in("id", ids);
+        const { data: gare } = await (supabase as any).from("gare_calendario").select("id, nome, data, luogo").in("id", ids);
         (gare ?? []).forEach((g: any) => {
           if (g.data) {
             const is_campo = g.tipo === "campo_estivo";

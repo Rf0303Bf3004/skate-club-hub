@@ -295,7 +295,7 @@ const GaraModal: React.FC<{ onClose: () => void; gara_iniziale?: any | null }> =
         const { data: ins_data, error: ins_err } = await (supabase as any)
           .from("gare_calendario")
           .insert(payload)
-          .select()
+          .select("id")
           .single();
         error = ins_err;
         nuova_gara_id = ins_data?.id ?? null;
@@ -1284,8 +1284,8 @@ const CompetitionsPage: React.FC = () => {
                 <InfoRow label={t("club_ospitante")} value={selected.club_ospitante || "—"} />
                 <InfoRow label={t("livello_minimo")} value={t(selected.livello_minimo)} />
                 <InfoRow label={t("carriera")} value={selected.carriera} />
-                <InfoRow label={t("costo_iscrizione")} value={`CHF ${selected.costo_iscrizione}`} />
-                <InfoRow label={t("costo_accompagnamento")} value={`CHF ${selected.costo_accompagnamento}`} />
+                <InfoRow label={t("costo_iscrizione")} value={selected.costo_iscrizione != null ? `CHF ${selected.costo_iscrizione}` : "—"} />
+                <InfoRow label={t("costo_accompagnamento")} value={selected.costo_accompagnamento != null ? `CHF ${selected.costo_accompagnamento}` : "—"} />
                 {selected.note && <InfoRow label={t("note")} value={selected.note} />}
               </div>
               {selected.indirizzo && (

@@ -21,7 +21,7 @@ const PortaleEventiPage: React.FC = () => {
     (async () => {
       const oggi = new Date().toISOString().slice(0, 10);
       const [g, c, e, ig] = await Promise.all([
-        supabase.from("gare_calendario").select("*").eq("club_id", session.atleta.club_id).gte("data", oggi).order("data"),
+        supabase.from("gare_calendario").select("id,nome,data,ora,luogo,indirizzo,club_ospitante,carriera,livello_minimo,note").eq("club_id", session.atleta.club_id).gte("data", oggi).order("data"),
         supabase.from("training_camps").select("*").eq("club_id", session.atleta.club_id).gte("data_inizio", oggi).order("data_inizio"),
         supabase.from("eventi_straordinari").select("*").eq("club_id", session.atleta.club_id).gte("data", oggi).order("data"),
         supabase.from("iscrizioni_gare_mobile" as any).select("gara_id").eq("atleta_id", session.atleta.id),
