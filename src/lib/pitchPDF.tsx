@@ -153,7 +153,7 @@ export const PitchDocument: React.FC<{ data: PitchData }> = ({ data }) => {
       {/* Pag 1 — Copertina */}
       <Page size="A4" style={styles.coverPage}>
         <View style={styles.coverHero}>
-          {data.club.logo_url ? <Image src={data.club.logo_url} style={styles.coverLogo} /> : null}
+          {data.club.logo_url ? <Image src={data.club.logo_url.split("?")[0]} style={styles.coverLogo} /> : null}
           <Text style={styles.coverTitle}>{data.club.nome}</Text>
           <Text style={styles.coverSubtitle}>Diventa nostro Sponsor {anno}/{anno + 1}</Text>
           <Text style={styles.coverMeta}>

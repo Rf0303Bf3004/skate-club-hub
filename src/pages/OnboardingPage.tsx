@@ -98,6 +98,14 @@ export default function OnboardingPage() {
       const path = `${session.club_id}/logo-${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage.from("loghi-club").upload(path, file, { upsert: true });
       if (upErr) { toast.error(upErr.message); return; }
+      // Pulizia: rimuovi il logo precedente se appartiene alla cartella di questo club.
+      // Errori ignorati in silenzio: è pulizia, non deve bloccare il salvataggio.
+      try {
+        const prev_path = (logoUrl || "").split("?")[0].split("/loghi-club/")[1];
+        if (prev_path && prev_path.startsWith(`${session.club_id}/`) && prev_path !== path) {
+          await supabase.storage.from("loghi-club").remove([decodeURIComponent(prev_path)]);
+        }
+      } catch {}
       const { data: pub } = supabase.storage.from("loghi-club").getPublicUrl(path);
       setLogoUrl(pub.publicUrl);
       toast.success(t("wizard.logo_uploaded"));
