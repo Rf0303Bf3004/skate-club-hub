@@ -58,5 +58,12 @@
     "inactive": "Inactif",
     "agonista": "Compétiteur",
     "amatoriale": "Amateur"
+  },
+  "table": {
+    "select_all": "Tout sélectionner",
+    "select_row": "Sélectionner l'athlète",
+    "print_cards": "Imprimer les fiches ({{count}})",
+    "print_many_confirm": "Vous allez imprimer {{count}} fiches. Continuer ?",
+    "print_no_code": "Aucune des athlètes sélectionnées n'a de code athlète."
   }
 }

@@ -1,4 +1,5 @@
 import FatturazioneAtletaFields from "@/components/atleti/FatturazioneAtletaFields";
+import { use_qr_data_url } from "@/hooks/use-qr-data-url";
 import { use_ragioni_sociali } from "@/hooks/use-ragioni-sociali";
 import React, { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -424,9 +425,8 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   const portal_url = codice_atleta_value
     ? `${PORTALE_BASE_URL}/${encodeURIComponent(codice_atleta_value)}`
     : null;
-  const portal_qr_src = portal_url
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=10&data=${encodeURIComponent(portal_url)}`
-    : null;
+  const portal_qr_generated = use_qr_data_url(portal_url, 320);
+  const portal_qr_src = portal_url && portal_qr_generated ? portal_qr_generated : null;
 
   const handle_genera_portal = async () => {
     set_generating_portal(true);

@@ -1387,6 +1387,32 @@ export type Database = {
           },
         ]
       }
+      comunicazioni_push_inviate: {
+        Row: {
+          comunicazione_id: string
+          destinatari: number
+          inviata_at: string
+        }
+        Insert: {
+          comunicazione_id: string
+          destinatari?: number
+          inviata_at?: string
+        }
+        Update: {
+          comunicazione_id?: string
+          destinatari?: number
+          inviata_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comunicazioni_push_inviate_comunicazione_id_fkey"
+            columns: ["comunicazione_id"]
+            isOneToOne: true
+            referencedRelation: "comunicazioni"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comunicazioni_template: {
         Row: {
           club_id: string
@@ -6968,6 +6994,7 @@ export type Database = {
         Args: { _user_id: string }
         Returns: string
       }
+      invia_push_comunicazioni_programmate: { Args: never; Returns: number }
       is_mobile_parent: { Args: never; Returns: boolean }
       is_superadmin: { Args: never; Returns: boolean }
       lezione_privata_appartiene_al_club: {

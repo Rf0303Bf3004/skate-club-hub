@@ -1,22 +1,18 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import i18n from "@/i18n";
 import { Copy, Check, QrCode, Printer, Download, RefreshCw, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
+import { use_app_store_links } from "@/hooks/use-app-store-links";
+import { use_qr_data_url } from "@/hooks/use-qr-data-url";
+import { genera_qr_data_url } from "@/lib/qr";
+import { stampa_schede_codice } from "@/lib/scheda-codice-html";
 
 interface Props {
   atleta: { id: string; nome?: string; cognome?: string; codice_atleta?: string | null };
   on_updated?: (nuovo_codice: string) => void;
-}
-
-const tc = (key: string, opts?: Record<string, unknown>) =>
-  i18n.t(`codice_card.${key}`, { ns: "atleti", ...(opts ?? {}) }) as string;
-
-function qr_url(codice: string, size = 320) {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&margin=8&data=${encodeURIComponent(codice)}`;
 }
 
 export default function CodiceAtletaCard({ atleta, on_updated }: Props) {
@@ -25,24 +21,12 @@ export default function CodiceAtletaCard({ atleta, on_updated }: Props) {
   const [show_qr, set_show_qr] = useState(false);
   const [rigenerando, set_rigenerando] = useState(false);
   const [conferma_rigen, set_conferma_rigen] = useState(false);
-  const [ios_store_url, set_ios_store_url] = useState("");
-  const [android_store_url, set_android_store_url] = useState("");
-
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase
-        .from("impostazioni_app_mobile")
-        .select("ios_store_url, android_store_url")
-        .limit(1)
-        .maybeSingle();
-      if (data) {
-        set_ios_store_url(data.ios_store_url ?? "");
-        set_android_store_url(data.android_store_url ?? "");
-      }
-    })();
-  }, []);
+  const { ios_store_url, android_store_url } = use_app_store_links();
 
   const codice = atleta.codice_atleta || "";
+  const qr_codice = use_qr_data_url(codice, 320);
+  const qr_ios = use_qr_data_url(ios_store_url, 200);
+  const qr_android = use_qr_data_url(android_store_url, 200);
 
   const copia = async () => {
     if (!codice) return;
@@ -56,71 +40,23 @@ export default function CodiceAtletaCard({ atleta, on_updated }: Props) {
     }
   };
 
-  const scarica_qr = () => {
+  const scarica_qr = async () => {
     if (!codice) return;
+    const data_url = await genera_qr_data_url(codice, 600);
+    if (!data_url) return;
     const a = document.createElement("a");
-    a.href = qr_url(codice, 600);
+    a.href = data_url;
     a.download = `qr-${codice}.png`;
-    a.target = "_blank";
     a.click();
   };
 
-  const stampa_scheda = () => {
+  const stampa_scheda = async () => {
     if (!codice) return;
     const nome_completo = `${atleta.nome ?? ""} ${atleta.cognome ?? ""}`.trim();
-    const ios = ios_store_url.trim();
-    const android = android_store_url.trim();
-    const box_store = (etichetta: string, url: string) =>
-      url
-        ? `<div class="store"><div class="store-title">${etichetta}</div><img class="store-qr" src="${qr_url(url, 320)}" alt="QR ${etichetta}" /><div class="store-link">${url}</div></div>`
-        : `<div class="store"><div class="store-title">${etichetta}</div><div class="store-todo">${tc("link_unavailable")}</div></div>`;
-    const html = `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Codice atleta ${codice}</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,Helvetica,Arial,sans-serif;}
-body{padding:48px;color:#0F172A;}
-.brand{display:flex;align-items:center;gap:12px;margin-bottom:32px;}
-.brand-icon{font-size:34px;}
-.brand-name{font-size:20px;font-weight:800;}
-.brand-sub{font-size:11px;color:#64748B;}
-.card{border:1.5px solid #E2E8F0;border-radius:18px;padding:36px;text-align:center;max-width:560px;margin:0 auto;}
-.atleta{font-size:22px;font-weight:700;margin-bottom:6px;}
-.label{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.6px;color:#0284C7;margin:24px 0 10px;}
-.codice{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:38px;font-weight:900;letter-spacing:6px;color:#0F172A;padding:18px 24px;background:#F0F9FF;border:2px solid #BAE6FD;border-radius:14px;display:inline-block;}
-img.qr{width:220px;height:220px;margin-top:18px;}
-ol{text-align:left;max-width:420px;margin:28px auto 0;font-size:13px;line-height:1.7;color:#334155;}
-ol li::marker{color:#0284C7;font-weight:700;}
-.stores{display:flex;gap:16px;margin-top:28px;justify-content:center;}
-.store{flex:1;max-width:220px;border:1.5px solid #E2E8F0;border-radius:14px;padding:14px;text-align:center;page-break-inside:avoid;}
-.store-title{font-size:11px;font-weight:800;color:#1E2761;margin-bottom:8px;}
-.store-qr{width:130px;height:130px;}
-.store-link{font-size:7.5px;color:#64748B;word-break:break-all;margin-top:6px;}
-.store-todo{font-size:10px;color:#94A3B8;padding:36px 6px;}
-.footer{margin-top:28px;font-size:10px;color:#94A3B8;text-align:center;}
-@media print{@page{margin:0;size:A4;}body{padding:24mm;}}
-</style></head><body>
-<div class="brand"><div class="brand-icon">⛸️</div><div><div class="brand-name">${tc("print_brand")}</div><div class="brand-sub">${tc("print_brand_sub")}</div></div></div>
-<div class="card">
-  <div class="atleta">${nome_completo || tc("print_athlete_fallback")}</div>
-  <div class="label">${tc("print_personal_code")}</div>
-  <div class="codice">${codice}</div>
-  <div><img class="qr" src="${qr_url(codice, 440)}" alt="QR ${codice}" /></div>
-  <ol>
-    <li>${tc("print_step_1")}</li>
-    <li>${tc("print_step_2")}</li>
-    <li>${tc("print_step_3", { codice })}</li>
-    <li>${tc("print_step_4")}</li>
-  </ol>
-  <div class="label">${tc("download_app")}</div>
-  <div class="stores">
-    ${box_store(tc("store_ios"), ios)}
-    ${box_store(tc("store_android"), android)}
-  </div>
-</div>
-<div class="footer">${tc("print_footer")}</div>
-<script>window.onload=function(){setTimeout(function(){window.print();},300);};</script>
-</body></html>`;
-    const w = window.open("", "_blank");
-    if (w) { w.document.write(html); w.document.close(); }
+    await stampa_schede_codice(
+      [{ nome_completo, codice }],
+      { ios_store_url, android_store_url },
+    );
   };
 
   const rigenera = async () => {
@@ -194,8 +130,8 @@ ol li::marker{color:#0284C7;font-weight:700;}
         </div>
         <div className="flex flex-wrap gap-2">
           {[
-            { etichetta: t("codice_card.store_ios"), url: ios_store_url.trim() },
-            { etichetta: t("codice_card.store_android"), url: android_store_url.trim() },
+            { etichetta: t("codice_card.store_ios"), url: ios_store_url },
+            { etichetta: t("codice_card.store_android"), url: android_store_url },
           ].map((s) => (
             <Button
               key={s.etichetta}
@@ -226,7 +162,11 @@ ol li::marker{color:#0284C7;font-weight:700;}
             </DialogTitle>
           </DialogHeader>
           <div className="text-center space-y-3">
-            <img src={qr_url(codice, 320)} alt={`QR ${codice}`} className="mx-auto rounded-xl border" />
+            {qr_codice ? (
+              <img src={qr_codice} alt={`QR ${codice}`} className="mx-auto rounded-xl border w-64 h-64" />
+            ) : (
+              <div className="mx-auto w-64 h-64 rounded-xl border bg-muted animate-pulse" />
+            )}
             <div className="font-mono text-lg font-bold tracking-[3px]">{codice}</div>
             <p className="text-xs text-muted-foreground">
               {t("codice_card.qr_dialog_hint")}
@@ -237,14 +177,14 @@ ol li::marker{color:#0284C7;font-weight:700;}
 
             <div className="grid grid-cols-2 gap-3 border-t pt-3">
               {[
-                { etichetta: t("codice_card.scan_ios"), url: ios_store_url.trim() },
-                { etichetta: t("codice_card.scan_android"), url: android_store_url.trim() },
+                { etichetta: t("codice_card.scan_ios"), url: ios_store_url, qr: qr_ios },
+                { etichetta: t("codice_card.scan_android"), url: android_store_url, qr: qr_android },
               ].map((s) => (
                 <div key={s.etichetta} className="space-y-1.5">
                   <p className="text-[11px] font-semibold text-foreground">{s.etichetta}</p>
-                  {s.url ? (
+                  {s.url && s.qr ? (
                     <img
-                      src={qr_url(s.url, 200)}
+                      src={s.qr}
                       alt={s.etichetta}
                       className="mx-auto rounded-lg border bg-white w-28 h-28"
                     />

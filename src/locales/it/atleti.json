@@ -332,7 +332,12 @@
     "to_verify_badge": "Da verificare",
     "card_button": "Scheda",
     "enrollment_button": "Iscrizione",
-    "edit_button": "Modifica"
+    "edit_button": "Modifica",
+    "select_all": "Seleziona tutto",
+    "select_row": "Seleziona atleta",
+    "print_cards": "Stampa schede ({{count}})",
+    "print_many_confirm": "Stai per stampare {{count}} schede. Continuare?",
+    "print_no_code": "Nessuna delle atlete selezionate ha un codice atleta."
   },
   "filters": {
     "all_categories": "Tutte le categorie",

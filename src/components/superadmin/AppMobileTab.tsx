@@ -5,10 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
+import { use_qr_data_url } from "@/hooks/use-qr-data-url";
 
-function qr_url(valore: string, size = 200) {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&margin=8&data=${encodeURIComponent(valore)}`;
-}
+
 
 interface Props {
   on_log?: (msg: string) => void;
@@ -19,6 +18,8 @@ export default function AppMobileTab({ on_log }: Props) {
   const [ios_store_url, set_ios_store_url] = useState("");
   const [android_store_url, set_android_store_url] = useState("");
   const [loading, set_loading] = useState(true);
+  const qr_ios = use_qr_data_url(ios_store_url.trim(), 200);
+  const qr_android = use_qr_data_url(android_store_url.trim(), 200);
   const [salvando, set_salvando] = useState(false);
 
   const carica = async () => {
@@ -96,12 +97,14 @@ export default function AppMobileTab({ on_log }: Props) {
             {
               label: "📲 iPhone — App Store (iOS)",
               valore: ios_store_url,
+              qr: qr_ios,
               set: set_ios_store_url,
               placeholder: "https://apps.apple.com/app/ice-arena/id0000000000",
             },
             {
               label: "🤖 Android — Google Play",
               valore: android_store_url,
+              qr: qr_android,
               set: set_android_store_url,
               placeholder: "https://play.google.com/store/apps/details?id=com.icearena.app",
             },
@@ -114,9 +117,9 @@ export default function AppMobileTab({ on_log }: Props) {
                 placeholder={f.placeholder}
               />
               <div className="rounded-lg border border-border bg-muted/30 p-3 flex items-center gap-3">
-                {f.valore.trim() ? (
+                {f.valore.trim() && f.qr ? (
                   <img
-                    src={qr_url(f.valore.trim())}
+                    src={f.qr}
                     alt={`QR ${f.label}`}
                     className="w-24 h-24 rounded bg-white"
                   />

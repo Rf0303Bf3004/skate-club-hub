@@ -58,5 +58,12 @@
     "inactive": "Inaktiv",
     "agonista": "Wettkämpfer",
     "amatoriale": "Amateur"
+  },
+  "table": {
+    "select_all": "Alle auswählen",
+    "select_row": "Athletin auswählen",
+    "print_cards": "Karten drucken ({{count}})",
+    "print_many_confirm": "Sie drucken gleich {{count}} Karten. Fortfahren?",
+    "print_no_code": "Keine der ausgewählten Athletinnen hat einen Athletencode."
   }
 }

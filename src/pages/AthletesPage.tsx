@@ -22,6 +22,9 @@ import ProvenienzaLegenda from "@/components/ProvenienzaLegenda";
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import SearchableListLayout from "@/components/common/SearchableListLayout";
+import { Checkbox } from "@/components/ui/checkbox";
+import { use_app_store_links } from "@/hooks/use-app-store-links";
+import { stampa_schede_codice } from "@/lib/scheda-codice-html";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 import { capitalizza_nome, capitalizza_indirizzo, normalizza_email, cerca_nap } from "@/lib/formato-testo";
@@ -690,6 +693,9 @@ const AthletesPage: React.FC = () => {
   const [sort_by, set_sort_by] = useState<"cognome" | "livello" | "eta" | "recente" | "codice">("cognome");
   const [solo_da_verificare, set_solo_da_verificare] = useState(false);
   const [selected_id, set_selected_id] = useState<string | null>(params.id ?? null);
+  const [selected_ids, set_selected_ids] = useState<string[]>([]);
+  const [stampando_schede, set_stampando_schede] = useState(false);
+  const { ios_store_url, android_store_url } = use_app_store_links();
   useEffect(() => { if (params.id && params.id !== selected_id) set_selected_id(params.id); }, [params.id]);
   const [modal_open, set_modal_open] = useState(false);
   const [selected_atleta, set_selected_atleta] = useState<any>(null);
@@ -890,6 +896,36 @@ const AthletesPage: React.FC = () => {
     });
     return sorted;
   }, [atleti, search, solo_da_verificare, status_filter, agonista_filter, attivo_filter, eta_filter, card_filter, categoria_filter, percorso_filter, level_filter, sort_by, adesioni]);
+
+
+  const filtered_ids = filtered.map((a: any) => a.id);
+  const all_selected = filtered_ids.length > 0 && filtered_ids.every((id: string) => selected_ids.includes(id));
+  const toggle_select_all = () => {
+    set_selected_ids(all_selected ? [] : filtered_ids);
+  };
+  const toggle_select_one = (id: string) => {
+    set_selected_ids((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+  const stampa_schede_selezionate = async () => {
+    const scelti = (atleti as any[]).filter((a: any) => selected_ids.includes(a.id) && a.codice_atleta);
+    if (scelti.length === 0) {
+      toast({ title: t2("table.print_no_code"), variant: "destructive" });
+      return;
+    }
+    if (scelti.length > 100 && !window.confirm(t2("table.print_many_confirm", { count: scelti.length }))) return;
+    set_stampando_schede(true);
+    try {
+      await stampa_schede_codice(
+        scelti.map((a: any) => ({
+          nome_completo: `${a.nome ?? ""} ${a.cognome ?? ""}`.trim(),
+          codice: a.codice_atleta,
+        })),
+        { ios_store_url, android_store_url },
+      );
+    } finally {
+      set_stampando_schede(false);
+    }
+  };
 
 
   const handle_save = async (data_in: any) => {
@@ -1469,6 +1505,12 @@ const AthletesPage: React.FC = () => {
               }}
               count_filtered={filtered.length}
               count_total={atleti.length}
+              right_actions={selected_ids.length > 0 ? (
+                <Button size="sm" onClick={stampa_schede_selezionate} disabled={stampando_schede} className="gap-1.5">
+                  <Printer className="w-4 h-4" />
+                  {t2("table.print_cards", { count: selected_ids.length })}
+                </Button>
+              ) : null}
               extra_summary={card_filter ? (
                 <button
                   onClick={() => set_card_filter(null)}
@@ -1494,6 +1536,13 @@ const AthletesPage: React.FC = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border">
+                  <th className="w-10 px-4 py-3">
+                    <Checkbox
+                      checked={all_selected}
+                      onCheckedChange={toggle_select_all}
+                      aria-label={t2("table.select_all")}
+                    />
+                  </th>
                   <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
                     {t("nome")}
                   </th>
@@ -1520,13 +1569,20 @@ const AthletesPage: React.FC = () => {
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground text-sm">
+                    <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground text-sm">
                       {t2("table.no_athletes_found")}
                     </td>
                   </tr>
                 ) : (
                   filtered.map((a: any) => (
                     <tr key={a.id} className={`border-b border-border/50 transition-colors ${a.verificato === false ? "bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-950/30 dark:hover:bg-yellow-950/50" : "hover:bg-muted/30"}`}>
+                      <td className="px-4 py-3">
+                        <Checkbox
+                          checked={selected_ids.includes(a.id)}
+                          onCheckedChange={() => toggle_select_one(a.id)}
+                          aria-label={t2("table.select_row")}
+                        />
+                      </td>
                       <td className="px-4 py-3 cursor-pointer" onClick={() => set_selected_id(a.id)}>
                         <div className="flex items-center gap-3">
                           {a.foto_url ? (
