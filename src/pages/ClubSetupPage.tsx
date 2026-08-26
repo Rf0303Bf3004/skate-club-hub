@@ -161,11 +161,21 @@ const ClubSetupPage: React.FC = () => {
     set_uploading(true);
     try {
       const ext = file.name.split(".").pop();
-      const path = `${get_current_club_id()}/logo.${ext}`;
+      const club_id = get_current_club_id();
+      const path = `${club_id}/logo-${Date.now()}.${ext}`;
       const { error: upload_error } = await supabase.storage
         .from("loghi-club")
         .upload(path, file, { upsert: true });
       if (upload_error) throw upload_error;
+      // Pulizia: rimuovi il logo precedente se appartiene alla cartella di questo club.
+      // Errori ignorati in silenzio: non deve mai bloccare il salvataggio del nuovo logo.
+      try {
+        const prev_url: string = (form as any)?.logo_url || logo_preview || "";
+        const prev_path = prev_url.split("?")[0].split("/loghi-club/")[1];
+        if (prev_path && prev_path.startsWith(`${club_id}/`) && prev_path !== path) {
+          await supabase.storage.from("loghi-club").remove([decodeURIComponent(prev_path)]);
+        }
+      } catch {}
       const { data: url_data } = supabase.storage.from("loghi-club").getPublicUrl(path);
       const logo_url = url_data.publicUrl;
       set_val("logo_url", logo_url);
