@@ -77,6 +77,13 @@ export type Database = {
             foreignKeyName: "adesioni_atleta_club_id_fkey"
             columns: ["club_id"]
             isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "adesioni_atleta_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
             referencedRelation: "kpi_pitch_sponsor"
             referencedColumns: ["club_id"]
           },
@@ -418,6 +425,13 @@ export type Database = {
             foreignKeyName: "atleti_club_id_fkey"
             columns: ["club_id"]
             isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atleti_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
             referencedRelation: "kpi_pitch_sponsor"
             referencedColumns: ["club_id"]
           },
@@ -609,6 +623,13 @@ export type Database = {
             foreignKeyName: "campi_club_partecipanti_club_id_fkey"
             columns: ["club_id"]
             isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campi_club_partecipanti_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
             referencedRelation: "kpi_pitch_sponsor"
             referencedColumns: ["club_id"]
           },
@@ -789,6 +810,13 @@ export type Database = {
             foreignKeyName: "catalogo_livelli_club_id_fkey"
             columns: ["club_id"]
             isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalogo_livelli_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
             referencedRelation: "kpi_pitch_sponsor"
             referencedColumns: ["club_id"]
           },
@@ -859,6 +887,13 @@ export type Database = {
             columns: ["club_id"]
             isOneToOne: false
             referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalogo_pacchetti_opzionali_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
             referencedColumns: ["id"]
           },
           {
@@ -1198,6 +1233,13 @@ export type Database = {
             columns: ["club_id"]
             isOneToOne: false
             referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comunicazioni_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
             referencedColumns: ["id"]
           },
           {
@@ -1852,6 +1894,13 @@ export type Database = {
             foreignKeyName: "corsi_club_id_fkey"
             columns: ["club_id"]
             isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "corsi_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
             referencedRelation: "kpi_pitch_sponsor"
             referencedColumns: ["club_id"]
           },
@@ -2011,6 +2060,13 @@ export type Database = {
             columns: ["club_id"]
             isOneToOne: false
             referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dashboard_card_permessi_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
             referencedColumns: ["id"]
           },
           {
@@ -2560,6 +2616,13 @@ export type Database = {
             foreignKeyName: "fatture_club_id_fkey"
             columns: ["club_id"]
             isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fatture_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
             referencedRelation: "kpi_pitch_sponsor"
             referencedColumns: ["club_id"]
           },
@@ -2681,6 +2744,13 @@ export type Database = {
             foreignKeyName: "fatture_clubs_club_id_fkey"
             columns: ["club_id"]
             isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fatture_clubs_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
             referencedRelation: "kpi_pitch_sponsor"
             referencedColumns: ["club_id"]
           },
@@ -2747,6 +2817,13 @@ export type Database = {
             columns: ["club_id"]
             isOneToOne: false
             referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gare_calendario_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
             referencedColumns: ["id"]
           },
           {
@@ -2829,6 +2906,13 @@ export type Database = {
             columns: ["club_id"]
             isOneToOne: false
             referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "griglia_blocchi_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
             referencedColumns: ["id"]
           },
           {
@@ -3015,6 +3099,13 @@ export type Database = {
             foreignKeyName: "griglia_sessioni_atleti_club_id_fkey"
             columns: ["club_id"]
             isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "griglia_sessioni_atleti_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
             referencedRelation: "kpi_pitch_sponsor"
             referencedColumns: ["club_id"]
           },
@@ -3156,6 +3247,13 @@ export type Database = {
             columns: ["club_id"]
             isOneToOne: false
             referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "griglia_specialita_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
             referencedColumns: ["id"]
           },
           {
@@ -3698,6 +3796,13 @@ export type Database = {
             foreignKeyName: "istruttori_club_id_fkey"
             columns: ["club_id"]
             isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "istruttori_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
             referencedRelation: "kpi_pitch_sponsor"
             referencedColumns: ["club_id"]
           },
@@ -3869,6 +3974,13 @@ export type Database = {
             columns: ["club_id"]
             isOneToOne: false
             referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lezioni_private_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
             referencedColumns: ["id"]
           },
           {
@@ -4072,6 +4184,13 @@ export type Database = {
             foreignKeyName: "migrazioni_club_destinazione_id_fkey"
             columns: ["club_destinazione_id"]
             isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "migrazioni_club_destinazione_id_fkey"
+            columns: ["club_destinazione_id"]
+            isOneToOne: false
             referencedRelation: "kpi_pitch_sponsor"
             referencedColumns: ["club_id"]
           },
@@ -4080,6 +4199,13 @@ export type Database = {
             columns: ["club_origine_id"]
             isOneToOne: false
             referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "migrazioni_club_origine_id_fkey"
+            columns: ["club_origine_id"]
+            isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
             referencedColumns: ["id"]
           },
           {
@@ -4128,6 +4254,13 @@ export type Database = {
             columns: ["club_id"]
             isOneToOne: false
             referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moduli_gestione_club_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
             referencedColumns: ["id"]
           },
           {
@@ -4860,6 +4993,13 @@ export type Database = {
             foreignKeyName: "proposte_club_id_fkey"
             columns: ["club_id"]
             isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposte_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
             referencedRelation: "kpi_pitch_sponsor"
             referencedColumns: ["club_id"]
           },
@@ -4958,6 +5098,13 @@ export type Database = {
             columns: ["club_id"]
             isOneToOne: false
             referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ragioni_sociali_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
             referencedColumns: ["id"]
           },
           {
@@ -5176,6 +5323,13 @@ export type Database = {
             foreignKeyName: "relazioni_allegati_club_id_fkey"
             columns: ["club_id"]
             isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relazioni_allegati_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
             referencedRelation: "kpi_pitch_sponsor"
             referencedColumns: ["club_id"]
           },
@@ -5231,6 +5385,13 @@ export type Database = {
             columns: ["club_id"]
             isOneToOne: false
             referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relazioni_blocchi_testo_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
             referencedColumns: ["id"]
           },
           {
@@ -5451,6 +5612,13 @@ export type Database = {
             foreignKeyName: "risorse_strutture_club_id_fkey"
             columns: ["club_id"]
             isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "risorse_strutture_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
             referencedRelation: "kpi_pitch_sponsor"
             referencedColumns: ["club_id"]
           },
@@ -5622,6 +5790,13 @@ export type Database = {
             columns: ["club_id"]
             isOneToOne: false
             referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ruoli_permessi_sezioni_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
             referencedColumns: ["id"]
           },
           {
@@ -5831,6 +6006,13 @@ export type Database = {
             columns: ["club_id"]
             isOneToOne: false
             referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsor_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
             referencedColumns: ["id"]
           },
           {
@@ -6053,6 +6235,13 @@ export type Database = {
             columns: ["club_id"]
             isOneToOne: false
             referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_livello_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
             referencedColumns: ["id"]
           },
           {
@@ -6300,6 +6489,13 @@ export type Database = {
             foreignKeyName: "utenti_club_club_id_fkey"
             columns: ["club_id"]
             isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "utenti_club_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
             referencedRelation: "kpi_pitch_sponsor"
             referencedColumns: ["club_id"]
           },
@@ -6398,10 +6594,68 @@ export type Database = {
             foreignKeyName: "atleti_club_id_fkey"
             columns: ["club_id"]
             isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atleti_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
             referencedRelation: "kpi_pitch_sponsor"
             referencedColumns: ["club_id"]
           },
         ]
+      }
+      clubs_mobile_public: {
+        Row: {
+          cantone: string | null
+          cap: string | null
+          citta: string | null
+          colore_primario: string | null
+          descrizione: string | null
+          email: string | null
+          id: string | null
+          indirizzo: string | null
+          logo_url: string | null
+          nome: string | null
+          paese: string | null
+          sigla: string | null
+          sito_web: string | null
+          telefono: string | null
+        }
+        Insert: {
+          cantone?: string | null
+          cap?: string | null
+          citta?: string | null
+          colore_primario?: string | null
+          descrizione?: string | null
+          email?: string | null
+          id?: string | null
+          indirizzo?: string | null
+          logo_url?: string | null
+          nome?: string | null
+          paese?: string | null
+          sigla?: string | null
+          sito_web?: string | null
+          telefono?: string | null
+        }
+        Update: {
+          cantone?: string | null
+          cap?: string | null
+          citta?: string | null
+          colore_primario?: string | null
+          descrizione?: string | null
+          email?: string | null
+          id?: string | null
+          indirizzo?: string | null
+          logo_url?: string | null
+          nome?: string | null
+          paese?: string | null
+          sigla?: string | null
+          sito_web?: string | null
+          telefono?: string | null
+        }
+        Relationships: []
       }
       gare_calendario_mobile: {
         Row: {
@@ -6458,6 +6712,13 @@ export type Database = {
             columns: ["club_id"]
             isOneToOne: false
             referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gare_calendario_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
             referencedColumns: ["id"]
           },
           {
@@ -6535,6 +6796,13 @@ export type Database = {
             foreignKeyName: "griglia_sessioni_atleti_club_id_fkey"
             columns: ["club_id"]
             isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "griglia_sessioni_atleti_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
             referencedRelation: "kpi_pitch_sponsor"
             referencedColumns: ["club_id"]
           },
@@ -6592,6 +6860,30 @@ export type Database = {
           presenza_media_settimanale: number | null
           staff_totale: number | null
           stagione_id: string | null
+        }
+        Relationships: []
+      }
+      setup_club_pagamenti: {
+        Row: {
+          banca: string | null
+          club_id: string | null
+          iban: string | null
+          intestatario_conto: string | null
+          twint_paylink: string | null
+        }
+        Insert: {
+          banca?: string | null
+          club_id?: string | null
+          iban?: string | null
+          intestatario_conto?: string | null
+          twint_paylink?: string | null
+        }
+        Update: {
+          banca?: string | null
+          club_id?: string | null
+          iban?: string | null
+          intestatario_conto?: string | null
+          twint_paylink?: string | null
         }
         Relationships: []
       }
