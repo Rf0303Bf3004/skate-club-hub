@@ -4,10 +4,10 @@ import { use_club, use_setup_club, use_stagioni } from '@/hooks/use-supabase-dat
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Printer, QrCode, Copy, Check, Send } from 'lucide-react';
 import { build_contratto } from '@/lib/contratto-adesione';
+import { use_app_store_links } from '@/hooks/use-app-store-links';
+import { use_qr_data_url } from '@/hooks/use-qr-data-url';
 
 interface SchedaProps { atleta: any; on_back: () => void; modo?: 'foto' | 'iscrizione'; }
-
-const URL_APP_STORE = 'https://app.icearena.ch/mio-club';
 
 /** Rende una stringa con separatore " · " su più righe */
 const multiline = (testo: string) =>
@@ -27,8 +27,10 @@ const SchedaAnagrafica: React.FC<SchedaProps> = ({ atleta, on_back, modo = 'foto
   const codice = atleta.codice_atleta || (atleta.cognome + atleta.nome + '0001').toUpperCase().replace(/\s/g, '').slice(0, 16);
   const e_iscrizione = modo === 'iscrizione';
   const url_foto = 'https://app.icearena.ch/' + (e_iscrizione ? 'iscrizione/' : 'carica-foto/') + encodeURIComponent(codice);
-  const qr_src = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(url_foto);
-  const qr_store = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(URL_APP_STORE);
+  const { ios_store_url, android_store_url } = use_app_store_links();
+  const url_app_store = ios_store_url || android_store_url;
+  const qr_src = use_qr_data_url(url_foto, 200);
+  const qr_store = use_qr_data_url(url_app_store, 200);
   const [copiato, set_copiato] = useState(false);
 
   const articoli = useMemo(() => build_contratto({
@@ -149,9 +151,17 @@ const SchedaAnagrafica: React.FC<SchedaProps> = ({ atleta, on_back, modo = 'foto
             {e_iscrizione && (
               <div className='text-center w-full border-b border-gray-100 pb-4'>
                 <p className='text-xs font-bold text-gray-500 uppercase tracking-widest mb-3'>{t('anagrafica.step_app')}</p>
-                <img src={qr_store} alt={t('anagrafica.qr_store_alt')} className='w-24 h-24 rounded-xl border border-gray-200 mx-auto' />
-                <p className='text-xs text-gray-500 mt-2 leading-snug'>{t('anagrafica.store_hint')}</p>
-                <p className='text-xs text-gray-400 mt-1 break-all'>{URL_APP_STORE}</p>
+                {url_app_store && qr_store ? (
+                  <>
+                    <img src={qr_store} alt={t('anagrafica.qr_store_alt')} className='w-24 h-24 rounded-xl border border-gray-200 mx-auto' />
+                    <p className='text-xs text-gray-500 mt-2 leading-snug'>{t('anagrafica.store_hint')}</p>
+                    <p className='text-xs text-gray-400 mt-1 break-all'>{url_app_store}</p>
+                  </>
+                ) : (
+                  <div className='w-24 h-24 rounded-xl border border-dashed border-gray-300 mx-auto flex items-center justify-center px-2 text-center text-[10px] text-gray-400'>
+                    {t('codice_card.link_unavailable')}
+                  </div>
+                )}
               </div>
             )}
             <div className='text-center'>
