@@ -898,6 +898,22 @@ const AthletesPage: React.FC = () => {
   }, [atleti, search, solo_da_verificare, status_filter, agonista_filter, attivo_filter, eta_filter, card_filter, categoria_filter, percorso_filter, level_filter, sort_by, adesioni]);
 
 
+  // Cambiando filtro o ricerca la selezione non è più coerente con ciò che si vede.
+  useEffect(() => {
+    set_selected_ids([]);
+  }, [
+    search,
+    solo_da_verificare,
+    status_filter,
+    agonista_filter,
+    attivo_filter,
+    eta_filter,
+    card_filter,
+    categoria_filter,
+    percorso_filter,
+    level_filter,
+  ]);
+
   const filtered_ids = filtered.map((a: any) => a.id);
   const all_selected = filtered_ids.length > 0 && filtered_ids.every((id: string) => selected_ids.includes(id));
   const toggle_select_all = () => {
@@ -1517,7 +1533,7 @@ const AthletesPage: React.FC = () => {
               right_actions={selected_ids.length > 0 ? (
                 <Button size="sm" onClick={stampa_schede_selezionate} disabled={stampando_schede} className="gap-1.5">
                   <Printer className="w-4 h-4" />
-                  {t2("table.print_cards", { count: selected_ids.length })}
+                  {t2("table.print_cards", { count: stampabili.length })}
                 </Button>
               ) : null}
               extra_summary={card_filter ? (
