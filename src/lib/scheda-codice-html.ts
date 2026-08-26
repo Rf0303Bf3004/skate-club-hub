@@ -87,15 +87,21 @@ function build_scheda_html(
 export async function stampa_schede_codice(
   atleti: SchedaCodiceAtleta[],
   store: StoreLinks,
-): Promise<void> {
+): Promise<{ ok: boolean; popup_bloccato?: boolean }> {
   const validi = atleti.filter((a) => a.codice);
-  if (validi.length === 0) return;
+  if (validi.length === 0) return { ok: false };
+
+  // La finestra va aperta in modo sincrono, dentro il gesto utente,
+  // altrimenti il blocco popup (Safari) la ferma.
+  const w = window.open("", "_blank");
+  if (!w) return { ok: false, popup_bloccato: true };
+  w.document.write("<!DOCTYPE html><html><body></body></html>");
 
   const [qr_ios, qr_android] = await Promise.all([
-    genera_qr_data_url(store.ios_store_url, 200),
-    genera_qr_data_url(store.android_store_url, 200),
+    genera_qr_data_url(store.ios_store_url, 600),
+    genera_qr_data_url(store.android_store_url, 600),
   ]);
-  const qr_codici = await Promise.all(validi.map((a) => genera_qr_data_url(a.codice, 200)));
+  const qr_codici = await Promise.all(validi.map((a) => genera_qr_data_url(a.codice, 600)));
 
   const corpo = validi
     .map((a, i) => build_scheda_html(a, qr_codici[i], store, qr_ios, qr_android))
