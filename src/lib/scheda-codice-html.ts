@@ -20,8 +20,7 @@ const escape_html = (v: string) =>
 const STILE = `
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,Helvetica,Arial,sans-serif;}
 body{padding:48px;color:#0F172A;}
-.scheda{page-break-after:always;}
-.scheda:last-child{page-break-after:auto;}
+.scheda + .scheda{page-break-before:always;}
 .brand{display:flex;align-items:center;gap:12px;margin-bottom:32px;}
 .brand-icon{font-size:34px;}
 .brand-name{font-size:20px;font-weight:800;}
