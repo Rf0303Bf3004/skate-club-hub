@@ -6937,6 +6937,22 @@ export type Database = {
           telefono: string
         }[]
       }
+      get_gare_costi: {
+        Args: { p_club_id: string }
+        Returns: {
+          costo_accompagnamento: number
+          costo_iscrizione: number
+          id: string
+        }[]
+      }
+      get_istruttori_contatti: {
+        Args: { p_club_id: string }
+        Returns: {
+          email: string
+          id: string
+          telefono: string
+        }[]
+      }
       get_istruttori_costi: {
         Args: { p_club_id: string }
         Returns: {
