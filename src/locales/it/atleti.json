@@ -337,7 +337,9 @@
     "select_row": "Seleziona atleta",
     "print_cards": "Stampa schede ({{count}})",
     "print_many_confirm": "Stai per stampare {{count}} schede. Continuare?",
-    "print_no_code": "Nessuna delle atlete selezionate ha un codice atleta."
+    "print_no_code": "Nessuna delle atlete selezionate ha un codice atleta.",
+    "print_excluded_no_code": "{{count}} atleti esclusi perché senza codice atleta.",
+    "print_popup_blocked": "Impossibile aprire la finestra di stampa: consenti i popup per questo sito."
   },
   "filters": {
     "all_categories": "Tutte le categorie",
@@ -624,7 +626,8 @@
     "print_step_2": "Apri l'app e tocca <strong>Inserisci codice</strong>.",
     "print_step_3": "Digita o scansiona <strong>{{codice}}</strong>.",
     "print_step_4": "Il profilo dell'atleta verrà collegato al dispositivo.",
-    "print_footer": "Codice permanente — non scade. In caso di smarrimento, il club può rigenerarlo dalla scheda atleta."
+    "print_footer": "Codice permanente — non scade. In caso di smarrimento, il club può rigenerarlo dalla scheda atleta.",
+    "popup_blocked": "Impossibile aprire la finestra di stampa: consenti i popup per questo sito."
   },
   "calendario": {
     "type_corso": "Corso",

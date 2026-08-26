@@ -64,6 +64,11 @@
     "select_row": "Select athlete",
     "print_cards": "Print cards ({{count}})",
     "print_many_confirm": "You are about to print {{count}} cards. Continue?",
-    "print_no_code": "None of the selected athletes has an athlete code."
+    "print_no_code": "None of the selected athletes has an athlete code.",
+    "print_excluded_no_code": "{{count}} athletes excluded because they have no athlete code.",
+    "print_popup_blocked": "Could not open the print window: allow pop-ups for this site."
+  },
+  "codice_card": {
+    "popup_blocked": "Could not open the print window: allow pop-ups for this site."
   }
 }

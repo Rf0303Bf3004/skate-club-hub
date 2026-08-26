@@ -64,6 +64,11 @@
     "select_row": "Sélectionner l'athlète",
     "print_cards": "Imprimer les fiches ({{count}})",
     "print_many_confirm": "Vous allez imprimer {{count}} fiches. Continuer ?",
-    "print_no_code": "Aucune des athlètes sélectionnées n'a de code athlète."
+    "print_no_code": "Aucune des athlètes sélectionnées n'a de code athlète.",
+    "print_excluded_no_code": "{{count}} athlètes exclus car sans code athlète.",
+    "print_popup_blocked": "Impossible d'ouvrir la fenêtre d'impression : autorisez les pop-ups pour ce site."
+  },
+  "codice_card": {
+    "popup_blocked": "Impossible d'ouvrir la fenêtre d'impression : autorisez les pop-ups pour ce site."
   }
 }
