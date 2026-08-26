@@ -64,6 +64,11 @@
     "select_row": "Athletin auswählen",
     "print_cards": "Karten drucken ({{count}})",
     "print_many_confirm": "Sie drucken gleich {{count}} Karten. Fortfahren?",
-    "print_no_code": "Keine der ausgewählten Athletinnen hat einen Athletencode."
+    "print_no_code": "Keine der ausgewählten Athletinnen hat einen Athletencode.",
+    "print_excluded_no_code": "{{count}} Athletinnen ausgeschlossen, da ohne Athletencode.",
+    "print_popup_blocked": "Druckfenster konnte nicht geöffnet werden: Pop-ups für diese Seite zulassen."
+  },
+  "codice_card": {
+    "popup_blocked": "Druckfenster konnte nicht geöffnet werden: Pop-ups für diese Seite zulassen."
   }
 }

@@ -898,6 +898,22 @@ const AthletesPage: React.FC = () => {
   }, [atleti, search, solo_da_verificare, status_filter, agonista_filter, attivo_filter, eta_filter, card_filter, categoria_filter, percorso_filter, level_filter, sort_by, adesioni]);
 
 
+  // Cambiando filtro o ricerca la selezione non è più coerente con ciò che si vede.
+  useEffect(() => {
+    set_selected_ids([]);
+  }, [
+    search,
+    solo_da_verificare,
+    status_filter,
+    agonista_filter,
+    attivo_filter,
+    eta_filter,
+    card_filter,
+    categoria_filter,
+    percorso_filter,
+    level_filter,
+  ]);
+
   const filtered_ids = filtered.map((a: any) => a.id);
   const all_selected = filtered_ids.length > 0 && filtered_ids.every((id: string) => selected_ids.includes(id));
   const toggle_select_all = () => {
@@ -906,22 +922,31 @@ const AthletesPage: React.FC = () => {
   const toggle_select_one = (id: string) => {
     set_selected_ids((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
+  // Solo gli atleti selezionati che hanno davvero un codice sono stampabili.
+  const stampabili = (atleti as any[]).filter(
+    (a: any) => selected_ids.includes(a.id) && a.codice_atleta,
+  );
+  const esclusi_senza_codice = selected_ids.length - stampabili.length;
   const stampa_schede_selezionate = async () => {
-    const scelti = (atleti as any[]).filter((a: any) => selected_ids.includes(a.id) && a.codice_atleta);
-    if (scelti.length === 0) {
+    if (stampabili.length === 0) {
       toast({ title: t2("table.print_no_code"), variant: "destructive" });
       return;
     }
-    if (scelti.length > 100 && !window.confirm(t2("table.print_many_confirm", { count: scelti.length }))) return;
+    if (stampabili.length > 100 && !window.confirm(t2("table.print_many_confirm", { count: stampabili.length }))) return;
     set_stampando_schede(true);
     try {
-      await stampa_schede_codice(
-        scelti.map((a: any) => ({
+      const esito = await stampa_schede_codice(
+        stampabili.map((a: any) => ({
           nome_completo: `${a.nome ?? ""} ${a.cognome ?? ""}`.trim(),
           codice: a.codice_atleta,
         })),
         { ios_store_url, android_store_url },
       );
+      if (esito.popup_bloccato) {
+        toast({ title: t2("table.print_popup_blocked"), variant: "destructive" });
+      } else if (esito.ok && esclusi_senza_codice > 0) {
+        toast({ title: t2("table.print_excluded_no_code", { count: esclusi_senza_codice }) });
+      }
     } finally {
       set_stampando_schede(false);
     }
@@ -1508,7 +1533,7 @@ const AthletesPage: React.FC = () => {
               right_actions={selected_ids.length > 0 ? (
                 <Button size="sm" onClick={stampa_schede_selezionate} disabled={stampando_schede} className="gap-1.5">
                   <Printer className="w-4 h-4" />
-                  {t2("table.print_cards", { count: selected_ids.length })}
+                  {t2("table.print_cards", { count: stampabili.length })}
                 </Button>
               ) : null}
               extra_summary={card_filter ? (

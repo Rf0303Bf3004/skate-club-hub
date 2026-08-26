@@ -53,10 +53,13 @@ export default function CodiceAtletaCard({ atleta, on_updated }: Props) {
   const stampa_scheda = async () => {
     if (!codice) return;
     const nome_completo = `${atleta.nome ?? ""} ${atleta.cognome ?? ""}`.trim();
-    await stampa_schede_codice(
+    const esito = await stampa_schede_codice(
       [{ nome_completo, codice }],
       { ios_store_url, android_store_url },
     );
+    if (esito.popup_bloccato) {
+      toast({ title: t("codice_card.popup_blocked"), variant: "destructive" });
+    }
   };
 
   const rigenera = async () => {
