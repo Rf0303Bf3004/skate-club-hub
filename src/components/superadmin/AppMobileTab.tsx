@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Smartphone, Save, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export default function AppMobileTab({ on_log }: Props) {
+  const query_client = useQueryClient();
   const [id, set_id] = useState<string | null>(null);
   const [ios_store_url, set_ios_store_url] = useState("");
   const [android_store_url, set_android_store_url] = useState("");
@@ -63,6 +65,7 @@ export default function AppMobileTab({ on_log }: Props) {
         if (error) throw error;
         set_id(data.id);
       }
+      await query_client.invalidateQueries({ queryKey: ["impostazioni_app_mobile"] });
       toast({ title: "✅ Link store aggiornati" });
       on_log?.("✅ Aggiornati link store app mobile");
     } catch (err: any) {
