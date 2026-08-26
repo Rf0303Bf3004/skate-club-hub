@@ -302,16 +302,25 @@ export function use_gare() {
     enabled: !!get_current_club_id(),
     queryKey: ["gare", get_current_club_id()],
     queryFn: async () => {
-      const [gare_res, isc_res, ris_res] = await Promise.all([
-        (supabase as any).from("gare_calendario").select("*").eq("club_id", get_current_club_id()).order("data"),
+      const [gare_res, isc_res, ris_res, costi_res] = await Promise.all([
+        // NB: costo_iscrizione / costo_accompagnamento sono hidden via column-level REVOKE;
+        // vengono recuperati con la RPC get_gare_costi solo per i ruoli finanziari.
+        (supabase as any).from("gare_calendario").select("id,club_id,nome,data,ora,luogo,indirizzo,club_ospitante,carriera,livello_minimo,stagione_id,note,archiviata,created_at").eq("club_id", get_current_club_id()).order("data"),
         supabase.from("iscrizioni_gare").select("*"),
         supabase.from("risultati_gara").select("*"),
+        supabase.rpc("get_gare_costi" as any, { p_club_id: get_current_club_id() } as any),
       ]);
       if (gare_res.error) throw gare_res.error;
       const isc = isc_res.data ?? [];
       const ris = ris_res.data ?? [];
+      const costi_map = new Map<string, any>();
+      if (!costi_res.error && Array.isArray(costi_res.data)) {
+        (costi_res.data as any[]).forEach((c) => costi_map.set(c.id, c));
+      }
       return (gare_res.data ?? []).map((g: any) => ({
         ...g,
+        costo_iscrizione: costi_map.get(g.id)?.costo_iscrizione ?? null,
+        costo_accompagnamento: costi_map.get(g.id)?.costo_accompagnamento ?? null,
         stagione_id: g.stagione_id || null,
         // Compat shims: la tabella `gare` usa `luogo`, l'UI legge anche `localita`
         localita: g.localita ?? g.luogo ?? "",
