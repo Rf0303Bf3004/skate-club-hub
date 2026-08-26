@@ -906,22 +906,31 @@ const AthletesPage: React.FC = () => {
   const toggle_select_one = (id: string) => {
     set_selected_ids((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
+  // Solo gli atleti selezionati che hanno davvero un codice sono stampabili.
+  const stampabili = (atleti as any[]).filter(
+    (a: any) => selected_ids.includes(a.id) && a.codice_atleta,
+  );
+  const esclusi_senza_codice = selected_ids.length - stampabili.length;
   const stampa_schede_selezionate = async () => {
-    const scelti = (atleti as any[]).filter((a: any) => selected_ids.includes(a.id) && a.codice_atleta);
-    if (scelti.length === 0) {
+    if (stampabili.length === 0) {
       toast({ title: t2("table.print_no_code"), variant: "destructive" });
       return;
     }
-    if (scelti.length > 100 && !window.confirm(t2("table.print_many_confirm", { count: scelti.length }))) return;
+    if (stampabili.length > 100 && !window.confirm(t2("table.print_many_confirm", { count: stampabili.length }))) return;
     set_stampando_schede(true);
     try {
-      await stampa_schede_codice(
-        scelti.map((a: any) => ({
+      const esito = await stampa_schede_codice(
+        stampabili.map((a: any) => ({
           nome_completo: `${a.nome ?? ""} ${a.cognome ?? ""}`.trim(),
           codice: a.codice_atleta,
         })),
         { ios_store_url, android_store_url },
       );
+      if (esito.popup_bloccato) {
+        toast({ title: t2("table.print_popup_blocked"), variant: "destructive" });
+      } else if (esito.ok && esclusi_senza_codice > 0) {
+        toast({ title: t2("table.print_excluded_no_code", { count: esclusi_senza_codice }) });
+      }
     } finally {
       set_stampando_schede(false);
     }
