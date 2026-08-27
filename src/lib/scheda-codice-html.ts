@@ -21,25 +21,25 @@ const STILE = `
 *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,Helvetica,Arial,sans-serif;}
 body{padding:48px;color:#0F172A;}
 .scheda + .scheda{page-break-before:always;}
-.brand{display:flex;align-items:center;gap:12px;margin-bottom:32px;}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:22px;}
 .brand-icon{font-size:34px;}
 .brand-name{font-size:20px;font-weight:800;}
 .brand-sub{font-size:11px;color:#64748B;}
-.card{border:1.5px solid #E2E8F0;border-radius:18px;padding:36px;text-align:center;max-width:560px;margin:0 auto;}
+.card{border:1.5px solid #E2E8F0;border-radius:18px;padding:28px;text-align:center;max-width:560px;margin:0 auto;}
 .atleta{font-size:22px;font-weight:700;margin-bottom:6px;}
-.label{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.6px;color:#0284C7;margin:24px 0 10px;}
+.label{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.6px;color:#0284C7;margin:18px 0 8px;}
 .codice{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:38px;font-weight:900;letter-spacing:6px;color:#0F172A;padding:18px 24px;background:#F0F9FF;border:2px solid #BAE6FD;border-radius:14px;display:inline-block;}
-img.qr{width:220px;height:220px;margin-top:18px;}
-ol{text-align:left;max-width:420px;margin:28px auto 0;font-size:13px;line-height:1.7;color:#334155;}
+img.qr{width:190px;height:190px;margin-top:14px;}
+ol{text-align:left;max-width:420px;margin:20px auto 0;font-size:13px;line-height:1.7;color:#334155;}
 ol li::marker{color:#0284C7;font-weight:700;}
-.stores{display:flex;gap:16px;margin-top:28px;justify-content:center;}
+.stores{display:flex;gap:16px;margin-top:20px;justify-content:center;}
 .store{flex:1;max-width:220px;border:1.5px solid #E2E8F0;border-radius:14px;padding:14px;text-align:center;page-break-inside:avoid;}
 .store-title{font-size:11px;font-weight:800;color:#1E2761;margin-bottom:8px;}
-.store-qr{width:130px;height:130px;}
+.store-qr{width:120px;height:120px;}
 .store-link{font-size:7.5px;color:#64748B;word-break:break-all;margin-top:6px;}
 .store-todo{font-size:10px;color:#94A3B8;padding:36px 6px;}
-.footer{margin-top:28px;font-size:10px;color:#94A3B8;text-align:center;}
-@media print{@page{margin:0;size:A4;}body{padding:24mm;}}
+.footer{margin-top:20px;font-size:10px;color:#94A3B8;text-align:center;}
+@media print{@page{size:A4;margin:10mm;}body{padding:0;}.scheda{padding:6mm 4mm;}}
 `;
 
 const box_store = (etichetta: string, url: string, qr: string) =>
