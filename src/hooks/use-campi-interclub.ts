@@ -208,14 +208,14 @@ export function use_campo_partecipanti(evento_campo_id: string | null) {
 
 export function use_clubs_opzioni() {
   return useQuery({
-    queryKey: ["clubs_opzioni"],
+    queryKey: ["elenco_club_opzioni"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("clubs" as any)
-        .select("id, nome")
+        .from("elenco_club" as any)
+        .select("id, nome, citta")
         .order("nome", { ascending: true });
       if (error) throw error;
-      return (data ?? []) as unknown as { id: string; nome: string }[];
+      return (data ?? []) as unknown as { id: string; nome: string; citta: string | null }[];
     },
   });
 }
