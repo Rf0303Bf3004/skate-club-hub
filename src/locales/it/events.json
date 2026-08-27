@@ -575,7 +575,10 @@
       "invitato_toast": "Club invitato",
       "esterno_badge": "Esterno",
       "senza_nome": "Club senza nome",
-      "senza_quota": "Quota non definita"
+      "senza_quota": "Quota non definita",
+      "nessun_club_disponibile": "Non ci sono altri club da invitare a questo campo.",
+      "cerca_placeholder": "Cerca club per nome o comune…",
+      "nessun_risultato": "Nessun club corrisponde alla ricerca."
     },
     "adesioni": {
       "title": "Adesioni per gruppo e club",

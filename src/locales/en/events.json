@@ -122,7 +122,10 @@
       "invitato_toast": "Club invited",
       "esterno_badge": "External",
       "senza_nome": "Unnamed club",
-      "senza_quota": "Fee not set"
+      "senza_quota": "Fee not set",
+      "nessun_club_disponibile": "There are no other clubs to invite to this camp.",
+      "cerca_placeholder": "Search club by name or town…",
+      "nessun_risultato": "No club matches your search."
     },
     "adesioni": {
       "title": "Sign-ups by group and club",
