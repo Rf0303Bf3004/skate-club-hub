@@ -553,6 +553,7 @@ const TabClubPartecipanti: React.FC<{ campo: EventoCampoInterClub; is_ospitante:
   const aggiorna = use_aggiorna_partecipante();
   const elimina = use_elimina_partecipante();
   const [open, set_open] = useState(false);
+  const [ricerca_club, set_ricerca_club] = useState("");
   const [modalita_invito, set_modalita_invito] = useState<"esistente" | "esterno">("esistente");
   const [form, set_form] = useState({
     club_id: "",
@@ -583,6 +584,22 @@ const TabClubPartecipanti: React.FC<{ campo: EventoCampoInterClub; is_ospitante:
         onError: (e: any) => toast.error(e.message),
       },
     );
+
+  const club_gia_invitati = useMemo(
+    () => new Set(partecipanti.map((p) => p.club_id).filter(Boolean) as string[]),
+    [partecipanti],
+  );
+  const club_disponibili = useMemo(
+    () => clubs.filter((c) => c.id !== campo.club_id && !club_gia_invitati.has(c.id)),
+    [clubs, campo.club_id, club_gia_invitati],
+  );
+  const club_filtrati = useMemo(() => {
+    const q = ricerca_club.trim().toLowerCase();
+    if (!q) return club_disponibili;
+    return club_disponibili.filter((c) =>
+      `${c.nome ?? ""} ${c.citta ?? ""}`.toLowerCase().includes(q),
+    );
+  }, [club_disponibili, ricerca_club]);
 
   const invito_valido =
     modalita_invito === "esistente" ? !!form.club_id : form.club_esterno_nome.trim().length > 0;
@@ -679,20 +696,41 @@ const TabClubPartecipanti: React.FC<{ campo: EventoCampoInterClub; is_ospitante:
             {modalita_invito === "esistente" ? (
               <div>
                 <Label>{t("campi_interclub.club.club_label")}</Label>
-                <Select value={form.club_id} onValueChange={(v) => set_form({ ...form, club_id: v })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t("campi_interclub.club.club_placeholder")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clubs
-                      .filter((c) => c.id !== campo.club_id)
-                      .map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.nome}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
+                {club_disponibili.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-2">
+                    {t("campi_interclub.club.nessun_club_disponibile")}
+                  </p>
+                ) : (
+                  <>
+                    {club_disponibili.length > 8 && (
+                      <Input
+                        className="mb-2"
+                        value={ricerca_club}
+                        onChange={(e) => set_ricerca_club(e.target.value)}
+                        placeholder={t("campi_interclub.club.cerca_placeholder")}
+                      />
+                    )}
+                    <Select value={form.club_id} onValueChange={(v) => set_form({ ...form, club_id: v })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t("campi_interclub.club.club_placeholder")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {club_filtrati.length === 0 ? (
+                          <div className="px-2 py-3 text-sm text-muted-foreground">
+                            {t("campi_interclub.club.nessun_risultato")}
+                          </div>
+                        ) : (
+                          club_filtrati.map((c) => (
+                            <SelectItem key={c.id} value={c.id}>
+                              {c.nome}
+                              {c.citta ? ` (${c.citta})` : ""}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </>
+                )}
               </div>
             ) : (
               <div>
