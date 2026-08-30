@@ -231,7 +231,9 @@ const ClubSetupPage: React.FC = () => {
         await queryClient.invalidateQueries({ queryKey: ["setup_club", club_id] });
       }
 
-      // Auto-sync stagione "Regolare" con le date configurate
+      // Auto-sync della stagione attiva con le date configurate.
+      // Il DB ammette UNA SOLA stagione attiva per club: cerchiamo quella attiva
+      // senza filtrare per tipo e la aggiorniamo; inseriamo solo se non esiste.
       const data_inizio = setup_payload.data_inizio_stagione ?? (setup as any)?.data_inizio_stagione;
       const data_fine = setup_payload.data_fine_stagione ?? (setup as any)?.data_fine_stagione;
       if (data_inizio && data_fine) {
@@ -239,8 +241,9 @@ const ClubSetupPage: React.FC = () => {
           .from("stagioni")
           .select("id")
           .eq("club_id", club_id)
-          .eq("tipo", "Regolare")
           .eq("attiva", true)
+          .order("data_inizio", { ascending: false })
+          .limit(1)
           .maybeSingle();
         const stagione_payload = {
           club_id,
@@ -251,9 +254,11 @@ const ClubSetupPage: React.FC = () => {
           attiva: true,
         };
         if (existing?.id) {
-          await supabase.from("stagioni").update(stagione_payload).eq("id", existing.id);
+          const { error: st_err } = await supabase.from("stagioni").update(stagione_payload).eq("id", existing.id);
+          if (st_err) throw st_err;
         } else {
-          await supabase.from("stagioni").insert(stagione_payload);
+          const { error: st_err } = await supabase.from("stagioni").insert(stagione_payload);
+          if (st_err) throw st_err;
         }
         await queryClient.invalidateQueries({ queryKey: ["stagioni"] });
       }
