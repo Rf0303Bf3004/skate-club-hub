@@ -1,4 +1,5 @@
 import TariffeRagioniSocialiSection from "@/components/istruttori/TariffeRagioniSocialiSection";
+import CodiceIstruttoreCard from "@/components/CodiceIstruttoreCard";
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
@@ -1697,7 +1698,10 @@ const InstructorsPage: React.FC = () => {
               <TabsTrigger value="disponibilita">{t("disponibilita")}</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="info" className="mt-6">
+            <TabsContent value="info" className="mt-6 space-y-6">
+              <div className="max-w-lg">
+                <CodiceIstruttoreCard istruttore={selected} />
+              </div>
               <div className="bg-card rounded-xl shadow-card p-6 space-y-3 max-w-lg">
                 {[
                   { label: t("email"), value: selected.email },
