@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase, get_current_club_id } from "@/lib/supabase";
+import { registra_silenzioso } from "@/lib/errori";
 
 /**
  * Modalità di gestione configurata per un'area operativa del club.
