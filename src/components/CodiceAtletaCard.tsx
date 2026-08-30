@@ -90,8 +90,8 @@ export default function CodiceAtletaCard({ atleta, on_updated }: Props) {
 
   return (
     <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-5 space-y-4">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
+      <div className="flex items-start justify-between gap-5 flex-wrap">
+        <div className="flex-1 min-w-[200px]">
           <div className="text-[10px] font-bold uppercase tracking-[1.6px] text-primary mb-1.5">
             {t("codice_card.title")}
           </div>
@@ -102,6 +102,15 @@ export default function CodiceAtletaCard({ atleta, on_updated }: Props) {
             {t("codice_card.description")}
           </p>
         </div>
+        {qr_codice ? (
+          <img
+            src={qr_codice}
+            alt={`QR ${codice}`}
+            className="w-32 h-32 rounded-xl border bg-white shrink-0"
+          />
+        ) : (
+          <div className="w-32 h-32 rounded-xl border bg-muted animate-pulse shrink-0" />
+        )}
       </div>
 
       <div className="flex flex-wrap gap-2">
