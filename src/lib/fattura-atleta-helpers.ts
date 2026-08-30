@@ -259,6 +259,11 @@ export async function genera_pdf_blob_per_email(id: string): Promise<{ blob: Blo
  * porta il documento in stato "inviata".
  */
 export async function invia_fattura_email(fattura_id: string, destinatario: string) {
+  const email = (destinatario ?? "").trim();
+  // Verifica prima di congelare il PDF: senza destinatario l'invio fallisce
+  // e lascerebbe la fattura con un pdf_url già scritto.
+  if (!email) throw new Error("Destinatario email mancante");
+
   const { fattura, atleta, club } = await load_fattura_full(fattura_id);
   const qr = fattura.tipo_documento === "nota_credito" ? null : await carica_qr_fattura(fattura_id);
   const data = build_pdf_data(fattura, atleta, club, qr);
@@ -274,10 +279,14 @@ export async function invia_fattura_email(fattura_id: string, destinatario: stri
   const { error: e_pdf } = await supabase.from("fatture").update({ pdf_url: path }).eq("id", fattura_id);
   if (e_pdf) throw e_pdf;
 
+  // Link firmato di lunga durata (30 giorni) da mettere nell'email.
+  const { data: signed } = await supabase.storage.from(BUCKET_FATTURE).createSignedUrl(path, 60 * 60 * 24 * 30);
+
   const { error: e_fn } = await supabase.functions.invoke("send-fattura-email-atleta", {
-    body: { fattura_id, destinatario },
+    body: { fattura_id, destinatario: email, pdf_url: signed?.signedUrl ?? null },
   });
   if (e_fn) throw e_fn;
+
 
   const { error: e_stato } = await supabase
     .from("fatture")
