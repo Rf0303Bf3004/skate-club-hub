@@ -1,25 +1,15 @@
 import React, { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { use_setup_club, use_atleti } from "@/hooks/use-supabase-data";
-import {
-  use_anteprima_fatture_mese,
-  use_genera_fatture_mensili,
-} from "@/hooks/use-supabase-mutations";
+import { use_setup_club } from "@/hooks/use-supabase-data";
+import AnteprimaFatturePeriodoDialog from "@/components/fatture/AnteprimaFatturePeriodoDialog";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { Calendar, Mail, Eye, FileText, Loader2 } from "lucide-react";
+import { Calendar, Mail, FileText, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 const FatturazioneTab: React.FC = () => {

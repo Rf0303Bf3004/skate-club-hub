@@ -274,6 +274,8 @@ const InvoicesPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <AnteprimaFatturePeriodoDialog open={anteprima_open} onOpenChange={set_anteprima_open} />
     </>
   );
 };
