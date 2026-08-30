@@ -23,6 +23,7 @@ type FatturaRow = {
   pagata: boolean | null;
   stato: string | null;
   atleta_id: string | null;
+  intestatario_email: string | null;
 };
 
 type AtletaRow = {
@@ -30,6 +31,8 @@ type AtletaRow = {
   nome: string;
   cognome: string;
   categoria: string | null;
+  genitore1_email: string | null;
+  genitore2_email: string | null;
 };
 
 type CellaMese = {
@@ -81,14 +84,14 @@ const SegreteriaFatturePage: React.FC = () => {
       const [atletiRes, fattureRes] = await Promise.all([
         supabase
           .from("atleti")
-          .select("id, nome, cognome, categoria")
+          .select("id, nome, cognome, categoria, genitore1_email, genitore2_email")
           .eq("club_id", club_id)
           .eq("attivo", true)
           .order("cognome")
           .order("nome"),
         supabase
           .from("fatture")
-          .select("id, numero, descrizione, importo, data_emissione, data_scadenza, data_pagamento, pagata, stato, atleta_id")
+          .select("id, numero, descrizione, importo, data_emissione, data_scadenza, data_pagamento, pagata, stato, atleta_id, intestatario_email")
           .eq("club_id", club_id)
           .gte("data_emissione", anno_inizio)
           .lt("data_emissione", anno_dopo),
@@ -467,8 +470,18 @@ const SegreteriaFatturePage: React.FC = () => {
                           size="sm"
                           variant="outline"
                           onClick={async () => {
+                            const destinatario = (
+                              f.intestatario_email ||
+                              modal_cella.atleta.genitore1_email ||
+                              modal_cella.atleta.genitore2_email ||
+                              ""
+                            ).trim();
+                            if (!destinatario) {
+                              toast({ title: "Nessun indirizzo email disponibile", variant: "destructive" });
+                              return;
+                            }
                             try {
-                              await invia_email.mutateAsync({ fattura_id: f.id, email: "" });
+                              await invia_email.mutateAsync({ fattura_id: f.id, email: destinatario });
                               toast({ title: t("tabellone.modal.invia_reminder") as string });
                             } catch (e: any) {
                               toast({ title: "Errore", description: e?.message, variant: "destructive" });

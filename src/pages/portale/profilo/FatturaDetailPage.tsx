@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ArrowLeft, Printer, Download, Mail, CreditCard, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { load_fattura_full, build_pdf_data } from "@/lib/fattura-atleta-helpers";
+import { load_fattura_full, build_pdf_data, invia_fattura_email } from "@/lib/fattura-atleta-helpers";
 import AnteprimaFatturaAtletaDialog from "@/components/AnteprimaFatturaAtletaDialog";
 
 const STATO_COLORS: Record<string, string> = {
@@ -50,10 +50,8 @@ const FatturaDetailPage: React.FC = () => {
     if (!pdf_data || !email_to) return;
     set_sending(true);
     try {
-      const { error } = await supabase.functions.invoke("send-fattura-email-atleta", {
-        body: { fattura_id: pdf_data._id, destinatario: email_to },
-      });
-      if (error) throw error;
+      // Stesso percorso della segreteria: congela il PDF e aggiorna lo stato.
+      await invia_fattura_email(pdf_data._id, email_to);
       toast({ title: "Email inviata" });
       set_email_open(false);
     } catch (e: any) {
