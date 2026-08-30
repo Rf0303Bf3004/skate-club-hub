@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Trash2, FileText, Send, CheckCircle, XCircle, Loader2, ChevronDown } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, FileText, Send, CheckCircle, XCircle, Loader2, ChevronDown, RefreshCw, Undo2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { load_fattura_full, invia_fattura_email, type FatturaFull } from "@/lib/fattura-atleta-helpers";
 import type { FatturaAtletaRiga } from "@/lib/fattura-atleta-pdf";
