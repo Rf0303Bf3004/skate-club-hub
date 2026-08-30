@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, Save, X, RefreshCw, Copy, Eye, EyeOff, Upload, ArrowLeft } from "lucide-react";
+import { Shield, Save, X, RefreshCw, Upload, ArrowLeft } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { AnagraficaTerritoriale } from "@/components/AnagraficaTerritoriale";
 import {
@@ -28,7 +28,6 @@ const SuperAdminNewClubPage: React.FC = () => {
   const { session } = useAuth();
   const navigate = useNavigate();
   const [saving, set_saving] = useState(false);
-  const [show_pwd, set_show_pwd] = useState(false);
   const [uploading_logo, set_uploading_logo] = useState(false);
 
   // Sezione A
@@ -144,9 +143,16 @@ const SuperAdminNewClubPage: React.FC = () => {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
+      // Nessuna password mostrata: al presidente arriva un link per impostarla.
+      const { error: link_err } = await supabase.auth.resetPasswordForEmail(
+        email_presidente.trim().toLowerCase(),
+        { redirectTo: `${window.location.origin}/reset-password` }
+      );
       toast({
         title: "✅ Club creato",
-        description: `Credenziali presidente: ${email_presidente} / ${password}`,
+        description: link_err
+          ? `Invito non inviato (${link_err.message}): usa "Password dimenticata" con ${email_presidente}.`
+          : `Inviato a ${email_presidente} il collegamento per impostare la password.`,
       });
       navigate(`/superadmin/clubs/${data.club_id}`);
     } catch (e: any) {
@@ -325,21 +331,12 @@ const SuperAdminNewClubPage: React.FC = () => {
             <label className="text-xs text-muted-foreground">Telefono</label>
             <Input value={telefono_pres} onChange={(e) => set_telefono_pres(e.target.value)} />
           </div>
-          <div className="sm:col-span-2">
-            <label className="text-xs text-muted-foreground">Password temporanea *</label>
-            <div className="flex gap-2">
-              <Input type={show_pwd ? "text" : "password"} value={password} onChange={(e) => set_password(e.target.value)} />
-              <Button type="button" variant="outline" size="icon" onClick={() => set_show_pwd((v) => !v)}>
-                {show_pwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </Button>
-              <Button type="button" variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(password); toast({ title: "Copiata" }); }}>
-                <Copy className="w-4 h-4" />
-              </Button>
-              <Button type="button" variant="outline" size="icon" onClick={() => set_password(gen_password())}>
-                <RefreshCw className="w-4 h-4" />
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Verrà comunicata al presidente per il primo login.</p>
+          <div className="sm:col-span-2 rounded-lg border border-dashed border-border bg-muted/40 p-3">
+            <p className="text-xs text-muted-foreground">
+              Nessuna password viene mostrata né copiata. L'account viene creato con una password
+              casuale non comunicata e al presidente viene inviato un collegamento a scadenza per
+              impostare la propria password.
+            </p>
           </div>
         </CardContent>
       </Card>

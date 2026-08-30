@@ -44,10 +44,19 @@ const LandingPage: React.FC = () => {
           <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
         </a>
 
-        <div className="pt-6">
+        <div className="pt-6 space-y-3">
+          <p className="text-sm text-white/80">
+            Sei un club e vuoi usare Ice Arena?{" "}
+            <a
+              href="/registrati"
+              className="font-semibold text-white underline underline-offset-4"
+            >
+              Registra il tuo club
+            </a>
+          </p>
           <a
             href="/staff"
-            className="text-sm text-white/70 hover:text-white underline-offset-4 hover:underline"
+            className="inline-block text-sm text-white/70 hover:text-white underline-offset-4 hover:underline"
           >
             Accesso staff →
           </a>

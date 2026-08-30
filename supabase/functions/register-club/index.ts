@@ -153,28 +153,48 @@ Deno.serve(async (req) => {
     }
     const club_id = clubData.id;
 
-    // 3. club_identity
-    await admin.from("club_identity").insert({
-      club_id,
-      citta: body.citta?.trim() || null,
-      email_contatto: email_club,
-      federazione: body.federazione?.trim() || "",
-    });
+    // Rollback completo (club + utente auth) usato dai passi critici seguenti
+    const rollback = async () => {
+      await admin.from("clubs").delete().eq("id", club_id);
+      await admin.auth.admin.deleteUser(user_id);
+    };
 
-    // 4. Stagione di default (settembre-giugno)
+    // 3. club_identity: creata dal trigger DB alla nascita del club.
+    //    Aggiorniamo solo i dati forniti, senza fallire se manca.
+    if (body.citta?.trim() || body.federazione?.trim()) {
+      const { error: ciErr } = await admin
+        .from("club_identity")
+        .update({
+          citta: body.citta?.trim() || null,
+          email_contatto: email_club,
+          federazione: body.federazione?.trim() || "",
+        })
+        .eq("club_id", club_id);
+      if (ciErr) console.error("club_identity update warning", ciErr);
+    }
+
+    // 4. Stagione di default (settembre-giugno) — obbligatoria
     const today = new Date();
     const year = today.getMonth() + 1 >= 7 ? today.getFullYear() : today.getFullYear() - 1;
-    await admin.from("stagioni").insert({
+    const { error: stErr } = await admin.from("stagioni").insert({
       club_id,
       nome: `${year}/${year + 1}`,
-      tipo: "regolare",
+      tipo: "Regolare",
       data_inizio: `${year}-09-01`,
       data_fine: `${year + 1}-06-30`,
       attiva: true,
       stato: "in_corso",
     });
+    if (stErr) {
+      console.error("stagioni error", stErr);
+      await rollback();
+      return new Response(
+        JSON.stringify({ error: `Errore creazione stagione: ${stErr.message}` }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
 
-    // 5. utenti_club presidente
+    // 5. utenti_club presidente — obbligatorio
     const { error: ucErr } = await admin.from("utenti_club").insert({
       user_id,
       club_id,
@@ -186,6 +206,17 @@ Deno.serve(async (req) => {
     });
     if (ucErr) {
       console.error("utenti_club error", ucErr);
+      await rollback();
+      const duplicato =
+        ucErr.code === "23505" ||
+        /duplicate key|unique constraint/i.test(ucErr.message ?? "");
+      const messaggio = duplicato
+        ? "Questo indirizzo email è già associato a un altro club."
+        : `Errore creazione presidente: ${ucErr.message}`;
+      return new Response(JSON.stringify({ error: messaggio }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     return new Response(JSON.stringify({ ok: true, club_id, user_id }), {
