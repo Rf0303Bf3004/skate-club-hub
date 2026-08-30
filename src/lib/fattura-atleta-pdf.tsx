@@ -78,6 +78,7 @@ export type FatturaAtletaData = {
 
 const s = StyleSheet.create({
   page: { paddingTop: 40, paddingHorizontal: 40, paddingBottom: 110 * MM, fontSize: 10, fontFamily: "Helvetica", color: "#0f172a" },
+  pageSenzaPolizza: { paddingTop: 40, paddingHorizontal: 40, paddingBottom: 40, fontSize: 10, fontFamily: "Helvetica", color: "#0f172a" },
   header: { flexDirection: "row", justifyContent: "space-between", marginBottom: 24 },
   mittente: { fontSize: 9, lineHeight: 1.4 },
   logo: { maxHeight: 50, height: 50, width: 100, objectFit: "contain", marginBottom: 6 },
@@ -282,7 +283,7 @@ export const FatturaAtletaDocument: React.FC<{ data: FatturaAtletaData }> = ({ d
 
   return (
     <Document>
-      <Page size="A4" style={s.page}>
+      <Page size="A4" style={is_nota ? s.pageSenzaPolizza : s.page}>
         <View style={s.header}>
           <View style={s.mittente}>
             {mostra_logo ? <Image src={(data.club.logo_url as string).split("?")[0]} style={s.logo} /> : null}
@@ -368,7 +369,7 @@ export const FatturaAtletaDocument: React.FC<{ data: FatturaAtletaData }> = ({ d
 
         {is_nota ? null : <PolizzaQr data={data} />}
 
-        <Text style={s.footer} fixed>
+        <Text style={[s.footer, is_nota ? { bottom: 24 } : null] as any} fixed>
           {data.club.fattura_footer_testo
             ? data.club.fattura_footer_testo
             : `${data.club.nome}${data.club.partita_iva ? ` · P.IVA ${data.club.partita_iva}` : ""}${data.club.email ? ` · ${data.club.email}` : ""}`}
