@@ -335,6 +335,8 @@ export function use_upsert_istruttore() {
         attivo: data.attivo !== false,
         note: data.note || "",
         user_id: data.user_id || null,
+        foto_url: data.foto_url || null,
+        tag_nfc: data.tag_nfc || null,
       };
       if (data.id) {
         const { error } = await supabase.from("istruttori").update(payload).eq("id", data.id);
