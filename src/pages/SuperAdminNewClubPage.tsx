@@ -144,9 +144,16 @@ const SuperAdminNewClubPage: React.FC = () => {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
+      // Nessuna password mostrata: al presidente arriva un link per impostarla.
+      const { error: link_err } = await supabase.auth.resetPasswordForEmail(
+        email_presidente.trim().toLowerCase(),
+        { redirectTo: `${window.location.origin}/reset-password` }
+      );
       toast({
         title: "✅ Club creato",
-        description: `Credenziali presidente: ${email_presidente} / ${password}`,
+        description: link_err
+          ? `Invito non inviato (${link_err.message}): usa "Password dimenticata" con ${email_presidente}.`
+          : `Inviato a ${email_presidente} il collegamento per impostare la password.`,
       });
       navigate(`/superadmin/clubs/${data.club_id}`);
     } catch (e: any) {
