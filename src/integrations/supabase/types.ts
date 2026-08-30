@@ -2918,6 +2918,7 @@ export type Database = {
           nome: string
           note: string | null
           ora: string | null
+          scadenza_iscrizioni: string | null
           stagione_id: string | null
         }
         Insert: {
@@ -2936,6 +2937,7 @@ export type Database = {
           nome?: string
           note?: string | null
           ora?: string | null
+          scadenza_iscrizioni?: string | null
           stagione_id?: string | null
         }
         Update: {
@@ -2954,6 +2956,7 @@ export type Database = {
           nome?: string
           note?: string | null
           ora?: string | null
+          scadenza_iscrizioni?: string | null
           stagione_id?: string | null
         }
         Relationships: [

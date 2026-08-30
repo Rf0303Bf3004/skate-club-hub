@@ -1,0 +1,1 @@
+ALTER TABLE public.gare_calendario ADD COLUMN IF NOT EXISTS scadenza_iscrizioni date;
