@@ -70,7 +70,12 @@ export function useDashboardCardsMatrix(): {
         .select("codice_card, visibile")
         .eq("club_id", session!.club_id)
         .eq("ruolo", session!.ruolo);
-      if (error) return [];
+      if (error) {
+        await registra_silenzioso("usePermessi", "Lettura permessi card dashboard", error, {
+          ruolo: session?.ruolo,
+        });
+        return [];
+      }
       return data ?? [];
     },
   });
