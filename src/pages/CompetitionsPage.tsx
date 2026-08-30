@@ -32,6 +32,8 @@ import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import SessioniCampoEstivo from "@/components/SessioniCampoEstivo";
+import RichiesteIscrizioniGara from "@/components/gare/RichiesteIscrizioniGara";
+
 import MedagliereWidget from "@/components/MedagliereWidget";
 import {
   ComunicazioneFormSection,
@@ -1129,8 +1131,14 @@ const CompetitionsPage: React.FC = () => {
               <TabsTrigger value="risultati">
                 {te("competitions.results_tab", { count: (selected.atleti_iscritti ?? []).filter((ai: any) => ai.posizione || ai.medaglia).length })}
               </TabsTrigger>
+              <TabsTrigger value="richieste">Richieste e iscrizioni</TabsTrigger>
               <TabsTrigger value="dettagli">{t("dettagli")}</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="richieste" className="mt-6">
+              <RichiesteIscrizioniGara gara={selected} atleti={atleti} />
+            </TabsContent>
+
 
             <TabsContent value="atleti" className="mt-6 space-y-4">
               {!passata && (

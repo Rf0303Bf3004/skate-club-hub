@@ -3742,6 +3742,10 @@ export type Database = {
           punteggio: number | null
           punteggio_artistico: number | null
           punteggio_tecnico: number | null
+          stato: string
+          stato_da: string | null
+          stato_il: string | null
+          stato_motivo: string | null
           voto_giudici: number | null
         }
         Insert: {
@@ -3760,6 +3764,10 @@ export type Database = {
           punteggio?: number | null
           punteggio_artistico?: number | null
           punteggio_tecnico?: number | null
+          stato?: string
+          stato_da?: string | null
+          stato_il?: string | null
+          stato_motivo?: string | null
           voto_giudici?: number | null
         }
         Update: {
@@ -3778,6 +3786,10 @@ export type Database = {
           punteggio?: number | null
           punteggio_artistico?: number | null
           punteggio_tecnico?: number | null
+          stato?: string
+          stato_da?: string | null
+          stato_il?: string | null
+          stato_motivo?: string | null
           voto_giudici?: number | null
         }
         Relationships: [
@@ -7383,6 +7395,10 @@ export type Database = {
         }[]
       }
       duplica_fattura: { Args: { p_fattura: string }; Returns: string }
+      esito_iscrizioni_gara: {
+        Args: { p_esito: string; p_iscrizioni: string[]; p_motivo?: string }
+        Returns: number
+      }
       formatta_numero_fattura: {
         Args: {
           p_anno: number
@@ -7455,6 +7471,10 @@ export type Database = {
       iban_e_qr_iban: { Args: { p: string }; Returns: boolean }
       iban_normalizza: { Args: { p: string }; Returns: string }
       iban_valido: { Args: { p: string }; Returns: boolean }
+      invia_iscrizioni_gara: {
+        Args: { p_iscrizioni: string[] }
+        Returns: number
+      }
       invia_push_comunicazioni_programmate: { Args: never; Returns: number }
       is_mobile_parent: { Args: never; Returns: boolean }
       is_mobile_staff: { Args: never; Returns: boolean }
@@ -7531,6 +7551,14 @@ export type Database = {
         Returns: string
       }
       pulisci_tentativi_accesso: { Args: never; Returns: number }
+      quadro_iscrizioni_gara: {
+        Args: { p_gara: string }
+        Returns: {
+          atleti: string
+          quanti: number
+          stato: string
+        }[]
+      }
       registra_tentativo_accesso: {
         Args: {
           p_codice: string
@@ -7557,6 +7585,24 @@ export type Database = {
       }
       riferimento_qrr: { Args: { p_numero: number }; Returns: string }
       riferimento_scor: { Args: { p_numero: number }; Returns: string }
+      righe_fatturabili_gare: {
+        Args: { p_anno: number; p_club: string; p_mese: number }
+        Returns: {
+          atleta_id: string
+          descrizione: string
+          giorni: number
+          giorni_mese: number
+          importo: number
+          periodo_a: string
+          periodo_da: string
+          prezzo_unitario: number
+          quantita: number
+          ragione_sociale_id: string
+          riferimento_id: string
+          tipo: string
+          voce: string
+        }[]
+      }
       righe_fatturabili_periodo: {
         Args: { p_anno: number; p_club: string; p_mese: number }
         Returns: {
@@ -7579,6 +7625,7 @@ export type Database = {
         Args: { p_club: string }
         Returns: string[]
       }
+      ruoli_che_gestiscono_gare: { Args: { p_club: string }; Returns: string[] }
       seed_dashboard_cards_default: {
         Args: { p_club: string }
         Returns: number
