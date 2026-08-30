@@ -21,7 +21,10 @@ export function useModalitaArea(area: string): {
         .eq("club_id", club_id)
         .eq("area", area)
         .maybeSingle();
-      if (error) return null;
+      if (error) {
+        await registra_silenzioso("useModalitaArea", "Lettura modalità di gestione", error, { area });
+        return null;
+      }
       return data as any;
     },
   });
