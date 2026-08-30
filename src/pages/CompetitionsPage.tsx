@@ -1129,8 +1129,14 @@ const CompetitionsPage: React.FC = () => {
               <TabsTrigger value="risultati">
                 {te("competitions.results_tab", { count: (selected.atleti_iscritti ?? []).filter((ai: any) => ai.posizione || ai.medaglia).length })}
               </TabsTrigger>
+              <TabsTrigger value="richieste">Richieste e iscrizioni</TabsTrigger>
               <TabsTrigger value="dettagli">{t("dettagli")}</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="richieste" className="mt-6">
+              <RichiesteIscrizioniGara gara={selected} atleti={atleti} />
+            </TabsContent>
+
 
             <TabsContent value="atleti" className="mt-6 space-y-4">
               {!passata && (
