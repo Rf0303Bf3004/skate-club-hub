@@ -305,7 +305,7 @@ export function use_gare() {
       const [gare_res, isc_res, ris_res, costi_res] = await Promise.all([
         // NB: costo_iscrizione / costo_accompagnamento sono hidden via column-level REVOKE;
         // vengono recuperati con la RPC get_gare_costi solo per i ruoli finanziari.
-        (supabase as any).from("gare_calendario").select("id,club_id,nome,data,ora,luogo,indirizzo,club_ospitante,carriera,livello_minimo,stagione_id,note,archiviata,created_at").eq("club_id", get_current_club_id()).order("data"),
+        (supabase as any).from("gare_calendario").select("id,club_id,nome,data,ora,luogo,indirizzo,club_ospitante,carriera,livello_minimo,scadenza_iscrizioni,stagione_id,note,archiviata,created_at").eq("club_id", get_current_club_id()).order("data"),
         supabase.from("iscrizioni_gare").select("*"),
         supabase.from("risultati_gara").select("*"),
         supabase.rpc("get_gare_costi" as any, { p_club_id: get_current_club_id() } as any),
