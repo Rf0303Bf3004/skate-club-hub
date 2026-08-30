@@ -386,10 +386,12 @@ export function use_fatture() {
         .eq("club_id", get_current_club_id())
         .order("data_scadenza", { ascending: false });
       if (error) throw error;
+      // Lo stato resta quello del database (bozza, inviata, sollecitata,
+      // pagata, scaduta, annullata, stornata): la derivazione per la UI
+      // spetta a get_fattura_stato_ui in src/lib/fattura-status.ts.
       return (data ?? []).map((f) => ({
         ...f,
         scadenza: f.data_scadenza,
-        stato: f.pagata ? "pagata" : "da_pagare",
         importo: f.importo ?? 0,
       }));
     },
