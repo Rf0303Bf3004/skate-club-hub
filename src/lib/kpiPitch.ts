@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { registra_silenzioso } from "@/lib/errori";
 
 export interface KpiPitchRow {
   club_id: string;
@@ -24,7 +25,10 @@ export function useKpiPitch(club_id?: string | null) {
         .select("*")
         .eq("club_id", club_id!)
         .maybeSingle();
-      if (error) return null;
+      if (error) {
+        await registra_silenzioso("kpiPitch", "Lettura KPI sponsor", error);
+        return null;
+      }
       return (data as any) ?? null;
     },
   });

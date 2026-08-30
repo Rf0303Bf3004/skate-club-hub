@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { use_count_iscrizioni_non_lette } from "@/components/comunicazioni/IscrizioniAtletiNotifiche";
 import { MENU_PRINCIPALE, MENU_SETUP } from "@/config/menuSections";
+import { registra_silenzioso } from "@/lib/errori";
 
 
 // Voci legacy raggruppate (admin/superadmin)
@@ -102,7 +103,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         .select("codice_sezione, visibile")
         .eq("club_id", session.club_id)
         .eq("ruolo", session.ruolo);
-      if (error) return [];
+      if (error) {
+        await registra_silenzioso("MainLayout", "Lettura permessi menu", error);
+        return [];
+      }
       return data ?? [];
     },
     enabled: is_nuovo_ruolo,
