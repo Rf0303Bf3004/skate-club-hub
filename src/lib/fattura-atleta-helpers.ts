@@ -8,6 +8,7 @@ const BUCKET_FATTURE = "fatture-atleti";
 export type FatturaFull = {
   id: string;
   club_id: string;
+  ragione_sociale_id: string | null;
   atleta_id: string | null;
   numero: string | null;
   periodo: string | null;
@@ -63,7 +64,8 @@ export async function load_fattura_full(id: string): Promise<{
 }> {
   const { data: f, error } = await supabase.from("fatture").select("*").eq("id", id).maybeSingle();
   if (error || !f) throw error || new Error("Fattura non trovata");
-  const [atletaRes, clubRes, setupRes] = await Promise.all([
+  const ragione_sociale_id = (f as any).ragione_sociale_id ?? null;
+  const [atletaRes, clubRes, setupRes, ragioneRes] = await Promise.all([
     f.atleta_id
       ? supabase
           .from("atleti")
@@ -81,15 +83,34 @@ export async function load_fattura_full(id: string): Promise<{
       .select("iban, intestatario_conto, twint_paylink, fattura_mostra_logo, fattura_colore_accento, fattura_mostra_iban, fattura_note_legali, fattura_footer_testo")
       .eq("club_id", f.club_id)
       .maybeSingle(),
+    ragione_sociale_id
+      ? supabase
+          .from("ragioni_sociali")
+          .select("nome, indirizzo, cap, citta, iban, intestatario_iban, partita_iva, numero_iva, logo_url, colore_primario")
+          .eq("id", ragione_sociale_id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
   const setup = (setupRes as any).data;
+  const rs = (ragioneRes as any).data;
+  const base = (clubRes as any).data;
+  // Il beneficiario stampato deve coincidere con quello codificato nel QR:
+  // se la fattura è legata a una ragione sociale, quella prevale sul club.
   const club = {
-    ...(clubRes as any).data,
-    iban: setup?.iban ?? null,
-    intestatario_iban: setup?.intestatario_conto ?? null,
+    ...base,
+    nome: rs?.nome ?? base?.nome,
+    indirizzo: rs?.indirizzo ?? base?.indirizzo,
+    cap: rs?.cap ?? base?.cap,
+    citta: rs?.citta ?? base?.citta,
+    cantone: rs ? null : base?.cantone,
+    partita_iva: rs?.partita_iva ?? base?.partita_iva,
+    numero_iva_chf: rs?.numero_iva ?? base?.numero_iva_chf,
+    logo_url: rs?.logo_url ?? base?.logo_url,
+    iban: rs ? rs.iban ?? null : setup?.iban ?? null,
+    intestatario_iban: rs ? rs.intestatario_iban ?? rs.nome ?? null : setup?.intestatario_conto ?? null,
     twint_qr_url: setup?.twint_paylink ?? null,
     fattura_mostra_logo: setup?.fattura_mostra_logo ?? false,
-    fattura_colore_accento: setup?.fattura_colore_accento ?? null,
+    fattura_colore_accento: rs?.colore_primario ?? setup?.fattura_colore_accento ?? null,
     fattura_mostra_iban: setup?.fattura_mostra_iban ?? true,
     fattura_note_legali: setup?.fattura_note_legali ?? null,
     fattura_footer_testo: setup?.fattura_footer_testo ?? null,
@@ -238,6 +259,11 @@ export async function genera_pdf_blob_per_email(id: string): Promise<{ blob: Blo
  * porta il documento in stato "inviata".
  */
 export async function invia_fattura_email(fattura_id: string, destinatario: string) {
+  const email = (destinatario ?? "").trim();
+  // Verifica prima di congelare il PDF: senza destinatario l'invio fallisce
+  // e lascerebbe la fattura con un pdf_url già scritto.
+  if (!email) throw new Error("Destinatario email mancante");
+
   const { fattura, atleta, club } = await load_fattura_full(fattura_id);
   const qr = fattura.tipo_documento === "nota_credito" ? null : await carica_qr_fattura(fattura_id);
   const data = build_pdf_data(fattura, atleta, club, qr);
@@ -253,10 +279,14 @@ export async function invia_fattura_email(fattura_id: string, destinatario: stri
   const { error: e_pdf } = await supabase.from("fatture").update({ pdf_url: path }).eq("id", fattura_id);
   if (e_pdf) throw e_pdf;
 
+  // Link firmato di lunga durata (30 giorni) da mettere nell'email.
+  const { data: signed } = await supabase.storage.from(BUCKET_FATTURE).createSignedUrl(path, 60 * 60 * 24 * 30);
+
   const { error: e_fn } = await supabase.functions.invoke("send-fattura-email-atleta", {
-    body: { fattura_id, destinatario },
+    body: { fattura_id, destinatario: email, pdf_url: signed?.signedUrl ?? null },
   });
   if (e_fn) throw e_fn;
+
 
   const { error: e_stato } = await supabase
     .from("fatture")

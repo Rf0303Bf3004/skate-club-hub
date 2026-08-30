@@ -2614,7 +2614,7 @@ export type Database = {
           periodo: string | null
           ragione_sociale_id: string | null
           riferimento_id: string | null
-          riferimento_numero: number | null
+          riferimento_numero: number
           righe: Json | null
           sconto_causale: string | null
           sconto_importo_chf: number
@@ -2658,7 +2658,7 @@ export type Database = {
           periodo?: string | null
           ragione_sociale_id?: string | null
           riferimento_id?: string | null
-          riferimento_numero?: number | null
+          riferimento_numero?: number
           righe?: Json | null
           sconto_causale?: string | null
           sconto_importo_chf?: number
@@ -2702,7 +2702,7 @@ export type Database = {
           periodo?: string | null
           ragione_sociale_id?: string | null
           riferimento_id?: string | null
-          riferimento_numero?: number | null
+          riferimento_numero?: number
           righe?: Json | null
           sconto_causale?: string | null
           sconto_importo_chf?: number

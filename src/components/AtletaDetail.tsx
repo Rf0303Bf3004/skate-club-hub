@@ -4,6 +4,7 @@ import { use_ragioni_sociali } from "@/hooks/use-ragioni-sociali";
 import React, { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
+import { get_fattura_stato_ui, get_fattura_stato_label } from "@/lib/fattura-status";
 import { format_data_completa } from "@/lib/format-data";
 import { CheckCircle2, AlertTriangle } from "lucide-react";
 import { useSearchParams, useNavigate } from "react-router-dom";
@@ -1620,6 +1621,8 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                     pagata: "bg-emerald-100 text-emerald-700 border-emerald-200",
                     scaduta: "bg-red-100 text-red-700 border-red-200",
                     annullata: "bg-gray-100 text-gray-500 border-gray-200",
+                    stornata: "bg-gray-100 text-gray-500 border-gray-200",
+                    sollecitata: "bg-orange-100 text-orange-700 border-orange-200",
                     da_pagare: "bg-amber-100 text-amber-700 border-amber-200",
                   };
                   return (
@@ -1633,8 +1636,8 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                           <div className="font-semibold text-foreground">{f.numero || td("detail.invoice_draft", { id: f.id.slice(0, 6) })}</div>
                           {f.periodo && <div className="text-xs text-muted-foreground">{f.periodo}</div>}
                         </div>
-                        <span className={`text-xs px-2 py-1 rounded-md border font-medium ${stato_cls[f.stato] || stato_cls.da_pagare}`}>
-                          {f.stato}
+                        <span className={`text-xs px-2 py-1 rounded-md border font-medium ${stato_cls[get_fattura_stato_ui(f)] || stato_cls.da_pagare}`}>
+                          {get_fattura_stato_label(get_fattura_stato_ui(f))}
                         </span>
                       </div>
                       {f.descrizione && <p className="text-sm text-muted-foreground mb-2 line-clamp-2">{f.descrizione}</p>}

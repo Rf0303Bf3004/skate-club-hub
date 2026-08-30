@@ -62,6 +62,7 @@ import PresidentDashboard from "@/components/dashboard/PresidentDashboard";
 import BannerDisponibilitaScaduta from "@/components/common/BannerDisponibilitaScaduta";
 import OnboardingBanner from "@/components/dashboard/OnboardingBanner";
 import { useAuth } from "@/lib/auth";
+import { get_fattura_stato_ui, fattura_chiusa } from "@/lib/fattura-status";
 
 // ─── Helpers ──────────────────────────────────────────────
 function normalize_giorno(value?: string): string {
@@ -1139,12 +1140,17 @@ const WidgetFatture: React.FC<{ fatture: any[]; atleti: any[] }> = ({ fatture, a
   const today = new Date().toISOString().split("T")[0];
   const tra_7 = add_days(today, 7);
 
-  const in_scadenza = fatture
-    .filter((f) => f.stato === "da_pagare" && f.scadenza && f.scadenza >= today && f.scadenza <= tra_7)
+  const aperte = fatture.filter((f) => {
+    const st = get_fattura_stato_ui(f, today);
+    return !fattura_chiusa(f) && st !== "pagata" && st !== "bozza";
+  });
+
+  const in_scadenza = aperte
+    .filter((f) => f.scadenza && f.scadenza >= today && f.scadenza <= tra_7)
     .sort((a, b) => a.scadenza.localeCompare(b.scadenza))
     .slice(0, 5);
 
-  const scadute = fatture.filter((f) => f.stato === "da_pagare" && f.scadenza && f.scadenza < today);
+  const scadute = aperte.filter((f) => f.scadenza && f.scadenza < today);
 
   if (in_scadenza.length === 0 && scadute.length === 0) return null;
 
@@ -1341,7 +1347,11 @@ const DashboardPage: React.FC = () => {
   const active_corsi = corsi.filter((c) => c.stato === "attivo").length;
   const upcoming_gare = gare.filter((g) => days_until(g.data) >= 0);
   const next_gara = upcoming_gare.sort((a, b) => days_until(a.data) - days_until(b.data))[0];
-  const fatture_da_pagare = fatture.filter((f) => f.stato === "da_pagare");
+  const today_iso_aperte = new Date().toISOString().split("T")[0];
+  const fatture_da_pagare = fatture.filter((f) => {
+    const st = get_fattura_stato_ui(f, today_iso_aperte);
+    return !fattura_chiusa(f) && st !== "pagata" && st !== "bozza";
+  });
   const totale_fatture = fatture_da_pagare.reduce((s, f) => s + f.importo, 0);
   const today_iso_kpi = new Date().toISOString().split("T")[0];
   const fatture_scadute_count = fatture_da_pagare.filter((f) => {

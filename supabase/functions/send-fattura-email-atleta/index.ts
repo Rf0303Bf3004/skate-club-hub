@@ -8,7 +8,7 @@ const corsHeaders = {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    const { fattura_id, destinatario } = await req.json();
+    const { fattura_id, destinatario, pdf_url } = await req.json();
     if (!fattura_id || !destinatario) {
       return new Response(JSON.stringify({ error: "fattura_id e destinatario obbligatori" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -24,11 +24,13 @@ Deno.serve(async (req) => {
     }
 
     const clubNome = (f as any).clubs?.nome ?? "Il tuo club";
+    const link_pdf = typeof pdf_url === "string" && pdf_url.startsWith("http") ? pdf_url : null;
     const html = `<div style="font-family:sans-serif;color:#0f172a">
       <h2>Fattura ${f.numero ?? ""}</h2>
-      <p>Trovi in allegato (oppure tramite il portale) la fattura ${f.numero ?? ""} di ${clubNome}.</p>
+      <p>${link_pdf ? `Puoi scaricare la fattura ${f.numero ?? ""} di ${clubNome} dal pulsante qui sotto.` : `La fattura ${f.numero ?? ""} di ${clubNome} è disponibile nel portale.`}</p>
       <p><strong>Totale:</strong> CHF ${Number(f.importo ?? 0).toFixed(2)}</p>
       ${f.data_scadenza ? `<p><strong>Scadenza:</strong> ${f.data_scadenza}</p>` : ""}
+      ${link_pdf ? `<p><a href="${link_pdf}" style="display:inline-block;background:#0284c7;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600">Scarica la fattura</a></p><p style="font-size:12px;color:#64748b">Il collegamento resta valido 30 giorni.</p>` : ""}
       <p>Puoi visualizzare e pagare la fattura dal portale.</p>
     </div>`;
 
