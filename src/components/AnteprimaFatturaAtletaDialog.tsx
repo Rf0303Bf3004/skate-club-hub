@@ -3,7 +3,7 @@ import { PDFViewer, PDFDownloadLink } from "@react-pdf/renderer";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Download, Loader2 } from "lucide-react";
-import { load_fattura_full, build_pdf_data } from "@/lib/fattura-atleta-helpers";
+import { carica_dati_pdf, url_pdf_congelato } from "@/lib/fattura-atleta-helpers";
 import { FatturaAtletaDocument, type FatturaAtletaData } from "@/lib/fattura-atleta-pdf";
 
 interface Props {
@@ -14,6 +14,7 @@ interface Props {
 
 const AnteprimaFatturaAtletaDialog: React.FC<Props> = ({ fattura_id, open, onOpenChange }) => {
   const [data, set_data] = useState<FatturaAtletaData | null>(null);
+  const [pdf_salvato, set_pdf_salvato] = useState<string | null>(null);
   const [loading, set_loading] = useState(false);
 
   useEffect(() => {
@@ -21,10 +22,19 @@ const AnteprimaFatturaAtletaDialog: React.FC<Props> = ({ fattura_id, open, onOpe
     let alive = true;
     (async () => {
       set_loading(true);
+      set_data(null);
+      set_pdf_salvato(null);
       try {
-        const r = await load_fattura_full(fattura_id);
+        // Le fatture non in bozza servono il PDF congelato all'invio.
+        const congelato = await url_pdf_congelato(fattura_id);
         if (!alive) return;
-        set_data(build_pdf_data(r.fattura, r.atleta, r.club));
+        if (congelato) {
+          set_pdf_salvato(congelato);
+          return;
+        }
+        const d = await carica_dati_pdf(fattura_id);
+        if (!alive) return;
+        set_data(d);
       } finally {
         if (alive) set_loading(false);
       }
@@ -37,7 +47,13 @@ const AnteprimaFatturaAtletaDialog: React.FC<Props> = ({ fattura_id, open, onOpe
       <DialogContent className="max-w-5xl w-[95vw] h-[90vh] flex flex-col p-0 gap-0">
         <DialogHeader className="px-5 py-3 border-b border-border flex-row items-center justify-between space-y-0">
           <DialogTitle>Anteprima fattura {data?.numero ? `· ${data.numero}` : ""}</DialogTitle>
-          {data && (
+          {pdf_salvato ? (
+            <Button size="sm" variant="outline" className="mr-8" asChild>
+              <a href={pdf_salvato} target="_blank" rel="noreferrer" download>
+                <Download className="w-4 h-4 mr-1" /> Scarica PDF
+              </a>
+            </Button>
+          ) : data ? (
             <PDFDownloadLink
               document={<FatturaAtletaDocument data={data} />}
               fileName={`fattura-${data.numero}.pdf`}
@@ -48,16 +64,18 @@ const AnteprimaFatturaAtletaDialog: React.FC<Props> = ({ fattura_id, open, onOpe
                 </Button>
               )}
             </PDFDownloadLink>
-          )}
+          ) : null}
         </DialogHeader>
         <div className="flex-1 bg-muted/30">
-          {loading || !data ? (
+          {loading || (!data && !pdf_salvato) ? (
             <div className="h-full flex items-center justify-center">
               <Loader2 className="w-6 h-6 animate-spin text-sky-500" />
             </div>
+          ) : pdf_salvato ? (
+            <iframe src={pdf_salvato} title="Fattura" className="w-full h-full border-0" />
           ) : (
             <PDFViewer width="100%" height="100%" showToolbar style={{ border: 0 }}>
-              <FatturaAtletaDocument data={data} />
+              <FatturaAtletaDocument data={data!} />
             </PDFViewer>
           )}
         </div>

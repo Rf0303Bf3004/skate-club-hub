@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!RESEND_API_KEY || !LOVABLE_API_KEY) {
-      await supabase.from("fatture").update({ email_inviata_at: new Date().toISOString(), data_invio: new Date().toISOString(), stato: "inviata" }).eq("id", fattura_id);
+      await supabase.from("fatture").update({ email_inviata_at: new Date().toISOString(), stato: "inviata" }).eq("id", fattura_id);
       return new Response(JSON.stringify({ ok: true, warning: "Email skipped: provider non configurato" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
     const body = await resp.json();
     if (!resp.ok) throw new Error(JSON.stringify(body));
 
-    await supabase.from("fatture").update({ email_inviata_at: new Date().toISOString(), data_invio: new Date().toISOString(), stato: "inviata" }).eq("id", fattura_id);
+    await supabase.from("fatture").update({ email_inviata_at: new Date().toISOString(), stato: "inviata" }).eq("id", fattura_id);
     return new Response(JSON.stringify({ ok: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     return new Response(JSON.stringify({ error: (e as Error).message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
