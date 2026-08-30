@@ -233,6 +233,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                   {session && render_nav_item("/convenzioni", BadgePercent, "Convenzioni", "convenzioni")}
                   {render_nav_item("/pacchetti-sponsor", FileSpreadsheet, "Pacchetti Sponsor", "pacchetti_sponsor")}
                   {render_nav_item("/import-atleti", FileSpreadsheet, "Import dati", "import_atleti")}
+                  {render_nav_item("/diagnostica", ShieldAlert, "Diagnostica", "diagnostica")}
                   {is_admin && (
                     <NavLink to="/gestione-avanzata" onClick={() => set_sidebar_open(false)}
                       className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/gestione-avanzata" ? "bg-destructive text-destructive-foreground shadow-sm" : "text-destructive/70 hover:bg-destructive/10 hover:text-destructive"}`}>
@@ -258,7 +259,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                   <span className="ml-auto inline-flex items-center justify-center px-1.5 h-4 rounded-full bg-emerald-500 text-white text-[9px] font-bold tracking-wider">NEW</span>
                 </NavLink>
               )}
-              {nuovo_setup.length > 0 && (
+              {(nuovo_setup.length > 0 || is_presidente || (session?.ruolo as string) === "segreteria") && (
                 <div className="pt-2">
                   <button
                     onClick={() => set_setup_open((o) => !o)}
@@ -271,6 +272,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                   {setup_open && (
                     <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border pl-2">
                       {nuovo_setup.map((s) => render_nav_item(s.path, s.icon, menu_label(s.codice, s.label), s.codice, s.non_implementato))}
+                      {(is_presidente || (session?.ruolo as string) === "segreteria") && !nuovo_setup.some((s) => s.codice === "diagnostica") &&
+                        render_nav_item("/diagnostica", ShieldAlert, "Diagnostica", "diagnostica")}
                     </div>
                   )}
                 </div>

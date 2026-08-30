@@ -2,7 +2,7 @@ import {
   LayoutDashboard, Users, GraduationCap, BookOpen, Trophy, Clock,
   Receipt, MessageSquare, Building2, Calendar, CalendarRange, MapPin,
   ListChecks, Handshake, UserCog, ShieldCheck, Wrench, FileSpreadsheet,
-  ClipboardCheck, Sparkles, UserPlus, LayoutGrid,
+  ClipboardCheck, Sparkles, UserPlus, LayoutGrid, Stethoscope,
 } from "lucide-react";
 
 export type MenuGruppo = "principale" | "setup";
@@ -42,6 +42,7 @@ export const MENU_SECTIONS: MenuSection[] = [
   { codice: "gestione_utenti",   label: "Gestione Utenti",    icon: UserCog,       path: "/utenti",            gruppo: "setup", ordine: 7 },
   { codice: "ruoli_permessi",    label: "Gestione Ruoli",     icon: ShieldCheck,   path: "/ruoli-permessi",    gruppo: "setup", ordine: 8 },
   { codice: "gestione_avanzata", label: "Gestione Avanzata",  icon: Wrench,            path: "/gestione-avanzata", gruppo: "setup", ordine: 9 },
+  { codice: "diagnostica",       label: "Diagnostica",        icon: Stethoscope,       path: "/diagnostica",       gruppo: "setup", ordine: 11 },
   { codice: "import_dati",       label: "Import dati",        icon: FileSpreadsheet,   path: "/import-atleti",     gruppo: "setup", ordine: 10 },
 ];
 
