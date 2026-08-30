@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { is_admin_like } from "@/lib/roles";
+import { registra_silenzioso } from "@/lib/errori";
 
 /**
  * Hook centralizzato per i permessi di sezione.
