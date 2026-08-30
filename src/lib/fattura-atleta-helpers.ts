@@ -217,36 +217,35 @@ export async function url_pdf_congelato(id: string): Promise<string | null> {
   return await url_pdf_salvato((data as any).pdf_url);
 }
 
-export async function genera_e_apri_pdf(id: string, modo: "apri" | "scarica" | "stampa" = "apri") {
+/**
+ * Prepara il PDF della fattura senza aprire finestre (i pop-up vengono bloccati).
+ * Restituisce un URL visualizzabile in un iframe dentro un dialogo.
+ * Se `congelato` è true l'URL proviene dall'archivio e non va revocato.
+ */
+export async function prepara_pdf_fattura(
+  id: string,
+): Promise<{ url: string; nome_file: string; congelato: boolean }> {
   const congelato = await url_pdf_congelato(id);
   if (congelato) {
-    if (modo === "scarica") {
-      const a = document.createElement("a");
-      a.href = congelato;
-      a.download = `fattura-${id.slice(0, 8)}.pdf`;
-      a.click();
-    } else {
-      const w = window.open(congelato, "_blank");
-      if (modo === "stampa" && w) w.addEventListener("load", () => w.print());
-    }
-    return;
+    return { url: congelato, nome_file: `fattura-${id.slice(0, 8)}.pdf`, congelato: true };
   }
   const data = await carica_dati_pdf(id);
   const blob = await genera_fattura_atleta_blob(data);
-  const url = URL.createObjectURL(blob);
-  if (modo === "scarica") {
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `fattura-${data.numero}.pdf`;
-    a.click();
-  } else {
-    const w = window.open(url, "_blank");
-    if (modo === "stampa" && w) {
-      w.addEventListener("load", () => w.print());
-    }
-  }
-  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  return { url: URL.createObjectURL(blob), nome_file: `fattura-${data.numero}.pdf`, congelato: false };
 }
+
+/** Scarica il PDF con un elemento <a download>: nessun pop-up, mai bloccato. */
+export async function scarica_pdf_fattura(id: string) {
+  const { url, nome_file, congelato } = await prepara_pdf_fattura(id);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = nome_file;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  if (!congelato) URL.revokeObjectURL(url);
+}
+
 
 export async function genera_pdf_blob_per_email(id: string): Promise<{ blob: Blob; numero: string; data: FatturaAtletaData }> {
   const data = await carica_dati_pdf(id);
