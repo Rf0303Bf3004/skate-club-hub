@@ -90,34 +90,52 @@ const PortaleEventiPage: React.FC = () => {
         <TabsContent value="gare" className="space-y-3 mt-4">
           {gare.length === 0 ? <EmptyMsg text={t("eventi.nessun_evento")} /> : gare.map((g) => {
             const motivo = motivo_non_iscrivibile(g, atleta_livelli);
-            const iscritto = iscr_gare.has(g.id);
+            const riga = iscr_gare[g.id];
+            const stato: string | null = riga ? (riga.stato ?? "richiesta") : null;
+            const viva = stato ? ["richiesta", "inviata", "confermata"].includes(stato) : false;
+            const etichetta =
+              stato === "richiesta" ? "Richiesta inviata al club"
+              : stato === "inviata" ? "In attesa di conferma"
+              : stato === "confermata" ? "Confermata"
+              : stato === "non_accettata" ? `Non accettata: ${riga?.stato_motivo ?? "—"}`
+              : stato === "ritirata" ? "Ritirata"
+              : null;
+            const colore =
+              stato === "confermata" ? "text-emerald-600"
+              : stato === "non_accettata" ? "text-red-600"
+              : stato === "ritirata" ? "text-slate-400"
+              : "text-sky-600";
             return (
               <div key={g.id} className="bg-white border border-slate-200 rounded-2xl p-4 flex items-start gap-3">
                 <DateBox data={g.data} />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-slate-800">{g.nome}</p>
                   {g.luogo && <p className="text-xs text-slate-500">📍 {g.luogo}</p>}
-                  {!iscritto && motivo && (
+                  {etichetta && <p className={`text-xs font-semibold mt-1 ${colore}`}>{etichetta}</p>}
+                  {!viva && motivo && (
                     <p className="text-xs text-amber-600 font-medium mt-1 flex items-center gap-1">
                       <Lock className="w-3 h-3" /> {motivo}
                     </p>
                   )}
-                  {!iscritto && !motivo && g.scadenza_iscrizioni && (
+                  {!viva && !motivo && g.scadenza_iscrizioni && (
                     <p className="text-[11px] text-slate-400 mt-1">
                       Iscrizioni entro il {new Date(g.scadenza_iscrizioni + "T00:00:00").toLocaleDateString("it-CH")}
                     </p>
                   )}
                 </div>
-                {iscritto ? (
-                  <span className="text-xs font-bold text-emerald-600 self-center">{t("eventi.iscritto")}</span>
+                {viva ? (
+                  <Button size="sm" variant="outline" className="self-center" onClick={() => ritira_gara(riga)}>
+                    Rinuncia
+                  </Button>
                 ) : motivo ? null : (
                   <Button size="sm" className="bg-sky-500 hover:bg-sky-600" onClick={() => iscriviti_gara(g)}>
-                    {t("eventi.iscriviti")}
+                    {stato ? "Richiedi di nuovo" : t("eventi.iscriviti")}
                   </Button>
                 )}
               </div>
             );
           })}
+
         </TabsContent>
 
 
