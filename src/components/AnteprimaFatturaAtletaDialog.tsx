@@ -23,6 +23,10 @@ const AnteprimaFatturaAtletaDialog: React.FC<Props> = ({ fattura_id, open, onOpe
   useEffect(() => {
     if (!open) return;
     let alive = true;
+    if (da_revocare.current) {
+      URL.revokeObjectURL(da_revocare.current);
+      da_revocare.current = null;
+    }
     set_loading(true);
     set_errore(null);
     set_url(null);
@@ -56,6 +60,8 @@ const AnteprimaFatturaAtletaDialog: React.FC<Props> = ({ fattura_id, open, onOpe
       URL.revokeObjectURL(da_revocare.current);
       da_revocare.current = null;
     }
+    iframe_stampa_ref.current?.remove();
+    iframe_stampa_ref.current = null;
     set_url(null);
     set_blob(null);
   }, [open]);
