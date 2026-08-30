@@ -26,7 +26,12 @@ export function usePermessiSezioniMatrix(): {
         .select("codice_sezione, visibile")
         .eq("club_id", session!.club_id)
         .eq("ruolo", session!.ruolo);
-      if (error) return [];
+      if (error) {
+        await registra_silenzioso("usePermessi", "Lettura permessi sezioni", error, {
+          ruolo: session?.ruolo,
+        });
+        return [];
+      }
       return data ?? [];
     },
   });
