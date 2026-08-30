@@ -61,6 +61,7 @@ import {
 import PresidentDashboard from "@/components/dashboard/PresidentDashboard";
 import BannerDisponibilitaScaduta from "@/components/common/BannerDisponibilitaScaduta";
 import OnboardingBanner from "@/components/dashboard/OnboardingBanner";
+import DiagnosticaCard from "@/components/dashboard/DiagnosticaCard";
 import { useAuth } from "@/lib/auth";
 import { get_fattura_stato_ui, fattura_chiusa } from "@/lib/fattura-status";
 
@@ -1470,6 +1471,9 @@ const DashboardPage: React.FC = () => {
           <p className="text-xs font-bold text-success">{td("presenti_in_pista", { count: totale_presenti })}</p>
         </div>
       </div>
+
+      {/* Diagnostica: segnalazioni non viste */}
+      <DiagnosticaCard />
 
       {/* KPI */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

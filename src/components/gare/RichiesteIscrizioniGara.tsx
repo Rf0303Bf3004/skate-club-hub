@@ -9,6 +9,7 @@ import { toast } from "@/hooks/use-toast";
 import { Send, Check, X, AlertTriangle, Loader2 } from "lucide-react";
 import { format_data_breve } from "@/lib/format-data";
 import { get_livello_atleta, rank_livello, normalizza_livello } from "@/lib/gare-iscrivibilita";
+import { segnala_errore } from "@/lib/errori";
 
 type Stato = "richiesta" | "inviata" | "confermata" | "non_accettata" | "ritirata";
 
@@ -78,7 +79,7 @@ const RichiesteIscrizioniGara: React.FC<Props> = ({ gara, atleti }) => {
     set_in_corso(true);
     const { error } = await (supabase as any).rpc("invia_iscrizioni_gara", { p_iscrizioni: ids });
     set_in_corso(false);
-    if (error) { toast({ title: "Errore invio", description: error.message, variant: "destructive" }); return; }
+    if (error) { await segnala_errore("RichiesteIscrizioniGara", "Invio iscrizioni gara", error); return; }
     toast({ title: `${ids.length} richieste inviate al club organizzatore` });
     await dopo_azione();
   };
@@ -96,7 +97,7 @@ const RichiesteIscrizioniGara: React.FC<Props> = ({ gara, atleti }) => {
       p_motivo: p_motivo?.trim() || null,
     });
     set_in_corso(false);
-    if (error) { toast({ title: "Errore aggiornamento", description: error.message, variant: "destructive" }); return; }
+    if (error) { await segnala_errore("RichiesteIscrizioniGara", "Aggiornamento esito iscrizioni", error); return; }
     toast({ title: p_esito === "confermata" ? `${ids.length} iscrizioni confermate` : `${ids.length} iscrizioni non accettate` });
     await dopo_azione();
   };

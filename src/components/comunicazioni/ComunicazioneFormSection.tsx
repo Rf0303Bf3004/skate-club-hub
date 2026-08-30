@@ -11,6 +11,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
 import { use_livelli } from "@/hooks/use-supabase-data";
+import { segnala_errore, segnala_a_vuoto } from "@/lib/errori";
 
 const tf = (key: string, opts?: any) => i18n.t(`form_section.${key}`, { ns: "communications", ...(opts ?? {}) }) as string;
 
@@ -286,8 +287,15 @@ export async function invia_comunicazione_evento(
     urgente: state.urgente === true,
   };
 
-  const { error } = await supabase.from("comunicazioni").insert(payload);
-  if (error) throw error;
+  const { data: inserite, error } = await supabase.from("comunicazioni").insert(payload).select("id");
+  if (error) {
+    await segnala_errore("ComunicazioneFormSection", "Invio comunicazione", error, { tipo_destinatari: state.tipo_destinatari });
+    throw error;
+  }
+  if (!inserite || inserite.length === 0) {
+    await segnala_a_vuoto("ComunicazioneFormSection", "Invio comunicazione", { tipo_destinatari: state.tipo_destinatari });
+    throw new Error("La comunicazione non è stata salvata: nessuna riga creata.");
+  }
 
   // Conteggio destinatari (stima, il trigger DB li popola comunque)
   let count = 0;

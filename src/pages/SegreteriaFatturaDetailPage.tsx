@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
+import { segnala_errore, verifica_scrittura } from "@/lib/errori";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -114,12 +115,14 @@ const SegreteriaFatturaDetailPage: React.FC = () => {
         sconto_note: f.sconto_note,
         note: f.note,
       };
-      const { error } = await supabase.from("fatture").update(patch).eq("id", f.id);
-      if (error) throw error;
+      const res = await supabase.from("fatture").update(patch).eq("id", f.id).select("id");
+      // Verifica anche il caso "nessuna riga toccata": non è un errore, ma non ha fatto nulla.
+      const ok = await verifica_scrittura("SegreteriaFatturaDetailPage", "Salvataggio bozza fattura", res, { fattura_id: f.id });
+      if (!ok) return;
       toast({ title: "Bozza salvata" });
       reload();
     } catch (e: any) {
-      toast({ title: "Errore", description: e?.message, variant: "destructive" });
+      await segnala_errore("SegreteriaFatturaDetailPage", "Salvataggio bozza fattura", e, { fattura_id: f?.id });
     } finally {
       set_saving(false);
     }
@@ -129,8 +132,9 @@ const SegreteriaFatturaDetailPage: React.FC = () => {
     if (!f) return;
     const patch: any = { stato: nuovo };
     if (nuovo === "pagata") patch.data_pagamento = new Date().toISOString().slice(0, 10);
-    const { error } = await supabase.from("fatture").update(patch).eq("id", f.id);
-    if (error) { toast({ title: "Errore", description: error.message, variant: "destructive" }); return; }
+    const res = await supabase.from("fatture").update(patch).eq("id", f.id).select("id");
+    const ok = await verifica_scrittura("SegreteriaFatturaDetailPage", `Cambio stato fattura in ${nuovo}`, res, { fattura_id: f.id });
+    if (!ok) return;
     toast({ title: `Stato aggiornato: ${nuovo}` });
     reload();
   }
@@ -146,7 +150,7 @@ const SegreteriaFatturaDetailPage: React.FC = () => {
       toast({ title: "Fattura inviata via email" });
       reload();
     } catch (e: any) {
-      toast({ title: "Errore invio", description: e?.message, variant: "destructive" });
+      await segnala_errore("SegreteriaFatturaDetailPage", "Invio fattura via email", e, { fattura_id: f?.id });
     } finally {
       set_inviando(false);
     }

@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { is_admin_like } from "@/lib/roles";
+import { registra_silenzioso } from "@/lib/errori";
 
 /**
  * Hook centralizzato per i permessi di sezione.
@@ -26,7 +27,12 @@ export function usePermessiSezioniMatrix(): {
         .select("codice_sezione, visibile")
         .eq("club_id", session!.club_id)
         .eq("ruolo", session!.ruolo);
-      if (error) return [];
+      if (error) {
+        await registra_silenzioso("usePermessi", "Lettura permessi sezioni", error, {
+          ruolo: session?.ruolo,
+        });
+        return [];
+      }
       return data ?? [];
     },
   });
@@ -64,7 +70,12 @@ export function useDashboardCardsMatrix(): {
         .select("codice_card, visibile")
         .eq("club_id", session!.club_id)
         .eq("ruolo", session!.ruolo);
-      if (error) return [];
+      if (error) {
+        await registra_silenzioso("usePermessi", "Lettura permessi card dashboard", error, {
+          ruolo: session?.ruolo,
+        });
+        return [];
+      }
       return data ?? [];
     },
   });

@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { registra_silenzioso } from "@/lib/errori";
 
 export interface ConflittoIscrizione {
   corso_id: string;
@@ -42,7 +43,10 @@ export async function verifica_conflitti_iscrizione(
     .from("iscrizioni_corsi")
     .select("corso_id,attiva,corsi(id,nome,giorno,ora_inizio,ora_fine,attivo)")
     .eq("atleta_id", atleta_id);
-  if (error) return [];
+  if (error) {
+    await registra_silenzioso("conflitti-iscrizioni", "Lettura iscrizioni per conflitti", error, { atleta_id, corso_id });
+    return [];
+  }
 
   const conflitti: ConflittoIscrizione[] = [];
   for (const r of (iscrizioni ?? []) as any[]) {

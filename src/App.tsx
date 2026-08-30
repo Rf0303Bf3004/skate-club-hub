@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from "@/lib/auth";
 import MainLayout from "@/components/MainLayout";
 import LoginPage from "@/pages/LoginPage";
 import DashboardPage from "@/pages/DashboardPage";
+import DiagnosticaPage from "@/pages/DiagnosticaPage";
 import AthletesPage from "@/pages/AthletesPage";
 import InstructorsPage from "@/pages/InstructorsPage";
 import CoursesPage from "@/pages/CoursesPage";
@@ -263,6 +264,7 @@ const AuthenticatedApp = () => {
           <Route path="/planning" element={<PlanningPage />} />
           <Route path="/griglia-ghiaccio" element={<GrigliaGhiaccioPage />} />
           <Route path="/setup-club" element={<ClubSetupPage />} />
+          <Route path="/diagnostica" element={<DiagnosticaPage />} />
           <Route path="/gestione-avanzata" element={<AdvancedManagementPage />} />
           <Route path="/richieste-iscrizione" element={<RichiesteIscrizionePage />} />
           <Route path="/ruoli-permessi" element={<RuoliPermessiPage />} />

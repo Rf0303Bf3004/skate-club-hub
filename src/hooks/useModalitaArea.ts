@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase, get_current_club_id } from "@/lib/supabase";
+import { registra_silenzioso } from "@/lib/errori";
 
 /**
  * Modalità di gestione configurata per un'area operativa del club.
@@ -21,7 +22,10 @@ export function useModalitaArea(area: string): {
         .eq("club_id", club_id)
         .eq("area", area)
         .maybeSingle();
-      if (error) return null;
+      if (error) {
+        await registra_silenzioso("useModalitaArea", "Lettura modalità di gestione", error, { area });
+        return null;
+      }
       return data as any;
     },
   });

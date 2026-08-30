@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import i18n from "@/i18n";
+import { segnala_errore } from "@/lib/errori";
 
 const tk = (key: string, opts?: any) => i18n.t(`regole.${key}`, { ns: "communications", ...(opts ?? {}) }) as string;
 
@@ -56,7 +57,7 @@ export function RegoleComunicazioniSection({ club_id }: { club_id: string | null
         .select("*")
         .eq("club_id", club_id);
       if (error) {
-        toast.error(tk("load_error"));
+        await segnala_errore("RegoleComunicazioniSection", tk("load_error"), error);
       } else {
         const lista = ((data as unknown) as Regola[]) ?? [];
         // crea regole mancanti localmente con default
@@ -98,7 +99,7 @@ export function RegoleComunicazioniSection({ club_id }: { club_id: string | null
       .upsert(payload as never, { onConflict: "club_id,codice" });
     set_saving_id(null);
     if (error) {
-      toast.error(tk("save_error"));
+      await segnala_errore("RegoleComunicazioniSection", tk("save_error"), error, { codice: nuova.codice });
     } else {
       toast.success(tk("saved"));
     }

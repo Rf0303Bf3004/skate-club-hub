@@ -2,6 +2,7 @@ import { supabase } from "@/lib/supabase";
 import type { FatturaAtletaData, FatturaAtletaRiga, FatturaQrData } from "@/lib/fattura-atleta-pdf";
 import { genera_fattura_atleta_blob } from "@/lib/fattura-atleta-pdf";
 import { genera_qr_data_url } from "@/lib/qr";
+import { segnala_a_vuoto } from "@/lib/errori";
 
 const BUCKET_FATTURE = "fatture-atleti";
 
@@ -300,8 +301,16 @@ export async function invia_fattura_email(fattura_id: string, destinatario: stri
   });
   if (up.error) throw up.error;
 
-  const { error: e_pdf } = await supabase.from("fatture").update({ pdf_url: path }).eq("id", fattura_id);
+  const { data: r_pdf, error: e_pdf } = await supabase
+    .from("fatture")
+    .update({ pdf_url: path })
+    .eq("id", fattura_id)
+    .select("id");
   if (e_pdf) throw e_pdf;
+  if (!r_pdf || r_pdf.length === 0) {
+    await segnala_a_vuoto("fattura-atleta-helpers", "Salvataggio PDF fattura", { fattura_id });
+    throw new Error("La fattura non è stata aggiornata: nessuna riga modificata (permessi o id inesistente).");
+  }
 
   // Link firmato di lunga durata (30 giorni) da mettere nell'email.
   const { data: signed } = await supabase.storage.from(BUCKET_FATTURE).createSignedUrl(path, 60 * 60 * 24 * 30);
@@ -312,11 +321,16 @@ export async function invia_fattura_email(fattura_id: string, destinatario: stri
   if (e_fn) throw e_fn;
 
 
-  const { error: e_stato } = await supabase
+  const { data: r_stato, error: e_stato } = await supabase
     .from("fatture")
     .update({ stato: "inviata", email_inviata_at: new Date().toISOString() })
-    .eq("id", fattura_id);
+    .eq("id", fattura_id)
+    .select("id");
   if (e_stato) throw e_stato;
+  if (!r_stato || r_stato.length === 0) {
+    await segnala_a_vuoto("fattura-atleta-helpers", "Passaggio fattura in stato inviata", { fattura_id });
+    throw new Error("Email inviata ma lo stato della fattura non è stato aggiornato.");
+  }
 
   return path;
 }

@@ -7428,6 +7428,17 @@ export type Database = {
           tipo: string
         }[]
       }
+      cosa_non_va: {
+        Args: { p_club: string; p_giorni?: number }
+        Returns: {
+          dove: string
+          gravita: string
+          messaggio: string
+          non_visti: number
+          quante: number
+          ultima: string
+        }[]
+      }
       diagnosi_avvio_club: {
         Args: { p_club: string }
         Returns: {
@@ -7601,6 +7612,7 @@ export type Database = {
         Args: { p_nuova: string; p_vecchia: string }
         Returns: string
       }
+      pulisci_errori_applicativi: { Args: never; Returns: number }
       pulisci_tentativi_accesso: { Args: never; Returns: number }
       quadro_iscrizioni_gara: {
         Args: { p_gara: string }

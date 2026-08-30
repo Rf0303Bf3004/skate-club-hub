@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Search, Archive, ArchiveRestore, MessageSquare, AlertTriangle, X } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { segnala_errore } from "@/lib/errori";
 
 const PAGE_SIZE = 20;
 
@@ -119,7 +120,7 @@ export const ListaComunicazioni: React.FC<Props> = ({
       .in('id', ids);
     set_busy(false);
     if (error) {
-      toast({ title: 'Operazione non riuscita', description: error.message, variant: 'destructive' });
+      await segnala_errore("ListaComunicazioni", archivia ? "Archiviazione comunicazioni" : "Ripristino comunicazioni", error, { ids });
       return;
     }
     set_selected([]);
