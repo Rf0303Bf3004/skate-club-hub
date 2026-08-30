@@ -16,24 +16,38 @@ const PortaleEventiPage: React.FC = () => {
   const [gare, set_gare] = useState<any[]>([]);
   const [campi, set_campi] = useState<any[]>([]);
   const [eventi, set_eventi] = useState<any[]>([]);
-  const [iscr_gare, set_iscr_gare] = useState<Set<string>>(new Set());
+  const [iscr_gare, set_iscr_gare] = useState<Record<string, any>>({});
   const [atleta_livelli, set_atleta_livelli] = useState<AtletaLivelloGara | null>(null);
+
+  const carica_iscrizioni = async () => {
+    const { data } = await supabase
+      .from("iscrizioni_gare")
+      .select("id,gara_id,stato,stato_motivo")
+      .eq("atleta_id", session.atleta.id);
+    const map: Record<string, any> = {};
+    (data ?? []).forEach((r: any) => {
+      const attuale = map[r.gara_id];
+      // le righe "vive" hanno priorità su ritirata / non accettata
+      const viva = ["richiesta", "inviata", "confermata"].includes(r.stato ?? "richiesta");
+      if (!attuale || viva) map[r.gara_id] = r;
+    });
+    set_iscr_gare(map);
+  };
 
   useEffect(() => {
     (async () => {
       const oggi = oggi_iso();
-      const [g, c, e, ig, a] = await Promise.all([
+      const [g, c, e, a] = await Promise.all([
         supabase.from("gare_calendario").select("id,nome,data,ora,luogo,indirizzo,club_ospitante,carriera,livello_minimo,scadenza_iscrizioni,archiviata,note").eq("club_id", session.atleta.club_id).gte("data", oggi).order("data"),
         supabase.from("training_camps").select("*").eq("club_id", session.atleta.club_id).gte("data_inizio", oggi).order("data_inizio"),
         supabase.from("eventi_straordinari").select("*").eq("club_id", session.atleta.club_id).gte("data", oggi).order("data"),
-        supabase.from("iscrizioni_gare_mobile" as any).select("gara_id").eq("atleta_id", session.atleta.id),
         supabase.from("atleti").select("carriera_artistica,carriera_stile,livello_attuale").eq("id", session.atleta.id).maybeSingle(),
       ]);
       set_gare(g.data ?? []);
       set_campi(c.data ?? []);
       set_eventi(e.data ?? []);
-      set_iscr_gare(new Set((ig.data ?? []).map((x: any) => x.gara_id)));
       set_atleta_livelli((a.data as AtletaLivelloGara) ?? null);
+      await carica_iscrizioni();
       set_loading(false);
     })();
   }, [session.atleta.id, session.atleta.club_id]);
@@ -47,9 +61,17 @@ const PortaleEventiPage: React.FC = () => {
       carriera: gara.carriera ?? null,
     });
     if (error) { toast.error(error.message); return; }
-    set_iscr_gare((s) => new Set([...s, gara.id]));
-    toast.success("Iscrizione registrata");
+    await carica_iscrizioni();
+    toast.success("Richiesta inviata al club");
   };
+
+  const ritira_gara = async (riga: any) => {
+    const { error } = await supabase.from("iscrizioni_gare").update({ stato: "ritirata" } as any).eq("id", riga.id);
+    if (error) { toast.error(error.message); return; }
+    await carica_iscrizioni();
+    toast.success("Richiesta ritirata");
+  };
+
 
   if (loading) {
     return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-sky-500" /></div>;
