@@ -77,7 +77,7 @@ export type FatturaAtletaData = {
 };
 
 const s = StyleSheet.create({
-  page: { padding: 40, fontSize: 10, fontFamily: "Helvetica", color: "#0f172a" },
+  page: { paddingTop: 40, paddingHorizontal: 40, paddingBottom: 110 * MM, fontSize: 10, fontFamily: "Helvetica", color: "#0f172a" },
   header: { flexDirection: "row", justifyContent: "space-between", marginBottom: 24 },
   mittente: { fontSize: 9, lineHeight: 1.4 },
   logo: { maxHeight: 50, height: 50, width: 100, objectFit: "contain", marginBottom: 6 },
@@ -103,12 +103,25 @@ const s = StyleSheet.create({
   totaleFinale: { flexDirection: "row", justifyContent: "flex-end", marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderColor: "#cbd5e1" },
   totaleFinaleLbl: { width: 140, textAlign: "right", paddingRight: 8, fontWeight: 700, fontSize: 12 },
   totaleFinaleVal: { width: 90, textAlign: "right", fontSize: 14, fontWeight: 700, color: "#1e3a8a" },
-  footer: { position: "absolute", bottom: 24, left: 40, right: 40, textAlign: "center", fontSize: 8, color: "#94a3b8", borderTopWidth: 0.5, borderColor: "#e2e8f0", paddingTop: 6 },
+  footer: { position: "absolute", bottom: 108 * MM, left: 40, right: 40, textAlign: "center", fontSize: 8, color: "#94a3b8", borderTopWidth: 0.5, borderColor: "#e2e8f0", paddingTop: 6 },
 
   // Polizza QR svizzera
-  qrBill: { marginTop: 22, flexDirection: "row", borderTopWidth: 0.75, borderColor: "#0f172a", paddingTop: 5 * MM },
-  qrReceipt: { width: 62 * MM, paddingRight: 5 * MM, borderRightWidth: 0.75, borderColor: "#0f172a" },
-  qrPayment: { flex: 1, paddingLeft: 5 * MM, flexDirection: "row" },
+  // Polizza ancorata in fondo alla pagina, a piena larghezza (fuori dal padding):
+  // altezza 105 mm, come previsto dalla perforazione.
+  qrBill: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 105 * MM,
+    flexDirection: "row",
+    borderTopWidth: 0.75,
+    borderColor: "#0f172a",
+    paddingTop: 5 * MM,
+    paddingBottom: 5 * MM,
+  },
+  qrReceipt: { width: 62 * MM, paddingLeft: 5 * MM, paddingRight: 5 * MM, borderRightWidth: 0.75, borderColor: "#0f172a" },
+  qrPayment: { flex: 1, paddingLeft: 5 * MM, paddingRight: 5 * MM, flexDirection: "row" },
   qrTitle: { fontSize: 11, fontWeight: 700, marginBottom: 6 },
   qrHead: { fontSize: 6, fontWeight: 700, marginTop: 6 },
   qrHeadBig: { fontSize: 8, fontWeight: 700, marginTop: 8 },
@@ -116,12 +129,21 @@ const s = StyleSheet.create({
   qrText: { fontSize: 10, lineHeight: 1.3 },
   qrBox: { width: 46 * MM, height: 46 * MM, position: "relative", marginTop: 5 * MM, marginBottom: 5 * MM },
   qrImg: { width: 46 * MM, height: 46 * MM },
+  // Quadrato nero 7x7 mm con bordino bianco di 0.7 mm attorno (norma SIX).
+  crossFrame: {
+    position: "absolute",
+    width: 8.4 * MM,
+    height: 8.4 * MM,
+    left: 18.8 * MM,
+    top: 18.8 * MM,
+    backgroundColor: "#ffffff",
+  },
   crossOuter: {
     position: "absolute",
     width: 7 * MM,
     height: 7 * MM,
-    left: 19.5 * MM,
-    top: 19.5 * MM,
+    left: 0.7 * MM,
+    top: 0.7 * MM,
     backgroundColor: "#000000",
   },
   crossV: { position: "absolute", backgroundColor: "#ffffff", width: 1.4 * MM, height: 4.2 * MM, left: 2.8 * MM, top: 1.4 * MM },
@@ -142,9 +164,11 @@ function riga_indirizzo(nome: string, indirizzo?: string | null, cap?: string | 
 
 /** Croce svizzera bianca su fondo nero, 7x7 mm, obbligatoria per la conformità. */
 const CroceSvizzera: React.FC = () => (
-  <View style={s.crossOuter}>
-    <View style={s.crossV} />
-    <View style={s.crossH} />
+  <View style={s.crossFrame}>
+    <View style={s.crossOuter}>
+      <View style={s.crossV} />
+      <View style={s.crossH} />
+    </View>
   </View>
 );
 

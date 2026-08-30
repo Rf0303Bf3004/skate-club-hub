@@ -81,7 +81,7 @@ const SegreteriaFatturaDetailPage: React.FC = () => {
     if (sconto_modo === "percentuale") return +(subtotale * Number(f.sconto_percentuale || 0) / 100).toFixed(2);
     return Number(f.sconto_importo_chf || 0);
   }, [f, subtotale, sconto_modo]);
-  const totale = Math.max(0, subtotale - sconto_importo);
+  const totale = subtotale < 0 ? subtotale - sconto_importo : Math.max(0, subtotale - sconto_importo);
 
   function update_riga(i: number, patch: Partial<FatturaAtletaRiga>) {
     set_righe((r) => r.map((x, idx) => {
