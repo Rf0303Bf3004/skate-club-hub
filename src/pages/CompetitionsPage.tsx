@@ -32,6 +32,8 @@ import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import SessioniCampoEstivo from "@/components/SessioniCampoEstivo";
+import RichiesteIscrizioniGara from "@/components/gare/RichiesteIscrizioniGara";
+
 import MedagliereWidget from "@/components/MedagliereWidget";
 import {
   ComunicazioneFormSection,
