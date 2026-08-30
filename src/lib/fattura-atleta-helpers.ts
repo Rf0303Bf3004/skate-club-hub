@@ -8,6 +8,7 @@ const BUCKET_FATTURE = "fatture-atleti";
 export type FatturaFull = {
   id: string;
   club_id: string;
+  ragione_sociale_id: string | null;
   atleta_id: string | null;
   numero: string | null;
   periodo: string | null;
