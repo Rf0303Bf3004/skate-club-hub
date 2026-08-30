@@ -188,5 +188,18 @@
     "eliminato": "🗑️ Eliminato correttamente",
     "errore_eliminazione": "Errore eliminazione",
     "disponibilita_salvata": "✅ Disponibilità salvata"
+  },
+  "codice_card": {
+    "title": "Codice istruttore",
+    "description": "Serve solo a farsi riconoscere nell'app: digitalo o inquadra il QR. Cosa puoi vedere dipende dal tuo ruolo.",
+    "copy_code": "Copia codice",
+    "copied": "Copiato",
+    "print_sheet": "Stampa",
+    "download_png": "Scarica QR",
+    "toast_copied": "Codice copiato",
+    "toast_copy_error": "Impossibile copiare il codice",
+    "popup_blocked": "Il browser ha bloccato la finestra di stampa",
+    "not_assigned": "Nessun codice assegnato a questo istruttore.",
+    "print_hint": "Apri l'app, scegli \"Accedi con il codice\" e inquadra il QR oppure digita il codice."
   }
 }
