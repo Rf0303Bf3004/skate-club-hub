@@ -2332,6 +2332,51 @@ export type Database = {
           },
         ]
       }
+      errori_applicativi: {
+        Row: {
+          club_id: string | null
+          codice: string | null
+          dettaglio: Json | null
+          dove: string
+          gravita: string
+          id: number
+          messaggio: string
+          operazione: string | null
+          quando: string
+          ruolo: string | null
+          user_id: string | null
+          visto: boolean
+        }
+        Insert: {
+          club_id?: string | null
+          codice?: string | null
+          dettaglio?: Json | null
+          dove: string
+          gravita?: string
+          id?: number
+          messaggio: string
+          operazione?: string | null
+          quando?: string
+          ruolo?: string | null
+          user_id?: string | null
+          visto?: boolean
+        }
+        Update: {
+          club_id?: string | null
+          codice?: string | null
+          dettaglio?: Json | null
+          dove?: string
+          gravita?: string
+          id?: number
+          messaggio?: string
+          operazione?: string | null
+          quando?: string
+          ruolo?: string | null
+          user_id?: string | null
+          visto?: boolean
+        }
+        Relationships: []
+      }
       eventi_calendario: {
         Row: {
           atleta_id: string
@@ -7471,10 +7516,16 @@ export type Database = {
       iban_e_qr_iban: { Args: { p: string }; Returns: boolean }
       iban_normalizza: { Args: { p: string }; Returns: string }
       iban_valido: { Args: { p: string }; Returns: boolean }
-      invia_iscrizioni_gara: {
-        Args: { p_iscrizioni: string[] }
-        Returns: number
-      }
+      invia_iscrizioni_gara:
+        | { Args: { p_iscrizioni: string[] }; Returns: number }
+        | {
+            Args: {
+              p_costo_accompagnamento?: number
+              p_costo_iscrizione?: number
+              p_iscrizioni: string[]
+            }
+            Returns: number
+          }
       invia_push_comunicazioni_programmate: { Args: never; Returns: number }
       is_mobile_parent: { Args: never; Returns: boolean }
       is_mobile_staff: { Args: never; Returns: boolean }
@@ -7558,6 +7609,18 @@ export type Database = {
           quanti: number
           stato: string
         }[]
+      }
+      registra_errore: {
+        Args: {
+          p_club?: string
+          p_codice?: string
+          p_dettaglio?: Json
+          p_dove: string
+          p_gravita?: string
+          p_messaggio: string
+          p_operazione?: string
+        }
+        Returns: number
       }
       registra_tentativo_accesso: {
         Args: {
