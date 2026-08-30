@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, Save, X, RefreshCw, Copy, Eye, EyeOff, Upload, ArrowLeft } from "lucide-react";
+import { Shield, Save, X, RefreshCw, Upload, ArrowLeft } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { AnagraficaTerritoriale } from "@/components/AnagraficaTerritoriale";
 import {
@@ -28,7 +28,6 @@ const SuperAdminNewClubPage: React.FC = () => {
   const { session } = useAuth();
   const navigate = useNavigate();
   const [saving, set_saving] = useState(false);
-  const [show_pwd, set_show_pwd] = useState(false);
   const [uploading_logo, set_uploading_logo] = useState(false);
 
   // Sezione A
