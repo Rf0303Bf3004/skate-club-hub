@@ -88,11 +88,11 @@ function PdfPageCanvas({ pdf, page_num, total_pages, scale }: PdfPageCanvasProps
 
   return (
     <div
-      className="bg-background shadow-md mx-auto mb-3"
+      className="max-w-full bg-background shadow-md mx-auto mb-3"
       data-page-number={page_num}
       style={page_width ? { width: `${page_width}px` } : undefined}
     >
-      <canvas ref={canvas_ref} className="block max-w-full" />
+      <canvas ref={canvas_ref} className="block w-full h-auto" />
     </div>
   );
 }

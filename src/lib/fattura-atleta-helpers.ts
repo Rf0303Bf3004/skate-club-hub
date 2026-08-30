@@ -217,33 +217,58 @@ export async function url_pdf_congelato(id: string): Promise<string | null> {
   return await url_pdf_salvato((data as any).pdf_url);
 }
 
+function estrai_percorso_pdf_storage(pdf_url: string): string {
+  if (!pdf_url.startsWith("http")) {
+    const percorso = pdf_url.replace(/^\/+/, "");
+    return percorso.startsWith(`${BUCKET_FATTURE}/`)
+      ? percorso.slice(BUCKET_FATTURE.length + 1)
+      : percorso;
+  }
+
+  const url = new URL(pdf_url);
+  const marker = `/${BUCKET_FATTURE}/`;
+  const indice = url.pathname.indexOf(marker);
+  if (indice < 0) throw new Error("Percorso del PDF archiviato non valido");
+  return decodeURIComponent(url.pathname.slice(indice + marker.length));
+}
+
 /**
- * Prepara il PDF della fattura senza aprire finestre (i pop-up vengono bloccati).
- * Restituisce un URL visualizzabile in un iframe dentro un dialogo.
- * Se `congelato` è true l'URL proviene dall'archivio e non va revocato.
+ * Prepara sempre un Blob locale e il relativo object URL. Anche i documenti
+ * congelati vengono scaricati dallo storage, così anteprima, download e stampa
+ * non dipendono dal visualizzatore PDF o dalle regole cross-origin del browser.
  */
 export async function prepara_pdf_fattura(
   id: string,
-): Promise<{ url: string; nome_file: string; congelato: boolean }> {
-  const congelato = await url_pdf_congelato(id);
-  if (congelato) {
-    return { url: congelato, nome_file: `fattura-${id.slice(0, 8)}.pdf`, congelato: true };
+): Promise<{ blob: Blob; url: string; nome_file: string; congelato: boolean }> {
+  const { data: fattura, error } = await supabase
+    .from("fatture")
+    .select("stato, pdf_url, numero")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+
+  if (fattura && (fattura as any).stato !== "bozza" && (fattura as any).pdf_url) {
+    const percorso = estrai_percorso_pdf_storage(String((fattura as any).pdf_url));
+    const { data: blob_archiviato, error: download_error } = await supabase.storage
+      .from(BUCKET_FATTURE)
+      .download(percorso);
+    if (download_error || !blob_archiviato) {
+      throw download_error ?? new Error("PDF archiviato non disponibile");
+    }
+    const blob = blob_archiviato.type === "application/pdf"
+      ? blob_archiviato
+      : new Blob([blob_archiviato], { type: "application/pdf" });
+    return {
+      blob,
+      url: URL.createObjectURL(blob),
+      nome_file: `fattura-${(fattura as any).numero || id.slice(0, 8)}.pdf`,
+      congelato: true,
+    };
   }
+
   const data = await carica_dati_pdf(id);
   const blob = await genera_fattura_atleta_blob(data);
-  return { url: URL.createObjectURL(blob), nome_file: `fattura-${data.numero}.pdf`, congelato: false };
-}
-
-/** Scarica il PDF con un elemento <a download>: nessun pop-up, mai bloccato. */
-export async function scarica_pdf_fattura(id: string) {
-  const { url, nome_file, congelato } = await prepara_pdf_fattura(id);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = nome_file;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  if (!congelato) URL.revokeObjectURL(url);
+  return { blob, url: URL.createObjectURL(blob), nome_file: `fattura-${data.numero}.pdf`, congelato: false };
 }
 
 

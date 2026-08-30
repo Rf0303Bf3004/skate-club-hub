@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Download, Printer, Loader2 } from "lucide-react";
 import { prepara_pdf_fattura } from "@/lib/fattura-atleta-helpers";
+import PdfViewer from "@/components/relazione/PdfViewer";
 
 interface Props {
   fattura_id: string;
@@ -12,27 +13,34 @@ interface Props {
 
 const AnteprimaFatturaAtletaDialog: React.FC<Props> = ({ fattura_id, open, onOpenChange }) => {
   const [url, set_url] = useState<string | null>(null);
+  const [blob, set_blob] = useState<Blob | null>(null);
   const [nome_file, set_nome_file] = useState("fattura.pdf");
   const [loading, set_loading] = useState(false);
   const [errore, set_errore] = useState<string | null>(null);
-  const iframe_ref = useRef<HTMLIFrameElement | null>(null);
   const da_revocare = useRef<string | null>(null);
+  const iframe_stampa_ref = useRef<HTMLIFrameElement | null>(null);
 
   useEffect(() => {
     if (!open) return;
     let alive = true;
+    if (da_revocare.current) {
+      URL.revokeObjectURL(da_revocare.current);
+      da_revocare.current = null;
+    }
     set_loading(true);
     set_errore(null);
     set_url(null);
+    set_blob(null);
     (async () => {
       try {
         const r = await prepara_pdf_fattura(fattura_id);
         if (!alive) {
-          if (!r.congelato) URL.revokeObjectURL(r.url);
+          URL.revokeObjectURL(r.url);
           return;
         }
-        if (!r.congelato) da_revocare.current = r.url;
+        da_revocare.current = r.url;
         set_url(r.url);
+        set_blob(r.blob);
         set_nome_file(r.nome_file);
       } catch (e: any) {
         if (alive) set_errore(e?.message ?? "Errore nella generazione del PDF");
@@ -52,7 +60,10 @@ const AnteprimaFatturaAtletaDialog: React.FC<Props> = ({ fattura_id, open, onOpe
       URL.revokeObjectURL(da_revocare.current);
       da_revocare.current = null;
     }
+    iframe_stampa_ref.current?.remove();
+    iframe_stampa_ref.current = null;
     set_url(null);
+    set_blob(null);
   }, [open]);
 
   useEffect(() => {
@@ -61,18 +72,32 @@ const AnteprimaFatturaAtletaDialog: React.FC<Props> = ({ fattura_id, open, onOpe
         URL.revokeObjectURL(da_revocare.current);
         da_revocare.current = null;
       }
+      iframe_stampa_ref.current?.remove();
+      iframe_stampa_ref.current = null;
     };
   }, []);
 
   const stampa = () => {
-    const frame = iframe_ref.current;
-    if (!frame) return;
-    const esegui = () => {
-      frame.contentWindow?.focus();
-      frame.contentWindow?.print();
+    if (!url) return;
+    iframe_stampa_ref.current?.remove();
+    const frame = document.createElement("iframe");
+    frame.title = "Stampa fattura";
+    frame.setAttribute("aria-hidden", "true");
+    frame.className = "fixed w-0 h-0 border-0 opacity-0 pointer-events-none";
+    frame.onload = () => {
+      const finestra = frame.contentWindow;
+      if (!finestra) return;
+      const pulisci = () => {
+        frame.remove();
+        if (iframe_stampa_ref.current === frame) iframe_stampa_ref.current = null;
+      };
+      finestra.addEventListener("afterprint", pulisci, { once: true });
+      finestra.focus();
+      finestra.print();
     };
-    if (frame.contentDocument?.readyState === "complete") esegui();
-    else frame.addEventListener("load", esegui, { once: true });
+    iframe_stampa_ref.current = frame;
+    document.body.appendChild(frame);
+    frame.src = url;
   };
 
   return (
@@ -91,7 +116,7 @@ const AnteprimaFatturaAtletaDialog: React.FC<Props> = ({ fattura_id, open, onOpe
             </Button>
           </div>
         </DialogHeader>
-        <div className="flex-1 bg-muted/30">
+        <div className="flex-1 min-h-0 overflow-hidden bg-muted/30">
           {loading ? (
             <div className="h-full flex items-center justify-center">
               <Loader2 className="w-6 h-6 animate-spin text-sky-500" />
@@ -100,8 +125,8 @@ const AnteprimaFatturaAtletaDialog: React.FC<Props> = ({ fattura_id, open, onOpe
             <div className="h-full flex items-center justify-center text-sm text-destructive px-6 text-center">
               {errore}
             </div>
-          ) : url ? (
-            <iframe ref={iframe_ref} src={url} title="Fattura" className="w-full h-full border-0" />
+          ) : blob ? (
+            <PdfViewer blob={blob} />
           ) : null}
         </div>
       </DialogContent>
