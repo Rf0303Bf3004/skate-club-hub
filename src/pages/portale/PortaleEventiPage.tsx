@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { Loader2, Trophy, Tent, Sparkles } from "lucide-react";
+import { Loader2, Trophy, Tent, Sparkles, Lock } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import type { PortaleSession } from "@/lib/portale-auth";
 import { useTranslation } from "react-i18next";
+import { motivo_non_iscrivibile, oggi_iso, type AtletaLivelloGara } from "@/lib/gare-iscrivibilita";
 
 const PortaleEventiPage: React.FC = () => {
   const { session } = useOutletContext<{ session: PortaleSession }>();
@@ -16,29 +17,34 @@ const PortaleEventiPage: React.FC = () => {
   const [campi, set_campi] = useState<any[]>([]);
   const [eventi, set_eventi] = useState<any[]>([]);
   const [iscr_gare, set_iscr_gare] = useState<Set<string>>(new Set());
+  const [atleta_livelli, set_atleta_livelli] = useState<AtletaLivelloGara | null>(null);
 
   useEffect(() => {
     (async () => {
-      const oggi = new Date().toISOString().slice(0, 10);
-      const [g, c, e, ig] = await Promise.all([
-        supabase.from("gare_calendario").select("id,nome,data,ora,luogo,indirizzo,club_ospitante,carriera,livello_minimo,note").eq("club_id", session.atleta.club_id).gte("data", oggi).order("data"),
+      const oggi = oggi_iso();
+      const [g, c, e, ig, a] = await Promise.all([
+        supabase.from("gare_calendario").select("id,nome,data,ora,luogo,indirizzo,club_ospitante,carriera,livello_minimo,scadenza_iscrizioni,archiviata,note").eq("club_id", session.atleta.club_id).gte("data", oggi).order("data"),
         supabase.from("training_camps").select("*").eq("club_id", session.atleta.club_id).gte("data_inizio", oggi).order("data_inizio"),
         supabase.from("eventi_straordinari").select("*").eq("club_id", session.atleta.club_id).gte("data", oggi).order("data"),
         supabase.from("iscrizioni_gare_mobile" as any).select("gara_id").eq("atleta_id", session.atleta.id),
+        supabase.from("atleti").select("carriera_artistica,carriera_stile,livello_attuale").eq("id", session.atleta.id).maybeSingle(),
       ]);
       set_gare(g.data ?? []);
       set_campi(c.data ?? []);
       set_eventi(e.data ?? []);
       set_iscr_gare(new Set((ig.data ?? []).map((x: any) => x.gara_id)));
+      set_atleta_livelli((a.data as AtletaLivelloGara) ?? null);
       set_loading(false);
     })();
   }, [session.atleta.id, session.atleta.club_id]);
 
   const iscriviti_gara = async (gara: any) => {
+    const motivo = motivo_non_iscrivibile(gara, atleta_livelli);
+    if (motivo) { toast.error(motivo); return; }
     const { error } = await supabase.from("iscrizioni_gare").insert({
-      club_id: session.atleta.club_id,
       atleta_id: session.atleta.id,
       gara_id: gara.id,
+      carriera: gara.carriera ?? null,
     });
     if (error) { toast.error(error.message); return; }
     set_iscr_gare((s) => new Set([...s, gara.id]));
@@ -60,23 +66,38 @@ const PortaleEventiPage: React.FC = () => {
         </TabsList>
 
         <TabsContent value="gare" className="space-y-3 mt-4">
-          {gare.length === 0 ? <EmptyMsg text={t("eventi.nessun_evento")} /> : gare.map((g) => (
-            <div key={g.id} className="bg-white border border-slate-200 rounded-2xl p-4 flex items-start gap-3">
-              <DateBox data={g.data} />
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-slate-800">{g.nome}</p>
-                {g.luogo && <p className="text-xs text-slate-500">📍 {g.luogo}</p>}
+          {gare.length === 0 ? <EmptyMsg text={t("eventi.nessun_evento")} /> : gare.map((g) => {
+            const motivo = motivo_non_iscrivibile(g, atleta_livelli);
+            const iscritto = iscr_gare.has(g.id);
+            return (
+              <div key={g.id} className="bg-white border border-slate-200 rounded-2xl p-4 flex items-start gap-3">
+                <DateBox data={g.data} />
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-slate-800">{g.nome}</p>
+                  {g.luogo && <p className="text-xs text-slate-500">📍 {g.luogo}</p>}
+                  {!iscritto && motivo && (
+                    <p className="text-xs text-amber-600 font-medium mt-1 flex items-center gap-1">
+                      <Lock className="w-3 h-3" /> {motivo}
+                    </p>
+                  )}
+                  {!iscritto && !motivo && g.scadenza_iscrizioni && (
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      Iscrizioni entro il {new Date(g.scadenza_iscrizioni + "T00:00:00").toLocaleDateString("it-CH")}
+                    </p>
+                  )}
+                </div>
+                {iscritto ? (
+                  <span className="text-xs font-bold text-emerald-600 self-center">{t("eventi.iscritto")}</span>
+                ) : motivo ? null : (
+                  <Button size="sm" className="bg-sky-500 hover:bg-sky-600" onClick={() => iscriviti_gara(g)}>
+                    {t("eventi.iscriviti")}
+                  </Button>
+                )}
               </div>
-              {iscr_gare.has(g.id) ? (
-                <span className="text-xs font-bold text-emerald-600 self-center">{t("eventi.iscritto")}</span>
-              ) : (
-                <Button size="sm" className="bg-sky-500 hover:bg-sky-600" onClick={() => iscriviti_gara(g)}>
-                  {t("eventi.iscriviti")}
-                </Button>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </TabsContent>
+
 
         <TabsContent value="campi" className="space-y-3 mt-4">
           {campi.length === 0 ? <EmptyMsg text={t("eventi.nessun_evento")} /> : campi.map((c) => (

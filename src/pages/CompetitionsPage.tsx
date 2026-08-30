@@ -155,6 +155,7 @@ interface GaraFormData {
   indirizzo: string;
   club_ospitante: string;
   livello_minimo: string;
+  scadenza_iscrizioni: string;
   carriera: string;
   costo_iscrizione: string;
   costo_accompagnamento: string;
@@ -170,6 +171,7 @@ const empty_form = (): GaraFormData => ({
   indirizzo: "",
   club_ospitante: "",
   livello_minimo: "Pulcini",
+  scadenza_iscrizioni: "",
   carriera: "Artistica",
   costo_iscrizione: "",
   costo_accompagnamento: "",
@@ -222,6 +224,7 @@ const GaraModal: React.FC<{ onClose: () => void; gara_iniziale?: any | null }> =
         indirizzo: gara_iniziale.indirizzo ?? "",
         club_ospitante: gara_iniziale.club_ospitante ?? "",
         livello_minimo: gara_iniziale.livello_minimo || "Pulcini",
+        scadenza_iscrizioni: gara_iniziale.scadenza_iscrizioni ?? "",
         carriera: gara_iniziale.carriera || "Artistica",
         costo_iscrizione: gara_iniziale.costo_iscrizione != null ? String(gara_iniziale.costo_iscrizione) : "",
         costo_accompagnamento: gara_iniziale.costo_accompagnamento != null ? String(gara_iniziale.costo_accompagnamento) : "",
@@ -281,6 +284,7 @@ const GaraModal: React.FC<{ onClose: () => void; gara_iniziale?: any | null }> =
         indirizzo: form.indirizzo.trim() || "",
         club_ospitante: form.club_ospitante.trim() || "",
         livello_minimo: form.livello_minimo || "",
+        scadenza_iscrizioni: form.scadenza_iscrizioni || null,
         carriera: form.carriera || "Entrambe",
         costo_iscrizione: form.costo_iscrizione ? Number(form.costo_iscrizione) : 0,
         costo_accompagnamento: form.costo_accompagnamento ? Number(form.costo_accompagnamento) : 0,
@@ -398,6 +402,15 @@ const GaraModal: React.FC<{ onClose: () => void; gara_iniziale?: any | null }> =
                   </option>
                 ))}
               </select>
+            </Field>
+            <Field label="Scadenza iscrizioni">
+              <input
+                type="date"
+                name="scadenza_iscrizioni"
+                value={form.scadenza_iscrizioni}
+                onChange={handle_change}
+                className={input_cls}
+              />
             </Field>
             <Field label={t("carriera")}>
               <select name="carriera" value={form.carriera} onChange={handle_change} className={input_cls}>
