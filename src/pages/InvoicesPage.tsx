@@ -8,7 +8,7 @@ import {
   use_atleti,
   get_atleta_name_from_list,
 } from "@/hooks/use-supabase-data";
-import { use_genera_fatture_mensili } from "@/hooks/use-supabase-mutations";
+import AnteprimaFatturePeriodoDialog from "@/components/fatture/AnteprimaFatturePeriodoDialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileText, Receipt } from "lucide-react";
@@ -23,7 +23,7 @@ const InvoicesPage: React.FC = () => {
   const { t } = useTranslation("fatture");
   const { data: fatture = [], isLoading } = use_fatture();
   const { data: atleti = [] } = use_atleti();
-  const genera = use_genera_fatture_mensili();
+  const [anteprima_open, set_anteprima_open] = useState(false);
   const [status_filter, set_status_filter] = useState("tutti");
   const [search_raw, set_search_raw] = useState("");
   const search = useDebouncedValue(search_raw, 200);
@@ -86,14 +86,6 @@ const InvoicesPage: React.FC = () => {
     .filter((f: any) => get_fattura_stato_ui(f, today_iso) === "scaduta")
     .reduce((s: number, f: any) => s + Number(f.importo ?? 0), 0);
 
-  const handle_genera = async () => {
-    try {
-      const count = await genera.mutateAsync(undefined);
-      toast({ title: t("invoices_page.toast.generated_title", { count }) });
-    } catch (err: any) {
-      toast({ title: t("invoices_page.toast.generate_error_title"), description: err?.message, variant: "destructive" });
-    }
-  };
 
 
   if (isLoading) {
