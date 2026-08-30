@@ -23,18 +23,18 @@ interface RigaDiagnosi {
 }
 
 const ROTTA_PER_AREA: Record<string, { to: string; label: string }> = {
-  Anagrafica: { to: "/club-setup", label: "Setup del club" },
+  Anagrafica: { to: "/setup-club", label: "Setup del club" },
   Accesso: { to: "/utenti", label: "Utenti e permessi" },
-  Stagione: { to: "/club-setup", label: "Date stagione" },
-  Ghiaccio: { to: "/club-setup", label: "Risorse e disponibilità" },
+  Stagione: { to: "/setup-club", label: "Date stagione" },
+  Ghiaccio: { to: "/setup-club", label: "Risorse e disponibilità" },
   Offerta: { to: "/corsi", label: "Corsi e istruttori" },
   Atleti: { to: "/atleti", label: "Atleti" },
-  Fatturazione: { to: "/club-setup", label: "Fatturazione" },
+  Fatturazione: { to: "/setup-club", label: "Fatturazione" },
   Comunicazioni: { to: "/comunicazioni", label: "Comunicazioni" },
   "App famiglie": { to: "/atleti", label: "Atleti" },
 };
 
-const rotta_area = (area: string) => ROTTA_PER_AREA[area] ?? { to: "/club-setup", label: "Setup del club" };
+const rotta_area = (area: string) => ROTTA_PER_AREA[area] ?? { to: "/setup-club", label: "Setup del club" };
 
 export default function OnboardingBanner() {
   const { session } = useAuth();
