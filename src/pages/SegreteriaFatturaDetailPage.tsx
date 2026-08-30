@@ -116,7 +116,6 @@ const SegreteriaFatturaDetailPage: React.FC = () => {
     if (!f) return;
     const patch: any = { stato: nuovo };
     if (nuovo === "pagata") patch.data_pagamento = new Date().toISOString().slice(0, 10);
-    if (nuovo === "inviata") patch.data_invio = new Date().toISOString();
     const { error } = await supabase.from("fatture").update(patch).eq("id", f.id);
     if (error) { toast({ title: "Errore", description: error.message, variant: "destructive" }); return; }
     toast({ title: `Stato aggiornato: ${nuovo}` });
@@ -126,16 +125,48 @@ const SegreteriaFatturaDetailPage: React.FC = () => {
   async function invia_email() {
     if (!f) return;
     if (!f.intestatario_email) { toast({ title: "Email intestatario mancante", variant: "destructive" }); return; }
+    set_inviando(true);
     try {
-      await salva_bozza();
-      const { error } = await supabase.functions.invoke("send-fattura-email-atleta", {
-        body: { fattura_id: f.id, destinatario: f.intestatario_email },
-      });
-      if (error) throw error;
-      await cambia_stato("inviata");
+      if (f.stato === "bozza") await salva_bozza();
+      // Congela il PDF in archivio, invia l'email e porta la fattura in stato "inviata".
+      await invia_fattura_email(f.id, f.intestatario_email);
       toast({ title: "Fattura inviata via email" });
+      reload();
     } catch (e: any) {
       toast({ title: "Errore invio", description: e?.message, variant: "destructive" });
+    } finally {
+      set_inviando(false);
+    }
+  }
+
+  async function esegui_azione() {
+    if (!f || !azione) return;
+    const motivo = motivo_azione.trim();
+    if (!motivo) { toast({ title: "Il motivo è obbligatorio", variant: "destructive" }); return; }
+    set_saving(true);
+    try {
+      if (azione === "annulla") {
+        const { error } = await supabase.rpc("annulla_fattura", { p_fattura: f.id, p_motivo: motivo });
+        if (error) throw error;
+        toast({ title: "Fattura annullata" });
+        set_azione(null); set_motivo_azione(""); reload();
+      } else if (azione === "sostituisci") {
+        const { data, error } = await supabase.rpc("sostituisci_fattura", { p_fattura: f.id, p_motivo: motivo });
+        if (error) throw error;
+        toast({ title: "Nuova bozza creata" });
+        set_azione(null); set_motivo_azione("");
+        navigate(`/segreteria/fatture/${data as string}`);
+      } else {
+        const { data, error } = await supabase.rpc("storna_fattura", { p_fattura: f.id, p_motivo: motivo });
+        if (error) throw error;
+        toast({ title: "Nota di credito emessa" });
+        set_azione(null); set_motivo_azione("");
+        navigate(`/segreteria/fatture/${data as string}`);
+      }
+    } catch (e: any) {
+      toast({ title: "Operazione non riuscita", description: e?.message, variant: "destructive" });
+    } finally {
+      set_saving(false);
     }
   }
 
