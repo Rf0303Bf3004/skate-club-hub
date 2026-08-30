@@ -14,14 +14,9 @@ import { useTranslation } from "react-i18next";
 
 const FatturazioneTab: React.FC = () => {
   const { t } = useTranslation("fatture");
-  const mese_label = (m: number) => t(`billing_tab.month_${m}`);
   const qc = useQueryClient();
   const { data: setup } = use_setup_club();
-  const { data: atleti = [] } = use_atleti();
-  const anteprima = use_anteprima_fatture_mese();
-  const genera = use_genera_fatture_mensili();
 
-  const oggi = new Date();
   const [giorno, set_giorno] = useState<number>(
     Number((setup as any)?.fatturazione_giorno_mese ?? 1),
   );
@@ -32,10 +27,7 @@ const FatturazioneTab: React.FC = () => {
     String((setup as any)?.fatturazione_costo_test ?? 0),
   );
   const [saving, set_saving] = useState(false);
-
-  const [anno, set_anno] = useState<number>(oggi.getFullYear());
-  const [mese, set_mese] = useState<number>(oggi.getMonth() + 1);
-  const [preview_rows, set_preview_rows] = useState<any[] | null>(null);
+  const [anteprima_open, set_anteprima_open] = useState(false);
 
   // Sync quando arriva il setup
   React.useEffect(() => {
@@ -72,40 +64,6 @@ const FatturazioneTab: React.FC = () => {
     }
   };
 
-  const handle_anteprima = async () => {
-    try {
-      const rows = await anteprima.mutateAsync({ anno, mese });
-      set_preview_rows(rows);
-      if (rows.length === 0) {
-        toast({ title: t("billing_tab.toast_none") });
-      }
-    } catch (err: any) {
-      toast({ title: t("billing_tab.toast_preview_error"), description: err?.message, variant: "destructive" });
-    }
-  };
-
-  const handle_genera = async () => {
-    try {
-      const count = await genera.mutateAsync({ anno, mese });
-      toast({ title: t("billing_tab.toast_generated", { count, mese: mese_label(mese), anno }) });
-      set_preview_rows(null);
-    } catch (err: any) {
-      toast({ title: t("billing_tab.toast_generate_error"), description: err?.message, variant: "destructive" });
-    }
-  };
-
-  const get_atleta_nome = (id: string) => {
-    const a = atleti.find((x: any) => x.id === id);
-    return a ? `${a.cognome} ${a.nome}` : id.slice(0, 8);
-  };
-
-  const totale_anteprima = (preview_rows ?? []).reduce(
-    (s, r) => s + Number(r.importo || 0),
-    0,
-  );
-
-  const anni_options = [oggi.getFullYear() - 1, oggi.getFullYear(), oggi.getFullYear() + 1];
-
   return (
     <div className="bg-card rounded-xl shadow-card p-6 space-y-8 max-w-3xl">
       {/* Generazione automatica */}
@@ -114,9 +72,7 @@ const FatturazioneTab: React.FC = () => {
           <Calendar className="w-5 h-5 text-primary" />
           <h2 className="text-base font-bold text-foreground">{t("billing_tab.auto_title")}</h2>
         </div>
-        <p className="text-xs text-muted-foreground">
-          {t("billing_tab.auto_desc")}
-        </p>
+        <p className="text-xs text-muted-foreground">{t("billing_tab.auto_desc")}</p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
@@ -152,9 +108,7 @@ const FatturazioneTab: React.FC = () => {
                 {t("billing_tab.email_auto_label")}
               </Label>
             </div>
-            <p className="text-xs text-muted-foreground">
-              {t("billing_tab.email_auto_desc")}
-            </p>
+            <p className="text-xs text-muted-foreground">{t("billing_tab.email_auto_desc")}</p>
           </div>
           <Switch id="email_auto" checked={email_auto} onCheckedChange={set_email_auto} />
         </div>
@@ -167,119 +121,23 @@ const FatturazioneTab: React.FC = () => {
 
       <Separator />
 
-      {/* Generazione manuale con anteprima */}
+      {/* Generazione manuale con anteprima (calcolo nel database) */}
       <section className="space-y-4">
         <div className="flex items-center gap-2">
           <FileText className="w-5 h-5 text-primary" />
           <h2 className="text-base font-bold text-foreground">{t("billing_tab.manual_title")}</h2>
         </div>
-        <p className="text-xs text-muted-foreground">
-          {t("billing_tab.manual_desc")}
-        </p>
+        <p className="text-xs text-muted-foreground">{t("billing_tab.manual_desc")}</p>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <div className="space-y-1.5">
-            <Label>{t("billing_tab.month")}</Label>
-            <Select value={String(mese)} onValueChange={(v) => { set_mese(Number(v)); set_preview_rows(null); }}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {Array.from({ length: 12 }, (_, i) => (
-                  <SelectItem key={i} value={String(i + 1)}>{mese_label(i + 1)}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label>{t("billing_tab.year")}</Label>
-            <Select value={String(anno)} onValueChange={(v) => { set_anno(Number(v)); set_preview_rows(null); }}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {anni_options.map((y) => (
-                  <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5 flex items-end">
-            <Button
-              variant="outline"
-              onClick={handle_anteprima}
-              disabled={anteprima.isPending}
-              className="w-full"
-            >
-              {anteprima.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Eye className="w-4 h-4 mr-2" />}
-              {t("billing_tab.preview")}
-            </Button>
-          </div>
-        </div>
+        <Button variant="outline" onClick={() => set_anteprima_open(true)}>
+          <FileText className="w-4 h-4 mr-2" />
+          {t("billing_tab.preview")}
+        </Button>
 
-        {preview_rows !== null && (
-          <div className="space-y-3">
-            <div className="rounded-lg border border-border overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/40">
-                  <tr>
-                    <th className="text-left px-3 py-2 text-xs font-bold text-muted-foreground uppercase">{t("billing_tab.col_atleta")}</th>
-                    <th className="text-left px-3 py-2 text-xs font-bold text-muted-foreground uppercase">{t("billing_tab.col_tipo")}</th>
-                    <th className="text-left px-3 py-2 text-xs font-bold text-muted-foreground uppercase">{t("billing_tab.col_descrizione")}</th>
-                    <th className="text-right px-3 py-2 text-xs font-bold text-muted-foreground uppercase">{t("billing_tab.col_importo")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {preview_rows.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="px-3 py-6 text-center text-muted-foreground text-sm">
-                        {t("billing_tab.none_for_period", { mese: mese_label(mese), anno })}
-                      </td>
-                    </tr>
-                  ) : (
-                    preview_rows.map((r: any, i: number) => (
-                      <tr key={i} className="border-t border-border/50">
-                        <td className="px-3 py-2 text-foreground">{get_atleta_nome(r.atleta_id)}</td>
-                        <td className="px-3 py-2 text-muted-foreground">{r.tipo}</td>
-                        <td className="px-3 py-2 text-muted-foreground truncate max-w-xs">{r.descrizione}</td>
-                        <td className="px-3 py-2 text-right tabular-nums font-medium text-foreground">
-                          CHF {Number(r.importo).toFixed(2)}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-                {preview_rows.length > 0 && (
-                  <tfoot className="bg-muted/30">
-                    <tr>
-                      <td colSpan={3} className="px-3 py-2 text-right font-bold text-foreground">{t("billing_tab.total")}</td>
-                      <td className="px-3 py-2 text-right tabular-nums font-bold text-primary">
-                        CHF {totale_anteprima.toFixed(2)}
-                      </td>
-                    </tr>
-                  </tfoot>
-                )}
-              </table>
-            </div>
-
-            {preview_rows.length > 0 && (
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Button
-                  onClick={handle_genera}
-                  disabled={genera.isPending}
-                  className="bg-primary hover:bg-primary/90"
-                >
-                  {genera.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileText className="w-4 h-4 mr-2" />}
-                  {t("billing_tab.confirm_generate", { count: preview_rows.length })}
-                </Button>
-                <Button variant="outline" onClick={() => set_preview_rows(null)}>
-                  {t("billing_tab.cancel_preview")}
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-
-        <p className="text-xs text-muted-foreground">
-          {t("billing_tab.no_duplicates_note")}
-        </p>
+        <p className="text-xs text-muted-foreground">{t("billing_tab.no_duplicates_note")}</p>
       </section>
+
+      <AnteprimaFatturePeriodoDialog open={anteprima_open} onOpenChange={set_anteprima_open} />
     </div>
   );
 };
