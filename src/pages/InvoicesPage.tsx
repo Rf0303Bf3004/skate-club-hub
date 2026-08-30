@@ -118,8 +118,8 @@ const InvoicesPage: React.FC = () => {
               </p>
             )}
           </div>
-          <Button className="bg-primary hover:bg-primary/90" onClick={handle_genera} disabled={genera.isPending}>
-            <FileText className="w-4 h-4 mr-2" /> {genera.isPending ? t("invoices_page.generating") : t("invoices_page.generate_button")}
+          <Button className="bg-primary hover:bg-primary/90" onClick={() => set_anteprima_open(true)}>
+            <FileText className="w-4 h-4 mr-2" /> {t("invoices_page.generate_button")}
           </Button>
         </div>
 
@@ -234,12 +234,21 @@ const InvoicesPage: React.FC = () => {
                       onClick={() => navigate(`/segreteria/fatture/${f.id}`)}
                       className="border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors"
                     >
-                      <td className="px-4 py-3 font-medium tabular-nums text-foreground">{f.numero}</td>
+                      <td className="px-4 py-3 font-medium tabular-nums text-foreground">
+                        <div className="flex items-center gap-2">
+                          {f.numero}
+                          {f.tipo_documento === "nota_credito" && (
+                            <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-purple-100 text-purple-800 border border-purple-200">
+                              Nota di credito
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td className="px-4 py-3 text-foreground">{get_atleta_name_from_list(atleti, f.atleta_id)}</td>
                       <td className="px-4 py-3 text-muted-foreground hidden md:table-cell max-w-xs truncate">
                         {f.descrizione}
                       </td>
-                      <td className="px-4 py-3 text-right tabular-nums font-semibold text-foreground">
+                      <td className={`px-4 py-3 text-right tabular-nums font-semibold ${Number(f.importo) < 0 ? "text-purple-700" : "text-foreground"}`}>
                         CHF {Number(f.importo).toFixed(2)}
                       </td>
                       <td className="px-4 py-3 tabular-nums text-muted-foreground hidden sm:table-cell">
