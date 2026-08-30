@@ -849,180 +849,120 @@ export function use_elimina_fattura() {
   });
 }
 
-// Costruisce le righe di fatture per un mese (anno, mese 1-12). Ritorna le righe pronte da inserire.
-async function build_fatture_mese(anno: number, mese: number) {
-  const mese_str = String(mese).padStart(2, "0");
-  const data_inizio_mese = `${anno}-${mese_str}-01`;
-  const data_fine_mese = new Date(anno, mese, 0).toISOString().split("T")[0];
-  const periodo = `${anno}-${mese_str}`;
-  const mese_label = new Date(anno, mese - 1, 1).toLocaleString("de-CH", { month: "long", year: "numeric" });
-  const oggi = new Date().toISOString().split("T")[0];
+// ─── Motore di fatturazione (calcolo nel database) ─────────
+// Nessun calcolo lato browser: la pagina Fatture chiama le funzioni del DB.
 
-  const { data: fe } = await supabase
-    .from("fatture")
-    .select("numero")
-    .eq("club_id", cid())
-    .order("numero", { ascending: false })
-    .limit(1);
-  let next_num = 1;
-  if (fe?.length && (fe[0] as any).numero) {
-    const match = (fe[0] as any).numero.match(/(\d+)/);
-    if (match) next_num = parseInt(match[1]) + 1;
-  }
+export type AnteprimaFatturaRiga = {
+  descrizione: string;
+  quantita?: number | null;
+  prezzo_unitario?: number | null;
+  importo: number;
+  tipo?: string | null;
+  voce?: string | null;
+  periodo_da?: string | null;
+  periodo_a?: string | null;
+  giorni?: number | null;
+  giorni_mese?: number | null;
+};
 
-  const { data: setup } = await supabase.from("setup_club").select("*").eq("club_id", cid()).maybeSingle();
-  const costo_test = Number((setup as any)?.fatturazione_costo_test ?? 0);
+export type AnteprimaFattura = {
+  atleta_id: string;
+  atleta: string;
+  ragione_sociale_id: string | null;
+  ragione_sociale: string | null;
+  n_righe: number;
+  totale: number;
+  righe: AnteprimaFatturaRiga[];
+  gia_fatturata: boolean;
+  avviso: string | null;
+};
 
-  const { data: esistenti } = await supabase
-    .from("fatture")
-    .select("atleta_id, tipo, riferimento_id")
-    .eq("club_id", cid())
-    .eq("periodo", periodo);
-  const dup_key = (a: string, t: string, r: string | null) => `${a}|${t}|${r ?? ""}`;
-  const dup_set = new Set((esistenti ?? []).map((e: any) => dup_key(e.atleta_id, e.tipo, e.riferimento_id)));
+export type EsitoGenerazione = {
+  creata: boolean;
+  atleta: string | null;
+  numero: string | null;
+  totale: number | null;
+  motivo: string | null;
+};
 
-  // Snapshot intestatario (genitore1) per ogni atleta del club, usato sulle fatture create.
-  const { data: atleti_snap } = await supabase
-    .from("atleti")
-    .select("id, genitore1_nome, genitore1_cognome, genitore1_indirizzo, genitore1_cap, genitore1_citta, genitore1_cantone, genitore1_paese_iso, genitore1_regione, genitore1_provincia, genitore1_email")
-    .eq("club_id", cid());
-  const intest_map = new Map<string, any>();
-  for (const a of atleti_snap || []) {
-    intest_map.set((a as any).id, {
-      intestatario_nome: (a as any).genitore1_nome || null,
-      intestatario_cognome: (a as any).genitore1_cognome || null,
-      intestatario_indirizzo: (a as any).genitore1_indirizzo || null,
-      intestatario_cap: (a as any).genitore1_cap || null,
-      intestatario_citta: (a as any).genitore1_citta || null,
-      intestatario_cantone: (a as any).genitore1_cantone || null,
-      intestatario_paese_iso: (a as any).genitore1_paese_iso || "CH",
-      intestatario_regione: (a as any).genitore1_regione || null,
-      intestatario_provincia: (a as any).genitore1_provincia || null,
-      intestatario_email: (a as any).genitore1_email || null,
-    });
-  }
-  const snap_of = (atleta_id: string) => intest_map.get(atleta_id) ?? {};
-
-  const prefisso_fattura = ((setup as any)?.fattura_prefisso_numero as string) || "F-";
-
-  const fatture_da_creare: any[] = [];
-
-  const { data: corsi } = await supabase.from("corsi").select("*").eq("club_id", cid()).eq("attivo", true);
-  const { data: iscrizioni_corsi } = await supabase.from("iscrizioni_corsi").select("*").eq("attiva", true);
-  for (const isc of iscrizioni_corsi || []) {
-    const corso = (corsi || []).find((c: any) => c.id === (isc as any).corso_id);
-    if (!corso || !(corso as any).costo_mensile) continue;
-    if (dup_set.has(dup_key((isc as any).atleta_id, "Corso", corso.id))) continue;
-    fatture_da_creare.push({
-      club_id: cid(),
-      atleta_id: (isc as any).atleta_id,
-      numero: `${prefisso_fattura}${String(next_num++).padStart(4, "0")}`,
-      descrizione: `Corso ${(corso as any).nome} - ${mese_label}`,
-      importo: (corso as any).costo_mensile,
-      data_emissione: oggi,
-      data_scadenza: data_fine_mese,
-      pagata: false,
-      tipo: "Corso",
-      riferimento_id: corso.id,
-      periodo,
-      ...snap_of((isc as any).atleta_id),
-    });
-  }
-
-  const { data: lezioni_mese } = await supabase
-    .from("lezioni_private")
-    .select("*, lezioni_private_atlete(*)")
-    .eq("club_id", cid())
-    .gte("data", data_inizio_mese)
-    .lte("data", data_fine_mese)
-    .eq("annullata", false);
-
-  const totale_per_atleta: Record<string, number> = {};
-  for (const lezione of lezioni_mese || []) {
-    for (const la of (lezione as any).lezioni_private_atlete || []) {
-      totale_per_atleta[la.atleta_id] = (totale_per_atleta[la.atleta_id] || 0) + (la.quota_costo || 0);
-    }
-  }
-  for (const [atleta_id, totale] of Object.entries(totale_per_atleta)) {
-    if (totale <= 0) continue;
-    if (dup_set.has(dup_key(atleta_id, "Lezione Privata", null))) continue;
-    fatture_da_creare.push({
-      club_id: cid(),
-      atleta_id,
-      numero: `${prefisso_fattura}${String(next_num++).padStart(4, "0")}`,
-      descrizione: `Lezioni private - ${mese_label}`,
-      importo: totale,
-      data_emissione: oggi,
-      data_scadenza: data_fine_mese,
-      pagata: false,
-      tipo: "Lezione Privata",
-      riferimento_id: null,
-      periodo,
-      ...snap_of(atleta_id),
-    });
-  }
-
-  if (costo_test > 0) {
-    const { data: test_mese } = await supabase
-      .from("test_livello")
-      .select("id, data, nome, test_livello_atleti(atleta_id, esito)")
-      .eq("club_id", cid())
-      .gte("data", data_inizio_mese)
-      .lte("data", data_fine_mese);
-
-    const test_per_atleta: Record<string, number> = {};
-    for (const test of test_mese || []) {
-      for (const ta of (test as any).test_livello_atleti || []) {
-        if (ta.esito === "in_attesa") continue;
-        test_per_atleta[ta.atleta_id] = (test_per_atleta[ta.atleta_id] || 0) + 1;
-      }
-    }
-    for (const [atleta_id, count] of Object.entries(test_per_atleta)) {
-      if (dup_set.has(dup_key(atleta_id, "Test Livello", null))) continue;
-      fatture_da_creare.push({
-        club_id: cid(),
-        atleta_id,
-        numero: `${prefisso_fattura}${String(next_num++).padStart(4, "0")}`,
-        descrizione: `Test di livello (${count}) - ${mese_label}`,
-        importo: costo_test * count,
-        data_emissione: oggi,
-        data_scadenza: data_fine_mese,
-        pagata: false,
-        tipo: "Test Livello",
-        riferimento_id: null,
-        periodo,
-        ...snap_of(atleta_id),
-      });
-    }
-  }
-
-  return fatture_da_creare;
-}
-
-export function use_anteprima_fatture_mese() {
+export function use_anteprima_fatture_periodo() {
   return useMutation({
-    mutationFn: async (params?: { anno?: number; mese?: number }) => {
-      const now = new Date();
-      const anno = params?.anno ?? now.getFullYear();
-      const mese = params?.mese ?? now.getMonth() + 1;
-      return build_fatture_mese(anno, mese);
+    mutationFn: async (params: { anno: number; mese: number }): Promise<AnteprimaFattura[]> => {
+      const { data, error } = await supabase.rpc("anteprima_fatture_periodo", {
+        p_club: cid(),
+        p_anno: params.anno,
+        p_mese: params.mese,
+      });
+      if (error) throw error;
+      return ((data ?? []) as any[]).map((r) => ({
+        ...r,
+        totale: Number(r.totale ?? 0),
+        righe: Array.isArray(r.righe) ? (r.righe as AnteprimaFatturaRiga[]) : [],
+      }));
     },
   });
 }
 
-export function use_genera_fatture_mensili() {
+export function use_genera_fatture_periodo() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (params?: { anno?: number; mese?: number }) => {
-      const now = new Date();
-      const anno = params?.anno ?? now.getFullYear();
-      const mese = params?.mese ?? now.getMonth() + 1;
-      const fatture_da_creare = await build_fatture_mese(anno, mese);
-      if (fatture_da_creare.length > 0) {
-        const { error } = await supabase.from("fatture").insert(fatture_da_creare);
-        if (error) throw error;
-      }
-      return fatture_da_creare.length;
+    mutationFn: async (params: { anno: number; mese: number }): Promise<EsitoGenerazione[]> => {
+      const { data, error } = await supabase.rpc("genera_fatture_periodo", {
+        p_club: cid(),
+        p_anno: params.anno,
+        p_mese: params.mese,
+      });
+      if (error) throw error;
+      return ((data ?? []) as any[]).map((r) => ({
+        ...r,
+        totale: r.totale === null || r.totale === undefined ? null : Number(r.totale),
+      }));
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["fatture"] }),
+  });
+}
+
+// ─── Ciclo di vita del documento ───────────────────────────
+export function use_annulla_fattura() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: { fattura_id: string; motivo: string }) => {
+      const { data, error } = await supabase.rpc("annulla_fattura", {
+        p_fattura: params.fattura_id,
+        p_motivo: params.motivo,
+      });
+      if (error) throw error;
+      return data as string;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["fatture"] }),
+  });
+}
+
+export function use_sostituisci_fattura() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: { fattura_id: string; motivo: string }) => {
+      const { data, error } = await supabase.rpc("sostituisci_fattura", {
+        p_fattura: params.fattura_id,
+        p_motivo: params.motivo,
+      });
+      if (error) throw error;
+      return data as string;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["fatture"] }),
+  });
+}
+
+export function use_storna_fattura() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: { fattura_id: string; motivo: string }) => {
+      const { data, error } = await supabase.rpc("storna_fattura", {
+        p_fattura: params.fattura_id,
+        p_motivo: params.motivo,
+      });
+      if (error) throw error;
+      return data as string;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["fatture"] }),
   });
@@ -1032,12 +972,8 @@ export function use_invia_email_fattura() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (params: { fattura_id: string; email: string }) => {
-      // Stub: registra timestamp di invio. L'invio reale richiede l'infrastruttura email.
-      const { error } = await supabase
-        .from("fatture")
-        .update({ email_inviata_at: new Date().toISOString() } as any)
-        .eq("id", params.fattura_id);
-      if (error) throw error;
+      const { invia_fattura_email } = await import("@/lib/fattura-atleta-helpers");
+      await invia_fattura_email(params.fattura_id, params.email);
       return params.email;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["fatture"] }),
