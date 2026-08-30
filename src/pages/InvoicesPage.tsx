@@ -75,7 +75,10 @@ const InvoicesPage: React.FC = () => {
     return sorted;
   }, [fatture, status_filter, search, periodo_filter, sort_by, today_iso, atleti]);
 
-  const non_pagate = fatture.filter((f: any) => f.stato !== "pagata" && !fattura_chiusa(f));
+  const non_pagate = fatture.filter((f: any) => {
+    const st = get_fattura_stato_ui(f, today_iso);
+    return !fattura_chiusa(f) && st !== "pagata" && st !== "bozza";
+  });
   const totale_da_pagare = non_pagate.reduce((s: number, f: any) => s + Number(f.importo), 0);
   const scadute_count = non_pagate.filter((f: any) => get_fattura_stato_ui(f, today_iso) === "scaduta").length;
   const in_arrivo_count = non_pagate.length - scadute_count;
