@@ -8,13 +8,13 @@ import {
   use_atleti,
   get_atleta_name_from_list,
 } from "@/hooks/use-supabase-data";
-import { use_genera_fatture_mensili } from "@/hooks/use-supabase-mutations";
+import AnteprimaFatturePeriodoDialog from "@/components/fatture/AnteprimaFatturePeriodoDialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileText, Receipt } from "lucide-react";
 import EmptyState from "@/components/common/EmptyState";
 import { toast } from "@/hooks/use-toast";
-import { get_fattura_stato_ui, get_fattura_stato_label, get_fattura_stato_classes } from "@/lib/fattura-status";
+import { get_fattura_stato_ui, get_fattura_stato_label, get_fattura_stato_classes, fattura_chiusa } from "@/lib/fattura-status";
 
 
 
@@ -23,7 +23,7 @@ const InvoicesPage: React.FC = () => {
   const { t } = useTranslation("fatture");
   const { data: fatture = [], isLoading } = use_fatture();
   const { data: atleti = [] } = use_atleti();
-  const genera = use_genera_fatture_mensili();
+  const [anteprima_open, set_anteprima_open] = useState(false);
   const [status_filter, set_status_filter] = useState("tutti");
   const [search_raw, set_search_raw] = useState("");
   const search = useDebouncedValue(search_raw, 200);
@@ -75,7 +75,7 @@ const InvoicesPage: React.FC = () => {
     return sorted;
   }, [fatture, status_filter, search, periodo_filter, sort_by, today_iso, atleti]);
 
-  const non_pagate = fatture.filter((f: any) => f.stato !== "pagata");
+  const non_pagate = fatture.filter((f: any) => f.stato !== "pagata" && !fattura_chiusa(f));
   const totale_da_pagare = non_pagate.reduce((s: number, f: any) => s + Number(f.importo), 0);
   const scadute_count = non_pagate.filter((f: any) => get_fattura_stato_ui(f, today_iso) === "scaduta").length;
   const in_arrivo_count = non_pagate.length - scadute_count;
@@ -86,14 +86,6 @@ const InvoicesPage: React.FC = () => {
     .filter((f: any) => get_fattura_stato_ui(f, today_iso) === "scaduta")
     .reduce((s: number, f: any) => s + Number(f.importo ?? 0), 0);
 
-  const handle_genera = async () => {
-    try {
-      const count = await genera.mutateAsync(undefined);
-      toast({ title: t("invoices_page.toast.generated_title", { count }) });
-    } catch (err: any) {
-      toast({ title: t("invoices_page.toast.generate_error_title"), description: err?.message, variant: "destructive" });
-    }
-  };
 
 
   if (isLoading) {
@@ -126,8 +118,8 @@ const InvoicesPage: React.FC = () => {
               </p>
             )}
           </div>
-          <Button className="bg-primary hover:bg-primary/90" onClick={handle_genera} disabled={genera.isPending}>
-            <FileText className="w-4 h-4 mr-2" /> {genera.isPending ? t("invoices_page.generating") : t("invoices_page.generate_button")}
+          <Button className="bg-primary hover:bg-primary/90" onClick={() => set_anteprima_open(true)}>
+            <FileText className="w-4 h-4 mr-2" /> {t("invoices_page.generate_button")}
           </Button>
         </div>
 
@@ -242,12 +234,21 @@ const InvoicesPage: React.FC = () => {
                       onClick={() => navigate(`/segreteria/fatture/${f.id}`)}
                       className="border-b border-border/50 hover:bg-muted/30 cursor-pointer transition-colors"
                     >
-                      <td className="px-4 py-3 font-medium tabular-nums text-foreground">{f.numero}</td>
+                      <td className="px-4 py-3 font-medium tabular-nums text-foreground">
+                        <div className="flex items-center gap-2">
+                          {f.numero}
+                          {f.tipo_documento === "nota_credito" && (
+                            <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-purple-100 text-purple-800 border border-purple-200">
+                              Nota di credito
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td className="px-4 py-3 text-foreground">{get_atleta_name_from_list(atleti, f.atleta_id)}</td>
                       <td className="px-4 py-3 text-muted-foreground hidden md:table-cell max-w-xs truncate">
                         {f.descrizione}
                       </td>
-                      <td className="px-4 py-3 text-right tabular-nums font-semibold text-foreground">
+                      <td className={`px-4 py-3 text-right tabular-nums font-semibold ${Number(f.importo) < 0 ? "text-purple-700" : "text-foreground"}`}>
                         CHF {Number(f.importo).toFixed(2)}
                       </td>
                       <td className="px-4 py-3 tabular-nums text-muted-foreground hidden sm:table-cell">
@@ -273,6 +274,8 @@ const InvoicesPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <AnteprimaFatturePeriodoDialog open={anteprima_open} onOpenChange={set_anteprima_open} />
     </>
   );
 };

@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.17"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -195,6 +195,10 @@ export type Database = {
           contratto_accettato_at: string | null
           created_at: string
           data_nascita: string | null
+          deroga_anagrafica: boolean
+          deroga_anagrafica_da: string | null
+          deroga_anagrafica_il: string | null
+          deroga_anagrafica_motivo: string | null
           disco_in_preparazione: string | null
           disco_url: string | null
           e_aiuto_monitrice: boolean
@@ -278,6 +282,10 @@ export type Database = {
           contratto_accettato_at?: string | null
           created_at?: string
           data_nascita?: string | null
+          deroga_anagrafica?: boolean
+          deroga_anagrafica_da?: string | null
+          deroga_anagrafica_il?: string | null
+          deroga_anagrafica_motivo?: string | null
           disco_in_preparazione?: string | null
           disco_url?: string | null
           e_aiuto_monitrice?: boolean
@@ -361,6 +369,10 @@ export type Database = {
           contratto_accettato_at?: string | null
           created_at?: string
           data_nascita?: string | null
+          deroga_anagrafica?: boolean
+          deroga_anagrafica_da?: string | null
+          deroga_anagrafica_il?: string | null
+          deroga_anagrafica_motivo?: string | null
           disco_in_preparazione?: string | null
           disco_url?: string | null
           e_aiuto_monitrice?: boolean
@@ -1173,6 +1185,7 @@ export type Database = {
           programmata_per: string | null
           richiede_rsvp: boolean
           rsvp_scadenza: string | null
+          ruoli_destinatari: string[] | null
           sotto_tipo: string | null
           stato: string
           test_livello_id: string | null
@@ -1206,6 +1219,7 @@ export type Database = {
           programmata_per?: string | null
           richiede_rsvp?: boolean
           rsvp_scadenza?: string | null
+          ruoli_destinatari?: string[] | null
           sotto_tipo?: string | null
           stato?: string
           test_livello_id?: string | null
@@ -1239,6 +1253,7 @@ export type Database = {
           programmata_per?: string | null
           richiede_rsvp?: boolean
           rsvp_scadenza?: string | null
+          ruoli_destinatari?: string[] | null
           sotto_tipo?: string | null
           stato?: string
           test_livello_id?: string | null
@@ -2166,6 +2181,7 @@ export type Database = {
           attivo: boolean
           creato_at: string
           id: string
+          lingua: string | null
           piattaforma: string
           token: string
           ultimo_uso_at: string | null
@@ -2176,6 +2192,7 @@ export type Database = {
           attivo?: boolean
           creato_at?: string
           id?: string
+          lingua?: string | null
           piattaforma?: string
           token: string
           ultimo_uso_at?: string | null
@@ -2186,6 +2203,7 @@ export type Database = {
           attivo?: boolean
           creato_at?: string
           id?: string
+          lingua?: string | null
           piattaforma?: string
           token?: string
           ultimo_uso_at?: string | null
@@ -2565,6 +2583,8 @@ export type Database = {
       }
       fatture: {
         Row: {
+          annullata_da: string | null
+          annullata_il: string | null
           atleta_id: string | null
           club_id: string
           created_at: string
@@ -2572,6 +2592,7 @@ export type Database = {
           data_pagamento: string | null
           data_scadenza: string | null
           descrizione: string | null
+          documento_origine_id: string | null
           email_inviata_at: string | null
           id: string
           importo: number | null
@@ -2585,6 +2606,7 @@ export type Database = {
           intestatario_paese_iso: string | null
           intestatario_provincia: string | null
           intestatario_regione: string | null
+          motivo_annullamento: string | null
           note: string | null
           numero: string | null
           pagata: boolean | null
@@ -2592,15 +2614,21 @@ export type Database = {
           periodo: string | null
           ragione_sociale_id: string | null
           riferimento_id: string | null
+          riferimento_numero: number | null
           righe: Json | null
           sconto_causale: string | null
           sconto_importo_chf: number
           sconto_note: string | null
           sconto_percentuale: number
+          solleciti_inviati: number
           stato: string
           tipo: string | null
+          tipo_documento: string
+          ultimo_sollecito_il: string | null
         }
         Insert: {
+          annullata_da?: string | null
+          annullata_il?: string | null
           atleta_id?: string | null
           club_id: string
           created_at?: string
@@ -2608,6 +2636,7 @@ export type Database = {
           data_pagamento?: string | null
           data_scadenza?: string | null
           descrizione?: string | null
+          documento_origine_id?: string | null
           email_inviata_at?: string | null
           id?: string
           importo?: number | null
@@ -2621,6 +2650,7 @@ export type Database = {
           intestatario_paese_iso?: string | null
           intestatario_provincia?: string | null
           intestatario_regione?: string | null
+          motivo_annullamento?: string | null
           note?: string | null
           numero?: string | null
           pagata?: boolean | null
@@ -2628,15 +2658,21 @@ export type Database = {
           periodo?: string | null
           ragione_sociale_id?: string | null
           riferimento_id?: string | null
+          riferimento_numero?: number | null
           righe?: Json | null
           sconto_causale?: string | null
           sconto_importo_chf?: number
           sconto_note?: string | null
           sconto_percentuale?: number
+          solleciti_inviati?: number
           stato?: string
           tipo?: string | null
+          tipo_documento?: string
+          ultimo_sollecito_il?: string | null
         }
         Update: {
+          annullata_da?: string | null
+          annullata_il?: string | null
           atleta_id?: string | null
           club_id?: string
           created_at?: string
@@ -2644,6 +2680,7 @@ export type Database = {
           data_pagamento?: string | null
           data_scadenza?: string | null
           descrizione?: string | null
+          documento_origine_id?: string | null
           email_inviata_at?: string | null
           id?: string
           importo?: number | null
@@ -2657,6 +2694,7 @@ export type Database = {
           intestatario_paese_iso?: string | null
           intestatario_provincia?: string | null
           intestatario_regione?: string | null
+          motivo_annullamento?: string | null
           note?: string | null
           numero?: string | null
           pagata?: boolean | null
@@ -2664,13 +2702,17 @@ export type Database = {
           periodo?: string | null
           ragione_sociale_id?: string | null
           riferimento_id?: string | null
+          riferimento_numero?: number | null
           righe?: Json | null
           sconto_causale?: string | null
           sconto_importo_chf?: number
           sconto_note?: string | null
           sconto_percentuale?: number
+          solleciti_inviati?: number
           stato?: string
           tipo?: string | null
+          tipo_documento?: string
+          ultimo_sollecito_il?: string | null
         }
         Relationships: [
           {
@@ -2714,6 +2756,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "kpi_pitch_sponsor"
             referencedColumns: ["club_id"]
+          },
+          {
+            foreignKeyName: "fatture_documento_origine_id_fkey"
+            columns: ["documento_origine_id"]
+            isOneToOne: false
+            referencedRelation: "fatture"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fatture_ragione_sociale_id_fkey"
@@ -3473,6 +3522,8 @@ export type Database = {
           attiva: boolean | null
           corso_id: string
           created_at: string
+          data_fine: string | null
+          data_iscrizione: string | null
           id: string
           note_salto_livello: string | null
           ragione_sociale_id: string | null
@@ -3484,6 +3535,8 @@ export type Database = {
           attiva?: boolean | null
           corso_id: string
           created_at?: string
+          data_fine?: string | null
+          data_iscrizione?: string | null
           id?: string
           note_salto_livello?: string | null
           ragione_sociale_id?: string | null
@@ -3495,6 +3548,8 @@ export type Database = {
           attiva?: boolean | null
           corso_id?: string
           created_at?: string
+          data_fine?: string | null
+          data_iscrizione?: string | null
           id?: string
           note_salto_livello?: string | null
           ragione_sociale_id?: string | null
@@ -3758,6 +3813,8 @@ export type Database = {
           atleta_id: string
           attiva: boolean
           created_at: string
+          data_fine: string | null
+          data_iscrizione: string | null
           id: string
           note: string | null
           numero_sessioni: number | null
@@ -3767,6 +3824,8 @@ export type Database = {
           atleta_id: string
           attiva?: boolean
           created_at?: string
+          data_fine?: string | null
+          data_iscrizione?: string | null
           id?: string
           note?: string | null
           numero_sessioni?: number | null
@@ -3776,6 +3835,8 @@ export type Database = {
           atleta_id?: string
           attiva?: boolean
           created_at?: string
+          data_fine?: string | null
+          data_iscrizione?: string | null
           id?: string
           note?: string | null
           numero_sessioni?: number | null
@@ -3842,6 +3903,7 @@ export type Database = {
         Row: {
           attivo: boolean | null
           club_id: string
+          codice_istruttore: string | null
           cognome: string
           colore: string | null
           compenso_fisso_corsi: number | null
@@ -3851,6 +3913,7 @@ export type Database = {
           costo_orario_lezioni: number | null
           created_at: string
           email: string | null
+          foto_url: string | null
           id: string
           linked_atleta_id: string | null
           livello_istruttore: Database["public"]["Enums"]["livello_istruttore_enum"]
@@ -3858,6 +3921,7 @@ export type Database = {
           note: string | null
           specialita: string | null
           stato_staff: Database["public"]["Enums"]["stato_staff_enum"]
+          tag_nfc: string | null
           telefono: string | null
           tipo_contratto: string
           user_id: string | null
@@ -3865,6 +3929,7 @@ export type Database = {
         Insert: {
           attivo?: boolean | null
           club_id: string
+          codice_istruttore?: string | null
           cognome?: string
           colore?: string | null
           compenso_fisso_corsi?: number | null
@@ -3874,6 +3939,7 @@ export type Database = {
           costo_orario_lezioni?: number | null
           created_at?: string
           email?: string | null
+          foto_url?: string | null
           id?: string
           linked_atleta_id?: string | null
           livello_istruttore?: Database["public"]["Enums"]["livello_istruttore_enum"]
@@ -3881,6 +3947,7 @@ export type Database = {
           note?: string | null
           specialita?: string | null
           stato_staff?: Database["public"]["Enums"]["stato_staff_enum"]
+          tag_nfc?: string | null
           telefono?: string | null
           tipo_contratto?: string
           user_id?: string | null
@@ -3888,6 +3955,7 @@ export type Database = {
         Update: {
           attivo?: boolean | null
           club_id?: string
+          codice_istruttore?: string | null
           cognome?: string
           colore?: string | null
           compenso_fisso_corsi?: number | null
@@ -3897,6 +3965,7 @@ export type Database = {
           costo_orario_lezioni?: number | null
           created_at?: string
           email?: string | null
+          foto_url?: string | null
           id?: string
           linked_atleta_id?: string | null
           livello_istruttore?: Database["public"]["Enums"]["livello_istruttore_enum"]
@@ -3904,6 +3973,7 @@ export type Database = {
           note?: string | null
           specialita?: string | null
           stato_staff?: Database["public"]["Enums"]["stato_staff_enum"]
+          tag_nfc?: string | null
           telefono?: string | null
           tipo_contratto?: string
           user_id?: string | null
@@ -5188,6 +5258,7 @@ export type Database = {
       ragioni_sociali: {
         Row: {
           accesso_dedicato: boolean
+          anno_numerazione: number | null
           attivo: boolean
           banca: string | null
           cap: string | null
@@ -5195,6 +5266,7 @@ export type Database = {
           club_id: string
           colore_primario: string
           created_at: string
+          formato_numero_fattura: string | null
           iban: string | null
           id: string
           indirizzo: string | null
@@ -5212,6 +5284,7 @@ export type Database = {
         }
         Insert: {
           accesso_dedicato?: boolean
+          anno_numerazione?: number | null
           attivo?: boolean
           banca?: string | null
           cap?: string | null
@@ -5219,6 +5292,7 @@ export type Database = {
           club_id: string
           colore_primario?: string
           created_at?: string
+          formato_numero_fattura?: string | null
           iban?: string | null
           id?: string
           indirizzo?: string | null
@@ -5236,6 +5310,7 @@ export type Database = {
         }
         Update: {
           accesso_dedicato?: boolean
+          anno_numerazione?: number | null
           attivo?: boolean
           banca?: string | null
           cap?: string | null
@@ -5243,6 +5318,7 @@ export type Database = {
           club_id?: string
           colore_primario?: string
           created_at?: string
+          formato_numero_fattura?: string | null
           iban?: string | null
           id?: string
           indirizzo?: string | null
@@ -6056,6 +6132,7 @@ export type Database = {
       setup_club: {
         Row: {
           anno_fondazione: number | null
+          anno_numerazione: number | null
           banca: string | null
           clausole_contratto: string | null
           club_id: string
@@ -6064,6 +6141,7 @@ export type Database = {
           data_inizio_stagione: string | null
           fattura_colore_accento: string | null
           fattura_footer_testo: string | null
+          fattura_giorni_scadenza: number
           fattura_mostra_iban: boolean
           fattura_mostra_logo: boolean
           fattura_note_legali: string | null
@@ -6071,6 +6149,7 @@ export type Database = {
           fatturazione_costo_test: number | null
           fatturazione_giorno_mese: number | null
           fatturazione_invio_email_auto: boolean | null
+          formato_numero_fattura: string | null
           iban: string | null
           id: string
           indirizzo_banca: string | null
@@ -6079,13 +6158,17 @@ export type Database = {
           max_lezioni_private_contemporanee: number | null
           medagliere_punti: Json | null
           missione: string | null
+          prossimo_numero_fattura: number
           slot_lezione_privata_minuti: number | null
+          sollecito_attivo: boolean
+          sollecito_giorni: number[]
           storia_breve: string | null
           twint_paylink: string | null
           valori: string | null
         }
         Insert: {
           anno_fondazione?: number | null
+          anno_numerazione?: number | null
           banca?: string | null
           clausole_contratto?: string | null
           club_id: string
@@ -6094,6 +6177,7 @@ export type Database = {
           data_inizio_stagione?: string | null
           fattura_colore_accento?: string | null
           fattura_footer_testo?: string | null
+          fattura_giorni_scadenza?: number
           fattura_mostra_iban?: boolean
           fattura_mostra_logo?: boolean
           fattura_note_legali?: string | null
@@ -6101,6 +6185,7 @@ export type Database = {
           fatturazione_costo_test?: number | null
           fatturazione_giorno_mese?: number | null
           fatturazione_invio_email_auto?: boolean | null
+          formato_numero_fattura?: string | null
           iban?: string | null
           id?: string
           indirizzo_banca?: string | null
@@ -6109,13 +6194,17 @@ export type Database = {
           max_lezioni_private_contemporanee?: number | null
           medagliere_punti?: Json | null
           missione?: string | null
+          prossimo_numero_fattura?: number
           slot_lezione_privata_minuti?: number | null
+          sollecito_attivo?: boolean
+          sollecito_giorni?: number[]
           storia_breve?: string | null
           twint_paylink?: string | null
           valori?: string | null
         }
         Update: {
           anno_fondazione?: number | null
+          anno_numerazione?: number | null
           banca?: string | null
           clausole_contratto?: string | null
           club_id?: string
@@ -6124,6 +6213,7 @@ export type Database = {
           data_inizio_stagione?: string | null
           fattura_colore_accento?: string | null
           fattura_footer_testo?: string | null
+          fattura_giorni_scadenza?: number
           fattura_mostra_iban?: boolean
           fattura_mostra_logo?: boolean
           fattura_note_legali?: string | null
@@ -6131,6 +6221,7 @@ export type Database = {
           fatturazione_costo_test?: number | null
           fatturazione_giorno_mese?: number | null
           fatturazione_invio_email_auto?: boolean | null
+          formato_numero_fattura?: string | null
           iban?: string | null
           id?: string
           indirizzo_banca?: string | null
@@ -6139,7 +6230,10 @@ export type Database = {
           max_lezioni_private_contemporanee?: number | null
           medagliere_punti?: Json | null
           missione?: string | null
+          prossimo_numero_fattura?: number
           slot_lezione_privata_minuti?: number | null
+          sollecito_attivo?: boolean
+          sollecito_giorni?: number[]
           storia_breve?: string | null
           twint_paylink?: string | null
           valori?: string | null
@@ -6384,6 +6478,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tentativi_accesso: {
+        Row: {
+          codice_hash: string | null
+          esito: string
+          id: number
+          motivo: string | null
+          origine: string
+          quando: string
+        }
+        Insert: {
+          codice_hash?: string | null
+          esito: string
+          id?: number
+          motivo?: string | null
+          origine: string
+          quando?: string
+        }
+        Update: {
+          codice_hash?: string | null
+          esito?: string
+          id?: number
+          motivo?: string | null
+          origine?: string
+          quando?: string
+        }
+        Relationships: []
       }
       test_livello: {
         Row: {
@@ -7162,7 +7283,61 @@ export type Database = {
       }
     }
     Functions: {
+      aggiorna_fatture_scadute: {
+        Args: never
+        Returns: {
+          club: string
+          marcate_scadute: number
+          solleciti_generati: number
+        }[]
+      }
+      anagrafica_fatturazione: {
+        Args: { p_atleta: string }
+        Returns: {
+          cantone: string
+          cap: string
+          citta: string
+          cognome: string
+          email: string
+          fonte: string
+          indirizzo: string
+          nome: string
+          paese_iso: string
+        }[]
+      }
+      anagrafica_fatturazione_mancante: {
+        Args: { p_atleta: string }
+        Returns: string
+      }
+      annulla_fattura: {
+        Args: { p_fattura: string; p_motivo: string }
+        Returns: string
+      }
+      anteprima_fatture_periodo: {
+        Args: { p_anno: number; p_club: string; p_mese: number }
+        Returns: {
+          atleta: string
+          atleta_id: string
+          avviso: string
+          gia_fatturata: boolean
+          n_righe: number
+          ragione_sociale: string
+          ragione_sociale_id: string
+          righe: Json
+          totale: number
+        }[]
+      }
       archivia_comunicazioni_vecchie: { Args: never; Returns: number }
+      arrotonda_chf: { Args: { p: number }; Returns: number }
+      attesa_prima_di_riprovare: {
+        Args: { p_origine: string }
+        Returns: {
+          bloccato: boolean
+          falliti_recenti: number
+          messaggio: string
+          secondi_di_attesa: number
+        }[]
+      }
       campo_club_ospitante: { Args: { p_campo: string }; Returns: string }
       cancel_corso_atleta: {
         Args: { p_atleta_id: string; p_corso_id: string }
@@ -7193,7 +7368,40 @@ export type Database = {
           tipo: string
         }[]
       }
+      diagnosi_avvio_club: {
+        Args: { p_club: string }
+        Returns: {
+          area: string
+          blocca: boolean
+          controllo: string
+          dettaglio: string
+          esito: string
+          passo: number
+        }[]
+      }
+      duplica_fattura: { Args: { p_fattura: string }; Returns: string }
+      formatta_numero_fattura: {
+        Args: {
+          p_anno: number
+          p_mese: number
+          p_modello: string
+          p_prefisso: string
+          p_progressivo: number
+        }
+        Returns: string
+      }
       genera_codice_atleta: { Args: never; Returns: string }
+      genera_codice_istruttore: { Args: never; Returns: string }
+      genera_fatture_periodo: {
+        Args: { p_anno: number; p_club: string; p_mese: number }
+        Returns: {
+          atleta: string
+          creata: boolean
+          motivo: string
+          numero: string
+          totale: number
+        }[]
+      }
       genera_planning_giornaliero: { Args: never; Returns: number }
       genera_reminder_giornalieri: { Args: never; Returns: number }
       genera_reminder_scadenza_ghiaccio: { Args: never; Returns: number }
@@ -7241,8 +7449,12 @@ export type Database = {
         Args: { _user_id: string }
         Returns: string
       }
+      iban_e_qr_iban: { Args: { p: string }; Returns: boolean }
+      iban_normalizza: { Args: { p: string }; Returns: string }
+      iban_valido: { Args: { p: string }; Returns: boolean }
       invia_push_comunicazioni_programmate: { Args: never; Returns: number }
       is_mobile_parent: { Args: never; Returns: boolean }
+      is_mobile_staff: { Args: never; Returns: boolean }
       is_superadmin: { Args: never; Returns: boolean }
       lezione_privata_appartiene_al_club: {
         Args: { _club_id: string; _lezione_id: string }
@@ -7306,16 +7518,74 @@ export type Database = {
           voto_giudici: string
         }[]
       }
+      mobile_istruttore_id: { Args: never; Returns: string }
+      mobile_ruolo: { Args: never; Returns: string }
+      mobile_sezioni_permesse: { Args: never; Returns: string[] }
+      mod10_ricorsivo: { Args: { p_cifre: string }; Returns: number }
       normalize_label: { Args: { input: string }; Returns: string }
+      passa_stagione: {
+        Args: { p_nuova: string; p_vecchia: string }
+        Returns: string
+      }
+      pulisci_tentativi_accesso: { Args: never; Returns: number }
+      registra_tentativo_accesso: {
+        Args: {
+          p_codice: string
+          p_esito: string
+          p_motivo?: string
+          p_origine: string
+        }
+        Returns: undefined
+      }
       ricalcola_cache_ore_mensile: {
         Args: { p_anno: number; p_istruttore_id: string; p_mese: number }
         Returns: undefined
+      }
+      riconosci_identita: {
+        Args: { p_valore: string }
+        Returns: {
+          club_id: string
+          id: string
+          mezzo: string
+          nome: string
+          ruolo: string
+          tipo: string
+        }[]
+      }
+      riferimento_qrr: { Args: { p_numero: number }; Returns: string }
+      riferimento_scor: { Args: { p_numero: number }; Returns: string }
+      righe_fatturabili_periodo: {
+        Args: { p_anno: number; p_club: string; p_mese: number }
+        Returns: {
+          atleta_id: string
+          descrizione: string
+          giorni: number
+          giorni_mese: number
+          importo: number
+          periodo_a: string
+          periodo_da: string
+          prezzo_unitario: number
+          quantita: number
+          ragione_sociale_id: string
+          riferimento_id: string
+          tipo: string
+          voce: string
+        }[]
+      }
+      ruoli_che_approvano_iscrizioni: {
+        Args: { p_club: string }
+        Returns: string[]
+      }
+      seed_dashboard_cards_default: {
+        Args: { p_club: string }
+        Returns: number
       }
       seed_pacchetti_sponsor_default: {
         Args: { p_club_id: string }
         Returns: undefined
       }
       seed_permessi_default: { Args: { p_club_id: string }; Returns: undefined }
+      seed_permessi_integrazioni: { Args: { p_club: string }; Returns: number }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       slot_liberi_istruttore: {
@@ -7327,11 +7597,38 @@ export type Database = {
           ora_inizio: string
         }[]
       }
+      sostituisci_fattura: {
+        Args: { p_fattura: string; p_motivo: string }
+        Returns: string
+      }
       spawn_corso_atleta: {
         Args: { p_atleta_id: string; p_corso_id: string }
         Returns: undefined
       }
+      storna_fattura: {
+        Args: { p_fattura: string; p_motivo: string }
+        Returns: string
+      }
+      swiss_qr_payload: {
+        Args: { p_fattura: string }
+        Returns: {
+          errori: string
+          payload: string
+          riferimento: string
+          tipo_riferimento: string
+        }[]
+      }
       sync_atleta_to_staff: { Args: { p_atleta_id: string }; Returns: string }
+      testo_tradotto: {
+        Args: {
+          p_campo: string
+          p_default: string
+          p_lingua: string
+          p_record: string
+          p_tabella: string
+        }
+        Returns: string
+      }
       user_can_manage_griglia: { Args: never; Returns: boolean }
       user_can_manage_richieste: { Args: never; Returns: boolean }
       user_can_see_finance: { Args: never; Returns: boolean }

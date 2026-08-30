@@ -1,6 +1,9 @@
 import { supabase } from "@/lib/supabase";
-import type { FatturaAtletaData, FatturaAtletaRiga } from "@/lib/fattura-atleta-pdf";
+import type { FatturaAtletaData, FatturaAtletaRiga, FatturaQrData } from "@/lib/fattura-atleta-pdf";
 import { genera_fattura_atleta_blob } from "@/lib/fattura-atleta-pdf";
+import { genera_qr_data_url } from "@/lib/qr";
+
+const BUCKET_FATTURE = "fatture-atleti";
 
 export type FatturaFull = {
   id: string;
@@ -18,6 +21,9 @@ export type FatturaFull = {
   pdf_url: string | null;
   note: string | null;
   righe: FatturaAtletaRiga[] | null;
+  tipo_documento: string | null;
+  documento_origine_id: string | null;
+  motivo_annullamento: string | null;
   intestatario_nome: string | null;
   intestatario_cognome: string | null;
   intestatario_indirizzo: string | null;
@@ -30,6 +36,25 @@ export type FatturaFull = {
   sconto_causale: string | null;
   sconto_note: string | null;
 };
+
+/** Polizza QR svizzera: payload calcolato dal database + immagine QR generata in locale. */
+export async function carica_qr_fattura(fattura_id: string): Promise<FatturaQrData> {
+  const { data, error } = await supabase.rpc("swiss_qr_payload", { p_fattura: fattura_id });
+  if (error) return { data_url: null, payload: null, tipo_riferimento: null, riferimento: null, errori: error.message };
+  const r = (Array.isArray(data) ? data[0] : data) as any;
+  if (!r) return { data_url: null, payload: null, tipo_riferimento: null, riferimento: null, errori: "Polizza non disponibile" };
+  if (r.errori) {
+    return { data_url: null, payload: null, tipo_riferimento: r.tipo_riferimento ?? null, riferimento: r.riferimento ?? null, errori: r.errori };
+  }
+  const data_url = await genera_qr_data_url(String(r.payload ?? ""), 900);
+  return {
+    data_url: data_url || null,
+    payload: r.payload ?? null,
+    tipo_riferimento: r.tipo_riferimento ?? null,
+    riferimento: r.riferimento ?? null,
+    errori: data_url ? null : "Impossibile generare il codice QR",
+  };
+}
 
 export async function load_fattura_full(id: string): Promise<{
   fattura: FatturaFull;
@@ -69,13 +94,14 @@ export async function load_fattura_full(id: string): Promise<{
     fattura_note_legali: setup?.fattura_note_legali ?? null,
     fattura_footer_testo: setup?.fattura_footer_testo ?? null,
   };
-  return { fattura: f as FatturaFull, atleta: (atletaRes as any).data, club };
+  return { fattura: f as unknown as FatturaFull, atleta: (atletaRes as any).data, club };
 }
 
 export function build_pdf_data(
   fattura: FatturaFull,
   atleta: any | null,
   club: any | null,
+  qr?: FatturaQrData | null,
 ): FatturaAtletaData {
   const righe: FatturaAtletaRiga[] =
     Array.isArray(fattura.righe) && fattura.righe.length > 0
@@ -93,7 +119,7 @@ export function build_pdf_data(
   if (!sconto && Number(fattura.sconto_percentuale || 0) > 0) {
     sconto = +(subtotale * Number(fattura.sconto_percentuale) / 100).toFixed(2);
   }
-  const totale = Math.max(0, subtotale - sconto);
+  const totale = subtotale < 0 ? subtotale - sconto : Math.max(0, subtotale - sconto);
   const livello = atleta?.livello_artistica || atleta?.livello_stile || atleta?.livello_attuale || null;
 
   return {
@@ -101,6 +127,7 @@ export function build_pdf_data(
     periodo: fattura.periodo || undefined,
     data_emissione: fattura.data_emissione || new Date().toISOString().slice(0, 10),
     data_scadenza: fattura.data_scadenza,
+    tipo_documento: fattura.tipo_documento ?? null,
     righe,
     subtotale,
     sconto_importo: sconto,
@@ -108,6 +135,7 @@ export function build_pdf_data(
     sconto_note: fattura.sconto_note,
     totale,
     note: fattura.note,
+    qr: qr ?? null,
     intestatario: {
       nome: fattura.intestatario_nome,
       cognome: fattura.intestatario_cognome,
@@ -146,9 +174,43 @@ export function build_pdf_data(
   };
 }
 
+/** Carica i dati completi del PDF (fattura + polizza QR). */
+export async function carica_dati_pdf(id: string): Promise<FatturaAtletaData> {
+  const r = await load_fattura_full(id);
+  const qr = r.fattura.tipo_documento === "nota_credito" ? null : await carica_qr_fattura(id);
+  return build_pdf_data(r.fattura, r.atleta, r.club, qr);
+}
+
+/** URL temporaneo del PDF congelato in archivio, se presente. */
+export async function url_pdf_salvato(pdf_url: string | null | undefined): Promise<string | null> {
+  if (!pdf_url) return null;
+  if (pdf_url.startsWith("http")) return pdf_url;
+  const { data } = await supabase.storage.from(BUCKET_FATTURE).createSignedUrl(pdf_url, 3600);
+  return data?.signedUrl ?? null;
+}
+
+/** Le fatture non in bozza servono il PDF congelato, mai rigenerato. */
+export async function url_pdf_congelato(id: string): Promise<string | null> {
+  const { data } = await supabase.from("fatture").select("stato, pdf_url").eq("id", id).maybeSingle();
+  if (!data || (data as any).stato === "bozza") return null;
+  return await url_pdf_salvato((data as any).pdf_url);
+}
+
 export async function genera_e_apri_pdf(id: string, modo: "apri" | "scarica" | "stampa" = "apri") {
-  const { fattura, atleta, club } = await load_fattura_full(id);
-  const data = build_pdf_data(fattura, atleta, club);
+  const congelato = await url_pdf_congelato(id);
+  if (congelato) {
+    if (modo === "scarica") {
+      const a = document.createElement("a");
+      a.href = congelato;
+      a.download = `fattura-${id.slice(0, 8)}.pdf`;
+      a.click();
+    } else {
+      const w = window.open(congelato, "_blank");
+      if (modo === "stampa" && w) w.addEventListener("load", () => w.print());
+    }
+    return;
+  }
+  const data = await carica_dati_pdf(id);
   const blob = await genera_fattura_atleta_blob(data);
   const url = URL.createObjectURL(blob);
   if (modo === "scarica") {
@@ -166,8 +228,41 @@ export async function genera_e_apri_pdf(id: string, modo: "apri" | "scarica" | "
 }
 
 export async function genera_pdf_blob_per_email(id: string): Promise<{ blob: Blob; numero: string; data: FatturaAtletaData }> {
-  const { fattura, atleta, club } = await load_fattura_full(id);
-  const data = build_pdf_data(fattura, atleta, club);
+  const data = await carica_dati_pdf(id);
   const blob = await genera_fattura_atleta_blob(data);
   return { blob, numero: data.numero, data };
+}
+
+/**
+ * Invio della fattura: congela il PDF in archivio (pdf_url), invia l'email e
+ * porta il documento in stato "inviata".
+ */
+export async function invia_fattura_email(fattura_id: string, destinatario: string) {
+  const { fattura, atleta, club } = await load_fattura_full(fattura_id);
+  const qr = fattura.tipo_documento === "nota_credito" ? null : await carica_qr_fattura(fattura_id);
+  const data = build_pdf_data(fattura, atleta, club, qr);
+  const blob = await genera_fattura_atleta_blob(data);
+
+  const path = `${fattura.club_id}/${fattura_id}.pdf`;
+  const up = await supabase.storage.from(BUCKET_FATTURE).upload(path, blob, {
+    upsert: true,
+    contentType: "application/pdf",
+  });
+  if (up.error) throw up.error;
+
+  const { error: e_pdf } = await supabase.from("fatture").update({ pdf_url: path }).eq("id", fattura_id);
+  if (e_pdf) throw e_pdf;
+
+  const { error: e_fn } = await supabase.functions.invoke("send-fattura-email-atleta", {
+    body: { fattura_id, destinatario },
+  });
+  if (e_fn) throw e_fn;
+
+  const { error: e_stato } = await supabase
+    .from("fatture")
+    .update({ stato: "inviata", email_inviata_at: new Date().toISOString() })
+    .eq("id", fattura_id);
+  if (e_stato) throw e_stato;
+
+  return path;
 }

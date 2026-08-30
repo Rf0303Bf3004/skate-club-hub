@@ -9,11 +9,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Trash2, FileText, Send, CheckCircle, XCircle, Loader2, ChevronDown } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, FileText, Send, CheckCircle, XCircle, Loader2, ChevronDown, RefreshCw, Undo2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { load_fattura_full, build_pdf_data, type FatturaFull } from "@/lib/fattura-atleta-helpers";
+import { load_fattura_full, invia_fattura_email, type FatturaFull } from "@/lib/fattura-atleta-helpers";
 import type { FatturaAtletaRiga } from "@/lib/fattura-atleta-pdf";
 import AnteprimaFatturaAtletaDialog from "@/components/AnteprimaFatturaAtletaDialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+
+type AzioneFattura = "annulla" | "sostituisci" | "storna";
 
 const CAUSALI = ["Pacchetto multiplo", "Secondo figlio", "Sconto fedelta", "Promozionale", "Altro"];
 
@@ -37,6 +40,9 @@ const SegreteriaFatturaDetailPage: React.FC = () => {
   const [righe, set_righe] = useState<FatturaAtletaRiga[]>([]);
   const [sconto_open, set_sconto_open] = useState(false);
   const [sconto_modo, set_sconto_modo] = useState<"importo" | "percentuale">("importo");
+  const [inviando, set_inviando] = useState(false);
+  const [azione, set_azione] = useState<AzioneFattura | null>(null);
+  const [motivo_azione, set_motivo_azione] = useState("");
 
   async function reload() {
     set_loading(true);
@@ -116,7 +122,6 @@ const SegreteriaFatturaDetailPage: React.FC = () => {
     if (!f) return;
     const patch: any = { stato: nuovo };
     if (nuovo === "pagata") patch.data_pagamento = new Date().toISOString().slice(0, 10);
-    if (nuovo === "inviata") patch.data_invio = new Date().toISOString();
     const { error } = await supabase.from("fatture").update(patch).eq("id", f.id);
     if (error) { toast({ title: "Errore", description: error.message, variant: "destructive" }); return; }
     toast({ title: `Stato aggiornato: ${nuovo}` });
@@ -126,16 +131,48 @@ const SegreteriaFatturaDetailPage: React.FC = () => {
   async function invia_email() {
     if (!f) return;
     if (!f.intestatario_email) { toast({ title: "Email intestatario mancante", variant: "destructive" }); return; }
+    set_inviando(true);
     try {
-      await salva_bozza();
-      const { error } = await supabase.functions.invoke("send-fattura-email-atleta", {
-        body: { fattura_id: f.id, destinatario: f.intestatario_email },
-      });
-      if (error) throw error;
-      await cambia_stato("inviata");
+      if (f.stato === "bozza") await salva_bozza();
+      // Congela il PDF in archivio, invia l'email e porta la fattura in stato "inviata".
+      await invia_fattura_email(f.id, f.intestatario_email);
       toast({ title: "Fattura inviata via email" });
+      reload();
     } catch (e: any) {
       toast({ title: "Errore invio", description: e?.message, variant: "destructive" });
+    } finally {
+      set_inviando(false);
+    }
+  }
+
+  async function esegui_azione() {
+    if (!f || !azione) return;
+    const motivo = motivo_azione.trim();
+    if (!motivo) { toast({ title: "Il motivo è obbligatorio", variant: "destructive" }); return; }
+    set_saving(true);
+    try {
+      if (azione === "annulla") {
+        const { error } = await supabase.rpc("annulla_fattura", { p_fattura: f.id, p_motivo: motivo });
+        if (error) throw error;
+        toast({ title: "Fattura annullata" });
+        set_azione(null); set_motivo_azione(""); reload();
+      } else if (azione === "sostituisci") {
+        const { data, error } = await supabase.rpc("sostituisci_fattura", { p_fattura: f.id, p_motivo: motivo });
+        if (error) throw error;
+        toast({ title: "Nuova bozza creata" });
+        set_azione(null); set_motivo_azione("");
+        navigate(`/segreteria/fatture/${data as string}`);
+      } else {
+        const { data, error } = await supabase.rpc("storna_fattura", { p_fattura: f.id, p_motivo: motivo });
+        if (error) throw error;
+        toast({ title: "Nota di credito emessa" });
+        set_azione(null); set_motivo_azione("");
+        navigate(`/segreteria/fatture/${data as string}`);
+      }
+    } catch (e: any) {
+      toast({ title: "Operazione non riuscita", description: e?.message, variant: "destructive" });
+    } finally {
+      set_saving(false);
     }
   }
 
@@ -266,18 +303,61 @@ const SegreteriaFatturaDetailPage: React.FC = () => {
         <div className="flex flex-wrap gap-2 justify-end pt-2 border-t border-border">
           {editable && <Button onClick={salva_bozza} disabled={saving} variant="outline">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salva bozza"}</Button>}
           <Button variant="outline" onClick={() => set_preview_open(true)}><FileText className="w-4 h-4 mr-1" /> Anteprima PDF</Button>
-          {f.stato !== "pagata" && f.stato !== "annullata" && (
-            <Button onClick={invia_email} className="bg-sky-600 hover:bg-sky-700"><Send className="w-4 h-4 mr-1" /> Invia</Button>
+          {f.stato !== "pagata" && f.stato !== "annullata" && f.stato !== "stornata" && (
+            <Button onClick={invia_email} disabled={inviando} className="bg-sky-600 hover:bg-sky-700">
+              {inviando ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Send className="w-4 h-4 mr-1" />} Invia
+            </Button>
           )}
-          {f.stato === "inviata" && (
+          {(f.stato === "inviata" || f.stato === "sollecitata" || f.stato === "scaduta") && (
             <Button onClick={() => cambia_stato("pagata")} className="bg-emerald-600 hover:bg-emerald-700"><CheckCircle className="w-4 h-4 mr-1" /> Marca pagata</Button>
           )}
-          {editable && (
-            <Button variant="outline" className="text-red-600" onClick={() => cambia_stato("annullata")}><XCircle className="w-4 h-4 mr-1" /> Annulla</Button>
+          {f.stato !== "annullata" && f.stato !== "stornata" && (
+            <>
+              <Button variant="outline" className="text-red-600" onClick={() => { set_motivo_azione(""); set_azione("annulla"); }}>
+                <XCircle className="w-4 h-4 mr-1" /> Annulla
+              </Button>
+              <Button variant="outline" onClick={() => { set_motivo_azione(""); set_azione("sostituisci"); }}>
+                <RefreshCw className="w-4 h-4 mr-1" /> Sostituisci
+              </Button>
+              {f.stato === "pagata" && (
+                <Button variant="outline" onClick={() => { set_motivo_azione(""); set_azione("storna"); }}>
+                  <Undo2 className="w-4 h-4 mr-1" /> Storna
+                </Button>
+              )}
+            </>
           )}
         </div>
       </div>
       <AnteprimaFatturaAtletaDialog fattura_id={f.id} open={preview_open} onOpenChange={set_preview_open} />
+
+      <Dialog open={!!azione} onOpenChange={(o) => { if (!o) { set_azione(null); set_motivo_azione(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {azione === "annulla" ? "Annulla fattura" : azione === "sostituisci" ? "Sostituisci fattura" : "Storna fattura"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              {azione === "annulla"
+                ? "La fattura viene annullata e non sarà più valida."
+                : azione === "sostituisci"
+                  ? "La fattura viene annullata e ne viene aperta una copia in bozza da correggere."
+                  : "Viene emessa una nota di credito a importo negativo collegata a questa fattura."}
+            </p>
+            <div>
+              <Label>Motivo (obbligatorio)</Label>
+              <Textarea value={motivo_azione} onChange={(e) => set_motivo_azione(e.target.value)} placeholder="Indica il motivo" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { set_azione(null); set_motivo_azione(""); }}>Chiudi</Button>
+            <Button onClick={esegui_azione} disabled={saving || !motivo_azione.trim()}>
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Conferma"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
