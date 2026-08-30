@@ -14,6 +14,7 @@ import { toast } from "@/hooks/use-toast";
 import { load_fattura_full, invia_fattura_email, type FatturaFull } from "@/lib/fattura-atleta-helpers";
 import type { FatturaAtletaRiga } from "@/lib/fattura-atleta-pdf";
 import AnteprimaFatturaAtletaDialog from "@/components/AnteprimaFatturaAtletaDialog";
+import { use_annulla_fattura, use_sostituisci_fattura, use_storna_fattura } from "@/hooks/use-supabase-mutations";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 type AzioneFattura = "annulla" | "sostituisci" | "storna";
@@ -23,9 +24,11 @@ const CAUSALI = ["Pacchetto multiplo", "Secondo figlio", "Sconto fedelta", "Prom
 const STATO_COLORS: Record<string, string> = {
   bozza: "bg-slate-100 text-slate-700",
   inviata: "bg-blue-100 text-blue-700",
+  sollecitata: "bg-orange-100 text-orange-700",
   pagata: "bg-emerald-100 text-emerald-700",
   scaduta: "bg-red-100 text-red-700",
   annullata: "bg-gray-200 text-gray-500 line-through",
+  stornata: "bg-gray-200 text-gray-500 line-through",
 };
 
 const SegreteriaFatturaDetailPage: React.FC = () => {
@@ -43,6 +46,9 @@ const SegreteriaFatturaDetailPage: React.FC = () => {
   const [inviando, set_inviando] = useState(false);
   const [azione, set_azione] = useState<AzioneFattura | null>(null);
   const [motivo_azione, set_motivo_azione] = useState("");
+  const annulla_fattura = use_annulla_fattura();
+  const sostituisci_fattura = use_sostituisci_fattura();
+  const storna_fattura = use_storna_fattura();
 
   async function reload() {
     set_loading(true);
@@ -67,6 +73,7 @@ const SegreteriaFatturaDetailPage: React.FC = () => {
   useEffect(() => { reload(); /* eslint-disable-next-line */ }, [id]);
 
   const editable = f?.stato === "bozza";
+  const is_nota_credito = f?.tipo_documento === "nota_credito";
 
   const subtotale = useMemo(() => righe.reduce((s, r) => s + Number(r.importo || 0), 0), [righe]);
   const sconto_importo = useMemo(() => {
@@ -152,22 +159,19 @@ const SegreteriaFatturaDetailPage: React.FC = () => {
     set_saving(true);
     try {
       if (azione === "annulla") {
-        const { error } = await supabase.rpc("annulla_fattura", { p_fattura: f.id, p_motivo: motivo });
-        if (error) throw error;
+        await annulla_fattura.mutateAsync({ fattura_id: f.id, motivo });
         toast({ title: "Fattura annullata" });
         set_azione(null); set_motivo_azione(""); reload();
       } else if (azione === "sostituisci") {
-        const { data, error } = await supabase.rpc("sostituisci_fattura", { p_fattura: f.id, p_motivo: motivo });
-        if (error) throw error;
+        const nuovo_id = await sostituisci_fattura.mutateAsync({ fattura_id: f.id, motivo });
         toast({ title: "Nuova bozza creata" });
         set_azione(null); set_motivo_azione("");
-        navigate(`/segreteria/fatture/${data as string}`);
+        navigate(`/segreteria/fatture/${nuovo_id}`);
       } else {
-        const { data, error } = await supabase.rpc("storna_fattura", { p_fattura: f.id, p_motivo: motivo });
-        if (error) throw error;
+        const nuovo_id = await storna_fattura.mutateAsync({ fattura_id: f.id, motivo });
         toast({ title: "Nota di credito emessa" });
         set_azione(null); set_motivo_azione("");
-        navigate(`/segreteria/fatture/${data as string}`);
+        navigate(`/segreteria/fatture/${nuovo_id}`);
       }
     } catch (e: any) {
       toast({ title: "Operazione non riuscita", description: e?.message, variant: "destructive" });
@@ -185,10 +189,24 @@ const SegreteriaFatturaDetailPage: React.FC = () => {
       <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">Fattura {f.numero || f.id.slice(0, 8)}</h1>
+            <h1 className="text-2xl font-bold">
+              {is_nota_credito ? "Nota di credito" : "Fattura"} {f.numero || f.id.slice(0, 8)}
+            </h1>
             <p className="text-sm text-muted-foreground">{f.periodo || ""} · {f.data_emissione || ""}</p>
+            {is_nota_credito && f.documento_origine_id && (
+              <button
+                type="button"
+                className="text-sm text-sky-700 underline mt-1"
+                onClick={() => navigate(`/segreteria/fatture/${f.documento_origine_id}`)}
+              >
+                Vai alla fattura stornata
+              </button>
+            )}
           </div>
-          <Badge className={STATO_COLORS[f.stato] || "bg-muted"}>{f.stato}</Badge>
+          <div className="flex items-center gap-2">
+            {is_nota_credito && <Badge className="bg-purple-100 text-purple-700">Nota di credito</Badge>}
+            <Badge className={STATO_COLORS[f.stato] || "bg-muted"}>{f.stato}</Badge>
+          </div>
         </div>
 
         {/* Intestatario */}
