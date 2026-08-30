@@ -1,6 +1,29 @@
 import { supabase } from "@/lib/supabase";
-import type { FatturaAtletaData, FatturaAtletaRiga } from "@/lib/fattura-atleta-pdf";
+import type { FatturaAtletaData, FatturaAtletaRiga, FatturaQrData } from "@/lib/fattura-atleta-pdf";
 import { genera_fattura_atleta_blob } from "@/lib/fattura-atleta-pdf";
+import { genera_qr_data_url } from "@/lib/qr";
+
+const BUCKET_FATTURE = "fatture-atleti";
+
+/** Polizza QR svizzera: payload calcolato dal database + immagine QR generata in locale. */
+export async function carica_qr_fattura(fattura_id: string): Promise<FatturaQrData> {
+  const { data, error } = await supabase.rpc("swiss_qr_payload", { p_fattura: fattura_id });
+  if (error) return { data_url: null, payload: null, tipo_riferimento: null, riferimento: null, errori: error.message };
+  const r = (Array.isArray(data) ? data[0] : data) as any;
+  if (!r) return { data_url: null, payload: null, tipo_riferimento: null, riferimento: null, errori: "Polizza non disponibile" };
+  if (r.errori) {
+    return { data_url: null, payload: null, tipo_riferimento: r.tipo_riferimento ?? null, riferimento: r.riferimento ?? null, errori: r.errori };
+  }
+  const data_url = await genera_qr_data_url(String(r.payload ?? ""), 900);
+  return {
+    data_url: data_url || null,
+    payload: r.payload ?? null,
+    tipo_riferimento: r.tipo_riferimento ?? null,
+    riferimento: r.riferimento ?? null,
+    errori: data_url ? null : "Impossibile generare il codice QR",
+  };
+}
+
 
 export type FatturaFull = {
   id: string;
