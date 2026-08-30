@@ -303,18 +303,61 @@ const SegreteriaFatturaDetailPage: React.FC = () => {
         <div className="flex flex-wrap gap-2 justify-end pt-2 border-t border-border">
           {editable && <Button onClick={salva_bozza} disabled={saving} variant="outline">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salva bozza"}</Button>}
           <Button variant="outline" onClick={() => set_preview_open(true)}><FileText className="w-4 h-4 mr-1" /> Anteprima PDF</Button>
-          {f.stato !== "pagata" && f.stato !== "annullata" && (
-            <Button onClick={invia_email} className="bg-sky-600 hover:bg-sky-700"><Send className="w-4 h-4 mr-1" /> Invia</Button>
+          {f.stato !== "pagata" && f.stato !== "annullata" && f.stato !== "stornata" && (
+            <Button onClick={invia_email} disabled={inviando} className="bg-sky-600 hover:bg-sky-700">
+              {inviando ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Send className="w-4 h-4 mr-1" />} Invia
+            </Button>
           )}
-          {f.stato === "inviata" && (
+          {(f.stato === "inviata" || f.stato === "sollecitata" || f.stato === "scaduta") && (
             <Button onClick={() => cambia_stato("pagata")} className="bg-emerald-600 hover:bg-emerald-700"><CheckCircle className="w-4 h-4 mr-1" /> Marca pagata</Button>
           )}
-          {editable && (
-            <Button variant="outline" className="text-red-600" onClick={() => cambia_stato("annullata")}><XCircle className="w-4 h-4 mr-1" /> Annulla</Button>
+          {f.stato !== "annullata" && f.stato !== "stornata" && (
+            <>
+              <Button variant="outline" className="text-red-600" onClick={() => { set_motivo_azione(""); set_azione("annulla"); }}>
+                <XCircle className="w-4 h-4 mr-1" /> Annulla
+              </Button>
+              <Button variant="outline" onClick={() => { set_motivo_azione(""); set_azione("sostituisci"); }}>
+                <RefreshCw className="w-4 h-4 mr-1" /> Sostituisci
+              </Button>
+              {f.stato === "pagata" && (
+                <Button variant="outline" onClick={() => { set_motivo_azione(""); set_azione("storna"); }}>
+                  <Undo2 className="w-4 h-4 mr-1" /> Storna
+                </Button>
+              )}
+            </>
           )}
         </div>
       </div>
       <AnteprimaFatturaAtletaDialog fattura_id={f.id} open={preview_open} onOpenChange={set_preview_open} />
+
+      <Dialog open={!!azione} onOpenChange={(o) => { if (!o) { set_azione(null); set_motivo_azione(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {azione === "annulla" ? "Annulla fattura" : azione === "sostituisci" ? "Sostituisci fattura" : "Storna fattura"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              {azione === "annulla"
+                ? "La fattura viene annullata e non sarà più valida."
+                : azione === "sostituisci"
+                  ? "La fattura viene annullata e ne viene aperta una copia in bozza da correggere."
+                  : "Viene emessa una nota di credito a importo negativo collegata a questa fattura."}
+            </p>
+            <div>
+              <Label>Motivo (obbligatorio)</Label>
+              <Textarea value={motivo_azione} onChange={(e) => set_motivo_azione(e.target.value)} placeholder="Indica il motivo" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { set_azione(null); set_motivo_azione(""); }}>Chiudi</Button>
+            <Button onClick={esegui_azione} disabled={saving || !motivo_azione.trim()}>
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Conferma"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
