@@ -110,7 +110,7 @@ const AnteprimaFatturaAtletaDialog: React.FC<Props> = ({ fattura_id, open, onOpe
             </Button>
           </div>
         </DialogHeader>
-        <div className="flex-1 bg-muted/30">
+        <div className="flex-1 min-h-0 overflow-hidden bg-muted/30">
           {loading ? (
             <div className="h-full flex items-center justify-center">
               <Loader2 className="w-6 h-6 animate-spin text-sky-500" />
