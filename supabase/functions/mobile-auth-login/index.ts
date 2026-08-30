@@ -1,6 +1,10 @@
 // supabase/functions/mobile-auth-login/index.ts
 // Edge Function: mobile-auth-login
 // POST /functions/v1/mobile-auth-login
+//
+// Riconoscimento tramite codice atleta, codice istruttore o tag NFC
+// (public.riconosci_identita) + freno ai tentativi di accesso
+// (public.attesa_prima_di_riprovare / public.registra_tentativo_accesso).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
@@ -17,12 +21,10 @@ function json(body: unknown, status = 200) {
   });
 }
 
-function normalize_codice(raw: string): string | null {
-  if (!raw) return null;
-  const compact = String(raw).toUpperCase().replace(/[^A-Z0-9]/g, "");
-  if (!compact.startsWith("AT") || compact.length !== 10) return null;
-  const body = compact.slice(2);
-  return `AT-${body.slice(0, 4)}-${body.slice(4, 8)}`;
+function origine_da_request(req: Request): string {
+  const xff = req.headers.get("x-forwarded-for") ?? "";
+  const primo = xff.split(",")[0]?.trim();
+  return primo || "sconosciuta";
 }
 
 async function derive_password(codice: string, salt: string): Promise<string> {
@@ -38,6 +40,8 @@ Deno.serve(async (req) => {
   console.log("[mobile-auth-login] incoming", { method: req.method });
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
+
+  const origine = origine_da_request(req);
 
   try {
     const supabase_url = Deno.env.get("SUPABASE_URL");
@@ -60,48 +64,119 @@ Deno.serve(async (req) => {
     try { body = await req.json(); }
     catch { return json({ error: "invalid_body" }, 400); }
 
-    const codice = normalize_codice(String(body?.token ?? body?.codice ?? ""));
-    if (!codice) {
-      console.warn("[mobile-auth-login] codice non normalizzabile");
-      return json({ error: "invalid_codice" }, 400);
-    }
-    console.log("[mobile-auth-login] codice normalized OK");
+    const valore = String(body?.token ?? body?.codice ?? "").trim();
 
     const admin = createClient(supabase_url!, service_key!, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
-    const { data: atleta, error: atl_err } = await admin
-      .from("atleti")
-      .select("id, nome, cognome, club_id, codice_atleta")
-      .eq("codice_atleta", codice)
-      .maybeSingle();
+    const registra = async (esito: "riuscito" | "fallito", motivo: string) => {
+      try {
+        await admin.rpc("registra_tentativo_accesso" as any, {
+          p_origine: origine,
+          p_codice: valore,
+          p_esito: esito,
+          p_motivo: motivo,
+        });
+      } catch (e) {
+        console.error("[mobile-auth-login] registra_tentativo_accesso error", e);
+      }
+    };
 
-    if (atl_err) {
-      console.error("[mobile-auth-login] atleti query error:", JSON.stringify(atl_err));
-      return json({
-        error: "db_error",
-        message: atl_err.message,
-        code: atl_err.code,
-        hint: atl_err.hint,
-      }, 500);
+    // ── Freno ai tentativi: PRIMA di qualunque lettura dei dati ──
+    const { data: attesa_rows, error: attesa_err } = await admin
+      .rpc("attesa_prima_di_riprovare" as any, { p_origine: origine });
+    if (attesa_err) {
+      console.error("[mobile-auth-login] attesa_prima_di_riprovare error", attesa_err.message);
+    } else {
+      const attesa: any = Array.isArray(attesa_rows) ? attesa_rows[0] : attesa_rows;
+      if (attesa?.bloccato) {
+        console.warn("[mobile-auth-login] bloccato per troppi tentativi");
+        return json({
+          error: "too_many_attempts",
+          message: attesa.messaggio,
+          secondi_di_attesa: attesa.secondi_di_attesa,
+        }, 429);
+      }
     }
-    if (!atleta) {
-      console.warn("[mobile-auth-login] codice non trovato");
+
+    if (!valore) {
+      await registra("fallito", "codice_non_valido");
+      return json({ error: "invalid_codice" }, 400);
+    }
+
+    // ── Riconoscimento identità (atleta | istruttore, codice | tag) ──
+    const { data: ident_rows, error: ident_err } = await admin
+      .rpc("riconosci_identita" as any, { p_valore: valore });
+
+    if (ident_err) {
+      console.error("[mobile-auth-login] riconosci_identita error:", ident_err.message);
+      return json({ error: "db_error", message: ident_err.message }, 500);
+    }
+
+    const identita: any = Array.isArray(ident_rows) ? ident_rows[0] : ident_rows;
+    if (!identita?.id) {
+      await registra("fallito", "codice_non_trovato");
+      // messaggio volutamente generico
       return json({ error: "invalid_codice" }, 404);
     }
-
-    const { data: club } = await admin
-      .from("clubs").select("id, nome").eq("id", atleta.club_id).maybeSingle();
-
-    const email = `atleta-${atleta.id}@portal.local`;
-    const password = await derive_password(codice, salt!);
-    const app_metadata = { atleta_id: atleta.id, club_id: atleta.club_id, role: "mobile_parent" };
-    const user_metadata = { nome: atleta.nome, cognome: atleta.cognome };
 
     const auth_client = createClient(supabase_url!, anon_key!, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
+
+    // Dati specifici per tipo
+    let email = "";
+    let seme_password = "";
+    let app_metadata: Record<string, unknown> = {};
+    let user_metadata: Record<string, unknown> = {};
+    let atleta: any = null;
+    let istruttore: any = null;
+    let club_id: string = identita.club_id;
+
+    if (identita.tipo === "atleta") {
+      const { data: a } = await admin
+        .from("atleti")
+        .select("id, nome, cognome, club_id, codice_atleta")
+        .eq("id", identita.id)
+        .maybeSingle();
+      if (!a) {
+        await registra("fallito", "codice_non_trovato");
+        return json({ error: "invalid_codice" }, 404);
+      }
+      atleta = a;
+      club_id = a.club_id;
+      email = `atleta-${a.id}@portal.local`;
+      seme_password = a.codice_atleta ?? a.id;
+      app_metadata = { atleta_id: a.id, club_id: a.club_id, role: "mobile_parent" };
+      user_metadata = { nome: a.nome, cognome: a.cognome };
+    } else if (identita.tipo === "istruttore") {
+      const { data: i } = await admin
+        .from("istruttori")
+        .select("id, nome, cognome, club_id, codice_istruttore, user_id")
+        .eq("id", identita.id)
+        .maybeSingle();
+      if (!i) {
+        await registra("fallito", "codice_non_trovato");
+        return json({ error: "invalid_codice" }, 404);
+      }
+      istruttore = i;
+      club_id = i.club_id;
+      email = `istruttore-${i.id}@portal.local`;
+      seme_password = i.codice_istruttore ?? i.id;
+      app_metadata = {
+        role: "mobile_staff",
+        istruttore_id: i.id,
+        club_id: i.club_id,
+        ruolo: identita.ruolo || "istruttore",
+      };
+      user_metadata = { nome: i.nome, cognome: i.cognome };
+    } else {
+      await registra("fallito", "tipo_non_supportato");
+      return json({ error: "invalid_codice" }, 404);
+    }
+
+    const password = await derive_password(seme_password, salt!);
 
     let signin = await auth_client.auth.signInWithPassword({ email, password });
 
@@ -143,16 +218,48 @@ Deno.serve(async (req) => {
       return json({ error: "auth_failed", message: signin.error?.message ?? "no session" }, 500);
     }
 
-    console.log("[mobile-auth-login] login OK for atleta", atleta.id);
+    // L'utente creato dal codice NON ha riga in utenti_club: resta fuori
+    // dall'amministrazione del club (user_club_id() = NULL).
+
+    // Collega l'utente auth all'anagrafica istruttore: da qui in poi
+    // genera_reminder_giornalieri trova i destinatari via istruttori.user_id.
+    if (istruttore) {
+      const uid = signin.data.user?.id;
+      if (uid && istruttore.user_id !== uid) {
+        const { error: link_err } = await admin
+          .from("istruttori")
+          .update({ user_id: uid })
+          .eq("id", istruttore.id);
+        if (link_err) console.error("[mobile-auth-login] link user_id error:", link_err.message);
+      }
+    }
+
+    const { data: club } = await admin
+      .from("clubs").select("id, nome").eq("id", club_id).maybeSingle();
+
+    await registra("riuscito", identita.tipo);
+
+    console.log("[mobile-auth-login] login OK", identita.tipo, identita.id);
     return json({
       access_token: signin.data.session.access_token,
       refresh_token: signin.data.session.refresh_token,
       expires_in: signin.data.session.expires_in,
       token_type: signin.data.session.token_type,
-      atleta: {
-        id: atleta.id, nome: atleta.nome, cognome: atleta.cognome,
-        club_id: atleta.club_id, codice_atleta: atleta.codice_atleta,
-      },
+      tipo: identita.tipo,
+      mezzo: identita.mezzo,
+      atleta: atleta
+        ? {
+            id: atleta.id, nome: atleta.nome, cognome: atleta.cognome,
+            club_id: atleta.club_id, codice_atleta: atleta.codice_atleta,
+          }
+        : null,
+      istruttore: istruttore
+        ? {
+            id: istruttore.id, nome: istruttore.nome, cognome: istruttore.cognome,
+            club_id: istruttore.club_id, codice_istruttore: istruttore.codice_istruttore,
+            ruolo: identita.ruolo || "istruttore",
+          }
+        : null,
       club: club ? { id: club.id, nome: club.nome } : null,
     });
   } catch (e) {
