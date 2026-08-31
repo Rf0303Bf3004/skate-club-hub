@@ -275,41 +275,97 @@ export function use_elimina_partecipante() {
   });
 }
 
-// ── Adesioni: matrice gruppo × club ──────────────────────────
-export type AdesioneRiga = { atleta_id: string; club_id: string | null; campo_gruppo_id: string | null };
+// ── Iscrizioni atleti al campo ───────────────────────────────
+export type IscrizioneCampo = {
+  id: string;
+  evento_campo_id: string;
+  atleta_id: string;
+  club_id: string | null;
+  campo_gruppo_id: string | null;
+  stato: string | null;
+  atleta?: { nome: string | null; cognome: string | null; club_id: string | null } | null;
+};
 
-export function use_campo_adesioni(evento_campo_id: string | null, gruppi_ids: string[]) {
+export function use_campo_iscrizioni(evento_campo_id: string | null) {
   return useQuery({
-    queryKey: ["campi_adesioni", evento_campo_id, gruppi_ids.join(",")],
+    queryKey: ["campi_iscrizioni", evento_campo_id],
     enabled: !!evento_campo_id,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("iscrizioni_eventi_campi" as any)
-        .select("atleta_id, stato, atleta:atleta_id(club_id)")
+        .select("id, evento_campo_id, atleta_id, club_id, campo_gruppo_id, stato, atleta:atleta_id(nome, cognome, club_id)")
         .eq("evento_campo_id", evento_campo_id);
       if (error) throw error;
-      const iscrizioni = (data ?? []) as any[];
-
-      let mappa_gruppi = new Map<string, string>();
-      if (gruppi_ids.length > 0) {
-        const { data: assegnazioni, error: err_gruppi } = await supabase
-          .from("griglia_sessioni_atleti" as any)
-          .select("atleta_id, campo_gruppo_id")
-          .in("campo_gruppo_id", gruppi_ids);
-        if (!err_gruppi) {
-          mappa_gruppi = new Map(
-            ((assegnazioni ?? []) as any[])
-              .filter((a) => a.atleta_id && a.campo_gruppo_id)
-              .map((a) => [a.atleta_id as string, a.campo_gruppo_id as string]),
-          );
-        }
-      }
-
-      return iscrizioni.map((i) => ({
-        atleta_id: i.atleta_id as string,
-        club_id: (i.atleta?.club_id ?? null) as string | null,
-        campo_gruppo_id: mappa_gruppi.get(i.atleta_id as string) ?? null,
-      })) as AdesioneRiga[];
+      return (data ?? []) as unknown as IscrizioneCampo[];
     },
   });
 }
+
+export function use_toggle_iscrizione_campo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: {
+      evento_campo_id: string;
+      atleta_id: string;
+      iscritto: boolean;
+      campo_gruppo_id?: string | null;
+    }) => {
+      if (v.iscritto) {
+        const { error } = await supabase
+          .from("iscrizioni_eventi_campi" as any)
+          .delete()
+          .eq("evento_campo_id", v.evento_campo_id)
+          .eq("atleta_id", v.atleta_id);
+        if (error) throw error;
+      } else {
+        // club_id è ricavato dal trigger lato database: non va inviato dal client
+        const { error } = await supabase.from("iscrizioni_eventi_campi" as any).insert({
+          evento_campo_id: v.evento_campo_id,
+          atleta_id: v.atleta_id,
+          campo_gruppo_id: v.campo_gruppo_id ?? null,
+        });
+        if (error) throw error;
+      }
+    },
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ["campi_iscrizioni", v.evento_campo_id] });
+      qc.invalidateQueries({ queryKey: ["campi_adesioni", v.evento_campo_id] });
+    },
+  });
+}
+
+export function use_aggiorna_gruppo_iscrizione() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: { id: string; campo_gruppo_id: string | null; evento_campo_id: string }) => {
+      const { error } = await supabase
+        .from("iscrizioni_eventi_campi" as any)
+        .update({ campo_gruppo_id: v.campo_gruppo_id })
+        .eq("id", v.id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ["campi_iscrizioni", v.evento_campo_id] });
+      qc.invalidateQueries({ queryKey: ["campi_adesioni", v.evento_campo_id] });
+    },
+  });
+}
+
+// ── Adesioni: matrice gruppo × club ──────────────────────────
+export type AdesioneRiga = { atleta_id: string; club_id: string | null; campo_gruppo_id: string | null };
+
+export function use_campo_adesioni(evento_campo_id: string | null) {
+  return useQuery({
+    queryKey: ["campi_adesioni", evento_campo_id],
+    enabled: !!evento_campo_id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("iscrizioni_eventi_campi" as any)
+        .select("atleta_id, club_id, campo_gruppo_id")
+        .eq("evento_campo_id", evento_campo_id);
+      if (error) throw error;
+      return (data ?? []) as unknown as AdesioneRiga[];
+    },
+  });
+}
+
