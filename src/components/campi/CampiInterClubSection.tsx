@@ -188,7 +188,13 @@ const CampiInterClubSection: React.FC = () => {
                         </Button>
                       </>
                     )}
+                    {partecipazione.stato === "accettato" && evento && (
+                      <Button size="sm" variant="outline" onClick={() => set_campo_selezionato(evento)}>
+                        {t("campi_interclub.invitato.apri")} <ChevronRight className="w-4 h-4 ml-1" />
+                      </Button>
+                    )}
                   </div>
+
                 </div>
               ))}
             </div>
