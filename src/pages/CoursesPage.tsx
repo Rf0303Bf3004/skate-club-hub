@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import FotoAtleta from "@/components/common/FotoAtleta";
 import { verifica_conflitti_iscrizione, type ConflittoIscrizione } from "@/lib/conflitti-iscrizioni";
 import { Calendar } from "lucide-react";
 import { use_persisted_state } from "@/hooks/use-persisted-state";
@@ -781,14 +782,13 @@ const TabMonitori: React.FC<{
         >
           {selected && <span className="text-white text-[10px] font-bold">✓</span>}
         </div>
-        {persona.foto_url ? (
-          <img src={persona.foto_url} alt={persona.nome} className="w-7 h-7 rounded-full object-cover" />
-        ) : (
-          <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
-            {persona.nome[0]}
-            {persona.cognome[0]}
-          </div>
-        )}
+        <FotoAtleta
+          foto_path={persona.foto_path}
+          nome={persona.nome}
+          cognome={persona.cognome}
+          className="w-7 h-7 rounded-full"
+          fallback_className="bg-primary/10 text-primary text-xs"
+        />
         <span className="text-sm font-medium text-foreground">
           {persona.nome} {persona.cognome}
         </span>
@@ -957,14 +957,13 @@ const TabPresenze: React.FC<{
               <div key={persona.id} className="bg-muted/20 rounded-xl border border-border p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    {persona.foto_url ? (
-                      <img src={persona.foto_url} alt={persona.nome} className="w-9 h-9 rounded-full object-cover" />
-                    ) : (
-                      <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-bold">
-                        {persona.nome[0]}
-                        {persona.cognome[0]}
-                      </div>
-                    )}
+                    <FotoAtleta
+                      foto_path={persona.foto_path}
+                      nome={persona.nome}
+                      cognome={persona.cognome}
+                      className="w-9 h-9 rounded-full"
+                      fallback_className="bg-primary/10 text-primary text-sm"
+                    />
                     <div>
                       <p className="text-sm font-semibold text-foreground">
                         {persona.nome} {persona.cognome}
