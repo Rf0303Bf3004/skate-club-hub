@@ -233,7 +233,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                   {session && render_nav_item("/convenzioni", BadgePercent, "Convenzioni", "convenzioni")}
                   {render_nav_item("/pacchetti-sponsor", FileSpreadsheet, "Pacchetti Sponsor", "pacchetti_sponsor")}
                   {render_nav_item("/import-atleti", FileSpreadsheet, "Import dati", "import_atleti")}
-                  {render_nav_item("/diagnostica", ShieldAlert, "Diagnostica", "diagnostica")}
                   {is_admin && (
                     <NavLink to="/gestione-avanzata" onClick={() => set_sidebar_open(false)}
                       className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/gestione-avanzata" ? "bg-destructive text-destructive-foreground shadow-sm" : "text-destructive/70 hover:bg-destructive/10 hover:text-destructive"}`}>
@@ -272,8 +271,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                   {setup_open && (
                     <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border pl-2">
                       {nuovo_setup.map((s) => render_nav_item(s.path, s.icon, menu_label(s.codice, s.label), s.codice, s.non_implementato))}
-                      {(is_presidente || (session?.ruolo as string) === "segreteria") && !nuovo_setup.some((s) => s.codice === "diagnostica") &&
-                        render_nav_item("/diagnostica", ShieldAlert, "Diagnostica", "diagnostica")}
                     </div>
                   )}
                 </div>
@@ -332,6 +329,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               <NavLink to="/superadmin/traduzioni" onClick={() => set_sidebar_open(false)}
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/superadmin/traduzioni" ? "bg-purple-600 text-white shadow-sm" : "text-purple-500 hover:bg-purple-100 hover:text-purple-700"}`}>
                 <Globe className="w-4 h-4 shrink-0" /><span>Traduzioni</span>
+              </NavLink>
+              <NavLink to="/diagnostica" onClick={() => set_sidebar_open(false)}
+                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/diagnostica" ? "bg-purple-600 text-white shadow-sm" : "text-purple-500 hover:bg-purple-100 hover:text-purple-700"}`}>
+                <ShieldAlert className="w-4 h-4 shrink-0" /><span>Diagnostica</span>
               </NavLink>
               <NavLink to="/superadmin/manutenzione" onClick={() => set_sidebar_open(false)}
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/superadmin/manutenzione" ? "bg-purple-600 text-white shadow-sm" : "text-purple-500 hover:bg-purple-100 hover:text-purple-700"}`}>

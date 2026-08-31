@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertTriangle, ShieldCheck } from "lucide-react";
 
-const RUOLI_AMMESSI = ["presidente", "segreteria", "admin", "superadmin"];
+const RUOLI_AMMESSI = ["superadmin"];
 
 /** Card dashboard: conteggio segnalazioni non viste, porta alla pagina Diagnostica. */
 export default function DiagnosticaCard() {

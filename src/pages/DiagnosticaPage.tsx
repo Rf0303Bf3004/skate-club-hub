@@ -20,7 +20,7 @@ interface RigaDiagnosi {
   non_visti: number;
 }
 
-const RUOLI_AMMESSI = ["presidente", "segreteria", "admin", "superadmin"];
+const RUOLI_AMMESSI = ["superadmin"];
 
 const STILE_GRAVITA: Record<string, string> = {
   errore: "bg-destructive/10 text-destructive border-destructive/30",
