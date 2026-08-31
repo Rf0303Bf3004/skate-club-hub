@@ -17,11 +17,19 @@ import {
   use_aggiorna_partecipante,
   use_elimina_partecipante,
   use_campo_adesioni,
+  use_campo_iscrizioni,
+  use_toggle_iscrizione_campo,
+  use_aggiorna_gruppo_iscrizione,
   STATI_CAMPO,
   type EventoCampoInterClub,
   type CampoGruppo,
   type CampoClubPartecipante,
 } from "@/hooks/use-campi-interclub";
+import { use_atleti } from "@/hooks/use-supabase-data";
+import { useAuth } from "@/lib/auth";
+import { segnala_errore } from "@/lib/errori";
+import { Checkbox } from "@/components/ui/checkbox";
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
