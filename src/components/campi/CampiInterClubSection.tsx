@@ -212,6 +212,8 @@ const CampoScheda: React.FC<{ campo: EventoCampoInterClub; is_ospitante: boolean
   on_back,
 }) => {
   const { t } = useTranslation("events");
+  const { user } = useAuth();
+  const is_superadmin = user?.ruolo === "superadmin";
   const [tab, set_tab] = useState("informazioni");
 
   return (
@@ -228,12 +230,13 @@ const CampoScheda: React.FC<{ campo: EventoCampoInterClub; is_ospitante: boolean
       </div>
 
       <Tabs value={tab} onValueChange={set_tab} className="space-y-4">
-        <TabsList className="grid grid-cols-5 w-full">
+        <TabsList className={`grid w-full ${is_superadmin ? "grid-cols-6" : "grid-cols-5"}`}>
           <TabsTrigger value="informazioni">{t("campi_interclub.tabs.informazioni")}</TabsTrigger>
           <TabsTrigger value="gruppi">{t("campi_interclub.tabs.gruppi")}</TabsTrigger>
           <TabsTrigger value="club">{t("campi_interclub.tabs.club")}</TabsTrigger>
+          <TabsTrigger value="atleti">{t("campi_interclub.tabs.atleti")}</TabsTrigger>
           <TabsTrigger value="adesioni">{t("campi_interclub.tabs.adesioni")}</TabsTrigger>
-          <TabsTrigger value="istruttori">{t("campi_interclub.tabs.istruttori")}</TabsTrigger>
+          {is_superadmin && <TabsTrigger value="istruttori">{t("campi_interclub.tabs.istruttori")}</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="informazioni">
@@ -245,22 +248,28 @@ const CampoScheda: React.FC<{ campo: EventoCampoInterClub; is_ospitante: boolean
         <TabsContent value="club">
           <TabClubPartecipanti campo={campo} is_ospitante={is_ospitante} />
         </TabsContent>
+        <TabsContent value="atleti">
+          <TabIscrizioniAtleti campo={campo} is_ospitante={is_ospitante} />
+        </TabsContent>
         <TabsContent value="adesioni">
           <TabAdesioni campo={campo} />
         </TabsContent>
-        <TabsContent value="istruttori">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Construction className="w-4 h-4" /> {t("campi_interclub.istruttori.title")}
-              </CardTitle>
-              <CardDescription>{t("campi_interclub.istruttori.placeholder")}</CardDescription>
-            </CardHeader>
-          </Card>
-        </TabsContent>
+        {is_superadmin && (
+          <TabsContent value="istruttori">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Construction className="w-4 h-4" /> {t("campi_interclub.istruttori.title")}
+                </CardTitle>
+                <CardDescription>{t("campi_interclub.istruttori.placeholder")}</CardDescription>
+              </CardHeader>
+            </Card>
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
+
 };
 
 // ── Tab 1: informazioni ──────────────────────────────────────
