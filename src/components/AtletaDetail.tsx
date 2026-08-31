@@ -42,6 +42,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import CompensoStaffModal from "@/components/CompensoStaffModal";
+import FotoAtleta from "@/components/common/FotoAtleta";
 
 interface Props {
   atleta: any;

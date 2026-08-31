@@ -26,6 +26,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { use_app_store_links } from "@/hooks/use-app-store-links";
 import { stampa_schede_codice } from "@/lib/scheda-codice-html";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import FotoAtleta from "@/components/common/FotoAtleta";
 
 import { capitalizza_nome, capitalizza_indirizzo, normalizza_email, cerca_nap } from "@/lib/formato-testo";
 
