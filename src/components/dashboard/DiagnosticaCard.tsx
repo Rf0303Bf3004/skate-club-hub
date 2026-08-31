@@ -17,14 +17,15 @@ export default function DiagnosticaCard() {
 
   const { data: non_visti = 0 } = useQuery({
     queryKey: ["diagnostica_non_visti", club_id],
-    enabled: !!club_id && ammesso,
+    enabled: ammesso,
     refetchInterval: 120000,
     queryFn: async () => {
-      const { count, error } = await supabase
+      let q = supabase
         .from("errori_applicativi")
         .select("id", { count: "exact", head: true })
-        .eq("club_id", club_id!)
         .eq("visto", false);
+      if (club_id) q = q.eq("club_id", club_id);
+      const { count, error } = await q;
       if (error) {
         console.warn("[DiagnosticaCard] conteggio non disponibile", error);
         return 0;

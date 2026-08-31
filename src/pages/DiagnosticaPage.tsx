@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle, CheckCheck, RefreshCw, Eye } from "lucide-react";
+import { AlertTriangle, CheckCheck, RefreshCw, Eye, PlayCircle } from "lucide-react";
 import { segnala_errore } from "@/lib/errori";
 import { toast } from "sonner";
 
@@ -44,10 +44,10 @@ export default function DiagnosticaPage() {
 
   const { data = [], isLoading, refetch, isFetching } = useQuery({
     queryKey: ["cosa_non_va", club_id, giorni],
-    enabled: !!club_id && ammesso,
+    enabled: ammesso,
     queryFn: async () => {
       const { data, error } = await supabase.rpc("cosa_non_va" as any, {
-        p_club: club_id,
+        p_club: club_id ?? null,
         p_giorni: Number(giorni),
       });
       if (error) {
@@ -75,6 +75,19 @@ export default function DiagnosticaPage() {
     onError: (e) => segnala_errore("DiagnosticaPage", "Marca come visto", e),
   });
 
+  const lancia_controlli = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc("lancia_controlli_notturni" as any);
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      toast.success("Controlli eseguiti");
+      await qc.invalidateQueries({ queryKey: ["cosa_non_va"] });
+      qc.invalidateQueries({ queryKey: ["diagnostica_non_visti"] });
+    },
+    onError: (e) => segnala_errore("DiagnosticaPage", "Esecuzione controlli", e),
+  });
+
   if (!ammesso) return <Navigate to="/" replace />;
 
   const totale_non_visti = data.reduce((s, r) => s + (r.non_visti ?? 0), 0);
@@ -97,6 +110,9 @@ export default function DiagnosticaPage() {
               <SelectItem value="90">Ultimi 90 giorni</SelectItem>
             </SelectContent>
           </Select>
+          <Button variant="secondary" size="sm" onClick={() => lancia_controlli.mutate()} disabled={lancia_controlli.isPending}>
+            <PlayCircle className={`w-4 h-4 mr-1 ${lancia_controlli.isPending ? "animate-pulse" : ""}`} /> Esegui i controlli adesso
+          </Button>
           <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
             <RefreshCw className={`w-4 h-4 mr-1 ${isFetching ? "animate-spin" : ""}`} /> Aggiorna
           </Button>
