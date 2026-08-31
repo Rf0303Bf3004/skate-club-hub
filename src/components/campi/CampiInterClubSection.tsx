@@ -817,8 +817,8 @@ const TabAdesioni: React.FC<{ campo: EventoCampoInterClub }> = ({ campo }) => {
   const { t } = useTranslation("events");
   const { data: gruppi = [] } = use_campo_gruppi(campo.id);
   const { data: partecipanti = [] } = use_campo_partecipanti(campo.id);
-  const gruppi_ids = useMemo(() => gruppi.map((g) => g.id), [gruppi]);
-  const { data: adesioni = [] } = use_campo_adesioni(campo.id, gruppi_ids);
+  const { data: adesioni = [] } = use_campo_adesioni(campo.id);
+
 
   const colonne = useMemo(
     () => partecipanti.filter((p) => p.stato === "accettato"),
