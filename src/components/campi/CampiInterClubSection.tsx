@@ -691,8 +691,9 @@ const TabClubPartecipanti: React.FC<{ campo: EventoCampoInterClub; is_ospitante:
                       {t(`campi_interclub.stati_pagamento.${p.stato_pagamento ?? "non_pagato"}`)}
                     </Badge>
                   )}
-
+                  {is_ospitante && (
                     <>
+
                       <Select
                         value={p.stato}
                         onValueChange={(v) =>
