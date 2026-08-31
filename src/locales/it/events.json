@@ -514,14 +514,16 @@
       "rifiuta": "Rifiuta",
       "accettato_toast": "Invito accettato",
       "rifiutato_toast": "Invito rifiutato",
-      "campo_sconosciuto": "Campo"
+      "campo_sconosciuto": "Campo",
+      "apri": "Apri campo"
     },
     "tabs": {
       "informazioni": "Informazioni",
       "gruppi": "Gruppi",
       "club": "Club partecipanti",
       "adesioni": "Adesioni",
-      "istruttori": "Istruttori"
+      "istruttori": "Istruttori",
+      "atleti": "Iscrizioni"
     },
     "info": {
       "title": "Informazioni del campo",
@@ -593,6 +595,21 @@
     "istruttori": {
       "title": "Istruttori per club",
       "placeholder": "Gli istruttori dichiarati da ciascun club partecipante saranno gestiti in una fase successiva."
+    },
+    "stati_pagamento": {
+      "non_pagato": "Non pagato",
+      "parziale": "Parziale",
+      "pagato": "Pagato"
+    },
+    "iscrizioni": {
+      "title": "Iscrizioni dei miei atleti",
+      "description": "Seleziona gli atleti del tuo club che partecipano al campo e assegna il gruppo.",
+      "cerca_placeholder": "Cerca atleta…",
+      "empty": "Nessun atleta disponibile.",
+      "atleta": "Atleta",
+      "altri_title": "Atleti degli altri club",
+      "altri_description": "Iscrizioni ricevute dalle società partecipanti: puoi assegnarne il gruppo.",
+      "altri_empty": "Nessuna iscrizione da altri club."
     }
   }
 }

@@ -14,6 +14,68 @@ export type Database = {
   }
   public: {
     Tables: {
+      accessi_assistenza: {
+        Row: {
+          aperto_il: string
+          chi: string | null
+          chiuso_il: string | null
+          club_id: string
+          id: string
+          motivo: string
+          scade_il: string
+          user_id: string | null
+        }
+        Insert: {
+          aperto_il?: string
+          chi?: string | null
+          chiuso_il?: string | null
+          club_id: string
+          id?: string
+          motivo: string
+          scade_il?: string
+          user_id?: string | null
+        }
+        Update: {
+          aperto_il?: string
+          chi?: string | null
+          chiuso_il?: string | null
+          club_id?: string
+          id?: string
+          motivo?: string
+          scade_il?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accessi_assistenza_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accessi_assistenza_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accessi_assistenza_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "elenco_club"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accessi_assistenza_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "kpi_pitch_sponsor"
+            referencedColumns: ["club_id"]
+          },
+        ]
+      }
       adesioni_atleta: {
         Row: {
           atleta_id: string
@@ -2757,6 +2819,30 @@ export type Database = {
         }
         Relationships: []
       }
+      export_definizioni: {
+        Row: {
+          entita: string
+          etichetta: string
+          gruppo: string
+          ordine: number
+          sql_txt: string
+        }
+        Insert: {
+          entita: string
+          etichetta: string
+          gruppo: string
+          ordine: number
+          sql_txt: string
+        }
+        Update: {
+          entita?: string
+          etichetta?: string
+          gruppo?: string
+          ordine?: number
+          sql_txt?: string
+        }
+        Relationships: []
+      }
       fatture: {
         Row: {
           aliquota_iva: number | null
@@ -3865,6 +3951,8 @@ export type Database = {
       iscrizioni_eventi_campi: {
         Row: {
           atleta_id: string
+          campo_gruppo_id: string | null
+          club_id: string | null
           created_at: string
           evento_campo_id: string
           id: string
@@ -3873,6 +3961,8 @@ export type Database = {
         }
         Insert: {
           atleta_id: string
+          campo_gruppo_id?: string | null
+          club_id?: string | null
           created_at?: string
           evento_campo_id: string
           id?: string
@@ -3881,6 +3971,8 @@ export type Database = {
         }
         Update: {
           atleta_id?: string
+          campo_gruppo_id?: string | null
+          club_id?: string | null
           created_at?: string
           evento_campo_id?: string
           id?: string
@@ -3888,6 +3980,41 @@ export type Database = {
           stato?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "iscrizioni_eventi_campi_campo_gruppo_id_fkey"
+            columns: ["campo_gruppo_id"]
+            isOneToOne: false
+            referencedRelation: "campi_gruppi"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "iscrizioni_eventi_campi_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "iscrizioni_eventi_campi_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "iscrizioni_eventi_campi_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "elenco_club"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "iscrizioni_eventi_campi_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "kpi_pitch_sponsor"
+            referencedColumns: ["club_id"]
+          },
           {
             foreignKeyName: "iscrizioni_eventi_campi_evento_campo_id_fkey"
             columns: ["evento_campo_id"]
@@ -6403,9 +6530,11 @@ export type Database = {
           fattura_mostra_logo: boolean
           fattura_note_legali: string | null
           fattura_prefisso_numero: string
+          fatturazione_automatica: boolean
           fatturazione_costo_test: number | null
           fatturazione_giorno_mese: number | null
           fatturazione_invio_email_auto: boolean | null
+          fatturazione_mese_riferimento: string
           formato_numero_fattura: string | null
           iban: string | null
           id: string
@@ -6439,9 +6568,11 @@ export type Database = {
           fattura_mostra_logo?: boolean
           fattura_note_legali?: string | null
           fattura_prefisso_numero?: string
+          fatturazione_automatica?: boolean
           fatturazione_costo_test?: number | null
           fatturazione_giorno_mese?: number | null
           fatturazione_invio_email_auto?: boolean | null
+          fatturazione_mese_riferimento?: string
           formato_numero_fattura?: string | null
           iban?: string | null
           id?: string
@@ -6475,9 +6606,11 @@ export type Database = {
           fattura_mostra_logo?: boolean
           fattura_note_legali?: string | null
           fattura_prefisso_numero?: string
+          fatturazione_automatica?: boolean
           fatturazione_costo_test?: number | null
           fatturazione_giorno_mese?: number | null
           fatturazione_invio_email_auto?: boolean | null
+          fatturazione_mese_riferimento?: string
           formato_numero_fattura?: string | null
           iban?: string | null
           id?: string
@@ -7598,6 +7731,10 @@ export type Database = {
           totale: number
         }[]
       }
+      apri_accesso_assistenza: {
+        Args: { p_club: string; p_motivo: string }
+        Returns: string
+      }
       archivia_comunicazioni_vecchie: { Args: never; Returns: number }
       arrotonda_chf: { Args: { p: number }; Returns: number }
       attesa_prima_di_riprovare: {
@@ -7614,6 +7751,7 @@ export type Database = {
         Args: { p_atleta_id: string; p_corso_id: string }
         Returns: undefined
       }
+      chiudi_accesso_assistenza: { Args: { p_id: string }; Returns: undefined }
       cleanup_archived_communications: { Args: never; Returns: number }
       club_invitato_a_campo: { Args: { p_campo: string }; Returns: boolean }
       club_partecipa_a_campo: { Args: { p_campo: string }; Returns: boolean }
@@ -7719,6 +7857,14 @@ export type Database = {
         Args: { p_esito: string; p_iscrizioni: string[]; p_motivo?: string }
         Returns: number
       }
+      esporta_club_csv: {
+        Args: { p_club: string; p_entita: string }
+        Returns: string
+      }
+      esporta_club_entita: {
+        Args: { p_club: string; p_entita: string }
+        Returns: Json
+      }
       formatta_numero_fattura: {
         Args: {
           p_anno: number
@@ -7731,6 +7877,16 @@ export type Database = {
       }
       genera_codice_atleta: { Args: never; Returns: string }
       genera_codice_istruttore: { Args: never; Returns: string }
+      genera_fatture_mensili_automatiche: {
+        Args: { p_data?: string }
+        Returns: {
+          bozze_create: number
+          club: string
+          nota: string
+          periodo: string
+          saltate: number
+        }[]
+      }
       genera_fatture_periodo: {
         Args: { p_anno: number; p_club: string; p_mese: number }
         Returns: {
@@ -7810,6 +7966,16 @@ export type Database = {
           numero_iva: string
           prezzi_ivati: boolean
           soggetto_iva: boolean
+        }[]
+      }
+      inventario_export_club: {
+        Args: { p_club: string }
+        Returns: {
+          entita: string
+          errore: string
+          etichetta: string
+          gruppo: string
+          righe: number
         }[]
       }
       invia_iscrizioni_gara:
@@ -8017,6 +8183,7 @@ export type Database = {
         Returns: string[]
       }
       ruoli_che_gestiscono_gare: { Args: { p_club: string }; Returns: string[] }
+      ruoli_direzione_club: { Args: { p_club: string }; Returns: string[] }
       seed_dashboard_cards_default: {
         Args: { p_club: string }
         Returns: number
