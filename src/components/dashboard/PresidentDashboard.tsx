@@ -173,7 +173,7 @@ function use_dashboard_data(CLUB_ID: string | undefined, stagione_id: string | n
         cassaR,
         igareR,
       ] = await Promise.all([
-        supabase.from("atleti").select("id, nome, cognome, foto_url, livello_artistica, livello_attuale, livello_amatori, livello_stile, agonista, data_nascita, attivo, categoria").eq("club_id", CLUB_ID),
+        supabase.from("atleti").select("id, nome, cognome, foto_url, foto_path, livello_artistica, livello_attuale, livello_amatori, livello_stile, agonista, data_nascita, attivo, categoria").eq("club_id", CLUB_ID),
         supabase.from("atleti_storici_stagioni").select("status, motivo_abbandono, stagione_id, livello").eq("club_id", CLUB_ID).in("stagione_id", ids),
         supabase.from("bilancio_stagione").select("*").eq("club_id", CLUB_ID),
         supabase.from("ricavi_per_fonte").select("*").eq("club_id", CLUB_ID),
@@ -945,7 +945,7 @@ const Area5Lezioni: React.FC<{ d: any }> = ({ d }) => {
   const topAt = Array.from(atMap.entries())
     .map(([id, v]) => {
       const a = (d.atleti || []).find((x: any) => x.id === id);
-      return { ...v, nome: a?.nome, cognome: a?.cognome, foto: a?.foto_url };
+      return { ...v, nome: a?.nome, cognome: a?.cognome, foto_path: a?.foto_path };
     })
     .sort((a, b) => b.speso - a.speso)
     .slice(0, 5);
@@ -1001,13 +1001,17 @@ const Area5Lezioni: React.FC<{ d: any }> = ({ d }) => {
             {topAt.map((a: any, idx: number) => (
               <div key={idx} className="flex items-center gap-4">
                 <div className="w-6 text-center text-sm text-slate-400 tabular-nums">{idx + 1}</div>
-                {a.foto ? (
-                  <img src={a.foto} alt="" className="h-10 w-10 rounded-full object-cover" />
-                ) : (
-                  <div className="h-10 w-10 rounded-full bg-cyan-100 flex items-center justify-center text-sm font-semibold text-cyan-700">
-                    {initials(a.nome, a.cognome)}
-                  </div>
-                )}
+                <FotoAtleta
+                  foto_path={a.foto_path}
+                  nome={a.nome}
+                  cognome={a.cognome}
+                  className="h-10 w-10 rounded-full"
+                  fallback={
+                    <div className="h-10 w-10 rounded-full bg-cyan-100 flex items-center justify-center text-sm font-semibold text-cyan-700">
+                      {initials(a.nome, a.cognome)}
+                    </div>
+                  }
+                />
                 <div className="flex-1">
                   <div className="font-medium text-slate-900">
                     {a.nome} {a.cognome}
@@ -1148,13 +1152,17 @@ const AtletiShowcase: React.FC<{ d: any }> = ({ d }) => {
           const pod = podiByAt.get(a.id) || 0;
           return (
             <div key={a.id} className="text-center">
-              {a.foto_url ? (
-                <img src={a.foto_url} alt="" className="h-28 w-28 rounded-full object-cover mx-auto shadow-md ring-4 ring-white" />
-              ) : (
-                <div className="h-28 w-28 rounded-full bg-gradient-to-br from-cyan-200 to-violet-200 flex items-center justify-center font-serif text-3xl text-slate-700 mx-auto shadow-md ring-4 ring-white">
-                  {initials(a.nome, a.cognome)}
-                </div>
-              )}
+              <FotoAtleta
+                foto_path={a.foto_path}
+                nome={a.nome}
+                cognome={a.cognome}
+                className="h-28 w-28 rounded-full mx-auto shadow-md ring-4 ring-white"
+                fallback={
+                  <div className="h-28 w-28 rounded-full bg-gradient-to-br from-cyan-200 to-violet-200 flex items-center justify-center font-serif text-3xl text-slate-700 mx-auto shadow-md ring-4 ring-white">
+                    {initials(a.nome, a.cognome)}
+                  </div>
+                }
+              />
               <div className="mt-4 font-serif text-lg text-slate-900">
                 {a.nome} {a.cognome}
               </div>
@@ -1458,13 +1466,17 @@ const Area7Catalogo: React.FC<{
         <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
           {topAtleti.map((a: any) => (
             <div key={a.id} className="text-center">
-              {a.foto_url ? (
-                <img src={a.foto_url} alt="" className="h-16 w-16 rounded-full object-cover mx-auto shadow-sm ring-2 ring-white" />
-              ) : (
-                <div className="h-16 w-16 rounded-full bg-gradient-to-br from-cyan-200 to-violet-200 flex items-center justify-center font-serif text-base text-slate-700 mx-auto shadow-sm ring-2 ring-white">
-                  {initials(a.nome, a.cognome)}
-                </div>
-              )}
+              <FotoAtleta
+                foto_path={a.foto_path}
+                nome={a.nome}
+                cognome={a.cognome}
+                className="h-16 w-16 rounded-full mx-auto shadow-sm ring-2 ring-white"
+                fallback={
+                  <div className="h-16 w-16 rounded-full bg-gradient-to-br from-cyan-200 to-violet-200 flex items-center justify-center font-serif text-base text-slate-700 mx-auto shadow-sm ring-2 ring-white">
+                    {initials(a.nome, a.cognome)}
+                  </div>
+                }
+              />
               <div className="mt-2 text-xs text-slate-700 truncate">{a.nome}</div>
             </div>
           ))}

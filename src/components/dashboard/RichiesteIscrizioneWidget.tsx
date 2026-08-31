@@ -58,7 +58,7 @@ export const RichiesteIscrizioneWidget: React.FC = () => {
       const atl_ids = [...new Set(rows.map((r) => r.atleta_id))];
       const cor_ids = [...new Set(rows.map((r) => r.corso_id))];
       const [{ data: atleti }, { data: corsi }] = await Promise.all([
-        supabase.from("atleti").select("id, nome, cognome, foto_url").in("id", atl_ids),
+        supabase.from("atleti").select("id, nome, cognome, foto_url, foto_path").in("id", atl_ids),
         supabase.from("corsi").select("id, nome").in("id", cor_ids),
       ]);
       const a_map = new Map((atleti ?? []).map((a: any) => [a.id, a]));
@@ -159,17 +159,17 @@ export const RichiesteIscrizioneWidget: React.FC = () => {
           {richieste!.map((r: any) => (
             <div key={r.id} className="border border-border rounded-lg p-3 space-y-2">
               <div className="flex items-center gap-2">
-                {r.atleta?.foto_url ? (
-                  <img
-                    src={r.atleta.foto_url}
-                    alt=""
-                    className="w-8 h-8 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                    <UserPlus className="w-4 h-4 text-muted-foreground" />
-                  </div>
-                )}
+                <FotoAtleta
+                  foto_path={r.atleta?.foto_path}
+                  nome={r.atleta?.nome}
+                  cognome={r.atleta?.cognome}
+                  className="w-8 h-8 rounded-full"
+                  fallback={
+                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                      <UserPlus className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                  }
+                />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">
                     {r.atleta?.nome} {r.atleta?.cognome}
@@ -366,7 +366,7 @@ export const RichiesteLezioniPrivateWidget: React.FC = () => {
       const { data: atleti } = atl_ids.length
         ? await supabase
             .from("atleti")
-            .select("id, nome, cognome, foto_url")
+            .select("id, nome, cognome, foto_url, foto_path")
             .in("id", atl_ids)
         : { data: [] as any[] };
 
@@ -462,13 +462,17 @@ export const RichiesteLezioniPrivateWidget: React.FC = () => {
             return (
               <div key={l.id} className="border border-border rounded-lg p-3 space-y-2">
                 <div className="flex items-center gap-2">
-                  {a0?.foto_url ? (
-                    <img src={a0.foto_url} alt="" className="w-8 h-8 rounded-full object-cover" />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground">
-                      {a0 ? `${a0.nome?.[0] ?? ""}${a0.cognome?.[0] ?? ""}` : "?"}
-                    </div>
-                  )}
+                  <FotoAtleta
+                    foto_path={a0?.foto_path}
+                    nome={a0?.nome}
+                    cognome={a0?.cognome}
+                    className="w-8 h-8 rounded-full"
+                    fallback={
+                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground">
+                        {a0 ? `${a0.nome?.[0] ?? ""}${a0.cognome?.[0] ?? ""}` : "?"}
+                      </div>
+                    }
+                  />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">
                       {a0 ? `${a0.nome} ${a0.cognome}` : "—"}
