@@ -933,4 +933,153 @@ const TabAdesioni: React.FC<{ campo: EventoCampoInterClub }> = ({ campo }) => {
   );
 };
 
+// ── Tab: iscrizioni atleti ───────────────────────────────────
+const TabIscrizioniAtleti: React.FC<{ campo: EventoCampoInterClub; is_ospitante: boolean }> = ({
+  campo,
+  is_ospitante,
+}) => {
+  const { t } = useTranslation("events");
+  const club_id = get_current_club_id();
+  const { data: gruppi = [] } = use_campo_gruppi(campo.id);
+  const { data: atleti = [] } = use_atleti();
+  const { data: iscrizioni = [] } = use_campo_iscrizioni(campo.id);
+  const toggle = use_toggle_iscrizione_campo();
+  const aggiorna_gruppo = use_aggiorna_gruppo_iscrizione();
+  const [ricerca, set_ricerca] = useState("");
+
+  const per_atleta = useMemo(
+    () => new Map(iscrizioni.map((i) => [i.atleta_id, i])),
+    [iscrizioni],
+  );
+
+  const miei_atleti = useMemo(() => {
+    const q = ricerca.trim().toLowerCase();
+    return (atleti ?? [])
+      .filter((a: any) => !q || `${a.cognome ?? ""} ${a.nome ?? ""}`.toLowerCase().includes(q))
+      .sort((a: any, b: any) => `${a.cognome} ${a.nome}`.localeCompare(`${b.cognome} ${b.nome}`));
+  }, [atleti, ricerca]);
+
+  const altri_club = useMemo(
+    () => iscrizioni.filter((i) => i.club_id && i.club_id !== club_id),
+    [iscrizioni, club_id],
+  );
+
+  const nome_gruppo = (id: string | null) =>
+    gruppi.find((g) => g.id === id)?.nome ?? t("campi_interclub.adesioni.senza_gruppo");
+
+  const cambia_gruppo = (iscrizione_id: string, valore: string) =>
+    aggiorna_gruppo.mutate(
+      { id: iscrizione_id, campo_gruppo_id: valore === "nessuno" ? null : valore, evento_campo_id: campo.id },
+      { onError: (e) => segnala_errore("CampiInterClub", "Aggiornamento gruppo iscrizione", e) },
+    );
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">{t("campi_interclub.iscrizioni.title")}</CardTitle>
+          <CardDescription>{t("campi_interclub.iscrizioni.description")}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Input
+            value={ricerca}
+            onChange={(e) => set_ricerca(e.target.value)}
+            placeholder={t("campi_interclub.iscrizioni.cerca_placeholder")}
+          />
+          {miei_atleti.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">{t("campi_interclub.iscrizioni.empty")}</p>
+          ) : (
+            <div className="space-y-2">
+              {miei_atleti.map((a: any) => {
+                const iscrizione = per_atleta.get(a.id);
+                return (
+                  <div key={a.id} className="flex flex-wrap items-center justify-between gap-3 p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Checkbox
+                        checked={!!iscrizione}
+                        disabled={toggle.isPending}
+                        onCheckedChange={() =>
+                          toggle.mutate(
+                            { evento_campo_id: campo.id, atleta_id: a.id, iscritto: !!iscrizione },
+                            { onError: (e) => segnala_errore("CampiInterClub", "Iscrizione atleta al campo", e) },
+                          )
+                        }
+                      />
+                      <span className="font-medium">
+                        {a.cognome} {a.nome}
+                      </span>
+                    </div>
+                    {iscrizione && (
+                      <Select
+                        value={iscrizione.campo_gruppo_id ?? "nessuno"}
+                        onValueChange={(v) => cambia_gruppo(iscrizione.id, v)}
+                      >
+                        <SelectTrigger className="w-56">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="nessuno">{t("campi_interclub.adesioni.senza_gruppo")}</SelectItem>
+                          {gruppi.map((g) => (
+                            <SelectItem key={g.id} value={g.id}>
+                              {g.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {is_ospitante && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">{t("campi_interclub.iscrizioni.altri_title")}</CardTitle>
+            <CardDescription>{t("campi_interclub.iscrizioni.altri_description")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {altri_club.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">
+                {t("campi_interclub.iscrizioni.altri_empty")}
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {altri_club.map((i) => (
+                  <div key={i.id} className="flex flex-wrap items-center justify-between gap-3 p-3 border rounded-lg">
+                    <span className="font-medium">
+                      {i.atleta?.cognome || i.atleta?.nome
+                        ? `${i.atleta?.cognome ?? ""} ${i.atleta?.nome ?? ""}`.trim()
+                        : `${t("campi_interclub.iscrizioni.atleta")} ${i.atleta_id.slice(0, 8)}`}
+                    </span>
+                    <Select
+                      value={i.campo_gruppo_id ?? "nessuno"}
+                      onValueChange={(v) => cambia_gruppo(i.id, v)}
+                    >
+                      <SelectTrigger className="w-56">
+                        <SelectValue placeholder={nome_gruppo(i.campo_gruppo_id)} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="nessuno">{t("campi_interclub.adesioni.senza_gruppo")}</SelectItem>
+                        {gruppi.map((g) => (
+                          <SelectItem key={g.id} value={g.id}>
+                            {g.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+};
+
 export default CampiInterClubSection;
