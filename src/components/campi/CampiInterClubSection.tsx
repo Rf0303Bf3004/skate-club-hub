@@ -212,8 +212,9 @@ const CampoScheda: React.FC<{ campo: EventoCampoInterClub; is_ospitante: boolean
   on_back,
 }) => {
   const { t } = useTranslation("events");
-  const { user } = useAuth();
-  const is_superadmin = user?.ruolo === "superadmin";
+  const { session } = useAuth();
+  const is_superadmin = session?.ruolo === "superadmin";
+
   const [tab, set_tab] = useState("informazioni");
 
   return (
