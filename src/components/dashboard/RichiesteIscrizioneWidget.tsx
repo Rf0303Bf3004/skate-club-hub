@@ -10,6 +10,7 @@ import { toast } from "@/hooks/use-toast";
 import { format_data_completa, format_data_lunga, locale_to_bcp47 } from "@/lib/format-data";
 import { useI18n } from "@/lib/i18n";
 import { useTranslation } from "react-i18next";
+import FotoAtleta from "@/components/common/FotoAtleta";
 
 function fmt_data_breve_localizzata(data_iso: string, locale_code: string): string {
   const dt = new Date(data_iso + "T00:00:00");

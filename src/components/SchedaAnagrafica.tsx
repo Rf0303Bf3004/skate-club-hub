@@ -6,6 +6,7 @@ import { ArrowLeft, Printer, QrCode, Copy, Check, Send } from 'lucide-react';
 import { build_contratto } from '@/lib/contratto-adesione';
 import { use_app_store_links } from '@/hooks/use-app-store-links';
 import { use_qr_data_url } from '@/hooks/use-qr-data-url';
+import FotoAtleta from "@/components/common/FotoAtleta";
 
 interface SchedaProps { atleta: any; on_back: () => void; modo?: 'foto' | 'iscrizione'; }
 
@@ -88,7 +89,7 @@ const SchedaAnagrafica: React.FC<SchedaProps> = ({ atleta, on_back, modo = 'foto
         <div className='grid grid-cols-3 divide-x divide-gray-100'>
           <div className='col-span-2 p-6 space-y-5'>
             <div className='flex items-center gap-4'>
-              {atleta.foto_url ? <img src={atleta.foto_url} className='w-16 h-16 rounded-full object-cover border-2 border-indigo-100' /> : <div className='w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-2xl'>{atleta.nome?.[0]}{atleta.cognome?.[0]}</div>}
+              <FotoAtleta foto_path={atleta.foto_path} nome={atleta.nome} cognome={atleta.cognome} className='w-16 h-16 rounded-full border-2 border-indigo-100' fallback={<div className='w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-2xl'>{atleta.nome?.[0]}{atleta.cognome?.[0]}</div>} />
               <div>
                 <p className='text-xl font-semibold text-gray-900'>{atleta.nome} {atleta.cognome}</p>
                 <p className='text-sm text-gray-500 mt-0.5'>{t('anagrafica.born_on')} {atleta.data_nascita ? new Date(atleta.data_nascita).toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'}</p>

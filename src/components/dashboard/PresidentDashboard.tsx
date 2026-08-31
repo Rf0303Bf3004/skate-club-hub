@@ -73,6 +73,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import OnboardingBanner from "@/components/dashboard/OnboardingBanner";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
+import FotoAtleta from "@/components/common/FotoAtleta";
 
 // Helper di traduzione: legge dal namespace `dashboard`, prefisso `president.`
 const tp = (k: string, opts?: Record<string, unknown>): string =>
