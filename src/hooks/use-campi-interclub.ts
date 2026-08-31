@@ -47,7 +47,7 @@ export type CampoClubPartecipante = {
 
 export const STATI_CAMPO = ["bozza", "aperto", "chiuso", "concluso"] as const;
 
-// ── Campi ospitati dal mio club ──────────────────────────────
+// ── Campi ospitati dal mio club (solo inter-club) ────────────
 export function use_campi_ospitati() {
   const club_id = get_current_club_id();
   return useQuery({
@@ -60,10 +60,23 @@ export function use_campi_ospitati() {
         .eq("club_id", club_id)
         .order("data_inizio", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as unknown as EventoCampoInterClub[];
+      const eventi = (data ?? []) as unknown as EventoCampoInterClub[];
+      if (eventi.length === 0) return eventi;
+      // Inter-club = campo con almeno un club partecipante invitato
+      const { data: part, error: err_part } = await supabase
+        .from("campi_club_partecipanti" as any)
+        .select("evento_campo_id")
+        .in(
+          "evento_campo_id",
+          eventi.map((e) => e.id),
+        );
+      if (err_part) throw err_part;
+      const con_partecipanti = new Set(((part ?? []) as any[]).map((p) => p.evento_campo_id as string));
+      return eventi.filter((e) => con_partecipanti.has(e.id));
     },
   });
 }
+
 
 // ── Campi a cui il mio club è invitato ───────────────────────
 export type CampoInvitato = {
