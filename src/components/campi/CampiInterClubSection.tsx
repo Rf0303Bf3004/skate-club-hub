@@ -668,7 +668,30 @@ const TabClubPartecipanti: React.FC<{ campo: EventoCampoInterClub; is_ospitante:
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant={stato_variant(p.stato)}>{t(`campi_interclub.stati_partecipante.${p.stato}`)}</Badge>
-                  {is_ospitante && (
+                  {is_ospitante ? (
+                    <Select
+                      value={p.stato_pagamento ?? "non_pagato"}
+                      onValueChange={(v) =>
+                        aggiorna.mutate({ id: p.id, evento_campo_id: campo.id, patch: { stato_pagamento: v } })
+                      }
+                    >
+                      <SelectTrigger className="w-40">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {["non_pagato", "parziale", "pagato"].map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {t(`campi_interclub.stati_pagamento.${s}`)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Badge variant={p.stato_pagamento === "pagato" ? "default" : "secondary"}>
+                      {t(`campi_interclub.stati_pagamento.${p.stato_pagamento ?? "non_pagato"}`)}
+                    </Badge>
+                  )}
+
                     <>
                       <Select
                         value={p.stato}
