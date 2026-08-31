@@ -58,6 +58,15 @@ Deno.serve(async (req) => {
     const club_id = atleta.club_id;
     const oggi = new Date().toISOString().split("T")[0];
 
+    // La foto è esposta solo come URL firmato a tempo, mai come URL pubblico
+    let foto_firmata: string | null = null;
+    if ((atleta as any).foto_path) {
+      const { data: sig } = await admin.storage
+        .from("foto-atleti")
+        .createSignedUrl((atleta as any).foto_path, 3600);
+      foto_firmata = sig?.signedUrl ?? null;
+    }
+
     // Whitelist dei campi atleta esposti (esclude verificato_da_user_id, importato_da_excel ecc.)
     const atleta_pub = {
       id: atleta.id, club_id, nome: atleta.nome, cognome: atleta.cognome,
@@ -65,7 +74,7 @@ Deno.serve(async (req) => {
       indirizzo: atleta.indirizzo, telefono: atleta.telefono, codice_fiscale: atleta.codice_fiscale,
       carriera_artistica: atleta.carriera_artistica, carriera_stile: atleta.carriera_stile,
       percorso_amatori: (atleta as any).percorso_amatori, livello_attuale: atleta.livello_attuale,
-      foto_url: atleta.foto_url, licenza_sis_numero: atleta.licenza_sis_numero,
+      foto_url: foto_firmata, licenza_sis_numero: atleta.licenza_sis_numero,
       licenza_sis_categoria: atleta.licenza_sis_categoria,
       licenza_sis_disciplina: atleta.licenza_sis_disciplina,
       licenza_sis_validita_a: atleta.licenza_sis_validita_a,

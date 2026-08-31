@@ -111,7 +111,7 @@ Deno.serve(async (req) => {
     const { data: atleta, error: atl_err } = await admin
       .from("atleti")
       .select(
-        "id, club_id, nome, cognome, data_nascita, foto_url, categoria, livello_amatori, livello_artistica, livello_stile, genitore1_nome, genitore1_cognome, genitore1_telefono, genitore1_email, genitore1_indirizzo, genitore1_cap, genitore1_citta, genitore1_cantone, partecipa_gare, intende_test_livello, consenso_foto_video, contratto_accettato_at",
+        "id, club_id, nome, cognome, data_nascita, foto_url, foto_path, categoria, livello_amatori, livello_artistica, livello_stile, genitore1_nome, genitore1_cognome, genitore1_telefono, genitore1_email, genitore1_indirizzo, genitore1_cap, genitore1_citta, genitore1_cantone, partecipa_gare, intende_test_livello, consenso_foto_video, contratto_accettato_at",
       )
       .eq("codice_atleta", codice)
       .maybeSingle();
@@ -186,11 +186,13 @@ Deno.serve(async (req) => {
     update.contratto_accettato_at = new Date().toISOString();
     update.attivo = true;
 
+    let foto_path_finale: string | null = (atleta as any).foto_path ?? null;
+
     if (file) {
       const ext = TIPI_OK[file.type];
       if (!ext) return json({ error: "formato_non_valido" }, 400);
       if (file.size > MAX_BYTES) return json({ error: "file_troppo_grande" }, 400);
-      const path = `${atleta.club_id}/${Date.now()}.${ext}`;
+      const path = `${atleta.club_id}/${crypto.randomUUID()}.${ext}`;
       const bytes = new Uint8Array(await file.arrayBuffer());
       const { error: up_err } = await admin.storage
         .from("foto-atleti")
@@ -201,6 +203,8 @@ Deno.serve(async (req) => {
       }
       const { data: pub } = admin.storage.from("foto-atleti").getPublicUrl(path);
       update.foto_url = pub.publicUrl;
+      update.foto_path = path;
+      foto_path_finale = path;
     }
 
     const { error: upd_err } = await admin.from("atleti").update(update).eq("id", atleta.id);
@@ -209,7 +213,13 @@ Deno.serve(async (req) => {
       return json({ error: "db_error" }, 500);
     }
 
-    return json({ ok: true, foto_url: update.foto_url ?? atleta.foto_url ?? null });
+    let foto_firmata: string | null = null;
+    if (foto_path_finale) {
+      const { data: sig } = await admin.storage.from("foto-atleti").createSignedUrl(foto_path_finale, 3600);
+      foto_firmata = sig?.signedUrl ?? null;
+    }
+
+    return json({ ok: true, foto_url: foto_firmata });
   } catch (e) {
     console.error("[iscrizione-atleta] fatal", e);
     return json({ error: "server_error" }, 500);
