@@ -65,7 +65,10 @@ const CampiInterClubSection: React.FC = () => {
   const [campo_selezionato, set_campo_selezionato] = useState<EventoCampoInterClub | null>(null);
 
   if (campo_selezionato) {
-    const aggiornato = ospitati.find((c) => c.id === campo_selezionato.id) ?? campo_selezionato;
+    const aggiornato =
+      ospitati.find((c) => c.id === campo_selezionato.id) ??
+      invitati.find((i) => i.evento?.id === campo_selezionato.id)?.evento ??
+      campo_selezionato;
     return (
       <CampoScheda
         campo={aggiornato}
@@ -74,6 +77,7 @@ const CampiInterClubSection: React.FC = () => {
       />
     );
   }
+
 
   return (
     <div className="space-y-6">
