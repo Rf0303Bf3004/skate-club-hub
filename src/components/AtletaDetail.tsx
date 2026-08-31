@@ -42,6 +42,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import CompensoStaffModal from "@/components/CompensoStaffModal";
+import FotoAtleta from "@/components/common/FotoAtleta";
 
 interface Props {
   atleta: any;
@@ -358,6 +359,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
     genitore2_telefono: a.genitore2_telefono || a.genitore_2?.telefono || "",
     genitore2_email: a.genitore2_email || a.genitore_2?.email || "",
     foto_url: a.foto_url || "",
+    foto_path: a.foto_path || "",
     disco_url: a.disco_url || "",
     disco_in_preparazione: a.disco_in_preparazione || "",
     compenso_orario_pista_str: (() => {
@@ -481,11 +483,12 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
     set_uploading_foto(true);
     try {
       const ext = file.name.split(".").pop();
-      const path = `${get_current_club_id()}/${Date.now()}.${ext}`;
+      const path = `${get_current_club_id()}/${crypto.randomUUID()}.${ext}`;
       const { error } = await supabase.storage.from("foto-atleti").upload(path, file, { upsert: true });
       if (error) throw error;
       const { data } = supabase.storage.from("foto-atleti").getPublicUrl(path);
       upd("foto_url", data.publicUrl);
+      upd("foto_path", path);
       toast({ title: td("detail.toast_photo_uploaded") });
     } catch (err: any) {
       toast({ title: td("detail.toast_photo_error"), description: err?.message, variant: "destructive" });
@@ -499,9 +502,9 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
     try {
       const ext = file.name.split(".").pop();
       const path = `${get_current_club_id()}/${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("dischi-audio").upload(path, file, { upsert: true });
+      const { error } = await supabase.storage.from("dischi-musicali").upload(path, file, { upsert: true });
       if (error) throw error;
-      const { data } = supabase.storage.from("dischi-audio").getPublicUrl(path);
+      const { data } = supabase.storage.from("dischi-musicali").getPublicUrl(path);
       upd("disco_url", data.publicUrl);
       toast({ title: td("detail.toast_disc_uploaded") });
     } catch (err: any) {
@@ -603,6 +606,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
         disco_in_preparazione: form.disco_in_preparazione,
         tag_nfc: form.tag_nfc,
         foto_url: form.foto_url || null,
+        foto_path: form.foto_path || null,
         disco_url: form.disco_url || null,
         ruolo_pista: form.ruolo_pista || "atleta",
         compenso_orario_pista: to_num(form.compenso_orario_pista_str),
@@ -768,18 +772,12 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
 
         <div className="flex items-center gap-4">
           <div className="relative">
-            {form.foto_url ? (
-              <img
-                src={form.foto_url}
-                alt={form.nome}
-                className="w-16 h-16 rounded-full object-cover border-2 border-border shadow-sm"
-              />
-            ) : (
-              <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center text-accent text-lg font-bold">
-                {form.nome?.[0]}
-                {form.cognome?.[0]}
-              </div>
-            )}
+            <FotoAtleta
+              foto_path={form.foto_path}
+              nome={form.nome}
+              cognome={form.cognome}
+              className="w-16 h-16 rounded-full border-2 border-border shadow-sm text-lg"
+            />
             <label className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center cursor-pointer hover:bg-primary/90 shadow-sm">
               <Upload className="w-3 h-3 text-white" />
               <input

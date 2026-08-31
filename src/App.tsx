@@ -264,7 +264,6 @@ const AuthenticatedApp = () => {
           <Route path="/planning" element={<PlanningPage />} />
           <Route path="/griglia-ghiaccio" element={<GrigliaGhiaccioPage />} />
           <Route path="/setup-club" element={<ClubSetupPage />} />
-          <Route path="/diagnostica" element={<DiagnosticaPage />} />
           <Route path="/gestione-avanzata" element={<AdvancedManagementPage />} />
           <Route path="/richieste-iscrizione" element={<RichiesteIscrizionePage />} />
           <Route path="/ruoli-permessi" element={<RuoliPermessiPage />} />
@@ -333,6 +332,10 @@ const AuthenticatedApp = () => {
                 <SuperAdminClubPage />
               </ProtectedSuperAdmin>
             }
+          />
+          <Route
+            path="/diagnostica"
+            element={<ProtectedSuperAdmin><DiagnosticaPage /></ProtectedSuperAdmin>}
           />
           <Route
             path="/superadmin/manutenzione"

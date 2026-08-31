@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
 
     const { data: atleta, error: atl_err } = await admin
       .from("atleti")
-      .select("id, nome, cognome, club_id, attivo, foto_url")
+      .select("id, nome, cognome, club_id, attivo, foto_url, foto_path")
       .eq("codice_atleta", codice)
       .maybeSingle();
     if (atl_err) {
@@ -72,6 +72,13 @@ Deno.serve(async (req) => {
     if (!atleta) return json({ error: "codice_non_trovato" }, 404);
 
 
+    // Firma al volo il percorso della foto (mai l'URL pubblico grezzo)
+    const firma = async (p: string | null) => {
+      if (!p) return null;
+      const { data } = await admin.storage.from("foto-atleti").createSignedUrl(p, 3600);
+      return data?.signedUrl ?? null;
+    };
+
     // Lookup (nessun file): restituisce i dati per la conferma visiva
     if (!file) {
       return json({
@@ -79,7 +86,7 @@ Deno.serve(async (req) => {
         atleta: {
           nome: atleta.nome,
           cognome: atleta.cognome,
-          foto_url: atleta.foto_url ?? null,
+          foto_url: await firma((atleta as any).foto_path ?? null),
         },
       });
     }
@@ -88,7 +95,7 @@ Deno.serve(async (req) => {
     if (!ext) return json({ error: "formato_non_valido" }, 400);
     if (file.size > MAX_BYTES) return json({ error: "file_troppo_grande" }, 400);
 
-    const path = `${atleta.club_id}/${Date.now()}.${ext}`;
+    const path = `${atleta.club_id}/${crypto.randomUUID()}.${ext}`;
     const bytes = new Uint8Array(await file.arrayBuffer());
 
     const { error: up_err } = await admin.storage
@@ -104,14 +111,14 @@ Deno.serve(async (req) => {
 
     const { error: upd_err } = await admin
       .from("atleti")
-      .update({ foto_url })
+      .update({ foto_url, foto_path: path })
       .eq("id", atleta.id);
     if (upd_err) {
       console.error("[upload-foto-atleta] upd_err", upd_err);
       return json({ error: "db_error" }, 500);
     }
 
-    return json({ ok: true, foto_url });
+    return json({ ok: true, foto_url: await firma(path) });
   } catch (e) {
     console.error("[upload-foto-atleta] fatal", e);
     return json({ error: "server_error" }, 500);

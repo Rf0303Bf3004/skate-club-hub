@@ -137,6 +137,21 @@ const SuperAdminManutenzione: React.FC = () => {
       },
     },
     {
+      id: "rinomina_foto",
+      titolo: "Rinomina foto atleti",
+      descrizione: "Sostituisce i nomi file prevedibili delle foto atleti con identificativi casuali. Ripetibile senza danni.",
+      icona: <Wrench className="w-5 h-5" />,
+      colore: "border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/30",
+      richiede_club: false,
+      esegui: async () => {
+        const { data, error } = await supabase.functions.invoke("rinomina-foto-atleti", { body: {} });
+        if (error) throw error;
+        const r = data as any;
+        if (r?.error) throw new Error(r.messaggio ?? r.error);
+        return `Foto rinominate: ${r?.rinominate ?? 0} · gia' a posto: ${r?.saltate ?? 0} · fallite: ${r?.fallite ?? 0}`;
+      },
+    },
+    {
       id: "export_dati",
       titolo: t("manutenzione.op.export.titolo"),
       descrizione: t("manutenzione.op.export.descrizione"),

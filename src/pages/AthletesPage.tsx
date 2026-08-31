@@ -26,6 +26,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { use_app_store_links } from "@/hooks/use-app-store-links";
 import { stampa_schede_codice } from "@/lib/scheda-codice-html";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import FotoAtleta from "@/components/common/FotoAtleta";
 
 import { capitalizza_nome, capitalizza_indirizzo, normalizza_email, cerca_nap } from "@/lib/formato-testo";
 
@@ -150,6 +151,7 @@ const AtletaModal: React.FC<{
     note: atleta?.note || "",
     attivo: atleta?.attivo !== false,
     foto_url: atleta?.foto_url || "",
+    foto_path: atleta?.foto_path || "",
     disco_in_preparazione: atleta?.disco_in_preparazione || "",
     disco_url: atleta?.disco_url || "",
     licenza_sis_numero: atleta?.licenza_sis_numero || "",
@@ -214,11 +216,12 @@ const AtletaModal: React.FC<{
     set_uploading_foto(true);
     try {
       const ext = file.name.split(".").pop();
-      const path = `${get_current_club_id()}/${Date.now()}.${ext}`;
+      const path = `${get_current_club_id()}/${crypto.randomUUID()}.${ext}`;
       const { error } = await supabase.storage.from("foto-atleti").upload(path, file, { upsert: true });
       if (error) throw error;
       const { data } = supabase.storage.from("foto-atleti").getPublicUrl(path);
       set_val("foto_url", data.publicUrl);
+      set_val("foto_path", path);
       toast({ title: t("toast.photo_uploaded") });
     } catch (err: any) {
       toast({ title: t("toast.photo_upload_error"), description: err?.message, variant: "destructive" });
@@ -258,18 +261,13 @@ const AtletaModal: React.FC<{
           {/* Foto */}
           <Field label={t("modal.photo")}>
             <div className="flex items-center gap-3">
-              {form.foto_url ? (
-                <img
-                  src={form.foto_url}
-                  alt="foto"
-                  className="w-16 h-16 rounded-full object-cover border border-border"
-                />
-              ) : (
-                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-muted-foreground text-xl font-bold">
-                  {form.nome?.[0] || "?"}
-                  {form.cognome?.[0] || ""}
-                </div>
-              )}
+              <FotoAtleta
+                foto_path={form.foto_path}
+                nome={form.nome}
+                cognome={form.cognome}
+                alt="foto"
+                className="w-16 h-16 rounded-full border border-border text-xl"
+              />
               <label
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg border border-border cursor-pointer hover:bg-muted/30 text-sm text-muted-foreground transition-colors ${uploading_foto ? "opacity-50 pointer-events-none" : ""}`}
               >
@@ -1610,14 +1608,12 @@ const AthletesPage: React.FC = () => {
                       </td>
                       <td className="px-4 py-3 cursor-pointer" onClick={() => set_selected_id(a.id)}>
                         <div className="flex items-center gap-3">
-                          {a.foto_url ? (
-                            <img src={a.foto_url} alt={a.nome} className="w-8 h-8 rounded-full object-cover shrink-0" />
-                          ) : (
-                            <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-accent text-xs font-bold shrink-0">
-                              {a.nome[0]}
-                              {a.cognome[0]}
-                            </div>
-                          )}
+                          <FotoAtleta
+                            foto_path={a.foto_path}
+                            nome={a.nome}
+                            cognome={a.cognome}
+                            className="w-8 h-8 rounded-full shrink-0 text-xs"
+                          />
                           <div>
                             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                               <p className="font-medium text-foreground inline-flex items-center gap-2 flex-wrap">
