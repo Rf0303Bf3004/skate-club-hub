@@ -424,10 +424,12 @@ export function use_campo_adesioni(evento_campo_id: string | null) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("iscrizioni_eventi_campi" as any)
-        .select("atleta_id, club_id, campo_gruppo_id, atleta:atleta_id(club_provenienza, ospite_di_campo_id)")
+        .select("atleta_id, club_id, campo_gruppo_id")
         .eq("evento_campo_id", evento_campo_id);
       if (error) throw error;
-      return (data ?? []) as unknown as AdesioneRiga[];
+      const righe = (data ?? []) as unknown as AdesioneRiga[];
+      const per_id = await carica_atleti_iscritti(righe.map((r) => r.atleta_id));
+      return righe.map((r) => ({ ...r, atleta: per_id.get(r.atleta_id) ?? null }));
     },
   });
 }
