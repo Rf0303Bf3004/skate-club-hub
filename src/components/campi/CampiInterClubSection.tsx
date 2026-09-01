@@ -1249,13 +1249,15 @@ const TabAdesioni: React.FC<{ campo: EventoCampoInterClub }> = ({ campo }) => {
   const nome_colonna = (p: CampoClubPartecipante) =>
     p.clubs?.nome || p.club_esterno_nome || t("campi_interclub.club.senza_nome");
 
-  // Un club esterno non ha `club_id`: i suoi atleti ospiti sono anagrafati sotto il club
-  // ospitante, quindi si contano per `club_provenienza`.
-  const appartiene = (a: (typeof adesioni)[number], p: CampoClubPartecipante) =>
-    p.club_id
-      ? a.club_id === p.club_id
-      : !!p.club_esterno_nome &&
-        (a.atleta?.club_provenienza ?? "").trim().toLowerCase() === p.club_esterno_nome.trim().toLowerCase();
+  // Gli atleti ospiti sono anagrafati sotto il club ospitante (anche quando il club invitato
+  // usa il portale): si abbinano per nome del club di provenienza, come fa il database.
+  const appartiene = (a: (typeof adesioni)[number], p: CampoClubPartecipante) => {
+    const nome_p = (p.clubs?.nome || p.club_esterno_nome || "").trim().toLowerCase();
+    const prov = (a.atleta?.club_provenienza ?? "").trim().toLowerCase();
+    if (a.atleta?.ospite_di_campo_id) return !!nome_p && prov === nome_p;
+    return p.club_id ? a.club_id === p.club_id : !!nome_p && prov === nome_p;
+  };
+
 
   const conta = (gruppo_id: string | null, p: CampoClubPartecipante) =>
     adesioni.filter((a) => a.campo_gruppo_id === gruppo_id && appartiene(a, p)).length;
