@@ -840,14 +840,13 @@ const ClubSetupPage: React.FC = () => {
           </div>
         </section>
 
-        <Separator />
+        </TabsContent>
+
+        {/* ══ AUTOMATISMI ══ */}
+        <TabsContent value="automatismi" className="space-y-4">
 
         {/* Medagliere club — punti per posizione */}
-        <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.medagliere")}</h2>
-          <p className="text-xs text-muted-foreground">
-            {t("club.testi.medagliere_info")}
-          </p>
+        <SetupSection id="medagliere" titolo={t("club.sezioni.medagliere")} descrizione={t("club.testi.medagliere_info")}>
           {(() => {
             const default_punti: Record<string, number> = { "1": 10, "2": 7, "3": 5, "4": 3, "5": 2, "6": 1 };
             const current_punti: Record<string, number> =
@@ -892,16 +891,10 @@ const ClubSetupPage: React.FC = () => {
               </div>
             );
           })()}
-        </section>
-
-        <Separator />
+        </SetupSection>
 
         {/* Reminder automatici */}
-        <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.reminder")}</h2>
-          <p className="text-xs text-muted-foreground">
-            {t("club.testi.reminder_info")}
-          </p>
+        <SetupSection id="reminder" titolo={t("club.sezioni.reminder")} descrizione={t("club.testi.reminder_info")}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label={t("club.fields.reminder_allenamenti")}>
               <div className="flex items-center gap-2">
@@ -1000,54 +993,41 @@ const ClubSetupPage: React.FC = () => {
               </Field>
             </div>
           </div>
-        </section>
-
-        <Separator />
+        </SetupSection>
 
         {/* Regole comunicazioni intelligenti */}
-        <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.comunicazioni_intelligenti")}</h2>
-          <p className="text-xs text-muted-foreground">
-            {t("club.testi.comunicazioni_intelligenti_info")}
-          </p>
+        <SetupSection
+          id="comunicazioni"
+          titolo={t("club.sezioni.comunicazioni_intelligenti")}
+          descrizione={t("club.testi.comunicazioni_intelligenti_info")}
+        >
           <RegoleComunicazioniSection club_id={club?.id || get_current_club_id() || null} />
-        </section>
-
-        <Separator />
+        </SetupSection>
 
         {/* Messaggi predefiniti */}
-        <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.messaggi_predefiniti")}</h2>
-          <p className="text-xs text-muted-foreground">
-            {t("club.testi.messaggi_predefiniti_info")}
-          </p>
+        <SetupSection
+          id="messaggi"
+          titolo={t("club.sezioni.messaggi_predefiniti")}
+          descrizione={t("club.testi.messaggi_predefiniti_info")}
+        >
           <TemplateComunicazioniSection club_id={club?.id || get_current_club_id() || null} />
-        </section>
+        </SetupSection>
 
-        <Separator />
-
-        {/* Salva dati club */}
-        <div className="flex justify-end">
-          <Button onClick={handle_save} disabled={saving || Object.keys(form).length === 0}>
-            {saving ? t("club.azioni.salvataggio") : t("club.azioni.salva_modifiche")}
-          </Button>
-        </div>
-
-        <Separator />
-
-        <ModalitaGestioneSection />
-
-        <ModalitaGestioneSection
-          area="fatturazione"
-          label={t("club.tabs.fatturazione")}
-          opzioni={[
-            { value: "standard", label: t("club.opzioni.fatturazione_standard") },
-            { value: "multi_ragione_sociale", label: t("club.opzioni.fatturazione_multi") },
-          ]}
-        />
-        </div>
+        {/* Modalità di gestione */}
+        <SetupSection id="modalita" titolo="Modalità di gestione">
+          <ModalitaGestioneSection />
+          <ModalitaGestioneSection
+            area="fatturazione"
+            label={t("club.tabs.fatturazione")}
+            opzioni={[
+              { value: "standard", label: t("club.opzioni.fatturazione_standard") },
+              { value: "multi_ragione_sociale", label: t("club.opzioni.fatturazione_multi") },
+            ]}
+          />
+        </SetupSection>
 
         </TabsContent>
+
 
         {/* ══ GHIACCIO E PLANNING ══ */}
         <TabsContent value="ghiaccio" className="space-y-4">
