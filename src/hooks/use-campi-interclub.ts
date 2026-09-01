@@ -56,7 +56,13 @@ export type CampoClubPartecipante = {
 
 export const STATI_CAMPO = ["bozza", "aperto", "chiuso", "concluso"] as const;
 
-// ── Campi ospitati dal mio club (solo inter-club) ────────────
+// ── Campi ospitati dal mio club (dichiarati inter-club) ──────
+export type EventoCampoOspitato = EventoCampoInterClub & {
+  multi_club?: boolean | null;
+  n_invitati: number;
+  n_accettati: number;
+};
+
 export function use_campi_ospitati() {
   const club_id = get_current_club_id();
   return useQuery({
@@ -67,24 +73,32 @@ export function use_campi_ospitati() {
         .from("eventi_campi" as any)
         .select("*")
         .eq("club_id", club_id)
+        .eq("multi_club", true)
         .order("data_inizio", { ascending: false });
       if (error) throw error;
-      const eventi = (data ?? []) as unknown as EventoCampoInterClub[];
+      const eventi = (data ?? []) as unknown as EventoCampoOspitato[];
       if (eventi.length === 0) return eventi;
-      // Inter-club = campo con almeno un club partecipante invitato
       const { data: part, error: err_part } = await supabase
         .from("campi_club_partecipanti" as any)
-        .select("evento_campo_id")
+        .select("evento_campo_id, stato")
         .in(
           "evento_campo_id",
           eventi.map((e) => e.id),
         );
       if (err_part) throw err_part;
-      const con_partecipanti = new Set(((part ?? []) as any[]).map((p) => p.evento_campo_id as string));
-      return eventi.filter((e) => con_partecipanti.has(e.id));
+      const righe = (part ?? []) as any[];
+      return eventi.map((e) => {
+        const suoi = righe.filter((p) => p.evento_campo_id === e.id);
+        return {
+          ...e,
+          n_invitati: suoi.length,
+          n_accettati: suoi.filter((p) => p.stato === "accettato").length,
+        };
+      });
     },
   });
 }
+
 
 
 // ── Campi a cui il mio club è invitato ───────────────────────

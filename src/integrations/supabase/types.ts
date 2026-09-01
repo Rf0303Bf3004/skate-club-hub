@@ -2721,6 +2721,7 @@ export type Database = {
           id: string
           luogo: string | null
           modalita: string
+          multi_club: boolean
           nome: string
           note: string | null
           quota_atleta: number | null
@@ -2740,6 +2741,7 @@ export type Database = {
           id?: string
           luogo?: string | null
           modalita?: string
+          multi_club?: boolean
           nome?: string
           note?: string | null
           quota_atleta?: number | null
@@ -2759,6 +2761,7 @@ export type Database = {
           id?: string
           luogo?: string | null
           modalita?: string
+          multi_club?: boolean
           nome?: string
           note?: string | null
           quota_atleta?: number | null
