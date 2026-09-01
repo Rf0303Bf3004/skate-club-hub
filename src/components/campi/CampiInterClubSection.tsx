@@ -275,9 +275,15 @@ const CampiInterClubSection: React.FC<CampiInterClubSectionProps> = ({
 };
 
 // ═══════════════════════════════ SCHEDA CAMPO ═══════════════════════════════
-const CampoScheda: React.FC<{ campo: EventoCampoInterClub; is_ospitante: boolean; on_back: () => void }> = ({
+const CampoScheda: React.FC<{
+  campo: EventoCampoInterClub;
+  is_ospitante: boolean;
+  tab_iniziale?: string;
+  on_back: () => void;
+}> = ({
   campo,
   is_ospitante,
+  tab_iniziale,
   on_back,
 }) => {
   const { t } = useTranslation("events");
