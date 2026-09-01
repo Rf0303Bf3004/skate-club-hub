@@ -1049,14 +1049,12 @@ const ClubSetupPage: React.FC = () => {
 
         </TabsContent>
 
-        <TabsContent value="ghiaccio">
-      <div className="bg-card rounded-xl shadow-card p-6 space-y-8 max-w-2xl border-2 border-primary/20">
-        <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-          {t("club.sezioni.ghiaccio_planning")}
-        </h2>
-
+        {/* ══ GHIACCIO E PLANNING ══ */}
+        <TabsContent value="ghiaccio" className="space-y-4">
+        <SetupSection id="gh_parametri" titolo={t("club.sezioni.ghiaccio_planning")}>
         {/* Config fields */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
           <Field label={t("club.fields.ora_apertura")}>
             <Input
               type="time"
