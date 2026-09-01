@@ -306,7 +306,13 @@ export type IscrizioneCampo = {
   club_id: string | null;
   campo_gruppo_id: string | null;
   stato: string | null;
-  atleta?: { nome: string | null; cognome: string | null; club_id: string | null } | null;
+  atleta?: {
+    nome: string | null;
+    cognome: string | null;
+    club_id: string | null;
+    club_provenienza: string | null;
+    ospite_di_campo_id: string | null;
+  } | null;
 };
 
 export function use_campo_iscrizioni(evento_campo_id: string | null) {
@@ -316,7 +322,9 @@ export function use_campo_iscrizioni(evento_campo_id: string | null) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("iscrizioni_eventi_campi" as any)
-        .select("id, evento_campo_id, atleta_id, club_id, campo_gruppo_id, stato, atleta:atleta_id(nome, cognome, club_id)")
+        .select(
+          "id, evento_campo_id, atleta_id, club_id, campo_gruppo_id, stato, atleta:atleta_id(nome, cognome, club_id, club_provenienza, ospite_di_campo_id)",
+        )
         .eq("evento_campo_id", evento_campo_id);
       if (error) throw error;
       return (data ?? []) as unknown as IscrizioneCampo[];
