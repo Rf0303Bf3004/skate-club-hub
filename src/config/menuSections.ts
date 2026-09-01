@@ -26,7 +26,7 @@ export const MENU_SECTIONS: MenuSection[] = [
   { codice: "corsi",           label: "Corsi",           icon: BookOpen,        path: "/corsi",           gruppo: "principale", ordine: 5 },
   { codice: "gare",            label: "Gare",            icon: Trophy,          path: "/gare",            gruppo: "principale", ordine: 6 },
   { codice: "test_livello",    label: "Test Livello",    icon: ClipboardCheck,  path: "/test",            gruppo: "principale", ordine: 7 },
-  { codice: "eventi",          label: "Galà ed Eventi",  icon: Sparkles,        path: "/eventi",          gruppo: "principale", ordine: 8 },
+  { codice: "eventi",          label: "Eventi",          icon: Sparkles,        path: "/eventi",          gruppo: "principale", ordine: 8 },
   { codice: "lezioni_private", label: "Lezioni Private", icon: Clock,           path: "/lezioni-private", gruppo: "principale", ordine: 9 },
   { codice: "fatture",         label: "Fatture",         icon: Receipt,         path: "/fatture",         gruppo: "principale", ordine: 10 },
   { codice: "comunicazioni",   label: "Comunicazioni",   icon: MessageSquare,   path: "/comunicazioni",   gruppo: "principale", ordine: 11 },
