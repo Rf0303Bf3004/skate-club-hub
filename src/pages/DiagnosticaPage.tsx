@@ -7,37 +7,50 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle, CheckCheck, RefreshCw, Eye, PlayCircle } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { AlertTriangle, CheckCheck, RefreshCw, PlayCircle, ChevronDown, Info, CircleCheck } from "lucide-react";
 import { segnala_errore } from "@/lib/errori";
 import { toast } from "sonner";
 
-interface RigaDiagnosi {
-  gravita: string;
-  dove: string;
-  messaggio: string;
+interface VoceDiagnosi {
+  urgenza: number;
+  fascia: string;
+  club: string | null;
+  titolo: string;
+  dettaglio: string | null;
+  significato: string | null;
+  cosa_fare: string | null;
+  chi: string | null;
+  da_quando: string | null;
+  ultima_volta: string | null;
   quante: number;
-  ultima: string;
-  non_visti: number;
+  righe: string[] | null;
 }
 
 const RUOLI_AMMESSI = ["superadmin"];
 
-const STILE_GRAVITA: Record<string, string> = {
-  errore: "bg-destructive/10 text-destructive border-destructive/30",
-  avviso: "bg-amber-100 text-amber-800 border-amber-300",
-  riuscito_a_vuoto: "bg-sky-100 text-sky-800 border-sky-300",
-};
+const ORDINE_FASCE = ["Da fare adesso", "Da sistemare quando puoi", "Solo per sapere"] as const;
 
-const ETICHETTA_GRAVITA: Record<string, string> = {
-  errore: "Errore",
-  avviso: "Avviso",
-  riuscito_a_vuoto: "Riuscito a vuoto",
+const STILE_FASCIA: Record<string, { bordo: string; icona: React.ReactNode }> = {
+  "Da fare adesso": {
+    bordo: "border-l-4 border-l-destructive",
+    icona: <AlertTriangle className="w-4 h-4 text-destructive" />,
+  },
+  "Da sistemare quando puoi": {
+    bordo: "border-l-4 border-l-amber-400",
+    icona: <AlertTriangle className="w-4 h-4 text-amber-500" />,
+  },
+  "Solo per sapere": {
+    bordo: "border-l-4 border-l-muted-foreground/30",
+    icona: <Info className="w-4 h-4 text-muted-foreground" />,
+  },
 };
 
 export default function DiagnosticaPage() {
   const { session } = useAuth();
   const qc = useQueryClient();
   const [giorni, set_giorni] = React.useState("30");
+  const [aperti, set_aperti] = React.useState<Record<string, boolean>>({});
 
   const club_id = session?.club_id;
   const ammesso = RUOLI_AMMESSI.includes(String(session?.ruolo));
@@ -52,18 +65,19 @@ export default function DiagnosticaPage() {
       });
       if (error) {
         await segnala_errore("DiagnosticaPage", "Lettura registro errori", error);
-        return [] as RigaDiagnosi[];
+        return [] as VoceDiagnosi[];
       }
-      return (data ?? []) as RigaDiagnosi[];
+      return (data ?? []) as VoceDiagnosi[];
     },
   });
 
   const segna_visti = useMutation({
-    mutationFn: async (dove: string | null) => {
-      let q = supabase.from("errori_applicativi").update({ visto: true }).eq("visto", false);
-      if (club_id) q = q.eq("club_id", club_id);
-      if (dove) q = q.eq("dove", dove);
-      const { data, error } = await q.select("id");
+    mutationFn: async (ids: string[]) => {
+      const { data, error } = await supabase
+        .from("errori_applicativi")
+        .update({ visto: true })
+        .in("id", ids)
+        .select("id");
       if (error) throw error;
       return data?.length ?? 0;
     },
@@ -90,15 +104,20 @@ export default function DiagnosticaPage() {
 
   if (!ammesso) return <Navigate to="/" replace />;
 
-  const totale_non_visti = data.reduce((s, r) => s + (r.non_visti ?? 0), 0);
+  const per_fascia = ORDINE_FASCE.map((fascia) => ({
+    fascia,
+    voci: data.filter((v) => v.fascia === fascia),
+  })).filter((b) => b.voci.length > 0);
+
+  const tutto_ok = !isLoading && per_fascia.length === 0;
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-6 space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Diagnostica</h1>
           <p className="text-sm text-muted-foreground">
-            Registro di ciò che non ha funzionato: errori, avvisi e operazioni riuscite a vuoto.
+            Cosa c'è da fare, spiegato in parole semplici.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -116,61 +135,96 @@ export default function DiagnosticaPage() {
           <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
             <RefreshCw className={`w-4 h-4 mr-1 ${isFetching ? "animate-spin" : ""}`} /> Aggiorna
           </Button>
-          <Button size="sm" disabled={totale_non_visti === 0 || segna_visti.isPending}
-            onClick={() => segna_visti.mutate(null)}>
-            <CheckCheck className="w-4 h-4 mr-1" /> Segna tutto come visto
-          </Button>
         </div>
       </div>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-500" />
-            Segnalazioni ({data.length}) · non viste: {totale_non_visti}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center py-10">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-            </div>
-          ) : data.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-6 text-center">
-              Nessuna segnalazione nel periodo scelto. Tutto in ordine.
+      {isLoading ? (
+        <div className="flex justify-center py-10">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        </div>
+      ) : tutto_ok ? (
+        <Card>
+          <CardContent className="py-10 flex flex-col items-center gap-2 text-center">
+            <CircleCheck className="w-10 h-10 text-primary" />
+            <p className="text-lg font-semibold">Va tutto bene</p>
+            <p className="text-sm text-muted-foreground">
+              Nessuna segnalazione nel periodo scelto. Non c'è nulla da fare.
             </p>
-          ) : (
-            <div className="space-y-2">
-              {data.map((r, i) => (
-                <div key={`${r.dove}-${r.messaggio}-${i}`}
-                  className={`rounded-md border p-3 flex items-start gap-3 ${STILE_GRAVITA[r.gravita] ?? "bg-muted"}`}>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Badge variant="outline" className="text-[10px] uppercase tracking-wide">
-                        {ETICHETTA_GRAVITA[r.gravita] ?? r.gravita}
-                      </Badge>
-                      <span className="font-medium text-sm">{r.dove}</span>
-                      {r.non_visti > 0 && (
-                        <Badge className="text-[10px]">{r.non_visti} non viste</Badge>
-                      )}
+          </CardContent>
+        </Card>
+      ) : (
+        per_fascia.map(({ fascia, voci }) => {
+          const stile = STILE_FASCIA[fascia];
+          const calmo = fascia === "Solo per sapere";
+          return (
+            <Card key={fascia}>
+              <CardHeader className="pb-3">
+                <CardTitle className={`text-base flex items-center gap-2 ${calmo ? "text-muted-foreground" : ""}`}>
+                  {stile.icona}
+                  {fascia} ({voci.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {voci.map((v, i) => {
+                  const key = `${fascia}-${v.titolo}-${i}`;
+                  const aperto = !!aperti[key];
+                  return (
+                    <div key={key} className={`rounded-md border bg-card p-4 ${stile.bordo}`}>
+                      <div className="flex items-start gap-3 flex-wrap">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`font-semibold ${calmo ? "text-foreground/80" : ""}`}>{v.titolo}</span>
+                            {v.da_quando && (
+                              <span className="text-xs text-muted-foreground">{v.da_quando}</span>
+                            )}
+                            {v.quante > 1 && (
+                              <Badge variant="outline" className="text-[10px]">{v.quante} segnalazioni</Badge>
+                            )}
+                          </div>
+                          {v.significato && (
+                            <p className="text-sm text-muted-foreground mt-1 break-words">{v.significato}</p>
+                          )}
+                          {v.cosa_fare && (
+                            <p className="text-sm font-medium mt-2 break-words">
+                              <span className="text-muted-foreground font-normal">Cosa fare: </span>
+                              {v.cosa_fare}
+                            </p>
+                          )}
+                          {v.dettaglio && (
+                            <Collapsible open={aperto} onOpenChange={(o) => set_aperti((p) => ({ ...p, [key]: o }))}>
+                              <CollapsibleTrigger className="mt-2 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+                                <ChevronDown className={`w-3 h-3 transition-transform ${aperto ? "rotate-180" : ""}`} />
+                                {aperto ? "Nascondi dettaglio" : "Mostra dettaglio"}
+                              </CollapsibleTrigger>
+                              <CollapsibleContent>
+                                <p className="text-xs text-muted-foreground mt-2 break-words rounded bg-muted/50 p-2">
+                                  {v.dettaglio}
+                                  {v.ultima_volta && <span className="block mt-1 opacity-80">Ultima volta: {v.ultima_volta}</span>}
+                                </p>
+                              </CollapsibleContent>
+                            </Collapsible>
+                          )}
+                        </div>
+                        <div className="flex flex-col items-end gap-2 shrink-0">
+                          {v.chi && (
+                            <Badge variant="secondary" className="text-[10px] uppercase tracking-wide">{v.chi}</Badge>
+                          )}
+                          {v.righe && v.righe.length > 0 && (
+                            <Button variant="ghost" size="sm" onClick={() => segna_visti.mutate(v.righe!)}
+                              disabled={segna_visti.isPending}>
+                              <CheckCheck className="w-4 h-4 mr-1" /> Segna come visto
+                            </Button>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-sm mt-1 break-words">{r.messaggio}</p>
-                    <p className="text-xs opacity-80 mt-1">
-                      {r.quante} volte · ultima: {new Date(r.ultima).toLocaleString("it-CH")}
-                    </p>
-                  </div>
-                  {r.non_visti > 0 && (
-                    <Button variant="ghost" size="sm" onClick={() => segna_visti.mutate(r.dove)}
-                      disabled={segna_visti.isPending}>
-                      <Eye className="w-4 h-4 mr-1" /> Visto
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          );
+        })
+      )}
     </div>
   );
 }
