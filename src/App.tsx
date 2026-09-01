@@ -208,6 +208,36 @@ const ProtectedSuperAdmin = ({ children }: { children: React.ReactNode }) => {
   return session?.ruolo === "superadmin" ? <>{children}</> : null;
 };
 
+/** Protegge una rotta in base ai permessi di sezione (ruoli_permessi_sezioni). */
+const SezioneGuard = ({
+  codice_sezione,
+  children,
+}: {
+  codice_sezione: string;
+  children: React.ReactNode;
+}) => {
+  const navigate = useNavigate();
+  const { visibile_set, is_admin_like, is_loading } = usePermessiSezioniMatrix();
+  const allowed = is_admin_like || visibile_set.has(codice_sezione);
+
+  useEffect(() => {
+    if (!is_loading && !allowed) {
+      toast({ title: "Non hai accesso a questa sezione", variant: "destructive" });
+      navigate("/", { replace: true });
+    }
+  }, [is_loading, allowed, navigate]);
+
+  if (is_loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
+      </div>
+    );
+  }
+  return allowed ? <>{children}</> : null;
+};
+
+
 const AuthenticatedApp = () => {
   const { is_authenticated, is_loading } = useAuth();
 
