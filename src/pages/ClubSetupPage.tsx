@@ -110,6 +110,22 @@ const ClubSetupPage: React.FC = () => {
   const [uploading, set_uploading] = useState(false);
   const [logo_preview, set_logo_preview] = useState<string | null>(null);
 
+  // Tab attivo ricordato nell'indirizzo (?tab=...)
+  const [search_params, set_search_params] = useSearchParams();
+  const tab_url = search_params.get("tab") ?? "";
+  const TAB_VALIDI = ["club", "automatismi", "ghiaccio", "catalogo", "fatturazione"];
+  const tab_attivo = TAB_VALIDI.includes(tab_url) ? tab_url : "club";
+  const [tab_in_attesa, set_tab_in_attesa] = useState<string | null>(null);
+
+  const vai_a_tab = (v: string) => {
+    const next = new URLSearchParams(search_params);
+    next.set("tab", v);
+    set_search_params(next, { replace: true });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+
+
   // Ghiaccio config form
   const [ghiaccio_form, set_ghiaccio_form] = useState<Record<string, any>>({});
   const [saving_ghiaccio, set_saving_ghiaccio] = useState(false);
