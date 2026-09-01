@@ -194,15 +194,22 @@ const IstruttoreModal: React.FC<{
     }
   };
 
+  // I contatti sono nascosti (column-level REVOKE) ai ruoli non autorizzati:
+  // in quel caso non vanno né mostrati né inviati, per non sovrascriverli con "".
+  const contatti_visibili = !istruttore?.id || istruttore?.contatti_visibili !== false;
+
   const handle_save = () => {
+    const { email, telefono, ...resto } = form;
     on_save({
-      ...form,
+      ...resto,
+      ...(contatti_visibili ? { email, telefono } : {}),
       id: istruttore?.id,
       ruolo: "istruttore",
       user_id: form.user_id || null,
       costo_minuto_lezione_privata: to_num(form.costo_minuto_lezione_privata),
     });
   };
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
