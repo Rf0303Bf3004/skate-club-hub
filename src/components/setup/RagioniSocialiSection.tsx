@@ -13,6 +13,8 @@ import {
   use_utenti_club_lite,
   use_utenti_ragione_sociale,
   use_toggle_utente_ragione_sociale,
+  use_aliquote_iva,
+  use_numero_iva_valido,
   type RagioneSociale,
 } from "@/hooks/use-ragioni-sociali";
 import { Switch } from "@/components/ui/switch";
@@ -21,8 +23,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Trash2, Pencil, Building2, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Trash2, Pencil, Building2, ChevronDown, ChevronRight, Lock } from "lucide-react";
 
 const maschera_iban = (iban?: string | null) => {
   if (!iban) return "—";
@@ -209,6 +212,16 @@ const UtentiAccessoSubSection: React.FC<{ ragione_sociale_id: string }> = ({ rag
 };
 
 // ─── Dialog anagrafica ─────────────────────────────────────
+const NOTE_ESENZIONE: Record<string, string> = {
+  CH: "Prestazione esclusa dall'imposta — LIVA art. 21 cpv. 2 n. 15",
+  IT: "Operazione esente ai sensi dell'art. 10 n. 20 DPR 633/72",
+};
+
+const PLACEHOLDER_NUMERO_IVA: Record<string, string> = {
+  CH: "CHE-123.456.789 IVA",
+  IT: "IT12345678901",
+};
+
 const empty_form = {
   nome: "",
   partita_iva: "",
@@ -217,6 +230,8 @@ const empty_form = {
   cap: "",
   citta: "",
   paese_iso: "CH",
+  email: "",
+  telefono: "",
   iban: "",
   intestatario_iban: "",
   banca: "",
@@ -225,6 +240,10 @@ const empty_form = {
   attivo: true,
   accesso_dedicato: false,
   numero_fattura_prefisso: "",
+  soggetto_iva: false,
+  iva_aliquota_default: "",
+  iva_prezzi_ivati: true,
+  iva_esenzione_nota: "",
 };
 
 const RagioneSocialeDialog: React.FC<{
@@ -245,12 +264,40 @@ const RagioneSocialeDialog: React.FC<{
             ...empty_form,
             ...Object.fromEntries(Object.entries(ragione).map(([k, v]) => [k, v ?? ""])),
             attivo: ragione.attivo !== false,
+            soggetto_iva: (ragione as any).soggetto_iva === true,
+            iva_prezzi_ivati: (ragione as any).iva_prezzi_ivati !== false,
           }
         : empty_form,
     );
   }, [open, ragione]);
 
   const set_val = (k: string, v: any) => set_form((p) => ({ ...p, [k]: v }));
+
+  const paese = String(form.paese_iso || "CH");
+  const { data: aliquote = [] } = use_aliquote_iva(paese);
+  const { data: numero_iva_ok } = use_numero_iva_valido(
+    String(form.numero_iva || "").trim() || null,
+    paese,
+  );
+
+  // Preselezione aliquota predefinita quando cambia il paese / arrivano le voci
+  React.useEffect(() => {
+    if (!form.soggetto_iva || aliquote.length === 0) return;
+    const presente = aliquote.some((a) => Number(a.aliquota) === Number(form.iva_aliquota_default));
+    if (!presente) {
+      const def = aliquote.find((a) => a.predefinita) ?? aliquote[0];
+      set_form((p) => ({ ...p, iva_aliquota_default: String(def.aliquota) }));
+    }
+  }, [aliquote, form.soggetto_iva, form.iva_aliquota_default]);
+
+  const aliquota_scelta = aliquote.find(
+    (a) => Number(a.aliquota) === Number(form.iva_aliquota_default),
+  );
+  const aliquota_num = Number(aliquota_scelta?.aliquota ?? 0);
+  const imponibile_esempio = (100 / (1 + aliquota_num / 100)).toFixed(2);
+  const iva_esempio = (100 - Number(imponibile_esempio)).toFixed(2);
+  const lordo_esempio = (100 * (1 + aliquota_num / 100)).toFixed(2);
+
 
   const handle_logo_upload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -298,6 +345,16 @@ const RagioneSocialeDialog: React.FC<{
         attivo: !!form.attivo,
         accesso_dedicato: !!form.accesso_dedicato,
         numero_fattura_prefisso: form.numero_fattura_prefisso || null,
+        email: form.email || null,
+        telefono: form.telefono || null,
+        soggetto_iva: !!form.soggetto_iva,
+        iva_aliquota_default: form.soggetto_iva
+          ? form.iva_aliquota_default === "" || form.iva_aliquota_default == null
+            ? null
+            : Number(form.iva_aliquota_default)
+          : null,
+        iva_prezzi_ivati: !!form.iva_prezzi_ivati,
+        iva_esenzione_nota: form.soggetto_iva ? null : form.iva_esenzione_nota || null,
       } as any);
       toast({ title: "Ragione sociale salvata" });
       on_close();
@@ -325,7 +382,17 @@ const RagioneSocialeDialog: React.FC<{
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Numero IVA</Label>
-              <Input value={form.numero_iva} onChange={(e) => set_val("numero_iva", e.target.value)} />
+              <Input
+                value={form.numero_iva}
+                onChange={(e) => set_val("numero_iva", e.target.value)}
+                placeholder={PLACEHOLDER_NUMERO_IVA[paese] ?? ""}
+              />
+              {String(form.numero_iva || "").trim() !== "" && numero_iva_ok === false && (
+                <p className="mt-1 text-[11px] text-amber-600">
+                  Questo numero non supera la cifra di controllo: verificatelo, altrimenti le fatture non
+                  potranno essere emesse.
+                </p>
+              )}
             </div>
           </div>
           <div>
@@ -342,7 +409,40 @@ const RagioneSocialeDialog: React.FC<{
               <Input value={form.citta} onChange={(e) => set_val("citta", e.target.value)} />
             </div>
           </div>
+          {/* Sede e recapiti */}
+          <div className="space-y-3 rounded-lg border border-border/60 p-3">
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Sede e recapiti</p>
+            <div>
+              <Label className="text-xs text-muted-foreground">Paese</Label>
+              <Select value={paese} onValueChange={(v) => set_val("paese_iso", v)}>
+                <SelectTrigger className="h-10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CH">Svizzera</SelectItem>
+                  <SelectItem value="IT">Italia</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs text-muted-foreground">Email</Label>
+                <Input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => set_val("email", e.target.value)}
+                  placeholder="fatture@ente.ch"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Telefono</Label>
+                <Input value={form.telefono} onChange={(e) => set_val("telefono", e.target.value)} />
+              </div>
+            </div>
+          </div>
+
           <div>
+
             <Label className="text-xs text-muted-foreground">IBAN</Label>
             <Input value={form.iban} onChange={(e) => set_val("iban", e.target.value)} />
           </div>
@@ -388,6 +488,79 @@ const RagioneSocialeDialog: React.FC<{
             />
             Attiva
           </label>
+
+          {/* IVA */}
+          <div className="space-y-3 rounded-lg border border-border/60 p-3">
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">IVA</p>
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-sm font-medium text-foreground">Questo ente è soggetto a IVA?</p>
+              <Switch
+                checked={!!form.soggetto_iva}
+                onCheckedChange={(v) => {
+                  set_form((p) => ({
+                    ...p,
+                    soggetto_iva: v,
+                    iva_esenzione_nota:
+                      !v && !String(p.iva_esenzione_nota || "").trim()
+                        ? NOTE_ESENZIONE[String(p.paese_iso || "CH")] ?? ""
+                        : p.iva_esenzione_nota,
+                  }));
+                }}
+              />
+            </div>
+
+            {!form.soggetto_iva ? (
+              <div>
+                <Label className="text-xs text-muted-foreground">Nota da stampare in fattura</Label>
+                <Input
+                  value={form.iva_esenzione_nota}
+                  onChange={(e) => set_val("iva_esenzione_nota", e.target.value)}
+                  placeholder={NOTE_ESENZIONE[paese]}
+                />
+              </div>
+            ) : (
+              <>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Aliquota predefinita</Label>
+                  <Select
+                    value={form.iva_aliquota_default === "" ? undefined : String(form.iva_aliquota_default)}
+                    onValueChange={(v) => set_val("iva_aliquota_default", v)}
+                  >
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="Seleziona un'aliquota" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {aliquote.map((a) => (
+                        <SelectItem key={a.codice} value={String(a.aliquota)}>
+                          {a.etichetta}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {aliquota_scelta?.descrizione && (
+                    <p className="mt-1 text-[11px] text-muted-foreground">{aliquota_scelta.descrizione}</p>
+                  )}
+                </div>
+
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-sm font-medium text-foreground">
+                    I prezzi che inserite sono già IVA compresa?
+                  </p>
+                  <Switch
+                    checked={!!form.iva_prezzi_ivati}
+                    onCheckedChange={(v) => set_val("iva_prezzi_ivati", v)}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {form.iva_prezzi_ivati
+                    ? `Un servizio da 100.00 resta 100.00 in fattura: ${imponibile_esempio} di imponibile più ${iva_esempio} di IVA`
+                    : `Un servizio da 100.00 diventa ${lordo_esempio} in fattura`}
+                </p>
+              </>
+            )}
+          </div>
+
+
 
           {/* Fatturazione */}
           <div className="space-y-3 rounded-lg border border-border/60 p-3">
@@ -448,10 +621,42 @@ const RagioneSocialeDialog: React.FC<{
   );
 };
 
+// ─── Pallino di stato "pronta a fatturare" ─────────────────
+const StatoRagione: React.FC<{ ragione: RagioneSociale }> = ({ ragione }) => {
+  const soggetto_iva = (ragione as any).soggetto_iva === true;
+  const { data: numero_iva_ok } = use_numero_iva_valido(
+    soggetto_iva ? ragione.numero_iva || null : null,
+    ragione.paese_iso || "CH",
+  );
+
+  const mancanze: string[] = [];
+  if (!ragione.iban) mancanze.push("IBAN");
+  if (!ragione.indirizzo) mancanze.push("indirizzo");
+  if (!ragione.cap) mancanze.push("CAP");
+  if (!ragione.citta) mancanze.push("città");
+  if (soggetto_iva && (!ragione.numero_iva || numero_iva_ok === false))
+    mancanze.push("numero IVA valido");
+
+  const ok = mancanze.length === 0;
+
+  return (
+    <>
+      <span
+        aria-label={ok ? "Pronta a fatturare" : "Dati mancanti"}
+        title={ok ? "Pronta a fatturare" : `Manca: ${mancanze.join(", ")}`}
+        className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full ${ok ? "bg-emerald-500" : "bg-amber-500"}`}
+      />
+      {!ok && (
+        <p className="mt-0.5 w-full text-xs text-amber-600">Manca: {mancanze.join(", ")}</p>
+      )}
+    </>
+  );
+};
+
 // ─── Sezione principale ────────────────────────────────────
 export const RagioniSocialiSection: React.FC = () => {
   const { session } = useAuth();
-  const allowed = !!session && ["superadmin", "admin", "presidente"].includes(session.ruolo);
+  const allowed = !!session && ["superadmin", "presidente"].includes(session.ruolo);
   const { modalita } = useModalitaArea("fatturazione");
   const { data: ragioni = [], isLoading } = use_ragioni_sociali();
   const elimina = use_elimina_ragione_sociale();
@@ -459,7 +664,6 @@ export const RagioniSocialiSection: React.FC = () => {
   const [edit_ragione, set_edit_ragione] = React.useState<RagioneSociale | null>(null);
   const [expanded, set_expanded] = React.useState<string | null>(null);
 
-  if (!allowed) return null;
 
   // La sezione è sempre visibile: se la gestione multi-ente non è attiva,
   // mostriamo comunque il selettore di modalità con la spiegazione.
@@ -494,16 +698,24 @@ export const RagioniSocialiSection: React.FC = () => {
           <Building2 className="h-4 w-4 text-muted-foreground" />
           <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Ragioni sociali</h2>
         </div>
-        <Button
-          size="sm"
-          onClick={() => {
-            set_edit_ragione(null);
-            set_dialog_open(true);
-          }}
-        >
-          <Plus className="mr-1.5 h-4 w-4" /> Nuova ragione sociale
-        </Button>
+        {allowed ? (
+          <Button
+            size="sm"
+            onClick={() => {
+              set_edit_ragione(null);
+              set_dialog_open(true);
+            }}
+          >
+            <Plus className="mr-1.5 h-4 w-4" /> Nuova ragione sociale
+          </Button>
+        ) : (
+          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Lock className="h-3.5 w-3.5" />
+            Questa parte la può modificare solo il presidente del club.
+          </p>
+        )}
       </div>
+
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Caricamento…</p>
@@ -529,7 +741,8 @@ export const RagioniSocialiSection: React.FC = () => {
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <StatoRagione ragione={r} />
                       <p className="truncate text-sm font-semibold text-foreground">{r.nome}</p>
                       <Badge variant={r.attivo ? "default" : "outline"} className="text-[10px]">
                         {r.attivo ? "Attiva" : "Disattiva"}
@@ -543,33 +756,38 @@ export const RagioniSocialiSection: React.FC = () => {
                     <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => set_expanded(aperta ? null : r.id)}>
                       {aperta ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                     </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8"
-                      onClick={() => {
-                        set_edit_ragione(r);
-                        set_dialog_open(true);
-                      }}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8 text-destructive"
-                      onClick={async () => {
-                        try {
-                          await elimina.mutateAsync(r.id);
-                          toast({ title: "Ragione sociale eliminata" });
-                        } catch (e: any) {
-                          toast({ title: "Errore", description: e?.message, variant: "destructive" });
-                        }
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {allowed && (
+                      <>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          onClick={() => {
+                            set_edit_ragione(r);
+                            set_dialog_open(true);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-destructive"
+                          onClick={async () => {
+                            try {
+                              await elimina.mutateAsync(r.id);
+                              toast({ title: "Ragione sociale eliminata" });
+                            } catch (e: any) {
+                              toast({ title: "Errore", description: e?.message, variant: "destructive" });
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
                   </div>
+
                 </div>
 
                 {aperta && <ListiniSubSection ragione_sociale_id={r.id} />}

@@ -22,7 +22,61 @@ export interface RagioneSociale {
   accesso_dedicato?: boolean;
   numero_fattura_prefisso?: string | null;
   prossimo_numero_fattura?: number | null;
+  email?: string | null;
+  telefono?: string | null;
+  soggetto_iva?: boolean | null;
+  iva_aliquota_default?: number | null;
+  iva_prezzi_ivati?: boolean | null;
+  iva_esenzione_nota?: string | null;
 }
+
+// ─── IVA: aliquote disponibili per paese ───────────────────
+export interface AliquotaIva {
+  codice: string;
+  aliquota: number;
+  etichetta: string;
+  descrizione: string | null;
+  predefinita: boolean;
+}
+
+export function use_aliquote_iva(paese_iso?: string | null) {
+  return useQuery({
+    enabled: !!paese_iso,
+    staleTime: 5 * 60 * 1000,
+    queryKey: ["aliquote_iva_disponibili", paese_iso],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("aliquote_iva_disponibili" as any, {
+        p_paese_iso: paese_iso,
+      } as any);
+      if (error) throw error;
+      return ((data ?? []) as any[]).map((r) => ({
+        codice: String(r.codice),
+        aliquota: Number(r.aliquota),
+        etichetta: String(r.etichetta),
+        descrizione: r.descrizione ?? null,
+        predefinita: !!r.predefinita,
+      })) as AliquotaIva[];
+    },
+  });
+}
+
+/** Validazione non bloccante del numero IVA (cifra di controllo). */
+export function use_numero_iva_valido(numero_iva?: string | null, paese_iso?: string | null) {
+  return useQuery({
+    enabled: !!numero_iva && !!paese_iso,
+    staleTime: 60 * 1000,
+    queryKey: ["numero_iva_ben_formato", numero_iva, paese_iso],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("numero_iva_ben_formato" as any, {
+        p_numero: numero_iva,
+        p_paese: paese_iso,
+      } as any);
+      if (error) throw error;
+      return data === true;
+    },
+  });
+}
+
 
 export interface RagioneSocialeListino {
   id: string;

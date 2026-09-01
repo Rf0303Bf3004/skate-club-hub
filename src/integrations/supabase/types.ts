@@ -5729,6 +5729,7 @@ export type Database = {
           club_id: string
           colore_primario: string
           created_at: string
+          email: string | null
           formato_numero_fattura: string | null
           iban: string | null
           id: string
@@ -5747,6 +5748,7 @@ export type Database = {
           partita_iva: string | null
           prossimo_numero_fattura: number
           soggetto_iva: boolean
+          telefono: string | null
           updated_at: string
         }
         Insert: {
@@ -5759,6 +5761,7 @@ export type Database = {
           club_id: string
           colore_primario?: string
           created_at?: string
+          email?: string | null
           formato_numero_fattura?: string | null
           iban?: string | null
           id?: string
@@ -5777,6 +5780,7 @@ export type Database = {
           partita_iva?: string | null
           prossimo_numero_fattura?: number
           soggetto_iva?: boolean
+          telefono?: string | null
           updated_at?: string
         }
         Update: {
@@ -5789,6 +5793,7 @@ export type Database = {
           club_id?: string
           colore_primario?: string
           created_at?: string
+          email?: string | null
           formato_numero_fattura?: string | null
           iban?: string | null
           id?: string
@@ -5807,6 +5812,7 @@ export type Database = {
           partita_iva?: string | null
           prossimo_numero_fattura?: number
           soggetto_iva?: boolean
+          telefono?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -7915,8 +7921,8 @@ export type Database = {
           da_quando: string
           dettaglio: string
           fascia: string
-          id_riga: number
           quante: number
+          righe: number[]
           significato: string
           titolo: string
           ultima_volta: string
