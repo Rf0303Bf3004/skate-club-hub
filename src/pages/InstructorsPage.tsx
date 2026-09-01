@@ -1988,6 +1988,19 @@ const InstructorsPage: React.FC = () => {
                       </span>
                     </div>
                   </div>
+                  {(liv === "monitrice" || liv === "aiuto_monitrice") && linked_atleta && puo_gestire_sportivo && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-3 w-full"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        set_selected_monitore_id(linked_atleta.id);
+                      }}
+                    >
+                      {ti("monitore.vedi_ore_compenso") || "Ore pista e compenso"}
+                    </Button>
+                  )}
                 </div>
               );
             })}
