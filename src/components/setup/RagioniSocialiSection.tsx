@@ -741,7 +741,8 @@ export const RagioniSocialiSection: React.FC = () => {
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <StatoRagione ragione={r} />
                       <p className="truncate text-sm font-semibold text-foreground">{r.nome}</p>
                       <Badge variant={r.attivo ? "default" : "outline"} className="text-[10px]">
                         {r.attivo ? "Attiva" : "Disattiva"}
@@ -755,33 +756,38 @@ export const RagioniSocialiSection: React.FC = () => {
                     <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => set_expanded(aperta ? null : r.id)}>
                       {aperta ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                     </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8"
-                      onClick={() => {
-                        set_edit_ragione(r);
-                        set_dialog_open(true);
-                      }}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8 text-destructive"
-                      onClick={async () => {
-                        try {
-                          await elimina.mutateAsync(r.id);
-                          toast({ title: "Ragione sociale eliminata" });
-                        } catch (e: any) {
-                          toast({ title: "Errore", description: e?.message, variant: "destructive" });
-                        }
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {allowed && (
+                      <>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          onClick={() => {
+                            set_edit_ragione(r);
+                            set_dialog_open(true);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-destructive"
+                          onClick={async () => {
+                            try {
+                              await elimina.mutateAsync(r.id);
+                              toast({ title: "Ragione sociale eliminata" });
+                            } catch (e: any) {
+                              toast({ title: "Errore", description: e?.message, variant: "destructive" });
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
                   </div>
+
                 </div>
 
                 {aperta && <ListiniSubSection ragione_sociale_id={r.id} />}
