@@ -26,6 +26,7 @@ import { ListaComunicazioni } from '@/components/comunicazioni/ListaComunicazion
 import { Bell } from 'lucide-react';
 import { usePermessiAzione } from '@/hooks/use-permessi-azione';
 import NotaPermesso from '@/components/common/NotaPermesso';
+import { conta_gruppi } from '@/lib/raggruppa-comunicazioni';
 
 function build_templates(t: (key: string) => string) {
   return [
@@ -520,7 +521,21 @@ const CommunicationsPage: React.FC = () => {
       .sort((a: any, b: any) => `${a.cognome} ${a.nome}`.localeCompare(`${b.cognome} ${b.nome}`, 'it'));
   }, [atleti, atleta_search]);
 
-  const non_lette_count = ricevute.filter((c: any) => !c.letta).length;
+  const non_lette_count = conta_gruppi(ricevute.filter((c: any) => !c.letta));
+
+  // I contatori dei tab contano gli invii (gruppi), non le singole righe.
+  const inviate_count = useMemo(() => conta_gruppi(inviate), [inviate]);
+  const ricevute_count = useMemo(() => conta_gruppi(ricevute), [ricevute]);
+  const archivio_count = useMemo(() => conta_gruppi(archivio), [archivio]);
+
+  const nome_atleta = React.useCallback(
+    (id: string | null) => {
+      if (!id) return '';
+      const a: any = atleti_by_id[id];
+      return a ? `${a.cognome} ${a.nome}` : '';
+    },
+    [atleti_by_id],
+  );
 
   const mark_letta = async (id: string) => {
     await supabase.from('comunicazioni').update({ letta: true }).eq('id', id);
@@ -588,11 +603,11 @@ const CommunicationsPage: React.FC = () => {
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="inviate" className="gap-2">
             <Send className="w-4 h-4" /> {t('tabs.sent_emoji')}
-            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">{inviate.length}</Badge>
+            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">{inviate_count}</Badge>
           </TabsTrigger>
           <TabsTrigger value="ricevute" className="gap-2">
             <Inbox className="w-4 h-4" /> {t('tabs.received_emoji')}
-            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">{ricevute.length}</Badge>
+            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">{ricevute_count}</Badge>
             {non_lette_count > 0 && (
               <Badge variant="destructive" className="ml-1 h-5 min-w-5 px-1.5 text-[10px]">{t('tabs.unread_count', { count: non_lette_count })}</Badge>
             )}
@@ -610,7 +625,7 @@ const CommunicationsPage: React.FC = () => {
           {can_see_all && (
             <TabsTrigger value="archivio" className="gap-2">
               <Archive className="w-4 h-4" /> {t('tabs.archive_emoji')}
-              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">{archivio.length}</Badge>
+              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">{archivio_count}</Badge>
             </TabsTrigger>
           )}
         </TabsList>
@@ -623,6 +638,7 @@ const CommunicationsPage: React.FC = () => {
             get_data_label={get_data_label}
             empty_text={t('empty.sent')}
             can_manage={puo_comunicare}
+            nome_atleta={nome_atleta}
           />
         </TabsContent>
 
@@ -636,6 +652,7 @@ const CommunicationsPage: React.FC = () => {
             on_open={(c) => { if (c.categoria === 'ricevuta' && !c.letta) void mark_letta(c.id); }}
             empty_text={t('empty.received')}
             can_manage={puo_comunicare}
+            nome_atleta={nome_atleta}
           />
         </TabsContent>
 
@@ -661,6 +678,7 @@ const CommunicationsPage: React.FC = () => {
               get_data_label={get_data_label}
               empty_text={t('empty.archive')}
               can_manage={puo_comunicare}
+              nome_atleta={nome_atleta}
             />
           </TabsContent>
         )}
