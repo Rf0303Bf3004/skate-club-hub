@@ -2,7 +2,6 @@ import React from "react";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { useModalitaArea } from "@/hooks/useModalitaArea";
-import ModalitaGestioneSection from "@/components/setup/ModalitaGestioneSection";
 import {
   use_ragioni_sociali,
   use_upsert_ragione_sociale,
