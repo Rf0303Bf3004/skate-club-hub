@@ -603,11 +603,11 @@ const CommunicationsPage: React.FC = () => {
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="inviate" className="gap-2">
             <Send className="w-4 h-4" /> {t('tabs.sent_emoji')}
-            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">{inviate.length}</Badge>
+            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">{inviate_count}</Badge>
           </TabsTrigger>
           <TabsTrigger value="ricevute" className="gap-2">
             <Inbox className="w-4 h-4" /> {t('tabs.received_emoji')}
-            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">{ricevute.length}</Badge>
+            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">{ricevute_count}</Badge>
             {non_lette_count > 0 && (
               <Badge variant="destructive" className="ml-1 h-5 min-w-5 px-1.5 text-[10px]">{t('tabs.unread_count', { count: non_lette_count })}</Badge>
             )}
@@ -625,7 +625,7 @@ const CommunicationsPage: React.FC = () => {
           {can_see_all && (
             <TabsTrigger value="archivio" className="gap-2">
               <Archive className="w-4 h-4" /> {t('tabs.archive_emoji')}
-              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">{archivio.length}</Badge>
+              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">{archivio_count}</Badge>
             </TabsTrigger>
           )}
         </TabsList>
@@ -638,6 +638,7 @@ const CommunicationsPage: React.FC = () => {
             get_data_label={get_data_label}
             empty_text={t('empty.sent')}
             can_manage={puo_comunicare}
+            nome_atleta={nome_atleta}
           />
         </TabsContent>
 
@@ -651,6 +652,7 @@ const CommunicationsPage: React.FC = () => {
             on_open={(c) => { if (c.categoria === 'ricevuta' && !c.letta) void mark_letta(c.id); }}
             empty_text={t('empty.received')}
             can_manage={puo_comunicare}
+            nome_atleta={nome_atleta}
           />
         </TabsContent>
 
@@ -676,6 +678,7 @@ const CommunicationsPage: React.FC = () => {
               get_data_label={get_data_label}
               empty_text={t('empty.archive')}
               can_manage={puo_comunicare}
+              nome_atleta={nome_atleta}
             />
           </TabsContent>
         )}
