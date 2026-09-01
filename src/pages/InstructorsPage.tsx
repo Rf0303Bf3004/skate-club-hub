@@ -1808,6 +1808,7 @@ const InstructorsPage: React.FC = () => {
                       descrizione={descrizione_salva_disponibilita}
                       conferma_label="Salva disponibilità"
                       on_conferma={save_disponibilita}
+                      variante="conferma"
                     >
                       <Button size="sm" disabled={save_disp.isPending}>
                         {save_disp.isPending ? "..." : t("salva")}
