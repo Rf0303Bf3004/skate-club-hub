@@ -36,7 +36,6 @@ export const MENU_SECTIONS: MenuSection[] = [
   { codice: "stagioni",          label: "Stagioni",           icon: Calendar,      path: "/stagioni",          gruppo: "setup", ordine: 2 },
   { codice: "planning_ghiaccio", label: "Planning Ghiaccio",  icon: CalendarRange, path: "/planning",          gruppo: "setup", ordine: 3 },
   { codice: "livelli",           label: "Livelli",            icon: ListChecks,    path: "/livelli",           gruppo: "setup", ordine: 5, non_implementato: true },
-  { codice: "livelli",           label: "Livelli",            icon: ListChecks,    path: "/livelli",           gruppo: "setup", ordine: 5, non_implementato: true },
   { codice: "sponsor",           label: "Sponsor",            icon: Handshake,     path: "/sponsor",           gruppo: "setup", ordine: 6, non_implementato: true },
   { codice: "pacchetti_sponsor", label: "Pacchetti Sponsor",  icon: FileSpreadsheet, path: "/pacchetti-sponsor", gruppo: "setup", ordine: 7 },
   { codice: "gestione_utenti",   label: "Gestione Utenti",    icon: UserCog,       path: "/utenti",            gruppo: "setup", ordine: 7 },
