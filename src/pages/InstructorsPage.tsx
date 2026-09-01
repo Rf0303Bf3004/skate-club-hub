@@ -1804,8 +1804,8 @@ const InstructorsPage: React.FC = () => {
                   </h2>
                   {puo_gestire_sportivo ? (
                     <ConfirmButton
-                      titolo="Salvare le nuove fasce di disponibilità?"
-                      descrizione={`Sostituisco le ${totale_fasce_attuali} fasce attuali con le ${totale_fasce_nuove} nuove?`}
+                      titolo="Salvare le fasce di disponibilità?"
+                      descrizione={descrizione_salva_disponibilita}
                       conferma_label="Salva disponibilità"
                       on_conferma={save_disponibilita}
                     >
