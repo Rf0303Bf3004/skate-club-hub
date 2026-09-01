@@ -262,18 +262,27 @@ const IstruttoreModal: React.FC<{
             </Field>
           </div>
 
-          <Field label={t("modal.email")}>
-            <input
-              type="email"
-              value={form.email}
-              onChange={(e) => set_val("email", e.target.value)}
-              className={input_cls}
-            />
-          </Field>
+          {contatti_visibili ? (
+            <>
+              <Field label={t("modal.email")}>
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => set_val("email", e.target.value)}
+                  className={input_cls}
+                />
+              </Field>
 
-          <Field label={t("modal.telefono")}>
-            <input value={form.telefono} onChange={(e) => set_val("telefono", e.target.value)} className={input_cls} />
-          </Field>
+              <Field label={t("modal.telefono")}>
+                <input value={form.telefono} onChange={(e) => set_val("telefono", e.target.value)} className={input_cls} />
+              </Field>
+            </>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              I contatti (email e telefono) non sono visibili con il tuo ruolo e non verranno modificati.
+            </p>
+          )}
+
 
           <Field label={t("modal.utente_collegato")}>
             <select
