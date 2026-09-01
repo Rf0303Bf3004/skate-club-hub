@@ -35,7 +35,7 @@ export const MENU_SECTIONS: MenuSection[] = [
   { codice: "setup_club",        label: "Setup del Club",     icon: Building2,     path: "/setup-club",        gruppo: "setup", ordine: 1 },
   { codice: "stagioni",          label: "Stagioni",           icon: Calendar,      path: "/stagioni",          gruppo: "setup", ordine: 2 },
   { codice: "planning_ghiaccio", label: "Planning Ghiaccio",  icon: CalendarRange, path: "/planning",          gruppo: "setup", ordine: 3 },
-  { codice: "campi_allenamento", label: "Campi Allenamento",  icon: MapPin,        path: "/campi-eventi",      gruppo: "setup", ordine: 4 },
+  
   { codice: "livelli",           label: "Livelli",            icon: ListChecks,    path: "/livelli",           gruppo: "setup", ordine: 5, non_implementato: true },
   { codice: "sponsor",           label: "Sponsor",            icon: Handshake,     path: "/sponsor",           gruppo: "setup", ordine: 6, non_implementato: true },
   { codice: "pacchetti_sponsor", label: "Pacchetti Sponsor",  icon: FileSpreadsheet, path: "/pacchetti-sponsor", gruppo: "setup", ordine: 7 },
