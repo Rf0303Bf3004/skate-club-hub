@@ -1410,6 +1410,24 @@ const TabIscrizioniAtleti: React.FC<{ campo: EventoCampoInterClub; is_ospitante:
           {!puo_gestire_sportivo && (
             <NotaPermesso testo="Non hai i permessi per iscrivere gli atleti al campo." />
           )}
+          {ospiti_campo.length > 0 && (
+            <div
+              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3"
+              style={{ borderColor: AMBRA_OSPITI, backgroundColor: `${AMBRA_OSPITI}14` }}
+            >
+              <span className="text-sm font-medium">
+                {ospiti_campo.length} {ospiti_campo.length === 1 ? "atleta ospite" : "atleti ospiti"} da{" "}
+                {club_ospiti.size} {club_ospiti.size === 1 ? "club" : "club"}
+              </span>
+              <Button
+                size="sm"
+                variant={solo_ospiti ? "default" : "outline"}
+                onClick={() => set_solo_ospiti((v) => !v)}
+              >
+                {solo_ospiti ? "Mostra tutti" : "Mostra solo ospiti"}
+              </Button>
+            </div>
+          )}
           <Input
             value={ricerca}
             onChange={(e) => set_ricerca(e.target.value)}
@@ -1421,6 +1439,7 @@ const TabIscrizioniAtleti: React.FC<{ campo: EventoCampoInterClub; is_ospitante:
             <div className="space-y-2">
               {miei_atleti.map((a: any) => {
                 const iscrizione = per_atleta.get(a.id);
+                const e_ospite = a.ospite_di_campo_id === campo.id;
                 return (
                   <div key={a.id} className="flex flex-wrap items-center justify-between gap-3 p-3 border rounded-lg">
                     <div className="flex items-center gap-3">
@@ -1437,6 +1456,18 @@ const TabIscrizioniAtleti: React.FC<{ campo: EventoCampoInterClub; is_ospitante:
                       <span className="font-medium">
                         {a.cognome} {a.nome}
                       </span>
+                      {e_ospite && (
+                        <span
+                          className="inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold leading-none tracking-wide"
+                          style={{
+                            borderLeft: `3px solid ${AMBRA_OSPITI}`,
+                            backgroundColor: `${AMBRA_OSPITI}1A`,
+                            color: AMBRA_OSPITI,
+                          }}
+                        >
+                          {`OSPITE — ${(a.club_provenienza ?? "").toUpperCase() || "CLUB ESTERNO"}`}
+                        </span>
+                      )}
                     </div>
                     {iscrizione && puo_gestire_sportivo && (
                       <Select
