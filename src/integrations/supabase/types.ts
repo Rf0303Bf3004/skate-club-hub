@@ -4072,6 +4072,20 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "iscrizioni_eventi_campi_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "iscrizioni_eventi_campi_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti_con_completezza"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "iscrizioni_eventi_campi_campo_gruppo_id_fkey"
             columns: ["campo_gruppo_id"]
             isOneToOne: false
