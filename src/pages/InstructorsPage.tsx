@@ -24,6 +24,9 @@ import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { can_override_ore_lavoro } from "@/lib/roles";
+import { usePermessiAzione } from "@/hooks/use-permessi-azione";
+import ConfirmButton from "@/components/common/ConfirmButton";
+import NotaPermesso from "@/components/common/NotaPermesso";
 
 const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
 
@@ -1477,6 +1480,7 @@ const InstructorsPage: React.FC = () => {
   const { t } = useI18n();
   const { t: ti } = useTranslation("istruttori");
   const navigate = useNavigate();
+  const { puo_gestire_sportivo } = usePermessiAzione();
   const { data: istruttori = [], isLoading } = use_istruttori();
   const { data: monitori_atleti = [] } = use_atleti_monitori();
   const { data: atleti_all = [] } = use_atleti();
@@ -1687,17 +1691,19 @@ const InstructorsPage: React.FC = () => {
                 </div>
               </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="ml-auto"
-              onClick={() => {
-                set_selected_modal(selected);
-                set_modal_open(true);
-              }}
-            >
-              {t("modifica")}
-            </Button>
+            {puo_gestire_sportivo && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="ml-auto"
+                onClick={() => {
+                  set_selected_modal(selected);
+                  set_modal_open(true);
+                }}
+              >
+                {t("modifica")}
+              </Button>
+            )}
           </div>
 
           {selected.stato_staff === "sospeso" && (
@@ -1768,9 +1774,20 @@ const InstructorsPage: React.FC = () => {
                   <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">
                     {t("disponibilita")}
                   </h2>
-                  <Button size="sm" onClick={save_disponibilita} disabled={save_disp.isPending}>
-                    {save_disp.isPending ? "..." : t("salva")}
-                  </Button>
+                  {puo_gestire_sportivo ? (
+                    <ConfirmButton
+                      titolo="Salvare le nuove fasce di disponibilità?"
+                      descrizione={`Sostituisco le ${totale_fasce_attuali} fasce attuali con le ${totale_fasce_nuove} nuove?`}
+                      conferma_label="Salva disponibilità"
+                      on_conferma={save_disponibilita}
+                    >
+                      <Button size="sm" disabled={save_disp.isPending}>
+                        {save_disp.isPending ? "..." : t("salva")}
+                      </Button>
+                    </ConfirmButton>
+                  ) : (
+                    <NotaPermesso testo="Non hai i permessi per modificare la disponibilità." />
+                  )}
                 </div>
                 <div className="space-y-4">
                   {GIORNI.map((giorno) => {
@@ -1838,15 +1855,17 @@ const InstructorsPage: React.FC = () => {
       <div className="space-y-6 animate-fade-in">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold tracking-tight text-foreground">{t("istruttori")}</h1>
-          <Button
-            className="bg-primary hover:bg-primary/90"
-            onClick={() => {
-              set_selected_modal(null);
-              set_modal_open(true);
-            }}
-          >
-            <Plus className="w-4 h-4 mr-2" /> {t("nuovo_istruttore")}
-          </Button>
+          {puo_gestire_sportivo && (
+            <Button
+              className="bg-primary hover:bg-primary/90"
+              onClick={() => {
+                set_selected_modal(null);
+                set_modal_open(true);
+              }}
+            >
+              <Plus className="w-4 h-4 mr-2" /> {t("nuovo_istruttore")}
+            </Button>
+          )}
         </div>
 
         {/* Tabs filtro per livello */}
