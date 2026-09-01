@@ -231,75 +231,75 @@ const SessioniCampoEstivo: React.FC<Props> = ({ gara_id }) => {
               : null;
             return (
               <div key={s.id} className="bg-card border border-border rounded-xl overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => set_expanded_id(is_open ? null : s.id)}
-                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors text-left"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-semibold text-foreground">
-                        {new Date(s.data + "T00:00:00").toLocaleDateString("de-CH", {
-                          weekday: "short",
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </span>
-                      {(s.ora_inizio || s.ora_fine) && (
-                        <Badge variant="outline" className="text-[10px] gap-1">
-                          <Clock className="w-3 h-3" />
-                          {(s.ora_inizio || "").slice(0, 5)}
-                          {s.ora_fine ? ` — ${(s.ora_fine || "").slice(0, 5)}` : ""}
-                        </Badge>
-                      )}
-                      {presenti_count !== null && (
-                        <Badge className="text-[10px] gap-1 bg-primary/10 text-primary hover:bg-primary/10">
-                          <Users className="w-3 h-3" />
-                          {t("sessioni_campo.presenti", { count: presenti_count })}
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
-                      {s.luogo && (
-                        <span className="flex items-center gap-1">
-                          <MapPin className="w-3 h-3" /> {s.luogo}
+                <div className="flex items-center">
+                  <button
+                    type="button"
+                    onClick={() => set_expanded_id(is_open ? null : s.id)}
+                    className="flex-1 min-w-0 flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors text-left"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-semibold text-foreground">
+                          {new Date(s.data + "T00:00:00").toLocaleDateString("de-CH", {
+                            weekday: "short",
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
                         </span>
-                      )}
-                      {istr_name && (
-                        <span className="flex items-center gap-1">
-                          <User className="w-3 h-3" /> {istr_name}
-                        </span>
-                      )}
-                      {s.note && <span className="italic truncate">{s.note}</span>}
+                        {(s.ora_inizio || s.ora_fine) && (
+                          <Badge variant="outline" className="text-[10px] gap-1">
+                            <Clock className="w-3 h-3" />
+                            {(s.ora_inizio || "").slice(0, 5)}
+                            {s.ora_fine ? ` — ${(s.ora_fine || "").slice(0, 5)}` : ""}
+                          </Badge>
+                        )}
+                        {presenti_count !== null && (
+                          <Badge className="text-[10px] gap-1 bg-primary/10 text-primary hover:bg-primary/10">
+                            <Users className="w-3 h-3" />
+                            {t("sessioni_campo.presenti", { count: presenti_count })}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
+                        {s.luogo && (
+                          <span className="flex items-center gap-1">
+                            <MapPin className="w-3 h-3" /> {s.luogo}
+                          </span>
+                        )}
+                        {istr_name && (
+                          <span className="flex items-center gap-1">
+                            <User className="w-3 h-3" /> {istr_name}
+                          </span>
+                        )}
+                        {s.note && <span className="italic truncate">{s.note}</span>}
+                      </div>
                     </div>
-                  </div>
+                    {is_open ? (
+                      <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+                    )}
+                  </button>
                   {puo_gestire_sportivo && (
-                    <span onClick={(e) => e.stopPropagation()}>
-                      <ConfirmButton
-                        titolo={t("sessioni_campo.confirm_delete_title")}
-                        descrizione={t("sessioni_campo.confirm_delete_desc", {
-                          data: new Date(s.data + "T00:00:00").toLocaleDateString("de-CH"),
-                        })}
-                        on_conferma={() => handle_delete_session(s.id)}
+                    <ConfirmButton
+                      titolo={t("sessioni_campo.confirm_delete_title")}
+                      descrizione={t("sessioni_campo.confirm_delete_desc", {
+                        data: new Date(s.data + "T00:00:00").toLocaleDateString("de-CH"),
+                      })}
+                      on_conferma={() => handle_delete_session(s.id)}
+                    >
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:bg-destructive/10 h-8 w-8 p-0 mx-2"
                       >
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      </ConfirmButton>
-                    </span>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </ConfirmButton>
                   )}
-                  {is_open ? (
-                    <ChevronUp className="w-4 h-4 text-muted-foreground" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                  )}
-                </button>
+                </div>
 
                 {is_open && (
                   <div className="border-t border-border bg-muted/10 px-4 py-3 space-y-2">
