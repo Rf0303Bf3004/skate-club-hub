@@ -106,22 +106,46 @@ const resources = {
   rm: {},
 };
 
+/**
+ * Lingua di partenza anche senza utente autenticato (pagine pubbliche):
+ * 1) preferenza salvata, 2) lingua del browser se il portale la supporta
+ * (l'inglese non e' mai un ripiego: i club sono in Ticino), 3) italiano.
+ */
+function lingua_iniziale(): SupportedLocale {
+  try {
+    const salvata = localStorage.getItem('app_language');
+    if (salvata && (SUPPORTED_LOCALES as readonly string[]).includes(salvata)) {
+      return salvata as SupportedLocale;
+    }
+  } catch { /* storage non disponibile */ }
+  const lingue = typeof navigator !== 'undefined'
+    ? [navigator.language, ...(navigator.languages ?? [])]
+    : [];
+  for (const l of lingue) {
+    const corta = (l ?? '').slice(0, 2).toLowerCase();
+    // 'en' escluso di proposito: si ricade sull'italiano.
+    if (['it', 'de', 'fr', 'rm'].includes(corta)) return corta as SupportedLocale;
+  }
+  return 'it';
+}
+
 if (!i18n.isInitialized) {
   i18n
     .use(LanguageDetector)
     .use(initReactI18next)
     .init({
       resources,
-      lng: undefined,
+      lng: lingua_iniziale(),
       fallbackLng: 'it',
       supportedLngs: SUPPORTED_LOCALES as unknown as string[],
       defaultNS: 'common',
       ns: NAMESPACES as unknown as string[],
       interpolation: { escapeValue: false },
       detection: {
-        order: ['localStorage', 'navigator'],
-        lookupLocalStorage: 'app_language',
-        caches: ['localStorage'],
+        // Nessun rilevamento automatico: la lingua la decide `lingua_iniziale()`
+        // (localStorage -> browser fra le lingue del portale -> italiano).
+        order: [],
+        caches: [],
       },
       returnNull: false,
       react: { useSuspense: false },
