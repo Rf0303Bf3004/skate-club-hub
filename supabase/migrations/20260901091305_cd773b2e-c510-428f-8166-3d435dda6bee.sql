@@ -1,0 +1,3 @@
+GRANT SELECT (id, club_id, nome, data, luogo, livello_minimo, stagione_id, note, created_at, ora, indirizzo, club_ospitante, carriera, archiviata, scadenza_iscrizioni) ON public.gare_calendario TO authenticated;
+
+GRANT SELECT (id, club_id, nome, cognome, attivo, costo_minuto_lezione_privata, specialita, note, created_at, colore, livello_istruttore, linked_atleta_id, stato_staff, tipo_contratto, costo_orario_lezioni, costo_orario_corsi, compenso_fisso_mensile, compenso_fisso_corsi, user_id, codice_istruttore, tag_nfc, foto_url) ON public.istruttori TO authenticated;
