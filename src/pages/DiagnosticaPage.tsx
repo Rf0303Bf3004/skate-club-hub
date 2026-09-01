@@ -155,18 +155,40 @@ export default function DiagnosticaPage() {
           </CardContent>
         </Card>
       ) : (
-        per_fascia.map(({ fascia, voci }) => {
+        <>
+          {nulla_di_urgente && (
+            <Card className="border-l-4 border-l-success">
+              <CardContent className="py-4 flex items-center gap-3">
+                <CircleCheck className="w-6 h-6 text-success" />
+                <div>
+                  <p className="font-medium">Nessun problema da risolvere adesso</p>
+                  <p className="text-sm text-muted-foreground">Qui sotto trovi solo cose da sistemare con calma.</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          {per_fascia.map(({ fascia, voci }) => {
           const stile = STILE_FASCIA[fascia];
           const calmo = fascia === "Solo per sapere";
+          const aperto_fascia = fasce_aperte[fascia] ?? !calmo;
           return (
             <Card key={fascia}>
               <CardHeader className="pb-3">
-                <CardTitle className={`text-base flex items-center gap-2 ${calmo ? "text-muted-foreground" : ""}`}>
-                  {stile.icona}
-                  {fascia} ({voci.length})
-                </CardTitle>
+                <button
+                  type="button"
+                  className="w-full text-left"
+                  onClick={() => set_fasce_aperte((p) => ({ ...p, [fascia]: !aperto_fascia }))}
+                >
+                  <CardTitle className={`text-base flex items-center gap-2 ${calmo ? "text-muted-foreground" : ""}`}>
+                    {stile.icona}
+                    {fascia} ({voci.length})
+                    <ChevronDown className={`w-4 h-4 ml-auto transition-transform ${aperto_fascia ? "rotate-180" : ""}`} />
+                  </CardTitle>
+                </button>
               </CardHeader>
+              {aperto_fascia && (
               <CardContent className="space-y-2">
+
                 {voci.map((v, i) => {
                   const key = `${fascia}-${v.titolo}-${i}`;
                   const aperto = !!aperti[key];
