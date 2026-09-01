@@ -1299,6 +1299,7 @@ const DashboardPage: React.FC = () => {
   const { data: club } = use_club();
   const { data: setup } = use_setup_club();
   const navigate = useNavigate();
+  const [nuovo_evento_open, set_nuovo_evento_open] = useState(false);
   const today = new Date().toISOString().split("T")[0];
   const { data: presenze = [] } = use_presenze(today);
   const { data: presenze_corso = [] } = useQuery({
