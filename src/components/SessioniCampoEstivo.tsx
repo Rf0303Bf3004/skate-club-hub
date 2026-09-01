@@ -11,6 +11,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
+import { usePermessiAzione } from "@/hooks/use-permessi-azione";
+import ConfirmButton from "@/components/common/ConfirmButton";
+import NotaPermesso from "@/components/common/NotaPermesso";
 import {
   Plus,
   Calendar,
@@ -52,6 +55,7 @@ const empty_session = (): SessioneForm => ({
 const SessioniCampoEstivo: React.FC<Props> = ({ gara_id }) => {
   const { t } = useTranslation("events");
   const qc = useQueryClient();
+  const { puo_gestire_sportivo } = usePermessiAzione();
   const [open_form, set_open_form] = useState(false);
   const [form, set_form] = useState<SessioneForm>(empty_session());
   const [saving, set_saving] = useState(false);
@@ -152,7 +156,6 @@ const SessioniCampoEstivo: React.FC<Props> = ({ gara_id }) => {
   };
 
   const handle_delete_session = async (id: string) => {
-    if (!confirm(t("sessioni_campo.confirm_delete"))) return;
     try {
       const { error } = await (supabase as any)
         .from("sessioni_campo")
@@ -202,9 +205,13 @@ const SessioniCampoEstivo: React.FC<Props> = ({ gara_id }) => {
         <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
           <Calendar className="w-4 h-4" /> {t("sessioni_campo.title", { count: sessioni.length })}
         </h3>
-        <Button onClick={() => set_open_form(true)} size="sm" className="gap-2">
-          <Plus className="w-4 h-4" /> {t("sessioni_campo.add")}
-        </Button>
+        {puo_gestire_sportivo ? (
+          <Button onClick={() => set_open_form(true)} size="sm" className="gap-2">
+            <Plus className="w-4 h-4" /> {t("sessioni_campo.add")}
+          </Button>
+        ) : (
+          <NotaPermesso testo={t("sessioni_campo.nota_sola_lettura")} />
+        )}
       </div>
 
       {isLoading ? (
@@ -267,18 +274,26 @@ const SessioniCampoEstivo: React.FC<Props> = ({ gara_id }) => {
                       {s.note && <span className="italic truncate">{s.note}</span>}
                     </div>
                   </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handle_delete_session(s.id);
-                    }}
-                    className="text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
+                  {puo_gestire_sportivo && (
+                    <span onClick={(e) => e.stopPropagation()}>
+                      <ConfirmButton
+                        titolo={t("sessioni_campo.confirm_delete_title")}
+                        descrizione={t("sessioni_campo.confirm_delete_desc", {
+                          data: new Date(s.data + "T00:00:00").toLocaleDateString("de-CH"),
+                        })}
+                        on_conferma={() => handle_delete_session(s.id)}
+                      >
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </ConfirmButton>
+                    </span>
+                  )}
                   {is_open ? (
                     <ChevronUp className="w-4 h-4 text-muted-foreground" />
                   ) : (

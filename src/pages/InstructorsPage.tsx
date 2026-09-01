@@ -1617,14 +1617,33 @@ const InstructorsPage: React.FC = () => {
   const selected = istruttori_veri.find((i: any) => i.id === selected_id);
   const selected_monitore = monitori_atleti.find((a: any) => a.id === selected_monitore_id);
 
-  const totale_fasce_attuali = useMemo(
-    () => Object.values(selected?.disponibilita || {}).reduce((acc: number, s: any) => acc + (Array.isArray(s) ? s.length : 0), 0),
-    [selected],
-  );
-  const totale_fasce_nuove = useMemo(
-    () => Object.values(disp_local).reduce((acc, s) => acc + s.length, 0),
-    [disp_local],
-  );
+  const diff_fasce = useMemo(() => {
+    const norm = (disp: any) => {
+      const set = new Set<string>();
+      Object.entries(disp || {}).forEach(([giorno, slots]: [string, any]) => {
+        (Array.isArray(slots) ? slots : []).forEach((s: any) =>
+          set.add(`${giorno}|${String(s.ora_inizio || "").slice(0, 5)}|${String(s.ora_fine || "").slice(0, 5)}`),
+        );
+      });
+      return set;
+    };
+    const attuali = norm(selected?.disponibilita);
+    const nuove = norm(disp_local);
+    let aggiunte = 0;
+    let rimosse = 0;
+    nuove.forEach((k) => { if (!attuali.has(k)) aggiunte++; });
+    attuali.forEach((k) => { if (!nuove.has(k)) rimosse++; });
+    return { aggiunte, rimosse };
+  }, [selected, disp_local]);
+
+  const descrizione_salva_disponibilita = useMemo(() => {
+    const { aggiunte, rimosse } = diff_fasce;
+    if (aggiunte === 0 && rimosse === 0) return "Nessuna modifica: le fasce restano come sono.";
+    const parti: string[] = [];
+    if (aggiunte > 0) parti.push(`aggiungo ${aggiunte} ${aggiunte === 1 ? "fascia" : "fasce"}`);
+    if (rimosse > 0) parti.push(`ne tolgo ${rimosse}`);
+    return `In pratica: ${parti.join(" e ")}. Le altre restano come sono.`;
+  }, [diff_fasce]);
 
   if (isLoading)
     return (
@@ -1785,8 +1804,8 @@ const InstructorsPage: React.FC = () => {
                   </h2>
                   {puo_gestire_sportivo ? (
                     <ConfirmButton
-                      titolo="Salvare le nuove fasce di disponibilità?"
-                      descrizione={`Sostituisco le ${totale_fasce_attuali} fasce attuali con le ${totale_fasce_nuove} nuove?`}
+                      titolo="Salvare le fasce di disponibilità?"
+                      descrizione={descrizione_salva_disponibilita}
                       conferma_label="Salva disponibilità"
                       on_conferma={save_disponibilita}
                     >

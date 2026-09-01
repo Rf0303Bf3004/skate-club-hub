@@ -239,6 +239,29 @@ const SezioneGuard = ({
   return allowed ? <>{children}</> : null;
 };
 
+/** Guard per pagine riservate al presidente (e superadmin), senza sezione dedicata. */
+const SoloPresidenteGuard = ({ children }: { children: React.ReactNode }) => {
+  const navigate = useNavigate();
+  const { session, is_loading } = useAuth();
+  const allowed = session?.ruolo === "superadmin" || session?.ruolo === "presidente";
+
+  useEffect(() => {
+    if (!is_loading && !allowed) {
+      toast({ title: "Non hai accesso a questa sezione", variant: "destructive" });
+      navigate("/", { replace: true });
+    }
+  }, [is_loading, allowed, navigate]);
+
+  if (is_loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
+      </div>
+    );
+  }
+  return allowed ? <>{children}</> : null;
+};
+
 
 const AuthenticatedApp = () => {
   const { is_authenticated, is_loading } = useAuth();
@@ -286,7 +309,7 @@ const AuthenticatedApp = () => {
           <Route path="/comunicazioni" element={<SezioneGuard codice_sezione="comunicazioni"><CommunicationsPage /></SezioneGuard>} />
           <Route path="/stagioni" element={<SezioneGuard codice_sezione="stagioni"><SeasonsPage /></SezioneGuard>} />
           <Route path="/campi-eventi" element={<Navigate to="/eventi" replace />} />
-          <Route path="/medagliere" element={<MedagliereePage />} />
+          <Route path="/medagliere" element={<SezioneGuard codice_sezione="gare"><MedagliereePage /></SezioneGuard>} />
           <Route path="/pre-season" element={<Navigate to="/eventi" replace />} />
           <Route path="/post-season" element={<Navigate to="/eventi" replace />} />
           {/* Alias rotte sidebar (varianti URL "lunghe") */}
@@ -308,14 +331,14 @@ const AuthenticatedApp = () => {
           <Route path="/richieste-iscrizione" element={<SezioneGuard codice_sezione="richieste_iscrizione"><RichiesteIscrizionePage /></SezioneGuard>} />
           <Route path="/ruoli-permessi" element={<SezioneGuard codice_sezione="ruoli_permessi"><RuoliPermessiPage /></SezioneGuard>} />
           <Route path="/utenti" element={<SezioneGuard codice_sezione="gestione_utenti"><UtentiPage /></SezioneGuard>} />
-          <Route path="/nuova-stagione" element={<NuovaStagionePage />} />
+          <Route path="/nuova-stagione" element={<SezioneGuard codice_sezione="stagioni"><NuovaStagionePage /></SezioneGuard>} />
           <Route path="/test-mobile-auth" element={<TestMobileAuthPage />} />
           <Route path="/import-atleti" element={<SezioneGuard codice_sezione="import_dati"><ImportAtletiPage /></SezioneGuard>} />
-          <Route path="/pacchetti-sponsor" element={<PacchettiSponsorPage />} />
-          <Route path="/convenzioni" element={<ConvenzioniSociPage />} />
+          <Route path="/pacchetti-sponsor" element={<SezioneGuard codice_sezione="pacchetti_sponsor"><PacchettiSponsorPage /></SezioneGuard>} />
+          <Route path="/convenzioni" element={<SoloPresidenteGuard><ConvenzioniSociPage /></SoloPresidenteGuard>} />
           <Route path="/onboarding" element={<OnboardingPage />} />
-          <Route path="/presidente/relazione" element={<PresidentRelazione />} />
-          <Route path="/presidente/relazione/contenuti" element={<PresidentRelazione />} />
+          <Route path="/presidente/relazione" element={<SoloPresidenteGuard><PresidentRelazione /></SoloPresidenteGuard>} />
+          <Route path="/presidente/relazione/contenuti" element={<SoloPresidenteGuard><PresidentRelazione /></SoloPresidenteGuard>} />
           <Route path="/presidente/gestione-relazione" element={<Navigate to="/presidente/relazione/contenuti" replace />} />
           <Route
             path="/superadmin"

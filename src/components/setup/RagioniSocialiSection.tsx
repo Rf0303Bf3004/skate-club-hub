@@ -777,11 +777,10 @@ export const RagioniSocialiSection: React.FC = () => {
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8 text-destructive"
-                          onClick={async () => {
+                        <ConfirmButton
+                          titolo={`Eliminare "${r.nome}"?`}
+                          descrizione="L'ente che emette le fatture verrà eliminato definitivamente, insieme ai suoi listini."
+                          on_conferma={async () => {
                             try {
                               await elimina.mutateAsync(r.id);
                               toast({ title: "Ragione sociale eliminata" });
@@ -790,8 +789,14 @@ export const RagioniSocialiSection: React.FC = () => {
                             }
                           }}
                         >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </ConfirmButton>
                       </>
                     )}
                   </div>
