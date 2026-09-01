@@ -1163,14 +1163,9 @@ const ClubSetupPage: React.FC = () => {
           </Button>
         </div>
 
-        <Separator />
-
-        {/* Tipo di pianificazione disponibilità */}
-        <div>
-          <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">
-            {t("club.sezioni.tipo_pianificazione")}
-          </h3>
+        <SetupSection id="gh_pianificazione" titolo={t("club.sezioni.tipo_pianificazione")}>
           <div className="max-w-sm">
+
             <Label className="text-xs text-muted-foreground">{t("club.fields.tipo_pianificazione")}</Label>
             <Select
               value={get_val("disponibilita_tipo_pianificazione", "stagionale") || "stagionale"}
