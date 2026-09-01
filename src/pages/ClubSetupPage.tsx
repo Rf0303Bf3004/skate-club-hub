@@ -642,29 +642,8 @@ const ClubSetupPage: React.FC = () => {
         {/* ══ IL CLUB ══ */}
         <TabsContent value="club" className="space-y-4">
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {[
-          { icon: Users, label: t("club.stats.atleti"), value: atleti.length, color: "text-primary" },
-          { icon: UserCheck, label: t("club.stats.istruttori"), value: istruttori.filter((i: any) => i.attivo).length, color: "text-success" },
-          { icon: Calendar, label: t("club.stats.stagione_attiva"), value: stagione_attiva?.nome || "—", color: "text-orange-500" },
-          { icon: Hash, label: t("club.stats.club_id"), value: get_current_club_id().slice(0, 8) + "...", color: "text-muted-foreground" },
-        ].map((stat, i) => (
-          <div key={i} className="bg-card rounded-xl shadow-card p-4 flex items-center gap-3">
-            <div className={`w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center ${stat.color}`}>
-              <stat.icon className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">{stat.label}</p>
-              <p className="text-sm font-bold text-foreground truncate max-w-[100px]">{stat.value}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="bg-card rounded-xl shadow-card p-6 space-y-8 max-w-2xl">
         {/* Logo */}
-        <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.logo")}</h2>
+        <SetupSection id="logo" titolo={t("club.sezioni.logo")} mancanti={mancanti.logo}>
           <div className="flex items-center gap-6">
             <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-border flex items-center justify-center overflow-hidden bg-muted/30 flex-shrink-0">
               {current_logo ? (
@@ -687,13 +666,10 @@ const ClubSetupPage: React.FC = () => {
               </label>
             </div>
           </div>
-        </section>
-
-        <Separator />
+        </SetupSection>
 
         {/* Dati club */}
-        <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t_old("dati_club")}</h2>
+        <SetupSection id="dati_club" titolo={t_old("dati_club")} mancanti={mancanti.dati_club}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label={t_old("nome")} icon={<Hash className="w-3.5 h-3.5" />}>
               <Input value={get_val("nome")} onChange={(e) => set_val("nome", e.target.value)} />
@@ -727,13 +703,10 @@ const ClubSetupPage: React.FC = () => {
               <Input value={get_val("numero_tessera_federale")} onChange={(e) => set_val("numero_tessera_federale", e.target.value)} />
             </Field>
           </div>
-        </section>
-
-        <Separator />
+        </SetupSection>
 
         {/* Colore primario */}
-        <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.colore_primario")}</h2>
+        <SetupSection id="colore" titolo={t("club.sezioni.colore_primario")}>
           <div className="flex items-center gap-4">
             <input
               type="color"
@@ -743,13 +716,10 @@ const ClubSetupPage: React.FC = () => {
             />
             <span className="text-sm text-muted-foreground">{colore}</span>
           </div>
-        </section>
-
-        <Separator />
+        </SetupSection>
 
         {/* Descrizione */}
-        <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.descrizione")}</h2>
+        <SetupSection id="descrizione" titolo={t("club.sezioni.descrizione")} mancanti={mancanti.descrizione}>
           <textarea
             value={get_val("descrizione")}
             onChange={(e) => set_val("descrizione", e.target.value)}
@@ -757,15 +727,10 @@ const ClubSetupPage: React.FC = () => {
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
             placeholder={t("club.fields.descrizione_placeholder")}
           />
-        </section>
-
-        <Separator />
+        </SetupSection>
 
         {/* Clausole aggiuntive al contratto di adesione */}
-        <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">
-            {t("club.sezioni.clausole_contratto")}
-          </h2>
+        <SetupSection id="contratto" titolo={t("club.sezioni.clausole_contratto")}>
           <textarea
             value={get_val("clausole_contratto")}
             onChange={(e) => set_val("clausole_contratto", e.target.value)}
@@ -776,13 +741,10 @@ const ClubSetupPage: React.FC = () => {
           <p className="text-xs text-muted-foreground">
             {t("club.testi.clausole_info")}
           </p>
-        </section>
-
-        <Separator />
+        </SetupSection>
 
         {/* Date stagione */}
-        <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.stagione")}</h2>
+        <SetupSection id="stagione" titolo={t("club.sezioni.stagione")} mancanti={mancanti.stagione}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label={t("club.fields.data_inizio_stagione")} icon={<Calendar className="w-3.5 h-3.5" />}>
               <Input
@@ -802,13 +764,10 @@ const ClubSetupPage: React.FC = () => {
               </p>
             </Field>
           </div>
-        </section>
-
-        <Separator />
+        </SetupSection>
 
         {/* Dati bancari */}
-        <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.dati_bancari")}</h2>
+        <SetupSection id="banca" titolo={t("club.sezioni.dati_bancari")} mancanti={mancanti.banca}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label={t("club.fields.iban")} icon={<Hash className="w-3.5 h-3.5" />}>
               <Input
@@ -838,7 +797,8 @@ const ClubSetupPage: React.FC = () => {
               <Input value={get_val("twint_paylink")} onChange={(e) => set_val("twint_paylink", e.target.value)} placeholder="https://pay.raisenow.io/xxxxx" />
             </Field>
           </div>
-        </section>
+        </SetupSection>
+
 
         </TabsContent>
 
