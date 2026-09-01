@@ -110,6 +110,8 @@ export default function DiagnosticaPage() {
   })).filter((b) => b.voci.length > 0);
 
   const tutto_ok = !isLoading && per_fascia.length === 0;
+  const nulla_di_urgente = !isLoading && data.filter((v) => v.urgenza === 1).length === 0;
+
 
   return (
     <div className="p-6 space-y-6">
