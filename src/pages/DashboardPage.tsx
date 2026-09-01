@@ -40,6 +40,7 @@ import {
   MessageCircle,
   ChevronLeft,
   ChevronRight,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +52,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
+import NuovoEventoDialog from "@/components/eventi/NuovoEventoDialog";
 import IstruttoriDisponibiliWidget from "@/components/dashboard/IstruttoriDisponibiliWidget";
 import MedagliereWidget from "@/components/MedagliereWidget";
 import {
