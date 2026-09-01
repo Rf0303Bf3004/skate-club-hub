@@ -34,6 +34,7 @@ import { use_atleti } from "@/hooks/use-supabase-data";
 import { use_app_store_links } from "@/hooks/use-app-store-links";
 import { stampa_schede_codice } from "@/lib/scheda-codice-html";
 import OspitiImportWizard from "@/components/campi/OspitiImportWizard";
+import { AMBRA_OSPITI } from "@/components/ProvenienzaLegenda";
 import { useAuth } from "@/lib/auth";
 import { segnala_errore } from "@/lib/errori";
 import { Checkbox } from "@/components/ui/checkbox";
