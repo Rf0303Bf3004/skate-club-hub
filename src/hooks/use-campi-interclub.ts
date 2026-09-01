@@ -237,7 +237,22 @@ export function use_campo_partecipanti(evento_campo_id: string | null) {
         .eq("evento_campo_id", evento_campo_id)
         .order("invitato_at", { ascending: true });
       if (error) throw error;
-      return (data ?? []) as unknown as CampoClubPartecipante[];
+      const righe = (data ?? []) as unknown as CampoClubPartecipante[];
+      // Le policy su `clubs` nascondono gli altri club: il nome si recupera da `elenco_club`.
+      const mancanti = righe.filter((r) => r.club_id && !r.clubs?.nome).map((r) => r.club_id as string);
+      if (mancanti.length > 0) {
+        const { data: elenco } = await supabase
+          .from("elenco_club" as any)
+          .select("id, nome")
+          .in("id", mancanti);
+        const per_id = new Map(((elenco ?? []) as any[]).map((c) => [c.id, c.nome as string | null]));
+        return righe.map((r) =>
+          r.club_id && !r.clubs?.nome && per_id.has(r.club_id)
+            ? { ...r, clubs: { nome: per_id.get(r.club_id) ?? null } }
+            : r,
+        );
+      }
+      return righe;
     },
   });
 }
@@ -306,8 +321,26 @@ export type IscrizioneCampo = {
   club_id: string | null;
   campo_gruppo_id: string | null;
   stato: string | null;
-  atleta?: { nome: string | null; cognome: string | null; club_id: string | null } | null;
+  atleta?: {
+    nome: string | null;
+    cognome: string | null;
+    club_id: string | null;
+    club_provenienza: string | null;
+    ospite_di_campo_id: string | null;
+  } | null;
 };
+
+// Non esiste una relazione dichiarata fra `iscrizioni_eventi_campi` e `atleti`:
+// gli atleti vanno letti a parte e uniti lato client.
+async function carica_atleti_iscritti(atleta_ids: string[]) {
+  if (atleta_ids.length === 0) return new Map<string, IscrizioneCampo["atleta"]>();
+  const { data, error } = await supabase
+    .from("atleti" as any)
+    .select("id, nome, cognome, club_id, club_provenienza, ospite_di_campo_id")
+    .in("id", atleta_ids);
+  if (error) throw error;
+  return new Map(((data ?? []) as any[]).map((a) => [a.id as string, a as IscrizioneCampo["atleta"]]));
+}
 
 export function use_campo_iscrizioni(evento_campo_id: string | null) {
   return useQuery({
@@ -316,10 +349,12 @@ export function use_campo_iscrizioni(evento_campo_id: string | null) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("iscrizioni_eventi_campi" as any)
-        .select("id, evento_campo_id, atleta_id, club_id, campo_gruppo_id, stato, atleta:atleta_id(nome, cognome, club_id)")
+        .select("id, evento_campo_id, atleta_id, club_id, campo_gruppo_id, stato")
         .eq("evento_campo_id", evento_campo_id);
       if (error) throw error;
-      return (data ?? []) as unknown as IscrizioneCampo[];
+      const righe = (data ?? []) as unknown as IscrizioneCampo[];
+      const per_id = await carica_atleti_iscritti(righe.map((r) => r.atleta_id));
+      return righe.map((r) => ({ ...r, atleta: per_id.get(r.atleta_id) ?? null }));
     },
   });
 }
@@ -389,10 +424,12 @@ export function use_campo_adesioni(evento_campo_id: string | null) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("iscrizioni_eventi_campi" as any)
-        .select("atleta_id, club_id, campo_gruppo_id, atleta:atleta_id(club_provenienza, ospite_di_campo_id)")
+        .select("atleta_id, club_id, campo_gruppo_id")
         .eq("evento_campo_id", evento_campo_id);
       if (error) throw error;
-      return (data ?? []) as unknown as AdesioneRiga[];
+      const righe = (data ?? []) as unknown as AdesioneRiga[];
+      const per_id = await carica_atleti_iscritti(righe.map((r) => r.atleta_id));
+      return righe.map((r) => ({ ...r, atleta: per_id.get(r.atleta_id) ?? null }));
     },
   });
 }

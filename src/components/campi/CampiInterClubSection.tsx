@@ -34,6 +34,7 @@ import { use_atleti } from "@/hooks/use-supabase-data";
 import { use_app_store_links } from "@/hooks/use-app-store-links";
 import { stampa_schede_codice } from "@/lib/scheda-codice-html";
 import OspitiImportWizard from "@/components/campi/OspitiImportWizard";
+import { AMBRA_OSPITI } from "@/components/ProvenienzaLegenda";
 import { useAuth } from "@/lib/auth";
 import { segnala_errore } from "@/lib/errori";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -695,6 +696,7 @@ const TabClubPartecipanti: React.FC<{ campo: EventoCampoInterClub; is_ospitante:
   const { t } = useTranslation("events");
   const { puo_gestire_sportivo } = usePermessiAzione();
   const { data: partecipanti = [] } = use_campo_partecipanti(campo.id);
+  const { data: ospiti = [] } = use_atleti_ospiti_campo(campo.id);
   const { data: clubs = [] } = use_clubs_opzioni();
   const invita = use_invita_club();
   const aggiorna = use_aggiorna_partecipante();
@@ -715,6 +717,14 @@ const TabClubPartecipanti: React.FC<{ campo: EventoCampoInterClub; is_ospitante:
 
   const nome_partecipante = (p: CampoClubPartecipante) =>
     p.clubs?.nome || p.club_esterno_nome || t("campi_interclub.club.senza_nome");
+
+  // Atleti ospiti già registrati, contati per nome del club di provenienza.
+  const conta_atleti = (p: CampoClubPartecipante) => {
+    const nome_p = (p.clubs?.nome || p.club_esterno_nome || "").trim().toLowerCase();
+    if (!nome_p) return 0;
+    return ospiti.filter((o) => (o.club_provenienza ?? "").trim().toLowerCase() === nome_p).length;
+  };
+
 
   const crea_link = (p: CampoClubPartecipante) =>
     link.mutate(
@@ -797,6 +807,18 @@ const TabClubPartecipanti: React.FC<{ campo: EventoCampoInterClub; is_ospitante:
                       <Badge variant="outline" className="ml-2">
                         {t("campi_interclub.club.esterno_badge")}
                       </Badge>
+                    )}
+                    {conta_atleti(p) > 0 && (
+                      <span
+                        className="ml-2 inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold leading-none"
+                        style={{
+                          borderLeft: `3px solid ${AMBRA_OSPITI}`,
+                          backgroundColor: `${AMBRA_OSPITI}1A`,
+                          color: AMBRA_OSPITI,
+                        }}
+                      >
+                        {conta_atleti(p)} {conta_atleti(p) === 1 ? "atleta" : "atleti"}
+                      </span>
                     )}
                   </p>
                   <p className="text-sm text-muted-foreground">
@@ -1249,13 +1271,15 @@ const TabAdesioni: React.FC<{ campo: EventoCampoInterClub }> = ({ campo }) => {
   const nome_colonna = (p: CampoClubPartecipante) =>
     p.clubs?.nome || p.club_esterno_nome || t("campi_interclub.club.senza_nome");
 
-  // Un club esterno non ha `club_id`: i suoi atleti ospiti sono anagrafati sotto il club
-  // ospitante, quindi si contano per `club_provenienza`.
-  const appartiene = (a: (typeof adesioni)[number], p: CampoClubPartecipante) =>
-    p.club_id
-      ? a.club_id === p.club_id
-      : !!p.club_esterno_nome &&
-        (a.atleta?.club_provenienza ?? "").trim().toLowerCase() === p.club_esterno_nome.trim().toLowerCase();
+  // Gli atleti ospiti sono anagrafati sotto il club ospitante (anche quando il club invitato
+  // usa il portale): si abbinano per nome del club di provenienza, come fa il database.
+  const appartiene = (a: (typeof adesioni)[number], p: CampoClubPartecipante) => {
+    const nome_p = (p.clubs?.nome || p.club_esterno_nome || "").trim().toLowerCase();
+    const prov = (a.atleta?.club_provenienza ?? "").trim().toLowerCase();
+    if (a.atleta?.ospite_di_campo_id) return !!nome_p && prov === nome_p;
+    return p.club_id ? a.club_id === p.club_id : !!nome_p && prov === nome_p;
+  };
+
 
   const conta = (gruppo_id: string | null, p: CampoClubPartecipante) =>
     adesioni.filter((a) => a.campo_gruppo_id === gruppo_id && appartiene(a, p)).length;
@@ -1350,23 +1374,43 @@ const TabIscrizioniAtleti: React.FC<{ campo: EventoCampoInterClub; is_ospitante:
   const toggle = use_toggle_iscrizione_campo();
   const aggiorna_gruppo = use_aggiorna_gruppo_iscrizione();
   const [ricerca, set_ricerca] = useState("");
+  const [solo_ospiti, set_solo_ospiti] = useState(false);
 
   const per_atleta = useMemo(
     () => new Map(iscrizioni.map((i) => [i.atleta_id, i])),
     [iscrizioni],
   );
 
+  const ospiti_campo = useMemo(
+    () => (atleti ?? []).filter((a: any) => a.ospite_di_campo_id === campo.id),
+    [atleti, campo.id],
+  );
+  const club_ospiti = useMemo(
+    () =>
+      new Set(
+        ospiti_campo
+          .map((a: any) => (a.club_provenienza ?? "").trim())
+          .filter((n: string) => n.length > 0),
+      ),
+    [ospiti_campo],
+  );
+
   const miei_atleti = useMemo(() => {
     const q = ricerca.trim().toLowerCase();
     return (atleti ?? [])
+      .filter((a: any) => !solo_ospiti || a.ospite_di_campo_id === campo.id)
       .filter((a: any) => !q || `${a.cognome ?? ""} ${a.nome ?? ""}`.toLowerCase().includes(q))
       .sort((a: any, b: any) => `${a.cognome} ${a.nome}`.localeCompare(`${b.cognome} ${b.nome}`));
-  }, [atleti, ricerca]);
+  }, [atleti, ricerca, solo_ospiti, campo.id]);
 
   const altri_club = useMemo(
-    () => iscrizioni.filter((i) => i.club_id && i.club_id !== club_id),
-    [iscrizioni, club_id],
+    () =>
+      iscrizioni.filter(
+        (i) => i.atleta?.ospite_di_campo_id === campo.id || (i.club_id && i.club_id !== club_id),
+      ),
+    [iscrizioni, club_id, campo.id],
   );
+
 
   const nome_gruppo = (id: string | null) =>
     gruppi.find((g) => g.id === id)?.nome ?? t("campi_interclub.adesioni.senza_gruppo");
@@ -1388,6 +1432,24 @@ const TabIscrizioniAtleti: React.FC<{ campo: EventoCampoInterClub; is_ospitante:
           {!puo_gestire_sportivo && (
             <NotaPermesso testo="Non hai i permessi per iscrivere gli atleti al campo." />
           )}
+          {ospiti_campo.length > 0 && (
+            <div
+              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3"
+              style={{ borderColor: AMBRA_OSPITI, backgroundColor: `${AMBRA_OSPITI}14` }}
+            >
+              <span className="text-sm font-medium">
+                {ospiti_campo.length} {ospiti_campo.length === 1 ? "atleta ospite" : "atleti ospiti"} da{" "}
+                {club_ospiti.size} {club_ospiti.size === 1 ? "club" : "club"}
+              </span>
+              <Button
+                size="sm"
+                variant={solo_ospiti ? "default" : "outline"}
+                onClick={() => set_solo_ospiti((v) => !v)}
+              >
+                {solo_ospiti ? "Mostra tutti" : "Mostra solo ospiti"}
+              </Button>
+            </div>
+          )}
           <Input
             value={ricerca}
             onChange={(e) => set_ricerca(e.target.value)}
@@ -1399,6 +1461,7 @@ const TabIscrizioniAtleti: React.FC<{ campo: EventoCampoInterClub; is_ospitante:
             <div className="space-y-2">
               {miei_atleti.map((a: any) => {
                 const iscrizione = per_atleta.get(a.id);
+                const e_ospite = a.ospite_di_campo_id === campo.id;
                 return (
                   <div key={a.id} className="flex flex-wrap items-center justify-between gap-3 p-3 border rounded-lg">
                     <div className="flex items-center gap-3">
@@ -1415,6 +1478,18 @@ const TabIscrizioniAtleti: React.FC<{ campo: EventoCampoInterClub; is_ospitante:
                       <span className="font-medium">
                         {a.cognome} {a.nome}
                       </span>
+                      {e_ospite && (
+                        <span
+                          className="inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold leading-none tracking-wide"
+                          style={{
+                            borderLeft: `3px solid ${AMBRA_OSPITI}`,
+                            backgroundColor: `${AMBRA_OSPITI}1A`,
+                            color: AMBRA_OSPITI,
+                          }}
+                        >
+                          {`OSPITE — ${(a.club_provenienza ?? "").toUpperCase() || "CLUB ESTERNO"}`}
+                        </span>
+                      )}
                     </div>
                     {iscrizione && puo_gestire_sportivo && (
                       <Select
