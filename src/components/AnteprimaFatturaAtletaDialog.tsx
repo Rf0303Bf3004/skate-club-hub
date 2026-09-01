@@ -36,7 +36,7 @@ const AnteprimaFatturaAtletaDialog: React.FC<Props> = ({ fattura_id, open, onOpe
     set_blob(null);
     (async () => {
       try {
-        const r = await prepara_pdf_fattura(fattura_id);
+        const r = await prepara_pdf_fattura(fattura_id, { preferisci_locale });
         if (!alive) {
           URL.revokeObjectURL(r.url);
           return;
@@ -54,7 +54,7 @@ const AnteprimaFatturaAtletaDialog: React.FC<Props> = ({ fattura_id, open, onOpe
     return () => {
       alive = false;
     };
-  }, [open, fattura_id]);
+  }, [open, fattura_id, preferisci_locale]);
 
   // Libera il blob quando il dialogo si chiude o il componente viene smontato.
   useEffect(() => {
