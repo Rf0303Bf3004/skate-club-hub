@@ -80,12 +80,19 @@ type Props = {
   on_submit: (elenco: RigaOspiteInput[]) => Promise<EsitoImportOspite[]>;
   /** Mostra anche la compilazione manuale dell'elenco. */
   consenti_manuale?: boolean;
+  /**
+   * Uso su pagina pubblica (link con token): l'autorizzazione e' il token,
+   * verificato lato server dalla edge function `campo-ospite`. Il gate di ruolo
+   * non si applica perche' nessuno e' autenticato.
+   */
+  pubblico?: boolean;
 };
 
-const OspitiImportWizard: React.FC<Props> = ({ on_submit, consenti_manuale = false }) => {
+const OspitiImportWizard: React.FC<Props> = ({ on_submit, consenti_manuale = false, pubblico = false }) => {
   const { t } = useTranslation("events");
   const tk = (k: string, o?: any) => t(`campi_interclub.ospiti.${k}`, o) as string;
   const { puo_gestire_sportivo } = usePermessiAzione();
+  const puo_scrivere = pubblico || puo_gestire_sportivo;
 
   const [modo, set_modo] = useState<"excel" | "manuale">("excel");
   const [headers, set_headers] = useState<string[]>([]);
@@ -337,7 +344,7 @@ const OspitiImportWizard: React.FC<Props> = ({ on_submit, consenti_manuale = fal
               </div>
             ))}
           </div>
-          {puo_gestire_sportivo ? (
+          {puo_scrivere ? (
             <Button onClick={conferma} disabled={invio || valide.length === 0}>
               {invio && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {tk("conferma", { count: valide.length })}
