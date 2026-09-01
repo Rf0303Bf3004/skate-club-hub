@@ -37,6 +37,9 @@ import OspitiImportWizard from "@/components/campi/OspitiImportWizard";
 import { useAuth } from "@/lib/auth";
 import { segnala_errore } from "@/lib/errori";
 import { Checkbox } from "@/components/ui/checkbox";
+import { usePermessiAzione } from "@/hooks/use-permessi-azione";
+import ConfirmButton from "@/components/common/ConfirmButton";
+import NotaPermesso from "@/components/common/NotaPermesso";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -93,6 +96,7 @@ const CampiInterClubSection: React.FC<CampiInterClubSectionProps> = ({
   on_campo_iniziale_aperto,
 }) => {
   const { t } = useTranslation("events");
+  const { puo_gestire_sportivo } = usePermessiAzione();
   const club_id = get_current_club_id();
   const { data: ospitati = [] } = use_campi_ospitati();
   const { data: invitati = [] } = use_campi_invitati();
@@ -174,7 +178,7 @@ const CampiInterClubSection: React.FC<CampiInterClubSectionProps> = ({
                       <Users className="w-3 h-3 inline mr-1" />
                       {c.n_invitati} invitati • {c.n_accettati} hanno accettato
                     </p>
-                    {c.n_invitati === 0 ? (
+                    {c.n_invitati === 0 && puo_gestire_sportivo ? (
                       <Button
                         size="sm"
                         className="mt-2 w-full"
@@ -385,6 +389,7 @@ const CampoScheda: React.FC<{
 // ── Tab 1: informazioni ──────────────────────────────────────
 const TabInformazioni: React.FC<{ campo: EventoCampoInterClub; is_ospitante: boolean }> = ({ campo, is_ospitante }) => {
   const { t } = useTranslation("events");
+  const { puo_gestire_sportivo } = usePermessiAzione();
   const aggiorna = use_aggiorna_campo();
   const [form, set_form] = useState({
     nome: campo.nome ?? "",
@@ -431,7 +436,10 @@ const TabInformazioni: React.FC<{ campo: EventoCampoInterClub; is_ospitante: boo
         <CardDescription>{t("campi_interclub.info.description")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <fieldset disabled={!is_ospitante} className="space-y-4">
+        {is_ospitante && !puo_gestire_sportivo && (
+          <NotaPermesso testo="Non hai i permessi per modificare le informazioni del campo." />
+        )}
+        <fieldset disabled={!is_ospitante || !puo_gestire_sportivo} className="space-y-4">
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <Label>{t("campi_interclub.info.nome")}</Label>
@@ -511,9 +519,11 @@ const TabInformazioni: React.FC<{ campo: EventoCampoInterClub; is_ospitante: boo
               <Textarea value={form.note} onChange={(e) => set_form({ ...form, note: e.target.value })} />
             </div>
           </div>
-          <Button onClick={salva} disabled={aggiorna.isPending}>
-            {t("campi_interclub.info.salva")}
-          </Button>
+          {puo_gestire_sportivo && (
+            <Button onClick={salva} disabled={aggiorna.isPending}>
+              {t("campi_interclub.info.salva")}
+            </Button>
+          )}
         </fieldset>
         {!is_ospitante && <p className="text-sm text-muted-foreground">{t("campi_interclub.solo_ospitante")}</p>}
       </CardContent>
@@ -524,6 +534,7 @@ const TabInformazioni: React.FC<{ campo: EventoCampoInterClub; is_ospitante: boo
 // ── Tab 2: gruppi ────────────────────────────────────────────
 const TabGruppi: React.FC<{ campo: EventoCampoInterClub; is_ospitante: boolean }> = ({ campo, is_ospitante }) => {
   const { t } = useTranslation("events");
+  const { puo_gestire_sportivo } = usePermessiAzione();
   const { data: gruppi = [] } = use_campo_gruppi(campo.id);
   const salva = use_salva_gruppo();
   const elimina = use_elimina_gruppo();
@@ -576,13 +587,16 @@ const TabGruppi: React.FC<{ campo: EventoCampoInterClub; is_ospitante: boolean }
           <CardTitle className="text-base">{t("campi_interclub.gruppi.title")}</CardTitle>
           <CardDescription>{t("campi_interclub.gruppi.description")}</CardDescription>
         </div>
-        {is_ospitante && (
+        {is_ospitante && puo_gestire_sportivo && (
           <Button size="sm" onClick={() => apri(null)}>
             <Plus className="w-4 h-4 mr-1" /> {t("campi_interclub.gruppi.nuovo")}
           </Button>
         )}
       </CardHeader>
       <CardContent>
+        {is_ospitante && !puo_gestire_sportivo && (
+          <NotaPermesso testo="Non hai i permessi per creare o modificare i gruppi." />
+        )}
         {gruppi.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-6">{t("campi_interclub.gruppi.empty")}</p>
         ) : (
@@ -596,7 +610,7 @@ const TabGruppi: React.FC<{ campo: EventoCampoInterClub; is_ospitante: boolean }
                     {g.capienza_max != null ? ` • ${t("campi_interclub.gruppi.capienza")}: ${g.capienza_max}` : ""}
                   </p>
                 </div>
-                {is_ospitante && (
+                {is_ospitante && puo_gestire_sportivo && (
                   <div className="flex items-center gap-1 shrink-0">
                     <Button variant="ghost" size="icon" onClick={() => sposta(index, -1)} disabled={index === 0}>
                       <ArrowUp className="w-4 h-4" />
@@ -612,13 +626,16 @@ const TabGruppi: React.FC<{ campo: EventoCampoInterClub; is_ospitante: boolean }
                     <Button variant="ghost" size="sm" onClick={() => apri(g)}>
                       {t("campi_interclub.gruppi.modifica")}
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => elimina.mutate({ id: g.id, evento_campo_id: campo.id })}
+                    <ConfirmButton
+                      titolo={`Eliminare il gruppo "${g.nome}"?`}
+                      descrizione="Gli atleti iscritti a questo gruppo resteranno iscritti al campo, ma senza gruppo."
+                      conferma_label="Elimina gruppo"
+                      on_conferma={() => elimina.mutate({ id: g.id, evento_campo_id: campo.id })}
                     >
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
+                      <Button variant="ghost" size="icon">
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </ConfirmButton>
                   </div>
                 )}
               </div>
@@ -676,6 +693,7 @@ const TabClubPartecipanti: React.FC<{ campo: EventoCampoInterClub; is_ospitante:
   is_ospitante,
 }) => {
   const { t } = useTranslation("events");
+  const { puo_gestire_sportivo } = usePermessiAzione();
   const { data: partecipanti = [] } = use_campo_partecipanti(campo.id);
   const { data: clubs = [] } = use_clubs_opzioni();
   const invita = use_invita_club();
@@ -756,13 +774,16 @@ const TabClubPartecipanti: React.FC<{ campo: EventoCampoInterClub; is_ospitante:
           <CardTitle className="text-base">{t("campi_interclub.club.title")}</CardTitle>
           <CardDescription>{t("campi_interclub.club.description")}</CardDescription>
         </div>
-        {is_ospitante && (
+        {is_ospitante && puo_gestire_sportivo && (
           <Button size="sm" onClick={() => set_open(true)}>
             <Plus className="w-4 h-4 mr-1" /> {t("campi_interclub.club.invita")}
           </Button>
         )}
       </CardHeader>
       <CardContent>
+        {is_ospitante && !puo_gestire_sportivo && (
+          <NotaPermesso testo="Non hai i permessi per invitare o gestire i club partecipanti." />
+        )}
         {partecipanti.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-6">{t("campi_interclub.club.empty")}</p>
         ) : (
@@ -785,7 +806,7 @@ const TabClubPartecipanti: React.FC<{ campo: EventoCampoInterClub; is_ospitante:
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant={stato_variant(p.stato)}>{t(`campi_interclub.stati_partecipante.${p.stato}`)}</Badge>
-                  {is_ospitante ? (
+                  {is_ospitante && puo_gestire_sportivo ? (
                     <Select
                       value={p.stato_pagamento ?? "non_pagato"}
                       onValueChange={(v) =>
@@ -808,7 +829,7 @@ const TabClubPartecipanti: React.FC<{ campo: EventoCampoInterClub; is_ospitante:
                       {t(`campi_interclub.stati_pagamento.${p.stato_pagamento ?? "non_pagato"}`)}
                     </Badge>
                   )}
-                  {is_ospitante && (
+                  {is_ospitante && puo_gestire_sportivo && (
                     <>
                       <Button
                         variant="outline"
@@ -847,13 +868,16 @@ const TabClubPartecipanti: React.FC<{ campo: EventoCampoInterClub; is_ospitante:
                           ))}
                         </SelectContent>
                       </Select>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => elimina.mutate({ id: p.id, evento_campo_id: campo.id })}
+                      <ConfirmButton
+                        titolo={`Rimuovere "${nome_partecipante(p)}" dal campo?`}
+                        descrizione="Il club perderà l'accesso al campo e ai relativi dati di iscrizione."
+                        conferma_label="Rimuovi club"
+                        on_conferma={() => elimina.mutate({ id: p.id, evento_campo_id: campo.id })}
                       >
-                        <Trash2 className="w-4 h-4 text-destructive" />
-                      </Button>
+                        <Button variant="ghost" size="icon">
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </ConfirmButton>
                     </>
                   )}
                 </div>
@@ -1318,6 +1342,7 @@ const TabIscrizioniAtleti: React.FC<{ campo: EventoCampoInterClub; is_ospitante:
   is_ospitante,
 }) => {
   const { t } = useTranslation("events");
+  const { puo_gestire_sportivo } = usePermessiAzione();
   const club_id = get_current_club_id();
   const { data: gruppi = [] } = use_campo_gruppi(campo.id);
   const { data: atleti = [] } = use_atleti();
@@ -1360,6 +1385,9 @@ const TabIscrizioniAtleti: React.FC<{ campo: EventoCampoInterClub; is_ospitante:
           <CardDescription>{t("campi_interclub.iscrizioni.description")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
+          {!puo_gestire_sportivo && (
+            <NotaPermesso testo="Non hai i permessi per iscrivere gli atleti al campo." />
+          )}
           <Input
             value={ricerca}
             onChange={(e) => set_ricerca(e.target.value)}
@@ -1376,7 +1404,7 @@ const TabIscrizioniAtleti: React.FC<{ campo: EventoCampoInterClub; is_ospitante:
                     <div className="flex items-center gap-3">
                       <Checkbox
                         checked={!!iscrizione}
-                        disabled={toggle.isPending}
+                        disabled={toggle.isPending || !puo_gestire_sportivo}
                         onCheckedChange={() =>
                           toggle.mutate(
                             { evento_campo_id: campo.id, atleta_id: a.id, iscritto: !!iscrizione },
@@ -1388,7 +1416,7 @@ const TabIscrizioniAtleti: React.FC<{ campo: EventoCampoInterClub; is_ospitante:
                         {a.cognome} {a.nome}
                       </span>
                     </div>
-                    {iscrizione && (
+                    {iscrizione && puo_gestire_sportivo && (
                       <Select
                         value={iscrizione.campo_gruppo_id ?? "nessuno"}
                         onValueChange={(v) => cambia_gruppo(iscrizione.id, v)}
@@ -1434,22 +1462,26 @@ const TabIscrizioniAtleti: React.FC<{ campo: EventoCampoInterClub; is_ospitante:
                         ? `${i.atleta?.cognome ?? ""} ${i.atleta?.nome ?? ""}`.trim()
                         : `${t("campi_interclub.iscrizioni.atleta")} ${i.atleta_id.slice(0, 8)}`}
                     </span>
-                    <Select
-                      value={i.campo_gruppo_id ?? "nessuno"}
-                      onValueChange={(v) => cambia_gruppo(i.id, v)}
-                    >
-                      <SelectTrigger className="w-56">
-                        <SelectValue placeholder={nome_gruppo(i.campo_gruppo_id)} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="nessuno">{t("campi_interclub.adesioni.senza_gruppo")}</SelectItem>
-                        {gruppi.map((g) => (
-                          <SelectItem key={g.id} value={g.id}>
-                            {g.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    {puo_gestire_sportivo ? (
+                      <Select
+                        value={i.campo_gruppo_id ?? "nessuno"}
+                        onValueChange={(v) => cambia_gruppo(i.id, v)}
+                      >
+                        <SelectTrigger className="w-56">
+                          <SelectValue placeholder={nome_gruppo(i.campo_gruppo_id)} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="nessuno">{t("campi_interclub.adesioni.senza_gruppo")}</SelectItem>
+                          {gruppi.map((g) => (
+                            <SelectItem key={g.id} value={g.id}>
+                              {g.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Badge variant="secondary">{nome_gruppo(i.campo_gruppo_id)}</Badge>
+                    )}
                   </div>
                 ))}
               </div>

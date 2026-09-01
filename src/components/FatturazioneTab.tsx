@@ -11,9 +11,12 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
 import { Calendar, Mail, FileText, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { usePermessiAzione } from "@/hooks/use-permessi-azione";
+import NotaPermesso from "@/components/common/NotaPermesso";
 
 const FatturazioneTab: React.FC = () => {
   const { t } = useTranslation("fatture");
+  const { puo_gestire_fatture } = usePermessiAzione();
   const qc = useQueryClient();
   const { data: setup } = use_setup_club();
 
@@ -113,10 +116,14 @@ const FatturazioneTab: React.FC = () => {
           <Switch id="email_auto" checked={email_auto} onCheckedChange={set_email_auto} />
         </div>
 
-        <Button onClick={handle_save} disabled={saving} className="w-full sm:w-auto">
-          {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-          {t("billing_tab.save")}
-        </Button>
+        {puo_gestire_fatture ? (
+          <Button onClick={handle_save} disabled={saving} className="w-full sm:w-auto">
+            {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+            {t("billing_tab.save")}
+          </Button>
+        ) : (
+          <NotaPermesso testo="Solo la segreteria e il presidente possono emettere fatture." />
+        )}
       </section>
 
       <Separator />
@@ -129,15 +136,21 @@ const FatturazioneTab: React.FC = () => {
         </div>
         <p className="text-xs text-muted-foreground">{t("billing_tab.manual_desc")}</p>
 
-        <Button variant="outline" onClick={() => set_anteprima_open(true)}>
-          <FileText className="w-4 h-4 mr-2" />
-          {t("billing_tab.preview")}
-        </Button>
+        {puo_gestire_fatture ? (
+          <Button variant="outline" onClick={() => set_anteprima_open(true)}>
+            <FileText className="w-4 h-4 mr-2" />
+            {t("billing_tab.preview")}
+          </Button>
+        ) : (
+          <NotaPermesso testo="Solo la segreteria e il presidente possono emettere fatture." />
+        )}
 
         <p className="text-xs text-muted-foreground">{t("billing_tab.no_duplicates_note")}</p>
       </section>
 
-      <AnteprimaFatturePeriodoDialog open={anteprima_open} onOpenChange={set_anteprima_open} />
+      {puo_gestire_fatture && (
+        <AnteprimaFatturePeriodoDialog open={anteprima_open} onOpenChange={set_anteprima_open} />
+      )}
     </div>
   );
 };

@@ -66,6 +66,7 @@ import ConfermaForzaturaDisponibilita from "@/components/griglia/ConfermaForzatu
 import RipetiSessioneDialog from "@/components/griglia/RipetiSessioneDialog";
 import ConfermaConflittoAtleti from "@/components/griglia/ConfermaConflittoAtleti";
 import DisallineamentoPropostaPill from "@/components/griglia/DisallineamentoPropostaPill";
+import ConfirmButton from "@/components/common/ConfirmButton";
 import NuovaPropostaDialog, { type ConfermaProposta } from "@/components/griglia/NuovaPropostaDialog";
 import { use_pool_proposte, use_crea_proposta } from "@/hooks/use-proposte";
 import { Link as RouterLink } from "react-router-dom";
@@ -824,9 +825,16 @@ const SessioneBox: React.FC<{
             <Repeat className="w-4 h-4" />
           </Button>
         )}
-        <Button variant="ghost" size="icon" onClick={on_elimina} title="Rimuovi sotto-sessione">
-          <Trash2 className="w-4 h-4 text-destructive" />
-        </Button>
+        <ConfirmButton
+          titolo={`Rimuovere la sotto-sessione ${hhmm(sessione.ora_inizio)}–${hhmm(sessione.ora_fine)}?`}
+          descrizione="Atleti, istruttori e gruppi assegnati a questa sotto-sessione verranno scollegati. L'operazione non è reversibile."
+          conferma_label="Rimuovi sotto-sessione"
+          on_conferma={on_elimina}
+        >
+          <Button variant="ghost" size="icon" title="Rimuovi sotto-sessione">
+            <Trash2 className="w-4 h-4 text-destructive" />
+          </Button>
+        </ConfirmButton>
       </div>
 
       {modo_libero && (

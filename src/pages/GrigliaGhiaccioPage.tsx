@@ -3,7 +3,8 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { usePermessiSezioniMatrix } from "@/hooks/usePermessi";
 import { useModalitaArea } from "@/hooks/useModalitaArea";
-import { can_manage_griglia } from "@/lib/roles";
+import { usePermessiAzione } from "@/hooks/use-permessi-azione";
+import NotaPermesso from "@/components/common/NotaPermesso";
 import { use_griglia_blocchi_giorno, giorno_it_da_data } from "@/hooks/use-griglia-ghiaccio";
 import { use_risorse_strutture } from "@/hooks/use-risorse-strutture";
 import GrigliaPistaSezione from "@/components/griglia/GrigliaPistaSezione";
@@ -61,7 +62,8 @@ const GrigliaGhiaccioPage: React.FC = () => {
   const { visibile_set, is_admin_like, is_loading: is_loading_permessi } = usePermessiSezioniMatrix();
   const allowed = is_admin_like || visibile_set.has("griglia_ghiaccio");
   const { modalita, is_loading: is_loading_modalita } = useModalitaArea("ghiaccio");
-  const is_editor = can_manage_griglia(session?.ruolo);
+  const { puo_pianificare } = usePermessiAzione();
+  const is_editor = puo_pianificare;
 
   const [data_sel, set_data_sel] = useState<string>(oggi_iso());
   const [includi_ospiti, set_includi_ospiti] = useState(false);
@@ -365,6 +367,9 @@ const GrigliaGhiaccioPage: React.FC = () => {
         />
       ) : (
       <div className="space-y-5">
+        {!is_editor && (
+          <NotaPermesso testo="Solo chi pianifica il ghiaccio può modificare la griglia." />
+        )}
         {risorse_ghiaccio.length === 0 ? (
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 flex items-start gap-2">
             <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />

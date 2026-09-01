@@ -11,6 +11,8 @@ import { Download, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { get_fattura_stato_ui, get_fattura_stato_label } from "@/lib/fattura-status";
 import { use_segna_fattura_pagata, use_invia_email_fattura } from "@/hooks/use-supabase-mutations";
+import { usePermessiAzione } from "@/hooks/use-permessi-azione";
+import NotaPermesso from "@/components/common/NotaPermesso";
 
 type FatturaRow = {
   id: string;
@@ -55,6 +57,7 @@ function fmt(v: number): string {
 
 const SegreteriaFatturePage: React.FC = () => {
   const { t } = useTranslation("segreteria");
+  const { puo_gestire_fatture } = usePermessiAzione();
   const navigate = useNavigate();
   const club_id = get_current_club_id();
 
@@ -447,8 +450,8 @@ const SegreteriaFatturePage: React.FC = () => {
                         {get_fattura_stato_label(stato)}
                       </span>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      {stato !== "pagata" && (
+                    <div className="flex flex-wrap gap-2 items-center">
+                      {stato !== "pagata" && puo_gestire_fatture && (
                         <Button
                           size="sm"
                           variant="outline"
@@ -465,7 +468,7 @@ const SegreteriaFatturePage: React.FC = () => {
                           {t("tabellone.modal.marca_pagata")}
                         </Button>
                       )}
-                      {stato !== "pagata" && (
+                      {stato !== "pagata" && puo_gestire_fatture && (
                         <Button
                           size="sm"
                           variant="outline"
@@ -490,6 +493,9 @@ const SegreteriaFatturePage: React.FC = () => {
                         >
                           {t("tabellone.modal.invia_reminder")}
                         </Button>
+                      )}
+                      {stato !== "pagata" && !puo_gestire_fatture && (
+                        <NotaPermesso testo="Solo la segreteria e il presidente possono emettere fatture." />
                       )}
                       <Button
                         size="sm"
