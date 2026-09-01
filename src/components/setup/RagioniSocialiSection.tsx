@@ -345,6 +345,16 @@ const RagioneSocialeDialog: React.FC<{
         attivo: !!form.attivo,
         accesso_dedicato: !!form.accesso_dedicato,
         numero_fattura_prefisso: form.numero_fattura_prefisso || null,
+        email: form.email || null,
+        telefono: form.telefono || null,
+        soggetto_iva: !!form.soggetto_iva,
+        iva_aliquota_default: form.soggetto_iva
+          ? form.iva_aliquota_default === "" || form.iva_aliquota_default == null
+            ? null
+            : Number(form.iva_aliquota_default)
+          : null,
+        iva_prezzi_ivati: !!form.iva_prezzi_ivati,
+        iva_esenzione_nota: form.soggetto_iva ? null : form.iva_esenzione_nota || null,
       } as any);
       toast({ title: "Ragione sociale salvata" });
       on_close();
