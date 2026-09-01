@@ -51,6 +51,7 @@ export default function DiagnosticaPage() {
   const qc = useQueryClient();
   const [giorni, set_giorni] = React.useState("30");
   const [aperti, set_aperti] = React.useState<Record<string, boolean>>({});
+  const [fasce_aperte, set_fasce_aperte] = React.useState<Record<string, boolean>>({});
 
   const club_id = session?.club_id;
   const ammesso = RUOLI_AMMESSI.includes(String(session?.ruolo));
