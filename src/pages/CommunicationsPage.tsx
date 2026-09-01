@@ -520,7 +520,21 @@ const CommunicationsPage: React.FC = () => {
       .sort((a: any, b: any) => `${a.cognome} ${a.nome}`.localeCompare(`${b.cognome} ${b.nome}`, 'it'));
   }, [atleti, atleta_search]);
 
-  const non_lette_count = ricevute.filter((c: any) => !c.letta).length;
+  const non_lette_count = conta_gruppi(ricevute.filter((c: any) => !c.letta));
+
+  // I contatori dei tab contano gli invii (gruppi), non le singole righe.
+  const inviate_count = useMemo(() => conta_gruppi(inviate), [inviate]);
+  const ricevute_count = useMemo(() => conta_gruppi(ricevute), [ricevute]);
+  const archivio_count = useMemo(() => conta_gruppi(archivio), [archivio]);
+
+  const nome_atleta = React.useCallback(
+    (id: string | null) => {
+      if (!id) return '';
+      const a: any = atleti_by_id[id];
+      return a ? `${a.cognome} ${a.nome}` : '';
+    },
+    [atleti_by_id],
+  );
 
   const mark_letta = async (id: string) => {
     await supabase.from('comunicazioni').update({ letta: true }).eq('id', id);
