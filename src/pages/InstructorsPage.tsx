@@ -1614,6 +1614,9 @@ const InstructorsPage: React.FC = () => {
     toast({ title: ti("toast.disponibilita_salvata") });
   };
 
+  const selected = istruttori_veri.find((i: any) => i.id === selected_id);
+  const selected_monitore = monitori_atleti.find((a: any) => a.id === selected_monitore_id);
+
   const totale_fasce_attuali = useMemo(
     () => Object.values(selected?.disponibilita || {}).reduce((acc: number, s: any) => acc + (Array.isArray(s) ? s.length : 0), 0),
     [selected],
@@ -1622,9 +1625,6 @@ const InstructorsPage: React.FC = () => {
     () => Object.values(disp_local).reduce((acc, s) => acc + s.length, 0),
     [disp_local],
   );
-
-  const selected = istruttori_veri.find((i: any) => i.id === selected_id);
-  const selected_monitore = monitori_atleti.find((a: any) => a.id === selected_monitore_id);
 
   if (isLoading)
     return (
