@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Upload, Download, Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { usePermessiAzione } from "@/hooks/use-permessi-azione";
+import NotaPermesso from "@/components/common/NotaPermesso";
 import {
   detect_mapping,
   leggi_foglio,
@@ -83,6 +85,7 @@ type Props = {
 const OspitiImportWizard: React.FC<Props> = ({ on_submit, consenti_manuale = false }) => {
   const { t } = useTranslation("events");
   const tk = (k: string, o?: any) => t(`campi_interclub.ospiti.${k}`, o) as string;
+  const { puo_gestire_sportivo } = usePermessiAzione();
 
   const [modo, set_modo] = useState<"excel" | "manuale">("excel");
   const [headers, set_headers] = useState<string[]>([]);
@@ -334,10 +337,14 @@ const OspitiImportWizard: React.FC<Props> = ({ on_submit, consenti_manuale = fal
               </div>
             ))}
           </div>
-          <Button onClick={conferma} disabled={invio || valide.length === 0}>
-            {invio && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {tk("conferma", { count: valide.length })}
-          </Button>
+          {puo_gestire_sportivo ? (
+            <Button onClick={conferma} disabled={invio || valide.length === 0}>
+              {invio && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {tk("conferma", { count: valide.length })}
+            </Button>
+          ) : (
+            <NotaPermesso testo="Non hai i permessi per registrare gli atleti ospiti." />
+          )}
         </div>
       )}
     </div>

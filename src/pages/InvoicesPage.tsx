@@ -15,12 +15,15 @@ import { FileText, Receipt } from "lucide-react";
 import EmptyState from "@/components/common/EmptyState";
 import { toast } from "@/hooks/use-toast";
 import { get_fattura_stato_ui, get_fattura_stato_label, get_fattura_stato_classes, fattura_chiusa } from "@/lib/fattura-status";
+import { usePermessiAzione } from "@/hooks/use-permessi-azione";
+import NotaPermesso from "@/components/common/NotaPermesso";
 
 
 
 // ─── Main Page ─────────────────────────────────────────────
 const InvoicesPage: React.FC = () => {
   const { t } = useTranslation("fatture");
+  const { puo_gestire_fatture } = usePermessiAzione();
   const { data: fatture = [], isLoading } = use_fatture();
   const { data: atleti = [] } = use_atleti();
   const [anteprima_open, set_anteprima_open] = useState(false);
@@ -121,9 +124,13 @@ const InvoicesPage: React.FC = () => {
               </p>
             )}
           </div>
-          <Button className="bg-primary hover:bg-primary/90" onClick={() => set_anteprima_open(true)}>
-            <FileText className="w-4 h-4 mr-2" /> {t("invoices_page.generate_button")}
-          </Button>
+          {puo_gestire_fatture ? (
+            <Button className="bg-primary hover:bg-primary/90" onClick={() => set_anteprima_open(true)}>
+              <FileText className="w-4 h-4 mr-2" /> {t("invoices_page.generate_button")}
+            </Button>
+          ) : (
+            <NotaPermesso testo="Solo la segreteria e il presidente possono emettere fatture." />
+          )}
         </div>
 
         <SearchableListLayout
@@ -278,7 +285,9 @@ const InvoicesPage: React.FC = () => {
         </div>
       </div>
 
-      <AnteprimaFatturePeriodoDialog open={anteprima_open} onOpenChange={set_anteprima_open} />
+      {puo_gestire_fatture && (
+        <AnteprimaFatturePeriodoDialog open={anteprima_open} onOpenChange={set_anteprima_open} />
+      )}
     </>
   );
 };

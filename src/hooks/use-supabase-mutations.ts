@@ -1266,18 +1266,45 @@ export function use_save_disponibilita() {
       disponibilita: Record<string, { ora_inizio: string; ora_fine: string }[]>;
     }) => {
       const club_id = cid();
-      const { error: de } = await supabase
+
+      // Calcola la differenza rispetto alle fasce esistenti: elimina solo quelle
+      // rimosse, inserisce solo quelle nuove, lascia intatte le invariate.
+      const { data: attuali, error: fe } = await supabase
         .from("disponibilita_istruttori")
-        .delete()
+        .select("id, giorno, ora_inizio, ora_fine")
         .eq("istruttore_id", data.istruttore_id);
-      if (de) throw de;
-      const rows: any[] = [];
+      if (fe) throw fe;
+
+      const chiave = (giorno: string, ora_inizio: string, ora_fine: string) => `${giorno}|${ora_inizio}|${ora_fine}`;
+
+      const nuove_chiavi = new Set<string>();
       for (const [giorno, slots] of Object.entries(data.disponibilita)) {
-        for (const s of slots)
-          rows.push({ club_id, istruttore_id: data.istruttore_id, giorno, ora_inizio: s.ora_inizio, ora_fine: s.ora_fine });
+        for (const s of slots) nuove_chiavi.add(chiave(giorno, s.ora_inizio, s.ora_fine));
       }
-      if (rows.length > 0) {
-        const { error } = await supabase.from("disponibilita_istruttori").insert(rows);
+
+      const attuali_map = new Map<string, string>(); // chiave -> id
+      (attuali ?? []).forEach((r: any) => attuali_map.set(chiave(r.giorno, r.ora_inizio, r.ora_fine), r.id));
+
+      const da_eliminare = (attuali ?? [])
+        .filter((r: any) => !nuove_chiavi.has(chiave(r.giorno, r.ora_inizio, r.ora_fine)))
+        .map((r: any) => r.id);
+
+      const da_inserire: any[] = [];
+      for (const [giorno, slots] of Object.entries(data.disponibilita)) {
+        for (const s of slots) {
+          const k = chiave(giorno, s.ora_inizio, s.ora_fine);
+          if (!attuali_map.has(k)) {
+            da_inserire.push({ club_id, istruttore_id: data.istruttore_id, giorno, ora_inizio: s.ora_inizio, ora_fine: s.ora_fine });
+          }
+        }
+      }
+
+      if (da_eliminare.length > 0) {
+        const { error } = await supabase.from("disponibilita_istruttori").delete().in("id", da_eliminare);
+        if (error) throw error;
+      }
+      if (da_inserire.length > 0) {
+        const { error } = await supabase.from("disponibilita_istruttori").insert(da_inserire);
         if (error) throw error;
       }
     },

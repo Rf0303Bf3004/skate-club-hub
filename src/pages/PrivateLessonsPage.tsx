@@ -13,6 +13,9 @@ import { ChevronLeft, ChevronRight, X, Search, Check, Clock, User, UserPlus, Set
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
+import { usePermessiAzione } from "@/hooks/use-permessi-azione";
+import NotaPermesso from "@/components/common/NotaPermesso";
+import ConfirmButton from "@/components/common/ConfirmButton";
 
 // ─── Helpers ───────────────────────────────────────────────
 function fmt(d: Date): string {
@@ -511,7 +514,8 @@ const SlotDetailModal: React.FC<{
   on_modifica: () => void;
   on_aggiungi_atleta: () => void;
   loading: boolean;
-}> = ({ slot, atleti, on_close, on_annulla, on_modifica, on_aggiungi_atleta, loading }) => {
+  puo_gestire: boolean;
+}> = ({ slot, atleti, on_close, on_annulla, on_modifica, on_aggiungi_atleta, loading, puo_gestire }) => {
   const { t } = useTranslation('corsi');
   const atleti_ids: string[] = slot.lesson?.atleti_ids || [];
   const tipo = get_tipo_lezione(atleti_ids);
@@ -577,22 +581,35 @@ const SlotDetailModal: React.FC<{
           )}
         </div>
         <div className="px-6 py-4 border-t border-border space-y-2 flex-shrink-0">
-          <Button
-            variant="outline"
-            onClick={on_aggiungi_atleta}
-            disabled={loading}
-            className="w-full border-orange-500/40 text-orange-600 hover:bg-orange-500/10"
-          >
-            <UserPlus className="w-4 h-4 mr-2" /> {t("lezioni_private.slot_detail_modal.aggiungi_atleta_semiprivata")}
-          </Button>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={on_modifica} disabled={loading} className="flex-1">
-              {t("lezioni_private.slot_detail_modal.modifica")}
-            </Button>
-            <Button variant="destructive" onClick={on_annulla} disabled={loading} className="flex-1">
-              {loading ? <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" /> : t("lezioni_private.slot_detail_modal.annulla")}
-            </Button>
-          </div>
+          {puo_gestire ? (
+            <>
+              <Button
+                variant="outline"
+                onClick={on_aggiungi_atleta}
+                disabled={loading}
+                className="w-full border-orange-500/40 text-orange-600 hover:bg-orange-500/10"
+              >
+                <UserPlus className="w-4 h-4 mr-2" /> {t("lezioni_private.slot_detail_modal.aggiungi_atleta_semiprivata")}
+              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={on_modifica} disabled={loading} className="flex-1">
+                  {t("lezioni_private.slot_detail_modal.modifica")}
+                </Button>
+                <ConfirmButton
+                  titolo="Annullare la lezione?"
+                  descrizione={`Confermi l'annullamento della lezione delle ${slot.time}?`}
+                  conferma_label="Annulla lezione"
+                  on_conferma={on_annulla}
+                >
+                  <Button variant="destructive" disabled={loading} className="flex-1">
+                    {loading ? <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" /> : t("lezioni_private.slot_detail_modal.annulla")}
+                  </Button>
+                </ConfirmButton>
+              </div>
+            </>
+          ) : (
+            <NotaPermesso testo="Non hai i permessi per modificare o annullare questa lezione." />
+          )}
         </div>
       </div>
     </div>
@@ -701,6 +718,7 @@ const LezioniPrivatePage: React.FC = () => {
   const aggiungi_atleta_mut = use_aggiungi_atleta_lezione();
 
   const slot_minuti = setup?.slot_lezione_privata_minuti || 20;
+  const { puo_configurare_club, puo_gestire_sportivo } = usePermessiAzione();
 
   const [selected_istruttore, set_selected_istruttore] = useState<string>("");
   const [cal_year, set_cal_year] = useState(new Date().getFullYear());
@@ -841,7 +859,6 @@ const LezioniPrivatePage: React.FC = () => {
 
   const handle_annulla = async () => {
     if (!detail_slot?.lesson) return;
-    if (!window.confirm(t("lezioni_private.confirm.annulla_lezione"))) return;
     try {
       await annulla_lezione.mutateAsync(detail_slot.lesson.id);
       set_detail_slot(null);
@@ -1011,6 +1028,7 @@ const LezioniPrivatePage: React.FC = () => {
           on_modifica={handle_modifica}
           on_aggiungi_atleta={() => set_aggiungi_open(true)}
           loading={annulla_lezione.isPending}
+          puo_gestire={puo_gestire_sportivo}
         />
       )}
       {detail_slot && aggiungi_open && (
@@ -1035,10 +1053,15 @@ const LezioniPrivatePage: React.FC = () => {
       <div className="space-y-6 animate-fade-in">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold tracking-tight text-foreground">{t("lezioni_private.title")}</h1>
-          <Button variant="outline" size="sm" onClick={() => set_durata_modal(true)} className="gap-2 text-xs">
-            <Settings className="w-3.5 h-3.5" /> {t("lezioni_private.slot_button", { min: slot_minuti })}
-          </Button>
+          {puo_configurare_club && (
+            <Button variant="outline" size="sm" onClick={() => set_durata_modal(true)} className="gap-2 text-xs">
+              <Settings className="w-3.5 h-3.5" /> {t("lezioni_private.slot_button", { min: slot_minuti })}
+            </Button>
+          )}
         </div>
+        {!puo_gestire_sportivo && (
+          <NotaPermesso testo="Puoi consultare le lezioni ma non hai i permessi per crearle, modificarle o annullarle." />
+        )}
 
         <div className="w-64">
           <Select value={selected_istruttore} onValueChange={set_selected_istruttore}>
@@ -1147,10 +1170,14 @@ const LezioniPrivatePage: React.FC = () => {
                       <div
                         key={i}
                         onClick={() =>
-                          is_free && !is_past_date ? open_slot(slot.time, slot.end_time, slot.has_ice) : !is_free ? set_detail_slot(slot) : undefined
+                          is_free && !is_past_date && puo_gestire_sportivo
+                            ? open_slot(slot.time, slot.end_time, slot.has_ice)
+                            : !is_free
+                              ? set_detail_slot(slot)
+                              : undefined
                         }
                         className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all
-                          ${is_free && is_past_date ? "opacity-40 cursor-default" : "cursor-pointer"}
+                          ${is_free && (is_past_date || !puo_gestire_sportivo) ? "opacity-40 cursor-default" : "cursor-pointer"}
                           ${is_off_ice
                             ? "bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20"
                             : is_free

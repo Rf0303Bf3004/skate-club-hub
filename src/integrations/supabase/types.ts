@@ -8223,7 +8223,12 @@ export type Database = {
           messaggio: string
         }[]
       }
+      puo_comunicare: { Args: never; Returns: boolean }
+      puo_configurare_club: { Args: never; Returns: boolean }
       puo_gestire_cancellazioni: { Args: { p_club: string }; Returns: boolean }
+      puo_gestire_fatture: { Args: { p_club: string }; Returns: boolean }
+      puo_gestire_sportivo: { Args: never; Returns: boolean }
+      puo_pianificare: { Args: never; Returns: boolean }
       purga_documenti_scaduti: {
         Args: { p_anni?: number; p_club?: string; p_simula?: boolean }
         Returns: Json
@@ -8369,6 +8374,7 @@ export type Database = {
       }
       ruoli_che_gestiscono_gare: { Args: { p_club: string }; Returns: string[] }
       ruoli_direzione_club: { Args: { p_club: string }; Returns: string[] }
+      ruolo_in: { Args: { p_ruoli: string[] }; Returns: boolean }
       seed_dashboard_cards_default: {
         Args: { p_club: string }
         Returns: number
@@ -8445,6 +8451,7 @@ export type Database = {
       user_is_admin_like: { Args: never; Returns: boolean }
       user_is_presidente: { Args: never; Returns: boolean }
       user_is_vicepresidente: { Args: never; Returns: boolean }
+      user_ruolo: { Args: never; Returns: string }
     }
     Enums: {
       livello_istruttore_enum: "istruttore" | "monitrice" | "aiuto_monitrice"

@@ -27,6 +27,8 @@ import { use_app_store_links } from "@/hooks/use-app-store-links";
 import { stampa_schede_codice } from "@/lib/scheda-codice-html";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import FotoAtleta from "@/components/common/FotoAtleta";
+import { usePermessiAzione } from "@/hooks/use-permessi-azione";
+import NotaPermesso from "@/components/common/NotaPermesso";
 
 import { capitalizza_nome, capitalizza_indirizzo, normalizza_email, cerca_nap } from "@/lib/formato-testo";
 
@@ -677,6 +679,7 @@ const AthletesPage: React.FC = () => {
   const navigate = useNavigate();
   const query_client = useQueryClient();
   const { session } = useAuth();
+  const { puo_gestire_sportivo } = usePermessiAzione();
   const params = useParams<{ id?: string }>();
   const { data: atleti = [], isLoading } = use_atleti();
   const upsert = use_upsert_atleta();
@@ -1200,7 +1203,7 @@ const AthletesPage: React.FC = () => {
               <Switch checked={solo_da_verificare} onCheckedChange={set_solo_da_verificare} />
               <span>{t2('header.only_to_verify')}</span>
             </label>
-            {(["presidente", "segreteria", "admin", "superadmin"].includes(session?.ruolo as string)) && (
+            {puo_gestire_sportivo && (
               <Button
                 variant="outline"
                 onClick={() => navigate("/import-atleti")}
@@ -1208,14 +1211,19 @@ const AthletesPage: React.FC = () => {
                 <Upload className="w-4 h-4 mr-2" /> {t2('header.import_excel')}
               </Button>
             )}
-            <Button
-              className="bg-primary hover:bg-primary/90"
-              onClick={() => set_quick_open(true)}
-            >
-              <Plus className="w-4 h-4 mr-2" /> {t("nuovo_atleta")}
-            </Button>
+            {puo_gestire_sportivo && (
+              <Button
+                className="bg-primary hover:bg-primary/90"
+                onClick={() => set_quick_open(true)}
+              >
+                <Plus className="w-4 h-4 mr-2" /> {t("nuovo_atleta")}
+              </Button>
+            )}
           </div>
         </div>
+        {!puo_gestire_sportivo && (
+          <NotaPermesso testo="Sola lettura: solo lo staff di gestione può modificare atleti e iscrizioni." />
+        )}
 
         {/* Card livelli — sempre TUTTI i box, anche con count=0 (stile spento) */}
         <div className="space-y-2">
@@ -1685,17 +1693,19 @@ const AthletesPage: React.FC = () => {
                         >
                           {t2("table.enrollment_button")}
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            set_selected_atleta(a);
-                            set_modal_open(true);
-                          }}
-                          className="text-xs h-7"
-                        >
-                          {t2("table.edit_button")}
-                        </Button>
+                        {puo_gestire_sportivo && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              set_selected_atleta(a);
+                              set_modal_open(true);
+                            }}
+                            className="text-xs h-7"
+                          >
+                            {t2("table.edit_button")}
+                          </Button>
+                        )}
                       </td>
                     </tr>
                   ))

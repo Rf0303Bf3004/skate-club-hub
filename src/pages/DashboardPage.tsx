@@ -65,6 +65,8 @@ import BannerDisponibilitaScaduta from "@/components/common/BannerDisponibilitaS
 import OnboardingBanner from "@/components/dashboard/OnboardingBanner";
 import DiagnosticaCard from "@/components/dashboard/DiagnosticaCard";
 import { useAuth } from "@/lib/auth";
+import { usePermessiAzione } from "@/hooks/use-permessi-azione";
+import NotaPermesso from "@/components/common/NotaPermesso";
 import { get_fattura_stato_ui, fattura_chiusa } from "@/lib/fattura-status";
 
 // ─── Helpers ──────────────────────────────────────────────
@@ -1281,6 +1283,7 @@ const SezionePresenzeIstruttori: React.FC<{
 // ─── Main Dashboard ────────────────────────────────────────
 const DashboardPage: React.FC = () => {
   const { session } = useAuth();
+  const { puo_comunicare } = usePermessiAzione();
   if ((session?.ruolo as string) === "presidente") {
     return <PresidentDashboard />;
   }
@@ -1738,17 +1741,21 @@ const DashboardPage: React.FC = () => {
           </div>
 
           {/* Box comunicazione rapida */}
-          <div id="box-comunicazione">
-            <BoxComunicazione
-              atleti={atleti}
-              istruttori={istruttori}
-              monitori={monitori}
-              corsi={corsi}
-              gare={gare}
-              preset={com_preset}
-              on_preset_consumed={() => set_com_preset(null)}
-            />
-          </div>
+          {puo_comunicare ? (
+            <div id="box-comunicazione">
+              <BoxComunicazione
+                atleti={atleti}
+                istruttori={istruttori}
+                monitori={monitori}
+                corsi={corsi}
+                gare={gare}
+                preset={com_preset}
+                on_preset_consumed={() => set_com_preset(null)}
+              />
+            </div>
+          ) : (
+            <NotaPermesso testo="Solo lo staff di segreteria e direzione può inviare comunicazioni rapide." />
+          )}
         </div>
 
         {/* Colonna destra — widget */}

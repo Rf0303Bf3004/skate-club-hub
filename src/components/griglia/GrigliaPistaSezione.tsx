@@ -12,6 +12,7 @@ import type { RisorsaStruttura } from "@/hooks/use-risorse-strutture";
 import GrigliaBuilder from "@/components/griglia/GrigliaBuilder";
 import ConfermaForzaturaDisponibilita from "@/components/griglia/ConfermaForzaturaDisponibilita";
 import { verifica_orario_disponibilita } from "@/lib/availability";
+import ConfirmButton from "@/components/common/ConfirmButton";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -343,14 +344,16 @@ const GrigliaPistaSezione: React.FC<Props> = ({ risorsa, data_sel, is_editor }) 
                         </TooltipProvider>
                       )}
                       {is_editor && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => rimuovi_blocco(b.id)}
-                          title="Elimina blocco"
+                        <ConfirmButton
+                          titolo={`Eliminare il blocco «${b.titolo || "Blocco ghiaccio"}»?`}
+                          descrizione="Verranno eliminate anche tutte le sotto-sessioni collegate. L'operazione non è reversibile."
+                          conferma_label="Elimina blocco"
+                          on_conferma={() => rimuovi_blocco(b.id)}
                         >
-                          <Trash2 className="w-4 h-4 text-destructive" />
-                        </Button>
+                          <Button variant="ghost" size="icon" title="Elimina blocco">
+                            <Trash2 className="w-4 h-4 text-destructive" />
+                          </Button>
+                        </ConfirmButton>
                       )}
                     </div>
                     {aperto && (

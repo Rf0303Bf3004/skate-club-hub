@@ -17,6 +17,9 @@ import type { FatturaAtletaRiga } from "@/lib/fattura-atleta-pdf";
 import AnteprimaFatturaAtletaDialog from "@/components/AnteprimaFatturaAtletaDialog";
 import { use_annulla_fattura, use_sostituisci_fattura, use_storna_fattura } from "@/hooks/use-supabase-mutations";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { usePermessiAzione } from "@/hooks/use-permessi-azione";
+import NotaPermesso from "@/components/common/NotaPermesso";
+import ConfirmButton from "@/components/common/ConfirmButton";
 
 type AzioneFattura = "annulla" | "sostituisci" | "storna";
 
@@ -34,6 +37,7 @@ const STATO_COLORS: Record<string, string> = {
 
 const SegreteriaFatturaDetailPage: React.FC = () => {
   const { id = "" } = useParams();
+  const { puo_gestire_fatture } = usePermessiAzione();
   const navigate = useNavigate();
   const [loading, set_loading] = useState(true);
   const [saving, set_saving] = useState(false);
@@ -73,7 +77,7 @@ const SegreteriaFatturaDetailPage: React.FC = () => {
 
   useEffect(() => { reload(); /* eslint-disable-next-line */ }, [id]);
 
-  const editable = f?.stato === "bozza";
+  const editable = f?.stato === "bozza" && puo_gestire_fatture;
   const is_nota_credito = f?.tipo_documento === "nota_credito";
 
   const subtotale = useMemo(() => righe.reduce((s, r) => s + Number(r.importo || 0), 0), [righe]);
@@ -322,18 +326,28 @@ const SegreteriaFatturaDetailPage: React.FC = () => {
         </div>
 
         {/* Azioni */}
-        <div className="flex flex-wrap gap-2 justify-end pt-2 border-t border-border">
+        <div className="flex flex-wrap gap-2 justify-end items-center pt-2 border-t border-border">
+          {f?.stato === "bozza" && !puo_gestire_fatture && (
+            <NotaPermesso testo="Solo la segreteria e il presidente possono emettere fatture." />
+          )}
           {editable && <Button onClick={salva_bozza} disabled={saving} variant="outline">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salva bozza"}</Button>}
           <Button variant="outline" onClick={() => set_preview_open(true)}><FileText className="w-4 h-4 mr-1" /> Anteprima PDF</Button>
-          {f.stato !== "pagata" && f.stato !== "annullata" && f.stato !== "stornata" && (
+          {f.stato !== "pagata" && f.stato !== "annullata" && f.stato !== "stornata" && puo_gestire_fatture && (
             <Button onClick={invia_email} disabled={inviando} className="bg-sky-600 hover:bg-sky-700">
               {inviando ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Send className="w-4 h-4 mr-1" />} Invia
             </Button>
           )}
-          {(f.stato === "inviata" || f.stato === "sollecitata" || f.stato === "scaduta") && (
-            <Button onClick={() => cambia_stato("pagata")} className="bg-emerald-600 hover:bg-emerald-700"><CheckCircle className="w-4 h-4 mr-1" /> Marca pagata</Button>
+          {(f.stato === "inviata" || f.stato === "sollecitata" || f.stato === "scaduta") && puo_gestire_fatture && (
+            <ConfirmButton
+              titolo={`Marcare come pagata la fattura ${f.numero || f.id.slice(0, 8)}?`}
+              descrizione="La fattura verrà registrata come pagata alla data odierna."
+              conferma_label="Marca pagata"
+              on_conferma={() => cambia_stato("pagata")}
+            >
+              <Button className="bg-emerald-600 hover:bg-emerald-700"><CheckCircle className="w-4 h-4 mr-1" /> Marca pagata</Button>
+            </ConfirmButton>
           )}
-          {f.stato !== "annullata" && f.stato !== "stornata" && (
+          {f.stato !== "annullata" && f.stato !== "stornata" && puo_gestire_fatture && (
             <>
               <Button variant="outline" className="text-red-600" onClick={() => { set_motivo_azione(""); set_azione("annulla"); }}>
                 <XCircle className="w-4 h-4 mr-1" /> Annulla

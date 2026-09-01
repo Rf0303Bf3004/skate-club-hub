@@ -24,6 +24,9 @@ import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { can_override_ore_lavoro } from "@/lib/roles";
+import { usePermessiAzione } from "@/hooks/use-permessi-azione";
+import ConfirmButton from "@/components/common/ConfirmButton";
+import NotaPermesso from "@/components/common/NotaPermesso";
 
 const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
 
@@ -1477,6 +1480,7 @@ const InstructorsPage: React.FC = () => {
   const { t } = useI18n();
   const { t: ti } = useTranslation("istruttori");
   const navigate = useNavigate();
+  const { puo_gestire_sportivo } = usePermessiAzione();
   const { data: istruttori = [], isLoading } = use_istruttori();
   const { data: monitori_atleti = [] } = use_atleti_monitori();
   const { data: atleti_all = [] } = use_atleti();
@@ -1613,6 +1617,15 @@ const InstructorsPage: React.FC = () => {
   const selected = istruttori_veri.find((i: any) => i.id === selected_id);
   const selected_monitore = monitori_atleti.find((a: any) => a.id === selected_monitore_id);
 
+  const totale_fasce_attuali = useMemo(
+    () => Object.values(selected?.disponibilita || {}).reduce((acc: number, s: any) => acc + (Array.isArray(s) ? s.length : 0), 0),
+    [selected],
+  );
+  const totale_fasce_nuove = useMemo(
+    () => Object.values(disp_local).reduce((acc, s) => acc + s.length, 0),
+    [disp_local],
+  );
+
   if (isLoading)
     return (
       <div className="flex items-center justify-center h-64">
@@ -1687,17 +1700,19 @@ const InstructorsPage: React.FC = () => {
                 </div>
               </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="ml-auto"
-              onClick={() => {
-                set_selected_modal(selected);
-                set_modal_open(true);
-              }}
-            >
-              {t("modifica")}
-            </Button>
+            {puo_gestire_sportivo && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="ml-auto"
+                onClick={() => {
+                  set_selected_modal(selected);
+                  set_modal_open(true);
+                }}
+              >
+                {t("modifica")}
+              </Button>
+            )}
           </div>
 
           {selected.stato_staff === "sospeso" && (
@@ -1768,9 +1783,20 @@ const InstructorsPage: React.FC = () => {
                   <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">
                     {t("disponibilita")}
                   </h2>
-                  <Button size="sm" onClick={save_disponibilita} disabled={save_disp.isPending}>
-                    {save_disp.isPending ? "..." : t("salva")}
-                  </Button>
+                  {puo_gestire_sportivo ? (
+                    <ConfirmButton
+                      titolo="Salvare le nuove fasce di disponibilità?"
+                      descrizione={`Sostituisco le ${totale_fasce_attuali} fasce attuali con le ${totale_fasce_nuove} nuove?`}
+                      conferma_label="Salva disponibilità"
+                      on_conferma={save_disponibilita}
+                    >
+                      <Button size="sm" disabled={save_disp.isPending}>
+                        {save_disp.isPending ? "..." : t("salva")}
+                      </Button>
+                    </ConfirmButton>
+                  ) : (
+                    <NotaPermesso testo="Non hai i permessi per modificare la disponibilità." />
+                  )}
                 </div>
                 <div className="space-y-4">
                   {GIORNI.map((giorno) => {
@@ -1779,9 +1805,11 @@ const InstructorsPage: React.FC = () => {
                       <div key={giorno} className="border border-border/50 rounded-lg p-3">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-sm font-medium text-foreground">{giorno}</span>
-                          <Button variant="ghost" size="sm" onClick={() => add_slot(giorno)} className="h-7 text-xs">
-                            <Plus className="w-3 h-3 mr-1" /> {ti("dettaglio.slot")}
-                          </Button>
+                          {puo_gestire_sportivo && (
+                            <Button variant="ghost" size="sm" onClick={() => add_slot(giorno)} className="h-7 text-xs">
+                              <Plus className="w-3 h-3 mr-1" /> {ti("dettaglio.slot")}
+                            </Button>
+                          )}
                         </div>
                         {slots.length === 0 && <p className="text-xs text-muted-foreground">{ti("dettaglio.nessuno_slot")}</p>}
                         {slots.map((s, idx) => (
@@ -1789,6 +1817,7 @@ const InstructorsPage: React.FC = () => {
                             <Input
                               type="time"
                               value={s.ora_inizio}
+                              disabled={!puo_gestire_sportivo}
                               onChange={(e) => update_slot(giorno, idx, "ora_inizio", e.target.value)}
                               className="w-28 h-8 text-xs"
                             />
@@ -1796,17 +1825,20 @@ const InstructorsPage: React.FC = () => {
                             <Input
                               type="time"
                               value={s.ora_fine}
+                              disabled={!puo_gestire_sportivo}
                               onChange={(e) => update_slot(giorno, idx, "ora_fine", e.target.value)}
                               className="w-28 h-8 text-xs"
                             />
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => remove_slot(giorno, idx)}
-                              className="h-7 w-7 p-0 text-destructive"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
+                            {puo_gestire_sportivo && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => remove_slot(giorno, idx)}
+                                className="h-7 w-7 p-0 text-destructive"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -1838,15 +1870,17 @@ const InstructorsPage: React.FC = () => {
       <div className="space-y-6 animate-fade-in">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold tracking-tight text-foreground">{t("istruttori")}</h1>
-          <Button
-            className="bg-primary hover:bg-primary/90"
-            onClick={() => {
-              set_selected_modal(null);
-              set_modal_open(true);
-            }}
-          >
-            <Plus className="w-4 h-4 mr-2" /> {t("nuovo_istruttore")}
-          </Button>
+          {puo_gestire_sportivo && (
+            <Button
+              className="bg-primary hover:bg-primary/90"
+              onClick={() => {
+                set_selected_modal(null);
+                set_modal_open(true);
+              }}
+            >
+              <Plus className="w-4 h-4 mr-2" /> {t("nuovo_istruttore")}
+            </Button>
+          )}
         </div>
 
         {/* Tabs filtro per livello */}
@@ -1954,6 +1988,19 @@ const InstructorsPage: React.FC = () => {
                       </span>
                     </div>
                   </div>
+                  {(liv === "monitrice" || liv === "aiuto_monitrice") && linked_atleta && puo_gestire_sportivo && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-3 w-full"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        set_selected_monitore_id(linked_atleta.id);
+                      }}
+                    >
+                      {ti("monitore.vedi_ore_compenso") || "Ore pista e compenso"}
+                    </Button>
+                  )}
                 </div>
               );
             })}

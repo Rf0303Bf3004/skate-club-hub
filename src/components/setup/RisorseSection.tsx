@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { Plus, Trash2, Pencil, MapPin, Luggage } from "lucide-react";
+import ConfirmButton from "@/components/common/ConfirmButton";
 
 const empty_form = {
   nome: "",
@@ -306,11 +307,11 @@ export const RisorseSection: React.FC = () => {
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8 text-destructive"
-                          onClick={async () => {
+                        <ConfirmButton
+                          titolo={`Eliminare la risorsa "${r.nome}"?`}
+                          descrizione="L'operazione non può essere annullata."
+                          conferma_label="Elimina"
+                          on_conferma={async () => {
                             try {
                               await elimina.mutateAsync(r.id);
                               toast({ title: "Risorsa eliminata" });
@@ -319,8 +320,14 @@ export const RisorseSection: React.FC = () => {
                             }
                           }}
                         >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </ConfirmButton>
                       </div>
                     </div>
                   ))}

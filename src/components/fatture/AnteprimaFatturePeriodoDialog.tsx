@@ -11,6 +11,8 @@ import {
   type AnteprimaFattura,
   type EsitoGenerazione,
 } from "@/hooks/use-supabase-mutations";
+import { usePermessiAzione } from "@/hooks/use-permessi-azione";
+import NotaPermesso from "@/components/common/NotaPermesso";
 
 const MESI = [
   "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
@@ -26,6 +28,7 @@ interface Props {
 }
 
 const AnteprimaFatturePeriodoDialog: React.FC<Props> = ({ open, onOpenChange }) => {
+  const { puo_gestire_fatture } = usePermessiAzione();
   const oggi = new Date();
   const [anno, set_anno] = useState<number>(oggi.getFullYear());
   const [mese, set_mese] = useState<number>(oggi.getMonth() + 1);
@@ -208,10 +211,14 @@ const AnteprimaFatturePeriodoDialog: React.FC<Props> = ({ open, onOpenChange }) 
             </div>
 
             {generabili.length > 0 && (
-              <Button onClick={esegui_genera} disabled={genera.isPending} className="bg-primary hover:bg-primary/90">
-                {genera.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileText className="w-4 h-4 mr-2" />}
-                Genera {generabili.length} fatture per CHF {chf(totale_generabile)}
-              </Button>
+              puo_gestire_fatture ? (
+                <Button onClick={esegui_genera} disabled={genera.isPending} className="bg-primary hover:bg-primary/90">
+                  {genera.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileText className="w-4 h-4 mr-2" />}
+                  Genera {generabili.length} fatture per CHF {chf(totale_generabile)}
+                </Button>
+              ) : (
+                <NotaPermesso testo="Solo la segreteria e il presidente possono emettere fatture." />
+              )
             )}
           </div>
         )}

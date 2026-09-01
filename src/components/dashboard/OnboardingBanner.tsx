@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import { usePermessiAzione } from "@/hooks/use-permessi-azione";
 
 /**
  * Lista di avvio del club, alimentata dalla funzione DB diagnosi_avvio_club(club_id).
@@ -39,6 +40,7 @@ const rotta_area = (area: string) => ROTTA_PER_AREA[area] ?? { to: "/setup-club"
 export default function OnboardingBanner() {
   const { session } = useAuth();
   const club_id = session?.club_id;
+  const { puo_configurare_club } = usePermessiAzione();
   const [chiuso_localmente, set_chiuso_localmente] = useState(false);
 
   const { data: banner_chiuso } = useQuery({
@@ -86,6 +88,7 @@ export default function OnboardingBanner() {
     toast.success("Messaggio nascosto");
   };
 
+  if (!puo_configurare_club) return null;
   if (!club_id || banner_chiuso || chiuso_localmente) return null;
   if (isLoading || (righe?.length ?? 0) === 0) return null;
 

@@ -9,12 +9,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { Building2 } from "lucide-react";
+import { usePermessiAzione } from "@/hooks/use-permessi-azione";
+import NotaPermesso from "@/components/common/NotaPermesso";
 
 /**
  * Tariffe orarie dell'istruttore differenziate per ragione sociale pagante.
  * Visibile SOLO se l'area "fatturazione" è in modalità "multi_ragione_sociale".
  */
 export const TariffeRagioniSocialiSection: React.FC<{ istruttore_id: string }> = ({ istruttore_id }) => {
+  const { puo_gestire_sportivo } = usePermessiAzione();
   const { modalita } = useModalitaArea("fatturazione");
   const { data: ragioni = [] } = use_ragioni_sociali();
   const { data: tariffe = [] } = use_tariffe_istruttore(istruttore_id);
@@ -58,6 +61,9 @@ export const TariffeRagioniSocialiSection: React.FC<{ istruttore_id: string }> =
         </h2>
       </div>
 
+      {!puo_gestire_sportivo && (
+        <NotaPermesso testo="Non hai i permessi per modificare le tariffe dell'istruttore." />
+      )}
       <div className="space-y-2">
         {ragioni.map((r) => (
           <div key={r.id} className="flex items-center gap-3 rounded-lg bg-muted/20 px-3 py-2">
@@ -67,13 +73,16 @@ export const TariffeRagioniSocialiSection: React.FC<{ istruttore_id: string }> =
               step="0.01"
               placeholder="Non definita"
               className="h-9 w-36"
+              disabled={!puo_gestire_sportivo}
               value={valori[r.id] ?? ""}
               onChange={(e) => set_valori((p) => ({ ...p, [r.id]: e.target.value }))}
             />
             <span className="text-xs text-muted-foreground">CHF/h</span>
-            <Button size="sm" variant="outline" onClick={() => salva(r.id)} disabled={saving_id === r.id}>
-              {saving_id === r.id ? "..." : "Salva"}
-            </Button>
+            {puo_gestire_sportivo && (
+              <Button size="sm" variant="outline" onClick={() => salva(r.id)} disabled={saving_id === r.id}>
+                {saving_id === r.id ? "..." : "Salva"}
+              </Button>
+            )}
           </div>
         ))}
       </div>

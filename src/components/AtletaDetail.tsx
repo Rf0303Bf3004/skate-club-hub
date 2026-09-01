@@ -43,6 +43,8 @@ import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import CompensoStaffModal from "@/components/CompensoStaffModal";
 import FotoAtleta from "@/components/common/FotoAtleta";
+import { usePermessiAzione } from "@/hooks/use-permessi-azione";
+import NotaPermesso from "@/components/common/NotaPermesso";
 
 interface Props {
   atleta: any;
@@ -269,7 +271,8 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
   const [confirm_verifica, set_confirm_verifica] = useState(false);
   const { session } = useAuth();
   const query_client = useQueryClient();
-  const can_verificare = (session?.ruolo as string) !== "aiuto_monitore";
+  const { puo_gestire_sportivo } = usePermessiAzione();
+  const can_verificare = puo_gestire_sportivo;
 
   // Nome utente che ha verificato (se presente)
   const { data: verificato_da_nome } = useQuery({
@@ -756,19 +759,26 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
             >
               <QrCode className="w-3.5 h-3.5" /> {td("detail.qr_portal_button")}
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => set_show_migra(true)}
-              className="gap-1.5 text-xs border-primary/40 text-primary hover:bg-primary/5"
-            >
-              <ArrowRightLeft className="w-3.5 h-3.5" /> {td("detail.migra_button")}
-            </Button>
-            <Button onClick={handle_save} disabled={upsert.isPending} className="bg-primary hover:bg-primary/90">
-              <Save className="w-4 h-4 mr-2" /> {upsert.isPending ? "..." : t("salva")}
-            </Button>
+            {puo_gestire_sportivo && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => set_show_migra(true)}
+                className="gap-1.5 text-xs border-primary/40 text-primary hover:bg-primary/5"
+              >
+                <ArrowRightLeft className="w-3.5 h-3.5" /> {td("detail.migra_button")}
+              </Button>
+            )}
+            {puo_gestire_sportivo && (
+              <Button onClick={handle_save} disabled={upsert.isPending} className="bg-primary hover:bg-primary/90">
+                <Save className="w-4 h-4 mr-2" /> {upsert.isPending ? "..." : t("salva")}
+              </Button>
+            )}
           </div>
         </div>
+        {!puo_gestire_sportivo && (
+          <NotaPermesso testo="Sola lettura: solo lo staff di gestione può modificare atleti e iscrizioni." />
+        )}
 
         <div className="flex items-center gap-4">
           <div className="relative">
@@ -1123,6 +1133,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
 
           {/* ── Livello ── */}
           <TabsContent value="livello" className="mt-6">
+            <fieldset disabled={!puo_gestire_sportivo} className="contents">
             <div className="space-y-6 max-w-2xl">
               {/* ─── Sezione Categoria ─── */}
               <div className="bg-card rounded-xl shadow-card p-6 space-y-4">
@@ -1350,6 +1361,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                 )}
               </div>
             </div>
+          </fieldset>
           </TabsContent>
 
           {/* ── Corsi ── */}
@@ -1504,6 +1516,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
 
           {/* ── Genitori ── */}
           <TabsContent value="genitori" className="mt-6 space-y-6">
+            <fieldset disabled={!puo_gestire_sportivo} className="contents">
             <CodiceAtletaCard
               atleta={form}
               on_updated={(nuovo) => upd("codice_atleta", nuovo)}
@@ -1570,6 +1583,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                 </div>
               );
             })}
+          </fieldset>
           </TabsContent>
 
           {/* ── Fatture ── */}

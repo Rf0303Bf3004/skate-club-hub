@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { useModalitaArea } from "@/hooks/useModalitaArea";
+import { usePermessiAzione } from "@/hooks/use-permessi-azione";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -31,7 +32,7 @@ export const ModalitaGestioneSection: React.FC<Props> = ({
   opzioni = OPZIONI_GHIACCIO,
 }) => {
   const { session } = useAuth();
-  const allowed = !!session && ["superadmin", "presidente"].includes(session.ruolo);
+  const { solo_presidente: allowed } = usePermessiAzione();
   const queryClient = useQueryClient();
   const { modalita, is_loading } = useModalitaArea(area);
 

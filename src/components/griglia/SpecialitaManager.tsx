@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trash2, Plus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { usePermessiAzione } from "@/hooks/use-permessi-azione";
+import NotaPermesso from "@/components/common/NotaPermesso";
+import ConfirmButton from "@/components/common/ConfirmButton";
 import {
   use_griglia_specialita,
   use_upsert_specialita,
@@ -15,6 +18,7 @@ import {
 
 /** CRUD minimale sulla tassonomia delle specialità della griglia ghiaccio. */
 const SpecialitaManager: React.FC = () => {
+  const { puo_pianificare } = usePermessiAzione();
   const { data: specialita = [], isLoading } = use_griglia_specialita();
   const upsert = use_upsert_specialita();
   const elimina = use_elimina_specialita();
@@ -116,9 +120,17 @@ const SpecialitaManager: React.FC = () => {
                 <div className="px-3 py-2 bg-muted/30 rounded-lg space-y-1.5">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-sm truncate">{s.nome}</span>
-                    <Button variant="ghost" size="icon" onClick={() => rimuovi(s.id)} title="Elimina">
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
+                    {puo_pianificare && (
+                      <ConfirmButton
+                        titolo={`Eliminare la specialità "${s.nome}"?`}
+                        conferma_label="Elimina"
+                        on_conferma={() => rimuovi(s.id)}
+                      >
+                        <Button variant="ghost" size="icon" title="Elimina">
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </ConfirmButton>
+                    )}
                   </div>
                   <Input
                     defaultValue={s.descrizione_messaggio ?? ""}
@@ -137,6 +149,8 @@ const SpecialitaManager: React.FC = () => {
       </DndContext>
       </div>
 
+      {!puo_pianificare && <NotaPermesso testo="Solo chi può pianificare può gestire le specialità." />}
+      {puo_pianificare && (
       <div className="pt-2 border-t space-y-2 shrink-0">
         <div className="flex items-center gap-2">
         <Input
@@ -161,6 +175,7 @@ const SpecialitaManager: React.FC = () => {
           className="h-8 text-xs"
         />
       </div>
+      )}
     </div>
   );
 };

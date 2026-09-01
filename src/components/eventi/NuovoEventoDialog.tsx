@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tent, Sparkles, Trophy, Users, Building2, ArrowLeft } from "lucide-react";
+import { usePermessiAzione } from "@/hooks/use-permessi-azione";
+import NotaPermesso from "@/components/common/NotaPermesso";
 
 export type SceltaNuovoEvento = "campo" | "campo_interclub" | "gala" | "gara";
 
@@ -32,6 +34,7 @@ const Scelta: React.FC<{
 
 /** Dialogo guidato: "Che cosa organizzate?" con eventuale domanda sui club invitati. */
 const NuovoEventoDialog: React.FC<Props> = ({ open, onOpenChange, on_scelta }) => {
+  const { puo_gestire_sportivo } = usePermessiAzione();
   const [passo, set_passo] = useState<1 | 2>(1);
 
   const chiudi = (v: boolean) => {
@@ -47,7 +50,15 @@ const NuovoEventoDialog: React.FC<Props> = ({ open, onOpenChange, on_scelta }) =
   return (
     <Dialog open={open} onOpenChange={chiudi}>
       <DialogContent className="max-w-lg">
-        {passo === 1 ? (
+        {!puo_gestire_sportivo ? (
+          <>
+            <DialogHeader>
+              <DialogTitle>Che cosa organizzate?</DialogTitle>
+              <DialogDescription>Non hai i permessi per creare un nuovo evento.</DialogDescription>
+            </DialogHeader>
+            <NotaPermesso testo="Solo superadmin, admin, presidente, vicepresidente, direttore tecnico o segreteria possono creare eventi." />
+          </>
+        ) : passo === 1 ? (
           <>
             <DialogHeader>
               <DialogTitle>Che cosa organizzate?</DialogTitle>

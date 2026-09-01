@@ -7,6 +7,8 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
+import { usePermessiAzione } from "@/hooks/use-permessi-azione";
+import NotaPermesso from "@/components/common/NotaPermesso";
 
 const tk = (key: string, opts?: any) => i18n.t(`compenso.${key}`, { ns: "istruttori", ...(opts ?? {}) }) as string;
 
@@ -48,6 +50,7 @@ interface Props {
 
 export const CompensoStaffModal: React.FC<Props> = ({ open, atleta, livello, on_saved, on_cancel }) => {
   const { t } = useTranslation("istruttori");
+  const { puo_gestire_sportivo } = usePermessiAzione();
   const [tipo, set_tipo] = useState<TipoContratto>("orario");
   const [prezzo_min, set_prezzo_min] = useState("");
   const [costo_lezioni, set_costo_lezioni] = useState("");
@@ -177,9 +180,11 @@ export const CompensoStaffModal: React.FC<Props> = ({ open, atleta, livello, on_
               <Button variant="outline" onClick={() => set_confirm_cancel(false)} disabled={cancelling}>
                 {t("compenso.back")}
               </Button>
-              <Button variant="destructive" onClick={handle_cancel_confirm} disabled={cancelling}>
-                {cancelling ? "..." : t("compenso.confirm_remove_cta")}
-              </Button>
+              {puo_gestire_sportivo && (
+                <Button variant="destructive" onClick={handle_cancel_confirm} disabled={cancelling}>
+                  {cancelling ? "..." : t("compenso.confirm_remove_cta")}
+                </Button>
+              )}
             </div>
           </div>
         ) : (
@@ -209,13 +214,20 @@ export const CompensoStaffModal: React.FC<Props> = ({ open, atleta, livello, on_
               {t("compenso.required_note")}
             </p>
 
+            {!puo_gestire_sportivo && (
+              <NotaPermesso testo="Non hai i permessi per modificare il compenso di questo membro dello staff." />
+            )}
             <div className="flex justify-between gap-2 pt-2">
-              <Button variant="outline" onClick={() => set_confirm_cancel(true)} disabled={saving}>
-                {t("compenso.cancel")}
-              </Button>
-              <Button onClick={handle_save} disabled={!can_save || saving} className="bg-primary hover:bg-primary/90">
-                {saving ? "..." : t("compenso.save")}
-              </Button>
+              {puo_gestire_sportivo && (
+                <Button variant="outline" onClick={() => set_confirm_cancel(true)} disabled={saving}>
+                  {t("compenso.cancel")}
+                </Button>
+              )}
+              {puo_gestire_sportivo && (
+                <Button onClick={handle_save} disabled={!can_save || saving} className="bg-primary hover:bg-primary/90">
+                  {saving ? "..." : t("compenso.save")}
+                </Button>
+              )}
             </div>
           </div>
         )}

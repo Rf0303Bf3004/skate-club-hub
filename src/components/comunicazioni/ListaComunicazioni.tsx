@@ -22,6 +22,7 @@ type Props = {
   on_open?: (c: any) => void;
   empty_text: string;
   stagioni?: any[];
+  can_manage?: boolean;
 };
 
 function get_ts(c: any) {
@@ -51,6 +52,7 @@ export const ListaComunicazioni: React.FC<Props> = ({
   on_open,
   empty_text,
   stagioni = [],
+  can_manage = true,
 }) => {
   const qc = useQueryClient();
   const [search, set_search] = useState('');
@@ -202,7 +204,7 @@ export const ListaComunicazioni: React.FC<Props> = ({
       </div>
 
       {/* Azioni multiple */}
-      {selected.length > 0 && (
+      {can_manage && selected.length > 0 && (
         <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-2">
           <p className="text-sm font-medium">{selected.length} selezionate</p>
           <div className="flex gap-2">
@@ -245,12 +247,14 @@ export const ListaComunicazioni: React.FC<Props> = ({
                       is_sel && 'ring-2 ring-primary/40',
                     )}
                   >
-                    <Checkbox
-                      checked={is_sel}
-                      onCheckedChange={() => toggle_select(c.id)}
-                      className="mt-1"
-                      aria-label="Seleziona comunicazione"
-                    />
+                    {can_manage && (
+                      <Checkbox
+                        checked={is_sel}
+                        onCheckedChange={() => toggle_select(c.id)}
+                        className="mt-1"
+                        aria-label="Seleziona comunicazione"
+                      />
+                    )}
                     <div className="flex-1 min-w-0 cursor-pointer" onClick={() => on_open?.(c)}>
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0">
@@ -271,15 +275,17 @@ export const ListaComunicazioni: React.FC<Props> = ({
                         </div>
                       </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      disabled={busy}
-                      title={mode === 'attive' ? 'Archivia' : 'Ripristina'}
-                      onClick={() => apply_archivia([c.id], mode === 'attive')}
-                    >
-                      {mode === 'attive' ? <Archive className="w-4 h-4" /> : <ArchiveRestore className="w-4 h-4" />}
-                    </Button>
+                    {can_manage && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        disabled={busy}
+                        title={mode === 'attive' ? 'Archivia' : 'Ripristina'}
+                        onClick={() => apply_archivia([c.id], mode === 'attive')}
+                      >
+                        {mode === 'attive' ? <Archive className="w-4 h-4" /> : <ArchiveRestore className="w-4 h-4" />}
+                      </Button>
+                    )}
                   </div>
                 );
               })}

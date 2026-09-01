@@ -37,6 +37,9 @@ import {
   Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
+import { usePermessiAzione } from "@/hooks/use-permessi-azione";
+import NotaPermesso from "@/components/common/NotaPermesso";
+import ConfirmButton from "@/components/common/ConfirmButton";
 
 type EventoCampo = {
   id: string;
@@ -82,6 +85,7 @@ const fmt_date = (d: string | null) => {
 // ═══════════════════════════════════════════════════════════
 const EventiPage = () => {
   const { t } = useTranslation("events");
+  const { puo_gestire_sportivo } = usePermessiAzione();
   const club_id = get_current_club_id();
   const navigate = useNavigate();
   const [search_params, set_search_params] = useSearchParams();
@@ -150,9 +154,13 @@ const EventiPage = () => {
             {t("eventi_unificati.page_subtitle", "Campi, stage, galà e spettacoli del club.")}
           </p>
         </div>
-        <Button size="lg" onClick={() => set_nuovo_open(true)}>
-          <Plus className="w-5 h-5 mr-2" /> {t("eventi_unificati.new_button", "Nuovo")}
-        </Button>
+        {puo_gestire_sportivo ? (
+          <Button size="lg" onClick={() => set_nuovo_open(true)}>
+            <Plus className="w-5 h-5 mr-2" /> {t("eventi_unificati.new_button", "Nuovo")}
+          </Button>
+        ) : (
+          <NotaPermesso testo="Non hai i permessi per creare nuovi eventi." />
+        )}
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className="space-y-4">
@@ -203,6 +211,7 @@ const CampoInternoSection: React.FC<{
   on_vai_a_inviti?: (evento_id: string) => void;
 }> = ({ eventi, apri_nuovo, on_chiudi_nuovo, on_vai_a_inviti }) => {
   const { t } = useTranslation("events");
+  const { puo_gestire_sportivo } = usePermessiAzione();
   const club_id = get_current_club_id();
   const qc = useQueryClient();
   const { data: stagioni = [] } = use_stagioni();
@@ -288,7 +297,8 @@ const CampoInternoSection: React.FC<{
         evento={selected}
         onBack={() => setSelected(null)}
         onDelete={() => remove.mutate(selected.id)}
-        on_aggiungi_club={() => abilita_interclub.mutate(selected.id)}
+        on_aggiungi_club={puo_gestire_sportivo ? () => abilita_interclub.mutate(selected.id) : undefined}
+        puo_gestire={puo_gestire_sportivo}
       />
     );
   }
@@ -300,9 +310,14 @@ const CampoInternoSection: React.FC<{
           <CardTitle>{t("campi_eventi.interno.title")}</CardTitle>
           <CardDescription>{t("campi_eventi.interno.description")}</CardDescription>
         </div>
-        <Button onClick={() => setOpen(true)}><Plus className="w-4 h-4 mr-2" /> {t("campi_eventi.interno.new_button")}</Button>
+        {puo_gestire_sportivo && (
+          <Button onClick={() => setOpen(true)}><Plus className="w-4 h-4 mr-2" /> {t("campi_eventi.interno.new_button")}</Button>
+        )}
       </CardHeader>
       <CardContent>
+        {!puo_gestire_sportivo && (
+          <div className="mb-3"><NotaPermesso testo="Non hai i permessi per creare o modificare i campi interni." /></div>
+        )}
         {eventi.length === 0 ? (
           <p className="text-sm text-muted-foreground py-8 text-center">{t("campi_eventi.interno.empty")}</p>
         ) : (
@@ -380,7 +395,8 @@ const CampoInternoDettaglio: React.FC<{
   onBack: () => void;
   onDelete: () => void;
   on_aggiungi_club?: () => void;
-}> = ({ evento, onBack, onDelete, on_aggiungi_club }) => {
+  puo_gestire: boolean;
+}> = ({ evento, onBack, onDelete, on_aggiungi_club, puo_gestire }) => {
   const { t } = useTranslation("events");
   const qc = useQueryClient();
   const { data: istruttori = [] } = use_istruttori();
@@ -453,7 +469,7 @@ const CampoInternoDettaglio: React.FC<{
           <p className="text-sm text-muted-foreground">{fmt_date(evento.data_inizio)} → {fmt_date(evento.data_fine)} {evento.luogo && `• ${evento.luogo}`}</p>
         </div>
         <div className="flex gap-2">
-          {on_aggiungi_club && (
+          {puo_gestire && on_aggiungi_club && (
             <Button variant="outline" size="sm" onClick={on_aggiungi_club}>
               <Users className="w-4 h-4 mr-2" />
               {evento.multi_club
@@ -461,18 +477,32 @@ const CampoInternoDettaglio: React.FC<{
                 : t("eventi_unificati.aggiungi_club", "Aggiungi altri club")}
             </Button>
           )}
-          <Button variant="destructive" size="sm" onClick={() => { if (confirm(t("campi_eventi.detail.delete_confirm"))) onDelete(); }}>
-            <Trash2 className="w-4 h-4 mr-2" /> {t("campi_eventi.detail.delete_button")}
-          </Button>
+          {puo_gestire && (
+            <ConfirmButton
+              titolo={`Eliminare l'evento "${evento.nome}"?`}
+              descrizione="Questa azione elimina anche le sessioni e le iscrizioni collegate."
+              conferma_label="Elimina evento"
+              on_conferma={onDelete}
+            >
+              <Button variant="destructive" size="sm">
+                <Trash2 className="w-4 h-4 mr-2" /> {t("campi_eventi.detail.delete_button")}
+              </Button>
+            </ConfirmButton>
+          )}
         </div>
       </div>
+      {!puo_gestire && (
+        <NotaPermesso testo="Non hai i permessi per modificare questo campo, le sue sessioni o le iscrizioni club." />
+      )}
 
       <div className="grid lg:grid-cols-2 gap-4">
         {/* Planning sessioni */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div><CardTitle className="text-base">{t("campi_eventi.detail.planning_title")}</CardTitle><CardDescription>{t("campi_eventi.detail.planning_desc", { count: sessioni.length })}</CardDescription></div>
-            <Button size="sm" onClick={() => setOpenSess(true)}><Plus className="w-4 h-4 mr-1" /> {t("campi_eventi.detail.session_button")}</Button>
+            {puo_gestire && (
+              <Button size="sm" onClick={() => setOpenSess(true)}><Plus className="w-4 h-4 mr-1" /> {t("campi_eventi.detail.session_button")}</Button>
+            )}
           </CardHeader>
           <CardContent>
             {sessioni.length === 0 ? (
@@ -487,7 +517,15 @@ const CampoInternoDettaglio: React.FC<{
                         <p className="font-medium">{s.titolo || t("campi_eventi.detail.session_default_title")} • {fmt_date(s.data)}</p>
                         <p className="text-xs text-muted-foreground">{s.ora_inizio?.slice(0, 5)}–{s.ora_fine?.slice(0, 5)} {istr && `• ${istr.nome} ${istr.cognome}`}</p>
                       </div>
-                      <Button variant="ghost" size="icon" onClick={() => delSess.mutate(s.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                      {puo_gestire && (
+                        <ConfirmButton
+                          titolo={`Eliminare la sessione "${s.titolo || t("campi_eventi.detail.session_default_title")}"?`}
+                          conferma_label="Elimina sessione"
+                          on_conferma={() => delSess.mutate(s.id)}
+                        >
+                          <Button variant="ghost" size="icon"><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                        </ConfirmButton>
+                      )}
                     </div>
                   );
                 })}
@@ -509,7 +547,12 @@ const CampoInternoDettaglio: React.FC<{
                 return (
                   <div key={a.id} className="flex items-center justify-between p-2 rounded hover:bg-muted/50">
                     <span className="text-sm">{a.cognome} {a.nome}</span>
-                    <Button size="sm" variant={isc ? "default" : "outline"} onClick={() => toggleIscr.mutate({ atleta_id: a.id, iscritto: isc })}>
+                    <Button
+                      size="sm"
+                      variant={isc ? "default" : "outline"}
+                      disabled={!puo_gestire}
+                      onClick={() => puo_gestire && toggleIscr.mutate({ atleta_id: a.id, iscritto: isc })}
+                    >
                       {isc ? t("campi_eventi.detail.enrolled") : t("campi_eventi.detail.enroll")}
                     </Button>
                   </div>
@@ -556,6 +599,7 @@ const CampoInternoDettaglio: React.FC<{
 // ═══════════════════════════════════════════════════════════
 const CampoEsternoSection: React.FC<{ eventi: EventoCampo[] }> = ({ eventi }) => {
   const { t } = useTranslation("events");
+  const { puo_gestire_sportivo } = usePermessiAzione();
   const club_id = get_current_club_id();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -628,9 +672,14 @@ const CampoEsternoSection: React.FC<{ eventi: EventoCampo[] }> = ({ eventi }) =>
           <CardTitle>{t("campi_eventi.esterno.title")}</CardTitle>
           <CardDescription>{t("campi_eventi.esterno.description")}</CardDescription>
         </div>
-        <Button onClick={() => setOpen(true)}><Plus className="w-4 h-4 mr-2" /> {t("campi_eventi.esterno.new_button")}</Button>
+        {puo_gestire_sportivo && (
+          <Button onClick={() => setOpen(true)}><Plus className="w-4 h-4 mr-2" /> {t("campi_eventi.esterno.new_button")}</Button>
+        )}
       </CardHeader>
       <CardContent>
+        {!puo_gestire_sportivo && (
+          <div className="mb-3"><NotaPermesso testo="Non hai i permessi per creare o eliminare campi esterni." /></div>
+        )}
         {eventi.length === 0 ? (
           <p className="text-sm text-muted-foreground py-8 text-center">{t("campi_eventi.esterno.empty")}</p>
         ) : (
@@ -655,9 +704,17 @@ const CampoEsternoSection: React.FC<{ eventi: EventoCampo[] }> = ({ eventi }) =>
                     <Button size="sm" variant="outline" onClick={() => inviaComunicazione.mutate(e)}>
                       <Send className="w-4 h-4 mr-1" /> {t("campi_eventi.esterno.send_communication_button")}
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => { if (confirm(t("campi_eventi.esterno.delete_confirm"))) remove.mutate(e.id); }}>
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
+                    {puo_gestire_sportivo && (
+                      <ConfirmButton
+                        titolo={`Eliminare il campo "${e.nome}"?`}
+                        conferma_label="Elimina campo"
+                        on_conferma={() => remove.mutate(e.id)}
+                      >
+                        <Button size="sm" variant="ghost">
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </ConfirmButton>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -713,6 +770,7 @@ const GalaSpettacoliSection: React.FC<{ apri_nuovo?: boolean; on_chiudi_nuovo?: 
   on_chiudi_nuovo,
 }) => {
   const { t } = useTranslation("events");
+  const { puo_gestire_sportivo } = usePermessiAzione();
   const TIPI_EVENTO_LABEL: Record<string, string> = {
     gala: t("campi_eventi.gala.type_gala"),
     saggio: t("campi_eventi.gala.type_saggio"),
@@ -934,9 +992,14 @@ const GalaSpettacoliSection: React.FC<{ apri_nuovo?: boolean; on_chiudi_nuovo?: 
           <CardTitle>{t("campi_eventi.gala.title")}</CardTitle>
           <CardDescription>{t("campi_eventi.gala.description")}</CardDescription>
         </div>
-        <Button onClick={() => { reset_form(); setOpen(true); }}><Plus className="w-4 h-4 mr-2" /> {t("campi_eventi.gala.new_button")}</Button>
+        {puo_gestire_sportivo && (
+          <Button onClick={() => { reset_form(); setOpen(true); }}><Plus className="w-4 h-4 mr-2" /> {t("campi_eventi.gala.new_button")}</Button>
+        )}
       </CardHeader>
       <CardContent>
+        {!puo_gestire_sportivo && (
+          <div className="mb-3"><NotaPermesso testo="Non hai i permessi per creare, modificare o eliminare eventi." /></div>
+        )}
         {eventi.length === 0 ? (
           <p className="text-sm text-muted-foreground py-8 text-center">{t("campi_eventi.gala.empty")}</p>
         ) : (
@@ -957,15 +1020,25 @@ const GalaSpettacoliSection: React.FC<{ apri_nuovo?: boolean; on_chiudi_nuovo?: 
                     {e.descrizione && <p className="text-sm">{e.descrizione}</p>}
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => apri_modifica(e)}>
-                      <Pencil className="w-4 h-4 mr-1" /> {t("eventi_unificati.edit", "Modifica")}
-                    </Button>
+                    {puo_gestire_sportivo && (
+                      <Button size="sm" variant="outline" onClick={() => apri_modifica(e)}>
+                        <Pencil className="w-4 h-4 mr-1" /> {t("eventi_unificati.edit", "Modifica")}
+                      </Button>
+                    )}
                     <Button size="sm" variant="outline" onClick={() => invia_comunicazione_post.mutate(e)} disabled={invia_comunicazione_post.isPending}>
                       <Send className="w-4 h-4 mr-1" /> {t("campi_eventi.gala.communicate_button")}
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => { if (confirm(t("campi_eventi.gala.delete_confirm"))) remove.mutate(e.id); }}>
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
+                    {puo_gestire_sportivo && (
+                      <ConfirmButton
+                        titolo={`Eliminare l'evento "${e.titolo}"?`}
+                        conferma_label="Elimina evento"
+                        on_conferma={() => remove.mutate(e.id)}
+                      >
+                        <Button size="sm" variant="ghost">
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </ConfirmButton>
+                    )}
                   </div>
                 </CardContent>
               </Card>
