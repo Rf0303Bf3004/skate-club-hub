@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import OspitiImportWizard from "@/components/campi/OspitiImportWizard";
 import type { EsitoImportOspite, RigaOspiteInput } from "@/hooks/use-campi-interclub";
 import { supabase } from "@/lib/supabase";
-import { format_data } from "@/lib/format-data";
+import { format_data_completa } from "@/lib/format-data";
 
 type InfoCampo = {
   evento: {
@@ -92,7 +92,7 @@ const CampoOspitePubblicoPage: React.FC = () => {
             {[
               info.club_provenienza,
               e?.luogo,
-              e?.data_inizio ? `${format_data(e.data_inizio)}${e?.data_fine ? ` – ${format_data(e.data_fine)}` : ""}` : null,
+              e?.data_inizio ? `${format_data_completa(e.data_inizio)}${e?.data_fine ? ` – ${format_data_completa(e.data_fine)}` : ""}` : null,
             ]
               .filter(Boolean)
               .join(" • ")}
