@@ -240,7 +240,11 @@ function estrai_percorso_pdf_storage(pdf_url: string): string {
  */
 export async function prepara_pdf_fattura(
   id: string,
+  opzioni?: { preferisci_locale?: boolean },
 ): Promise<{ blob: Blob; url: string; nome_file: string; congelato: boolean }> {
+  // Il portale famiglie non ha accesso all'archivio storage del club:
+  // in quel caso il PDF viene sempre rigenerato lato client.
+  const solo_locale = opzioni?.preferisci_locale === true;
   const { data: fattura, error } = await supabase
     .from("fatture")
     .select("stato, pdf_url, numero")
@@ -248,7 +252,7 @@ export async function prepara_pdf_fattura(
     .maybeSingle();
   if (error) throw error;
 
-  if (fattura && (fattura as any).stato !== "bozza" && (fattura as any).pdf_url) {
+  if (!solo_locale && fattura && (fattura as any).stato !== "bozza" && (fattura as any).pdf_url) {
     const percorso = estrai_percorso_pdf_storage(String((fattura as any).pdf_url));
     const { data: blob_archiviato, error: download_error } = await supabase.storage
       .from(BUCKET_FATTURE)
