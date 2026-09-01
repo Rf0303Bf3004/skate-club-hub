@@ -245,9 +245,11 @@ export default function DiagnosticaPage() {
                   );
                 })}
               </CardContent>
+              )}
             </Card>
           );
-        })
+          })}
+        </>
       )}
     </div>
   );
