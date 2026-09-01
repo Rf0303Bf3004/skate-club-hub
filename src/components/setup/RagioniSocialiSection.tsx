@@ -675,18 +675,16 @@ export const RagioniSocialiSection: React.FC = () => {
           <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Ragioni sociali</h2>
         </div>
         <p className="text-sm text-muted-foreground max-w-2xl">
-          Il club fattura con un unico ente. Se hai più enti che fatturano separatamente
-          (per esempio Club e Academy), attiva qui sotto la gestione multi-ente: potrai poi
-          creare le ragioni sociali, i loro listini e assegnare atleti e istruttori a ciascuna.
+          Il club fattura con un solo ente. Per gestire più ragioni sociali, attivalo in{" "}
+          <a
+            href="?tab=automatismi"
+            className="font-medium text-primary underline underline-offset-2"
+          >
+            Automatismi &gt; Modalità di gestione
+          </a>
+          .
         </p>
-        <ModalitaGestioneSection
-          area="fatturazione"
-          label="Fatturazione"
-          opzioni={[
-            { value: "standard", label: "Standard (un solo ente)" },
-            { value: "multi_ragione_sociale", label: "Multi ragione sociale" },
-          ]}
-        />
+
       </section>
     );
   }
