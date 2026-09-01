@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -9,10 +10,20 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
-import { Upload, Globe, Phone, Mail, MapPin, Hash, Users, UserCheck, Calendar, Building2, Plus, Trash2, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Upload, Globe, Phone, Mail, MapPin, Hash, Users, UserCheck, Calendar, Building2, Plus, Trash2, Loader2, CheckCircle2, AlertCircle, Sparkles, Snowflake, BookOpen, Receipt } from "lucide-react";
 import CatalogoOffertaTab from "@/components/CatalogoOffertaTab";
 import FatturazioneTab from "@/components/FatturazioneTab";
 import { RegoleComunicazioniSection } from "@/components/comunicazioni/RegoleComunicazioniSection";
@@ -21,8 +32,12 @@ import RagioniSocialiSection from "@/components/setup/RagioniSocialiSection";
 import FatturaLayoutSection from "@/components/setup/FatturaLayoutSection";
 import RisorseSection from "@/components/setup/RisorseSection";
 import TemplateComunicazioniSection from "@/components/setup/TemplateComunicazioniSection";
+import SetupSection from "@/components/setup/SetupSection";
+import SetupIndice, { type VoceIndice } from "@/components/setup/SetupIndice";
+import SetupSaveBar from "@/components/setup/SetupSaveBar";
 import { use_risorse_strutture } from "@/hooks/use-risorse-strutture";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 
 
 const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"] as const;
