@@ -82,13 +82,33 @@ const stato_variant = (stato: string): "default" | "secondary" | "destructive" |
 };
 
 // ═══════════════════════════════ SEZIONE PRINCIPALE ═══════════════════════════════
-const CampiInterClubSection: React.FC = () => {
+interface CampiInterClubSectionProps {
+  /** Apre subito la scheda di questo campo, sul tab dei club invitati. */
+  campo_iniziale_id?: string | null;
+  on_campo_iniziale_aperto?: () => void;
+}
+
+const CampiInterClubSection: React.FC<CampiInterClubSectionProps> = ({
+  campo_iniziale_id,
+  on_campo_iniziale_aperto,
+}) => {
   const { t } = useTranslation("events");
   const club_id = get_current_club_id();
   const { data: ospitati = [] } = use_campi_ospitati();
   const { data: invitati = [] } = use_campi_invitati();
   const rispondi = use_rispondi_invito_campo();
   const [campo_selezionato, set_campo_selezionato] = useState<EventoCampoInterClub | null>(null);
+  const [tab_iniziale, set_tab_iniziale] = useState<string | undefined>(undefined);
+
+  React.useEffect(() => {
+    if (!campo_iniziale_id) return;
+    const trovato = ospitati.find((c) => c.id === campo_iniziale_id);
+    if (!trovato) return;
+    set_campo_selezionato(trovato);
+    set_tab_iniziale("club");
+    on_campo_iniziale_aperto?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [campo_iniziale_id, ospitati]);
 
   if (campo_selezionato) {
     const aggiornato =
@@ -99,7 +119,11 @@ const CampiInterClubSection: React.FC = () => {
       <CampoScheda
         campo={aggiornato}
         is_ospitante={aggiornato.club_id === club_id}
-        on_back={() => set_campo_selezionato(null)}
+        tab_iniziale={tab_iniziale}
+        on_back={() => {
+          set_campo_selezionato(null);
+          set_tab_iniziale(undefined);
+        }}
       />
     );
   }
@@ -146,9 +170,27 @@ const CampiInterClubSection: React.FC = () => {
                         {t("campi_interclub.info.scadenza_adesioni")}: {fmt_date(c.scadenza_adesioni)}
                       </p>
                     )}
-                    <Button variant="ghost" size="sm" className="mt-1 -mx-2 w-full justify-end">
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
+                    <p className="text-muted-foreground">
+                      <Users className="w-3 h-3 inline mr-1" />
+                      {c.n_invitati} invitati • {c.n_accettati} hanno accettato
+                    </p>
+                    {c.n_invitati === 0 ? (
+                      <Button
+                        size="sm"
+                        className="mt-2 w-full"
+                        onClick={(ev) => {
+                          ev.stopPropagation();
+                          set_campo_selezionato(c);
+                          set_tab_iniziale("club");
+                        }}
+                      >
+                        <Plus className="w-4 h-4 mr-1" /> Invita club
+                      </Button>
+                    ) : (
+                      <Button variant="ghost" size="sm" className="mt-1 -mx-2 w-full justify-end">
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               ))}
@@ -156,6 +198,7 @@ const CampiInterClubSection: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
 
       <Card>
         <CardHeader>
