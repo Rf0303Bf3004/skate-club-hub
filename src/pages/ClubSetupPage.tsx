@@ -1318,7 +1318,8 @@ const ClubSetupPage: React.FC = () => {
               );
             })}
           </div>
-        </div>
+        </SetupSection>
+
 
         {risorsa_is_ghiaccio && (
         <SetupSection id="gh_pulizia" titolo={t("club.sezioni.pulizia_ghiaccio")}>
