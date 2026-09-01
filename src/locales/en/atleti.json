@@ -36,7 +36,9 @@
     "delete": "Delete athlete",
     "athlete_code": "Athlete code",
     "swiss_license": "Swiss license",
-    "nfc_tag": "NFC tag"
+    "nfc_tag": "NFC tag",
+    "flag_ospite": "Camp guest — {{club}}",
+    "ospite_scade": "record deleted on {{data}}"
   },
   "form": {
     "name": "First name",
@@ -70,5 +72,9 @@
   },
   "codice_card": {
     "popup_blocked": "Could not open the print window: allow pop-ups for this site."
+  },
+  "badges": {
+    "ospite": "GUEST",
+    "ospite_tooltip": "Temporary guest athlete, home club: {{club}}"
   }
 }

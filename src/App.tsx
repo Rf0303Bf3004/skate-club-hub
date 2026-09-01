@@ -60,6 +60,7 @@ import SuperAdminAppMobilePage from "@/pages/SuperAdminAppMobilePage";
 import SuperAdminTraduzioniPage from "@/pages/SuperAdminTraduzioniPage";
 import ConvenzioniSociPage from "@/pages/ConvenzioniSociPage";
 import ConvenzionePubblicaPage from "@/pages/ConvenzionePubblicaPage";
+import CampoOspitePubblicoPage from "@/pages/CampoOspitePubblicoPage";
 import PortaleLoginPage from "@/pages/portale/PortaleLoginPage";
 import PortaleLayout from "@/pages/portale/PortaleLayout";
 import PortaleHomePage from "@/pages/portale/PortaleHomePage";
@@ -117,6 +118,7 @@ const PublicRoutes = ({ children }: { children: React.ReactNode }) => {
       <BrowserRouter>
         <Routes>
           <Route path="/c/:token" element={<ConvenzionePubblicaPage />} />
+          <Route path="/campo-ospite/:token" element={<CampoOspitePubblicoPage />} />
         </Routes>
       </BrowserRouter>
     );

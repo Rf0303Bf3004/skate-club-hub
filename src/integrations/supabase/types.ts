@@ -291,11 +291,14 @@ export type Database = {
           categoria: string | null
           citta: string | null
           club_id: string
+          club_provenienza: string | null
           codice_atleta: string | null
           codice_fiscale: string | null
           cognome: string
           compenso_orario_pista: number | null
           consenso_foto_video: boolean
+          consenso_ricontatto: boolean | null
+          contatto_emergenza: string | null
           contratto_accettato_at: string | null
           created_at: string
           data_nascita: string | null
@@ -343,12 +346,16 @@ export type Database = {
           livello_artistica: string | null
           livello_artistica_in_preparazione: string | null
           livello_attuale: string | null
+          livello_dichiarato: string | null
           livello_in_preparazione: string | null
           livello_stile: string | null
           livello_stile_in_preparazione: string | null
           nome: string
           note: string | null
           ore_pista_stagione: number | null
+          ospite_dal: string | null
+          ospite_di_campo_id: string | null
+          ospite_scade_il: string | null
           paese_iso: string
           partecipa_gare: boolean
           provincia: string | null
@@ -382,11 +389,14 @@ export type Database = {
           categoria?: string | null
           citta?: string | null
           club_id: string
+          club_provenienza?: string | null
           codice_atleta?: string | null
           codice_fiscale?: string | null
           cognome?: string
           compenso_orario_pista?: number | null
           consenso_foto_video?: boolean
+          consenso_ricontatto?: boolean | null
+          contatto_emergenza?: string | null
           contratto_accettato_at?: string | null
           created_at?: string
           data_nascita?: string | null
@@ -434,12 +444,16 @@ export type Database = {
           livello_artistica?: string | null
           livello_artistica_in_preparazione?: string | null
           livello_attuale?: string | null
+          livello_dichiarato?: string | null
           livello_in_preparazione?: string | null
           livello_stile?: string | null
           livello_stile_in_preparazione?: string | null
           nome?: string
           note?: string | null
           ore_pista_stagione?: number | null
+          ospite_dal?: string | null
+          ospite_di_campo_id?: string | null
+          ospite_scade_il?: string | null
           paese_iso?: string
           partecipa_gare?: boolean
           provincia?: string | null
@@ -473,11 +487,14 @@ export type Database = {
           categoria?: string | null
           citta?: string | null
           club_id?: string
+          club_provenienza?: string | null
           codice_atleta?: string | null
           codice_fiscale?: string | null
           cognome?: string
           compenso_orario_pista?: number | null
           consenso_foto_video?: boolean
+          consenso_ricontatto?: boolean | null
+          contatto_emergenza?: string | null
           contratto_accettato_at?: string | null
           created_at?: string
           data_nascita?: string | null
@@ -525,12 +542,16 @@ export type Database = {
           livello_artistica?: string | null
           livello_artistica_in_preparazione?: string | null
           livello_attuale?: string | null
+          livello_dichiarato?: string | null
           livello_in_preparazione?: string | null
           livello_stile?: string | null
           livello_stile_in_preparazione?: string | null
           nome?: string
           note?: string | null
           ore_pista_stagione?: number | null
+          ospite_dal?: string | null
+          ospite_di_campo_id?: string | null
+          ospite_scade_il?: string | null
           paese_iso?: string
           partecipa_gare?: boolean
           provincia?: string | null
@@ -573,6 +594,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "kpi_pitch_sponsor"
             referencedColumns: ["club_id"]
+          },
+          {
+            foreignKeyName: "atleti_ospite_di_campo_id_fkey"
+            columns: ["ospite_di_campo_id"]
+            isOneToOne: false
+            referencedRelation: "eventi_campi"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "atleti_ragione_sociale_id_fkey"
@@ -708,12 +736,21 @@ export type Database = {
           club_id: string | null
           created_at: string
           evento_campo_id: string
+          fatt_cap: string | null
+          fatt_citta: string | null
+          fatt_email: string | null
+          fatt_indirizzo: string | null
+          fatt_paese_iso: string | null
+          fatt_ragione_sociale: string | null
+          fatt_referente: string | null
           id: string
           invitato_at: string
           invitato_da: string | null
           quota_club: number | null
           stato: string
           stato_pagamento: string
+          token: string | null
+          token_usato_il: string | null
           updated_at: string
           valido_al: string
           valido_dal: string
@@ -724,12 +761,21 @@ export type Database = {
           club_id?: string | null
           created_at?: string
           evento_campo_id: string
+          fatt_cap?: string | null
+          fatt_citta?: string | null
+          fatt_email?: string | null
+          fatt_indirizzo?: string | null
+          fatt_paese_iso?: string | null
+          fatt_ragione_sociale?: string | null
+          fatt_referente?: string | null
           id?: string
           invitato_at?: string
           invitato_da?: string | null
           quota_club?: number | null
           stato?: string
           stato_pagamento?: string
+          token?: string | null
+          token_usato_il?: string | null
           updated_at?: string
           valido_al: string
           valido_dal: string
@@ -740,12 +786,21 @@ export type Database = {
           club_id?: string | null
           created_at?: string
           evento_campo_id?: string
+          fatt_cap?: string | null
+          fatt_citta?: string | null
+          fatt_email?: string | null
+          fatt_indirizzo?: string | null
+          fatt_paese_iso?: string | null
+          fatt_ragione_sociale?: string | null
+          fatt_referente?: string | null
           id?: string
           invitato_at?: string
           invitato_da?: string | null
           quota_club?: number | null
           stato?: string
           stato_pagamento?: string
+          token?: string | null
+          token_usato_il?: string | null
           updated_at?: string
           valido_al?: string
           valido_dal?: string
@@ -7717,6 +7772,19 @@ export type Database = {
         Args: { p_atleta: string; p_forza?: boolean; p_motivo?: string }
         Returns: Json
       }
+      anteprima_fatture_club_ospiti: {
+        Args: { p_campo: string }
+        Returns: {
+          avviso: string
+          club_ospite: string
+          gia_fatturata: boolean
+          n_atleti: number
+          n_righe: number
+          riga_partecipazione: string
+          righe: Json
+          totale: number
+        }[]
+      }
       anteprima_fatture_periodo: {
         Args: { p_anno: number; p_club: string; p_mese: number }
         Returns: {
@@ -7754,6 +7822,13 @@ export type Database = {
       chiudi_accesso_assistenza: { Args: { p_id: string }; Returns: undefined }
       cleanup_archived_communications: { Args: never; Returns: number }
       club_invitato_a_campo: { Args: { p_campo: string }; Returns: boolean }
+      club_ospite_fatturabile: {
+        Args: { p_riga: string }
+        Returns: {
+          mancano: string
+          ok: boolean
+        }[]
+      }
       club_partecipa_a_campo: { Args: { p_campo: string }; Returns: boolean }
       controlla_saturazione_corsi: { Args: never; Returns: number }
       controlli_conformita: {
@@ -7839,6 +7914,15 @@ export type Database = {
         }[]
       }
       duplica_fattura: { Args: { p_fattura: string }; Returns: string }
+      elimina_atleti_ospiti_scaduti: {
+        Args: { p_simula?: boolean }
+        Returns: {
+          atleta: string
+          campo: string
+          club_provenienza: string
+          esito: string
+        }[]
+      }
       emittente_documento: {
         Args: { p_club: string; p_ragione_sociale?: string }
         Returns: {
@@ -7877,6 +7961,7 @@ export type Database = {
       }
       genera_codice_atleta: { Args: never; Returns: string }
       genera_codice_istruttore: { Args: never; Returns: string }
+      genera_fattura_club_ospite: { Args: { p_riga: string }; Returns: string }
       genera_fatture_mensili_automatiche: {
         Args: { p_data?: string }
         Returns: {
@@ -7907,6 +7992,7 @@ export type Database = {
           totale: number
         }[]
       }
+      genera_link_club_ospite: { Args: { p_riga: string }; Returns: string }
       genera_planning_giornaliero: { Args: never; Returns: number }
       genera_reminder_giornalieri: { Args: never; Returns: number }
       genera_reminder_scadenza_ghiaccio: { Args: never; Returns: number }
@@ -8104,6 +8190,41 @@ export type Database = {
         Args: { p_atleta: string; p_override?: string }
         Returns: string
       }
+      registra_atleta_ospite: {
+        Args: {
+          p_al?: string
+          p_campo: string
+          p_club_provenienza: string
+          p_cognome: string
+          p_consenso_foto?: boolean
+          p_consenso_ricontatto?: boolean
+          p_contatto_email?: string
+          p_contatto_telefono?: string
+          p_dal?: string
+          p_data_nascita?: string
+          p_emergenza?: string
+          p_gruppo?: string
+          p_livello?: string
+          p_nome: string
+          p_note?: string
+        }
+        Returns: string
+      }
+      registra_atleti_ospiti_massa: {
+        Args: {
+          p_campo: string
+          p_club_provenienza: string
+          p_elenco: Json
+          p_gruppo?: string
+        }
+        Returns: {
+          codice_atleta: string
+          cognome: string
+          esito: string
+          nome: string
+          riga: number
+        }[]
+      }
       registra_errore: {
         Args: {
           p_club?: string
@@ -8158,6 +8279,20 @@ export type Database = {
           riferimento_id: string
           tipo: string
           voce: string
+        }[]
+      }
+      righe_fatturabili_ospiti: {
+        Args: { p_campo: string }
+        Returns: {
+          atleta: string
+          atleta_id: string
+          club_ospite: string
+          descrizione: string
+          importo: number
+          prezzo_unitario: number
+          quantita: number
+          riga_partecipazione: string
+          tipo: string
         }[]
       }
       righe_fatturabili_periodo: {

@@ -2,7 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { use_ragioni_sociali } from "@/hooks/use-ragioni-sociali";
-import { VERDE_ESTERNI } from "@/components/ProvenienzaLegenda";
+import { VERDE_ESTERNI, AMBRA_OSPITI } from "@/components/ProvenienzaLegenda";
 
 /**
  * Mini-pillole testuali FED / AGO per atleti.
@@ -14,6 +14,10 @@ type Props = {
   atleta_federazione?: boolean | null;
   atleta_esterno?: boolean | null;
   ragione_sociale_id?: string | null;
+  /** Atleta ospite temporaneo di un campo (di un altro club). */
+  ospite_di_campo_id?: string | null;
+  /** Nome del club di provenienza dell'ospite (mostrato nella pillola). */
+  club_provenienza?: string | null;
   className?: string;
 };
 
@@ -25,6 +29,8 @@ const AthleteBadges: React.FC<Props> = ({
   atleta_federazione,
   atleta_esterno,
   ragione_sociale_id,
+  ospite_di_campo_id,
+  club_provenienza,
   className,
 }) => {
   const { t } = useTranslation("atleti");
@@ -32,8 +38,10 @@ const AthleteBadges: React.FC<Props> = ({
   const ragione_sociale = ragione_sociale_id
     ? (ragioni_sociali ?? []).find((r) => r.id === ragione_sociale_id)
     : undefined;
+  const is_ospite = !!ospite_di_campo_id;
 
-  if (!agonista && !atleta_federazione && !atleta_esterno && !ragione_sociale) return null;
+  if (!agonista && !atleta_federazione && !atleta_esterno && !ragione_sociale && !is_ospite) return null;
+
   return (
     <TooltipProvider delayDuration={200}>
       <span className={`inline-flex items-center gap-1 align-middle ${className ?? ""}`}>
@@ -71,6 +79,21 @@ const AthleteBadges: React.FC<Props> = ({
               </span>
             </TooltipTrigger>
             <TooltipContent>{t("badges.ragione_sociale_tooltip", { nome: ragione_sociale.nome })}</TooltipContent>
+          </Tooltip>
+        )}
+        {is_ospite && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span
+                className={pill_cls}
+                style={{ borderLeft: `3px solid ${AMBRA_OSPITI}`, backgroundColor: `${AMBRA_OSPITI}1A` }}
+              >
+                {(club_provenienza || t("badges.ospite")).toUpperCase()}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              {t("badges.ospite_tooltip", { club: club_provenienza || "—" })}
+            </TooltipContent>
           </Tooltip>
         )}
         {atleta_esterno && (
