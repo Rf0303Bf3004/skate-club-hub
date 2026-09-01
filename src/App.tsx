@@ -264,7 +264,14 @@ const AuthenticatedApp = () => {
           <Route path="/gestione-ruoli" element={<Navigate to="/ruoli-permessi" replace />} />
           <Route path="/planning" element={<PlanningPage />} />
           <Route path="/griglia-ghiaccio" element={<GrigliaGhiaccioPage />} />
-          <Route path="/setup-club" element={<ClubSetupPage />} />
+          <Route
+            path="/setup-club"
+            element={
+              <SezioneGuard codice_sezione="setup_club">
+                <ClubSetupPage />
+              </SezioneGuard>
+            }
+          />
           <Route path="/gestione-avanzata" element={<AdvancedManagementPage />} />
           <Route path="/richieste-iscrizione" element={<RichiesteIscrizionePage />} />
           <Route path="/ruoli-permessi" element={<RuoliPermessiPage />} />
