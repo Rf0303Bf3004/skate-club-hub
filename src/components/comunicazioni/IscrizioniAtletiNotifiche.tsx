@@ -120,7 +120,7 @@ export const IscrizioniAtletiNotifiche: React.FC = () => {
     if (!c) return;
     if (c.gara_id) navigate(`/gare/${c.gara_id}`);
     else if (c.test_livello_id) navigate(`/test`);
-    else if (c.evento_straordinario_id) navigate(`/campi-eventi`);
+    else if (c.evento_straordinario_id) navigate(`/eventi`);
   };
 
   if (isLoading) {

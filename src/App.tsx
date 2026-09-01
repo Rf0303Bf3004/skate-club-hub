@@ -41,7 +41,6 @@ import RichiesteIscrizionePage from "@/pages/RichiesteIscrizionePage";
 import NuovaStagionePage from "@/pages/NuovaStagionePage";
 import TestLivelloPage from "@/pages/TestLivelloPage";
 import PortaleAtletaPage from "@/pages/PortaleAtletaPage";
-import CampiEventiPage from "@/pages/CampiEventiPage";
 import MedagliereePage from "@/pages/MedagliereePage";
 import TestMobileAuthPage from "@/pages/TestMobileAuthPage";
 import ImportAtletiPage from "@/pages/ImportAtletiPage";
@@ -248,16 +247,16 @@ const AuthenticatedApp = () => {
           <Route path="/test/:id" element={<TestLivelloPage />} />
           <Route path="/lezioni-private" element={<PrivateLessonsPage />} />
           <Route path="/eventi" element={<EventiPage />} />
-          <Route path="/eventi/:id" element={<EventiPage />} />
+          <Route path="/eventi/:id" element={<Navigate to="/eventi" replace />} />
           <Route path="/fatture" element={<InvoicesPage />} />
           <Route path="/segreteria/fatture" element={<SegreteriaFatturePage />} />
           <Route path="/segreteria/fatture/:id" element={<SegreteriaFatturaDetailPage />} />
           <Route path="/comunicazioni" element={<CommunicationsPage />} />
           <Route path="/stagioni" element={<SeasonsPage />} />
-          <Route path="/campi-eventi" element={<CampiEventiPage />} />
+          <Route path="/campi-eventi" element={<Navigate to="/eventi" replace />} />
           <Route path="/medagliere" element={<MedagliereePage />} />
-          <Route path="/pre-season" element={<Navigate to="/campi-eventi" replace />} />
-          <Route path="/post-season" element={<Navigate to="/campi-eventi" replace />} />
+          <Route path="/pre-season" element={<Navigate to="/eventi" replace />} />
+          <Route path="/post-season" element={<Navigate to="/eventi" replace />} />
           {/* Alias rotte sidebar (varianti URL "lunghe") */}
           <Route path="/test-livello" element={<Navigate to="/test" replace />} />
           <Route path="/planning-ghiaccio" element={<Navigate to="/planning" replace />} />

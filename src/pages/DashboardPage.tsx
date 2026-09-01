@@ -40,6 +40,7 @@ import {
   MessageCircle,
   ChevronLeft,
   ChevronRight,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +52,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
+import NuovoEventoDialog from "@/components/eventi/NuovoEventoDialog";
 import IstruttoriDisponibiliWidget from "@/components/dashboard/IstruttoriDisponibiliWidget";
 import MedagliereWidget from "@/components/MedagliereWidget";
 import {
@@ -1297,6 +1299,7 @@ const DashboardPage: React.FC = () => {
   const { data: club } = use_club();
   const { data: setup } = use_setup_club();
   const navigate = useNavigate();
+  const [nuovo_evento_open, set_nuovo_evento_open] = useState(false);
   const today = new Date().toISOString().split("T")[0];
   const { data: presenze = [] } = use_presenze(today);
   const { data: presenze_corso = [] } = useQuery({
@@ -1464,13 +1467,28 @@ const DashboardPage: React.FC = () => {
             </p>
           )}
         </div>
-        <div className="ml-auto text-right">
-          <p className="text-xs text-muted-foreground capitalize">
-            {fmt_date_long(new Date(), locale_code)}
-          </p>
-          <p className="text-xs font-bold text-success">{td("presenti_in_pista", { count: totale_presenti })}</p>
+        <div className="ml-auto flex items-center gap-3">
+          <Button size="sm" onClick={() => set_nuovo_evento_open(true)}>
+            <Plus className="w-4 h-4 mr-1" /> Nuovo
+          </Button>
+          <div className="text-right">
+            <p className="text-xs text-muted-foreground capitalize">
+              {fmt_date_long(new Date(), locale_code)}
+            </p>
+            <p className="text-xs font-bold text-success">{td("presenti_in_pista", { count: totale_presenti })}</p>
+          </div>
         </div>
       </div>
+
+      <NuovoEventoDialog
+        open={nuovo_evento_open}
+        onOpenChange={set_nuovo_evento_open}
+        on_scelta={(scelta) => {
+          if (scelta === "gara") navigate("/gare");
+          else navigate(`/eventi?nuovo=${scelta}`);
+        }}
+      />
+
 
       {/* Diagnostica: segnalazioni non viste */}
       <DiagnosticaCard />
