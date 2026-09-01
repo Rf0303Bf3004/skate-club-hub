@@ -444,7 +444,10 @@
     "toast_error": "Errore",
     "toast_deleted": "Sessione eliminata",
     "toast_presenza_error": "Errore presenza",
-    "confirm_delete": "Eliminare questa sessione e tutte le presenze collegate?"
+    "confirm_delete": "Eliminare questa sessione e tutte le presenze collegate?",
+    "confirm_delete_title": "Eliminare la sessione?",
+    "confirm_delete_desc": "La sessione del {{data}} e tutte le presenze collegate verranno eliminate.",
+    "nota_sola_lettura": "Solo chi gestisce l'attività sportiva può aggiungere o eliminare sessioni."
   },
   "import_pdf": {
     "title": "Importa risultati da PDF ufficiale ISU",
