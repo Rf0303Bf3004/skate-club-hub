@@ -327,16 +327,23 @@ export type IscrizioneCampo = {
     club_id: string | null;
     club_provenienza: string | null;
     ospite_di_campo_id: string | null;
+    data_nascita?: string | null;
+    livello_dichiarato?: string | null;
+    livello_attuale?: string | null;
+    carriera_artistica?: string | null;
+    carriera_stile?: string | null;
   } | null;
 };
 
-// Non esiste una relazione dichiarata fra `iscrizioni_eventi_campi` e `atleti`:
-// gli atleti vanno letti a parte e uniti lato client.
+// Lettura separata degli atleti (esplicita e verificata): gli atleti vengono
+// letti a parte e uniti lato client alle iscrizioni.
 async function carica_atleti_iscritti(atleta_ids: string[]) {
   if (atleta_ids.length === 0) return new Map<string, IscrizioneCampo["atleta"]>();
   const { data, error } = await supabase
     .from("atleti" as any)
-    .select("id, nome, cognome, club_id, club_provenienza, ospite_di_campo_id")
+    .select(
+      "id, nome, cognome, club_id, club_provenienza, ospite_di_campo_id, data_nascita, livello_dichiarato, livello_attuale, carriera_artistica, carriera_stile",
+    )
     .in("id", atleta_ids);
   if (error) throw error;
   return new Map(((data ?? []) as any[]).map((a) => [a.id as string, a as IscrizioneCampo["atleta"]]));
