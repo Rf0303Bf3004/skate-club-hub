@@ -13,6 +13,8 @@ import {
   use_utenti_club_lite,
   use_utenti_ragione_sociale,
   use_toggle_utente_ragione_sociale,
+  use_aliquote_iva,
+  use_numero_iva_valido,
   type RagioneSociale,
 } from "@/hooks/use-ragioni-sociali";
 import { Switch } from "@/components/ui/switch";
