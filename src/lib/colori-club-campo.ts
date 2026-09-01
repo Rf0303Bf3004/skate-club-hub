@@ -25,7 +25,6 @@ export function colore_club_per_indice(indice: number): string {
 /** Pastiglia tenue: sfondo trasparente del colore, testo dello stesso colore. */
 export function stile_pastiglia_club(colore: string): React.CSSProperties {
   return {
-    borderLeft: `3px solid ${colore}`,
     backgroundColor: `${colore}1F`,
     color: colore,
   };
