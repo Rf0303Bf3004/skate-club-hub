@@ -26,7 +26,6 @@ const legacy_gruppo_operativita = [
   { key: "planning_ghiaccio", path: "/planning", icon: Calendar },
   { key: "corsi", path: "/corsi", icon: BookOpen },
   { key: "lezioni_private", path: "/lezioni-private", icon: GraduationCap },
-  { key: "campi_eventi", path: "/campi-eventi", icon: Tent },
 ];
 
 const legacy_gruppo_gare = [
