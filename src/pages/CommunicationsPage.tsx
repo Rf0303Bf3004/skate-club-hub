@@ -26,6 +26,7 @@ import { ListaComunicazioni } from '@/components/comunicazioni/ListaComunicazion
 import { Bell } from 'lucide-react';
 import { usePermessiAzione } from '@/hooks/use-permessi-azione';
 import NotaPermesso from '@/components/common/NotaPermesso';
+import { conta_gruppi } from '@/lib/raggruppa-comunicazioni';
 
 function build_templates(t: (key: string) => string) {
   return [
