@@ -31,7 +31,7 @@ export const ModalitaGestioneSection: React.FC<Props> = ({
   opzioni = OPZIONI_GHIACCIO,
 }) => {
   const { session } = useAuth();
-  const allowed = !!session && ["superadmin", "admin", "presidente"].includes(session.ruolo);
+  const allowed = !!session && ["superadmin", "presidente"].includes(session.ruolo);
   const queryClient = useQueryClient();
   const { modalita, is_loading } = useModalitaArea(area);
 
