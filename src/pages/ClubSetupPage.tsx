@@ -516,22 +516,83 @@ const ClubSetupPage: React.FC = () => {
   const current_logo = logo_preview || club?.logo_url;
   const colore = get_val("colore_primario", "#3B82F6");
 
+  const vuoto = (v: any) => v === null || v === undefined || String(v).trim() === "";
+  const conta_vuoti = (campi: string[]) => campi.filter((f) => vuoto(get_val(f, ""))).length;
+
+  // Campi ancora da compilare, per sezione
+  const mancanti = {
+    logo: current_logo ? 0 : 1,
+    dati_club: conta_vuoti(["nome", "indirizzo", "cap", "citta", "email"]),
+    descrizione: vuoto(get_val("descrizione", "")) ? 1 : 0,
+    stagione: conta_vuoti(["data_inizio_stagione", "data_fine_stagione"]),
+    banca: conta_vuoti(["iban", "intestatario_conto"]),
+    disponibilita: Object.values(disp_local).some((v) => (v?.length ?? 0) > 0) ? 0 : 1,
+  };
+
   // Completezza tab
   const tab_completa: Record<string, boolean> = {
-    configurazione: !!get_val("nome") && !!get_val("email") && !!get_val("indirizzo"),
-    ghiaccio: Object.values(disp_local).some((v) => (v?.length ?? 0) > 0),
+    club: !!get_val("nome") && !!get_val("email") && !!get_val("indirizzo"),
+    automatismi: true,
+    ghiaccio: mancanti.disponibilita === 0,
     catalogo: (catalogo_count ?? 0) > 0,
     fatturazione: !!String(get_val("iban", "")).trim() && !!String(get_val("intestatario_conto", "")).trim(),
   };
 
-  const tab_label = (value: string, label: string) => (
-    <span className="flex items-center gap-1.5">
-      {label}
-      {tab_completa[value]
-        ? <CheckCircle2 className="w-3.5 h-3.5 text-success" />
-        : <AlertCircle className="w-3.5 h-3.5 text-orange-500" />}
-    </span>
-  );
+  const TABS: { value: string; label: string; icon: any }[] = [
+    { value: "club", label: "Il club", icon: Building2 },
+    { value: "automatismi", label: "Automatismi", icon: Sparkles },
+    { value: "ghiaccio", label: t("club.tabs.ghiaccio"), icon: Snowflake },
+    { value: "catalogo", label: t("club.tabs.catalogo"), icon: BookOpen },
+    { value: "fatturazione", label: t("club.tabs.fatturazione"), icon: Receipt },
+  ];
+
+  const VOCI: Record<string, VoceIndice[]> = {
+    club: [
+      { id: "logo", label: t("club.sezioni.logo") },
+      { id: "dati_club", label: t_old("dati_club") },
+      { id: "colore", label: t("club.sezioni.colore_primario") },
+      { id: "descrizione", label: t("club.sezioni.descrizione") },
+      { id: "contratto", label: t("club.sezioni.clausole_contratto") },
+      { id: "stagione", label: t("club.sezioni.stagione") },
+      { id: "banca", label: t("club.sezioni.dati_bancari") },
+    ],
+    automatismi: [
+      { id: "medagliere", label: t("club.sezioni.medagliere") },
+      { id: "reminder", label: t("club.sezioni.reminder") },
+      { id: "comunicazioni", label: t("club.sezioni.comunicazioni_intelligenti") },
+      { id: "messaggi", label: t("club.sezioni.messaggi_predefiniti") },
+      { id: "modalita", label: "Modalità di gestione" },
+    ],
+    ghiaccio: [
+      { id: "gh_parametri", label: t("club.sezioni.ghiaccio_planning") },
+      { id: "gh_private", label: t("club.sezioni.lezioni_private") },
+      { id: "gh_pianificazione", label: t("club.sezioni.tipo_pianificazione") },
+      { id: "gh_disponibilita", label: t("club.sezioni.disponibilita_strutture") },
+      ...(risorsa_is_ghiaccio ? [{ id: "gh_pulizia", label: t("club.sezioni.pulizia_ghiaccio") }] : []),
+      { id: "gh_risorse", label: "Risorse e strutture" },
+    ],
+    catalogo: [],
+    fatturazione: [],
+  };
+
+  const modifiche = Object.keys(form).length + Object.keys(ghiaccio_form).length;
+  const salvataggio_in_corso = saving || saving_ghiaccio;
+
+  const salva_tutto = async () => {
+    if (Object.keys(ghiaccio_form).length > 0) await handle_save_ghiaccio();
+    if (Object.keys(form).length > 0) await handle_save();
+  };
+
+  const annulla_modifiche = () => {
+    set_form({});
+    set_ghiaccio_form({});
+  };
+
+  const cambia_tab = (v: string) => {
+    if (v === tab_attivo) return;
+    if (modifiche > 0) set_tab_in_attesa(v);
+    else vai_a_tab(v);
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -557,15 +618,30 @@ const ClubSetupPage: React.FC = () => {
         ))}
       </div>
 
-      <Tabs defaultValue="configurazione" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="configurazione">{tab_label("configurazione", t("club.tabs.configurazione"))}</TabsTrigger>
-          <TabsTrigger value="ghiaccio">{tab_label("ghiaccio", t("club.tabs.ghiaccio"))}</TabsTrigger>
-          <TabsTrigger value="catalogo">{tab_label("catalogo", t("club.tabs.catalogo"))}</TabsTrigger>
-          <TabsTrigger value="fatturazione">{tab_label("fatturazione", t("club.tabs.fatturazione"))}</TabsTrigger>
-        </TabsList>
+      <Tabs value={tab_attivo} onValueChange={cambia_tab} className="w-full">
+        {/* Barra di navigazione appiccicata */}
+        <div className="sticky top-0 z-30 -mx-4 mb-4 border-b border-border bg-background px-4 shadow-sm">
+          <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto rounded-none bg-transparent p-0 scrollbar-none">
+            {TABS.map((tb) => (
+              <TabsTrigger
+                key={tb.value}
+                value={tb.value}
+                className="gap-2 whitespace-nowrap rounded-lg border-b-2 border-transparent px-4 py-3 text-sm font-medium data-[state=active]:border-primary data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none"
+              >
+                <tb.icon className="h-4 w-4" />
+                {tb.label}
+                {tab_completa[tb.value]
+                  ? <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+                  : <AlertCircle className="h-3.5 w-3.5 text-orange-500" />}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          <SetupIndice key={tab_attivo} voci={VOCI[tab_attivo] ?? []} />
+        </div>
 
-        <TabsContent value="configurazione">
+        {/* ══ IL CLUB ══ */}
+        <TabsContent value="club" className="space-y-4">
+
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
           { icon: Users, label: t("club.stats.atleti"), value: atleti.length, color: "text-primary" },
