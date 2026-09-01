@@ -16,6 +16,7 @@ interface Props {
   descrizione?: string;
   conferma_label?: string;
   on_conferma: () => void;
+  variante?: "conferma" | "pericolo";
   children: React.ReactNode;
 }
 
@@ -28,6 +29,7 @@ const ConfirmButton: React.FC<Props> = ({
   descrizione,
   conferma_label = "Elimina",
   on_conferma,
+  variante = "pericolo",
   children,
 }) => (
   <AlertDialog>
@@ -41,7 +43,11 @@ const ConfirmButton: React.FC<Props> = ({
         <AlertDialogCancel>Annulla</AlertDialogCancel>
         <AlertDialogAction
           onClick={on_conferma}
-          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          className={
+            variante === "conferma"
+              ? "bg-primary text-primary-foreground hover:bg-primary/90"
+              : "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          }
         >
           {conferma_label}
         </AlertDialogAction>

@@ -332,13 +332,13 @@ const AuthenticatedApp = () => {
           <Route path="/ruoli-permessi" element={<SezioneGuard codice_sezione="ruoli_permessi"><RuoliPermessiPage /></SezioneGuard>} />
           <Route path="/utenti" element={<SezioneGuard codice_sezione="gestione_utenti"><UtentiPage /></SezioneGuard>} />
           <Route path="/nuova-stagione" element={<SezioneGuard codice_sezione="stagioni"><NuovaStagionePage /></SezioneGuard>} />
-          <Route path="/test-mobile-auth" element={<TestMobileAuthPage />} />
+          <Route path="/test-mobile-auth" element={<ProtectedSuperAdmin><TestMobileAuthPage /></ProtectedSuperAdmin>} />
           <Route path="/import-atleti" element={<SezioneGuard codice_sezione="import_dati"><ImportAtletiPage /></SezioneGuard>} />
           <Route path="/pacchetti-sponsor" element={<SezioneGuard codice_sezione="pacchetti_sponsor"><PacchettiSponsorPage /></SezioneGuard>} />
           <Route path="/convenzioni" element={<SoloPresidenteGuard><ConvenzioniSociPage /></SoloPresidenteGuard>} />
           <Route path="/onboarding" element={<OnboardingPage />} />
           <Route path="/presidente/relazione" element={<SoloPresidenteGuard><PresidentRelazione /></SoloPresidenteGuard>} />
-          <Route path="/presidente/relazione/contenuti" element={<SoloPresidenteGuard><PresidentRelazione /></SoloPresidenteGuard>} />
+          <Route path="/presidente/relazione/contenuti" element={<SoloPresidenteGuard><PresidentRelazioneGestione /></SoloPresidenteGuard>} />
           <Route path="/presidente/gestione-relazione" element={<Navigate to="/presidente/relazione/contenuti" replace />} />
           <Route
             path="/superadmin"
