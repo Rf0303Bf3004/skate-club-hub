@@ -72,7 +72,24 @@ export const ModalitaGestioneSection: React.FC<Props> = ({
     }
   }, [salva.isSuccess]);
 
-  if (!allowed) return null;
+  if (!allowed) {
+    return (
+      <section className="space-y-2 rounded-xl border border-dashed border-muted-foreground/30 bg-muted/30 p-4">
+        <div className="flex items-center gap-2">
+          <FlaskConical className="w-4 h-4 text-muted-foreground" />
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">
+            Modalità di gestione
+          </h2>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {label}: {opzioni.find((o) => o.value === modalita)?.label ?? modalita}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Questa parte la può modificare solo il presidente del club.
+        </p>
+      </section>
+    );
+  }
 
   return (
     <section className="space-y-4 rounded-xl border border-dashed border-muted-foreground/30 bg-muted/30 p-4">
