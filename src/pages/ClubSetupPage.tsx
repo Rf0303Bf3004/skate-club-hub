@@ -1116,14 +1116,9 @@ const ClubSetupPage: React.FC = () => {
             )}
           </Field>
         </div>
+        </SetupSection>
 
-        <Separator />
-
-        {/* Lezioni Private */}
-        <div>
-          <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">
-            {t("club.sezioni.lezioni_private")}
-          </h3>
+        <SetupSection id="gh_private" titolo={t("club.sezioni.lezioni_private")}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label={t("club.fields.max_atleti_lezione_privata")}>
               <Input
@@ -1155,13 +1150,8 @@ const ClubSetupPage: React.FC = () => {
               {saving_private ? t("club.azioni.salvataggio") : t("club.azioni.salva_config_private")}
             </Button>
           </div>
-        </div>
+        </SetupSection>
 
-        <div className="flex justify-end">
-          <Button onClick={handle_save_ghiaccio} disabled={saving_ghiaccio}>
-            {saving_ghiaccio ? t("club.azioni.salvataggio") : t("club.azioni.salva_config_ghiaccio")}
-          </Button>
-        </div>
 
         <SetupSection id="gh_pianificazione" titolo={t("club.sezioni.tipo_pianificazione")}>
           <div className="max-w-sm">
