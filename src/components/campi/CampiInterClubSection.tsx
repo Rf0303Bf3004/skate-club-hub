@@ -831,7 +831,7 @@ const RigaClubPartecipante: React.FC<{
                 </SelectContent>
               </Select>
               <Select
-                value={p.stato_pagamento ?? "non_pagato"}
+                value={p.stato_pagamento || "non_pagato"}
                 onValueChange={(v) =>
                   aggiorna.mutate({ id: p.id, evento_campo_id: campo.id, patch: { stato_pagamento: v } })
                 }
