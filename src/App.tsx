@@ -114,12 +114,21 @@ const PublicRoutes = ({ children }: { children: React.ReactNode }) => {
       </BrowserRouter>
     );
   }
+  if (path.startsWith("/campo-ospite/")) {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/campo-ospite/:token" element={<CampoOspitePubblicoPage />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
+
   if (path.startsWith("/c/")) {
     return (
       <BrowserRouter>
         <Routes>
           <Route path="/c/:token" element={<ConvenzionePubblicaPage />} />
-          <Route path="/campo-ospite/:token" element={<CampoOspitePubblicoPage />} />
         </Routes>
       </BrowserRouter>
     );
