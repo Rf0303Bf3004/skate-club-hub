@@ -330,6 +330,18 @@ export type IscrizioneCampo = {
   } | null;
 };
 
+// Non esiste una relazione dichiarata fra `iscrizioni_eventi_campi` e `atleti`:
+// gli atleti vanno letti a parte e uniti lato client.
+async function carica_atleti_iscritti(atleta_ids: string[]) {
+  if (atleta_ids.length === 0) return new Map<string, IscrizioneCampo["atleta"]>();
+  const { data, error } = await supabase
+    .from("atleti" as any)
+    .select("id, nome, cognome, club_id, club_provenienza, ospite_di_campo_id")
+    .in("id", atleta_ids);
+  if (error) throw error;
+  return new Map(((data ?? []) as any[]).map((a) => [a.id as string, a as IscrizioneCampo["atleta"]]));
+}
+
 export function use_campo_iscrizioni(evento_campo_id: string | null) {
   return useQuery({
     queryKey: ["campi_iscrizioni", evento_campo_id],
@@ -337,12 +349,12 @@ export function use_campo_iscrizioni(evento_campo_id: string | null) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("iscrizioni_eventi_campi" as any)
-        .select(
-          "id, evento_campo_id, atleta_id, club_id, campo_gruppo_id, stato, atleta:atleta_id(nome, cognome, club_id, club_provenienza, ospite_di_campo_id)",
-        )
+        .select("id, evento_campo_id, atleta_id, club_id, campo_gruppo_id, stato")
         .eq("evento_campo_id", evento_campo_id);
       if (error) throw error;
-      return (data ?? []) as unknown as IscrizioneCampo[];
+      const righe = (data ?? []) as unknown as IscrizioneCampo[];
+      const per_id = await carica_atleti_iscritti(righe.map((r) => r.atleta_id));
+      return righe.map((r) => ({ ...r, atleta: per_id.get(r.atleta_id) ?? null }));
     },
   });
 }
