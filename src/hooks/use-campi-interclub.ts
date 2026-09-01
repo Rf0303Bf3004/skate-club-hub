@@ -237,7 +237,22 @@ export function use_campo_partecipanti(evento_campo_id: string | null) {
         .eq("evento_campo_id", evento_campo_id)
         .order("invitato_at", { ascending: true });
       if (error) throw error;
-      return (data ?? []) as unknown as CampoClubPartecipante[];
+      const righe = (data ?? []) as unknown as CampoClubPartecipante[];
+      // Le policy su `clubs` nascondono gli altri club: il nome si recupera da `elenco_club`.
+      const mancanti = righe.filter((r) => r.club_id && !r.clubs?.nome).map((r) => r.club_id as string);
+      if (mancanti.length > 0) {
+        const { data: elenco } = await supabase
+          .from("elenco_club" as any)
+          .select("id, nome")
+          .in("id", mancanti);
+        const per_id = new Map(((elenco ?? []) as any[]).map((c) => [c.id, c.nome as string | null]));
+        return righe.map((r) =>
+          r.club_id && !r.clubs?.nome && per_id.has(r.club_id)
+            ? { ...r, clubs: { nome: per_id.get(r.club_id) ?? null } }
+            : r,
+        );
+      }
+      return righe;
     },
   });
 }
