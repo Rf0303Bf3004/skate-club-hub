@@ -2459,6 +2459,39 @@ export type Database = {
         }
         Relationships: []
       }
+      diagnostica_spiegazioni: {
+        Row: {
+          chi: string | null
+          cosa_fare: string
+          dove: string | null
+          id: number
+          quando_appare: string
+          significato: string
+          titolo: string
+          urgenza: number
+        }
+        Insert: {
+          chi?: string | null
+          cosa_fare: string
+          dove?: string | null
+          id?: number
+          quando_appare: string
+          significato: string
+          titolo: string
+          urgenza: number
+        }
+        Update: {
+          chi?: string | null
+          cosa_fare?: string
+          dove?: string | null
+          id?: number
+          quando_appare?: string
+          significato?: string
+          titolo?: string
+          urgenza?: number
+        }
+        Relationships: []
+      }
       disponibilita_ghiaccio: {
         Row: {
           club_id: string
@@ -7871,14 +7904,20 @@ export type Database = {
         }[]
       }
       cosa_non_va: {
-        Args: { p_club: string; p_giorni?: number }
+        Args: { p_club?: string; p_giorni?: number }
         Returns: {
-          dove: string
-          gravita: string
-          messaggio: string
-          non_visti: number
+          chi: string
+          club: string
+          cosa_fare: string
+          da_quando: string
+          dettaglio: string
+          fascia: string
+          id_riga: number
           quante: number
-          ultima: string
+          significato: string
+          titolo: string
+          ultima_volta: string
+          urgenza: number
         }[]
       }
       diagnosi_avvio_club: {
@@ -7967,9 +8006,10 @@ export type Database = {
         Returns: {
           bozze_create: number
           club: string
+          da_controllare: number
+          gia_fatturate: number
           nota: string
           periodo: string
-          saltate: number
         }[]
       }
       genera_fatture_periodo: {
@@ -8040,6 +8080,7 @@ export type Database = {
         Args: { _user_id: string }
         Returns: string
       }
+      giorni_in_parole: { Args: { p_giorni: number }; Returns: string }
       iban_e_qr_iban: { Args: { p: string }; Returns: boolean }
       iban_normalizza: { Args: { p: string }; Returns: string }
       iban_valido: { Args: { p: string }; Returns: boolean }
