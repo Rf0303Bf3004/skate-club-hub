@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -9,10 +10,20 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
-import { Upload, Globe, Phone, Mail, MapPin, Hash, Users, UserCheck, Calendar, Building2, Plus, Trash2, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Upload, Globe, Phone, Mail, MapPin, Hash, Users, UserCheck, Calendar, Building2, Plus, Trash2, Loader2, CheckCircle2, AlertCircle, Sparkles, Snowflake, BookOpen, Receipt } from "lucide-react";
 import CatalogoOffertaTab from "@/components/CatalogoOffertaTab";
 import FatturazioneTab from "@/components/FatturazioneTab";
 import { RegoleComunicazioniSection } from "@/components/comunicazioni/RegoleComunicazioniSection";
@@ -21,8 +32,12 @@ import RagioniSocialiSection from "@/components/setup/RagioniSocialiSection";
 import FatturaLayoutSection from "@/components/setup/FatturaLayoutSection";
 import RisorseSection from "@/components/setup/RisorseSection";
 import TemplateComunicazioniSection from "@/components/setup/TemplateComunicazioniSection";
+import SetupSection from "@/components/setup/SetupSection";
+import SetupIndice, { type VoceIndice } from "@/components/setup/SetupIndice";
+import SetupSaveBar from "@/components/setup/SetupSaveBar";
 import { use_risorse_strutture } from "@/hooks/use-risorse-strutture";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 
 
 const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"] as const;
@@ -94,6 +109,22 @@ const ClubSetupPage: React.FC = () => {
   const [saving, set_saving] = useState(false);
   const [uploading, set_uploading] = useState(false);
   const [logo_preview, set_logo_preview] = useState<string | null>(null);
+
+  // Tab attivo ricordato nell'indirizzo (?tab=...)
+  const [search_params, set_search_params] = useSearchParams();
+  const tab_url = search_params.get("tab") ?? "";
+  const TAB_VALIDI = ["club", "automatismi", "ghiaccio", "catalogo", "fatturazione"];
+  const tab_attivo = TAB_VALIDI.includes(tab_url) ? tab_url : "club";
+  const [tab_in_attesa, set_tab_in_attesa] = useState<string | null>(null);
+
+  const vai_a_tab = (v: string) => {
+    const next = new URLSearchParams(search_params);
+    next.set("tab", v);
+    set_search_params(next, { replace: true });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+
 
   // Ghiaccio config form
   const [ghiaccio_form, set_ghiaccio_form] = useState<Record<string, any>>({});
@@ -485,22 +516,83 @@ const ClubSetupPage: React.FC = () => {
   const current_logo = logo_preview || club?.logo_url;
   const colore = get_val("colore_primario", "#3B82F6");
 
+  const vuoto = (v: any) => v === null || v === undefined || String(v).trim() === "";
+  const conta_vuoti = (campi: string[]) => campi.filter((f) => vuoto(get_val(f, ""))).length;
+
+  // Campi ancora da compilare, per sezione
+  const mancanti = {
+    logo: current_logo ? 0 : 1,
+    dati_club: conta_vuoti(["nome", "indirizzo", "cap", "citta", "email"]),
+    descrizione: vuoto(get_val("descrizione", "")) ? 1 : 0,
+    stagione: conta_vuoti(["data_inizio_stagione", "data_fine_stagione"]),
+    banca: conta_vuoti(["iban", "intestatario_conto"]),
+    disponibilita: Object.values(disp_local).some((v) => (v?.length ?? 0) > 0) ? 0 : 1,
+  };
+
   // Completezza tab
   const tab_completa: Record<string, boolean> = {
-    configurazione: !!get_val("nome") && !!get_val("email") && !!get_val("indirizzo"),
-    ghiaccio: Object.values(disp_local).some((v) => (v?.length ?? 0) > 0),
+    club: !!get_val("nome") && !!get_val("email") && !!get_val("indirizzo"),
+    automatismi: true,
+    ghiaccio: mancanti.disponibilita === 0,
     catalogo: (catalogo_count ?? 0) > 0,
     fatturazione: !!String(get_val("iban", "")).trim() && !!String(get_val("intestatario_conto", "")).trim(),
   };
 
-  const tab_label = (value: string, label: string) => (
-    <span className="flex items-center gap-1.5">
-      {label}
-      {tab_completa[value]
-        ? <CheckCircle2 className="w-3.5 h-3.5 text-success" />
-        : <AlertCircle className="w-3.5 h-3.5 text-orange-500" />}
-    </span>
-  );
+  const TABS: { value: string; label: string; icon: any }[] = [
+    { value: "club", label: "Il club", icon: Building2 },
+    { value: "automatismi", label: "Automatismi", icon: Sparkles },
+    { value: "ghiaccio", label: t("club.tabs.ghiaccio"), icon: Snowflake },
+    { value: "catalogo", label: t("club.tabs.catalogo"), icon: BookOpen },
+    { value: "fatturazione", label: t("club.tabs.fatturazione"), icon: Receipt },
+  ];
+
+  const VOCI: Record<string, VoceIndice[]> = {
+    club: [
+      { id: "logo", label: t("club.sezioni.logo") },
+      { id: "dati_club", label: t_old("dati_club") },
+      { id: "colore", label: t("club.sezioni.colore_primario") },
+      { id: "descrizione", label: t("club.sezioni.descrizione") },
+      { id: "contratto", label: t("club.sezioni.clausole_contratto") },
+      { id: "stagione", label: t("club.sezioni.stagione") },
+      { id: "banca", label: t("club.sezioni.dati_bancari") },
+    ],
+    automatismi: [
+      { id: "medagliere", label: t("club.sezioni.medagliere") },
+      { id: "reminder", label: t("club.sezioni.reminder") },
+      { id: "comunicazioni", label: t("club.sezioni.comunicazioni_intelligenti") },
+      { id: "messaggi", label: t("club.sezioni.messaggi_predefiniti") },
+      { id: "modalita", label: "Modalità di gestione" },
+    ],
+    ghiaccio: [
+      { id: "gh_parametri", label: t("club.sezioni.ghiaccio_planning") },
+      { id: "gh_private", label: t("club.sezioni.lezioni_private") },
+      { id: "gh_pianificazione", label: t("club.sezioni.tipo_pianificazione") },
+      { id: "gh_disponibilita", label: t("club.sezioni.disponibilita_strutture") },
+      ...(risorsa_is_ghiaccio ? [{ id: "gh_pulizia", label: t("club.sezioni.pulizia_ghiaccio") }] : []),
+      { id: "gh_risorse", label: "Risorse e strutture" },
+    ],
+    catalogo: [],
+    fatturazione: [],
+  };
+
+  const modifiche = Object.keys(form).length + Object.keys(ghiaccio_form).length;
+  const salvataggio_in_corso = saving || saving_ghiaccio;
+
+  const salva_tutto = async () => {
+    if (Object.keys(ghiaccio_form).length > 0) await handle_save_ghiaccio();
+    if (Object.keys(form).length > 0) await handle_save();
+  };
+
+  const annulla_modifiche = () => {
+    set_form({});
+    set_ghiaccio_form({});
+  };
+
+  const cambia_tab = (v: string) => {
+    if (v === tab_attivo) return;
+    if (modifiche > 0) set_tab_in_attesa(v);
+    else vai_a_tab(v);
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -526,38 +618,32 @@ const ClubSetupPage: React.FC = () => {
         ))}
       </div>
 
-      <Tabs defaultValue="configurazione" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="configurazione">{tab_label("configurazione", t("club.tabs.configurazione"))}</TabsTrigger>
-          <TabsTrigger value="ghiaccio">{tab_label("ghiaccio", t("club.tabs.ghiaccio"))}</TabsTrigger>
-          <TabsTrigger value="catalogo">{tab_label("catalogo", t("club.tabs.catalogo"))}</TabsTrigger>
-          <TabsTrigger value="fatturazione">{tab_label("fatturazione", t("club.tabs.fatturazione"))}</TabsTrigger>
-        </TabsList>
+      <Tabs value={tab_attivo} onValueChange={cambia_tab} className="w-full">
+        {/* Barra di navigazione appiccicata */}
+        <div className="sticky top-0 z-30 -mx-4 mb-4 border-b border-border bg-background px-4 shadow-sm">
+          <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto rounded-none bg-transparent p-0 scrollbar-none">
+            {TABS.map((tb) => (
+              <TabsTrigger
+                key={tb.value}
+                value={tb.value}
+                className="gap-2 whitespace-nowrap rounded-lg border-b-2 border-transparent px-4 py-3 text-sm font-medium data-[state=active]:border-primary data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none"
+              >
+                <tb.icon className="h-4 w-4" />
+                {tb.label}
+                {tab_completa[tb.value]
+                  ? <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+                  : <AlertCircle className="h-3.5 w-3.5 text-orange-500" />}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          <SetupIndice key={tab_attivo} voci={VOCI[tab_attivo] ?? []} />
+        </div>
 
-        <TabsContent value="configurazione">
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {[
-          { icon: Users, label: t("club.stats.atleti"), value: atleti.length, color: "text-primary" },
-          { icon: UserCheck, label: t("club.stats.istruttori"), value: istruttori.filter((i: any) => i.attivo).length, color: "text-success" },
-          { icon: Calendar, label: t("club.stats.stagione_attiva"), value: stagione_attiva?.nome || "—", color: "text-orange-500" },
-          { icon: Hash, label: t("club.stats.club_id"), value: get_current_club_id().slice(0, 8) + "...", color: "text-muted-foreground" },
-        ].map((stat, i) => (
-          <div key={i} className="bg-card rounded-xl shadow-card p-4 flex items-center gap-3">
-            <div className={`w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center ${stat.color}`}>
-              <stat.icon className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">{stat.label}</p>
-              <p className="text-sm font-bold text-foreground truncate max-w-[100px]">{stat.value}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+        {/* ══ IL CLUB ══ */}
+        <TabsContent value="club" className="space-y-4">
 
-      <div className="bg-card rounded-xl shadow-card p-6 space-y-8 max-w-2xl">
         {/* Logo */}
-        <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.logo")}</h2>
+        <SetupSection id="logo" titolo={t("club.sezioni.logo")} mancanti={mancanti.logo}>
           <div className="flex items-center gap-6">
             <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-border flex items-center justify-center overflow-hidden bg-muted/30 flex-shrink-0">
               {current_logo ? (
@@ -580,13 +666,10 @@ const ClubSetupPage: React.FC = () => {
               </label>
             </div>
           </div>
-        </section>
-
-        <Separator />
+        </SetupSection>
 
         {/* Dati club */}
-        <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t_old("dati_club")}</h2>
+        <SetupSection id="dati_club" titolo={t_old("dati_club")} mancanti={mancanti.dati_club}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label={t_old("nome")} icon={<Hash className="w-3.5 h-3.5" />}>
               <Input value={get_val("nome")} onChange={(e) => set_val("nome", e.target.value)} />
@@ -620,13 +703,10 @@ const ClubSetupPage: React.FC = () => {
               <Input value={get_val("numero_tessera_federale")} onChange={(e) => set_val("numero_tessera_federale", e.target.value)} />
             </Field>
           </div>
-        </section>
-
-        <Separator />
+        </SetupSection>
 
         {/* Colore primario */}
-        <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.colore_primario")}</h2>
+        <SetupSection id="colore" titolo={t("club.sezioni.colore_primario")}>
           <div className="flex items-center gap-4">
             <input
               type="color"
@@ -636,13 +716,10 @@ const ClubSetupPage: React.FC = () => {
             />
             <span className="text-sm text-muted-foreground">{colore}</span>
           </div>
-        </section>
-
-        <Separator />
+        </SetupSection>
 
         {/* Descrizione */}
-        <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.descrizione")}</h2>
+        <SetupSection id="descrizione" titolo={t("club.sezioni.descrizione")} mancanti={mancanti.descrizione}>
           <textarea
             value={get_val("descrizione")}
             onChange={(e) => set_val("descrizione", e.target.value)}
@@ -650,15 +727,10 @@ const ClubSetupPage: React.FC = () => {
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
             placeholder={t("club.fields.descrizione_placeholder")}
           />
-        </section>
-
-        <Separator />
+        </SetupSection>
 
         {/* Clausole aggiuntive al contratto di adesione */}
-        <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">
-            {t("club.sezioni.clausole_contratto")}
-          </h2>
+        <SetupSection id="contratto" titolo={t("club.sezioni.clausole_contratto")}>
           <textarea
             value={get_val("clausole_contratto")}
             onChange={(e) => set_val("clausole_contratto", e.target.value)}
@@ -669,13 +741,10 @@ const ClubSetupPage: React.FC = () => {
           <p className="text-xs text-muted-foreground">
             {t("club.testi.clausole_info")}
           </p>
-        </section>
-
-        <Separator />
+        </SetupSection>
 
         {/* Date stagione */}
-        <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.stagione")}</h2>
+        <SetupSection id="stagione" titolo={t("club.sezioni.stagione")} mancanti={mancanti.stagione}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label={t("club.fields.data_inizio_stagione")} icon={<Calendar className="w-3.5 h-3.5" />}>
               <Input
@@ -695,13 +764,10 @@ const ClubSetupPage: React.FC = () => {
               </p>
             </Field>
           </div>
-        </section>
-
-        <Separator />
+        </SetupSection>
 
         {/* Dati bancari */}
-        <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.dati_bancari")}</h2>
+        <SetupSection id="banca" titolo={t("club.sezioni.dati_bancari")} mancanti={mancanti.banca}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label={t("club.fields.iban")} icon={<Hash className="w-3.5 h-3.5" />}>
               <Input
@@ -731,16 +797,16 @@ const ClubSetupPage: React.FC = () => {
               <Input value={get_val("twint_paylink")} onChange={(e) => set_val("twint_paylink", e.target.value)} placeholder="https://pay.raisenow.io/xxxxx" />
             </Field>
           </div>
-        </section>
+        </SetupSection>
 
-        <Separator />
+
+        </TabsContent>
+
+        {/* ══ AUTOMATISMI ══ */}
+        <TabsContent value="automatismi" className="space-y-4">
 
         {/* Medagliere club — punti per posizione */}
-        <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.medagliere")}</h2>
-          <p className="text-xs text-muted-foreground">
-            {t("club.testi.medagliere_info")}
-          </p>
+        <SetupSection id="medagliere" titolo={t("club.sezioni.medagliere")} descrizione={t("club.testi.medagliere_info")}>
           {(() => {
             const default_punti: Record<string, number> = { "1": 10, "2": 7, "3": 5, "4": 3, "5": 2, "6": 1 };
             const current_punti: Record<string, number> =
@@ -785,16 +851,10 @@ const ClubSetupPage: React.FC = () => {
               </div>
             );
           })()}
-        </section>
-
-        <Separator />
+        </SetupSection>
 
         {/* Reminder automatici */}
-        <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.reminder")}</h2>
-          <p className="text-xs text-muted-foreground">
-            {t("club.testi.reminder_info")}
-          </p>
+        <SetupSection id="reminder" titolo={t("club.sezioni.reminder")} descrizione={t("club.testi.reminder_info")}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label={t("club.fields.reminder_allenamenti")}>
               <div className="flex items-center gap-2">
@@ -893,63 +953,48 @@ const ClubSetupPage: React.FC = () => {
               </Field>
             </div>
           </div>
-        </section>
-
-        <Separator />
+        </SetupSection>
 
         {/* Regole comunicazioni intelligenti */}
-        <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.comunicazioni_intelligenti")}</h2>
-          <p className="text-xs text-muted-foreground">
-            {t("club.testi.comunicazioni_intelligenti_info")}
-          </p>
+        <SetupSection
+          id="comunicazioni"
+          titolo={t("club.sezioni.comunicazioni_intelligenti")}
+          descrizione={t("club.testi.comunicazioni_intelligenti_info")}
+        >
           <RegoleComunicazioniSection club_id={club?.id || get_current_club_id() || null} />
-        </section>
-
-        <Separator />
+        </SetupSection>
 
         {/* Messaggi predefiniti */}
-        <section className="space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{t("club.sezioni.messaggi_predefiniti")}</h2>
-          <p className="text-xs text-muted-foreground">
-            {t("club.testi.messaggi_predefiniti_info")}
-          </p>
+        <SetupSection
+          id="messaggi"
+          titolo={t("club.sezioni.messaggi_predefiniti")}
+          descrizione={t("club.testi.messaggi_predefiniti_info")}
+        >
           <TemplateComunicazioniSection club_id={club?.id || get_current_club_id() || null} />
-        </section>
+        </SetupSection>
 
-        <Separator />
-
-        {/* Salva dati club */}
-        <div className="flex justify-end">
-          <Button onClick={handle_save} disabled={saving || Object.keys(form).length === 0}>
-            {saving ? t("club.azioni.salvataggio") : t("club.azioni.salva_modifiche")}
-          </Button>
-        </div>
-
-        <Separator />
-
-        <ModalitaGestioneSection />
-
-        <ModalitaGestioneSection
-          area="fatturazione"
-          label={t("club.tabs.fatturazione")}
-          opzioni={[
-            { value: "standard", label: t("club.opzioni.fatturazione_standard") },
-            { value: "multi_ragione_sociale", label: t("club.opzioni.fatturazione_multi") },
-          ]}
-        />
-        </div>
+        {/* Modalità di gestione */}
+        <SetupSection id="modalita" titolo="Modalità di gestione">
+          <ModalitaGestioneSection />
+          <ModalitaGestioneSection
+            area="fatturazione"
+            label={t("club.tabs.fatturazione")}
+            opzioni={[
+              { value: "standard", label: t("club.opzioni.fatturazione_standard") },
+              { value: "multi_ragione_sociale", label: t("club.opzioni.fatturazione_multi") },
+            ]}
+          />
+        </SetupSection>
 
         </TabsContent>
 
-        <TabsContent value="ghiaccio">
-      <div className="bg-card rounded-xl shadow-card p-6 space-y-8 max-w-2xl border-2 border-primary/20">
-        <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-          {t("club.sezioni.ghiaccio_planning")}
-        </h2>
 
+        {/* ══ GHIACCIO E PLANNING ══ */}
+        <TabsContent value="ghiaccio" className="space-y-4">
+        <SetupSection id="gh_parametri" titolo={t("club.sezioni.ghiaccio_planning")}>
         {/* Config fields */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
           <Field label={t("club.fields.ora_apertura")}>
             <Input
               type="time"
@@ -1009,14 +1054,9 @@ const ClubSetupPage: React.FC = () => {
             )}
           </Field>
         </div>
+        </SetupSection>
 
-        <Separator />
-
-        {/* Lezioni Private */}
-        <div>
-          <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">
-            {t("club.sezioni.lezioni_private")}
-          </h3>
+        <SetupSection id="gh_private" titolo={t("club.sezioni.lezioni_private")}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label={t("club.fields.max_atleti_lezione_privata")}>
               <Input
@@ -1048,22 +1088,12 @@ const ClubSetupPage: React.FC = () => {
               {saving_private ? t("club.azioni.salvataggio") : t("club.azioni.salva_config_private")}
             </Button>
           </div>
-        </div>
+        </SetupSection>
 
-        <div className="flex justify-end">
-          <Button onClick={handle_save_ghiaccio} disabled={saving_ghiaccio}>
-            {saving_ghiaccio ? t("club.azioni.salvataggio") : t("club.azioni.salva_config_ghiaccio")}
-          </Button>
-        </div>
 
-        <Separator />
-
-        {/* Tipo di pianificazione disponibilità */}
-        <div>
-          <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">
-            {t("club.sezioni.tipo_pianificazione")}
-          </h3>
+        <SetupSection id="gh_pianificazione" titolo={t("club.sezioni.tipo_pianificazione")}>
           <div className="max-w-sm">
+
             <Label className="text-xs text-muted-foreground">{t("club.fields.tipo_pianificazione")}</Label>
             <Select
               value={get_val("disponibilita_tipo_pianificazione", "stagionale") || "stagionale"}
@@ -1122,22 +1152,20 @@ const ClubSetupPage: React.FC = () => {
               </Button>
             </div>
           )}
-        </div>
-
-        <Separator />
+        </SetupSection>
 
 
-
-        {/* Disponibilità strutture settimanale */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">
-              {t("club.sezioni.disponibilita_strutture")}
-            </h3>
+        <SetupSection
+          id="gh_disponibilita"
+          titolo={t("club.sezioni.disponibilita_strutture")}
+          mancanti={mancanti.disponibilita}
+        >
+          <div className="flex justify-end">
             <Button size="sm" onClick={save_disponibilita} disabled={saving_disp || !risorsa_sel_id}>
               {saving_disp ? t("club.azioni.salvando") : t("club.azioni.salva_disponibilita")}
             </Button>
           </div>
+
           <div className="mb-4 max-w-sm">
             <Label className="text-xs text-muted-foreground">
               {t("club.fields.valida_fino_al")}
@@ -1214,18 +1242,11 @@ const ClubSetupPage: React.FC = () => {
               );
             })}
           </div>
-        </div>
+        </SetupSection>
+
 
         {risorsa_is_ghiaccio && (
-        <>
-        <Separator />
-
-        {/* Pulizia Ghiaccio */}
-        <div>
-
-          <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">
-            {t("club.sezioni.pulizia_ghiaccio")}
-          </h3>
+        <SetupSection id="gh_pulizia" titolo={t("club.sezioni.pulizia_ghiaccio")}>
           <div className="space-y-4">
             {GIORNI.map((giorno) => {
               const slots = disp_pulizia_local[giorno] || [];
@@ -1267,17 +1288,15 @@ const ClubSetupPage: React.FC = () => {
               );
             })}
           </div>
-        </div>
-        </>
+        </SetupSection>
         )}
-      </div>
 
-
-      <div className="max-w-2xl mt-6">
-        <RisorseSection />
-      </div>
+        <SetupSection id="gh_risorse" titolo="Risorse e strutture">
+          <RisorseSection />
+        </SetupSection>
         </TabsContent>
 
+        {/* ══ CATALOGO ══ */}
         <TabsContent value="catalogo">
           <CatalogoOffertaTab
             club_id={club?.id || get_current_club_id() || null}
@@ -1285,6 +1304,7 @@ const ClubSetupPage: React.FC = () => {
           />
         </TabsContent>
 
+        {/* ══ FATTURAZIONE ══ */}
         <TabsContent value="fatturazione">
           <div className="space-y-6">
             <FatturazioneTab />
@@ -1293,8 +1313,40 @@ const ClubSetupPage: React.FC = () => {
           </div>
         </TabsContent>
       </Tabs>
+
+      <SetupSaveBar
+        modifiche={modifiche}
+        saving={salvataggio_in_corso}
+        on_save={salva_tutto}
+        on_reset={annulla_modifiche}
+      />
+
+      <AlertDialog open={!!tab_in_attesa} onOpenChange={(o) => { if (!o) set_tab_in_attesa(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ci sono modifiche non salvate</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se cambi scheda ora, le modifiche non salvate ({modifiche}) andranno perse.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Resta qui</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                const dest = tab_in_attesa;
+                annulla_modifiche();
+                set_tab_in_attesa(null);
+                if (dest) vai_a_tab(dest);
+              }}
+            >
+              Esci senza salvare
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
+
 };
 
 const Field: React.FC<{ label: string; icon?: React.ReactNode; children: React.ReactNode }> = ({ label, icon, children }) => (
