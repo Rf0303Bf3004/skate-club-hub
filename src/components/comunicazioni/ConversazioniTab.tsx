@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronDown, ChevronRight, Send, MessageSquare } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { use_atleti } from "@/hooks/use-supabase-data";
+import { chiave_gruppo } from "@/lib/raggruppa-comunicazioni";
 
 const tk = (key: string, opts?: any) => i18n.t(`conversazioni.${key}`, { ns: "communications", ...(opts ?? {}) }) as string;
 
@@ -21,11 +23,14 @@ type Destinatario = {
 
 type Conversazione = {
   id: string;
+  /** Tutte le righe dell'invio: le azioni valgono per l'intero gruppo. */
+  ids: string[];
   titolo: string;
   testo: string;
   created_at: string;
   rsvp_scadenza: string | null;
   destinatari: Destinatario[];
+  testo_personalizzato: boolean;
 };
 
 function format_date(iso: string | null) {
@@ -46,7 +51,7 @@ export const ConversazioniTab: React.FC = () => {
       const { data, error } = await supabase
         .from("comunicazioni")
         .select(`
-          id, titolo, testo, created_at, rsvp_scadenza,
+          id, club_id, tipo, sotto_tipo, atleta_id, titolo, testo, created_at, rsvp_scadenza,
           destinatari:comunicazioni_destinatari(
             id, atleta_id, rsvp_risposta, rsvp_at,
             atleti:atleti(nome, cognome)
@@ -57,9 +62,39 @@ export const ConversazioniTab: React.FC = () => {
         .eq("archiviata", false)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as any;
+      // Un riquadro per invio: le righe scritte nello stesso minuto con stesso
+      // titolo/tipo appartengono allo stesso ciclo di invio.
+      const mappa = new Map<string, any[]>();
+      (data ?? []).forEach((r: any) => {
+        const k = chiave_gruppo(r);
+        const lista = mappa.get(k);
+        if (lista) lista.push(r);
+        else mappa.set(k, [r]);
+      });
+      return Array.from(mappa.values()).map((righe) => {
+        const capofila = righe[0];
+        const destinatari: Destinatario[] = righe.flatMap((r: any) =>
+          (r.destinatari ?? []).length > 0
+            ? r.destinatari
+            : r.atleta_id
+              ? [{ id: r.id, atleta_id: r.atleta_id, rsvp_risposta: null, rsvp_at: null, atleti: null }]
+              : [],
+        );
+        return {
+          ...capofila,
+          ids: righe.map((r: any) => r.id),
+          destinatari,
+          testo_personalizzato: new Set(righe.map((r: any) => r.testo ?? "")).size > 1,
+        } as Conversazione;
+      });
     },
   });
+
+  const { data: atleti = [] } = use_atleti();
+  const atleti_by_id = useMemo(
+    () => Object.fromEntries((atleti ?? []).map((a: any) => [a.id, a])),
+    [atleti],
+  );
 
   const sollecita = useMutation({
     mutationFn: async (conv: Conversazione) => {
@@ -121,7 +156,14 @@ export const ConversazioniTab: React.FC = () => {
                     <h3 className="font-semibold text-foreground truncate">{conv.titolo}</h3>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {t("conversazioni.sent_on", { data: format_date(conv.created_at), count: tot })}
+                      {" • "}
+                      {`hanno risposto ${conferme + rifiuti} su ${tot}`}
                     </p>
+                    {conv.testo_personalizzato && (
+                      <p className="text-[11px] text-muted-foreground/80 italic mt-0.5">
+                        il testo è personalizzato per ciascun destinatario
+                      </p>
+                    )}
                     <div className="flex flex-wrap gap-2 mt-2">
                       <Badge className="bg-success/15 text-success border-success/30" variant="outline">{t("conversazioni.confirmations", { count: conferme })}</Badge>
                       <Badge className="bg-destructive/15 text-destructive border-destructive/30" variant="outline">{t("conversazioni.refusals", { count: rifiuti })}</Badge>
@@ -146,7 +188,8 @@ export const ConversazioniTab: React.FC = () => {
             {expanded && (
               <div className="border-t border-border bg-muted/20 px-4 py-3 space-y-1.5 max-h-80 overflow-y-auto">
                 {conv.destinatari.map((d) => {
-                  const nome = d.atleti ? `${d.atleti.cognome} ${d.atleti.nome}` : d.atleta_id.slice(0, 8);
+                  const anagrafica: any = d.atleti ?? atleti_by_id[d.atleta_id];
+                  const nome = anagrafica ? `${anagrafica.cognome} ${anagrafica.nome}` : d.atleta_id.slice(0, 8);
                   const stato = d.rsvp_risposta === "si"
                     ? <span className="text-success">{t("conversazioni.confirmed_on", { data: format_date(d.rsvp_at) })}</span>
                     : d.rsvp_risposta === "no"
