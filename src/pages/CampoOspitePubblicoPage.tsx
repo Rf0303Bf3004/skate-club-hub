@@ -126,7 +126,7 @@ const CampoOspitePubblicoPage: React.FC = () => {
                 </Select>
               </div>
             )}
-            <OspitiImportWizard on_submit={registra} consenti_manuale />
+            <OspitiImportWizard on_submit={registra} consenti_manuale pubblico />
           </CardContent>
         </Card>
       </div>
