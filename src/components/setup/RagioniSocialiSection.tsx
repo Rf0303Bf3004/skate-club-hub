@@ -621,10 +621,42 @@ const RagioneSocialeDialog: React.FC<{
   );
 };
 
+// ─── Pallino di stato "pronta a fatturare" ─────────────────
+const StatoRagione: React.FC<{ ragione: RagioneSociale }> = ({ ragione }) => {
+  const soggetto_iva = (ragione as any).soggetto_iva === true;
+  const { data: numero_iva_ok } = use_numero_iva_valido(
+    soggetto_iva ? ragione.numero_iva || null : null,
+    ragione.paese_iso || "CH",
+  );
+
+  const mancanze: string[] = [];
+  if (!ragione.iban) mancanze.push("IBAN");
+  if (!ragione.indirizzo) mancanze.push("indirizzo");
+  if (!ragione.cap) mancanze.push("CAP");
+  if (!ragione.citta) mancanze.push("città");
+  if (soggetto_iva && (!ragione.numero_iva || numero_iva_ok === false))
+    mancanze.push("numero IVA valido");
+
+  const ok = mancanze.length === 0;
+
+  return (
+    <>
+      <span
+        aria-label={ok ? "Pronta a fatturare" : "Dati mancanti"}
+        title={ok ? "Pronta a fatturare" : `Manca: ${mancanze.join(", ")}`}
+        className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full ${ok ? "bg-emerald-500" : "bg-amber-500"}`}
+      />
+      {!ok && (
+        <p className="mt-0.5 w-full text-xs text-amber-600">Manca: {mancanze.join(", ")}</p>
+      )}
+    </>
+  );
+};
+
 // ─── Sezione principale ────────────────────────────────────
 export const RagioniSocialiSection: React.FC = () => {
   const { session } = useAuth();
-  const allowed = !!session && ["superadmin", "admin", "presidente"].includes(session.ruolo);
+  const allowed = !!session && ["superadmin", "presidente"].includes(session.ruolo);
   const { modalita } = useModalitaArea("fatturazione");
   const { data: ragioni = [], isLoading } = use_ragioni_sociali();
   const elimina = use_elimina_ragione_sociale();
@@ -632,7 +664,6 @@ export const RagioniSocialiSection: React.FC = () => {
   const [edit_ragione, set_edit_ragione] = React.useState<RagioneSociale | null>(null);
   const [expanded, set_expanded] = React.useState<string | null>(null);
 
-  if (!allowed) return null;
 
   // La sezione è sempre visibile: se la gestione multi-ente non è attiva,
   // mostriamo comunque il selettore di modalità con la spiegazione.
