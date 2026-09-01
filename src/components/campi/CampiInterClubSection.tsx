@@ -717,6 +717,14 @@ const TabClubPartecipanti: React.FC<{ campo: EventoCampoInterClub; is_ospitante:
   const nome_partecipante = (p: CampoClubPartecipante) =>
     p.clubs?.nome || p.club_esterno_nome || t("campi_interclub.club.senza_nome");
 
+  // Atleti ospiti già registrati, contati per nome del club di provenienza.
+  const conta_atleti = (p: CampoClubPartecipante) => {
+    const nome_p = (p.clubs?.nome || p.club_esterno_nome || "").trim().toLowerCase();
+    if (!nome_p) return 0;
+    return ospiti.filter((o) => (o.club_provenienza ?? "").trim().toLowerCase() === nome_p).length;
+  };
+
+
   const crea_link = (p: CampoClubPartecipante) =>
     link.mutate(
       { riga_partecipazione: p.id, evento_campo_id: campo.id },
