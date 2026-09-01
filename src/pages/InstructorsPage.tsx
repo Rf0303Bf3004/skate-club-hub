@@ -1614,6 +1614,15 @@ const InstructorsPage: React.FC = () => {
     toast({ title: ti("toast.disponibilita_salvata") });
   };
 
+  const totale_fasce_attuali = useMemo(
+    () => Object.values(selected?.disponibilita || {}).reduce((acc: number, s: any) => acc + (Array.isArray(s) ? s.length : 0), 0),
+    [selected],
+  );
+  const totale_fasce_nuove = useMemo(
+    () => Object.values(disp_local).reduce((acc, s) => acc + s.length, 0),
+    [disp_local],
+  );
+
   const selected = istruttori_veri.find((i: any) => i.id === selected_id);
   const selected_monitore = monitori_atleti.find((a: any) => a.id === selected_monitore_id);
 
@@ -1796,9 +1805,11 @@ const InstructorsPage: React.FC = () => {
                       <div key={giorno} className="border border-border/50 rounded-lg p-3">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-sm font-medium text-foreground">{giorno}</span>
-                          <Button variant="ghost" size="sm" onClick={() => add_slot(giorno)} className="h-7 text-xs">
-                            <Plus className="w-3 h-3 mr-1" /> {ti("dettaglio.slot")}
-                          </Button>
+                          {puo_gestire_sportivo && (
+                            <Button variant="ghost" size="sm" onClick={() => add_slot(giorno)} className="h-7 text-xs">
+                              <Plus className="w-3 h-3 mr-1" /> {ti("dettaglio.slot")}
+                            </Button>
+                          )}
                         </div>
                         {slots.length === 0 && <p className="text-xs text-muted-foreground">{ti("dettaglio.nessuno_slot")}</p>}
                         {slots.map((s, idx) => (
@@ -1806,6 +1817,7 @@ const InstructorsPage: React.FC = () => {
                             <Input
                               type="time"
                               value={s.ora_inizio}
+                              disabled={!puo_gestire_sportivo}
                               onChange={(e) => update_slot(giorno, idx, "ora_inizio", e.target.value)}
                               className="w-28 h-8 text-xs"
                             />
@@ -1813,17 +1825,20 @@ const InstructorsPage: React.FC = () => {
                             <Input
                               type="time"
                               value={s.ora_fine}
+                              disabled={!puo_gestire_sportivo}
                               onChange={(e) => update_slot(giorno, idx, "ora_fine", e.target.value)}
                               className="w-28 h-8 text-xs"
                             />
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => remove_slot(giorno, idx)}
-                              className="h-7 w-7 p-0 text-destructive"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
+                            {puo_gestire_sportivo && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => remove_slot(giorno, idx)}
+                                className="h-7 w-7 p-0 text-destructive"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            )}
                           </div>
                         ))}
                       </div>
