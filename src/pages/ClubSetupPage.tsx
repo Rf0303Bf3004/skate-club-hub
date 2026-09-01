@@ -1231,20 +1231,17 @@ const ClubSetupPage: React.FC = () => {
           )}
         </div>
 
-        <Separator />
-
-
-
-        {/* Disponibilità strutture settimanale */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">
-              {t("club.sezioni.disponibilita_strutture")}
-            </h3>
+        <SetupSection
+          id="gh_disponibilita"
+          titolo={t("club.sezioni.disponibilita_strutture")}
+          mancanti={mancanti.disponibilita}
+        >
+          <div className="flex justify-end">
             <Button size="sm" onClick={save_disponibilita} disabled={saving_disp || !risorsa_sel_id}>
               {saving_disp ? t("club.azioni.salvando") : t("club.azioni.salva_disponibilita")}
             </Button>
           </div>
+
           <div className="mb-4 max-w-sm">
             <Label className="text-xs text-muted-foreground">
               {t("club.fields.valida_fino_al")}
