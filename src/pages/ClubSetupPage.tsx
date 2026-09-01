@@ -1224,7 +1224,8 @@ const ClubSetupPage: React.FC = () => {
               </Button>
             </div>
           )}
-        </div>
+        </SetupSection>
+
 
         <SetupSection
           id="gh_disponibilita"
