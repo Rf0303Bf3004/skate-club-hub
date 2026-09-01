@@ -808,6 +808,18 @@ const TabClubPartecipanti: React.FC<{ campo: EventoCampoInterClub; is_ospitante:
                         {t("campi_interclub.club.esterno_badge")}
                       </Badge>
                     )}
+                    {conta_atleti(p) > 0 && (
+                      <span
+                        className="ml-2 inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold leading-none"
+                        style={{
+                          borderLeft: `3px solid ${AMBRA_OSPITI}`,
+                          backgroundColor: `${AMBRA_OSPITI}1A`,
+                          color: AMBRA_OSPITI,
+                        }}
+                      >
+                        {conta_atleti(p)} {conta_atleti(p) === 1 ? "atleta" : "atleti"}
+                      </span>
+                    )}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {fmt_date(p.valido_dal)} → {fmt_date(p.valido_al)} •{" "}
