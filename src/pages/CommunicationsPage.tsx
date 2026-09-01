@@ -24,6 +24,8 @@ import { ConversazioniTab } from '@/components/comunicazioni/ConversazioniTab';
 import { MieiReminderStaffTab } from '@/components/comunicazioni/MieiReminderStaffTab';
 import { ListaComunicazioni } from '@/components/comunicazioni/ListaComunicazioni';
 import { Bell } from 'lucide-react';
+import { usePermessiAzione } from '@/hooks/use-permessi-azione';
+import NotaPermesso from '@/components/common/NotaPermesso';
 
 function build_templates(t: (key: string) => string) {
   return [
@@ -483,6 +485,7 @@ const CommunicationsPage: React.FC = () => {
   const { session } = useAuth();
   const qc = useQueryClient();
   const ruolo = session?.ruolo;
+  const { puo_comunicare } = usePermessiAzione();
   const can_see_all = ruolo === 'superadmin' || ruolo === 'admin';
   const can_see_miei_reminder_staff = ruolo === 'istruttore' || ruolo === 'aiuto_monitore';
 
@@ -573,8 +576,13 @@ const CommunicationsPage: React.FC = () => {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold tracking-tight text-foreground">{t('title')}</h1>
-        <Button className="bg-primary hover:bg-primary/90" onClick={open_new}><Plus className="w-4 h-4 mr-2" /> {t('new')}</Button>
+        {puo_comunicare && (
+          <Button className="bg-primary hover:bg-primary/90" onClick={open_new}><Plus className="w-4 h-4 mr-2" /> {t('new')}</Button>
+        )}
       </div>
+      {!puo_comunicare && (
+        <NotaPermesso testo="Solo lo staff di segreteria e direzione può creare, inviare o modificare comunicazioni. Puoi comunque leggerle e gestire i tuoi reminder." />
+      )}
 
       <Tabs defaultValue={non_lette_count > 0 ? 'ricevute' : 'inviate'} className="w-full">
         <TabsList className="flex-wrap h-auto">
@@ -614,6 +622,7 @@ const CommunicationsPage: React.FC = () => {
             get_destinatari_label={get_destinatari_label}
             get_data_label={get_data_label}
             empty_text={t('empty.sent')}
+            can_manage={puo_comunicare}
           />
         </TabsContent>
 
@@ -626,6 +635,7 @@ const CommunicationsPage: React.FC = () => {
             get_data_label={get_data_label}
             on_open={(c) => { if (c.categoria === 'ricevuta' && !c.letta) void mark_letta(c.id); }}
             empty_text={t('empty.received')}
+            can_manage={puo_comunicare}
           />
         </TabsContent>
 
@@ -650,6 +660,7 @@ const CommunicationsPage: React.FC = () => {
               get_destinatari_label={get_destinatari_label}
               get_data_label={get_data_label}
               empty_text={t('empty.archive')}
+              can_manage={puo_comunicare}
             />
           </TabsContent>
         )}

@@ -13,6 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import ConfirmButton from "@/components/common/ConfirmButton";
+import NotaPermesso from "@/components/common/NotaPermesso";
+import { usePermessiAzione } from "@/hooks/use-permessi-azione";
 import { Plus, ArrowLeft, Trash2, X, CheckCircle, Send, Search } from "lucide-react";
 import {
   ComunicazioneFormSection,
@@ -131,6 +133,7 @@ function summarize_livelli(t: (k: string, o?: any) => string, rows: { livello_ta
 // ─── Componente principale ──────────────────────────────────────────────
 export default function TestLivelloPage() {
   const { t } = useTranslation("events");
+  const { puo_gestire_sportivo } = usePermessiAzione();
   const club_id = get_current_club_id();
   const qc = useQueryClient();
   const route_params = useParams<{ id?: string }>();
@@ -515,10 +518,15 @@ export default function TestLivelloPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-foreground">{t("level_tests.page_title")}</h1>
-          <Button onClick={() => { set_form({ ...empty_form }); set_view("new"); }}>
-            <Plus className="w-4 h-4 mr-2" /> {t("level_tests.new")}
-          </Button>
+          {puo_gestire_sportivo && (
+            <Button onClick={() => { set_form({ ...empty_form }); set_view("new"); }}>
+              <Plus className="w-4 h-4 mr-2" /> {t("level_tests.new")}
+            </Button>
+          )}
         </div>
+        {!puo_gestire_sportivo && (
+          <NotaPermesso testo="Sola lettura: solo lo staff di gestione può creare, modificare o eliminare i test di livello." />
+        )}
         <div className="flex items-center gap-2">
           <Button
             variant={mostra_passati ? "outline" : "default"}
@@ -723,17 +731,19 @@ export default function TestLivelloPage() {
         </Button>
         <h1 className="text-2xl font-bold text-foreground">{selected_test.nome}</h1>
         <Badge variant="outline" className="capitalize">{selected_test.tipo === "in_gara" ? t("level_tests.type_in_gara_badge") : t("level_tests.type_base_badge")}</Badge>
-        <div className="ml-auto flex gap-2">
-          <ConfirmButton
-            titolo={t("level_tests.delete_confirm_title")}
-            descrizione={t("level_tests.delete_confirm_desc")}
-            on_conferma={() => delete_test.mutate(selected_test.id)}
-          >
-            <Button variant="destructive" size="sm">
-              <Trash2 className="w-4 h-4 mr-1" /> {t("level_tests.delete")}
-            </Button>
-          </ConfirmButton>
-        </div>
+        {puo_gestire_sportivo && (
+          <div className="ml-auto flex gap-2">
+            <ConfirmButton
+              titolo={t("level_tests.delete_confirm_title")}
+              descrizione={t("level_tests.delete_confirm_desc")}
+              on_conferma={() => delete_test.mutate(selected_test.id)}
+            >
+              <Button variant="destructive" size="sm">
+                <Trash2 className="w-4 h-4 mr-1" /> {t("level_tests.delete")}
+              </Button>
+            </ConfirmButton>
+          </div>
+        )}
       </div>
 
       <Card>
@@ -757,9 +767,11 @@ export default function TestLivelloPage() {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">{t("level_tests.athletes_convoked_count", { count: grouped_chains.length })}</CardTitle>
-            <Button size="sm" onClick={() => set_show_add(true)}>
-              <Plus className="w-4 h-4 mr-1" /> {t("level_tests.convoke_athlete")}
-            </Button>
+            {puo_gestire_sportivo && (
+              <Button size="sm" onClick={() => set_show_add(true)}>
+                <Plus className="w-4 h-4 mr-1" /> {t("level_tests.convoke_athlete")}
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -793,41 +805,51 @@ export default function TestLivelloPage() {
                               </Badge>
                             )}
                           </div>
-                          <Select
-                            value={step.esito}
-                            onValueChange={(v) => handle_change_esito(step.id, v as "in_attesa" | "superato" | "non_superato" | "non_sostenuto")}
-                          >
-                            <SelectTrigger className="w-36 h-8 text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {ESITO_OPTIONS.map((o) => (
-                                <SelectItem
-                                  key={o.value}
-                                  value={o.value}
-                                  disabled={o.value === "non_sostenuto" && is_first}
-                                >
-                                  {o.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Input
-                            className="h-8 text-xs"
-                            defaultValue={step.note_istruttore || ""}
-                            onBlur={(e) => update_field.mutate({ id: step.id, patch: { note_istruttore: e.target.value } as any })}
-                            placeholder={t("level_tests.note_istruttore_placeholder")}
-                          />
-                          <ConfirmButton
-                            titolo={t("level_tests.remove_step_confirm_title", { ordine: step.ordine })}
-                            descrizione={`${step.livello_accesso} → ${step.livello_target}`}
-                            conferma_label={t("level_tests.remove_step_confirm_label")}
-                            on_conferma={() => remove_step.mutate(step.id)}
-                          >
-                            <Button variant="ghost" size="icon" className="h-7 w-7">
-                              <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                            </Button>
-                          </ConfirmButton>
+                          {puo_gestire_sportivo ? (
+                            <Select
+                              value={step.esito}
+                              onValueChange={(v) => handle_change_esito(step.id, v as "in_attesa" | "superato" | "non_superato" | "non_sostenuto")}
+                            >
+                              <SelectTrigger className="w-36 h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {ESITO_OPTIONS.map((o) => (
+                                  <SelectItem
+                                    key={o.value}
+                                    value={o.value}
+                                    disabled={o.value === "non_sostenuto" && is_first}
+                                  >
+                                    {o.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <Badge variant="outline" className="w-fit">{ESITO_OPTIONS.find((o) => o.value === step.esito)?.label || step.esito}</Badge>
+                          )}
+                          {puo_gestire_sportivo ? (
+                            <Input
+                              className="h-8 text-xs"
+                              defaultValue={step.note_istruttore || ""}
+                              onBlur={(e) => update_field.mutate({ id: step.id, patch: { note_istruttore: e.target.value } as any })}
+                              placeholder={t("level_tests.note_istruttore_placeholder")}
+                            />
+                          ) : (
+                            <span className="text-xs text-muted-foreground truncate">{step.note_istruttore || "—"}</span>
+                          )}
+                          {puo_gestire_sportivo && (
+                            <ConfirmButton
+                              titolo={t("level_tests.remove_step_confirm_title", { ordine: step.ordine })}
+                              descrizione={`${step.livello_accesso} → ${step.livello_target}`}
+                              conferma_label={t("level_tests.remove_step_confirm_label")}
+                              on_conferma={() => remove_step.mutate(step.id)}
+                            >
+                              <Button variant="ghost" size="icon" className="h-7 w-7">
+                                <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                              </Button>
+                            </ConfirmButton>
+                          )}
                         </div>
                       );
                     })}

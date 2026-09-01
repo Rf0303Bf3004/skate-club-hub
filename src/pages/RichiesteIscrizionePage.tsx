@@ -14,6 +14,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { usePermessiAzione } from "@/hooks/use-permessi-azione";
+import NotaPermesso from "@/components/common/NotaPermesso";
 
 type Filtro = "tutte" | "in_attesa" | "approvata" | "rifiutata" | "archivio";
 
@@ -22,6 +24,7 @@ const PAGE_SIZES = [25, 50, 100];
 
 const RichiesteIscrizionePage: React.FC = () => {
   const { t } = useTranslation("atleti");
+  const { puo_gestire_sportivo } = usePermessiAzione();
   const { session } = useAuth();
   const { visibile_set, is_admin_like, is_loading: is_loading_permessi } = usePermessiSezioniMatrix();
   const allowed = is_admin_like || visibile_set.has("richieste_iscrizione");
@@ -170,7 +173,7 @@ const RichiesteIscrizionePage: React.FC = () => {
     return (
       <tr key={r.id} className={`border-b border-border last:border-0 ${selezionata ? "bg-primary/5" : "hover:bg-muted/40"}`}>
         <td className="p-3 w-10">
-          {r.stato === "in_attesa" && (
+          {r.stato === "in_attesa" && puo_gestire_sportivo && (
             <Checkbox checked={selezionata} onCheckedChange={() => toggle_uno(r.id)} className="h-5 w-5" />
           )}
         </td>
@@ -191,7 +194,7 @@ const RichiesteIscrizionePage: React.FC = () => {
           )}
         </td>
         <td className="p-3 text-right whitespace-nowrap">
-          {r.stato === "in_attesa" && (
+          {r.stato === "in_attesa" && puo_gestire_sportivo && (
             <div className="inline-flex gap-2">
               <Button size="sm" variant="outline" className="h-9 w-9 p-0 border-emerald-200 text-emerald-600 hover:bg-emerald-50" onClick={() => open_modal([r], "approvata")}>
                 <Check className="w-4 h-4" />
@@ -223,6 +226,9 @@ const RichiesteIscrizionePage: React.FC = () => {
           <Badge className="bg-amber-100 text-amber-700 text-sm px-3 py-1">{t("richieste_iscrizione.badge_in_attesa", { count: counts.in_attesa })}</Badge>
         )}
       </div>
+      {!puo_gestire_sportivo && (
+        <NotaPermesso testo="Sola lettura: solo lo staff di gestione può approvare o rifiutare le richieste di iscrizione." />
+      )}
 
       {isLoading && (
         <div className="flex items-center justify-center h-64">
@@ -298,7 +304,7 @@ const RichiesteIscrizionePage: React.FC = () => {
           </div>
 
           {/* Bulk bar */}
-          {selezione.length > 0 && (
+          {selezione.length > 0 && puo_gestire_sportivo && (
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 p-3">
               <span className="text-sm font-medium text-foreground">{t("richieste_iscrizione.selezionate", { count: selezione.length })}</span>
               <div className="flex gap-2">
@@ -337,7 +343,7 @@ const RichiesteIscrizionePage: React.FC = () => {
                   <thead className="bg-muted/50 text-xs text-muted-foreground">
                     <tr>
                       <th className="p-3 w-10 text-left">
-                        {pendenti_pagina.length > 0 && (
+                        {pendenti_pagina.length > 0 && puo_gestire_sportivo && (
                           <Checkbox checked={tutte_selezionate} onCheckedChange={toggle_tutte} className="h-5 w-5" />
                         )}
                       </th>

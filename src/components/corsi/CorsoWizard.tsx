@@ -9,6 +9,9 @@ import { Check, ChevronLeft, ChevronRight, Snowflake, Dumbbell, AlertTriangle, X
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { GrigliaFasceGhiaccio, NumInput, to_num } from "@/pages/CoursesPage";
 import { toast } from "@/hooks/use-toast";
+import { usePermessiAzione } from "@/hooks/use-permessi-azione";
+import NotaPermesso from "@/components/common/NotaPermesso";
+import ConfirmButton from "@/components/common/ConfirmButton";
 import { calcola_status_istruttori_per_slot, norm_giorno, time_to_min as tmin } from "@/lib/availability";
 import { SelectLivello } from "@/components/ui/select-livello";
 import { use_livelli, use_disponibilita_ghiaccio } from "@/hooks/use-supabase-data";
@@ -169,11 +172,11 @@ export interface CorsoWizardProps {
 
 export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, corsi, on_close, on_save, on_delete, saving, deleting }) => {
   const { t } = useTranslation("corsi");
+  const { puo_gestire_sportivo } = usePermessiAzione();
   const is_edit = !!corso?.id;
   const has_planning_init = !!(corso?.giorno && corso?.ora_inizio && corso?.ora_fine);
 
   const [step, set_step] = useState(1);
-  const [confirm_delete, set_confirm_delete] = useState(false);
   const [posiziona_planning, set_posiziona_planning] = useState(is_edit ? has_planning_init : true);
 
   // Carica stagioni del club per pre-valorizzare quella attiva (fix bug stagione_id NULL)
@@ -1022,21 +1025,17 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
             <Button variant="ghost" onClick={on_close} disabled={saving || !!deleting}>
               {t("corso_wizard.annulla")}
             </Button>
-            {is_edit && on_delete && (
-              confirm_delete ? (
-                <>
-                  <Button variant="outline" size="sm" onClick={() => set_confirm_delete(false)} disabled={!!deleting}>
-                    {t("corso_wizard.no")}
-                  </Button>
-                  <Button variant="destructive" size="sm" onClick={async () => { await on_delete(); }} disabled={!!deleting}>
-                    {deleting ? "..." : t("corso_wizard.elimina_definitivamente")}
-                  </Button>
-                </>
-              ) : (
-                <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => set_confirm_delete(true)} disabled={saving}>
-                  {t("corso_wizard.elimina_corso")}
+            {is_edit && on_delete && puo_gestire_sportivo && (
+              <ConfirmButton
+                titolo={`Eliminare il corso "${form.nome || t("corso_wizard.senza_nome")}"?`}
+                descrizione={t("corso_wizard.elimina_definitivamente")}
+                conferma_label={t("corso_wizard.elimina_definitivamente")}
+                on_conferma={async () => { await on_delete(); }}
+              >
+                <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10" disabled={saving || !!deleting}>
+                  {deleting ? "..." : t("corso_wizard.elimina_corso")}
                 </Button>
-              )
+              </ConfirmButton>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -1060,6 +1059,9 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                 </Button>
               </div>
             )}
+            {!puo_gestire_sportivo && (
+              <NotaPermesso testo="Sola lettura: solo lo staff di gestione può salvare o eliminare corsi." />
+            )}
             {step === 2 && (
               <div className="flex flex-col items-end gap-1">
                 {istruttori_ko_selezionati.length > 0 && (
@@ -1067,13 +1069,15 @@ export const CorsoWizard: React.FC<CorsoWizardProps> = ({ corso, istruttori, cor
                     {t("corso_wizard.rimuovi_prima", { nomi: istruttori_ko_selezionati.map((i: any) => `${i.nome} ${i.cognome}`).join(", "), interpolation: { escapeValue: false } })}
                   </span>
                 )}
-                <Button
-                  onClick={handle_submit}
-                  disabled={saving || istruttori_ko_selezionati.length > 0}
-                  className="bg-primary hover:bg-primary/90"
-                >
-                  {saving ? t("corso_wizard.salvataggio") : t("corso_wizard.salva")}
-                </Button>
+                {puo_gestire_sportivo && (
+                  <Button
+                    onClick={handle_submit}
+                    disabled={saving || istruttori_ko_selezionati.length > 0}
+                    className="bg-primary hover:bg-primary/90"
+                  >
+                    {saving ? t("corso_wizard.salvataggio") : t("corso_wizard.salva")}
+                  </Button>
+                )}
               </div>
             )}
           </div>

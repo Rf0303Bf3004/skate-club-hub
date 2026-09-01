@@ -269,22 +269,22 @@ const AuthenticatedApp = () => {
         <Routes>
           <Route path="/" element={<SmartHome />} />
           <Route path="/staff" element={<Navigate to="/" replace />} />
-          <Route path="/atleti" element={<AthletesPage />} />
-          <Route path="/atleti/:id" element={<AthletesPage />} />
-          <Route path="/istruttori" element={<InstructorsPage />} />
-          <Route path="/corsi" element={<CoursesPage />} />
-          <Route path="/gare" element={<CompetitionsPage />} />
-          <Route path="/gare/:id" element={<CompetitionsPage />} />
-          <Route path="/test" element={<TestLivelloPage />} />
-          <Route path="/test/:id" element={<TestLivelloPage />} />
-          <Route path="/lezioni-private" element={<PrivateLessonsPage />} />
-          <Route path="/eventi" element={<EventiPage />} />
+          <Route path="/atleti" element={<SezioneGuard codice_sezione="atleti"><AthletesPage /></SezioneGuard>} />
+          <Route path="/atleti/:id" element={<SezioneGuard codice_sezione="atleti"><AthletesPage /></SezioneGuard>} />
+          <Route path="/istruttori" element={<SezioneGuard codice_sezione="istruttori"><InstructorsPage /></SezioneGuard>} />
+          <Route path="/corsi" element={<SezioneGuard codice_sezione="corsi"><CoursesPage /></SezioneGuard>} />
+          <Route path="/gare" element={<SezioneGuard codice_sezione="gare"><CompetitionsPage /></SezioneGuard>} />
+          <Route path="/gare/:id" element={<SezioneGuard codice_sezione="gare"><CompetitionsPage /></SezioneGuard>} />
+          <Route path="/test" element={<SezioneGuard codice_sezione="test_livello"><TestLivelloPage /></SezioneGuard>} />
+          <Route path="/test/:id" element={<SezioneGuard codice_sezione="test_livello"><TestLivelloPage /></SezioneGuard>} />
+          <Route path="/lezioni-private" element={<SezioneGuard codice_sezione="lezioni_private"><PrivateLessonsPage /></SezioneGuard>} />
+          <Route path="/eventi" element={<SezioneGuard codice_sezione="eventi"><EventiPage /></SezioneGuard>} />
           <Route path="/eventi/:id" element={<Navigate to="/eventi" replace />} />
-          <Route path="/fatture" element={<InvoicesPage />} />
-          <Route path="/segreteria/fatture" element={<SegreteriaFatturePage />} />
-          <Route path="/segreteria/fatture/:id" element={<SegreteriaFatturaDetailPage />} />
-          <Route path="/comunicazioni" element={<CommunicationsPage />} />
-          <Route path="/stagioni" element={<SeasonsPage />} />
+          <Route path="/fatture" element={<SezioneGuard codice_sezione="fatture"><InvoicesPage /></SezioneGuard>} />
+          <Route path="/segreteria/fatture" element={<SezioneGuard codice_sezione="fatture"><SegreteriaFatturePage /></SezioneGuard>} />
+          <Route path="/segreteria/fatture/:id" element={<SezioneGuard codice_sezione="fatture"><SegreteriaFatturaDetailPage /></SezioneGuard>} />
+          <Route path="/comunicazioni" element={<SezioneGuard codice_sezione="comunicazioni"><CommunicationsPage /></SezioneGuard>} />
+          <Route path="/stagioni" element={<SezioneGuard codice_sezione="stagioni"><SeasonsPage /></SezioneGuard>} />
           <Route path="/campi-eventi" element={<Navigate to="/eventi" replace />} />
           <Route path="/medagliere" element={<MedagliereePage />} />
           <Route path="/pre-season" element={<Navigate to="/eventi" replace />} />
@@ -294,8 +294,8 @@ const AuthenticatedApp = () => {
           <Route path="/planning-ghiaccio" element={<Navigate to="/planning" replace />} />
           <Route path="/configurazione-club" element={<Navigate to="/setup-club" replace />} />
           <Route path="/gestione-ruoli" element={<Navigate to="/ruoli-permessi" replace />} />
-          <Route path="/planning" element={<PlanningPage />} />
-          <Route path="/griglia-ghiaccio" element={<GrigliaGhiaccioPage />} />
+          <Route path="/planning" element={<SezioneGuard codice_sezione="planning_ghiaccio"><PlanningPage /></SezioneGuard>} />
+          <Route path="/griglia-ghiaccio" element={<SezioneGuard codice_sezione="griglia_ghiaccio"><GrigliaGhiaccioPage /></SezioneGuard>} />
           <Route
             path="/setup-club"
             element={
@@ -304,13 +304,13 @@ const AuthenticatedApp = () => {
               </SezioneGuard>
             }
           />
-          <Route path="/gestione-avanzata" element={<AdvancedManagementPage />} />
-          <Route path="/richieste-iscrizione" element={<RichiesteIscrizionePage />} />
-          <Route path="/ruoli-permessi" element={<RuoliPermessiPage />} />
-          <Route path="/utenti" element={<UtentiPage />} />
+          <Route path="/gestione-avanzata" element={<SezioneGuard codice_sezione="gestione_avanzata"><AdvancedManagementPage /></SezioneGuard>} />
+          <Route path="/richieste-iscrizione" element={<SezioneGuard codice_sezione="richieste_iscrizione"><RichiesteIscrizionePage /></SezioneGuard>} />
+          <Route path="/ruoli-permessi" element={<SezioneGuard codice_sezione="ruoli_permessi"><RuoliPermessiPage /></SezioneGuard>} />
+          <Route path="/utenti" element={<SezioneGuard codice_sezione="gestione_utenti"><UtentiPage /></SezioneGuard>} />
           <Route path="/nuova-stagione" element={<NuovaStagionePage />} />
           <Route path="/test-mobile-auth" element={<TestMobileAuthPage />} />
-          <Route path="/import-atleti" element={<ImportAtletiPage />} />
+          <Route path="/import-atleti" element={<SezioneGuard codice_sezione="import_dati"><ImportAtletiPage /></SezioneGuard>} />
           <Route path="/pacchetti-sponsor" element={<PacchettiSponsorPage />} />
           <Route path="/convenzioni" element={<ConvenzioniSociPage />} />
           <Route path="/onboarding" element={<OnboardingPage />} />

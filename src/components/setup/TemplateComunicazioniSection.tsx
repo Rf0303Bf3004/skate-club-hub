@@ -6,6 +6,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { usePermessiAzione } from "@/hooks/use-permessi-azione";
+import NotaPermesso from "@/components/common/NotaPermesso";
+import ConfirmButton from "@/components/common/ConfirmButton";
 
 type Template = { id: string; nome: string; testo: string | null };
 
@@ -15,6 +18,7 @@ type Template = { id: string; nome: string; testo: string | null };
  */
 const TemplateComunicazioniSection: React.FC<{ club_id: string | null }> = ({ club_id }) => {
   const queryClient = useQueryClient();
+  const { puo_comunicare } = usePermessiAzione();
   const [bozza, set_bozza] = useState<Record<string, { nome: string; testo: string }>>({});
   const [saving_id, set_saving_id] = useState<string | null>(null);
 
@@ -100,15 +104,24 @@ const TemplateComunicazioniSection: React.FC<{ club_id: string | null }> = ({ cl
                 value={get_val(t, "nome")}
                 onChange={(e) => set_val(t, "nome", e.target.value)}
                 placeholder="Nome del messaggio"
+                disabled={!puo_comunicare}
               />
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 text-destructive shrink-0"
-                onClick={() => elimina(t)}
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
+              {puo_comunicare && (
+                <ConfirmButton
+                  titolo={`Eliminare il messaggio "${t.nome}"?`}
+                  descrizione="L'operazione non può essere annullata."
+                  conferma_label="Elimina"
+                  on_conferma={() => elimina(t)}
+                >
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-destructive shrink-0"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </ConfirmButton>
+              )}
             </div>
             <Textarea
               rows={3}
@@ -116,18 +129,25 @@ const TemplateComunicazioniSection: React.FC<{ club_id: string | null }> = ({ cl
               value={get_val(t, "testo")}
               onChange={(e) => set_val(t, "testo", e.target.value)}
               placeholder="Testo del messaggio…"
+              disabled={!puo_comunicare}
             />
-            <div className="flex justify-end">
-              <Button size="sm" disabled={!modificato || saving_id === t.id} onClick={() => salva(t)}>
-                {saving_id === t.id ? "..." : "Salva"}
-              </Button>
-            </div>
+            {puo_comunicare && (
+              <div className="flex justify-end">
+                <Button size="sm" disabled={!modificato || saving_id === t.id} onClick={() => salva(t)}>
+                  {saving_id === t.id ? "..." : "Salva"}
+                </Button>
+              </div>
+            )}
           </div>
         );
       })}
-      <Button variant="outline" size="sm" onClick={aggiungi}>
-        <Plus className="w-4 h-4 mr-1" /> Aggiungi messaggio predefinito
-      </Button>
+      {puo_comunicare ? (
+        <Button variant="outline" size="sm" onClick={aggiungi}>
+          <Plus className="w-4 h-4 mr-1" /> Aggiungi messaggio predefinito
+        </Button>
+      ) : (
+        <NotaPermesso testo="Solo lo staff di segreteria e direzione può gestire i messaggi predefiniti." />
+      )}
     </div>
   );
 };

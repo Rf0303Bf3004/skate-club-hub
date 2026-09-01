@@ -33,6 +33,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import SessioniCampoEstivo from "@/components/SessioniCampoEstivo";
 import RichiesteIscrizioniGara from "@/components/gare/RichiesteIscrizioniGara";
+import { usePermessiAzione } from "@/hooks/use-permessi-azione";
+import NotaPermesso from "@/components/common/NotaPermesso";
 
 import MedagliereWidget from "@/components/MedagliereWidget";
 import {
@@ -894,6 +896,7 @@ const CompetitionsPage: React.FC = () => {
   const { data: gare = [], isLoading } = use_gare();
   const { data: atleti = [] } = use_atleti();
   const elimina = use_elimina_gara();
+  const { puo_gestire_sportivo } = usePermessiAzione();
   const queryClient = useQueryClient();
 
   const route_params = useParams<{ id?: string }>();
@@ -1036,32 +1039,36 @@ const CompetitionsPage: React.FC = () => {
             >
               <ArrowLeft className="w-4 h-4 mr-2" /> {t("gare")}
             </Button>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => set_edit_gara(selected)}
-                className="text-muted-foreground hover:text-foreground gap-1.5"
-              >
-                <Pencil className="w-4 h-4" /> {te("competitions.edit_button")}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handle_archivia(selected.id, !selected.archiviata)}
-                className="text-muted-foreground hover:text-foreground gap-1.5"
-              >
-                <Archive className="w-4 h-4" /> {selected.archiviata ? te("competitions.restore_button") : te("competitions.archive_button")}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => set_confirm_delete(true)}
-                className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-1.5"
-              >
-                <Trash2 className="w-4 h-4" /> {te("competitions.delete_button")}
-              </Button>
-            </div>
+            {puo_gestire_sportivo ? (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => set_edit_gara(selected)}
+                  className="text-muted-foreground hover:text-foreground gap-1.5"
+                >
+                  <Pencil className="w-4 h-4" /> {te("competitions.edit_button")}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handle_archivia(selected.id, !selected.archiviata)}
+                  className="text-muted-foreground hover:text-foreground gap-1.5"
+                >
+                  <Archive className="w-4 h-4" /> {selected.archiviata ? te("competitions.restore_button") : te("competitions.archive_button")}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => set_confirm_delete(true)}
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-1.5"
+                >
+                  <Trash2 className="w-4 h-4" /> {te("competitions.delete_button")}
+                </Button>
+              </div>
+            ) : (
+              <NotaPermesso testo="Solo chi gestisce l'area sportiva può modificare, archiviare o eliminare la gara." />
+            )}
           </div>
 
           {confirm_delete && (
@@ -1351,9 +1358,11 @@ const CompetitionsPage: React.FC = () => {
       <div className="space-y-6 animate-fade-in">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold tracking-tight text-foreground">{t("gare")}</h1>
-          <Button onClick={() => set_show_modal(true)} className="bg-primary hover:bg-primary/90">
-            <Plus className="w-4 h-4 mr-2" /> {t("nuova_gara")}
-          </Button>
+          {puo_gestire_sportivo && (
+            <Button onClick={() => set_show_modal(true)} className="bg-primary hover:bg-primary/90">
+              <Plus className="w-4 h-4 mr-2" /> {t("nuova_gara")}
+            </Button>
+          )}
         </div>
 
         <Tabs value={active_tab} onValueChange={handle_tab_change} className="w-full">
@@ -1363,12 +1372,14 @@ const CompetitionsPage: React.FC = () => {
           </TabsList>
 
           <TabsContent value="elenco" className="mt-4 space-y-6">
-            <ImportGaraPdf
-              atleti_db={atleti.map((a: any) => ({ id: a.id, nome: a.nome, cognome: a.cognome }))}
-              on_done={() => {
-                queryClient.invalidateQueries({ queryKey: ["gare"] });
-              }}
-            />
+            {puo_gestire_sportivo && (
+              <ImportGaraPdf
+                atleti_db={atleti.map((a: any) => ({ id: a.id, nome: a.nome, cognome: a.cognome }))}
+                on_done={() => {
+                  queryClient.invalidateQueries({ queryKey: ["gare"] });
+                }}
+              />
+            )}
 
             <SearchableListLayout
               search={search_gare}

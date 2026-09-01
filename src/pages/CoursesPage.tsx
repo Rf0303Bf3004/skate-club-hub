@@ -53,6 +53,8 @@ import { DuplicaStagioneDialog } from "@/components/corsi/DuplicaStagioneDialog"
 import { Copy, Wand2 } from "lucide-react";
 import { useModalitaArea } from "@/hooks/useModalitaArea";
 import FatturazioneIscrizioneRow from "@/components/corsi/FatturazioneIscrizioneRow";
+import { usePermessiAzione } from "@/hooks/use-permessi-azione";
+import NotaPermesso from "@/components/common/NotaPermesso";
 
 const GIORNI_DB = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
 
@@ -341,6 +343,7 @@ const TabIscrizioni: React.FC<{
   on_refresh: () => void;
 }> = ({ corso_id, livello_richiesto, atleti_iscritti_ids, tutti_atleti, on_refresh }) => {
   const { t } = useTranslation("corsi");
+  const { puo_gestire_sportivo } = usePermessiAzione();
   const [query, set_query] = useState("");
   const [saving, set_saving] = useState(false);
   const [removing, set_removing] = useState<string | null>(null);
@@ -476,6 +479,9 @@ const TabIscrizioni: React.FC<{
 
   return (
     <div className="space-y-4">
+      {!puo_gestire_sportivo && (
+        <NotaPermesso testo="Sola lettura: solo lo staff di gestione può iscrivere o rimuovere atleti dai corsi." />
+      )}
       {/* Level jump confirmation dialog */}
       {salto_dialog && (
         <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 space-y-3">
@@ -599,15 +605,17 @@ const TabIscrizioni: React.FC<{
                       <span className="text-[10px] text-muted-foreground">{livello}</span>
                     </div>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => handle_iscrivi(a)}
-                    disabled={saving}
-                    className="h-7 text-xs gap-1 flex-shrink-0 text-primary hover:bg-primary/10"
-                  >
-                    <UserPlus className="w-3.5 h-3.5" /> {t("iscrizioni.enroll")}
-                  </Button>
+                  {puo_gestire_sportivo && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handle_iscrivi(a)}
+                      disabled={saving}
+                      className="h-7 text-xs gap-1 flex-shrink-0 text-primary hover:bg-primary/10"
+                    >
+                      <UserPlus className="w-3.5 h-3.5" /> {t("iscrizioni.enroll")}
+                    </Button>
+                  )}
                 </div>
               );
             })
@@ -616,7 +624,7 @@ const TabIscrizioni: React.FC<{
       </div>
 
       {/* Pulsante salto di livello */}
-      {ha_filtro_livello && !show_salto_search && (
+      {puo_gestire_sportivo && ha_filtro_livello && !show_salto_search && (
         <Button
           variant="outline"
           size="sm"
@@ -628,7 +636,7 @@ const TabIscrizioni: React.FC<{
       )}
 
       {/* Ricerca salto di livello */}
-      {show_salto_search && ha_filtro_livello && (
+      {puo_gestire_sportivo && show_salto_search && ha_filtro_livello && (
         <div className="space-y-2 border border-orange-200 rounded-xl p-3 bg-orange-50/30">
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold text-orange-600 uppercase tracking-wide flex items-center gap-1">
@@ -667,15 +675,17 @@ const TabIscrizioni: React.FC<{
                         <span className="text-[10px] text-orange-600">{livello}</span>
                       </div>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handle_iscrivi_salto(a)}
-                      disabled={saving}
-                      className="h-7 text-xs gap-1 flex-shrink-0 text-orange-600 hover:bg-orange-100"
-                    >
-                      <UserPlus className="w-3.5 h-3.5" /> {t("iscrizioni.enroll")}
-                    </Button>
+                    {puo_gestire_sportivo && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handle_iscrivi_salto(a)}
+                        disabled={saving}
+                        className="h-7 text-xs gap-1 flex-shrink-0 text-orange-600 hover:bg-orange-100"
+                      >
+                        <UserPlus className="w-3.5 h-3.5" /> {t("iscrizioni.enroll")}
+                      </Button>
+                    )}
                   </div>
                 );
               })
@@ -707,15 +717,23 @@ const TabIscrizioni: React.FC<{
                     <p className="text-xs text-muted-foreground">{get_atleta_livello(a)}</p>
                   </div>
                 </div>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => handle_rimuovi(a.id)}
-                  disabled={removing === a.id}
-                  className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10"
-                >
-                  {removing === a.id ? "..." : <Trash2 className="w-3.5 h-3.5" />}
-                </Button>
+                {puo_gestire_sportivo && (
+                  <ConfirmButton
+                    titolo="Rimuovere l'atleta dal corso?"
+                    descrizione={`${a.nome} ${a.cognome} verrà rimosso/a dal corso.`}
+                    conferma_label="Rimuovi"
+                    on_conferma={() => handle_rimuovi(a.id)}
+                  >
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={removing === a.id}
+                      className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10"
+                    >
+                      {removing === a.id ? "..." : <Trash2 className="w-3.5 h-3.5" />}
+                    </Button>
+                  </ConfirmButton>
+                )}
               </div>
               {multi_rs && <FatturazioneIscrizioneRow corso_id={corso_id} atleta_id={a.id} />}
               </div>
@@ -734,6 +752,7 @@ const TabMonitori: React.FC<{
   on_refresh: () => void;
 }> = ({ corso, tutti_monitori, on_refresh }) => {
   const { t } = useTranslation("corsi");
+  const { puo_gestire_sportivo } = usePermessiAzione();
   const [saving, set_saving] = useState(false);
   const [local_monitori, set_local_monitori] = useState<string[]>(corso.monitori || []);
   const [local_aiuto, set_local_aiuto] = useState<string[]>(corso.aiuto_monitori || []);
@@ -773,8 +792,8 @@ const TabMonitori: React.FC<{
     selected,
   }) => (
     <div
-      onClick={() => !saving && toggle_persona(persona.id, tipo)}
-      className={`flex items-center justify-between px-3 py-2.5 rounded-xl border-2 cursor-pointer transition-all ${selected ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 bg-background"}`}
+      onClick={() => puo_gestire_sportivo && !saving && toggle_persona(persona.id, tipo)}
+      className={`flex items-center justify-between px-3 py-2.5 rounded-xl border-2 transition-all ${puo_gestire_sportivo ? "cursor-pointer" : "cursor-default"} ${selected ? "border-primary bg-primary/5" : "border-border hover:border-primary/40 bg-background"}`}
     >
       <div className="flex items-center gap-2">
         <div
@@ -803,6 +822,9 @@ const TabMonitori: React.FC<{
 
   return (
     <div className="space-y-5">
+      {!puo_gestire_sportivo && (
+        <NotaPermesso testo="Sola lettura: solo lo staff di gestione può assegnare monitori ai corsi." />
+      )}
       {monitori.length > 0 && (
         <div className="space-y-2">
           <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
@@ -1425,6 +1447,7 @@ const CorsoModal: React.FC<{
 }) => {
   const qc = useQueryClient();
   const { t } = useTranslation("corsi");
+  const { puo_gestire_sportivo } = usePermessiAzione();
   const { data: disp_ghiaccio_modal = [] } = use_disponibilita_ghiaccio();
   const corso_completezza = corso ? check_corso_completo(corso, disp_ghiaccio_modal, istruttori) : { completo: false, motivo: t("modal.new_course") };
 
@@ -1795,7 +1818,7 @@ const CorsoModal: React.FC<{
         <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
           <h2 className="text-base font-bold text-foreground">{corso?.id ? t("modal.edit_course") : t("modal.new_course")}</h2>
           <div className="flex items-center gap-2">
-            {corso?.id && on_ridefinisci && (
+            {corso?.id && on_ridefinisci && puo_gestire_sportivo && (
               <Button
                 variant="outline"
                 size="sm"
@@ -2130,19 +2153,24 @@ const CorsoModal: React.FC<{
         </Tabs>
 
         <div className="px-6 py-4 border-t border-border space-y-2 flex-shrink-0">
+          {!puo_gestire_sportivo && (
+            <NotaPermesso testo="Sola lettura: solo lo staff di gestione può modificare o eliminare corsi." />
+          )}
           <div className="flex gap-2">
             <Button variant="outline" onClick={on_close} disabled={saving} className="flex-1">
               {t("modal.cancel")}
             </Button>
-            <Button
-              onClick={handle_save_click}
-              disabled={saving || confirm_forzatura || validating_ghiaccio || !!ghiaccio_error}
-              className="flex-1 bg-primary hover:bg-primary/90"
-            >
-              {validating_ghiaccio ? t("modal.checking") : saving ? "..." : t("modal.save")}
-            </Button>
+            {puo_gestire_sportivo && (
+              <Button
+                onClick={handle_save_click}
+                disabled={saving || confirm_forzatura || validating_ghiaccio || !!ghiaccio_error}
+                className="flex-1 bg-primary hover:bg-primary/90"
+              >
+                {validating_ghiaccio ? t("modal.checking") : saving ? "..." : t("modal.save")}
+              </Button>
+            )}
           </div>
-          {corso?.id && !confirm_delete && (
+          {puo_gestire_sportivo && corso?.id && !confirm_delete && (
             <Button
               variant="ghost"
               size="sm"
@@ -2152,7 +2180,7 @@ const CorsoModal: React.FC<{
               {t("modal.delete_course")}
             </Button>
           )}
-          {confirm_delete && (
+          {puo_gestire_sportivo && confirm_delete && (
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => set_confirm_delete(false)} className="flex-1">
                 {t("modal.cancel")}
@@ -2436,6 +2464,7 @@ const FilterBar: React.FC<{
 
 // ─── Main Page ─────────────────────────────────────────────
 const CoursesPage: React.FC = () => {
+  const { puo_gestire_sportivo } = usePermessiAzione();
   const { t } = useTranslation("corsi");
   const qc = useQueryClient();
   const { data: corsi = [], isLoading } = use_corsi();
@@ -2830,20 +2859,27 @@ const CoursesPage: React.FC = () => {
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <h1 className="text-xl font-bold tracking-tight text-foreground">{t("corsi")}</h1>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => set_duplica_open(true)}>
-              <Copy className="w-4 h-4 mr-2" /> {t("page.duplicate_season")}
-            </Button>
-            <Button
-              className="bg-primary hover:bg-primary/90"
-              onClick={() => {
-                set_wizard_corso(null);
-                set_wizard_open(true);
-              }}
-            >
-              <Plus className="w-4 h-4 mr-2" /> {t("page.new_course")}
-            </Button>
+            {puo_gestire_sportivo && (
+              <Button variant="outline" onClick={() => set_duplica_open(true)}>
+                <Copy className="w-4 h-4 mr-2" /> {t("page.duplicate_season")}
+              </Button>
+            )}
+            {puo_gestire_sportivo && (
+              <Button
+                className="bg-primary hover:bg-primary/90"
+                onClick={() => {
+                  set_wizard_corso(null);
+                  set_wizard_open(true);
+                }}
+              >
+                <Plus className="w-4 h-4 mr-2" /> {t("page.new_course")}
+              </Button>
+            )}
           </div>
         </div>
+        {!puo_gestire_sportivo && (
+          <NotaPermesso testo="Sola lettura: solo lo staff di gestione può creare o modificare corsi." />
+        )}
 
         <AvanzamentoStagione
           conteggi={conteggi_stato}
@@ -2938,13 +2974,15 @@ const CoursesPage: React.FC = () => {
                               <Badge variant="outline" className="text-[10px] border-orange-300 bg-orange-50 text-orange-700 flex-shrink-0" title={completezza.motivo}>
                                 <AlertTriangle className="w-3 h-3 mr-1" />{t("page.incomplete")}
                               </Badge>
-                              <button
-                                onClick={(e) => { e.stopPropagation(); set_wizard_corso(c); set_wizard_open(true); }}
-                                className="flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline flex-shrink-0"
-                                title={completezza.motivo}
-                              >
-                                <Wand2 className="w-3.5 h-3.5" /> {t("page.fix_action")}
-                              </button>
+                              {puo_gestire_sportivo && (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); set_wizard_corso(c); set_wizard_open(true); }}
+                                  className="flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline flex-shrink-0"
+                                  title={completezza.motivo}
+                                >
+                                  <Wand2 className="w-3.5 h-3.5" /> {t("page.fix_action")}
+                                </button>
+                              )}
                             </>
                           )}
                           {c.tipo && <Badge variant="secondary" className="text-xs flex-shrink-0">{c.tipo}</Badge>}
@@ -2954,27 +2992,29 @@ const CoursesPage: React.FC = () => {
                             </Badge>
                           )}
                           <span className="text-xs text-muted-foreground flex-shrink-0">{t("card.enrolled_count", { count: (c.atleti_ids||[]).length })}</span>
-                          <ConfirmButton
-                            titolo={t("page.confirm_delete_title", { name: c.nome })}
-                            descrizione={t("page.confirm_delete_desc")}
-                            on_conferma={async () => {
-                              try {
-                                await elimina.mutateAsync(c.id);
-                                toast({ title: t("page.toast_course_deleted_short") });
-                              } catch (err: any) {
-                                toast({ title: t("page.toast_delete_error"), description: err?.message, variant: "destructive" });
-                              }
-                            }}
-                          >
-                            <button
-                              onClick={(e) => e.stopPropagation()}
-                              className="text-muted-foreground hover:text-destructive p-1 rounded flex-shrink-0"
-                              title={t("page.delete_course_title")}
-                              aria-label={t("page.delete_course_title")}
+                          {puo_gestire_sportivo && (
+                            <ConfirmButton
+                              titolo={t("page.confirm_delete_title", { name: c.nome })}
+                              descrizione={t("page.confirm_delete_desc")}
+                              on_conferma={async () => {
+                                try {
+                                  await elimina.mutateAsync(c.id);
+                                  toast({ title: t("page.toast_course_deleted_short") });
+                                } catch (err: any) {
+                                  toast({ title: t("page.toast_delete_error"), description: err?.message, variant: "destructive" });
+                                }
+                              }}
                             >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </ConfirmButton>
+                              <button
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-muted-foreground hover:text-destructive p-1 rounded flex-shrink-0"
+                                title={t("page.delete_course_title")}
+                                aria-label={t("page.delete_course_title")}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </ConfirmButton>
+                          )}
                         </div>
                       );
                     })}
@@ -3011,38 +3051,42 @@ const CoursesPage: React.FC = () => {
                               <Badge variant="outline" className="text-[10px] border-orange-300 bg-orange-50 text-orange-700 flex-shrink-0" title={completezza.motivo}>
                                 <AlertTriangle className="w-3 h-3 mr-1" />{t("page.incomplete")}
                               </Badge>
-                              <button
-                                onClick={(e) => { e.stopPropagation(); set_wizard_corso(c); set_wizard_open(true); }}
-                                className="flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline flex-shrink-0"
-                                title={completezza.motivo}
-                              >
-                                <Wand2 className="w-3.5 h-3.5" /> {t("page.fix_action")}
-                              </button>
+                              {puo_gestire_sportivo && (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); set_wizard_corso(c); set_wizard_open(true); }}
+                                  className="flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline flex-shrink-0"
+                                  title={completezza.motivo}
+                                >
+                                  <Wand2 className="w-3.5 h-3.5" /> {t("page.fix_action")}
+                                </button>
+                              )}
                             </>
                           )}
                           {c.tipo && <Badge variant="secondary" className="text-xs flex-shrink-0">{c.tipo}</Badge>}
                           <span className="text-xs text-muted-foreground flex-shrink-0">{t("card.enrolled_count", { count: (c.atleti_ids||[]).length })}</span>
-                          <ConfirmButton
-                            titolo={t("page.confirm_delete_title", { name: c.nome })}
-                            descrizione={t("page.confirm_delete_desc")}
-                            on_conferma={async () => {
-                              try {
-                                await elimina.mutateAsync(c.id);
-                                toast({ title: t("page.toast_course_deleted_short") });
-                              } catch (err: any) {
-                                toast({ title: t("page.toast_delete_error"), description: err?.message, variant: "destructive" });
-                              }
-                            }}
-                          >
-                            <button
-                              onClick={(e) => e.stopPropagation()}
-                              className="text-muted-foreground hover:text-destructive p-1 rounded flex-shrink-0"
-                              title={t("page.delete_course_title")}
-                              aria-label={t("page.delete_course_title")}
+                          {puo_gestire_sportivo && (
+                            <ConfirmButton
+                              titolo={t("page.confirm_delete_title", { name: c.nome })}
+                              descrizione={t("page.confirm_delete_desc")}
+                              on_conferma={async () => {
+                                try {
+                                  await elimina.mutateAsync(c.id);
+                                  toast({ title: t("page.toast_course_deleted_short") });
+                                } catch (err: any) {
+                                  toast({ title: t("page.toast_delete_error"), description: err?.message, variant: "destructive" });
+                                }
+                              }}
                             >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </ConfirmButton>
+                              <button
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-muted-foreground hover:text-destructive p-1 rounded flex-shrink-0"
+                                title={t("page.delete_course_title")}
+                                aria-label={t("page.delete_course_title")}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </ConfirmButton>
+                          )}
                         </div>
                       );
                     })}

@@ -2,6 +2,9 @@ import React from "react";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { useModalitaArea } from "@/hooks/useModalitaArea";
+import { usePermessiAzione } from "@/hooks/use-permessi-azione";
+import ConfirmButton from "@/components/common/ConfirmButton";
+import NotaPermesso from "@/components/common/NotaPermesso";
 import {
   use_ragioni_sociali,
   use_upsert_ragione_sociale,
@@ -46,6 +49,7 @@ const ListiniSubSection: React.FC<{ ragione_sociale_id: string }> = ({ ragione_s
   const { data: listini = [], isLoading } = use_listini_ragione_sociale(ragione_sociale_id);
   const upsert = use_upsert_listino();
   const elimina = use_elimina_listino();
+  const { solo_presidente: puo_scrivere } = usePermessiAzione();
   const [edit_id, set_edit_id] = React.useState<string | null>(null);
   const [nome, set_nome] = React.useState("");
   const [prezzo, set_prezzo] = React.useState("");
@@ -92,64 +96,71 @@ const ListiniSubSection: React.FC<{ ragione_sociale_id: string }> = ({ ragione_s
                   CHF {Number(l.prezzo_slot_chf ?? 0).toFixed(2)} / slot
                 </span>
               </div>
-              <div className="flex items-center gap-1">
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-7 w-7"
-                  onClick={() => {
-                    set_edit_id(l.id);
-                    set_nome(l.nome);
-                    set_prezzo(l.prezzo_slot_chf == null ? "" : String(l.prezzo_slot_chf));
-                  }}
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-7 w-7 text-destructive"
-                  onClick={async () => {
-                    try {
-                      await elimina.mutateAsync(l.id);
-                      toast({ title: "Listino eliminato" });
-                    } catch (e: any) {
-                      toast({ title: "Errore", description: e?.message, variant: "destructive" });
-                    }
-                  }}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
-              </div>
+              {puo_scrivere && (
+                <div className="flex items-center gap-1">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7"
+                    onClick={() => {
+                      set_edit_id(l.id);
+                      set_nome(l.nome);
+                      set_prezzo(l.prezzo_slot_chf == null ? "" : String(l.prezzo_slot_chf));
+                    }}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <ConfirmButton
+                    titolo={`Eliminare il listino "${l.nome}"?`}
+                    descrizione="Il listino verrà rimosso definitivamente da questa ragione sociale."
+                    on_conferma={async () => {
+                      try {
+                        await elimina.mutateAsync(l.id);
+                        toast({ title: "Listino eliminato" });
+                      } catch (e: any) {
+                        toast({ title: "Errore", description: e?.message, variant: "destructive" });
+                      }
+                    }}
+                  >
+                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </ConfirmButton>
+                </div>
+              )}
             </div>
           ))}
         </div>
       )}
 
-      <div className="flex flex-wrap items-end gap-2 pt-1">
-        <div className="flex-1 min-w-[140px]">
-          <Label className="text-[11px] text-muted-foreground">Nome listino</Label>
-          <Input value={nome} onChange={(e) => set_nome(e.target.value)} placeholder="es. Base" className="h-9" />
-        </div>
-        <div className="w-32">
-          <Label className="text-[11px] text-muted-foreground">Prezzo slot CHF</Label>
-          <Input
-            type="number"
-            step="0.01"
-            value={prezzo}
-            onChange={(e) => set_prezzo(e.target.value)}
-            className="h-9"
-          />
-        </div>
-        <Button size="sm" onClick={salva} disabled={upsert.isPending}>
-          {edit_id ? "Aggiorna" : "Aggiungi"}
-        </Button>
-        {edit_id && (
-          <Button size="sm" variant="ghost" onClick={reset}>
-            Annulla
+      {puo_scrivere ? (
+        <div className="flex flex-wrap items-end gap-2 pt-1">
+          <div className="flex-1 min-w-[140px]">
+            <Label className="text-[11px] text-muted-foreground">Nome listino</Label>
+            <Input value={nome} onChange={(e) => set_nome(e.target.value)} placeholder="es. Base" className="h-9" />
+          </div>
+          <div className="w-32">
+            <Label className="text-[11px] text-muted-foreground">Prezzo slot CHF</Label>
+            <Input
+              type="number"
+              step="0.01"
+              value={prezzo}
+              onChange={(e) => set_prezzo(e.target.value)}
+              className="h-9"
+            />
+          </div>
+          <Button size="sm" onClick={salva} disabled={upsert.isPending}>
+            {edit_id ? "Aggiorna" : "Aggiungi"}
           </Button>
-        )}
-      </div>
+          {edit_id && (
+            <Button size="sm" variant="ghost" onClick={reset}>
+              Annulla
+            </Button>
+          )}
+        </div>
+      ) : (
+        <NotaPermesso testo="Solo il presidente del club può modificare i listini." />
+      )}
     </div>
   );
 };
@@ -655,7 +666,7 @@ const StatoRagione: React.FC<{ ragione: RagioneSociale }> = ({ ragione }) => {
 // ─── Sezione principale ────────────────────────────────────
 export const RagioniSocialiSection: React.FC = () => {
   const { session } = useAuth();
-  const allowed = !!session && ["superadmin", "presidente"].includes(session.ruolo);
+  const { solo_presidente: allowed } = usePermessiAzione();
   const { modalita } = useModalitaArea("fatturazione");
   const { data: ragioni = [], isLoading } = use_ragioni_sociali();
   const elimina = use_elimina_ragione_sociale();

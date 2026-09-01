@@ -31,6 +31,9 @@ import SlotMenu from "@/components/planning/SlotMenu";
 import { istruttore_disponibile, compute_exception_diff, type exception_diff_entry } from "@/lib/availability";
 import MeseView from "@/components/planning/MeseView";
 import { use_elimina_corso } from "@/hooks/use-supabase-mutations";
+import { usePermessiAzione } from "@/hooks/use-permessi-azione";
+import NotaPermesso from "@/components/common/NotaPermesso";
+import ConfirmButton from "@/components/common/ConfirmButton";
 
 // ── ErrorBoundary ──
 class PlanningErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
@@ -481,6 +484,7 @@ function SidebarCostruzione({
 // ══════════════════════════════════════════════════════════════
 function PlanningPageInner() {
   const { t } = useTranslation('planning');
+  const { puo_pianificare } = usePermessiAzione();
   const queryClient = useQueryClient();
   const configQuery = use_config_ghiaccio();
   const ghiaccioQuery = use_disponibilita_ghiaccio();
@@ -1676,7 +1680,7 @@ function PlanningPageInner() {
               <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => change_zoom(1)} title={t('toolbar.zoom_in')}>+</Button>
               <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => set_fit_focus(true)} title={t('toolbar.fit_to_window')}>{t('toolbar.fit')}</Button>
             </div>
-            {build_mode && (
+            {build_mode && puo_pianificare && (
               <Button size="sm" variant="outline" onClick={() => set_slot_manager_open(!slot_manager_open)}>
                 <LayoutGrid className="h-4 w-4 mr-1" /> {t('toolbar.ice_slots')}
               </Button>
@@ -1999,7 +2003,6 @@ function PlanningPageInner() {
                     await remove_corso(sel);
                     return;
                   }
-                  if (!window.confirm(`Eliminare definitivamente la lezione privata "${sel.nome}"? Verranno rimosse anche tutte le occorrenze settimanali e le iscrizioni atlete.`)) return;
                   try {
                     // Cancella tutte le occorrenze settimanali
                     await supabase.from("planning_private_settimana").delete().eq("lezione_privata_id", lp_id);
@@ -2114,26 +2117,31 @@ function PlanningPageInner() {
               </Badge>
             )}
             {pick_corso && <Badge variant="outline" className="border-primary text-primary text-xs">{t('toolbar.selected', { name: pick_corso.nome })}</Badge>}
-            <Button
-              size="sm"
-              onClick={() => { set_build_mode(!build_mode); set_pick_corso(null); }}
-              className={`gap-1.5 ${build_mode
-                ? "bg-amber-500 hover:bg-amber-600 text-white border-amber-600"
-                : "bg-card hover:bg-muted text-foreground border border-input"}`}
-              title={build_mode ? t('toolbar.switch_to_view_mode_title') : t('toolbar.switch_to_build_mode_title')}
-            >
-              {build_mode ? <Hammer className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              <span className="hidden lg:inline">
-                {build_mode
-                  ? t('toolbar.in_build_mode')
-                  : t('toolbar.in_view_mode')}
-              </span>
-              <span className="lg:hidden">
-                {t('toolbar.mode_label', { mode: build_mode ? t('toolbar.mode_build') : t('toolbar.mode_view') })}
-              </span>
-            </Button>
+            {puo_pianificare && (
+              <Button
+                size="sm"
+                onClick={() => { set_build_mode(!build_mode); set_pick_corso(null); }}
+                className={`gap-1.5 ${build_mode
+                  ? "bg-amber-500 hover:bg-amber-600 text-white border-amber-600"
+                  : "bg-card hover:bg-muted text-foreground border border-input"}`}
+                title={build_mode ? t('toolbar.switch_to_view_mode_title') : t('toolbar.switch_to_build_mode_title')}
+              >
+                {build_mode ? <Hammer className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                <span className="hidden lg:inline">
+                  {build_mode
+                    ? t('toolbar.in_build_mode')
+                    : t('toolbar.in_view_mode')}
+                </span>
+                <span className="lg:hidden">
+                  {t('toolbar.mode_label', { mode: build_mode ? t('toolbar.mode_build') : t('toolbar.mode_view') })}
+                </span>
+              </Button>
+            )}
           </div>
         </div>
+        {!puo_pianificare && (
+          <NotaPermesso testo="Solo chi può pianificare (superadmin, admin, presidente, vicepresidente, dt) può modificare il planning ghiaccio." />
+        )}
 
         {/* Week / Month navigation */}
         <div className="flex items-center gap-3 flex-wrap">
@@ -2677,6 +2685,7 @@ function DetailPanel({ corso, warnings, istr_map, atleti, build_mode, exception_
   on_delete_privata?: () => void;
 }) {
   const { t } = useTranslation('planning');
+  const { puo_pianificare } = usePermessiAzione();
   const [confirm_restore, set_confirm_restore] = React.useState(false);
   const is_private = (corso.tipo || "").toLowerCase() === "privata";
   const corso_id_for_query = corso.corso_id || corso.id;
@@ -2890,7 +2899,7 @@ function DetailPanel({ corso, warnings, istr_map, atleti, build_mode, exception_
       )}
 
       {/* Eccezioni di settimana — solo per planning rows non-private */}
-      {corso._is_plan_row && !is_private && (
+      {corso._is_plan_row && !is_private && puo_pianificare && (
         <div className="space-y-1.5 pt-2 border-t border-border">
           <p className="text-xs font-semibold text-muted-foreground">{t('detail_panel.week_exceptions')}</p>
           {on_annulla_settimana && (
@@ -2910,7 +2919,7 @@ function DetailPanel({ corso, warnings, istr_map, atleti, build_mode, exception_
       )}
 
       {/* Actions */}
-      {build_mode && (
+      {build_mode && puo_pianificare && (
         <div className="space-y-1.5 pt-2 border-t border-border">
           <Button size="sm" variant="outline" className="w-full justify-start text-xs gap-1.5" onClick={on_edit}>
             <Pencil className="h-3 w-3" /> {t('detail_panel.edit')}
@@ -2921,13 +2930,25 @@ function DetailPanel({ corso, warnings, istr_map, atleti, build_mode, exception_
         </div>
       )}
 
-      {/* Eliminazione definitiva lezione privata — sempre disponibile */}
-      {is_private && on_delete_privata && (
+      {/* Eliminazione definitiva lezione privata */}
+      {is_private && on_delete_privata && puo_pianificare && (
         <div className="space-y-1.5 pt-2 border-t border-destructive/30">
-          <Button size="sm" variant="destructive" className="w-full justify-start text-xs gap-1.5" onClick={on_delete_privata}>
-            <Undo2 className="h-3 w-3" /> {t('detail_panel.delete_private_lesson')}
-          </Button>
+          <ConfirmButton
+            titolo={`Eliminare la lezione privata "${corso.nome}"?`}
+            descrizione="Verranno rimosse anche tutte le occorrenze settimanali e le iscrizioni atlete."
+            conferma_label="Elimina"
+            on_conferma={on_delete_privata}
+          >
+            <Button size="sm" variant="destructive" className="w-full justify-start text-xs gap-1.5">
+              <Undo2 className="h-3 w-3" /> {t('detail_panel.delete_private_lesson')}
+            </Button>
+          </ConfirmButton>
           <p className="text-[10px] italic text-muted-foreground">{t('detail_panel.delete_private_lesson_hint')}</p>
+        </div>
+      )}
+      {!puo_pianificare && (corso._is_plan_row || is_private) && (
+        <div className="pt-2 border-t border-border">
+          <NotaPermesso testo="Solo chi può pianificare può modificare o eliminare questo corso." />
         </div>
       )}
     </div>
@@ -2942,6 +2963,7 @@ function SlotManagerPanel({ giorno, slots, istruttori, disp_istr, on_close, quer
   on_close: () => void; queryClient: any;
 }) {
   const { t } = useTranslation('planning');
+  const { puo_pianificare } = usePermessiAzione();
   const [new_tipo, set_new_tipo] = useState("ghiaccio");
   const [new_start, set_new_start] = useState("08:00");
   const [new_end, set_new_end] = useState("09:00");
@@ -2990,28 +3012,42 @@ function SlotManagerPanel({ giorno, slots, istruttori, disp_istr, on_close, quer
         {slots.map((s: any) => (
           <div key={s.id} className="flex items-center justify-between text-xs bg-muted rounded px-2 py-1">
             <span className="font-medium">{s.tipo === "pulizia" ? "🧹" : "❄️"} {s.ora_inizio?.slice(0, 5)} – {s.ora_fine?.slice(0, 5)}</span>
-            <button onClick={() => delete_slot(s.id)} className="text-destructive hover:text-destructive/80"><X className="h-3 w-3" /></button>
+            {puo_pianificare && (
+              <ConfirmButton
+                titolo={`Eliminare la fascia ${s.ora_inizio?.slice(0, 5)} – ${s.ora_fine?.slice(0, 5)}?`}
+                conferma_label="Elimina"
+                on_conferma={() => delete_slot(s.id)}
+              >
+                <button className="text-destructive hover:text-destructive/80"><X className="h-3 w-3" /></button>
+              </ConfirmButton>
+            )}
           </div>
         ))}
       </div>
 
       {/* Add form */}
-      <div className="space-y-2 pt-2 border-t border-border">
-        <Select value={new_tipo} onValueChange={set_new_tipo}>
-          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ghiaccio">{t('slot_manager.ice_type')}</SelectItem>
-            <SelectItem value="pulizia">{t('slot_manager.cleaning_type')}</SelectItem>
-          </SelectContent>
-        </Select>
-        <div className="flex gap-2">
-          <Input type="time" value={new_start} onChange={(e) => set_new_start(e.target.value)} className="h-8 text-xs" />
-          <Input type="time" value={new_end} onChange={(e) => set_new_end(e.target.value)} className="h-8 text-xs" />
+      {puo_pianificare ? (
+        <div className="space-y-2 pt-2 border-t border-border">
+          <Select value={new_tipo} onValueChange={set_new_tipo}>
+            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ghiaccio">{t('slot_manager.ice_type')}</SelectItem>
+              <SelectItem value="pulizia">{t('slot_manager.cleaning_type')}</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="flex gap-2">
+            <Input type="time" value={new_start} onChange={(e) => set_new_start(e.target.value)} className="h-8 text-xs" />
+            <Input type="time" value={new_end} onChange={(e) => set_new_end(e.target.value)} className="h-8 text-xs" />
+          </div>
+          <Button size="sm" className="w-full text-xs" onClick={add_slot} disabled={saving}>
+            <Plus className="h-3 w-3 mr-1" /> {t('slot_manager.add')}
+          </Button>
         </div>
-        <Button size="sm" className="w-full text-xs" onClick={add_slot} disabled={saving}>
-          <Plus className="h-3 w-3 mr-1" /> {t('slot_manager.add')}
-        </Button>
-      </div>
+      ) : (
+        <div className="pt-2 border-t border-border">
+          <NotaPermesso testo="Solo chi può pianificare può modificare le fasce di disponibilità ghiaccio." />
+        </div>
+      )}
 
       {/* Instructor availability */}
       <div className="pt-2 border-t border-border space-y-2">
