@@ -9,9 +9,12 @@ interface Props {
   fattura_id: string;
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  /** true nel portale famiglie: l'archivio storage del club non è accessibile. */
+  preferisci_locale?: boolean;
 }
 
-const AnteprimaFatturaAtletaDialog: React.FC<Props> = ({ fattura_id, open, onOpenChange }) => {
+const AnteprimaFatturaAtletaDialog: React.FC<Props> = ({ fattura_id, open, onOpenChange, preferisci_locale }) => {
+
   const [url, set_url] = useState<string | null>(null);
   const [blob, set_blob] = useState<Blob | null>(null);
   const [nome_file, set_nome_file] = useState("fattura.pdf");
