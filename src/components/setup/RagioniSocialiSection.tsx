@@ -698,16 +698,24 @@ export const RagioniSocialiSection: React.FC = () => {
           <Building2 className="h-4 w-4 text-muted-foreground" />
           <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Ragioni sociali</h2>
         </div>
-        <Button
-          size="sm"
-          onClick={() => {
-            set_edit_ragione(null);
-            set_dialog_open(true);
-          }}
-        >
-          <Plus className="mr-1.5 h-4 w-4" /> Nuova ragione sociale
-        </Button>
+        {allowed ? (
+          <Button
+            size="sm"
+            onClick={() => {
+              set_edit_ragione(null);
+              set_dialog_open(true);
+            }}
+          >
+            <Plus className="mr-1.5 h-4 w-4" /> Nuova ragione sociale
+          </Button>
+        ) : (
+          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Lock className="h-3.5 w-3.5" />
+            Questa parte la può modificare solo il presidente del club.
+          </p>
+        )}
       </div>
+
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Caricamento…</p>
