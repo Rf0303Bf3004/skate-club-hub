@@ -1324,15 +1324,7 @@ const ClubSetupPage: React.FC = () => {
         </div>
 
         {risorsa_is_ghiaccio && (
-        <>
-        <Separator />
-
-        {/* Pulizia Ghiaccio */}
-        <div>
-
-          <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">
-            {t("club.sezioni.pulizia_ghiaccio")}
-          </h3>
+        <SetupSection id="gh_pulizia" titolo={t("club.sezioni.pulizia_ghiaccio")}>
           <div className="space-y-4">
             {GIORNI.map((giorno) => {
               const slots = disp_pulizia_local[giorno] || [];
@@ -1374,9 +1366,9 @@ const ClubSetupPage: React.FC = () => {
               );
             })}
           </div>
-        </div>
-        </>
+        </SetupSection>
         )}
+
         <SetupSection id="gh_risorse" titolo="Risorse e strutture">
           <RisorseSection />
         </SetupSection>
