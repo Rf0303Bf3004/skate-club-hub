@@ -21,8 +21,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Trash2, Pencil, Building2, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Trash2, Pencil, Building2, ChevronDown, ChevronRight, Lock } from "lucide-react";
 
 const maschera_iban = (iban?: string | null) => {
   if (!iban) return "—";
@@ -209,6 +210,16 @@ const UtentiAccessoSubSection: React.FC<{ ragione_sociale_id: string }> = ({ rag
 };
 
 // ─── Dialog anagrafica ─────────────────────────────────────
+const NOTE_ESENZIONE: Record<string, string> = {
+  CH: "Prestazione esclusa dall'imposta — LIVA art. 21 cpv. 2 n. 15",
+  IT: "Operazione esente ai sensi dell'art. 10 n. 20 DPR 633/72",
+};
+
+const PLACEHOLDER_NUMERO_IVA: Record<string, string> = {
+  CH: "CHE-123.456.789 IVA",
+  IT: "IT12345678901",
+};
+
 const empty_form = {
   nome: "",
   partita_iva: "",
@@ -217,6 +228,8 @@ const empty_form = {
   cap: "",
   citta: "",
   paese_iso: "CH",
+  email: "",
+  telefono: "",
   iban: "",
   intestatario_iban: "",
   banca: "",
@@ -225,6 +238,10 @@ const empty_form = {
   attivo: true,
   accesso_dedicato: false,
   numero_fattura_prefisso: "",
+  soggetto_iva: false,
+  iva_aliquota_default: "",
+  iva_prezzi_ivati: true,
+  iva_esenzione_nota: "",
 };
 
 const RagioneSocialeDialog: React.FC<{
@@ -245,12 +262,40 @@ const RagioneSocialeDialog: React.FC<{
             ...empty_form,
             ...Object.fromEntries(Object.entries(ragione).map(([k, v]) => [k, v ?? ""])),
             attivo: ragione.attivo !== false,
+            soggetto_iva: (ragione as any).soggetto_iva === true,
+            iva_prezzi_ivati: (ragione as any).iva_prezzi_ivati !== false,
           }
         : empty_form,
     );
   }, [open, ragione]);
 
   const set_val = (k: string, v: any) => set_form((p) => ({ ...p, [k]: v }));
+
+  const paese = String(form.paese_iso || "CH");
+  const { data: aliquote = [] } = use_aliquote_iva(paese);
+  const { data: numero_iva_ok } = use_numero_iva_valido(
+    String(form.numero_iva || "").trim() || null,
+    paese,
+  );
+
+  // Preselezione aliquota predefinita quando cambia il paese / arrivano le voci
+  React.useEffect(() => {
+    if (!form.soggetto_iva || aliquote.length === 0) return;
+    const presente = aliquote.some((a) => Number(a.aliquota) === Number(form.iva_aliquota_default));
+    if (!presente) {
+      const def = aliquote.find((a) => a.predefinita) ?? aliquote[0];
+      set_form((p) => ({ ...p, iva_aliquota_default: String(def.aliquota) }));
+    }
+  }, [aliquote, form.soggetto_iva, form.iva_aliquota_default]);
+
+  const aliquota_scelta = aliquote.find(
+    (a) => Number(a.aliquota) === Number(form.iva_aliquota_default),
+  );
+  const aliquota_num = Number(aliquota_scelta?.aliquota ?? 0);
+  const imponibile_esempio = (100 / (1 + aliquota_num / 100)).toFixed(2);
+  const iva_esempio = (100 - Number(imponibile_esempio)).toFixed(2);
+  const lordo_esempio = (100 * (1 + aliquota_num / 100)).toFixed(2);
+
 
   const handle_logo_upload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
