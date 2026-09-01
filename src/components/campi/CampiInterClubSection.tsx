@@ -1352,23 +1352,43 @@ const TabIscrizioniAtleti: React.FC<{ campo: EventoCampoInterClub; is_ospitante:
   const toggle = use_toggle_iscrizione_campo();
   const aggiorna_gruppo = use_aggiorna_gruppo_iscrizione();
   const [ricerca, set_ricerca] = useState("");
+  const [solo_ospiti, set_solo_ospiti] = useState(false);
 
   const per_atleta = useMemo(
     () => new Map(iscrizioni.map((i) => [i.atleta_id, i])),
     [iscrizioni],
   );
 
+  const ospiti_campo = useMemo(
+    () => (atleti ?? []).filter((a: any) => a.ospite_di_campo_id === campo.id),
+    [atleti, campo.id],
+  );
+  const club_ospiti = useMemo(
+    () =>
+      new Set(
+        ospiti_campo
+          .map((a: any) => (a.club_provenienza ?? "").trim())
+          .filter((n: string) => n.length > 0),
+      ),
+    [ospiti_campo],
+  );
+
   const miei_atleti = useMemo(() => {
     const q = ricerca.trim().toLowerCase();
     return (atleti ?? [])
+      .filter((a: any) => !solo_ospiti || a.ospite_di_campo_id === campo.id)
       .filter((a: any) => !q || `${a.cognome ?? ""} ${a.nome ?? ""}`.toLowerCase().includes(q))
       .sort((a: any, b: any) => `${a.cognome} ${a.nome}`.localeCompare(`${b.cognome} ${b.nome}`));
-  }, [atleti, ricerca]);
+  }, [atleti, ricerca, solo_ospiti, campo.id]);
 
   const altri_club = useMemo(
-    () => iscrizioni.filter((i) => i.club_id && i.club_id !== club_id),
-    [iscrizioni, club_id],
+    () =>
+      iscrizioni.filter(
+        (i) => i.atleta?.ospite_di_campo_id === campo.id || (i.club_id && i.club_id !== club_id),
+      ),
+    [iscrizioni, club_id, campo.id],
   );
+
 
   const nome_gruppo = (id: string | null) =>
     gruppi.find((g) => g.id === id)?.nome ?? t("campi_interclub.adesioni.senza_gruppo");
