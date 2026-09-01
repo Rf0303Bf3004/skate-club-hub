@@ -1,15 +1,20 @@
 import React, { useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Archive, ArchiveRestore, MessageSquare, AlertTriangle, X } from 'lucide-react';
+import { Search, Archive, ArchiveRestore, MessageSquare, AlertTriangle, X, ChevronDown, ChevronRight, Users } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { segnala_errore } from "@/lib/errori";
+import {
+  raggruppa_comunicazioni,
+  etichetta_destinatari_gruppo,
+  type GruppoComunicazioni,
+} from '@/lib/raggruppa-comunicazioni';
 
 const PAGE_SIZE = 20;
 
@@ -23,11 +28,19 @@ type Props = {
   empty_text: string;
   stagioni?: any[];
   can_manage?: boolean;
+  /** Nome leggibile dell'atleta destinatario della singola riga. */
+  nome_atleta?: (id: string | null) => string;
 };
 
 function get_ts(c: any) {
   const iso = (c.stato === 'inviata' && c.inviata_at) ? c.inviata_at : (c.created_at || (c.data ? `${c.data}T00:00:00` : null));
   return iso ? new Date(iso).getTime() : 0;
+}
+
+function ora_label(c: any) {
+  const iso = (c.stato === 'inviata' && c.inviata_at) ? c.inviata_at : c.created_at;
+  if (!iso) return '';
+  return new Date(iso).toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' });
 }
 
 function bucket_of(ts: number) {
@@ -43,6 +56,63 @@ function bucket_of(ts: number) {
 
 const BUCKET_ORDER = ['Oggi', 'Questa settimana', 'Questo mese', 'Precedenti'];
 
+/** Elenco destinatari di un invio, con stato di lettura e risposta. */
+const ElencoDestinatari: React.FC<{
+  gruppo: GruppoComunicazioni;
+  nome_atleta?: (id: string | null) => string;
+}> = ({ gruppo, nome_atleta }) => {
+  const { data: risposte = {} } = useQuery({
+    queryKey: ['comunicazioni_risposte', gruppo.key],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('comunicazioni_destinatari')
+        .select('comunicazione_id, atleta_id, rsvp_risposta')
+        .in('comunicazione_id', gruppo.ids);
+      if (error) throw error;
+      const mappa: Record<string, string> = {};
+      (data ?? []).forEach((d: any) => {
+        if (d.rsvp_risposta) mappa[`${d.comunicazione_id}`] = d.rsvp_risposta;
+      });
+      return mappa;
+    },
+  });
+
+  const righe = useMemo(
+    () =>
+      gruppo.righe
+        .map((c: any) => ({
+          id: c.id,
+          nome: nome_atleta?.(c.atleta_id) || (c.atleta_id ? c.atleta_id.slice(0, 8) : 'Destinatario'),
+          letta: !!c.letta,
+          risposta: risposte[c.id] ?? null,
+        }))
+        .sort((a, b) => a.nome.localeCompare(b.nome, 'it')),
+    [gruppo, nome_atleta, risposte],
+  );
+
+  return (
+    <div className="border-t border-border bg-muted/20 px-4 py-3 max-h-80 overflow-y-auto space-y-1">
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+        Destinatari ({righe.length})
+      </p>
+      {righe.map((r) => (
+        <div key={r.id} className="flex items-center justify-between gap-3 text-sm py-1 border-b border-border/40 last:border-0">
+          <span className="text-foreground truncate">{r.nome}</span>
+          <span className="text-xs shrink-0">
+            {r.risposta ? (
+              <span className="text-success">ha risposto</span>
+            ) : r.letta ? (
+              <span className="text-muted-foreground">letto</span>
+            ) : (
+              <span className="text-warning">non letto</span>
+            )}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 export const ListaComunicazioni: React.FC<Props> = ({
   items,
   mode,
@@ -53,6 +123,7 @@ export const ListaComunicazioni: React.FC<Props> = ({
   empty_text,
   stagioni = [],
   can_manage = true,
+  nome_atleta,
 }) => {
   const qc = useQueryClient();
   const [search, set_search] = useState('');
@@ -62,6 +133,7 @@ export const ListaComunicazioni: React.FC<Props> = ({
   const [stagione_id, set_stagione_id] = useState('tutte');
   const [limit, set_limit] = useState(PAGE_SIZE);
   const [selected, set_selected] = useState<string[]>([]);
+  const [aperto, set_aperto] = useState<string | null>(null);
   const [busy, set_busy] = useState(false);
 
   const tipi_destinatari = useMemo(
@@ -98,19 +170,26 @@ export const ListaComunicazioni: React.FC<Props> = ({
       .sort((a: any, b: any) => get_ts(b) - get_ts(a));
   }, [items, search, filtro_destinatari, solo_urgenti, periodo, stagione_id, stagioni]);
 
-  const visible = filtered.slice(0, limit);
+  // Il raggruppamento avviene su TUTTE le righe filtrate: la paginazione
+  // ("Carica altre") lavora poi sui gruppi, così nessun invio resta spezzato.
+  const gruppi = useMemo(() => raggruppa_comunicazioni(filtered), [filtered]);
+  const visible = gruppi.slice(0, limit);
 
   const grouped = useMemo(() => {
-    const map: Record<string, any[]> = {};
-    visible.forEach((c: any) => {
-      const b = bucket_of(get_ts(c));
-      (map[b] ||= []).push(c);
+    const map: Record<string, GruppoComunicazioni[]> = {};
+    visible.forEach((g) => {
+      const b = bucket_of(get_ts(g.capofila));
+      (map[b] ||= []).push(g);
     });
     return BUCKET_ORDER.filter((b) => map[b]?.length).map((b) => ({ bucket: b, rows: map[b] }));
   }, [visible]);
 
-  const toggle_select = (id: string) => {
-    set_selected((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+  const toggle_select_gruppo = (g: GruppoComunicazioni) => {
+    set_selected((prev) => {
+      const tutte = g.ids.every((id) => prev.includes(id));
+      if (tutte) return prev.filter((id) => !g.ids.includes(id));
+      return Array.from(new Set([...prev, ...g.ids]));
+    });
   };
 
   const apply_archivia = async (ids: string[], archivia: boolean) => {
@@ -135,6 +214,7 @@ export const ListaComunicazioni: React.FC<Props> = ({
   };
 
   const has_filters = !!search || filtro_destinatari !== 'tutti' || solo_urgenti || periodo !== 'tutti' || stagione_id !== 'tutte';
+  const gruppi_selezionati = gruppi.filter((g) => g.ids.some((id) => selected.includes(id))).length;
 
   return (
     <div className="space-y-4">
@@ -206,7 +286,10 @@ export const ListaComunicazioni: React.FC<Props> = ({
       {/* Azioni multiple */}
       {can_manage && selected.length > 0 && (
         <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-2">
-          <p className="text-sm font-medium">{selected.length} selezionate</p>
+          <p className="text-sm font-medium">
+            {gruppi_selezionati} {gruppi_selezionati === 1 ? 'invio selezionato' : 'invii selezionati'}
+            <span className="text-muted-foreground font-normal"> ({selected.length} messaggi)</span>
+          </p>
           <div className="flex gap-2">
             <Button variant="ghost" size="sm" onClick={() => set_selected([])}>Annulla</Button>
             <Button
@@ -223,7 +306,7 @@ export const ListaComunicazioni: React.FC<Props> = ({
         </div>
       )}
 
-      {filtered.length === 0 ? (
+      {gruppi.length === 0 ? (
         <div className="bg-card rounded-xl shadow-card p-12 text-center space-y-3">
           <div className="flex justify-center text-muted-foreground/40"><MessageSquare className="w-12 h-12" /></div>
           <p className="text-sm text-muted-foreground">{has_filters ? 'Nessun risultato con questi filtri.' : empty_text}</p>
@@ -235,67 +318,96 @@ export const ListaComunicazioni: React.FC<Props> = ({
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
                 {bucket} <span className="font-normal">({rows.length})</span>
               </p>
-              {rows.map((c: any) => {
-                const unread = highlight_unread && !c.letta;
-                const is_sel = selected.includes(c.id);
+              {rows.map((g) => {
+                const c = g.capofila;
+                const unread = highlight_unread && g.righe.every((r: any) => !r.letta);
+                const is_sel = g.ids.every((id) => selected.includes(id));
+                const is_open = aperto === g.key;
                 return (
                   <div
-                    key={c.id}
+                    key={g.key}
                     className={cn(
-                      'bg-card rounded-xl shadow-card p-4 hover:shadow-card-hover transition-shadow flex gap-3',
+                      'bg-card rounded-xl shadow-card hover:shadow-card-hover transition-shadow overflow-hidden',
                       unread && 'bg-warning/5 border-l-4 border-l-destructive',
                       is_sel && 'ring-2 ring-primary/40',
                     )}
                   >
-                    {can_manage && (
-                      <Checkbox
-                        checked={is_sel}
-                        onCheckedChange={() => toggle_select(c.id)}
-                        className="mt-1"
-                        aria-label="Seleziona comunicazione"
-                      />
-                    )}
-                    <div className="flex-1 min-w-0 cursor-pointer" onClick={() => on_open?.(c)}>
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {c.urgente && (
-                              <Badge variant="destructive" className="text-[10px] gap-1">
-                                <AlertTriangle className="w-3 h-3" /> URGENTE
-                              </Badge>
+                    <div className="p-4 flex gap-3">
+                      {can_manage && (
+                        <Checkbox
+                          checked={is_sel}
+                          onCheckedChange={() => toggle_select_gruppo(g)}
+                          className="mt-1"
+                          aria-label="Seleziona invio"
+                        />
+                      )}
+                      <div
+                        className="flex-1 min-w-0 cursor-pointer"
+                        onClick={() => {
+                          set_aperto(is_open ? null : g.key);
+                          on_open?.(c);
+                        }}
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {!g.singola && (is_open
+                                ? <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                                : <ChevronRight className="w-4 h-4 text-muted-foreground" />)}
+                              {c.urgente && (
+                                <Badge variant="destructive" className="text-[10px] gap-1">
+                                  <AlertTriangle className="w-3 h-3" /> URGENTE
+                                </Badge>
+                              )}
+                              {unread && <Badge variant="destructive" className="text-[10px]">NUOVO</Badge>}
+                              <h3 className="font-semibold text-foreground">{c.titolo}</h3>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{c.testo}</p>
+                            {g.testo_personalizzato && (
+                              <p className="text-[11px] text-muted-foreground/80 mt-1 italic">
+                                il testo è personalizzato per ciascun destinatario
+                              </p>
                             )}
-                            {unread && <Badge variant="destructive" className="text-[10px]">NUOVO</Badge>}
-                            <h3 className="font-semibold text-foreground">{c.titolo}</h3>
                           </div>
-                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{c.testo}</p>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <p className="text-xs tabular-nums text-muted-foreground">{get_data_label(c)}</p>
-                          <Badge variant="secondary" className="text-xs mt-1">{get_destinatari_label(c)}</Badge>
+                          <div className="text-right shrink-0">
+                            <p className="text-xs tabular-nums text-muted-foreground">
+                              {get_data_label(c)} {ora_label(c)}
+                            </p>
+                            <Badge variant="secondary" className="text-xs mt-1 gap-1">
+                              {g.singola ? (
+                                get_destinatari_label(c)
+                              ) : (
+                                <>
+                                  <Users className="w-3 h-3" /> {etichetta_destinatari_gruppo(g)}
+                                </>
+                              )}
+                            </Badge>
+                          </div>
                         </div>
                       </div>
+                      {can_manage && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          disabled={busy}
+                          title={mode === 'attive' ? 'Archivia tutto l\'invio' : 'Ripristina tutto l\'invio'}
+                          onClick={() => apply_archivia(g.ids, mode === 'attive')}
+                        >
+                          {mode === 'attive' ? <Archive className="w-4 h-4" /> : <ArchiveRestore className="w-4 h-4" />}
+                        </Button>
+                      )}
                     </div>
-                    {can_manage && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        disabled={busy}
-                        title={mode === 'attive' ? 'Archivia' : 'Ripristina'}
-                        onClick={() => apply_archivia([c.id], mode === 'attive')}
-                      >
-                        {mode === 'attive' ? <Archive className="w-4 h-4" /> : <ArchiveRestore className="w-4 h-4" />}
-                      </Button>
-                    )}
+                    {is_open && !g.singola && <ElencoDestinatari gruppo={g} nome_atleta={nome_atleta} />}
                   </div>
                 );
               })}
             </div>
           ))}
 
-          {filtered.length > visible.length && (
+          {gruppi.length > visible.length && (
             <div className="flex justify-center">
               <Button variant="outline" onClick={() => set_limit((l) => l + PAGE_SIZE)}>
-                Carica altre ({filtered.length - visible.length})
+                Carica altre ({gruppi.length - visible.length})
               </Button>
             </div>
           )}
