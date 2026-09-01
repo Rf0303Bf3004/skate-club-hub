@@ -696,6 +696,7 @@ const TabClubPartecipanti: React.FC<{ campo: EventoCampoInterClub; is_ospitante:
   const { t } = useTranslation("events");
   const { puo_gestire_sportivo } = usePermessiAzione();
   const { data: partecipanti = [] } = use_campo_partecipanti(campo.id);
+  const { data: ospiti = [] } = use_atleti_ospiti_campo(campo.id);
   const { data: clubs = [] } = use_clubs_opzioni();
   const invita = use_invita_club();
   const aggiorna = use_aggiorna_partecipante();
