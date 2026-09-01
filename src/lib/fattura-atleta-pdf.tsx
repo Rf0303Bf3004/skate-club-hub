@@ -159,6 +159,14 @@ const s = StyleSheet.create({
   },
 });
 
+/**
+ * Nome dell'intestatario: per le fatture ai club ospiti il nome è vuoto e la
+ * ragione sociale sta nel cognome — niente spazio iniziale in quel caso.
+ */
+function nome_intestatario(nome?: string | null, cognome?: string | null) {
+  return [nome, cognome].map((v) => (v ?? "").trim()).filter(Boolean).join(" ") || "—";
+}
+
 function riga_indirizzo(nome: string, indirizzo?: string | null, cap?: string | null, citta?: string | null) {
   return [nome, indirizzo || null, [cap, citta].filter(Boolean).join(" ") || null].filter(Boolean) as string[];
 }
@@ -193,7 +201,7 @@ const PolizzaQr: React.FC<{ data: FatturaAtletaData }> = ({ data }) => {
     data.club.citta,
   );
   const debitore = riga_indirizzo(
-    [data.intestatario.nome, data.intestatario.cognome].filter(Boolean).join(" ") || "—",
+    nome_intestatario(data.intestatario.nome, data.intestatario.cognome),
     data.intestatario.indirizzo,
     data.intestatario.cap,
     data.intestatario.citta,
@@ -308,7 +316,7 @@ export const FatturaAtletaDocument: React.FC<{ data: FatturaAtletaData }> = ({ d
         <View style={s.twoCols}>
           <View style={s.col}>
             <Text style={s.blockLabel}>Intestatario</Text>
-            <Text style={s.destName}>{[intest.nome, intest.cognome].filter(Boolean).join(" ") || "—"}</Text>
+            <Text style={s.destName}>{nome_intestatario(intest.nome, intest.cognome)}</Text>
             {indirizzo_dest.map((l, i) => <Text key={i}>{l}</Text>)}
             {intest.email ? <Text style={s.small}>{intest.email}</Text> : null}
           </View>

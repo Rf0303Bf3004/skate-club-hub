@@ -36,7 +36,9 @@
     "delete": "Supprimer l'athlète",
     "athlete_code": "Code athlète",
     "swiss_license": "Licence suisse",
-    "nfc_tag": "Étiquette NFC"
+    "nfc_tag": "Étiquette NFC",
+    "flag_ospite": "Invité du camp — {{club}}",
+    "ospite_scade": "fiche supprimée le {{data}}"
   },
   "form": {
     "name": "Prénom",
@@ -70,5 +72,9 @@
   },
   "codice_card": {
     "popup_blocked": "Impossible d'ouvrir la fenêtre d'impression : autorisez les pop-ups pour ce site."
+  },
+  "badges": {
+    "ospite": "INVITÉ",
+    "ospite_tooltip": "Athlète invité temporaire, club d'origine : {{club}}"
   }
 }

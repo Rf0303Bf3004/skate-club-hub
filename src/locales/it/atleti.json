@@ -189,7 +189,9 @@
     "toast_migrated": "🚀 Atleta migrata con successo",
     "toast_migra_error": "Errore migrazione",
     "club_not_identified": "Club non identificato",
-    "new_invoice_desc": "Nuova fattura"
+    "new_invoice_desc": "Nuova fattura",
+    "flag_ospite": "Ospite di campo — {{club}}",
+    "ospite_scade": "scheda eliminata il {{data}}"
   },
   "form": {
     "name": "Nome",
@@ -522,7 +524,9 @@
     "ago_tooltip": "Agonista",
     "esterno": "ESTERNO",
     "esterno_tooltip": "Pattinatore esterno ospite",
-    "ragione_sociale_tooltip": "Ragione sociale: {{nome}}"
+    "ragione_sociale_tooltip": "Ragione sociale: {{nome}}",
+    "ospite": "OSPITE",
+    "ospite_tooltip": "Atleta ospite temporaneo, club di provenienza: {{club}}"
   },
   "storico_test": {
     "empty": "Nessun test sostenuto",

@@ -18,7 +18,7 @@ import { Switch } from "@/components/ui/switch";
 import AtletaDetail from "@/components/AtletaDetail";
 import SchedaAnagrafica from "@/components/SchedaAnagrafica";
 import AthleteBadges from "@/components/AthleteBadges";
-import ProvenienzaLegenda from "@/components/ProvenienzaLegenda";
+import ProvenienzaLegenda, { RIGA_OSPITE_CLS } from "@/components/ProvenienzaLegenda";
 import { toast } from "@/hooks/use-toast";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import SearchableListLayout from "@/components/common/SearchableListLayout";
@@ -1552,7 +1552,7 @@ const AthletesPage: React.FC = () => {
           );
         })()}
 
-        <ProvenienzaLegenda className="px-1" />
+        <ProvenienzaLegenda className="px-1" con_ospiti={filtered.some((a: any) => a.ospite_di_campo_id)} />
 
         <div className="bg-card rounded-xl shadow-card overflow-hidden">
           <div className="overflow-x-auto">
@@ -1598,7 +1598,7 @@ const AthletesPage: React.FC = () => {
                   </tr>
                 ) : (
                   filtered.map((a: any) => (
-                    <tr key={a.id} className={`border-b border-border/50 transition-colors ${a.verificato === false ? "bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-950/30 dark:hover:bg-yellow-950/50" : "hover:bg-muted/30"}`}>
+                    <tr key={a.id} className={`border-b border-border/50 transition-colors ${a.ospite_di_campo_id ? `${RIGA_OSPITE_CLS} hover:bg-amber-500/20` : a.verificato === false ? "bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-950/30 dark:hover:bg-yellow-950/50" : "hover:bg-muted/30"}`}>
                       <td className="px-4 py-3">
                         <Checkbox
                           checked={selected_ids.includes(a.id)}
@@ -1623,6 +1623,8 @@ const AthletesPage: React.FC = () => {
                                   atleta_federazione={a.atleta_federazione}
                                   atleta_esterno={a.atleta_esterno}
                                   ragione_sociale_id={(a as any).ragione_sociale_id}
+                                  ospite_di_campo_id={(a as any).ospite_di_campo_id}
+                                  club_provenienza={(a as any).club_provenienza}
                                 />
                                 {a.verificato === false && (
                                   <span className="inline-flex items-center gap-1 rounded-md bg-yellow-100 px-1.5 py-0.5 text-[10px] font-semibold text-yellow-800 ring-1 ring-inset ring-yellow-300">

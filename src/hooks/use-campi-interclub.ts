@@ -42,8 +42,17 @@ export type CampoClubPartecipante = {
   invitato_da: string | null;
   invitato_at: string;
   accettato_at: string | null;
+  token?: string | null;
+  fatt_ragione_sociale?: string | null;
+  fatt_indirizzo?: string | null;
+  fatt_cap?: string | null;
+  fatt_citta?: string | null;
+  fatt_paese_iso?: string | null;
+  fatt_email?: string | null;
+  fatt_referente?: string | null;
   clubs?: { nome: string | null } | null;
 };
+
 
 export const STATI_CAMPO = ["bozza", "aperto", "chiuso", "concluso"] as const;
 
@@ -352,7 +361,12 @@ export function use_aggiorna_gruppo_iscrizione() {
 }
 
 // ── Adesioni: matrice gruppo × club ──────────────────────────
-export type AdesioneRiga = { atleta_id: string; club_id: string | null; campo_gruppo_id: string | null };
+export type AdesioneRiga = {
+  atleta_id: string;
+  club_id: string | null;
+  campo_gruppo_id: string | null;
+  atleta?: { club_provenienza: string | null; ospite_di_campo_id: string | null } | null;
+};
 
 export function use_campo_adesioni(evento_campo_id: string | null) {
   return useQuery({
@@ -361,7 +375,7 @@ export function use_campo_adesioni(evento_campo_id: string | null) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("iscrizioni_eventi_campi" as any)
-        .select("atleta_id, club_id, campo_gruppo_id")
+        .select("atleta_id, club_id, campo_gruppo_id, atleta:atleta_id(club_provenienza, ospite_di_campo_id)")
         .eq("evento_campo_id", evento_campo_id);
       if (error) throw error;
       return (data ?? []) as unknown as AdesioneRiga[];
@@ -369,3 +383,139 @@ export function use_campo_adesioni(evento_campo_id: string | null) {
   });
 }
 
+
+// ── Atleti ospiti (club che non usano il portale) ─────────────
+export type AtletaOspite = {
+  id: string;
+  nome: string | null;
+  cognome: string | null;
+  data_nascita: string | null;
+  codice_atleta: string | null;
+  club_provenienza: string | null;
+  livello_dichiarato: string | null;
+  ospite_dal: string | null;
+  ospite_scade_il: string | null;
+};
+
+export function use_atleti_ospiti_campo(evento_campo_id: string | null) {
+  return useQuery({
+    queryKey: ["atleti_ospiti_campo", evento_campo_id],
+    enabled: !!evento_campo_id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("atleti" as any)
+        .select("id, nome, cognome, data_nascita, codice_atleta, club_provenienza, livello_dichiarato, ospite_dal, ospite_scade_il")
+        .eq("ospite_di_campo_id", evento_campo_id)
+        .order("cognome", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as unknown as AtletaOspite[];
+    },
+  });
+}
+
+export type EsitoImportOspite = {
+  riga: number;
+  nome: string | null;
+  cognome: string | null;
+  codice_atleta: string | null;
+  esito: string;
+};
+
+export type RigaOspiteInput = {
+  nome: string;
+  cognome: string;
+  data_nascita: string | null;
+  livello: string | null;
+  dal: string | null;
+  al: string | null;
+  email: string | null;
+  telefono: string | null;
+  emergenza: string | null;
+  note: string | null;
+  consenso_foto: boolean | null;
+  consenso_ricontatto: boolean | null;
+};
+
+export function use_registra_atleti_ospiti() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: {
+      evento_campo_id: string;
+      club_provenienza: string;
+      elenco: RigaOspiteInput[];
+      campo_gruppo_id?: string | null;
+    }) => {
+      const { data, error } = await supabase.rpc("registra_atleti_ospiti_massa" as any, {
+        p_campo: v.evento_campo_id,
+        p_club_provenienza: v.club_provenienza,
+        p_elenco: v.elenco as any,
+        p_gruppo: v.campo_gruppo_id ?? null,
+      });
+      if (error) throw error;
+      return (data ?? []) as unknown as EsitoImportOspite[];
+    },
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ["atleti_ospiti_campo", v.evento_campo_id] });
+      qc.invalidateQueries({ queryKey: ["campi_iscrizioni", v.evento_campo_id] });
+      qc.invalidateQueries({ queryKey: ["campi_adesioni", v.evento_campo_id] });
+      qc.invalidateQueries({ queryKey: ["atleti"] });
+    },
+  });
+}
+
+// ── Fatturazione dei club ospiti ─────────────────────────────
+export type AnteprimaFatturaOspite = {
+  riga_partecipazione: string;
+  club_ospite: string | null;
+  n_atleti: number;
+  n_righe: number;
+  totale: number;
+  righe: { descrizione: string; atleta: string; importo: number }[] | null;
+  gia_fatturata: boolean;
+  avviso: string | null;
+};
+
+export function use_anteprima_fatture_ospiti(evento_campo_id: string | null) {
+  return useQuery({
+    queryKey: ["anteprima_fatture_ospiti", evento_campo_id],
+    enabled: !!evento_campo_id,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("anteprima_fatture_club_ospiti" as any, {
+        p_campo: evento_campo_id,
+      });
+      if (error) throw error;
+      return (data ?? []) as unknown as AnteprimaFatturaOspite[];
+    },
+  });
+}
+
+export function use_genera_fattura_club_ospite() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: { riga_partecipazione: string; evento_campo_id: string }) => {
+      const { data, error } = await supabase.rpc("genera_fattura_club_ospite" as any, {
+        p_riga: v.riga_partecipazione,
+      });
+      if (error) throw error;
+      return data as unknown as string;
+    },
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ["anteprima_fatture_ospiti", v.evento_campo_id] });
+      qc.invalidateQueries({ queryKey: ["fatture"] });
+    },
+  });
+}
+
+export function use_genera_link_club_ospite() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: { riga_partecipazione: string; evento_campo_id: string }) => {
+      const { data, error } = await supabase.rpc("genera_link_club_ospite" as any, {
+        p_riga: v.riga_partecipazione,
+      });
+      if (error) throw error;
+      return String(data ?? "");
+    },
+    onSuccess: (_d, v) => qc.invalidateQueries({ queryKey: ["campi_partecipanti", v.evento_campo_id] }),
+  });
+}

@@ -829,7 +829,8 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                 }
               }
 
-              const has_flags = form.agonista || form.atleta_federazione || form.attivo_come_monitore || form.atleta_esterno || !!ragione_sociale_atleta;
+              const is_ospite = !!(form as any).ospite_di_campo_id;
+              const has_flags = form.agonista || form.atleta_federazione || form.attivo_come_monitore || form.atleta_esterno || !!ragione_sociale_atleta || is_ospite;
 
               return (
                 <div className="flex flex-col gap-2">
@@ -910,6 +911,15 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                       )}
                       {form.atleta_esterno && (
                         <span className="inline-flex items-center gap-1">{td("detail.flag_esterno")}</span>
+                      )}
+                      {is_ospite && (
+                        <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-semibold ring-1 ring-inset ring-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400">
+                          {td("detail.flag_ospite", { club: (form as any).club_provenienza || "—" })}
+                          {(form as any).livello_dichiarato ? ` • ${(form as any).livello_dichiarato}` : ""}
+                          {(form as any).ospite_scade_il
+                            ? ` • ${td("detail.ospite_scade", { data: new Date((form as any).ospite_scade_il + "T00:00:00").toLocaleDateString("it-CH") })}`
+                            : ""}
+                        </span>
                       )}
                     </div>
                   )}

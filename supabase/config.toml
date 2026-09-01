@@ -1,5 +1,8 @@
 project_id = "mdlfhdyyzrxppamlzepd"
 
+[functions.campo-ospite]
+verify_jwt = false
+
 [functions.mobile-auth-login]
 verify_jwt = false
 
