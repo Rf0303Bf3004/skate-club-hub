@@ -292,7 +292,7 @@ const CampoScheda: React.FC<{
   const { data: ospiti = [] } = use_atleti_ospiti_campo(is_ospitante ? campo.id : null);
   const { ios_store_url, android_store_url } = use_app_store_links();
 
-  const [tab, set_tab] = useState("informazioni");
+  const [tab, set_tab] = useState(tab_iniziale ?? "informazioni");
 
   const stampa_ospiti = async () => {
     const elenco = ospiti
