@@ -382,7 +382,17 @@ const RagioneSocialeDialog: React.FC<{
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Numero IVA</Label>
-              <Input value={form.numero_iva} onChange={(e) => set_val("numero_iva", e.target.value)} />
+              <Input
+                value={form.numero_iva}
+                onChange={(e) => set_val("numero_iva", e.target.value)}
+                placeholder={PLACEHOLDER_NUMERO_IVA[paese] ?? ""}
+              />
+              {String(form.numero_iva || "").trim() !== "" && numero_iva_ok === false && (
+                <p className="mt-1 text-[11px] text-amber-600">
+                  Questo numero non supera la cifra di controllo: verificatelo, altrimenti le fatture non
+                  potranno essere emesse.
+                </p>
+              )}
             </div>
           </div>
           <div>
@@ -399,7 +409,40 @@ const RagioneSocialeDialog: React.FC<{
               <Input value={form.citta} onChange={(e) => set_val("citta", e.target.value)} />
             </div>
           </div>
+          {/* Sede e recapiti */}
+          <div className="space-y-3 rounded-lg border border-border/60 p-3">
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Sede e recapiti</p>
+            <div>
+              <Label className="text-xs text-muted-foreground">Paese</Label>
+              <Select value={paese} onValueChange={(v) => set_val("paese_iso", v)}>
+                <SelectTrigger className="h-10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CH">Svizzera</SelectItem>
+                  <SelectItem value="IT">Italia</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs text-muted-foreground">Email</Label>
+                <Input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => set_val("email", e.target.value)}
+                  placeholder="fatture@ente.ch"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Telefono</Label>
+                <Input value={form.telefono} onChange={(e) => set_val("telefono", e.target.value)} />
+              </div>
+            </div>
+          </div>
+
           <div>
+
             <Label className="text-xs text-muted-foreground">IBAN</Label>
             <Input value={form.iban} onChange={(e) => set_val("iban", e.target.value)} />
           </div>
@@ -445,6 +488,79 @@ const RagioneSocialeDialog: React.FC<{
             />
             Attiva
           </label>
+
+          {/* IVA */}
+          <div className="space-y-3 rounded-lg border border-border/60 p-3">
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">IVA</p>
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-sm font-medium text-foreground">Questo ente è soggetto a IVA?</p>
+              <Switch
+                checked={!!form.soggetto_iva}
+                onCheckedChange={(v) => {
+                  set_form((p) => ({
+                    ...p,
+                    soggetto_iva: v,
+                    iva_esenzione_nota:
+                      !v && !String(p.iva_esenzione_nota || "").trim()
+                        ? NOTE_ESENZIONE[String(p.paese_iso || "CH")] ?? ""
+                        : p.iva_esenzione_nota,
+                  }));
+                }}
+              />
+            </div>
+
+            {!form.soggetto_iva ? (
+              <div>
+                <Label className="text-xs text-muted-foreground">Nota da stampare in fattura</Label>
+                <Input
+                  value={form.iva_esenzione_nota}
+                  onChange={(e) => set_val("iva_esenzione_nota", e.target.value)}
+                  placeholder={NOTE_ESENZIONE[paese]}
+                />
+              </div>
+            ) : (
+              <>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Aliquota predefinita</Label>
+                  <Select
+                    value={form.iva_aliquota_default === "" ? undefined : String(form.iva_aliquota_default)}
+                    onValueChange={(v) => set_val("iva_aliquota_default", v)}
+                  >
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="Seleziona un'aliquota" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {aliquote.map((a) => (
+                        <SelectItem key={a.codice} value={String(a.aliquota)}>
+                          {a.etichetta}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {aliquota_scelta?.descrizione && (
+                    <p className="mt-1 text-[11px] text-muted-foreground">{aliquota_scelta.descrizione}</p>
+                  )}
+                </div>
+
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-sm font-medium text-foreground">
+                    I prezzi che inserite sono già IVA compresa?
+                  </p>
+                  <Switch
+                    checked={!!form.iva_prezzi_ivati}
+                    onCheckedChange={(v) => set_val("iva_prezzi_ivati", v)}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {form.iva_prezzi_ivati
+                    ? `Un servizio da 100.00 resta 100.00 in fattura: ${imponibile_esempio} di imponibile più ${iva_esempio} di IVA`
+                    : `Un servizio da 100.00 diventa ${lordo_esempio} in fattura`}
+                </p>
+              </>
+            )}
+          </div>
+
+
 
           {/* Fatturazione */}
           <div className="space-y-3 rounded-lg border border-border/60 p-3">
