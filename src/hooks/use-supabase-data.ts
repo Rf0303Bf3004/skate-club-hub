@@ -199,8 +199,11 @@ export function use_istruttori() {
         const ct = contatti_map.get(i.id) ?? {};
         return {
           ...i,
+          // true solo se la RPC ha restituito i contatti: distingue "nascosto" da "vuoto"
+          contatti_visibili: contatti_map.has(i.id),
           email: ct.email ?? null,
           telefono: ct.telefono ?? null,
+
           costo_orario_lezioni: c.costo_orario_lezioni ?? null,
           costo_orario_corsi: c.costo_orario_corsi ?? null,
           compenso_fisso_mensile: c.compenso_fisso_mensile ?? null,

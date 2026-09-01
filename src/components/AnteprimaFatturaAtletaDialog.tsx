@@ -9,9 +9,12 @@ interface Props {
   fattura_id: string;
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  /** true nel portale famiglie: l'archivio storage del club non è accessibile. */
+  preferisci_locale?: boolean;
 }
 
-const AnteprimaFatturaAtletaDialog: React.FC<Props> = ({ fattura_id, open, onOpenChange }) => {
+const AnteprimaFatturaAtletaDialog: React.FC<Props> = ({ fattura_id, open, onOpenChange, preferisci_locale }) => {
+
   const [url, set_url] = useState<string | null>(null);
   const [blob, set_blob] = useState<Blob | null>(null);
   const [nome_file, set_nome_file] = useState("fattura.pdf");
@@ -33,7 +36,7 @@ const AnteprimaFatturaAtletaDialog: React.FC<Props> = ({ fattura_id, open, onOpe
     set_blob(null);
     (async () => {
       try {
-        const r = await prepara_pdf_fattura(fattura_id);
+        const r = await prepara_pdf_fattura(fattura_id, { preferisci_locale });
         if (!alive) {
           URL.revokeObjectURL(r.url);
           return;
@@ -51,7 +54,7 @@ const AnteprimaFatturaAtletaDialog: React.FC<Props> = ({ fattura_id, open, onOpe
     return () => {
       alive = false;
     };
-  }, [open, fattura_id]);
+  }, [open, fattura_id, preferisci_locale]);
 
   // Libera il blob quando il dialogo si chiude o il componente viene smontato.
   useEffect(() => {

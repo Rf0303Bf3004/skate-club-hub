@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ArrowLeft, Printer, Download, Mail, CreditCard, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { load_fattura_full, build_pdf_data, invia_fattura_email } from "@/lib/fattura-atleta-helpers";
+import { load_fattura_full, build_pdf_data } from "@/lib/fattura-atleta-helpers";
+import { supabase } from "@/lib/supabase";
 import AnteprimaFatturaAtletaDialog from "@/components/AnteprimaFatturaAtletaDialog";
 
 const STATO_COLORS: Record<string, string> = {
@@ -49,8 +50,12 @@ const FatturaDetailPage: React.FC = () => {
     if (!pdf_data || !email_to) return;
     set_sending(true);
     try {
-      // Stesso percorso della segreteria: congela il PDF e aggiorna lo stato.
-      await invia_fattura_email(pdf_data._id, email_to);
+      // Il portale famiglie non può scrivere nell'archivio del club:
+      // l'invio passa direttamente dalla funzione email lato server.
+      const { error } = await supabase.functions.invoke("send-fattura-email-atleta", {
+        body: { fattura_id: pdf_data._id, destinatario: email_to },
+      });
+      if (error) throw error;
       toast({ title: "Email inviata" });
       set_email_open(false);
     } catch (e: any) {
@@ -140,7 +145,7 @@ const FatturaDetailPage: React.FC = () => {
         </div>
       </div>
 
-      <AnteprimaFatturaAtletaDialog fattura_id={d._id} open={preview_open} onOpenChange={set_preview_open} />
+      <AnteprimaFatturaAtletaDialog fattura_id={d._id} open={preview_open} onOpenChange={set_preview_open} preferisci_locale />
 
 
       <Dialog open={email_open} onOpenChange={set_email_open}>
