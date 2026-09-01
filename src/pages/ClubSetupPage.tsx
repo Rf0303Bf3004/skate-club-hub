@@ -1377,14 +1377,12 @@ const ClubSetupPage: React.FC = () => {
         </div>
         </>
         )}
-      </div>
-
-
-      <div className="max-w-2xl mt-6">
-        <RisorseSection />
-      </div>
+        <SetupSection id="gh_risorse" titolo="Risorse e strutture">
+          <RisorseSection />
+        </SetupSection>
         </TabsContent>
 
+        {/* ══ CATALOGO ══ */}
         <TabsContent value="catalogo">
           <CatalogoOffertaTab
             club_id={club?.id || get_current_club_id() || null}
@@ -1392,6 +1390,7 @@ const ClubSetupPage: React.FC = () => {
           />
         </TabsContent>
 
+        {/* ══ FATTURAZIONE ══ */}
         <TabsContent value="fatturazione">
           <div className="space-y-6">
             <FatturazioneTab />
@@ -1400,8 +1399,40 @@ const ClubSetupPage: React.FC = () => {
           </div>
         </TabsContent>
       </Tabs>
+
+      <SetupSaveBar
+        modifiche={modifiche}
+        saving={salvataggio_in_corso}
+        on_save={salva_tutto}
+        on_reset={annulla_modifiche}
+      />
+
+      <AlertDialog open={!!tab_in_attesa} onOpenChange={(o) => { if (!o) set_tab_in_attesa(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ci sono modifiche non salvate</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se cambi scheda ora, le modifiche non salvate ({modifiche}) andranno perse.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Resta qui</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                const dest = tab_in_attesa;
+                annulla_modifiche();
+                set_tab_in_attesa(null);
+                if (dest) vai_a_tab(dest);
+              }}
+            >
+              Esci senza salvare
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
+
 };
 
 const Field: React.FC<{ label: string; icon?: React.ReactNode; children: React.ReactNode }> = ({ label, icon, children }) => (
