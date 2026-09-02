@@ -507,7 +507,18 @@ const UtentiPage: React.FC = () => {
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">{format_relative(u.last_sign_in_at, t)}</TableCell>
                     <TableCell className="text-center">
-                      <Switch checked={!!u.attivo} disabled />
+                      {(() => {
+                        const is_self = u.user_id === session?.user_id;
+                        return (
+                          <span title={is_self ? "Non puoi disattivare il tuo stesso accesso" : ""}>
+                            <Switch
+                              checked={!!u.attivo}
+                              disabled={!!toggling_user_id || is_self}
+                              onCheckedChange={() => set_confirm_state({ type: "toggle", user: u })}
+                            />
+                          </span>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="inline-flex gap-1">
@@ -516,9 +527,6 @@ const UtentiPage: React.FC = () => {
                         </Button>
                         <Button variant="ghost" size="icon" onClick={() => set_confirm_state({ type: "reset", user: u })} title={t("users.tooltip.reset_password")}>
                           <KeyRound className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => set_confirm_state({ type: "toggle", user: u })} title={u.attivo ? t("users.tooltip.disattiva") : t("users.tooltip.riattiva")}>
-                          <Power className={`w-4 h-4 ${u.attivo ? "text-emerald-600" : "text-muted-foreground"}`} />
                         </Button>
                       </div>
                     </TableCell>
@@ -549,16 +557,24 @@ const UtentiPage: React.FC = () => {
                 )}
                 <p className="text-[11px] text-muted-foreground">{t("users.table.last_access")}: {format_relative(u.last_sign_in_at, t)}</p>
                 <div className="flex items-center justify-between pt-1">
-                  <div className="flex items-center gap-2 text-xs">
-                    <Switch checked={!!u.attivo} disabled />
-                    <span>{u.attivo ? t("users.status.attivo") : t("users.status.disattivato")}</span>
-                  </div>
+                  {(() => {
+                    const is_self = u.user_id === session?.user_id;
+                    return (
+                      <div className="flex items-center gap-2 text-xs">
+                        <span title={is_self ? "Non puoi disattivare il tuo stesso accesso" : ""}>
+                          <Switch
+                            checked={!!u.attivo}
+                            disabled={!!toggling_user_id || is_self}
+                            onCheckedChange={() => set_confirm_state({ type: "toggle", user: u })}
+                          />
+                        </span>
+                        <span>{u.attivo ? t("users.status.attivo") : t("users.status.disattivato")}</span>
+                      </div>
+                    );
+                  })()}
                   <div className="inline-flex gap-1">
                     <Button variant="ghost" size="icon" onClick={() => open_edit(u)}><Pencil className="w-4 h-4" /></Button>
                     <Button variant="ghost" size="icon" onClick={() => set_confirm_state({ type: "reset", user: u })}><KeyRound className="w-4 h-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => set_confirm_state({ type: "toggle", user: u })}>
-                      <Power className={`w-4 h-4 ${u.attivo ? "text-emerald-600" : "text-muted-foreground"}`} />
-                    </Button>
                   </div>
                 </div>
               </div>
