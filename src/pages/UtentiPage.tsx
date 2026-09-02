@@ -404,8 +404,21 @@ const UtentiPage: React.FC = () => {
         <div className="flex items-center gap-2">
           <Switch checked={solo_attivi} onCheckedChange={set_solo_attivi} id="solo-attivi" />
           <Label htmlFor="solo-attivi" className="text-sm">{t("users.only_active")}</Label>
+          {nascosti_disattivi > 0 && (
+            <span className="text-xs text-amber-700">
+              {nascosti_disattivi === 1
+                ? "1 utente disattivato nascosto"
+                : `${nascosti_disattivi} utenti disattivati nascosti`}
+            </span>
+          )}
         </div>
       </div>
+
+      {auth_info_ko && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          Non riesco a leggere email e ultimo accesso degli utenti: i campi restano vuoti.
+        </div>
+      )}
 
       {isLoading ? (
         <div className="flex items-center justify-center h-64">
@@ -419,11 +432,31 @@ const UtentiPage: React.FC = () => {
               <TableHeader>
                 <TableRow className="bg-muted/30">
                   <TableHead>{t("users.table.nome")}</TableHead>
-                  <TableHead>{t("users.table.cognome")}</TableHead>
+                  <TableHead>
+                    <button
+                      type="button"
+                      onClick={() => set_ordina_per(ordina_per === "cognome" ? "recenti" : "cognome")}
+                      className="inline-flex items-center gap-1 hover:text-foreground"
+                      title="Ordina per cognome"
+                    >
+                      {t("users.table.cognome")}
+                      <ArrowUpDown className={`w-3 h-3 ${ordina_per === "cognome" ? "text-primary" : "opacity-50"}`} />
+                    </button>
+                  </TableHead>
                   <TableHead>{t("users.table.email")}</TableHead>
                   <TableHead>{t("users.table.telefono")}</TableHead>
                   <TableHead>{t("users.table.ruolo")}</TableHead>
-                  <TableHead>{t("users.table.last_access")}</TableHead>
+                  <TableHead>
+                    <button
+                      type="button"
+                      onClick={() => set_ordina_per("recenti")}
+                      className="inline-flex items-center gap-1 hover:text-foreground"
+                      title="Ordina dai più recenti"
+                    >
+                      {t("users.table.last_access")}
+                      <ArrowUpDown className={`w-3 h-3 ${ordina_per === "recenti" ? "text-primary" : "opacity-50"}`} />
+                    </button>
+                  </TableHead>
                   <TableHead className="text-center">{t("users.table.attivo")}</TableHead>
                   <TableHead className="text-right">{t("users.table.azioni")}</TableHead>
                 </TableRow>
@@ -437,7 +470,19 @@ const UtentiPage: React.FC = () => {
                   </TableRow>
                 )}
                 {filtered.map((u) => (
-                  <TableRow key={u.id}>
+                  <TableRow
+                    key={u.id}
+                    ref={
+                      u.user_id === evidenzia_user_id
+                        ? (el) => el?.scrollIntoView({ block: "center", behavior: "smooth" })
+                        : undefined
+                    }
+                    className={
+                      u.user_id === evidenzia_user_id
+                        ? "bg-amber-100 ring-2 ring-amber-400 transition-colors"
+                        : ""
+                    }
+                  >
                     <TableCell className="font-medium">{u.nome}</TableCell>
                     <TableCell className="font-medium">{u.cognome}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{u.email ?? "—"}</TableCell>
