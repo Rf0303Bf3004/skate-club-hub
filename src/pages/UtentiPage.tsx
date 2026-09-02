@@ -112,6 +112,10 @@ const UtentiPage: React.FC = () => {
     type: "toggle" | "reset"; user: UtenteRow;
   } | null>(null);
   const [pwd_dialog, set_pwd_dialog] = useState<{ password: string; nome: string } | null>(null);
+  const [link_proposta, set_link_proposta] = useState<{
+    istruttore_id: string; nome: string; user_id: string;
+  } | null>(null);
+
 
   const { data: utenti = [], isLoading } = useQuery({
     queryKey: ["utenti_club_admin", club_id],
