@@ -291,7 +291,6 @@ const UtentiPage: React.FC = () => {
         );
         if (nuovo_user_id) {
           set_ordina_per("recenti");
-          set_solo_attivi(false);
           set_search("");
           set_filtro_ruolo("tutti");
           set_evidenzia_user_id(nuovo_user_id);
