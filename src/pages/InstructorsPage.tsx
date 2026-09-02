@@ -27,6 +27,9 @@ import { can_override_ore_lavoro } from "@/lib/roles";
 import { usePermessiAzione } from "@/hooks/use-permessi-azione";
 import ConfirmButton from "@/components/common/ConfirmButton";
 import NotaPermesso from "@/components/common/NotaPermesso";
+import CreaAccessoDialog from "@/components/istruttori/CreaAccessoDialog";
+import { use_email_utenti_club } from "@/hooks/use-accessi-utenti";
+
 
 const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
 
