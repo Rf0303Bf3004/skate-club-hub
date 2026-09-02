@@ -2032,7 +2032,17 @@ const InstructorsPage: React.FC = () => {
                       {!linked_atleta && i.email && (
                         <p className="text-xs text-muted-foreground truncate">{i.email}</p>
                       )}
+                      {i.user_id ? (
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          {email_accessi?.get(i.user_id) || "Accesso collegato"}
+                        </p>
+                      ) : (
+                        <span className="inline-block mt-0.5 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
+                          Nessun accesso
+                        </span>
+                      )}
                     </div>
+
                     <span
                       className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${badge_cls}`}
                     >
