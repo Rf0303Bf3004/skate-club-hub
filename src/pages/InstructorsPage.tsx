@@ -27,6 +27,9 @@ import { can_override_ore_lavoro } from "@/lib/roles";
 import { usePermessiAzione } from "@/hooks/use-permessi-azione";
 import ConfirmButton from "@/components/common/ConfirmButton";
 import NotaPermesso from "@/components/common/NotaPermesso";
+import CreaAccessoDialog from "@/components/istruttori/CreaAccessoDialog";
+import { use_email_utenti_club } from "@/hooks/use-accessi-utenti";
+
 
 const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
 
@@ -1498,6 +1501,9 @@ const InstructorsPage: React.FC = () => {
   const [saving_contratto, set_saving_contratto] = useState(false);
   const [active_filter, set_active_filter] = useState<"tutti" | "istruttore" | "monitrice" | "aiuto_monitrice">("tutti");
   const [search_istruttori, set_search_istruttori] = useState("");
+  const [accesso_target, set_accesso_target] = useState<any>(null);
+  const { data: email_accessi } = use_email_utenti_club();
+
 
   // Lookup atleti by id per resolver dei linked_atleta_id
   const atleti_by_id = useMemo(() => {
@@ -1659,7 +1665,13 @@ const InstructorsPage: React.FC = () => {
   if (selected) {
     return (
       <>
+        <CreaAccessoDialog
+          open={!!accesso_target}
+          on_close={() => set_accesso_target(null)}
+          istruttore={accesso_target}
+        />
         {modal_open && (
+
           <IstruttoreModal
             key={selected_modal?.id || "nuovo"}
             istruttore={selected_modal}
@@ -1749,9 +1761,41 @@ const InstructorsPage: React.FC = () => {
             </TabsList>
 
             <TabsContent value="info" className="mt-6 space-y-6">
+              {(() => {
+                const mail_accesso = selected.user_id ? email_accessi?.get(selected.user_id) : null;
+                const ha_accesso = !!selected.user_id;
+                return (
+                  <div
+                    className={`max-w-lg rounded-xl border px-4 py-3 flex items-center justify-between gap-3 ${
+                      ha_accesso
+                        ? "border-border bg-card"
+                        : "border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700"
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                        Accesso al portale
+                      </p>
+                      {ha_accesso ? (
+                        <p className="text-sm text-foreground truncate">{mail_accesso || "collegato"}</p>
+                      ) : (
+                        <p className="text-sm text-amber-900 dark:text-amber-100">
+                          Nessun accesso — l'istruttore non riceverà i turni né le comunicazioni
+                        </p>
+                      )}
+                    </div>
+                    {!ha_accesso && puo_gestire_sportivo && (
+                      <Button size="sm" onClick={() => set_accesso_target(selected)} className="flex-shrink-0">
+                        <ShieldCheck className="w-3.5 h-3.5 mr-1.5" /> Crea accesso
+                      </Button>
+                    )}
+                  </div>
+                );
+              })()}
               <div className="max-w-lg">
                 <CodiceIstruttoreCard istruttore={selected} />
               </div>
+
               <div className="bg-card rounded-xl shadow-card p-6 space-y-3 max-w-lg">
                 {[
                   { label: t("email"), value: selected.email },
@@ -1875,7 +1919,13 @@ const InstructorsPage: React.FC = () => {
 
   return (
     <>
+      <CreaAccessoDialog
+        open={!!accesso_target}
+        on_close={() => set_accesso_target(null)}
+        istruttore={accesso_target}
+      />
       {modal_open && (
+
         <IstruttoreModal
           key={selected_modal?.id || "nuovo"}
           istruttore={selected_modal}
@@ -1988,7 +2038,17 @@ const InstructorsPage: React.FC = () => {
                       {!linked_atleta && i.email && (
                         <p className="text-xs text-muted-foreground truncate">{i.email}</p>
                       )}
+                      {i.user_id ? (
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          {email_accessi?.get(i.user_id) || "Accesso collegato"}
+                        </p>
+                      ) : (
+                        <span className="inline-block mt-0.5 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
+                          Nessun accesso
+                        </span>
+                      )}
                     </div>
+
                     <span
                       className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${badge_cls}`}
                     >
