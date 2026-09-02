@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
-import { Users, Plus, Pencil, KeyRound, Power, Copy, Search, ArrowUpDown } from "lucide-react";
+import { Users, Plus, Pencil, KeyRound, Copy, Search, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -114,6 +114,7 @@ const UtentiPage: React.FC = () => {
   const [confirm_state, set_confirm_state] = useState<{
     type: "toggle" | "reset"; user: UtenteRow;
   } | null>(null);
+  const [toggling_user_id, set_toggling_user_id] = useState<string | null>(null);
   const [pwd_dialog, set_pwd_dialog] = useState<{ password: string; nome: string } | null>(null);
   const [link_proposta, set_link_proposta] = useState<{
     istruttore_id: string; nome: string; user_id: string;
@@ -330,6 +331,12 @@ const UtentiPage: React.FC = () => {
   };
 
   const do_toggle_attivo = async (u: UtenteRow) => {
+    if (u.user_id === session?.user_id) {
+      toast.error("Non puoi disattivare il tuo stesso accesso.");
+      set_confirm_state(null);
+      return;
+    }
+    set_toggling_user_id(u.user_id);
     try {
       const { error } = await supabase
         .from("utenti_club")
@@ -341,6 +348,7 @@ const UtentiPage: React.FC = () => {
     } catch (e: any) {
       toast.error(e?.message || t("users.toast.generic_error"));
     } finally {
+      set_toggling_user_id(null);
       set_confirm_state(null);
     }
   };
@@ -458,7 +466,7 @@ const UtentiPage: React.FC = () => {
                       <ArrowUpDown className={`w-3 h-3 ${ordina_per === "recenti" ? "text-primary" : "opacity-50"}`} />
                     </button>
                   </TableHead>
-                  <TableHead className="text-center">{t("users.table.attivo")}</TableHead>
+                  <TableHead className="text-center">{t("users.table.accesso_attivo", { defaultValue: "Accesso attivo" })}</TableHead>
                   <TableHead className="text-right">{t("users.table.azioni")}</TableHead>
                 </TableRow>
               </TableHeader>
@@ -499,7 +507,18 @@ const UtentiPage: React.FC = () => {
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">{format_relative(u.last_sign_in_at, t)}</TableCell>
                     <TableCell className="text-center">
-                      <Switch checked={!!u.attivo} disabled />
+                      {(() => {
+                        const is_self = u.user_id === session?.user_id;
+                        return (
+                          <span title={is_self ? "Non puoi disattivare il tuo stesso accesso" : ""}>
+                            <Switch
+                              checked={!!u.attivo}
+                              disabled={!!toggling_user_id || is_self}
+                              onCheckedChange={() => set_confirm_state({ type: "toggle", user: u })}
+                            />
+                          </span>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="inline-flex gap-1">
@@ -508,9 +527,6 @@ const UtentiPage: React.FC = () => {
                         </Button>
                         <Button variant="ghost" size="icon" onClick={() => set_confirm_state({ type: "reset", user: u })} title={t("users.tooltip.reset_password")}>
                           <KeyRound className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => set_confirm_state({ type: "toggle", user: u })} title={u.attivo ? t("users.tooltip.disattiva") : t("users.tooltip.riattiva")}>
-                          <Power className={`w-4 h-4 ${u.attivo ? "text-emerald-600" : "text-muted-foreground"}`} />
                         </Button>
                       </div>
                     </TableCell>
@@ -541,16 +557,24 @@ const UtentiPage: React.FC = () => {
                 )}
                 <p className="text-[11px] text-muted-foreground">{t("users.table.last_access")}: {format_relative(u.last_sign_in_at, t)}</p>
                 <div className="flex items-center justify-between pt-1">
-                  <div className="flex items-center gap-2 text-xs">
-                    <Switch checked={!!u.attivo} disabled />
-                    <span>{u.attivo ? t("users.status.attivo") : t("users.status.disattivato")}</span>
-                  </div>
+                  {(() => {
+                    const is_self = u.user_id === session?.user_id;
+                    return (
+                      <div className="flex items-center gap-2 text-xs">
+                        <span title={is_self ? "Non puoi disattivare il tuo stesso accesso" : ""}>
+                          <Switch
+                            checked={!!u.attivo}
+                            disabled={!!toggling_user_id || is_self}
+                            onCheckedChange={() => set_confirm_state({ type: "toggle", user: u })}
+                          />
+                        </span>
+                        <span>{u.attivo ? t("users.status.attivo") : t("users.status.disattivato")}</span>
+                      </div>
+                    );
+                  })()}
                   <div className="inline-flex gap-1">
                     <Button variant="ghost" size="icon" onClick={() => open_edit(u)}><Pencil className="w-4 h-4" /></Button>
                     <Button variant="ghost" size="icon" onClick={() => set_confirm_state({ type: "reset", user: u })}><KeyRound className="w-4 h-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => set_confirm_state({ type: "toggle", user: u })}>
-                      <Power className={`w-4 h-4 ${u.attivo ? "text-emerald-600" : "text-muted-foreground"}`} />
-                    </Button>
                   </div>
                 </div>
               </div>
@@ -645,12 +669,14 @@ const UtentiPage: React.FC = () => {
                 />
               )}
               {confirm_state?.type === "toggle" && confirm_state.user.attivo && (
-                <Trans
-                  i18nKey="users.confirm.deactivate_description"
-                  ns="settings"
-                  values={{ nome: `${confirm_state.user.nome ?? ""} ${confirm_state.user.cognome ?? ""}`.trim() }}
-                  components={{ strong: <strong /> }}
-                />
+                <>
+                  <p>
+                    Stai per disattivare <strong>{`${confirm_state.user.nome ?? ""} ${confirm_state.user.cognome ?? ""}`.trim()}</strong>.
+                  </p>
+                  <p className="mt-2">
+                    Non potrà più entrare nel portale. I suoi dati e il suo storico restano.
+                  </p>
+                </>
               )}
               {confirm_state?.type === "toggle" && !confirm_state.user.attivo && (
                 <Trans
