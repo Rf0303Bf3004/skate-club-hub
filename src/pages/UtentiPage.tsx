@@ -284,10 +284,21 @@ const UtentiPage: React.FC = () => {
         });
         if (r.error) throw new Error(r.error.message);
         if ((r.data as any)?.error) throw new Error((r.data as any).error);
-        toast.success(t("users.toast.created", { nome: form.nome, cognome: form.cognome, password: form.password }));
+        const nuovo_user_id = (r.data as any)?.user_id as string | undefined;
+        const ruolo_label = t(`users.role.${form.ruolo}`, { defaultValue: form.ruolo });
+        toast.success(
+          `${form.nome.trim()} ${form.cognome.trim()}: accesso creato come ${ruolo_label}. Lo trovi in cima all'elenco.`,
+        );
+        if (nuovo_user_id) {
+          set_ordina_per("recenti");
+          set_solo_attivi(false);
+          set_search("");
+          set_filtro_ruolo("tutti");
+          set_evidenzia_user_id(nuovo_user_id);
+          setTimeout(() => set_evidenzia_user_id((v) => (v === nuovo_user_id ? null : v)), 6000);
+        }
 
         // Se il ruolo è di pista, proponi il collegamento alla scheda istruttore omonima non collegata
-        const nuovo_user_id = (r.data as any)?.user_id as string | undefined;
         if (nuovo_user_id && ["istruttore", "aiuto_monitore"].includes(form.ruolo)) {
           const { data: schede } = await supabase
             .from("istruttori")
