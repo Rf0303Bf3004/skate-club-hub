@@ -119,40 +119,49 @@ const UtentiPage: React.FC = () => {
   } | null>(null);
 
 
-  const { data: utenti = [], isLoading } = useQuery({
+  const { data: risultato, isLoading } = useQuery({
     queryKey: ["utenti_club_admin", club_id],
-    queryFn: async () => {
-      if (!club_id) return [];
+    queryFn: async (): Promise<{ rows: UtenteRow[]; auth_info_ko: boolean }> => {
+      if (!club_id) return { rows: [], auth_info_ko: false };
       const { data, error } = await supabase
         .from("utenti_club")
         .select("*")
         .eq("club_id", club_id)
-        .order("cognome", { ascending: true });
+        .order("created_at", { ascending: false });
       if (error) throw error;
       const rows = (data ?? []) as UtenteRow[];
       const user_ids = rows.map((r) => r.user_id).filter(Boolean);
-      if (user_ids.length === 0) return rows;
+      if (user_ids.length === 0) return { rows, auth_info_ko: false };
       try {
         const { data: sess_data } = await supabase.auth.getSession();
         const r = await supabase.functions.invoke("manage-user", {
           body: { action: "list_auth_info", club_id, user_ids },
           headers: sess_data.session ? { Authorization: `Bearer ${sess_data.session.access_token}` } : {},
         });
-        const map = (r.data as any)?.users ?? {};
-        return rows.map((row) => ({
-          ...row,
-          email: map[row.user_id]?.email ?? undefined,
-          last_sign_in_at: map[row.user_id]?.last_sign_in_at ?? null,
-        }));
-      } catch {
-        return rows;
+        if (r.error) throw new Error(r.error.message);
+        const map = (r.data as any)?.users;
+        if (!map) throw new Error("risposta senza utenti");
+        return {
+          rows: rows.map((row) => ({
+            ...row,
+            email: map[row.user_id]?.email ?? undefined,
+            last_sign_in_at: map[row.user_id]?.last_sign_in_at ?? null,
+          })),
+          auth_info_ko: false,
+        };
+      } catch (e) {
+        console.error("[utenti] list_auth_info non riuscito", e);
+        return { rows, auth_info_ko: true };
       }
     },
     enabled: !!club_id && !!allowed,
   });
 
+  const utenti = risultato?.rows ?? [];
+  const auth_info_ko = !!risultato?.auth_info_ko;
+
   const filtered = useMemo(() => {
-    return (utenti ?? []).filter((u) => {
+    const out = (utenti ?? []).filter((u) => {
       if (filtro_ruolo !== "tutti" && u.ruolo !== filtro_ruolo) return false;
       if (solo_attivi && !u.attivo) return false;
       if (search.trim()) {
@@ -162,6 +171,27 @@ const UtentiPage: React.FC = () => {
       }
       return true;
     });
+    out.sort((a, b) =>
+      ordina_per === "cognome"
+        ? `${a.cognome ?? ""} ${a.nome ?? ""}`.localeCompare(`${b.cognome ?? ""} ${b.nome ?? ""}`, "it")
+        : (b.created_at ?? "").localeCompare(a.created_at ?? ""),
+    );
+    return out;
+  }, [utenti, filtro_ruolo, solo_attivi, search, ordina_per]);
+
+  /** Righe nascoste dal filtro "solo attivi" (con gli altri filtri già applicati). */
+  const nascosti_disattivi = useMemo(() => {
+    if (!solo_attivi) return 0;
+    return (utenti ?? []).filter((u) => {
+      if (u.attivo) return false;
+      if (filtro_ruolo !== "tutti" && u.ruolo !== filtro_ruolo) return false;
+      if (search.trim()) {
+        const q = search.trim().toLowerCase();
+        const blob = `${u.nome ?? ""} ${u.cognome ?? ""} ${u.email ?? ""}`.toLowerCase();
+        if (!blob.includes(q)) return false;
+      }
+      return true;
+    }).length;
   }, [utenti, filtro_ruolo, solo_attivi, search]);
 
   if (!session) return null;
