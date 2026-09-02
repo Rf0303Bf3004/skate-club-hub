@@ -7886,6 +7886,15 @@ export type Database = {
         }[]
       }
       club_partecipa_a_campo: { Args: { p_campo: string }; Returns: boolean }
+      club_presentabile: {
+        Args: { p_club?: string }
+        Returns: {
+          ambito: string
+          dettaglio: string
+          esito: string
+          quanti: number
+        }[]
+      }
       controlla_saturazione_corsi: { Args: never; Returns: number }
       controlli_conformita: {
         Args: never

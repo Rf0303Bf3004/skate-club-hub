@@ -554,8 +554,8 @@ const SezioneChiPartecipa: React.FC<{ campo: EventoCampoInterClub; is_ospitante:
   }, [partecipanti]);
 
   const nostri_iscritti = useMemo(
-    () => iscrizioni.filter((i) => !i.atleta?.ospite_di_campo_id && i.club_id === campo.club_id),
-    [iscrizioni, campo.club_id],
+    () => iscrizioni.filter((i) => !i.atleta?.ospite_di_campo_id && i.club_id === club_id),
+    [iscrizioni, club_id],
   );
 
   const iscritti_di = (p: CampoClubPartecipante) => {

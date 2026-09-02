@@ -1,0 +1,12 @@
+GRANT EXECUTE ON FUNCTION public.puo_gestire_sportivo() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.puo_comunicare() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.puo_configurare_club() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.puo_pianificare() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.puo_gestire_fatture(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.ruolo_in(text[]) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.puo_gestire_sportivo() TO anon;
+GRANT EXECUTE ON FUNCTION public.puo_comunicare() TO anon;
+GRANT EXECUTE ON FUNCTION public.puo_configurare_club() TO anon;
+GRANT EXECUTE ON FUNCTION public.puo_pianificare() TO anon;
+GRANT EXECUTE ON FUNCTION public.puo_gestire_fatture(uuid) TO anon;
+GRANT EXECUTE ON FUNCTION public.ruolo_in(text[]) TO anon;
