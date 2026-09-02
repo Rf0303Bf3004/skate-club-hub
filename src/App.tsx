@@ -338,8 +338,8 @@ const AuthenticatedApp = () => {
           />
           <Route path="/gestione-avanzata" element={<SezioneGuard codice_sezione="gestione_avanzata"><AdvancedManagementPage /></SezioneGuard>} />
           <Route path="/richieste-iscrizione" element={<SezioneGuard codice_sezione="richieste_iscrizione"><RichiesteIscrizionePage /></SezioneGuard>} />
-          <Route path="/ruoli-permessi" element={<SezioneGuard codice_sezione="ruoli_permessi"><RuoliPermessiPage /></SezioneGuard>} />
-          <Route path="/utenti" element={<SezioneGuard codice_sezione="gestione_utenti"><UtentiPage /></SezioneGuard>} />
+          <Route path="/ruoli-permessi" element={<SoloPresidenteGuard><SezioneGuard codice_sezione="ruoli_permessi"><RuoliPermessiPage /></SezioneGuard></SoloPresidenteGuard>} />
+          <Route path="/utenti" element={<SoloPresidenteGuard><SezioneGuard codice_sezione="gestione_utenti"><UtentiPage /></SezioneGuard></SoloPresidenteGuard>} />
           <Route path="/nuova-stagione" element={<SezioneGuard codice_sezione="stagioni"><NuovaStagionePage /></SezioneGuard>} />
           <Route path="/test-mobile-auth" element={<ProtectedSuperAdmin><TestMobileAuthPage /></ProtectedSuperAdmin>} />
           <Route path="/import-atleti" element={<SezioneGuard codice_sezione="import_dati"><ImportAtletiPage /></SezioneGuard>} />

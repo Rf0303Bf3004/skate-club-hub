@@ -38,7 +38,8 @@ const RuoliPermessiPage: React.FC = () => {
   const [saving, set_saving] = useState(false);
   const [matrix, set_matrix] = useState<Record<string, Record<string, boolean>>>({});
 
-  const puo_gestire_ruoli = is_admin_like(session?.ruolo) || session?.ruolo === "presidente";
+  // Allineato al database: scrittura su ruoli_permessi_sezioni solo per superadmin e presidente.
+  const puo_gestire_ruoli = session?.ruolo === "superadmin" || session?.ruolo === "presidente";
   if (session && !puo_gestire_ruoli) {
     return <Navigate to="/" replace />;
   }
