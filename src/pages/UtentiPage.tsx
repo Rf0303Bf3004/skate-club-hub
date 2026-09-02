@@ -466,7 +466,7 @@ const UtentiPage: React.FC = () => {
                       <ArrowUpDown className={`w-3 h-3 ${ordina_per === "recenti" ? "text-primary" : "opacity-50"}`} />
                     </button>
                   </TableHead>
-                  <TableHead className="text-center">{t("users.table.attivo")}</TableHead>
+                  <TableHead className="text-center">{t("users.table.accesso_attivo", { defaultValue: "Accesso attivo" })}</TableHead>
                   <TableHead className="text-right">{t("users.table.azioni")}</TableHead>
                 </TableRow>
               </TableHeader>
@@ -669,12 +669,14 @@ const UtentiPage: React.FC = () => {
                 />
               )}
               {confirm_state?.type === "toggle" && confirm_state.user.attivo && (
-                <Trans
-                  i18nKey="users.confirm.deactivate_description"
-                  ns="settings"
-                  values={{ nome: `${confirm_state.user.nome ?? ""} ${confirm_state.user.cognome ?? ""}`.trim() }}
-                  components={{ strong: <strong /> }}
-                />
+                <>
+                  <p>
+                    Stai per disattivare <strong>{`${confirm_state.user.nome ?? ""} ${confirm_state.user.cognome ?? ""}`.trim()}</strong>.
+                  </p>
+                  <p className="mt-2">
+                    Non potrà più entrare nel portale. I suoi dati e il suo storico restano.
+                  </p>
+                </>
               )}
               {confirm_state?.type === "toggle" && !confirm_state.user.attivo && (
                 <Trans
