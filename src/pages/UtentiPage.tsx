@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
-import { Users, Plus, Pencil, KeyRound, Power, Copy, Search } from "lucide-react";
+import { Users, Plus, Pencil, KeyRound, Power, Copy, Search, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -99,6 +99,8 @@ const UtentiPage: React.FC = () => {
   const [filtro_ruolo, set_filtro_ruolo] = useState<string>("tutti");
   const [solo_attivi, set_solo_attivi] = useState(true);
   const [search, set_search] = useState("");
+  const [ordina_per, set_ordina_per] = useState<"recenti" | "cognome">("recenti");
+  const [evidenzia_user_id, set_evidenzia_user_id] = useState<string | null>(null);
 
   const [dialog_open, set_dialog_open] = useState(false);
   const [edit_user, set_edit_user] = useState<UtenteRow | null>(null);
@@ -117,40 +119,49 @@ const UtentiPage: React.FC = () => {
   } | null>(null);
 
 
-  const { data: utenti = [], isLoading } = useQuery({
+  const { data: risultato, isLoading } = useQuery({
     queryKey: ["utenti_club_admin", club_id],
-    queryFn: async () => {
-      if (!club_id) return [];
+    queryFn: async (): Promise<{ rows: UtenteRow[]; auth_info_ko: boolean }> => {
+      if (!club_id) return { rows: [], auth_info_ko: false };
       const { data, error } = await supabase
         .from("utenti_club")
         .select("*")
         .eq("club_id", club_id)
-        .order("cognome", { ascending: true });
+        .order("created_at", { ascending: false });
       if (error) throw error;
       const rows = (data ?? []) as UtenteRow[];
       const user_ids = rows.map((r) => r.user_id).filter(Boolean);
-      if (user_ids.length === 0) return rows;
+      if (user_ids.length === 0) return { rows, auth_info_ko: false };
       try {
         const { data: sess_data } = await supabase.auth.getSession();
         const r = await supabase.functions.invoke("manage-user", {
           body: { action: "list_auth_info", club_id, user_ids },
           headers: sess_data.session ? { Authorization: `Bearer ${sess_data.session.access_token}` } : {},
         });
-        const map = (r.data as any)?.users ?? {};
-        return rows.map((row) => ({
-          ...row,
-          email: map[row.user_id]?.email ?? undefined,
-          last_sign_in_at: map[row.user_id]?.last_sign_in_at ?? null,
-        }));
-      } catch {
-        return rows;
+        if (r.error) throw new Error(r.error.message);
+        const map = (r.data as any)?.users;
+        if (!map) throw new Error("risposta senza utenti");
+        return {
+          rows: rows.map((row) => ({
+            ...row,
+            email: map[row.user_id]?.email ?? undefined,
+            last_sign_in_at: map[row.user_id]?.last_sign_in_at ?? null,
+          })),
+          auth_info_ko: false,
+        };
+      } catch (e) {
+        console.error("[utenti] list_auth_info non riuscito", e);
+        return { rows, auth_info_ko: true };
       }
     },
     enabled: !!club_id && !!allowed,
   });
 
+  const utenti = risultato?.rows ?? [];
+  const auth_info_ko = !!risultato?.auth_info_ko;
+
   const filtered = useMemo(() => {
-    return (utenti ?? []).filter((u) => {
+    const out = (utenti ?? []).filter((u) => {
       if (filtro_ruolo !== "tutti" && u.ruolo !== filtro_ruolo) return false;
       if (solo_attivi && !u.attivo) return false;
       if (search.trim()) {
@@ -160,6 +171,27 @@ const UtentiPage: React.FC = () => {
       }
       return true;
     });
+    out.sort((a, b) =>
+      ordina_per === "cognome"
+        ? `${a.cognome ?? ""} ${a.nome ?? ""}`.localeCompare(`${b.cognome ?? ""} ${b.nome ?? ""}`, "it")
+        : (b.created_at ?? "").localeCompare(a.created_at ?? ""),
+    );
+    return out;
+  }, [utenti, filtro_ruolo, solo_attivi, search, ordina_per]);
+
+  /** Righe nascoste dal filtro "solo attivi" (con gli altri filtri già applicati). */
+  const nascosti_disattivi = useMemo(() => {
+    if (!solo_attivi) return 0;
+    return (utenti ?? []).filter((u) => {
+      if (u.attivo) return false;
+      if (filtro_ruolo !== "tutti" && u.ruolo !== filtro_ruolo) return false;
+      if (search.trim()) {
+        const q = search.trim().toLowerCase();
+        const blob = `${u.nome ?? ""} ${u.cognome ?? ""} ${u.email ?? ""}`.toLowerCase();
+        if (!blob.includes(q)) return false;
+      }
+      return true;
+    }).length;
   }, [utenti, filtro_ruolo, solo_attivi, search]);
 
   if (!session) return null;
@@ -252,10 +284,20 @@ const UtentiPage: React.FC = () => {
         });
         if (r.error) throw new Error(r.error.message);
         if ((r.data as any)?.error) throw new Error((r.data as any).error);
-        toast.success(t("users.toast.created", { nome: form.nome, cognome: form.cognome, password: form.password }));
+        const nuovo_user_id = (r.data as any)?.user_id as string | undefined;
+        const ruolo_label = t(`users.role.${form.ruolo}`, { defaultValue: form.ruolo });
+        toast.success(
+          `${form.nome.trim()} ${form.cognome.trim()}: accesso creato come ${ruolo_label}. Lo trovi in cima all'elenco.`,
+        );
+        if (nuovo_user_id) {
+          set_ordina_per("recenti");
+          set_search("");
+          set_filtro_ruolo("tutti");
+          set_evidenzia_user_id(nuovo_user_id);
+          setTimeout(() => set_evidenzia_user_id((v) => (v === nuovo_user_id ? null : v)), 6000);
+        }
 
         // Se il ruolo è di pista, proponi il collegamento alla scheda istruttore omonima non collegata
-        const nuovo_user_id = (r.data as any)?.user_id as string | undefined;
         if (nuovo_user_id && ["istruttore", "aiuto_monitore"].includes(form.ruolo)) {
           const { data: schede } = await supabase
             .from("istruttori")
@@ -362,8 +404,21 @@ const UtentiPage: React.FC = () => {
         <div className="flex items-center gap-2">
           <Switch checked={solo_attivi} onCheckedChange={set_solo_attivi} id="solo-attivi" />
           <Label htmlFor="solo-attivi" className="text-sm">{t("users.only_active")}</Label>
+          {nascosti_disattivi > 0 && (
+            <span className="text-xs text-amber-700">
+              {nascosti_disattivi === 1
+                ? "1 utente disattivato nascosto"
+                : `${nascosti_disattivi} utenti disattivati nascosti`}
+            </span>
+          )}
         </div>
       </div>
+
+      {auth_info_ko && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          Non riesco a leggere email e ultimo accesso degli utenti: i campi restano vuoti.
+        </div>
+      )}
 
       {isLoading ? (
         <div className="flex items-center justify-center h-64">
@@ -377,11 +432,31 @@ const UtentiPage: React.FC = () => {
               <TableHeader>
                 <TableRow className="bg-muted/30">
                   <TableHead>{t("users.table.nome")}</TableHead>
-                  <TableHead>{t("users.table.cognome")}</TableHead>
+                  <TableHead>
+                    <button
+                      type="button"
+                      onClick={() => set_ordina_per(ordina_per === "cognome" ? "recenti" : "cognome")}
+                      className="inline-flex items-center gap-1 hover:text-foreground"
+                      title="Ordina per cognome"
+                    >
+                      {t("users.table.cognome")}
+                      <ArrowUpDown className={`w-3 h-3 ${ordina_per === "cognome" ? "text-primary" : "opacity-50"}`} />
+                    </button>
+                  </TableHead>
                   <TableHead>{t("users.table.email")}</TableHead>
                   <TableHead>{t("users.table.telefono")}</TableHead>
                   <TableHead>{t("users.table.ruolo")}</TableHead>
-                  <TableHead>{t("users.table.last_access")}</TableHead>
+                  <TableHead>
+                    <button
+                      type="button"
+                      onClick={() => set_ordina_per("recenti")}
+                      className="inline-flex items-center gap-1 hover:text-foreground"
+                      title="Ordina dai più recenti"
+                    >
+                      {t("users.table.last_access")}
+                      <ArrowUpDown className={`w-3 h-3 ${ordina_per === "recenti" ? "text-primary" : "opacity-50"}`} />
+                    </button>
+                  </TableHead>
                   <TableHead className="text-center">{t("users.table.attivo")}</TableHead>
                   <TableHead className="text-right">{t("users.table.azioni")}</TableHead>
                 </TableRow>
@@ -395,7 +470,19 @@ const UtentiPage: React.FC = () => {
                   </TableRow>
                 )}
                 {filtered.map((u) => (
-                  <TableRow key={u.id}>
+                  <TableRow
+                    key={u.id}
+                    ref={
+                      u.user_id === evidenzia_user_id
+                        ? (el) => el?.scrollIntoView({ block: "center", behavior: "smooth" })
+                        : undefined
+                    }
+                    className={
+                      u.user_id === evidenzia_user_id
+                        ? "bg-amber-100 ring-2 ring-amber-400 transition-colors"
+                        : ""
+                    }
+                  >
                     <TableCell className="font-medium">{u.nome}</TableCell>
                     <TableCell className="font-medium">{u.cognome}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{u.email ?? "—"}</TableCell>
