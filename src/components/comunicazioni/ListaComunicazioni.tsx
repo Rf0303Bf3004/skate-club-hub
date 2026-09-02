@@ -30,6 +30,8 @@ type Props = {
   can_manage?: boolean;
   /** Nome leggibile dell'atleta destinatario della singola riga. */
   nome_atleta?: (id: string | null) => string;
+  /** Elenco annidato: nasconde barra filtri e intestazioni temporali. */
+  compatto?: boolean;
 };
 
 function get_ts(c: any) {
@@ -56,8 +58,49 @@ function bucket_of(ts: number) {
 
 const BUCKET_ORDER = ['Oggi', 'Questa settimana', 'Questo mese', 'Precedenti'];
 
-/** Elenco destinatari di un invio, con stato di lettura e risposta. */
-const ElencoDestinatari: React.FC<{
+/**
+ * Conteggio dei destinatari veri per le comunicazioni che NON sono invii ad atleti:
+ * per lo staff si contano le righe di `comunicazioni_destinatari_staff`, per le altre
+ * quelle di `comunicazioni_destinatari`.
+ */
+function use_conteggi_destinatari(gruppi: GruppoComunicazioni[]) {
+  const ids_staff = gruppi.filter((g) => g.natura === 'staff').map((g) => g.capofila.id);
+  const ids_altro = gruppi.filter((g) => g.natura === 'altro').map((g) => g.capofila.id);
+  const key = [...ids_staff, ...ids_altro].sort().join(',');
+
+  return useQuery({
+    queryKey: ['comunicazioni_conteggi_destinatari', key],
+    enabled: key.length > 0,
+    queryFn: async () => {
+      const mappa: Record<string, number> = {};
+      const conta = (righe: any[] | null) => {
+        (righe ?? []).forEach((r: any) => {
+          mappa[r.comunicazione_id] = (mappa[r.comunicazione_id] ?? 0) + 1;
+        });
+      };
+      if (ids_staff.length) {
+        const { data, error } = await supabase
+          .from('comunicazioni_destinatari_staff')
+          .select('comunicazione_id')
+          .in('comunicazione_id', ids_staff);
+        if (error) throw error;
+        conta(data);
+      }
+      if (ids_altro.length) {
+        const { data, error } = await supabase
+          .from('comunicazioni_destinatari')
+          .select('comunicazione_id')
+          .in('comunicazione_id', ids_altro);
+        if (error) throw error;
+        conta(data);
+      }
+      return mappa;
+    },
+  });
+}
+
+/** Elenco destinatari di un invio ad atleti, con stato di lettura e risposta. */
+const ElencoDestinatariAtleti: React.FC<{
   gruppo: GruppoComunicazioni;
   nome_atleta?: (id: string | null) => string;
 }> = ({ gruppo, nome_atleta }) => {
@@ -113,6 +156,54 @@ const ElencoDestinatari: React.FC<{
   );
 };
 
+/** Elenco dello staff che ha ricevuto una singola notifica. */
+const ElencoDestinatariStaff: React.FC<{ comunicazione_id: string }> = ({ comunicazione_id }) => {
+  const { data: righe = [] } = useQuery({
+    queryKey: ['comunicazioni_destinatari_staff', comunicazione_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('comunicazioni_destinatari_staff')
+        .select('id, user_id, letto_at')
+        .eq('comunicazione_id', comunicazione_id);
+      if (error) throw error;
+      const user_ids = Array.from(new Set((data ?? []).map((d: any) => d.user_id).filter(Boolean)));
+      let nomi: Record<string, string> = {};
+      if (user_ids.length) {
+        const { data: utenti } = await supabase
+          .from('utenti_club')
+          .select('user_id, nome, cognome')
+          .in('user_id', user_ids);
+        nomi = Object.fromEntries(
+          (utenti ?? []).map((u: any) => [u.user_id, `${u.cognome ?? ''} ${u.nome ?? ''}`.trim()]),
+        );
+      }
+      return (data ?? [])
+        .map((d: any) => ({
+          id: d.id,
+          nome: nomi[d.user_id] || (d.user_id ? d.user_id.slice(0, 8) : 'Membro dello staff'),
+          letto: !!d.letto_at,
+        }))
+        .sort((a, b) => a.nome.localeCompare(b.nome, 'it'));
+    },
+  });
+
+  return (
+    <div className="border-t border-border bg-muted/20 px-4 py-3 max-h-80 overflow-y-auto space-y-1">
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+        Istruttori avvisati ({righe.length})
+      </p>
+      {righe.map((r) => (
+        <div key={r.id} className="flex items-center justify-between gap-3 text-sm py-1 border-b border-border/40 last:border-0">
+          <span className="text-foreground truncate">{r.nome}</span>
+          <span className="text-xs shrink-0">
+            {r.letto ? <span className="text-muted-foreground">letto</span> : <span className="text-warning">non letto</span>}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 export const ListaComunicazioni: React.FC<Props> = ({
   items,
   mode,
@@ -124,6 +215,7 @@ export const ListaComunicazioni: React.FC<Props> = ({
   stagioni = [],
   can_manage = true,
   nome_atleta,
+  compatto = false,
 }) => {
   const qc = useQueryClient();
   const [search, set_search] = useState('');
@@ -174,15 +266,17 @@ export const ListaComunicazioni: React.FC<Props> = ({
   // ("Carica altre") lavora poi sui gruppi, così nessun invio resta spezzato.
   const gruppi = useMemo(() => raggruppa_comunicazioni(filtered), [filtered]);
   const visible = gruppi.slice(0, limit);
+  const { data: conteggi = {} } = use_conteggi_destinatari(visible);
 
   const grouped = useMemo(() => {
     const map: Record<string, GruppoComunicazioni[]> = {};
     visible.forEach((g) => {
-      const b = bucket_of(get_ts(g.capofila));
+      const b = compatto ? 'tutto' : bucket_of(get_ts(g.capofila));
       (map[b] ||= []).push(g);
     });
+    if (compatto) return map['tutto'] ? [{ bucket: 'tutto', rows: map['tutto'] }] : [];
     return BUCKET_ORDER.filter((b) => map[b]?.length).map((b) => ({ bucket: b, rows: map[b] }));
-  }, [visible]);
+  }, [visible, compatto]);
 
   const toggle_select_gruppo = (g: GruppoComunicazioni) => {
     set_selected((prev) => {
@@ -219,6 +313,7 @@ export const ListaComunicazioni: React.FC<Props> = ({
   return (
     <div className="space-y-4">
       {/* Barra filtri */}
+      {!compatto && (
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -282,6 +377,7 @@ export const ListaComunicazioni: React.FC<Props> = ({
           <AlertTriangle className="w-4 h-4" /> Urgenti
         </Button>
       </div>
+      )}
 
       {/* Azioni multiple */}
       {can_manage && selected.length > 0 && (
@@ -315,14 +411,21 @@ export const ListaComunicazioni: React.FC<Props> = ({
         <div className="space-y-6">
           {grouped.map(({ bucket, rows }) => (
             <div key={bucket} className="space-y-3">
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                {bucket} <span className="font-normal">({rows.length})</span>
-              </p>
+              {!compatto && (
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                  {bucket} <span className="font-normal">({rows.length})</span>
+                </p>
+              )}
               {rows.map((g) => {
                 const c = g.capofila;
                 const unread = highlight_unread && g.righe.every((r: any) => !r.letta);
                 const is_sel = g.ids.every((id) => selected.includes(id));
                 const is_open = aperto === g.key;
+                const n_reali = conteggi[c.id];
+                const espandibile = g.natura === 'atleti' ? !g.singola : (n_reali ?? 0) > 0;
+                const etichetta = g.natura === 'atleti'
+                  ? (g.singola ? get_destinatari_label(c) : etichetta_destinatari_gruppo(g))
+                  : (etichetta_destinatari_gruppo(g, n_reali) || get_destinatari_label(c));
                 return (
                   <div
                     key={g.key}
@@ -351,7 +454,7 @@ export const ListaComunicazioni: React.FC<Props> = ({
                         <div className="flex items-start justify-between gap-4">
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              {!g.singola && (is_open
+                              {espandibile && (is_open
                                 ? <ChevronDown className="w-4 h-4 text-muted-foreground" />
                                 : <ChevronRight className="w-4 h-4 text-muted-foreground" />)}
                               {c.urgente && (
@@ -361,9 +464,12 @@ export const ListaComunicazioni: React.FC<Props> = ({
                               )}
                               {unread && <Badge variant="destructive" className="text-[10px]">NUOVO</Badge>}
                               <h3 className="font-semibold text-foreground">{c.titolo}</h3>
+                              {g.natura === 'staff' && nome_atleta?.(c.atleta_id) && (
+                                <span className="text-sm text-muted-foreground">— {nome_atleta(c.atleta_id)}</span>
+                              )}
                             </div>
                             <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{c.testo}</p>
-                            {g.testo_personalizzato && (
+                            {g.natura === 'atleti' && g.testo_personalizzato && (
                               <p className="text-[11px] text-muted-foreground/80 mt-1 italic">
                                 il testo è personalizzato per ciascun destinatario
                               </p>
@@ -374,13 +480,8 @@ export const ListaComunicazioni: React.FC<Props> = ({
                               {get_data_label(c)} {ora_label(c)}
                             </p>
                             <Badge variant="secondary" className="text-xs mt-1 gap-1">
-                              {g.singola ? (
-                                get_destinatari_label(c)
-                              ) : (
-                                <>
-                                  <Users className="w-3 h-3" /> {etichetta_destinatari_gruppo(g)}
-                                </>
-                              )}
+                              {g.natura !== 'atleti' || !g.singola ? <Users className="w-3 h-3" /> : null}
+                              {etichetta}
                             </Badge>
                           </div>
                         </div>
@@ -397,7 +498,13 @@ export const ListaComunicazioni: React.FC<Props> = ({
                         </Button>
                       )}
                     </div>
-                    {is_open && !g.singola && <ElencoDestinatari gruppo={g} nome_atleta={nome_atleta} />}
+                    {is_open && espandibile && (
+                      g.natura === 'atleti'
+                        ? <ElencoDestinatariAtleti gruppo={g} nome_atleta={nome_atleta} />
+                        : g.natura === 'staff'
+                          ? <ElencoDestinatariStaff comunicazione_id={c.id} />
+                          : null
+                    )}
                   </div>
                 );
               })}
