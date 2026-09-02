@@ -1761,9 +1761,41 @@ const InstructorsPage: React.FC = () => {
             </TabsList>
 
             <TabsContent value="info" className="mt-6 space-y-6">
+              {(() => {
+                const mail_accesso = selected.user_id ? email_accessi?.get(selected.user_id) : null;
+                const ha_accesso = !!selected.user_id;
+                return (
+                  <div
+                    className={`max-w-lg rounded-xl border px-4 py-3 flex items-center justify-between gap-3 ${
+                      ha_accesso
+                        ? "border-border bg-card"
+                        : "border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700"
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                        Accesso al portale
+                      </p>
+                      {ha_accesso ? (
+                        <p className="text-sm text-foreground truncate">{mail_accesso || "collegato"}</p>
+                      ) : (
+                        <p className="text-sm text-amber-900 dark:text-amber-100">
+                          Nessun accesso — l'istruttore non riceverà i turni né le comunicazioni
+                        </p>
+                      )}
+                    </div>
+                    {!ha_accesso && puo_gestire_sportivo && (
+                      <Button size="sm" onClick={() => set_accesso_target(selected)} className="flex-shrink-0">
+                        <ShieldCheck className="w-3.5 h-3.5 mr-1.5" /> Crea accesso
+                      </Button>
+                    )}
+                  </div>
+                );
+              })()}
               <div className="max-w-lg">
                 <CodiceIstruttoreCard istruttore={selected} />
               </div>
+
               <div className="bg-card rounded-xl shadow-card p-6 space-y-3 max-w-lg">
                 {[
                   { label: t("email"), value: selected.email },
