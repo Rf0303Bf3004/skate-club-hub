@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
-import { Users, Plus, Pencil, KeyRound, Power, Copy, Search, ArrowUpDown } from "lucide-react";
+import { Users, Plus, Pencil, KeyRound, Copy, Search, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -114,6 +114,7 @@ const UtentiPage: React.FC = () => {
   const [confirm_state, set_confirm_state] = useState<{
     type: "toggle" | "reset"; user: UtenteRow;
   } | null>(null);
+  const [toggling_user_id, set_toggling_user_id] = useState<string | null>(null);
   const [pwd_dialog, set_pwd_dialog] = useState<{ password: string; nome: string } | null>(null);
   const [link_proposta, set_link_proposta] = useState<{
     istruttore_id: string; nome: string; user_id: string;
@@ -330,6 +331,12 @@ const UtentiPage: React.FC = () => {
   };
 
   const do_toggle_attivo = async (u: UtenteRow) => {
+    if (u.user_id === session?.user_id) {
+      toast.error("Non puoi disattivare il tuo stesso accesso.");
+      set_confirm_state(null);
+      return;
+    }
+    set_toggling_user_id(u.user_id);
     try {
       const { error } = await supabase
         .from("utenti_club")
@@ -341,6 +348,7 @@ const UtentiPage: React.FC = () => {
     } catch (e: any) {
       toast.error(e?.message || t("users.toast.generic_error"));
     } finally {
+      set_toggling_user_id(null);
       set_confirm_state(null);
     }
   };
