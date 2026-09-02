@@ -93,7 +93,8 @@ const UtentiPage: React.FC = () => {
   const RUOLI_BASE = useMemo(() => build_ruoli_base(t), [t]);
   const RUOLI_ESTESI = useMemo(() => build_ruoli_estesi(t), [t]);
 
-  const allowed = session && ["superadmin", "admin", "presidente"].includes(session.ruolo);
+  // Gestione utenti riservata a superadmin e presidente, come nelle regole del database.
+  const allowed = session && ["superadmin", "presidente"].includes(session.ruolo);
   const club_id = session?.club_id;
 
   const [filtro_ruolo, set_filtro_ruolo] = useState<string>("tutti");

@@ -8,7 +8,7 @@ import { Shield, Save, Clock, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DashboardCardsPermessi from "@/components/ruoli-permessi/DashboardCardsPermessi";
 import { MENU_SECTIONS } from "@/config/menuSections";
-import { is_admin_like } from "@/lib/roles";
+
 import { useTranslation } from "react-i18next";
 
 const RUOLI = [
@@ -38,7 +38,8 @@ const RuoliPermessiPage: React.FC = () => {
   const [saving, set_saving] = useState(false);
   const [matrix, set_matrix] = useState<Record<string, Record<string, boolean>>>({});
 
-  const puo_gestire_ruoli = is_admin_like(session?.ruolo) || session?.ruolo === "presidente";
+  // Allineato al database: scrittura su ruoli_permessi_sezioni solo per superadmin e presidente.
+  const puo_gestire_ruoli = session?.ruolo === "superadmin" || session?.ruolo === "presidente";
   if (session && !puo_gestire_ruoli) {
     return <Navigate to="/" replace />;
   }
