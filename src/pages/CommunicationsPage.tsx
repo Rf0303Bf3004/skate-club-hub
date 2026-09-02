@@ -23,10 +23,12 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ConversazioniTab } from '@/components/comunicazioni/ConversazioniTab';
 import { MieiReminderStaffTab } from '@/components/comunicazioni/MieiReminderStaffTab';
 import { ListaComunicazioni } from '@/components/comunicazioni/ListaComunicazioni';
-import { Bell } from 'lucide-react';
+import { Bell, Bot } from 'lucide-react';
 import { usePermessiAzione } from '@/hooks/use-permessi-azione';
 import NotaPermesso from '@/components/common/NotaPermesso';
-import { conta_gruppi } from '@/lib/raggruppa-comunicazioni';
+import { conta_gruppi, is_automatica } from '@/lib/raggruppa-comunicazioni';
+import { AutomaticheTab } from '@/components/comunicazioni/AutomaticheTab';
+
 
 function build_templates(t: (key: string) => string) {
   return [
@@ -521,12 +523,27 @@ const CommunicationsPage: React.FC = () => {
       .sort((a: any, b: any) => `${a.cognome} ${a.nome}`.localeCompare(`${b.cognome} ${b.nome}`, 'it'));
   }, [atleti, atleta_search]);
 
-  const non_lette_count = conta_gruppi(ricevute.filter((c: any) => !c.letta));
+  
+
+  // "Scritte da noi" vs "Automatiche": chi apre le comunicazioni per scrivere
+  // non deve attraversare centinaia di avvisi generati dal sistema. Gli avvisi
+  // automatici confluiscono tutti nel tab dedicato, inviati o ricevuti che siano.
+  const inviate_manuali = useMemo(() => inviate.filter((c: any) => !is_automatica(c)), [inviate]);
+  const ricevute_manuali = useMemo(() => ricevute.filter((c: any) => !is_automatica(c)), [ricevute]);
+  const automatiche = useMemo(
+    () => [...inviate, ...ricevute].filter((c: any) => is_automatica(c)),
+    [inviate, ricevute],
+  );
 
   // I contatori dei tab contano gli invii (gruppi), non le singole righe.
-  const inviate_count = useMemo(() => conta_gruppi(inviate), [inviate]);
-  const ricevute_count = useMemo(() => conta_gruppi(ricevute), [ricevute]);
+  const inviate_count = useMemo(() => conta_gruppi(inviate_manuali), [inviate_manuali]);
+  const automatiche_count = useMemo(() => conta_gruppi(automatiche), [automatiche]);
+  const ricevute_count = useMemo(() => conta_gruppi(ricevute_manuali), [ricevute_manuali]);
   const archivio_count = useMemo(() => conta_gruppi(archivio), [archivio]);
+  const non_lette_count = useMemo(() => conta_gruppi(ricevute_manuali.filter((c: any) => !c.letta)), [ricevute_manuali]);
+
+
+
 
   const nome_atleta = React.useCallback(
     (id: string | null) => {
@@ -599,11 +616,15 @@ const CommunicationsPage: React.FC = () => {
         <NotaPermesso testo="Solo lo staff di segreteria e direzione può creare, inviare o modificare comunicazioni. Puoi comunque leggerle e gestire i tuoi reminder." />
       )}
 
-      <Tabs defaultValue={non_lette_count > 0 ? 'ricevute' : 'inviate'} className="w-full">
+      <Tabs defaultValue="inviate" className="w-full">
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="inviate" className="gap-2">
-            <Send className="w-4 h-4" /> {t('tabs.sent_emoji')}
+            <Send className="w-4 h-4" /> Scritte da noi
             <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">{inviate_count}</Badge>
+          </TabsTrigger>
+          <TabsTrigger value="automatiche" className="gap-2">
+            <Bot className="w-4 h-4" /> Automatiche
+            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">{automatiche_count}</Badge>
           </TabsTrigger>
           <TabsTrigger value="ricevute" className="gap-2">
             <Inbox className="w-4 h-4" /> {t('tabs.received_emoji')}
@@ -632,7 +653,7 @@ const CommunicationsPage: React.FC = () => {
 
         <TabsContent value="inviate" className="mt-4">
           <ListaComunicazioni
-            items={inviate}
+            items={inviate_manuali}
             mode="attive"
             get_destinatari_label={get_destinatari_label}
             get_data_label={get_data_label}
@@ -642,9 +663,20 @@ const CommunicationsPage: React.FC = () => {
           />
         </TabsContent>
 
+        <TabsContent value="automatiche" className="mt-4">
+          <AutomaticheTab
+            items={automatiche}
+            get_destinatari_label={get_destinatari_label}
+            get_data_label={get_data_label}
+            can_manage={puo_comunicare}
+            nome_atleta={nome_atleta}
+          />
+        </TabsContent>
+
+
         <TabsContent value="ricevute" className="mt-4">
           <ListaComunicazioni
-            items={ricevute}
+            items={ricevute_manuali}
             mode="attive"
             highlight_unread
             get_destinatari_label={get_destinatari_label}
