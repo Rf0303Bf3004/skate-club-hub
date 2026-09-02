@@ -8382,6 +8382,10 @@ export type Database = {
           voce: string
         }[]
       }
+      ruoli_avviso_staff: {
+        Args: { p_sotto_tipo: string; p_tipo: string }
+        Returns: string[]
+      }
       ruoli_che_approvano_iscrizioni: {
         Args: { p_club: string }
         Returns: string[]
