@@ -253,6 +253,29 @@ const UtentiPage: React.FC = () => {
         if (r.error) throw new Error(r.error.message);
         if ((r.data as any)?.error) throw new Error((r.data as any).error);
         toast.success(t("users.toast.created", { nome: form.nome, cognome: form.cognome, password: form.password }));
+
+        // Se il ruolo è di pista, proponi il collegamento alla scheda istruttore omonima non collegata
+        const nuovo_user_id = (r.data as any)?.user_id as string | undefined;
+        if (nuovo_user_id && ["istruttore", "aiuto_monitore"].includes(form.ruolo)) {
+          const { data: schede } = await supabase
+            .from("istruttori")
+            .select("id, nome, cognome, user_id")
+            .eq("club_id", club_id)
+            .is("user_id", null);
+          const match = (schede ?? []).find(
+            (s: any) =>
+              (s.nome ?? "").trim().toLowerCase() === form.nome.trim().toLowerCase() &&
+              (s.cognome ?? "").trim().toLowerCase() === form.cognome.trim().toLowerCase(),
+          );
+          if (match) {
+            set_link_proposta({
+              istruttore_id: match.id,
+              nome: `${match.nome ?? ""} ${match.cognome ?? ""}`.trim(),
+              user_id: nuovo_user_id,
+            });
+          }
+        }
+
       }
       set_dialog_open(false);
       qc.invalidateQueries({ queryKey: ["utenti_club_admin", club_id] });
