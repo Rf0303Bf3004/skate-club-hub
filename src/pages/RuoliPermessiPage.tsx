@@ -8,7 +8,7 @@ import { Shield, Save, Clock, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DashboardCardsPermessi from "@/components/ruoli-permessi/DashboardCardsPermessi";
 import { MENU_SECTIONS } from "@/config/menuSections";
-import { is_admin_like } from "@/lib/roles";
+
 import { useTranslation } from "react-i18next";
 
 const RUOLI = [
