@@ -623,8 +623,42 @@ const UtentiPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Proposta di collegamento accesso ↔ scheda istruttore */}
+      <AlertDialog open={!!link_proposta} onOpenChange={(v) => !v && set_link_proposta(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Collego questo accesso alla scheda di {link_proposta?.nome}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esiste una scheda istruttore con lo stesso nome e cognome, ancora senza accesso. Se la collego, la
+              persona vedrà i suoi turni e riceverà le comunicazioni.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Non ora</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (!link_proposta) return;
+                const { error } = await supabase
+                  .from("istruttori")
+                  .update({ user_id: link_proposta.user_id })
+                  .eq("id", link_proposta.istruttore_id);
+                if (error) toast.error(error.message);
+                else {
+                  toast.success("Scheda collegata all'accesso");
+                  qc.invalidateQueries({ queryKey: ["istruttori"] });
+                }
+                set_link_proposta(null);
+              }}
+            >
+              Sì, collega
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
+
 
 export default UtentiPage;
