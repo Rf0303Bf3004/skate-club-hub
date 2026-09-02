@@ -1498,6 +1498,9 @@ const InstructorsPage: React.FC = () => {
   const [saving_contratto, set_saving_contratto] = useState(false);
   const [active_filter, set_active_filter] = useState<"tutti" | "istruttore" | "monitrice" | "aiuto_monitrice">("tutti");
   const [search_istruttori, set_search_istruttori] = useState("");
+  const [accesso_target, set_accesso_target] = useState<any>(null);
+  const { data: email_accessi } = use_email_utenti_club();
+
 
   // Lookup atleti by id per resolver dei linked_atleta_id
   const atleti_by_id = useMemo(() => {
