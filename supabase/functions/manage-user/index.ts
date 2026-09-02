@@ -142,6 +142,31 @@ Deno.serve(async (req) => {
       return json({ ok: true, users: result });
     }
 
+    if (action === "delete") {
+      const { user_id } = body;
+      if (!user_id) return json({ error: "missing_params" }, 400);
+      if (user_id === user.id) return json({ error: "cannot_delete_self" }, 400);
+      // verifica che user_id appartenga allo stesso club
+      const { data: target } = await admin
+        .from("utenti_club")
+        .select("id")
+        .eq("user_id", user_id)
+        .eq("club_id", club_id)
+        .maybeSingle();
+      if (!target) return json({ error: "not_found" }, 404);
+
+      const { error: del_row_err } = await admin
+        .from("utenti_club")
+        .delete()
+        .eq("user_id", user_id)
+        .eq("club_id", club_id);
+      if (del_row_err) return json({ error: del_row_err.message }, 500);
+
+      const { error: del_auth_err } = await admin.auth.admin.deleteUser(user_id);
+      if (del_auth_err) return json({ error: del_auth_err.message }, 500);
+      return json({ ok: true });
+    }
+
     return json({ error: "unknown_action" }, 400);
   } catch (e: any) {
     return json({ error: e?.message || "internal_error" }, 500);
