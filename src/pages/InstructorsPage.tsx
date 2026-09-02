@@ -1665,7 +1665,13 @@ const InstructorsPage: React.FC = () => {
   if (selected) {
     return (
       <>
+        <CreaAccessoDialog
+          open={!!accesso_target}
+          on_close={() => set_accesso_target(null)}
+          istruttore={accesso_target}
+        />
         {modal_open && (
+
           <IstruttoreModal
             key={selected_modal?.id || "nuovo"}
             istruttore={selected_modal}
