@@ -99,6 +99,8 @@ const UtentiPage: React.FC = () => {
   const [filtro_ruolo, set_filtro_ruolo] = useState<string>("tutti");
   const [solo_attivi, set_solo_attivi] = useState(true);
   const [search, set_search] = useState("");
+  const [ordina_per, set_ordina_per] = useState<"recenti" | "cognome">("recenti");
+  const [evidenzia_user_id, set_evidenzia_user_id] = useState<string | null>(null);
 
   const [dialog_open, set_dialog_open] = useState(false);
   const [edit_user, set_edit_user] = useState<UtenteRow | null>(null);
