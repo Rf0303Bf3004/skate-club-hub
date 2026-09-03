@@ -63,7 +63,14 @@ export const AutomaticheTab: React.FC<Props> = ({
       });
   }, [items]);
 
-  const [aperti, set_aperti] = useState<string[]>(() => (giorni[0] ? [giorni[0].giorno] : []));
+  const [aperti, set_aperti] = useState<string[]>(() => {
+    // I giorni con avvisi non letti restano aperti: non devono passare inosservati.
+    const con_non_letti = giorni
+      .filter((g) => g.righe.some((r: any) => r.categoria === 'ricevuta' && !r.letta))
+      .map((g) => g.giorno);
+    if (con_non_letti.length) return con_non_letti;
+    return giorni[0] ? [giorni[0].giorno] : [];
+  });
 
   if (items.length === 0) {
     return (
