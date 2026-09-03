@@ -39,6 +39,8 @@ export const AutomaticheTab: React.FC<Props> = ({
   get_data_label,
   can_manage,
   nome_atleta,
+  highlight_unread,
+  on_open,
 }) => {
   const giorni = useMemo(() => {
     const mappa = new Map<string, any[]>();
@@ -97,6 +99,8 @@ export const AutomaticheTab: React.FC<Props> = ({
                   items={g.righe}
                   mode="attive"
                   compatto
+                  highlight_unread={highlight_unread}
+                  on_open={on_open}
                   get_destinatari_label={get_destinatari_label}
                   get_data_label={get_data_label}
                   empty_text="Nessun avviso."
