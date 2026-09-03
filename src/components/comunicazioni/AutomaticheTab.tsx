@@ -12,6 +12,8 @@ type Props = {
   get_data_label: (c: any) => string;
   can_manage?: boolean;
   nome_atleta?: (id: string | null) => string;
+  highlight_unread?: boolean;
+  on_open?: (c: any) => void;
 };
 
 function giorno_di(c: any) {
@@ -37,6 +39,8 @@ export const AutomaticheTab: React.FC<Props> = ({
   get_data_label,
   can_manage,
   nome_atleta,
+  highlight_unread,
+  on_open,
 }) => {
   const giorni = useMemo(() => {
     const mappa = new Map<string, any[]>();
@@ -59,7 +63,14 @@ export const AutomaticheTab: React.FC<Props> = ({
       });
   }, [items]);
 
-  const [aperti, set_aperti] = useState<string[]>(() => (giorni[0] ? [giorni[0].giorno] : []));
+  const [aperti, set_aperti] = useState<string[]>(() => {
+    // I giorni con avvisi non letti restano aperti: non devono passare inosservati.
+    const con_non_letti = giorni
+      .filter((g) => g.righe.some((r: any) => r.categoria === 'ricevuta' && !r.letta))
+      .map((g) => g.giorno);
+    if (con_non_letti.length) return con_non_letti;
+    return giorni[0] ? [giorni[0].giorno] : [];
+  });
 
   if (items.length === 0) {
     return (
@@ -95,6 +106,8 @@ export const AutomaticheTab: React.FC<Props> = ({
                   items={g.righe}
                   mode="attive"
                   compatto
+                  highlight_unread={highlight_unread}
+                  on_open={on_open}
                   get_destinatari_label={get_destinatari_label}
                   get_data_label={get_data_label}
                   empty_text="Nessun avviso."

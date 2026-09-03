@@ -541,6 +541,13 @@ const CommunicationsPage: React.FC = () => {
   const ricevute_count = useMemo(() => conta_gruppi(ricevute_manuali), [ricevute_manuali]);
   const archivio_count = useMemo(() => conta_gruppi(archivio), [archivio]);
   const non_lette_count = useMemo(() => conta_gruppi(ricevute_manuali.filter((c: any) => !c.letta)), [ricevute_manuali]);
+  // Anche gli avvisi automatici ricevuti devono farsi notare: contatore sul tab e badge NUOVO.
+  const non_lette_automatiche_count = useMemo(
+    () => conta_gruppi(automatiche.filter((c: any) => c.categoria === 'ricevuta' && !c.letta)),
+    [automatiche],
+  );
+  const tab_iniziale =
+    non_lette_count > 0 ? 'ricevute' : non_lette_automatiche_count > 0 ? 'automatiche' : 'inviate';
 
 
 
@@ -616,7 +623,7 @@ const CommunicationsPage: React.FC = () => {
         <NotaPermesso testo="Solo lo staff di segreteria e direzione può creare, inviare o modificare comunicazioni. Puoi comunque leggerle e gestire i tuoi reminder." />
       )}
 
-      <Tabs defaultValue="inviate" className="w-full">
+      <Tabs defaultValue={tab_iniziale} className="w-full">
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="inviate" className="gap-2">
             <Send className="w-4 h-4" /> Scritte da noi
@@ -625,6 +632,9 @@ const CommunicationsPage: React.FC = () => {
           <TabsTrigger value="automatiche" className="gap-2">
             <Bot className="w-4 h-4" /> Automatiche
             <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">{automatiche_count}</Badge>
+            {non_lette_automatiche_count > 0 && (
+              <Badge variant="destructive" className="ml-1 h-5 min-w-5 px-1.5 text-[10px]">{t('tabs.unread_count', { count: non_lette_automatiche_count })}</Badge>
+            )}
           </TabsTrigger>
           <TabsTrigger value="ricevute" className="gap-2">
             <Inbox className="w-4 h-4" /> {t('tabs.received_emoji')}
@@ -666,6 +676,8 @@ const CommunicationsPage: React.FC = () => {
         <TabsContent value="automatiche" className="mt-4">
           <AutomaticheTab
             items={automatiche}
+            highlight_unread
+            on_open={(c: any) => { if (c.categoria === 'ricevuta' && !c.letta) void mark_letta(c.id); }}
             get_destinatari_label={get_destinatari_label}
             get_data_label={get_data_label}
             can_manage={puo_comunicare}

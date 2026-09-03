@@ -42,6 +42,9 @@ export const RUOLI_FATTURE: RuoloUtente[] = ["superadmin", "admin", "presidente"
 
 export const RUOLI_SOLO_PRESIDENTE: RuoloUtente[] = ["superadmin", "presidente"];
 
+/** Chi può creare accessi al portale: stessi ruoli accettati dalla funzione `manage-user`. */
+export const RUOLI_CREAZIONE_ACCESSI: RuoloUtente[] = ["superadmin", "admin", "presidente"];
+
 function has(ruoli: RuoloUtente[], ruolo?: string | null): boolean {
   return !!ruolo && (ruoli as string[]).includes(ruolo);
 }
@@ -64,6 +67,9 @@ export function puo_gestire_fatture(ruolo?: string | null) {
 export function solo_presidente(ruolo?: string | null) {
   return has(RUOLI_SOLO_PRESIDENTE, ruolo);
 }
+export function puo_creare_accessi(ruolo?: string | null) {
+  return has(RUOLI_CREAZIONE_ACCESSI, ruolo);
+}
 /** Equivalente di ruolo_in(array[...]) del database. */
 export function ruolo_in(ruoli: RuoloUtente[], ruolo?: string | null) {
   return has(ruoli, ruolo);
@@ -77,6 +83,7 @@ export interface PermessiAzione {
   puo_pianificare: boolean;
   puo_gestire_fatture: boolean;
   solo_presidente: boolean;
+  puo_creare_accessi: boolean;
   ruolo_in: (ruoli: RuoloUtente[]) => boolean;
 }
 
@@ -94,6 +101,7 @@ export function usePermessiAzione(): PermessiAzione {
       puo_pianificare: puo_pianificare(ruolo),
       puo_gestire_fatture: puo_gestire_fatture(ruolo),
       solo_presidente: solo_presidente(ruolo),
+      puo_creare_accessi: puo_creare_accessi(ruolo),
       ruolo_in: (ruoli: RuoloUtente[]) => ruolo_in(ruoli, ruolo),
     }),
     [ruolo],
