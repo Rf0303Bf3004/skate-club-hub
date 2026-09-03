@@ -1483,7 +1483,7 @@ const InstructorsPage: React.FC = () => {
   const { t } = useI18n();
   const { t: ti } = useTranslation("istruttori");
   const navigate = useNavigate();
-  const { puo_gestire_sportivo } = usePermessiAzione();
+  const { puo_gestire_sportivo, puo_creare_accessi } = usePermessiAzione();
   const { data: istruttori = [], isLoading } = use_istruttori();
   const { data: monitori_atleti = [] } = use_atleti_monitori();
   const { data: atleti_all = [] } = use_atleti();
@@ -1784,7 +1784,7 @@ const InstructorsPage: React.FC = () => {
                         </p>
                       )}
                     </div>
-                    {!ha_accesso && puo_gestire_sportivo && (
+                    {!ha_accesso && puo_creare_accessi && (
                       <Button size="sm" onClick={() => set_accesso_target(selected)} className="flex-shrink-0">
                         <ShieldCheck className="w-3.5 h-3.5 mr-1.5" /> Crea accesso
                       </Button>
