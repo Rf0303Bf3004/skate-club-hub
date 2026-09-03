@@ -623,7 +623,7 @@ const CommunicationsPage: React.FC = () => {
         <NotaPermesso testo="Solo lo staff di segreteria e direzione può creare, inviare o modificare comunicazioni. Puoi comunque leggerle e gestire i tuoi reminder." />
       )}
 
-      <Tabs defaultValue="inviate" className="w-full">
+      <Tabs defaultValue={tab_iniziale} className="w-full">
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="inviate" className="gap-2">
             <Send className="w-4 h-4" /> Scritte da noi
@@ -632,6 +632,9 @@ const CommunicationsPage: React.FC = () => {
           <TabsTrigger value="automatiche" className="gap-2">
             <Bot className="w-4 h-4" /> Automatiche
             <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">{automatiche_count}</Badge>
+            {non_lette_automatiche_count > 0 && (
+              <Badge variant="destructive" className="ml-1 h-5 min-w-5 px-1.5 text-[10px]">{t('tabs.unread_count', { count: non_lette_automatiche_count })}</Badge>
+            )}
           </TabsTrigger>
           <TabsTrigger value="ricevute" className="gap-2">
             <Inbox className="w-4 h-4" /> {t('tabs.received_emoji')}
