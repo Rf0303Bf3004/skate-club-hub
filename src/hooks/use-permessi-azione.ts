@@ -83,6 +83,7 @@ export interface PermessiAzione {
   puo_pianificare: boolean;
   puo_gestire_fatture: boolean;
   solo_presidente: boolean;
+  puo_creare_accessi: boolean;
   ruolo_in: (ruoli: RuoloUtente[]) => boolean;
 }
 
