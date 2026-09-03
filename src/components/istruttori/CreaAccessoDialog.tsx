@@ -155,6 +155,9 @@ const CreaAccessoDialog: React.FC<Props> = ({ open, on_close, istruttore }) => {
       });
       const err_msg = (r.data as any)?.error || r.error?.message;
       if (err_msg) {
+        if (/forbidden/i.test(String(err_msg))) {
+          throw new Error("Solo presidente o amministratore del club possono creare un accesso al portale.");
+        }
         if (/already|registered|exists|duplicate/i.test(String(err_msg))) {
           const existing = await trova_utente_per_email(mail);
           if (existing) set_email_esistente({ email: mail, user_id: existing });

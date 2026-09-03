@@ -541,6 +541,13 @@ const CommunicationsPage: React.FC = () => {
   const ricevute_count = useMemo(() => conta_gruppi(ricevute_manuali), [ricevute_manuali]);
   const archivio_count = useMemo(() => conta_gruppi(archivio), [archivio]);
   const non_lette_count = useMemo(() => conta_gruppi(ricevute_manuali.filter((c: any) => !c.letta)), [ricevute_manuali]);
+  // Anche gli avvisi automatici ricevuti devono farsi notare: contatore sul tab e badge NUOVO.
+  const non_lette_automatiche_count = useMemo(
+    () => conta_gruppi(automatiche.filter((c: any) => c.categoria === 'ricevuta' && !c.letta)),
+    [automatiche],
+  );
+  const tab_iniziale =
+    non_lette_count > 0 ? 'ricevute' : non_lette_automatiche_count > 0 ? 'automatiche' : 'inviate';
 
 
 
