@@ -101,6 +101,7 @@ export function usePermessiAzione(): PermessiAzione {
       puo_pianificare: puo_pianificare(ruolo),
       puo_gestire_fatture: puo_gestire_fatture(ruolo),
       solo_presidente: solo_presidente(ruolo),
+      puo_creare_accessi: puo_creare_accessi(ruolo),
       ruolo_in: (ruoli: RuoloUtente[]) => ruolo_in(ruoli, ruolo),
     }),
     [ruolo],
