@@ -676,6 +676,8 @@ const CommunicationsPage: React.FC = () => {
         <TabsContent value="automatiche" className="mt-4">
           <AutomaticheTab
             items={automatiche}
+            highlight_unread
+            on_open={(c: any) => { if (c.categoria === 'ricevuta' && !c.letta) void mark_letta(c.id); }}
             get_destinatari_label={get_destinatari_label}
             get_data_label={get_data_label}
             can_manage={puo_comunicare}

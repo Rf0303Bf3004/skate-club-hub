@@ -12,6 +12,8 @@ type Props = {
   get_data_label: (c: any) => string;
   can_manage?: boolean;
   nome_atleta?: (id: string | null) => string;
+  highlight_unread?: boolean;
+  on_open?: (c: any) => void;
 };
 
 function giorno_di(c: any) {
