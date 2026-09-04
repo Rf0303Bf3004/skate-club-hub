@@ -2,6 +2,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { date_settimanali, genera_occorrenze_corso } from "@/lib/planning-occorrenze";
+import {
+  carica_stagione_attiva,
+  date_fuori_stagione,
+  ErroreDateFuoriStagione,
+  type StagioneCorrente,
+} from "@/lib/stagione-attiva";
 
 // ─── Tipi ──────────────────────────────────────────────────
 export interface GrigliaSpecialita {
@@ -386,6 +392,7 @@ export function use_upsert_blocco() {
         if (error) throw error;
         return input.id;
       }
+      const stagione_blocco = await carica_stagione_attiva(club_id);
       const { data, error } = await supabase
         .from("griglia_blocchi" as any)
         .insert({
@@ -397,6 +404,7 @@ export function use_upsert_blocco() {
           risorsa_id: input.risorsa_id ?? null,
           stato: "bozza",
           creato_da: session?.user_id ?? null,
+          stagione_id: stagione_blocco?.id ?? null,
           ...forzatura,
         } as any)
         .select("id")
@@ -1589,6 +1597,8 @@ export function use_ripeti_sessione() {
       prezzo_mensile?: number | null;
       /** Motivo scritto per generare comunque le date fuori disponibilità. */
       motivo_forzatura?: string | null;
+      /** Conferma esplicita a generare anche le date oltre la fine stagione. */
+      conferma_fuori_stagione?: boolean;
     }): Promise<RipetiSessioneResult> => {
       const club_id = get_current_club_id();
       if (!club_id) throw new Error("Club non disponibile");
@@ -1597,7 +1607,7 @@ export function use_ripeti_sessione() {
       // Stagione attiva del club (fallback: la più recente)
       const { data: stagioni, error: err_st } = await supabase
         .from("stagioni")
-        .select("id,data_fine,attiva,data_inizio")
+        .select("id,nome,data_fine,attiva,data_inizio")
         .eq("club_id", club_id)
         .order("data_inizio", { ascending: false });
       if (err_st) throw err_st;
@@ -1633,6 +1643,18 @@ export function use_ripeti_sessione() {
 
       // Disponibilità su TUTTE le date generate, non solo sulla prima.
       const date = date_settimanali(blocco.data, input.fino_a);
+      // La generazione non esce dalla stagione senza una conferma esplicita.
+      const stagione_corrente: StagioneCorrente = {
+        id: stagione.id,
+        nome: stagione.nome ?? "Stagione",
+        data_inizio: stagione.data_inizio,
+        data_fine: stagione.data_fine,
+        attiva: !!stagione.attiva,
+      };
+      const date_oltre = date_fuori_stagione(date, stagione_corrente);
+      if (date_oltre.length > 0 && !input.conferma_fuori_stagione) {
+        throw new ErroreDateFuoriStagione(date_oltre, stagione_corrente);
+      }
       const motivo_forzatura = (input.motivo_forzatura ?? "").trim();
       const fuori = await verifica_disponibilita_su_date({
         istruttore_ids: istruttori_ids,
@@ -1755,6 +1777,7 @@ export function use_ripeti_sessione() {
               titolo: blocco.titolo ?? null,
               risorsa_id: blocco.risorsa_id ?? null,
               stato: "bozza",
+              stagione_id: stagione.id,
             } as any)
             .select("id")
             .single();

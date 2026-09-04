@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { format_local_iso } from "@/lib/planning-occorrenze";
+import { settimane_fra } from "@/lib/stagione-attiva";
 import { Repeat, CalendarRange, CalendarDays } from "lucide-react";
 
 interface Props {
@@ -54,8 +55,10 @@ const RipetiSessioneDialog: React.FC<Props> = ({
       const lista = (data ?? []) as any[];
       const st = lista.find((s) => s.attiva) ?? lista[0] ?? null;
       set_fine_stagione(st?.data_fine ?? null);
+      // Predefinito: fino alla fine della stagione, mai oltre.
+      if (st?.data_fine) set_n_settimane(settimane_fra(data_blocco, st.data_fine));
     })();
-  }, [open]);
+  }, [open, data_blocco]);
 
   const data_fine_n = useMemo(() => {
     const d = new Date(`${data_blocco}T00:00:00`);

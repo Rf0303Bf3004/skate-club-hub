@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { use_stagione_attiva } from "@/lib/stagione-attiva";
 import { use_club, use_setup_club, use_stagioni, use_atleti, use_istruttori } from "@/hooks/use-supabase-data";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -45,16 +46,23 @@ const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sa
 // ── Hooks for ghiaccio config ──
 function use_config_ghiaccio() {
   const club_id = get_current_club_id();
+  const { data: stagione } = use_stagione_attiva();
   return useQuery({
-    queryKey: ["configurazione_ghiaccio", club_id],
+    // La configurazione del ghiaccio vale per la stagione in corso: le stagioni
+    // passate conservano i loro parametri.
+    queryKey: ["configurazione_ghiaccio", club_id, stagione?.id ?? null],
     enabled: !!club_id,
     queryFn: async () => {
       const { data } = await supabase
         .from("configurazione_ghiaccio")
         .select("*")
-        .eq("club_id", club_id)
-        .maybeSingle();
-      return data;
+        .eq("club_id", club_id);
+      const righe = (data ?? []) as any[];
+      return (
+        righe.find((r) => stagione?.id && r.stagione_id === stagione.id) ??
+        righe.find((r) => !r.stagione_id) ??
+        null
+      );
     },
   });
 }
@@ -100,6 +108,7 @@ const ClubSetupPage: React.FC = () => {
   const { data: atleti = [] } = use_atleti();
   const { data: istruttori = [] } = use_istruttori();
   const { data: config_ghiaccio, isLoading: loading_config } = use_config_ghiaccio();
+  const { data: stagione_corrente } = use_stagione_attiva();
   const { data: disp_ghiaccio_raw, isLoading: loading_disp } = use_disponibilita_ghiaccio();
   const { data: catalogo_count } = use_catalogo_count();
   const { data: risorse = [] } = use_risorse_strutture();
@@ -316,6 +325,7 @@ const ClubSetupPage: React.FC = () => {
       };
       const payload = {
         club_id,
+        stagione_id: stagione_corrente?.id ?? null,
         ora_apertura_default: get_ghiaccio_val("ora_apertura_default", "06:00"),
         ora_chiusura_default: get_ghiaccio_val("ora_chiusura_default", "22:30"),
         durata_pulizia_minuti: parseInt(get_ghiaccio_val("durata_pulizia_minuti", 30)),
@@ -352,6 +362,7 @@ const ClubSetupPage: React.FC = () => {
       const club_id = get_current_club_id();
       const payload: any = {
         club_id,
+        stagione_id: stagione_corrente?.id ?? null,
         max_atleti_lezione_privata:
           parseInt(get_ghiaccio_val("max_atleti_lezione_privata", (config_ghiaccio as any)?.max_atleti_lezione_privata ?? 3)) || 3,
         modalita_costo_privata:
