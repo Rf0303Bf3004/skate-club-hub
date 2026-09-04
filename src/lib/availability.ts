@@ -459,3 +459,34 @@ export function verifica_orario_disponibilita(
 
   return { ok: true };
 }
+
+// ─────────────────────────────────────────────────────────────
+// Ore realmente lavorate quando ci sono sovrapposizioni.
+// Un istruttore che segue due gruppi dalle 17:00 alle 18:00 ha
+// lavorato UN'ORA, non due: si sommano gli intervalli DISTINTI
+// per data, unendo quelli che si sovrappongono.
+// ─────────────────────────────────────────────────────────────
+
+export type slot_datato = { data: string; ora_inizio: string; ora_fine: string };
+
+/** Minuti distinti (unione degli intervalli) per una singola giornata. */
+export function minuti_distinti_giorno(slot: slot_impegno[]): number {
+  const intervalli = (slot ?? [])
+    .map((s) => ({ s: time_to_min(s.ora_inizio), e: time_to_min(s.ora_fine) }))
+    .filter((i) => i.e > i.s);
+  return merge_intervals(intervalli).reduce((acc, i) => acc + (i.e - i.s), 0);
+}
+
+/** Ore distinte su più giornate: gli slot sovrapposti nella stessa data contano una volta sola. */
+export function ore_distinte_per_data(slot: slot_datato[]): number {
+  const per_data = new Map<string, slot_impegno[]>();
+  for (const s of slot ?? []) {
+    if (!s?.data) continue;
+    const lista = per_data.get(s.data) ?? [];
+    lista.push({ ora_inizio: s.ora_inizio, ora_fine: s.ora_fine });
+    per_data.set(s.data, lista);
+  }
+  let minuti = 0;
+  for (const lista of per_data.values()) minuti += minuti_distinti_giorno(lista);
+  return minuti / 60;
+}

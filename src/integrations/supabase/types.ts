@@ -1756,6 +1756,9 @@ export type Database = {
           modalita_costo_privata: string
           ora_apertura_default: string
           ora_chiusura_default: string
+          pausa_accettabile_minuti: number
+          pausa_massima_minuti: number
+          permanenza_massima_ore: number
           stagione_id: string | null
         }
         Insert: {
@@ -1771,6 +1774,9 @@ export type Database = {
           modalita_costo_privata?: string
           ora_apertura_default?: string
           ora_chiusura_default?: string
+          pausa_accettabile_minuti?: number
+          pausa_massima_minuti?: number
+          permanenza_massima_ore?: number
           stagione_id?: string | null
         }
         Update: {
@@ -1786,6 +1792,9 @@ export type Database = {
           modalita_costo_privata?: string
           ora_apertura_default?: string
           ora_chiusura_default?: string
+          pausa_accettabile_minuti?: number
+          pausa_massima_minuti?: number
+          permanenza_massima_ore?: number
           stagione_id?: string | null
         }
         Relationships: []
@@ -3420,6 +3429,7 @@ export type Database = {
           ora_inizio: string
           pubblicato_at: string | null
           risorsa_id: string | null
+          stagione_id: string | null
           stato: string
           titolo: string | null
           updated_at: string
@@ -3439,6 +3449,7 @@ export type Database = {
           ora_inizio: string
           pubblicato_at?: string | null
           risorsa_id?: string | null
+          stagione_id?: string | null
           stato?: string
           titolo?: string | null
           updated_at?: string
@@ -3458,6 +3469,7 @@ export type Database = {
           ora_inizio?: string
           pubblicato_at?: string | null
           risorsa_id?: string | null
+          stagione_id?: string | null
           stato?: string
           titolo?: string | null
           updated_at?: string
@@ -3503,6 +3515,13 @@ export type Database = {
             columns: ["risorsa_id"]
             isOneToOne: false
             referencedRelation: "risorse_strutture"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "griglia_blocchi_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
             referencedColumns: ["id"]
           },
         ]

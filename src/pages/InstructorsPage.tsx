@@ -29,6 +29,7 @@ import ConfirmButton from "@/components/common/ConfirmButton";
 import NotaPermesso from "@/components/common/NotaPermesso";
 import CreaAccessoDialog from "@/components/istruttori/CreaAccessoDialog";
 import { use_email_utenti_club } from "@/hooks/use-accessi-utenti";
+import { ore_distinte_per_data } from "@/lib/availability";
 
 
 const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
@@ -637,9 +638,17 @@ const TabOreLavoro: React.FC<{
       .sort((a, b) => a.data.localeCompare(b.data) || a.ora_inizio.localeCompare(b.ora_inizio));
   }, [slots_query.data, presenze_query.data, dettaglio_query.data, corsi_by_id]);
 
-  const ore_previste_totali = slot_righe.reduce((s, r) => s + r.ore_previste, 0);
-  const ore_effettive_totali = slot_righe.reduce((s, r) => s + r.ore_effettive, 0);
-  const ore_mancanti = slot_righe.filter((r) => r.stato === "mancante").reduce((s, r) => s + r.ore_previste, 0);
+  // Sovrapposizioni: due sessioni contemporanee nella stessa data valgono UNA volta sola.
+  // Le ore confermate a mano (override) restano quelle indicate dall'utente.
+  const ore_previste_totali = ore_distinte_per_data(slot_righe);
+  const ore_effettive_totali = useMemo(() => {
+    const override_ore = slot_righe
+      .filter((r) => r.stato === "override")
+      .reduce((s, r) => s + r.ore_effettive, 0);
+    const reali = slot_righe.filter((r) => r.stato !== "override" && r.ore_effettive > 0);
+    return override_ore + ore_distinte_per_data(reali);
+  }, [slot_righe]);
+  const ore_mancanti = ore_distinte_per_data(slot_righe.filter((r) => r.stato === "mancante"));
   const slot_mancanti_count = slot_righe.filter((r) => r.stato === "mancante").length;
   const slot_override_count = slot_righe.filter((r) => r.stato === "override").length;
 
