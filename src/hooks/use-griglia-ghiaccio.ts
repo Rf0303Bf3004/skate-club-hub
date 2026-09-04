@@ -2,6 +2,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { date_settimanali, genera_occorrenze_corso } from "@/lib/planning-occorrenze";
+import {
+  carica_stagione_attiva,
+  date_fuori_stagione,
+  ErroreDateFuoriStagione,
+  type StagioneCorrente,
+} from "@/lib/stagione-attiva";
 
 // ─── Tipi ──────────────────────────────────────────────────
 export interface GrigliaSpecialita {
