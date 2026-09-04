@@ -1036,6 +1036,12 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
   >(null);
   /** Generazione ricorrente: date che cadono fuori disponibilità. */
   const [date_fuori, set_date_fuori] = useState<{ fino_a: string; elenco: DataFuoriDisponibilita[] } | null>(null);
+  const [oltre_stagione, set_oltre_stagione] = useState<{
+    fino_a: string;
+    motivo?: string;
+    date: string[];
+    stagione: StagioneCorrente;
+  } | null>(null);
   const [motivo_date_fuori, set_motivo_date_fuori] = useState("");
   /** Blocco duro sulle sovrapposizioni orarie degli atleti (con override motivato). */
   const [conflitto_batch, set_conflitto_batch] = useState<{
@@ -1455,7 +1461,11 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
     }
   }, [sessioni, tab_attivo]);
 
-  const conferma_ripetizione = async (fino_a: string, motivo_forzatura?: string) => {
+  const conferma_ripetizione = async (
+    fino_a: string,
+    motivo_forzatura?: string,
+    conferma_fuori_stagione?: boolean,
+  ) => {
     if (!ripeti_sessione) return;
     try {
       const res = await ripeti.mutateAsync({
@@ -1464,6 +1474,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
         fino_a,
         nome_risorsa: risorsa_blocco?.nome ?? null,
         motivo_forzatura: motivo_forzatura ?? null,
+        conferma_fuori_stagione: conferma_fuori_stagione ?? false,
       });
       const parti = [
         `${res.settimane_create} ${res.settimane_create === 1 ? "settimana creata" : "settimane create"}`,
@@ -1477,8 +1488,13 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
       });
       set_ripeti_sessione(null);
       set_date_fuori(null);
+      set_oltre_stagione(null);
       set_motivo_date_fuori("");
     } catch (e: any) {
+      if (e instanceof ErroreDateFuoriStagione) {
+        set_oltre_stagione({ fino_a, motivo: motivo_forzatura, date: e.date_fuori, stagione: e.stagione });
+        return;
+      }
       if (e instanceof ErroreDisponibilitaDate) {
         set_motivo_date_fuori("");
         set_date_fuori({ fino_a, elenco: e.date_fuori });
@@ -2004,6 +2020,53 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
           });
         }}
       />
+
+      <AlertDialog open={!!oltre_stagione} onOpenChange={(o) => !o && set_oltre_stagione(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>La ricorrenza supera la fine della stagione</AlertDialogTitle>
+            <AlertDialogDescription>
+              {oltre_stagione?.date.length === 1
+                ? "1 data cade"
+                : `${oltre_stagione?.date.length ?? 0} date cadono`}{" "}
+              fuori dalla stagione «{oltre_stagione?.stagione.nome}», che finisce il{" "}
+              {oltre_stagione
+                ? new Date(`${oltre_stagione.stagione.data_fine}T00:00:00`).toLocaleDateString("it-CH")
+                : ""}
+              . Puoi fermarti alla fine della stagione oppure generarle comunque.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="max-h-40 overflow-auto rounded border p-2 text-xs space-y-1">
+            {(oltre_stagione?.date ?? []).map((d) => (
+              <div key={d}>{new Date(`${d}T00:00:00`).toLocaleDateString("it-CH")}</div>
+            ))}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                const o = oltre_stagione;
+                if (!o) return;
+                set_oltre_stagione(null);
+                await conferma_ripetizione(o.stagione.data_fine, o.motivo, false);
+              }}
+            >
+              Ferma a fine stagione
+            </Button>
+            <AlertDialogAction
+              onClick={async () => {
+                const o = oltre_stagione;
+                if (!o) return;
+                set_oltre_stagione(null);
+                await conferma_ripetizione(o.fino_a, o.motivo, true);
+              }}
+            >
+              Genera comunque
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={!!date_fuori} onOpenChange={(o) => !o && set_date_fuori(null)}>
         <AlertDialogContent>
