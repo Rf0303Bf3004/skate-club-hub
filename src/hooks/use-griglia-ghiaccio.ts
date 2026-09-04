@@ -993,14 +993,25 @@ export async function verifica_conflitti_atleti(
   return out;
 }
 
+export interface ConflittoIstruttore extends ConflittoGruppo {
+  /** Sessione già assegnata che si sovrappone. */
+  sessione_id: string;
+  /** Atlete presenti nell'altra sessione. */
+  n_atlete_altra: number;
+  /** Atlete presenti nella sessione di destinazione. */
+  n_atlete_destinazione: number;
+}
+
 /**
- * Verifica (non bloccante d'ufficio: l'utente può forzare) sullo stesso istruttore
- * assegnato a due sotto-sessioni sovrapposte nello stesso giorno.
+ * AVVISO (non blocco): lo stesso istruttore in due sotto-sessioni sovrapposte
+ * nello stesso giorno è legittimo (due gruppi su porzioni di pista diverse).
+ * Restituisce l'altra sessione, l'orario e quante atlete ci sono in ciascuna,
+ * così l'utente può confermare con cognizione di causa.
  */
 export async function verifica_conflitto_istruttore(input: {
   sessione_id: string;
   istruttore_id: string;
-}): Promise<ConflittoGruppo | null> {
+}): Promise<ConflittoIstruttore | null> {
   if (!input.istruttore_id) return null;
   const candidate = await _sessioni_sovrapposte(input.sessione_id);
   if (candidate.length === 0) return null;
@@ -1017,8 +1028,176 @@ export async function verifica_conflitto_istruttore(input: {
   const match = ((righe ?? []) as any[])[0];
   if (!match) return null;
 
-  return _etichetta_sessione(candidate.find((s) => s.id === match.sessione_id)!);
+  const etichetta = await _etichetta_sessione(candidate.find((s) => s.id === match.sessione_id)!);
+  const conta = async (sessione_id: string) => {
+    const { count } = await supabase
+      .from("griglia_sessioni_atleti" as any)
+      .select("id", { count: "exact", head: true })
+      .eq("sessione_id", sessione_id);
+    return count ?? 0;
+  };
+  return {
+    ...etichetta,
+    sessione_id: match.sessione_id as string,
+    n_atlete_altra: await conta(match.sessione_id as string),
+    n_atlete_destinazione: await conta(input.sessione_id),
+  };
 }
+
+// ─── Disponibilità dichiarata degli istruttori ─────────────
+// Regola: la fascia oraria della sessione deve stare INTERAMENTE dentro una
+// riga di `disponibilita_istruttori` per quell'istruttore e per il giorno della
+// settimana della data del blocco. Nessuna riga per quel giorno = rifiuto:
+// l'assenza di dati non vale come permesso. Stessa regola replicata come
+// trigger sul database (`griglia_valida_disponibilita_istruttore`).
+
+export interface EsitoDisponibilita {
+  ok: boolean;
+  giorno: string;
+  fasce_label: string;
+  motivo: string | null;
+}
+
+/** Errore riconoscibile dall'interfaccia per proporre la forzatura motivata. */
+export class ErroreDisponibilitaIstruttore extends Error {
+  esito: EsitoDisponibilita;
+  constructor(esito: EsitoDisponibilita) {
+    super(esito.motivo ?? "Istruttore fuori disponibilità");
+    this.name = "ErroreDisponibilitaIstruttore";
+    this.esito = esito;
+  }
+}
+
+function _norm_giorno(g: string | null | undefined): string {
+  return (g ?? "")
+    .toString()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function _valuta_fasce(
+  fasce: { ora_inizio: string; ora_fine: string }[],
+  giorno: string,
+  ora_inizio: string,
+  ora_fine: string,
+): EsitoDisponibilita {
+  const fasce_label = fasce
+    .map((f) => `${String(f.ora_inizio).slice(0, 5)}–${String(f.ora_fine).slice(0, 5)}`)
+    .join(", ");
+  if (fasce.length === 0) {
+    return {
+      ok: false,
+      giorno,
+      fasce_label: "",
+      motivo: `Nessuna disponibilità dichiarata il ${giorno}: l'assegnazione non è ammessa.`,
+    };
+  }
+  const s = _min(ora_inizio);
+  const e = _min(ora_fine);
+  const dentro = fasce.some((f) => _min(f.ora_inizio) <= s && _min(f.ora_fine) >= e);
+  if (dentro) return { ok: true, giorno, fasce_label, motivo: null };
+  return {
+    ok: false,
+    giorno,
+    fasce_label,
+    motivo: `${String(ora_inizio).slice(0, 5)}–${String(ora_fine).slice(0, 5)} non rientra nella disponibilità del ${giorno} (${fasce_label}).`,
+  };
+}
+
+async function _fasce_istruttori(istruttore_ids: string[]) {
+  const ids = Array.from(new Set(istruttore_ids.filter(Boolean)));
+  const per_istruttore = new Map<string, { giorno: string; ora_inizio: string; ora_fine: string }[]>();
+  if (ids.length === 0) return per_istruttore;
+  const { data, error } = await supabase
+    .from("disponibilita_istruttori")
+    .select("istruttore_id,giorno,ora_inizio,ora_fine")
+    .in("istruttore_id", ids);
+  if (error) throw error;
+  for (const r of (data ?? []) as any[]) {
+    const lista = per_istruttore.get(r.istruttore_id) ?? [];
+    lista.push({ giorno: r.giorno, ora_inizio: r.ora_inizio, ora_fine: r.ora_fine });
+    per_istruttore.set(r.istruttore_id, lista);
+  }
+  return per_istruttore;
+}
+
+/** Controllo puntuale su una data e una fascia oraria. */
+export async function verifica_disponibilita_istruttore(input: {
+  istruttore_id: string;
+  data: string;
+  ora_inizio: string;
+  ora_fine: string;
+}): Promise<EsitoDisponibilita> {
+  const giorno = giorno_it_da_data(input.data);
+  const mappa = await _fasce_istruttori([input.istruttore_id]);
+  const fasce = (mappa.get(input.istruttore_id) ?? []).filter(
+    (f) => _norm_giorno(f.giorno) === _norm_giorno(giorno),
+  );
+  return _valuta_fasce(fasce, giorno, input.ora_inizio, input.ora_fine);
+}
+
+/** Data + orario di una sotto-sessione (con il blocco che la contiene). */
+export async function _coordinate_sessione(
+  sessione_id: string,
+): Promise<{ data: string; ora_inizio: string; ora_fine: string } | null> {
+  const { data: s, error } = await supabase
+    .from("griglia_sessioni" as any)
+    .select("id,blocco_id,ora_inizio,ora_fine")
+    .eq("id", sessione_id)
+    .maybeSingle();
+  if (error) throw error;
+  if (!s) return null;
+  const { data: b, error: err_b } = await supabase
+    .from("griglia_blocchi" as any)
+    .select("data")
+    .eq("id", (s as any).blocco_id)
+    .maybeSingle();
+  if (err_b) throw err_b;
+  if (!b) return null;
+  return {
+    data: (b as any).data as string,
+    ora_inizio: (s as any).ora_inizio as string,
+    ora_fine: (s as any).ora_fine as string,
+  };
+}
+
+export interface DataFuoriDisponibilita {
+  data: string;
+  giorno: string;
+  istruttore_id: string;
+  motivo: string;
+}
+
+/**
+ * Generazione di massa: ogni occorrenza va verificata, non solo la prima.
+ * Restituisce l'elenco delle date che NON passano il controllo.
+ */
+export async function verifica_disponibilita_su_date(input: {
+  istruttore_ids: string[];
+  date: string[];
+  ora_inizio: string;
+  ora_fine: string;
+}): Promise<DataFuoriDisponibilita[]> {
+  const ids = Array.from(new Set((input.istruttore_ids ?? []).filter(Boolean)));
+  if (ids.length === 0 || (input.date ?? []).length === 0) return [];
+  const mappa = await _fasce_istruttori(ids);
+  const out: DataFuoriDisponibilita[] = [];
+  for (const d of input.date) {
+    const giorno = giorno_it_da_data(d);
+    for (const istruttore_id of ids) {
+      const fasce = (mappa.get(istruttore_id) ?? []).filter(
+        (f) => _norm_giorno(f.giorno) === _norm_giorno(giorno),
+      );
+      const esito = _valuta_fasce(fasce, giorno, input.ora_inizio, input.ora_fine);
+      if (!esito.ok) out.push({ data: d, giorno, istruttore_id, motivo: esito.motivo ?? "" });
+    }
+  }
+  return out;
+}
+
+
 
 
 /**
