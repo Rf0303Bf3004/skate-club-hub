@@ -1607,7 +1607,7 @@ export function use_ripeti_sessione() {
       // Stagione attiva del club (fallback: la più recente)
       const { data: stagioni, error: err_st } = await supabase
         .from("stagioni")
-        .select("id,data_fine,attiva,data_inizio")
+        .select("id,nome,data_fine,attiva,data_inizio")
         .eq("club_id", club_id)
         .order("data_inizio", { ascending: false });
       if (err_st) throw err_st;
@@ -1777,6 +1777,7 @@ export function use_ripeti_sessione() {
               titolo: blocco.titolo ?? null,
               risorsa_id: blocco.risorsa_id ?? null,
               stato: "bozza",
+              stagione_id: stagione.id,
             } as any)
             .select("id")
             .single();
