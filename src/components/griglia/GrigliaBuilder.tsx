@@ -27,6 +27,10 @@ import {
   use_disallineamento_proposte,
   use_risincronizza_proposta,
   verifica_conflitto_istruttore,
+  ErroreDisponibilitaIstruttore,
+  ErroreDisponibilitaDate,
+  type ConflittoIstruttore,
+  type DataFuoriDisponibilita,
 
   type ConflittoGruppo,
   type ConflittoAtleta,
@@ -1017,8 +1021,22 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
     { nome: string; conflitto: ConflittoGruppo } | null
   >(null);
   const [conflitto_istruttore, set_conflitto_istruttore] = useState<
-    { nome: string; istruttore_id: string; sessione_id: string; conflitto: ConflittoGruppo } | null
+    { nome: string; istruttore_id: string; sessione_id: string; conflitto: ConflittoIstruttore } | null
   >(null);
+  /** Istruttore fuori dalla disponibilità dichiarata: forzabile solo con motivo scritto. */
+  const [forzatura_istruttore, set_forzatura_istruttore] = useState<
+    {
+      nome: string;
+      istruttore_id: string;
+      sessione_id: string;
+      forza?: boolean;
+      motivo_blocco: string | null;
+      orario_label?: string;
+    } | null
+  >(null);
+  /** Generazione ricorrente: date che cadono fuori disponibilità. */
+  const [date_fuori, set_date_fuori] = useState<{ fino_a: string; elenco: DataFuoriDisponibilita[] } | null>(null);
+  const [motivo_date_fuori, set_motivo_date_fuori] = useState("");
   /** Blocco duro sulle sovrapposizioni orarie degli atleti (con override motivato). */
   const [conflitto_batch, set_conflitto_batch] = useState<{
     conflitti: ConflittoAtleta[];
@@ -1352,11 +1370,47 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
           set_conflitto_istruttore({ nome, istruttore_id: persona_id, sessione_id, conflitto });
           return;
         }
-        await assegna_istruttore.mutateAsync({ sessione_id, istruttore_id: persona_id });
+        await esegui_assegna_istruttore({ sessione_id, istruttore_id: persona_id, nome });
       }
 
     } catch (e: any) {
       toast({ title: "Errore assegnazione", description: e.message, variant: "destructive" });
+    }
+  };
+
+  /**
+   * Unico punto di assegnazione istruttore: la disponibilità dichiarata blocca,
+   * ma chi ne ha facoltà può forzare scrivendo il motivo (che resta registrato).
+   */
+  const esegui_assegna_istruttore = async (p: {
+    sessione_id: string;
+    istruttore_id: string;
+    nome: string;
+    forza?: boolean;
+    motivo_forzatura?: string;
+  }) => {
+    try {
+      await assegna_istruttore.mutateAsync({
+        sessione_id: p.sessione_id,
+        istruttore_id: p.istruttore_id,
+        forza: p.forza,
+        motivo_forzatura: p.motivo_forzatura ?? null,
+      });
+      if (p.motivo_forzatura) toast({ title: `✅ ${p.nome} assegnato (fuori disponibilità, motivato)` });
+    } catch (e: any) {
+      if (e instanceof ErroreDisponibilitaIstruttore) {
+        const sess = sessioni.find((x) => x.id === p.sessione_id);
+        set_forzatura_istruttore({
+          nome: p.nome,
+          istruttore_id: p.istruttore_id,
+          sessione_id: p.sessione_id,
+          forza: p.forza,
+          motivo_blocco: `${p.nome}: ${e.esito.motivo ?? ""}`,
+          orario_label: sess ? `${hhmm(sess.ora_inizio)}–${hhmm(sess.ora_fine)}` : undefined,
+        });
+        return;
+      }
+      toast({ title: "Errore assegnazione", description: e?.message, variant: "destructive" });
     }
   };
 
@@ -1401,7 +1455,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
     }
   }, [sessioni, tab_attivo]);
 
-  const conferma_ripetizione = async (fino_a: string) => {
+  const conferma_ripetizione = async (fino_a: string, motivo_forzatura?: string) => {
     if (!ripeti_sessione) return;
     try {
       const res = await ripeti.mutateAsync({
@@ -1409,6 +1463,7 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
         blocco,
         fino_a,
         nome_risorsa: risorsa_blocco?.nome ?? null,
+        motivo_forzatura: motivo_forzatura ?? null,
       });
       const parti = [
         `${res.settimane_create} ${res.settimane_create === 1 ? "settimana creata" : "settimane create"}`,
@@ -1421,7 +1476,14 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
           : parti.join(", "),
       });
       set_ripeti_sessione(null);
+      set_date_fuori(null);
+      set_motivo_date_fuori("");
     } catch (e: any) {
+      if (e instanceof ErroreDisponibilitaDate) {
+        set_motivo_date_fuori("");
+        set_date_fuori({ fino_a, elenco: e.date_fuori });
+        return;
+      }
       toast({ title: "Errore ricorrenza", description: e?.message, variant: "destructive" });
     }
   };
@@ -1895,8 +1957,10 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
             <AlertDialogDescription>
               {conflitto_istruttore?.nome} è già assegnato a un'altra sessione sovrapposta (
               {conflitto_istruttore?.conflitto.ora_inizio}–{conflitto_istruttore?.conflitto.ora_fine} —{" "}
-              {conflitto_istruttore?.conflitto.etichetta}). Puoi assegnarlo comunque se deve seguire
-              eccezionalmente due gruppi in contemporanea.
+              {conflitto_istruttore?.conflitto.etichetta}) con{" "}
+              {conflitto_istruttore?.conflitto.n_atlete_altra ?? 0} atlete; qui ce ne sono{" "}
+              {conflitto_istruttore?.conflitto.n_atlete_destinazione ?? 0}. Puoi assegnarlo comunque se
+              deve seguire due gruppi in contemporanea.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1906,16 +1970,12 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
                 const c = conflitto_istruttore;
                 set_conflitto_istruttore(null);
                 if (!c) return;
-                try {
-                  await assegna_istruttore.mutateAsync({
-                    sessione_id: c.sessione_id,
-                    istruttore_id: c.istruttore_id,
-                    forza: true,
-                  });
-                  toast({ title: `✅ ${c.nome} assegnato nonostante la sovrapposizione` });
-                } catch (e: any) {
-                  toast({ title: "Errore assegnazione", description: e.message, variant: "destructive" });
-                }
+                await esegui_assegna_istruttore({
+                  sessione_id: c.sessione_id,
+                  istruttore_id: c.istruttore_id,
+                  nome: c.nome,
+                  forza: true,
+                });
               }}
             >
               Assegna comunque
@@ -1925,6 +1985,66 @@ const GrigliaBuilder: React.FC<Props> = ({ blocco, blocchi_giorno }) => {
       </AlertDialog>
 
 
+
+      <ConfermaForzaturaDisponibilita
+        open={!!forzatura_istruttore}
+        motivo={forzatura_istruttore?.motivo_blocco ?? null}
+        orario_label={forzatura_istruttore?.orario_label}
+        on_close={() => set_forzatura_istruttore(null)}
+        on_forza={async (motivo) => {
+          const f = forzatura_istruttore;
+          set_forzatura_istruttore(null);
+          if (!f) return;
+          await esegui_assegna_istruttore({
+            sessione_id: f.sessione_id,
+            istruttore_id: f.istruttore_id,
+            nome: f.nome,
+            forza: f.forza,
+            motivo_forzatura: motivo,
+          });
+        }}
+      />
+
+      <AlertDialog open={!!date_fuori} onOpenChange={(o) => !o && set_date_fuori(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>⚠️ Date fuori dalla disponibilità dichiarata</AlertDialogTitle>
+            <AlertDialogDescription>
+              {date_fuori?.elenco.length === 1
+                ? "Una data della ricorrenza non rientra"
+                : `${date_fuori?.elenco.length ?? 0} date della ricorrenza non rientrano`}{" "}
+              nella disponibilità dell'istruttore. Puoi generarle comunque scrivendo il motivo, che
+              resta registrato insieme al tuo nome.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="max-h-40 overflow-auto rounded border p-2 text-xs space-y-1">
+            {(date_fuori?.elenco ?? []).map((d, i) => (
+              <div key={`${d.data}-${d.istruttore_id}-${i}`}>
+                <span className="font-medium">{d.data}</span> ({d.giorno}) — {d.motivo}
+              </div>
+            ))}
+          </div>
+          <Textarea
+            value={motivo_date_fuori}
+            onChange={(e) => set_motivo_date_fuori(e.target.value)}
+            placeholder="Motivo della forzatura (obbligatorio)"
+            rows={3}
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={!motivo_date_fuori.trim()}
+              onClick={async () => {
+                const d = date_fuori;
+                if (!d) return;
+                await conferma_ripetizione(d.fino_a, motivo_date_fuori.trim());
+              }}
+            >
+              Genera comunque
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <RipetiSessioneDialog
 
