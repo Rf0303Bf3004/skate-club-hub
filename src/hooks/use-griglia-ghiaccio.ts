@@ -1190,6 +1190,16 @@ export interface DataFuoriDisponibilita {
  * Generazione di massa: ogni occorrenza va verificata, non solo la prima.
  * Restituisce l'elenco delle date che NON passano il controllo.
  */
+/** Errore con l'elenco completo delle date rifiutate (generazione di massa). */
+export class ErroreDisponibilitaDate extends Error {
+  date_fuori: DataFuoriDisponibilita[];
+  constructor(date_fuori: DataFuoriDisponibilita[]) {
+    super(`${date_fuori.length} date fuori disponibilità`);
+    this.name = "ErroreDisponibilitaDate";
+    this.date_fuori = date_fuori;
+  }
+}
+
 export async function verifica_disponibilita_su_date(input: {
   istruttore_ids: string[];
   date: string[];
@@ -1576,6 +1586,8 @@ export function use_ripeti_sessione() {
       nome_corso?: string | null;
       /** Prezzo mensile del corso creato (default 0 come oggi). */
       prezzo_mensile?: number | null;
+      /** Motivo scritto per generare comunque le date fuori disponibilità. */
+      motivo_forzatura?: string | null;
     }): Promise<RipetiSessioneResult> => {
       const club_id = get_current_club_id();
       if (!club_id) throw new Error("Club non disponibile");
@@ -1704,7 +1716,6 @@ export function use_ripeti_sessione() {
 
 
       // 2) Occorrenze nel Planning classico (stesso schema, idempotente)
-      const date = date_settimanali(blocco.data, input.fino_a);
       const occ = await genera_occorrenze_corso({
         club_id,
         stagione_id: stagione.id,
