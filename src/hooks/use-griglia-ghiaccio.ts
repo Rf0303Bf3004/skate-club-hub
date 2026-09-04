@@ -1574,6 +1574,7 @@ export interface RipetiSessioneResult {
 export function use_ripeti_sessione() {
   const invalidate = use_invalidate_griglia();
   const qc = useQueryClient();
+  const { session: sessione_utente } = useAuth();
   return useMutation({
     mutationFn: async (input: {
       sessione: GrigliaSessione;
@@ -1806,6 +1807,14 @@ export function use_ripeti_sessione() {
             note: sessione.note ?? null,
             messaggio_atleti: sessione.messaggio_atleti ?? null,
             corso_id,
+            ...(date_forzate.has(d)
+              ? {
+                  fuori_disponibilita: true,
+                  motivo_forzatura,
+                  forzato_da: sessione_utente?.user_id ?? null,
+                  forzato_at: new Date().toISOString(),
+                }
+              : {}),
           } as any)
           .select("id")
           .single();
