@@ -1618,6 +1618,18 @@ export function use_ripeti_sessione() {
 
       const istruttori_ids = (sessione.istruttori ?? []).map((i) => i.istruttore_id);
 
+      // Disponibilità su TUTTE le date generate, non solo sulla prima.
+      const date = date_settimanali(blocco.data, input.fino_a);
+      const motivo_forzatura = (input.motivo_forzatura ?? "").trim();
+      const fuori = await verifica_disponibilita_su_date({
+        istruttore_ids: istruttori_ids,
+        date,
+        ora_inizio,
+        ora_fine,
+      });
+      if (fuori.length > 0 && !motivo_forzatura) throw new ErroreDisponibilitaDate(fuori);
+      const date_forzate = new Set(fuori.map((f) => f.data));
+
       const etichetta_specialita =
         sessione.specialita_nome || sessione.specialita_testo_libero || "Sessione ghiaccio";
       const nome_corso =
