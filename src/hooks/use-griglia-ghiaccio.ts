@@ -1597,6 +1597,8 @@ export function use_ripeti_sessione() {
       prezzo_mensile?: number | null;
       /** Motivo scritto per generare comunque le date fuori disponibilità. */
       motivo_forzatura?: string | null;
+      /** Conferma esplicita a generare anche le date oltre la fine stagione. */
+      conferma_fuori_stagione?: boolean;
     }): Promise<RipetiSessioneResult> => {
       const club_id = get_current_club_id();
       if (!club_id) throw new Error("Club non disponibile");
