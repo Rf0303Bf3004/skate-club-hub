@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { use_stagione_attiva } from "@/lib/stagione-attiva";
 import { use_club, use_setup_club, use_stagioni, use_atleti, use_istruttori } from "@/hooks/use-supabase-data";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -323,6 +324,7 @@ const ClubSetupPage: React.FC = () => {
       };
       const payload = {
         club_id,
+        stagione_id: stagione_corrente?.id ?? null,
         ora_apertura_default: get_ghiaccio_val("ora_apertura_default", "06:00"),
         ora_chiusura_default: get_ghiaccio_val("ora_chiusura_default", "22:30"),
         durata_pulizia_minuti: parseInt(get_ghiaccio_val("durata_pulizia_minuti", 30)),
@@ -359,6 +361,7 @@ const ClubSetupPage: React.FC = () => {
       const club_id = get_current_club_id();
       const payload: any = {
         club_id,
+        stagione_id: stagione_corrente?.id ?? null,
         max_atleti_lezione_privata:
           parseInt(get_ghiaccio_val("max_atleti_lezione_privata", (config_ghiaccio as any)?.max_atleti_lezione_privata ?? 3)) || 3,
         modalita_costo_privata:
