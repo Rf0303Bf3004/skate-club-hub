@@ -460,11 +460,27 @@ export function use_pubblica_blocco() {
     mutationFn: async (blocco: string | GrigliaBlocco) => {
       const blocco_id = typeof blocco === "string" ? blocco : blocco.id;
       const club_id = get_current_club_id();
+
+      // Una sessione di ghiaccio senza istruttore non si pubblica: sul ghiaccio
+      // c'è sempre qualcuno responsabile del gruppo.
+      if (typeof blocco !== "string") {
+        const senza = (blocco.sessioni ?? []).filter((s) => (s.istruttori ?? []).length === 0);
+        if (senza.length > 0) {
+          const elenco = senza
+            .map((s) => `${String(s.ora_inizio).slice(0, 5)}–${String(s.ora_fine).slice(0, 5)}`)
+            .join(", ");
+          throw new Error(
+            `Non posso pubblicare: ${senza.length === 1 ? "una sessione è" : `${senza.length} sessioni sono`} senza istruttore (${elenco}). Assegna un istruttore e riprova.`,
+          );
+        }
+      }
+
       const { error } = await supabase
         .from("griglia_blocchi" as any)
         .update({ stato: "pubblicato", pubblicato_at: new Date().toISOString() } as any)
         .eq("id", blocco_id);
       if (error) throw error;
+
 
       // Invio convocazioni: una comunicazione per atleta e per sessione con messaggio.
       let inviate = 0;
