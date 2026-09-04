@@ -44,6 +44,7 @@ import {
 } from "@/hooks/use-griglia-ghiaccio";
 
 import { use_risorse_strutture } from "@/hooks/use-risorse-strutture";
+import { ErroreDateFuoriStagione, type StagioneCorrente } from "@/lib/stagione-attiva";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
