@@ -8146,6 +8146,10 @@ export type Database = {
           soggetto_iva: boolean
         }[]
       }
+      insegna_riferimento: {
+        Args: { p_rif: string; p_tipo: string }
+        Returns: boolean
+      }
       inventario_export_club: {
         Args: { p_club: string }
         Returns: {
@@ -8170,6 +8174,7 @@ export type Database = {
       is_mobile_parent: { Args: never; Returns: boolean }
       is_mobile_staff: { Args: never; Returns: boolean }
       is_superadmin: { Args: never; Returns: boolean }
+      istruttore_corrente: { Args: never; Returns: string }
       lancia_controlli_notturni: {
         Args: never
         Returns: {
@@ -8268,6 +8273,7 @@ export type Database = {
       puo_comunicare: { Args: never; Returns: boolean }
       puo_configurare_club: { Args: never; Returns: boolean }
       puo_gestire_cancellazioni: { Args: { p_club: string }; Returns: boolean }
+      puo_gestire_denaro: { Args: never; Returns: boolean }
       puo_gestire_fatture: { Args: { p_club: string }; Returns: boolean }
       puo_gestire_sportivo: { Args: never; Returns: boolean }
       puo_pianificare: { Args: never; Returns: boolean }
