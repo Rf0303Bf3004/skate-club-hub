@@ -1409,9 +1409,43 @@ export function use_sync_gruppo_sessione() {
 
 export function use_assegna_istruttore_sessione() {
   const invalidate = use_invalidate_griglia();
+  const { session } = useAuth();
   return useMutation({
-    mutationFn: async (input: { sessione_id: string; istruttore_id: string; forza?: boolean }) => {
-      // Blocco di default, con override esplicito consentito (`forza`).
+    mutationFn: async (input: {
+      sessione_id: string;
+      istruttore_id: string;
+      /** Sovrapposizione con un'altra sessione già confermata dall'utente. */
+      forza?: boolean;
+      /** Motivo scritto della forzatura fuori disponibilità (obbligatorio per forzare). */
+      motivo_forzatura?: string | null;
+    }) => {
+      const motivo = (input.motivo_forzatura ?? "").trim();
+
+      // 1) Disponibilità dichiarata: rifiuto salvo forzatura motivata.
+      const coord = await _coordinate_sessione(input.sessione_id);
+      if (coord) {
+        const esito = await verifica_disponibilita_istruttore({
+          istruttore_id: input.istruttore_id,
+          data: coord.data,
+          ora_inizio: coord.ora_inizio,
+          ora_fine: coord.ora_fine,
+        });
+        if (!esito.ok) {
+          if (!motivo) throw new ErroreDisponibilitaIstruttore(esito);
+          const { error: err_f } = await supabase
+            .from("griglia_sessioni" as any)
+            .update({
+              fuori_disponibilita: true,
+              motivo_forzatura: motivo,
+              forzato_da: session?.user_id ?? null,
+              forzato_at: new Date().toISOString(),
+            } as any)
+            .eq("id", input.sessione_id);
+          if (err_f) throw err_f;
+        }
+      }
+
+      // 2) Sovrapposizione con un'altra sessione: avviso, non blocco.
       if (!input.forza) {
         const conflitto = await verifica_conflitto_istruttore(input);
         if (conflitto) {
@@ -1420,6 +1454,7 @@ export function use_assegna_istruttore_sessione() {
           );
         }
       }
+
       const { error } = await supabase
         .from("griglia_sessioni_istruttori" as any)
         .insert({ sessione_id: input.sessione_id, istruttore_id: input.istruttore_id } as any);
