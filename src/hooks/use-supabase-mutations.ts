@@ -1313,55 +1313,111 @@ export function use_save_disponibilita() {
 }
 
 // ─── Presenze ──────────────────────────────────────────────
+export type presenza_input = {
+  persona_id: string;
+  tipo_persona: "istruttore" | "atleta";
+  data: string;
+  ora_entrata?: string;
+  metodo: "nfc" | "manuale";
+  note?: string;
+  riferimento_id?: string;
+  tipo_riferimento?: "corso" | "lezione_privata" | "libero";
+};
+
+/**
+ * Scrive UNA sola riga di presenza per persona/riferimento/data.
+ * La tabella ha un vincolo UNIQUE (persona_id, tipo_persona, data,
+ * riferimento_id, tipo_riferimento): l'inserimento usa ON CONFLICT ... DO UPDATE
+ * (upsert), così un secondo salvataggio aggiorna la riga invece di duplicarla
+ * o fallire. Con `riferimento_id` nullo il vincolo non scatta (NULLS DISTINCT),
+ * quindi in quel caso la riga esistente viene cercata prima.
+ */
+async function scrivi_presenza(data: presenza_input): Promise<{ tipo: "entrata" | "uscita" }> {
+  const ora = data.ora_entrata || new Date().toTimeString().slice(0, 5);
+  const club_id = cid();
+
+  const query = supabase
+    .from("presenze")
+    .select("id")
+    .eq("club_id", club_id)
+    .eq("persona_id", data.persona_id)
+    .eq("tipo_persona", data.tipo_persona)
+    .eq("data", data.data);
+  if (data.riferimento_id) query.eq("riferimento_id", data.riferimento_id);
+  else query.is("riferimento_id", null);
+
+  const { data: esistenti, error: err_sel } = await query.limit(1);
+  if (err_sel) throw err_sel;
+  const existing = (esistenti ?? [])[0];
+
+  if (existing) {
+    const { error } = await supabase.from("presenze").update({ ora_uscita: ora }).eq("id", existing.id);
+    if (error) throw error;
+    return { tipo: "uscita" };
+  }
+
+  const riga = {
+    club_id,
+    persona_id: data.persona_id,
+    tipo_persona: data.tipo_persona,
+    data: data.data,
+    ora_entrata: ora,
+    metodo: data.metodo,
+    note: data.note ?? null,
+    riferimento_id: data.riferimento_id || null,
+    tipo_riferimento: data.tipo_riferimento || null,
+  };
+
+  const { error } = await supabase
+    .from("presenze")
+    .upsert(riga as any, {
+      onConflict: "persona_id,tipo_persona,data,riferimento_id,tipo_riferimento",
+      ignoreDuplicates: false,
+    });
+  if (error) throw error;
+  return { tipo: "entrata" };
+}
+
 export function use_segna_presenza() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (data: {
-      persona_id: string;
-      tipo_persona: "istruttore" | "atleta";
-      data: string;
-      ora_entrata?: string;
-      metodo: "nfc" | "manuale";
-      note?: string;
-      riferimento_id?: string;
-      tipo_riferimento?: "corso" | "lezione_privata" | "libero";
-    }) => {
-      const query = supabase
-        .from("presenze")
-        .select("id")
-        .eq("club_id", cid())
-        .eq("persona_id", data.persona_id)
-        .eq("data", data.data);
-      if (data.riferimento_id) {
-        query.eq("riferimento_id", data.riferimento_id);
-      } else {
-        query.is("riferimento_id", null);
-      }
-      const { data: existing } = await query.maybeSingle();
-      if (existing) {
-        const { error } = await supabase
-          .from("presenze")
-          .update({ ora_uscita: data.ora_entrata || new Date().toTimeString().slice(0, 5) })
-          .eq("id", existing.id);
-        if (error) throw error;
-        return { tipo: "uscita" };
-      } else {
-        const { error } = await supabase.from("presenze").insert({
-          club_id: cid(),
-          persona_id: data.persona_id,
-          tipo_persona: data.tipo_persona,
-          data: data.data,
-          ora_entrata: data.ora_entrata || new Date().toTimeString().slice(0, 5),
-          metodo: data.metodo,
-          riferimento_id: data.riferimento_id || null,
-          tipo_riferimento: data.tipo_riferimento || null,
-        });
-        if (error) throw error;
-        return { tipo: "entrata" };
-      }
-    },
+    mutationFn: (data: presenza_input) => scrivi_presenza(data),
     onSuccess: (_d, vars) => {
       qc.invalidateQueries({ queryKey: ["presenze", cid(), vars.data] });
+    },
+  });
+}
+
+/**
+ * Appello di gruppo: una riga per persona, mai N copie.
+ * L'elenco in ingresso viene deduplicato sulla chiave del vincolo UNIQUE
+ * prima della scrittura (è lì che nasceva la moltiplicazione).
+ */
+export function use_segna_presenze_massa() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (righe: presenza_input[]) => {
+      const per_chiave = new Map<string, presenza_input>();
+      for (const r of righe) {
+        if (!r?.persona_id) continue;
+        const chiave = [
+          r.persona_id,
+          r.tipo_persona,
+          r.data,
+          r.riferimento_id ?? "",
+          r.tipo_riferimento ?? "",
+        ].join("|");
+        per_chiave.set(chiave, r);
+      }
+      let scritte = 0;
+      for (const r of per_chiave.values()) {
+        await scrivi_presenza(r);
+        scritte += 1;
+      }
+      return { scritte };
+    },
+    onSuccess: (_d, vars) => {
+      qc.invalidateQueries({ queryKey: ["presenze", cid(), vars[0]?.data] });
     },
   });
 }

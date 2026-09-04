@@ -460,11 +460,27 @@ export function use_pubblica_blocco() {
     mutationFn: async (blocco: string | GrigliaBlocco) => {
       const blocco_id = typeof blocco === "string" ? blocco : blocco.id;
       const club_id = get_current_club_id();
+
+      // Una sessione di ghiaccio senza istruttore non si pubblica: sul ghiaccio
+      // c'è sempre qualcuno responsabile del gruppo.
+      if (typeof blocco !== "string") {
+        const senza = (blocco.sessioni ?? []).filter((s) => (s.istruttori ?? []).length === 0);
+        if (senza.length > 0) {
+          const elenco = senza
+            .map((s) => `${String(s.ora_inizio).slice(0, 5)}–${String(s.ora_fine).slice(0, 5)}`)
+            .join(", ");
+          throw new Error(
+            `Non posso pubblicare: ${senza.length === 1 ? "una sessione è" : `${senza.length} sessioni sono`} senza istruttore (${elenco}). Assegna un istruttore e riprova.`,
+          );
+        }
+      }
+
       const { error } = await supabase
         .from("griglia_blocchi" as any)
         .update({ stato: "pubblicato", pubblicato_at: new Date().toISOString() } as any)
         .eq("id", blocco_id);
       if (error) throw error;
+
 
       // Invio convocazioni: una comunicazione per atleta e per sessione con messaggio.
       let inviate = 0;
@@ -993,14 +1009,25 @@ export async function verifica_conflitti_atleti(
   return out;
 }
 
+export interface ConflittoIstruttore extends ConflittoGruppo {
+  /** Sessione già assegnata che si sovrappone. */
+  sessione_id: string;
+  /** Atlete presenti nell'altra sessione. */
+  n_atlete_altra: number;
+  /** Atlete presenti nella sessione di destinazione. */
+  n_atlete_destinazione: number;
+}
+
 /**
- * Verifica (non bloccante d'ufficio: l'utente può forzare) sullo stesso istruttore
- * assegnato a due sotto-sessioni sovrapposte nello stesso giorno.
+ * AVVISO (non blocco): lo stesso istruttore in due sotto-sessioni sovrapposte
+ * nello stesso giorno è legittimo (due gruppi su porzioni di pista diverse).
+ * Restituisce l'altra sessione, l'orario e quante atlete ci sono in ciascuna,
+ * così l'utente può confermare con cognizione di causa.
  */
 export async function verifica_conflitto_istruttore(input: {
   sessione_id: string;
   istruttore_id: string;
-}): Promise<ConflittoGruppo | null> {
+}): Promise<ConflittoIstruttore | null> {
   if (!input.istruttore_id) return null;
   const candidate = await _sessioni_sovrapposte(input.sessione_id);
   if (candidate.length === 0) return null;
@@ -1017,8 +1044,186 @@ export async function verifica_conflitto_istruttore(input: {
   const match = ((righe ?? []) as any[])[0];
   if (!match) return null;
 
-  return _etichetta_sessione(candidate.find((s) => s.id === match.sessione_id)!);
+  const etichetta = await _etichetta_sessione(candidate.find((s) => s.id === match.sessione_id)!);
+  const conta = async (sessione_id: string) => {
+    const { count } = await supabase
+      .from("griglia_sessioni_atleti" as any)
+      .select("id", { count: "exact", head: true })
+      .eq("sessione_id", sessione_id);
+    return count ?? 0;
+  };
+  return {
+    ...etichetta,
+    sessione_id: match.sessione_id as string,
+    n_atlete_altra: await conta(match.sessione_id as string),
+    n_atlete_destinazione: await conta(input.sessione_id),
+  };
 }
+
+// ─── Disponibilità dichiarata degli istruttori ─────────────
+// Regola: la fascia oraria della sessione deve stare INTERAMENTE dentro una
+// riga di `disponibilita_istruttori` per quell'istruttore e per il giorno della
+// settimana della data del blocco. Nessuna riga per quel giorno = rifiuto:
+// l'assenza di dati non vale come permesso. Stessa regola replicata come
+// trigger sul database (`griglia_valida_disponibilita_istruttore`).
+
+export interface EsitoDisponibilita {
+  ok: boolean;
+  giorno: string;
+  fasce_label: string;
+  motivo: string | null;
+}
+
+/** Errore riconoscibile dall'interfaccia per proporre la forzatura motivata. */
+export class ErroreDisponibilitaIstruttore extends Error {
+  esito: EsitoDisponibilita;
+  constructor(esito: EsitoDisponibilita) {
+    super(esito.motivo ?? "Istruttore fuori disponibilità");
+    this.name = "ErroreDisponibilitaIstruttore";
+    this.esito = esito;
+  }
+}
+
+function _norm_giorno(g: string | null | undefined): string {
+  return (g ?? "")
+    .toString()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function _valuta_fasce(
+  fasce: { ora_inizio: string; ora_fine: string }[],
+  giorno: string,
+  ora_inizio: string,
+  ora_fine: string,
+): EsitoDisponibilita {
+  const fasce_label = fasce
+    .map((f) => `${String(f.ora_inizio).slice(0, 5)}–${String(f.ora_fine).slice(0, 5)}`)
+    .join(", ");
+  if (fasce.length === 0) {
+    return {
+      ok: false,
+      giorno,
+      fasce_label: "",
+      motivo: `Nessuna disponibilità dichiarata il ${giorno}: l'assegnazione non è ammessa.`,
+    };
+  }
+  const s = _min(ora_inizio);
+  const e = _min(ora_fine);
+  const dentro = fasce.some((f) => _min(f.ora_inizio) <= s && _min(f.ora_fine) >= e);
+  if (dentro) return { ok: true, giorno, fasce_label, motivo: null };
+  return {
+    ok: false,
+    giorno,
+    fasce_label,
+    motivo: `${String(ora_inizio).slice(0, 5)}–${String(ora_fine).slice(0, 5)} non rientra nella disponibilità del ${giorno} (${fasce_label}).`,
+  };
+}
+
+async function _fasce_istruttori(istruttore_ids: string[]) {
+  const ids = Array.from(new Set(istruttore_ids.filter(Boolean)));
+  const per_istruttore = new Map<string, { giorno: string; ora_inizio: string; ora_fine: string }[]>();
+  if (ids.length === 0) return per_istruttore;
+  const { data, error } = await supabase
+    .from("disponibilita_istruttori")
+    .select("istruttore_id,giorno,ora_inizio,ora_fine")
+    .in("istruttore_id", ids);
+  if (error) throw error;
+  for (const r of (data ?? []) as any[]) {
+    const lista = per_istruttore.get(r.istruttore_id) ?? [];
+    lista.push({ giorno: r.giorno, ora_inizio: r.ora_inizio, ora_fine: r.ora_fine });
+    per_istruttore.set(r.istruttore_id, lista);
+  }
+  return per_istruttore;
+}
+
+/** Controllo puntuale su una data e una fascia oraria. */
+export async function verifica_disponibilita_istruttore(input: {
+  istruttore_id: string;
+  data: string;
+  ora_inizio: string;
+  ora_fine: string;
+}): Promise<EsitoDisponibilita> {
+  const giorno = giorno_it_da_data(input.data);
+  const mappa = await _fasce_istruttori([input.istruttore_id]);
+  const fasce = (mappa.get(input.istruttore_id) ?? []).filter(
+    (f) => _norm_giorno(f.giorno) === _norm_giorno(giorno),
+  );
+  return _valuta_fasce(fasce, giorno, input.ora_inizio, input.ora_fine);
+}
+
+/** Data + orario di una sotto-sessione (con il blocco che la contiene). */
+export async function _coordinate_sessione(
+  sessione_id: string,
+): Promise<{ data: string; ora_inizio: string; ora_fine: string } | null> {
+  const { data: s, error } = await supabase
+    .from("griglia_sessioni" as any)
+    .select("id,blocco_id,ora_inizio,ora_fine")
+    .eq("id", sessione_id)
+    .maybeSingle();
+  if (error) throw error;
+  if (!s) return null;
+  const { data: b, error: err_b } = await supabase
+    .from("griglia_blocchi" as any)
+    .select("data")
+    .eq("id", (s as any).blocco_id)
+    .maybeSingle();
+  if (err_b) throw err_b;
+  if (!b) return null;
+  return {
+    data: (b as any).data as string,
+    ora_inizio: (s as any).ora_inizio as string,
+    ora_fine: (s as any).ora_fine as string,
+  };
+}
+
+export interface DataFuoriDisponibilita {
+  data: string;
+  giorno: string;
+  istruttore_id: string;
+  motivo: string;
+}
+
+/**
+ * Generazione di massa: ogni occorrenza va verificata, non solo la prima.
+ * Restituisce l'elenco delle date che NON passano il controllo.
+ */
+/** Errore con l'elenco completo delle date rifiutate (generazione di massa). */
+export class ErroreDisponibilitaDate extends Error {
+  date_fuori: DataFuoriDisponibilita[];
+  constructor(date_fuori: DataFuoriDisponibilita[]) {
+    super(`${date_fuori.length} date fuori disponibilità`);
+    this.name = "ErroreDisponibilitaDate";
+    this.date_fuori = date_fuori;
+  }
+}
+
+export async function verifica_disponibilita_su_date(input: {
+  istruttore_ids: string[];
+  date: string[];
+  ora_inizio: string;
+  ora_fine: string;
+}): Promise<DataFuoriDisponibilita[]> {
+  const ids = Array.from(new Set((input.istruttore_ids ?? []).filter(Boolean)));
+  if (ids.length === 0 || (input.date ?? []).length === 0) return [];
+  const mappa = await _fasce_istruttori(ids);
+  const out: DataFuoriDisponibilita[] = [];
+  for (const d of input.date) {
+    const giorno = giorno_it_da_data(d);
+    for (const istruttore_id of ids) {
+      const fasce = (mappa.get(istruttore_id) ?? []).filter(
+        (f) => _norm_giorno(f.giorno) === _norm_giorno(giorno),
+      );
+      const esito = _valuta_fasce(fasce, giorno, input.ora_inizio, input.ora_fine);
+      if (!esito.ok) out.push({ data: d, giorno, istruttore_id, motivo: esito.motivo ?? "" });
+    }
+  }
+  return out;
+}
+
+
 
 
 /**
@@ -1230,9 +1435,43 @@ export function use_sync_gruppo_sessione() {
 
 export function use_assegna_istruttore_sessione() {
   const invalidate = use_invalidate_griglia();
+  const { session } = useAuth();
   return useMutation({
-    mutationFn: async (input: { sessione_id: string; istruttore_id: string; forza?: boolean }) => {
-      // Blocco di default, con override esplicito consentito (`forza`).
+    mutationFn: async (input: {
+      sessione_id: string;
+      istruttore_id: string;
+      /** Sovrapposizione con un'altra sessione già confermata dall'utente. */
+      forza?: boolean;
+      /** Motivo scritto della forzatura fuori disponibilità (obbligatorio per forzare). */
+      motivo_forzatura?: string | null;
+    }) => {
+      const motivo = (input.motivo_forzatura ?? "").trim();
+
+      // 1) Disponibilità dichiarata: rifiuto salvo forzatura motivata.
+      const coord = await _coordinate_sessione(input.sessione_id);
+      if (coord) {
+        const esito = await verifica_disponibilita_istruttore({
+          istruttore_id: input.istruttore_id,
+          data: coord.data,
+          ora_inizio: coord.ora_inizio,
+          ora_fine: coord.ora_fine,
+        });
+        if (!esito.ok) {
+          if (!motivo) throw new ErroreDisponibilitaIstruttore(esito);
+          const { error: err_f } = await supabase
+            .from("griglia_sessioni" as any)
+            .update({
+              fuori_disponibilita: true,
+              motivo_forzatura: motivo,
+              forzato_da: session?.user_id ?? null,
+              forzato_at: new Date().toISOString(),
+            } as any)
+            .eq("id", input.sessione_id);
+          if (err_f) throw err_f;
+        }
+      }
+
+      // 2) Sovrapposizione con un'altra sessione: avviso, non blocco.
       if (!input.forza) {
         const conflitto = await verifica_conflitto_istruttore(input);
         if (conflitto) {
@@ -1241,6 +1480,7 @@ export function use_assegna_istruttore_sessione() {
           );
         }
       }
+
       const { error } = await supabase
         .from("griglia_sessioni_istruttori" as any)
         .insert({ sessione_id: input.sessione_id, istruttore_id: input.istruttore_id } as any);
@@ -1334,6 +1574,7 @@ export interface RipetiSessioneResult {
 export function use_ripeti_sessione() {
   const invalidate = use_invalidate_griglia();
   const qc = useQueryClient();
+  const { session: sessione_utente } = useAuth();
   return useMutation({
     mutationFn: async (input: {
       sessione: GrigliaSessione;
@@ -1346,6 +1587,8 @@ export function use_ripeti_sessione() {
       nome_corso?: string | null;
       /** Prezzo mensile del corso creato (default 0 come oggi). */
       prezzo_mensile?: number | null;
+      /** Motivo scritto per generare comunque le date fuori disponibilità. */
+      motivo_forzatura?: string | null;
     }): Promise<RipetiSessioneResult> => {
       const club_id = get_current_club_id();
       if (!club_id) throw new Error("Club non disponibile");
@@ -1387,6 +1630,18 @@ export function use_ripeti_sessione() {
         : (sessione.atleti ?? []).map((a) => a.atleta_id);
 
       const istruttori_ids = (sessione.istruttori ?? []).map((i) => i.istruttore_id);
+
+      // Disponibilità su TUTTE le date generate, non solo sulla prima.
+      const date = date_settimanali(blocco.data, input.fino_a);
+      const motivo_forzatura = (input.motivo_forzatura ?? "").trim();
+      const fuori = await verifica_disponibilita_su_date({
+        istruttore_ids: istruttori_ids,
+        date,
+        ora_inizio,
+        ora_fine,
+      });
+      if (fuori.length > 0 && !motivo_forzatura) throw new ErroreDisponibilitaDate(fuori);
+      const date_forzate = new Set(fuori.map((f) => f.data));
 
       const etichetta_specialita =
         sessione.specialita_nome || sessione.specialita_testo_libero || "Sessione ghiaccio";
@@ -1462,7 +1717,6 @@ export function use_ripeti_sessione() {
 
 
       // 2) Occorrenze nel Planning classico (stesso schema, idempotente)
-      const date = date_settimanali(blocco.data, input.fino_a);
       const occ = await genera_occorrenze_corso({
         club_id,
         stagione_id: stagione.id,
@@ -1553,6 +1807,14 @@ export function use_ripeti_sessione() {
             note: sessione.note ?? null,
             messaggio_atleti: sessione.messaggio_atleti ?? null,
             corso_id,
+            ...(date_forzate.has(d)
+              ? {
+                  fuori_disponibilita: true,
+                  motivo_forzatura,
+                  forzato_da: sessione_utente?.user_id ?? null,
+                  forzato_at: new Date().toISOString(),
+                }
+              : {}),
           } as any)
           .select("id")
           .single();

@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.griglia_valida_disponibilita_istruttore() FROM PUBLIC, anon, authenticated;
