@@ -108,6 +108,7 @@ const ClubSetupPage: React.FC = () => {
   const { data: atleti = [] } = use_atleti();
   const { data: istruttori = [] } = use_istruttori();
   const { data: config_ghiaccio, isLoading: loading_config } = use_config_ghiaccio();
+  const { data: stagione_corrente } = use_stagione_attiva();
   const { data: disp_ghiaccio_raw, isLoading: loading_disp } = use_disponibilita_ghiaccio();
   const { data: catalogo_count } = use_catalogo_count();
   const { data: risorse = [] } = use_risorse_strutture();
