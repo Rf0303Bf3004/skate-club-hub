@@ -1643,6 +1643,18 @@ export function use_ripeti_sessione() {
 
       // Disponibilità su TUTTE le date generate, non solo sulla prima.
       const date = date_settimanali(blocco.data, input.fino_a);
+      // La generazione non esce dalla stagione senza una conferma esplicita.
+      const stagione_corrente: StagioneCorrente = {
+        id: stagione.id,
+        nome: stagione.nome ?? "Stagione",
+        data_inizio: stagione.data_inizio,
+        data_fine: stagione.data_fine,
+        attiva: !!stagione.attiva,
+      };
+      const date_oltre = date_fuori_stagione(date, stagione_corrente);
+      if (date_oltre.length > 0 && !input.conferma_fuori_stagione) {
+        throw new ErroreDateFuoriStagione(date_oltre, stagione_corrente);
+      }
       const motivo_forzatura = (input.motivo_forzatura ?? "").trim();
       const fuori = await verifica_disponibilita_su_date({
         istruttore_ids: istruttori_ids,
