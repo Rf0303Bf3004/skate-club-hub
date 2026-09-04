@@ -11,6 +11,7 @@ import GrigliaPistaSezione from "@/components/griglia/GrigliaPistaSezione";
 import ProvenienzaLegenda from "@/components/ProvenienzaLegenda";
 import DisponibilitaResiduaPopover from "@/components/griglia/DisponibilitaResiduaPopover";
 import BannerDisponibilitaScaduta from "@/components/common/BannerDisponibilitaScaduta";
+import BlocchiFuoriStagione from "@/components/griglia/BlocchiFuoriStagione";
 import TableauSchermo from "@/components/griglia/TableauSchermo";
 import SettimanaView from "@/components/griglia/SettimanaView";
 import MeseGrigliaView from "@/components/griglia/MeseGrigliaView";
@@ -280,6 +281,7 @@ const GrigliaGhiaccioPage: React.FC = () => {
       </div>
 
       <BannerDisponibilitaScaduta />
+      <BlocchiFuoriStagione is_editor={is_editor} />
 
       <div className="flex flex-wrap items-center gap-2">
         <ToggleGroup
