@@ -45,16 +45,23 @@ const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sa
 // ── Hooks for ghiaccio config ──
 function use_config_ghiaccio() {
   const club_id = get_current_club_id();
+  const { data: stagione } = use_stagione_attiva();
   return useQuery({
-    queryKey: ["configurazione_ghiaccio", club_id],
+    // La configurazione del ghiaccio vale per la stagione in corso: le stagioni
+    // passate conservano i loro parametri.
+    queryKey: ["configurazione_ghiaccio", club_id, stagione?.id ?? null],
     enabled: !!club_id,
     queryFn: async () => {
       const { data } = await supabase
         .from("configurazione_ghiaccio")
         .select("*")
-        .eq("club_id", club_id)
-        .maybeSingle();
-      return data;
+        .eq("club_id", club_id);
+      const righe = (data ?? []) as any[];
+      return (
+        righe.find((r) => stagione?.id && r.stagione_id === stagione.id) ??
+        righe.find((r) => !r.stagione_id) ??
+        null
+      );
     },
   });
 }
