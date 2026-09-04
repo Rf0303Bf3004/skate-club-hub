@@ -386,6 +386,7 @@ export function use_upsert_blocco() {
         if (error) throw error;
         return input.id;
       }
+      const stagione_blocco = await carica_stagione_attiva(club_id);
       const { data, error } = await supabase
         .from("griglia_blocchi" as any)
         .insert({
@@ -397,6 +398,7 @@ export function use_upsert_blocco() {
           risorsa_id: input.risorsa_id ?? null,
           stato: "bozza",
           creato_da: session?.user_id ?? null,
+          stagione_id: stagione_blocco?.id ?? null,
           ...forzatura,
         } as any)
         .select("id")
