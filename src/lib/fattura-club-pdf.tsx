@@ -138,11 +138,12 @@ export const FatturaClubDocument: React.FC<{ data: FatturaClubData }> = ({ data 
 
         <View style={s.paySection}>
           <Text style={s.blockLabel}>Riferimento pagamento</Text>
-          <Text>Bonifico bancario — IBAN: {MITTENTE.iban}</Text>
-          <Text>Intestatario: {MITTENTE.ragione_sociale}</Text>
+          {mitt.iban ? <Text>Bonifico bancario — IBAN: {mitt.iban}</Text> : <Text>Bonifico bancario</Text>}
+          <Text>Intestatario: {mitt.nome}</Text>
           <Text>Causale: Fattura {data.numero} – {data.periodo}</Text>
           <Text style={{ marginTop: 4 }}>Scadenza: {data.data_scadenza}</Text>
         </View>
+
 
         {data.note ? (
           <View style={{ marginTop: 14 }}>
