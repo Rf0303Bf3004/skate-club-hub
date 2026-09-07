@@ -84,7 +84,7 @@ const SuperAdminFatturaDetailPage: React.FC = () => {
   const intest_incompleto = !intest.indirizzo || !intest.cap || !intest.citta;
 
   const pdf_data: FatturaClubData | null = useMemo(() => {
-    if (!f || !club) return null;
+    if (!f || !club || !fornitore) return null;
     return {
       numero: `${f.periodo}/${String(f.id).slice(0, 6).toUpperCase()}`,
       periodo: formatPeriodo(f.periodo),
@@ -93,6 +93,18 @@ const SuperAdminFatturaDetailPage: React.FC = () => {
       righe,
       totale,
       note: edit_mode ? edit_note : (f.note ?? ""),
+      mittente: {
+        nome: fornitore.nome,
+        indirizzo: fornitore.indirizzo,
+        cap: fornitore.cap,
+        citta: fornitore.citta,
+        cantone: fornitore.cantone,
+        paese: fornitore.paese,
+        ide: fornitore.ide,
+        numero_iva: fornitore.numero_iva,
+        iban: fornitore.iban,
+        email: fornitore.email_fatture ?? fornitore.email_info,
+      },
       club: {
         nome: intest.nome,
         indirizzo: intest.indirizzo ?? undefined,
@@ -105,7 +117,8 @@ const SuperAdminFatturaDetailPage: React.FC = () => {
         iban: intest.iban ?? undefined,
       },
     };
-  }, [f, club, righe, totale, edit_mode, edit_note, intest]);
+  }, [f, club, righe, totale, edit_mode, edit_note, intest, fornitore]);
+
 
   const start_edit = () => {
     set_edit_righe(righe_default.length ? righe_default : [{ descrizione: "", importo: 0 }]);
