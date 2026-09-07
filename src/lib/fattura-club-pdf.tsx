@@ -1,15 +1,19 @@
 import React from "react";
 import { Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
 
-const MITTENTE = {
-  ragione_sociale: "Ice Arena Manager Sagl",
-  indirizzo: "Via Cantonale 1",
-  cap_citta: "6500 Bellinzona (TI)",
-  paese: "Svizzera",
-  partita_iva: "CHE-XXX.XXX.XXX",
-  iva: "CHE-XXX.XXX.XXX MWST",
-  iban: "CH00 0000 0000 0000 0000 0",
-  email: "fatture@icearena.ch",
+// L'anagrafica del mittente (fornitore della piattaforma) arriva sempre da
+// fuori: unica fonte di verità = tabella `fornitore_piattaforma`.
+export type MittenteFattura = {
+  nome: string;
+  indirizzo: string;
+  cap: string;
+  citta: string;
+  cantone?: string | null;
+  paese: string;
+  ide?: string | null;
+  numero_iva?: string | null;
+  iban?: string | null;
+  email?: string | null;
 };
 
 export type FatturaRiga = { descrizione: string; importo: number };
@@ -22,6 +26,7 @@ export type FatturaClubData = {
   righe: FatturaRiga[];
   totale: number;
   note?: string;
+  mittente: MittenteFattura;
   club: {
     nome: string;
     indirizzo?: string;
@@ -37,6 +42,7 @@ export type FatturaClubData = {
     iban?: string;
   };
 };
+
 
 const s = StyleSheet.create({
   page: { padding: 40, fontSize: 10, fontFamily: "Helvetica", color: "#0f172a" },
@@ -64,6 +70,9 @@ const s = StyleSheet.create({
 
 export const FatturaClubDocument: React.FC<{ data: FatturaClubData }> = ({ data }) => {
   const dest = data.club;
+  const mitt = data.mittente;
+  const mitt_cap_citta = [mitt.cap, mitt.citta].filter(Boolean).join(" ")
+    + (mitt.cantone ? ` (${mitt.cantone})` : "");
   const paese_iso = (dest.paese_iso || "CH").toUpperCase();
   const cap_len_max = paese_iso === "CH" ? 4 : 5;
   const territorio = paese_iso === "CH"
@@ -76,18 +85,21 @@ export const FatturaClubDocument: React.FC<{ data: FatturaClubData }> = ({ data 
   ].filter(Boolean);
   void cap_len_max;
 
+  const footer_parti = [mitt.nome, mitt_cap_citta, mitt.email, mitt.numero_iva].filter(Boolean);
+
   return (
     <Document>
       <Page size="A4" style={s.page}>
         <View style={s.header}>
           <View style={s.mittente}>
-            <Text style={s.mittenteName}>{MITTENTE.ragione_sociale}</Text>
-            <Text>{MITTENTE.indirizzo}</Text>
-            <Text>{MITTENTE.cap_citta}</Text>
-            <Text>{MITTENTE.paese}</Text>
-            <Text>P.IVA: {MITTENTE.partita_iva}</Text>
-            <Text>IVA: {MITTENTE.iva}</Text>
+            <Text style={s.mittenteName}>{mitt.nome}</Text>
+            <Text>{mitt.indirizzo}</Text>
+            <Text>{mitt_cap_citta}</Text>
+            <Text>{mitt.paese}</Text>
+            {mitt.ide ? <Text>IDE: {mitt.ide}</Text> : null}
+            {mitt.numero_iva ? <Text>IVA: {mitt.numero_iva}</Text> : null}
           </View>
+
           <View style={s.invoiceMeta}>
             <Text style={s.invoiceTitle}>FATTURA</Text>
             <Text style={s.small}>N. {data.numero}</Text>
@@ -126,11 +138,12 @@ export const FatturaClubDocument: React.FC<{ data: FatturaClubData }> = ({ data 
 
         <View style={s.paySection}>
           <Text style={s.blockLabel}>Riferimento pagamento</Text>
-          <Text>Bonifico bancario — IBAN: {MITTENTE.iban}</Text>
-          <Text>Intestatario: {MITTENTE.ragione_sociale}</Text>
+          {mitt.iban ? <Text>Bonifico bancario — IBAN: {mitt.iban}</Text> : <Text>Bonifico bancario</Text>}
+          <Text>Intestatario: {mitt.nome}</Text>
           <Text>Causale: Fattura {data.numero} – {data.periodo}</Text>
           <Text style={{ marginTop: 4 }}>Scadenza: {data.data_scadenza}</Text>
         </View>
+
 
         {data.note ? (
           <View style={{ marginTop: 14 }}>
@@ -140,8 +153,9 @@ export const FatturaClubDocument: React.FC<{ data: FatturaClubData }> = ({ data 
         ) : null}
 
         <Text style={s.footer} fixed>
-          {MITTENTE.ragione_sociale} · {MITTENTE.cap_citta} · {MITTENTE.email} · {MITTENTE.iva}
+          {footer_parti.join(" · ")}
         </Text>
+
       </Page>
     </Document>
   );

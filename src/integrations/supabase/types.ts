@@ -3317,6 +3317,60 @@ export type Database = {
         }
         Relationships: []
       }
+      fornitore_piattaforma: {
+        Row: {
+          cantone: string | null
+          cap: string
+          citta: string
+          email_fatture: string | null
+          email_info: string
+          iban: string | null
+          id: string
+          ide: string | null
+          indirizzo: string
+          nome: string
+          numero_iva: string | null
+          paese: string
+          paese_iso: string
+          singleton: boolean
+          updated_at: string
+        }
+        Insert: {
+          cantone?: string | null
+          cap: string
+          citta: string
+          email_fatture?: string | null
+          email_info: string
+          iban?: string | null
+          id?: string
+          ide?: string | null
+          indirizzo: string
+          nome: string
+          numero_iva?: string | null
+          paese?: string
+          paese_iso?: string
+          singleton?: boolean
+          updated_at?: string
+        }
+        Update: {
+          cantone?: string | null
+          cap?: string
+          citta?: string
+          email_fatture?: string | null
+          email_info?: string
+          iban?: string | null
+          id?: string
+          ide?: string | null
+          indirizzo?: string
+          nome?: string
+          numero_iva?: string | null
+          paese?: string
+          paese_iso?: string
+          singleton?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       gare_calendario: {
         Row: {
           archiviata: boolean | null
@@ -7554,6 +7608,39 @@ export type Database = {
           nome?: string | null
           paese?: string | null
           sigla?: string | null
+        }
+        Relationships: []
+      }
+      fornitore_piattaforma_pubblico: {
+        Row: {
+          cantone: string | null
+          cap: string | null
+          citta: string | null
+          email_info: string | null
+          ide: string | null
+          indirizzo: string | null
+          nome: string | null
+          paese: string | null
+        }
+        Insert: {
+          cantone?: string | null
+          cap?: string | null
+          citta?: string | null
+          email_info?: string | null
+          ide?: string | null
+          indirizzo?: string | null
+          nome?: string | null
+          paese?: string | null
+        }
+        Update: {
+          cantone?: string | null
+          cap?: string | null
+          citta?: string | null
+          email_info?: string | null
+          ide?: string | null
+          indirizzo?: string | null
+          nome?: string | null
+          paese?: string | null
         }
         Relationships: []
       }

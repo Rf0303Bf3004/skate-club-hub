@@ -13,12 +13,14 @@ import { BlobProvider, PDFDownloadLink, pdf } from "@react-pdf/renderer";
 import { ArrowLeft, FileText, Send, CheckCircle2, Pencil, Plus, Trash2, Download } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { FatturaClubDocument, type FatturaClubData, type FatturaRiga } from "@/lib/fattura-club-pdf";
+import { use_fornitore_completo } from "@/hooks/use-fornitore-piattaforma";
 
 const SuperAdminFatturaDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const today = new Date().toISOString().slice(0, 10);
+  const { fornitore } = use_fornitore_completo();
 
   const [open_preview, set_open_preview] = useState(false);
   const [edit_mode, set_edit_mode] = useState(false);
@@ -84,7 +86,7 @@ const SuperAdminFatturaDetailPage: React.FC = () => {
   const intest_incompleto = !intest.indirizzo || !intest.cap || !intest.citta;
 
   const pdf_data: FatturaClubData | null = useMemo(() => {
-    if (!f || !club) return null;
+    if (!f || !club || !fornitore) return null;
     return {
       numero: `${f.periodo}/${String(f.id).slice(0, 6).toUpperCase()}`,
       periodo: formatPeriodo(f.periodo),
@@ -93,6 +95,18 @@ const SuperAdminFatturaDetailPage: React.FC = () => {
       righe,
       totale,
       note: edit_mode ? edit_note : (f.note ?? ""),
+      mittente: {
+        nome: fornitore.nome,
+        indirizzo: fornitore.indirizzo,
+        cap: fornitore.cap,
+        citta: fornitore.citta,
+        cantone: fornitore.cantone,
+        paese: fornitore.paese,
+        ide: fornitore.ide,
+        numero_iva: fornitore.numero_iva,
+        iban: fornitore.iban,
+        email: fornitore.email_fatture ?? fornitore.email_info,
+      },
       club: {
         nome: intest.nome,
         indirizzo: intest.indirizzo ?? undefined,
@@ -105,7 +119,8 @@ const SuperAdminFatturaDetailPage: React.FC = () => {
         iban: intest.iban ?? undefined,
       },
     };
-  }, [f, club, righe, totale, edit_mode, edit_note, intest]);
+  }, [f, club, righe, totale, edit_mode, edit_note, intest, fornitore]);
+
 
   const start_edit = () => {
     set_edit_righe(righe_default.length ? righe_default : [{ descrizione: "", importo: 0 }]);
@@ -225,10 +240,12 @@ const SuperAdminFatturaDetailPage: React.FC = () => {
         <Card>
           <CardHeader><CardTitle className="text-base">Mittente</CardTitle></CardHeader>
           <CardContent className="text-sm space-y-0.5">
-            <p className="font-semibold">Ice Arena Manager Sagl</p>
-            <p>Via Cantonale 1</p>
-            <p>6500 Bellinzona (TI)</p>
-            <p className="text-muted-foreground">P.IVA / IVA: CHE-XXX.XXX.XXX MWST</p>
+            <p className="font-semibold">{fornitore?.nome ?? "—"}</p>
+            {fornitore?.indirizzo && <p>{fornitore.indirizzo}</p>}
+            {fornitore && <p>{[fornitore.cap, fornitore.citta].filter(Boolean).join(" ")}{fornitore.cantone ? ` (${fornitore.cantone})` : ""}</p>}
+            {fornitore?.ide && <p className="text-muted-foreground">IDE: {fornitore.ide}</p>}
+            {fornitore?.numero_iva && <p className="text-muted-foreground">IVA: {fornitore.numero_iva}</p>}
+            {fornitore?.iban && <p className="text-muted-foreground">IBAN: {fornitore.iban}</p>}
           </CardContent>
         </Card>
         <Card>
