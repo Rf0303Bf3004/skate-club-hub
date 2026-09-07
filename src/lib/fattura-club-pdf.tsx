@@ -153,8 +153,9 @@ export const FatturaClubDocument: React.FC<{ data: FatturaClubData }> = ({ data 
         ) : null}
 
         <Text style={s.footer} fixed>
-          {MITTENTE.ragione_sociale} · {MITTENTE.cap_citta} · {MITTENTE.email} · {MITTENTE.iva}
+          {footer_parti.join(" · ")}
         </Text>
+
       </Page>
     </Document>
   );
