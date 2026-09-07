@@ -1,15 +1,19 @@
 import React from "react";
 import { Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
 
-const MITTENTE = {
-  ragione_sociale: "Ice Arena Manager Sagl",
-  indirizzo: "Via Cantonale 1",
-  cap_citta: "6500 Bellinzona (TI)",
-  paese: "Svizzera",
-  partita_iva: "CHE-XXX.XXX.XXX",
-  iva: "CHE-XXX.XXX.XXX MWST",
-  iban: "CH00 0000 0000 0000 0000 0",
-  email: "fatture@icearena.ch",
+// L'anagrafica del mittente (fornitore della piattaforma) arriva sempre da
+// fuori: unica fonte di verità = tabella `fornitore_piattaforma`.
+export type MittenteFattura = {
+  nome: string;
+  indirizzo: string;
+  cap: string;
+  citta: string;
+  cantone?: string | null;
+  paese: string;
+  ide?: string | null;
+  numero_iva?: string | null;
+  iban?: string | null;
+  email?: string | null;
 };
 
 export type FatturaRiga = { descrizione: string; importo: number };
@@ -22,6 +26,7 @@ export type FatturaClubData = {
   righe: FatturaRiga[];
   totale: number;
   note?: string;
+  mittente: MittenteFattura;
   club: {
     nome: string;
     indirizzo?: string;
@@ -37,6 +42,7 @@ export type FatturaClubData = {
     iban?: string;
   };
 };
+
 
 const s = StyleSheet.create({
   page: { padding: 40, fontSize: 10, fontFamily: "Helvetica", color: "#0f172a" },
