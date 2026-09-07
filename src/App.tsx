@@ -53,6 +53,7 @@ import PacchettiSponsorPage from "@/pages/PacchettiSponsorPage";
 import RegisterClubPage from "@/pages/RegisterClubPage";
 import OnboardingPage from "@/pages/OnboardingPage";
 import LegalPlaceholderPage from "@/pages/LegalPlaceholderPage";
+import PrivacyPage from "@/pages/PrivacyPage";
 import RecoveryPage from "@/pages/RecoveryPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import SuperAdminUtentiPage from "@/pages/SuperAdminUtentiPage";
@@ -189,7 +190,7 @@ const PublicRoutes = ({ children }: { children: React.ReactNode }) => {
       <BrowserRouter>
         <Routes>
           <Route path="/termini" element={<LegalPlaceholderPage titolo="Termini e Condizioni" />} />
-          <Route path="/privacy" element={<LegalPlaceholderPage titolo="Informativa Privacy" />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
         </Routes>
       </BrowserRouter>
     );
