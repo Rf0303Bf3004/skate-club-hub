@@ -70,6 +70,9 @@ const s = StyleSheet.create({
 
 export const FatturaClubDocument: React.FC<{ data: FatturaClubData }> = ({ data }) => {
   const dest = data.club;
+  const mitt = data.mittente;
+  const mitt_cap_citta = [mitt.cap, mitt.citta].filter(Boolean).join(" ")
+    + (mitt.cantone ? ` (${mitt.cantone})` : "");
   const paese_iso = (dest.paese_iso || "CH").toUpperCase();
   const cap_len_max = paese_iso === "CH" ? 4 : 5;
   const territorio = paese_iso === "CH"
@@ -82,18 +85,21 @@ export const FatturaClubDocument: React.FC<{ data: FatturaClubData }> = ({ data 
   ].filter(Boolean);
   void cap_len_max;
 
+  const footer_parti = [mitt.nome, mitt_cap_citta, mitt.email, mitt.numero_iva].filter(Boolean);
+
   return (
     <Document>
       <Page size="A4" style={s.page}>
         <View style={s.header}>
           <View style={s.mittente}>
-            <Text style={s.mittenteName}>{MITTENTE.ragione_sociale}</Text>
-            <Text>{MITTENTE.indirizzo}</Text>
-            <Text>{MITTENTE.cap_citta}</Text>
-            <Text>{MITTENTE.paese}</Text>
-            <Text>P.IVA: {MITTENTE.partita_iva}</Text>
-            <Text>IVA: {MITTENTE.iva}</Text>
+            <Text style={s.mittenteName}>{mitt.nome}</Text>
+            <Text>{mitt.indirizzo}</Text>
+            <Text>{mitt_cap_citta}</Text>
+            <Text>{mitt.paese}</Text>
+            {mitt.ide ? <Text>IDE: {mitt.ide}</Text> : null}
+            {mitt.numero_iva ? <Text>IVA: {mitt.numero_iva}</Text> : null}
           </View>
+
           <View style={s.invoiceMeta}>
             <Text style={s.invoiceTitle}>FATTURA</Text>
             <Text style={s.small}>N. {data.numero}</Text>
