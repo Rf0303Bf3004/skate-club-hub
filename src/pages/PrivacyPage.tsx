@@ -1,8 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { use_fornitore_pubblico } from "@/hooks/use-fornitore-piattaforma";
 
 export default function PrivacyPage() {
+  const { fornitore } = use_fornitore_pubblico();
+  const indirizzo_fornitore = [
+    fornitore.indirizzo,
+    [fornitore.cap, fornitore.citta].filter(Boolean).join(" "),
+    fornitore.paese,
+  ].filter(Boolean).join(", ");
   return (
     <div className="min-h-screen bg-background py-8 px-4 sm:px-6 lg:px-8">
       <Card className="mx-auto w-full max-w-3xl shadow-sm">
@@ -32,12 +39,12 @@ export default function PrivacyPage() {
               Il titolare del trattamento è il club sportivo a cui l'atleta è iscritto. È il club che decide quali dati raccogliere e per quali finalità, ed è al club che ti rivolgi per correggere o cancellare qualcosa.
             </p>
             <p>
-              Il fornitore della piattaforma è SC2-INTECH Sagl, Piazza Nosetto 4b, 6500 Bellinzona, Svizzera (IDE CHE-489.434.744). Agisce come responsabile del trattamento: mette a disposizione il software e l'infrastruttura, tratta i dati solo su istruzione del club e non li usa per finalità proprie.
+              Il fornitore della piattaforma è {fornitore.nome}, {indirizzo_fornitore}{fornitore.ide ? ` (IDE ${fornitore.ide})` : ""}. Agisce come responsabile del trattamento: mette a disposizione il software e l'infrastruttura, tratta i dati solo su istruzione del club e non li usa per finalità proprie.
             </p>
             <p>
               Contatto per le questioni privacy:{" "}
-              <a className="text-primary underline" href="mailto:info@icearena.ch">
-                info@icearena.ch
+              <a className="text-primary underline" href={`mailto:${fornitore.email_info}`}>
+                {fornitore.email_info}
               </a>
             </p>
           </section>
@@ -168,8 +175,8 @@ export default function PrivacyPage() {
             </p>
             <p>
               La richiesta si fa al club, che è il titolare. Se non ricevi risposta, scrivi a{" "}
-              <a className="text-primary underline" href="mailto:info@icearena.ch">
-                info@icearena.ch
+              <a className="text-primary underline" href={`mailto:${fornitore.email_info}`}>
+                {fornitore.email_info}
               </a>{" "}
               e il fornitore inoltra la richiesta. In Svizzera puoi rivolgerti all'Incaricato federale della protezione dei dati e della trasparenza (IFPDT); nell'Unione europea, all'autorità di controllo del tuo paese.
             </p>
@@ -182,8 +189,8 @@ export default function PrivacyPage() {
             </p>
             <p>
               Per la cancellazione dei dati dell'atleta dagli archivi del club, la richiesta va fatta al club oppure a{" "}
-              <a className="text-primary underline" href="mailto:info@icearena.ch">
-                info@icearena.ch
+              <a className="text-primary underline" href={`mailto:${fornitore.email_info}`}>
+                {fornitore.email_info}
               </a>
               . Viene evasa entro trenta giorni, fatti salvi i documenti che il club deve conservare per legge.
             </p>
@@ -208,11 +215,11 @@ export default function PrivacyPage() {
           <section className="space-y-2">
             <h2 className="text-lg font-semibold">Contatti</h2>
             <p>
-              SC2-INTECH Sagl — Piazza Nosetto 4b, 6500 Bellinzona, Svizzera
+              {fornitore.nome} — {indirizzo_fornitore}
             </p>
             <p>
-              <a className="text-primary underline" href="mailto:info@icearena.ch">
-                info@icearena.ch
+              <a className="text-primary underline" href={`mailto:${fornitore.email_info}`}>
+                {fornitore.email_info}
               </a>
             </p>
           </section>

@@ -14,6 +14,7 @@ import { toast } from "@/hooks/use-toast";
 import { Send } from "lucide-react";
 import { pdf } from "@react-pdf/renderer";
 import { FatturaClubDocument, type FatturaClubData, type FatturaRiga } from "@/lib/fattura-club-pdf";
+import { use_fornitore_completo, type FornitoreCompleto } from "@/hooks/use-fornitore-piattaforma";
 
 type FatturaClubRow = {
   id: string; club_id: string; periodo: string; importo_chf: number;
@@ -32,6 +33,7 @@ const SuperAdminTabelloneFatturePage: React.FC = () => {
   const { t } = useTranslation("superadmin");
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { fornitore } = use_fornitore_completo();
   const today = new Date().toISOString().slice(0, 10);
   const [anno, set_anno] = useState<number>(new Date().getFullYear());
   const [solo_non_pagati, set_solo_np] = useState(false);
@@ -124,7 +126,7 @@ const SuperAdminTabelloneFatturePage: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  const build_pdf_data = (f: FatturaClubRow, c: ClubRow): FatturaClubData => {
+  const build_pdf_data = (f: FatturaClubRow, c: ClubRow, forn: FornitoreCompleto): FatturaClubData => {
     const righe: FatturaRiga[] = Array.isArray(f.righe_custom) && f.righe_custom.length > 0
       ? (f.righe_custom as FatturaRiga[])
       : [
@@ -141,6 +143,12 @@ const SuperAdminTabelloneFatturePage: React.FC = () => {
       data_emissione: today,
       data_scadenza: f.data_scadenza,
       righe, totale, note: f.note ?? undefined,
+      mittente: {
+        nome: forn.nome, indirizzo: forn.indirizzo, cap: forn.cap, citta: forn.citta,
+        cantone: forn.cantone, paese: forn.paese, ide: forn.ide,
+        numero_iva: forn.numero_iva, iban: forn.iban,
+        email: forn.email_fatture ?? forn.email_info,
+      },
       club: { nome: c.nome, indirizzo: c.indirizzo, cap: c.cap, citta: c.citta, cantone: c.cantone, paese: c.paese, partita_iva: c.partita_iva, numero_iva_chf: c.numero_iva_chf },
     };
   };
@@ -155,7 +163,8 @@ const SuperAdminTabelloneFatturePage: React.FC = () => {
       try {
         const c = clubs.find((x) => x.id === f.club_id);
         if (!c) throw new Error("Club non trovato");
-        const pdf_data = build_pdf_data(f, c);
+        if (!fornitore) throw new Error("Anagrafica fornitore non disponibile");
+        const pdf_data = build_pdf_data(f, c, fornitore);
         const blob = await pdf(<FatturaClubDocument data={pdf_data} />).toBlob();
         const path = `${f.club_id}/${f.id}.pdf`;
         const up = await supabase.storage.from("fatture-clubs").upload(path, blob, { upsert: true, contentType: "application/pdf" });
