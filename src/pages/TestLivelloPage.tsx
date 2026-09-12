@@ -374,6 +374,8 @@ export default function TestLivelloPage() {
       const payload: any = {
         club_id: club_id!,
         nome: form.nome,
+        livello_accesso: form.livello_accesso,
+
         tipo: form.tipo,
         gara_id: form.tipo === "in_gara" ? (form.gara_id || null) : null,
         data: form.tipo === "in_gara" ? (gara?.data ?? null) : (form.data || null),
