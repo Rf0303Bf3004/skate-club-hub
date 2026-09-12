@@ -974,6 +974,11 @@ export default function TestLivelloPage() {
               onChange={handle_com_change}
               corsi={corsi_lista.map((c) => ({ id: c.id, label: c.nome }))}
               atleti={atleti.map((a) => ({ id: a.id, label: `${a.cognome} ${a.nome}` }))}
+              description={
+                form.livello_accesso
+                  ? `L'avviso va solo alle ${idonee_form.length} atlete ${form.livello_accesso}, le uniche che possono fare questo test.`
+                  : "Scegli prima il passaggio del test: l'avviso va solo alle atlete che possono parteciparvi."
+              }
             />
 
             <div className="flex gap-3 justify-end pt-2">
@@ -981,9 +986,11 @@ export default function TestLivelloPage() {
               <Button
                 disabled={
                   !form.nome ||
+                  !form.livello_accesso ||
                   (form.tipo === "in_gara" && !form.gara_id) ||
                   create_test.isPending
                 }
+
                 onClick={() => create_test.mutate()}
               >
                 {com_state.invia ? (<><Send className="w-4 h-4 mr-1" /> {t("level_tests.create_and_communicate")}</>) : t("level_tests.create_test")}
