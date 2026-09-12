@@ -30,5 +30,22 @@
     "competition": "Compétition",
     "gala": "Gala / Événement extraordinaire",
     "level_test": "Test de niveau"
+  },
+  "conversazioni": {
+    "loading": "Chargement des conversations…",
+    "empty": "Aucune conversation nécessitant une réponse.",
+    "no_pending": "Aucun destinataire en attente de réponse",
+    "reminder_title": "🔔 Rappel : {{titolo}}",
+    "reminder_body": "Nous vous rappelons de répondre à la communication :\n\n{{testo}}",
+    "reminder_sent": "📨 Rappel envoyé à {{count}} destinataires",
+    "error": "Erreur",
+    "sent_on": "Envoyée le {{data}} à {{count}} destinataires",
+    "confirmations": "✓ {{count}} présences confirmées",
+    "refusals": "❌ {{count}} absences signalées",
+    "pending": "{{count}} présences attendues",
+    "remind_non_responders": "Relancer les personnes sans réponse",
+    "confirmed_on": "✓ présence confirmée le {{data}}",
+    "refused_on": "❌ absence signalée le {{data}}",
+    "waiting": "présence attendue"
   }
 }

@@ -285,8 +285,8 @@ export const CARDS: DashboardCard[] = [
   {
     codice: 'rsvp_scaduti',
     area: 'comunicazioni',
-    titolo: 'RSVP scaduti senza risposta',
-    descrizione: 'n eventi con rsvp scaduto',
+    titolo: 'Presenze attese',
+    descrizione: 'n presenze previste senza assenza segnalata',
     destinazioneClick: '/comunicazioni?filtro=rsvp_scaduti',
     cliccabile: true,
     icona: 'MailWarning',

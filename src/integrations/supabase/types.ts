@@ -5452,7 +5452,7 @@ export type Database = {
       planning_corsi_settimana: {
         Row: {
           annullato: boolean
-          corso_id: string
+          corso_id: string | null
           created_at: string
           creato_at: string
           creato_da: string | null
@@ -5472,7 +5472,7 @@ export type Database = {
         }
         Insert: {
           annullato?: boolean
-          corso_id: string
+          corso_id?: string | null
           created_at?: string
           creato_at?: string
           creato_da?: string | null
@@ -5492,7 +5492,7 @@ export type Database = {
         }
         Update: {
           annullato?: boolean
-          corso_id?: string
+          corso_id?: string | null
           created_at?: string
           creato_at?: string
           creato_da?: string | null
@@ -5511,6 +5511,13 @@ export type Database = {
           titolo_override?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "planning_corsi_settimana_corso_id_fkey"
+            columns: ["corso_id"]
+            isOneToOne: false
+            referencedRelation: "corsi"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "planning_corsi_settimana_settimana_id_fkey"
             columns: ["settimana_id"]
