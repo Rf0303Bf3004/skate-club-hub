@@ -117,10 +117,26 @@ function get_esito_options(t: (k: string) => string): { value: TestAtleta["esito
   ];
 }
 
+// Tutti i passaggi possibili (accesso → target): il test si riferisce a uno solo di questi.
+const TUTTI_PASSAGGI: Passaggio[] = [...TEST_BASE_PASSAGGI, ...TEST_CARRIERA_PASSAGGI];
+
+const passaggio_di_accesso = (accesso: string | null | undefined): Passaggio | null =>
+  TUTTI_PASSAGGI.find((p) => p.accesso === accesso) ?? null;
+
+/** Catena di passaggi consecutivi a partire dal passaggio del test. */
+const passaggi_da_accesso = (accesso: string | null | undefined): Passaggio[] => {
+  const idx = TUTTI_PASSAGGI.findIndex((p) => p.accesso === accesso);
+  return idx >= 0 ? TUTTI_PASSAGGI.slice(idx) : [];
+};
+
+const etichetta_passaggio = (p: Passaggio) =>
+  `${p.target} (riservato alle atlete ${p.accesso})`;
+
 // ─── Form state nuovo test ───────────────────────────────────────────────
 type NuovoTestForm = {
   tipo: "base" | "in_gara";
   nome: string;
+  livello_accesso: string;
   data: string;
   ora: string;
   luogo: string;
@@ -134,6 +150,7 @@ type NuovoTestForm = {
 const empty_form: NuovoTestForm = {
   tipo: "base",
   nome: "",
+  livello_accesso: "",
   data: "",
   ora: "",
   luogo: "",
@@ -143,6 +160,7 @@ const empty_form: NuovoTestForm = {
   gara_id: "",
   note: "",
 };
+
 
 // Riepilogo livelli convocate per la card di lista
 function summarize_livelli(t: (k: string, o?: any) => string, rows: { livello_target: string; disciplina: string | null }[]): string {
