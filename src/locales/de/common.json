@@ -239,7 +239,7 @@
     "club": "Der Club"
   },
   "pista": {
-    "nessuna_sessione": "Heute ist keine Einheit veröffentlicht.",
+    "nessuna_sessione": "Heute wurde keine Einheit veröffentlicht.",
     "serve_club": "Dieser Bildschirm funktioniert mit einem Club-Zugang.",
     "contatore": "{{presenti}} anwesend · {{assenti}} abwesend",
     "registra_appello": "Anwesenheit speichern",
@@ -251,6 +251,11 @@
     "salvato_titolo": "Anwesenheit gespeichert",
     "conferma_cambio_titolo": "Nicht gespeicherte Änderungen",
     "conferma_cambio_testo": "Sie haben Abwesenheiten markiert, ohne sie zu speichern. Beim Wechsel gehen sie verloren.",
-    "conferma_cambio_azione": "Einheit wechseln"
+    "conferma_cambio_azione": "Einheit wechseln",
+    "n_atlete_one": "{{count}} Athletin",
+    "n_atlete_other": "{{count}} Athletinnen",
+    "nessuna_atleta": "Dieser Einheit ist keine Athletin zugeteilt.",
+    "schermo_intero": "Vollbild",
+    "esci_schermo_intero": "Beenden"
   }
 }

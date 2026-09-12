@@ -251,6 +251,11 @@
     "salvato_titolo": "Appel enregistré",
     "conferma_cambio_titolo": "Modifications non enregistrées",
     "conferma_cambio_testo": "Vous avez marqué des absences sans les enregistrer. Changer de séance les perdra.",
-    "conferma_cambio_azione": "Changer de séance"
+    "conferma_cambio_azione": "Changer de séance",
+    "n_atlete_one": "{{count}} athlète",
+    "n_atlete_other": "{{count}} athlètes",
+    "nessuna_atleta": "Aucune athlète affectée à cette séance.",
+    "schermo_intero": "Plein écran",
+    "esci_schermo_intero": "Quitter"
   }
 }

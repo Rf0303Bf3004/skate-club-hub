@@ -251,6 +251,11 @@
     "salvato_titolo": "Attendance saved",
     "conferma_cambio_titolo": "Unsaved changes",
     "conferma_cambio_testo": "You marked absences without saving them. Switching session will discard them.",
-    "conferma_cambio_azione": "Switch session"
+    "conferma_cambio_azione": "Switch session",
+    "n_atlete_one": "{{count}} athlete",
+    "n_atlete_other": "{{count}} athletes",
+    "nessuna_atleta": "No athlete assigned to this session.",
+    "schermo_intero": "Full screen",
+    "esci_schermo_intero": "Exit"
   }
 }
