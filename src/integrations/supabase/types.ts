@@ -7095,6 +7095,7 @@ export type Database = {
           nome: string
           note: string | null
           ora: string | null
+          scadenza_disdetta: string | null
           stagione_id: string | null
           tipo: string
         }
@@ -7112,6 +7113,7 @@ export type Database = {
           nome?: string
           note?: string | null
           ora?: string | null
+          scadenza_disdetta?: string | null
           stagione_id?: string | null
           tipo?: string
         }
@@ -7129,6 +7131,7 @@ export type Database = {
           nome?: string
           note?: string | null
           ora?: string | null
+          scadenza_disdetta?: string | null
           stagione_id?: string | null
           tipo?: string
         }
@@ -7190,6 +7193,7 @@ export type Database = {
           costo_applicato: number | null
           created_at: string
           disciplina: string | null
+          disdetta_nei_termini: boolean | null
           esito: string
           id: string
           invitata_at: string
@@ -7197,6 +7201,7 @@ export type Database = {
           livello_target: string
           note_istruttore: string | null
           ordine: number
+          presente: boolean | null
           risposta_at: string | null
           stato: string
           stato_da: string | null
@@ -7208,6 +7213,7 @@ export type Database = {
           costo_applicato?: number | null
           created_at?: string
           disciplina?: string | null
+          disdetta_nei_termini?: boolean | null
           esito?: string
           id?: string
           invitata_at?: string
@@ -7215,6 +7221,7 @@ export type Database = {
           livello_target: string
           note_istruttore?: string | null
           ordine?: number
+          presente?: boolean | null
           risposta_at?: string | null
           stato?: string
           stato_da?: string | null
@@ -7226,6 +7233,7 @@ export type Database = {
           costo_applicato?: number | null
           created_at?: string
           disciplina?: string | null
+          disdetta_nei_termini?: boolean | null
           esito?: string
           id?: string
           invitata_at?: string
@@ -7233,6 +7241,7 @@ export type Database = {
           livello_target?: string
           note_istruttore?: string | null
           ordine?: number
+          presente?: boolean | null
           risposta_at?: string | null
           stato?: string
           stato_da?: string | null
@@ -8528,6 +8537,7 @@ export type Database = {
           costo_applicato: number | null
           created_at: string
           disciplina: string | null
+          disdetta_nei_termini: boolean | null
           esito: string
           id: string
           invitata_at: string
@@ -8535,6 +8545,7 @@ export type Database = {
           livello_target: string
           note_istruttore: string | null
           ordine: number
+          presente: boolean | null
           risposta_at: string | null
           stato: string
           stato_da: string | null

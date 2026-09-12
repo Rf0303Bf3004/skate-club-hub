@@ -16,7 +16,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import ConfirmButton from "@/components/common/ConfirmButton";
 import NotaPermesso from "@/components/common/NotaPermesso";
 import { usePermessiAzione } from "@/hooks/use-permessi-azione";
-import { Plus, ArrowLeft, Trash2, X, CheckCircle, Send, Search } from "lucide-react";
+import { Plus, ArrowLeft, Trash2, X, CheckCircle, Send, Search, Printer } from "lucide-react";
+import { createPortal } from "react-dom";
+import { use_club } from "@/hooks/use-supabase-data";
 import {
   ComunicazioneFormSection,
   empty_comunicazione_state,
@@ -50,6 +52,7 @@ type TestLivello = {
   gara_id: string | null;
   club_ospitante: string | null;
   costo_iscrizione: number | null;
+  scadenza_disdetta: string | null;
   // legacy / deprecated
   livello_attuale: string | null;
   livello_accesso: string | null;
@@ -57,7 +60,7 @@ type TestLivello = {
   created_at: string;
 };
 
-type StatoInvito = "invitata" | "accettata" | "rifiutata" | "annullata";
+type StatoInvito = "invitata" | "accettata" | "rifiutata" | "annullata" | "ritirata";
 
 type TestAtleta = TestAtletaRow & {
   note_istruttore: string | null;
@@ -67,6 +70,8 @@ type TestAtleta = TestAtletaRow & {
   stato_da: string | null;
   stato_motivo: string | null;
   costo_applicato: number | null;
+  disdetta_nei_termini: boolean | null;
+  presente: boolean | null;
 };
 
 const STATO_INVITO_BADGE: Record<StatoInvito, string> = {
@@ -74,6 +79,7 @@ const STATO_INVITO_BADGE: Record<StatoInvito, string> = {
   accettata: "bg-green-100 text-green-800 border-green-200",
   rifiutata: "bg-destructive/10 text-destructive border-destructive/20",
   annullata: "bg-muted/50 text-muted-foreground/60 border-border/50 line-through",
+  ritirata: "bg-orange-100 text-orange-800 border-orange-200",
 };
 
 type Atleta = {
@@ -81,6 +87,7 @@ type Atleta = {
   nome: string;
   cognome: string;
   attivo: boolean | null;
+  data_nascita: string | null;
   livello_attuale: string | null;
   carriera_artistica: string | null;
   carriera_stile: string | null;
@@ -117,6 +124,7 @@ type NuovoTestForm = {
   luogo: string;
   club_ospitante: string;
   costo_iscrizione: string;
+  scadenza_disdetta: string;
   gara_id: string;
   note: string;
 };
@@ -129,6 +137,7 @@ const empty_form: NuovoTestForm = {
   luogo: "",
   club_ospitante: "",
   costo_iscrizione: "",
+  scadenza_disdetta: "",
   gara_id: "",
   note: "",
 };
@@ -150,6 +159,7 @@ function summarize_livelli(t: (k: string, o?: any) => string, rows: { livello_ta
 export default function TestLivelloPage() {
   const { t } = useTranslation("events");
   const { puo_gestire_sportivo } = usePermessiAzione();
+  const { data: club_corrente } = use_club();
   const club_id = get_current_club_id();
   const qc = useQueryClient();
   const route_params = useParams<{ id?: string }>();
@@ -210,7 +220,7 @@ export default function TestLivelloPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("atleti")
-        .select("id, nome, cognome, attivo, livello_attuale, carriera_artistica, carriera_stile, categoria, livello_amatori, livello_artistica, livello_stile")
+        .select("id, nome, cognome, attivo, data_nascita, livello_attuale, carriera_artistica, carriera_stile, categoria, livello_amatori, livello_artistica, livello_stile")
         .eq("club_id", club_id!)
         .eq("attivo", true)
         .order("cognome");
@@ -323,6 +333,7 @@ export default function TestLivelloPage() {
         luogo: form.tipo === "in_gara" ? (gara?.luogo ?? null) : (form.luogo || null),
         club_ospitante: form.tipo === "in_gara" ? (gara?.club_ospitante ?? null) : (form.club_ospitante || null),
         costo_iscrizione: form.costo_iscrizione ? Number(form.costo_iscrizione) : null,
+        scadenza_disdetta: form.scadenza_disdetta || null,
         note: form.note || null,
       };
       const { data, error } = await supabase
@@ -379,6 +390,19 @@ export default function TestLivelloPage() {
     onSuccess: () => { refetch_atleti(); toast.success(t("level_tests.toast_convocation_removed")); },
   });
 
+  const set_presenza = useMutation({
+    mutationFn: async ({ atleta_id, valore }: { atleta_id: string; valore: boolean | null }) => {
+      if (!selected_test_id) return;
+      const { error } = await supabase
+        .from("test_livello_atleti")
+        .update({ presente: valore } as any)
+        .eq("test_id", selected_test_id)
+        .eq("atleta_id", atleta_id);
+      if (error) throw error;
+    },
+    onSuccess: () => refetch_atleti(),
+  });
+
   const update_field = useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: Partial<TestAtleta> }) => {
       const { error } = await supabase.from("test_livello_atleti").update(patch).eq("id", id);
@@ -429,6 +453,7 @@ export default function TestLivelloPage() {
   const [invite_selected, set_invite_selected] = useState<Set<string>>(new Set());
   const [search_invite, set_search_invite] = useState("");
   const [filtro_livello_invite, set_filtro_livello_invite] = useState<string>("tutti");
+  const [invite_passaggi, set_invite_passaggi] = useState<Record<string, number>>({});
   const [annulla_atleta_id, set_annulla_atleta_id] = useState<string | null>(null);
   const [annulla_motivo, set_annulla_motivo] = useState("");
 
@@ -483,6 +508,13 @@ export default function TestLivelloPage() {
     });
   };
 
+  // Passaggi proposti per un'atleta (progressione tecnica)
+  const passaggi_atleta = (atleta_id: string): Passaggio[] => {
+    const a = atleti.find((x) => x.id === atleta_id);
+    if (!a) return [];
+    return get_passaggi_validi_per_atleta(a as any, "artistica");
+  };
+
   const invita_selezionate = useMutation({
     mutationFn: async () => {
       if (!selected_test_id || invite_selected.size === 0) return { inserite: 0, duplicate: 0 };
@@ -491,19 +523,22 @@ export default function TestLivelloPage() {
         const atleta = atleti.find((a) => a.id === atleta_id);
         if (!atleta) continue;
         const passaggi = get_passaggi_validi_per_atleta(atleta as any, "artistica");
-        const p = passaggi[0] ?? null;
-        const row = {
-          test_id: selected_test_id,
-          atleta_id,
-          ordine: 1,
-          livello_accesso: p?.accesso ?? get_livello_gara(atleta as any),
-          livello_target: p?.target ?? null,
-          disciplina: p?.richiede_disciplina ? "artistica" : null,
-          esito: "in_attesa",
-        };
-        const { error } = await supabase.from("test_livello_atleti").insert(row as any);
+        const quanti = Math.max(1, Math.min(invite_passaggi[atleta_id] ?? 1, Math.max(passaggi.length, 1)));
+        const rows = Array.from({ length: quanti }, (_, idx) => {
+          const p = passaggi[idx] ?? null;
+          return {
+            test_id: selected_test_id,
+            atleta_id,
+            ordine: idx + 1,
+            livello_accesso: p?.accesso ?? get_livello_gara(atleta as any),
+            livello_target: p?.target ?? null,
+            disciplina: p?.richiede_disciplina ? "artistica" : null,
+            esito: "in_attesa",
+          };
+        });
+        const { error } = await supabase.from("test_livello_atleti").insert(rows as any);
         if (error) {
-          // Indice unico (test_id, atleta_id): doppio invito → salto senza esplodere
+          // Unicità (test_id, atleta_id, ordine): passaggio già presente → salto
           if ((error as any).code === "23505") { duplicate++; continue; }
           throw error;
         }
@@ -514,6 +549,7 @@ export default function TestLivelloPage() {
     onSuccess: ({ inserite, duplicate }) => {
       refetch_atleti();
       set_invite_selected(new Set());
+      set_invite_passaggi({});
       if (inserite > 0) toast.success(t("level_tests.invite_sent", { count: inserite, defaultValue: `${inserite} atlete invitate` }));
       if (duplicate > 0) toast.info(t("level_tests.invite_duplicates", { count: duplicate, defaultValue: `${duplicate} erano già invitate: saltate` }));
     },
@@ -813,6 +849,12 @@ export default function TestLivelloPage() {
             )}
 
             <div>
+              <label className="text-sm font-medium text-foreground">Ultimo giorno per ritirarsi senza pagare</label>
+              <Input type="date" value={form.scadenza_disdetta} onChange={(e) => set_form({ ...form, scadenza_disdetta: e.target.value })} />
+              <p className="text-xs text-muted-foreground mt-1">Se resta vuoto, chi aderisce paga comunque.</p>
+            </div>
+
+            <div>
               <label className="text-sm font-medium text-foreground">{t("level_tests.notes_label")}</label>
               <Textarea value={form.note} onChange={(e) => set_form({ ...form, note: e.target.value })} />
             </div>
@@ -851,6 +893,34 @@ export default function TestLivelloPage() {
   }
 
   const gara_link = selected_test.gara_id ? gare.find((g) => g.id === selected_test.gara_id) : null;
+
+  // ─── Elenco iscritte stampabile ────────────────────────────────
+  const iscritte_stampa = (() => {
+    const gruppi = new Map<string, { atleta: Atleta | undefined; passi: TestAtleta[] }[]>();
+    for (const r of inviti_lista) {
+      if ((r.stato ?? "invitata") !== "accettata") continue;
+      const atleta = atleti.find((a) => a.id === r.atleta_id);
+      const livello = atleta ? get_livello_gara(atleta as any) : "—";
+      const passi = test_atleti.filter((x) => x.atleta_id === r.atleta_id).sort((a, b) => a.ordine - b.ordine);
+      if (!gruppi.has(livello)) gruppi.set(livello, []);
+      gruppi.get(livello)!.push({ atleta, passi });
+    }
+    for (const arr of gruppi.values()) {
+      arr.sort((a, b) => `${a.atleta?.cognome ?? ""} ${a.atleta?.nome ?? ""}`.localeCompare(`${b.atleta?.cognome ?? ""} ${b.atleta?.nome ?? ""}`));
+    }
+    return Array.from(gruppi.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  })();
+  const totale_iscritte = iscritte_stampa.reduce((acc, [, arr]) => acc + arr.length, 0);
+
+  const stampa_elenco = () => {
+    document.body.classList.add("stampa-elenco-test");
+    const cleanup = () => {
+      document.body.classList.remove("stampa-elenco-test");
+      window.removeEventListener("afterprint", cleanup);
+    };
+    window.addEventListener("afterprint", cleanup);
+    setTimeout(() => window.print(), 50);
+  };
   const next_for_dialog = next_passaggio_for_chain();
 
   return (
@@ -861,8 +931,13 @@ export default function TestLivelloPage() {
         </Button>
         <h1 className="text-2xl font-bold text-foreground">{selected_test.nome}</h1>
         <Badge variant="outline" className="capitalize">{selected_test.tipo === "in_gara" ? t("level_tests.type_in_gara_badge") : t("level_tests.type_base_badge")}</Badge>
+        <div className="ml-auto flex gap-2">
+          <Button variant="outline" size="sm" onClick={stampa_elenco}>
+            <Printer className="w-4 h-4 mr-1" /> Elenco iscritte
+          </Button>
+        </div>
         {puo_gestire_sportivo && (
-          <div className="ml-auto flex gap-2">
+          <div className="flex gap-2">
             <ConfirmButton
               titolo={t("level_tests.delete_confirm_title")}
               descrizione={t("level_tests.delete_confirm_desc")}
@@ -890,6 +965,12 @@ export default function TestLivelloPage() {
           {selected_test.costo_iscrizione != null && (
             <div className="md:col-span-4"><span className="text-muted-foreground">{t("level_tests.detail_cost")}</span> CHF {Number(selected_test.costo_iscrizione).toFixed(2)}</div>
           )}
+          <div className="md:col-span-4 text-sm">
+            <span className="text-muted-foreground">Ultimo giorno per ritirarsi senza pagare:</span>{" "}
+            {selected_test.scadenza_disdetta
+              ? new Date(selected_test.scadenza_disdetta).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })
+              : "nessuno — chi aderisce paga comunque"}
+          </div>
         </CardContent>
       </Card>
 
@@ -943,24 +1024,62 @@ export default function TestLivelloPage() {
                   const invito = inviti_per_atleta.get(a.id);
                   const gia_invitata = !!invito && (invito.stato ?? "invitata") !== "annullata";
                   const stato_inv = (invito?.stato ?? "invitata") as StatoInvito;
+                  const selezionata = invite_selected.has(a.id);
+                  const passaggi = selezionata ? passaggi_atleta(a.id) : [];
+                  const quanti = Math.max(1, Math.min(invite_passaggi[a.id] ?? 1, Math.max(passaggi.length, 1)));
                   return (
-                    <label
-                      key={a.id}
-                      className={`flex items-center gap-3 px-3 py-2 text-sm ${gia_invitata ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:bg-accent"}`}
-                    >
-                      <Checkbox
-                        checked={gia_invitata || invite_selected.has(a.id)}
-                        disabled={gia_invitata}
-                        onCheckedChange={() => !gia_invitata && toggle_invite(a.id)}
-                      />
-                      <span className="flex-1">{a.cognome} {a.nome}</span>
-                      <span className="text-xs text-muted-foreground">{get_livello_gara(a as any)}</span>
-                      {invito && (
-                        <Badge variant="outline" className={`text-[10px] ${STATO_INVITO_BADGE[stato_inv]}`}>
-                          {t(`level_tests.stato_${stato_inv}`, { defaultValue: stato_inv })}
-                        </Badge>
+                    <div key={a.id} className={gia_invitata ? "opacity-60" : ""}>
+                      <div
+                        role="button"
+                        tabIndex={gia_invitata ? -1 : 0}
+                        onClick={() => !gia_invitata && toggle_invite(a.id)}
+                        className={`flex items-center gap-3 px-3 py-2 text-sm ${gia_invitata ? "cursor-not-allowed" : "cursor-pointer hover:bg-accent"}`}
+                      >
+                        <Checkbox
+                          checked={gia_invitata || selezionata}
+                          disabled={gia_invitata}
+                          onCheckedChange={() => !gia_invitata && toggle_invite(a.id)}
+                        />
+                        <span className="flex-1">{a.cognome} {a.nome}</span>
+                        <span className="text-xs text-muted-foreground">{get_livello_gara(a as any)}</span>
+                        {invito && (
+                          <Badge variant="outline" className={`text-[10px] ${STATO_INVITO_BADGE[stato_inv]}`}>
+                            {t(`level_tests.stato_${stato_inv}`, { defaultValue: stato_inv })}
+                          </Badge>
+                        )}
+                      </div>
+                      {selezionata && !gia_invitata && (
+                        <div className="px-3 pb-3 pl-10 space-y-1">
+                          {passaggi.length <= 1 ? (
+                            <p className="text-xs text-muted-foreground">
+                              Un solo passaggio: {passaggi[0] ? `${passaggi[0].accesso} → ${passaggi[0].target}` : get_livello_gara(a as any)}
+                            </p>
+                          ) : (
+                            <>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground">Quanti passaggi fa</span>
+                                <Select
+                                  value={String(quanti)}
+                                  onValueChange={(v) => set_invite_passaggi((prev) => ({ ...prev, [a.id]: Number(v) }))}
+                                >
+                                  <SelectTrigger className="h-8 w-28 text-xs"><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                    {passaggi.map((_, i) => (
+                                      <SelectItem key={i} value={String(i + 1)}>{i + 1}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <ul className="text-xs text-muted-foreground space-y-0.5">
+                                {passaggi.slice(0, quanti).map((p, i) => (
+                                  <li key={i}>{i + 1}. {p.accesso} → {p.target}</li>
+                                ))}
+                              </ul>
+                            </>
+                          )}
+                        </div>
                       )}
-                    </label>
+                    </div>
                   );
                 })}
               </div>
@@ -988,6 +1107,7 @@ export default function TestLivelloPage() {
                   <TableHead>{t("level_tests.invite_col_level", { defaultValue: "Livello" })}</TableHead>
                   <TableHead>{t("level_tests.invite_col_state", { defaultValue: "Stato" })}</TableHead>
                   <TableHead>{t("level_tests.invite_col_answered", { defaultValue: "Risposta" })}</TableHead>
+                  <TableHead>Presenza</TableHead>
                   <TableHead>{t("level_tests.invite_col_fee", { defaultValue: "Quota" })}</TableHead>
                   {puo_gestire_sportivo && <TableHead className="w-24" />}
                 </TableRow>
@@ -996,27 +1116,68 @@ export default function TestLivelloPage() {
                 {inviti_lista.map((r) => {
                   const atleta = atleti.find((a) => a.id === r.atleta_id);
                   const stato_inv = (r.stato ?? "invitata") as StatoInvito;
+                  const passi = test_atleti
+                    .filter((x) => x.atleta_id === r.atleta_id)
+                    .sort((a, b) => a.ordine - b.ordine);
+                  const presente_val = r.presente === null || r.presente === undefined ? "non_segnata" : (r.presente ? "presente" : "assente");
                   return (
                     <TableRow key={r.atleta_id} className={stato_inv === "annullata" ? "opacity-50" : ""}>
-                      <TableCell className="font-medium text-sm">
+                      <TableCell className="font-medium text-sm align-top">
                         {atleta ? `${atleta.cognome} ${atleta.nome}` : r.atleta_id.slice(0, 8)}
+                        <ul className="mt-1 space-y-0.5 text-xs font-normal text-muted-foreground">
+                          {passi.map((s2) => (
+                            <li key={s2.id}>
+                              {s2.ordine}. {s2.livello_accesso} → {s2.livello_target}
+                              {s2.disciplina ? ` (${s2.disciplina === "artistica" ? "artistica" : "stile"})` : ""}
+                            </li>
+                          ))}
+                        </ul>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {atleta ? get_livello_gara(atleta as any) : "—"}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="align-top">
                         <Badge variant="outline" className={STATO_INVITO_BADGE[stato_inv]}>
                           {t(`level_tests.stato_${stato_inv}`, { defaultValue: stato_inv })}
                         </Badge>
+                        {stato_inv === "ritirata" && (
+                          <p className={`mt-1 text-xs ${r.disdetta_nei_termini ? "text-muted-foreground" : "text-destructive"}`}>
+                            {r.disdetta_nei_termini ? "ritiro nei termini" : "ritiro fuori termine, quota addebitata"}
+                          </p>
+                        )}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {r.risposta_at ? new Date(r.risposta_at).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—"}
                       </TableCell>
-                      <TableCell className="text-sm">
+                      <TableCell className="align-top">
+                        {puo_gestire_sportivo ? (
+                          <Select
+                            value={presente_val}
+                            onValueChange={(v) =>
+                              set_presenza.mutate({
+                                atleta_id: r.atleta_id,
+                                valore: v === "non_segnata" ? null : v === "presente",
+                              })
+                            }
+                          >
+                            <SelectTrigger className="h-8 w-36 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="non_segnata">Non ancora segnata</SelectItem>
+                              <SelectItem value="presente">Presente</SelectItem>
+                              <SelectItem value="assente">Assente</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">
+                            {presente_val === "non_segnata" ? "—" : presente_val === "presente" ? "Presente" : "Assente"}
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-sm align-top">
                         {r.costo_applicato != null ? `CHF ${Number(r.costo_applicato).toFixed(2)}` : "—"}
                       </TableCell>
                       {puo_gestire_sportivo && (
-                        <TableCell>
+                        <TableCell className="align-top">
                           {stato_inv !== "annullata" && (
                             <Button
                               variant="ghost"
@@ -1034,6 +1195,11 @@ export default function TestLivelloPage() {
                 })}
               </TableBody>
             </Table>
+          )}
+          {inviti_lista.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              Segnare un'atleta assente non toglie la quota dalla fattura: l'addebito dipende dall'adesione e dall'ultimo giorno utile per ritirarsi, non dalla presenza.
+            </p>
           )}
         </CardContent>
       </Card>
@@ -1257,6 +1423,63 @@ export default function TestLivelloPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* ─── Elenco iscritte (solo stampa) ─────────────────────────── */}
+      {createPortal(
+        <div id="elenco-test-print-root" className="hidden">
+        <h1 style={{ fontSize: "18pt", fontWeight: 700, marginBottom: "2mm" }}>{selected_test.nome}</h1>
+        <p style={{ fontSize: "11pt", marginBottom: "1mm" }}>
+          {selected_test.data
+            ? new Date(selected_test.data).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })
+            : "data da definire"}
+          {selected_test.ora ? ` · ${selected_test.ora.slice(0, 5)}` : ""}
+          {selected_test.luogo ? ` · ${selected_test.luogo}` : ""}
+        </p>
+        <p style={{ fontSize: "11pt", marginBottom: "6mm" }}>{(club_corrente as any)?.nome ?? ""}</p>
+        {iscritte_stampa.length === 0 ? (
+          <p style={{ fontSize: "11pt" }}>Nessuna iscritta confermata.</p>
+        ) : iscritte_stampa.map(([livello, righe]) => (
+          <div key={livello} style={{ marginBottom: "6mm" }}>
+            <h2 style={{ fontSize: "13pt", fontWeight: 700, marginBottom: "2mm" }}>
+              {livello} — {righe.length} {righe.length === 1 ? "iscritta" : "iscritte"}
+            </h2>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "10.5pt" }}>
+              <thead>
+                <tr>
+                  <th style={{ textAlign: "left", borderBottom: "1px solid #000", padding: "1.5mm 1mm" }}>Cognome</th>
+                  <th style={{ textAlign: "left", borderBottom: "1px solid #000", padding: "1.5mm 1mm" }}>Nome</th>
+                  <th style={{ textAlign: "left", borderBottom: "1px solid #000", padding: "1.5mm 1mm" }}>Anno</th>
+                  <th style={{ textAlign: "left", borderBottom: "1px solid #000", padding: "1.5mm 1mm" }}>Passaggi</th>
+                  <th style={{ textAlign: "left", borderBottom: "1px solid #000", padding: "1.5mm 1mm", width: "20mm" }}>Presenza</th>
+                </tr>
+              </thead>
+              <tbody>
+                {righe.map(({ atleta, passi }) => (
+                  <tr key={atleta?.id ?? Math.random()}>
+                    <td style={{ borderBottom: "1px solid #999", padding: "2mm 1mm" }}>{atleta?.cognome ?? "—"}</td>
+                    <td style={{ borderBottom: "1px solid #999", padding: "2mm 1mm" }}>{atleta?.nome ?? "—"}</td>
+                    <td style={{ borderBottom: "1px solid #999", padding: "2mm 1mm" }}>
+                      {atleta?.data_nascita ? String(atleta.data_nascita).slice(0, 4) : "—"}
+                    </td>
+                    <td style={{ borderBottom: "1px solid #999", padding: "2mm 1mm" }}>
+                      {passi.map((s3) => `${s3.livello_accesso} → ${s3.livello_target}`).join("; ") || "—"}
+                    </td>
+                    <td style={{ borderBottom: "1px solid #999", padding: "2mm 1mm" }}>
+                      <span style={{ display: "inline-block", width: "6mm", height: "6mm", border: "1px solid #000" }} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))}
+        <p style={{ fontSize: "10pt", marginTop: "8mm" }}>
+          Totale iscritte: {totale_iscritte} · Stampato il{" "}
+          {new Date().toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
+        </p>
+        </div>,
+        document.body,
+      )}
 
       {/* ─── Annulla invito Dialog ─────────────────────────────────── */}
       <Dialog open={!!annulla_atleta_id} onOpenChange={(open) => { if (!open) { set_annulla_atleta_id(null); set_annulla_motivo(""); } }}>
