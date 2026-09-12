@@ -27,6 +27,7 @@ import { toast } from "@/hooks/use-toast";
 import { Upload, Globe, Phone, Mail, MapPin, Hash, Users, UserCheck, Calendar, Building2, Plus, Trash2, Loader2, CheckCircle2, AlertCircle, Sparkles, Snowflake, BookOpen, Receipt } from "lucide-react";
 import CatalogoOffertaTab from "@/components/CatalogoOffertaTab";
 import FatturazioneTab from "@/components/FatturazioneTab";
+import TariffeTestSection from "@/components/setup/TariffeTestSection";
 import { RegoleComunicazioniSection } from "@/components/comunicazioni/RegoleComunicazioniSection";
 import ModalitaGestioneSection from "@/components/setup/ModalitaGestioneSection";
 import RagioniSocialiSection from "@/components/setup/RagioniSocialiSection";
@@ -1319,6 +1320,7 @@ const ClubSetupPage: React.FC = () => {
         <TabsContent value="fatturazione">
           <div className="space-y-6">
             <FatturazioneTab />
+            <TariffeTestSection />
             <RagioniSocialiSection />
             <FatturaLayoutSection />
           </div>
