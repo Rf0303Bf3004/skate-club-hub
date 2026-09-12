@@ -419,7 +419,23 @@ export default function TestLivelloPage() {
     onError: (e: any) => toast.error(t("level_tests.toast_create_error", { error: e?.message ?? "" })),
   });
 
+  const update_livello_test = useMutation({
+    mutationFn: async ({ id, accesso }: { id: string; accesso: string }) => {
+      const { error } = await supabase
+        .from("test_livello")
+        .update({ livello_accesso: accesso } as any)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["test_livello"] });
+      toast.success("Livello del test aggiornato");
+    },
+    onError: (e: any) => toast.error(t("level_tests.toast_generic_error", { error: e?.message ?? "" })),
+  });
+
   const delete_test = useMutation({
+
     mutationFn: async (id: string) => {
       await supabase.from("test_livello_atleti").delete().eq("test_id", id);
       const { error } = await supabase.from("test_livello").delete().eq("id", id);
