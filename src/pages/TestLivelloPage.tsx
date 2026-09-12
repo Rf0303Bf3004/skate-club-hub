@@ -322,6 +322,15 @@ export default function TestLivelloPage() {
   );
   const tests_visibili = mostra_passati ? tests_passati : tests_attivi;
 
+  // Atlete idonee al passaggio scelto nel form (livello attuale == accesso del test)
+  const idonee_form = useMemo(
+    () =>
+      form.livello_accesso
+        ? atleti.filter((a) => get_livello_gara(a as any) === form.livello_accesso)
+        : [],
+    [atleti, form.livello_accesso],
+  );
+
   // Auto-sync default titolo/testo per la sezione Comunicazione (form Nuovo Test)
   useEffect(() => {
     if (com_touched) return;
@@ -334,10 +343,27 @@ export default function TestLivelloPage() {
     }));
   }, [form.nome, form.data, form.tipo, form.gara_id, gare, com_touched]);
 
+  // I destinatari predefiniti sono SOLO le atlete idonee al livello del test
+  useEffect(() => {
+    if (com_dest_touched) return;
+    set_com_state((p) => ({
+      ...p,
+      tipo_destinatari: "atleti",
+      atleti_ids: idonee_form.map((a) => a.id),
+    }));
+  }, [idonee_form, com_dest_touched]);
+
   const handle_com_change = (next: ComunicazioneFormState) => {
     if (next.titolo !== com_state.titolo || next.testo !== com_state.testo) set_com_touched(true);
+    if (
+      next.tipo_destinatari !== com_state.tipo_destinatari ||
+      next.atleti_ids.length !== com_state.atleti_ids.length
+    ) {
+      set_com_dest_touched(true);
+    }
     set_com_state(next);
   };
+
 
   // ─── Mutations ──────────────────────────────────────────────────────
   const create_test = useMutation({
