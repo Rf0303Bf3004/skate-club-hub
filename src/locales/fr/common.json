@@ -228,7 +228,8 @@
   "confirm_delete_title": "Confirmer la suppression",
   "menu": {
     "griglia_ghiaccio": "Grille de glace",
-    "ruoli_permessi": "Gestion des rôles"
+    "ruoli_permessi": "Gestion des rôles",
+    "pista": "Au bord de la glace"
   },
   "menu_gruppo": {
     "generale": "Général",
@@ -236,5 +237,20 @@
     "ghiaccio": "Glace",
     "soldi": "Administration",
     "club": "Le club"
+  },
+  "pista": {
+    "nessuna_sessione": "Aucune séance publiée aujourd'hui.",
+    "serve_club": "Cet écran fonctionne avec un accès de club.",
+    "contatore": "{{presenti}} présentes · {{assenti}} absentes",
+    "registra_appello": "Enregistrer l'appel",
+    "registrazione_in_corso": "Enregistrement…",
+    "registrato_alle": "enregistré à {{ora}}",
+    "avvisato": "signalé par la famille",
+    "gruppo_numero": "Groupe {{numero}}",
+    "n_atlete": "{{count}} athlètes",
+    "salvato_titolo": "Appel enregistré",
+    "conferma_cambio_titolo": "Modifications non enregistrées",
+    "conferma_cambio_testo": "Vous avez marqué des absences sans les enregistrer. Changer de séance les perdra.",
+    "conferma_cambio_azione": "Changer de séance"
   }
 }

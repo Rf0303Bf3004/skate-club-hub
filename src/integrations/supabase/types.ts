@@ -8446,6 +8446,46 @@ export type Database = {
         Returns: string
       }
       percorso_foto_atleta: { Args: { p_atleta: string }; Returns: string }
+      pista_appello: {
+        Args: { p_assenti?: string[]; p_sessione_id: string }
+        Returns: {
+          assenti: number
+          presenti: number
+        }[]
+      }
+      pista_atleti: {
+        Args: { p_sessione_id: string }
+        Returns: {
+          atleta_id: string
+          cognome: string
+          etichetta: string
+          gruppo_sessione_id: string
+          nome: string
+          stato: string
+        }[]
+      }
+      pista_riferimento: {
+        Args: { p_sessione_id: string }
+        Returns: {
+          club_id: string
+          data: string
+          id: string
+          tipo: string
+        }[]
+      }
+      pista_sessioni: {
+        Args: { p_club_id?: string; p_data?: string }
+        Returns: {
+          in_corso: boolean
+          istruttori: string
+          n_atleti: number
+          ora_fine: string
+          ora_inizio: string
+          sessione_id: string
+          specialita: string
+          titolo: string
+        }[]
+      }
       prezzo_test_livello: {
         Args: { p_livello_target: string; p_test_id: string }
         Returns: number

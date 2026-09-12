@@ -228,7 +228,8 @@
   "confirm_delete_title": "Confirm deletion",
   "menu": {
     "griglia_ghiaccio": "Ice Grid",
-    "ruoli_permessi": "Role Management"
+    "ruoli_permessi": "Role Management",
+    "pista": "Rinkside"
   },
   "menu_gruppo": {
     "generale": "General",
@@ -236,5 +237,20 @@
     "ghiaccio": "Ice",
     "soldi": "Administration",
     "club": "The club"
+  },
+  "pista": {
+    "nessuna_sessione": "There is no published session today.",
+    "serve_club": "This screen works with a club account.",
+    "contatore": "{{presenti}} present · {{assenti}} absent",
+    "registra_appello": "Save attendance",
+    "registrazione_in_corso": "Saving…",
+    "registrato_alle": "saved at {{ora}}",
+    "avvisato": "reported by the family",
+    "gruppo_numero": "Group {{numero}}",
+    "n_atlete": "{{count}} athletes",
+    "salvato_titolo": "Attendance saved",
+    "conferma_cambio_titolo": "Unsaved changes",
+    "conferma_cambio_testo": "You marked absences without saving them. Switching session will discard them.",
+    "conferma_cambio_azione": "Switch session"
   }
 }
