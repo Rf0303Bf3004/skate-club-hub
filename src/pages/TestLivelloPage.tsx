@@ -1203,7 +1203,14 @@ export default function TestLivelloPage() {
                         )}
                       </TableCell>
                       <TableCell className="text-sm align-top">
-                        {r.costo_applicato != null ? `CHF ${Number(r.costo_applicato).toFixed(2)}` : "—"}
+                        {(() => {
+                          const tot = passi.reduce(
+                            (acc, s4) =>
+                              acc + Number((stato_inv === "accettata" ? s4.costo_applicato : s4.costo_previsto) ?? 0),
+                            0,
+                          );
+                          return tot > 0 ? `CHF ${tot.toFixed(2)}` : "—";
+                        })()}
                       </TableCell>
                       {puo_gestire_sportivo && (
                         <TableCell className="align-top">
