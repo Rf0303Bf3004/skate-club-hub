@@ -424,6 +424,120 @@ export default function TestLivelloPage() {
     refetch_atleti();
   };
 
+  // ─── Inviti atlete ─────────────────────────────────────────────────
+  const [invite_selected, set_invite_selected] = useState<Set<string>>(new Set());
+  const [search_invite, set_search_invite] = useState("");
+  const [filtro_livello_invite, set_filtro_livello_invite] = useState<string>("tutti");
+  const [annulla_atleta_id, set_annulla_atleta_id] = useState<string | null>(null);
+  const [annulla_motivo, set_annulla_motivo] = useState("");
+
+  // Una riga "invito" per atleta (la prima della catena, ordine min)
+  const inviti_per_atleta = useMemo(() => {
+    const map = new Map<string, TestAtleta>();
+    for (const r of test_atleti) {
+      const prev = map.get(r.atleta_id);
+      if (!prev || r.ordine < prev.ordine) map.set(r.atleta_id, r);
+    }
+    return map;
+  }, [test_atleti]);
+
+  const inviti_lista = useMemo(() => Array.from(inviti_per_atleta.values()), [inviti_per_atleta]);
+
+  const invito_stats = useMemo(() => {
+    let invitate = 0, accettate = 0, rifiutate = 0, senza_risposta = 0, totale_accettate = 0;
+    for (const r of inviti_lista) {
+      const s = (r.stato ?? "invitata") as StatoInvito;
+      if (s === "annullata") continue;
+      invitate++;
+      if (s === "accettata") { accettate++; totale_accettate += Number(r.costo_applicato ?? 0); }
+      else if (s === "rifiutata") rifiutate++;
+      else if (!r.risposta_at) senza_risposta++;
+    }
+    return { invitate, accettate, rifiutate, senza_risposta, totale_accettate };
+  }, [inviti_lista]);
+
+  const livelli_invite_disponibili = useMemo(() => {
+    const set = new Set<string>();
+    for (const a of atleti) set.add(get_livello_gara(a as any));
+    return Array.from(set).sort();
+  }, [atleti]);
+
+  const atleti_invitabili = useMemo(() => {
+    const terms = search_invite.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    return atleti.filter((a) => {
+      if (filtro_livello_invite !== "tutti" && get_livello_gara(a as any) !== filtro_livello_invite) return false;
+      if (terms.length > 0) {
+        const text = `${a.nome} ${a.cognome}`.toLowerCase();
+        if (!terms.every((term) => text.includes(term))) return false;
+      }
+      return true;
+    });
+  }, [atleti, search_invite, filtro_livello_invite]);
+
+  const toggle_invite = (id: string) => {
+    set_invite_selected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const invita_selezionate = useMutation({
+    mutationFn: async () => {
+      if (!selected_test_id || invite_selected.size === 0) return { inserite: 0, duplicate: 0 };
+      let inserite = 0, duplicate = 0;
+      for (const atleta_id of invite_selected) {
+        const atleta = atleti.find((a) => a.id === atleta_id);
+        if (!atleta) continue;
+        const passaggi = get_passaggi_validi_per_atleta(atleta as any, "artistica");
+        const p = passaggi[0] ?? null;
+        const row = {
+          test_id: selected_test_id,
+          atleta_id,
+          ordine: 1,
+          livello_accesso: p?.accesso ?? get_livello_gara(atleta as any),
+          livello_target: p?.target ?? null,
+          disciplina: p?.richiede_disciplina ? "artistica" : null,
+          esito: "in_attesa",
+        };
+        const { error } = await supabase.from("test_livello_atleti").insert(row as any);
+        if (error) {
+          // Indice unico (test_id, atleta_id): doppio invito → salto senza esplodere
+          if ((error as any).code === "23505") { duplicate++; continue; }
+          throw error;
+        }
+        inserite++;
+      }
+      return { inserite, duplicate };
+    },
+    onSuccess: ({ inserite, duplicate }) => {
+      refetch_atleti();
+      set_invite_selected(new Set());
+      if (inserite > 0) toast.success(t("level_tests.invite_sent", { count: inserite, defaultValue: `${inserite} atlete invitate` }));
+      if (duplicate > 0) toast.info(t("level_tests.invite_duplicates", { count: duplicate, defaultValue: `${duplicate} erano già invitate: saltate` }));
+    },
+    onError: (e: any) => toast.error(t("level_tests.toast_generic_error", { error: e?.message ?? "" })),
+  });
+
+  const annulla_invito = useMutation({
+    mutationFn: async ({ atleta_id, motivo }: { atleta_id: string; motivo: string }) => {
+      const { data: user_data } = await supabase.auth.getUser();
+      const { error } = await supabase
+        .from("test_livello_atleti")
+        .update({ stato: "annullata", stato_motivo: motivo || null, stato_da: user_data.user?.id ?? null } as any)
+        .eq("test_id", selected_test_id!)
+        .eq("atleta_id", atleta_id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      refetch_atleti();
+      set_annulla_atleta_id(null);
+      set_annulla_motivo("");
+      toast.success(t("level_tests.invite_cancelled", { defaultValue: "Invito annullato" }));
+    },
+    onError: (e: any) => toast.error(t("level_tests.toast_generic_error", { error: e?.message ?? "" })),
+  });
+
   // ─── Add Athlete Dialog (multitest chain) ────────────────────────────
   const [show_add, set_show_add] = useState(false);
   const [add_atleta_id, set_add_atleta_id] = useState<string>("");
