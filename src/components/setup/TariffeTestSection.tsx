@@ -99,7 +99,7 @@ const TariffeTestSection: React.FC = () => {
       await qc.invalidateQueries({ queryKey: ["tariffe_test_livello", club_id] });
       toast({ title: "Tariffe dei test salvate" });
     } catch (err) {
-      segnala_errore(err, { contesto: "salvataggio tariffe test livello" });
+      segnala_errore("TariffeTestSection", "Salvataggio tariffe dei test", err);
     } finally {
       set_saving(false);
     }
