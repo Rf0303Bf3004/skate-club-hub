@@ -1147,12 +1147,19 @@ export default function TestLivelloPage() {
                       <TableCell className="font-medium text-sm align-top">
                         {atleta ? `${atleta.cognome} ${atleta.nome}` : r.atleta_id.slice(0, 8)}
                         <ul className="mt-1 space-y-0.5 text-xs font-normal text-muted-foreground">
-                          {passi.map((s2) => (
-                            <li key={s2.id}>
-                              {s2.ordine}. {s2.livello_accesso} → {s2.livello_target}
-                              {s2.disciplina ? ` (${s2.disciplina === "artistica" ? "artistica" : "stile"})` : ""}
-                            </li>
-                          ))}
+                          {passi.map((s2) => {
+                            const quota = stato_inv === "accettata" ? s2.costo_applicato : s2.costo_previsto;
+                            return (
+                              <li key={s2.id}>
+                                {s2.ordine}. {s2.livello_accesso} → {s2.livello_target}
+                                {s2.disciplina ? ` (${s2.disciplina === "artistica" ? "artistica" : "stile"})` : ""}
+                                {" · "}
+                                <span className="tabular-nums">
+                                  {quota != null ? `CHF ${Number(quota).toFixed(2)}` : "—"}
+                                </span>
+                              </li>
+                            );
+                          })}
                         </ul>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
