@@ -122,6 +122,7 @@ type NuovoTestForm = {
   luogo: string;
   club_ospitante: string;
   costo_iscrizione: string;
+  scadenza_disdetta: string;
   gara_id: string;
   note: string;
 };
@@ -134,6 +135,7 @@ const empty_form: NuovoTestForm = {
   luogo: "",
   club_ospitante: "",
   costo_iscrizione: "",
+  scadenza_disdetta: "",
   gara_id: "",
   note: "",
 };
