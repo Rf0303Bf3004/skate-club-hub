@@ -38,6 +38,7 @@ import {
   type Passaggio,
   type TestAtletaRow,
 } from "@/lib/atleta-livello";
+import { use_tariffe_test, LIVELLI_TARIFFA } from "@/components/setup/TariffeTestSection";
 
 // ─── Tipi ───────────────────────────────────────────────────────────────
 type TestLivello = {
@@ -70,6 +71,7 @@ type TestAtleta = TestAtletaRow & {
   stato_da: string | null;
   stato_motivo: string | null;
   costo_applicato: number | null;
+  costo_previsto: number | null;
   disdetta_nei_termini: boolean | null;
   presente: boolean | null;
 };
@@ -471,16 +473,21 @@ export default function TestLivelloPage() {
 
   const invito_stats = useMemo(() => {
     let invitate = 0, accettate = 0, rifiutate = 0, senza_risposta = 0, totale_accettate = 0;
+    const accettate_ids = new Set<string>();
     for (const r of inviti_lista) {
       const s = (r.stato ?? "invitata") as StatoInvito;
       if (s === "annullata") continue;
       invitate++;
-      if (s === "accettata") { accettate++; totale_accettate += Number(r.costo_applicato ?? 0); }
+      if (s === "accettata") { accettate++; accettate_ids.add(r.atleta_id); }
       else if (s === "rifiutata") rifiutate++;
       else if (!r.risposta_at) senza_risposta++;
     }
+    // Somma la quota congelata (costo_applicato) di tutti i passaggi delle accettate
+    for (const riga of test_atleti) {
+      if (accettate_ids.has(riga.atleta_id)) totale_accettate += Number(riga.costo_applicato ?? 0);
+    }
     return { invitate, accettate, rifiutate, senza_risposta, totale_accettate };
-  }, [inviti_lista]);
+  }, [inviti_lista, test_atleti]);
 
   const livelli_invite_disponibili = useMemo(() => {
     const set = new Set<string>();
