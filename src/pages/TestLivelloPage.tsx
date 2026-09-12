@@ -1498,7 +1498,13 @@ export default function TestLivelloPage() {
                       {atleta?.data_nascita ? String(atleta.data_nascita).slice(0, 4) : "—"}
                     </td>
                     <td style={{ borderBottom: "1px solid #999", padding: "2mm 1mm" }}>
-                      {passi.map((s3) => `${s3.livello_accesso} → ${s3.livello_target}`).join("; ") || "—"}
+                      {passi
+                        .map(
+                          (s3) =>
+                            `${s3.livello_accesso} → ${s3.livello_target}` +
+                            (s3.costo_applicato != null ? ` (CHF ${Number(s3.costo_applicato).toFixed(2)})` : ""),
+                        )
+                        .join("; ") || "—"}
                     </td>
                     <td style={{ borderBottom: "1px solid #999", padding: "2mm 1mm" }}>
                       <span style={{ display: "inline-block", width: "6mm", height: "6mm", border: "1px solid #000" }} />
@@ -1510,7 +1516,7 @@ export default function TestLivelloPage() {
           </div>
         ))}
         <p style={{ fontSize: "10pt", marginTop: "8mm" }}>
-          Totale iscritte: {totale_iscritte} · Stampato il{" "}
+          Totale iscritte: {totale_iscritte} · Totale quote: CHF {totale_quote_stampa.toFixed(2)} · Stampato il{" "}
           {new Date().toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
         </p>
         </div>,
