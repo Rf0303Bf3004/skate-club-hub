@@ -489,6 +489,16 @@ export default function TestLivelloPage() {
     return { invitate, accettate, rifiutate, senza_risposta, totale_accettate };
   }, [inviti_lista, test_atleti]);
 
+  // Listino tariffe per tipo di test (vince sul prezzo della singola giornata)
+  const { data: tariffe_test = [] } = use_tariffe_test();
+  const tariffe_attive = useMemo(
+    () =>
+      LIVELLI_TARIFFA.filter((liv) =>
+        tariffe_test.some((t) => t.livello_target === liv && t.attiva !== false && t.prezzo != null),
+      ),
+    [tariffe_test],
+  );
+
   const livelli_invite_disponibili = useMemo(() => {
     const set = new Set<string>();
     for (const a of atleti) set.add(get_livello_gara(a as any));
