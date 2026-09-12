@@ -117,10 +117,26 @@ function get_esito_options(t: (k: string) => string): { value: TestAtleta["esito
   ];
 }
 
+// Tutti i passaggi possibili (accesso → target): il test si riferisce a uno solo di questi.
+const TUTTI_PASSAGGI: Passaggio[] = [...TEST_BASE_PASSAGGI, ...TEST_CARRIERA_PASSAGGI];
+
+const passaggio_di_accesso = (accesso: string | null | undefined): Passaggio | null =>
+  TUTTI_PASSAGGI.find((p) => p.accesso === accesso) ?? null;
+
+/** Catena di passaggi consecutivi a partire dal passaggio del test. */
+const passaggi_da_accesso = (accesso: string | null | undefined): Passaggio[] => {
+  const idx = TUTTI_PASSAGGI.findIndex((p) => p.accesso === accesso);
+  return idx >= 0 ? TUTTI_PASSAGGI.slice(idx) : [];
+};
+
+const etichetta_passaggio = (p: Passaggio) =>
+  `${p.target} (riservato alle atlete ${p.accesso})`;
+
 // ─── Form state nuovo test ───────────────────────────────────────────────
 type NuovoTestForm = {
   tipo: "base" | "in_gara";
   nome: string;
+  livello_accesso: string;
   data: string;
   ora: string;
   luogo: string;
@@ -134,6 +150,7 @@ type NuovoTestForm = {
 const empty_form: NuovoTestForm = {
   tipo: "base",
   nome: "",
+  livello_accesso: "",
   data: "",
   ora: "",
   luogo: "",
@@ -143,6 +160,7 @@ const empty_form: NuovoTestForm = {
   gara_id: "",
   note: "",
 };
+
 
 // Riepilogo livelli convocate per la card di lista
 function summarize_livelli(t: (k: string, o?: any) => string, rows: { livello_target: string; disciplina: string | null }[]): string {
@@ -174,6 +192,8 @@ export default function TestLivelloPage() {
   // ─── Sezione Comunicazione (form Nuovo Test) ────────────
   const [com_state, set_com_state] = useState<ComunicazioneFormState>(() => empty_comunicazione_state());
   const [com_touched, set_com_touched] = useState(false);
+  const [com_dest_touched, set_com_dest_touched] = useState(false);
+
 
   const { data: corsi_lista = [] } = useQuery({
     queryKey: ["corsi_per_comunicazione", club_id],
@@ -304,6 +324,15 @@ export default function TestLivelloPage() {
   );
   const tests_visibili = mostra_passati ? tests_passati : tests_attivi;
 
+  // Atlete idonee al passaggio scelto nel form (livello attuale == accesso del test)
+  const idonee_form = useMemo(
+    () =>
+      form.livello_accesso
+        ? atleti.filter((a) => get_livello_gara(a as any) === form.livello_accesso)
+        : [],
+    [atleti, form.livello_accesso],
+  );
+
   // Auto-sync default titolo/testo per la sezione Comunicazione (form Nuovo Test)
   useEffect(() => {
     if (com_touched) return;
@@ -316,10 +345,27 @@ export default function TestLivelloPage() {
     }));
   }, [form.nome, form.data, form.tipo, form.gara_id, gare, com_touched]);
 
+  // I destinatari predefiniti sono SOLO le atlete idonee al livello del test
+  useEffect(() => {
+    if (com_dest_touched) return;
+    set_com_state((p) => ({
+      ...p,
+      tipo_destinatari: "atleti",
+      atleti_ids: idonee_form.map((a) => a.id),
+    }));
+  }, [idonee_form, com_dest_touched]);
+
   const handle_com_change = (next: ComunicazioneFormState) => {
     if (next.titolo !== com_state.titolo || next.testo !== com_state.testo) set_com_touched(true);
+    if (
+      next.tipo_destinatari !== com_state.tipo_destinatari ||
+      next.atleti_ids.length !== com_state.atleti_ids.length
+    ) {
+      set_com_dest_touched(true);
+    }
     set_com_state(next);
   };
+
 
   // ─── Mutations ──────────────────────────────────────────────────────
   const create_test = useMutation({
@@ -328,6 +374,8 @@ export default function TestLivelloPage() {
       const payload: any = {
         club_id: club_id!,
         nome: form.nome,
+        livello_accesso: form.livello_accesso,
+
         tipo: form.tipo,
         gara_id: form.tipo === "in_gara" ? (form.gara_id || null) : null,
         data: form.tipo === "in_gara" ? (gara?.data ?? null) : (form.data || null),
@@ -371,7 +419,23 @@ export default function TestLivelloPage() {
     onError: (e: any) => toast.error(t("level_tests.toast_create_error", { error: e?.message ?? "" })),
   });
 
+  const update_livello_test = useMutation({
+    mutationFn: async ({ id, accesso }: { id: string; accesso: string }) => {
+      const { error } = await supabase
+        .from("test_livello")
+        .update({ livello_accesso: accesso } as any)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["test_livello"] });
+      toast.success("Livello del test aggiornato");
+    },
+    onError: (e: any) => toast.error(t("level_tests.toast_generic_error", { error: e?.message ?? "" })),
+  });
+
   const delete_test = useMutation({
+
     mutationFn: async (id: string) => {
       await supabase.from("test_livello_atleti").delete().eq("test_id", id);
       const { error } = await supabase.from("test_livello").delete().eq("id", id);
@@ -455,6 +519,8 @@ export default function TestLivelloPage() {
   const [invite_selected, set_invite_selected] = useState<Set<string>>(new Set());
   const [search_invite, set_search_invite] = useState("");
   const [filtro_livello_invite, set_filtro_livello_invite] = useState<string>("tutti");
+  const [mostra_tutte_invite, set_mostra_tutte_invite] = useState(false);
+
   const [invite_passaggi, set_invite_passaggi] = useState<Record<string, number>>({});
   const [annulla_atleta_id, set_annulla_atleta_id] = useState<string | null>(null);
   const [annulla_motivo, set_annulla_motivo] = useState("");
@@ -505,9 +571,15 @@ export default function TestLivelloPage() {
     return Array.from(set).sort();
   }, [atleti]);
 
+  // Livello a cui il test si rivolge (accesso) e passaggio corrispondente
+  const accesso_test = selected_test?.livello_accesso || "";
+  const passaggio_test = passaggio_di_accesso(accesso_test);
+  const is_idonea = (a: Atleta) => !!accesso_test && get_livello_gara(a as any) === accesso_test;
+
   const atleti_invitabili = useMemo(() => {
     const terms = search_invite.trim().toLowerCase().split(/\s+/).filter(Boolean);
     return atleti.filter((a) => {
+      if (!mostra_tutte_invite && accesso_test && get_livello_gara(a as any) !== accesso_test) return false;
       if (filtro_livello_invite !== "tutti" && get_livello_gara(a as any) !== filtro_livello_invite) return false;
       if (terms.length > 0) {
         const text = `${a.nome} ${a.cognome}`.toLowerCase();
@@ -515,7 +587,7 @@ export default function TestLivelloPage() {
       }
       return true;
     });
-  }, [atleti, search_invite, filtro_livello_invite]);
+  }, [atleti, search_invite, filtro_livello_invite, mostra_tutte_invite, accesso_test]);
 
   const toggle_invite = (id: string) => {
     set_invite_selected((prev) => {
@@ -525,12 +597,9 @@ export default function TestLivelloPage() {
     });
   };
 
-  // Passaggi proposti per un'atleta (progressione tecnica)
-  const passaggi_atleta = (atleta_id: string): Passaggio[] => {
-    const a = atleti.find((x) => x.id === atleta_id);
-    if (!a) return [];
-    return get_passaggi_validi_per_atleta(a as any, "artistica");
-  };
+  // Passaggi del TEST: si parte dal passaggio del test, non dal livello dell'atleta
+  const passaggi_atleta = (_atleta_id: string): Passaggio[] => passaggi_da_accesso(accesso_test);
+
 
   const invita_selezionate = useMutation({
     mutationFn: async () => {
@@ -539,7 +608,8 @@ export default function TestLivelloPage() {
       for (const atleta_id of invite_selected) {
         const atleta = atleti.find((a) => a.id === atleta_id);
         if (!atleta) continue;
-        const passaggi = get_passaggi_validi_per_atleta(atleta as any, "artistica");
+        // Il passaggio è quello del TEST, non il prossimo step dell'atleta
+        const passaggi = passaggi_da_accesso(accesso_test);
         const quanti = Math.max(1, Math.min(invite_passaggi[atleta_id] ?? 1, Math.max(passaggi.length, 1)));
         const rows = Array.from({ length: quanti }, (_, idx) => {
           const p = passaggi[idx] ?? null;
@@ -547,7 +617,8 @@ export default function TestLivelloPage() {
             test_id: selected_test_id,
             atleta_id,
             ordine: idx + 1,
-            livello_accesso: p?.accesso ?? get_livello_gara(atleta as any),
+            livello_accesso: p?.accesso ?? accesso_test,
+
             livello_target: p?.target ?? null,
             disciplina: p?.richiede_disciplina ? "artistica" : null,
             esito: "in_attesa",
@@ -806,6 +877,28 @@ export default function TestLivelloPage() {
               <Input value={form.nome} onChange={(e) => set_form({ ...form, nome: e.target.value })} placeholder={t("level_tests.name_placeholder")} />
             </div>
 
+            {/* Livello del test (obbligatorio) */}
+            <div>
+              <label className="text-sm font-medium text-foreground">Test per il passaggio a</label>
+              <Select
+                value={form.livello_accesso}
+                onValueChange={(v) => set_form({ ...form, livello_accesso: v })}
+              >
+                <SelectTrigger><SelectValue placeholder="Scegli il passaggio" /></SelectTrigger>
+                <SelectContent>
+                  {TUTTI_PASSAGGI.map((p) => (
+                    <SelectItem key={p.accesso} value={p.accesso}>{etichetta_passaggio(p)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                {form.livello_accesso
+                  ? `Possono partecipare solo le atlete ${form.livello_accesso}: al momento sono ${idonee_form.length}.`
+                  : "Serve per sapere a chi si rivolge il test: senza questa scelta non si può filtrare chi può partecipare."}
+              </p>
+
+            </div>
+
             {/* Step 2A: base */}
             {form.tipo === "base" && (
               <div className="grid gap-4 md:grid-cols-2">
@@ -881,6 +974,11 @@ export default function TestLivelloPage() {
               onChange={handle_com_change}
               corsi={corsi_lista.map((c) => ({ id: c.id, label: c.nome }))}
               atleti={atleti.map((a) => ({ id: a.id, label: `${a.cognome} ${a.nome}` }))}
+              description={
+                form.livello_accesso
+                  ? `L'avviso va solo alle ${idonee_form.length} atlete ${form.livello_accesso}, le uniche che possono fare questo test.`
+                  : "Scegli prima il passaggio del test: l'avviso va solo alle atlete che possono parteciparvi."
+              }
             />
 
             <div className="flex gap-3 justify-end pt-2">
@@ -888,9 +986,11 @@ export default function TestLivelloPage() {
               <Button
                 disabled={
                   !form.nome ||
+                  !form.livello_accesso ||
                   (form.tipo === "in_gara" && !form.gara_id) ||
                   create_test.isPending
                 }
+
                 onClick={() => create_test.mutate()}
               >
                 {com_state.invia ? (<><Send className="w-4 h-4 mr-1" /> {t("level_tests.create_and_communicate")}</>) : t("level_tests.create_test")}
@@ -983,6 +1083,25 @@ export default function TestLivelloPage() {
           <div><span className="text-muted-foreground">{t("level_tests.detail_time")}</span> {selected_test.ora?.slice(0, 5) || "-"}</div>
           <div><span className="text-muted-foreground">{t("level_tests.detail_place")}</span> {selected_test.luogo || "-"}</div>
           <div><span className="text-muted-foreground">{t("level_tests.detail_club")}</span> {selected_test.club_ospitante || "-"}</div>
+          <div className="md:col-span-4 flex flex-wrap items-center gap-2">
+            <span className="text-muted-foreground">Test per il passaggio a:</span>
+            {puo_gestire_sportivo ? (
+              <Select
+                value={accesso_test}
+                onValueChange={(v) => update_livello_test.mutate({ id: selected_test.id, accesso: v })}
+              >
+                <SelectTrigger className="h-8 w-80 text-xs"><SelectValue placeholder="Da scegliere" /></SelectTrigger>
+                <SelectContent>
+                  {TUTTI_PASSAGGI.map((p) => (
+                    <SelectItem key={p.accesso} value={p.accesso}>{etichetta_passaggio(p)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <span>{passaggio_test ? etichetta_passaggio(passaggio_test) : "da scegliere"}</span>
+            )}
+          </div>
+
           {gara_link && (
             <div className="md:col-span-4 text-xs text-muted-foreground">
               {t("level_tests.detail_in_gara_label")} <strong>{gara_link.nome}</strong>
@@ -1024,10 +1143,16 @@ export default function TestLivelloPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {puo_gestire_sportivo && !accesso_test && (
+            <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              Questo test non dice ancora a che livello si riferisce: scegli qui sopra il passaggio,
+              così l'elenco mostra solo le atlete che possono parteciparvi.
+            </p>
+          )}
           {puo_gestire_sportivo && (
             <div className="border rounded-md overflow-hidden">
-              <div className="flex items-center gap-2 p-2 border-b bg-muted/30">
-                <div className="relative flex-1">
+              <div className="flex items-center gap-2 p-2 border-b bg-muted/30 flex-wrap">
+                <div className="relative flex-1 min-w-[180px]">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                   <Input
                     placeholder={t("level_tests.search_athlete_placeholder")}
@@ -1047,7 +1172,17 @@ export default function TestLivelloPage() {
                     ))}
                   </SelectContent>
                 </Select>
+                {accesso_test && (
+                  <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                    <Checkbox
+                      checked={mostra_tutte_invite}
+                      onCheckedChange={(v) => set_mostra_tutte_invite(!!v)}
+                    />
+                    Mostra tutte
+                  </label>
+                )}
               </div>
+
               <div className="max-h-[280px] overflow-y-auto divide-y divide-border/50">
                 {atleti_invitabili.length === 0 ? (
                   <p className="px-3 py-4 text-sm text-muted-foreground text-center">{t("level_tests.no_athlete_found")}</p>
@@ -1072,12 +1207,18 @@ export default function TestLivelloPage() {
                           onCheckedChange={() => !gia_invitata && toggle_invite(a.id)}
                         />
                         <span className="flex-1">{a.cognome} {a.nome}</span>
+                        {!is_idonea(a) && accesso_test && (
+                          <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-800 border-amber-300">
+                            non idonea: è {get_livello_gara(a as any)}
+                          </Badge>
+                        )}
                         <span className="text-xs text-muted-foreground">{get_livello_gara(a as any)}</span>
                         {invito && (
                           <Badge variant="outline" className={`text-[10px] ${STATO_INVITO_BADGE[stato_inv]}`}>
                             {t(`level_tests.stato_${stato_inv}`, { defaultValue: stato_inv })}
                           </Badge>
                         )}
+
                       </div>
                       {selezionata && !gia_invitata && (
                         <div className="px-3 pb-3 pl-10 space-y-1">
