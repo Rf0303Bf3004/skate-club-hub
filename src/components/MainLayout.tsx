@@ -286,7 +286,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               {MENU_GRUPPI.map((gruppo) => {
                 const voci_visibili = gruppo.voci.filter((voce) => visibile_set.has(voce.codice));
                 const mostra_tabellone = gruppo.id === "soldi" && visibile_set.has("fatture");
-                const mostra_utenti = gruppo.id === "club" && can_manage_users;
+                const mostra_utenti = gruppo.id === "club" && can_manage_users && !visibile_set.has("gestione_utenti");
                 const mostra_convenzioni = gruppo.id === "club" && !!session;
                 const mostra_relazione = gruppo.id === "club" && is_presidente;
                 if (voci_visibili.length === 0 && !mostra_tabellone && !mostra_utenti && !mostra_convenzioni && !mostra_relazione) return null;

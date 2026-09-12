@@ -231,6 +231,7 @@
     "ruoli_permessi": "Gestion des rôles"
   },
   "menu_gruppo": {
+    "generale": "Général",
     "persone": "Personnes",
     "ghiaccio": "Glace",
     "soldi": "Administration",
