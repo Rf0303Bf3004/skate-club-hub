@@ -334,6 +334,11 @@
     "salvato_titolo": "Appello registrato",
     "conferma_cambio_titolo": "Modifiche non registrate",
     "conferma_cambio_testo": "Hai segnato delle assenze senza registrarle. Cambiando sessione andranno perse.",
-    "conferma_cambio_azione": "Cambia sessione"
+    "conferma_cambio_azione": "Cambia sessione",
+    "n_atlete_one": "{{count}} atleta",
+    "n_atlete_other": "{{count}} atlete",
+    "nessuna_atleta": "Nessuna atleta assegnata a questa sessione.",
+    "schermo_intero": "Schermo intero",
+    "esci_schermo_intero": "Esci"
   }
 }
