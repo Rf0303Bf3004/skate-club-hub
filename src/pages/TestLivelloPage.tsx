@@ -1143,10 +1143,16 @@ export default function TestLivelloPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {puo_gestire_sportivo && !accesso_test && (
+            <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              Questo test non dice ancora a che livello si riferisce: scegli qui sopra il passaggio,
+              così l'elenco mostra solo le atlete che possono parteciparvi.
+            </p>
+          )}
           {puo_gestire_sportivo && (
             <div className="border rounded-md overflow-hidden">
-              <div className="flex items-center gap-2 p-2 border-b bg-muted/30">
-                <div className="relative flex-1">
+              <div className="flex items-center gap-2 p-2 border-b bg-muted/30 flex-wrap">
+                <div className="relative flex-1 min-w-[180px]">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                   <Input
                     placeholder={t("level_tests.search_athlete_placeholder")}
@@ -1166,7 +1172,17 @@ export default function TestLivelloPage() {
                     ))}
                   </SelectContent>
                 </Select>
+                {accesso_test && (
+                  <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                    <Checkbox
+                      checked={mostra_tutte_invite}
+                      onCheckedChange={(v) => set_mostra_tutte_invite(!!v)}
+                    />
+                    Mostra tutte
+                  </label>
+                )}
               </div>
+
               <div className="max-h-[280px] overflow-y-auto divide-y divide-border/50">
                 {atleti_invitabili.length === 0 ? (
                   <p className="px-3 py-4 text-sm text-muted-foreground text-center">{t("level_tests.no_athlete_found")}</p>
