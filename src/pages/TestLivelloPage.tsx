@@ -16,7 +16,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import ConfirmButton from "@/components/common/ConfirmButton";
 import NotaPermesso from "@/components/common/NotaPermesso";
 import { usePermessiAzione } from "@/hooks/use-permessi-azione";
-import { Plus, ArrowLeft, Trash2, X, CheckCircle, Send, Search } from "lucide-react";
+import { Plus, ArrowLeft, Trash2, X, CheckCircle, Send, Search, Printer } from "lucide-react";
+import { use_club } from "@/hooks/use-supabase-data";
 import {
   ComunicazioneFormSection,
   empty_comunicazione_state,
@@ -157,6 +158,7 @@ function summarize_livelli(t: (k: string, o?: any) => string, rows: { livello_ta
 export default function TestLivelloPage() {
   const { t } = useTranslation("events");
   const { puo_gestire_sportivo } = usePermessiAzione();
+  const { data: club_corrente } = use_club();
   const club_id = get_current_club_id();
   const qc = useQueryClient();
   const route_params = useParams<{ id?: string }>();
@@ -217,7 +219,7 @@ export default function TestLivelloPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("atleti")
-        .select("id, nome, cognome, attivo, livello_attuale, carriera_artistica, carriera_stile, categoria, livello_amatori, livello_artistica, livello_stile")
+        .select("id, nome, cognome, attivo, data_nascita, livello_attuale, carriera_artistica, carriera_stile, categoria, livello_amatori, livello_artistica, livello_stile")
         .eq("club_id", club_id!)
         .eq("attivo", true)
         .order("cognome");
@@ -330,6 +332,7 @@ export default function TestLivelloPage() {
         luogo: form.tipo === "in_gara" ? (gara?.luogo ?? null) : (form.luogo || null),
         club_ospitante: form.tipo === "in_gara" ? (gara?.club_ospitante ?? null) : (form.club_ospitante || null),
         costo_iscrizione: form.costo_iscrizione ? Number(form.costo_iscrizione) : null,
+        scadenza_disdetta: form.scadenza_disdetta || null,
         note: form.note || null,
       };
       const { data, error } = await supabase
