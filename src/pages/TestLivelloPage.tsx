@@ -38,6 +38,7 @@ import {
   type Passaggio,
   type TestAtletaRow,
 } from "@/lib/atleta-livello";
+import { use_tariffe_test, LIVELLI_TARIFFA } from "@/components/setup/TariffeTestSection";
 
 // ─── Tipi ───────────────────────────────────────────────────────────────
 type TestLivello = {
@@ -70,6 +71,7 @@ type TestAtleta = TestAtletaRow & {
   stato_da: string | null;
   stato_motivo: string | null;
   costo_applicato: number | null;
+  costo_previsto: number | null;
   disdetta_nei_termini: boolean | null;
   presente: boolean | null;
 };
@@ -471,16 +473,31 @@ export default function TestLivelloPage() {
 
   const invito_stats = useMemo(() => {
     let invitate = 0, accettate = 0, rifiutate = 0, senza_risposta = 0, totale_accettate = 0;
+    const accettate_ids = new Set<string>();
     for (const r of inviti_lista) {
       const s = (r.stato ?? "invitata") as StatoInvito;
       if (s === "annullata") continue;
       invitate++;
-      if (s === "accettata") { accettate++; totale_accettate += Number(r.costo_applicato ?? 0); }
+      if (s === "accettata") { accettate++; accettate_ids.add(r.atleta_id); }
       else if (s === "rifiutata") rifiutate++;
       else if (!r.risposta_at) senza_risposta++;
     }
+    // Somma la quota congelata (costo_applicato) di tutti i passaggi delle accettate
+    for (const riga of test_atleti) {
+      if (accettate_ids.has(riga.atleta_id)) totale_accettate += Number(riga.costo_applicato ?? 0);
+    }
     return { invitate, accettate, rifiutate, senza_risposta, totale_accettate };
-  }, [inviti_lista]);
+  }, [inviti_lista, test_atleti]);
+
+  // Listino tariffe per tipo di test (vince sul prezzo della singola giornata)
+  const { data: tariffe_test = [] } = use_tariffe_test();
+  const tariffe_attive = useMemo(
+    () =>
+      LIVELLI_TARIFFA.filter((liv) =>
+        tariffe_test.some((t) => t.livello_target === liv && t.attiva !== false && t.prezzo != null),
+      ),
+    [tariffe_test],
+  );
 
   const livelli_invite_disponibili = useMemo(() => {
     const set = new Set<string>();
@@ -911,6 +928,15 @@ export default function TestLivelloPage() {
     return Array.from(gruppi.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   })();
   const totale_iscritte = iscritte_stampa.reduce((acc, [, arr]) => acc + arr.length, 0);
+  const totale_quote_stampa = iscritte_stampa.reduce(
+    (acc, [, arr]) =>
+      acc +
+      arr.reduce(
+        (a, { passi }) => a + passi.reduce((p, s) => p + Number(s.costo_applicato ?? 0), 0),
+        0,
+      ),
+    0,
+  );
 
   const stampa_elenco = () => {
     document.body.classList.add("stampa-elenco-test");
@@ -965,6 +991,11 @@ export default function TestLivelloPage() {
           {selected_test.costo_iscrizione != null && (
             <div className="md:col-span-4"><span className="text-muted-foreground">{t("level_tests.detail_cost")}</span> CHF {Number(selected_test.costo_iscrizione).toFixed(2)}</div>
           )}
+          <div className="md:col-span-4 text-xs text-muted-foreground">
+            {tariffe_attive.length === 0
+              ? "Nessun tipo di test ha una tariffa nel listino: vale il prezzo di questa giornata."
+              : `Hanno già una tariffa nel listino: ${tariffe_attive.join(", ")}. Per questi tipi il listino vince sul prezzo della giornata.`}
+          </div>
           <div className="md:col-span-4 text-sm">
             <span className="text-muted-foreground">Ultimo giorno per ritirarsi senza pagare:</span>{" "}
             {selected_test.scadenza_disdetta
@@ -1125,12 +1156,19 @@ export default function TestLivelloPage() {
                       <TableCell className="font-medium text-sm align-top">
                         {atleta ? `${atleta.cognome} ${atleta.nome}` : r.atleta_id.slice(0, 8)}
                         <ul className="mt-1 space-y-0.5 text-xs font-normal text-muted-foreground">
-                          {passi.map((s2) => (
-                            <li key={s2.id}>
-                              {s2.ordine}. {s2.livello_accesso} → {s2.livello_target}
-                              {s2.disciplina ? ` (${s2.disciplina === "artistica" ? "artistica" : "stile"})` : ""}
-                            </li>
-                          ))}
+                          {passi.map((s2) => {
+                            const quota = stato_inv === "accettata" ? s2.costo_applicato : s2.costo_previsto;
+                            return (
+                              <li key={s2.id}>
+                                {s2.ordine}. {s2.livello_accesso} → {s2.livello_target}
+                                {s2.disciplina ? ` (${s2.disciplina === "artistica" ? "artistica" : "stile"})` : ""}
+                                {" · "}
+                                <span className="tabular-nums">
+                                  {quota != null ? `CHF ${Number(quota).toFixed(2)}` : "—"}
+                                </span>
+                              </li>
+                            );
+                          })}
                         </ul>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
@@ -1174,7 +1212,14 @@ export default function TestLivelloPage() {
                         )}
                       </TableCell>
                       <TableCell className="text-sm align-top">
-                        {r.costo_applicato != null ? `CHF ${Number(r.costo_applicato).toFixed(2)}` : "—"}
+                        {(() => {
+                          const tot = passi.reduce(
+                            (acc, s4) =>
+                              acc + Number((stato_inv === "accettata" ? s4.costo_applicato : s4.costo_previsto) ?? 0),
+                            0,
+                          );
+                          return tot > 0 ? `CHF ${tot.toFixed(2)}` : "—";
+                        })()}
                       </TableCell>
                       {puo_gestire_sportivo && (
                         <TableCell className="align-top">
@@ -1462,7 +1507,13 @@ export default function TestLivelloPage() {
                       {atleta?.data_nascita ? String(atleta.data_nascita).slice(0, 4) : "—"}
                     </td>
                     <td style={{ borderBottom: "1px solid #999", padding: "2mm 1mm" }}>
-                      {passi.map((s3) => `${s3.livello_accesso} → ${s3.livello_target}`).join("; ") || "—"}
+                      {passi
+                        .map(
+                          (s3) =>
+                            `${s3.livello_accesso} → ${s3.livello_target}` +
+                            (s3.costo_applicato != null ? ` (CHF ${Number(s3.costo_applicato).toFixed(2)})` : ""),
+                        )
+                        .join("; ") || "—"}
                     </td>
                     <td style={{ borderBottom: "1px solid #999", padding: "2mm 1mm" }}>
                       <span style={{ display: "inline-block", width: "6mm", height: "6mm", border: "1px solid #000" }} />
@@ -1474,7 +1525,7 @@ export default function TestLivelloPage() {
           </div>
         ))}
         <p style={{ fontSize: "10pt", marginTop: "8mm" }}>
-          Totale iscritte: {totale_iscritte} · Stampato il{" "}
+          Totale iscritte: {totale_iscritte} · Totale quote: CHF {totale_quote_stampa.toFixed(2)} · Stampato il{" "}
           {new Date().toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
         </p>
         </div>,
