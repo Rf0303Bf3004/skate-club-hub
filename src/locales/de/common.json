@@ -228,7 +228,8 @@
   "confirm_delete_title": "Löschen bestätigen",
   "menu": {
     "griglia_ghiaccio": "Eisraster",
-    "ruoli_permessi": "Rollenverwaltung"
+    "ruoli_permessi": "Rollenverwaltung",
+    "pista": "Am Eisrand"
   },
   "menu_gruppo": {
     "generale": "Allgemein",
@@ -236,5 +237,20 @@
     "ghiaccio": "Eis",
     "soldi": "Verwaltung",
     "club": "Der Club"
+  },
+  "pista": {
+    "nessuna_sessione": "Heute ist keine Einheit veröffentlicht.",
+    "serve_club": "Dieser Bildschirm funktioniert mit einem Club-Zugang.",
+    "contatore": "{{presenti}} anwesend · {{assenti}} abwesend",
+    "registra_appello": "Anwesenheit speichern",
+    "registrazione_in_corso": "Wird gespeichert…",
+    "registrato_alle": "gespeichert um {{ora}}",
+    "avvisato": "von der Familie gemeldet",
+    "gruppo_numero": "Gruppe {{numero}}",
+    "n_atlete": "{{count}} Athletinnen",
+    "salvato_titolo": "Anwesenheit gespeichert",
+    "conferma_cambio_titolo": "Nicht gespeicherte Änderungen",
+    "conferma_cambio_testo": "Sie haben Abwesenheiten markiert, ohne sie zu speichern. Beim Wechsel gehen sie verloren.",
+    "conferma_cambio_azione": "Einheit wechseln"
   }
 }

@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { usePermessiSezioniMatrix } from "@/hooks/usePermessi";
 import { toast } from "@/hooks/use-toast";
 import GrigliaGhiaccioPage from "@/pages/GrigliaGhiaccioPage";
+import PistaPage from "@/pages/PistaPage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useNavigate, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -328,6 +329,7 @@ const AuthenticatedApp = () => {
           <Route path="/configurazione-club" element={<Navigate to="/setup-club" replace />} />
           <Route path="/gestione-ruoli" element={<Navigate to="/ruoli-permessi" replace />} />
           <Route path="/planning" element={<SezioneGuard codice_sezione="planning_ghiaccio"><PlanningPage /></SezioneGuard>} />
+          <Route path="/pista" element={<SezioneGuard codice_sezione="pista"><PistaPage /></SezioneGuard>} />
           <Route path="/griglia-ghiaccio" element={<SezioneGuard codice_sezione="griglia_ghiaccio"><GrigliaGhiaccioPage /></SezioneGuard>} />
           <Route
             path="/setup-club"

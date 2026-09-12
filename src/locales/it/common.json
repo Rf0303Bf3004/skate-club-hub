@@ -265,7 +265,8 @@
     "superadmin_dashboard": "Dashboard",
     "superadmin_club": "Gestione Club",
     "superadmin_manutenzione": "Manutenzione Ordinaria",
-    "superadmin_manutenzione_str": "Manutenzione Straordinaria"
+    "superadmin_manutenzione_str": "Manutenzione Straordinaria",
+    "pista": "Bordo pista"
   },
   "menu_gruppo": {
     "generale": "Generale",
@@ -319,5 +320,20 @@
     "dd": "GG",
     "mm": "MM",
     "yyyy": "AAAA"
+  },
+  "pista": {
+    "nessuna_sessione": "Oggi non c'è nessuna sessione pubblicata.",
+    "serve_club": "Questa schermata funziona con un accesso di club.",
+    "contatore": "{{presenti}} presenti · {{assenti}} assenti",
+    "registra_appello": "Registra l'appello",
+    "registrazione_in_corso": "Registrazione in corso…",
+    "registrato_alle": "registrato alle {{ora}}",
+    "avvisato": "avvisato dalla famiglia",
+    "gruppo_numero": "Gruppo {{numero}}",
+    "n_atlete": "{{count}} atlete",
+    "salvato_titolo": "Appello registrato",
+    "conferma_cambio_titolo": "Modifiche non registrate",
+    "conferma_cambio_testo": "Hai segnato delle assenze senza registrarle. Cambiando sessione andranno perse.",
+    "conferma_cambio_azione": "Cambia sessione"
   }
 }

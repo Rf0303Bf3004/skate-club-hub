@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { use_club } from "@/hooks/use-supabase-data";
 import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
-import { LayoutDashboard, Users, BookOpen, Trophy, CreditCard, MessageSquare, Settings, Calendar, UserCheck, Tent, GraduationCap, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, Lock, ClipboardList, ClipboardCheck, Sparkles, ChevronDown, ChevronRight, FileText, Search, LayoutGrid, BadgePercent, Smartphone, FileSpreadsheet } from "lucide-react";
+import { LayoutDashboard, Users, BookOpen, Trophy, CreditCard, MessageSquare, Settings, Calendar, UserCheck, Tent, GraduationCap, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, Lock, ClipboardList, ClipboardCheck, Sparkles, ChevronDown, ChevronRight, FileText, Tablet, Search, LayoutGrid, BadgePercent, Smartphone, FileSpreadsheet } from "lucide-react";
 import GlobalSearchPalette from "@/components/common/GlobalSearchPalette";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import { registra_silenzioso } from "@/lib/errori";
 const legacy_dashboard = { key: "dashboard", path: "/", icon: LayoutDashboard };
 
 const legacy_gruppo_operativita = [
+  { key: "pista", path: "/pista", icon: Tablet, label_key: "menu.pista" },
   { key: "atleti", path: "/atleti", icon: Users },
   { key: "richieste_iscrizione", path: "/richieste-iscrizione", icon: ClipboardList },
   { key: "istruttori", path: "/istruttori", icon: UserCheck },
@@ -249,7 +250,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             <>
               {render_nav_item(legacy_dashboard.path, legacy_dashboard.icon, t(legacy_dashboard.key), legacy_dashboard.key)}
               {render_group("Operatività", LayoutGrid, op_open, () => set_op_open((o) => !o),
-                legacy_gruppo_operativita.map((i) => render_nav_item(i.path, i.icon, (i as any).label ?? t(i.key), i.key))
+                legacy_gruppo_operativita.map((i) => render_nav_item(i.path, i.icon, (i as any).label_key ? tc((i as any).label_key) : (i as any).label ?? t(i.key), i.key))
               )}
               {render_group("Gare & Eventi", Trophy, gare_open, () => set_gare_open((o) => !o),
                 legacy_gruppo_gare.map((i) => render_nav_item(i.path, i.icon, t(i.key), i.key))
