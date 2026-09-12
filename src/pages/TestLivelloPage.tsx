@@ -1083,6 +1083,25 @@ export default function TestLivelloPage() {
           <div><span className="text-muted-foreground">{t("level_tests.detail_time")}</span> {selected_test.ora?.slice(0, 5) || "-"}</div>
           <div><span className="text-muted-foreground">{t("level_tests.detail_place")}</span> {selected_test.luogo || "-"}</div>
           <div><span className="text-muted-foreground">{t("level_tests.detail_club")}</span> {selected_test.club_ospitante || "-"}</div>
+          <div className="md:col-span-4 flex flex-wrap items-center gap-2">
+            <span className="text-muted-foreground">Test per il passaggio a:</span>
+            {puo_gestire_sportivo ? (
+              <Select
+                value={accesso_test}
+                onValueChange={(v) => update_livello_test.mutate({ id: selected_test.id, accesso: v })}
+              >
+                <SelectTrigger className="h-8 w-80 text-xs"><SelectValue placeholder="Da scegliere" /></SelectTrigger>
+                <SelectContent>
+                  {TUTTI_PASSAGGI.map((p) => (
+                    <SelectItem key={p.accesso} value={p.accesso}>{etichetta_passaggio(p)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <span>{passaggio_test ? etichetta_passaggio(passaggio_test) : "da scegliere"}</span>
+            )}
+          </div>
+
           {gara_link && (
             <div className="md:col-span-4 text-xs text-muted-foreground">
               {t("level_tests.detail_in_gara_label")} <strong>{gara_link.nome}</strong>
