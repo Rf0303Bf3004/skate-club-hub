@@ -519,6 +519,8 @@ export default function TestLivelloPage() {
   const [invite_selected, set_invite_selected] = useState<Set<string>>(new Set());
   const [search_invite, set_search_invite] = useState("");
   const [filtro_livello_invite, set_filtro_livello_invite] = useState<string>("tutti");
+  const [mostra_tutte_invite, set_mostra_tutte_invite] = useState(false);
+
   const [invite_passaggi, set_invite_passaggi] = useState<Record<string, number>>({});
   const [annulla_atleta_id, set_annulla_atleta_id] = useState<string | null>(null);
   const [annulla_motivo, set_annulla_motivo] = useState("");
