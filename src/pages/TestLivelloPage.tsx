@@ -192,6 +192,8 @@ export default function TestLivelloPage() {
   // ─── Sezione Comunicazione (form Nuovo Test) ────────────
   const [com_state, set_com_state] = useState<ComunicazioneFormState>(() => empty_comunicazione_state());
   const [com_touched, set_com_touched] = useState(false);
+  const [com_dest_touched, set_com_dest_touched] = useState(false);
+
 
   const { data: corsi_lista = [] } = useQuery({
     queryKey: ["corsi_per_comunicazione", club_id],
