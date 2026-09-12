@@ -225,5 +225,15 @@
     "unpaid": "À payer"
   },
   "irreversible_warning": "Cette opération est irréversible. Toutes les données liées seront supprimées.",
-  "confirm_delete_title": "Confirmer la suppression"
+  "confirm_delete_title": "Confirmer la suppression",
+  "menu": {
+    "griglia_ghiaccio": "Grille de glace",
+    "ruoli_permessi": "Gestion des rôles"
+  },
+  "menu_gruppo": {
+    "persone": "Personnes",
+    "ghiaccio": "Glace",
+    "soldi": "Administration",
+    "club": "Le club"
+  }
 }
