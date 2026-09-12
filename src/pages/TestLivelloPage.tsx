@@ -877,6 +877,28 @@ export default function TestLivelloPage() {
               <Input value={form.nome} onChange={(e) => set_form({ ...form, nome: e.target.value })} placeholder={t("level_tests.name_placeholder")} />
             </div>
 
+            {/* Livello del test (obbligatorio) */}
+            <div>
+              <label className="text-sm font-medium text-foreground">Test per il passaggio a</label>
+              <Select
+                value={form.livello_accesso}
+                onValueChange={(v) => set_form({ ...form, livello_accesso: v })}
+              >
+                <SelectTrigger><SelectValue placeholder="Scegli il passaggio" /></SelectTrigger>
+                <SelectContent>
+                  {TUTTI_PASSAGGI.map((p) => (
+                    <SelectItem key={p.accesso} value={p.accesso}>{etichetta_passaggio(p)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                {form.livello_accesso
+                  ? `Possono partecipare solo le atlete ${form.livello_accesso}: al momento sono ${idonee_form.length}.`
+                  : "Serve per sapere a chi si rivolge il test: senza questa scelta non si può filtrare chi può partecipare."}
+              </p>
+
+            </div>
+
             {/* Step 2A: base */}
             {form.tipo === "base" && (
               <div className="grid gap-4 md:grid-cols-2">
