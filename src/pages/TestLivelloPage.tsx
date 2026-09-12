@@ -1257,6 +1257,37 @@ export default function TestLivelloPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* ─── Annulla invito Dialog ─────────────────────────────────── */}
+      <Dialog open={!!annulla_atleta_id} onOpenChange={(open) => { if (!open) { set_annulla_atleta_id(null); set_annulla_motivo(""); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("level_tests.cancel_invite_title", { defaultValue: "Annulla invito" })}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              {t("level_tests.cancel_invite_desc", { defaultValue: "L'invito resta nello storico con stato «annullata». Scrivi il motivo:" })}
+            </p>
+            <Textarea
+              value={annulla_motivo}
+              onChange={(e) => set_annulla_motivo(e.target.value)}
+              placeholder={t("level_tests.cancel_invite_reason_placeholder", { defaultValue: "Motivo dell'annullamento…" })}
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => { set_annulla_atleta_id(null); set_annulla_motivo(""); }}>
+                {t("level_tests.cancel")}
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={!annulla_motivo.trim() || annulla_invito.isPending}
+                onClick={() => annulla_atleta_id && annulla_invito.mutate({ atleta_id: annulla_atleta_id, motivo: annulla_motivo.trim() })}
+              >
+                {t("level_tests.cancel_invite_confirm", { defaultValue: "Annulla invito" })}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
