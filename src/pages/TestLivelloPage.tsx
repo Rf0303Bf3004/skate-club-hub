@@ -390,6 +390,20 @@ export default function TestLivelloPage() {
     onSuccess: () => { refetch_atleti(); toast.success(t("level_tests.toast_convocation_removed")); },
   });
 
+  const set_presenza = useMutation({
+    mutationFn: async ({ atleta_id, valore }: { atleta_id: string; valore: boolean | null }) => {
+      if (!selected_test_id) return;
+      const { error } = await supabase
+        .from("test_livello_atleti")
+        .update({ presente: valore } as any)
+        .eq("test_id", selected_test_id)
+        .eq("atleta_id", atleta_id);
+      if (error) throw error;
+    },
+    onSuccess: () => refetch_test_atleti(),
+    onError: (e) => segnala_errore(e, "Presenza test di livello"),
+  });
+
   const update_field = useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: Partial<TestAtleta> }) => {
       const { error } = await supabase.from("test_livello_atleti").update(patch).eq("id", id);
@@ -1141,9 +1155,9 @@ export default function TestLivelloPage() {
                           <Select
                             value={presente_val}
                             onValueChange={(v) =>
-                              update_field.mutate({
-                                id: r.id,
-                                patch: { presente: v === "non_segnata" ? null : v === "presente" } as any,
+                              set_presenza.mutate({
+                                atleta_id: r.atleta_id,
+                                valore: v === "non_segnata" ? null : v === "presente",
                               })
                             }
                           >
