@@ -143,3 +143,20 @@
   }
 }
 
+
+/* Stampa: elenco iscritte di un Test di livello */
+@media print {
+  body.stampa-elenco-test > *:not(#elenco-test-print-root) {
+    display: none !important;
+  }
+  body.stampa-elenco-test #elenco-test-print-root,
+  body.stampa-elenco-test #elenco-test-print-root * {
+    display: revert !important;
+    color: #000 !important;
+    background: transparent !important;
+  }
+  body.stampa-elenco-test #elenco-test-print-root {
+    display: block !important;
+    position: static !important;
+  }
+}

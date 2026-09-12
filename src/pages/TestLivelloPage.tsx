@@ -879,6 +879,34 @@ export default function TestLivelloPage() {
   }
 
   const gara_link = selected_test.gara_id ? gare.find((g) => g.id === selected_test.gara_id) : null;
+
+  // ─── Elenco iscritte stampabile ────────────────────────────────
+  const iscritte_stampa = (() => {
+    const gruppi = new Map<string, { atleta: Atleta | undefined; passi: TestAtleta[] }[]>();
+    for (const r of inviti_lista) {
+      if ((r.stato ?? "invitata") !== "accettata") continue;
+      const atleta = atleti.find((a) => a.id === r.atleta_id);
+      const livello = atleta ? get_livello_gara(atleta as any) : "—";
+      const passi = test_atleti.filter((x) => x.atleta_id === r.atleta_id).sort((a, b) => a.ordine - b.ordine);
+      if (!gruppi.has(livello)) gruppi.set(livello, []);
+      gruppi.get(livello)!.push({ atleta, passi });
+    }
+    for (const arr of gruppi.values()) {
+      arr.sort((a, b) => `${a.atleta?.cognome ?? ""} ${a.atleta?.nome ?? ""}`.localeCompare(`${b.atleta?.cognome ?? ""} ${b.atleta?.nome ?? ""}`));
+    }
+    return Array.from(gruppi.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  })();
+  const totale_iscritte = iscritte_stampa.reduce((acc, [, arr]) => acc + arr.length, 0);
+
+  const stampa_elenco = () => {
+    document.body.classList.add("stampa-elenco-test");
+    const cleanup = () => {
+      document.body.classList.remove("stampa-elenco-test");
+      window.removeEventListener("afterprint", cleanup);
+    };
+    window.addEventListener("afterprint", cleanup);
+    setTimeout(() => window.print(), 50);
+  };
   const next_for_dialog = next_passaggio_for_chain();
 
   return (
@@ -889,8 +917,13 @@ export default function TestLivelloPage() {
         </Button>
         <h1 className="text-2xl font-bold text-foreground">{selected_test.nome}</h1>
         <Badge variant="outline" className="capitalize">{selected_test.tipo === "in_gara" ? t("level_tests.type_in_gara_badge") : t("level_tests.type_base_badge")}</Badge>
+        <div className="ml-auto flex gap-2">
+          <Button variant="outline" size="sm" onClick={stampa_elenco}>
+            <Printer className="w-4 h-4 mr-1" /> Elenco iscritte
+          </Button>
+        </div>
         {puo_gestire_sportivo && (
-          <div className="ml-auto flex gap-2">
+          <div className="flex gap-2">
             <ConfirmButton
               titolo={t("level_tests.delete_confirm_title")}
               descrizione={t("level_tests.delete_confirm_desc")}
@@ -1376,6 +1409,60 @@ export default function TestLivelloPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* ─── Elenco iscritte (solo stampa) ─────────────────────────── */}
+      <div id="elenco-test-print-root" className="hidden">
+        <h1 style={{ fontSize: "18pt", fontWeight: 700, marginBottom: "2mm" }}>{selected_test.nome}</h1>
+        <p style={{ fontSize: "11pt", marginBottom: "1mm" }}>
+          {selected_test.data
+            ? new Date(selected_test.data).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })
+            : "data da definire"}
+          {selected_test.ora ? ` · ${selected_test.ora.slice(0, 5)}` : ""}
+          {selected_test.luogo ? ` · ${selected_test.luogo}` : ""}
+        </p>
+        <p style={{ fontSize: "11pt", marginBottom: "6mm" }}>{(club_corrente as any)?.nome ?? ""}</p>
+        {iscritte_stampa.length === 0 ? (
+          <p style={{ fontSize: "11pt" }}>Nessuna iscritta confermata.</p>
+        ) : iscritte_stampa.map(([livello, righe]) => (
+          <div key={livello} style={{ marginBottom: "6mm" }}>
+            <h2 style={{ fontSize: "13pt", fontWeight: 700, marginBottom: "2mm" }}>
+              {livello} — {righe.length} {righe.length === 1 ? "iscritta" : "iscritte"}
+            </h2>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "10.5pt" }}>
+              <thead>
+                <tr>
+                  <th style={{ textAlign: "left", borderBottom: "1px solid #000", padding: "1.5mm 1mm" }}>Cognome</th>
+                  <th style={{ textAlign: "left", borderBottom: "1px solid #000", padding: "1.5mm 1mm" }}>Nome</th>
+                  <th style={{ textAlign: "left", borderBottom: "1px solid #000", padding: "1.5mm 1mm" }}>Anno</th>
+                  <th style={{ textAlign: "left", borderBottom: "1px solid #000", padding: "1.5mm 1mm" }}>Passaggi</th>
+                  <th style={{ textAlign: "left", borderBottom: "1px solid #000", padding: "1.5mm 1mm", width: "20mm" }}>Presenza</th>
+                </tr>
+              </thead>
+              <tbody>
+                {righe.map(({ atleta, passi }) => (
+                  <tr key={atleta?.id ?? Math.random()}>
+                    <td style={{ borderBottom: "1px solid #999", padding: "2mm 1mm" }}>{atleta?.cognome ?? "—"}</td>
+                    <td style={{ borderBottom: "1px solid #999", padding: "2mm 1mm" }}>{atleta?.nome ?? "—"}</td>
+                    <td style={{ borderBottom: "1px solid #999", padding: "2mm 1mm" }}>
+                      {atleta?.data_nascita ? String(atleta.data_nascita).slice(0, 4) : "—"}
+                    </td>
+                    <td style={{ borderBottom: "1px solid #999", padding: "2mm 1mm" }}>
+                      {passi.map((s3) => `${s3.livello_accesso} → ${s3.livello_target}`).join("; ") || "—"}
+                    </td>
+                    <td style={{ borderBottom: "1px solid #999", padding: "2mm 1mm" }}>
+                      <span style={{ display: "inline-block", width: "6mm", height: "6mm", border: "1px solid #000" }} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))}
+        <p style={{ fontSize: "10pt", marginTop: "8mm" }}>
+          Totale iscritte: {totale_iscritte} · Stampato il{" "}
+          {new Date().toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
+        </p>
+      </div>
 
       {/* ─── Annulla invito Dialog ─────────────────────────────────── */}
       <Dialog open={!!annulla_atleta_id} onOpenChange={(open) => { if (!open) { set_annulla_atleta_id(null); set_annulla_motivo(""); } }}>
