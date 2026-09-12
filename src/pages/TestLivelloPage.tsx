@@ -1080,7 +1080,7 @@ export default function TestLivelloPage() {
                               </Badge>
                             )}
                           </div>
-                          {puo_gestire_sportivo ? (
+                          {puo_gestire_sportivo && (step.stato ?? "invitata") === "accettata" ? (
                             <Select
                               value={step.esito}
                               onValueChange={(v) => handle_change_esito(step.id, v as "in_attesa" | "superato" | "non_superato" | "non_sostenuto")}
