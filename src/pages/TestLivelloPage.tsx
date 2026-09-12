@@ -400,8 +400,7 @@ export default function TestLivelloPage() {
         .eq("atleta_id", atleta_id);
       if (error) throw error;
     },
-    onSuccess: () => refetch_test_atleti(),
-    onError: (e) => segnala_errore(e, "Presenza test di livello"),
+    onSuccess: () => refetch_atleti(),
   });
 
   const update_field = useMutation({
