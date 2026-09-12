@@ -965,24 +965,62 @@ export default function TestLivelloPage() {
                   const invito = inviti_per_atleta.get(a.id);
                   const gia_invitata = !!invito && (invito.stato ?? "invitata") !== "annullata";
                   const stato_inv = (invito?.stato ?? "invitata") as StatoInvito;
+                  const selezionata = invite_selected.has(a.id);
+                  const passaggi = selezionata ? passaggi_atleta(a.id) : [];
+                  const quanti = Math.max(1, Math.min(invite_passaggi[a.id] ?? 1, Math.max(passaggi.length, 1)));
                   return (
-                    <label
-                      key={a.id}
-                      className={`flex items-center gap-3 px-3 py-2 text-sm ${gia_invitata ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:bg-accent"}`}
-                    >
-                      <Checkbox
-                        checked={gia_invitata || invite_selected.has(a.id)}
-                        disabled={gia_invitata}
-                        onCheckedChange={() => !gia_invitata && toggle_invite(a.id)}
-                      />
-                      <span className="flex-1">{a.cognome} {a.nome}</span>
-                      <span className="text-xs text-muted-foreground">{get_livello_gara(a as any)}</span>
-                      {invito && (
-                        <Badge variant="outline" className={`text-[10px] ${STATO_INVITO_BADGE[stato_inv]}`}>
-                          {t(`level_tests.stato_${stato_inv}`, { defaultValue: stato_inv })}
-                        </Badge>
+                    <div key={a.id} className={gia_invitata ? "opacity-60" : ""}>
+                      <div
+                        role="button"
+                        tabIndex={gia_invitata ? -1 : 0}
+                        onClick={() => !gia_invitata && toggle_invite(a.id)}
+                        className={`flex items-center gap-3 px-3 py-2 text-sm ${gia_invitata ? "cursor-not-allowed" : "cursor-pointer hover:bg-accent"}`}
+                      >
+                        <Checkbox
+                          checked={gia_invitata || selezionata}
+                          disabled={gia_invitata}
+                          onCheckedChange={() => !gia_invitata && toggle_invite(a.id)}
+                        />
+                        <span className="flex-1">{a.cognome} {a.nome}</span>
+                        <span className="text-xs text-muted-foreground">{get_livello_gara(a as any)}</span>
+                        {invito && (
+                          <Badge variant="outline" className={`text-[10px] ${STATO_INVITO_BADGE[stato_inv]}`}>
+                            {t(`level_tests.stato_${stato_inv}`, { defaultValue: stato_inv })}
+                          </Badge>
+                        )}
+                      </div>
+                      {selezionata && !gia_invitata && (
+                        <div className="px-3 pb-3 pl-10 space-y-1">
+                          {passaggi.length <= 1 ? (
+                            <p className="text-xs text-muted-foreground">
+                              Un solo passaggio: {passaggi[0] ? `${passaggi[0].accesso} → ${passaggi[0].target}` : get_livello_gara(a as any)}
+                            </p>
+                          ) : (
+                            <>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground">Quanti passaggi fa</span>
+                                <Select
+                                  value={String(quanti)}
+                                  onValueChange={(v) => set_invite_passaggi((prev) => ({ ...prev, [a.id]: Number(v) }))}
+                                >
+                                  <SelectTrigger className="h-8 w-28 text-xs"><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                    {passaggi.map((_, i) => (
+                                      <SelectItem key={i} value={String(i + 1)}>{i + 1}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <ul className="text-xs text-muted-foreground space-y-0.5">
+                                {passaggi.slice(0, quanti).map((p, i) => (
+                                  <li key={i}>{i + 1}. {p.accesso} → {p.target}</li>
+                                ))}
+                              </ul>
+                            </>
+                          )}
+                        </div>
                       )}
-                    </label>
+                    </div>
                   );
                 })}
               </div>
