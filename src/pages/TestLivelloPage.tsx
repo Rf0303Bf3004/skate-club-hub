@@ -569,9 +569,15 @@ export default function TestLivelloPage() {
     return Array.from(set).sort();
   }, [atleti]);
 
+  // Livello a cui il test si rivolge (accesso) e passaggio corrispondente
+  const accesso_test = selected_test?.livello_accesso || "";
+  const passaggio_test = passaggio_di_accesso(accesso_test);
+  const is_idonea = (a: Atleta) => !!accesso_test && get_livello_gara(a as any) === accesso_test;
+
   const atleti_invitabili = useMemo(() => {
     const terms = search_invite.trim().toLowerCase().split(/\s+/).filter(Boolean);
     return atleti.filter((a) => {
+      if (!mostra_tutte_invite && accesso_test && get_livello_gara(a as any) !== accesso_test) return false;
       if (filtro_livello_invite !== "tutti" && get_livello_gara(a as any) !== filtro_livello_invite) return false;
       if (terms.length > 0) {
         const text = `${a.nome} ${a.cognome}`.toLowerCase();
@@ -579,7 +585,7 @@ export default function TestLivelloPage() {
       }
       return true;
     });
-  }, [atleti, search_invite, filtro_livello_invite]);
+  }, [atleti, search_invite, filtro_livello_invite, mostra_tutte_invite, accesso_test]);
 
   const toggle_invite = (id: string) => {
     set_invite_selected((prev) => {
@@ -589,12 +595,9 @@ export default function TestLivelloPage() {
     });
   };
 
-  // Passaggi proposti per un'atleta (progressione tecnica)
-  const passaggi_atleta = (atleta_id: string): Passaggio[] => {
-    const a = atleti.find((x) => x.id === atleta_id);
-    if (!a) return [];
-    return get_passaggi_validi_per_atleta(a as any, "artistica");
-  };
+  // Passaggi del TEST: si parte dal passaggio del test, non dal livello dell'atleta
+  const passaggi_atleta = (_atleta_id: string): Passaggio[] => passaggi_da_accesso(accesso_test);
+
 
   const invita_selezionate = useMutation({
     mutationFn: async () => {
