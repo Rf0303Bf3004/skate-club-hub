@@ -12,12 +12,12 @@ export interface MenuSection {
   label: string;
   icon: any;
   path: string;
-  gruppo: string;
+  gruppo: MenuGruppo;
   ordine: number;
   non_implementato?: boolean;
 }
 
-export const MENU_SECTIONS: MenuSection[] = [
+const MENU_SECTIONS_RAGGRUPPATE: MenuSection[] = [
   { codice: "dashboard",        label: "Dashboard",          icon: LayoutDashboard, path: "/",                  gruppo: "nessuno", ordine: 1 },
   { codice: "comunicazioni",    label: "Comunicazioni",      icon: MessageSquare,   path: "/comunicazioni",     gruppo: "nessuno", ordine: 2 },
   { codice: "atleti",           label: "Atleti",             icon: Users,           path: "/atleti",            gruppo: "persone", ordine: 1 },
@@ -42,7 +42,18 @@ export const MENU_SECTIONS: MenuSection[] = [
   { codice: "import_dati",      label: "Import dati",        icon: FileSpreadsheet, path: "/import-atleti",     gruppo: "club", ordine: 9 },
 ];
 
-export const MENU_TOP = MENU_SECTIONS
+// Compatibilità per la matrice permessi esistente, che presenta ancora le due sezioni storiche.
+const CODICI_SETUP_LEGACY = new Set([
+  "setup_club", "stagioni", "planning_ghiaccio", "livelli", "sponsor",
+  "pacchetti_sponsor", "gestione_utenti", "ruoli_permessi", "gestione_avanzata", "import_dati",
+]);
+
+export const MENU_SECTIONS = MENU_SECTIONS_RAGGRUPPATE.map((sezione) => ({
+  ...sezione,
+  gruppo: CODICI_SETUP_LEGACY.has(sezione.codice) ? "setup" : "principale",
+}));
+
+export const MENU_TOP = MENU_SECTIONS_RAGGRUPPATE
   .filter((s) => s.gruppo === "nessuno")
   .sort((a, b) => a.ordine - b.ordine);
 
@@ -53,7 +64,7 @@ export const MENU_GRUPPI = [
   { id: "club", label_key: "menu_gruppo.club", label_fallback: "Il club", icon: Building2 },
 ].map((gruppo) => ({
   ...gruppo,
-  voci: MENU_SECTIONS
+  voci: MENU_SECTIONS_RAGGRUPPATE
     .filter((s) => s.gruppo === gruppo.id)
     .sort((a, b) => a.ordine - b.ordine),
 }));
