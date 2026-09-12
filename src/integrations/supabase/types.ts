@@ -7053,6 +7053,65 @@ export type Database = {
           },
         ]
       }
+      tariffe_test_livello: {
+        Row: {
+          attiva: boolean
+          club_id: string
+          created_at: string
+          id: string
+          livello_target: string
+          prezzo: number
+          updated_at: string
+        }
+        Insert: {
+          attiva?: boolean
+          club_id: string
+          created_at?: string
+          id?: string
+          livello_target: string
+          prezzo: number
+          updated_at?: string
+        }
+        Update: {
+          attiva?: boolean
+          club_id?: string
+          created_at?: string
+          id?: string
+          livello_target?: string
+          prezzo?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tariffe_test_livello_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tariffe_test_livello_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tariffe_test_livello_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "elenco_club"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tariffe_test_livello_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "kpi_pitch_sponsor"
+            referencedColumns: ["club_id"]
+          },
+        ]
+      }
       tentativi_accesso: {
         Row: {
           codice_hash: string | null
@@ -7191,6 +7250,7 @@ export type Database = {
         Row: {
           atleta_id: string
           costo_applicato: number | null
+          costo_previsto: number | null
           created_at: string
           disciplina: string | null
           disdetta_nei_termini: boolean | null
@@ -7211,6 +7271,7 @@ export type Database = {
         Insert: {
           atleta_id: string
           costo_applicato?: number | null
+          costo_previsto?: number | null
           created_at?: string
           disciplina?: string | null
           disdetta_nei_termini?: boolean | null
@@ -7231,6 +7292,7 @@ export type Database = {
         Update: {
           atleta_id?: string
           costo_applicato?: number | null
+          costo_previsto?: number | null
           created_at?: string
           disciplina?: string | null
           disdetta_nei_termini?: boolean | null
@@ -8374,6 +8436,10 @@ export type Database = {
         Returns: string
       }
       percorso_foto_atleta: { Args: { p_atleta: string }; Returns: string }
+      prezzo_test_livello: {
+        Args: { p_livello_target: string; p_test_id: string }
+        Returns: number
+      }
       pulisci_errori_applicativi: { Args: never; Returns: number }
       pulisci_tentativi_accesso: { Args: never; Returns: number }
       puo_cancellare_atleta: {
@@ -8535,6 +8601,7 @@ export type Database = {
         Returns: {
           atleta_id: string
           costo_applicato: number | null
+          costo_previsto: number | null
           created_at: string
           disciplina: string | null
           disdetta_nei_termini: boolean | null
