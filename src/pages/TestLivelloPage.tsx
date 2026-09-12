@@ -56,8 +56,23 @@ type TestLivello = {
   created_at: string;
 };
 
+type StatoInvito = "invitata" | "accettata" | "rifiutata" | "annullata";
+
 type TestAtleta = TestAtletaRow & {
   note_istruttore: string | null;
+  stato: StatoInvito | null;
+  invitata_at: string | null;
+  risposta_at: string | null;
+  stato_da: string | null;
+  stato_motivo: string | null;
+  costo_applicato: number | null;
+};
+
+const STATO_INVITO_BADGE: Record<StatoInvito, string> = {
+  invitata: "bg-muted text-muted-foreground border-border",
+  accettata: "bg-green-100 text-green-800 border-green-200",
+  rifiutata: "bg-destructive/10 text-destructive border-destructive/20",
+  annullata: "bg-muted/50 text-muted-foreground/60 border-border/50 line-through",
 };
 
 type Atleta = {
