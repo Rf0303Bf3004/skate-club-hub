@@ -1048,6 +1048,7 @@ export default function TestLivelloPage() {
                   <TableHead>{t("level_tests.invite_col_level", { defaultValue: "Livello" })}</TableHead>
                   <TableHead>{t("level_tests.invite_col_state", { defaultValue: "Stato" })}</TableHead>
                   <TableHead>{t("level_tests.invite_col_answered", { defaultValue: "Risposta" })}</TableHead>
+                  <TableHead>Presenza</TableHead>
                   <TableHead>{t("level_tests.invite_col_fee", { defaultValue: "Quota" })}</TableHead>
                   {puo_gestire_sportivo && <TableHead className="w-24" />}
                 </TableRow>
@@ -1056,27 +1057,68 @@ export default function TestLivelloPage() {
                 {inviti_lista.map((r) => {
                   const atleta = atleti.find((a) => a.id === r.atleta_id);
                   const stato_inv = (r.stato ?? "invitata") as StatoInvito;
+                  const passi = test_atleti
+                    .filter((x) => x.atleta_id === r.atleta_id)
+                    .sort((a, b) => a.ordine - b.ordine);
+                  const presente_val = r.presente === null || r.presente === undefined ? "non_segnata" : (r.presente ? "presente" : "assente");
                   return (
                     <TableRow key={r.atleta_id} className={stato_inv === "annullata" ? "opacity-50" : ""}>
-                      <TableCell className="font-medium text-sm">
+                      <TableCell className="font-medium text-sm align-top">
                         {atleta ? `${atleta.cognome} ${atleta.nome}` : r.atleta_id.slice(0, 8)}
+                        <ul className="mt-1 space-y-0.5 text-xs font-normal text-muted-foreground">
+                          {passi.map((s2) => (
+                            <li key={s2.id}>
+                              {s2.ordine}. {s2.livello_accesso} → {s2.livello_target}
+                              {s2.disciplina ? ` (${s2.disciplina === "artistica" ? "artistica" : "stile"})` : ""}
+                            </li>
+                          ))}
+                        </ul>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {atleta ? get_livello_gara(atleta as any) : "—"}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="align-top">
                         <Badge variant="outline" className={STATO_INVITO_BADGE[stato_inv]}>
                           {t(`level_tests.stato_${stato_inv}`, { defaultValue: stato_inv })}
                         </Badge>
+                        {stato_inv === "ritirata" && (
+                          <p className={`mt-1 text-xs ${r.disdetta_nei_termini ? "text-muted-foreground" : "text-destructive"}`}>
+                            {r.disdetta_nei_termini ? "ritiro nei termini" : "ritiro fuori termine, quota addebitata"}
+                          </p>
+                        )}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {r.risposta_at ? new Date(r.risposta_at).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—"}
                       </TableCell>
-                      <TableCell className="text-sm">
+                      <TableCell className="align-top">
+                        {puo_gestire_sportivo ? (
+                          <Select
+                            value={presente_val}
+                            onValueChange={(v) =>
+                              update_field.mutate({
+                                id: r.id,
+                                patch: { presente: v === "non_segnata" ? null : v === "presente" } as any,
+                              })
+                            }
+                          >
+                            <SelectTrigger className="h-8 w-36 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="non_segnata">Non ancora segnata</SelectItem>
+                              <SelectItem value="presente">Presente</SelectItem>
+                              <SelectItem value="assente">Assente</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">
+                            {presente_val === "non_segnata" ? "—" : presente_val === "presente" ? "Presente" : "Assente"}
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-sm align-top">
                         {r.costo_applicato != null ? `CHF ${Number(r.costo_applicato).toFixed(2)}` : "—"}
                       </TableCell>
                       {puo_gestire_sportivo && (
-                        <TableCell>
+                        <TableCell className="align-top">
                           {stato_inv !== "annullata" && (
                             <Button
                               variant="ghost"
