@@ -1207,12 +1207,18 @@ export default function TestLivelloPage() {
                           onCheckedChange={() => !gia_invitata && toggle_invite(a.id)}
                         />
                         <span className="flex-1">{a.cognome} {a.nome}</span>
+                        {!is_idonea(a) && accesso_test && (
+                          <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-800 border-amber-300">
+                            non idonea: è {get_livello_gara(a as any)}
+                          </Badge>
+                        )}
                         <span className="text-xs text-muted-foreground">{get_livello_gara(a as any)}</span>
                         {invito && (
                           <Badge variant="outline" className={`text-[10px] ${STATO_INVITO_BADGE[stato_inv]}`}>
                             {t(`level_tests.stato_${stato_inv}`, { defaultValue: stato_inv })}
                           </Badge>
                         )}
+
                       </div>
                       {selezionata && !gia_invitata && (
                         <div className="px-3 pb-3 pl-10 space-y-1">
