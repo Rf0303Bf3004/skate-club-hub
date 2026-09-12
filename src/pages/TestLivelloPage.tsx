@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import ConfirmButton from "@/components/common/ConfirmButton";
 import NotaPermesso from "@/components/common/NotaPermesso";
 import { usePermessiAzione } from "@/hooks/use-permessi-azione";
@@ -56,8 +57,23 @@ type TestLivello = {
   created_at: string;
 };
 
+type StatoInvito = "invitata" | "accettata" | "rifiutata" | "annullata";
+
 type TestAtleta = TestAtletaRow & {
   note_istruttore: string | null;
+  stato: StatoInvito | null;
+  invitata_at: string | null;
+  risposta_at: string | null;
+  stato_da: string | null;
+  stato_motivo: string | null;
+  costo_applicato: number | null;
+};
+
+const STATO_INVITO_BADGE: Record<StatoInvito, string> = {
+  invitata: "bg-muted text-muted-foreground border-border",
+  accettata: "bg-green-100 text-green-800 border-green-200",
+  rifiutata: "bg-destructive/10 text-destructive border-destructive/20",
+  annullata: "bg-muted/50 text-muted-foreground/60 border-border/50 line-through",
 };
 
 type Atleta = {
@@ -408,6 +424,120 @@ export default function TestLivelloPage() {
     }
     refetch_atleti();
   };
+
+  // ─── Inviti atlete ─────────────────────────────────────────────────
+  const [invite_selected, set_invite_selected] = useState<Set<string>>(new Set());
+  const [search_invite, set_search_invite] = useState("");
+  const [filtro_livello_invite, set_filtro_livello_invite] = useState<string>("tutti");
+  const [annulla_atleta_id, set_annulla_atleta_id] = useState<string | null>(null);
+  const [annulla_motivo, set_annulla_motivo] = useState("");
+
+  // Una riga "invito" per atleta (la prima della catena, ordine min)
+  const inviti_per_atleta = useMemo(() => {
+    const map = new Map<string, TestAtleta>();
+    for (const r of test_atleti) {
+      const prev = map.get(r.atleta_id);
+      if (!prev || r.ordine < prev.ordine) map.set(r.atleta_id, r);
+    }
+    return map;
+  }, [test_atleti]);
+
+  const inviti_lista = useMemo(() => Array.from(inviti_per_atleta.values()), [inviti_per_atleta]);
+
+  const invito_stats = useMemo(() => {
+    let invitate = 0, accettate = 0, rifiutate = 0, senza_risposta = 0, totale_accettate = 0;
+    for (const r of inviti_lista) {
+      const s = (r.stato ?? "invitata") as StatoInvito;
+      if (s === "annullata") continue;
+      invitate++;
+      if (s === "accettata") { accettate++; totale_accettate += Number(r.costo_applicato ?? 0); }
+      else if (s === "rifiutata") rifiutate++;
+      else if (!r.risposta_at) senza_risposta++;
+    }
+    return { invitate, accettate, rifiutate, senza_risposta, totale_accettate };
+  }, [inviti_lista]);
+
+  const livelli_invite_disponibili = useMemo(() => {
+    const set = new Set<string>();
+    for (const a of atleti) set.add(get_livello_gara(a as any));
+    return Array.from(set).sort();
+  }, [atleti]);
+
+  const atleti_invitabili = useMemo(() => {
+    const terms = search_invite.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    return atleti.filter((a) => {
+      if (filtro_livello_invite !== "tutti" && get_livello_gara(a as any) !== filtro_livello_invite) return false;
+      if (terms.length > 0) {
+        const text = `${a.nome} ${a.cognome}`.toLowerCase();
+        if (!terms.every((term) => text.includes(term))) return false;
+      }
+      return true;
+    });
+  }, [atleti, search_invite, filtro_livello_invite]);
+
+  const toggle_invite = (id: string) => {
+    set_invite_selected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const invita_selezionate = useMutation({
+    mutationFn: async () => {
+      if (!selected_test_id || invite_selected.size === 0) return { inserite: 0, duplicate: 0 };
+      let inserite = 0, duplicate = 0;
+      for (const atleta_id of invite_selected) {
+        const atleta = atleti.find((a) => a.id === atleta_id);
+        if (!atleta) continue;
+        const passaggi = get_passaggi_validi_per_atleta(atleta as any, "artistica");
+        const p = passaggi[0] ?? null;
+        const row = {
+          test_id: selected_test_id,
+          atleta_id,
+          ordine: 1,
+          livello_accesso: p?.accesso ?? get_livello_gara(atleta as any),
+          livello_target: p?.target ?? null,
+          disciplina: p?.richiede_disciplina ? "artistica" : null,
+          esito: "in_attesa",
+        };
+        const { error } = await supabase.from("test_livello_atleti").insert(row as any);
+        if (error) {
+          // Indice unico (test_id, atleta_id): doppio invito → salto senza esplodere
+          if ((error as any).code === "23505") { duplicate++; continue; }
+          throw error;
+        }
+        inserite++;
+      }
+      return { inserite, duplicate };
+    },
+    onSuccess: ({ inserite, duplicate }) => {
+      refetch_atleti();
+      set_invite_selected(new Set());
+      if (inserite > 0) toast.success(t("level_tests.invite_sent", { count: inserite, defaultValue: `${inserite} atlete invitate` }));
+      if (duplicate > 0) toast.info(t("level_tests.invite_duplicates", { count: duplicate, defaultValue: `${duplicate} erano già invitate: saltate` }));
+    },
+    onError: (e: any) => toast.error(t("level_tests.toast_generic_error", { error: e?.message ?? "" })),
+  });
+
+  const annulla_invito = useMutation({
+    mutationFn: async ({ atleta_id, motivo }: { atleta_id: string; motivo: string }) => {
+      const { data: user_data } = await supabase.auth.getUser();
+      const { error } = await supabase
+        .from("test_livello_atleti")
+        .update({ stato: "annullata", stato_motivo: motivo || null, stato_da: user_data.user?.id ?? null } as any)
+        .eq("test_id", selected_test_id!)
+        .eq("atleta_id", atleta_id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      refetch_atleti();
+      set_annulla_atleta_id(null);
+      set_annulla_motivo("");
+      toast.success(t("level_tests.invite_cancelled", { defaultValue: "Invito annullato" }));
+    },
+    onError: (e: any) => toast.error(t("level_tests.toast_generic_error", { error: e?.message ?? "" })),
+  });
 
   // ─── Add Athlete Dialog (multitest chain) ────────────────────────────
   const [show_add, set_show_add] = useState(false);
@@ -763,6 +893,151 @@ export default function TestLivelloPage() {
         </CardContent>
       </Card>
 
+      {/* ─── Invita le atlete ─────────────────────────────────────── */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <CardTitle className="text-base">{t("level_tests.invite_title", { defaultValue: "Invita le atlete" })}</CardTitle>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+              <span>{t("level_tests.invite_stats_invited", { count: invito_stats.invitate, defaultValue: `Invitate: ${invito_stats.invitate}` })}</span>
+              <span className="text-green-700">{t("level_tests.invite_stats_accepted", { count: invito_stats.accettate, defaultValue: `Accettate: ${invito_stats.accettate}` })}</span>
+              <span className="text-destructive">{t("level_tests.invite_stats_refused", { count: invito_stats.rifiutate, defaultValue: `Rifiutate: ${invito_stats.rifiutate}` })}</span>
+              <span>{t("level_tests.invite_stats_pending", { count: invito_stats.senza_risposta, defaultValue: `Senza risposta: ${invito_stats.senza_risposta}` })}</span>
+              {invito_stats.accettate > 0 && (
+                <span className="font-medium text-foreground">
+                  {t("level_tests.invite_stats_revenue", { amount: invito_stats.totale_accettate.toFixed(2), defaultValue: `Quota addebitata in fattura: CHF ${invito_stats.totale_accettate.toFixed(2)}` })}
+                </span>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {puo_gestire_sportivo && (
+            <div className="border rounded-md overflow-hidden">
+              <div className="flex items-center gap-2 p-2 border-b bg-muted/30">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                  <Input
+                    placeholder={t("level_tests.search_athlete_placeholder")}
+                    value={search_invite}
+                    onChange={(e) => set_search_invite(e.target.value)}
+                    className="h-9 pl-9 text-sm"
+                  />
+                </div>
+                <Select value={filtro_livello_invite} onValueChange={set_filtro_livello_invite}>
+                  <SelectTrigger className="w-44 h-9 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="tutti">{t("level_tests.invite_all_levels", { defaultValue: "Tutti i livelli" })}</SelectItem>
+                    {livelli_invite_disponibili.map((l) => (
+                      <SelectItem key={l} value={l}>{l}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="max-h-[280px] overflow-y-auto divide-y divide-border/50">
+                {atleti_invitabili.length === 0 ? (
+                  <p className="px-3 py-4 text-sm text-muted-foreground text-center">{t("level_tests.no_athlete_found")}</p>
+                ) : atleti_invitabili.map((a) => {
+                  const invito = inviti_per_atleta.get(a.id);
+                  const gia_invitata = !!invito && (invito.stato ?? "invitata") !== "annullata";
+                  const stato_inv = (invito?.stato ?? "invitata") as StatoInvito;
+                  return (
+                    <label
+                      key={a.id}
+                      className={`flex items-center gap-3 px-3 py-2 text-sm ${gia_invitata ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:bg-accent"}`}
+                    >
+                      <Checkbox
+                        checked={gia_invitata || invite_selected.has(a.id)}
+                        disabled={gia_invitata}
+                        onCheckedChange={() => !gia_invitata && toggle_invite(a.id)}
+                      />
+                      <span className="flex-1">{a.cognome} {a.nome}</span>
+                      <span className="text-xs text-muted-foreground">{get_livello_gara(a as any)}</span>
+                      {invito && (
+                        <Badge variant="outline" className={`text-[10px] ${STATO_INVITO_BADGE[stato_inv]}`}>
+                          {t(`level_tests.stato_${stato_inv}`, { defaultValue: stato_inv })}
+                        </Badge>
+                      )}
+                    </label>
+                  );
+                })}
+              </div>
+              <div className="flex justify-end p-2 border-t bg-muted/30">
+                <Button
+                  size="sm"
+                  disabled={invite_selected.size === 0 || invita_selezionate.isPending}
+                  onClick={() => invita_selezionate.mutate()}
+                >
+                  <Send className="w-4 h-4 mr-1" />
+                  {t("level_tests.invite_selected", { count: invite_selected.size, defaultValue: `Invita le selezionate (${invite_selected.size})` })}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Tabella invitate */}
+          {inviti_lista.length === 0 ? (
+            <p className="text-center text-muted-foreground py-4 text-sm">{t("level_tests.no_invites", { defaultValue: "Nessuna atleta invitata a questo test." })}</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("level_tests.invite_col_name", { defaultValue: "Atleta" })}</TableHead>
+                  <TableHead>{t("level_tests.invite_col_level", { defaultValue: "Livello" })}</TableHead>
+                  <TableHead>{t("level_tests.invite_col_state", { defaultValue: "Stato" })}</TableHead>
+                  <TableHead>{t("level_tests.invite_col_answered", { defaultValue: "Risposta" })}</TableHead>
+                  <TableHead>{t("level_tests.invite_col_fee", { defaultValue: "Quota" })}</TableHead>
+                  {puo_gestire_sportivo && <TableHead className="w-24" />}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {inviti_lista.map((r) => {
+                  const atleta = atleti.find((a) => a.id === r.atleta_id);
+                  const stato_inv = (r.stato ?? "invitata") as StatoInvito;
+                  return (
+                    <TableRow key={r.atleta_id} className={stato_inv === "annullata" ? "opacity-50" : ""}>
+                      <TableCell className="font-medium text-sm">
+                        {atleta ? `${atleta.cognome} ${atleta.nome}` : r.atleta_id.slice(0, 8)}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {atleta ? get_livello_gara(atleta as any) : "—"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={STATO_INVITO_BADGE[stato_inv]}>
+                          {t(`level_tests.stato_${stato_inv}`, { defaultValue: stato_inv })}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {r.risposta_at ? new Date(r.risposta_at).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—"}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {r.costo_applicato != null ? `CHF ${Number(r.costo_applicato).toFixed(2)}` : "—"}
+                      </TableCell>
+                      {puo_gestire_sportivo && (
+                        <TableCell>
+                          {stato_inv !== "annullata" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-xs text-destructive"
+                              onClick={() => { set_annulla_atleta_id(r.atleta_id); set_annulla_motivo(""); }}
+                            >
+                              {t("level_tests.invite_cancel", { defaultValue: "Annulla invito" })}
+                            </Button>
+                          )}
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -805,7 +1080,7 @@ export default function TestLivelloPage() {
                               </Badge>
                             )}
                           </div>
-                          {puo_gestire_sportivo ? (
+                          {puo_gestire_sportivo && (step.stato ?? "invitata") === "accettata" ? (
                             <Select
                               value={step.esito}
                               onValueChange={(v) => handle_change_esito(step.id, v as "in_attesa" | "superato" | "non_superato" | "non_sostenuto")}
@@ -977,6 +1252,37 @@ export default function TestLivelloPage() {
                 onClick={() => submit_add_chain.mutate()}
               >
                 <CheckCircle className="w-4 h-4 mr-1" /> {t("level_tests.convoke")}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Annulla invito Dialog ─────────────────────────────────── */}
+      <Dialog open={!!annulla_atleta_id} onOpenChange={(open) => { if (!open) { set_annulla_atleta_id(null); set_annulla_motivo(""); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("level_tests.cancel_invite_title", { defaultValue: "Annulla invito" })}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              {t("level_tests.cancel_invite_desc", { defaultValue: "L'invito resta nello storico con stato «annullata». Scrivi il motivo:" })}
+            </p>
+            <Textarea
+              value={annulla_motivo}
+              onChange={(e) => set_annulla_motivo(e.target.value)}
+              placeholder={t("level_tests.cancel_invite_reason_placeholder", { defaultValue: "Motivo dell'annullamento…" })}
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => { set_annulla_atleta_id(null); set_annulla_motivo(""); }}>
+                {t("level_tests.cancel")}
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={!annulla_motivo.trim() || annulla_invito.isPending}
+                onClick={() => annulla_atleta_id && annulla_invito.mutate({ atleta_id: annulla_atleta_id, motivo: annulla_motivo.trim() })}
+              >
+                {t("level_tests.cancel_invite_confirm", { defaultValue: "Annulla invito" })}
               </Button>
             </div>
           </div>
