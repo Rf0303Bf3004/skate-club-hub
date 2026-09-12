@@ -29,6 +29,7 @@ type Conversazione = {
   testo: string;
   created_at: string;
   rsvp_scadenza: string | null;
+  sotto_tipo: string | null;
   destinatari: Destinatario[];
   testo_personalizzato: boolean;
 };
@@ -142,6 +143,7 @@ export const ConversazioniTab: React.FC = () => {
         const conferme = conv.destinatari.filter((d) => d.rsvp_risposta === "si").length;
         const rifiuti = conv.destinatari.filter((d) => d.rsvp_risposta === "no").length;
         const in_attesa = tot - conferme - rifiuti;
+        const e_promemoria_allenamento = ["reminder_allenamento", "reminder_staff"].includes(conv.sotto_tipo ?? "");
         const expanded = open_id === conv.id;
         return (
           <div key={conv.id} className="bg-card rounded-xl shadow-card border border-border overflow-hidden">
@@ -172,7 +174,7 @@ export const ConversazioniTab: React.FC = () => {
                     </div>
                   </div>
                 </button>
-                {in_attesa > 0 && (
+                {in_attesa > 0 && !e_promemoria_allenamento && (
                   <Button
                     size="sm"
                     variant="outline"

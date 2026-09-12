@@ -180,13 +180,13 @@
     "reminder_sent": "📨 Sollecito inviato a {{count}} destinatari",
     "error": "Errore",
     "sent_on": "Inviata il {{data}} a {{count}} destinatari",
-    "confirmations": "✓ {{count}} conferme",
-    "refusals": "❌ {{count}} rifiuti",
-    "pending": "⏳ {{count}} in attesa",
+    "confirmations": "✓ {{count}} presenze confermate",
+    "refusals": "❌ {{count}} assenze segnalate",
+    "pending": "{{count}} attesi presenti",
     "remind_non_responders": "Sollecita non rispondenti",
-    "confirmed_on": "✓ confermato il {{data}}",
-    "refused_on": "❌ rifiutato il {{data}}",
-    "waiting": "⏳ in attesa"
+    "confirmed_on": "✓ presenza confermata il {{data}}",
+    "refused_on": "❌ assenza segnalata il {{data}}",
+    "waiting": "atteso presente"
   },
   "iscrizioni_notifiche": {
     "archived": "Notifica archiviata",

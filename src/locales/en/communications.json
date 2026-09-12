@@ -30,5 +30,22 @@
     "competition": "Competition",
     "gala": "Gala / Special event",
     "level_test": "Level test"
+  },
+  "conversazioni": {
+    "loading": "Loading conversations…",
+    "empty": "No conversations requiring a response.",
+    "no_pending": "No recipients awaiting a response",
+    "reminder_title": "🔔 Reminder: {{titolo}}",
+    "reminder_body": "Please remember to reply to this message:\n\n{{testo}}",
+    "reminder_sent": "📨 Reminder sent to {{count}} recipients",
+    "error": "Error",
+    "sent_on": "Sent on {{data}} to {{count}} recipients",
+    "confirmations": "✓ {{count}} confirmed attendances",
+    "refusals": "❌ {{count}} reported absences",
+    "pending": "{{count}} expected present",
+    "remind_non_responders": "Remind non-responders",
+    "confirmed_on": "✓ attendance confirmed on {{data}}",
+    "refused_on": "❌ absence reported on {{data}}",
+    "waiting": "expected present"
   }
 }
