@@ -17,6 +17,7 @@ import ConfirmButton from "@/components/common/ConfirmButton";
 import NotaPermesso from "@/components/common/NotaPermesso";
 import { usePermessiAzione } from "@/hooks/use-permessi-azione";
 import { Plus, ArrowLeft, Trash2, X, CheckCircle, Send, Search, Printer } from "lucide-react";
+import { createPortal } from "react-dom";
 import { use_club } from "@/hooks/use-supabase-data";
 import {
   ComunicazioneFormSection,
@@ -1411,7 +1412,8 @@ export default function TestLivelloPage() {
       </Dialog>
 
       {/* ─── Elenco iscritte (solo stampa) ─────────────────────────── */}
-      <div id="elenco-test-print-root" className="hidden">
+      {createPortal(
+        <div id="elenco-test-print-root" className="hidden">
         <h1 style={{ fontSize: "18pt", fontWeight: 700, marginBottom: "2mm" }}>{selected_test.nome}</h1>
         <p style={{ fontSize: "11pt", marginBottom: "1mm" }}>
           {selected_test.data
@@ -1462,7 +1464,9 @@ export default function TestLivelloPage() {
           Totale iscritte: {totale_iscritte} · Stampato il{" "}
           {new Date().toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })}
         </p>
-      </div>
+        </div>,
+        document.body,
+      )}
 
       {/* ─── Annulla invito Dialog ─────────────────────────────────── */}
       <Dialog open={!!annulla_atleta_id} onOpenChange={(open) => { if (!open) { set_annulla_atleta_id(null); set_annulla_motivo(""); } }}>
