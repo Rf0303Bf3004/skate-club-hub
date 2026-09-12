@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
 import { segnala_errore } from "@/lib/errori";
+import { useAuth } from "@/lib/auth";
 
 /**
  * Bordo pista: tablet condiviso a bordo ghiaccio.
@@ -67,6 +68,7 @@ const MessaggioCentrale: React.FC<{ testo: string; variante?: "normale" | "error
 
 const PistaPage: React.FC = () => {
   const { t } = useTranslation("common");
+  const { session } = useAuth();
   const [adesso, set_adesso] = React.useState(() => new Date());
   const [sessione_id, set_sessione_id] = React.useState<string | null>(null);
   const [assenti, set_assenti] = React.useState<Set<string>>(new Set());
@@ -179,7 +181,7 @@ const PistaPage: React.FC = () => {
       set_modificato(false);
       toast({ title: t("pista.salvato_titolo") });
     } catch (errore) {
-      segnala_errore(errore, "pista_appello");
+      segnala_errore("PistaPage", t("pista.registra_appello"), errore);
     } finally {
       set_salvataggio(false);
     }
@@ -205,7 +207,7 @@ const PistaPage: React.FC = () => {
       return <MessaggioCentrale variante="errore" testo={(sessioni_query.error as Error).message} />;
     }
     if (sessioni.length === 0) {
-      return <MessaggioCentrale testo={t("pista.nessuna_sessione")} />;
+      return <MessaggioCentrale testo={session?.club_id ? t("pista.nessuna_sessione") : t("pista.serve_club")} />;
     }
 
     return (
