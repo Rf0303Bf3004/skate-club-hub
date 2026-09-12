@@ -608,7 +608,8 @@ export default function TestLivelloPage() {
       for (const atleta_id of invite_selected) {
         const atleta = atleti.find((a) => a.id === atleta_id);
         if (!atleta) continue;
-        const passaggi = get_passaggi_validi_per_atleta(atleta as any, "artistica");
+        // Il passaggio è quello del TEST, non il prossimo step dell'atleta
+        const passaggi = passaggi_da_accesso(accesso_test);
         const quanti = Math.max(1, Math.min(invite_passaggi[atleta_id] ?? 1, Math.max(passaggi.length, 1)));
         const rows = Array.from({ length: quanti }, (_, idx) => {
           const p = passaggi[idx] ?? null;
@@ -616,7 +617,8 @@ export default function TestLivelloPage() {
             test_id: selected_test_id,
             atleta_id,
             ordine: idx + 1,
-            livello_accesso: p?.accesso ?? get_livello_gara(atleta as any),
+            livello_accesso: p?.accesso ?? accesso_test,
+
             livello_target: p?.target ?? null,
             disciplina: p?.richiede_disciplina ? "artistica" : null,
             esito: "in_attesa",
