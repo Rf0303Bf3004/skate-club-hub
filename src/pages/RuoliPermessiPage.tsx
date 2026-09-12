@@ -7,7 +7,7 @@ import { Navigate } from "react-router-dom";
 import { Shield, Save, Clock, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DashboardCardsPermessi from "@/components/ruoli-permessi/DashboardCardsPermessi";
-import { MENU_SECTIONS } from "@/config/menuSections";
+import { MENU_GRUPPI, MENU_SECTIONS, MENU_TOP } from "@/config/menuSections";
 
 import { useTranslation } from "react-i18next";
 
@@ -32,6 +32,7 @@ const ALL_PERMESSI_CODES = [
 
 const RuoliPermessiPage: React.FC = () => {
   const { t } = useTranslation("settings");
+  const { t: tc } = useTranslation("common");
   const { session } = useAuth();
   const qc = useQueryClient();
   const club_id = session?.club_id;
@@ -101,7 +102,18 @@ const RuoliPermessiPage: React.FC = () => {
 
   if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
 
-  const gruppi = ["principale", "setup"] as const;
+  const fasce = [
+    {
+      id: "generale",
+      label: tc("menu_gruppo.generale", { defaultValue: "Generale" }),
+      voci: MENU_TOP,
+    },
+    ...MENU_GRUPPI.map((gruppo) => ({
+      id: gruppo.id,
+      label: tc(gruppo.label_key, { defaultValue: gruppo.label_fallback }),
+      voci: gruppo.voci,
+    })),
+  ];
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -132,14 +144,14 @@ const RuoliPermessiPage: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {gruppi.map((gruppo) => (
-              <React.Fragment key={gruppo}>
+            {fasce.map((fascia) => (
+              <React.Fragment key={fascia.id}>
                 <tr className="bg-muted/20 border-b border-border">
                   <td colSpan={1 + RUOLI.length} className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    {gruppo === "principale" ? t("roles.group_main_menu") : t("roles.group_setup")}
+                    {fascia.label}
                   </td>
                 </tr>
-                {MENU_SECTIONS.filter((s) => s.gruppo === gruppo).map((sezione, idx) => (
+                {fascia.voci.map((sezione, idx) => (
                   <tr key={sezione.codice} className={`border-b border-border/50 ${idx % 2 === 0 ? "bg-background" : "bg-muted/10"}`}>
                     <td className="px-4 py-3 text-sm font-medium text-foreground flex items-center gap-2">
                       <sezione.icon className="w-4 h-4 text-muted-foreground" />
