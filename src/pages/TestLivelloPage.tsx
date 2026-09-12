@@ -439,6 +439,7 @@ export default function TestLivelloPage() {
   const [invite_selected, set_invite_selected] = useState<Set<string>>(new Set());
   const [search_invite, set_search_invite] = useState("");
   const [filtro_livello_invite, set_filtro_livello_invite] = useState<string>("tutti");
+  const [invite_passaggi, set_invite_passaggi] = useState<Record<string, number>>({});
   const [annulla_atleta_id, set_annulla_atleta_id] = useState<string | null>(null);
   const [annulla_motivo, set_annulla_motivo] = useState("");
 
@@ -493,6 +494,13 @@ export default function TestLivelloPage() {
     });
   };
 
+  // Passaggi proposti per un'atleta (progressione tecnica)
+  const passaggi_atleta = (atleta_id: string): Passaggio[] => {
+    const a = atleti.find((x) => x.id === atleta_id);
+    if (!a) return [];
+    return get_passaggi_validi_per_atleta(a as any, "artistica");
+  };
+
   const invita_selezionate = useMutation({
     mutationFn: async () => {
       if (!selected_test_id || invite_selected.size === 0) return { inserite: 0, duplicate: 0 };
@@ -501,19 +509,22 @@ export default function TestLivelloPage() {
         const atleta = atleti.find((a) => a.id === atleta_id);
         if (!atleta) continue;
         const passaggi = get_passaggi_validi_per_atleta(atleta as any, "artistica");
-        const p = passaggi[0] ?? null;
-        const row = {
-          test_id: selected_test_id,
-          atleta_id,
-          ordine: 1,
-          livello_accesso: p?.accesso ?? get_livello_gara(atleta as any),
-          livello_target: p?.target ?? null,
-          disciplina: p?.richiede_disciplina ? "artistica" : null,
-          esito: "in_attesa",
-        };
-        const { error } = await supabase.from("test_livello_atleti").insert(row as any);
+        const quanti = Math.max(1, Math.min(invite_passaggi[atleta_id] ?? 1, Math.max(passaggi.length, 1)));
+        const rows = Array.from({ length: quanti }, (_, idx) => {
+          const p = passaggi[idx] ?? null;
+          return {
+            test_id: selected_test_id,
+            atleta_id,
+            ordine: idx + 1,
+            livello_accesso: p?.accesso ?? get_livello_gara(atleta as any),
+            livello_target: p?.target ?? null,
+            disciplina: p?.richiede_disciplina ? "artistica" : null,
+            esito: "in_attesa",
+          };
+        });
+        const { error } = await supabase.from("test_livello_atleti").insert(rows as any);
         if (error) {
-          // Indice unico (test_id, atleta_id): doppio invito → salto senza esplodere
+          // Unicità (test_id, atleta_id, ordine): passaggio già presente → salto
           if ((error as any).code === "23505") { duplicate++; continue; }
           throw error;
         }
@@ -524,6 +535,7 @@ export default function TestLivelloPage() {
     onSuccess: ({ inserite, duplicate }) => {
       refetch_atleti();
       set_invite_selected(new Set());
+      set_invite_passaggi({});
       if (inserite > 0) toast.success(t("level_tests.invite_sent", { count: inserite, defaultValue: `${inserite} atlete invitate` }));
       if (duplicate > 0) toast.info(t("level_tests.invite_duplicates", { count: duplicate, defaultValue: `${duplicate} erano già invitate: saltate` }));
     },
