@@ -982,6 +982,11 @@ export default function TestLivelloPage() {
           {selected_test.costo_iscrizione != null && (
             <div className="md:col-span-4"><span className="text-muted-foreground">{t("level_tests.detail_cost")}</span> CHF {Number(selected_test.costo_iscrizione).toFixed(2)}</div>
           )}
+          <div className="md:col-span-4 text-xs text-muted-foreground">
+            {tariffe_attive.length === 0
+              ? "Nessun tipo di test ha una tariffa nel listino: vale il prezzo di questa giornata."
+              : `Hanno già una tariffa nel listino: ${tariffe_attive.join(", ")}. Per questi tipi il listino vince sul prezzo della giornata.`}
+          </div>
           <div className="md:col-span-4 text-sm">
             <span className="text-muted-foreground">Ultimo giorno per ritirarsi senza pagare:</span>{" "}
             {selected_test.scadenza_disdetta
