@@ -50,6 +50,7 @@ type TestLivello = {
   gara_id: string | null;
   club_ospitante: string | null;
   costo_iscrizione: number | null;
+  scadenza_disdetta: string | null;
   // legacy / deprecated
   livello_attuale: string | null;
   livello_accesso: string | null;
@@ -57,7 +58,7 @@ type TestLivello = {
   created_at: string;
 };
 
-type StatoInvito = "invitata" | "accettata" | "rifiutata" | "annullata";
+type StatoInvito = "invitata" | "accettata" | "rifiutata" | "annullata" | "ritirata";
 
 type TestAtleta = TestAtletaRow & {
   note_istruttore: string | null;
@@ -67,6 +68,8 @@ type TestAtleta = TestAtletaRow & {
   stato_da: string | null;
   stato_motivo: string | null;
   costo_applicato: number | null;
+  disdetta_nei_termini: boolean | null;
+  presente: boolean | null;
 };
 
 const STATO_INVITO_BADGE: Record<StatoInvito, string> = {
@@ -74,6 +77,7 @@ const STATO_INVITO_BADGE: Record<StatoInvito, string> = {
   accettata: "bg-green-100 text-green-800 border-green-200",
   rifiutata: "bg-destructive/10 text-destructive border-destructive/20",
   annullata: "bg-muted/50 text-muted-foreground/60 border-border/50 line-through",
+  ritirata: "bg-orange-100 text-orange-800 border-orange-200",
 };
 
 type Atleta = {
@@ -81,6 +85,7 @@ type Atleta = {
   nome: string;
   cognome: string;
   attivo: boolean | null;
+  data_nascita: string | null;
   livello_attuale: string | null;
   carriera_artistica: string | null;
   carriera_stile: string | null;
