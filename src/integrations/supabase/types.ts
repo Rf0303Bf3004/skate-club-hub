@@ -7015,6 +7015,7 @@ export type Database = {
       storico_livelli_atleta: {
         Row: {
           atleta_id: string
+          cambiato_da: string | null
           carriera: string | null
           created_at: string
           data_fine: string | null
@@ -7025,6 +7026,7 @@ export type Database = {
         }
         Insert: {
           atleta_id: string
+          cambiato_da?: string | null
           carriera?: string | null
           created_at?: string
           data_fine?: string | null
@@ -7035,6 +7037,7 @@ export type Database = {
         }
         Update: {
           atleta_id?: string
+          cambiato_da?: string | null
           carriera?: string | null
           created_at?: string
           data_fine?: string | null
