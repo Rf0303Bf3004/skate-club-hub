@@ -12,7 +12,7 @@ export interface MenuSection {
   label: string;
   icon: any;
   path: string;
-  gruppo: MenuGruppo;
+  gruppo: string;
   ordine: number;
   non_implementato?: boolean;
 }
