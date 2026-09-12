@@ -928,6 +928,15 @@ export default function TestLivelloPage() {
     return Array.from(gruppi.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   })();
   const totale_iscritte = iscritte_stampa.reduce((acc, [, arr]) => acc + arr.length, 0);
+  const totale_quote_stampa = iscritte_stampa.reduce(
+    (acc, [, arr]) =>
+      acc +
+      arr.reduce(
+        (a, { passi }) => a + passi.reduce((p, s) => p + Number(s.costo_applicato ?? 0), 0),
+        0,
+      ),
+    0,
+  );
 
   const stampa_elenco = () => {
     document.body.classList.add("stampa-elenco-test");
