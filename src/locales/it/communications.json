@@ -161,7 +161,7 @@
     "default_gara_fallback": "la gara",
     "default_gara_titolo": "Convocazione {{nome}}",
     "default_gara_titolo_fallback": "gara",
-    "default_test_testo": "Care atlete, è in programma il test {{nome}} il {{data}}. Iscrivetevi tramite l'app.",
+    "default_test_testo": "Care atlete, è in programma il test {{nome}} il {{data}}. Il club comunicherà l'invito a chi verrà convocata.",
     "default_test_fallback": "di livello",
     "default_test_titolo": "Test livello {{nome}}",
     "default_gala_testo": "Care atlete, vi invitiamo a partecipare a {{titolo}} il {{data}}{{ora}}{{luogo}}.\n\nConfermate la partecipazione tramite l'app.",
