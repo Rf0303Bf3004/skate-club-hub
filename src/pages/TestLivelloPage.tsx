@@ -835,6 +835,12 @@ export default function TestLivelloPage() {
             )}
 
             <div>
+              <label className="text-sm font-medium text-foreground">Ultimo giorno per ritirarsi senza pagare</label>
+              <Input type="date" value={form.scadenza_disdetta} onChange={(e) => set_form({ ...form, scadenza_disdetta: e.target.value })} />
+              <p className="text-xs text-muted-foreground mt-1">Se resta vuoto, chi aderisce paga comunque.</p>
+            </div>
+
+            <div>
               <label className="text-sm font-medium text-foreground">{t("level_tests.notes_label")}</label>
               <Textarea value={form.note} onChange={(e) => set_form({ ...form, note: e.target.value })} />
             </div>
@@ -912,6 +918,12 @@ export default function TestLivelloPage() {
           {selected_test.costo_iscrizione != null && (
             <div className="md:col-span-4"><span className="text-muted-foreground">{t("level_tests.detail_cost")}</span> CHF {Number(selected_test.costo_iscrizione).toFixed(2)}</div>
           )}
+          <div className="md:col-span-4 text-sm">
+            <span className="text-muted-foreground">Ultimo giorno per ritirarsi senza pagare:</span>{" "}
+            {selected_test.scadenza_disdetta
+              ? new Date(selected_test.scadenza_disdetta).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" })
+              : "nessuno — chi aderisce paga comunque"}
+          </div>
         </CardContent>
       </Card>
 
@@ -1136,6 +1148,11 @@ export default function TestLivelloPage() {
                 })}
               </TableBody>
             </Table>
+          )}
+          {inviti_lista.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              Segnare un'atleta assente non toglie la quota dalla fattura: l'addebito dipende dall'adesione e dall'ultimo giorno utile per ritirarsi, non dalla presenza.
+            </p>
           )}
         </CardContent>
       </Card>
