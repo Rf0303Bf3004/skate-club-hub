@@ -225,5 +225,15 @@
     "unpaid": "To pay"
   },
   "irreversible_warning": "This action is irreversible. All linked data will be deleted.",
-  "confirm_delete_title": "Confirm deletion"
+  "confirm_delete_title": "Confirm deletion",
+  "menu": {
+    "griglia_ghiaccio": "Ice Grid",
+    "ruoli_permessi": "Role Management"
+  },
+  "menu_gruppo": {
+    "persone": "People",
+    "ghiaccio": "Ice",
+    "soldi": "Administration",
+    "club": "The club"
+  }
 }

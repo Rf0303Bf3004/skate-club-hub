@@ -11,7 +11,7 @@ import GlobalSearchPalette from "@/components/common/GlobalSearchPalette";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { use_count_iscrizioni_non_lette } from "@/components/comunicazioni/IscrizioniAtletiNotifiche";
-import { MENU_PRINCIPALE, MENU_SETUP } from "@/config/menuSections";
+import { MENU_GRUPPI, MENU_TOP } from "@/config/menuSections";
 import { registra_silenzioso } from "@/lib/errori";
 
 
@@ -117,14 +117,49 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     return s;
   }, [permessi_sezioni]);
 
-  const nuovo_principale = MENU_PRINCIPALE.filter((s) => visibile_set.has(s.codice));
-  const nuovo_setup = MENU_SETUP.filter((s) => visibile_set.has(s.codice));
+  const nuovo_top = MENU_TOP.filter((s) => visibile_set.has(s.codice));
 
-  const [setup_open, set_setup_open] = React.useState(true);
+  const [nuovi_gruppi_aperti, set_nuovi_gruppi_aperti] = React.useState<Record<string, boolean>>(() => {
+    const defaults: Record<string, boolean> = { persone: true, ghiaccio: true, soldi: true, club: false };
+    for (const gruppo of MENU_GRUPPI) {
+      try {
+        const salvato = localStorage.getItem(`menu_gruppo_${gruppo.id}`);
+        if (salvato !== null) defaults[gruppo.id] = salvato === "true";
+      } catch {
+        return defaults;
+      }
+    }
+    return defaults;
+  });
   const [op_open, set_op_open] = React.useState(true);
   const [gare_open, set_gare_open] = React.useState(true);
   const [fatt_open, set_fatt_open] = React.useState(true);
   const [conf_open, set_conf_open] = React.useState(false);
+
+  React.useEffect(() => {
+    const gruppo_attivo = MENU_GRUPPI.find((gruppo) =>
+      gruppo.voci.some((voce) => location.pathname === voce.path || (voce.path !== "/" && location.pathname.startsWith(voce.path)))
+      || (gruppo.id === "soldi" && location.pathname.startsWith("/segreteria/fatture"))
+      || (gruppo.id === "club" && ["/utenti", "/convenzioni", "/presidente/relazione"].some((path) => location.pathname.startsWith(path)))
+    );
+    if (gruppo_attivo) {
+      set_nuovi_gruppi_aperti((correnti) => correnti[gruppo_attivo.id]
+        ? correnti
+        : { ...correnti, [gruppo_attivo.id]: true });
+    }
+  }, [location.pathname]);
+
+  const toggle_nuovo_gruppo = (id: string) => {
+    set_nuovi_gruppi_aperti((correnti) => {
+      const prossimo = !correnti[id];
+      try {
+        localStorage.setItem(`menu_gruppo_${id}`, String(prossimo));
+      } catch {
+        // localStorage può non essere disponibile: lo stato in memoria resta operativo.
+      }
+      return { ...correnti, [id]: prossimo };
+    });
+  };
 
 
   const render_nav_item = (path: string, Icon: any, label: string, key: string, disabled?: boolean) => {
@@ -244,47 +279,60 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             </>
           )}
 
-          {/* Nuovi ruoli: voci principali + gruppo Setup espandibile */}
+          {/* Nuovi ruoli: voci principali + gruppi operativi espandibili */}
           {is_nuovo_ruolo && (
             <>
-              {nuovo_principale.map((s) => render_nav_item(s.path, s.icon, menu_label(s.codice, s.label), s.codice, s.non_implementato))}
-              {visibile_set.has("fatture") && render_nav_item("/segreteria/fatture", LayoutGrid, tc("menu.segreteria_fatture", { defaultValue: "Tabellone Fatture" }), "segreteria_fatture")}
-              {is_presidente && (
-                <NavLink to="/presidente/relazione" onClick={() => set_sidebar_open(false)}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname.startsWith("/presidente/relazione") ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
-                  <FileText className="w-4 h-4 shrink-0" />
-                  <span>{tc("relazione")}</span>
-                  <span className="ml-auto inline-flex items-center justify-center px-1.5 h-4 rounded-full bg-emerald-500 text-white text-[9px] font-bold tracking-wider">NEW</span>
-                </NavLink>
-              )}
-              {(nuovo_setup.length > 0 || is_presidente || (session?.ruolo as string) === "segreteria") && (
-                <div className="pt-2">
-                  <button
-                    onClick={() => set_setup_open((o) => !o)}
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
-                  >
-                    <Settings className="w-4 h-4 shrink-0" />
-                    <span>{tc("setup")}</span>
-                    {setup_open ? <ChevronDown className="w-4 h-4 ml-auto" /> : <ChevronRight className="w-4 h-4 ml-auto" />}
-                  </button>
-                  {setup_open && (
-                    <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border pl-2">
-                      {nuovo_setup.map((s) => render_nav_item(s.path, s.icon, menu_label(s.codice, s.label), s.codice, s.non_implementato))}
-                    </div>
-                  )}
-                </div>
-              )}
+              {nuovo_top.map((s) => render_nav_item(s.path, s.icon, menu_label(s.codice, s.label), s.codice, s.non_implementato))}
+              {MENU_GRUPPI.map((gruppo) => {
+                const voci_visibili = gruppo.voci.filter((voce) => visibile_set.has(voce.codice));
+                const mostra_tabellone = gruppo.id === "soldi" && visibile_set.has("fatture");
+                const mostra_utenti = gruppo.id === "club" && can_manage_users;
+                const mostra_convenzioni = gruppo.id === "club" && !!session;
+                const mostra_relazione = gruppo.id === "club" && is_presidente;
+                if (voci_visibili.length === 0 && !mostra_tabellone && !mostra_utenti && !mostra_convenzioni && !mostra_relazione) return null;
+
+                const aperto = nuovi_gruppi_aperti[gruppo.id] ?? gruppo.id !== "club";
+                const Icon = gruppo.icon;
+                return (
+                  <div key={gruppo.id} className="pt-2">
+                    <button
+                      onClick={() => toggle_nuovo_gruppo(gruppo.id)}
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-[11px] font-semibold uppercase text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+                    >
+                      <Icon className="w-4 h-4 shrink-0" />
+                      <span>{tc(gruppo.label_key, { defaultValue: gruppo.label_fallback })}</span>
+                      {aperto ? <ChevronDown className="w-4 h-4 ml-auto" /> : <ChevronRight className="w-4 h-4 ml-auto" />}
+                    </button>
+                    {aperto && (
+                      <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border pl-2">
+                        {voci_visibili.map((s) => render_nav_item(s.path, s.icon, menu_label(s.codice, s.label), s.codice, s.non_implementato))}
+                        {mostra_tabellone && render_nav_item("/segreteria/fatture", LayoutGrid, tc("menu.segreteria_fatture", { defaultValue: "Tabellone Fatture" }), "segreteria_fatture")}
+                        {mostra_utenti && render_nav_item("/utenti", Users, tc("menu.utenti"), "utenti")}
+                        {mostra_convenzioni && render_nav_item("/convenzioni", BadgePercent, "Convenzioni", "convenzioni")}
+                        {mostra_relazione && (
+                          <NavLink to="/presidente/relazione" onClick={() => set_sidebar_open(false)}
+                            className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname.startsWith("/presidente/relazione") ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+                            <FileText className="w-4 h-4 shrink-0" />
+                            <span>{tc("relazione")}</span>
+                            <span className="ml-auto inline-flex items-center justify-center px-1.5 h-4 rounded-full bg-emerald-500 text-white text-[9px] font-bold tracking-wider">NEW</span>
+                          </NavLink>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </>
           )}
 
-          {can_manage_users && !is_superadmin && !is_menu_legacy && (
+          {can_manage_users && !is_superadmin && !is_menu_legacy && !is_nuovo_ruolo && (
             <NavLink to="/utenti" onClick={() => set_sidebar_open(false)}
               className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/utenti" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
               <Users className="w-4 h-4 shrink-0" />
               <span>{tc("menu.utenti")}</span>
             </NavLink>
           )}
-          {!is_superadmin && session && !is_menu_legacy && (
+          {!is_superadmin && session && !is_menu_legacy && !is_nuovo_ruolo && (
             <NavLink to="/convenzioni" onClick={() => set_sidebar_open(false)}
               className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/convenzioni" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
               <BadgePercent className="w-4 h-4 shrink-0" />

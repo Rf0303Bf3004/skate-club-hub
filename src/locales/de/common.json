@@ -225,5 +225,15 @@
     "unpaid": "Offen"
   },
   "irreversible_warning": "Diese Aktion ist unwiderruflich. Alle verknüpften Daten werden gelöscht.",
-  "confirm_delete_title": "Löschen bestätigen"
+  "confirm_delete_title": "Löschen bestätigen",
+  "menu": {
+    "griglia_ghiaccio": "Eisraster",
+    "ruoli_permessi": "Rollenverwaltung"
+  },
+  "menu_gruppo": {
+    "persone": "Personen",
+    "ghiaccio": "Eis",
+    "soldi": "Verwaltung",
+    "club": "Der Club"
+  }
 }
