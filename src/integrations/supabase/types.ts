@@ -7187,38 +7187,56 @@ export type Database = {
       test_livello_atleti: {
         Row: {
           atleta_id: string
+          costo_applicato: number | null
           created_at: string
           disciplina: string | null
           esito: string
           id: string
+          invitata_at: string
           livello_accesso: string
           livello_target: string
           note_istruttore: string | null
           ordine: number
+          risposta_at: string | null
+          stato: string
+          stato_da: string | null
+          stato_motivo: string | null
           test_id: string
         }
         Insert: {
           atleta_id: string
+          costo_applicato?: number | null
           created_at?: string
           disciplina?: string | null
           esito?: string
           id?: string
+          invitata_at?: string
           livello_accesso: string
           livello_target: string
           note_istruttore?: string | null
           ordine?: number
+          risposta_at?: string | null
+          stato?: string
+          stato_da?: string | null
+          stato_motivo?: string | null
           test_id: string
         }
         Update: {
           atleta_id?: string
+          costo_applicato?: number | null
           created_at?: string
           disciplina?: string | null
           esito?: string
           id?: string
+          invitata_at?: string
           livello_accesso?: string
           livello_target?: string
           note_istruttore?: string | null
           ordine?: number
+          risposta_at?: string | null
+          stato?: string
+          stato_da?: string | null
+          stato_motivo?: string | null
           test_id?: string
         }
         Relationships: [
@@ -8502,6 +8520,33 @@ export type Database = {
           tipo: string
           voce: string
         }[]
+      }
+      rispondi_invito_test: {
+        Args: { p_invito: string; p_risposta: string }
+        Returns: {
+          atleta_id: string
+          costo_applicato: number | null
+          created_at: string
+          disciplina: string | null
+          esito: string
+          id: string
+          invitata_at: string
+          livello_accesso: string
+          livello_target: string
+          note_istruttore: string | null
+          ordine: number
+          risposta_at: string | null
+          stato: string
+          stato_da: string | null
+          stato_motivo: string | null
+          test_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "test_livello_atleti"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       ruoli_avviso_staff: {
         Args: { p_sotto_tipo: string; p_tipo: string }
