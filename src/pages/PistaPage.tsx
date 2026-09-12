@@ -1,6 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
+import { Maximize2, Minimize2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,34 +23,10 @@ import { useAuth } from "@/lib/auth";
  * Usa ESCLUSIVAMENTE le RPC pista_sessioni / pista_atleti / pista_appello.
  */
 
-interface SessionePista {
-  sessione_id: string;
-  titolo: string | null;
-  ora_inizio: string | null;
-  ora_fine: string | null;
-  specialita: string | null;
-  istruttori: string | null;
-  n_atleti: number | null;
-  in_corso: boolean | null;
-}
-
-interface AtletaPista {
-  atleta_id: string;
-  nome: string | null;
-  cognome: string | null;
-  gruppo_sessione_id: string | null;
-  etichetta: string | null;
-  stato: "presente" | "assente" | "avvisato" | "non_registrato" | string;
-}
-
-type RpcFn = (
-  nome: string,
-  argomenti?: Record<string, unknown>,
-) => Promise<{ data: unknown; error: { message: string } | null }>;
-
-const chiama_rpc = supabase.rpc.bind(supabase) as unknown as RpcFn;
-
 const ora_breve = (valore: string | null) => (valore ? String(valore).slice(0, 5) : "");
+
+const chiave_giorno = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
 const MessaggioCentrale: React.FC<{ testo: string; variante?: "normale" | "errore" }> = ({
   testo,
@@ -67,60 +44,85 @@ const MessaggioCentrale: React.FC<{ testo: string; variante?: "normale" | "error
 );
 
 const PistaPage: React.FC = () => {
-  const { t } = useTranslation("common");
+  const { t, i18n } = useTranslation("common");
   const { session } = useAuth();
   const [adesso, set_adesso] = React.useState(() => new Date());
   const [sessione_id, set_sessione_id] = React.useState<string | null>(null);
+  const [scelta_manuale, set_scelta_manuale] = React.useState(false);
   const [assenti, set_assenti] = React.useState<Set<string>>(new Set());
   const [modificato, set_modificato] = React.useState(false);
   const [salvataggio, set_salvataggio] = React.useState(false);
   const [registrato_alle, set_registrato_alle] = React.useState<string | null>(null);
   const [sessione_in_attesa, set_sessione_in_attesa] = React.useState<string | null>(null);
+  const [schermo_intero, set_schermo_intero] = React.useState(false);
 
   React.useEffect(() => {
     const timer = window.setInterval(() => set_adesso(new Date()), 60_000);
     return () => window.clearInterval(timer);
   }, []);
 
+  const giorno = chiave_giorno(adesso);
+
   const sessioni_query = useQuery({
-    queryKey: ["pista_sessioni"],
-    queryFn: async (): Promise<SessionePista[]> => {
-      const { data, error } = await chiama_rpc("pista_sessioni", { p_data: null });
-      if (error) throw new Error(error.message);
-      return (data as SessionePista[]) ?? [];
+    queryKey: ["pista_sessioni", giorno],
+    refetchInterval: 5 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("pista_sessioni", { p_data: null });
+      if (error) {
+        segnala_errore("PistaPage", "pista_sessioni", error);
+        throw new Error(error.message);
+      }
+      return data ?? [];
     },
   });
 
-  const sessioni = sessioni_query.data ?? [];
+  const sessioni = React.useMemo(() => sessioni_query.data ?? [], [sessioni_query.data]);
 
-  // Selezione automatica: in corso > prossima da iniziare > ultima.
+  // Selezione automatica: si aggiorna a ogni scatto dell'orologio, ma mai
+  // se ci sono modifiche non registrate o se l'utente ha scelto a mano.
   React.useEffect(() => {
-    if (sessione_id || sessioni.length === 0) return;
+    if (sessioni.length === 0) return;
+    if (modificato) return;
+    if (scelta_manuale && sessione_id) return;
     const ora_corrente = `${String(adesso.getHours()).padStart(2, "0")}:${String(adesso.getMinutes()).padStart(2, "0")}`;
     const in_corso = sessioni.find((s) => s.in_corso);
     const prossima = sessioni.find((s) => ora_breve(s.ora_inizio) >= ora_corrente);
-    set_sessione_id((in_corso ?? prossima ?? sessioni[sessioni.length - 1]).sessione_id);
-  }, [sessioni, sessione_id, adesso]);
+    const scelta = (in_corso ?? prossima ?? sessioni[sessioni.length - 1]).sessione_id;
+    if (scelta !== sessione_id) set_sessione_id(scelta);
+  }, [sessioni, sessione_id, adesso, modificato, scelta_manuale]);
 
   const atleti_query = useQuery({
     queryKey: ["pista_atleti", sessione_id],
     enabled: !!sessione_id,
-    queryFn: async (): Promise<AtletaPista[]> => {
-      const { data, error } = await chiama_rpc("pista_atleti", { p_sessione_id: sessione_id });
-      if (error) throw new Error(error.message);
-      return (data as AtletaPista[]) ?? [];
+    refetchOnWindowFocus: false,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("pista_atleti", { p_sessione_id: sessione_id as string });
+      if (error) {
+        segnala_errore("PistaPage", "pista_atleti", error);
+        throw new Error(error.message);
+      }
+      return data ?? [];
     },
   });
 
   const atleti = React.useMemo(() => atleti_query.data ?? [], [atleti_query.data]);
 
-  // Stato iniziale dell'appello dai dati del database.
+  // L'appello si inizializza solo quando cambia la sessione, mai su refetch.
+  const sessione_inizializzata = React.useRef<string | null>(null);
   React.useEffect(() => {
-    if (!atleti_query.data) return;
-    set_assenti(new Set(atleti_query.data.filter((a) => a.stato === "assente" || a.stato === "avvisato").map((a) => a.atleta_id)));
+    if (!sessione_id || !atleti_query.data) return;
+    if (sessione_inizializzata.current === sessione_id) return;
+    sessione_inizializzata.current = sessione_id;
+    set_assenti(
+      new Set(
+        atleti_query.data
+          .filter((a) => a.stato === "assente" || a.stato === "avvisato")
+          .map((a) => a.atleta_id),
+      ),
+    );
     set_modificato(false);
     set_registrato_alle(null);
-  }, [atleti_query.data]);
+  }, [sessione_id, atleti_query.data]);
 
   const sessione_selezionata = sessioni.find((s) => s.sessione_id === sessione_id) ?? null;
 
@@ -128,7 +130,7 @@ const PistaPage: React.FC = () => {
     const con_gruppo = atleti.filter((a) => a.gruppo_sessione_id);
     const senza_gruppo = atleti.filter((a) => !a.gruppo_sessione_id);
     const ordine: string[] = [];
-    const mappa = new Map<string, AtletaPista[]>();
+    const mappa = new Map<string, typeof atleti>();
     for (const atleta of con_gruppo) {
       const chiave = atleta.gruppo_sessione_id as string;
       if (!mappa.has(chiave)) {
@@ -149,6 +151,8 @@ const PistaPage: React.FC = () => {
   const n_assenti = atleti.filter((a) => assenti.has(a.atleta_id)).length;
   const n_presenti = atleti.length - n_assenti;
 
+  const lista_pronta = !atleti_query.isLoading && !atleti_query.isFetching && !atleti_query.error && atleti.length > 0;
+
   const alterna = (atleta_id: string) => {
     set_assenti((precedenti) => {
       const prossimi = new Set(precedenti);
@@ -160,21 +164,30 @@ const PistaPage: React.FC = () => {
     set_registrato_alle(null);
   };
 
+  const applica_sessione = (id: string) => {
+    sessione_inizializzata.current = null;
+    set_sessione_id(id);
+    set_scelta_manuale(true);
+    set_assenti(new Set());
+    set_modificato(false);
+    set_registrato_alle(null);
+  };
+
   const cambia_sessione = (id: string) => {
     if (id === sessione_id) return;
     if (modificato) {
       set_sessione_in_attesa(id);
       return;
     }
-    set_sessione_id(id);
+    applica_sessione(id);
   };
 
   const registra = async () => {
-    if (!sessione_id) return;
+    if (!sessione_id || !lista_pronta) return;
     set_salvataggio(true);
     try {
       const elenco = atleti.filter((a) => assenti.has(a.atleta_id)).map((a) => a.atleta_id);
-      const { error } = await chiama_rpc("pista_appello", { p_sessione_id: sessione_id, p_assenti: elenco });
+      const { error } = await supabase.rpc("pista_appello", { p_sessione_id: sessione_id, p_assenti: elenco });
       if (error) throw new Error(error.message);
       const ora = new Date();
       set_registrato_alle(`${String(ora.getHours()).padStart(2, "0")}:${String(ora.getMinutes()).padStart(2, "0")}`);
@@ -187,13 +200,14 @@ const PistaPage: React.FC = () => {
     }
   };
 
-  const data_estesa = adesso.toLocaleDateString("it-CH", {
+  const lingua = i18n.language || "it";
+  const data_estesa = adesso.toLocaleDateString(lingua, {
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
   });
-  const ora_corrente = adesso.toLocaleTimeString("it-CH", { hour: "2-digit", minute: "2-digit" });
+  const ora_corrente = adesso.toLocaleTimeString(lingua, { hour: "2-digit", minute: "2-digit" });
 
   const contenuto = () => {
     if (sessioni_query.isLoading) {
@@ -249,7 +263,7 @@ const PistaPage: React.FC = () => {
         )}
 
         {/* Contatore sempre visibile */}
-        <div className="sticky top-0 z-10 -mx-4 mt-4 border-y border-border bg-background px-4 py-3 text-xl font-bold">
+        <div className="sticky top-0 z-40 -mx-4 mt-4 border-y border-border bg-background px-4 py-3 text-xl font-bold">
           {t("pista.contatore", { presenti: n_presenti, assenti: n_assenti })}
         </div>
 
@@ -259,6 +273,8 @@ const PistaPage: React.FC = () => {
           </div>
         ) : atleti_query.error ? (
           <MessaggioCentrale variante="errore" testo={(atleti_query.error as Error).message} />
+        ) : atleti.length === 0 ? (
+          <MessaggioCentrale testo={t("pista.nessuna_atleta")} />
         ) : (
           <div className="mt-4 space-y-6 pb-32">
             {gruppi.map((gruppo) => (
@@ -302,21 +318,41 @@ const PistaPage: React.FC = () => {
   };
 
   return (
-    <div className="relative min-h-[70vh] px-4">
-      <header className="py-4">
-        <h1 className="text-2xl md:text-3xl font-bold capitalize">{data_estesa}</h1>
-        <p className="text-4xl font-bold tabular-nums">{ora_corrente}</p>
+    <div
+      className={
+        schermo_intero
+          ? "fixed inset-0 z-50 overflow-y-auto bg-background px-4"
+          : "relative min-h-[70vh] px-4"
+      }
+    >
+      <header className="flex items-start justify-between gap-4 py-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold capitalize">{data_estesa}</h1>
+          <p className="text-4xl font-bold tabular-nums">{ora_corrente}</p>
+        </div>
+        <Button
+          variant={schermo_intero ? "default" : "outline"}
+          size="lg"
+          onClick={() => set_schermo_intero((v) => !v)}
+        >
+          {schermo_intero ? <Minimize2 className="mr-2 h-5 w-5" /> : <Maximize2 className="mr-2 h-5 w-5" />}
+          {schermo_intero ? t("pista.esci_schermo_intero") : t("pista.schermo_intero")}
+        </Button>
       </header>
 
       {contenuto()}
 
       {sessioni.length > 0 && (
-        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background p-3">
+        <div
+          className={`${
+            schermo_intero ? "absolute" : "sticky"
+          } inset-x-0 bottom-0 z-20 border-t border-border bg-background p-3`}
+        >
           <div className="mx-auto flex max-w-5xl flex-col gap-1">
             <Button
               size="lg"
               className="h-16 w-full text-lg font-bold"
-              disabled={salvataggio || !sessione_id}
+              disabled={salvataggio || !sessione_id || !lista_pronta}
               onClick={registra}
             >
               {salvataggio ? t("pista.registrazione_in_corso") : t("pista.registra_appello")}
@@ -340,7 +376,7 @@ const PistaPage: React.FC = () => {
             <AlertDialogCancel>{t("annulla", { defaultValue: "Annulla" })}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                if (sessione_in_attesa) set_sessione_id(sessione_in_attesa);
+                if (sessione_in_attesa) applica_sessione(sessione_in_attesa);
                 set_sessione_in_attesa(null);
               }}
             >
