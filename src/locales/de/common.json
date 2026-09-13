@@ -381,7 +381,12 @@
     "fine_prima_inizio": "Das Ende muss nach dem Start liegen.",
     "ripetizione_spiegazione": "Nach dem Start kann das Ende markiert werden: Der Punkt wird zur Wiederholung.",
     "brano_non_disponibile": "Das Stück ist nicht verfügbar.",
-    "in_preparazione": "In Vorbereitung"
+    "in_preparazione": "In Vorbereitung",
+    "errore_salva_dettagli": "Die Änderungen an der Musik konnten nicht gespeichert werden.",
+    "istruzioni_caricamento": "Zuerst Typ und Titel wählen, dann die Datei: Der Upload startet sofort und speichert. Titel und Typ lassen sich weiterhin in der Zeile ändern.",
+    "scegli_file_e_salva": "Datei wählen und speichern",
+    "titolo_mancante": "Stück ohne Titel",
+    "titolo_mancante_dettaglio": "Die Musik wird ohne Titel gespeichert. Du kannst ihn in der Zeile nachtragen."
   },
   "menu_blocco": {
     "conduzione": "Betrieb",
