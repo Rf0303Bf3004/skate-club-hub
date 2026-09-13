@@ -79,6 +79,10 @@ export function solo_presidente(ruolo?: string | null) {
 export function puo_creare_accessi(ruolo?: string | null) {
   return has(RUOLI_CREAZIONE_ACCESSI, ruolo);
 }
+/** Specchio di puo_gestire_musica(): i dischi li gestisce anche l'allenatore. */
+export function puo_gestire_musica(ruolo?: string | null) {
+  return has(RUOLI_MUSICA, ruolo);
+}
 /** Equivalente di ruolo_in(array[...]) del database. */
 export function ruolo_in(ruoli: RuoloUtente[], ruolo?: string | null) {
   return has(ruoli, ruolo);
@@ -93,6 +97,7 @@ export interface PermessiAzione {
   puo_gestire_fatture: boolean;
   solo_presidente: boolean;
   puo_creare_accessi: boolean;
+  puo_gestire_musica: boolean;
   ruolo_in: (ruoli: RuoloUtente[]) => boolean;
 }
 
@@ -111,6 +116,7 @@ export function usePermessiAzione(): PermessiAzione {
       puo_gestire_fatture: puo_gestire_fatture(ruolo),
       solo_presidente: solo_presidente(ruolo),
       puo_creare_accessi: puo_creare_accessi(ruolo),
+      puo_gestire_musica: puo_gestire_musica(ruolo),
       ruolo_in: (ruoli: RuoloUtente[]) => ruolo_in(ruoli, ruolo),
     }),
     [ruolo],
