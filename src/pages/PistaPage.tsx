@@ -20,8 +20,11 @@ import { useAuth } from "@/lib/auth";
 
 /**
  * Bordo pista: tablet condiviso a bordo ghiaccio.
- * Usa ESCLUSIVAMENTE le RPC pista_sessioni / pista_atleti / pista_appello.
+ * Divisione principale per istruttore, più una linguetta "Tutto il ghiaccio".
+ * Usa ESCLUSIVAMENTE le RPC pista_* (nessuna lettura diretta di tabelle).
  */
+
+const TUTTO = "__tutto_il_ghiaccio";
 
 const ora_breve = (valore: string | null) => (valore ? String(valore).slice(0, 5) : "");
 
@@ -43,17 +46,25 @@ const MessaggioCentrale: React.FC<{ testo: string; variante?: "normale" | "error
   </div>
 );
 
+const Caricamento: React.FC = () => (
+  <div className="flex items-center justify-center py-16">
+    <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary" />
+  </div>
+);
+
 const PistaPage: React.FC = () => {
   const { t, i18n } = useTranslation("common");
   const { session } = useAuth();
   const [adesso, set_adesso] = React.useState(() => new Date());
+  const [tab, set_tab] = React.useState<string | null>(null);
+  const [scelta_manuale_istruttore, set_scelta_manuale_istruttore] = React.useState(false);
   const [sessione_id, set_sessione_id] = React.useState<string | null>(null);
   const [scelta_manuale, set_scelta_manuale] = React.useState(false);
   const [assenti, set_assenti] = React.useState<Set<string>>(new Set());
   const [modificato, set_modificato] = React.useState(false);
   const [salvataggio, set_salvataggio] = React.useState(false);
   const [registrato_alle, set_registrato_alle] = React.useState<string | null>(null);
-  const [sessione_in_attesa, set_sessione_in_attesa] = React.useState<string | null>(null);
+  const [in_attesa, set_in_attesa] = React.useState<{ tipo: "sessione" | "istruttore"; id: string } | null>(null);
   const [schermo_intero, set_schermo_intero] = React.useState(false);
 
   React.useEffect(() => {
@@ -63,8 +74,50 @@ const PistaPage: React.FC = () => {
 
   const giorno = chiave_giorno(adesso);
 
-  const sessioni_query = useQuery({
+  const compleanni_query = useQuery({
+    queryKey: ["pista_compleanni", giorno],
+    refetchInterval: 30 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("pista_compleanni", { p_data: null });
+      if (error) {
+        segnala_errore("PistaPage", "pista_compleanni", error);
+        throw new Error(error.message);
+      }
+      return data ?? [];
+    },
+  });
+
+  const istruttori_query = useQuery({
+    queryKey: ["pista_istruttori", giorno],
+    refetchInterval: 5 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("pista_istruttori", { p_data: null });
+      if (error) {
+        segnala_errore("PistaPage", "pista_istruttori", error);
+        throw new Error(error.message);
+      }
+      return data ?? [];
+    },
+  });
+
+  const istruttori = React.useMemo(() => istruttori_query.data ?? [], [istruttori_query.data]);
+
+  // Selezione automatica istruttore: solo finché l'utente non sceglie a mano
+  // e finché non ci sono modifiche non registrate.
+  React.useEffect(() => {
+    if (istruttori.length === 0) return;
+    if (modificato) return;
+    if (scelta_manuale_istruttore && tab) return;
+    const scelta = istruttori[0].istruttore_id;
+    if (scelta !== tab) set_tab(scelta);
+  }, [istruttori, tab, adesso, modificato, scelta_manuale_istruttore]);
+
+  const in_tutto = tab === TUTTO;
+  const istruttore_id = in_tutto ? null : tab;
+
+  const sessioni_tutte_query = useQuery({
     queryKey: ["pista_sessioni", giorno],
+    enabled: in_tutto,
     refetchInterval: 5 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase.rpc("pista_sessioni", { p_data: null });
@@ -76,14 +129,47 @@ const PistaPage: React.FC = () => {
     },
   });
 
-  const sessioni = React.useMemo(() => sessioni_query.data ?? [], [sessioni_query.data]);
+  const sessioni_istruttore_query = useQuery({
+    queryKey: ["pista_sessioni_istruttore", istruttore_id, giorno],
+    enabled: !!istruttore_id,
+    refetchInterval: 5 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("pista_sessioni_istruttore", {
+        p_istruttore_id: istruttore_id as string,
+        p_data: null,
+      });
+      if (error) {
+        segnala_errore("PistaPage", "pista_sessioni_istruttore", error);
+        throw new Error(error.message);
+      }
+      return data ?? [];
+    },
+  });
 
-  // Selezione automatica: si aggiorna a ogni scatto dell'orologio, ma mai
+  type Sessione = {
+    sessione_id: string;
+    titolo: string | null;
+    ora_inizio: string | null;
+    ora_fine: string | null;
+    specialita: string | null;
+    n_atleti: number | null;
+    in_corso: boolean | null;
+    altri_istruttori?: string | null;
+    istruttori?: string | null;
+  };
+
+  const sessioni_query = in_tutto ? sessioni_tutte_query : sessioni_istruttore_query;
+  const sessioni: Sessione[] = React.useMemo(
+    () => (sessioni_query.data ?? []) as Sessione[],
+    [sessioni_query.data],
+  );
+
+  // Selezione automatica sessione: si aggiorna a ogni scatto dell'orologio, ma mai
   // se ci sono modifiche non registrate o se l'utente ha scelto a mano.
   React.useEffect(() => {
     if (sessioni.length === 0) return;
     if (modificato) return;
-    if (scelta_manuale && sessione_id) return;
+    if (scelta_manuale && sessione_id && sessioni.some((s) => s.sessione_id === sessione_id)) return;
     const ora_corrente = `${String(adesso.getHours()).padStart(2, "0")}:${String(adesso.getMinutes()).padStart(2, "0")}`;
     const in_corso = sessioni.find((s) => s.in_corso);
     const prossima = sessioni.find((s) => ora_breve(s.ora_inizio) >= ora_corrente);
@@ -164,22 +250,43 @@ const PistaPage: React.FC = () => {
     set_registrato_alle(null);
   };
 
-  const applica_sessione = (id: string) => {
+  const azzera_appello = () => {
     sessione_inizializzata.current = null;
-    set_sessione_id(id);
-    set_scelta_manuale(true);
     set_assenti(new Set());
     set_modificato(false);
     set_registrato_alle(null);
   };
 
+  const applica_sessione = (id: string) => {
+    azzera_appello();
+    set_sessione_id(id);
+    set_scelta_manuale(true);
+  };
+
+  const applica_istruttore = (id: string) => {
+    azzera_appello();
+    set_tab(id);
+    set_scelta_manuale_istruttore(true);
+    set_sessione_id(null);
+    set_scelta_manuale(false);
+  };
+
   const cambia_sessione = (id: string) => {
     if (id === sessione_id) return;
     if (modificato) {
-      set_sessione_in_attesa(id);
+      set_in_attesa({ tipo: "sessione", id });
       return;
     }
     applica_sessione(id);
+  };
+
+  const cambia_istruttore = (id: string) => {
+    if (id === tab) return;
+    if (modificato) {
+      set_in_attesa({ tipo: "istruttore", id });
+      return;
+    }
+    applica_istruttore(id);
   };
 
   const registra = async () => {
@@ -209,24 +316,64 @@ const PistaPage: React.FC = () => {
   });
   const ora_corrente = adesso.toLocaleTimeString(lingua, { hour: "2-digit", minute: "2-digit" });
 
-  const contenuto = () => {
-    if (sessioni_query.isLoading) {
-      return (
-        <div className="flex items-center justify-center py-24">
-          <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary" />
-        </div>
-      );
-    }
-    if (sessioni_query.error) {
-      return <MessaggioCentrale variante="errore" testo={(sessioni_query.error as Error).message} />;
-    }
-    if (sessioni.length === 0) {
-      return <MessaggioCentrale testo={session?.club_id ? t("pista.nessuna_sessione") : t("pista.serve_club")} />;
-    }
+  const compleanni = compleanni_query.data ?? [];
 
+  const lista_atlete = () => {
+    if (atleti_query.isLoading) return <Caricamento />;
+    if (atleti_query.error) return <MessaggioCentrale variante="errore" testo={(atleti_query.error as Error).message} />;
+    if (atleti.length === 0) return <MessaggioCentrale testo={t("pista.nessuna_atleta")} />;
+    return (
+      <div className="mt-4 space-y-6 pb-32">
+        {gruppi.map((gruppo) => (
+          <div key={gruppo.chiave}>
+            {gruppo.titolo && (
+              <h2 className="mb-2 text-lg font-bold uppercase tracking-wide text-muted-foreground">{gruppo.titolo}</h2>
+            )}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {gruppo.atleti.map((atleta) => {
+                const assente = assenti.has(atleta.atleta_id);
+                return (
+                  <button
+                    key={atleta.atleta_id}
+                    onClick={() => alterna(atleta.atleta_id)}
+                    className={`flex min-h-[56px] w-full items-center justify-between gap-3 rounded-xl border-2 px-4 py-3 text-left text-base transition-colors ${
+                      assente
+                        ? "border-destructive bg-destructive/15 text-muted-foreground"
+                        : "border-border bg-card text-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <span className={`text-lg font-semibold ${assente ? "line-through" : ""}`}>
+                      {atleta.cognome} {atleta.nome}
+                    </span>
+                    {atleta.stato === "avvisato" && (
+                      <span className="shrink-0 rounded-full border border-border px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                        {t("pista.avvisato")}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const contatore = (
+    <div className="sticky top-0 z-40 -mx-4 mt-4 border-y border-border bg-background px-4 py-3 text-xl font-bold">
+      {t("pista.contatore", { presenti: n_presenti, assenti: n_assenti })}
+    </div>
+  );
+
+  const vista_tutto = () => {
+    if (sessioni_tutte_query.isLoading) return <Caricamento />;
+    if (sessioni_tutte_query.error)
+      return <MessaggioCentrale variante="errore" testo={(sessioni_tutte_query.error as Error).message} />;
+    if (sessioni.length === 0)
+      return <MessaggioCentrale testo={session?.club_id ? t("pista.nessuna_sessione") : t("pista.serve_club")} />;
     return (
       <>
-        {/* Striscia sessioni di oggi */}
         <div className="flex gap-3 overflow-x-auto pb-2">
           {sessioni.map((s) => {
             const attiva = s.sessione_id === sessione_id;
@@ -252,9 +399,7 @@ const PistaPage: React.FC = () => {
 
         {sessione_selezionata && (
           <div className="mt-4 text-lg">
-            {sessione_selezionata.specialita && (
-              <span className="font-semibold">{sessione_selezionata.specialita}</span>
-            )}
+            {sessione_selezionata.specialita && <span className="font-semibold">{sessione_selezionata.specialita}</span>}
             {sessione_selezionata.specialita && sessione_selezionata.istruttori && <span className="mx-2">·</span>}
             {sessione_selezionata.istruttori && (
               <span className="text-muted-foreground">{sessione_selezionata.istruttori}</span>
@@ -262,69 +407,84 @@ const PistaPage: React.FC = () => {
           </div>
         )}
 
-        {/* Contatore sempre visibile */}
-        <div className="sticky top-0 z-40 -mx-4 mt-4 border-y border-border bg-background px-4 py-3 text-xl font-bold">
-          {t("pista.contatore", { presenti: n_presenti, assenti: n_assenti })}
-        </div>
-
-        {atleti_query.isLoading ? (
-          <div className="flex items-center justify-center py-16">
-            <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary" />
-          </div>
-        ) : atleti_query.error ? (
-          <MessaggioCentrale variante="errore" testo={(atleti_query.error as Error).message} />
-        ) : atleti.length === 0 ? (
-          <MessaggioCentrale testo={t("pista.nessuna_atleta")} />
-        ) : (
-          <div className="mt-4 space-y-6 pb-32">
-            {gruppi.map((gruppo) => (
-              <div key={gruppo.chiave}>
-                {gruppo.titolo && (
-                  <h2 className="mb-2 text-lg font-bold uppercase tracking-wide text-muted-foreground">
-                    {gruppo.titolo}
-                  </h2>
-                )}
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  {gruppo.atleti.map((atleta) => {
-                    const assente = assenti.has(atleta.atleta_id);
-                    return (
-                      <button
-                        key={atleta.atleta_id}
-                        onClick={() => alterna(atleta.atleta_id)}
-                        className={`flex min-h-[56px] w-full items-center justify-between gap-3 rounded-xl border-2 px-4 py-3 text-left text-base transition-colors ${
-                          assente
-                            ? "border-destructive bg-destructive/15 text-muted-foreground"
-                            : "border-border bg-card text-foreground hover:bg-muted"
-                        }`}
-                      >
-                        <span className={`text-lg font-semibold ${assente ? "line-through" : ""}`}>
-                          {atleta.cognome} {atleta.nome}
-                        </span>
-                        {atleta.stato === "avvisato" && (
-                          <span className="shrink-0 rounded-full border border-border px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                            {t("pista.avvisato")}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        {contatore}
+        {lista_atlete()}
       </>
     );
   };
 
+  const vista_istruttore = () => {
+    if (sessioni_istruttore_query.isLoading) return <Caricamento />;
+    if (sessioni_istruttore_query.error)
+      return <MessaggioCentrale variante="errore" testo={(sessioni_istruttore_query.error as Error).message} />;
+    if (sessioni.length === 0) return <MessaggioCentrale testo={t("pista.istruttore_senza_sessioni")} />;
+
+    return (
+      <>
+        {sessioni.length > 1 && (
+          <div className="flex gap-3 overflow-x-auto pb-2">
+            {sessioni.map((s) => {
+              const attiva = s.sessione_id === sessione_id;
+              return (
+                <button
+                  key={s.sessione_id}
+                  onClick={() => cambia_sessione(s.sessione_id)}
+                  className={`min-w-[160px] min-h-[72px] shrink-0 rounded-xl border-2 px-4 py-2 text-left transition-colors ${
+                    attiva
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : s.in_corso
+                        ? "border-primary bg-primary/10 text-foreground"
+                        : "border-border bg-card text-foreground hover:bg-muted"
+                  }`}
+                >
+                  <div className="text-xl font-bold tabular-nums">{ora_breve(s.ora_inizio)}</div>
+                  <div className="text-sm font-medium truncate">{s.titolo ?? ""}</div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {sessione_selezionata && (
+          <div className="mt-3">
+            <div className="text-2xl font-bold tabular-nums">
+              {ora_breve(sessione_selezionata.ora_inizio)}
+              {sessione_selezionata.ora_fine ? `–${ora_breve(sessione_selezionata.ora_fine)}` : ""}
+              {sessione_selezionata.titolo ? <span className="ml-3 font-semibold">{sessione_selezionata.titolo}</span> : null}
+            </div>
+            <div className="text-lg">
+              {sessione_selezionata.specialita && (
+                <span className="font-semibold">{sessione_selezionata.specialita}</span>
+              )}
+              {sessione_selezionata.specialita && sessione_selezionata.altri_istruttori && <span className="mx-2">·</span>}
+              {sessione_selezionata.altri_istruttori && (
+                <span className="text-muted-foreground">
+                  {t("pista.con_istruttori", { nomi: sessione_selezionata.altri_istruttori })}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {contatore}
+        {lista_atlete()}
+      </>
+    );
+  };
+
+  const contenuto = () => {
+    if (istruttori_query.isLoading) return <Caricamento />;
+    if (istruttori_query.error)
+      return <MessaggioCentrale variante="errore" testo={(istruttori_query.error as Error).message} />;
+    if (istruttori.length === 0 && !in_tutto)
+      return <MessaggioCentrale testo={session?.club_id ? t("pista.nessuna_sessione") : t("pista.serve_club")} />;
+    return in_tutto ? vista_tutto() : vista_istruttore();
+  };
+
+  const mostra_barra = in_tutto ? sessioni.length > 0 : !!sessione_id;
+
   return (
-    <div
-      className={
-        schermo_intero
-          ? "fixed inset-0 z-50 overflow-y-auto bg-background px-4"
-          : "relative min-h-[70vh] px-4"
-      }
-    >
+    <div className={schermo_intero ? "fixed inset-0 z-50 overflow-y-auto bg-background px-4" : "relative min-h-[70vh] px-4"}>
       <header className="flex items-start justify-between gap-4 py-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold capitalize">{data_estesa}</h1>
@@ -340,13 +500,60 @@ const PistaPage: React.FC = () => {
         </Button>
       </header>
 
+      {compleanni.length > 0 && (
+        <div className="mb-3 rounded-lg border border-border bg-muted/50 px-4 py-2 text-base">
+          <span className="font-semibold">{t("pista.compleanni_oggi")}</span>{" "}
+          {compleanni
+            .map((c) => t("pista.compleanno_persona", { nome: c.nome, cognome: c.cognome, count: c.anni ?? 0 }))
+            .join(", ")}
+        </div>
+      )}
+
+      {/* Linguette istruttori + Tutto il ghiaccio */}
+      <div className="flex gap-3 overflow-x-auto border-b border-border pb-2">
+        {istruttori.map((i) => {
+          const attiva = i.istruttore_id === tab;
+          return (
+            <button
+              key={i.istruttore_id}
+              onClick={() => cambia_istruttore(i.istruttore_id)}
+              className={`min-w-[170px] min-h-[72px] shrink-0 rounded-xl border-2 px-4 py-2 text-left transition-colors ${
+                attiva
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : i.ha_sessione_in_corso
+                    ? "border-primary bg-primary/10 text-foreground"
+                    : "border-border bg-card text-foreground hover:bg-muted"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                {i.ha_sessione_in_corso && (
+                  <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${attiva ? "bg-primary-foreground" : "bg-primary"}`} />
+                )}
+                <span className="truncate text-lg font-bold">
+                  {i.nome} {i.cognome}
+                </span>
+              </div>
+              <div className="text-sm tabular-nums opacity-80">{ora_breve(i.prima_ora)}</div>
+            </button>
+          );
+        })}
+        <button
+          onClick={() => cambia_istruttore(TUTTO)}
+          className={`min-w-[170px] min-h-[72px] shrink-0 rounded-xl border-2 px-4 py-2 text-left transition-colors ${
+            in_tutto
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-border bg-card text-foreground hover:bg-muted"
+          }`}
+        >
+          <span className="text-lg font-bold">{t("pista.tutto_il_ghiaccio")}</span>
+        </button>
+      </div>
+
       {contenuto()}
 
-      {sessioni.length > 0 && (
+      {mostra_barra && (
         <div
-          className={`${
-            schermo_intero ? "absolute" : "sticky"
-          } inset-x-0 bottom-0 z-20 border-t border-border bg-background p-3`}
+          className={`${schermo_intero ? "absolute" : "sticky"} inset-x-0 bottom-0 z-20 border-t border-border bg-background p-3`}
         >
           <div className="mx-auto flex max-w-5xl flex-col gap-1">
             <Button
@@ -366,21 +573,28 @@ const PistaPage: React.FC = () => {
         </div>
       )}
 
-      <AlertDialog open={!!sessione_in_attesa} onOpenChange={(aperto) => !aperto && set_sessione_in_attesa(null)}>
+      <AlertDialog open={!!in_attesa} onOpenChange={(aperto) => !aperto && set_in_attesa(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t("pista.conferma_cambio_titolo")}</AlertDialogTitle>
-            <AlertDialogDescription>{t("pista.conferma_cambio_testo")}</AlertDialogDescription>
+            <AlertDialogDescription>
+              {in_attesa?.tipo === "istruttore" ? t("pista.conferma_cambio_istruttore_testo") : t("pista.conferma_cambio_testo")}
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t("annulla", { defaultValue: "Annulla" })}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                if (sessione_in_attesa) applica_sessione(sessione_in_attesa);
-                set_sessione_in_attesa(null);
+                if (in_attesa) {
+                  if (in_attesa.tipo === "istruttore") applica_istruttore(in_attesa.id);
+                  else applica_sessione(in_attesa.id);
+                }
+                set_in_attesa(null);
               }}
             >
-              {t("pista.conferma_cambio_azione")}
+              {in_attesa?.tipo === "istruttore"
+                ? t("pista.conferma_cambio_istruttore_azione")
+                : t("pista.conferma_cambio_azione")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

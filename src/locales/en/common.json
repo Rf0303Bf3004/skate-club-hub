@@ -256,6 +256,14 @@
     "n_atlete_other": "{{count}} athletes",
     "nessuna_atleta": "No athlete assigned to this session.",
     "schermo_intero": "Full screen",
-    "esci_schermo_intero": "Exit"
+    "esci_schermo_intero": "Exit",
+    "tutto_il_ghiaccio": "Whole ice",
+    "istruttore_senza_sessioni": "This instructor has no sessions today.",
+    "con_istruttori": "with {{nomi}}",
+    "compleanni_oggi": "Birthday today:",
+    "compleanno_persona_one": "{{nome}} {{cognome}} ({{count}} year)",
+    "compleanno_persona_other": "{{nome}} {{cognome}} ({{count}} years)",
+    "conferma_cambio_istruttore_testo": "You marked absences without saving them. Switching instructor will discard them.",
+    "conferma_cambio_istruttore_azione": "Switch instructor"
   }
 }

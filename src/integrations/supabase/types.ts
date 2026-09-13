@@ -8464,6 +8464,26 @@ export type Database = {
           stato: string
         }[]
       }
+      pista_compleanni: {
+        Args: { p_club_id?: string; p_data?: string }
+        Returns: {
+          anni: number
+          chi: string
+          cognome: string
+          nome: string
+        }[]
+      }
+      pista_istruttori: {
+        Args: { p_club_id?: string; p_data?: string }
+        Returns: {
+          cognome: string
+          ha_sessione_in_corso: boolean
+          istruttore_id: string
+          n_sessioni: number
+          nome: string
+          prima_ora: string
+        }[]
+      }
       pista_riferimento: {
         Args: { p_sessione_id: string }
         Returns: {
@@ -8478,6 +8498,19 @@ export type Database = {
         Returns: {
           in_corso: boolean
           istruttori: string
+          n_atleti: number
+          ora_fine: string
+          ora_inizio: string
+          sessione_id: string
+          specialita: string
+          titolo: string
+        }[]
+      }
+      pista_sessioni_istruttore: {
+        Args: { p_data?: string; p_istruttore_id: string }
+        Returns: {
+          altri_istruttori: string
+          in_corso: boolean
           n_atleti: number
           ora_fine: string
           ora_inizio: string

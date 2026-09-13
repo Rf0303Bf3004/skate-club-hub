@@ -256,6 +256,14 @@
     "n_atlete_other": "{{count}} athlètes",
     "nessuna_atleta": "Aucune athlète affectée à cette séance.",
     "schermo_intero": "Plein écran",
-    "esci_schermo_intero": "Quitter"
+    "esci_schermo_intero": "Quitter",
+    "tutto_il_ghiaccio": "Toute la glace",
+    "istruttore_senza_sessioni": "Cet entraîneur n'a aucune séance aujourd'hui.",
+    "con_istruttori": "avec {{nomi}}",
+    "compleanni_oggi": "Anniversaire aujourd'hui :",
+    "compleanno_persona_one": "{{nome}} {{cognome}} ({{count}} an)",
+    "compleanno_persona_other": "{{nome}} {{cognome}} ({{count}} ans)",
+    "conferma_cambio_istruttore_testo": "Vous avez marqué des absences sans les enregistrer. Changer d'entraîneur les perdra.",
+    "conferma_cambio_istruttore_azione": "Changer d'entraîneur"
   }
 }
