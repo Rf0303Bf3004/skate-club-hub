@@ -382,6 +382,7 @@
   "griglia_nav": {
     "giorno_precedente": "Previous day",
     "giorno_successivo": "Next day",
-    "oggi": "Today"
+    "oggi": "Today",
+    "scegli_data": "Choose date"
   }
 }

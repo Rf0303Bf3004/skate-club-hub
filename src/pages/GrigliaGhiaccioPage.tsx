@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
@@ -107,7 +107,28 @@ const GrigliaGhiaccioPage: React.FC = () => {
   const [formato_carta, set_formato_carta] = useState<FormatoCarta>("A4");
   const [periodo, set_periodo] = useState<"giorno" | "settimana" | "mese" | "stagione">("giorno");
   const [vista, set_vista] = useState<"impilata" | "tableau">("impilata");
+  const [selettore_data_aperto, set_selettore_data_aperto] = useState(false);
+  const ref_selettore_data = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!selettore_data_aperto) return;
+    const on_key = (e: KeyboardEvent) => {
+      if (e.key === "Escape") set_selettore_data_aperto(false);
+    };
+    const on_click = (e: MouseEvent) => {
+      const target = e.target as Node | null;
+      if (ref_selettore_data.current && target && !ref_selettore_data.current.contains(target)) {
+        set_selettore_data_aperto(false);
+      }
+    };
+    window.addEventListener("keydown", on_key);
+    window.addEventListener("mousedown", on_click);
+    return () => {
+      window.removeEventListener("keydown", on_key);
+      window.removeEventListener("mousedown", on_click);
+    };
+  }, [selettore_data_aperto]);
 
   const { data: risorse = [] } = use_risorse_strutture();
   const risorse_ghiaccio = useMemo(
@@ -273,48 +294,73 @@ const GrigliaGhiaccioPage: React.FC = () => {
             </div>
           </div>
           <div className="flex items-end gap-2">
-            <div className="space-y-1">
-              <Label className="text-xs">Data</Label>
-              <div className="flex items-center gap-1">
-                <Button
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="h-10 w-10 shrink-0"
+                onClick={() => {
+                  cambia_giorno(-1);
+                  set_selettore_data_aperto(false);
+                }}
+                aria-label={t("griglia_nav.giorno_precedente")}
+                title={t("griglia_nav.giorno_precedente")}
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+              {selettore_data_aperto ? (
+                <div ref={ref_selettore_data} className="flex items-center">
+                  <DateInput
+                    value={data_sel}
+                    onChange={(v) => {
+                      if (v) {
+                        set_data_sel(v);
+                        set_selettore_data_aperto(false);
+                      }
+                    }}
+                    min_year={2020}
+                    max_year={2100}
+                    className="gap-1"
+                  />
+                </div>
+              ) : (
+                <button
                   type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-10 w-10 shrink-0"
-                  onClick={() => cambia_giorno(-1)}
-                  aria-label={t("griglia_nav.giorno_precedente")}
-                  title={t("griglia_nav.giorno_precedente")}
+                  onClick={() => set_selettore_data_aperto(true)}
+                  className="h-10 px-4 rounded-md border border-input bg-background text-base font-semibold hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-w-[220px] text-center"
+                  aria-label={t("griglia_nav.scegli_data")}
+                  title={t("griglia_nav.scegli_data")}
                 >
-                  <ChevronLeft className="h-5 w-5" />
-                </Button>
-                <DateInput
-                  value={data_sel}
-                  onChange={set_data_sel}
-                  min_year={2020}
-                  max_year={2100}
-                  className="gap-1"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-10 w-10 shrink-0"
-                  onClick={() => cambia_giorno(1)}
-                  aria-label={t("griglia_nav.giorno_successivo")}
-                  title={t("griglia_nav.giorno_successivo")}
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-10"
-                  disabled={data_sel === oggi_iso()}
-                  onClick={() => set_data_sel(oggi_iso())}
-                >
-                  {t("griglia_nav.oggi")}
-                </Button>
-              </div>
+                  {label_data(data_sel)}
+                </button>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="h-10 w-10 shrink-0"
+                onClick={() => {
+                  cambia_giorno(1);
+                  set_selettore_data_aperto(false);
+                }}
+                aria-label={t("griglia_nav.giorno_successivo")}
+                title={t("griglia_nav.giorno_successivo")}
+              >
+                <ChevronRight className="h-5 w-5" />
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10"
+                disabled={data_sel === oggi_iso()}
+                onClick={() => {
+                  set_data_sel(oggi_iso());
+                  set_selettore_data_aperto(false);
+                }}
+              >
+                {t("griglia_nav.oggi")}
+              </Button>
             </div>
             <label className="flex cursor-pointer items-center gap-2 pt-5 text-xs text-muted-foreground">
               <input
