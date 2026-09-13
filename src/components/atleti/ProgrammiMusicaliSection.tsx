@@ -126,6 +126,14 @@ const ProgrammiMusicaliSection: React.FC<Props> = ({ atleta_id }) => {
   const carica = async (file: File) => {
     const club_id = get_current_club_id();
     if (!club_id) return;
+    // Il titolo non è obbligatorio: si avvisa, non si blocca.
+    if (!titolo.trim()) {
+      toast({
+        variant: "warning",
+        title: t("musica.titolo_mancante"),
+        description: t("musica.titolo_mancante_dettaglio"),
+      });
+    }
     set_caricamento(true);
     try {
       const durata_sec = await leggi_durata(file);
