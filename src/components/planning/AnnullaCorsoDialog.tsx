@@ -15,6 +15,7 @@ import { Loader2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
+import { segnala_errore } from "@/lib/errori";
 
 interface Props {
   open: boolean;
@@ -158,6 +159,7 @@ const AnnullaCorsoDialog: React.FC<Props> = ({
                 i18n.t("avviso_corso_annullato_non_inviato", { ns: "errors" }) as string,
                 com_err,
                 { planning_corso_id: final_id, corso_id: corso_id_target },
+                "avviso",
               );
             }
           }
@@ -169,14 +171,12 @@ const AnnullaCorsoDialog: React.FC<Props> = ({
           i18n.t("avviso_corso_annullato_non_inviato", { ns: "errors" }) as string,
           com_e,
           { planning_corso_id: final_id, corso_id: corso_id_target },
+          "avviso",
         );
       }
 
-      if (avviso_inviato) {
-        toast.success(tk("ok"));
-      } else {
-        toast.warning(i18n.t("avviso_corso_annullato_non_inviato", { ns: "errors" }) as string);
-      }
+      // Il corso resta annullato: il messaggio finale però dice la verità sull'avviso.
+      if (avviso_inviato) toast.success(tk("ok"));
       on_done(final_id, motivo.trim());
       set_motivo("");
       on_close();
