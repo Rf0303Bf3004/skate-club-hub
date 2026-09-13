@@ -1126,6 +1126,31 @@ const LezioniPrivatePage: React.FC = () => {
           <NotaPermesso testo="Puoi consultare le lezioni ma non hai i permessi per crearle, modificarle o annullarle." />
         )}
 
+        <Tabs value={tab} onValueChange={(v) => set_tab(v as "calendario" | "richieste")}>
+          <TabsList>
+            <TabsTrigger value="calendario">{tc("richieste_private.tab_calendario")}</TabsTrigger>
+            <TabsTrigger value="richieste">
+              {tc("richieste_private.tab_richieste")}
+              {n_in_attesa > 0 && (
+                <span className="ml-2 text-xs font-bold px-1.5 py-0.5 rounded-full bg-primary/15 text-primary">
+                  {n_in_attesa}
+                </span>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="calendario" className="mt-4 space-y-6">
+        {richiesta_pendente && (
+          <div className="flex items-center justify-between gap-3 flex-wrap rounded-xl border border-primary/40 bg-primary/5 px-4 py-3">
+            <span className="text-sm text-foreground">
+              {tc("richieste_private.accetta_in_corso", { nome: nome_atleta_richiesta(richiesta_pendente.atleta_id) })}
+            </span>
+            <Button variant="outline" size="sm" onClick={() => set_richiesta_pendente(null)}>
+              {tc("richieste_private.annulla_accettazione")}
+            </Button>
+          </div>
+        )}
+
         <div className="w-64">
           <Select value={selected_istruttore} onValueChange={set_selected_istruttore}>
             <SelectTrigger>
