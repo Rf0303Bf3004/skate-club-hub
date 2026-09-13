@@ -623,8 +623,15 @@ const ClubSetupPage: React.FC = () => {
   const salvataggio_in_corso = saving || saving_ghiaccio;
 
   const salva_tutto = async () => {
-    if (Object.keys(ghiaccio_form).length > 0) await handle_save_ghiaccio();
+    const ghiaccio_da_salvare = Object.keys(ghiaccio_form).length > 0;
+    // Se la configurazione ghiaccio non è stata letta, quella parte non si salva:
+    // il messaggio finale lo deve dire, senza far credere che sia andato tutto bene.
+    const ghiaccio_bloccato = ghiaccio_da_salvare && !config_pronta;
+    if (ghiaccio_da_salvare && !ghiaccio_bloccato) await handle_save_ghiaccio();
     if (Object.keys(form).length > 0) await handle_save();
+    if (ghiaccio_bloccato) {
+      toast({ title: t("club.toast.salvataggio_parziale_ghiaccio"), variant: "destructive" });
+    }
   };
 
   const annulla_modifiche = () => {
