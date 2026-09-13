@@ -92,13 +92,24 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
     [programma.file_path, t],
   );
 
+  /** Rinnovo manuale: azzera il contatore dei tentativi. */
+  const riprova_a_mano = React.useCallback(() => {
+    tentativi_firma.current = 0;
+    void rinnova();
+  }, [rinnova]);
+
   React.useEffect(() => {
     set_url(null);
     set_posizione(0);
     set_loop_punto(null);
+    set_punto_aperto(null);
     set_in_riproduzione(false);
+    tentativi_firma.current = 0;
     void rinnova(0);
-    const timer = window.setInterval(() => void rinnova(), 4 * 60_000);
+    const timer = window.setInterval(() => {
+      tentativi_firma.current = 0;
+      void rinnova();
+    }, 4 * 60_000);
     return () => window.clearInterval(timer);
   }, [programma.id, rinnova]);
 
