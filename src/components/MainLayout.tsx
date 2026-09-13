@@ -120,8 +120,49 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
   const nuovo_top = MENU_TOP.filter((s) => visibile_set.has(s.codice));
 
+  // Voci scritte a mano, assegnate a un blocco e a un gruppo senza cambiarne le condizioni.
+  const extra_per_gruppo = React.useCallback((id: MenuGruppo) => ({
+    tabellone: id === "soldi" && visibile_set.has("fatture"),
+    utenti: id === "accessi" && can_manage_users && !visibile_set.has("gestione_utenti"),
+    convenzioni: id === "struttura" && !!session,
+    relazione: id === "struttura" && is_presidente,
+  }), [visibile_set, can_manage_users, session, is_presidente]);
+
+  const gruppo_ha_voci = React.useCallback((gruppo: typeof MENU_GRUPPI[number]) => {
+    const extra = extra_per_gruppo(gruppo.id);
+    return gruppo.voci.some((voce) => visibile_set.has(voce.codice))
+      || extra.tabellone || extra.utenti || extra.convenzioni || extra.relazione;
+  }, [extra_per_gruppo, visibile_set]);
+
+  const blocchi_visibili = React.useMemo(() => MENU_BLOCCHI.filter((blocco) => {
+    if (blocco.id === "conduzione" && nuovo_top.length > 0) return true;
+    return gruppi_del_blocco(blocco.id).some(gruppo_ha_voci);
+  }), [nuovo_top.length, gruppo_ha_voci]);
+
+  const [blocco_attivo, set_blocco_attivo] = React.useState<MenuBlocco>(() => {
+    try {
+      const salvato = localStorage.getItem("menu_blocco_attivo");
+      if (salvato === "setup" || salvato === "conduzione") return salvato;
+    } catch {
+      return "conduzione";
+    }
+    return "conduzione";
+  });
+
+  const cambia_blocco = (id: MenuBlocco) => {
+    set_blocco_attivo(id);
+    try {
+      localStorage.setItem("menu_blocco_attivo", id);
+    } catch {
+      // localStorage può non essere disponibile: lo stato in memoria resta operativo.
+    }
+  };
+
   const [nuovi_gruppi_aperti, set_nuovi_gruppi_aperti] = React.useState<Record<string, boolean>>(() => {
-    const defaults: Record<string, boolean> = { persone: true, ghiaccio: true, soldi: true, club: false };
+    const defaults: Record<string, boolean> = {
+      persone: true, ghiaccio: true, soldi: true,
+      struttura: true, offerta: true, sponsor_gruppo: false, accessi: false,
+    };
     for (const gruppo of MENU_GRUPPI) {
       try {
         const salvato = localStorage.getItem(`menu_gruppo_${gruppo.id}`);
@@ -141,12 +182,17 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     const gruppo_attivo = MENU_GRUPPI.find((gruppo) =>
       gruppo.voci.some((voce) => location.pathname === voce.path || (voce.path !== "/" && location.pathname.startsWith(voce.path)))
       || (gruppo.id === "soldi" && location.pathname.startsWith("/segreteria/fatture"))
-      || (gruppo.id === "club" && ["/utenti", "/convenzioni", "/presidente/relazione"].some((path) => location.pathname.startsWith(path)))
+      || (gruppo.id === "accessi" && location.pathname.startsWith("/utenti"))
+      || (gruppo.id === "struttura" && ["/convenzioni", "/presidente/relazione"].some((path) => location.pathname.startsWith(path)))
     );
     if (gruppo_attivo) {
       set_nuovi_gruppi_aperti((correnti) => correnti[gruppo_attivo.id]
         ? correnti
         : { ...correnti, [gruppo_attivo.id]: true });
+      // La rotta aperta può stare nell'altro blocco: il menu ci si sposta da solo.
+      set_blocco_attivo((corrente) => corrente === gruppo_attivo.blocco ? corrente : gruppo_attivo.blocco);
+    } else if (MENU_TOP.some((voce) => location.pathname === voce.path || (voce.path !== "/" && location.pathname.startsWith(voce.path)))) {
+      set_blocco_attivo((corrente) => corrente === "conduzione" ? corrente : "conduzione");
     }
   }, [location.pathname]);
 
@@ -161,6 +207,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       return { ...correnti, [id]: prossimo };
     });
   };
+
+  // Se il blocco memorizzato non ha voci per questo ruolo si ripiega su quello disponibile.
+  const blocco_corrente: MenuBlocco = blocchi_visibili.some((b) => b.id === blocco_attivo)
+    ? blocco_attivo
+    : (blocchi_visibili[0]?.id ?? "conduzione");
+
 
 
   const render_nav_item = (path: string, Icon: any, label: string, key: string, disabled?: boolean) => {
