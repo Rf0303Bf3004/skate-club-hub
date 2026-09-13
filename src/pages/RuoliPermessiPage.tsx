@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -38,14 +38,13 @@ const RuoliPermessiPage: React.FC = () => {
   const club_id = session?.club_id;
   const [saving, set_saving] = useState(false);
   const [matrix, set_matrix] = useState<Record<string, Record<string, boolean>>>({});
+  // Prova esplicita che la matrice viene da una lettura riuscita, non dall'assenza di dati.
+  const [matrice_caricata, set_matrice_caricata] = useState(false);
 
   // Allineato al database: scrittura su ruoli_permessi_sezioni solo per superadmin e presidente.
   const puo_gestire_ruoli = session?.ruolo === "superadmin" || session?.ruolo === "presidente";
-  if (session && !puo_gestire_ruoli) {
-    return <Navigate to="/" replace />;
-  }
 
-  const { isLoading, isError, error, refetch } = useQuery({
+  const { data, isLoading, isError, isFetching, error, refetch } = useQuery({
     queryKey: ["ruoli_permessi_sezioni_admin", club_id],
     queryFn: async () => {
       if (!club_id) return [];
@@ -54,28 +53,45 @@ const RuoliPermessiPage: React.FC = () => {
         .select("*")
         .eq("club_id", club_id);
       if (error) throw error;
-      const m: Record<string, Record<string, boolean>> = {};
-      for (const r of RUOLI) {
-        m[r.codice] = {};
-        for (const codice of ALL_PERMESSI_CODES) {
-          const p = (data ?? []).find((x: any) => x.ruolo === r.codice && x.codice_sezione === codice);
-          m[r.codice][codice] = p ? p.visibile : false;
-        }
-      }
-      set_matrix(m);
       return data ?? [];
     },
     enabled: !!club_id,
   });
 
+  // La matrice si costruisce solo quando i dati sono davvero arrivati (anche dalla cache).
+  useEffect(() => {
+    if (!data) {
+      set_matrice_caricata(false);
+      set_matrix({});
+      return;
+    }
+    const m: Record<string, Record<string, boolean>> = {};
+    for (const r of RUOLI) {
+      m[r.codice] = {};
+      for (const codice of ALL_PERMESSI_CODES) {
+        const p = (data as any[]).find((x: any) => x.ruolo === r.codice && x.codice_sezione === codice);
+        m[r.codice][codice] = p ? p.visibile : false;
+      }
+    }
+    set_matrix(m);
+    set_matrice_caricata(true);
+  }, [data]);
+
   const toggle = (ruolo: string, sezione: string) => {
     set_matrix((prev) => ({ ...prev, [ruolo]: { ...prev[ruolo], [sezione]: !prev[ruolo]?.[sezione] } }));
   };
 
+  // Si può scrivere solo su una matrice letta davvero e non mentre una lettura è in corso.
+  const puo_salvare = matrice_caricata && !isFetching;
+  // Errore bloccante solo se non abbiamo mai caricato la matrice.
+  const errore_bloccante = isError && !matrice_caricata;
+  // Rilettura fallita su matrice già caricata: si avvisa, non si blocca.
+  const dati_forse_vecchi = isError && matrice_caricata;
+
   const salva = async () => {
     if (!club_id) return;
     // Non si scrive mai partendo da una matrice non caricata: azzererebbe i permessi.
-    if (isError || Object.keys(matrix).length === 0) {
+    if (!puo_salvare) {
       toast({
         title: t("roles.load_error_title"),
         description: t("roles.load_error_desc"),
