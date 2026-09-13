@@ -1022,6 +1022,14 @@ const ClubSetupPage: React.FC = () => {
         {/* ══ GHIACCIO E PLANNING ══ */}
         <TabsContent value="ghiaccio" className="space-y-4">
         <SetupSection id="gh_parametri" titolo={t("club.sezioni.ghiaccio_planning")}>
+        {errore_config && (
+          <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 mb-3 space-y-2">
+            <p className="text-sm text-destructive">{t("club.toast.config_ghiaccio_non_letta")}</p>
+            <Button variant="outline" size="sm" onClick={() => ricarica_config()}>
+              {t("club.azioni.riprova")}
+            </Button>
+          </div>
+        )}
         {/* Config fields */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
