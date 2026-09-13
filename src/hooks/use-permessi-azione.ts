@@ -45,6 +45,15 @@ export const RUOLI_SOLO_PRESIDENTE: RuoloUtente[] = ["superadmin", "presidente"]
 /** Chi può creare accessi al portale: stessi ruoli accettati dalla funzione `manage-user`. */
 export const RUOLI_CREAZIONE_ACCESSI: RuoloUtente[] = ["superadmin", "admin", "presidente"];
 
+/** Specchio esatto di puo_gestire_musica() del database: include l'istruttore. */
+export const RUOLI_MUSICA: RuoloUtente[] = [
+  "superadmin",
+  "admin",
+  "presidente",
+  "dt",
+  "istruttore",
+];
+
 function has(ruoli: RuoloUtente[], ruolo?: string | null): boolean {
   return !!ruolo && (ruoli as string[]).includes(ruolo);
 }
