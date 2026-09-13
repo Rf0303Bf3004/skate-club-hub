@@ -461,5 +461,10 @@
   "menu_blocco": {
     "conduzione": "Conduzione",
     "setup": "Setup"
+  },
+  "griglia_nav": {
+    "giorno_precedente": "Giorno precedente",
+    "giorno_successivo": "Giorno successivo",
+    "oggi": "Oggi"
   }
 }

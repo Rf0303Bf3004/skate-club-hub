@@ -378,5 +378,10 @@
   "menu_blocco": {
     "conduzione": "Operations",
     "setup": "Setup"
+  },
+  "griglia_nav": {
+    "giorno_precedente": "Previous day",
+    "giorno_successivo": "Next day",
+    "oggi": "Today"
   }
 }
