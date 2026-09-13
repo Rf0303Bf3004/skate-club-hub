@@ -128,15 +128,22 @@ const RichiestePrivateSezione: React.FC<Props> = ({ atleta_id, club_id }) => {
   const ritira = async (id: string) => {
     set_salvando(true);
     try {
-      const { error } = await supabase
+      // Se il club l'ha già gestita l'update non tocca nessuna riga:
+      // in quel caso non si può dire alla famiglia che è stata ritirata.
+      const { data, error } = await supabase
         .from("richieste_lezioni_private")
         .update({ stato: "annullata" })
         .eq("id", id)
         .eq("atleta_id", atleta_id)
-        .eq("stato", "in_attesa");
+        .eq("stato", "in_attesa")
+        .select("id");
       if (error) throw error;
-      toast.success(t("richieste_private.ritirata_ok"));
       await qc.invalidateQueries({ queryKey: ["portale_richieste_private", atleta_id] });
+      if (!data || data.length === 0) {
+        toast.error(t("richieste_private.gia_gestita"));
+        return;
+      }
+      toast.success(t("richieste_private.ritirata_ok"));
     } catch (e) {
       await segnala_errore("RichiestePrivateSezione", t("richieste_private.ritira"), e, { id });
     } finally {
