@@ -12,5 +12,8 @@
   "duplicate": "Un élément avec ces données existe déjà",
   "operation_in_progress": "Opération en cours, veuillez patienter...",
   "avviso_corso_spostato_non_inviato": "Cours déplacé, mais l'avis aux athlètes n'a pas été envoyé : prévenez-les vous-même.",
-  "avviso_corso_annullato_non_inviato": "Cours annulé, mais l'avis aux athlètes n'a pas été envoyé : prévenez-les vous-même."
+  "avviso_corso_annullato_non_inviato": "Cours annulé, mais l'avis aux athlètes n'a pas été envoyé : prévenez-les vous-même.",
+  "lezione_privata_corso_non_creato": "Leçon créée, mais le cours lié n'a pas été créé :",
+  "lezione_privata_istruttore_non_collegato": "Leçon créée, mais l'instructeur n'a pas été lié au cours :",
+  "lezione_privata_planning_non_collocata": "Leçon créée, mais elle n'a pas pu être placée dans le planning :"
 }

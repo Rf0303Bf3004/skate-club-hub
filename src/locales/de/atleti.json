@@ -84,6 +84,8 @@
     "toast": {
       "atleti_lettura_fallita": "Lesen der vorhandenen Athletinnen fehlgeschlagen",
       "livelli_lettura_fallita": "Lesen der Stufen fehlgeschlagen"
-    }
+    },
+    "attesa_atleti": "Vorhandene Athletinnen werden gelesen: Bitte warten, bevor Sie fortfahren.",
+    "avviso_livelli": "Die Stufen konnten nicht überprüft werden: Der Import kann fortgesetzt werden, nicht erkannte Stufen bleiben leer."
   }
 }

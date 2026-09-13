@@ -84,6 +84,8 @@
     "toast": {
       "atleti_lettura_fallita": "Failed to read existing athletes",
       "livelli_lettura_fallita": "Failed to read levels"
-    }
+    },
+    "attesa_atleti": "Reading existing athletes: please wait before continuing.",
+    "avviso_livelli": "Levels could not be verified: the import can continue, unrecognised levels will be left empty."
   }
 }

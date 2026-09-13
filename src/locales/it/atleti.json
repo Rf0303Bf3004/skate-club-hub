@@ -520,7 +520,9 @@
     },
     "blocco_atleti": "Non è stato possibile leggere gli atleti già presenti: l'import è stato interrotto per non creare duplicati.",
     "blocco_livelli": "Non è stato possibile leggere l'elenco dei livelli: l'import è stato interrotto.",
-    "riprova": "Riprova"
+    "riprova": "Riprova",
+    "attesa_atleti": "Lettura degli atleti già presenti in corso: attendi prima di continuare.",
+    "avviso_livelli": "Non è stato possibile verificare i livelli: l'import può proseguire, i livelli non riconosciuti resteranno vuoti."
   },
   "badges": {
     "fed": "FED",

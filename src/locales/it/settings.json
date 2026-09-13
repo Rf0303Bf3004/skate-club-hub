@@ -17,7 +17,8 @@
       "disponibilita_salvata_per": "✅ Disponibilità salvata per {{risorsa}}",
       "periodo_mancante": "Imposta prima ogni quanti giorni va rinnovata",
       "disponibilita_rinnovata": "✅ Disponibilità rinnovata",
-      "config_ghiaccio_non_letta": "Non è stato possibile leggere la configurazione del ghiaccio: il salvataggio è bloccato per non sovrascriverla."
+      "config_ghiaccio_non_letta": "Non è stato possibile leggere la configurazione del ghiaccio: il salvataggio è bloccato per non sovrascriverla.",
+      "salvataggio_parziale_ghiaccio": "Le altre sezioni sono state salvate, ma la configurazione del ghiaccio no: non è stata letta."
     },
     "stats": {
       "atleti": "Atleti",
@@ -106,7 +107,8 @@
       "tipo_pianificazione_info": "Con la modalità periodica il sistema avvisa lo staff qualche giorno prima della scadenza che la disponibilità va rinnovata.",
       "prossima_scadenza": "Prossima scadenza",
       "scadenza_non_impostata": "non ancora impostata",
-      "dato_non_disponibile": "Dato non disponibile"
+      "dato_non_disponibile": "Dato non disponibile",
+      "config_ghiaccio_in_caricamento": "Configurazione del ghiaccio in caricamento…"
     },
     "stato": {
       "attivo": "Attivo",
@@ -220,7 +222,8 @@
     },
     "load_error_title": "Permessi non caricati",
     "load_error_desc": "Non è stato possibile leggere i permessi del club. Il salvataggio è disabilitato per non azzerare la configurazione.",
-    "retry": "Riprova"
+    "retry": "Riprova",
+    "stale_warning": "Attenzione: non è stato possibile rileggere i permessi, i dati mostrati potrebbero non essere aggiornati."
   },
   "users": {
     "title": "Gestione Utenti",

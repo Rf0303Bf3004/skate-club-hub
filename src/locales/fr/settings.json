@@ -6,13 +6,15 @@
     "lessons_params": "Paramètres des leçons privées",
     "save_changes": "Enregistrer les modifications",
     "toast": {
-      "config_ghiaccio_non_letta": "Impossible de lire la configuration de la glace : l'enregistrement est bloqué pour ne pas l'écraser."
+      "config_ghiaccio_non_letta": "Impossible de lire la configuration de la glace : l'enregistrement est bloqué pour ne pas l'écraser.",
+      "salvataggio_parziale_ghiaccio": "Les autres sections ont été enregistrées, mais pas la configuration de la glace : elle n'a pas pu être lue."
     },
     "azioni": {
       "riprova": "Réessayer"
     },
     "testi": {
-      "dato_non_disponibile": "Donnée non disponible"
+      "dato_non_disponibile": "Donnée non disponible",
+      "config_ghiaccio_in_caricamento": "Chargement de la configuration de la glace…"
     }
   },
   "seasons": {
@@ -28,7 +30,8 @@
     "permissions": "Autorisations",
     "load_error_title": "Autorisations non chargées",
     "load_error_desc": "Impossible de lire les autorisations du club. L'enregistrement est désactivé pour ne pas effacer la configuration.",
-    "retry": "Réessayer"
+    "retry": "Réessayer",
+    "stale_warning": "Attention : les autorisations n'ont pas pu être relues, les données affichées peuvent ne pas être à jour."
   },
   "users": {
     "title": "Utilisateurs",
