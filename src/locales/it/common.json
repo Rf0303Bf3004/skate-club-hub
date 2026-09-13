@@ -362,7 +362,15 @@
     "prossimamente": "Prossimamente",
     "istruzione_appello": "Sono tutte presenti. Tocca solo chi NON c'è.",
     "assente_etichetta": "ASSENTE",
-    "tocca_per_annullare": "tocca per annullare"
+    "tocca_per_annullare": "tocca per annullare",
+    "nota_salvata": "Nota salvata",
+    "nota_placeholder": "Scrivi qui la nota",
+    "nota_salvataggio_in_corso": "Salvataggio…",
+    "note_conteggio_one": "{{count}} nota",
+    "note_conteggio_other": "{{count}} note",
+    "note_errore": "Le note non sono disponibili: non significa che non ce ne siano.",
+    "note_titolo": "Note",
+    "nota_firma": "{{autore}} · {{ora}}"
   },
   "richieste_private": {
     "titolo": "Richieste di lezione privata",

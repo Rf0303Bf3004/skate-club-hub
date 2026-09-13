@@ -1,10 +1,12 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { Check, Maximize2, Minimize2, Music, StickyNote } from "lucide-react";
+import { Check, Maximize2, Minimize2, Music, StickyNote, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
 import LettoreDisco from "@/components/musica/LettoreDisco";
 import { use_programmi_atleti, type ProgrammaMusicale } from "@/hooks/use-programmi-musicali";
 import {
@@ -108,6 +110,12 @@ const PistaPage: React.FC = () => {
     titolo: string;
     programmi: ProgrammaMusicale[];
   } | null>(null);
+  const [nota_target, set_nota_target] = React.useState<{ atleta_id: string; titolo: string } | null>(null);
+  const [nota_testo, set_nota_testo] = React.useState("");
+  const [nota_salvataggio, set_nota_salvataggio] = React.useState(false);
+  const [note_aperte, set_note_aperte] = React.useState<{ atleta_id: string; titolo: string } | null>(null);
+  const [nota_in_eliminazione, set_nota_in_eliminazione] = React.useState<string | null>(null);
+
 
   React.useEffect(() => {
     const timer = window.setInterval(() => set_adesso(new Date()), 60_000);
@@ -333,8 +341,83 @@ const PistaPage: React.FC = () => {
     return mappa;
   }, [programmi_query.data]);
 
+  // ---- Note rapide: sole RPC pista_note / pista_nota_salva / pista_nota_elimina ----
+  type NotaPista = {
+    id: string;
+    atleta_id: string;
+    testo: string;
+    autore_nome: string | null;
+    creata_il: string;
+  };
+
+  const note_query = useQuery({
+    queryKey: ["pista_note", sessione_id],
+    enabled: !!sessione_id,
+    refetchOnWindowFocus: false,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("pista_note", { p_sessione_id: sessione_id as string });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as NotaPista[];
+    },
+  });
+
+  // segnala_errore fuori dalla queryFn: con i tentativi automatici la funzione
+  // gira più volte e produrrebbe avvisi doppi.
+  React.useEffect(() => {
+    if (note_query.isError) segnala_errore("PistaPage", "pista_note", note_query.error);
+  }, [note_query.isError, note_query.error]);
+
+  const note_per_atleta = React.useMemo(() => {
+    const mappa = new Map<string, NotaPista[]>();
+    for (const n of note_query.data ?? []) {
+      if (!mappa.has(n.atleta_id)) mappa.set(n.atleta_id, []);
+      mappa.get(n.atleta_id)!.push(n);
+    }
+    return mappa;
+  }, [note_query.data]);
+
+  const salva_nota = async () => {
+    if (!nota_target || !sessione_id) return;
+    const testo = nota_testo.trim();
+    if (!testo) return;
+    set_nota_salvataggio(true);
+    try {
+      const { error } = await supabase.rpc("pista_nota_salva", {
+        p_sessione_id: sessione_id,
+        p_atleta_id: nota_target.atleta_id,
+        p_testo: testo,
+      });
+      if (error) throw new Error(error.message);
+      await note_query.refetch();
+      // Si chiude solo dopo una scrittura davvero riuscita.
+      set_nota_target(null);
+      set_nota_testo("");
+      toast({ title: t("pista.nota_salvata") });
+    } catch (errore) {
+      // La finestrella resta aperta e il testo scritto non si perde.
+      segnala_errore("PistaPage", t("pista.nota_rapida"), errore);
+    } finally {
+      set_nota_salvataggio(false);
+    }
+  };
+
+  const elimina_nota = async (nota_id: string) => {
+    set_nota_in_eliminazione(nota_id);
+    try {
+      const { error } = await supabase.rpc("pista_nota_elimina", { p_nota_id: nota_id });
+      // Messaggio del database, mai uno inventato.
+      if (error) throw new Error(error.message);
+      await note_query.refetch();
+    } catch (errore) {
+      segnala_errore("PistaPage", t("pista.note_titolo"), errore);
+    } finally {
+      set_nota_in_eliminazione(null);
+    }
+  };
+
   const apri_lettore = (programma: ProgrammaMusicale, titolo: string) =>
     set_programma_attivo({ programma, titolo });
+
 
   const alterna = (atleta_id: string) => {
     set_assenti((precedenti) => {
@@ -490,27 +573,47 @@ const PistaPage: React.FC = () => {
             {t("musica.errore_programmi")}
           </p>
         )}
+        {note_query.isError && (
+          <p className="rounded-lg border border-destructive bg-destructive/10 px-4 py-2 text-base text-destructive">
+            {t("pista.note_errore")}
+          </p>
+        )}
         {presenti.map((atleta) => {
           const titolo = `${atleta.cognome} ${atleta.nome}`;
           const suoi = programmi_per_atleta.get(atleta.atleta_id) ?? [];
+          const sue_note = note_per_atleta.get(atleta.atleta_id) ?? [];
           return (
             <div
               key={atleta.atleta_id}
               className="flex min-h-[72px] items-center justify-between gap-4 rounded-xl border-2 border-border bg-card px-4 py-3"
             >
-              <span className="truncate text-xl font-semibold">{titolo}</span>
+              <span className="min-w-0">
+                <span className="block truncate text-xl font-semibold">{titolo}</span>
+                {/* Conteggio note: mostrato solo se ce n'è almeno una. */}
+                {sue_note.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => set_note_aperte({ atleta_id: atleta.atleta_id, titolo })}
+                    className="mt-0.5 text-sm font-medium text-muted-foreground underline underline-offset-2"
+                  >
+                    {t("pista.note_conteggio", { count: sue_note.length })}
+                  </button>
+                )}
+              </span>
               <div className="flex shrink-0 items-center gap-2">
-                {/* Nota rapida: non c'è ancora dove salvarla */}
                 <Button
                   size="lg"
                   variant="outline"
                   className="h-12"
-                  disabled
-                  title={t("pista.prossimamente")}
+                  onClick={() => {
+                    set_nota_testo("");
+                    set_nota_target({ atleta_id: atleta.atleta_id, titolo });
+                  }}
                 >
                   <StickyNote className="mr-2 h-5 w-5" />
                   {t("pista.nota_rapida")}
                 </Button>
+
                 {suoi.length > 0 ? (
                   <Button
                     size="lg"
@@ -803,7 +906,91 @@ const PistaPage: React.FC = () => {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Nota rapida: scrittura */}
+      <Dialog
+        open={!!nota_target}
+        onOpenChange={(aperto) => {
+          if (!aperto && !nota_salvataggio) {
+            set_nota_target(null);
+            set_nota_testo("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-2xl">{nota_target?.titolo ?? ""}</DialogTitle>
+          </DialogHeader>
+          <Textarea
+            value={nota_testo}
+            onChange={(e) => set_nota_testo(e.target.value)}
+            rows={6}
+            placeholder={t("pista.nota_placeholder")}
+            className="min-h-[160px] text-lg"
+          />
+          <div className="flex gap-3">
+            <Button
+              size="lg"
+              variant="outline"
+              className="h-14 flex-1 text-lg"
+              disabled={nota_salvataggio}
+              onClick={() => {
+                set_nota_target(null);
+                set_nota_testo("");
+              }}
+            >
+              {t("annulla", { defaultValue: "Annulla" })}
+            </Button>
+            <Button
+              size="lg"
+              className="h-14 flex-1 text-lg font-bold"
+              disabled={nota_salvataggio || nota_testo.trim().length === 0}
+              onClick={salva_nota}
+            >
+              {nota_salvataggio ? t("pista.nota_salvataggio_in_corso") : t("salva", { defaultValue: "Salva" })}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Nota rapida: note già scritte */}
+      <Dialog open={!!note_aperte} onOpenChange={(aperto) => !aperto && set_note_aperte(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-2xl">{note_aperte?.titolo ?? ""}</DialogTitle>
+          </DialogHeader>
+          <div className="flex max-h-[60vh] flex-col gap-3 overflow-y-auto">
+            {note_query.isError ? (
+              <p className="text-base text-destructive">{t("pista.note_errore")}</p>
+            ) : (
+              (note_per_atleta.get(note_aperte?.atleta_id ?? "") ?? []).map((n) => (
+                <div key={n.id} className="rounded-xl border border-border p-3">
+                  <p className="whitespace-pre-wrap text-lg">{n.testo}</p>
+                  <div className="mt-2 flex items-center justify-between gap-3">
+                    <span className="text-sm text-muted-foreground">
+                      {t("pista.nota_firma", {
+                        autore: n.autore_nome ?? "—",
+                        ora: new Date(n.creata_il).toLocaleTimeString(lingua, { hour: "2-digit", minute: "2-digit" }),
+                      })}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={nota_in_eliminazione === n.id}
+                      onClick={() => elimina_nota(n.id)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      {t("elimina", { defaultValue: "Elimina" })}
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Scelta del programma quando l'atleta ne ha più di uno */}
+
       <Dialog open={!!scelta_disco} onOpenChange={(aperto) => !aperto && set_scelta_disco(null)}>
         <DialogContent>
           <DialogHeader>

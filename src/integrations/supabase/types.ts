@@ -5075,6 +5075,89 @@ export type Database = {
         }
         Relationships: []
       }
+      note_pista: {
+        Row: {
+          atleta_id: string
+          autore_nome: string | null
+          autore_user_id: string | null
+          club_id: string
+          created_at: string
+          id: string
+          sessione_id: string
+          testo: string
+        }
+        Insert: {
+          atleta_id: string
+          autore_nome?: string | null
+          autore_user_id?: string | null
+          club_id: string
+          created_at?: string
+          id?: string
+          sessione_id: string
+          testo: string
+        }
+        Update: {
+          atleta_id?: string
+          autore_nome?: string | null
+          autore_user_id?: string | null
+          club_id?: string
+          created_at?: string
+          id?: string
+          sessione_id?: string
+          testo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "note_pista_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "note_pista_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti_con_completezza"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "note_pista_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "note_pista_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "note_pista_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "elenco_club"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "note_pista_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "kpi_pitch_sponsor"
+            referencedColumns: ["club_id"]
+          },
+          {
+            foreignKeyName: "note_pista_sessione_id_fkey"
+            columns: ["sessione_id"]
+            isOneToOne: false
+            referencedRelation: "griglia_sessioni"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ore_lavorate_dettaglio: {
         Row: {
           club_id: string
@@ -8704,6 +8787,10 @@ export type Database = {
       is_mobile_staff: { Args: never; Returns: boolean }
       is_superadmin: { Args: never; Returns: boolean }
       istruttore_corrente: { Args: never; Returns: string }
+      istruttore_su_sessione: {
+        Args: { p_sessione_id: string }
+        Returns: boolean
+      }
       lancia_controlli_notturni: {
         Args: never
         Returns: {
@@ -8825,6 +8912,21 @@ export type Database = {
           n_sessioni: number
           nome: string
           prima_ora: string
+        }[]
+      }
+      pista_nota_elimina: { Args: { p_nota_id: string }; Returns: undefined }
+      pista_nota_salva: {
+        Args: { p_atleta_id: string; p_sessione_id: string; p_testo: string }
+        Returns: string
+      }
+      pista_note: {
+        Args: { p_sessione_id: string }
+        Returns: {
+          atleta_id: string
+          autore_nome: string
+          creata_il: string
+          id: string
+          testo: string
         }[]
       }
       pista_riferimento: {
