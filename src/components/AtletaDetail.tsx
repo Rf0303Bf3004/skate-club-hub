@@ -1069,15 +1069,8 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <Label className="text-sm text-muted-foreground">{td("detail.disc_in_prep")}</Label>
-                <Input
-                  value={form.disco_in_preparazione || ""}
-                  onChange={(e) => upd("disco_in_preparazione", e.target.value)}
-                  placeholder={td("detail.disc_placeholder")}
-                  className="h-9"
-                />
-              </div>
+              {/* Il vecchio campo libero "disco in preparazione" è stato sostituito
+                  dall'interruttore "in preparazione" su ogni programma musicale. */}
               {a?.id && <ProgrammiMusicaliSection atleta_id={a.id} />}
               <div className="space-y-1.5">
                 <Label className="text-sm text-muted-foreground">{t("note")}</Label>
