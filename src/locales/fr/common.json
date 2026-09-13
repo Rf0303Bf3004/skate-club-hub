@@ -270,7 +270,10 @@
     "correggi_appello": "Corriger l'appel",
     "nessuna_presente": "Aucune athlète présente dans cette séance.",
     "nota_rapida": "Note rapide",
-    "prossimamente": "Prochainement"
+    "prossimamente": "Prochainement",
+    "istruzione_appello": "Toutes sont présentes. Touchez seulement celles qui ne sont PAS là.",
+    "assente_etichetta": "ABSENTE",
+    "tocca_per_annullare": "touchez pour annuler"
   },
   "richieste_private": {
     "titolo": "Demandes de leçon privée",
@@ -326,7 +329,8 @@
     "risposta_club": "Réponse du club",
     "nessun_istruttore": "La liste des instructeurs n'est pas disponible : la demande sera envoyée sans préférence.",
     "creata_parziale": "Leçon créée, mais certaines étapes ont échoué",
-    "gia_gestita": "La demande a déjà été traitée par le club."
+    "gia_gestita": "La demande a déjà été traitée par le club.",
+    "collegamento_atleta_diverso": "La leçon créée ne concerne pas l'athlète de la demande : la demande reste en attente"
   },
   "musica": {
     "ascolta": "Écouter",

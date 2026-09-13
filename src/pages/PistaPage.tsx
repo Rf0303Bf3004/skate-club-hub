@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { Maximize2, Minimize2, Music, StickyNote } from "lucide-react";
+import { Check, Maximize2, Minimize2, Music, StickyNote } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -426,6 +426,9 @@ const PistaPage: React.FC = () => {
 
   const lista_appello = () => (
     <div className="mt-4 space-y-6 pb-32">
+      <p className="rounded-xl border-2 border-warning-border bg-warning px-4 py-3 text-xl font-bold text-warning-foreground sm:text-2xl">
+        {t("pista.istruzione_appello")}
+      </p>
       {gruppi.map((gruppo) => (
         <div key={gruppo.chiave}>
           {gruppo.titolo && (
@@ -444,14 +447,31 @@ const PistaPage: React.FC = () => {
                       : "border-border bg-card text-foreground hover:bg-muted"
                   }`}
                 >
-                  <span className={`text-lg font-semibold ${assente ? "line-through" : ""}`}>
-                    {atleta.cognome} {atleta.nome}
-                  </span>
-                  {atleta.stato === "avvisato" && (
-                    <span className="shrink-0 rounded-full border border-border px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                      {t("pista.avvisato")}
+                  <span className="flex min-w-0 items-center gap-2">
+                    {!assente && <Check className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />}
+                    <span className="min-w-0">
+                      <span className={`block text-lg font-semibold ${assente ? "line-through" : ""}`}>
+                        {atleta.cognome} {atleta.nome}
+                      </span>
+                      {assente && (
+                        <span className="block text-xs font-medium text-muted-foreground">
+                          {t("pista.tocca_per_annullare")}
+                        </span>
+                      )}
                     </span>
-                  )}
+                  </span>
+                  <span className="flex shrink-0 items-center gap-2">
+                    {assente && (
+                      <span className="rounded-md bg-destructive px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-destructive-foreground">
+                        {t("pista.assente_etichetta")}
+                      </span>
+                    )}
+                    {atleta.stato === "avvisato" && (
+                      <span className="rounded-full border border-border px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                        {t("pista.avvisato")}
+                      </span>
+                    )}
+                  </span>
                 </button>
               );
             })}
