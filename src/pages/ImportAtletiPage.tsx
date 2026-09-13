@@ -399,6 +399,13 @@ const ImportAtletiPage: React.FC = () => {
     set_step(3);
   }, [rows, mapping, livelli_db, atleti_index]);
 
+  // Se l'elenco atleti (o dei livelli) arriva dopo la classificazione, la rifacciamo:
+  // altrimenti resterebbe in giro uno snapshot costruito su un elenco vuoto.
+  useEffect(() => {
+    if (step === 3 && parsed.length > 0 && atleti_pronti) build_parsed();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [atleti_index, livelli_db.length]);
+
   const counts = useMemo(() => ({
     nuovi: parsed.filter((p) => p.status === "nuovo").length,
     aggiornamenti: parsed.filter((p) => p.status === "aggiornamento").length,
@@ -408,8 +415,8 @@ const ImportAtletiPage: React.FC = () => {
 
   // ── STEP 4: import ──
   const run_import = async () => {
-    if (lettura_fallita) {
-      toast.error(atleti_errore ? ti("blocco_atleti") : ti("blocco_livelli"));
+    if (!atleti_pronti) {
+      toast.error(ti("blocco_atleti"));
       return;
     }
     set_importing(true);
