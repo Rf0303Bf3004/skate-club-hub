@@ -738,6 +738,60 @@ const LezioniPrivatePage: React.FC = () => {
   const [aggiungi_open, set_aggiungi_open] = useState(false);
   const [durata_modal, set_durata_modal] = useState(false);
   const [saving_durata, set_saving_durata] = useState(false);
+  const [tab, set_tab] = useState<"calendario" | "richieste">("calendario");
+  const [richiesta_pendente, set_richiesta_pendente] = useState<RichiestaLezione | null>(null);
+  const { t: tc } = useTranslation("common");
+  const richieste_query = use_richieste_lezioni_private();
+  const n_in_attesa = (richieste_query.data ?? []).filter((r) => r.stato === "in_attesa").length;
+
+  const nome_atleta_richiesta = (id: string) => {
+    const a = atleti.find((x: any) => x.id === id);
+    return a ? `${a.nome} ${a.cognome}` : id.slice(0, 8);
+  };
+
+  const handle_accetta_richiesta = (r: RichiestaLezione) => {
+    set_richiesta_pendente(r);
+    if (r.istruttore_id) set_selected_istruttore(r.istruttore_id);
+    if (r.data_preferita) {
+      set_selected_date(r.data_preferita);
+      const d = new Date(`${r.data_preferita}T00:00:00`);
+      set_cal_year(d.getFullYear());
+      set_cal_month(d.getMonth());
+    }
+    set_tab("calendario");
+    toast({ title: tc("richieste_private.accetta_istruzioni", { nome: nome_atleta_richiesta(r.atleta_id) }) });
+  };
+
+  const collega_richiesta_a_lezione = async (lezione_id: string) => {
+    if (!richiesta_pendente) return;
+    try {
+      const { data: utente, error: err_utente } = await supabase.auth.getUser();
+      if (err_utente) throw err_utente;
+      const { error } = await supabase
+        .from("richieste_lezioni_private")
+        .update({
+          stato: "accettata",
+          lezione_id,
+          gestita_da: utente?.user?.id ?? null,
+          gestita_il: new Date().toISOString(),
+        })
+        .eq("id", richiesta_pendente.id)
+        .eq("club_id", get_current_club_id());
+      if (error) throw error;
+      set_richiesta_pendente(null);
+      await qc.invalidateQueries({ queryKey: QUERY_KEY_RICHIESTE_PRIVATE });
+      toast({ title: tc("richieste_private.accettata_ok") });
+    } catch (e) {
+      await segnala_errore(
+        "PrivateLessonsPage",
+        tc("richieste_private.accettata_parziale"),
+        e,
+        { richiesta_id: richiesta_pendente?.id, lezione_id },
+        "avviso",
+      );
+    }
+  };
+
 
   React.useEffect(() => {
     if (!selected_istruttore && istruttori.length > 0) set_selected_istruttore(istruttori[0].id);
