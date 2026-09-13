@@ -6,13 +6,15 @@
     "lessons_params": "Private lesson settings",
     "save_changes": "Save changes",
     "toast": {
-      "config_ghiaccio_non_letta": "The ice configuration could not be read: saving is blocked so it is not overwritten."
+      "config_ghiaccio_non_letta": "The ice configuration could not be read: saving is blocked so it is not overwritten.",
+      "salvataggio_parziale_ghiaccio": "The other sections were saved, but the ice configuration was not: it could not be read."
     },
     "azioni": {
       "riprova": "Retry"
     },
     "testi": {
-      "dato_non_disponibile": "Data not available"
+      "dato_non_disponibile": "Data not available",
+      "config_ghiaccio_in_caricamento": "Loading ice configuration…"
     }
   },
   "seasons": {
@@ -28,7 +30,8 @@
     "permissions": "Permissions",
     "load_error_title": "Permissions not loaded",
     "load_error_desc": "The club permissions could not be read. Saving is disabled so the configuration is not wiped.",
-    "retry": "Retry"
+    "retry": "Retry",
+    "stale_warning": "Warning: permissions could not be re-read, the data shown may be out of date."
   },
   "users": {
     "title": "Users",

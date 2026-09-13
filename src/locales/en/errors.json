@@ -12,5 +12,8 @@
   "duplicate": "An item with this data already exists",
   "operation_in_progress": "Operation in progress, please wait...",
   "avviso_corso_spostato_non_inviato": "Course moved, but the notice to the athletes was not sent: please inform them yourself.",
-  "avviso_corso_annullato_non_inviato": "Course cancelled, but the notice to the athletes was not sent: please inform them yourself."
+  "avviso_corso_annullato_non_inviato": "Course cancelled, but the notice to the athletes was not sent: please inform them yourself.",
+  "lezione_privata_corso_non_creato": "Lesson created, but the linked course was not created:",
+  "lezione_privata_istruttore_non_collegato": "Lesson created, but the instructor was not linked to the course:",
+  "lezione_privata_planning_non_collocata": "Lesson created, but it could not be placed in the planning:"
 }

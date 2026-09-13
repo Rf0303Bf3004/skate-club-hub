@@ -49,7 +49,7 @@ const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sa
 function use_config_ghiaccio() {
   const club_id = get_current_club_id();
   const { data: stagione } = use_stagione_attiva();
-  return useQuery({
+  const query = useQuery({
     // La configurazione del ghiaccio vale per la stagione in corso: le stagioni
     // passate conservano i loro parametri.
     queryKey: ["configurazione_ghiaccio", club_id, stagione?.id ?? null],
@@ -59,10 +59,7 @@ function use_config_ghiaccio() {
         .from("configurazione_ghiaccio")
         .select("*")
         .eq("club_id", club_id);
-      if (error) {
-        await segnala_errore("ClubSetupPage", "Lettura configurazione ghiaccio", error);
-        throw error;
-      }
+      if (error) throw error;
       const righe = (data ?? []) as any[];
       return (
         righe.find((r) => stagione?.id && r.stagione_id === stagione.id) ??
@@ -71,6 +68,13 @@ function use_config_ghiaccio() {
       );
     },
   });
+  // Una segnalazione sola a tentativi esauriti, non una per ogni ritentativo.
+  useEffect(() => {
+    if (query.error) {
+      void segnala_errore("ClubSetupPage", "Lettura configurazione ghiaccio", query.error, undefined, "avviso");
+    }
+  }, [query.error]);
+  return query;
 }
 
 function use_disponibilita_ghiaccio() {
@@ -91,7 +95,7 @@ function use_disponibilita_ghiaccio() {
 
 function use_catalogo_count() {
   const club_id = get_current_club_id();
-  return useQuery({
+  const query = useQuery({
     queryKey: ["catalogo_livelli_count", club_id],
     enabled: !!club_id,
     queryFn: async () => {
@@ -99,13 +103,16 @@ function use_catalogo_count() {
         .from("catalogo_livelli")
         .select("id", { count: "exact", head: true })
         .eq("club_id", club_id);
-      if (error) {
-        await segnala_errore("ClubSetupPage", "Lettura catalogo livelli", error);
-        throw error;
-      }
+      if (error) throw error;
       return count ?? 0;
     },
   });
+  useEffect(() => {
+    if (query.error) {
+      void segnala_errore("ClubSetupPage", "Lettura catalogo livelli", query.error, undefined, "avviso");
+    }
+  }, [query.error]);
+  return query;
 }
 
 const ClubSetupPage: React.FC = () => {
@@ -117,7 +124,13 @@ const ClubSetupPage: React.FC = () => {
   const { data: stagioni = [] } = use_stagioni();
   const { data: atleti = [] } = use_atleti();
   const { data: istruttori = [] } = use_istruttori();
-  const { data: config_ghiaccio, isLoading: loading_config, isError: errore_config, refetch: ricarica_config } = use_config_ghiaccio();
+  const {
+    data: config_ghiaccio,
+    isLoading: loading_config,
+    isError: errore_config,
+    isSuccess: config_pronta,
+    refetch: ricarica_config,
+  } = use_config_ghiaccio();
   const { data: stagione_corrente } = use_stagione_attiva();
   const { data: disp_ghiaccio_raw, isLoading: loading_disp } = use_disponibilita_ghiaccio();
   const { data: catalogo_count, isError: errore_catalogo } = use_catalogo_count();
@@ -324,8 +337,9 @@ const ClubSetupPage: React.FC = () => {
 
   // Save ghiaccio config (upsert)
   const handle_save_ghiaccio = async () => {
-    // Configurazione non letta: salvare significherebbe sovrascriverla con valori vuoti.
-    if (errore_config) {
+    // Configurazione non letta (fallita o non ancora arrivata): salvare significherebbe
+    // sovrascriverla con valori vuoti o inserire una riga duplicata.
+    if (!config_pronta) {
       toast({ title: t("club.toast.config_ghiaccio_non_letta"), variant: "destructive" });
       return;
     }
@@ -372,7 +386,7 @@ const ClubSetupPage: React.FC = () => {
   // Save SOLO sezione lezioni private
   const [saving_private, set_saving_private] = useState(false);
   const handle_save_private = async () => {
-    if (errore_config) {
+    if (!config_pronta) {
       toast({ title: t("club.toast.config_ghiaccio_non_letta"), variant: "destructive" });
       return;
     }
@@ -609,8 +623,15 @@ const ClubSetupPage: React.FC = () => {
   const salvataggio_in_corso = saving || saving_ghiaccio;
 
   const salva_tutto = async () => {
-    if (Object.keys(ghiaccio_form).length > 0) await handle_save_ghiaccio();
+    const ghiaccio_da_salvare = Object.keys(ghiaccio_form).length > 0;
+    // Se la configurazione ghiaccio non è stata letta, quella parte non si salva:
+    // il messaggio finale lo deve dire, senza far credere che sia andato tutto bene.
+    const ghiaccio_bloccato = ghiaccio_da_salvare && !config_pronta;
+    if (ghiaccio_da_salvare && !ghiaccio_bloccato) await handle_save_ghiaccio();
     if (Object.keys(form).length > 0) await handle_save();
+    if (ghiaccio_bloccato) {
+      toast({ title: t("club.toast.salvataggio_parziale_ghiaccio"), variant: "destructive" });
+    }
   };
 
   const annulla_modifiche = () => {
@@ -661,10 +682,13 @@ const ClubSetupPage: React.FC = () => {
                 <tb.icon className="h-4 w-4" />
                 {tb.label}
                 {tb.value === "catalogo" && errore_catalogo ? (
-                  <AlertCircle
-                    className="h-3.5 w-3.5 text-muted-foreground"
-                    aria-label={t("club.testi.dato_non_disponibile")}
-                  />
+                  <span
+                    className="inline-flex items-center gap-1 text-[11px] text-muted-foreground"
+                    title={t("club.testi.dato_non_disponibile")}
+                  >
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    {t("club.testi.dato_non_disponibile")}
+                  </span>
                 ) : tab_completa[tb.value] ? (
                   <CheckCircle2 className="h-3.5 w-3.5 text-success" />
                 ) : (
@@ -1029,6 +1053,11 @@ const ClubSetupPage: React.FC = () => {
         {/* ══ GHIACCIO E PLANNING ══ */}
         <TabsContent value="ghiaccio" className="space-y-4">
         <SetupSection id="gh_parametri" titolo={t("club.sezioni.ghiaccio_planning")}>
+        {loading_config && (
+          <div className="bg-muted/40 border border-border rounded-lg p-3 mb-3">
+            <p className="text-sm text-muted-foreground">{t("club.testi.config_ghiaccio_in_caricamento")}</p>
+          </div>
+        )}
         {errore_config && (
           <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 mb-3 space-y-2">
             <p className="text-sm text-destructive">{t("club.toast.config_ghiaccio_non_letta")}</p>
@@ -1129,7 +1158,7 @@ const ClubSetupPage: React.FC = () => {
             </Field>
           </div>
           <div className="flex justify-end mt-4">
-            <Button onClick={handle_save_private} disabled={saving_private || errore_config}>
+            <Button onClick={handle_save_private} disabled={saving_private || !config_pronta}>
               {saving_private ? t("club.azioni.salvataggio") : t("club.azioni.salva_config_private")}
             </Button>
           </div>

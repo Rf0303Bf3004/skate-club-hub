@@ -129,15 +129,19 @@ const AnnullaCorsoDialog: React.FC<Props> = ({
       // 3) Conta iscritti e crea comunicazione
       let avviso_inviato = true;
       try {
-        const { count } = await supabase
+        const { count, error: count_err } = await supabase
           .from("iscrizioni_corsi")
           .select("id", { count: "exact", head: true })
           .eq("corso_id", corso_id_target)
           .eq("attiva", true);
 
+        // Lettura non riuscita: non si può concludere che non ci sia nessuno da avvisare.
+        if (count_err) throw count_err;
+
         if ((count ?? 0) > 0) {
           const club_id = await get_current_club_id();
-          if (club_id) {
+          if (!club_id) throw new Error("club_id non disponibile");
+          {
             const data_it = format_data_it(data);
             const testo = tk("com_testo", { corso: corso_nome, data: data_it, motivo: motivo.trim(), interpolation: { escapeValue: false } });
             const { error: com_err } = await supabase.from("comunicazioni").insert({
@@ -177,6 +181,7 @@ const AnnullaCorsoDialog: React.FC<Props> = ({
 
       // Il corso resta annullato: il messaggio finale però dice la verità sull'avviso.
       if (avviso_inviato) toast.success(tk("ok"));
+      else toast.warning(i18n.t("avviso_corso_annullato_non_inviato", { ns: "errors" }) as string);
       on_done(final_id, motivo.trim());
       set_motivo("");
       on_close();

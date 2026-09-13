@@ -84,6 +84,8 @@
     "toast": {
       "atleti_lettura_fallita": "Échec de la lecture des athlètes existants",
       "livelli_lettura_fallita": "Échec de la lecture des niveaux"
-    }
+    },
+    "attesa_atleti": "Lecture des athlètes existants en cours : patientez avant de continuer.",
+    "avviso_livelli": "Impossible de vérifier les niveaux : l'import peut continuer, les niveaux non reconnus resteront vides."
   }
 }

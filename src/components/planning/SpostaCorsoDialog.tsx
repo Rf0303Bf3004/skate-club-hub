@@ -190,15 +190,19 @@ const SpostaCorsoDialog: React.FC<Props> = ({
       // 3. Comunicazione agli iscritti
       let avviso_inviato = true;
       try {
-        const { count } = await supabase
+        const { count, error: count_err } = await supabase
           .from("iscrizioni_corsi")
           .select("id", { count: "exact", head: true })
           .eq("corso_id", planning_corso.corso_id)
           .eq("attiva", true);
 
+        // Lettura non riuscita: non si può concludere che non ci sia nessuno da avvisare.
+        if (count_err) throw count_err;
+
         if ((count ?? 0) > 0) {
           const club_id = await get_current_club_id();
-          if (club_id) {
+          if (!club_id) throw new Error("club_id non disponibile");
+          {
             const data_old_it = format_data_it(planning_corso.data);
             const data_new_it = format_data_it(new_data);
             const testo = tk("com_testo", { corso: planning_corso.nome, data_old: data_old_it, data_new: data_new_it, inizio: ora_inizio, fine: ora_fine, interpolation: { escapeValue: false } });
@@ -239,6 +243,7 @@ const SpostaCorsoDialog: React.FC<Props> = ({
 
       // Lo spostamento è comunque avvenuto: il messaggio verde solo se l'avviso è partito.
       if (avviso_inviato) toast.success(tk("ok"));
+      else toast.warning(i18n.t("avviso_corso_spostato_non_inviato", { ns: "errors" }) as string);
       on_done(inserted.id, planning_corso.id, new_data, ora_inizio);
       on_close();
     } catch (e: any) {

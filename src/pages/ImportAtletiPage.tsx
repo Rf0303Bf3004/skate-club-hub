@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -233,44 +233,51 @@ const ImportAtletiPage: React.FC = () => {
   const file_input_ref = useRef<HTMLInputElement>(null);
 
   // Fetch livelli ufficiali (tabella globale, senza club_id)
-  const {
-    data: livelli_db = [],
-    isError: livelli_errore,
-    refetch: ricarica_livelli,
-  } = useQuery({
+  const livelli_query = useQuery({
     queryKey: ["livelli_import"],
     queryFn: async () => {
       const { data, error } = await supabase.from("livelli").select("nome").eq("attivo", true);
-      if (error) {
-        await segnala_errore("ImportAtletiPage", ti("toast.livelli_lettura_fallita"), error);
-        throw error;
-      }
+      if (error) throw error;
       return (data ?? []).map((l: any) => norm_string(l.nome)).filter(Boolean);
     },
   });
+  const livelli_db = livelli_query.data ?? [];
+  const livelli_errore = livelli_query.isError;
+  const ricarica_livelli = livelli_query.refetch;
 
   // Fetch atleti del club per match duplicati
-  const {
-    data: atleti_db = [],
-    isError: atleti_errore,
-    refetch: ricarica_atleti,
-  } = useQuery({
+  const atleti_query = useQuery({
     queryKey: ["atleti_import_match", club_id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("atleti")
         .select("id, nome, cognome, data_nascita, telefono, genitore1_email, livello_attuale, sesso")
         .eq("club_id", club_id);
-      if (error) {
-        await segnala_errore("ImportAtletiPage", ti("toast.atleti_lettura_fallita"), error);
-        throw error;
-      }
+      if (error) throw error;
       return data ?? [];
     },
   });
+  const atleti_db = atleti_query.data ?? [];
+  const atleti_errore = atleti_query.isError;
+  const ricarica_atleti = atleti_query.refetch;
+  // La lettura è "pronta" solo se è riuscita davvero: un elenco vuoto per errore
+  // classificherebbe tutte le righe come nuove e duplicherebbe l'anagrafica.
+  const atleti_pronti = atleti_query.isSuccess;
 
-  // Se una delle due letture fallisce l'import non è sicuro: si ferma tutto.
-  const lettura_fallita = atleti_errore || livelli_errore;
+  // Segnalazione una sola volta a tentativi esauriti, non dentro la queryFn.
+  useEffect(() => {
+    if (livelli_query.error) {
+      void segnala_errore("ImportAtletiPage", ti("toast.livelli_lettura_fallita"), livelli_query.error, undefined, "avviso");
+    }
+  }, [livelli_query.error]);
+  useEffect(() => {
+    if (atleti_query.error) {
+      void segnala_errore("ImportAtletiPage", ti("toast.atleti_lettura_fallita"), atleti_query.error);
+    }
+  }, [atleti_query.error]);
+
+  // Solo la lettura degli atleti blocca: i livelli sono facoltativi e degradano con grazia.
+  const lettura_fallita = atleti_errore;
   const atleti_index = useMemo(() => {
     const m = new Map<string, any>();
     for (const a of atleti_db as any[]) {
@@ -392,6 +399,13 @@ const ImportAtletiPage: React.FC = () => {
     set_step(3);
   }, [rows, mapping, livelli_db, atleti_index]);
 
+  // Se l'elenco atleti (o dei livelli) arriva dopo la classificazione, la rifacciamo:
+  // altrimenti resterebbe in giro uno snapshot costruito su un elenco vuoto.
+  useEffect(() => {
+    if (step === 3 && parsed.length > 0 && atleti_pronti) build_parsed();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [atleti_index, livelli_db.length]);
+
   const counts = useMemo(() => ({
     nuovi: parsed.filter((p) => p.status === "nuovo").length,
     aggiornamenti: parsed.filter((p) => p.status === "aggiornamento").length,
@@ -401,8 +415,8 @@ const ImportAtletiPage: React.FC = () => {
 
   // ── STEP 4: import ──
   const run_import = async () => {
-    if (lettura_fallita) {
-      toast.error(atleti_errore ? ti("blocco_atleti") : ti("blocco_livelli"));
+    if (!atleti_pronti) {
+      toast.error(ti("blocco_atleti"));
       return;
     }
     set_importing(true);
@@ -482,17 +496,24 @@ const ImportAtletiPage: React.FC = () => {
 
       {lettura_fallita && (
         <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 space-y-2">
-          <p className="text-sm font-semibold text-destructive">
-            {atleti_errore ? t("import.blocco_atleti") : t("import.blocco_livelli")}
-          </p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              if (atleti_errore) ricarica_atleti();
-              if (livelli_errore) ricarica_livelli();
-            }}
-          >
+          <p className="text-sm font-semibold text-destructive">{t("import.blocco_atleti")}</p>
+          <Button variant="outline" size="sm" onClick={() => ricarica_atleti()}>
+            {t("import.riprova")}
+          </Button>
+        </div>
+      )}
+
+      {!lettura_fallita && !atleti_pronti && (
+        <div className="bg-muted/40 border border-border rounded-xl p-4 flex items-center gap-2">
+          <Loader2 className="w-4 h-4 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">{t("import.attesa_atleti")}</p>
+        </div>
+      )}
+
+      {livelli_errore && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
+          <p className="text-sm text-amber-800">{t("import.avviso_livelli")}</p>
+          <Button variant="outline" size="sm" onClick={() => ricarica_livelli()}>
             {t("import.riprova")}
           </Button>
         </div>
@@ -573,7 +594,7 @@ const ImportAtletiPage: React.FC = () => {
           </div>
           <div className="flex justify-between">
             <Button variant="outline" onClick={() => set_step(1)}><ArrowLeft className="w-4 h-4 mr-2" /> {t("import.back")}</Button>
-            <Button disabled={!mapping_valido || lettura_fallita} onClick={build_parsed}>
+            <Button disabled={!mapping_valido || !atleti_pronti} onClick={build_parsed}>
               {t("import.continue")} <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
@@ -652,7 +673,7 @@ const ImportAtletiPage: React.FC = () => {
             <Button variant="outline" onClick={() => set_step(2)} disabled={importing}>
               <ArrowLeft className="w-4 h-4 mr-2" /> Indietro
             </Button>
-            <Button onClick={run_import} disabled={importing || lettura_fallita || (counts.nuovi + counts.aggiornamenti) === 0}>
+            <Button onClick={run_import} disabled={importing || !atleti_pronti || (counts.nuovi + counts.aggiornamenti) === 0}>
               <CheckCircle2 className="w-4 h-4 mr-2" />
               {t("import.do_import", { count: counts.nuovi + counts.aggiornamenti })}
             </Button>

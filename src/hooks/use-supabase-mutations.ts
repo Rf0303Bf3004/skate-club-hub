@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase, get_current_club_id } from "@/lib/supabase";
+import i18n from "@/i18n";
 
 function cid() {
   return get_current_club_id();
@@ -692,7 +693,9 @@ export function use_crea_lezione_privata() {
         ora_fine: null as any,
       }).select("id").single();
       if (corso_error) {
-        throw new Error(`Lezione creata, ma il corso collegato non è stato creato: ${corso_error.message}`);
+        throw new Error(
+          `${i18n.t("lezione_privata_corso_non_creato", { ns: "errors" })} ${corso_error.message}`,
+        );
       }
       if (new_corso && data.istruttore_id) {
         const { error: ci_error } = await supabase.from("corsi_istruttori").insert({
@@ -700,7 +703,9 @@ export function use_crea_lezione_privata() {
           istruttore_id: data.istruttore_id,
         });
         if (ci_error) {
-          throw new Error(`Lezione creata, ma l'istruttore non è stato collegato al corso: ${ci_error.message}`);
+          throw new Error(
+            `${i18n.t("lezione_privata_istruttore_non_collegato", { ns: "errors" })} ${ci_error.message}`,
+          );
         }
       }
 
@@ -713,7 +718,9 @@ export function use_crea_lezione_privata() {
           .eq("data_lunedi", data_lunedi)
           .maybeSingle();
         if (settimana_error) {
-          throw new Error(`Lezione creata, ma non è stato possibile collocarla nel planning: ${settimana_error.message}`);
+          throw new Error(
+            `${i18n.t("lezione_privata_planning_non_collocata", { ns: "errors" })} ${settimana_error.message}`,
+          );
         }
 
 
@@ -756,7 +763,9 @@ export function use_crea_lezione_privata() {
       qc.invalidateQueries({ queryKey: ["corsi"] });
       return lezione;
     },
-    onSuccess: async () => {
+    // onSettled: la lezione può essere già stata scritta anche quando un passo
+    // successivo fallisce, quindi l'elenco va aggiornato in ogni caso.
+    onSettled: async () => {
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["lezioni_private"] }),
         qc.invalidateQueries({ queryKey: ["corsi"] }),
