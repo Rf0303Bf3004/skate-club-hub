@@ -232,22 +232,8 @@ const AtletaModal: React.FC<{
     }
   };
 
-  const handle_disco_upload = async (file: File) => {
-    set_uploading_disco(true);
-    try {
-      const ext = file.name.split(".").pop();
-      const path = `${get_current_club_id()}/${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("dischi-musicali").upload(path, file, { upsert: true });
-      if (error) throw error;
-      const { data } = supabase.storage.from("dischi-musicali").getPublicUrl(path);
-      set_val("disco_url", data.publicUrl);
-      toast({ title: t("toast.disc_uploaded") });
-    } catch (err: any) {
-      toast({ title: t("toast.disc_upload_error"), description: err?.message, variant: "destructive" });
-    } finally {
-      set_uploading_disco(false);
-    }
-  };
+  // Caricamento disco rimosso: i programmi musicali si gestiscono dalla scheda atleta,
+  // su bucket privato con collegamenti firmati.
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -428,23 +414,7 @@ const AtletaModal: React.FC<{
                 />
               </Field>
 
-              <Field label={t("modal.disc_file")}>
-                <div className="flex items-center gap-3">
-                  {form.disco_url && <audio controls src={form.disco_url} className="h-8 flex-1" />}
-                  <label
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border border-border cursor-pointer hover:bg-muted/30 text-sm text-muted-foreground transition-colors ${uploading_disco ? "opacity-50 pointer-events-none" : ""}`}
-                  >
-                    <Upload className="w-4 h-4" />
-                    {uploading_disco ? t("modal.uploading") : form.disco_url ? t("modal.replace") : t("modal.upload_audio")}
-                    <input
-                      type="file"
-                      accept="audio/*"
-                      className="hidden"
-                      onChange={(e) => e.target.files?.[0] && handle_disco_upload(e.target.files[0])}
-                    />
-                  </label>
-                </div>
-              </Field>
+              {/* I dischi si gestiscono nella scheda dell'atleta (bucket privato, collegamenti firmati). */}
             </>
           )}
 

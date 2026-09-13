@@ -45,6 +45,7 @@ import CompensoStaffModal from "@/components/CompensoStaffModal";
 import FotoAtleta from "@/components/common/FotoAtleta";
 import { usePermessiAzione } from "@/hooks/use-permessi-azione";
 import NotaPermesso from "@/components/common/NotaPermesso";
+import ProgrammiMusicaliSection from "@/components/atleti/ProgrammiMusicaliSection";
 
 interface Props {
   atleta: any;
@@ -500,22 +501,8 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
     }
   };
 
-  const handle_disco_upload = async (file: File) => {
-    set_uploading_disco(true);
-    try {
-      const ext = file.name.split(".").pop();
-      const path = `${get_current_club_id()}/${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("dischi-musicali").upload(path, file, { upsert: true });
-      if (error) throw error;
-      const { data } = supabase.storage.from("dischi-musicali").getPublicUrl(path);
-      upd("disco_url", data.publicUrl);
-      toast({ title: td("detail.toast_disc_uploaded") });
-    } catch (err: any) {
-      toast({ title: td("detail.toast_disc_error"), description: err?.message, variant: "destructive" });
-    } finally {
-      set_uploading_disco(false);
-    }
-  };
+  // I dischi ora vivono in `programmi_musicali` (bucket privato, collegamenti firmati):
+  // vedi ProgrammiMusicaliSection. Il vecchio caricamento pubblico è stato rimosso.
 
   const handle_marca_verificato = async () => {
     set_verifying(true);
@@ -1091,27 +1078,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                   className="h-9"
                 />
               </div>
-              <div className="space-y-2">
-                <Label className="text-sm text-muted-foreground">{td("detail.disc_file")}</Label>
-                {form.disco_url && (
-                  <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg">
-                    <Music className="w-4 h-4 text-primary flex-shrink-0" />
-                    <audio controls src={form.disco_url} className="flex-1 h-8" />
-                  </div>
-                )}
-                <label
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border border-border cursor-pointer hover:bg-muted/30 text-sm text-muted-foreground transition-colors w-fit ${uploading_disco ? "opacity-50 pointer-events-none" : ""}`}
-                >
-                  <Upload className="w-4 h-4" />
-                  {uploading_disco ? td("detail.uploading") : form.disco_url ? td("detail.replace_disc") : td("detail.upload_disc")}
-                  <input
-                    type="file"
-                    accept="audio/*"
-                    className="hidden"
-                    onChange={(e) => e.target.files?.[0] && handle_disco_upload(e.target.files[0])}
-                  />
-                </label>
-              </div>
+              {a?.id && <ProgrammiMusicaliSection atleta_id={a.id} />}
               <div className="space-y-1.5">
                 <Label className="text-sm text-muted-foreground">{t("note")}</Label>
                 <Textarea value={form.note || ""} onChange={(e) => upd("note", e.target.value)} />

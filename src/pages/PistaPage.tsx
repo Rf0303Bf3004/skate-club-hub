@@ -1,9 +1,12 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { Maximize2, Minimize2 } from "lucide-react";
+import { Maximize2, Minimize2, Music, StickyNote } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import LettoreDisco from "@/components/musica/LettoreDisco";
+import { use_programmi_atleti, type ProgrammaMusicale } from "@/hooks/use-programmi-musicali";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -96,6 +99,15 @@ const PistaPage: React.FC = () => {
   const [in_attesa, set_in_attesa] = React.useState<{ tipo: "sessione" | "istruttore"; id: string } | null>(null);
   const [schermo_intero, set_schermo_intero] = React.useState(false);
   const [ripreso, set_ripreso] = React.useState(false);
+  const [momento, set_momento] = React.useState<"appello" | "in_pista">("appello");
+  const [programma_attivo, set_programma_attivo] = React.useState<{
+    programma: ProgrammaMusicale;
+    titolo: string;
+  } | null>(null);
+  const [scelta_disco, set_scelta_disco] = React.useState<{
+    titolo: string;
+    programmi: ProgrammaMusicale[];
+  } | null>(null);
 
   React.useEffect(() => {
     const timer = window.setInterval(() => set_adesso(new Date()), 60_000);
@@ -292,6 +304,26 @@ const PistaPage: React.FC = () => {
 
   const lista_pronta = !atleti_query.isLoading && !atleti_query.isFetching && !atleti_query.error && atleti.length > 0;
 
+  // Momento "in pista": solo le presenti, con il disco. L'appello resta correggibile.
+  const presenti = React.useMemo(
+    () => atleti.filter((a) => !assenti.has(a.atleta_id)),
+    [atleti, assenti],
+  );
+  const ids_presenti = React.useMemo(() => presenti.map((a) => a.atleta_id), [presenti]);
+  const programmi_query = use_programmi_atleti(momento === "in_pista" ? ids_presenti : []);
+  const programmi_per_atleta = React.useMemo(() => {
+    const mappa = new Map<string, ProgrammaMusicale[]>();
+    for (const p of programmi_query.data ?? []) {
+      if (!p.file_path) continue;
+      if (!mappa.has(p.atleta_id)) mappa.set(p.atleta_id, []);
+      mappa.get(p.atleta_id)!.push(p);
+    }
+    return mappa;
+  }, [programmi_query.data]);
+
+  const apri_lettore = (programma: ProgrammaMusicale, titolo: string) =>
+    set_programma_attivo({ programma, titolo });
+
   const alterna = (atleta_id: string) => {
     set_assenti((precedenti) => {
       const prossimi = new Set(precedenti);
@@ -309,6 +341,9 @@ const PistaPage: React.FC = () => {
     set_modificato(false);
     set_registrato_alle(null);
     set_ripreso(false);
+    set_momento("appello");
+    set_programma_attivo(null);
+    set_scelta_disco(null);
   };
 
   const applica_sessione = (id: string) => {
@@ -355,6 +390,9 @@ const PistaPage: React.FC = () => {
       set_modificato(false);
       set_ripreso(false);
       cancella_bozza(sessione_id);
+      // Dopo l'appello la schermata passa alle sole presenti (momento "in pista").
+      set_momento("in_pista");
+      void atleti_query.refetch();
       toast({ title: t("pista.salvato_titolo") });
     } catch (errore) {
       segnala_errore("PistaPage", t("pista.registra_appello"), errore);
@@ -374,46 +412,102 @@ const PistaPage: React.FC = () => {
 
   const compleanni = compleanni_query.data ?? [];
 
+  const lista_appello = () => (
+    <div className="mt-4 space-y-6 pb-32">
+      {gruppi.map((gruppo) => (
+        <div key={gruppo.chiave}>
+          {gruppo.titolo && (
+            <h2 className="mb-2 text-lg font-bold uppercase tracking-wide text-muted-foreground">{gruppo.titolo}</h2>
+          )}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {gruppo.atleti.map((atleta) => {
+              const assente = assenti.has(atleta.atleta_id);
+              return (
+                <button
+                  key={atleta.atleta_id}
+                  onClick={() => alterna(atleta.atleta_id)}
+                  className={`flex min-h-[56px] w-full items-center justify-between gap-3 rounded-xl border-2 px-4 py-3 text-left text-base transition-colors ${
+                    assente
+                      ? "border-destructive bg-destructive/15 text-muted-foreground"
+                      : "border-border bg-card text-foreground hover:bg-muted"
+                  }`}
+                >
+                  <span className={`text-lg font-semibold ${assente ? "line-through" : ""}`}>
+                    {atleta.cognome} {atleta.nome}
+                  </span>
+                  {atleta.stato === "avvisato" && (
+                    <span className="shrink-0 rounded-full border border-border px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                      {t("pista.avvisato")}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  const lista_in_pista = () => {
+    if (presenti.length === 0) return <MessaggioCentrale testo={t("pista.nessuna_presente")} />;
+    return (
+      <div className="mt-4 space-y-3 pb-56">
+        {programmi_query.isError && (
+          <p className="rounded-lg border border-destructive bg-destructive/10 px-4 py-2 text-base text-destructive">
+            {t("musica.errore_programmi")}
+          </p>
+        )}
+        {presenti.map((atleta) => {
+          const titolo = `${atleta.cognome} ${atleta.nome}`;
+          const suoi = programmi_per_atleta.get(atleta.atleta_id) ?? [];
+          return (
+            <div
+              key={atleta.atleta_id}
+              className="flex min-h-[72px] items-center justify-between gap-4 rounded-xl border-2 border-border bg-card px-4 py-3"
+            >
+              <span className="truncate text-xl font-semibold">{titolo}</span>
+              <div className="flex shrink-0 items-center gap-2">
+                {/* Nota rapida: non c'è ancora dove salvarla */}
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="h-12"
+                  disabled
+                  title={t("pista.prossimamente")}
+                >
+                  <StickyNote className="mr-2 h-5 w-5" />
+                  {t("pista.nota_rapida")}
+                </Button>
+                {suoi.length > 0 ? (
+                  <Button
+                    size="lg"
+                    className="h-12 min-w-[120px]"
+                    onClick={() => {
+                      if (suoi.length === 1) apri_lettore(suoi[0], titolo);
+                      else set_scelta_disco({ titolo, programmi: suoi });
+                    }}
+                  >
+                    <Music className="mr-2 h-5 w-5" />
+                    {t("musica.disco")}
+                  </Button>
+                ) : (
+                  // Chi non ha programmi caricati mostra il posto vuoto, non un errore.
+                  <span className="inline-block h-12 min-w-[120px]" aria-hidden="true" />
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   const lista_atlete = () => {
     if (atleti_query.isLoading) return <Caricamento />;
     if (atleti_query.error) return <MessaggioCentrale variante="errore" testo={(atleti_query.error as Error).message} />;
     if (atleti.length === 0) return <MessaggioCentrale testo={t("pista.nessuna_atleta")} />;
-    return (
-      <div className="mt-4 space-y-6 pb-32">
-        {gruppi.map((gruppo) => (
-          <div key={gruppo.chiave}>
-            {gruppo.titolo && (
-              <h2 className="mb-2 text-lg font-bold uppercase tracking-wide text-muted-foreground">{gruppo.titolo}</h2>
-            )}
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {gruppo.atleti.map((atleta) => {
-                const assente = assenti.has(atleta.atleta_id);
-                return (
-                  <button
-                    key={atleta.atleta_id}
-                    onClick={() => alterna(atleta.atleta_id)}
-                    className={`flex min-h-[56px] w-full items-center justify-between gap-3 rounded-xl border-2 px-4 py-3 text-left text-base transition-colors ${
-                      assente
-                        ? "border-destructive bg-destructive/15 text-muted-foreground"
-                        : "border-border bg-card text-foreground hover:bg-muted"
-                    }`}
-                  >
-                    <span className={`text-lg font-semibold ${assente ? "line-through" : ""}`}>
-                      {atleta.cognome} {atleta.nome}
-                    </span>
-                    {atleta.stato === "avvisato" && (
-                      <span className="shrink-0 rounded-full border border-border px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                        {t("pista.avvisato")}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
-    );
+    return momento === "appello" ? lista_appello() : lista_in_pista();
   };
 
   const contatore = (
@@ -622,14 +716,25 @@ const PistaPage: React.FC = () => {
           className={`${schermo_intero ? "absolute" : "sticky"} inset-x-0 bottom-0 z-20 border-t border-border bg-background p-3`}
         >
           <div className="mx-auto flex max-w-5xl flex-col gap-1">
-            <Button
-              size="lg"
-              className="h-16 w-full text-lg font-bold"
-              disabled={salvataggio || !sessione_id || !lista_pronta}
-              onClick={registra}
-            >
-              {salvataggio ? t("pista.registrazione_in_corso") : t("pista.registra_appello")}
-            </Button>
+            {momento === "appello" ? (
+              <Button
+                size="lg"
+                className="h-16 w-full text-lg font-bold"
+                disabled={salvataggio || !sessione_id || !lista_pronta}
+                onClick={registra}
+              >
+                {salvataggio ? t("pista.registrazione_in_corso") : t("pista.registra_appello")}
+              </Button>
+            ) : (
+              <Button
+                size="lg"
+                variant="outline"
+                className="h-16 w-full text-lg font-bold"
+                onClick={() => set_momento("appello")}
+              >
+                {t("pista.correggi_appello")}
+              </Button>
+            )}
             {registrato_alle && (
               <p className="text-center text-sm text-muted-foreground">
                 {t("pista.registrato_alle", { ora: registrato_alle })}
@@ -665,6 +770,41 @@ const PistaPage: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Scelta del programma quando l'atleta ne ha più di uno */}
+      <Dialog open={!!scelta_disco} onOpenChange={(aperto) => !aperto && set_scelta_disco(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{scelta_disco?.titolo ?? ""}</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-2">
+            {(scelta_disco?.programmi ?? []).map((p) => (
+              <Button
+                key={p.id}
+                size="lg"
+                variant="outline"
+                className="h-14 justify-start"
+                onClick={() => {
+                  apri_lettore(p, scelta_disco!.titolo);
+                  set_scelta_disco(null);
+                }}
+              >
+                <Music className="mr-2 h-5 w-5" />
+                {t(`musica.tipo_${p.tipo}`, { defaultValue: p.tipo })}
+                {p.titolo_brano ? ` · ${p.titolo_brano}` : ""}
+              </Button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {programma_attivo && (
+        <LettoreDisco
+          programma={programma_attivo.programma}
+          titolo_atleta={programma_attivo.titolo}
+          onClose={() => set_programma_attivo(null)}
+        />
+      )}
     </div>
   );
 };

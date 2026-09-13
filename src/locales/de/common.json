@@ -266,7 +266,11 @@
     "conferma_cambio_istruttore_testo": "Sie haben Abwesenheiten markiert, ohne sie zu speichern. Beim Wechsel der Trainerin bzw. des Trainers gehen sie verloren.",
     "conferma_cambio_istruttore_azione": "Trainer wechseln",
     "compleanno_persona_senza_anni": "{{nome}} {{cognome}}",
-    "ripresa_bozza": "Die noch nicht gespeicherten Meldungen wurden wiederhergestellt."
+    "ripresa_bozza": "Die noch nicht gespeicherten Meldungen wurden wiederhergestellt.",
+    "correggi_appello": "Anwesenheit korrigieren",
+    "nessuna_presente": "In dieser Einheit ist keine Athletin anwesend.",
+    "nota_rapida": "Kurze Notiz",
+    "prossimamente": "Demnächst"
   },
   "richieste_private": {
     "titolo": "Anfragen für Privatlektionen",
@@ -321,5 +325,38 @@
     "ritirata_ok": "Anfrage zurückgezogen",
     "risposta_club": "Antwort des Clubs",
     "nessun_istruttore": "Die Liste der Lehrpersonen ist nicht verfügbar: die Anfrage wird ohne Präferenz gesendet."
+  },
+  "musica": {
+    "ascolta": "Anhören",
+    "attivo": "Aktiv",
+    "carica_disco": "Musik hochladen",
+    "caricamento_disco": "Wird hochgeladen…",
+    "caricamento_punti": "Stellen werden geladen…",
+    "chiudi_lettore": "Player schliessen",
+    "dischi": "Musikprogramme",
+    "disco": "Musik",
+    "disco_caricato": "Musik hochgeladen",
+    "elimina_disco": "Musik löschen",
+    "elimina_disco_conferma": "Die Datei und die markierten Stellen werden gelöscht.",
+    "errore_collegamento": "Die Audiodatei konnte nicht geöffnet werden.",
+    "errore_programmi": "Die Musikprogramme konnten nicht gelesen werden. Die Liste ist nicht verfügbar: Das heisst nicht, dass es keine gibt.",
+    "errore_punti": "Die Programmstellen konnten nicht gelesen werden.",
+    "errore_riproduzione": "Die Wiedergabe ist nicht gestartet.",
+    "ferma_ripetizione": "Wiederholung stoppen",
+    "indietro_10": "−10 s",
+    "nessun_disco": "Keine Musik hochgeladen",
+    "nessun_punto": "Keine Stelle markiert.",
+    "nome_punto": "Name der Stelle",
+    "pausa": "Pause",
+    "play": "Abspielen",
+    "riprova": "Erneut versuchen",
+    "segna_punto": "Stelle markieren",
+    "senza_titolo": "Ohne Titel",
+    "tipo": "Typ",
+    "tipo_corto": "Kurzprogramm",
+    "tipo_esibizione": "Schaulaufen",
+    "tipo_gala": "Gala",
+    "tipo_libero": "Kürprogramm",
+    "titolo_brano": "Titel des Stücks"
   }
 }

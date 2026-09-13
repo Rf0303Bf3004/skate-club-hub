@@ -349,7 +349,11 @@
     "conferma_cambio_istruttore_testo": "Hai segnato delle assenze senza registrarle. Cambiando istruttore andranno perse.",
     "conferma_cambio_istruttore_azione": "Cambia istruttore",
     "compleanno_persona_senza_anni": "{{nome}} {{cognome}}",
-    "ripresa_bozza": "Ripresa la segnalazione non ancora registrata."
+    "ripresa_bozza": "Ripresa la segnalazione non ancora registrata.",
+    "correggi_appello": "Correggi l'appello",
+    "nessuna_presente": "Nessuna atleta presente in questa sessione.",
+    "nota_rapida": "Nota rapida",
+    "prossimamente": "Prossimamente"
   },
   "richieste_private": {
     "titolo": "Richieste di lezione privata",
@@ -404,5 +408,38 @@
     "ritirata_ok": "Richiesta ritirata",
     "risposta_club": "Risposta del club",
     "nessun_istruttore": "L'elenco degli istruttori non è disponibile: la richiesta verrà inviata senza preferenza."
+  },
+  "musica": {
+    "ascolta": "Ascolta",
+    "attivo": "Attivo",
+    "carica_disco": "Carica un disco",
+    "caricamento_disco": "Caricamento…",
+    "caricamento_punti": "Caricamento dei punti…",
+    "chiudi_lettore": "Chiudi il lettore",
+    "dischi": "Dischi",
+    "disco": "Disco",
+    "disco_caricato": "Disco caricato",
+    "elimina_disco": "Elimina il disco",
+    "elimina_disco_conferma": "Il file e i punti segnati verranno eliminati.",
+    "errore_collegamento": "Non è stato possibile aprire il file audio.",
+    "errore_programmi": "Non è stato possibile leggere i dischi. L'elenco non è disponibile: non significa che non ce ne siano.",
+    "errore_punti": "Non è stato possibile leggere i punti del programma.",
+    "errore_riproduzione": "La riproduzione non è partita.",
+    "ferma_ripetizione": "Ferma la ripetizione",
+    "indietro_10": "−10 s",
+    "nessun_disco": "Nessun disco caricato",
+    "nessun_punto": "Nessun punto segnato.",
+    "nome_punto": "Nome del punto",
+    "pausa": "Pausa",
+    "play": "Avvia",
+    "riprova": "Riprova",
+    "segna_punto": "Segna un punto",
+    "senza_titolo": "Senza titolo",
+    "tipo": "Tipo",
+    "tipo_corto": "Programma corto",
+    "tipo_esibizione": "Esibizione",
+    "tipo_gala": "Galà",
+    "tipo_libero": "Programma libero",
+    "titolo_brano": "Titolo del brano"
   }
 }
