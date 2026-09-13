@@ -57,6 +57,10 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
   const [dialogo_punto, set_dialogo_punto] = React.useState(false);
   const [nome_punto, set_nome_punto] = React.useState("");
   const [salvataggio_punto, set_salvataggio_punto] = React.useState(false);
+  // Punto appena segnato di cui si può ancora indicare la fine (ripetizione).
+  const [punto_aperto, set_punto_aperto] = React.useState<PuntoProgramma | null>(null);
+  // Il rinnovo del collegamento non deve entrare in ciclo: due tentativi e basta.
+  const tentativi_firma = React.useRef(0);
 
   const punti_query = use_punti_programma(programma.id);
   const punti = punti_query.data ?? [];
