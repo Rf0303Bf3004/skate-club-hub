@@ -7,7 +7,7 @@ import { Navigate } from "react-router-dom";
 import { Shield, Save, Clock, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DashboardCardsPermessi from "@/components/ruoli-permessi/DashboardCardsPermessi";
-import { MENU_GRUPPI, MENU_SECTIONS, MENU_TOP } from "@/config/menuSections";
+import { FASCE_PERMESSI, MENU_SECTIONS } from "@/config/menuSections";
 
 import { useTranslation } from "react-i18next";
 
@@ -135,18 +135,9 @@ const RuoliPermessiPage: React.FC = () => {
     return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
   }
 
-  const fasce = [
-    {
-      id: "generale",
-      label: tc("menu_gruppo.generale", { defaultValue: "Generale" }),
-      voci: MENU_TOP,
-    },
-    ...MENU_GRUPPI.map((gruppo) => ({
-      id: gruppo.id,
-      label: tc(gruppo.label_key, { defaultValue: gruppo.label_fallback }),
-      voci: gruppo.voci,
-    })),
-  ];
+  // Unica fonte: FASCE_PERMESSI copre tutte le sezioni dei due blocchi.
+  const blocchi = FASCE_PERMESSI;
+
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -200,33 +191,43 @@ const RuoliPermessiPage: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {fasce.map((fascia) => (
-              <React.Fragment key={fascia.id}>
-                <tr className="bg-muted/20 border-b border-border">
-                  <td colSpan={1 + RUOLI.length} className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    {fascia.label}
+            {blocchi.map((blocco) => (
+              <React.Fragment key={blocco.blocco}>
+                <tr className="bg-primary/10 border-b-2 border-primary/30">
+                  <td colSpan={1 + RUOLI.length} className="px-4 py-3 text-sm font-extrabold uppercase tracking-widest text-primary">
+                    {tc(blocco.label_key, { defaultValue: blocco.label_fallback })}
                   </td>
                 </tr>
-                {fascia.voci.map((sezione, idx) => (
-                  <tr key={sezione.codice} className={`border-b border-border/50 ${idx % 2 === 0 ? "bg-background" : "bg-muted/10"}`}>
-                    <td className="px-4 py-3 text-sm font-medium text-foreground flex items-center gap-2">
-                      <sezione.icon className="w-4 h-4 text-muted-foreground" />
-                      {sezione.label}
-                    </td>
-                    {RUOLI.map((r) => (
-                      <td key={r.codice} className="px-3 py-3 text-center">
-                        <input
-                          type="checkbox"
-                          checked={matrix[r.codice]?.[sezione.codice] ?? false}
-                          onChange={() => toggle(r.codice, sezione.codice)}
-                          className="w-4 h-4 rounded border-gray-300 text-primary cursor-pointer accent-primary"
-                        />
+                {blocco.fasce.map((fascia) => (
+                  <React.Fragment key={fascia.id}>
+                    <tr className="bg-muted/20 border-b border-border">
+                      <td colSpan={1 + RUOLI.length} className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                        {tc(fascia.label_key, { defaultValue: fascia.label_fallback })}
                       </td>
+                    </tr>
+                    {fascia.voci.map((sezione, idx) => (
+                      <tr key={sezione.codice} className={`border-b border-border/50 ${idx % 2 === 0 ? "bg-background" : "bg-muted/10"}`}>
+                        <td className="px-4 py-3 text-sm font-medium text-foreground flex items-center gap-2">
+                          <sezione.icon className="w-4 h-4 text-muted-foreground" />
+                          {sezione.label}
+                        </td>
+                        {RUOLI.map((r) => (
+                          <td key={r.codice} className="px-3 py-3 text-center">
+                            <input
+                              type="checkbox"
+                              checked={matrix[r.codice]?.[sezione.codice] ?? false}
+                              onChange={() => toggle(r.codice, sezione.codice)}
+                              className="w-4 h-4 rounded border-gray-300 text-primary cursor-pointer accent-primary"
+                            />
+                          </td>
+                        ))}
+                      </tr>
                     ))}
-                  </tr>
+                  </React.Fragment>
                 ))}
               </React.Fragment>
             ))}
+
             {/* Permessi extra (sezioni interne, non in menu) */}
             <tr className="bg-muted/20 border-b border-border">
               <td colSpan={1 + RUOLI.length} className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">

@@ -236,7 +236,11 @@
     "persone": "People",
     "ghiaccio": "Ice",
     "soldi": "Administration",
-    "club": "The club"
+    "club": "The club",
+    "struttura": "The club",
+    "offerta": "Courses and coaches",
+    "sponsor_gruppo": "Sponsors",
+    "accessi": "Access and data"
   },
   "pista": {
     "nessuna_sessione": "There is no published session today.",
@@ -370,5 +374,9 @@
     "ripetizione_spiegazione": "After marking the start you can mark the end: the point becomes a loop.",
     "brano_non_disponibile": "The track is not available.",
     "in_preparazione": "In preparation"
+  },
+  "menu_blocco": {
+    "conduzione": "Operations",
+    "setup": "Setup"
   }
 }

@@ -11,7 +11,7 @@ import GlobalSearchPalette from "@/components/common/GlobalSearchPalette";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { use_count_iscrizioni_non_lette } from "@/components/comunicazioni/IscrizioniAtletiNotifiche";
-import { MENU_GRUPPI, MENU_TOP } from "@/config/menuSections";
+import { MENU_BLOCCHI, MENU_GRUPPI, MENU_TOP, gruppi_del_blocco, type MenuBlocco, type MenuGruppo } from "@/config/menuSections";
 import { registra_silenzioso } from "@/lib/errori";
 
 
@@ -120,8 +120,49 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
   const nuovo_top = MENU_TOP.filter((s) => visibile_set.has(s.codice));
 
+  // Voci scritte a mano, assegnate a un blocco e a un gruppo senza cambiarne le condizioni.
+  const extra_per_gruppo = React.useCallback((id: MenuGruppo) => ({
+    tabellone: id === "soldi" && visibile_set.has("fatture"),
+    utenti: id === "accessi" && can_manage_users && !visibile_set.has("gestione_utenti"),
+    convenzioni: id === "struttura" && !!session,
+    relazione: id === "struttura" && is_presidente,
+  }), [visibile_set, can_manage_users, session, is_presidente]);
+
+  const gruppo_ha_voci = React.useCallback((gruppo: typeof MENU_GRUPPI[number]) => {
+    const extra = extra_per_gruppo(gruppo.id);
+    return gruppo.voci.some((voce) => visibile_set.has(voce.codice))
+      || extra.tabellone || extra.utenti || extra.convenzioni || extra.relazione;
+  }, [extra_per_gruppo, visibile_set]);
+
+  const blocchi_visibili = React.useMemo(() => MENU_BLOCCHI.filter((blocco) => {
+    if (blocco.id === "conduzione" && nuovo_top.length > 0) return true;
+    return gruppi_del_blocco(blocco.id).some(gruppo_ha_voci);
+  }), [nuovo_top.length, gruppo_ha_voci]);
+
+  const [blocco_attivo, set_blocco_attivo] = React.useState<MenuBlocco>(() => {
+    try {
+      const salvato = localStorage.getItem("menu_blocco_attivo");
+      if (salvato === "setup" || salvato === "conduzione") return salvato;
+    } catch {
+      return "conduzione";
+    }
+    return "conduzione";
+  });
+
+  const cambia_blocco = (id: MenuBlocco) => {
+    set_blocco_attivo(id);
+    try {
+      localStorage.setItem("menu_blocco_attivo", id);
+    } catch {
+      // localStorage può non essere disponibile: lo stato in memoria resta operativo.
+    }
+  };
+
   const [nuovi_gruppi_aperti, set_nuovi_gruppi_aperti] = React.useState<Record<string, boolean>>(() => {
-    const defaults: Record<string, boolean> = { persone: true, ghiaccio: true, soldi: true, club: false };
+    const defaults: Record<string, boolean> = {
+      persone: true, ghiaccio: true, soldi: true,
+      struttura: true, offerta: true, sponsor_gruppo: false, accessi: false,
+    };
     for (const gruppo of MENU_GRUPPI) {
       try {
         const salvato = localStorage.getItem(`menu_gruppo_${gruppo.id}`);
@@ -141,12 +182,17 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     const gruppo_attivo = MENU_GRUPPI.find((gruppo) =>
       gruppo.voci.some((voce) => location.pathname === voce.path || (voce.path !== "/" && location.pathname.startsWith(voce.path)))
       || (gruppo.id === "soldi" && location.pathname.startsWith("/segreteria/fatture"))
-      || (gruppo.id === "club" && ["/utenti", "/convenzioni", "/presidente/relazione"].some((path) => location.pathname.startsWith(path)))
+      || (gruppo.id === "accessi" && location.pathname.startsWith("/utenti"))
+      || (gruppo.id === "struttura" && ["/convenzioni", "/presidente/relazione"].some((path) => location.pathname.startsWith(path)))
     );
     if (gruppo_attivo) {
       set_nuovi_gruppi_aperti((correnti) => correnti[gruppo_attivo.id]
         ? correnti
         : { ...correnti, [gruppo_attivo.id]: true });
+      // La rotta aperta può stare nell'altro blocco: il menu ci si sposta da solo.
+      set_blocco_attivo((corrente) => corrente === gruppo_attivo.blocco ? corrente : gruppo_attivo.blocco);
+    } else if (MENU_TOP.some((voce) => location.pathname === voce.path || (voce.path !== "/" && location.pathname.startsWith(voce.path)))) {
+      set_blocco_attivo((corrente) => corrente === "conduzione" ? corrente : "conduzione");
     }
   }, [location.pathname]);
 
@@ -161,6 +207,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       return { ...correnti, [id]: prossimo };
     });
   };
+
+  // Se il blocco memorizzato non ha voci per questo ruolo si ripiega su quello disponibile.
+  const blocco_corrente: MenuBlocco = blocchi_visibili.some((b) => b.id === blocco_attivo)
+    ? blocco_attivo
+    : (blocchi_visibili[0]?.id ?? "conduzione");
+
 
 
   const render_nav_item = (path: string, Icon: any, label: string, key: string, disabled?: boolean) => {
@@ -283,16 +335,34 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           {/* Nuovi ruoli: voci principali + gruppi operativi espandibili */}
           {is_nuovo_ruolo && (
             <>
-              {nuovo_top.map((s) => render_nav_item(s.path, s.icon, menu_label(s.codice, s.label), s.codice, s.non_implementato))}
-              {MENU_GRUPPI.map((gruppo) => {
+              {blocchi_visibili.length > 1 && (
+                <div className="grid grid-cols-2 gap-2 pb-3">
+                  {blocchi_visibili.map((blocco) => {
+                    const attivo = blocco.id === blocco_corrente;
+                    return (
+                      <button
+                        key={blocco.id}
+                        onClick={() => cambia_blocco(blocco.id)}
+                        aria-pressed={attivo}
+                        className={`py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all border ${attivo
+                          ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                          : "bg-background text-muted-foreground border-border hover:bg-muted hover:text-foreground"}`}
+                      >
+                        {tc(blocco.label_key, { defaultValue: blocco.label_fallback })}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {blocco_corrente === "conduzione" &&
+                nuovo_top.map((s) => render_nav_item(s.path, s.icon, menu_label(s.codice, s.label), s.codice, s.non_implementato))}
+              {gruppi_del_blocco(blocco_corrente).map((gruppo) => {
                 const voci_visibili = gruppo.voci.filter((voce) => visibile_set.has(voce.codice));
-                const mostra_tabellone = gruppo.id === "soldi" && visibile_set.has("fatture");
-                const mostra_utenti = gruppo.id === "club" && can_manage_users && !visibile_set.has("gestione_utenti");
-                const mostra_convenzioni = gruppo.id === "club" && !!session;
-                const mostra_relazione = gruppo.id === "club" && is_presidente;
+                const extra = extra_per_gruppo(gruppo.id);
+                const { tabellone: mostra_tabellone, utenti: mostra_utenti, convenzioni: mostra_convenzioni, relazione: mostra_relazione } = extra;
                 if (voci_visibili.length === 0 && !mostra_tabellone && !mostra_utenti && !mostra_convenzioni && !mostra_relazione) return null;
 
-                const aperto = nuovi_gruppi_aperti[gruppo.id] ?? gruppo.id !== "club";
+                const aperto = nuovi_gruppi_aperti[gruppo.id] ?? true;
                 const Icon = gruppo.icon;
                 return (
                   <div key={gruppo.id} className="pt-2">
@@ -325,6 +395,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               })}
             </>
           )}
+
 
           {can_manage_users && !is_superadmin && !is_menu_legacy && !is_nuovo_ruolo && (
             <NavLink to="/utenti" onClick={() => set_sidebar_open(false)}
