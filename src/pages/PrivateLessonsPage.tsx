@@ -977,7 +977,7 @@ const LezioniPrivatePage: React.FC = () => {
         const a = atleti.find((x: any) => x.id === aid);
         return a ? `${a.cognome} ${a.nome}`.trim() : "?";
       });
-      const creata: any = await crea_lezione.mutateAsync({
+      const esito: any = await crea_lezione.mutateAsync({
         istruttore_id: form_data.istruttore_id,
         data: form_data.data,
         ora_inizio: form_data.ora_inizio,
@@ -991,10 +991,21 @@ const LezioniPrivatePage: React.FC = () => {
         has_ice: form_data.has_ice !== false,
       });
       set_form_open(false);
-      toast({
-        title: form_data.ricorrente ? t("lezioni_private.toast.lezioni_ricorrenti_create") : t("lezioni_private.toast.lezione_prenotata"),
-      });
+      const creata: any = esito?.lezione;
+      const problemi: string[] = esito?.problemi ?? [];
+      if (problemi.length > 0) {
+        // Operazione riuscita a metà: mai il messaggio verde.
+        toast({
+          title: tc("richieste_private.creata_parziale"),
+          description: problemi.join(" · "),
+        });
+      } else {
+        toast({
+          title: form_data.ricorrente ? t("lezioni_private.toast.lezioni_ricorrenti_create") : t("lezioni_private.toast.lezione_prenotata"),
+        });
+      }
       const lezione_id: string | undefined = Array.isArray(creata) ? creata[0]?.id : creata?.id;
+      // La richiesta va collegata anche quando qualche passo successivo è fallito.
       if (richiesta_pendente && lezione_id) await collega_richiesta_a_lezione(lezione_id);
     } catch (err: any) {
       toast({
