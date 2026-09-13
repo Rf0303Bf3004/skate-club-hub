@@ -294,48 +294,73 @@ const GrigliaGhiaccioPage: React.FC = () => {
             </div>
           </div>
           <div className="flex items-end gap-2">
-            <div className="space-y-1">
-              <Label className="text-xs">Data</Label>
-              <div className="flex items-center gap-1">
-                <Button
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="h-10 w-10 shrink-0"
+                onClick={() => {
+                  cambia_giorno(-1);
+                  set_selettore_data_aperto(false);
+                }}
+                aria-label={t("griglia_nav.giorno_precedente")}
+                title={t("griglia_nav.giorno_precedente")}
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+              {selettore_data_aperto ? (
+                <div ref={ref_selettore_data} className="flex items-center">
+                  <DateInput
+                    value={data_sel}
+                    onChange={(v) => {
+                      if (v) {
+                        set_data_sel(v);
+                        set_selettore_data_aperto(false);
+                      }
+                    }}
+                    min_year={2020}
+                    max_year={2100}
+                    className="gap-1"
+                  />
+                </div>
+              ) : (
+                <button
                   type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-10 w-10 shrink-0"
-                  onClick={() => cambia_giorno(-1)}
-                  aria-label={t("griglia_nav.giorno_precedente")}
-                  title={t("griglia_nav.giorno_precedente")}
+                  onClick={() => set_selettore_data_aperto(true)}
+                  className="h-10 px-4 rounded-md border border-input bg-background text-base font-semibold hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-w-[220px] text-center"
+                  aria-label={t("griglia_nav.scegli_data")}
+                  title={t("griglia_nav.scegli_data")}
                 >
-                  <ChevronLeft className="h-5 w-5" />
-                </Button>
-                <DateInput
-                  value={data_sel}
-                  onChange={set_data_sel}
-                  min_year={2020}
-                  max_year={2100}
-                  className="gap-1"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-10 w-10 shrink-0"
-                  onClick={() => cambia_giorno(1)}
-                  aria-label={t("griglia_nav.giorno_successivo")}
-                  title={t("griglia_nav.giorno_successivo")}
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-10"
-                  disabled={data_sel === oggi_iso()}
-                  onClick={() => set_data_sel(oggi_iso())}
-                >
-                  {t("griglia_nav.oggi")}
-                </Button>
-              </div>
+                  {label_data(data_sel)}
+                </button>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="h-10 w-10 shrink-0"
+                onClick={() => {
+                  cambia_giorno(1);
+                  set_selettore_data_aperto(false);
+                }}
+                aria-label={t("griglia_nav.giorno_successivo")}
+                title={t("griglia_nav.giorno_successivo")}
+              >
+                <ChevronRight className="h-5 w-5" />
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10"
+                disabled={data_sel === oggi_iso()}
+                onClick={() => {
+                  set_data_sel(oggi_iso());
+                  set_selettore_data_aperto(false);
+                }}
+              >
+                {t("griglia_nav.oggi")}
+              </Button>
             </div>
             <label className="flex cursor-pointer items-center gap-2 pt-5 text-xs text-muted-foreground">
               <input
