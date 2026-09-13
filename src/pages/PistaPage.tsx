@@ -108,6 +108,12 @@ const PistaPage: React.FC = () => {
     titolo: string;
     programmi: ProgrammaMusicale[];
   } | null>(null);
+  const [nota_target, set_nota_target] = React.useState<{ atleta_id: string; titolo: string } | null>(null);
+  const [nota_testo, set_nota_testo] = React.useState("");
+  const [nota_salvataggio, set_nota_salvataggio] = React.useState(false);
+  const [note_aperte, set_note_aperte] = React.useState<{ atleta_id: string; titolo: string } | null>(null);
+  const [nota_in_eliminazione, set_nota_in_eliminazione] = React.useState<string | null>(null);
+
 
   React.useEffect(() => {
     const timer = window.setInterval(() => set_adesso(new Date()), 60_000);
