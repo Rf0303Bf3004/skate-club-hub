@@ -378,7 +378,7 @@ const ProgrammiMusicaliSection: React.FC<Props> = ({ atleta_id }) => {
             }`}
           >
             <Upload className="h-4 w-4" />
-            {caricamento ? t("musica.caricamento_disco") : t("musica.carica_disco")}
+            {caricamento ? t("musica.caricamento_disco") : t("musica.scegli_file_e_salva")}
             <input
               type="file"
               accept="audio/*"
