@@ -135,18 +135,9 @@ const RuoliPermessiPage: React.FC = () => {
     return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
   }
 
-  const fasce = [
-    {
-      id: "generale",
-      label: tc("menu_gruppo.generale", { defaultValue: "Generale" }),
-      voci: MENU_TOP,
-    },
-    ...MENU_GRUPPI.map((gruppo) => ({
-      id: gruppo.id,
-      label: tc(gruppo.label_key, { defaultValue: gruppo.label_fallback }),
-      voci: gruppo.voci,
-    })),
-  ];
+  // Unica fonte: FASCE_PERMESSI copre tutte le sezioni dei due blocchi.
+  const blocchi = FASCE_PERMESSI;
+
 
   return (
     <div className="space-y-6 animate-fade-in">
