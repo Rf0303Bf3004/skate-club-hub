@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { usePermessiSezioniMatrix } from "@/hooks/usePermessi";
@@ -36,7 +37,15 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { LayoutGrid, Printer, AlertTriangle, Columns3, Rows3, CalendarDays, CalendarRange, CalendarClock } from "lucide-react";
+import { LayoutGrid, Printer, AlertTriangle, Columns3, Rows3, CalendarDays, CalendarRange, CalendarClock, ChevronLeft, ChevronRight } from "lucide-react";
+import DateInput from "@/components/forms/DateInput";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+
+function sposta_giorno(data_iso: string, delta: number): string {
+  const d = new Date(`${data_iso}T00:00:00`);
+  d.setDate(d.getDate() + delta);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 
 function oggi_iso(): string {
   const d = new Date();
