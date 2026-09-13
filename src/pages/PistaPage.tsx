@@ -110,7 +110,13 @@ const PistaPage: React.FC = () => {
     if (modificato) return;
     if (scelta_manuale_istruttore && tab && (tab === TUTTO || istruttori.some((i) => i.istruttore_id === tab))) return;
     const scelta = (istruttori.find((i) => i.ha_sessione_in_corso) ?? istruttori[0]).istruttore_id;
-    if (scelta !== tab) applica_istruttore_auto(scelta);
+    if (scelta !== tab) {
+      // Anche il cambio automatico azzera l'appello e la sessione, come quello manuale.
+      azzera_appello();
+      set_tab(scelta);
+      set_sessione_id(null);
+      set_scelta_manuale(false);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [istruttori, tab, adesso, modificato, scelta_manuale_istruttore]);
 
