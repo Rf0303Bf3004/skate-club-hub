@@ -273,7 +273,11 @@
     "persone": "Persone",
     "ghiaccio": "Ghiaccio",
     "soldi": "Amministrazione",
-    "club": "Il club"
+    "club": "Il club",
+    "struttura": "Il club",
+    "offerta": "Corsi e istruttori",
+    "sponsor_gruppo": "Sponsor",
+    "accessi": "Accessi e dati"
   },
   "pending_requests_tooltip_one": "{{count}} richiesta in attesa",
   "pending_requests_tooltip_other": "{{count}} richieste in attesa",
@@ -453,5 +457,9 @@
     "ripetizione_spiegazione": "Dopo aver segnato l'inizio potrai segnare la fine: il punto diventa una ripetizione.",
     "brano_non_disponibile": "Il brano non è disponibile.",
     "in_preparazione": "In preparazione"
+  },
+  "menu_blocco": {
+    "conduzione": "Conduzione",
+    "setup": "Setup"
   }
 }

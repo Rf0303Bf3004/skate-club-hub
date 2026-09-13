@@ -236,7 +236,11 @@
     "persone": "Personen",
     "ghiaccio": "Eis",
     "soldi": "Verwaltung",
-    "club": "Der Club"
+    "club": "Der Club",
+    "struttura": "Der Club",
+    "offerta": "Kurse und Trainer",
+    "sponsor_gruppo": "Sponsoren",
+    "accessi": "Zugänge und Daten"
   },
   "pista": {
     "nessuna_sessione": "Heute wurde keine Einheit veröffentlicht.",
@@ -370,5 +374,9 @@
     "ripetizione_spiegazione": "Nach dem Start kann das Ende markiert werden: Der Punkt wird zur Wiederholung.",
     "brano_non_disponibile": "Das Stück ist nicht verfügbar.",
     "in_preparazione": "In Vorbereitung"
+  },
+  "menu_blocco": {
+    "conduzione": "Betrieb",
+    "setup": "Einrichtung"
   }
 }
