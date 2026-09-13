@@ -39,6 +39,7 @@ import SetupIndice, { type VoceIndice } from "@/components/setup/SetupIndice";
 import SetupSaveBar from "@/components/setup/SetupSaveBar";
 import { use_risorse_strutture } from "@/hooks/use-risorse-strutture";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { segnala_errore } from "@/lib/errori";
 
 
 
