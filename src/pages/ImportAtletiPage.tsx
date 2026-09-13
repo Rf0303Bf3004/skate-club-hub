@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
+import { segnala_errore } from "@/lib/errori";
 
 const ti = (key: string, opts?: any) => i18n.t(`import.${key}`, { ns: "atleti", ...(opts || {}) }) as string;
 
@@ -232,25 +233,44 @@ const ImportAtletiPage: React.FC = () => {
   const file_input_ref = useRef<HTMLInputElement>(null);
 
   // Fetch livelli ufficiali (tabella globale, senza club_id)
-  const { data: livelli_db = [] } = useQuery({
+  const {
+    data: livelli_db = [],
+    isError: livelli_errore,
+    refetch: ricarica_livelli,
+  } = useQuery({
     queryKey: ["livelli_import"],
     queryFn: async () => {
-      const { data } = await supabase.from("livelli").select("nome").eq("attivo", true);
+      const { data, error } = await supabase.from("livelli").select("nome").eq("attivo", true);
+      if (error) {
+        await segnala_errore("ImportAtletiPage", ti("toast.livelli_lettura_fallita"), error);
+        throw error;
+      }
       return (data ?? []).map((l: any) => norm_string(l.nome)).filter(Boolean);
     },
   });
 
   // Fetch atleti del club per match duplicati
-  const { data: atleti_db = [] } = useQuery({
+  const {
+    data: atleti_db = [],
+    isError: atleti_errore,
+    refetch: ricarica_atleti,
+  } = useQuery({
     queryKey: ["atleti_import_match", club_id],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("atleti")
         .select("id, nome, cognome, data_nascita, telefono, genitore1_email, livello_attuale, sesso")
         .eq("club_id", club_id);
+      if (error) {
+        await segnala_errore("ImportAtletiPage", ti("toast.atleti_lettura_fallita"), error);
+        throw error;
+      }
       return data ?? [];
     },
   });
+
+  // Se una delle due letture fallisce l'import non è sicuro: si ferma tutto.
+  const lettura_fallita = atleti_errore || livelli_errore;
   const atleti_index = useMemo(() => {
     const m = new Map<string, any>();
     for (const a of atleti_db as any[]) {
