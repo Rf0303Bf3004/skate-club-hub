@@ -1001,6 +1001,7 @@ const LezioniPrivatePage: React.FC = () => {
         toast({
           title: tc("richieste_private.creata_parziale"),
           description: problemi.join(" · "),
+          variant: "warning",
         });
       } else {
         toast({
