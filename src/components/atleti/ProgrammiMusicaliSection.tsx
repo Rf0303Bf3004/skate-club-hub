@@ -57,6 +57,50 @@ interface Props {
   atleta_id: string;
 }
 
+/**
+ * Titolo del brano modificabile sul posto.
+ * Se la scrittura fallisce il campo torna al valore letto dal database:
+ * a schermo non resta una modifica che non è stata salvata.
+ */
+const CampoTitolo: React.FC<{
+  programma: ProgrammaMusicale;
+  on_salva: (valore: string | null) => Promise<boolean>;
+}> = ({ programma, on_salva }) => {
+  const { t } = useTranslation("common");
+  const salvato = programma.titolo_brano ?? "";
+  const [valore, set_valore] = React.useState(salvato);
+  const [in_corso, set_in_corso] = React.useState(false);
+
+  React.useEffect(() => {
+    set_valore(programma.titolo_brano ?? "");
+  }, [programma.titolo_brano]);
+
+  const salva = async () => {
+    const pulito = valore.trim();
+    if (pulito === salvato.trim()) return;
+    set_in_corso(true);
+    const esito = await on_salva(pulito || null);
+    set_in_corso(false);
+    if (!esito) set_valore(salvato);
+  };
+
+  return (
+    <Input
+      value={valore}
+      disabled={in_corso}
+      onChange={(e) => set_valore(e.target.value)}
+      onBlur={() => void salva()}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+        if (e.key === "Escape") set_valore(salvato);
+      }}
+      className="h-8 w-56"
+      aria-label={t("musica.titolo_brano")}
+      placeholder={t("musica.titolo_brano")}
+    />
+  );
+};
+
 const ProgrammiMusicaliSection: React.FC<Props> = ({ atleta_id }) => {
   const { t } = useTranslation("common");
   const { session } = useAuth();
