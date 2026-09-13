@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   ChevronFirst,
+  Pencil,
   Pause,
   Play,
   Plus,
@@ -743,13 +744,14 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
                     set_nome_modifica(p.nome);
                   }}
                 >
-                  ✎
+                  <Pencil className="h-5 w-5" />
                 </Button>
                 <ConfirmButton
                   titolo={t("musica.elimina_punto")}
                   descrizione={t("musica.elimina_punto_conferma", { nome: p.nome })}
                   conferma_label={t("musica.elimina_punto")}
                   on_conferma={() => void elimina_punto(p)}
+                  variante="pericolo"
                 >
                   <Button
                     variant="ghost"
