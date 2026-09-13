@@ -308,6 +308,7 @@ const PistaPage: React.FC = () => {
     set_assenti(new Set());
     set_modificato(false);
     set_registrato_alle(null);
+    set_ripreso(false);
   };
 
   const applica_sessione = (id: string) => {
