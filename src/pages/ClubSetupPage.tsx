@@ -95,7 +95,7 @@ function use_disponibilita_ghiaccio() {
 
 function use_catalogo_count() {
   const club_id = get_current_club_id();
-  return useQuery({
+  const query = useQuery({
     queryKey: ["catalogo_livelli_count", club_id],
     enabled: !!club_id,
     queryFn: async () => {
@@ -103,13 +103,16 @@ function use_catalogo_count() {
         .from("catalogo_livelli")
         .select("id", { count: "exact", head: true })
         .eq("club_id", club_id);
-      if (error) {
-        await segnala_errore("ClubSetupPage", "Lettura catalogo livelli", error);
-        throw error;
-      }
+      if (error) throw error;
       return count ?? 0;
     },
   });
+  useEffect(() => {
+    if (query.error) {
+      void segnala_errore("ClubSetupPage", "Lettura catalogo livelli", query.error, undefined, "avviso");
+    }
+  }, [query.error]);
+  return query;
 }
 
 const ClubSetupPage: React.FC = () => {
