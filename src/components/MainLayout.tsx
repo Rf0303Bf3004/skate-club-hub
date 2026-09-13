@@ -335,16 +335,34 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           {/* Nuovi ruoli: voci principali + gruppi operativi espandibili */}
           {is_nuovo_ruolo && (
             <>
-              {nuovo_top.map((s) => render_nav_item(s.path, s.icon, menu_label(s.codice, s.label), s.codice, s.non_implementato))}
-              {MENU_GRUPPI.map((gruppo) => {
+              {blocchi_visibili.length > 1 && (
+                <div className="grid grid-cols-2 gap-2 pb-3">
+                  {blocchi_visibili.map((blocco) => {
+                    const attivo = blocco.id === blocco_corrente;
+                    return (
+                      <button
+                        key={blocco.id}
+                        onClick={() => cambia_blocco(blocco.id)}
+                        aria-pressed={attivo}
+                        className={`py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all border ${attivo
+                          ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                          : "bg-background text-muted-foreground border-border hover:bg-muted hover:text-foreground"}`}
+                      >
+                        {tc(blocco.label_key, { defaultValue: blocco.label_fallback })}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {blocco_corrente === "conduzione" &&
+                nuovo_top.map((s) => render_nav_item(s.path, s.icon, menu_label(s.codice, s.label), s.codice, s.non_implementato))}
+              {gruppi_del_blocco(blocco_corrente).map((gruppo) => {
                 const voci_visibili = gruppo.voci.filter((voce) => visibile_set.has(voce.codice));
-                const mostra_tabellone = gruppo.id === "soldi" && visibile_set.has("fatture");
-                const mostra_utenti = gruppo.id === "club" && can_manage_users && !visibile_set.has("gestione_utenti");
-                const mostra_convenzioni = gruppo.id === "club" && !!session;
-                const mostra_relazione = gruppo.id === "club" && is_presidente;
+                const extra = extra_per_gruppo(gruppo.id);
+                const { tabellone: mostra_tabellone, utenti: mostra_utenti, convenzioni: mostra_convenzioni, relazione: mostra_relazione } = extra;
                 if (voci_visibili.length === 0 && !mostra_tabellone && !mostra_utenti && !mostra_convenzioni && !mostra_relazione) return null;
 
-                const aperto = nuovi_gruppi_aperti[gruppo.id] ?? gruppo.id !== "club";
+                const aperto = nuovi_gruppi_aperti[gruppo.id] ?? true;
                 const Icon = gruppo.icon;
                 return (
                   <div key={gruppo.id} className="pt-2">
@@ -377,6 +395,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               })}
             </>
           )}
+
 
           {can_manage_users && !is_superadmin && !is_menu_legacy && !is_nuovo_ruolo && (
             <NavLink to="/utenti" onClick={() => set_sidebar_open(false)}
