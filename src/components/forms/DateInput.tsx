@@ -73,7 +73,8 @@ const DateInput: React.FC<Props> = ({ value, onChange, className, min_year = 190
       : "border-input focus-visible:ring-ring");
 
   return (
-    <div className={`flex items-center gap-2 ${className ?? ""}`}>
+    <div className={className ?? ""}>
+      <div className="flex items-center gap-2">
       <input
         type="text"
         inputMode="numeric"
