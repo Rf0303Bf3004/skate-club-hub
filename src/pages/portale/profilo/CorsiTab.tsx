@@ -97,6 +97,9 @@ const CorsiTab: React.FC = () => {
             </p>
           </div>
         ))}
+        {session && (
+          <RichiestePrivateSezione atleta_id={session.atleta.id} club_id={session.atleta.club_id} />
+        )}
       </TabsContent>
     </Tabs>
   );
