@@ -181,6 +181,7 @@ const AnnullaCorsoDialog: React.FC<Props> = ({
 
       // Il corso resta annullato: il messaggio finale però dice la verità sull'avviso.
       if (avviso_inviato) toast.success(tk("ok"));
+      else toast.warning(i18n.t("avviso_corso_annullato_non_inviato", { ns: "errors" }) as string);
       on_done(final_id, motivo.trim());
       set_motivo("");
       on_close();

@@ -243,6 +243,7 @@ const SpostaCorsoDialog: React.FC<Props> = ({
 
       // Lo spostamento è comunque avvenuto: il messaggio verde solo se l'avviso è partito.
       if (avviso_inviato) toast.success(tk("ok"));
+      else toast.warning(i18n.t("avviso_corso_spostato_non_inviato", { ns: "errors" }) as string);
       on_done(inserted.id, planning_corso.id, new_data, ora_inizio);
       on_close();
     } catch (e: any) {
