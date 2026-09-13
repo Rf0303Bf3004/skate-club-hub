@@ -6389,6 +6389,111 @@ export type Database = {
         }
         Relationships: []
       }
+      richieste_lezioni_private: {
+        Row: {
+          atleta_id: string
+          club_id: string
+          created_at: string
+          data_preferita: string | null
+          fascia_preferita: string | null
+          gestita_da: string | null
+          gestita_il: string | null
+          id: string
+          istruttore_id: string | null
+          lezione_id: string | null
+          note_richiesta: string | null
+          note_risposta: string | null
+          stato: string
+        }
+        Insert: {
+          atleta_id: string
+          club_id: string
+          created_at?: string
+          data_preferita?: string | null
+          fascia_preferita?: string | null
+          gestita_da?: string | null
+          gestita_il?: string | null
+          id?: string
+          istruttore_id?: string | null
+          lezione_id?: string | null
+          note_richiesta?: string | null
+          note_risposta?: string | null
+          stato?: string
+        }
+        Update: {
+          atleta_id?: string
+          club_id?: string
+          created_at?: string
+          data_preferita?: string | null
+          fascia_preferita?: string | null
+          gestita_da?: string | null
+          gestita_il?: string | null
+          id?: string
+          istruttore_id?: string | null
+          lezione_id?: string | null
+          note_richiesta?: string | null
+          note_risposta?: string | null
+          stato?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "richieste_lezioni_private_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "richieste_lezioni_private_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti_con_completezza"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "richieste_lezioni_private_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "richieste_lezioni_private_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "richieste_lezioni_private_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "elenco_club"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "richieste_lezioni_private_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "kpi_pitch_sponsor"
+            referencedColumns: ["club_id"]
+          },
+          {
+            foreignKeyName: "richieste_lezioni_private_istruttore_id_fkey"
+            columns: ["istruttore_id"]
+            isOneToOne: false
+            referencedRelation: "istruttori"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "richieste_lezioni_private_lezione_id_fkey"
+            columns: ["lezione_id"]
+            isOneToOne: false
+            referencedRelation: "lezioni_private"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       risorse_strutture: {
         Row: {
           attiva: boolean
@@ -8235,6 +8340,7 @@ export type Database = {
         }
         Returns: string
       }
+      genera_auguri_compleanno: { Args: { p_data?: string }; Returns: number }
       genera_codice_atleta: { Args: never; Returns: string }
       genera_codice_istruttore: { Args: never; Returns: string }
       genera_fattura_club_ospite: { Args: { p_riga: string }; Returns: string }
