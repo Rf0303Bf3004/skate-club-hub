@@ -45,6 +45,7 @@ import CompensoStaffModal from "@/components/CompensoStaffModal";
 import FotoAtleta from "@/components/common/FotoAtleta";
 import { usePermessiAzione } from "@/hooks/use-permessi-azione";
 import NotaPermesso from "@/components/common/NotaPermesso";
+import ProgrammiMusicaliSection from "@/components/atleti/ProgrammiMusicaliSection";
 
 interface Props {
   atleta: any;
@@ -500,22 +501,8 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
     }
   };
 
-  const handle_disco_upload = async (file: File) => {
-    set_uploading_disco(true);
-    try {
-      const ext = file.name.split(".").pop();
-      const path = `${get_current_club_id()}/${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("dischi-musicali").upload(path, file, { upsert: true });
-      if (error) throw error;
-      const { data } = supabase.storage.from("dischi-musicali").getPublicUrl(path);
-      upd("disco_url", data.publicUrl);
-      toast({ title: td("detail.toast_disc_uploaded") });
-    } catch (err: any) {
-      toast({ title: td("detail.toast_disc_error"), description: err?.message, variant: "destructive" });
-    } finally {
-      set_uploading_disco(false);
-    }
-  };
+  // I dischi ora vivono in `programmi_musicali` (bucket privato, collegamenti firmati):
+  // vedi ProgrammiMusicaliSection. Il vecchio caricamento pubblico è stato rimosso.
 
   const handle_marca_verificato = async () => {
     set_verifying(true);
