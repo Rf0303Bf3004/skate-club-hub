@@ -1122,7 +1122,7 @@ const ClubSetupPage: React.FC = () => {
             </Field>
           </div>
           <div className="flex justify-end mt-4">
-            <Button onClick={handle_save_private} disabled={saving_private}>
+            <Button onClick={handle_save_private} disabled={saving_private || errore_config}>
               {saving_private ? t("club.azioni.salvataggio") : t("club.azioni.salva_config_private")}
             </Button>
           </div>
