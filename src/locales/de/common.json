@@ -264,6 +264,8 @@
     "compleanno_persona_one": "{{nome}} {{cognome}} ({{count}} Jahr)",
     "compleanno_persona_other": "{{nome}} {{cognome}} ({{count}} Jahre)",
     "conferma_cambio_istruttore_testo": "Sie haben Abwesenheiten markiert, ohne sie zu speichern. Beim Wechsel der Trainerin bzw. des Trainers gehen sie verloren.",
-    "conferma_cambio_istruttore_azione": "Trainer wechseln"
+    "conferma_cambio_istruttore_azione": "Trainer wechseln",
+    "compleanno_persona_senza_anni": "{{nome}} {{cognome}}",
+    "ripresa_bozza": "Die noch nicht gespeicherten Meldungen wurden wiederhergestellt."
   }
 }

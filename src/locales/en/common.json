@@ -264,6 +264,8 @@
     "compleanno_persona_one": "{{nome}} {{cognome}} ({{count}} year)",
     "compleanno_persona_other": "{{nome}} {{cognome}} ({{count}} years)",
     "conferma_cambio_istruttore_testo": "You marked absences without saving them. Switching instructor will discard them.",
-    "conferma_cambio_istruttore_azione": "Switch instructor"
+    "conferma_cambio_istruttore_azione": "Switch instructor",
+    "compleanno_persona_senza_anni": "{{nome}} {{cognome}}",
+    "ripresa_bozza": "Resumed the attendance marks not yet recorded."
   }
 }
