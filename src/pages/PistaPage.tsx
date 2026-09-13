@@ -353,6 +353,8 @@ const PistaPage: React.FC = () => {
       const ora = new Date();
       set_registrato_alle(`${String(ora.getHours()).padStart(2, "0")}:${String(ora.getMinutes()).padStart(2, "0")}`);
       set_modificato(false);
+      set_ripreso(false);
+      cancella_bozza(sessione_id);
       toast({ title: t("pista.salvato_titolo") });
     } catch (errore) {
       segnala_errore("PistaPage", t("pista.registra_appello"), errore);
