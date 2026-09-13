@@ -121,17 +121,17 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const nuovo_top = MENU_TOP.filter((s) => visibile_set.has(s.codice));
 
   // Voci scritte a mano, assegnate a un blocco e a un gruppo senza cambiarne le condizioni.
+  // Convenzioni non è qui: è voce di primo livello del blocco CONDUZIONE, subito dopo Comunicazioni.
   const extra_per_gruppo = React.useCallback((id: MenuGruppo) => ({
     tabellone: id === "soldi" && visibile_set.has("fatture"),
     utenti: id === "accessi" && can_manage_users && !visibile_set.has("gestione_utenti"),
-    convenzioni: id === "struttura" && !!session,
     relazione: id === "struttura" && is_presidente,
-  }), [visibile_set, can_manage_users, session, is_presidente]);
+  }), [visibile_set, can_manage_users, is_presidente]);
 
   const gruppo_ha_voci = React.useCallback((gruppo: typeof MENU_GRUPPI[number]) => {
     const extra = extra_per_gruppo(gruppo.id);
     return gruppo.voci.some((voce) => visibile_set.has(voce.codice))
-      || extra.tabellone || extra.utenti || extra.convenzioni || extra.relazione;
+      || extra.tabellone || extra.utenti || extra.relazione;
   }, [extra_per_gruppo, visibile_set]);
 
   const blocchi_visibili = React.useMemo(() => MENU_BLOCCHI.filter((blocco) => {
@@ -183,7 +183,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       gruppo.voci.some((voce) => location.pathname === voce.path || (voce.path !== "/" && location.pathname.startsWith(voce.path)))
       || (gruppo.id === "soldi" && location.pathname.startsWith("/segreteria/fatture"))
       || (gruppo.id === "accessi" && location.pathname.startsWith("/utenti"))
-      || (gruppo.id === "struttura" && ["/convenzioni", "/presidente/relazione"].some((path) => location.pathname.startsWith(path)))
+      || (gruppo.id === "struttura" && location.pathname.startsWith("/presidente/relazione"))
     );
     if (gruppo_attivo) {
       set_nuovi_gruppi_aperti((correnti) => correnti[gruppo_attivo.id]
@@ -191,7 +191,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         : { ...correnti, [gruppo_attivo.id]: true });
       // La rotta aperta può stare nell'altro blocco: il menu ci si sposta da solo.
       set_blocco_attivo((corrente) => corrente === gruppo_attivo.blocco ? corrente : gruppo_attivo.blocco);
-    } else if (MENU_TOP.some((voce) => location.pathname === voce.path || (voce.path !== "/" && location.pathname.startsWith(voce.path)))) {
+    } else if (MENU_TOP.some((voce) => location.pathname === voce.path || (voce.path !== "/" && location.pathname.startsWith(voce.path)))
+      || location.pathname.startsWith("/convenzioni")) {
       set_blocco_attivo((corrente) => corrente === "conduzione" ? corrente : "conduzione");
     }
   }, [location.pathname]);
@@ -356,11 +357,13 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               )}
               {blocco_corrente === "conduzione" &&
                 nuovo_top.map((s) => render_nav_item(s.path, s.icon, menu_label(s.codice, s.label), s.codice, s.non_implementato))}
+              {blocco_corrente === "conduzione" && session &&
+                render_nav_item("/convenzioni", BadgePercent, "Convenzioni", "convenzioni")}
               {gruppi_del_blocco(blocco_corrente).map((gruppo) => {
                 const voci_visibili = gruppo.voci.filter((voce) => visibile_set.has(voce.codice));
                 const extra = extra_per_gruppo(gruppo.id);
-                const { tabellone: mostra_tabellone, utenti: mostra_utenti, convenzioni: mostra_convenzioni, relazione: mostra_relazione } = extra;
-                if (voci_visibili.length === 0 && !mostra_tabellone && !mostra_utenti && !mostra_convenzioni && !mostra_relazione) return null;
+                const { tabellone: mostra_tabellone, utenti: mostra_utenti, relazione: mostra_relazione } = extra;
+                if (voci_visibili.length === 0 && !mostra_tabellone && !mostra_utenti && !mostra_relazione) return null;
 
                 const aperto = nuovi_gruppi_aperti[gruppo.id] ?? true;
                 const Icon = gruppo.icon;
@@ -379,7 +382,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                         {voci_visibili.map((s) => render_nav_item(s.path, s.icon, menu_label(s.codice, s.label), s.codice, s.non_implementato))}
                         {mostra_tabellone && render_nav_item("/segreteria/fatture", LayoutGrid, tc("menu.segreteria_fatture", { defaultValue: "Tabellone Fatture" }), "segreteria_fatture")}
                         {mostra_utenti && render_nav_item("/utenti", Users, tc("menu.utenti"), "utenti")}
-                        {mostra_convenzioni && render_nav_item("/convenzioni", BadgePercent, "Convenzioni", "convenzioni")}
+                        
                         {mostra_relazione && (
                           <NavLink to="/presidente/relazione" onClick={() => set_sidebar_open(false)}
                             className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname.startsWith("/presidente/relazione") ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
