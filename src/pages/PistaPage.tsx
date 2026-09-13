@@ -260,6 +260,7 @@ const PistaPage: React.FC = () => {
       set_assenti(new Set(salvato));
       set_modificato(true);
       set_ripreso(true);
+      set_momento("appello");
     } else {
       set_assenti(
         new Set(
@@ -270,6 +271,11 @@ const PistaPage: React.FC = () => {
       );
       set_modificato(false);
       set_ripreso(false);
+      // Se l'appello di questa sessione è già stato fatto (nessuna atleta è
+      // rimasta "non_registrato"), il tablet riparte direttamente da "in pista".
+      const gia_registrato =
+        atleti_query.data.length > 0 && atleti_query.data.every((a) => a.stato !== "non_registrato");
+      set_momento(gia_registrato ? "in_pista" : "appello");
     }
     set_registrato_alle(null);
   }, [sessione_id, atleti_query.data]);
