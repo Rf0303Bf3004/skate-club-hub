@@ -1089,7 +1089,12 @@ const LezioniPrivatePage: React.FC = () => {
           slot_minuti={slot_minuti}
           on_change={(k, v) => set_form_data((p) => ({ ...p, [k]: v }))}
           on_submit={handle_submit}
-          on_close={() => set_form_open(false)}
+          on_close={() => {
+            set_form_open(false);
+            // Chiudere il modulo annulla l'accettazione in corso: altrimenti
+            // la prossima lezione finirebbe collegata alla richiesta sbagliata.
+            set_richiesta_pendente(null);
+          }}
           loading={saving}
         />
       )}
@@ -1137,7 +1142,13 @@ const LezioniPrivatePage: React.FC = () => {
           <NotaPermesso testo="Puoi consultare le lezioni ma non hai i permessi per crearle, modificarle o annullarle." />
         )}
 
-        <Tabs value={tab} onValueChange={(v) => set_tab(v as "calendario" | "richieste")}>
+        <Tabs
+          value={tab}
+          onValueChange={(v) => {
+            set_tab(v as "calendario" | "richieste");
+            set_richiesta_pendente(null);
+          }}
+        >
           <TabsList>
             <TabsTrigger value="calendario">{tc("richieste_private.tab_calendario")}</TabsTrigger>
             <TabsTrigger value="richieste">
