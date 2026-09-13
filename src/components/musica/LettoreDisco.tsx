@@ -400,7 +400,7 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
       <Dialog open={dialogo_punto} onOpenChange={set_dialogo_punto}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t("musica.segna_punto")}</DialogTitle>
+            <DialogTitle>{t("musica.segna_inizio")}</DialogTitle>
           </DialogHeader>
           <Input
             value={nome_punto}
