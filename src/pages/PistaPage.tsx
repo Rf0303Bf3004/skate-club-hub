@@ -95,6 +95,7 @@ const PistaPage: React.FC = () => {
   const [registrato_alle, set_registrato_alle] = React.useState<string | null>(null);
   const [in_attesa, set_in_attesa] = React.useState<{ tipo: "sessione" | "istruttore"; id: string } | null>(null);
   const [schermo_intero, set_schermo_intero] = React.useState(false);
+  const [ripreso, set_ripreso] = React.useState(false);
 
   React.useEffect(() => {
     const timer = window.setInterval(() => set_adesso(new Date()), 60_000);
