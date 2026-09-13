@@ -324,7 +324,9 @@
     "ritira_conferma": "Voulez-vous retirer cette demande ?",
     "ritirata_ok": "Demande retirée",
     "risposta_club": "Réponse du club",
-    "nessun_istruttore": "La liste des instructeurs n'est pas disponible : la demande sera envoyée sans préférence."
+    "nessun_istruttore": "La liste des instructeurs n'est pas disponible : la demande sera envoyée sans préférence.",
+    "creata_parziale": "Leçon créée, mais certaines étapes ont échoué",
+    "gia_gestita": "La demande a déjà été traitée par le club."
   },
   "musica": {
     "ascolta": "Écouter",
@@ -357,6 +359,12 @@
     "tipo_esibizione": "Exhibition",
     "tipo_gala": "Gala",
     "tipo_libero": "Programme libre",
-    "titolo_brano": "Titre du morceau"
+    "titolo_brano": "Titre du morceau",
+    "segna_inizio": "Marquer le début",
+    "segna_fine_qui": "Marquer la fin de « {{nome}} »",
+    "fine_prima_inizio": "La fin doit venir après le début.",
+    "ripetizione_spiegazione": "Après avoir marqué le début, vous pourrez marquer la fin : le point devient une boucle.",
+    "brano_non_disponibile": "Le morceau n'est pas disponible.",
+    "in_preparazione": "En préparation"
   }
 }

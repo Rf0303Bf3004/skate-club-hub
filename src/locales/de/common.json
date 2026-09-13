@@ -324,7 +324,9 @@
     "ritira_conferma": "Möchten Sie diese Anfrage zurückziehen?",
     "ritirata_ok": "Anfrage zurückgezogen",
     "risposta_club": "Antwort des Clubs",
-    "nessun_istruttore": "Die Liste der Lehrpersonen ist nicht verfügbar: die Anfrage wird ohne Präferenz gesendet."
+    "nessun_istruttore": "Die Liste der Lehrpersonen ist nicht verfügbar: die Anfrage wird ohne Präferenz gesendet.",
+    "creata_parziale": "Lektion erstellt, aber einige Schritte sind fehlgeschlagen",
+    "gia_gestita": "Die Anfrage wurde vom Club bereits bearbeitet."
   },
   "musica": {
     "ascolta": "Anhören",
@@ -357,6 +359,12 @@
     "tipo_esibizione": "Schaulaufen",
     "tipo_gala": "Gala",
     "tipo_libero": "Kürprogramm",
-    "titolo_brano": "Titel des Stücks"
+    "titolo_brano": "Titel des Stücks",
+    "segna_inizio": "Start markieren",
+    "segna_fine_qui": "Ende von „{{nome}}“ markieren",
+    "fine_prima_inizio": "Das Ende muss nach dem Start liegen.",
+    "ripetizione_spiegazione": "Nach dem Start kann das Ende markiert werden: Der Punkt wird zur Wiederholung.",
+    "brano_non_disponibile": "Das Stück ist nicht verfügbar.",
+    "in_preparazione": "In Vorbereitung"
   }
 }

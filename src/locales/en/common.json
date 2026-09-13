@@ -324,7 +324,9 @@
     "ritira_conferma": "Do you want to withdraw this request?",
     "ritirata_ok": "Request withdrawn",
     "risposta_club": "Club reply",
-    "nessun_istruttore": "The instructor list is unavailable: the request will be sent without a preference."
+    "nessun_istruttore": "The instructor list is unavailable: the request will be sent without a preference.",
+    "creata_parziale": "Lesson created, but some steps failed",
+    "gia_gestita": "The request has already been handled by the club."
   },
   "musica": {
     "ascolta": "Listen",
@@ -357,6 +359,12 @@
     "tipo_esibizione": "Exhibition",
     "tipo_gala": "Gala",
     "tipo_libero": "Free program",
-    "titolo_brano": "Track title"
+    "titolo_brano": "Track title",
+    "segna_inizio": "Mark start",
+    "segna_fine_qui": "Mark end of “{{nome}}”",
+    "fine_prima_inizio": "The end must come after the start.",
+    "ripetizione_spiegazione": "After marking the start you can mark the end: the point becomes a loop.",
+    "brano_non_disponibile": "The track is not available.",
+    "in_preparazione": "In preparation"
   }
 }
