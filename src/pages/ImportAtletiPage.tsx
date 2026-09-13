@@ -496,17 +496,24 @@ const ImportAtletiPage: React.FC = () => {
 
       {lettura_fallita && (
         <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 space-y-2">
-          <p className="text-sm font-semibold text-destructive">
-            {atleti_errore ? t("import.blocco_atleti") : t("import.blocco_livelli")}
-          </p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              if (atleti_errore) ricarica_atleti();
-              if (livelli_errore) ricarica_livelli();
-            }}
-          >
+          <p className="text-sm font-semibold text-destructive">{t("import.blocco_atleti")}</p>
+          <Button variant="outline" size="sm" onClick={() => ricarica_atleti()}>
+            {t("import.riprova")}
+          </Button>
+        </div>
+      )}
+
+      {!lettura_fallita && !atleti_pronti && (
+        <div className="bg-muted/40 border border-border rounded-xl p-4 flex items-center gap-2">
+          <Loader2 className="w-4 h-4 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">{t("import.attesa_atleti")}</p>
+        </div>
+      )}
+
+      {livelli_errore && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
+          <p className="text-sm text-amber-800">{t("import.avviso_livelli")}</p>
+          <Button variant="outline" size="sm" onClick={() => ricarica_livelli()}>
             {t("import.riprova")}
           </Button>
         </div>
