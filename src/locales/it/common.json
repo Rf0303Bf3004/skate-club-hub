@@ -466,7 +466,12 @@
     "fine_prima_inizio": "La fine deve venire dopo l'inizio.",
     "ripetizione_spiegazione": "Dopo aver segnato l'inizio potrai segnare la fine: il punto diventa una ripetizione.",
     "brano_non_disponibile": "Il brano non è disponibile.",
-    "in_preparazione": "In preparazione"
+    "in_preparazione": "In preparazione",
+    "errore_salva_dettagli": "Non è stato possibile salvare le modifiche al disco.",
+    "istruzioni_caricamento": "Scegli prima il tipo e il titolo, poi scegli il file: il caricamento parte subito e salva. Titolo e tipo restano modificabili dalla riga del disco.",
+    "scegli_file_e_salva": "Scegli il file e salva",
+    "titolo_mancante": "Brano senza titolo",
+    "titolo_mancante_dettaglio": "Il disco viene salvato senza titolo. Puoi aggiungerlo dalla riga del disco."
   },
   "menu_blocco": {
     "conduzione": "Conduzione",

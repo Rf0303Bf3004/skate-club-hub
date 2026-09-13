@@ -57,6 +57,50 @@ interface Props {
   atleta_id: string;
 }
 
+/**
+ * Titolo del brano modificabile sul posto.
+ * Se la scrittura fallisce il campo torna al valore letto dal database:
+ * a schermo non resta una modifica che non è stata salvata.
+ */
+const CampoTitolo: React.FC<{
+  programma: ProgrammaMusicale;
+  on_salva: (valore: string | null) => Promise<boolean>;
+}> = ({ programma, on_salva }) => {
+  const { t } = useTranslation("common");
+  const salvato = programma.titolo_brano ?? "";
+  const [valore, set_valore] = React.useState(salvato);
+  const [in_corso, set_in_corso] = React.useState(false);
+
+  React.useEffect(() => {
+    set_valore(programma.titolo_brano ?? "");
+  }, [programma.titolo_brano]);
+
+  const salva = async () => {
+    const pulito = valore.trim();
+    if (pulito === salvato.trim()) return;
+    set_in_corso(true);
+    const esito = await on_salva(pulito || null);
+    set_in_corso(false);
+    if (!esito) set_valore(salvato);
+  };
+
+  return (
+    <Input
+      value={valore}
+      disabled={in_corso}
+      onChange={(e) => set_valore(e.target.value)}
+      onBlur={() => void salva()}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+        if (e.key === "Escape") set_valore(salvato);
+      }}
+      className="h-8 w-56"
+      aria-label={t("musica.titolo_brano")}
+      placeholder={t("musica.titolo_brano")}
+    />
+  );
+};
+
 const ProgrammiMusicaliSection: React.FC<Props> = ({ atleta_id }) => {
   const { t } = useTranslation("common");
   const { session } = useAuth();
@@ -82,6 +126,14 @@ const ProgrammiMusicaliSection: React.FC<Props> = ({ atleta_id }) => {
   const carica = async (file: File) => {
     const club_id = get_current_club_id();
     if (!club_id) return;
+    // Il titolo non è obbligatorio: si avvisa, non si blocca.
+    if (!titolo.trim()) {
+      toast({
+        variant: "warning",
+        title: t("musica.titolo_mancante"),
+        description: t("musica.titolo_mancante_dettaglio"),
+      });
+    }
     set_caricamento(true);
     try {
       const durata_sec = await leggi_durata(file);
@@ -141,6 +193,34 @@ const ProgrammiMusicaliSection: React.FC<Props> = ({ atleta_id }) => {
     }
   };
 
+  /** Salva titolo o tipo di un disco già caricato. Il file non viene toccato. */
+  const salva_dettagli = async (
+    programma: ProgrammaMusicale,
+    campi: { titolo_brano?: string | null; tipo?: TipoProgramma },
+  ): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from("programmi_musicali")
+        .update(campi as any)
+        .eq("id", programma.id)
+        .eq("club_id", programma.club_id);
+      if (error) throw error;
+      await ricarica();
+      return true;
+    } catch (err) {
+      void segnala_errore("Programmi musicali", t("musica.errore_salva_dettagli"), err);
+      return false;
+    }
+  };
+
+  const [tipo_in_corso, set_tipo_in_corso] = React.useState<string | null>(null);
+
+  const cambia_tipo = async (programma: ProgrammaMusicale, nuovo: TipoProgramma) => {
+    set_tipo_in_corso(programma.id);
+    await salva_dettagli(programma, { tipo: nuovo });
+    set_tipo_in_corso(null);
+  };
+
   const elimina = async (programma: ProgrammaMusicale) => {
     try {
       const { error } = await supabase
@@ -187,12 +267,39 @@ const ProgrammiMusicaliSection: React.FC<Props> = ({ atleta_id }) => {
             <div key={p.id} className="rounded-lg border border-border bg-muted/20 p-2">
               <div className="flex flex-wrap items-center gap-2">
                 <Music className="h-4 w-4 flex-shrink-0 text-primary" />
-                <span className="text-sm font-medium">
-                  {t(`musica.tipo_${p.tipo}`, { defaultValue: p.tipo })}
-                </span>
-                <span className="truncate text-sm text-muted-foreground">
-                  {p.titolo_brano || t("musica.senza_titolo")}
-                </span>
+                {puo_gestire_musica ? (
+                  <>
+                    <Select
+                      value={p.tipo}
+                      disabled={tipo_in_corso === p.id}
+                      onValueChange={(v) => void cambia_tipo(p, v as TipoProgramma)}
+                    >
+                      <SelectTrigger className="h-8 w-40" aria-label={t("musica.tipo")}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TIPI_PROGRAMMA.map((v) => (
+                          <SelectItem key={v} value={v}>
+                            {t(`musica.tipo_${v}`, { defaultValue: v })}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <CampoTitolo
+                      programma={p}
+                      on_salva={(valore) => salva_dettagli(p, { titolo_brano: valore })}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <span className="text-sm font-medium">
+                      {t(`musica.tipo_${p.tipo}`, { defaultValue: p.tipo })}
+                    </span>
+                    <span className="truncate text-sm text-muted-foreground">
+                      {p.titolo_brano || t("musica.senza_titolo")}
+                    </span>
+                  </>
+                )}
                 <div className="ml-auto flex items-center gap-2">
                   <Button variant="outline" size="sm" onClick={() => void ascolta(p)} disabled={!p.file_path}>
                     {t("musica.ascolta")}
@@ -240,6 +347,7 @@ const ProgrammiMusicaliSection: React.FC<Props> = ({ atleta_id }) => {
 
       {puo_gestire_musica && (
         <div className="flex flex-wrap items-end gap-2 rounded-lg border border-dashed border-border p-2">
+          <p className="w-full text-xs text-muted-foreground">{t("musica.istruzioni_caricamento")}</p>
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">{t("musica.tipo")}</Label>
             <Select value={tipo} onValueChange={(v) => set_tipo(v as TipoProgramma)}>
@@ -270,7 +378,7 @@ const ProgrammiMusicaliSection: React.FC<Props> = ({ atleta_id }) => {
             }`}
           >
             <Upload className="h-4 w-4" />
-            {caricamento ? t("musica.caricamento_disco") : t("musica.carica_disco")}
+            {caricamento ? t("musica.caricamento_disco") : t("musica.scegli_file_e_salva")}
             <input
               type="file"
               accept="audio/*"
