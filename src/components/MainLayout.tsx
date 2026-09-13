@@ -11,7 +11,7 @@ import GlobalSearchPalette from "@/components/common/GlobalSearchPalette";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { use_count_iscrizioni_non_lette } from "@/components/comunicazioni/IscrizioniAtletiNotifiche";
-import { MENU_GRUPPI, MENU_TOP } from "@/config/menuSections";
+import { MENU_BLOCCHI, MENU_GRUPPI, MENU_TOP, gruppi_del_blocco, type MenuBlocco, type MenuGruppo } from "@/config/menuSections";
 import { registra_silenzioso } from "@/lib/errori";
 
 
