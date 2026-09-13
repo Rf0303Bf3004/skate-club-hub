@@ -569,7 +569,7 @@ const ImportAtletiPage: React.FC = () => {
           </div>
           <div className="flex justify-between">
             <Button variant="outline" onClick={() => set_step(1)}><ArrowLeft className="w-4 h-4 mr-2" /> {t("import.back")}</Button>
-            <Button disabled={!mapping_valido} onClick={build_parsed}>
+            <Button disabled={!mapping_valido || lettura_fallita} onClick={build_parsed}>
               {t("import.continue")} <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
