@@ -232,22 +232,8 @@ const AtletaModal: React.FC<{
     }
   };
 
-  const handle_disco_upload = async (file: File) => {
-    set_uploading_disco(true);
-    try {
-      const ext = file.name.split(".").pop();
-      const path = `${get_current_club_id()}/${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("dischi-musicali").upload(path, file, { upsert: true });
-      if (error) throw error;
-      const { data } = supabase.storage.from("dischi-musicali").getPublicUrl(path);
-      set_val("disco_url", data.publicUrl);
-      toast({ title: t("toast.disc_uploaded") });
-    } catch (err: any) {
-      toast({ title: t("toast.disc_upload_error"), description: err?.message, variant: "destructive" });
-    } finally {
-      set_uploading_disco(false);
-    }
-  };
+  // Caricamento disco rimosso: i programmi musicali si gestiscono dalla scheda atleta,
+  // su bucket privato con collegamenti firmati.
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
