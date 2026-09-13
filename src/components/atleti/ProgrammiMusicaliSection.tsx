@@ -185,6 +185,34 @@ const ProgrammiMusicaliSection: React.FC<Props> = ({ atleta_id }) => {
     }
   };
 
+  /** Salva titolo o tipo di un disco già caricato. Il file non viene toccato. */
+  const salva_dettagli = async (
+    programma: ProgrammaMusicale,
+    campi: { titolo_brano?: string | null; tipo?: TipoProgramma },
+  ): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from("programmi_musicali")
+        .update(campi as any)
+        .eq("id", programma.id)
+        .eq("club_id", programma.club_id);
+      if (error) throw error;
+      await ricarica();
+      return true;
+    } catch (err) {
+      void segnala_errore("Programmi musicali", t("musica.errore_salva_dettagli"), err);
+      return false;
+    }
+  };
+
+  const [tipo_in_corso, set_tipo_in_corso] = React.useState<string | null>(null);
+
+  const cambia_tipo = async (programma: ProgrammaMusicale, nuovo: TipoProgramma) => {
+    set_tipo_in_corso(programma.id);
+    await salva_dettagli(programma, { tipo: nuovo });
+    set_tipo_in_corso(null);
+  };
+
   const elimina = async (programma: ProgrammaMusicale) => {
     try {
       const { error } = await supabase
