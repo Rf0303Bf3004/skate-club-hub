@@ -382,6 +382,7 @@
   "griglia_nav": {
     "giorno_precedente": "Vorheriger Tag",
     "giorno_successivo": "Nächster Tag",
-    "oggi": "Heute"
+    "oggi": "Heute",
+    "scegli_data": "Datum auswählen"
   }
 }

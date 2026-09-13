@@ -465,6 +465,7 @@
   "griglia_nav": {
     "giorno_precedente": "Giorno precedente",
     "giorno_successivo": "Giorno successivo",
-    "oggi": "Oggi"
+    "oggi": "Oggi",
+    "scegli_data": "Scegli data"
   }
 }
