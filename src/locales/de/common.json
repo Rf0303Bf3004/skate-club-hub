@@ -270,7 +270,10 @@
     "correggi_appello": "Anwesenheit korrigieren",
     "nessuna_presente": "In dieser Einheit ist keine Athletin anwesend.",
     "nota_rapida": "Kurze Notiz",
-    "prossimamente": "Demnächst"
+    "prossimamente": "Demnächst",
+    "istruzione_appello": "Alle sind anwesend. Tippe nur auf die, die NICHT da sind.",
+    "assente_etichetta": "ABWESEND",
+    "tocca_per_annullare": "tippen zum Rückgängigmachen"
   },
   "richieste_private": {
     "titolo": "Anfragen für Privatlektionen",
@@ -326,7 +329,8 @@
     "risposta_club": "Antwort des Clubs",
     "nessun_istruttore": "Die Liste der Lehrpersonen ist nicht verfügbar: die Anfrage wird ohne Präferenz gesendet.",
     "creata_parziale": "Lektion erstellt, aber einige Schritte sind fehlgeschlagen",
-    "gia_gestita": "Die Anfrage wurde vom Club bereits bearbeitet."
+    "gia_gestita": "Die Anfrage wurde vom Club bereits bearbeitet.",
+    "collegamento_atleta_diverso": "Die erstellte Lektion betrifft nicht die angefragte Athletin: die Anfrage bleibt offen"
   },
   "musica": {
     "ascolta": "Anhören",

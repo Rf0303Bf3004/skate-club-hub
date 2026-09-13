@@ -353,7 +353,10 @@
     "correggi_appello": "Correggi l'appello",
     "nessuna_presente": "Nessuna atleta presente in questa sessione.",
     "nota_rapida": "Nota rapida",
-    "prossimamente": "Prossimamente"
+    "prossimamente": "Prossimamente",
+    "istruzione_appello": "Sono tutte presenti. Tocca solo chi NON c'è.",
+    "assente_etichetta": "ASSENTE",
+    "tocca_per_annullare": "tocca per annullare"
   },
   "richieste_private": {
     "titolo": "Richieste di lezione privata",
@@ -409,7 +412,8 @@
     "risposta_club": "Risposta del club",
     "nessun_istruttore": "L'elenco degli istruttori non è disponibile: la richiesta verrà inviata senza preferenza.",
     "creata_parziale": "Lezione creata, ma alcuni passaggi non sono riusciti",
-    "gia_gestita": "La richiesta è già stata gestita dal club."
+    "gia_gestita": "La richiesta è già stata gestita dal club.",
+    "collegamento_atleta_diverso": "La lezione creata non riguarda l'atleta della richiesta: la richiesta resta in attesa"
   },
   "musica": {
     "ascolta": "Ascolta",

@@ -270,7 +270,10 @@
     "correggi_appello": "Correct the roll call",
     "nessuna_presente": "No athlete present in this session.",
     "nota_rapida": "Quick note",
-    "prossimamente": "Coming soon"
+    "prossimamente": "Coming soon",
+    "istruzione_appello": "Everyone is present. Tap only those who are NOT here.",
+    "assente_etichetta": "ABSENT",
+    "tocca_per_annullare": "tap to undo"
   },
   "richieste_private": {
     "titolo": "Private lesson requests",
@@ -326,7 +329,8 @@
     "risposta_club": "Club reply",
     "nessun_istruttore": "The instructor list is unavailable: the request will be sent without a preference.",
     "creata_parziale": "Lesson created, but some steps failed",
-    "gia_gestita": "The request has already been handled by the club."
+    "gia_gestita": "The request has already been handled by the club.",
+    "collegamento_atleta_diverso": "The created lesson does not involve the requested athlete: the request stays pending"
   },
   "musica": {
     "ascolta": "Listen",
