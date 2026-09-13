@@ -904,7 +904,91 @@ const PistaPage: React.FC = () => {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Nota rapida: scrittura */}
+      <Dialog
+        open={!!nota_target}
+        onOpenChange={(aperto) => {
+          if (!aperto && !nota_salvataggio) {
+            set_nota_target(null);
+            set_nota_testo("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-2xl">{nota_target?.titolo ?? ""}</DialogTitle>
+          </DialogHeader>
+          <Textarea
+            value={nota_testo}
+            onChange={(e) => set_nota_testo(e.target.value)}
+            rows={6}
+            placeholder={t("pista.nota_placeholder")}
+            className="min-h-[160px] text-lg"
+          />
+          <div className="flex gap-3">
+            <Button
+              size="lg"
+              variant="outline"
+              className="h-14 flex-1 text-lg"
+              disabled={nota_salvataggio}
+              onClick={() => {
+                set_nota_target(null);
+                set_nota_testo("");
+              }}
+            >
+              {t("annulla", { defaultValue: "Annulla" })}
+            </Button>
+            <Button
+              size="lg"
+              className="h-14 flex-1 text-lg font-bold"
+              disabled={nota_salvataggio || nota_testo.trim().length === 0}
+              onClick={salva_nota}
+            >
+              {nota_salvataggio ? t("pista.nota_salvataggio_in_corso") : t("salva", { defaultValue: "Salva" })}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Nota rapida: note già scritte */}
+      <Dialog open={!!note_aperte} onOpenChange={(aperto) => !aperto && set_note_aperte(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-2xl">{note_aperte?.titolo ?? ""}</DialogTitle>
+          </DialogHeader>
+          <div className="flex max-h-[60vh] flex-col gap-3 overflow-y-auto">
+            {note_query.isError ? (
+              <p className="text-base text-destructive">{t("pista.note_errore")}</p>
+            ) : (
+              (note_per_atleta.get(note_aperte?.atleta_id ?? "") ?? []).map((n) => (
+                <div key={n.id} className="rounded-xl border border-border p-3">
+                  <p className="whitespace-pre-wrap text-lg">{n.testo}</p>
+                  <div className="mt-2 flex items-center justify-between gap-3">
+                    <span className="text-sm text-muted-foreground">
+                      {t("pista.nota_firma", {
+                        autore: n.autore_nome ?? "—",
+                        ora: new Date(n.creata_il).toLocaleTimeString(lingua, { hour: "2-digit", minute: "2-digit" }),
+                      })}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={nota_in_eliminazione === n.id}
+                      onClick={() => elimina_nota(n.id)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      {t("elimina", { defaultValue: "Elimina" })}
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Scelta del programma quando l'atleta ne ha più di uno */}
+
       <Dialog open={!!scelta_disco} onOpenChange={(aperto) => !aperto && set_scelta_disco(null)}>
         <DialogContent>
           <DialogHeader>
