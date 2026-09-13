@@ -401,6 +401,10 @@ const ImportAtletiPage: React.FC = () => {
 
   // ── STEP 4: import ──
   const run_import = async () => {
+    if (lettura_fallita) {
+      toast.error(atleti_errore ? ti("blocco_atleti") : ti("blocco_livelli"));
+      return;
+    }
     set_importing(true);
     set_step(4);
     let creati = 0;
