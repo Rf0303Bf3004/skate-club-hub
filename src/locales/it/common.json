@@ -323,7 +323,9 @@
   "date_input": {
     "dd": "GG",
     "mm": "MM",
-    "yyyy": "AAAA"
+    "yyyy": "AAAA",
+    "errore_inesistente": "Questa data non esiste.",
+    "errore_anno_range": "L'anno deve essere compreso fra {{min}} e {{max}}."
   },
   "pista": {
     "nessuna_sessione": "Oggi non c'è nessuna sessione pubblicata.",

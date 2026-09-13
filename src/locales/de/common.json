@@ -384,5 +384,12 @@
     "giorno_successivo": "Nächster Tag",
     "oggi": "Heute",
     "scegli_data": "Datum auswählen"
+  },
+  "date_input": {
+    "dd": "TT",
+    "mm": "MM",
+    "yyyy": "JJJJ",
+    "errore_inesistente": "Dieses Datum existiert nicht.",
+    "errore_anno_range": "Das Jahr muss zwischen {{min}} und {{max}} liegen."
   }
 }
