@@ -261,7 +261,7 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
         {errore_audio && (
           <div className="flex items-center justify-between gap-3 rounded-lg border border-destructive bg-destructive/10 px-3 py-2">
             <span className="text-base text-destructive">{errore_audio}</span>
-            <Button variant="outline" onClick={() => void rinnova()}>
+            <Button variant="outline" onClick={riprova_a_mano}>
               {t("musica.riprova")}
             </Button>
           </div>
