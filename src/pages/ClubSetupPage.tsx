@@ -682,10 +682,13 @@ const ClubSetupPage: React.FC = () => {
                 <tb.icon className="h-4 w-4" />
                 {tb.label}
                 {tb.value === "catalogo" && errore_catalogo ? (
-                  <AlertCircle
-                    className="h-3.5 w-3.5 text-muted-foreground"
-                    aria-label={t("club.testi.dato_non_disponibile")}
-                  />
+                  <span
+                    className="inline-flex items-center gap-1 text-[11px] text-muted-foreground"
+                    title={t("club.testi.dato_non_disponibile")}
+                  >
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    {t("club.testi.dato_non_disponibile")}
+                  </span>
                 ) : tab_completa[tb.value] ? (
                   <CheckCircle2 className="h-3.5 w-3.5 text-success" />
                 ) : (
@@ -1050,6 +1053,11 @@ const ClubSetupPage: React.FC = () => {
         {/* ══ GHIACCIO E PLANNING ══ */}
         <TabsContent value="ghiaccio" className="space-y-4">
         <SetupSection id="gh_parametri" titolo={t("club.sezioni.ghiaccio_planning")}>
+        {loading_config && (
+          <div className="bg-muted/40 border border-border rounded-lg p-3 mb-3">
+            <p className="text-sm text-muted-foreground">{t("club.testi.config_ghiaccio_in_caricamento")}</p>
+          </div>
+        )}
         {errore_config && (
           <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 mb-3 space-y-2">
             <p className="text-sm text-destructive">{t("club.toast.config_ghiaccio_non_letta")}</p>
