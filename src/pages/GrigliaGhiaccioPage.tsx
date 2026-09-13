@@ -114,7 +114,7 @@ const GrigliaGhiaccioPage: React.FC = () => {
   useEffect(() => {
     if (!selettore_data_aperto) return;
     const on_key = (e: KeyboardEvent) => {
-      if (e.key === "Escape") set_selettore_data_aperto(false);
+      if (e.key === "Escape" || e.key === "Enter") set_selettore_data_aperto(false);
     };
     const on_click = (e: MouseEvent) => {
       const target = e.target as Node | null;
