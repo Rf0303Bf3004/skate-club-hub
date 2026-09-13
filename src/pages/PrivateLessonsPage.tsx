@@ -1300,6 +1300,18 @@ const LezioniPrivatePage: React.FC = () => {
             {t("lezioni_private.select_istruttore_empty")}
           </div>
         )}
+          </TabsContent>
+
+          <TabsContent value="richieste" className="mt-4">
+            <RichiesteLezioniPrivateTab
+              atleti={atleti as any}
+              istruttori={istruttori as any}
+              puo_gestire={puo_gestire_sportivo}
+              richiesta_pendente_id={richiesta_pendente?.id ?? null}
+              on_accetta={handle_accetta_richiesta}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </>
   );
