@@ -160,7 +160,7 @@ const RuoliPermessiPage: React.FC = () => {
         </div>
         <Button
           onClick={salva}
-          disabled={saving || isError || Object.keys(matrix).length === 0}
+          disabled={saving || !puo_salvare}
           className="gap-2"
         >
           <Save className="w-4 h-4" />
@@ -168,7 +168,16 @@ const RuoliPermessiPage: React.FC = () => {
         </Button>
       </div>
 
-      {isError ? (
+      {dati_forse_vecchi && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
+          <p className="text-sm text-amber-800">{t("roles.stale_warning")}</p>
+          <Button variant="outline" size="sm" onClick={() => refetch()}>
+            {t("roles.retry")}
+          </Button>
+        </div>
+      )}
+
+      {errore_bloccante ? (
         <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-6 space-y-3">
           <p className="text-sm font-semibold text-destructive">{t("roles.load_error_title")}</p>
           <p className="text-sm text-destructive/90">{t("roles.load_error_desc")}</p>
