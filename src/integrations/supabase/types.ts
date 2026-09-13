@@ -5913,7 +5913,8 @@ export type Database = {
           id: string
           nome: string
           ordine: number
-          programma_id: string
+          programma_id: string | null
+          scaletta_id: string | null
           secondi: number
           secondi_fine: number | null
         }
@@ -5922,7 +5923,8 @@ export type Database = {
           id?: string
           nome: string
           ordine?: number
-          programma_id: string
+          programma_id?: string | null
+          scaletta_id?: string | null
           secondi: number
           secondi_fine?: number | null
         }
@@ -5931,7 +5933,8 @@ export type Database = {
           id?: string
           nome?: string
           ordine?: number
-          programma_id?: string
+          programma_id?: string | null
+          scaletta_id?: string | null
           secondi?: number
           secondi_fine?: number | null
         }
@@ -5941,6 +5944,13 @@ export type Database = {
             columns: ["programma_id"]
             isOneToOne: false
             referencedRelation: "programmi_musicali"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "punti_programma_scaletta_id_fkey"
+            columns: ["scaletta_id"]
+            isOneToOne: false
+            referencedRelation: "scaletta_evento"
             referencedColumns: ["id"]
           },
         ]
@@ -6895,6 +6905,84 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "kpi_pitch_sponsor"
             referencedColumns: ["club_id"]
+          },
+        ]
+      }
+      scaletta_evento: {
+        Row: {
+          attivo: boolean
+          chi: string | null
+          club_id: string
+          created_at: string
+          durata_sec: number | null
+          evento_id: string
+          file_path: string | null
+          id: string
+          note: string | null
+          ordine: number
+          titolo: string
+        }
+        Insert: {
+          attivo?: boolean
+          chi?: string | null
+          club_id: string
+          created_at?: string
+          durata_sec?: number | null
+          evento_id: string
+          file_path?: string | null
+          id?: string
+          note?: string | null
+          ordine?: number
+          titolo: string
+        }
+        Update: {
+          attivo?: boolean
+          chi?: string | null
+          club_id?: string
+          created_at?: string
+          durata_sec?: number | null
+          evento_id?: string
+          file_path?: string | null
+          id?: string
+          note?: string | null
+          ordine?: number
+          titolo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scaletta_evento_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scaletta_evento_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scaletta_evento_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "elenco_club"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scaletta_evento_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "kpi_pitch_sponsor"
+            referencedColumns: ["club_id"]
+          },
+          {
+            foreignKeyName: "scaletta_evento_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventi_straordinari"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -8777,6 +8865,7 @@ export type Database = {
       puo_gestire_cancellazioni: { Args: { p_club: string }; Returns: boolean }
       puo_gestire_denaro: { Args: never; Returns: boolean }
       puo_gestire_fatture: { Args: { p_club: string }; Returns: boolean }
+      puo_gestire_musica: { Args: never; Returns: boolean }
       puo_gestire_sportivo: { Args: never; Returns: boolean }
       puo_pianificare: { Args: never; Returns: boolean }
       purga_documenti_scaduti: {
