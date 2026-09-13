@@ -660,9 +660,16 @@ const ClubSetupPage: React.FC = () => {
               >
                 <tb.icon className="h-4 w-4" />
                 {tb.label}
-                {tab_completa[tb.value]
-                  ? <CheckCircle2 className="h-3.5 w-3.5 text-success" />
-                  : <AlertCircle className="h-3.5 w-3.5 text-orange-500" />}
+                {tb.value === "catalogo" && errore_catalogo ? (
+                  <AlertCircle
+                    className="h-3.5 w-3.5 text-muted-foreground"
+                    aria-label={t("club.testi.dato_non_disponibile")}
+                  />
+                ) : tab_completa[tb.value] ? (
+                  <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+                ) : (
+                  <AlertCircle className="h-3.5 w-3.5 text-orange-500" />
+                )}
               </TabsTrigger>
             ))}
           </TabsList>
