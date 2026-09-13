@@ -28,6 +28,35 @@ const TUTTO = "__tutto_il_ghiaccio";
 
 const ora_breve = (valore: string | null) => (valore ? String(valore).slice(0, 5) : "");
 
+const chiave_bozza = (sessione_id: string) => `appello_${sessione_id}`;
+
+const leggi_bozza = (sessione_id: string): string[] | null => {
+  try {
+    const grezzo = window.localStorage.getItem(chiave_bozza(sessione_id));
+    if (!grezzo) return null;
+    const valore = JSON.parse(grezzo);
+    return Array.isArray(valore) ? (valore as string[]) : null;
+  } catch {
+    return null;
+  }
+};
+
+const scrivi_bozza = (sessione_id: string, elenco: string[]) => {
+  try {
+    window.localStorage.setItem(chiave_bozza(sessione_id), JSON.stringify(elenco));
+  } catch {
+    /* localStorage non disponibile: la pagina continua a funzionare */
+  }
+};
+
+const cancella_bozza = (sessione_id: string) => {
+  try {
+    window.localStorage.removeItem(chiave_bozza(sessione_id));
+  } catch {
+    /* localStorage non disponibile */
+  }
+};
+
 const chiave_giorno = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
