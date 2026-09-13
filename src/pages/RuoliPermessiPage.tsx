@@ -125,7 +125,15 @@ const RuoliPermessiPage: React.FC = () => {
     }
   };
 
-  if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
+  if (session && !puo_gestire_ruoli) {
+    return <Navigate to="/" replace />;
+  }
+
+  // Finché la matrice non è costruita da una lettura riuscita si mostra lo spinner,
+  // mai la tabella con tutte le caselle spente.
+  if (!errore_bloccante && (isLoading || !matrice_caricata)) {
+    return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>;
+  }
 
   const fasce = [
     {
