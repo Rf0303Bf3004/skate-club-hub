@@ -566,7 +566,11 @@ const PistaPage: React.FC = () => {
         <div className="mb-3 rounded-lg border border-border bg-muted/50 px-4 py-2 text-base">
           <span className="font-semibold">{t("pista.compleanni_oggi")}</span>{" "}
           {compleanni
-            .map((c) => t("pista.compleanno_persona", { nome: c.nome, cognome: c.cognome, count: c.anni ?? 0 }))
+            .map((c) =>
+              c.anni == null
+                ? t("pista.compleanno_persona_senza_anni", { nome: c.nome, cognome: c.cognome })
+                : t("pista.compleanno_persona", { nome: c.nome, cognome: c.cognome, count: c.anni }),
+            )
             .join(", ")}
         </div>
       )}
