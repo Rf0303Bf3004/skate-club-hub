@@ -9,7 +9,7 @@ interface Props {
   max_year?: number;
 }
 
-const DateInput: React.FC<Props> = ({ value, onChange, className, min_year = 1900, max_year = 2020 }) => {
+const DateInput: React.FC<Props> = ({ value, onChange, className, min_year = 1900, max_year = 2100 }) => {
   const { t } = useTranslation("common");
   const [gg, set_gg] = useState("");
   const [mm, set_mm] = useState("");

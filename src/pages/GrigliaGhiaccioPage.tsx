@@ -314,10 +314,7 @@ const GrigliaGhiaccioPage: React.FC = () => {
                   <DateInput
                     value={data_sel}
                     onChange={(v) => {
-                      if (v) {
-                        set_data_sel(v);
-                        set_selettore_data_aperto(false);
-                      }
+                      if (v) set_data_sel(v);
                     }}
                     min_year={2020}
                     max_year={2100}
