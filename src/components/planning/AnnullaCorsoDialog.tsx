@@ -126,6 +126,7 @@ const AnnullaCorsoDialog: React.FC<Props> = ({
       }
 
       // 3) Conta iscritti e crea comunicazione
+      let avviso_inviato = true;
       try {
         const { count } = await supabase
           .from("iscrizioni_corsi")
@@ -150,14 +151,32 @@ const AnnullaCorsoDialog: React.FC<Props> = ({
               programmata_per: new Date().toISOString(),
               creata_da: user_id,
             });
-            if (com_err) console.error("[AnnullaCorsoDialog] comunicazione error", com_err);
+            if (com_err) {
+              avviso_inviato = false;
+              await segnala_errore(
+                "AnnullaCorsoDialog",
+                i18n.t("avviso_corso_annullato_non_inviato", { ns: "errors" }) as string,
+                com_err,
+                { planning_corso_id: final_id, corso_id: corso_id_target },
+              );
+            }
           }
         }
       } catch (com_e) {
-        console.error("[AnnullaCorsoDialog] errore creazione comunicazione", com_e);
+        avviso_inviato = false;
+        await segnala_errore(
+          "AnnullaCorsoDialog",
+          i18n.t("avviso_corso_annullato_non_inviato", { ns: "errors" }) as string,
+          com_e,
+          { planning_corso_id: final_id, corso_id: corso_id_target },
+        );
       }
 
-      toast.success(tk("ok"));
+      if (avviso_inviato) {
+        toast.success(tk("ok"));
+      } else {
+        toast.warning(i18n.t("avviso_corso_annullato_non_inviato", { ns: "errors" }) as string);
+      }
       on_done(final_id, motivo.trim());
       set_motivo("");
       on_close();
