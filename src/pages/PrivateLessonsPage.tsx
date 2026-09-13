@@ -994,6 +994,8 @@ const LezioniPrivatePage: React.FC = () => {
       toast({
         title: form_data.ricorrente ? t("lezioni_private.toast.lezioni_ricorrenti_create") : t("lezioni_private.toast.lezione_prenotata"),
       });
+      const lezione_id: string | undefined = Array.isArray(creata) ? creata[0]?.id : creata?.id;
+      if (richiesta_pendente && lezione_id) await collega_richiesta_a_lezione(lezione_id);
     } catch (err: any) {
       toast({
         title: t("lezioni_private.toast.errore_salvataggio"),
