@@ -347,6 +347,7 @@ const ProgrammiMusicaliSection: React.FC<Props> = ({ atleta_id }) => {
 
       {puo_gestire_musica && (
         <div className="flex flex-wrap items-end gap-2 rounded-lg border border-dashed border-border p-2">
+          <p className="w-full text-xs text-muted-foreground">{t("musica.istruzioni_caricamento")}</p>
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">{t("musica.tipo")}</Label>
             <Select value={tipo} onValueChange={(v) => set_tipo(v as TipoProgramma)}>
