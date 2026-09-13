@@ -648,7 +648,7 @@ const ImportAtletiPage: React.FC = () => {
             <Button variant="outline" onClick={() => set_step(2)} disabled={importing}>
               <ArrowLeft className="w-4 h-4 mr-2" /> Indietro
             </Button>
-            <Button onClick={run_import} disabled={importing || (counts.nuovi + counts.aggiornamenti) === 0}>
+            <Button onClick={run_import} disabled={importing || lettura_fallita || (counts.nuovi + counts.aggiornamenti) === 0}>
               <CheckCircle2 className="w-4 h-4 mr-2" />
               {t("import.do_import", { count: counts.nuovi + counts.aggiornamenti })}
             </Button>
