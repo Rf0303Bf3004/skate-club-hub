@@ -1091,27 +1091,7 @@ const AtletaDetail: React.FC<Props> = ({ atleta: a, on_back }) => {
                   className="h-9"
                 />
               </div>
-              <div className="space-y-2">
-                <Label className="text-sm text-muted-foreground">{td("detail.disc_file")}</Label>
-                {form.disco_url && (
-                  <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg">
-                    <Music className="w-4 h-4 text-primary flex-shrink-0" />
-                    <audio controls src={form.disco_url} className="flex-1 h-8" />
-                  </div>
-                )}
-                <label
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border border-border cursor-pointer hover:bg-muted/30 text-sm text-muted-foreground transition-colors w-fit ${uploading_disco ? "opacity-50 pointer-events-none" : ""}`}
-                >
-                  <Upload className="w-4 h-4" />
-                  {uploading_disco ? td("detail.uploading") : form.disco_url ? td("detail.replace_disc") : td("detail.upload_disc")}
-                  <input
-                    type="file"
-                    accept="audio/*"
-                    className="hidden"
-                    onChange={(e) => e.target.files?.[0] && handle_disco_upload(e.target.files[0])}
-                  />
-                </label>
-              </div>
+              {a?.id && <ProgrammiMusicaliSection atleta_id={a.id} />}
               <div className="space-y-1.5">
                 <Label className="text-sm text-muted-foreground">{t("note")}</Label>
                 <Textarea value={form.note || ""} onChange={(e) => upd("note", e.target.value)} />
