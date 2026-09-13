@@ -977,7 +977,7 @@ const LezioniPrivatePage: React.FC = () => {
         const a = atleti.find((x: any) => x.id === aid);
         return a ? `${a.cognome} ${a.nome}`.trim() : "?";
       });
-      await crea_lezione.mutateAsync({
+      const creata: any = await crea_lezione.mutateAsync({
         istruttore_id: form_data.istruttore_id,
         data: form_data.data,
         ora_inizio: form_data.ora_inizio,
