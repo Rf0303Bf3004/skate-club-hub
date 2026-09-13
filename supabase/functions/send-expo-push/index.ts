@@ -1,9 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+// Funzione di solo servizio (trigger/cron): nessuna intestazione CORS,
+// non va chiamata da un browser.
+const corsHeaders: Record<string, string> = {};
 
 const EXPO_URL = "https://exp.host/--/api/v2/push/send";
 
@@ -15,8 +14,14 @@ type ExpoMessage = {
 };
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+  // Solo chiamate interne (trigger/cron) con la chiave di servizio.
+  const auth = req.headers.get("authorization") || "";
+  const expected = `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`;
+  if (auth !== expected) {
+    return new Response(JSON.stringify({ error: "unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   try {
