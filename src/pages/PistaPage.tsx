@@ -103,13 +103,15 @@ const PistaPage: React.FC = () => {
   const istruttori = React.useMemo(() => istruttori_query.data ?? [], [istruttori_query.data]);
 
   // Selezione automatica istruttore: solo finché l'utente non sceglie a mano
-  // e finché non ci sono modifiche non registrate.
+  // e finché non ci sono modifiche non registrate. La scelta manuale resta valida
+  // solo se la linguetta è ancora presente nella lista corrente.
   React.useEffect(() => {
     if (istruttori.length === 0) return;
     if (modificato) return;
-    if (scelta_manuale_istruttore && tab) return;
-    const scelta = istruttori[0].istruttore_id;
-    if (scelta !== tab) set_tab(scelta);
+    if (scelta_manuale_istruttore && tab && (tab === TUTTO || istruttori.some((i) => i.istruttore_id === tab))) return;
+    const scelta = (istruttori.find((i) => i.ha_sessione_in_corso) ?? istruttori[0]).istruttore_id;
+    if (scelta !== tab) applica_istruttore_auto(scelta);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [istruttori, tab, adesso, modificato, scelta_manuale_istruttore]);
 
   const in_tutto = tab === TUTTO;
