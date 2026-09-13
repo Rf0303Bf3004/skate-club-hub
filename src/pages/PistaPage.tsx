@@ -224,7 +224,13 @@ const PistaPage: React.FC = () => {
     const in_corso = sessioni.find((s) => s.in_corso);
     const prossima = sessioni.find((s) => ora_breve(s.ora_inizio) >= ora_corrente);
     const scelta = (in_corso ?? prossima ?? sessioni[sessioni.length - 1]).sessione_id;
-    if (scelta !== sessione_id) set_sessione_id(scelta);
+    if (scelta !== sessione_id) {
+      // Cambio automatico di sessione: si riparte dall'appello della nuova
+      // sessione, mai restando nell'elenco della precedente.
+      if (sessione_id) azzera_appello();
+      set_sessione_id(scelta);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessioni, sessione_id, adesso, modificato, scelta_manuale]);
 
   const atleti_query = useQuery({
