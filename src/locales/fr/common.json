@@ -386,7 +386,22 @@
     "istruzioni_caricamento": "Choisissez d'abord le type et le titre, puis le fichier : le chargement démarre tout de suite et enregistre. Le titre et le type restent modifiables depuis la ligne du morceau.",
     "scegli_file_e_salva": "Choisir le fichier et enregistrer",
     "titolo_mancante": "Morceau sans titre",
-    "titolo_mancante_dettaglio": "Le morceau est enregistré sans titre. Vous pouvez l'ajouter depuis la ligne du morceau."
+    "titolo_mancante_dettaglio": "Le morceau est enregistré sans titre. Vous pouvez l'ajouter depuis la ligne du morceau.",
+    "da_capo": "Depuis le début",
+    "avanti_10": "+10 s",
+    "punto_precedente": "Point précédent",
+    "punto_successivo": "Point suivant",
+    "volume": "Volume",
+    "silenzia": "Couper le son",
+    "riattiva_audio": "Rétablir le son",
+    "barra_avanzamento": "Progression du morceau",
+    "rinomina_punto": "Renommer le point",
+    "salva_nome_punto": "Enregistrer le nom",
+    "elimina_punto": "Supprimer le point",
+    "elimina_punto_conferma": "Le point « {{nome}} » sera supprimé.",
+    "errore_rinomina_punto": "Impossible de renommer le point.",
+    "errore_elimina_punto": "Impossible de supprimer le point.",
+    "scorciatoie": "Clavier : barre d'espace démarre et arrête, flèches gauche et droite déplacent de 5 secondes."
   },
   "menu_blocco": {
     "conduzione": "Conduite",

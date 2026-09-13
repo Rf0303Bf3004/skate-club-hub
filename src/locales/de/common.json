@@ -386,7 +386,22 @@
     "istruzioni_caricamento": "Zuerst Typ und Titel wählen, dann die Datei: Der Upload startet sofort und speichert. Titel und Typ lassen sich weiterhin in der Zeile ändern.",
     "scegli_file_e_salva": "Datei wählen und speichern",
     "titolo_mancante": "Stück ohne Titel",
-    "titolo_mancante_dettaglio": "Die Musik wird ohne Titel gespeichert. Du kannst ihn in der Zeile nachtragen."
+    "titolo_mancante_dettaglio": "Die Musik wird ohne Titel gespeichert. Du kannst ihn in der Zeile nachtragen.",
+    "da_capo": "Von vorne",
+    "avanti_10": "+10 s",
+    "punto_precedente": "Vorherige Stelle",
+    "punto_successivo": "Nächste Stelle",
+    "volume": "Lautstärke",
+    "silenzia": "Stummschalten",
+    "riattiva_audio": "Ton einschalten",
+    "barra_avanzamento": "Fortschritt des Stücks",
+    "rinomina_punto": "Stelle umbenennen",
+    "salva_nome_punto": "Namen speichern",
+    "elimina_punto": "Stelle löschen",
+    "elimina_punto_conferma": "Die Stelle „{{nome}}“ wird gelöscht.",
+    "errore_rinomina_punto": "Die Stelle konnte nicht umbenannt werden.",
+    "errore_elimina_punto": "Die Stelle konnte nicht gelöscht werden.",
+    "scorciatoie": "Tastatur: Leertaste startet und stoppt, Pfeil links und rechts verschieben um 5 Sekunden."
   },
   "menu_blocco": {
     "conduzione": "Betrieb",

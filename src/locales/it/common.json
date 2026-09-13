@@ -471,7 +471,22 @@
     "istruzioni_caricamento": "Scegli prima il tipo e il titolo, poi scegli il file: il caricamento parte subito e salva. Titolo e tipo restano modificabili dalla riga del disco.",
     "scegli_file_e_salva": "Scegli il file e salva",
     "titolo_mancante": "Brano senza titolo",
-    "titolo_mancante_dettaglio": "Il disco viene salvato senza titolo. Puoi aggiungerlo dalla riga del disco."
+    "titolo_mancante_dettaglio": "Il disco viene salvato senza titolo. Puoi aggiungerlo dalla riga del disco.",
+    "da_capo": "Da capo",
+    "avanti_10": "+10 s",
+    "punto_precedente": "Punto precedente",
+    "punto_successivo": "Punto successivo",
+    "volume": "Volume",
+    "silenzia": "Silenzia",
+    "riattiva_audio": "Riattiva l'audio",
+    "barra_avanzamento": "Avanzamento del brano",
+    "rinomina_punto": "Rinomina il punto",
+    "salva_nome_punto": "Salva il nome",
+    "elimina_punto": "Elimina il punto",
+    "elimina_punto_conferma": "Il punto «{{nome}}» verrà eliminato.",
+    "errore_rinomina_punto": "Non è stato possibile rinominare il punto.",
+    "errore_elimina_punto": "Non è stato possibile eliminare il punto.",
+    "scorciatoie": "Tastiera: barra spaziatrice avvia e ferma, frecce sinistra e destra spostano di 5 secondi."
   },
   "menu_blocco": {
     "conduzione": "Conduzione",
