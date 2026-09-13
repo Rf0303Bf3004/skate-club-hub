@@ -185,24 +185,56 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
     vai_a(p.secondi);
   };
 
+  /** Passo 1: segna l'inizio. Il nome si chiede una volta sola, qui. */
   const salva_punto = async () => {
     const nome = nome_punto.trim();
     if (!nome) return;
     set_salvataggio_punto(true);
     try {
       const secondi = Math.floor(audio()?.currentTime ?? posizione);
-      const { error } = await supabase.from("punti_programma").insert({
-        programma_id: programma.id,
-        nome,
-        secondi,
-        ordine: punti.length,
-      } as any);
+      const { data, error } = await supabase
+        .from("punti_programma")
+        .insert({
+          programma_id: programma.id,
+          nome,
+          secondi,
+          ordine: punti.length,
+        } as any)
+        .select("id, programma_id, nome, secondi, secondi_fine, ordine")
+        .single();
       if (error) throw error;
       await query_client.invalidateQueries({ queryKey: ["punti_programma", programma.id] });
+      set_punto_aperto((data ?? null) as PuntoProgramma | null);
       set_dialogo_punto(false);
       set_nome_punto("");
     } catch (err) {
       void segnala_errore("LettoreDisco", t("musica.segna_punto"), err);
+    } finally {
+      set_salvataggio_punto(false);
+    }
+  };
+
+  /** Passo 2: segna la fine sullo stesso punto, che diventa una ripetizione. */
+  const segna_fine = async () => {
+    const aperto = punto_aperto;
+    if (!aperto) return;
+    const fine = Math.floor(audio()?.currentTime ?? posizione);
+    if (fine <= aperto.secondi) {
+      set_errore_audio(t("musica.fine_prima_inizio"));
+      return;
+    }
+    set_salvataggio_punto(true);
+    try {
+      const { error } = await supabase
+        .from("punti_programma")
+        .update({ secondi_fine: fine } as any)
+        .eq("id", aperto.id);
+      if (error) throw error;
+      await query_client.invalidateQueries({ queryKey: ["punti_programma", programma.id] });
+      set_loop_punto({ ...aperto, secondi_fine: fine });
+      set_punto_aperto(null);
+    } catch (err) {
+      void segnala_errore("LettoreDisco", t("musica.segna_fine_qui"), err);
     } finally {
       set_salvataggio_punto(false);
     }
