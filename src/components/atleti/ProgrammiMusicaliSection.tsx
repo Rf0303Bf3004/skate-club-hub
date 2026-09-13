@@ -259,12 +259,39 @@ const ProgrammiMusicaliSection: React.FC<Props> = ({ atleta_id }) => {
             <div key={p.id} className="rounded-lg border border-border bg-muted/20 p-2">
               <div className="flex flex-wrap items-center gap-2">
                 <Music className="h-4 w-4 flex-shrink-0 text-primary" />
-                <span className="text-sm font-medium">
-                  {t(`musica.tipo_${p.tipo}`, { defaultValue: p.tipo })}
-                </span>
-                <span className="truncate text-sm text-muted-foreground">
-                  {p.titolo_brano || t("musica.senza_titolo")}
-                </span>
+                {puo_gestire_musica ? (
+                  <>
+                    <Select
+                      value={p.tipo}
+                      disabled={tipo_in_corso === p.id}
+                      onValueChange={(v) => void cambia_tipo(p, v as TipoProgramma)}
+                    >
+                      <SelectTrigger className="h-8 w-40" aria-label={t("musica.tipo")}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TIPI_PROGRAMMA.map((v) => (
+                          <SelectItem key={v} value={v}>
+                            {t(`musica.tipo_${v}`, { defaultValue: v })}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <CampoTitolo
+                      programma={p}
+                      on_salva={(valore) => salva_dettagli(p, { titolo_brano: valore })}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <span className="text-sm font-medium">
+                      {t(`musica.tipo_${p.tipo}`, { defaultValue: p.tipo })}
+                    </span>
+                    <span className="truncate text-sm text-muted-foreground">
+                      {p.titolo_brano || t("musica.senza_titolo")}
+                    </span>
+                  </>
+                )}
                 <div className="ml-auto flex items-center gap-2">
                   <Button variant="outline" size="sm" onClick={() => void ascolta(p)} disabled={!p.file_path}>
                     {t("musica.ascolta")}
