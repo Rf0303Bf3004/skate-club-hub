@@ -68,6 +68,18 @@ const RichiestePrivateSezione: React.FC<Props> = ({ atleta_id, club_id }) => {
   const istruttori = istruttori_query.data ?? [];
   const richieste = richieste_query.data ?? [];
 
+  React.useEffect(() => {
+    if (richieste_query.isError) {
+      segnala_errore(
+        "RichiestePrivateSezione",
+        "lettura richieste_lezioni_private",
+        richieste_query.error,
+        { atleta_id },
+        "avviso",
+      );
+    }
+  }, [richieste_query.isError, richieste_query.error, atleta_id]);
+
   const etichetta_stato = (s: string) => {
     if (s === "accettata") return t("richieste_private.stato_accettata");
     if (s === "rifiutata") return t("richieste_private.stato_rifiutata");
