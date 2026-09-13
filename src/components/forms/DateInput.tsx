@@ -120,6 +120,14 @@ const DateInput: React.FC<Props> = ({ value, onChange, className, min_year = 190
         }}
         className={`${base_cls} w-20`}
       />
+      </div>
+      {errore && (
+        <p className="mt-1 text-sm text-destructive" role="alert">
+          {errore === "inesistente"
+            ? t("date_input.errore_inesistente")
+            : t("date_input.errore_anno_range", { min: min_year, max: max_year })}
+        </p>
+      )}
     </div>
   );
 };
