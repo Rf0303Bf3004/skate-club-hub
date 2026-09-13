@@ -49,7 +49,7 @@ const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sa
 function use_config_ghiaccio() {
   const club_id = get_current_club_id();
   const { data: stagione } = use_stagione_attiva();
-  return useQuery({
+  const query = useQuery({
     // La configurazione del ghiaccio vale per la stagione in corso: le stagioni
     // passate conservano i loro parametri.
     queryKey: ["configurazione_ghiaccio", club_id, stagione?.id ?? null],
@@ -59,10 +59,7 @@ function use_config_ghiaccio() {
         .from("configurazione_ghiaccio")
         .select("*")
         .eq("club_id", club_id);
-      if (error) {
-        await segnala_errore("ClubSetupPage", "Lettura configurazione ghiaccio", error);
-        throw error;
-      }
+      if (error) throw error;
       const righe = (data ?? []) as any[];
       return (
         righe.find((r) => stagione?.id && r.stagione_id === stagione.id) ??
@@ -71,6 +68,13 @@ function use_config_ghiaccio() {
       );
     },
   });
+  // Una segnalazione sola a tentativi esauriti, non una per ogni ritentativo.
+  useEffect(() => {
+    if (query.error) {
+      void segnala_errore("ClubSetupPage", "Lettura configurazione ghiaccio", query.error, undefined, "avviso");
+    }
+  }, [query.error]);
+  return query;
 }
 
 function use_disponibilita_ghiaccio() {
