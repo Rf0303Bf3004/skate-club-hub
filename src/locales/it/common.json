@@ -347,6 +347,8 @@
     "compleanno_persona_one": "{{nome}} {{cognome}} ({{count}} anno)",
     "compleanno_persona_other": "{{nome}} {{cognome}} ({{count}} anni)",
     "conferma_cambio_istruttore_testo": "Hai segnato delle assenze senza registrarle. Cambiando istruttore andranno perse.",
-    "conferma_cambio_istruttore_azione": "Cambia istruttore"
+    "conferma_cambio_istruttore_azione": "Cambia istruttore",
+    "compleanno_persona_senza_anni": "{{nome}} {{cognome}}",
+    "ripresa_bozza": "Ripresa la segnalazione non ancora registrata."
   }
 }

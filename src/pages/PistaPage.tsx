@@ -28,6 +28,35 @@ const TUTTO = "__tutto_il_ghiaccio";
 
 const ora_breve = (valore: string | null) => (valore ? String(valore).slice(0, 5) : "");
 
+const chiave_bozza = (sessione_id: string) => `appello_${sessione_id}`;
+
+const leggi_bozza = (sessione_id: string): string[] | null => {
+  try {
+    const grezzo = window.localStorage.getItem(chiave_bozza(sessione_id));
+    if (!grezzo) return null;
+    const valore = JSON.parse(grezzo);
+    return Array.isArray(valore) ? (valore as string[]) : null;
+  } catch {
+    return null;
+  }
+};
+
+const scrivi_bozza = (sessione_id: string, elenco: string[]) => {
+  try {
+    window.localStorage.setItem(chiave_bozza(sessione_id), JSON.stringify(elenco));
+  } catch {
+    /* localStorage non disponibile: la pagina continua a funzionare */
+  }
+};
+
+const cancella_bozza = (sessione_id: string) => {
+  try {
+    window.localStorage.removeItem(chiave_bozza(sessione_id));
+  } catch {
+    /* localStorage non disponibile */
+  }
+};
+
 const chiave_giorno = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
@@ -66,6 +95,7 @@ const PistaPage: React.FC = () => {
   const [registrato_alle, set_registrato_alle] = React.useState<string | null>(null);
   const [in_attesa, set_in_attesa] = React.useState<{ tipo: "sessione" | "istruttore"; id: string } | null>(null);
   const [schermo_intero, set_schermo_intero] = React.useState(false);
+  const [ripreso, set_ripreso] = React.useState(false);
 
   React.useEffect(() => {
     const timer = window.setInterval(() => set_adesso(new Date()), 60_000);
@@ -103,13 +133,21 @@ const PistaPage: React.FC = () => {
   const istruttori = React.useMemo(() => istruttori_query.data ?? [], [istruttori_query.data]);
 
   // Selezione automatica istruttore: solo finché l'utente non sceglie a mano
-  // e finché non ci sono modifiche non registrate.
+  // e finché non ci sono modifiche non registrate. La scelta manuale resta valida
+  // solo se la linguetta è ancora presente nella lista corrente.
   React.useEffect(() => {
     if (istruttori.length === 0) return;
     if (modificato) return;
-    if (scelta_manuale_istruttore && tab) return;
-    const scelta = istruttori[0].istruttore_id;
-    if (scelta !== tab) set_tab(scelta);
+    if (scelta_manuale_istruttore && tab && (tab === TUTTO || istruttori.some((i) => i.istruttore_id === tab))) return;
+    const scelta = (istruttori.find((i) => i.ha_sessione_in_corso) ?? istruttori[0]).istruttore_id;
+    if (scelta !== tab) {
+      // Anche il cambio automatico azzera l'appello e la sessione, come quello manuale.
+      azzera_appello();
+      set_tab(scelta);
+      set_sessione_id(null);
+      set_scelta_manuale(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [istruttori, tab, adesso, modificato, scelta_manuale_istruttore]);
 
   const in_tutto = tab === TUTTO;
@@ -199,16 +237,31 @@ const PistaPage: React.FC = () => {
     if (!sessione_id || !atleti_query.data) return;
     if (sessione_inizializzata.current === sessione_id) return;
     sessione_inizializzata.current = sessione_id;
-    set_assenti(
-      new Set(
-        atleti_query.data
-          .filter((a) => a.stato === "assente" || a.stato === "avvisato")
-          .map((a) => a.atleta_id),
-      ),
-    );
-    set_modificato(false);
+    const salvato = leggi_bozza(sessione_id);
+    if (salvato) {
+      set_assenti(new Set(salvato));
+      set_modificato(true);
+      set_ripreso(true);
+    } else {
+      set_assenti(
+        new Set(
+          atleti_query.data
+            .filter((a) => a.stato === "assente" || a.stato === "avvisato")
+            .map((a) => a.atleta_id),
+        ),
+      );
+      set_modificato(false);
+      set_ripreso(false);
+    }
     set_registrato_alle(null);
   }, [sessione_id, atleti_query.data]);
+
+  // L'appello in corso sopravvive a un ricaricamento del tablet.
+  React.useEffect(() => {
+    if (!sessione_id || !modificato) return;
+    if (sessione_inizializzata.current !== sessione_id) return;
+    scrivi_bozza(sessione_id, Array.from(assenti));
+  }, [assenti, modificato, sessione_id]);
 
   const sessione_selezionata = sessioni.find((s) => s.sessione_id === sessione_id) ?? null;
 
@@ -255,6 +308,7 @@ const PistaPage: React.FC = () => {
     set_assenti(new Set());
     set_modificato(false);
     set_registrato_alle(null);
+    set_ripreso(false);
   };
 
   const applica_sessione = (id: string) => {
@@ -299,6 +353,8 @@ const PistaPage: React.FC = () => {
       const ora = new Date();
       set_registrato_alle(`${String(ora.getHours()).padStart(2, "0")}:${String(ora.getMinutes()).padStart(2, "0")}`);
       set_modificato(false);
+      set_ripreso(false);
+      cancella_bozza(sessione_id);
       toast({ title: t("pista.salvato_titolo") });
     } catch (errore) {
       segnala_errore("PistaPage", t("pista.registra_appello"), errore);
@@ -361,9 +417,14 @@ const PistaPage: React.FC = () => {
   };
 
   const contatore = (
-    <div className="sticky top-0 z-40 -mx-4 mt-4 border-y border-border bg-background px-4 py-3 text-xl font-bold">
-      {t("pista.contatore", { presenti: n_presenti, assenti: n_assenti })}
-    </div>
+    <>
+      <div className="sticky top-0 z-40 -mx-4 mt-4 border-y border-border bg-background px-4 py-3 text-xl font-bold">
+        {t("pista.contatore", { presenti: n_presenti, assenti: n_assenti })}
+      </div>
+      {ripreso && (
+        <p className="mt-2 rounded-lg border border-border bg-muted/50 px-4 py-2 text-base">{t("pista.ripresa_bozza")}</p>
+      )}
+    </>
   );
 
   const vista_tutto = () => {
@@ -414,7 +475,8 @@ const PistaPage: React.FC = () => {
   };
 
   const vista_istruttore = () => {
-    if (sessioni_istruttore_query.isLoading) return <Caricamento />;
+    // Finché la linguetta non è stata scelta la query è disabilitata: è ancora caricamento.
+    if (tab === null || sessioni_istruttore_query.isLoading) return <Caricamento />;
     if (sessioni_istruttore_query.error)
       return <MessaggioCentrale variante="errore" testo={(sessioni_istruttore_query.error as Error).message} />;
     if (sessioni.length === 0) return <MessaggioCentrale testo={t("pista.istruttore_senza_sessioni")} />;
@@ -504,7 +566,11 @@ const PistaPage: React.FC = () => {
         <div className="mb-3 rounded-lg border border-border bg-muted/50 px-4 py-2 text-base">
           <span className="font-semibold">{t("pista.compleanni_oggi")}</span>{" "}
           {compleanni
-            .map((c) => t("pista.compleanno_persona", { nome: c.nome, cognome: c.cognome, count: c.anni ?? 0 }))
+            .map((c) =>
+              c.anni == null
+                ? t("pista.compleanno_persona_senza_anni", { nome: c.nome, cognome: c.cognome })
+                : t("pista.compleanno_persona", { nome: c.nome, cognome: c.cognome, count: c.anni }),
+            )
             .join(", ")}
         </div>
       )}
