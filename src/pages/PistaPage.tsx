@@ -475,7 +475,8 @@ const PistaPage: React.FC = () => {
   };
 
   const vista_istruttore = () => {
-    if (sessioni_istruttore_query.isLoading) return <Caricamento />;
+    // Finché la linguetta non è stata scelta la query è disabilitata: è ancora caricamento.
+    if (tab === null || sessioni_istruttore_query.isLoading) return <Caricamento />;
     if (sessioni_istruttore_query.error)
       return <MessaggioCentrale variante="errore" testo={(sessioni_istruttore_query.error as Error).message} />;
     if (sessioni.length === 0) return <MessaggioCentrale testo={t("pista.istruttore_senza_sessioni")} />;
