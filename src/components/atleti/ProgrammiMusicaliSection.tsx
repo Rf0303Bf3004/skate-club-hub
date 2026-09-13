@@ -238,7 +238,7 @@ const ProgrammiMusicaliSection: React.FC<Props> = ({ atleta_id }) => {
         </div>
       )}
 
-      {puo_gestire_sportivo && (
+      {puo_gestire_musica && (
         <div className="flex flex-wrap items-end gap-2 rounded-lg border border-dashed border-border p-2">
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">{t("musica.tipo")}</Label>
