@@ -54,10 +54,14 @@ function use_config_ghiaccio() {
     queryKey: ["configurazione_ghiaccio", club_id, stagione?.id ?? null],
     enabled: !!club_id,
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("configurazione_ghiaccio")
         .select("*")
         .eq("club_id", club_id);
+      if (error) {
+        await segnala_errore("ClubSetupPage", "Lettura configurazione ghiaccio", error);
+        throw error;
+      }
       const righe = (data ?? []) as any[];
       return (
         righe.find((r) => stagione?.id && r.stagione_id === stagione.id) ??
@@ -90,10 +94,14 @@ function use_catalogo_count() {
     queryKey: ["catalogo_livelli_count", club_id],
     enabled: !!club_id,
     queryFn: async () => {
-      const { count } = await (supabase as any)
+      const { count, error } = await (supabase as any)
         .from("catalogo_livelli")
         .select("id", { count: "exact", head: true })
         .eq("club_id", club_id);
+      if (error) {
+        await segnala_errore("ClubSetupPage", "Lettura catalogo livelli", error);
+        throw error;
+      }
       return count ?? 0;
     },
   });
