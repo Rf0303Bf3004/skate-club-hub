@@ -371,6 +371,8 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
             (a as any).preservesPitch = true;
             (a as any).mozPreservesPitch = true;
             (a as any).webkitPreservesPitch = true;
+            // Il file si è aperto: i tentativi di rinnovo ripartono da zero.
+            tentativi_firma.current = 0;
           }}
           onPlay={() => set_in_riproduzione(true)}
           onPause={() => set_in_riproduzione(false)}
@@ -383,6 +385,13 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
           }}
           onError={() => {
             // Il collegamento firmato dura 5 minuti: se scade si richiede e si riprende.
+            // Dopo due tentativi falliti ci si ferma: un file mancante non deve
+            // mandare il tablet in ciclo firma-errore per ore.
+            if (tentativi_firma.current >= 2) {
+              set_errore_audio(t("musica.brano_non_disponibile"));
+              return;
+            }
+            tentativi_firma.current += 1;
             void rinnova();
           }}
         />
