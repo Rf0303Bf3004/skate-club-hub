@@ -1,16 +1,16 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, fireEvent, screen } from "@testing-library/react";
+import { render, fireEvent } from "@testing-library/react";
 import React from "react";
 import DateInput from "@/components/forms/DateInput";
 
 function digita(gg: string, mm: string, aaaa: string) {
   const onChange = vi.fn();
-  render(<DateInput value="" onChange={onChange} />);
-  const inputs = screen.getAllByRole("textbox") as HTMLInputElement[];
+  const { container } = render(<DateInput value="" onChange={onChange} />);
+  const inputs = Array.from(container.querySelectorAll("input")) as HTMLInputElement[];
   fireEvent.change(inputs[0], { target: { value: gg } });
   fireEvent.change(inputs[1], { target: { value: mm } });
   fireEvent.change(inputs[2], { target: { value: aaaa } });
-  const alert = screen.queryByRole("alert");
+  const alert = container.querySelector("[role=alert]");
   return { emesso: onChange.mock.calls.map((c) => c[0]).filter(Boolean), messaggio: alert?.textContent ?? null };
 }
 
