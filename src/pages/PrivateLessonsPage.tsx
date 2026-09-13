@@ -909,10 +909,10 @@ const LezioniPrivatePage: React.FC = () => {
       ora_inizio: time,
       ora_fine: end_time,
       durata_minuti: slot_minuti,
-      atleti_ids: [],
+      atleti_ids: richiesta_pendente ? [richiesta_pendente.atleta_id] : [],
       ricorrente: false,
       costo_totale: costo,
-      note: "",
+      note: richiesta_pendente?.note_richiesta || "",
       has_ice,
     });
     set_form_open(true);
