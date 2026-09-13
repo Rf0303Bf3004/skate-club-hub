@@ -812,6 +812,7 @@ const PistaPage: React.FC = () => {
 
       {programma_attivo && (
         <LettoreDisco
+          key={programma_attivo.programma.id}
           programma={programma_attivo.programma}
           titolo_atleta={programma_attivo.titolo}
           onClose={() => set_programma_attivo(null)}
