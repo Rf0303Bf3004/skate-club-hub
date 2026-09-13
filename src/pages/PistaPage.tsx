@@ -426,6 +426,9 @@ const PistaPage: React.FC = () => {
 
   const lista_appello = () => (
     <div className="mt-4 space-y-6 pb-32">
+      <p className="rounded-xl border-2 border-warning-border bg-warning px-4 py-3 text-xl font-bold text-warning-foreground sm:text-2xl">
+        {t("pista.istruzione_appello")}
+      </p>
       {gruppi.map((gruppo) => (
         <div key={gruppo.chiave}>
           {gruppo.titolo && (
