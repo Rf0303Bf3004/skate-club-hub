@@ -333,7 +333,7 @@ const GrigliaGhiaccioPage: React.FC = () => {
             )}
 
             <DisponibilitaResiduaPopover
-              data_sel={data_sel}
+              data_sel={data_query}
               risorse={[...risorse_ghiaccio, ...risorse_palestra].map((r) => ({
                 id: r.id,
                 nome: r.nome,
@@ -396,7 +396,7 @@ const GrigliaGhiaccioPage: React.FC = () => {
 
       {periodo === "settimana" ? (
         <SettimanaView
-          data_sel={data_sel}
+          data_sel={data_query}
           includi_ospiti={includi_ospiti}
           on_cambia_data={set_data_sel}
           on_apri_giorno={(d) => {
@@ -407,7 +407,7 @@ const GrigliaGhiaccioPage: React.FC = () => {
         />
       ) : periodo === "mese" ? (
         <MeseGrigliaView
-          data_sel={data_sel}
+          data_sel={data_query}
           includi_ospiti={includi_ospiti}
           on_cambia_data={set_data_sel}
           on_apri_settimana={(d) => {
@@ -433,7 +433,7 @@ const GrigliaGhiaccioPage: React.FC = () => {
           eventi={eventi_tableau}
           min_inizio={finestra_tableau.min_inizio}
           min_fine={finestra_tableau.min_fine}
-          giorno_settimana={giorno_it_da_data(data_sel)}
+          giorno_settimana={giorno_it_da_data(data_query)}
         />
       ) : (
       <div className="space-y-5">
@@ -451,7 +451,7 @@ const GrigliaGhiaccioPage: React.FC = () => {
         ) : (
           <div className="space-y-5">
             {risorse_ghiaccio.map((r) => (
-              <GrigliaPistaSezione key={r.id} risorsa={r} data_sel={data_sel} is_editor={is_editor} />
+              <GrigliaPistaSezione key={r.id} risorsa={r} data_sel={data_query} is_editor={is_editor} />
             ))}
           </div>
         )}
@@ -462,7 +462,7 @@ const GrigliaGhiaccioPage: React.FC = () => {
             <h2 className="text-sm font-semibold text-muted-foreground">Palestre / Off Ice</h2>
             <div className="space-y-5">
               {risorse_palestra.map((r) => (
-                <GrigliaPistaSezione key={r.id} risorsa={r} data_sel={data_sel} is_editor={is_editor} />
+                <GrigliaPistaSezione key={r.id} risorsa={r} data_sel={data_query} is_editor={is_editor} />
               ))}
             </div>
           </div>
@@ -482,7 +482,7 @@ const GrigliaGhiaccioPage: React.FC = () => {
             {riepilogo_istruttori.map((i) => (
               <div key={i.istruttore_id} className="space-y-1">
                 <h3 className="font-semibold">{i.nome}</h3>
-                <p className="text-xs text-muted-foreground capitalize">{label_data(data_sel)}</p>
+                <p className="text-xs text-muted-foreground capitalize">{label_data(data_query)}</p>
                 <ul className="text-sm space-y-2 mt-1">
                   {i.sessioni.map((s, idx) => (
                     <li key={idx}>
@@ -614,14 +614,14 @@ const GrigliaGhiaccioPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      <StampaRiepilogoIstruttori istruttori={riepilogo_istruttori} data_label={label_data(data_sel)} />
+      <StampaRiepilogoIstruttori istruttori={riepilogo_istruttori} data_label={label_data(data_query)} />
 
       <TableauPosterStampa
         corsie={corsie_tableau}
         eventi={eventi_tableau}
         min_inizio={finestra_tableau.min_inizio}
         min_fine={finestra_tableau.min_fine}
-        data_label={label_data(data_sel)}
+        data_label={label_data(data_query)}
         formato={formato_carta}
       />
     </div>
