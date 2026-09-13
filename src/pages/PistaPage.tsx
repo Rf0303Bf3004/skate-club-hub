@@ -333,8 +333,83 @@ const PistaPage: React.FC = () => {
     return mappa;
   }, [programmi_query.data]);
 
+  // ---- Note rapide: sole RPC pista_note / pista_nota_salva / pista_nota_elimina ----
+  type NotaPista = {
+    id: string;
+    atleta_id: string;
+    testo: string;
+    autore_nome: string | null;
+    creata_il: string;
+  };
+
+  const note_query = useQuery({
+    queryKey: ["pista_note", sessione_id],
+    enabled: !!sessione_id,
+    refetchOnWindowFocus: false,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("pista_note", { p_sessione_id: sessione_id as string });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as NotaPista[];
+    },
+  });
+
+  // segnala_errore fuori dalla queryFn: con i tentativi automatici la funzione
+  // gira più volte e produrrebbe avvisi doppi.
+  React.useEffect(() => {
+    if (note_query.isError) segnala_errore("PistaPage", "pista_note", note_query.error);
+  }, [note_query.isError, note_query.error]);
+
+  const note_per_atleta = React.useMemo(() => {
+    const mappa = new Map<string, NotaPista[]>();
+    for (const n of note_query.data ?? []) {
+      if (!mappa.has(n.atleta_id)) mappa.set(n.atleta_id, []);
+      mappa.get(n.atleta_id)!.push(n);
+    }
+    return mappa;
+  }, [note_query.data]);
+
+  const salva_nota = async () => {
+    if (!nota_target || !sessione_id) return;
+    const testo = nota_testo.trim();
+    if (!testo) return;
+    set_nota_salvataggio(true);
+    try {
+      const { error } = await supabase.rpc("pista_nota_salva", {
+        p_sessione_id: sessione_id,
+        p_atleta_id: nota_target.atleta_id,
+        p_testo: testo,
+      });
+      if (error) throw new Error(error.message);
+      await note_query.refetch();
+      // Si chiude solo dopo una scrittura davvero riuscita.
+      set_nota_target(null);
+      set_nota_testo("");
+      toast({ title: t("pista.nota_salvata") });
+    } catch (errore) {
+      // La finestrella resta aperta e il testo scritto non si perde.
+      segnala_errore("PistaPage", t("pista.nota_rapida"), errore);
+    } finally {
+      set_nota_salvataggio(false);
+    }
+  };
+
+  const elimina_nota = async (nota_id: string) => {
+    set_nota_in_eliminazione(nota_id);
+    try {
+      const { error } = await supabase.rpc("pista_nota_elimina", { p_nota_id: nota_id });
+      // Messaggio del database, mai uno inventato.
+      if (error) throw new Error(error.message);
+      await note_query.refetch();
+    } catch (errore) {
+      segnala_errore("PistaPage", t("pista.note_titolo"), errore);
+    } finally {
+      set_nota_in_eliminazione(null);
+    }
+  };
+
   const apri_lettore = (programma: ProgrammaMusicale, titolo: string) =>
     set_programma_attivo({ programma, titolo });
+
 
   const alterna = (atleta_id: string) => {
     set_assenti((precedenti) => {
