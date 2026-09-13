@@ -1,11 +1,15 @@
 ---
 name: Storage buckets
-description: Bucket Storage del progetto (foto-atleti, loghi-club, dischi-musicali) — tutti pubblici, lettura aperta, scrittura per utenti autenticati
+description: Bucket Storage del progetto — foto-atleti e loghi-club pubblici, dischi-musicali PRIVATO (15 MB, solo audio, policy per percorso club/atleta)
 type: reference
 ---
-Il DB Cloud espone 3 bucket Storage pubblici:
-- **foto-atleti**: foto profilo atleti, riferite via `atleti.foto_url`. Path convention: `{club_id}/{timestamp}.{ext}`.
-- **loghi-club**: logo del club caricabile da /setup-club, riferito via `clubs.logo_url`.
-- **dischi-musicali**: file audio per i programmi delle atlete, riferito via `atleti.disco_url`. (NB: il vecchio nome `dischi-audio` non esiste — usare sempre `dischi-musicali`.)
+Il DB Cloud espone questi bucket Storage:
+- **foto-atleti** (pubblico): foto profilo atleti, riferite via `atleti.foto_url` / `foto_path`. Path convention: `{club_id}/{timestamp}.{ext}`.
+- **loghi-club** (pubblico): logo del club caricabile da /setup-club, riferito via `clubs.logo_url`.
+- **dischi-musicali** (**PRIVATO**): file audio dei programmi delle atlete.
+  - Limite 15 MB per file, solo tipi audio.
+  - Percorso obbligatorio `{club_id}/{atleta_id}/{nomefile}.{est}`; le policy sono basate su quel percorso.
+  - L'ascolto avviene **solo** con `createSignedUrl(path, 300)`. **Mai `getPublicUrl`.**
+  - Scrittura riservata ai ruoli di `puo_gestire_musica()`: superadmin, admin, presidente, dt, istruttore.
 
-RLS: lettura pubblica (i bucket sono `public=true`), upload/update/delete riservati a utenti `authenticated`. La logica di ownership fine (es. genitore può caricare solo la foto del proprio figlio) è gestita a livello applicativo.
+RLS: i bucket pubblici hanno lettura aperta e scrittura per utenti `authenticated`. Per `dischi-musicali` lettura e scrittura passano dalle policy per percorso.
