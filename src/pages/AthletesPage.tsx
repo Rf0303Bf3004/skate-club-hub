@@ -414,23 +414,7 @@ const AtletaModal: React.FC<{
                 />
               </Field>
 
-              <Field label={t("modal.disc_file")}>
-                <div className="flex items-center gap-3">
-                  {form.disco_url && <audio controls src={form.disco_url} className="h-8 flex-1" />}
-                  <label
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border border-border cursor-pointer hover:bg-muted/30 text-sm text-muted-foreground transition-colors ${uploading_disco ? "opacity-50 pointer-events-none" : ""}`}
-                  >
-                    <Upload className="w-4 h-4" />
-                    {uploading_disco ? t("modal.uploading") : form.disco_url ? t("modal.replace") : t("modal.upload_audio")}
-                    <input
-                      type="file"
-                      accept="audio/*"
-                      className="hidden"
-                      onChange={(e) => e.target.files?.[0] && handle_disco_upload(e.target.files[0])}
-                    />
-                  </label>
-                </div>
-              </Field>
+              {/* I dischi si gestiscono nella scheda dell'atleta (bucket privato, collegamenti firmati). */}
             </>
           )}
 
