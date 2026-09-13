@@ -439,6 +439,10 @@ const PistaPage: React.FC = () => {
     set_momento("appello");
     set_programma_attivo(null);
     set_scelta_disco(null);
+    set_nota_target(null);
+    set_nota_testo("");
+    set_note_aperte(null);
+    set_nota_in_eliminazione(null);
   };
 
   const applica_sessione = (id: string) => {
