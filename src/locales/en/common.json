@@ -384,5 +384,12 @@
     "giorno_successivo": "Next day",
     "oggi": "Today",
     "scegli_data": "Choose date"
+  },
+  "date_input": {
+    "dd": "DD",
+    "mm": "MM",
+    "yyyy": "YYYY",
+    "errore_inesistente": "This date does not exist.",
+    "errore_anno_range": "The year must be between {{min}} and {{max}}."
   }
 }
