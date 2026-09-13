@@ -407,7 +407,9 @@
     "ritira_conferma": "Vuoi ritirare questa richiesta?",
     "ritirata_ok": "Richiesta ritirata",
     "risposta_club": "Risposta del club",
-    "nessun_istruttore": "L'elenco degli istruttori non è disponibile: la richiesta verrà inviata senza preferenza."
+    "nessun_istruttore": "L'elenco degli istruttori non è disponibile: la richiesta verrà inviata senza preferenza.",
+    "creata_parziale": "Lezione creata, ma alcuni passaggi non sono riusciti",
+    "gia_gestita": "La richiesta è già stata gestita dal club."
   },
   "musica": {
     "ascolta": "Ascolta",
@@ -440,6 +442,12 @@
     "tipo_esibizione": "Esibizione",
     "tipo_gala": "Galà",
     "tipo_libero": "Programma libero",
-    "titolo_brano": "Titolo del brano"
+    "titolo_brano": "Titolo del brano",
+    "segna_inizio": "Segna inizio",
+    "segna_fine_qui": "Segna fine di «{{nome}}»",
+    "fine_prima_inizio": "La fine deve venire dopo l'inizio.",
+    "ripetizione_spiegazione": "Dopo aver segnato l'inizio potrai segnare la fine: il punto diventa una ripetizione.",
+    "brano_non_disponibile": "Il brano non è disponibile.",
+    "in_preparazione": "In preparazione"
   }
 }

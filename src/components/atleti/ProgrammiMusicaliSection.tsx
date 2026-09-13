@@ -36,6 +36,23 @@ const nome_pulito = (nome: string) =>
     .replace(/[^\w.\-]+/g, "_")
     .slice(-80);
 
+/** Durata del brano letta dal file prima del salvataggio (0 se non leggibile). */
+const leggi_durata = (file: File): Promise<number> =>
+  new Promise((risolvi) => {
+    const indirizzo = URL.createObjectURL(file);
+    const elemento = document.createElement("audio");
+    const chiudi = (valore: number) => {
+      URL.revokeObjectURL(indirizzo);
+      risolvi(valore);
+    };
+    elemento.preload = "metadata";
+    elemento.onloadedmetadata = () =>
+      chiudi(Number.isFinite(elemento.duration) ? Math.round(elemento.duration) : 0);
+    elemento.onerror = () => chiudi(0);
+    window.setTimeout(() => chiudi(0), 10_000);
+    elemento.src = indirizzo;
+  });
+
 interface Props {
   atleta_id: string;
 }
@@ -44,7 +61,7 @@ const ProgrammiMusicaliSection: React.FC<Props> = ({ atleta_id }) => {
   const { t } = useTranslation("common");
   const { session } = useAuth();
   const query_client = useQueryClient();
-  const { puo_gestire_sportivo } = usePermessiAzione();
+  const { puo_gestire_musica } = usePermessiAzione();
 
   const programmi_query = use_programmi_atleta(atleta_id);
   const programmi = programmi_query.data ?? [];
@@ -54,14 +71,20 @@ const ProgrammiMusicaliSection: React.FC<Props> = ({ atleta_id }) => {
   const [caricamento, set_caricamento] = React.useState(false);
   const [in_ascolto, set_in_ascolto] = React.useState<{ id: string; url: string } | null>(null);
 
-  const ricarica = () =>
-    query_client.invalidateQueries({ queryKey: ["programmi_musicali_atleta"] });
+  // Bordo pista legge una chiave diversa: vanno invalidate entrambe.
+  const ricarica = async () => {
+    await Promise.all([
+      query_client.invalidateQueries({ queryKey: ["programmi_musicali_atleta"] }),
+      query_client.invalidateQueries({ queryKey: ["programmi_musicali_gruppo"] }),
+    ]);
+  };
 
   const carica = async (file: File) => {
     const club_id = get_current_club_id();
     if (!club_id) return;
     set_caricamento(true);
     try {
+      const durata_sec = await leggi_durata(file);
       const path = percorso_disco(club_id, atleta_id, `${Date.now()}_${nome_pulito(file.name)}`);
       const { error: errore_file } = await supabase.storage
         .from(BUCKET_DISCHI)
@@ -74,6 +97,7 @@ const ProgrammiMusicaliSection: React.FC<Props> = ({ atleta_id }) => {
         tipo,
         titolo_brano: titolo.trim() || null,
         file_path: path,
+        durata_sec: durata_sec > 0 ? durata_sec : null,
         attivo: true,
         caricato_da: session?.user_id ?? null,
       } as any);
@@ -94,7 +118,8 @@ const ProgrammiMusicaliSection: React.FC<Props> = ({ atleta_id }) => {
       const { error } = await supabase
         .from("programmi_musicali")
         .update({ attivo } as any)
-        .eq("id", programma.id);
+        .eq("id", programma.id)
+        .eq("club_id", programma.club_id);
       if (error) throw error;
       await ricarica();
     } catch (err) {
@@ -102,9 +127,27 @@ const ProgrammiMusicaliSection: React.FC<Props> = ({ atleta_id }) => {
     }
   };
 
+  const cambia_in_preparazione = async (programma: ProgrammaMusicale, in_preparazione: boolean) => {
+    try {
+      const { error } = await supabase
+        .from("programmi_musicali")
+        .update({ in_preparazione } as any)
+        .eq("id", programma.id)
+        .eq("club_id", programma.club_id);
+      if (error) throw error;
+      await ricarica();
+    } catch (err) {
+      void segnala_errore("Programmi musicali", t("musica.in_preparazione"), err);
+    }
+  };
+
   const elimina = async (programma: ProgrammaMusicale) => {
     try {
-      const { error } = await supabase.from("programmi_musicali").delete().eq("id", programma.id);
+      const { error } = await supabase
+        .from("programmi_musicali")
+        .delete()
+        .eq("id", programma.id)
+        .eq("club_id", programma.club_id);
       if (error) throw error;
       if (in_ascolto?.id === programma.id) set_in_ascolto(null);
       await ricarica();
@@ -154,7 +197,7 @@ const ProgrammiMusicaliSection: React.FC<Props> = ({ atleta_id }) => {
                   <Button variant="outline" size="sm" onClick={() => void ascolta(p)} disabled={!p.file_path}>
                     {t("musica.ascolta")}
                   </Button>
-                  {puo_gestire_sportivo && (
+                  {puo_gestire_musica && (
                     <>
                       <div className="flex items-center gap-1">
                         <Switch
@@ -163,6 +206,14 @@ const ProgrammiMusicaliSection: React.FC<Props> = ({ atleta_id }) => {
                           aria-label={t("musica.attivo")}
                         />
                         <span className="text-xs text-muted-foreground">{t("musica.attivo")}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Switch
+                          checked={p.in_preparazione}
+                          onCheckedChange={(v) => void cambia_in_preparazione(p, v)}
+                          aria-label={t("musica.in_preparazione")}
+                        />
+                        <span className="text-xs text-muted-foreground">{t("musica.in_preparazione")}</span>
                       </div>
                       <ConfirmButton
                         variante="pericolo"
@@ -187,7 +238,7 @@ const ProgrammiMusicaliSection: React.FC<Props> = ({ atleta_id }) => {
         </div>
       )}
 
-      {puo_gestire_sportivo && (
+      {puo_gestire_musica && (
         <div className="flex flex-wrap items-end gap-2 rounded-lg border border-dashed border-border p-2">
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">{t("musica.tipo")}</Label>

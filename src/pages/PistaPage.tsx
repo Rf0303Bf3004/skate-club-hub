@@ -224,7 +224,13 @@ const PistaPage: React.FC = () => {
     const in_corso = sessioni.find((s) => s.in_corso);
     const prossima = sessioni.find((s) => ora_breve(s.ora_inizio) >= ora_corrente);
     const scelta = (in_corso ?? prossima ?? sessioni[sessioni.length - 1]).sessione_id;
-    if (scelta !== sessione_id) set_sessione_id(scelta);
+    if (scelta !== sessione_id) {
+      // Cambio automatico di sessione: si riparte dall'appello della nuova
+      // sessione, mai restando nell'elenco della precedente.
+      if (sessione_id) azzera_appello();
+      set_sessione_id(scelta);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessioni, sessione_id, adesso, modificato, scelta_manuale]);
 
   const atleti_query = useQuery({
@@ -254,6 +260,7 @@ const PistaPage: React.FC = () => {
       set_assenti(new Set(salvato));
       set_modificato(true);
       set_ripreso(true);
+      set_momento("appello");
     } else {
       set_assenti(
         new Set(
@@ -264,6 +271,11 @@ const PistaPage: React.FC = () => {
       );
       set_modificato(false);
       set_ripreso(false);
+      // Se l'appello di questa sessione è già stato fatto (nessuna atleta è
+      // rimasta "non_registrato"), il tablet riparte direttamente da "in pista".
+      const gia_registrato =
+        atleti_query.data.length > 0 && atleti_query.data.every((a) => a.stato !== "non_registrato");
+      set_momento(gia_registrato ? "in_pista" : "appello");
     }
     set_registrato_alle(null);
   }, [sessione_id, atleti_query.data]);
@@ -800,6 +812,7 @@ const PistaPage: React.FC = () => {
 
       {programma_attivo && (
         <LettoreDisco
+          key={programma_attivo.programma.id}
           programma={programma_attivo.programma}
           titolo_atleta={programma_attivo.titolo}
           onClose={() => set_programma_attivo(null)}

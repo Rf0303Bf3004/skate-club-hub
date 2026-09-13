@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase, get_current_club_id } from "@/lib/supabase";
 import i18n from "@/i18n";
+import { segnala_errore } from "@/lib/errori";
 
 function cid() {
   return get_current_club_id();
@@ -667,8 +668,17 @@ export function use_crea_lezione_privata() {
         }
         const { data: inserted, error } = await supabase.from("lezioni_private").insert(lesson_rows).select("id");
         if (error) throw error;
-        await insert_lezioni_private_atlete(inserted ?? [], data.atleti_ids || [], data.costo_totale || 0);
-        return inserted;
+        const problemi_ric: string[] = [];
+        // Dopo la scrittura non si lancia più: i passi successivi si riportano.
+        try {
+          await insert_lezioni_private_atlete(inserted ?? [], data.atleti_ids || [], data.costo_totale || 0);
+        } catch (err: any) {
+          problemi_ric.push(
+            `${i18n.t("lezione_privata_atlete_non_collegate", { ns: "errors" })} ${err?.message ?? ""}`.trim(),
+          );
+          await segnala_errore("use_crea_lezione_privata", "lezioni_private_atlete", err, {}, "avviso");
+        }
+        return { lezione: inserted, problemi: problemi_ric };
       }
       const { data: lezione, error } = await supabase
         .from("lezioni_private")
@@ -676,7 +686,20 @@ export function use_crea_lezione_privata() {
         .select("id, data, ora_inizio, ora_fine, istruttore_id")
         .single();
       if (error) throw error;
-      await insert_lezioni_private_atlete(lezione ? [lezione] : [], data.atleti_ids || [], data.costo_totale || 0);
+
+      // ── Da qui in poi la lezione ESISTE già: nessun passo può più lanciare.
+      // Ogni fallimento viene raccolto in `problemi` e restituito al chiamante.
+      const problemi: string[] = [];
+      const registra_problema = async (chiave: string, err: any, passo: string) => {
+        problemi.push(`${i18n.t(chiave, { ns: "errors" })} ${err?.message ?? ""}`.trim());
+        await segnala_errore("use_crea_lezione_privata", passo, err, { lezione_id: lezione?.id }, "avviso");
+      };
+
+      try {
+        await insert_lezioni_private_atlete(lezione ? [lezione] : [], data.atleti_ids || [], data.costo_totale || 0);
+      } catch (err: any) {
+        await registra_problema("lezione_privata_atlete_non_collegate", err, "lezioni_private_atlete");
+      }
 
       const is_semi = (data.atleti_ids?.length || 0) > 1;
       const nomi = data.atleti_nomi?.length ? data.atleti_nomi : data.atleti_ids || [];
@@ -693,9 +716,7 @@ export function use_crea_lezione_privata() {
         ora_fine: null as any,
       }).select("id").single();
       if (corso_error) {
-        throw new Error(
-          `${i18n.t("lezione_privata_corso_non_creato", { ns: "errors" })} ${corso_error.message}`,
-        );
+        await registra_problema("lezione_privata_corso_non_creato", corso_error, "corsi");
       }
       if (new_corso && data.istruttore_id) {
         const { error: ci_error } = await supabase.from("corsi_istruttori").insert({
@@ -703,9 +724,7 @@ export function use_crea_lezione_privata() {
           istruttore_id: data.istruttore_id,
         });
         if (ci_error) {
-          throw new Error(
-            `${i18n.t("lezione_privata_istruttore_non_collegato", { ns: "errors" })} ${ci_error.message}`,
-          );
+          await registra_problema("lezione_privata_istruttore_non_collegato", ci_error, "corsi_istruttori");
         }
       }
 
@@ -718,13 +737,8 @@ export function use_crea_lezione_privata() {
           .eq("data_lunedi", data_lunedi)
           .maybeSingle();
         if (settimana_error) {
-          throw new Error(
-            `${i18n.t("lezione_privata_planning_non_collocata", { ns: "errors" })} ${settimana_error.message}`,
-          );
-        }
-
-
-        if (settimana?.id) {
+          await registra_problema("lezione_privata_planning_non_collocata", settimana_error, "planning_settimane");
+        } else if (settimana?.id) {
           const planning_payload = {
             data: lezione.data,
             ora_inizio: lezione.ora_inizio,
@@ -739,14 +753,24 @@ export function use_crea_lezione_privata() {
             .eq("settimana_id", settimana.id)
             .eq("lezione_privata_id", lezione.id)
             .maybeSingle();
-          if (existing_planning_error) throw existing_planning_error;
-
-          if (existing_planning?.id) {
+          if (existing_planning_error) {
+            await registra_problema(
+              "lezione_privata_planning_non_collocata",
+              existing_planning_error,
+              "planning_private_settimana",
+            );
+          } else if (existing_planning?.id) {
             const { error: planning_error } = await supabase
               .from("planning_private_settimana")
               .update(planning_payload)
               .eq("id", existing_planning.id);
-            if (planning_error) throw planning_error;
+            if (planning_error) {
+              await registra_problema(
+                "lezione_privata_planning_non_collocata",
+                planning_error,
+                "planning_private_settimana",
+              );
+            }
           } else {
             const { error: planning_error } = await supabase
               .from("planning_private_settimana")
@@ -755,13 +779,19 @@ export function use_crea_lezione_privata() {
                 lezione_privata_id: lezione.id,
                 ...planning_payload,
               });
-            if (planning_error) throw planning_error;
+            if (planning_error) {
+              await registra_problema(
+                "lezione_privata_planning_non_collocata",
+                planning_error,
+                "planning_private_settimana",
+              );
+            }
           }
         }
       }
 
       qc.invalidateQueries({ queryKey: ["corsi"] });
-      return lezione;
+      return { lezione, problemi };
     },
     // onSettled: la lezione può essere già stata scritta anche quando un passo
     // successivo fallisce, quindi l'elenco va aggiornato in ogni caso.

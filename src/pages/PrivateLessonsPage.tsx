@@ -977,7 +977,7 @@ const LezioniPrivatePage: React.FC = () => {
         const a = atleti.find((x: any) => x.id === aid);
         return a ? `${a.cognome} ${a.nome}`.trim() : "?";
       });
-      const creata: any = await crea_lezione.mutateAsync({
+      const esito: any = await crea_lezione.mutateAsync({
         istruttore_id: form_data.istruttore_id,
         data: form_data.data,
         ora_inizio: form_data.ora_inizio,
@@ -991,10 +991,21 @@ const LezioniPrivatePage: React.FC = () => {
         has_ice: form_data.has_ice !== false,
       });
       set_form_open(false);
-      toast({
-        title: form_data.ricorrente ? t("lezioni_private.toast.lezioni_ricorrenti_create") : t("lezioni_private.toast.lezione_prenotata"),
-      });
+      const creata: any = esito?.lezione;
+      const problemi: string[] = esito?.problemi ?? [];
+      if (problemi.length > 0) {
+        // Operazione riuscita a metà: mai il messaggio verde.
+        toast({
+          title: tc("richieste_private.creata_parziale"),
+          description: problemi.join(" · "),
+        });
+      } else {
+        toast({
+          title: form_data.ricorrente ? t("lezioni_private.toast.lezioni_ricorrenti_create") : t("lezioni_private.toast.lezione_prenotata"),
+        });
+      }
       const lezione_id: string | undefined = Array.isArray(creata) ? creata[0]?.id : creata?.id;
+      // La richiesta va collegata anche quando qualche passo successivo è fallito.
       if (richiesta_pendente && lezione_id) await collega_richiesta_a_lezione(lezione_id);
     } catch (err: any) {
       toast({
@@ -1078,7 +1089,12 @@ const LezioniPrivatePage: React.FC = () => {
           slot_minuti={slot_minuti}
           on_change={(k, v) => set_form_data((p) => ({ ...p, [k]: v }))}
           on_submit={handle_submit}
-          on_close={() => set_form_open(false)}
+          on_close={() => {
+            set_form_open(false);
+            // Chiudere il modulo annulla l'accettazione in corso: altrimenti
+            // la prossima lezione finirebbe collegata alla richiesta sbagliata.
+            set_richiesta_pendente(null);
+          }}
           loading={saving}
         />
       )}
@@ -1126,7 +1142,13 @@ const LezioniPrivatePage: React.FC = () => {
           <NotaPermesso testo="Puoi consultare le lezioni ma non hai i permessi per crearle, modificarle o annullarle." />
         )}
 
-        <Tabs value={tab} onValueChange={(v) => set_tab(v as "calendario" | "richieste")}>
+        <Tabs
+          value={tab}
+          onValueChange={(v) => {
+            set_tab(v as "calendario" | "richieste");
+            set_richiesta_pendente(null);
+          }}
+        >
           <TabsList>
             <TabsTrigger value="calendario">{tc("richieste_private.tab_calendario")}</TabsTrigger>
             <TabsTrigger value="richieste">

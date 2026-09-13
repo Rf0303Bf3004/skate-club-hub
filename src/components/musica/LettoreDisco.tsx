@@ -57,6 +57,10 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
   const [dialogo_punto, set_dialogo_punto] = React.useState(false);
   const [nome_punto, set_nome_punto] = React.useState("");
   const [salvataggio_punto, set_salvataggio_punto] = React.useState(false);
+  // Punto appena segnato di cui si può ancora indicare la fine (ripetizione).
+  const [punto_aperto, set_punto_aperto] = React.useState<PuntoProgramma | null>(null);
+  // Il rinnovo del collegamento non deve entrare in ciclo: due tentativi e basta.
+  const tentativi_firma = React.useRef(0);
 
   const punti_query = use_punti_programma(programma.id);
   const punti = punti_query.data ?? [];
@@ -88,13 +92,24 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
     [programma.file_path, t],
   );
 
+  /** Rinnovo manuale: azzera il contatore dei tentativi. */
+  const riprova_a_mano = React.useCallback(() => {
+    tentativi_firma.current = 0;
+    void rinnova();
+  }, [rinnova]);
+
   React.useEffect(() => {
     set_url(null);
     set_posizione(0);
     set_loop_punto(null);
+    set_punto_aperto(null);
     set_in_riproduzione(false);
+    tentativi_firma.current = 0;
     void rinnova(0);
-    const timer = window.setInterval(() => void rinnova(), 4 * 60_000);
+    const timer = window.setInterval(() => {
+      tentativi_firma.current = 0;
+      void rinnova();
+    }, 4 * 60_000);
     return () => window.clearInterval(timer);
   }, [programma.id, rinnova]);
 
@@ -170,24 +185,56 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
     vai_a(p.secondi);
   };
 
+  /** Passo 1: segna l'inizio. Il nome si chiede una volta sola, qui. */
   const salva_punto = async () => {
     const nome = nome_punto.trim();
     if (!nome) return;
     set_salvataggio_punto(true);
     try {
       const secondi = Math.floor(audio()?.currentTime ?? posizione);
-      const { error } = await supabase.from("punti_programma").insert({
-        programma_id: programma.id,
-        nome,
-        secondi,
-        ordine: punti.length,
-      } as any);
+      const { data, error } = await supabase
+        .from("punti_programma")
+        .insert({
+          programma_id: programma.id,
+          nome,
+          secondi,
+          ordine: punti.length,
+        } as any)
+        .select("id, programma_id, nome, secondi, secondi_fine, ordine")
+        .single();
       if (error) throw error;
       await query_client.invalidateQueries({ queryKey: ["punti_programma", programma.id] });
+      set_punto_aperto((data ?? null) as PuntoProgramma | null);
       set_dialogo_punto(false);
       set_nome_punto("");
     } catch (err) {
       void segnala_errore("LettoreDisco", t("musica.segna_punto"), err);
+    } finally {
+      set_salvataggio_punto(false);
+    }
+  };
+
+  /** Passo 2: segna la fine sullo stesso punto, che diventa una ripetizione. */
+  const segna_fine = async () => {
+    const aperto = punto_aperto;
+    if (!aperto) return;
+    const fine = Math.floor(audio()?.currentTime ?? posizione);
+    if (fine <= aperto.secondi) {
+      set_errore_audio(t("musica.fine_prima_inizio"));
+      return;
+    }
+    set_salvataggio_punto(true);
+    try {
+      const { error } = await supabase
+        .from("punti_programma")
+        .update({ secondi_fine: fine } as any)
+        .eq("id", aperto.id);
+      if (error) throw error;
+      await query_client.invalidateQueries({ queryKey: ["punti_programma", programma.id] });
+      set_loop_punto({ ...aperto, secondi_fine: fine });
+      set_punto_aperto(null);
+    } catch (err) {
+      void segnala_errore("LettoreDisco", t("musica.segna_fine_qui"), err);
     } finally {
       set_salvataggio_punto(false);
     }
@@ -214,7 +261,7 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
         {errore_audio && (
           <div className="flex items-center justify-between gap-3 rounded-lg border border-destructive bg-destructive/10 px-3 py-2">
             <span className="text-base text-destructive">{errore_audio}</span>
-            <Button variant="outline" onClick={() => void rinnova()}>
+            <Button variant="outline" onClick={riprova_a_mano}>
               {t("musica.riprova")}
             </Button>
           </div>
@@ -268,8 +315,20 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
           </div>
           <Button size="lg" variant="outline" className="h-14" onClick={() => set_dialogo_punto(true)}>
             <Plus className="mr-2 h-5 w-5" />
-            {t("musica.segna_punto")}
+            {t("musica.segna_inizio")}
           </Button>
+          {punto_aperto && (
+            <Button
+              size="lg"
+              variant="secondary"
+              className="h-14"
+              disabled={salvataggio_punto}
+              onClick={() => void segna_fine()}
+            >
+              <Repeat className="mr-2 h-5 w-5" />
+              {t("musica.segna_fine_qui", { nome: punto_aperto.nome })}
+            </Button>
+          )}
           {loop_punto && (
             <Button size="lg" variant="secondary" className="h-14" onClick={() => set_loop_punto(null)}>
               <Repeat className="mr-2 h-5 w-5" />
@@ -312,6 +371,8 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
             (a as any).preservesPitch = true;
             (a as any).mozPreservesPitch = true;
             (a as any).webkitPreservesPitch = true;
+            // Il file si è aperto: i tentativi di rinnovo ripartono da zero.
+            tentativi_firma.current = 0;
           }}
           onPlay={() => set_in_riproduzione(true)}
           onPause={() => set_in_riproduzione(false)}
@@ -324,6 +385,13 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
           }}
           onError={() => {
             // Il collegamento firmato dura 5 minuti: se scade si richiede e si riprende.
+            // Dopo due tentativi falliti ci si ferma: un file mancante non deve
+            // mandare il tablet in ciclo firma-errore per ore.
+            if (tentativi_firma.current >= 2) {
+              set_errore_audio(t("musica.brano_non_disponibile"));
+              return;
+            }
+            tentativi_firma.current += 1;
             void rinnova();
           }}
         />
@@ -332,19 +400,20 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
       <Dialog open={dialogo_punto} onOpenChange={set_dialogo_punto}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t("musica.segna_punto")}</DialogTitle>
+            <DialogTitle>{t("musica.segna_inizio")}</DialogTitle>
           </DialogHeader>
           <Input
             value={nome_punto}
             onChange={(e) => set_nome_punto(e.target.value)}
             placeholder={t("musica.nome_punto")}
           />
+          <p className="text-sm text-muted-foreground">{t("musica.ripetizione_spiegazione")}</p>
           <DialogFooter>
             <Button variant="outline" onClick={() => set_dialogo_punto(false)}>
               {t("actions.cancel")}
             </Button>
             <Button onClick={() => void salva_punto()} disabled={!nome_punto.trim() || salvataggio_punto}>
-              {t("actions.save")}
+              {t("musica.segna_inizio")}
             </Button>
           </DialogFooter>
         </DialogContent>
