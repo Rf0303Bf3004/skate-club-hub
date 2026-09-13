@@ -207,16 +207,31 @@ const PistaPage: React.FC = () => {
     if (!sessione_id || !atleti_query.data) return;
     if (sessione_inizializzata.current === sessione_id) return;
     sessione_inizializzata.current = sessione_id;
-    set_assenti(
-      new Set(
-        atleti_query.data
-          .filter((a) => a.stato === "assente" || a.stato === "avvisato")
-          .map((a) => a.atleta_id),
-      ),
-    );
-    set_modificato(false);
+    const salvato = leggi_bozza(sessione_id);
+    if (salvato) {
+      set_assenti(new Set(salvato));
+      set_modificato(true);
+      set_ripreso(true);
+    } else {
+      set_assenti(
+        new Set(
+          atleti_query.data
+            .filter((a) => a.stato === "assente" || a.stato === "avvisato")
+            .map((a) => a.atleta_id),
+        ),
+      );
+      set_modificato(false);
+      set_ripreso(false);
+    }
     set_registrato_alle(null);
   }, [sessione_id, atleti_query.data]);
+
+  // L'appello in corso sopravvive a un ricaricamento del tablet.
+  React.useEffect(() => {
+    if (!sessione_id || !modificato) return;
+    if (sessione_inizializzata.current !== sessione_id) return;
+    scrivi_bozza(sessione_id, Array.from(assenti));
+  }, [assenti, modificato, sessione_id]);
 
   const sessione_selezionata = sessioni.find((s) => s.sessione_id === sessione_id) ?? null;
 
