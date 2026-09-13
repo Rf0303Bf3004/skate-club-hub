@@ -277,7 +277,15 @@
     "prossimamente": "Coming soon",
     "istruzione_appello": "Everyone is present. Tap only those who are NOT here.",
     "assente_etichetta": "ABSENT",
-    "tocca_per_annullare": "tap to undo"
+    "tocca_per_annullare": "tap to undo",
+    "nota_salvata": "Note saved",
+    "nota_placeholder": "Write the note here",
+    "nota_salvataggio_in_corso": "Saving…",
+    "note_conteggio_one": "{{count}} note",
+    "note_conteggio_other": "{{count}} notes",
+    "note_errore": "Notes are unavailable: this does not mean there are none.",
+    "note_titolo": "Notes",
+    "nota_firma": "{{autore}} · {{ora}}"
   },
   "richieste_private": {
     "titolo": "Private lesson requests",

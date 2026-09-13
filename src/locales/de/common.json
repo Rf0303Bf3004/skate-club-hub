@@ -277,7 +277,15 @@
     "prossimamente": "Demnächst",
     "istruzione_appello": "Alle sind anwesend. Tippe nur auf die, die NICHT da sind.",
     "assente_etichetta": "ABWESEND",
-    "tocca_per_annullare": "tippen zum Rückgängigmachen"
+    "tocca_per_annullare": "tippen zum Rückgängigmachen",
+    "nota_salvata": "Notiz gespeichert",
+    "nota_placeholder": "Notiz hier schreiben",
+    "nota_salvataggio_in_corso": "Speichern…",
+    "note_conteggio_one": "{{count}} Notiz",
+    "note_conteggio_other": "{{count}} Notizen",
+    "note_errore": "Die Notizen sind nicht verfügbar: Das heisst nicht, dass es keine gibt.",
+    "note_titolo": "Notizen",
+    "nota_firma": "{{autore}} · {{ora}}"
   },
   "richieste_private": {
     "titolo": "Anfragen für Privatlektionen",
