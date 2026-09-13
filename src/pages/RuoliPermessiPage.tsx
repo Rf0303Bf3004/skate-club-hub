@@ -7,7 +7,7 @@ import { Navigate } from "react-router-dom";
 import { Shield, Save, Clock, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DashboardCardsPermessi from "@/components/ruoli-permessi/DashboardCardsPermessi";
-import { MENU_GRUPPI, MENU_SECTIONS, MENU_TOP } from "@/config/menuSections";
+import { FASCE_PERMESSI, MENU_SECTIONS } from "@/config/menuSections";
 
 import { useTranslation } from "react-i18next";
 
