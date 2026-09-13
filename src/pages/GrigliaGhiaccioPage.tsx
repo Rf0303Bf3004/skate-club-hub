@@ -275,12 +275,46 @@ const GrigliaGhiaccioPage: React.FC = () => {
           <div className="flex items-end gap-2">
             <div className="space-y-1">
               <Label className="text-xs">Data</Label>
-              <Input
-                type="date"
-                value={data_sel}
-                onChange={(e) => set_data_sel(e.target.value)}
-                className="h-9 w-[11rem]"
-              />
+              <div className="flex items-center gap-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-10 w-10 shrink-0"
+                  onClick={() => cambia_giorno(-1)}
+                  aria-label={t("griglia_nav.giorno_precedente")}
+                  title={t("griglia_nav.giorno_precedente")}
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </Button>
+                <DateInput
+                  value={data_sel}
+                  onChange={set_data_sel}
+                  min_year={2020}
+                  max_year={2100}
+                  className="gap-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-10 w-10 shrink-0"
+                  onClick={() => cambia_giorno(1)}
+                  aria-label={t("griglia_nav.giorno_successivo")}
+                  title={t("griglia_nav.giorno_successivo")}
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-10"
+                  disabled={data_sel === oggi_iso()}
+                  onClick={() => set_data_sel(oggi_iso())}
+                >
+                  {t("griglia_nav.oggi")}
+                </Button>
+              </div>
             </div>
             <label className="flex cursor-pointer items-center gap-2 pt-5 text-xs text-muted-foreground">
               <input
