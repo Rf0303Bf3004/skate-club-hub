@@ -107,7 +107,28 @@ const GrigliaGhiaccioPage: React.FC = () => {
   const [formato_carta, set_formato_carta] = useState<FormatoCarta>("A4");
   const [periodo, set_periodo] = useState<"giorno" | "settimana" | "mese" | "stagione">("giorno");
   const [vista, set_vista] = useState<"impilata" | "tableau">("impilata");
+  const [selettore_data_aperto, set_selettore_data_aperto] = useState(false);
+  const ref_selettore_data = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!selettore_data_aperto) return;
+    const on_key = (e: KeyboardEvent) => {
+      if (e.key === "Escape") set_selettore_data_aperto(false);
+    };
+    const on_click = (e: MouseEvent) => {
+      const target = e.target as Node | null;
+      if (ref_selettore_data.current && target && !ref_selettore_data.current.contains(target)) {
+        set_selettore_data_aperto(false);
+      }
+    };
+    window.addEventListener("keydown", on_key);
+    window.addEventListener("mousedown", on_click);
+    return () => {
+      window.removeEventListener("keydown", on_key);
+      window.removeEventListener("mousedown", on_click);
+    };
+  }, [selettore_data_aperto]);
 
   const { data: risorse = [] } = use_risorse_strutture();
   const risorse_ghiaccio = useMemo(
