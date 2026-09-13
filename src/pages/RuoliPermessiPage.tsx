@@ -45,7 +45,7 @@ const RuoliPermessiPage: React.FC = () => {
     return <Navigate to="/" replace />;
   }
 
-  const { isLoading } = useQuery({
+  const { isLoading, isError, error, refetch } = useQuery({
     queryKey: ["ruoli_permessi_sezioni_admin", club_id],
     queryFn: async () => {
       if (!club_id) return [];
@@ -74,6 +74,15 @@ const RuoliPermessiPage: React.FC = () => {
 
   const salva = async () => {
     if (!club_id) return;
+    // Non si scrive mai partendo da una matrice non caricata: azzererebbe i permessi.
+    if (isError || Object.keys(matrix).length === 0) {
+      toast({
+        title: t("roles.load_error_title"),
+        description: t("roles.load_error_desc"),
+        variant: "destructive",
+      });
+      return;
+    }
     set_saving(true);
     try {
       const rows: any[] = [];
