@@ -75,7 +75,32 @@ const GrigliaGhiaccioPage: React.FC = () => {
   const { puo_pianificare } = usePermessiAzione();
   const is_editor = puo_pianificare;
 
+  const { t } = useTranslation("common");
   const [data_sel, set_data_sel] = useState<string>(oggi_iso());
+  // Le letture seguono la data con un piccolo ritardo: clic rapidi sulle frecce
+  // aggiornano subito l'etichetta ma non fanno partire una query a ogni clic.
+  const data_query = useDebouncedValue(data_sel, 200);
+
+  const cambia_giorno = (delta: number) => set_data_sel((prev) => sposta_giorno(prev || oggi_iso(), delta));
+
+  useEffect(() => {
+    const on_key = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      const in_campo =
+        !!el &&
+        (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable);
+      if (in_campo) return;
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        cambia_giorno(-1);
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        cambia_giorno(1);
+      }
+    };
+    window.addEventListener("keydown", on_key);
+    return () => window.removeEventListener("keydown", on_key);
+  }, []);
   const [includi_ospiti, set_includi_ospiti] = useState(false);
   const [riepilogo_open, set_riepilogo_open] = useState(false);
   const [tableau_open, set_tableau_open] = useState(false);
@@ -101,7 +126,7 @@ const GrigliaGhiaccioPage: React.FC = () => {
   );
 
   // Riepilogo istruttori: aggregato su TUTTE le piste del giorno
-  const { data: blocchi_giorno = [] } = use_griglia_blocchi_giorno(data_sel);
+  const { data: blocchi_giorno = [] } = use_griglia_blocchi_giorno(data_query);
 
   const riepilogo_istruttori = useMemo<IstruttoreStampa[]>(() => {
     const map = new Map<string, IstruttoreStampa>();
