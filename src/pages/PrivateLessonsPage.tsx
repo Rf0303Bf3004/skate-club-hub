@@ -1009,8 +1009,31 @@ const LezioniPrivatePage: React.FC = () => {
         });
       }
       const lezione_id: string | undefined = Array.isArray(creata) ? creata[0]?.id : creata?.id;
-      // La richiesta va collegata anche quando qualche passo successivo è fallito.
-      if (richiesta_pendente && lezione_id) await collega_richiesta_a_lezione(lezione_id);
+      // La richiesta va collegata anche quando qualche passo successivo è fallito,
+      // ma solo se la lezione creata riguarda davvero l'atleta della richiesta.
+      if (richiesta_pendente && lezione_id) {
+        const atleti_lezione: string[] = form_data.atleti_ids || [];
+        if (atleti_lezione.includes(richiesta_pendente.atleta_id)) {
+          await collega_richiesta_a_lezione(lezione_id);
+        } else {
+          await segnala_errore(
+            "PrivateLessonsPage",
+            tc("richieste_private.collegamento_atleta_diverso"),
+            new Error("atleta_richiesta_non_nella_lezione"),
+            {
+              richiesta_id: richiesta_pendente.id,
+              lezione_id,
+              atleta_richiesta: richiesta_pendente.atleta_id,
+              atleti_lezione,
+            },
+            "avviso",
+          );
+          toast({
+            title: tc("richieste_private.collegamento_atleta_diverso"),
+            variant: "warning",
+          });
+        }
+      }
     } catch (err: any) {
       toast({
         title: t("lezioni_private.toast.errore_salvataggio"),
