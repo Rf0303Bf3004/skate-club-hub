@@ -233,44 +233,51 @@ const ImportAtletiPage: React.FC = () => {
   const file_input_ref = useRef<HTMLInputElement>(null);
 
   // Fetch livelli ufficiali (tabella globale, senza club_id)
-  const {
-    data: livelli_db = [],
-    isError: livelli_errore,
-    refetch: ricarica_livelli,
-  } = useQuery({
+  const livelli_query = useQuery({
     queryKey: ["livelli_import"],
     queryFn: async () => {
       const { data, error } = await supabase.from("livelli").select("nome").eq("attivo", true);
-      if (error) {
-        await segnala_errore("ImportAtletiPage", ti("toast.livelli_lettura_fallita"), error);
-        throw error;
-      }
+      if (error) throw error;
       return (data ?? []).map((l: any) => norm_string(l.nome)).filter(Boolean);
     },
   });
+  const livelli_db = livelli_query.data ?? [];
+  const livelli_errore = livelli_query.isError;
+  const ricarica_livelli = livelli_query.refetch;
 
   // Fetch atleti del club per match duplicati
-  const {
-    data: atleti_db = [],
-    isError: atleti_errore,
-    refetch: ricarica_atleti,
-  } = useQuery({
+  const atleti_query = useQuery({
     queryKey: ["atleti_import_match", club_id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("atleti")
         .select("id, nome, cognome, data_nascita, telefono, genitore1_email, livello_attuale, sesso")
         .eq("club_id", club_id);
-      if (error) {
-        await segnala_errore("ImportAtletiPage", ti("toast.atleti_lettura_fallita"), error);
-        throw error;
-      }
+      if (error) throw error;
       return data ?? [];
     },
   });
+  const atleti_db = atleti_query.data ?? [];
+  const atleti_errore = atleti_query.isError;
+  const ricarica_atleti = atleti_query.refetch;
+  // La lettura è "pronta" solo se è riuscita davvero: un elenco vuoto per errore
+  // classificherebbe tutte le righe come nuove e duplicherebbe l'anagrafica.
+  const atleti_pronti = atleti_query.isSuccess;
 
-  // Se una delle due letture fallisce l'import non è sicuro: si ferma tutto.
-  const lettura_fallita = atleti_errore || livelli_errore;
+  // Segnalazione una sola volta a tentativi esauriti, non dentro la queryFn.
+  useEffect(() => {
+    if (livelli_query.error) {
+      void segnala_errore("ImportAtletiPage", ti("toast.livelli_lettura_fallita"), livelli_query.error, undefined, "avviso");
+    }
+  }, [livelli_query.error]);
+  useEffect(() => {
+    if (atleti_query.error) {
+      void segnala_errore("ImportAtletiPage", ti("toast.atleti_lettura_fallita"), atleti_query.error);
+    }
+  }, [atleti_query.error]);
+
+  // Solo la lettura degli atleti blocca: i livelli sono facoltativi e degradano con grazia.
+  const lettura_fallita = atleti_errore;
   const atleti_index = useMemo(() => {
     const m = new Map<string, any>();
     for (const a of atleti_db as any[]) {
