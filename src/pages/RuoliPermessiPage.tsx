@@ -221,6 +221,8 @@ const RuoliPermessiPage: React.FC = () => {
           </tbody>
         </table>
       </div>
+      )}
+
 
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
         <p className="text-sm text-blue-700 font-medium">{t("roles.note_label")}</p>
