@@ -8551,6 +8551,22 @@ export type Database = {
         Args: { p_club: string; p_entita: string }
         Returns: Json
       }
+      finestre_libere_istruttori: {
+        Args: {
+          p_a?: string
+          p_da?: string
+          p_istruttore?: string
+          p_min_minuti?: number
+        }
+        Returns: {
+          alle: string
+          dalle: string
+          data: string
+          istruttore: string
+          istruttore_id: string
+          minuti: number
+        }[]
+      }
       formatta_numero_fattura: {
         Args: {
           p_anno: number
