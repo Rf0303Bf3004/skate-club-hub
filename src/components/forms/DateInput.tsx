@@ -9,11 +9,20 @@ interface Props {
   max_year?: number;
 }
 
+type ErroreData = null | "inesistente" | "anno_fuori_range";
+
+/** Vera solo se il giorno/mese/anno esistono davvero nel calendario (bisestili inclusi). */
+function data_esiste(gn: number, mn: number, yn: number): boolean {
+  const d = new Date(yn, mn - 1, gn);
+  return d.getFullYear() === yn && d.getMonth() === mn - 1 && d.getDate() === gn;
+}
+
 const DateInput: React.FC<Props> = ({ value, onChange, className, min_year = 1900, max_year = 2100 }) => {
   const { t } = useTranslation("common");
   const [gg, set_gg] = useState("");
   const [mm, set_mm] = useState("");
   const [aaaa, set_aaaa] = useState("");
+  const [errore, set_errore] = useState<ErroreData>(null);
 
   const ref_mm = useRef<HTMLInputElement>(null);
   const ref_aaaa = useRef<HTMLInputElement>(null);
