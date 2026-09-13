@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase, get_current_club_id } from "@/lib/supabase";
+import i18n from "@/i18n";
 
 function cid() {
   return get_current_club_id();
