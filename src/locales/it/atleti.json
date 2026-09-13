@@ -514,8 +514,13 @@
       "no_rows": "Il file non contiene righe",
       "read_error": "Errore lettura file: {{msg}}",
       "created": "Creato {{nome}} {{cognome}} ({{codice}})",
-      "row_error": "Errore riga {{riga}}: {{msg}}"
-    }
+      "row_error": "Errore riga {{riga}}: {{msg}}",
+      "atleti_lettura_fallita": "Lettura atleti esistenti non riuscita",
+      "livelli_lettura_fallita": "Lettura livelli non riuscita"
+    },
+    "blocco_atleti": "Non è stato possibile leggere gli atleti già presenti: l'import è stato interrotto per non creare duplicati.",
+    "blocco_livelli": "Non è stato possibile leggere l'elenco dei livelli: l'import è stato interrotto.",
+    "riprova": "Riprova"
   },
   "badges": {
     "fed": "FED",

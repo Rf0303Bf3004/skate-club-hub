@@ -76,5 +76,14 @@
   "badges": {
     "ospite": "GAST",
     "ospite_tooltip": "Temporärer Gastsportler, Herkunftsclub: {{club}}"
+  },
+  "import": {
+    "blocco_atleti": "Die bereits vorhandenen Athletinnen konnten nicht gelesen werden: Der Import wurde abgebrochen, um keine Duplikate zu erzeugen.",
+    "blocco_livelli": "Die Liste der Stufen konnte nicht gelesen werden: Der Import wurde abgebrochen.",
+    "riprova": "Erneut versuchen",
+    "toast": {
+      "atleti_lettura_fallita": "Lesen der vorhandenen Athletinnen fehlgeschlagen",
+      "livelli_lettura_fallita": "Lesen der Stufen fehlgeschlagen"
+    }
   }
 }
