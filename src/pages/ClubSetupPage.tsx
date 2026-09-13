@@ -337,8 +337,9 @@ const ClubSetupPage: React.FC = () => {
 
   // Save ghiaccio config (upsert)
   const handle_save_ghiaccio = async () => {
-    // Configurazione non letta: salvare significherebbe sovrascriverla con valori vuoti.
-    if (errore_config) {
+    // Configurazione non letta (fallita o non ancora arrivata): salvare significherebbe
+    // sovrascriverla con valori vuoti o inserire una riga duplicata.
+    if (!config_pronta) {
       toast({ title: t("club.toast.config_ghiaccio_non_letta"), variant: "destructive" });
       return;
     }
@@ -385,7 +386,7 @@ const ClubSetupPage: React.FC = () => {
   // Save SOLO sezione lezioni private
   const [saving_private, set_saving_private] = useState(false);
   const handle_save_private = async () => {
-    if (errore_config) {
+    if (!config_pronta) {
       toast({ title: t("club.toast.config_ghiaccio_non_letta"), variant: "destructive" });
       return;
     }
