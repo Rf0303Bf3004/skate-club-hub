@@ -4,7 +4,16 @@
     "data_section": "Club-Daten",
     "season_params": "Saisonparameter",
     "lessons_params": "Parameter Privatlektionen",
-    "save_changes": "Änderungen speichern"
+    "save_changes": "Änderungen speichern",
+    "toast": {
+      "config_ghiaccio_non_letta": "Die Eis-Konfiguration konnte nicht gelesen werden: Das Speichern ist gesperrt, damit sie nicht überschrieben wird."
+    },
+    "azioni": {
+      "riprova": "Erneut versuchen"
+    },
+    "testi": {
+      "dato_non_disponibile": "Daten nicht verfügbar"
+    }
   },
   "seasons": {
     "title": "Saisons",
@@ -16,7 +25,10 @@
   "roles": {
     "title": "Rollen und Berechtigungen",
     "new_role": "Neue Rolle",
-    "permissions": "Berechtigungen"
+    "permissions": "Berechtigungen",
+    "load_error_title": "Berechtigungen nicht geladen",
+    "load_error_desc": "Die Berechtigungen des Clubs konnten nicht gelesen werden. Das Speichern ist deaktiviert, damit die Konfiguration nicht gelöscht wird.",
+    "retry": "Erneut versuchen"
   },
   "users": {
     "title": "Benutzer",

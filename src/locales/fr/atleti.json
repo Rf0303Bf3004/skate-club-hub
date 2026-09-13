@@ -76,5 +76,14 @@
   "badges": {
     "ospite": "INVITÉ",
     "ospite_tooltip": "Athlète invité temporaire, club d'origine : {{club}}"
+  },
+  "import": {
+    "blocco_atleti": "Impossible de lire les athlètes déjà présents : l'import a été interrompu pour ne pas créer de doublons.",
+    "blocco_livelli": "Impossible de lire la liste des niveaux : l'import a été interrompu.",
+    "riprova": "Réessayer",
+    "toast": {
+      "atleti_lettura_fallita": "Échec de la lecture des athlètes existants",
+      "livelli_lettura_fallita": "Échec de la lecture des niveaux"
+    }
   }
 }

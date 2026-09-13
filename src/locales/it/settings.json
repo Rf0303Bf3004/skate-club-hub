@@ -16,7 +16,8 @@
       "seleziona_risorsa": "Seleziona una risorsa",
       "disponibilita_salvata_per": "✅ Disponibilità salvata per {{risorsa}}",
       "periodo_mancante": "Imposta prima ogni quanti giorni va rinnovata",
-      "disponibilita_rinnovata": "✅ Disponibilità rinnovata"
+      "disponibilita_rinnovata": "✅ Disponibilità rinnovata",
+      "config_ghiaccio_non_letta": "Non è stato possibile leggere la configurazione del ghiaccio: il salvataggio è bloccato per non sovrascriverla."
     },
     "stats": {
       "atleti": "Atleti",
@@ -104,7 +105,8 @@
       "nessuno_slot_suffix": "per aggiungere una fascia oraria",
       "tipo_pianificazione_info": "Con la modalità periodica il sistema avvisa lo staff qualche giorno prima della scadenza che la disponibilità va rinnovata.",
       "prossima_scadenza": "Prossima scadenza",
-      "scadenza_non_impostata": "non ancora impostata"
+      "scadenza_non_impostata": "non ancora impostata",
+      "dato_non_disponibile": "Dato non disponibile"
     },
     "stato": {
       "attivo": "Attivo",
@@ -135,7 +137,8 @@
       "salva_disponibilita": "Salva disponibilità",
       "slot": "Slot",
       "plus_slot": "+ Slot",
-      "rinnova_disponibilita": "Rinnova disponibilità per il prossimo periodo"
+      "rinnova_disponibilita": "Rinnova disponibilità per il prossimo periodo",
+      "riprova": "Riprova"
     }
   },
   "seasons": {
@@ -214,7 +217,10 @@
       "toast_reset_done": "Configurazione consigliata applicata",
       "toast_error": "Errore",
       "note": "Il Presidente vede sempre tutte le card disponibili. Le modifiche si applicano al prossimo login degli utenti."
-    }
+    },
+    "load_error_title": "Permessi non caricati",
+    "load_error_desc": "Non è stato possibile leggere i permessi del club. Il salvataggio è disabilitato per non azzerare la configurazione.",
+    "retry": "Riprova"
   },
   "users": {
     "title": "Gestione Utenti",

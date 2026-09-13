@@ -22,6 +22,7 @@ import { Loader2, Move } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
+import { segnala_errore } from "@/lib/errori";
 
 const format_data_it = (iso: string) => {
   const [y, m, d] = iso.split("-");
@@ -187,6 +188,7 @@ const SpostaCorsoDialog: React.FC<Props> = ({
       if (e2) throw e2;
 
       // 3. Comunicazione agli iscritti
+      let avviso_inviato = true;
       try {
         const { count } = await supabase
           .from("iscrizioni_corsi")
@@ -212,14 +214,31 @@ const SpostaCorsoDialog: React.FC<Props> = ({
               programmata_per: new Date().toISOString(),
               creata_da: user_id,
             });
-            if (com_err) console.error("[SpostaCorsoDialog] comunicazione error", com_err);
+            if (com_err) {
+              avviso_inviato = false;
+              await segnala_errore(
+                "SpostaCorsoDialog",
+                i18n.t("avviso_corso_spostato_non_inviato", { ns: "errors" }) as string,
+                com_err,
+                { planning_corso_id: inserted.id, corso_id: planning_corso.corso_id },
+                "avviso",
+              );
+            }
           }
         }
       } catch (com_e) {
-        console.error("[SpostaCorsoDialog] errore creazione comunicazione", com_e);
+        avviso_inviato = false;
+        await segnala_errore(
+          "SpostaCorsoDialog",
+          i18n.t("avviso_corso_spostato_non_inviato", { ns: "errors" }) as string,
+          com_e,
+          { planning_corso_id: inserted.id, corso_id: planning_corso.corso_id },
+          "avviso",
+        );
       }
 
-      toast.success(tk("ok"));
+      // Lo spostamento è comunque avvenuto: il messaggio verde solo se l'avviso è partito.
+      if (avviso_inviato) toast.success(tk("ok"));
       on_done(inserted.id, planning_corso.id, new_data, ora_inizio);
       on_close();
     } catch (e: any) {

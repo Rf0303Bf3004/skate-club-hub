@@ -10,5 +10,7 @@
   "server_error": "Errore del server. Riprova più tardi.",
   "validation_failed": "Alcuni campi non sono validi",
   "duplicate": "Esiste già un elemento con questi dati",
-  "operation_in_progress": "Operazione in corso, attendi..."
+  "operation_in_progress": "Operazione in corso, attendi...",
+  "avviso_corso_spostato_non_inviato": "Corso spostato, ma l'avviso alle atlete non è stato inviato: avvisale tu.",
+  "avviso_corso_annullato_non_inviato": "Corso annullato, ma l'avviso alle atlete non è stato inviato: avvisale tu."
 }

@@ -45,7 +45,7 @@ const RuoliPermessiPage: React.FC = () => {
     return <Navigate to="/" replace />;
   }
 
-  const { isLoading } = useQuery({
+  const { isLoading, isError, error, refetch } = useQuery({
     queryKey: ["ruoli_permessi_sezioni_admin", club_id],
     queryFn: async () => {
       if (!club_id) return [];
@@ -74,6 +74,15 @@ const RuoliPermessiPage: React.FC = () => {
 
   const salva = async () => {
     if (!club_id) return;
+    // Non si scrive mai partendo da una matrice non caricata: azzererebbe i permessi.
+    if (isError || Object.keys(matrix).length === 0) {
+      toast({
+        title: t("roles.load_error_title"),
+        description: t("roles.load_error_desc"),
+        variant: "destructive",
+      });
+      return;
+    }
     set_saving(true);
     try {
       const rows: any[] = [];
@@ -125,12 +134,26 @@ const RuoliPermessiPage: React.FC = () => {
             <p className="text-sm text-muted-foreground">{t("roles.page_subtitle")}</p>
           </div>
         </div>
-        <Button onClick={salva} disabled={saving} className="gap-2">
+        <Button
+          onClick={salva}
+          disabled={saving || isError || Object.keys(matrix).length === 0}
+          className="gap-2"
+        >
           <Save className="w-4 h-4" />
           {saving ? t("roles.saving") : t("roles.save_permissions")}
         </Button>
       </div>
 
+      {isError ? (
+        <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-6 space-y-3">
+          <p className="text-sm font-semibold text-destructive">{t("roles.load_error_title")}</p>
+          <p className="text-sm text-destructive/90">{t("roles.load_error_desc")}</p>
+          <p className="text-xs text-muted-foreground">{(error as any)?.message}</p>
+          <Button variant="outline" onClick={() => refetch()}>
+            {t("roles.retry")}
+          </Button>
+        </div>
+      ) : (
       <div className="bg-card rounded-xl shadow-card overflow-x-auto">
         <table className="w-full min-w-[700px]">
           <thead>
@@ -198,6 +221,8 @@ const RuoliPermessiPage: React.FC = () => {
           </tbody>
         </table>
       </div>
+      )}
+
 
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
         <p className="text-sm text-blue-700 font-medium">{t("roles.note_label")}</p>

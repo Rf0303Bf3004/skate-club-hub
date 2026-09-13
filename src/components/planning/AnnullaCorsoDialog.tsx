@@ -15,6 +15,7 @@ import { Loader2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
+import { segnala_errore } from "@/lib/errori";
 
 interface Props {
   open: boolean;
@@ -126,6 +127,7 @@ const AnnullaCorsoDialog: React.FC<Props> = ({
       }
 
       // 3) Conta iscritti e crea comunicazione
+      let avviso_inviato = true;
       try {
         const { count } = await supabase
           .from("iscrizioni_corsi")
@@ -150,14 +152,31 @@ const AnnullaCorsoDialog: React.FC<Props> = ({
               programmata_per: new Date().toISOString(),
               creata_da: user_id,
             });
-            if (com_err) console.error("[AnnullaCorsoDialog] comunicazione error", com_err);
+            if (com_err) {
+              avviso_inviato = false;
+              await segnala_errore(
+                "AnnullaCorsoDialog",
+                i18n.t("avviso_corso_annullato_non_inviato", { ns: "errors" }) as string,
+                com_err,
+                { planning_corso_id: final_id, corso_id: corso_id_target },
+                "avviso",
+              );
+            }
           }
         }
       } catch (com_e) {
-        console.error("[AnnullaCorsoDialog] errore creazione comunicazione", com_e);
+        avviso_inviato = false;
+        await segnala_errore(
+          "AnnullaCorsoDialog",
+          i18n.t("avviso_corso_annullato_non_inviato", { ns: "errors" }) as string,
+          com_e,
+          { planning_corso_id: final_id, corso_id: corso_id_target },
+          "avviso",
+        );
       }
 
-      toast.success(tk("ok"));
+      // Il corso resta annullato: il messaggio finale però dice la verità sull'avviso.
+      if (avviso_inviato) toast.success(tk("ok"));
       on_done(final_id, motivo.trim());
       set_motivo("");
       on_close();

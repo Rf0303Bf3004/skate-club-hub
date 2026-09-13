@@ -76,5 +76,14 @@
   "badges": {
     "ospite": "GUEST",
     "ospite_tooltip": "Temporary guest athlete, home club: {{club}}"
+  },
+  "import": {
+    "blocco_atleti": "The existing athletes could not be read: the import was stopped to avoid creating duplicates.",
+    "blocco_livelli": "The list of levels could not be read: the import was stopped.",
+    "riprova": "Retry",
+    "toast": {
+      "atleti_lettura_fallita": "Failed to read existing athletes",
+      "livelli_lettura_fallita": "Failed to read levels"
+    }
   }
 }

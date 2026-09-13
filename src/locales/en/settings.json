@@ -4,7 +4,16 @@
     "data_section": "Club details",
     "season_params": "Season settings",
     "lessons_params": "Private lesson settings",
-    "save_changes": "Save changes"
+    "save_changes": "Save changes",
+    "toast": {
+      "config_ghiaccio_non_letta": "The ice configuration could not be read: saving is blocked so it is not overwritten."
+    },
+    "azioni": {
+      "riprova": "Retry"
+    },
+    "testi": {
+      "dato_non_disponibile": "Data not available"
+    }
   },
   "seasons": {
     "title": "Seasons",
@@ -16,7 +25,10 @@
   "roles": {
     "title": "Roles and permissions",
     "new_role": "New role",
-    "permissions": "Permissions"
+    "permissions": "Permissions",
+    "load_error_title": "Permissions not loaded",
+    "load_error_desc": "The club permissions could not be read. Saving is disabled so the configuration is not wiped.",
+    "retry": "Retry"
   },
   "users": {
     "title": "Users",

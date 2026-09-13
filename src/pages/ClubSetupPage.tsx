@@ -39,6 +39,7 @@ import SetupIndice, { type VoceIndice } from "@/components/setup/SetupIndice";
 import SetupSaveBar from "@/components/setup/SetupSaveBar";
 import { use_risorse_strutture } from "@/hooks/use-risorse-strutture";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { segnala_errore } from "@/lib/errori";
 
 
 
@@ -54,10 +55,14 @@ function use_config_ghiaccio() {
     queryKey: ["configurazione_ghiaccio", club_id, stagione?.id ?? null],
     enabled: !!club_id,
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("configurazione_ghiaccio")
         .select("*")
         .eq("club_id", club_id);
+      if (error) {
+        await segnala_errore("ClubSetupPage", "Lettura configurazione ghiaccio", error);
+        throw error;
+      }
       const righe = (data ?? []) as any[];
       return (
         righe.find((r) => stagione?.id && r.stagione_id === stagione.id) ??
@@ -90,10 +95,14 @@ function use_catalogo_count() {
     queryKey: ["catalogo_livelli_count", club_id],
     enabled: !!club_id,
     queryFn: async () => {
-      const { count } = await (supabase as any)
+      const { count, error } = await (supabase as any)
         .from("catalogo_livelli")
         .select("id", { count: "exact", head: true })
         .eq("club_id", club_id);
+      if (error) {
+        await segnala_errore("ClubSetupPage", "Lettura catalogo livelli", error);
+        throw error;
+      }
       return count ?? 0;
     },
   });
@@ -108,10 +117,10 @@ const ClubSetupPage: React.FC = () => {
   const { data: stagioni = [] } = use_stagioni();
   const { data: atleti = [] } = use_atleti();
   const { data: istruttori = [] } = use_istruttori();
-  const { data: config_ghiaccio, isLoading: loading_config } = use_config_ghiaccio();
+  const { data: config_ghiaccio, isLoading: loading_config, isError: errore_config, refetch: ricarica_config } = use_config_ghiaccio();
   const { data: stagione_corrente } = use_stagione_attiva();
   const { data: disp_ghiaccio_raw, isLoading: loading_disp } = use_disponibilita_ghiaccio();
-  const { data: catalogo_count } = use_catalogo_count();
+  const { data: catalogo_count, isError: errore_catalogo } = use_catalogo_count();
   const { data: risorse = [] } = use_risorse_strutture();
 
   const stagione_attiva = stagioni.find((s: any) => s.attiva);
@@ -315,6 +324,11 @@ const ClubSetupPage: React.FC = () => {
 
   // Save ghiaccio config (upsert)
   const handle_save_ghiaccio = async () => {
+    // Configurazione non letta: salvare significherebbe sovrascriverla con valori vuoti.
+    if (errore_config) {
+      toast({ title: t("club.toast.config_ghiaccio_non_letta"), variant: "destructive" });
+      return;
+    }
     set_saving_ghiaccio(true);
     try {
       const club_id = get_current_club_id();
@@ -358,6 +372,10 @@ const ClubSetupPage: React.FC = () => {
   // Save SOLO sezione lezioni private
   const [saving_private, set_saving_private] = useState(false);
   const handle_save_private = async () => {
+    if (errore_config) {
+      toast({ title: t("club.toast.config_ghiaccio_non_letta"), variant: "destructive" });
+      return;
+    }
     set_saving_private(true);
     try {
       const club_id = get_current_club_id();
@@ -642,9 +660,16 @@ const ClubSetupPage: React.FC = () => {
               >
                 <tb.icon className="h-4 w-4" />
                 {tb.label}
-                {tab_completa[tb.value]
-                  ? <CheckCircle2 className="h-3.5 w-3.5 text-success" />
-                  : <AlertCircle className="h-3.5 w-3.5 text-orange-500" />}
+                {tb.value === "catalogo" && errore_catalogo ? (
+                  <AlertCircle
+                    className="h-3.5 w-3.5 text-muted-foreground"
+                    aria-label={t("club.testi.dato_non_disponibile")}
+                  />
+                ) : tab_completa[tb.value] ? (
+                  <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+                ) : (
+                  <AlertCircle className="h-3.5 w-3.5 text-orange-500" />
+                )}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -1004,6 +1029,14 @@ const ClubSetupPage: React.FC = () => {
         {/* ══ GHIACCIO E PLANNING ══ */}
         <TabsContent value="ghiaccio" className="space-y-4">
         <SetupSection id="gh_parametri" titolo={t("club.sezioni.ghiaccio_planning")}>
+        {errore_config && (
+          <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 mb-3 space-y-2">
+            <p className="text-sm text-destructive">{t("club.toast.config_ghiaccio_non_letta")}</p>
+            <Button variant="outline" size="sm" onClick={() => ricarica_config()}>
+              {t("club.azioni.riprova")}
+            </Button>
+          </div>
+        )}
         {/* Config fields */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
@@ -1096,7 +1129,7 @@ const ClubSetupPage: React.FC = () => {
             </Field>
           </div>
           <div className="flex justify-end mt-4">
-            <Button onClick={handle_save_private} disabled={saving_private}>
+            <Button onClick={handle_save_private} disabled={saving_private || errore_config}>
               {saving_private ? t("club.azioni.salvataggio") : t("club.azioni.salva_config_private")}
             </Button>
           </div>

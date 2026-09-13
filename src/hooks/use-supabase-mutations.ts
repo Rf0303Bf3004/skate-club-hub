@@ -212,11 +212,13 @@ export function use_upsert_atleta() {
 
       if (data.id) {
         // Recupero livello attuale precedente per decidere se aggiornare lo storico
-        const { data: prev } = await supabase
+        const { data: prev, error: prev_error } = await supabase
           .from("atleti")
           .select("livello_attuale")
           .eq("id", data.id)
           .maybeSingle();
+        // Senza il livello precedente lo storico non sarebbe affidabile: meglio fallire.
+        if (prev_error) throw prev_error;
         livello_attuale_precedente = prev?.livello_attuale ?? null;
 
         const { error } = await supabase.from("atleti").update(payload).eq("id", data.id);
@@ -678,7 +680,7 @@ export function use_crea_lezione_privata() {
       const is_semi = (data.atleti_ids?.length || 0) > 1;
       const nomi = data.atleti_nomi?.length ? data.atleti_nomi : data.atleti_ids || [];
       const corso_nome = `${is_semi ? "Semi" : "Privata"} · ${nomi.join(", ")}`;
-      const { data: new_corso } = await supabase.from("corsi").insert({
+      const { data: new_corso, error: corso_error } = await supabase.from("corsi").insert({
         club_id: cid(),
         nome: corso_nome,
         tipo: "privata",
@@ -689,21 +691,31 @@ export function use_crea_lezione_privata() {
         ora_inizio: null as any,
         ora_fine: null as any,
       }).select("id").single();
+      if (corso_error) {
+        throw new Error(`Lezione creata, ma il corso collegato non è stato creato: ${corso_error.message}`);
+      }
       if (new_corso && data.istruttore_id) {
-        await supabase.from("corsi_istruttori").insert({
+        const { error: ci_error } = await supabase.from("corsi_istruttori").insert({
           corso_id: new_corso.id,
           istruttore_id: data.istruttore_id,
         });
+        if (ci_error) {
+          throw new Error(`Lezione creata, ma l'istruttore non è stato collegato al corso: ${ci_error.message}`);
+        }
       }
 
       if (lezione && data.has_ice !== false) {
         const data_lunedi = monday_of_week(lezione.data);
-        const { data: settimana } = await supabase
+        const { data: settimana, error: settimana_error } = await supabase
           .from("planning_settimane")
           .select("id")
           .eq("club_id", cid())
           .eq("data_lunedi", data_lunedi)
           .maybeSingle();
+        if (settimana_error) {
+          throw new Error(`Lezione creata, ma non è stato possibile collocarla nel planning: ${settimana_error.message}`);
+        }
+
 
         if (settimana?.id) {
           const planning_payload = {

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
+import { segnala_errore } from "@/lib/errori";
 
 const ti = (key: string, opts?: any) => i18n.t(`import.${key}`, { ns: "atleti", ...(opts || {}) }) as string;
 
@@ -232,25 +233,44 @@ const ImportAtletiPage: React.FC = () => {
   const file_input_ref = useRef<HTMLInputElement>(null);
 
   // Fetch livelli ufficiali (tabella globale, senza club_id)
-  const { data: livelli_db = [] } = useQuery({
+  const {
+    data: livelli_db = [],
+    isError: livelli_errore,
+    refetch: ricarica_livelli,
+  } = useQuery({
     queryKey: ["livelli_import"],
     queryFn: async () => {
-      const { data } = await supabase.from("livelli").select("nome").eq("attivo", true);
+      const { data, error } = await supabase.from("livelli").select("nome").eq("attivo", true);
+      if (error) {
+        await segnala_errore("ImportAtletiPage", ti("toast.livelli_lettura_fallita"), error);
+        throw error;
+      }
       return (data ?? []).map((l: any) => norm_string(l.nome)).filter(Boolean);
     },
   });
 
   // Fetch atleti del club per match duplicati
-  const { data: atleti_db = [] } = useQuery({
+  const {
+    data: atleti_db = [],
+    isError: atleti_errore,
+    refetch: ricarica_atleti,
+  } = useQuery({
     queryKey: ["atleti_import_match", club_id],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("atleti")
         .select("id, nome, cognome, data_nascita, telefono, genitore1_email, livello_attuale, sesso")
         .eq("club_id", club_id);
+      if (error) {
+        await segnala_errore("ImportAtletiPage", ti("toast.atleti_lettura_fallita"), error);
+        throw error;
+      }
       return data ?? [];
     },
   });
+
+  // Se una delle due letture fallisce l'import non è sicuro: si ferma tutto.
+  const lettura_fallita = atleti_errore || livelli_errore;
   const atleti_index = useMemo(() => {
     const m = new Map<string, any>();
     for (const a of atleti_db as any[]) {
@@ -381,6 +401,10 @@ const ImportAtletiPage: React.FC = () => {
 
   // ── STEP 4: import ──
   const run_import = async () => {
+    if (lettura_fallita) {
+      toast.error(atleti_errore ? ti("blocco_atleti") : ti("blocco_livelli"));
+      return;
+    }
     set_importing(true);
     set_step(4);
     let creati = 0;
@@ -456,6 +480,25 @@ const ImportAtletiPage: React.FC = () => {
 
       <StepIndicator step={step} />
 
+      {lettura_fallita && (
+        <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 space-y-2">
+          <p className="text-sm font-semibold text-destructive">
+            {atleti_errore ? t("import.blocco_atleti") : t("import.blocco_livelli")}
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (atleti_errore) ricarica_atleti();
+              if (livelli_errore) ricarica_livelli();
+            }}
+          >
+            {t("import.riprova")}
+          </Button>
+        </div>
+      )}
+
+
       {/* STEP 1 */}
       {step === 1 && (
         <div className="space-y-4">
@@ -530,7 +573,7 @@ const ImportAtletiPage: React.FC = () => {
           </div>
           <div className="flex justify-between">
             <Button variant="outline" onClick={() => set_step(1)}><ArrowLeft className="w-4 h-4 mr-2" /> {t("import.back")}</Button>
-            <Button disabled={!mapping_valido} onClick={build_parsed}>
+            <Button disabled={!mapping_valido || lettura_fallita} onClick={build_parsed}>
               {t("import.continue")} <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
@@ -609,7 +652,7 @@ const ImportAtletiPage: React.FC = () => {
             <Button variant="outline" onClick={() => set_step(2)} disabled={importing}>
               <ArrowLeft className="w-4 h-4 mr-2" /> Indietro
             </Button>
-            <Button onClick={run_import} disabled={importing || (counts.nuovi + counts.aggiornamenti) === 0}>
+            <Button onClick={run_import} disabled={importing || lettura_fallita || (counts.nuovi + counts.aggiornamenti) === 0}>
               <CheckCircle2 className="w-4 h-4 mr-2" />
               {t("import.do_import", { count: counts.nuovi + counts.aggiornamenti })}
             </Button>

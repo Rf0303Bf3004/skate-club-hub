@@ -10,5 +10,7 @@
   "server_error": "Server error. Please try again later.",
   "validation_failed": "Some fields are not valid",
   "duplicate": "An item with this data already exists",
-  "operation_in_progress": "Operation in progress, please wait..."
+  "operation_in_progress": "Operation in progress, please wait...",
+  "avviso_corso_spostato_non_inviato": "Course moved, but the notice to the athletes was not sent: please inform them yourself.",
+  "avviso_corso_annullato_non_inviato": "Course cancelled, but the notice to the athletes was not sent: please inform them yourself."
 }
