@@ -197,7 +197,7 @@ const ProgrammiMusicaliSection: React.FC<Props> = ({ atleta_id }) => {
                   <Button variant="outline" size="sm" onClick={() => void ascolta(p)} disabled={!p.file_path}>
                     {t("musica.ascolta")}
                   </Button>
-                  {puo_gestire_sportivo && (
+                  {puo_gestire_musica && (
                     <>
                       <div className="flex items-center gap-1">
                         <Switch
@@ -206,6 +206,14 @@ const ProgrammiMusicaliSection: React.FC<Props> = ({ atleta_id }) => {
                           aria-label={t("musica.attivo")}
                         />
                         <span className="text-xs text-muted-foreground">{t("musica.attivo")}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Switch
+                          checked={p.in_preparazione}
+                          onCheckedChange={(v) => void cambia_in_preparazione(p, v)}
+                          aria-label={t("musica.in_preparazione")}
+                        />
+                        <span className="text-xs text-muted-foreground">{t("musica.in_preparazione")}</span>
                       </div>
                       <ConfirmButton
                         variante="pericolo"
