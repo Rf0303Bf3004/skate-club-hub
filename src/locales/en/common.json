@@ -386,7 +386,22 @@
     "istruzioni_caricamento": "Choose the type and the title first, then choose the file: the upload starts right away and saves. Title and type can still be changed from the track row.",
     "scegli_file_e_salva": "Choose the file and save",
     "titolo_mancante": "Track without a title",
-    "titolo_mancante_dettaglio": "The track is saved without a title. You can add it from the track row."
+    "titolo_mancante_dettaglio": "The track is saved without a title. You can add it from the track row.",
+    "da_capo": "From the start",
+    "avanti_10": "+10 s",
+    "punto_precedente": "Previous point",
+    "punto_successivo": "Next point",
+    "volume": "Volume",
+    "silenzia": "Mute",
+    "riattiva_audio": "Unmute",
+    "barra_avanzamento": "Track progress",
+    "rinomina_punto": "Rename the point",
+    "salva_nome_punto": "Save the name",
+    "elimina_punto": "Delete the point",
+    "elimina_punto_conferma": "The point “{{nome}}” will be deleted.",
+    "errore_rinomina_punto": "The point could not be renamed.",
+    "errore_elimina_punto": "The point could not be deleted.",
+    "scorciatoie": "Keyboard: space starts and stops, left and right arrows move by 5 seconds."
   },
   "menu_blocco": {
     "conduzione": "Operations",
