@@ -266,7 +266,11 @@
     "conferma_cambio_istruttore_testo": "Vous avez marqué des absences sans les enregistrer. Changer d'entraîneur les perdra.",
     "conferma_cambio_istruttore_azione": "Changer d'entraîneur",
     "compleanno_persona_senza_anni": "{{nome}} {{cognome}}",
-    "ripresa_bozza": "Reprise des absences signalées mais pas encore enregistrées."
+    "ripresa_bozza": "Reprise des absences signalées mais pas encore enregistrées.",
+    "correggi_appello": "Corriger l'appel",
+    "nessuna_presente": "Aucune athlète présente dans cette séance.",
+    "nota_rapida": "Note rapide",
+    "prossimamente": "Prochainement"
   },
   "richieste_private": {
     "titolo": "Demandes de leçon privée",
@@ -321,5 +325,38 @@
     "ritirata_ok": "Demande retirée",
     "risposta_club": "Réponse du club",
     "nessun_istruttore": "La liste des instructeurs n'est pas disponible : la demande sera envoyée sans préférence."
+  },
+  "musica": {
+    "ascolta": "Écouter",
+    "attivo": "Actif",
+    "carica_disco": "Charger un morceau",
+    "caricamento_disco": "Chargement…",
+    "caricamento_punti": "Chargement des points…",
+    "chiudi_lettore": "Fermer le lecteur",
+    "dischi": "Programmes musicaux",
+    "disco": "Musique",
+    "disco_caricato": "Morceau chargé",
+    "elimina_disco": "Supprimer le morceau",
+    "elimina_disco_conferma": "Le fichier et les points marqués seront supprimés.",
+    "errore_collegamento": "Impossible d'ouvrir le fichier audio.",
+    "errore_programmi": "Impossible de lire les programmes musicaux. La liste n'est pas disponible : cela ne veut pas dire qu'il n'y en a pas.",
+    "errore_punti": "Impossible de lire les points du programme.",
+    "errore_riproduzione": "La lecture n'a pas démarré.",
+    "ferma_ripetizione": "Arrêter la répétition",
+    "indietro_10": "−10 s",
+    "nessun_disco": "Aucun morceau chargé",
+    "nessun_punto": "Aucun point marqué.",
+    "nome_punto": "Nom du point",
+    "pausa": "Pause",
+    "play": "Lecture",
+    "riprova": "Réessayer",
+    "segna_punto": "Marquer un point",
+    "senza_titolo": "Sans titre",
+    "tipo": "Type",
+    "tipo_corto": "Programme court",
+    "tipo_esibizione": "Exhibition",
+    "tipo_gala": "Gala",
+    "tipo_libero": "Programme libre",
+    "titolo_brano": "Titre du morceau"
   }
 }

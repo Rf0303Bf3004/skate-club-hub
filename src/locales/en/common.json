@@ -266,7 +266,11 @@
     "conferma_cambio_istruttore_testo": "You marked absences without saving them. Switching instructor will discard them.",
     "conferma_cambio_istruttore_azione": "Switch instructor",
     "compleanno_persona_senza_anni": "{{nome}} {{cognome}}",
-    "ripresa_bozza": "Resumed the attendance marks not yet recorded."
+    "ripresa_bozza": "Resumed the attendance marks not yet recorded.",
+    "correggi_appello": "Correct the roll call",
+    "nessuna_presente": "No athlete present in this session.",
+    "nota_rapida": "Quick note",
+    "prossimamente": "Coming soon"
   },
   "richieste_private": {
     "titolo": "Private lesson requests",
@@ -321,5 +325,38 @@
     "ritirata_ok": "Request withdrawn",
     "risposta_club": "Club reply",
     "nessun_istruttore": "The instructor list is unavailable: the request will be sent without a preference."
+  },
+  "musica": {
+    "ascolta": "Listen",
+    "attivo": "Active",
+    "carica_disco": "Upload a track",
+    "caricamento_disco": "Uploading…",
+    "caricamento_punti": "Loading points…",
+    "chiudi_lettore": "Close the player",
+    "dischi": "Music programs",
+    "disco": "Music",
+    "disco_caricato": "Track uploaded",
+    "elimina_disco": "Delete the track",
+    "elimina_disco_conferma": "The file and its marked points will be deleted.",
+    "errore_collegamento": "The audio file could not be opened.",
+    "errore_programmi": "The music programs could not be read. The list is unavailable: it does not mean there are none.",
+    "errore_punti": "The program points could not be read.",
+    "errore_riproduzione": "Playback did not start.",
+    "ferma_ripetizione": "Stop the loop",
+    "indietro_10": "−10 s",
+    "nessun_disco": "No track uploaded",
+    "nessun_punto": "No point marked.",
+    "nome_punto": "Point name",
+    "pausa": "Pause",
+    "play": "Play",
+    "riprova": "Try again",
+    "segna_punto": "Mark a point",
+    "senza_titolo": "Untitled",
+    "tipo": "Type",
+    "tipo_corto": "Short program",
+    "tipo_esibizione": "Exhibition",
+    "tipo_gala": "Gala",
+    "tipo_libero": "Free program",
+    "titolo_brano": "Track title"
   }
 }
