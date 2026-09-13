@@ -407,12 +407,13 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
             onChange={(e) => set_nome_punto(e.target.value)}
             placeholder={t("musica.nome_punto")}
           />
+          <p className="text-sm text-muted-foreground">{t("musica.ripetizione_spiegazione")}</p>
           <DialogFooter>
             <Button variant="outline" onClick={() => set_dialogo_punto(false)}>
               {t("actions.cancel")}
             </Button>
             <Button onClick={() => void salva_punto()} disabled={!nome_punto.trim() || salvataggio_punto}>
-              {t("actions.save")}
+              {t("musica.segna_inizio")}
             </Button>
           </DialogFooter>
         </DialogContent>
