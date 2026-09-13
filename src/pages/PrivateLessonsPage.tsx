@@ -16,6 +16,13 @@ import { useQueryClient } from "@tanstack/react-query";
 import { usePermessiAzione } from "@/hooks/use-permessi-azione";
 import NotaPermesso from "@/components/common/NotaPermesso";
 import ConfirmButton from "@/components/common/ConfirmButton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import RichiesteLezioniPrivateTab, {
+  use_richieste_lezioni_private,
+  QUERY_KEY_RICHIESTE_PRIVATE,
+  type RichiestaLezione,
+} from "@/components/lezioni/RichiesteLezioniPrivateTab";
+import { segnala_errore } from "@/lib/errori";
 
 // ─── Helpers ───────────────────────────────────────────────
 function fmt(d: Date): string {
