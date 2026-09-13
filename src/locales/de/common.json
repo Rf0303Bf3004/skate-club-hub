@@ -378,5 +378,10 @@
   "menu_blocco": {
     "conduzione": "Betrieb",
     "setup": "Einrichtung"
+  },
+  "griglia_nav": {
+    "giorno_precedente": "Vorheriger Tag",
+    "giorno_successivo": "Nächster Tag",
+    "oggi": "Heute"
   }
 }

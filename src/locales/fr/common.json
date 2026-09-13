@@ -378,5 +378,10 @@
   "menu_blocco": {
     "conduzione": "Conduite",
     "setup": "Configuration"
+  },
+  "griglia_nav": {
+    "giorno_precedente": "Jour précédent",
+    "giorno_successivo": "Jour suivant",
+    "oggi": "Aujourd’hui"
   }
 }
