@@ -721,50 +721,53 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
         ) : punti.length === 0 ? (
           <p className="text-base text-muted-foreground">{t("musica.nessun_punto")}</p>
         ) : (
-          <div className="flex flex-wrap gap-2">
-            {punti_ordinati.map((p) => (
-              <div
-                key={p.id}
-                className={`flex items-center gap-1 rounded-lg border p-1 ${
-                  loop_punto?.id === p.id ? "border-primary bg-primary/10" : "border-border"
-                }`}
-              >
-                <Button variant="ghost" className="h-12" onClick={() => usa_punto(p)}>
-                  {p.secondi_fine != null && <Repeat className="mr-2 h-4 w-4" />}
-                  {p.nome} · {mmss(p.secondi)}
-                  {p.secondi_fine != null ? ` – ${mmss(p.secondi_fine)}` : ""}
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="h-12 w-12 p-0"
-                  aria-label={t("musica.rinomina_punto")}
-                  title={t("musica.rinomina_punto")}
-                  onClick={() => {
-                    set_punto_modifica(p);
-                    set_nome_modifica(p.nome);
-                  }}
+          <>
+            <p className="text-sm text-muted-foreground">{t("musica.spiegazione_punti")}</p>
+            <div className="flex flex-wrap gap-2">
+              {punti_ordinati.map((p) => (
+                <div
+                  key={p.id}
+                  className={`flex items-center gap-1 rounded-lg border p-1 ${
+                    loop_punto?.id === p.id ? "border-primary bg-primary/10" : "border-border"
+                  }`}
                 >
-                  <Pencil className="h-5 w-5" />
-                </Button>
-                <ConfirmButton
-                  titolo={t("musica.elimina_punto")}
-                  descrizione={t("musica.elimina_punto_conferma", { nome: p.nome })}
-                  conferma_label={t("musica.elimina_punto")}
-                  on_conferma={() => void elimina_punto(p)}
-                  variante="pericolo"
-                >
+                  <Button variant="ghost" className="h-12" onClick={() => usa_punto(p)}>
+                    {p.secondi_fine != null && <Repeat className="mr-2 h-4 w-4" />}
+                    {p.nome} · {mmss(p.secondi)}
+                    {p.secondi_fine != null ? ` – ${mmss(p.secondi_fine)}` : ""}
+                  </Button>
                   <Button
                     variant="ghost"
-                    className="h-12 w-12 p-0 text-destructive"
-                    aria-label={t("musica.elimina_punto")}
-                    title={t("musica.elimina_punto")}
+                    className="h-12 w-12 p-0"
+                    aria-label={t("musica.rinomina_punto")}
+                    title={t("musica.rinomina_punto")}
+                    onClick={() => {
+                      set_punto_modifica(p);
+                      set_nome_modifica(p.nome);
+                    }}
                   >
-                    <Trash2 className="h-5 w-5" />
+                    <Pencil className="h-5 w-5" />
                   </Button>
-                </ConfirmButton>
-              </div>
-            ))}
-          </div>
+                  <ConfirmButton
+                    titolo={t("musica.elimina_punto")}
+                    descrizione={t("musica.elimina_punto_conferma", { nome: p.nome })}
+                    conferma_label={t("musica.elimina_punto")}
+                    on_conferma={() => void elimina_punto(p)}
+                    variante="pericolo"
+                  >
+                    <Button
+                      variant="ghost"
+                      className="h-12 w-12 p-0 text-destructive"
+                      aria-label={t("musica.elimina_punto")}
+                      title={t("musica.elimina_punto")}
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </Button>
+                  </ConfirmButton>
+                </div>
+              ))}
+            </div>
+          </>
         )}
 
         <audio
