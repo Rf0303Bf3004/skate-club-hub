@@ -5733,6 +5733,101 @@ export type Database = {
           },
         ]
       }
+      programmi_musicali: {
+        Row: {
+          atleta_id: string
+          attivo: boolean
+          caricato_da: string | null
+          club_id: string
+          created_at: string
+          durata_sec: number | null
+          file_path: string | null
+          id: string
+          in_preparazione: boolean
+          stagione_id: string | null
+          tipo: string
+          titolo_brano: string | null
+        }
+        Insert: {
+          atleta_id: string
+          attivo?: boolean
+          caricato_da?: string | null
+          club_id: string
+          created_at?: string
+          durata_sec?: number | null
+          file_path?: string | null
+          id?: string
+          in_preparazione?: boolean
+          stagione_id?: string | null
+          tipo?: string
+          titolo_brano?: string | null
+        }
+        Update: {
+          atleta_id?: string
+          attivo?: boolean
+          caricato_da?: string | null
+          club_id?: string
+          created_at?: string
+          durata_sec?: number | null
+          file_path?: string | null
+          id?: string
+          in_preparazione?: boolean
+          stagione_id?: string | null
+          tipo?: string
+          titolo_brano?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "programmi_musicali_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "programmi_musicali_atleta_id_fkey"
+            columns: ["atleta_id"]
+            isOneToOne: false
+            referencedRelation: "atleti_con_completezza"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "programmi_musicali_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "programmi_musicali_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "programmi_musicali_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "elenco_club"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "programmi_musicali_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "kpi_pitch_sponsor"
+            referencedColumns: ["club_id"]
+          },
+          {
+            foreignKeyName: "programmi_musicali_stagione_id_fkey"
+            columns: ["stagione_id"]
+            isOneToOne: false
+            referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       proposte: {
         Row: {
           attiva: boolean
@@ -5808,6 +5903,44 @@ export type Database = {
             columns: ["stagione_id"]
             isOneToOne: false
             referencedRelation: "stagioni"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      punti_programma: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          ordine: number
+          programma_id: string
+          secondi: number
+          secondi_fine: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          ordine?: number
+          programma_id: string
+          secondi: number
+          secondi_fine?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          ordine?: number
+          programma_id?: string
+          secondi?: number
+          secondi_fine?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "punti_programma_programma_id_fkey"
+            columns: ["programma_id"]
+            isOneToOne: false
+            referencedRelation: "programmi_musicali"
             referencedColumns: ["id"]
           },
         ]
