@@ -476,6 +476,25 @@ const ImportAtletiPage: React.FC = () => {
 
       <StepIndicator step={step} />
 
+      {lettura_fallita && (
+        <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 space-y-2">
+          <p className="text-sm font-semibold text-destructive">
+            {atleti_errore ? t("import.blocco_atleti") : t("import.blocco_livelli")}
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (atleti_errore) ricarica_atleti();
+              if (livelli_errore) ricarica_livelli();
+            }}
+          >
+            {t("import.riprova")}
+          </Button>
+        </div>
+      )}
+
+
       {/* STEP 1 */}
       {step === 1 && (
         <div className="space-y-4">
