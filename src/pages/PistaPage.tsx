@@ -571,27 +571,47 @@ const PistaPage: React.FC = () => {
             {t("musica.errore_programmi")}
           </p>
         )}
+        {note_query.isError && (
+          <p className="rounded-lg border border-destructive bg-destructive/10 px-4 py-2 text-base text-destructive">
+            {t("pista.note_errore")}
+          </p>
+        )}
         {presenti.map((atleta) => {
           const titolo = `${atleta.cognome} ${atleta.nome}`;
           const suoi = programmi_per_atleta.get(atleta.atleta_id) ?? [];
+          const sue_note = note_per_atleta.get(atleta.atleta_id) ?? [];
           return (
             <div
               key={atleta.atleta_id}
               className="flex min-h-[72px] items-center justify-between gap-4 rounded-xl border-2 border-border bg-card px-4 py-3"
             >
-              <span className="truncate text-xl font-semibold">{titolo}</span>
+              <span className="min-w-0">
+                <span className="block truncate text-xl font-semibold">{titolo}</span>
+                {/* Conteggio note: mostrato solo se ce n'è almeno una. */}
+                {sue_note.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => set_note_aperte({ atleta_id: atleta.atleta_id, titolo })}
+                    className="mt-0.5 text-sm font-medium text-muted-foreground underline underline-offset-2"
+                  >
+                    {t("pista.note_conteggio", { count: sue_note.length })}
+                  </button>
+                )}
+              </span>
               <div className="flex shrink-0 items-center gap-2">
-                {/* Nota rapida: non c'è ancora dove salvarla */}
                 <Button
                   size="lg"
                   variant="outline"
                   className="h-12"
-                  disabled
-                  title={t("pista.prossimamente")}
+                  onClick={() => {
+                    set_nota_testo("");
+                    set_nota_target({ atleta_id: atleta.atleta_id, titolo });
+                  }}
                 >
                   <StickyNote className="mr-2 h-5 w-5" />
                   {t("pista.nota_rapida")}
                 </Button>
+
                 {suoi.length > 0 ? (
                   <Button
                     size="lg"
