@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import type { PortaleSession } from "@/lib/portale-auth";
 import { useTranslation } from "react-i18next";
+import RichiestePrivateSezione from "@/components/portale/RichiestePrivateSezione";
 
 const CorsiTab: React.FC = () => {
   const ctx = useOutletContext<{ session?: PortaleSession }>() as any;
