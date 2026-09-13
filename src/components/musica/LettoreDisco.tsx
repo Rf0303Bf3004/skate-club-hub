@@ -315,8 +315,20 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
           </div>
           <Button size="lg" variant="outline" className="h-14" onClick={() => set_dialogo_punto(true)}>
             <Plus className="mr-2 h-5 w-5" />
-            {t("musica.segna_punto")}
+            {t("musica.segna_inizio")}
           </Button>
+          {punto_aperto && (
+            <Button
+              size="lg"
+              variant="secondary"
+              className="h-14"
+              disabled={salvataggio_punto}
+              onClick={() => void segna_fine()}
+            >
+              <Repeat className="mr-2 h-5 w-5" />
+              {t("musica.segna_fine_qui", { nome: punto_aperto.nome })}
+            </Button>
+          )}
           {loop_punto && (
             <Button size="lg" variant="secondary" className="h-14" onClick={() => set_loop_punto(null)}>
               <Repeat className="mr-2 h-5 w-5" />
