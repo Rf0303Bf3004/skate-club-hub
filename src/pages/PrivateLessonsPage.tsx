@@ -16,6 +16,13 @@ import { useQueryClient } from "@tanstack/react-query";
 import { usePermessiAzione } from "@/hooks/use-permessi-azione";
 import NotaPermesso from "@/components/common/NotaPermesso";
 import ConfirmButton from "@/components/common/ConfirmButton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import RichiesteLezioniPrivateTab, {
+  use_richieste_lezioni_private,
+  QUERY_KEY_RICHIESTE_PRIVATE,
+  type RichiestaLezione,
+} from "@/components/lezioni/RichiesteLezioniPrivateTab";
+import { segnala_errore } from "@/lib/errori";
 
 // ─── Helpers ───────────────────────────────────────────────
 function fmt(d: Date): string {
@@ -731,6 +738,60 @@ const LezioniPrivatePage: React.FC = () => {
   const [aggiungi_open, set_aggiungi_open] = useState(false);
   const [durata_modal, set_durata_modal] = useState(false);
   const [saving_durata, set_saving_durata] = useState(false);
+  const [tab, set_tab] = useState<"calendario" | "richieste">("calendario");
+  const [richiesta_pendente, set_richiesta_pendente] = useState<RichiestaLezione | null>(null);
+  const { t: tc } = useTranslation("common");
+  const richieste_query = use_richieste_lezioni_private();
+  const n_in_attesa = (richieste_query.data ?? []).filter((r) => r.stato === "in_attesa").length;
+
+  const nome_atleta_richiesta = (id: string) => {
+    const a = atleti.find((x: any) => x.id === id);
+    return a ? `${a.nome} ${a.cognome}` : id.slice(0, 8);
+  };
+
+  const handle_accetta_richiesta = (r: RichiestaLezione) => {
+    set_richiesta_pendente(r);
+    if (r.istruttore_id) set_selected_istruttore(r.istruttore_id);
+    if (r.data_preferita) {
+      set_selected_date(r.data_preferita);
+      const d = new Date(`${r.data_preferita}T00:00:00`);
+      set_cal_year(d.getFullYear());
+      set_cal_month(d.getMonth());
+    }
+    set_tab("calendario");
+    toast({ title: tc("richieste_private.accetta_istruzioni", { nome: nome_atleta_richiesta(r.atleta_id) }) });
+  };
+
+  const collega_richiesta_a_lezione = async (lezione_id: string) => {
+    if (!richiesta_pendente) return;
+    try {
+      const { data: utente, error: err_utente } = await supabase.auth.getUser();
+      if (err_utente) throw err_utente;
+      const { error } = await supabase
+        .from("richieste_lezioni_private")
+        .update({
+          stato: "accettata",
+          lezione_id,
+          gestita_da: utente?.user?.id ?? null,
+          gestita_il: new Date().toISOString(),
+        })
+        .eq("id", richiesta_pendente.id)
+        .eq("club_id", get_current_club_id());
+      if (error) throw error;
+      set_richiesta_pendente(null);
+      await qc.invalidateQueries({ queryKey: QUERY_KEY_RICHIESTE_PRIVATE });
+      toast({ title: tc("richieste_private.accettata_ok") });
+    } catch (e) {
+      await segnala_errore(
+        "PrivateLessonsPage",
+        tc("richieste_private.accettata_parziale"),
+        e,
+        { richiesta_id: richiesta_pendente?.id, lezione_id },
+        "avviso",
+      );
+    }
+  };
+
 
   React.useEffect(() => {
     if (!selected_istruttore && istruttori.length > 0) set_selected_istruttore(istruttori[0].id);
@@ -848,10 +909,10 @@ const LezioniPrivatePage: React.FC = () => {
       ora_inizio: time,
       ora_fine: end_time,
       durata_minuti: slot_minuti,
-      atleti_ids: [],
+      atleti_ids: richiesta_pendente ? [richiesta_pendente.atleta_id] : [],
       ricorrente: false,
       costo_totale: costo,
-      note: "",
+      note: richiesta_pendente?.note_richiesta || "",
       has_ice,
     });
     set_form_open(true);
@@ -916,7 +977,7 @@ const LezioniPrivatePage: React.FC = () => {
         const a = atleti.find((x: any) => x.id === aid);
         return a ? `${a.cognome} ${a.nome}`.trim() : "?";
       });
-      await crea_lezione.mutateAsync({
+      const creata: any = await crea_lezione.mutateAsync({
         istruttore_id: form_data.istruttore_id,
         data: form_data.data,
         ora_inizio: form_data.ora_inizio,
@@ -933,6 +994,8 @@ const LezioniPrivatePage: React.FC = () => {
       toast({
         title: form_data.ricorrente ? t("lezioni_private.toast.lezioni_ricorrenti_create") : t("lezioni_private.toast.lezione_prenotata"),
       });
+      const lezione_id: string | undefined = Array.isArray(creata) ? creata[0]?.id : creata?.id;
+      if (richiesta_pendente && lezione_id) await collega_richiesta_a_lezione(lezione_id);
     } catch (err: any) {
       toast({
         title: t("lezioni_private.toast.errore_salvataggio"),
@@ -1061,6 +1124,31 @@ const LezioniPrivatePage: React.FC = () => {
         </div>
         {!puo_gestire_sportivo && (
           <NotaPermesso testo="Puoi consultare le lezioni ma non hai i permessi per crearle, modificarle o annullarle." />
+        )}
+
+        <Tabs value={tab} onValueChange={(v) => set_tab(v as "calendario" | "richieste")}>
+          <TabsList>
+            <TabsTrigger value="calendario">{tc("richieste_private.tab_calendario")}</TabsTrigger>
+            <TabsTrigger value="richieste">
+              {tc("richieste_private.tab_richieste")}
+              {n_in_attesa > 0 && (
+                <span className="ml-2 text-xs font-bold px-1.5 py-0.5 rounded-full bg-primary/15 text-primary">
+                  {n_in_attesa}
+                </span>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="calendario" className="mt-4 space-y-6">
+        {richiesta_pendente && (
+          <div className="flex items-center justify-between gap-3 flex-wrap rounded-xl border border-primary/40 bg-primary/5 px-4 py-3">
+            <span className="text-sm text-foreground">
+              {tc("richieste_private.accetta_in_corso", { nome: nome_atleta_richiesta(richiesta_pendente.atleta_id) })}
+            </span>
+            <Button variant="outline" size="sm" onClick={() => set_richiesta_pendente(null)}>
+              {tc("richieste_private.annulla_accettazione")}
+            </Button>
+          </div>
         )}
 
         <div className="w-64">
@@ -1237,6 +1325,18 @@ const LezioniPrivatePage: React.FC = () => {
             {t("lezioni_private.select_istruttore_empty")}
           </div>
         )}
+          </TabsContent>
+
+          <TabsContent value="richieste" className="mt-4">
+            <RichiesteLezioniPrivateTab
+              atleti={atleti as any}
+              istruttori={istruttori as any}
+              puo_gestire={puo_gestire_sportivo}
+              richiesta_pendente_id={richiesta_pendente?.id ?? null}
+              on_accetta={handle_accetta_richiesta}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </>
   );
