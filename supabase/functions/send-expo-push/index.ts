@@ -1,9 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+// Funzione di solo servizio (trigger/cron): nessuna intestazione CORS,
+// non va chiamata da un browser.
+const corsHeaders: Record<string, string> = {};
 
 const EXPO_URL = "https://exp.host/--/api/v2/push/send";
 
