@@ -931,6 +931,9 @@ const LezioniPrivatePage: React.FC = () => {
 
   const handle_modifica = () => {
     if (!detail_slot?.lesson) return;
+    // Modificare una lezione esistente non è mai la risposta a una richiesta:
+    // la richiesta in sospeso va scollegata subito.
+    set_richiesta_pendente(null);
     const lesson = detail_slot.lesson;
     set_form_data({
       istruttore_id: selected_istruttore,
