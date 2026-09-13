@@ -34,10 +34,12 @@ const DateInput: React.FC<Props> = ({ value, onChange, className, min_year = 190
       set_aaaa(y);
       set_mm(m);
       set_gg(d);
+      set_errore(null);
     } else if (!value) {
       set_gg("");
       set_mm("");
       set_aaaa("");
+      set_errore(null);
     }
   }, [value]);
 
@@ -46,18 +48,29 @@ const DateInput: React.FC<Props> = ({ value, onChange, className, min_year = 190
       const gn = parseInt(g, 10);
       const mn = parseInt(m, 10);
       const yn = parseInt(y, 10);
-      if (gn >= 1 && gn <= 31 && mn >= 1 && mn <= 12 && yn >= min_year && yn <= max_year) {
-        onChange(`${y}-${m}-${g}`);
+      if (yn < min_year || yn > max_year) {
+        set_errore("anno_fuori_range");
         return;
       }
+      if (!data_esiste(gn, mn, yn)) {
+        set_errore("inesistente");
+        return;
+      }
+      set_errore(null);
+      onChange(`${y}-${m}-${g}`);
+      return;
     }
+    set_errore(null);
     if (!g && !m && !y) onChange("");
   };
 
   const only_digits = (s: string, max: number) => s.replace(/\D/g, "").slice(0, max);
 
   const base_cls =
-    "h-10 rounded-md border border-input bg-background px-2 py-2 text-base text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:text-sm";
+    "h-10 rounded-md border bg-background px-2 py-2 text-base text-center focus-visible:outline-none focus-visible:ring-2 md:text-sm " +
+    (errore
+      ? "border-destructive text-destructive focus-visible:ring-destructive"
+      : "border-input focus-visible:ring-ring");
 
   return (
     <div className={`flex items-center gap-2 ${className ?? ""}`}>
