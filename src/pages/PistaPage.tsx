@@ -417,9 +417,14 @@ const PistaPage: React.FC = () => {
   };
 
   const contatore = (
-    <div className="sticky top-0 z-40 -mx-4 mt-4 border-y border-border bg-background px-4 py-3 text-xl font-bold">
-      {t("pista.contatore", { presenti: n_presenti, assenti: n_assenti })}
-    </div>
+    <>
+      <div className="sticky top-0 z-40 -mx-4 mt-4 border-y border-border bg-background px-4 py-3 text-xl font-bold">
+        {t("pista.contatore", { presenti: n_presenti, assenti: n_assenti })}
+      </div>
+      {ripreso && (
+        <p className="mt-2 rounded-lg border border-border bg-muted/50 px-4 py-2 text-base">{t("pista.ripresa_bozza")}</p>
+      )}
+    </>
   );
 
   const vista_tutto = () => {
