@@ -67,6 +67,12 @@ const RichiesteLezioniPrivateTab: React.FC<Props> = ({
   const qc = useQueryClient();
   const { data, isSuccess, isError, error, isFetching, refetch } = use_richieste_lezioni_private();
 
+  React.useEffect(() => {
+    if (isError) {
+      segnala_errore("RichiesteLezioniPrivateTab", "lettura richieste_lezioni_private", error, {}, "avviso");
+    }
+  }, [isError, error]);
+
   const [mostra_storico, set_mostra_storico] = useState(false);
   const [rifiuta_id, set_rifiuta_id] = useState<string | null>(null);
   const [nota_rifiuto, set_nota_rifiuto] = useState("");
