@@ -530,11 +530,13 @@ export const RichiesteLezioniPrivateWidget: React.FC = () => {
           <Skeleton className="h-14 w-full" />
           <Skeleton className="h-14 w-full" />
         </div>
+      ) : isError ? (
+        <BloccoErrore onRiprova={() => refetch()} />
       ) : count === 0 ? (
         <p className="text-sm text-muted-foreground py-2">{t("widget_richieste.empty")}</p>
       ) : (
         <div className="space-y-3">
-          {lezioni!.map((l: any) => {
+          {visibili.map((l: any) => {
             const a0 = l.atleti?.[0];
             const altri = (l.atleti?.length ?? 0) - 1;
             return (
