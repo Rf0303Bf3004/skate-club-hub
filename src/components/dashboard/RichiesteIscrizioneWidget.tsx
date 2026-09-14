@@ -13,11 +13,6 @@ import { useTranslation } from "react-i18next";
 import FotoAtleta from "@/components/common/FotoAtleta";
 import { Link } from "react-router-dom";
 import { segnala_errore } from "@/lib/errori";
-import {
-  use_lezioni_da_approvare,
-  use_approva_lezione_privata,
-  use_rifiuta_lezione_privata,
-} from "@/hooks/use-lezioni-da-approvare";
 
 function fmt_data_breve_localizzata(data_iso: string, locale_code: string): string {
   const dt = new Date(data_iso + "T00:00:00");
