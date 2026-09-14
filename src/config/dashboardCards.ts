@@ -54,7 +54,7 @@ export const CARDS: DashboardCard[] = [
   {
     codice: 'fatture_scadenza',
     gruppo: 'da_fare',
-    destinazione: '/fatture?filtro=da_pagare',
+    destinazione: '/fatture',
     icona: 'AlertTriangle',
   },
 
@@ -94,7 +94,7 @@ export const CARDS: DashboardCard[] = [
   {
     codice: 'kpi_atleti_attivi',
     gruppo: 'andamento',
-    destinazione: '/atleti?filtro=attivi',
+    destinazione: '/atleti',
     icona: 'Users',
   },
   {
@@ -112,7 +112,7 @@ export const CARDS: DashboardCard[] = [
   {
     codice: 'kpi_da_incassare',
     gruppo: 'andamento',
-    destinazione: '/fatture?filtro=da_pagare',
+    destinazione: '/fatture',
     icona: 'CreditCard',
   },
   {
