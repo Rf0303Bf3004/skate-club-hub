@@ -1836,8 +1836,11 @@ const DashboardPage: React.FC = () => {
           {mostra("fatture_scadenza") && <WidgetFatture fatture={fatture} atleti={atleti} />}
 
           {/* Prossime gare */}
-          {upcoming_gare.length > 0 && (
-            <div className="bg-card rounded-xl shadow-card p-5 space-y-3">
+          {mostra("prossime_gare") && upcoming_gare.length > 0 && (
+            <div
+              onClick={() => navigate("/gare")}
+              className="bg-card rounded-xl shadow-card p-5 space-y-3 cursor-pointer transition-all hover:shadow-card-hover"
+            >
               <div className="flex items-center gap-2">
                 <Trophy className="w-4 h-4 text-primary" />
                 <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{td("widgets.competitions")}</h3>
@@ -1863,11 +1866,14 @@ const DashboardPage: React.FC = () => {
           )}
 
           {/* Medagliere stagione (top 5) */}
-          <MedagliereWidget compact limit={5} />
+          {mostra("medagliere") && <MedagliereWidget compact limit={5} />}
 
           {/* Ultime comunicazioni */}
-          {comunicazioni.length > 0 && (
-            <div className="bg-card rounded-xl shadow-card p-5 space-y-3">
+          {mostra("ultime_comunicazioni") && comunicazioni.length > 0 && (
+            <div
+              onClick={() => navigate("/comunicazioni")}
+              className="bg-card rounded-xl shadow-card p-5 space-y-3 cursor-pointer transition-all hover:shadow-card-hover"
+            >
               <div className="flex items-center gap-2">
                 <MessageSquare className="w-4 h-4 text-primary" />
                 <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{td("widgets.communications")}</h3>
