@@ -14,7 +14,18 @@
     },
     "testi": {
       "dato_non_disponibile": "Data not available",
-      "config_ghiaccio_in_caricamento": "Loading ice configuration…"
+      "config_ghiaccio_in_caricamento": "Loading ice configuration…",
+      "auguri_compleanno_info": "On the athlete's birthday, at the chosen time, the family receives birthday wishes from the club, in the app and as a phone notification.",
+      "auguri_compleanno_modello_pre": "The text can be customized in the ",
+      "auguri_compleanno_modello_link": "communication templates",
+      "auguri_compleanno_modello_post": ": create a template named \"Auguri di compleanno\" with the placeholders {nome_atleta} and {eta}. Without a template, a standard text is used."
+    },
+    "sezioni": {
+      "auguri_compleanno": "🎂 Birthday wishes"
+    },
+    "fields": {
+      "auguri_compleanno_attivo": "Birthday wishes to families",
+      "auguri_compleanno_orario": "Birthday wishes send time (Swiss local time)"
     }
   },
   "seasons": {

@@ -14,7 +14,18 @@
     },
     "testi": {
       "dato_non_disponibile": "Daten nicht verfügbar",
-      "config_ghiaccio_in_caricamento": "Eis-Konfiguration wird geladen…"
+      "config_ghiaccio_in_caricamento": "Eis-Konfiguration wird geladen…",
+      "auguri_compleanno_info": "Am Geburtstag des Athleten erhält die Familie zur gewählten Uhrzeit Glückwünsche vom Club, in der App und als Benachrichtigung auf dem Telefon.",
+      "auguri_compleanno_modello_pre": "Der Text kann in den ",
+      "auguri_compleanno_modello_link": "Kommunikationsvorlagen",
+      "auguri_compleanno_modello_post": " angepasst werden: Erstellen Sie eine Vorlage namens \"Auguri di compleanno\" mit den Platzhaltern {nome_atleta} und {eta}. Ohne Vorlage wird ein Standardtext verwendet."
+    },
+    "sezioni": {
+      "auguri_compleanno": "🎂 Geburtstagswünsche"
+    },
+    "fields": {
+      "auguri_compleanno_attivo": "Geburtstagswünsche an Familien",
+      "auguri_compleanno_orario": "Sendezeit der Glückwünsche (Schweizer Ortszeit)"
     }
   },
   "seasons": {

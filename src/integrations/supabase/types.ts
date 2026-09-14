@@ -1240,6 +1240,9 @@ export type Database = {
       clubs: {
         Row: {
           attivo: boolean
+          auguri_compleanno_attivo: boolean
+          auguri_compleanno_last_run_date: string | null
+          auguri_compleanno_orario_invio: number
           banner_onboarding_chiuso: boolean
           cantone: string | null
           cap: string | null
@@ -1296,6 +1299,9 @@ export type Database = {
         }
         Insert: {
           attivo?: boolean
+          auguri_compleanno_attivo?: boolean
+          auguri_compleanno_last_run_date?: string | null
+          auguri_compleanno_orario_invio?: number
           banner_onboarding_chiuso?: boolean
           cantone?: string | null
           cap?: string | null
@@ -1352,6 +1358,9 @@ export type Database = {
         }
         Update: {
           attivo?: boolean
+          auguri_compleanno_attivo?: boolean
+          auguri_compleanno_last_run_date?: string | null
+          auguri_compleanno_orario_invio?: number
           banner_onboarding_chiuso?: boolean
           cantone?: string | null
           cap?: string | null

@@ -262,6 +262,7 @@ const ClubSetupPage: React.FC = () => {
         "reminder_allenamenti_attivo", "reminder_staff_attivo", "reminder_orario_invio", "reminder_anticipo_giorni",
         "reminder_planning_atleti_attivo", "reminder_planning_istruttori_attivo",
         "reminder_planning_orario_invio", "reminder_planning_anticipo_giorni",
+        "auguri_compleanno_attivo", "auguri_compleanno_orario_invio",
         "disponibilita_valida_fino_al",
         "disponibilita_tipo_pianificazione", "disponibilita_periodo_giorni", "disponibilita_giorni_preavviso",
 
@@ -329,7 +330,15 @@ const ClubSetupPage: React.FC = () => {
       toast({ title: t("club.toast.configurazione_salvata") });
       set_form({});
     } catch (err: any) {
+      void segnala_errore("ClubSetupPage", "Salvataggio configurazione club", err);
       toast({ title: t("club.toast.errore_salvataggio"), description: err?.message, variant: "destructive" });
+      // I comandi degli auguri tornano ai valori letti dal database: niente valori mai scritti a schermo.
+      set_form((prev: Record<string, any>) => {
+        const next = { ...prev };
+        delete next["auguri_compleanno_attivo"];
+        delete next["auguri_compleanno_orario_invio"];
+        return next;
+      });
     } finally {
       set_saving(false);
     }
@@ -1013,6 +1022,45 @@ const ClubSetupPage: React.FC = () => {
                 </select>
               </Field>
             </div>
+          </div>
+
+          <div className="pt-2 space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t("club.sezioni.auguri_compleanno")}</h3>
+            <p className="text-xs text-muted-foreground">
+              {t("club.testi.auguri_compleanno_info")}
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label={t("club.fields.auguri_compleanno_attivo")}>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={get_val("auguri_compleanno_attivo", (club as any)?.auguri_compleanno_attivo ?? true)}
+                    onCheckedChange={(v) => set_val("auguri_compleanno_attivo", v)}
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    {get_val("auguri_compleanno_attivo", (club as any)?.auguri_compleanno_attivo ?? true) ? t("club.stato.attivo") : t("club.stato.disattivo")}
+                  </span>
+                </div>
+              </Field>
+              <Field label={t("club.fields.auguri_compleanno_orario")}>
+                <select
+                  className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm disabled:opacity-50"
+                  disabled={!get_val("auguri_compleanno_attivo", (club as any)?.auguri_compleanno_attivo ?? true)}
+                  value={String(get_val("auguri_compleanno_orario_invio", (club as any)?.auguri_compleanno_orario_invio ?? 9))}
+                  onChange={(e) => set_val("auguri_compleanno_orario_invio", Number(e.target.value))}
+                >
+                  {Array.from({ length: 24 }, (_, h) => h).map((h) => (
+                    <option key={h} value={h}>{String(h).padStart(2, "0")}:00</option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {t("club.testi.auguri_compleanno_modello_pre")}
+              <a href="#messaggi" className="text-primary underline underline-offset-2">
+                {t("club.testi.auguri_compleanno_modello_link")}
+              </a>
+              {t("club.testi.auguri_compleanno_modello_post")}
+            </p>
           </div>
         </SetupSection>
 
