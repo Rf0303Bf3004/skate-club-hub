@@ -48,20 +48,38 @@ function giorni_attesa(created_at: string): number {
   return Math.max(0, Math.floor(ms / 86400000));
 }
 
+/** Lezioni già nate da una richiesta: servono per dire quante ne restano. */
+function use_lezioni_per_richiesta() {
+  return useQuery({
+    queryKey: ["lezioni_richiesta", get_current_club_id()],
+    enabled: !!get_current_club_id(),
+    queryFn: async (): Promise<{ richiesta_id: string; data: string; annullata: boolean }[]> => {
+      const { data, error } = await supabase
+        .from("lezioni_private")
+        .select("richiesta_id, data, annullata")
+        .eq("club_id", get_current_club_id())
+        .not("richiesta_id", "is", null);
+      if (error) throw error;
+      return (data ?? []) as { richiesta_id: string; data: string; annullata: boolean }[];
+    },
+  });
+}
+
 interface Props {
   atleti: { id: string; nome: string; cognome: string }[];
-  istruttori: { id: string; nome: string; cognome: string }[];
+  istruttori: { id: string; nome: string; cognome: string; costo_minuto_lezione_privata?: number | null }[];
   puo_gestire: boolean;
-  richiesta_pendente_id: string | null;
-  on_accetta: (r: RichiestaLezione) => void;
+  /** Approvare una richiesta è riservato a DT, presidenza e amministrazione. */
+  puo_approvare: boolean;
+  durata_default: number;
 }
 
 const RichiesteLezioniPrivateTab: React.FC<Props> = ({
   atleti,
   istruttori,
   puo_gestire,
-  richiesta_pendente_id,
-  on_accetta,
+  puo_approvare,
+  durata_default,
 }) => {
   const { t, i18n } = useTranslation("common");
   const qc = useQueryClient();
