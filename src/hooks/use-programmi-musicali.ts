@@ -126,7 +126,7 @@ export function use_punti_programma(programma_id: string | null) {
     queryFn: async (): Promise<PuntoProgramma[]> => {
       const { data, error } = await supabase
         .from("punti_programma")
-        .select("id, programma_id, nome, secondi, secondi_fine, ordine")
+        .select(CAMPI_PUNTO)
         .eq("programma_id", programma_id as string)
         .order("ordine", { ascending: true })
         .order("secondi", { ascending: true });
