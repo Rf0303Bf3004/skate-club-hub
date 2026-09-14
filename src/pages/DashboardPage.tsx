@@ -1319,6 +1319,9 @@ const DashboardPage: React.FC = () => {
   const [tab_presenze, set_tab_presenze] = useState<"corsi" | "istruttori">("corsi");
   const [agenda_offset, set_agenda_offset] = useState(0);
   const [com_preset, set_com_preset] = useState<BoxComunicazionePreset | null>(null);
+  /** Le lezioni private di oggi partono chiuse: la pagina è già lunga. */
+  const [lezioni_aperte, set_lezioni_aperte] = useState(false);
+  const [com_aperta, set_com_aperta] = useState(false);
 
   // Atleti con compleanno oggi
   const compleanni_oggi = useMemo(() => {
