@@ -802,7 +802,7 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
           <>
             <p className="text-sm text-muted-foreground">{t("musica.spiegazione_punti")}</p>
             <div className="flex flex-wrap gap-2">
-              {punti_ordinati.map((p) => (
+              {punti_disegnati.map(({ punto: p, numero, colore }) => (
                 <div
                   key={p.id}
                   className={`flex items-center gap-1 rounded-lg border p-1 ${
@@ -810,10 +810,17 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
                   }`}
                 >
                   <Button variant="ghost" className="h-12" onClick={() => usa_punto(p)}>
+                    <span
+                      className="mr-2 flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold text-white"
+                      style={{ backgroundColor: colore }}
+                    >
+                      {numero}
+                    </span>
                     {p.secondi_fine != null && <Repeat className="mr-2 h-4 w-4" />}
                     {p.nome} · {mmss(p.secondi)}
                     {p.secondi_fine != null ? ` – ${mmss(p.secondi_fine)}` : ""}
                   </Button>
+
                   <Button
                     variant="ghost"
                     className="h-12 w-12 p-0"
