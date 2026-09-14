@@ -160,6 +160,8 @@ Deno.serve(async (req) => {
     // Il gettone evita di tenere la chiave di servizio dentro i comandi del cron,
     // dove la vedrebbe chiunque abbia accesso al database.
     let interna = token === service_key;
+    let puo_congelare = false;
+    if (interna) puo_congelare = true;
 
     const gettone = String((body as any)?.token_interno ?? "").trim();
     if (!interna && gettone) {
@@ -170,6 +172,7 @@ Deno.serve(async (req) => {
       if (g_err) return json({ error: "gettone_non_verificabile", dettaglio: g_err.message }, 500);
       if (valido !== true) return json({ error: "gettone_non_valido" }, 401);
       interna = true;
+      puo_congelare = true;
     }
 
     if (!interna) {
@@ -199,23 +202,45 @@ Deno.serve(async (req) => {
           (caller.ruolo === "superadmin" || caller.club_id === f.club_id)
         ) {
           autorizzato = true;
+          puo_congelare = true;
         }
       }
       if (!autorizzato) return json({ error: "forbidden" }, 403);
     }
 
     const avvisi: string[] = [];
-
-    // --- il documento già congelato non si tocca ---
     const percorso = `${f.club_id}/${fattura_id}.pdf`;
     const gia_congelato = typeof f.pdf_url === "string" && f.pdf_url.trim().length > 0;
-    if (congela && gia_congelato && !rigenera) {
-      return json({
-        ok: true,
-        gia_presente: true,
-        percorso: f.pdf_url,
-        avvisi,
-      });
+
+    /** Il base64 va costruito a blocchi: su un PDF intero btoa() sfonda lo stack. */
+    const in_base64 = (byte: Uint8Array) => {
+      let grezzo = "";
+      const blocco = 0x8000;
+      for (let i = 0; i < byte.length; i += blocco) {
+        grezzo += String.fromCharCode(...byte.subarray(i, i + blocco));
+      }
+      return btoa(grezzo);
+    };
+
+    // Una fattura uscita dalla bozza ha un PDF congelato: quello è il documento
+    // che la famiglia ha ricevuto e non va mai rigenerato dai dati di adesso.
+    // Prima il portale famiglie lo ricostruiva al volo: bastava che il club
+    // cambiasse indirizzo dopo l'invio e la famiglia vedeva un'altra fattura.
+    if (gia_congelato && f.stato !== "bozza" && !rigenera) {
+      const scarico = await supabase.storage.from(BUCKET_FATTURE).download(String(f.pdf_url).trim());
+      if (!scarico.error && scarico.data) {
+        const byte = new Uint8Array(await scarico.data.arrayBuffer());
+        return json({
+          ok: true,
+          numero: f.numero ?? String(f.id).slice(0, 8),
+          byte: byte.length,
+          pdf_base64: in_base64(byte),
+          percorso: f.pdf_url,
+          congelato: true,
+          avvisi,
+        });
+      }
+      avvisi.push("Il PDF archiviato non è stato recuperato: la fattura è stata ricostruita dai dati attuali e potrebbe non coincidere con quella già inviata.");
     }
 
     // --- dati ---
@@ -299,6 +324,9 @@ Deno.serve(async (req) => {
     const byte = new Uint8Array(await blob.arrayBuffer());
 
     let percorso_salvato: string | null = null;
+    if (congela && !puo_congelare) {
+      return json({ error: "congelamento_non_consentito" }, 403);
+    }
     if (congela) {
       const up = await supabase.storage.from(BUCKET_FATTURE).upload(percorso, byte, {
         upsert: true,
@@ -312,17 +340,11 @@ Deno.serve(async (req) => {
       percorso_salvato = percorso;
     }
 
-    let b64 = "";
-    const blocco = 0x8000;
-    for (let i = 0; i < byte.length; i += blocco) {
-      b64 += String.fromCharCode(...byte.subarray(i, i + blocco));
-    }
-
     return json({
       ok: true,
       numero: dati.numero,
       byte: byte.length,
-      pdf_base64: btoa(b64),
+      pdf_base64: in_base64(byte),
       percorso: percorso_salvato,
       congelato: percorso_salvato !== null,
       avvisi,
