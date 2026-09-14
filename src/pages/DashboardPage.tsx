@@ -1345,11 +1345,10 @@ const DashboardPage: React.FC = () => {
       marker: `birthday:${atleta.id}:${Date.now()}`,
     };
     set_com_preset(preset);
-    setTimeout(() => {
-      const el = document.getElementById("box-comunicazione");
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 50);
+    // Gli auguri precompilati si aprono nella finestra della comunicazione rapida.
+    set_com_aperta(true);
   };
+
 
   const is_loading = loading_atleti || loading_corsi || loading_gare || loading_fatture || loading_istruttori;
 
