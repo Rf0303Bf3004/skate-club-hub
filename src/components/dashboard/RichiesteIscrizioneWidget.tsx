@@ -304,7 +304,7 @@ export const UltimeIscrizioniWidget: React.FC = () => {
   const { t } = useTranslation("dashboard");
   const club_id = get_current_club_id();
 
-  const { data: iscrizioni, isLoading, isFetching, refetch } = useQuery({
+  const { data: iscrizioni, isLoading, isError, error: errore_query, isFetching, refetch } = useQuery({
     queryKey: ["ultime_iscrizioni", club_id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -333,7 +333,16 @@ export const UltimeIscrizioniWidget: React.FC = () => {
     refetchInterval: REFETCH_MS,
   });
 
+  React.useEffect(() => {
+    if (isError) void segnala_errore("Dashboard", "ultime iscrizioni", errore_query, undefined, "avviso");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isError]);
+
+  const righe = iscrizioni ?? [];
+  const visibili = righe.slice(0, MOSTRATE);
+
   return (
+
     <div className="bg-card rounded-xl shadow-card p-5 space-y-3">
       <div className="flex items-center gap-2">
         <UserPlus className="w-4 h-4 text-primary" />
