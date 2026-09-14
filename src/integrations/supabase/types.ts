@@ -4692,6 +4692,7 @@ export type Database = {
           ora_fine: string | null
           ora_inizio: string | null
           richiede_approvazione: boolean
+          richiesta_id: string | null
           ricorrente: boolean
         }
         Insert: {
@@ -4709,6 +4710,7 @@ export type Database = {
           ora_fine?: string | null
           ora_inizio?: string | null
           richiede_approvazione?: boolean
+          richiesta_id?: string | null
           ricorrente?: boolean
         }
         Update: {
@@ -4726,6 +4728,7 @@ export type Database = {
           ora_fine?: string | null
           ora_inizio?: string | null
           richiede_approvazione?: boolean
+          richiesta_id?: string | null
           ricorrente?: boolean
         }
         Relationships: [
@@ -4762,6 +4765,13 @@ export type Database = {
             columns: ["istruttore_id"]
             isOneToOne: false
             referencedRelation: "istruttori"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lezioni_private_richiesta_id_fkey"
+            columns: ["richiesta_id"]
+            isOneToOne: false
+            referencedRelation: "richieste_lezioni_private"
             referencedColumns: ["id"]
           },
         ]
@@ -6641,6 +6651,8 @@ export type Database = {
           lezione_id: string | null
           note_richiesta: string | null
           note_risposta: string | null
+          ricorrenza: string
+          ripetizioni: number
           stato: string
         }
         Insert: {
@@ -6656,6 +6668,8 @@ export type Database = {
           lezione_id?: string | null
           note_richiesta?: string | null
           note_risposta?: string | null
+          ricorrenza?: string
+          ripetizioni?: number
           stato?: string
         }
         Update: {
@@ -6671,6 +6685,8 @@ export type Database = {
           lezione_id?: string | null
           note_richiesta?: string | null
           note_risposta?: string | null
+          ricorrenza?: string
+          ripetizioni?: number
           stato?: string
         }
         Relationships: [
@@ -8480,6 +8496,20 @@ export type Database = {
           righe: Json
           totale: number
         }[]
+      }
+      approva_richiesta_privata: {
+        Args: {
+          p_costo_totale?: number
+          p_data: string
+          p_durata_minuti: number
+          p_istruttore_id: string
+          p_note?: string
+          p_ora_inizio: string
+          p_richiesta_id: string
+          p_ricorrenza: string
+          p_ripetizioni: number
+        }
+        Returns: Json
       }
       apri_accesso_assistenza: {
         Args: { p_club: string; p_motivo: string }
