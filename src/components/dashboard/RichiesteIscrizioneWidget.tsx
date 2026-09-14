@@ -135,7 +135,10 @@ export const RichiesteIscrizioneWidget: React.FC = () => {
     onError: (e: any) => toast({ title: t("widget_richieste.toast_error"), description: e.message, variant: "destructive" }),
   });
 
-  const count = richieste?.length ?? 0;
+  const righe = data?.righe ?? [];
+  const totale = data?.totale ?? 0;
+  const visibili = righe.slice(0, MOSTRATE);
+  const count = totale;
 
   return (
     <div className="bg-card rounded-xl shadow-card p-5 space-y-3">
@@ -165,11 +168,14 @@ export const RichiesteIscrizioneWidget: React.FC = () => {
           <Skeleton className="h-14 w-full" />
           <Skeleton className="h-14 w-full" />
         </div>
+      ) : isError ? (
+        <BloccoErrore onRiprova={() => refetch()} />
       ) : count === 0 ? (
         <p className="text-sm text-muted-foreground py-2">{t("widget_richieste.empty")}</p>
       ) : (
         <div className="space-y-3">
-          {richieste!.map((r: any) => (
+          {visibili.map((r: any) => (
+
             <div key={r.id} className="border border-border rounded-lg p-3 space-y-2">
               <div className="flex items-center gap-2">
                 <FotoAtleta
