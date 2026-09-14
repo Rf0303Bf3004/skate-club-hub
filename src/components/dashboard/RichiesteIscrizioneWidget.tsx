@@ -80,7 +80,7 @@ export const RichiesteIscrizioneWidget: React.FC = () => {
   const [rifiuto_id, set_rifiuto_id] = useState<string | null>(null);
   const [motivo, set_motivo] = useState("");
 
-  const { data, isLoading, isError, isFetching, refetch } = useQuery({
+  const { data, isLoading, isError, error: errore_query, isFetching, refetch } = useQuery({
     queryKey: ["richieste_pendenti", club_id],
     queryFn: async () => {
       // Se ne mostrano al massimo tre: non ha senso scaricarle tutte.
