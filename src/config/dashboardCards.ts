@@ -211,7 +211,7 @@ export const CARDS: DashboardCard[] = [
     area: 'operativa',
     titolo: 'Richieste lezioni private',
     descrizione: 'n da approvare',
-    destinazioneClick: '/lezioni-private?filtro=da_approvare',
+    destinazioneClick: '/lezioni-private?tab=da_approvare',
     cliccabile: true,
     icona: 'MessageSquarePlus',
   },
