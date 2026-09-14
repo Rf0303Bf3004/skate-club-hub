@@ -1524,29 +1524,42 @@ const DashboardPage: React.FC = () => {
       <DiagnosticaCard />
 
       {/* KPI */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title={td("kpi.active_athletes")} value={String(active_atleti)} icon={<Users className="w-5 h-5" />} to="/atleti?filtro=attivi" />
-        <KPICard title={td("kpi.active_courses")} value={String(active_corsi)} icon={<BookOpen className="w-5 h-5" />} to="/corsi" />
-        <KPICard
-          title={td("kpi.next_competitions")}
-          value={String(upcoming_gare.length)}
-          icon={<Trophy className="w-5 h-5" />}
-          subtitle={next_gara ? td("kpi.next_competition_in", { days: days_until(next_gara.data), nome: next_gara.nome }) : undefined}
-          to="/gare"
-        />
-        <KPICard
-          title={td("kpi.amount_to_collect")}
-          value={`CHF ${totale_fatture.toLocaleString()}`}
-          icon={<CreditCard className="w-5 h-5" />}
-          highlight
-          subtitle={
-            fatture_da_pagare.length > 0
-              ? td("kpi.invoices_status", { scadute: fatture_scadute_count, arrivo: fatture_in_arrivo_count })
-              : undefined
-          }
-          to="/fatture?filtro=da_pagare"
-        />
-      </div>
+      {(mostra("kpi_atleti_attivi") ||
+        mostra("kpi_corsi_attivi") ||
+        mostra("kpi_prossime_gare") ||
+        mostra("kpi_da_incassare")) && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {mostra("kpi_atleti_attivi") && (
+            <KPICard title={td("kpi.active_athletes")} value={String(active_atleti)} icon={<Users className="w-5 h-5" />} to="/atleti?filtro=attivi" />
+          )}
+          {mostra("kpi_corsi_attivi") && (
+            <KPICard title={td("kpi.active_courses")} value={String(active_corsi)} icon={<BookOpen className="w-5 h-5" />} to="/corsi" />
+          )}
+          {mostra("kpi_prossime_gare") && (
+            <KPICard
+              title={td("kpi.next_competitions")}
+              value={String(upcoming_gare.length)}
+              icon={<Trophy className="w-5 h-5" />}
+              subtitle={next_gara ? td("kpi.next_competition_in", { days: days_until(next_gara.data), nome: next_gara.nome }) : undefined}
+              to="/gare"
+            />
+          )}
+          {mostra("kpi_da_incassare") && (
+            <KPICard
+              title={td("kpi.amount_to_collect")}
+              value={`CHF ${totale_fatture.toLocaleString()}`}
+              icon={<CreditCard className="w-5 h-5" />}
+              highlight
+              subtitle={
+                fatture_da_pagare.length > 0
+                  ? td("kpi.invoices_status", { scadute: fatture_scadute_count, arrivo: fatture_in_arrivo_count })
+                  : undefined
+              }
+              to="/fatture?filtro=da_pagare"
+            />
+          )}
+        </div>
+      )}
 
 
       {/* Banner compleanni del giorno */}
