@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { is_admin_like } from "@/lib/roles";
 import { registra_silenzioso } from "@/lib/errori";
-import { card_visibile_di_default } from "@/config/dashboardCards";
+import { card_visibile_di_default, TUTTI_I_CODICI } from "@/config/dashboardCards";
 
 /**
  * Hook centralizzato per i permessi di sezione.
@@ -93,16 +93,24 @@ export function useDashboardCardsMatrix(): {
     },
   });
 
+  // Solo le righe con un codice che conosciamo: una lista vecchia rimasta in
+  // tabella (codici di riquadri che non esistono più) va ignorata, altrimenti
+  // «configurato» risulterebbe vero e la Dashboard si aprirebbe vuota.
+  const righe_note = useMemo(
+    () => (data ?? []).filter((p) => TUTTI_I_CODICI.includes(p.codice_card)),
+    [data],
+  );
+
   const visibile_set = useMemo(() => {
     const s = new Set<string>();
-    for (const p of data ?? []) if (p.visibile) s.add(p.codice_card);
+    for (const p of righe_note) if (p.visibile) s.add(p.codice_card);
     return s;
-  }, [data]);
+  }, [righe_note]);
 
   return {
     visibile_set,
     is_admin_like: admin_like,
-    configurato: (data?.length ?? 0) > 0,
+    configurato: righe_note.length > 0,
     ruolo: session?.ruolo ?? null,
     // L'amministrazione non interroga la tabella: per lei non c'è attesa.
     is_loading: admin_like ? false : isLoading,
