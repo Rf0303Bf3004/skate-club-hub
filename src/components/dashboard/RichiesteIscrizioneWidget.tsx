@@ -570,7 +570,7 @@ export const RichiesteLezioniPrivateWidget: React.FC = () => {
               </div>
             );
           })}
-          <RigaVediTutte restanti={count - visibili.length} to="/lezioni-private" />
+          <RigaVediTutte restanti={count - visibili.length} to="/lezioni-private?tab=da_approvare" />
         </div>
 
       )}
