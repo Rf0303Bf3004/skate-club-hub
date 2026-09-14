@@ -1675,12 +1675,21 @@ const DashboardPage: React.FC = () => {
                     </div>
                     {agenda_is_today && today_lezioni.length > 0 && (
                       <div className="space-y-2">
-                        <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => set_lezioni_aperte((v) => !v)}
+                          aria-expanded={lezioni_aperte}
+                          className="flex items-center gap-2"
+                        >
                           <div className="text-xs font-bold px-2.5 py-1 rounded-full bg-primary text-white">
-                            {td("agenda.private_lessons_today")}
+                            {td("agenda.private_lessons_today")} ({today_lezioni.length})
                           </div>
-                        </div>
-                        {today_lezioni.map((lezione) => {
+                          <ChevronDown
+                            className={`w-4 h-4 text-muted-foreground transition-transform ${lezioni_aperte ? "rotate-180" : ""}`}
+                          />
+                        </button>
+                        {lezioni_aperte && today_lezioni.map((lezione) => {
+
                           const atleti_lezione = atleti.filter((a) => lezione.atleti_ids?.includes(a.id));
                           const istr = istruttori.find((i) => i.id === lezione.istruttore_id);
                           return (
