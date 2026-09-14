@@ -1,0 +1,13 @@
+{
+  "imports": {
+    "react": "npm:react@18.3.1",
+    "react/jsx-runtime": "npm:react@18.3.1/jsx-runtime",
+    "@react-pdf/renderer": "npm:@react-pdf/renderer@4.5.1",
+    "qrcode": "npm:qrcode@1.5.4",
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2"
+  },
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "react"
+  }
+}

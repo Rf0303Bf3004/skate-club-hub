@@ -273,7 +273,20 @@ const PolizzaQr: React.FC<{ data: FatturaAtletaData }> = ({ data }) => {
           {debitore.map((l, i) => <Text key={i} style={s.qrText}>{l}</Text>)}
         </View>
       </View>
-    </View>
+    </>
+  );
+
+  // La polizza sta in fondo all'ULTIMA pagina, come vuole la norma svizzera.
+  // Prima scivolava su una pagina in più, lasciando un buco di 10 cm in fondo
+  // alla fattura. Fissandola alla pagina e disegnandola solo quando pageNumber
+  // è l'ultima, la fattura torna a essere un foglio solo e la polizza compare
+  // una volta sola anche sulle fatture di più pagine.
+  return (
+    <View
+      style={s.qrBill}
+      fixed
+      render={({ pageNumber, totalPages }: any) => (pageNumber === totalPages ? contenuto : null)}
+    />
   );
 };
 
