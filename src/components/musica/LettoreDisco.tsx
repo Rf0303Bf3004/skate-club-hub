@@ -479,7 +479,7 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
           secondi,
           ordine: punti.length,
         } as any)
-        .select("id, programma_id, nome, secondi, secondi_fine, ordine")
+        .select(CAMPI_PUNTO)
         .single();
       if (error) throw error;
       await query_client.invalidateQueries({ queryKey: ["punti_programma", programma.id] });
@@ -564,6 +564,17 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
   const posizione_mostrata = trascina ?? posizione;
   const percentuale = durata > 0 ? Math.min(100, (posizione_mostrata / durata) * 100) : 0;
   const restante = Math.max(0, durata - posizione_mostrata);
+
+  // Passaggio che sta suonando: solo quelli con inizio e fine occupano un tratto.
+  const in_corso = punti_disegnati.find(
+    (d) =>
+      d.punto.secondi_fine != null &&
+      posizione_mostrata >= d.punto.secondi &&
+      posizione_mostrata < d.punto.secondi_fine,
+  );
+
+  const ALTEZZA_FILA = 22; // px fra una fila di numeri e quella sopra
+
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-50 border-t-2 border-primary bg-card p-4 shadow-2xl">
