@@ -1642,6 +1642,7 @@ const DashboardPage: React.FC = () => {
         {/* Colonna sinistra — corsi + presenze */}
         <div className="lg:col-span-2 space-y-5">
           {/* Agenda corsi — un giorno alla volta */}
+          {mostra("agenda_giorno") && (
           <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{td("agenda.title")}</h3>
@@ -1788,9 +1789,10 @@ const DashboardPage: React.FC = () => {
               />
             )}
           </div>
+          )}
 
           {/* Comunicazione rapida: sta in una finestra, così la pagina resta corta */}
-          {puo_comunicare ? (
+          {mostra("comunicazione_rapida") && (puo_comunicare ? (
             <Dialog open={com_aperta} onOpenChange={(v) => {
               set_com_aperta(v);
               if (!v) set_com_preset(null);
@@ -1821,17 +1823,17 @@ const DashboardPage: React.FC = () => {
           ) : (
 
             <NotaPermesso testo="Solo lo staff di segreteria e direzione può inviare comunicazioni rapide." />
-          )}
+          ))}
         </div>
 
         {/* Colonna destra — widget */}
         <div className="space-y-5">
-          <RichiesteIscrizioneWidget />
-          <UltimeIscrizioniWidget />
-          <RichiesteLezioniPrivateWidget />
-          <IstruttoriDisponibiliWidget />
-          <WidgetCompleanni atleti={atleti} />
-          <WidgetFatture fatture={fatture} atleti={atleti} />
+          {mostra("richieste_iscrizione") && <RichiesteIscrizioneWidget />}
+          {mostra("ultime_iscrizioni") && <UltimeIscrizioniWidget />}
+          {mostra("richieste_private") && <RichiesteLezioniPrivateWidget />}
+          {mostra("istruttori_oggi") && <IstruttoriDisponibiliWidget />}
+          {mostra("compleanni_settimana") && <WidgetCompleanni atleti={atleti} />}
+          {mostra("fatture_scadenza") && <WidgetFatture fatture={fatture} atleti={atleti} />}
 
           {/* Prossime gare */}
           {upcoming_gare.length > 0 && (
