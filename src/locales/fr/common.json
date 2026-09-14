@@ -421,5 +421,26 @@
     "yyyy": "AAAA",
     "errore_inesistente": "Cette date n'existe pas.",
     "errore_anno_range": "L'année doit être comprise entre {{min}} et {{max}}."
+  },
+  "lezioni_da_approvare": {
+    "tab": "À approuver",
+    "titolo": "Leçons privées à approuver",
+    "aggiorna": "Actualiser",
+    "errore_lettura": "Liste indisponible : le chargement a échoué.",
+    "riprova": "Réessayer",
+    "vuoto": "Aucune leçon à approuver.",
+    "istruttore": "Moniteur",
+    "atlete": "Patineuses",
+    "nessuna_atleta": "aucune patineuse",
+    "ricorrente": "Récurrente",
+    "approva": "Approuver",
+    "rifiuta": "Refuser",
+    "motivo_rifiuto": "Motif du refus",
+    "conferma_rifiuto": "Confirmer le refus",
+    "annulla": "Annuler",
+    "toast_approvata": "Leçon approuvée",
+    "toast_rifiutata": "Leçon refusée",
+    "toast_errore": "Opération échouée",
+    "etichetta_calendario": "à approuver"
   }
 }

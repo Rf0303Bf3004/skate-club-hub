@@ -1324,6 +1324,7 @@ const LezioniPrivatePage: React.FC = () => {
                     const is_free = slot.status === "libero";
                     const is_off_ice = is_free && !slot.has_ice;
                     const is_past_time = is_today && time_to_min(slot.time) <= now_minutes;
+                    const da_approvare = !is_free && !!(slot.lesson as any)?.richiede_approvazione;
                     // Hide free slots on past dates or past times today
                     if (is_free && (is_past_date || is_past_time)) return null;
                     return (
@@ -1344,7 +1345,8 @@ const LezioniPrivatePage: React.FC = () => {
                               ? "bg-success/10 hover:bg-success/20 border border-success/20"
                               : is_semiprivata
                                 ? "bg-orange-500/10 hover:bg-orange-500/15 border border-orange-500/20"
-                                : "bg-destructive/10 hover:bg-destructive/15 border border-destructive/20"}`}
+                                : "bg-destructive/10 hover:bg-destructive/15 border border-destructive/20"}
+                          ${da_approvare ? "border-dashed border-2" : ""}`}
                       >
                         <div className="flex items-center gap-3">
                           <div
@@ -1356,6 +1358,11 @@ const LezioniPrivatePage: React.FC = () => {
                             </p>
                             {is_off_ice && (
                               <p className="text-xs text-sky-600 mt-0.5">{t("lezioni_private.slot_status.fuori_ghiaccio_label")}</p>
+                            )}
+                            {da_approvare && (
+                              <p className="text-[11px] font-semibold text-amber-700 mt-0.5">
+                                {tc("lezioni_da_approvare.etichetta_calendario")}
+                              </p>
                             )}
                             {slot.status === "occupato" && slot.lesson && (
                               <p className="text-xs text-muted-foreground mt-0.5">
