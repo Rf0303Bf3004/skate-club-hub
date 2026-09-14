@@ -330,7 +330,15 @@ const ClubSetupPage: React.FC = () => {
       toast({ title: t("club.toast.configurazione_salvata") });
       set_form({});
     } catch (err: any) {
+      void segnala_errore("ClubSetupPage", "Salvataggio configurazione club", err);
       toast({ title: t("club.toast.errore_salvataggio"), description: err?.message, variant: "destructive" });
+      // I comandi degli auguri tornano ai valori letti dal database: niente valori mai scritti a schermo.
+      set_form((prev: Record<string, any>) => {
+        const next = { ...prev };
+        delete next["auguri_compleanno_attivo"];
+        delete next["auguri_compleanno_orario_invio"];
+        return next;
+      });
     } finally {
       set_saving(false);
     }
