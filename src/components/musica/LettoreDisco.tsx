@@ -601,8 +601,26 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
           </div>
         )}
 
-        {/* barra di avanzamento trascinabile, con i punti e le ripetizioni sopra */}
-        <div className="pt-6">
+        {/* riga fissa: il passaggio che sta suonando. Lo spazio resta anche da vuota,
+            altrimenti la barra salterebbe su e giù ogni pochi secondi. */}
+        <div className="flex h-8 items-center gap-2">
+          {in_corso ? (
+            <>
+              <span
+                className="h-4 w-4 flex-shrink-0 rounded-full"
+                style={{ backgroundColor: in_corso.colore }}
+              />
+              <span className="truncate text-lg font-bold">
+                {in_corso.numero}. {in_corso.punto.nome}
+              </span>
+            </>
+          ) : (
+            <span className="sr-only">{t("musica.nessun_passaggio_in_corso")}</span>
+          )}
+        </div>
+
+        {/* barra di avanzamento trascinabile, con le fasce dei passaggi e i numeri sopra */}
+        <div style={{ paddingTop: file_numeri * ALTEZZA_FILA + 8 }}>
           <div
             ref={barra_ref}
             className="relative h-11 w-full touch-none select-none rounded-full bg-muted"
@@ -622,33 +640,39 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
               style={{ width: `${percentuale}%` }}
             />
             {durata > 0 &&
-              punti_ordinati.map((p) => {
-                const sinistra = Math.min(100, (p.secondi / durata) * 100);
-                const attivo = loop_punto?.id === p.id;
-                const larghezza =
-                  p.secondi_fine != null
-                    ? Math.max(1, Math.min(100 - sinistra, ((p.secondi_fine - p.secondi) / durata) * 100))
-                    : null;
+              punti_disegnati.map((d) => {
+                const suona = in_corso?.punto.id === d.punto.id;
                 return (
-                  <React.Fragment key={p.id}>
-                    {larghezza != null ? (
+                  <React.Fragment key={d.punto.id}>
+                    {d.larghezza != null ? (
+                      // passaggio con inizio e fine: fascia del proprio colore
                       <span
-                        className={`absolute inset-y-0 rounded ${
-                          attivo ? "bg-primary/70 ring-2 ring-primary" : "bg-secondary/60"
-                        }`}
-                        style={{ left: `${sinistra}%`, width: `${larghezza}%` }}
+                        className="absolute inset-y-0 rounded"
+                        style={{
+                          left: `${d.sinistra}%`,
+                          width: `${d.larghezza}%`,
+                          backgroundColor: d.colore,
+                          opacity: suona ? 0.95 : 0.28,
+                          boxShadow: suona ? `0 0 0 2px ${d.colore}` : undefined,
+                        }}
                       />
                     ) : (
+                      // passaggio con il solo inizio: spillo verticale
                       <span
-                        className="absolute inset-y-0 w-1 rounded bg-foreground"
-                        style={{ left: `${sinistra}%` }}
+                        className="absolute inset-y-0 rounded"
+                        style={{ left: `${d.sinistra}%`, width: 3, backgroundColor: d.colore }}
                       />
                     )}
+                    {/* pallino numerato: la fila evita che due numeri vicini si sovrappongano */}
                     <span
-                      className="pointer-events-none absolute -top-6 max-w-[9rem] truncate text-xs font-medium text-muted-foreground"
-                      style={{ left: `${sinistra}%` }}
+                      className="pointer-events-none absolute flex h-5 w-5 -translate-x-1/2 items-center justify-center rounded-full text-[11px] font-bold text-white shadow"
+                      style={{
+                        left: `${d.sinistra}%`,
+                        top: -((d.fila + 1) * ALTEZZA_FILA),
+                        backgroundColor: d.colore,
+                      }}
                     >
-                      {p.nome}
+                      {d.numero}
                     </span>
                   </React.Fragment>
                 );
@@ -660,6 +684,7 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
             />
           </div>
         </div>
+
         <div className="flex justify-between text-2xl font-bold tabular-nums">
           <span>{mmss(posizione_mostrata)}</span>
           <span className="text-muted-foreground">−{mmss(restante)}</span>
