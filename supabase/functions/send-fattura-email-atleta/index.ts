@@ -138,6 +138,31 @@ Deno.serve(async (req) => {
     if (!destinatario) return json({ error: "destinatario_mancante" }, 400);
     if (!ammessi.includes(destinatario)) return json({ error: "destinatario_non_ammesso" }, 403);
 
+    // Il PDF deve esistere in archivio PRIMA di spedire il collegamento.
+    // Prima lo caricava il browser di chi premeva Invia: di notte non c'è
+    // nessun browser, e dal portale famiglie l'archivio non è scrivibile.
+    if (!f.pdf_url) {
+      const gen = await fetch(`${url}/functions/v1/genera-fattura-pdf`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${service_key}`,
+        },
+        body: JSON.stringify({ fattura_id, congela: true }),
+      });
+      const esito = await gen.json().catch(() => ({}));
+      if (!gen.ok || !(esito as any)?.ok) {
+        return json({
+          error: "pdf_non_generato",
+          dettaglio: (esito as any)?.error ?? `HTTP ${gen.status}`,
+        }, 500);
+      }
+      if (Array.isArray((esito as any).avvisi) && (esito as any).avvisi.length > 0) {
+        console.log("avvisi generazione PDF", (esito as any).avvisi);
+      }
+      f.pdf_url = (esito as any).percorso ?? `${f.club_id}/${fattura_id}.pdf`;
+    }
+
     // 4) Collegamento al PDF: costruito qui dal bucket, mai preso dalla richiesta.
     const percorso_pdf = typeof f.pdf_url === "string" && f.pdf_url.trim().length > 0
       ? f.pdf_url.trim()
@@ -151,8 +176,13 @@ Deno.serve(async (req) => {
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!RESEND_API_KEY || !LOVABLE_API_KEY) {
-      await supabase.from("fatture").update({ email_inviata_at: new Date().toISOString(), stato: "inviata" }).eq("id", fattura_id);
-      return json({ ok: true, warning: "Email skipped: provider non configurato" });
+      // Prima qui la fattura veniva segnata come "inviata" lo stesso: il club
+      // vedeva 104 fatture inviate e nessuna famiglia aveva ricevuto niente.
+      // Meglio un errore chiaro che una riga verde bugiarda.
+      return json({
+        error: "provider_email_non_configurato",
+        messaggio: "L'invio delle email non è configurato: la fattura NON è stata inviata e resta nello stato attuale.",
+      }, 503);
     }
 
     const clubNome = (f as any).clubs?.nome ?? "Il tuo club";
