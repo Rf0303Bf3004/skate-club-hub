@@ -11,6 +11,8 @@ import { format_data_completa, format_data_lunga, locale_to_bcp47 } from "@/lib/
 import { useI18n } from "@/lib/i18n";
 import { useTranslation } from "react-i18next";
 import FotoAtleta from "@/components/common/FotoAtleta";
+import { Link } from "react-router-dom";
+import { segnala_errore } from "@/lib/errori";
 
 function fmt_data_breve_localizzata(data_iso: string, locale_code: string): string {
   const dt = new Date(data_iso + "T00:00:00");
@@ -20,7 +22,41 @@ function fmt_data_breve_localizzata(data_iso: string, locale_code: string): stri
 
 const REFETCH_MS = 60_000;
 
+/** Righe mostrate nel riquadro e righe scaricate (una in più per sapere se ce ne sono altre). */
+const MOSTRATE = 3;
+const MAX_RIGHE = MOSTRATE + 1;
+
 type TFn = (key: string, opts?: Record<string, unknown>) => string;
+
+/**
+ * Guasto della lettura: non è la stessa cosa dello stato vuoto.
+ * L'utente deve capire che l'elenco non è disponibile, non che non c'è niente.
+ */
+const BloccoErrore: React.FC<{ onRiprova: () => void }> = ({ onRiprova }) => {
+  const { t } = useTranslation("dashboard");
+  return (
+    <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 space-y-1">
+      <p className="text-sm text-amber-900">{t("widget_comune.errore_lettura")}</p>
+      <Button size="sm" variant="outline" className="h-7 text-xs" onClick={onRiprova}>
+        {t("widget_comune.riprova")}
+      </Button>
+    </div>
+  );
+};
+
+/** Riga "vedi tutte": compare solo se ci sono più righe di quelle mostrate. */
+const RigaVediTutte: React.FC<{ restanti: number; to: string }> = ({ restanti, to }) => {
+  const { t } = useTranslation("dashboard");
+  if (restanti <= 0) return null;
+  return (
+    <Link
+      to={to}
+      className="block text-center text-xs font-semibold text-primary hover:underline pt-1"
+    >
+      {t("widget_comune.vedi_tutte", { count: restanti })}
+    </Link>
+  );
+};
 
 function tempo_relativo(iso: string, t: TFn): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -34,6 +70,7 @@ function tempo_relativo(iso: string, t: TFn): string {
   if (d < 7) return t("relative_time.days", { count: d });
   return format_data_completa(iso);
 }
+
 
 // ─── Card 1: Richieste pendenti ──────────────────────────────
 export const RichiesteIscrizioneWidget: React.FC = () => {
