@@ -23,8 +23,6 @@ import RichiesteLezioniPrivateTab, {
   type RichiestaLezione,
 } from "@/components/lezioni/RichiesteLezioniPrivateTab";
 import { segnala_errore } from "@/lib/errori";
-import LezioniDaApprovareTab from "@/components/lezioni/LezioniDaApprovareTab";
-import { use_lezioni_da_approvare } from "@/hooks/use-lezioni-da-approvare";
 import { useSearchParams } from "react-router-dom";
 
 // ─── Helpers ───────────────────────────────────────────────

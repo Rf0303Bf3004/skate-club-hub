@@ -6,6 +6,7 @@ import { segnala_errore } from "@/lib/errori";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Loader2, CalendarClock, User } from "lucide-react";
 import { toast } from "sonner";
+import ApprovaRichiestaDialog from "@/components/lezioni/ApprovaRichiestaDialog";
 
 export interface RichiestaLezione {
   id: string;
