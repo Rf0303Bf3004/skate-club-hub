@@ -402,7 +402,8 @@
     "elimina_punto_conferma": "Der Abschnitt „{{nome}}“ wird gelöscht. Das Stück bleibt erhalten.",
     "errore_rinomina_punto": "Der Abschnitt konnte nicht umbenannt werden.",
     "errore_elimina_punto": "Der Abschnitt konnte nicht gelöscht werden.",
-    "scorciatoie": "Tastatur: Leertaste startet und stoppt, Pfeil links und rechts verschieben um 5 Sekunden."
+    "scorciatoie": "Tastatur: Leertaste startet und stoppt, Pfeil links und rechts verschieben um 5 Sekunden.",
+    "nessun_passaggio_in_corso": "Gerade kein Abschnitt"
   },
   "menu_blocco": {
     "conduzione": "Betrieb",
