@@ -30,6 +30,8 @@ import ConfirmButton from "@/components/common/ConfirmButton";
 import { supabase } from "@/lib/supabase";
 import { segnala_errore } from "@/lib/errori";
 import {
+  CAMPI_PUNTO,
+  COLORE_PUNTO_FALLBACK,
   firma_disco,
   use_punti_programma,
   type ProgrammaMusicale,
@@ -114,6 +116,46 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
     () => [...punti].sort((a, b) => a.secondi - b.secondi),
     [punti],
   );
+
+  /**
+   * Passaggi pronti da disegnare: numero d'ordine per tempo crescente, colore
+   * del database (grigio se manca) e la fila su cui mettere il pallino.
+   * Le file servono a non far accavallare due numeri vicini: se l'inizio del
+   * passaggio successivo dista meno di SOGLIA_VICINI, il pallino sale di una fila.
+   */
+  const punti_disegnati = React.useMemo(() => {
+    const SOGLIA_VICINI = 4; // percentuale della durata
+    const ultima_per_fila: number[] = [];
+    return punti_ordinati.map((p, indice) => {
+      const sinistra = durata > 0 ? Math.min(100, Math.max(0, (p.secondi / durata) * 100)) : 0;
+      let fila = 0;
+      while (
+        ultima_per_fila[fila] != null &&
+        sinistra - (ultima_per_fila[fila] as number) < SOGLIA_VICINI
+      ) {
+        fila += 1;
+      }
+      ultima_per_fila[fila] = sinistra;
+      const larghezza =
+        p.secondi_fine != null && durata > 0
+          ? Math.max(0.8, Math.min(100 - sinistra, ((p.secondi_fine - p.secondi) / durata) * 100))
+          : null;
+      return {
+        punto: p,
+        numero: indice + 1,
+        colore: p.colore || COLORE_PUNTO_FALLBACK,
+        sinistra,
+        larghezza,
+        fila,
+      };
+    });
+  }, [punti_ordinati, durata]);
+
+  const file_numeri = React.useMemo(
+    () => punti_disegnati.reduce((max, d) => Math.max(max, d.fila + 1), 1),
+    [punti_disegnati],
+  );
+
 
   // Velocità e volume devono sopravvivere al rinnovo del collegamento, che
   // ricarica l'elemento audio: si rileggono sempre da questi riferimenti.
