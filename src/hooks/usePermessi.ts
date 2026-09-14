@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { is_admin_like } from "@/lib/roles";
 import { registra_silenzioso } from "@/lib/errori";
-import { card_visibile_di_default } from "@/config/dashboardCards";
+import { card_visibile_di_default, TUTTI_I_CODICI } from "@/config/dashboardCards";
 
 /**
  * Hook centralizzato per i permessi di sezione.
