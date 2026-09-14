@@ -421,5 +421,26 @@
     "yyyy": "JJJJ",
     "errore_inesistente": "Dieses Datum existiert nicht.",
     "errore_anno_range": "Das Jahr muss zwischen {{min}} und {{max}} liegen."
+  },
+  "lezioni_da_approvare": {
+    "tab": "Zu genehmigen",
+    "titolo": "Zu genehmigende Privatstunden",
+    "aggiorna": "Aktualisieren",
+    "errore_lettura": "Liste nicht verfügbar: Laden fehlgeschlagen.",
+    "riprova": "Erneut versuchen",
+    "vuoto": "Keine Stunden zu genehmigen.",
+    "istruttore": "Trainer",
+    "atlete": "Läuferinnen",
+    "nessuna_atleta": "keine Läuferin",
+    "ricorrente": "Wiederkehrend",
+    "approva": "Genehmigen",
+    "rifiuta": "Ablehnen",
+    "motivo_rifiuto": "Grund der Ablehnung",
+    "conferma_rifiuto": "Ablehnung bestätigen",
+    "annulla": "Abbrechen",
+    "toast_approvata": "Stunde genehmigt",
+    "toast_rifiutata": "Stunde abgelehnt",
+    "toast_errore": "Vorgang fehlgeschlagen",
+    "etichetta_calendario": "zu genehmigen"
   }
 }

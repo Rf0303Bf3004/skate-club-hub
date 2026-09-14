@@ -499,5 +499,26 @@
     "giorno_successivo": "Giorno successivo",
     "oggi": "Oggi",
     "scegli_data": "Scegli data"
+  },
+  "lezioni_da_approvare": {
+    "tab": "Da approvare",
+    "titolo": "Lezioni private da approvare",
+    "aggiorna": "Aggiorna",
+    "errore_lettura": "Elenco non disponibile: la lettura non è riuscita.",
+    "riprova": "Riprova",
+    "vuoto": "Nessuna lezione da approvare.",
+    "istruttore": "Istruttore",
+    "atlete": "Atlete",
+    "nessuna_atleta": "nessuna atleta",
+    "ricorrente": "Ricorrente",
+    "approva": "Approva",
+    "rifiuta": "Rifiuta",
+    "motivo_rifiuto": "Motivo del rifiuto",
+    "conferma_rifiuto": "Conferma rifiuto",
+    "annulla": "Annulla",
+    "toast_approvata": "Lezione approvata",
+    "toast_rifiutata": "Lezione rifiutata",
+    "toast_errore": "Operazione non riuscita",
+    "etichetta_calendario": "da approvare"
   }
 }

@@ -421,5 +421,26 @@
     "yyyy": "YYYY",
     "errore_inesistente": "This date does not exist.",
     "errore_anno_range": "The year must be between {{min}} and {{max}}."
+  },
+  "lezioni_da_approvare": {
+    "tab": "To approve",
+    "titolo": "Private lessons to approve",
+    "aggiorna": "Refresh",
+    "errore_lettura": "List unavailable: loading failed.",
+    "riprova": "Retry",
+    "vuoto": "No lessons to approve.",
+    "istruttore": "Instructor",
+    "atlete": "Skaters",
+    "nessuna_atleta": "no skater",
+    "ricorrente": "Recurring",
+    "approva": "Approve",
+    "rifiuta": "Reject",
+    "motivo_rifiuto": "Reason for rejection",
+    "conferma_rifiuto": "Confirm rejection",
+    "annulla": "Cancel",
+    "toast_approvata": "Lesson approved",
+    "toast_rifiutata": "Lesson rejected",
+    "toast_errore": "Operation failed",
+    "etichetta_calendario": "to approve"
   }
 }
