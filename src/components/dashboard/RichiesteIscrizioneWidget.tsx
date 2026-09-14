@@ -365,11 +365,13 @@ export const UltimeIscrizioniWidget: React.FC = () => {
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
         </div>
-      ) : !iscrizioni || iscrizioni.length === 0 ? (
+      ) : isError ? (
+        <BloccoErrore onRiprova={() => refetch()} />
+      ) : righe.length === 0 ? (
         <p className="text-sm text-muted-foreground py-2">{t("widget_iscrizioni.empty")}</p>
       ) : (
         <div className="space-y-2">
-          {iscrizioni.map((i: any) => (
+          {visibili.map((i: any) => (
             <div key={i.id} className="text-sm">
               <p className="text-foreground">
                 <span className="font-medium">
@@ -381,7 +383,9 @@ export const UltimeIscrizioniWidget: React.FC = () => {
               <p className="text-xs text-muted-foreground">{tempo_relativo(i.created_at, t)}</p>
             </div>
           ))}
+          <RigaVediTutte restanti={righe.length - visibili.length} to="/atleti" />
         </div>
+
       )}
     </div>
   );
