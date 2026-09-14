@@ -209,8 +209,8 @@ const PolizzaQr: React.FC<{ data: FatturaAtletaData }> = ({ data }) => {
   const importo = data.totale.toFixed(2);
   const iban = data.club.iban ?? "";
 
-  return (
-    <View style={s.qrBill} wrap={false}>
+  const contenuto = (
+    <>
       {/* Sezione ricevuta */}
       <View style={s.qrReceipt}>
         <Text style={s.qrTitle}>Ricevuta</Text>
