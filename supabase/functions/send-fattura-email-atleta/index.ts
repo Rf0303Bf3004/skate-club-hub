@@ -51,13 +51,6 @@ Deno.serve(async (req) => {
     const token = auth_header.replace(/^Bearer\s+/i, "").trim();
     if (!token) return json({ error: "unauthorized" }, 401);
 
-    const user_client = createClient(url, anon_key, {
-      global: { headers: { Authorization: `Bearer ${token}` } },
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-    const { data: { user }, error: u_err } = await user_client.auth.getUser();
-    if (u_err || !user) return json({ error: "unauthorized" }, 401);
-
     const supabase = createClient(url, service_key, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
@@ -76,29 +69,51 @@ Deno.serve(async (req) => {
     // Messaggio identico se la fattura non esiste o non è del chiamante.
     if (!f) return json({ error: "forbidden" }, 403);
 
-    // 2) Autorizzazione: staff dello stesso club, oppure famiglia dell'atleta.
-    const meta = (user.app_metadata ?? {}) as Record<string, unknown>;
-    const atleta_del_portale = typeof meta.atleta_id === "string" ? meta.atleta_id : null;
-
-    let autorizzato = false;
-    if (atleta_del_portale && f.atleta_id && atleta_del_portale === f.atleta_id) {
-      autorizzato = true;
-    } else {
-      const { data: caller, error: c_err } = await supabase
-        .from("utenti_club")
-        .select("ruolo, club_id")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      if (c_err) return json({ error: "lookup_failed" }, 500);
-      if (
-        caller &&
-        RUOLI_FATTURAZIONE.includes(String(caller.ruolo)) &&
-        (caller.ruolo === "superadmin" || caller.club_id === f.club_id)
-      ) {
-        autorizzato = true;
-      }
+    // 2) Autorizzazione: staff dello stesso club, famiglia dell'atleta,
+    //    oppure chiamata interna (chiave di servizio o gettone usa e getta).
+    let interna = token === service_key;
+    const gettone = String((body as any)?.token_interno ?? "").trim();
+    if (!interna && gettone) {
+      const { data: valido, error: g_err } = await supabase.rpc("consuma_token_interno", {
+        p_token: gettone,
+        p_scopo: "send-fattura-email-atleta",
+      });
+      if (g_err) return json({ error: "gettone_non_verificabile", dettaglio: g_err.message }, 500);
+      if (valido !== true) return json({ error: "gettone_non_valido" }, 401);
+      interna = true;
     }
-    if (!autorizzato) return json({ error: "forbidden" }, 403);
+
+    if (!interna) {
+      const user_client = createClient(url, anon_key, {
+        global: { headers: { Authorization: `Bearer ${token}` } },
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      const { data: { user }, error: u_err } = await user_client.auth.getUser();
+      if (u_err || !user) return json({ error: "unauthorized" }, 401);
+
+      const meta = (user.app_metadata ?? {}) as Record<string, unknown>;
+      const atleta_del_portale = typeof meta.atleta_id === "string" ? meta.atleta_id : null;
+
+      let autorizzato = false;
+      if (atleta_del_portale && f.atleta_id && atleta_del_portale === f.atleta_id) {
+        autorizzato = true;
+      } else {
+        const { data: caller, error: c_err } = await supabase
+          .from("utenti_club")
+          .select("ruolo, club_id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (c_err) return json({ error: "lookup_failed" }, 500);
+        if (
+          caller &&
+          RUOLI_FATTURAZIONE.includes(String(caller.ruolo)) &&
+          (caller.ruolo === "superadmin" || caller.club_id === f.club_id)
+        ) {
+          autorizzato = true;
+        }
+      }
+      if (!autorizzato) return json({ error: "forbidden" }, 403);
+    }
 
     // 3) Destinatario: solo indirizzi già presenti sull'atleta o sulla fattura.
     let atleta: { genitore1_email: string | null; genitore2_email: string | null } | null = null;
