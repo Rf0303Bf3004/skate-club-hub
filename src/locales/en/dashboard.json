@@ -25,5 +25,14 @@
     "available_instructors": "Instructors available today",
     "subscription_requests": "Registration requests"
   },
-  "countdown_days": "Countdown: {{count}}d"
+  "countdown_days": "Countdown: {{count}}d",
+  "widget_comune": {
+    "errore_lettura": "This list is not available right now.",
+    "riprova": "Try again",
+    "vedi_tutte_one": "See the other one ({{count}})",
+    "vedi_tutte_other": "See all ({{count}} more)"
+  },
+  "comunicazione": {
+    "apri": "Write a message"
+  }
 }

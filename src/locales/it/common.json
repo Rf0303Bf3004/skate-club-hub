@@ -487,7 +487,8 @@
     "elimina_punto_conferma": "Il passaggio «{{nome}}» viene cancellato. Il brano non si tocca.",
     "errore_rinomina_punto": "Non è stato possibile rinominare il passaggio.",
     "errore_elimina_punto": "Non è stato possibile eliminare il passaggio.",
-    "scorciatoie": "Tastiera: barra spaziatrice avvia e ferma, frecce sinistra e destra spostano di 5 secondi."
+    "scorciatoie": "Tastiera: barra spaziatrice avvia e ferma, frecce sinistra e destra spostano di 5 secondi.",
+    "nessun_passaggio_in_corso": "Nessun passaggio in questo momento"
   },
   "menu_blocco": {
     "conduzione": "Conduzione",

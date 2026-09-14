@@ -30,6 +30,8 @@ import ConfirmButton from "@/components/common/ConfirmButton";
 import { supabase } from "@/lib/supabase";
 import { segnala_errore } from "@/lib/errori";
 import {
+  CAMPI_PUNTO,
+  COLORE_PUNTO_FALLBACK,
   firma_disco,
   use_punti_programma,
   type ProgrammaMusicale,
@@ -114,6 +116,46 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
     () => [...punti].sort((a, b) => a.secondi - b.secondi),
     [punti],
   );
+
+  /**
+   * Passaggi pronti da disegnare: numero d'ordine per tempo crescente, colore
+   * del database (grigio se manca) e la fila su cui mettere il pallino.
+   * Le file servono a non far accavallare due numeri vicini: se l'inizio del
+   * passaggio successivo dista meno di SOGLIA_VICINI, il pallino sale di una fila.
+   */
+  const punti_disegnati = React.useMemo(() => {
+    const SOGLIA_VICINI = 4; // percentuale della durata
+    const ultima_per_fila: number[] = [];
+    return punti_ordinati.map((p, indice) => {
+      const sinistra = durata > 0 ? Math.min(100, Math.max(0, (p.secondi / durata) * 100)) : 0;
+      let fila = 0;
+      while (
+        ultima_per_fila[fila] != null &&
+        sinistra - (ultima_per_fila[fila] as number) < SOGLIA_VICINI
+      ) {
+        fila += 1;
+      }
+      ultima_per_fila[fila] = sinistra;
+      const larghezza =
+        p.secondi_fine != null && durata > 0
+          ? Math.max(0.8, Math.min(100 - sinistra, ((p.secondi_fine - p.secondi) / durata) * 100))
+          : null;
+      return {
+        punto: p,
+        numero: indice + 1,
+        colore: p.colore || COLORE_PUNTO_FALLBACK,
+        sinistra,
+        larghezza,
+        fila,
+      };
+    });
+  }, [punti_ordinati, durata]);
+
+  const file_numeri = React.useMemo(
+    () => punti_disegnati.reduce((max, d) => Math.max(max, d.fila + 1), 1),
+    [punti_disegnati],
+  );
+
 
   // Velocità e volume devono sopravvivere al rinnovo del collegamento, che
   // ricarica l'elemento audio: si rileggono sempre da questi riferimenti.
@@ -437,7 +479,7 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
           secondi,
           ordine: punti.length,
         } as any)
-        .select("id, programma_id, nome, secondi, secondi_fine, ordine")
+        .select(CAMPI_PUNTO)
         .single();
       if (error) throw error;
       await query_client.invalidateQueries({ queryKey: ["punti_programma", programma.id] });
@@ -523,6 +565,17 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
   const percentuale = durata > 0 ? Math.min(100, (posizione_mostrata / durata) * 100) : 0;
   const restante = Math.max(0, durata - posizione_mostrata);
 
+  // Passaggio che sta suonando: solo quelli con inizio e fine occupano un tratto.
+  const in_corso = punti_disegnati.find(
+    (d) =>
+      d.punto.secondi_fine != null &&
+      posizione_mostrata >= d.punto.secondi &&
+      posizione_mostrata < d.punto.secondi_fine,
+  );
+
+  const ALTEZZA_FILA = 22; // px fra una fila di numeri e quella sopra
+
+
   return (
     <div className="fixed inset-x-0 bottom-0 z-50 border-t-2 border-primary bg-card p-4 shadow-2xl">
       <div className="mx-auto flex max-w-5xl flex-col gap-3">
@@ -548,8 +601,26 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
           </div>
         )}
 
-        {/* barra di avanzamento trascinabile, con i punti e le ripetizioni sopra */}
-        <div className="pt-6">
+        {/* riga fissa: il passaggio che sta suonando. Lo spazio resta anche da vuota,
+            altrimenti la barra salterebbe su e giù ogni pochi secondi. */}
+        <div className="flex h-8 items-center gap-2">
+          {in_corso ? (
+            <>
+              <span
+                className="h-4 w-4 flex-shrink-0 rounded-full"
+                style={{ backgroundColor: in_corso.colore }}
+              />
+              <span className="truncate text-lg font-bold">
+                {in_corso.numero}. {in_corso.punto.nome}
+              </span>
+            </>
+          ) : (
+            <span className="sr-only">{t("musica.nessun_passaggio_in_corso")}</span>
+          )}
+        </div>
+
+        {/* barra di avanzamento trascinabile, con le fasce dei passaggi e i numeri sopra */}
+        <div style={{ paddingTop: file_numeri * ALTEZZA_FILA + 8 }}>
           <div
             ref={barra_ref}
             className="relative h-11 w-full touch-none select-none rounded-full bg-muted"
@@ -569,33 +640,39 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
               style={{ width: `${percentuale}%` }}
             />
             {durata > 0 &&
-              punti_ordinati.map((p) => {
-                const sinistra = Math.min(100, (p.secondi / durata) * 100);
-                const attivo = loop_punto?.id === p.id;
-                const larghezza =
-                  p.secondi_fine != null
-                    ? Math.max(1, Math.min(100 - sinistra, ((p.secondi_fine - p.secondi) / durata) * 100))
-                    : null;
+              punti_disegnati.map((d) => {
+                const suona = in_corso?.punto.id === d.punto.id;
                 return (
-                  <React.Fragment key={p.id}>
-                    {larghezza != null ? (
+                  <React.Fragment key={d.punto.id}>
+                    {d.larghezza != null ? (
+                      // passaggio con inizio e fine: fascia del proprio colore
                       <span
-                        className={`absolute inset-y-0 rounded ${
-                          attivo ? "bg-primary/70 ring-2 ring-primary" : "bg-secondary/60"
-                        }`}
-                        style={{ left: `${sinistra}%`, width: `${larghezza}%` }}
+                        className="absolute inset-y-0 rounded"
+                        style={{
+                          left: `${d.sinistra}%`,
+                          width: `${d.larghezza}%`,
+                          backgroundColor: d.colore,
+                          opacity: suona ? 0.95 : 0.28,
+                          boxShadow: suona ? `0 0 0 2px ${d.colore}` : undefined,
+                        }}
                       />
                     ) : (
+                      // passaggio con il solo inizio: spillo verticale
                       <span
-                        className="absolute inset-y-0 w-1 rounded bg-foreground"
-                        style={{ left: `${sinistra}%` }}
+                        className="absolute inset-y-0 rounded"
+                        style={{ left: `${d.sinistra}%`, width: 3, backgroundColor: d.colore }}
                       />
                     )}
+                    {/* pallino numerato: la fila evita che due numeri vicini si sovrappongano */}
                     <span
-                      className="pointer-events-none absolute -top-6 max-w-[9rem] truncate text-xs font-medium text-muted-foreground"
-                      style={{ left: `${sinistra}%` }}
+                      className="pointer-events-none absolute flex h-5 w-5 -translate-x-1/2 items-center justify-center rounded-full text-[11px] font-bold text-white shadow"
+                      style={{
+                        left: `${d.sinistra}%`,
+                        top: -((d.fila + 1) * ALTEZZA_FILA),
+                        backgroundColor: d.colore,
+                      }}
                     >
-                      {p.nome}
+                      {d.numero}
                     </span>
                   </React.Fragment>
                 );
@@ -607,6 +684,7 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
             />
           </div>
         </div>
+
         <div className="flex justify-between text-2xl font-bold tabular-nums">
           <span>{mmss(posizione_mostrata)}</span>
           <span className="text-muted-foreground">−{mmss(restante)}</span>
@@ -724,7 +802,7 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
           <>
             <p className="text-sm text-muted-foreground">{t("musica.spiegazione_punti")}</p>
             <div className="flex flex-wrap gap-2">
-              {punti_ordinati.map((p) => (
+              {punti_disegnati.map(({ punto: p, numero, colore }) => (
                 <div
                   key={p.id}
                   className={`flex items-center gap-1 rounded-lg border p-1 ${
@@ -732,10 +810,17 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
                   }`}
                 >
                   <Button variant="ghost" className="h-12" onClick={() => usa_punto(p)}>
+                    <span
+                      className="mr-2 flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold text-white"
+                      style={{ backgroundColor: colore }}
+                    >
+                      {numero}
+                    </span>
                     {p.secondi_fine != null && <Repeat className="mr-2 h-4 w-4" />}
                     {p.nome} · {mmss(p.secondi)}
                     {p.secondi_fine != null ? ` – ${mmss(p.secondi_fine)}` : ""}
                   </Button>
+
                   <Button
                     variant="ghost"
                     className="h-12 w-12 p-0"

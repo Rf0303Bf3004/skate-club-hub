@@ -5992,6 +5992,7 @@ export type Database = {
       }
       punti_programma: {
         Row: {
+          colore: string | null
           created_at: string
           id: string
           nome: string
@@ -6002,6 +6003,7 @@ export type Database = {
           secondi_fine: number | null
         }
         Insert: {
+          colore?: string | null
           created_at?: string
           id?: string
           nome: string
@@ -6012,6 +6014,7 @@ export type Database = {
           secondi_fine?: number | null
         }
         Update: {
+          colore?: string | null
           created_at?: string
           id?: string
           nome?: string

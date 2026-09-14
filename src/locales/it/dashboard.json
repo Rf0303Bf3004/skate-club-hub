@@ -723,5 +723,14 @@
     "cta_staff": "Invita uno staff",
     "toast_error": "Impossibile chiudere il banner. Riprova.",
     "toast_success": "Benvenuto, buon lavoro! 🎉"
+  },
+  "widget_comune": {
+    "errore_lettura": "Elenco non disponibile in questo momento.",
+    "riprova": "Riprova",
+    "vedi_tutte_one": "Vedi anche l'altra ({{count}})",
+    "vedi_tutte_other": "Vedi tutte ({{count}} in più)"
+  },
+  "comunicazione": {
+    "apri": "Scrivi una comunicazione"
   }
 }

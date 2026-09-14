@@ -11,6 +11,8 @@ import { format_data_completa, format_data_lunga, locale_to_bcp47 } from "@/lib/
 import { useI18n } from "@/lib/i18n";
 import { useTranslation } from "react-i18next";
 import FotoAtleta from "@/components/common/FotoAtleta";
+import { Link } from "react-router-dom";
+import { segnala_errore } from "@/lib/errori";
 
 function fmt_data_breve_localizzata(data_iso: string, locale_code: string): string {
   const dt = new Date(data_iso + "T00:00:00");
@@ -20,7 +22,41 @@ function fmt_data_breve_localizzata(data_iso: string, locale_code: string): stri
 
 const REFETCH_MS = 60_000;
 
+/** Righe mostrate nel riquadro e righe scaricate (una in più per sapere se ce ne sono altre). */
+const MOSTRATE = 3;
+const MAX_RIGHE = MOSTRATE + 1;
+
 type TFn = (key: string, opts?: Record<string, unknown>) => string;
+
+/**
+ * Guasto della lettura: non è la stessa cosa dello stato vuoto.
+ * L'utente deve capire che l'elenco non è disponibile, non che non c'è niente.
+ */
+const BloccoErrore: React.FC<{ onRiprova: () => void }> = ({ onRiprova }) => {
+  const { t } = useTranslation("dashboard");
+  return (
+    <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 space-y-1">
+      <p className="text-sm text-amber-900">{t("widget_comune.errore_lettura")}</p>
+      <Button size="sm" variant="outline" className="h-7 text-xs" onClick={onRiprova}>
+        {t("widget_comune.riprova")}
+      </Button>
+    </div>
+  );
+};
+
+/** Riga "vedi tutte": compare solo se ci sono più righe di quelle mostrate. */
+const RigaVediTutte: React.FC<{ restanti: number; to: string }> = ({ restanti, to }) => {
+  const { t } = useTranslation("dashboard");
+  if (restanti <= 0) return null;
+  return (
+    <Link
+      to={to}
+      className="block text-center text-xs font-semibold text-primary hover:underline pt-1"
+    >
+      {t("widget_comune.vedi_tutte", { count: restanti })}
+    </Link>
+  );
+};
 
 function tempo_relativo(iso: string, t: TFn): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -35,6 +71,7 @@ function tempo_relativo(iso: string, t: TFn): string {
   return format_data_completa(iso);
 }
 
+
 // ─── Card 1: Richieste pendenti ──────────────────────────────
 export const RichiesteIscrizioneWidget: React.FC = () => {
   const { t } = useTranslation("dashboard");
@@ -43,18 +80,21 @@ export const RichiesteIscrizioneWidget: React.FC = () => {
   const [rifiuto_id, set_rifiuto_id] = useState<string | null>(null);
   const [motivo, set_motivo] = useState("");
 
-  const { data: richieste, isLoading, isFetching, refetch } = useQuery({
+  const { data, isLoading, isError, error: errore_query, isFetching, refetch } = useQuery({
     queryKey: ["richieste_pendenti", club_id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Se ne mostrano al massimo tre: non ha senso scaricarle tutte.
+      const { data, error, count } = await supabase
         .from("richieste_iscrizione")
-        .select("id, created_at, note_richiesta, atleta_id, corso_id")
+        .select("id, created_at, note_richiesta, atleta_id, corso_id", { count: "exact" })
         .eq("club_id", club_id)
         .eq("stato", "in_attesa")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(MAX_RIGHE);
       if (error) throw error;
       const rows = data ?? [];
-      if (rows.length === 0) return [];
+      const totale = count ?? rows.length;
+      if (rows.length === 0) return { righe: [] as any[], totale };
 
       const atl_ids = [...new Set(rows.map((r) => r.atleta_id))];
       const cor_ids = [...new Set(rows.map((r) => r.corso_id))];
@@ -64,14 +104,23 @@ export const RichiesteIscrizioneWidget: React.FC = () => {
       ]);
       const a_map = new Map((atleti ?? []).map((a: any) => [a.id, a]));
       const c_map = new Map((corsi ?? []).map((c: any) => [c.id, c]));
-      return rows.map((r) => ({
-        ...r,
-        atleta: a_map.get(r.atleta_id),
-        corso: c_map.get(r.corso_id),
-      }));
+      return {
+        righe: rows.map((r) => ({
+          ...r,
+          atleta: a_map.get(r.atleta_id),
+          corso: c_map.get(r.corso_id),
+        })),
+        totale,
+      };
     },
     refetchInterval: REFETCH_MS,
   });
+
+  React.useEffect(() => {
+    if (isError) void segnala_errore("Dashboard", "richieste iscrizione", errore_query, undefined, "avviso");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isError]);
+
 
   const approva = useMutation({
     mutationFn: async (r: any) => {
@@ -123,7 +172,10 @@ export const RichiesteIscrizioneWidget: React.FC = () => {
     onError: (e: any) => toast({ title: t("widget_richieste.toast_error"), description: e.message, variant: "destructive" }),
   });
 
-  const count = richieste?.length ?? 0;
+  const righe = data?.righe ?? [];
+  const totale = data?.totale ?? 0;
+  const visibili = righe.slice(0, MOSTRATE);
+  const count = totale;
 
   return (
     <div className="bg-card rounded-xl shadow-card p-5 space-y-3">
@@ -153,11 +205,14 @@ export const RichiesteIscrizioneWidget: React.FC = () => {
           <Skeleton className="h-14 w-full" />
           <Skeleton className="h-14 w-full" />
         </div>
+      ) : isError ? (
+        <BloccoErrore onRiprova={() => refetch()} />
       ) : count === 0 ? (
         <p className="text-sm text-muted-foreground py-2">{t("widget_richieste.empty")}</p>
       ) : (
         <div className="space-y-3">
-          {richieste!.map((r: any) => (
+          {visibili.map((r: any) => (
+
             <div key={r.id} className="border border-border rounded-lg p-3 space-y-2">
               <div className="flex items-center gap-2">
                 <FotoAtleta
@@ -236,7 +291,9 @@ export const RichiesteIscrizioneWidget: React.FC = () => {
               )}
             </div>
           ))}
+          <RigaVediTutte restanti={totale - visibili.length} to="/richieste-iscrizione" />
         </div>
+
       )}
     </div>
   );
@@ -247,7 +304,7 @@ export const UltimeIscrizioniWidget: React.FC = () => {
   const { t } = useTranslation("dashboard");
   const club_id = get_current_club_id();
 
-  const { data: iscrizioni, isLoading, isFetching, refetch } = useQuery({
+  const { data: iscrizioni, isLoading, isError, error: errore_query, isFetching, refetch } = useQuery({
     queryKey: ["ultime_iscrizioni", club_id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -276,7 +333,16 @@ export const UltimeIscrizioniWidget: React.FC = () => {
     refetchInterval: REFETCH_MS,
   });
 
+  React.useEffect(() => {
+    if (isError) void segnala_errore("Dashboard", "ultime iscrizioni", errore_query, undefined, "avviso");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isError]);
+
+  const righe = iscrizioni ?? [];
+  const visibili = righe.slice(0, MOSTRATE);
+
   return (
+
     <div className="bg-card rounded-xl shadow-card p-5 space-y-3">
       <div className="flex items-center gap-2">
         <UserPlus className="w-4 h-4 text-primary" />
@@ -299,11 +365,13 @@ export const UltimeIscrizioniWidget: React.FC = () => {
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
         </div>
-      ) : !iscrizioni || iscrizioni.length === 0 ? (
+      ) : isError ? (
+        <BloccoErrore onRiprova={() => refetch()} />
+      ) : righe.length === 0 ? (
         <p className="text-sm text-muted-foreground py-2">{t("widget_iscrizioni.empty")}</p>
       ) : (
         <div className="space-y-2">
-          {iscrizioni.map((i: any) => (
+          {visibili.map((i: any) => (
             <div key={i.id} className="text-sm">
               <p className="text-foreground">
                 <span className="font-medium">
@@ -315,7 +383,9 @@ export const UltimeIscrizioniWidget: React.FC = () => {
               <p className="text-xs text-muted-foreground">{tempo_relativo(i.created_at, t)}</p>
             </div>
           ))}
+          <RigaVediTutte restanti={righe.length - visibili.length} to="/atleti" />
         </div>
+
       )}
     </div>
   );
@@ -336,7 +406,7 @@ export const RichiesteLezioniPrivateWidget: React.FC = () => {
   const [rifiuto_id, set_rifiuto_id] = useState<string | null>(null);
   const [motivo, set_motivo] = useState("");
 
-  const { data: lezioni, isLoading, isFetching, refetch } = useQuery({
+  const { data: lezioni, isLoading, isError, error: errore_query, isFetching, refetch } = useQuery({
     queryKey: ["richieste_lezioni_private", club_id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -423,7 +493,14 @@ export const RichiesteLezioniPrivateWidget: React.FC = () => {
     onError: (e: any) => toast({ title: t("widget_richieste.toast_error"), description: e.message, variant: "destructive" }),
   });
 
-  const count = lezioni?.length ?? 0;
+  React.useEffect(() => {
+    if (isError) void segnala_errore("Dashboard", "richieste lezioni private", errore_query, undefined, "avviso");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isError]);
+
+  const righe = lezioni ?? [];
+  const visibili = righe.slice(0, MOSTRATE);
+  const count = righe.length;
 
   return (
     <div className="bg-card rounded-xl shadow-card p-5 space-y-3">
@@ -453,11 +530,13 @@ export const RichiesteLezioniPrivateWidget: React.FC = () => {
           <Skeleton className="h-14 w-full" />
           <Skeleton className="h-14 w-full" />
         </div>
+      ) : isError ? (
+        <BloccoErrore onRiprova={() => refetch()} />
       ) : count === 0 ? (
         <p className="text-sm text-muted-foreground py-2">{t("widget_richieste.empty")}</p>
       ) : (
         <div className="space-y-3">
-          {lezioni!.map((l: any) => {
+          {visibili.map((l: any) => {
             const a0 = l.atleti?.[0];
             const altri = (l.atleti?.length ?? 0) - 1;
             return (
@@ -554,7 +633,9 @@ export const RichiesteLezioniPrivateWidget: React.FC = () => {
               </div>
             );
           })}
+          <RigaVediTutte restanti={count - visibili.length} to="/lezioni-private" />
         </div>
+
       )}
     </div>
   );

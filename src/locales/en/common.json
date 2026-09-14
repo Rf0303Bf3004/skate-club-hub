@@ -402,7 +402,8 @@
     "elimina_punto_conferma": "The section “{{nome}}” will be deleted. The track stays untouched.",
     "errore_rinomina_punto": "The section could not be renamed.",
     "errore_elimina_punto": "The section could not be deleted.",
-    "scorciatoie": "Keyboard: space starts and stops, left and right arrows move by 5 seconds."
+    "scorciatoie": "Keyboard: space starts and stops, left and right arrows move by 5 seconds.",
+    "nessun_passaggio_in_corso": "No section playing right now"
   },
   "menu_blocco": {
     "conduzione": "Operations",

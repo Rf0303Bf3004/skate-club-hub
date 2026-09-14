@@ -43,6 +43,13 @@ import {
   Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
@@ -1319,6 +1326,9 @@ const DashboardPage: React.FC = () => {
   const [tab_presenze, set_tab_presenze] = useState<"corsi" | "istruttori">("corsi");
   const [agenda_offset, set_agenda_offset] = useState(0);
   const [com_preset, set_com_preset] = useState<BoxComunicazionePreset | null>(null);
+  /** Le lezioni private di oggi partono chiuse: la pagina è già lunga. */
+  const [lezioni_aperte, set_lezioni_aperte] = useState(false);
+  const [com_aperta, set_com_aperta] = useState(false);
 
   // Atleti con compleanno oggi
   const compleanni_oggi = useMemo(() => {
@@ -1342,11 +1352,10 @@ const DashboardPage: React.FC = () => {
       marker: `birthday:${atleta.id}:${Date.now()}`,
     };
     set_com_preset(preset);
-    setTimeout(() => {
-      const el = document.getElementById("box-comunicazione");
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 50);
+    // Gli auguri precompilati si aprono nella finestra della comunicazione rapida.
+    set_com_aperta(true);
   };
+
 
   const is_loading = loading_atleti || loading_corsi || loading_gare || loading_fatture || loading_istruttori;
 
@@ -1675,12 +1684,21 @@ const DashboardPage: React.FC = () => {
                     </div>
                     {agenda_is_today && today_lezioni.length > 0 && (
                       <div className="space-y-2">
-                        <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => set_lezioni_aperte((v) => !v)}
+                          aria-expanded={lezioni_aperte}
+                          className="flex items-center gap-2"
+                        >
                           <div className="text-xs font-bold px-2.5 py-1 rounded-full bg-primary text-white">
-                            {td("agenda.private_lessons_today")}
+                            {td("agenda.private_lessons_today")} ({today_lezioni.length})
                           </div>
-                        </div>
-                        {today_lezioni.map((lezione) => {
+                          <ChevronDown
+                            className={`w-4 h-4 text-muted-foreground transition-transform ${lezioni_aperte ? "rotate-180" : ""}`}
+                          />
+                        </button>
+                        {lezioni_aperte && today_lezioni.map((lezione) => {
+
                           const atleti_lezione = atleti.filter((a) => lezione.atleti_ids?.includes(a.id));
                           const istr = istruttori.find((i) => i.id === lezione.istruttore_id);
                           return (
@@ -1740,20 +1758,37 @@ const DashboardPage: React.FC = () => {
             )}
           </div>
 
-          {/* Box comunicazione rapida */}
+          {/* Comunicazione rapida: sta in una finestra, così la pagina resta corta */}
           {puo_comunicare ? (
-            <div id="box-comunicazione">
-              <BoxComunicazione
-                atleti={atleti}
-                istruttori={istruttori}
-                monitori={monitori}
-                corsi={corsi}
-                gare={gare}
-                preset={com_preset}
-                on_preset_consumed={() => set_com_preset(null)}
-              />
-            </div>
+            <Dialog open={com_aperta} onOpenChange={(v) => {
+              set_com_aperta(v);
+              if (!v) set_com_preset(null);
+            }}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="w-full justify-start">
+                  <Send className="w-4 h-4 mr-2" />
+                  {td("comunicazione.apri", { defaultValue: "Scrivi una comunicazione" })}
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>
+                    {td("comunicazione.apri", { defaultValue: "Scrivi una comunicazione" })}
+                  </DialogTitle>
+                </DialogHeader>
+                <BoxComunicazione
+                  atleti={atleti}
+                  istruttori={istruttori}
+                  monitori={monitori}
+                  corsi={corsi}
+                  gare={gare}
+                  preset={com_preset}
+                  on_preset_consumed={() => set_com_preset(null)}
+                />
+              </DialogContent>
+            </Dialog>
           ) : (
+
             <NotaPermesso testo="Solo lo staff di segreteria e direzione può inviare comunicazioni rapide." />
           )}
         </div>

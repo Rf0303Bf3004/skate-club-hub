@@ -402,7 +402,8 @@
     "elimina_punto_conferma": "Le passage « {{nome}} » sera supprimé. Le morceau reste en place.",
     "errore_rinomina_punto": "Impossible de renommer le passage.",
     "errore_elimina_punto": "Impossible de supprimer le passage.",
-    "scorciatoie": "Clavier : barre d'espace démarre et arrête, flèches gauche et droite déplacent de 5 secondes."
+    "scorciatoie": "Clavier : barre d'espace démarre et arrête, flèches gauche et droite déplacent de 5 secondes.",
+    "nessun_passaggio_in_corso": "Aucun passage en ce moment"
   },
   "menu_blocco": {
     "conduzione": "Conduite",

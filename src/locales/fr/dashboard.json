@@ -25,5 +25,14 @@
     "available_instructors": "Instructeurs disponibles aujourd'hui",
     "subscription_requests": "Demandes d'inscription"
   },
-  "countdown_days": "Compte à rebours : {{count}} j"
+  "countdown_days": "Compte à rebours : {{count}} j",
+  "widget_comune": {
+    "errore_lettura": "Liste indisponible pour le moment.",
+    "riprova": "Réessayer",
+    "vedi_tutte_one": "Voir l'autre ({{count}})",
+    "vedi_tutte_other": "Tout voir ({{count}} de plus)"
+  },
+  "comunicazione": {
+    "apri": "Écrire un message"
+  }
 }
