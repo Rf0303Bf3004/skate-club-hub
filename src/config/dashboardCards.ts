@@ -1,311 +1,212 @@
-export type AreaDashboard =
-  | 'finanziaria'
-  | 'atleti'
-  | 'sportiva'
-  | 'operativa'
-  | 'ghiaccio'
-  | 'comunicazioni';
+/**
+ * I riquadri della Dashboard.
+ *
+ * Regola: un riquadro esiste solo se risponde a «cosa devo fare oggi».
+ * Come è organizzato il club sta in Setup, non qui.
+ *
+ * Questo elenco contiene SOLO i blocchi che `DashboardPage.tsx` disegna davvero,
+ * ciascuno con il suo `codice`. Ogni destinazione è una rotta che esiste in
+ * `App.tsx`: se un riquadro non ha una pagina dove approfondire, `destinazione`
+ * è `null` e il riquadro non è cliccabile.
+ *
+ * Il presidente ha una Dashboard sua (`PresidentDashboard.tsx`): non è
+ * configurabile da qui e non compare in `RUOLI_DASHBOARD`.
+ */
+
+/** Raggruppamento per urgenza di chi guarda, non per area del club. */
+export type GruppoDashboard = 'da_fare' | 'oggi' | 'andamento';
 
 export interface DashboardCard {
   codice: string;
-  area: AreaDashboard;
-  titolo: string;
-  descrizione: string;
-  destinazioneClick: string;
-  cliccabile: boolean;
+  gruppo: GruppoDashboard;
+  /** Rotta esistente in App.tsx, oppure null se il riquadro non è cliccabile. */
+  destinazione: string | null;
   icona: string;
 }
 
-export interface AreaConfig {
-  codice: AreaDashboard;
-  label: string;
-  colore: string;
+export interface GruppoConfig {
+  codice: GruppoDashboard;
+  /** Chiave i18n nel namespace `settings`. */
+  chiave_label: string;
+  classi_intestazione: string;
 }
 
 export interface RuoloConfig {
   codice: string;
-  label: string;
+  /** Chiave i18n nel namespace `settings`. */
+  chiave_label: string;
 }
 
 export const CARDS: DashboardCard[] = [
-  // FINANZIARIA (7)
+  // ─── Da fare: aspettano una decisione ───────────────────
   {
-    codice: 'fatturato_mese',
-    area: 'finanziaria',
-    titolo: 'Fatturato mese',
-    descrizione: 'CHF totale fatture emesse mese corrente',
-    destinazioneClick: '/fatture?filtro=mese',
-    cliccabile: true,
-    icona: 'Banknote',
-  },
-  {
-    codice: 'fatturato_anno',
-    area: 'finanziaria',
-    titolo: 'Fatturato anno',
-    descrizione: 'CHF totale stagione',
-    destinazioneClick: '/fatture?filtro=stagione',
-    cliccabile: true,
-    icona: 'TrendingUp',
-  },
-  {
-    codice: 'da_incassare',
-    area: 'finanziaria',
-    titolo: 'Da incassare',
-    descrizione: 'CHF + n fatture in attesa',
-    destinazioneClick: '/fatture?filtro=da_pagare',
-    cliccabile: true,
-    icona: 'Wallet',
-  },
-  {
-    codice: 'fatture_scadute',
-    area: 'finanziaria',
-    titolo: 'Fatture scadute',
-    descrizione: 'n + CHF scadute',
-    destinazioneClick: '/fatture?filtro=scadute',
-    cliccabile: true,
-    icona: 'AlertCircle',
-  },
-  {
-    codice: 'cash_flow',
-    area: 'finanziaria',
-    titolo: 'Cash flow proiettato',
-    descrizione: 'grafico 3 mesi avanti',
-    destinazioneClick: '/fatture?vista=calendario',
-    cliccabile: true,
-    icona: 'BarChart3',
-  },
-  {
-    codice: 'compensi_mese',
-    area: 'finanziaria',
-    titolo: 'Compensi del mese',
-    descrizione: 'CHF da pagare a istruttori e monitori',
-    destinazioneClick: '/compensi?mese=corrente',
-    cliccabile: true,
-    icona: 'CreditCard',
-  },
-  {
-    codice: 'fatturato_yoy',
-    area: 'finanziaria',
-    titolo: 'Fatturato YoY',
-    descrizione: 'confronto stagione vs precedente',
-    destinazioneClick: '/fatture?vista=confronto',
-    cliccabile: true,
-    icona: 'Scale',
-  },
-
-  // ATLETI (5)
-  {
-    codice: 'atleti_attivi',
-    area: 'atleti',
-    titolo: 'Atleti attivi',
-    descrizione: 'conteggio totale',
-    destinazioneClick: '/atleti?filtro=attivi',
-    cliccabile: true,
-    icona: 'Users',
-  },
-  {
-    codice: 'atleti_yoy',
-    area: 'atleti',
-    titolo: 'Atleti YoY',
-    descrizione: 'stagione corrente vs precedente',
-    destinazioneClick: '/atleti?vista=confronto',
-    cliccabile: true,
-    icona: 'UserCheck',
-  },
-  {
-    codice: 'distribuzione_livelli',
-    area: 'atleti',
-    titolo: 'Distribuzione per livello',
-    descrizione: 'grafico a barre',
-    destinazioneClick: '/atleti?vista=per_livello',
-    cliccabile: true,
-    icona: 'LayoutGrid',
-  },
-  {
-    codice: 'compleanni_30gg',
-    area: 'atleti',
-    titolo: 'Compleanni 30 giorni',
-    descrizione: 'lista prossimi',
-    destinazioneClick: '/atleti?vista=compleanni',
-    cliccabile: true,
-    icona: 'Cake',
-  },
-  {
-    codice: 'tessere_sis_scadenza',
-    area: 'atleti',
-    titolo: 'Tessere SIS in scadenza',
-    descrizione: 'n atleti con licenza < 60gg',
-    destinazioneClick: '/atleti?filtro=sis_scadenza',
-    cliccabile: true,
-    icona: 'ShieldAlert',
-  },
-
-  // SPORTIVA (6)
-  {
-    codice: 'atleti_pronti_test',
-    area: 'sportiva',
-    titolo: 'Atleti pronti per test',
-    descrizione: 'n fermi sullo stesso livello',
-    destinazioneClick: '/test-livello?vista=candidati',
-    cliccabile: true,
-    icona: 'Medal',
-  },
-  {
-    codice: 'medagliere',
-    area: 'sportiva',
-    titolo: 'Medagliere stagione',
-    descrizione: 'top atleti per podi',
-    destinazioneClick: '/risultati-gara?vista=medagliere',
-    cliccabile: true,
-    icona: 'Trophy',
-  },
-  {
-    codice: 'prossime_gare',
-    area: 'sportiva',
-    titolo: 'Prossime gare',
-    descrizione: 'lista 5 con countdown',
-    destinazioneClick: '/gare-calendario',
-    cliccabile: true,
-    icona: 'CalendarCheck',
-  },
-  {
-    codice: 'da_iscrivere_gare',
-    area: 'sportiva',
-    titolo: 'Atleti da iscrivere a gare aperte',
-    descrizione: 'n',
-    destinazioneClick: '/iscrizioni-gare?filtro=non_iscritti',
-    cliccabile: true,
-    icona: 'ClipboardList',
-  },
-  {
-    codice: 'storico_gare_stagione',
-    area: 'sportiva',
-    titolo: 'Storico gare stagione',
-    descrizione: 'gare disputate',
-    destinazioneClick: '/gare-calendario?filtro=disputate',
-    cliccabile: true,
-    icona: 'History',
-  },
-  {
-    codice: 'risultati_yoy',
-    area: 'sportiva',
-    titolo: 'Risultati gara YoY',
-    descrizione: 'podi/top5/top10 vs anno scorso',
-    destinazioneClick: '/risultati-gara?vista=confronto',
-    cliccabile: true,
-    icona: 'BarChart4',
-  },
-
-  // OPERATIVA (5)
-  {
-    codice: 'iscrizioni_pendenti',
-    area: 'operativa',
-    titolo: 'Iscrizioni pendenti',
-    descrizione: 'n da approvare',
-    destinazioneClick: '/richieste-iscrizione',
-    cliccabile: true,
+    codice: 'richieste_iscrizione',
+    gruppo: 'da_fare',
+    destinazione: '/richieste-iscrizione',
     icona: 'UserPlus',
   },
   {
     codice: 'richieste_private',
-    area: 'operativa',
-    titolo: 'Richieste lezioni private',
-    descrizione: 'n da approvare',
-    destinazioneClick: '/lezioni-private?tab=da_approvare',
-    cliccabile: true,
+    gruppo: 'da_fare',
+    destinazione: '/lezioni-private?tab=richieste',
     icona: 'MessageSquarePlus',
   },
   {
+    codice: 'fatture_scadenza',
+    gruppo: 'da_fare',
+    destinazione: '/fatture?filtro=da_pagare',
+    icona: 'AlertTriangle',
+  },
+
+  // ─── Oggi: cosa succede nelle prossime ore ──────────────
+  {
+    codice: 'agenda_giorno',
+    gruppo: 'oggi',
+    destinazione: null,
+    icona: 'Clock',
+  },
+  {
+    codice: 'compleanni_oggi',
+    gruppo: 'oggi',
+    destinazione: null,
+    icona: 'Cake',
+  },
+  {
+    codice: 'compleanni_settimana',
+    gruppo: 'oggi',
+    destinazione: '/atleti',
+    icona: 'Gift',
+  },
+  {
     codice: 'istruttori_oggi',
-    area: 'operativa',
-    titolo: 'Istruttori disponibili oggi',
-    descrizione: 'lista con ore',
-    destinazioneClick: '/planning-istruttori',
-    cliccabile: true,
+    gruppo: 'oggi',
+    destinazione: '/istruttori',
+    icona: 'UserCheck',
+  },
+  {
+    codice: 'comunicazione_rapida',
+    gruppo: 'oggi',
+    destinazione: null,
+    icona: 'Send',
+  },
+
+  // ─── Andamento: numeri da tenere d'occhio ───────────────
+  {
+    codice: 'kpi_atleti_attivi',
+    gruppo: 'andamento',
+    destinazione: '/atleti?filtro=attivi',
+    icona: 'Users',
+  },
+  {
+    codice: 'kpi_corsi_attivi',
+    gruppo: 'andamento',
+    destinazione: '/corsi',
+    icona: 'BookOpen',
+  },
+  {
+    codice: 'kpi_prossime_gare',
+    gruppo: 'andamento',
+    destinazione: '/gare',
+    icona: 'Trophy',
+  },
+  {
+    codice: 'kpi_da_incassare',
+    gruppo: 'andamento',
+    destinazione: '/fatture?filtro=da_pagare',
+    icona: 'CreditCard',
+  },
+  {
+    codice: 'prossime_gare',
+    gruppo: 'andamento',
+    destinazione: '/gare',
+    icona: 'CalendarCheck',
+  },
+  {
+    codice: 'medagliere',
+    gruppo: 'andamento',
+    destinazione: '/medagliere',
+    icona: 'Medal',
+  },
+  {
+    codice: 'ultime_iscrizioni',
+    gruppo: 'andamento',
+    destinazione: '/atleti',
     icona: 'UserCheck2',
   },
   {
-    codice: 'carico_istruttori',
-    area: 'operativa',
-    titolo: 'Carico ore istruttori',
-    descrizione: 'grafico settimana',
-    destinazioneClick: '/istruttori?vista=carico',
-    cliccabile: true,
-    icona: 'PieChart',
-  },
-  {
-    codice: 'presenze_settimana',
-    area: 'operativa',
-    titolo: 'Presenze settimana',
-    descrizione: 'percent per corso',
-    destinazioneClick: '/presenze?vista=settimana',
-    cliccabile: true,
-    icona: 'Percent',
-  },
-
-  // GHIACCIO (2)
-  {
-    codice: 'occupazione_ghiaccio',
-    area: 'ghiaccio',
-    titolo: 'Occupazione ghiaccio',
-    descrizione: 'percent slot pieni settimana',
-    destinazioneClick: '/disponibilita-ghiaccio',
-    cliccabile: true,
-    icona: 'Thermometer',
-  },
-  {
-    codice: 'slot_non_assegnati',
-    area: 'ghiaccio',
-    titolo: 'Slot non assegnati',
-    descrizione: 'n ore prenotate non usate',
-    destinazioneClick: '/planning-settimana?filtro=buchi',
-    cliccabile: true,
-    icona: 'Timer',
-  },
-
-  // COMUNICAZIONI (3)
-  {
-    codice: 'comunicazione_rapida',
-    area: 'comunicazioni',
-    titolo: 'Comunicazione rapida',
-    descrizione: 'widget di invio',
-    destinazioneClick: '',
-    cliccabile: false,
-    icona: 'Send',
-  },
-  {
     codice: 'ultime_comunicazioni',
-    area: 'comunicazioni',
-    titolo: 'Ultime comunicazioni',
-    descrizione: 'lista delle 5 recenti',
-    destinazioneClick: '/comunicazioni',
-    cliccabile: true,
+    gruppo: 'andamento',
+    destinazione: '/comunicazioni',
     icona: 'Inbox',
   },
+];
+
+export const GRUPPI: GruppoConfig[] = [
   {
-    codice: 'rsvp_scaduti',
-    area: 'comunicazioni',
-    titolo: 'Presenze attese',
-    descrizione: 'n presenze previste senza assenza segnalata',
-    destinazioneClick: '/comunicazioni?filtro=rsvp_scaduti',
-    cliccabile: true,
-    icona: 'MailWarning',
+    codice: 'da_fare',
+    chiave_label: 'roles.dashboard_cards.gruppi.da_fare',
+    classi_intestazione: 'bg-amber-50 text-amber-800 border-amber-200',
+  },
+  {
+    codice: 'oggi',
+    chiave_label: 'roles.dashboard_cards.gruppi.oggi',
+    classi_intestazione: 'bg-blue-50 text-blue-800 border-blue-200',
+  },
+  {
+    codice: 'andamento',
+    chiave_label: 'roles.dashboard_cards.gruppi.andamento',
+    classi_intestazione: 'bg-emerald-50 text-emerald-800 border-emerald-200',
   },
 ];
 
-export const AREE: AreaConfig[] = [
-  { codice: 'finanziaria', label: 'Area Finanziaria', colore: 'emerald' },
-  { codice: 'atleti', label: 'Area Atleti', colore: 'blue' },
-  { codice: 'sportiva', label: 'Area Sportiva', colore: 'amber' },
-  { codice: 'operativa', label: 'Area Operativa', colore: 'purple' },
-  { codice: 'ghiaccio', label: 'Area Ghiaccio', colore: 'cyan' },
-  { codice: 'comunicazioni', label: 'Area Comunicazioni', colore: 'rose' },
+/** Il presidente non c'è: la sua Dashboard è un'altra pagina. */
+export const RUOLI_DASHBOARD: RuoloConfig[] = [
+  { codice: 'segreteria', chiave_label: 'roles.dashboard_cards.ruoli.segreteria' },
+  { codice: 'dt', chiave_label: 'roles.dashboard_cards.ruoli.dt' },
+  { codice: 'istruttore', chiave_label: 'roles.dashboard_cards.ruoli.istruttore' },
+  { codice: 'aiuto_monitore', chiave_label: 'roles.dashboard_cards.ruoli.aiuto_monitore' },
 ];
 
-export const RUOLI_DASHBOARD: RuoloConfig[] = [
-  { codice: 'presidente', label: 'Presidente' },
-  { codice: 'segreteria', label: 'Segreteria' },
-  { codice: 'dt', label: 'Direttore Tecnico' },
-  { codice: 'istruttore', label: 'Istruttore' },
-  { codice: 'aiuto_monitore', label: 'Aiuto Monitore' },
-];
+export const TUTTI_I_CODICI: string[] = CARDS.map((c) => c.codice);
+
+/**
+ * Valori di partenza per ruolo.
+ * Valgono finché il club non ha mai configurato la matrice: una tabella vuota
+ * significa «mai configurato», non «tutto spento».
+ */
+export const CARDS_DEFAULT_PER_RUOLO: Record<string, string[]> = {
+  // Chi tiene la segreteria: iscrizioni, soldi, compleanni, comunicazioni.
+  segreteria: [
+    'richieste_iscrizione',
+    'fatture_scadenza',
+    'compleanni_oggi',
+    'compleanni_settimana',
+    'agenda_giorno',
+    'comunicazione_rapida',
+    'ultime_comunicazioni',
+  ],
+  // Direzione tecnica: niente fatture, niente iscrizioni.
+  dt: [
+    'richieste_private',
+    'agenda_giorno',
+    'istruttori_oggi',
+    'compleanni_oggi',
+    'compleanni_settimana',
+    'prossime_gare',
+    'kpi_prossime_gare',
+  ],
+  // Chi sta sul ghiaccio: la propria giornata e i compleanni.
+  istruttore: ['agenda_giorno', 'compleanni_oggi', 'compleanni_settimana'],
+  aiuto_monitore: ['agenda_giorno', 'compleanni_oggi', 'compleanni_settimana'],
+  // Amministrazione: tutto.
+  admin: TUTTI_I_CODICI,
+  superadmin: TUTTI_I_CODICI,
+};
+
+/** Vero se quel ruolo vede quel riquadro quando la matrice non è mai stata configurata. */
+export function card_visibile_di_default(ruolo: string | null | undefined, codice: string): boolean {
+  if (!ruolo) return false;
+  const def = CARDS_DEFAULT_PER_RUOLO[ruolo];
+  if (!def) return false;
+  return def.includes(codice);
+}
