@@ -1751,20 +1751,37 @@ const DashboardPage: React.FC = () => {
             )}
           </div>
 
-          {/* Box comunicazione rapida */}
+          {/* Comunicazione rapida: sta in una finestra, così la pagina resta corta */}
           {puo_comunicare ? (
-            <div id="box-comunicazione">
-              <BoxComunicazione
-                atleti={atleti}
-                istruttori={istruttori}
-                monitori={monitori}
-                corsi={corsi}
-                gare={gare}
-                preset={com_preset}
-                on_preset_consumed={() => set_com_preset(null)}
-              />
-            </div>
+            <Dialog open={com_aperta} onOpenChange={(v) => {
+              set_com_aperta(v);
+              if (!v) set_com_preset(null);
+            }}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="w-full justify-start">
+                  <Send className="w-4 h-4 mr-2" />
+                  {td("comunicazione.apri", { defaultValue: "Scrivi una comunicazione" })}
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>
+                    {td("comunicazione.apri", { defaultValue: "Scrivi una comunicazione" })}
+                  </DialogTitle>
+                </DialogHeader>
+                <BoxComunicazione
+                  atleti={atleti}
+                  istruttori={istruttori}
+                  monitori={monitori}
+                  corsi={corsi}
+                  gare={gare}
+                  preset={com_preset}
+                  on_preset_consumed={() => set_com_preset(null)}
+                />
+              </DialogContent>
+            </Dialog>
           ) : (
+
             <NotaPermesso testo="Solo lo staff di segreteria e direzione può inviare comunicazioni rapide." />
           )}
         </div>
