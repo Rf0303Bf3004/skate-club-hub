@@ -872,10 +872,10 @@ const LezioniPrivatePage: React.FC = () => {
       ora_inizio: time,
       ora_fine: end_time,
       durata_minuti: slot_minuti,
-      atleti_ids: richiesta_pendente ? [richiesta_pendente.atleta_id] : [],
+      atleti_ids: [],
       ricorrente: false,
       costo_totale: costo,
-      note: richiesta_pendente?.note_richiesta || "",
+      note: "",
       has_ice,
     });
     set_form_open(true);
@@ -894,9 +894,6 @@ const LezioniPrivatePage: React.FC = () => {
 
   const handle_modifica = () => {
     if (!detail_slot?.lesson) return;
-    // Modificare una lezione esistente non è mai la risposta a una richiesta:
-    // la richiesta in sospeso va scollegata subito.
-    set_richiesta_pendente(null);
     const lesson = detail_slot.lesson;
     set_form_data({
       istruttore_id: selected_istruttore,
@@ -1053,12 +1050,7 @@ const LezioniPrivatePage: React.FC = () => {
           slot_minuti={slot_minuti}
           on_change={(k, v) => set_form_data((p) => ({ ...p, [k]: v }))}
           on_submit={handle_submit}
-          on_close={() => {
-            set_form_open(false);
-            // Chiudere il modulo annulla l'accettazione in corso: altrimenti
-            // la prossima lezione finirebbe collegata alla richiesta sbagliata.
-            set_richiesta_pendente(null);
-          }}
+          on_close={() => set_form_open(false)}
           loading={saving}
         />
       )}
@@ -1106,23 +1098,9 @@ const LezioniPrivatePage: React.FC = () => {
           <NotaPermesso testo="Puoi consultare le lezioni ma non hai i permessi per crearle, modificarle o annullarle." />
         )}
 
-        <Tabs
-          value={tab}
-          onValueChange={(v) => {
-            set_tab(v as TabLezioni);
-            set_richiesta_pendente(null);
-          }}
-        >
+        <Tabs value={tab} onValueChange={(v) => set_tab(v as TabLezioni)}>
           <TabsList>
             <TabsTrigger value="calendario">{tc("richieste_private.tab_calendario")}</TabsTrigger>
-            <TabsTrigger value="da_approvare">
-              {tc("lezioni_da_approvare.tab")}
-              {n_da_approvare > 0 && (
-                <span className="ml-2 text-xs font-bold px-1.5 py-0.5 rounded-full bg-primary/15 text-primary">
-                  {n_da_approvare}
-                </span>
-              )}
-            </TabsTrigger>
             <TabsTrigger value="richieste">
               {tc("richieste_private.tab_richieste")}
               {n_in_attesa > 0 && (
@@ -1134,16 +1112,6 @@ const LezioniPrivatePage: React.FC = () => {
           </TabsList>
 
           <TabsContent value="calendario" className="mt-4 space-y-6">
-        {richiesta_pendente && (
-          <div className="flex items-center justify-between gap-3 flex-wrap rounded-xl border border-primary/40 bg-primary/5 px-4 py-3">
-            <span className="text-sm text-foreground">
-              {tc("richieste_private.accetta_in_corso", { nome: nome_atleta_richiesta(richiesta_pendente.atleta_id) })}
-            </span>
-            <Button variant="outline" size="sm" onClick={() => set_richiesta_pendente(null)}>
-              {tc("richieste_private.annulla_accettazione")}
-            </Button>
-          </div>
-        )}
 
         <div className="w-64">
           <Select value={selected_istruttore} onValueChange={set_selected_istruttore}>
@@ -1328,17 +1296,13 @@ const LezioniPrivatePage: React.FC = () => {
         )}
           </TabsContent>
 
-          <TabsContent value="da_approvare" className="mt-4">
-            <LezioniDaApprovareTab puo_gestire={puo_gestire_sportivo} />
-          </TabsContent>
-
           <TabsContent value="richieste" className="mt-4">
             <RichiesteLezioniPrivateTab
               atleti={atleti as any}
               istruttori={istruttori as any}
               puo_gestire={puo_gestire_sportivo}
-              richiesta_pendente_id={richiesta_pendente?.id ?? null}
-              on_accetta={handle_accetta_richiesta}
+              puo_approvare={puo_approvare_richieste}
+              durata_default={slot_minuti}
             />
           </TabsContent>
         </Tabs>
