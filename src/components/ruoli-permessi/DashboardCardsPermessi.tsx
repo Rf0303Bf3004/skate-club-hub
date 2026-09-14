@@ -84,6 +84,14 @@ const DashboardCardsPermessi: React.FC = () => {
         .from("dashboard_card_permessi")
         .upsert(rows, { onConflict: "club_id,ruolo,codice_card" });
       if (error) throw error;
+      // Righe con codici che non esistono più: via, o restano in tabella e
+      // fanno risultare «configurato» anche dove non lo è.
+      const { error: err_vecchie } = await supabase
+        .from("dashboard_card_permessi")
+        .delete()
+        .eq("club_id", club_id)
+        .not("codice_card", "in", `(${TUTTI_I_CODICI.join(",")})`);
+      if (err_vecchie) throw err_vecchie;
       qc.invalidateQueries({ queryKey: ["dashboard_card_permessi_admin"] });
       qc.invalidateQueries({ queryKey: ["dashboard_card_permessi_self"] });
       toast({ title: t("roles.dashboard_cards.toast_saved_title"), description: t("roles.dashboard_cards.toast_saved_desc") });
