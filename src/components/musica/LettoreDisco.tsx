@@ -3,13 +3,14 @@ import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   ChevronFirst,
-  Pencil,
+  Flag,
   Pause,
   Play,
   Plus,
   Repeat,
   RotateCcw,
   RotateCw,
+  Settings2,
   SkipBack,
   SkipForward,
   Trash2,
@@ -45,6 +46,9 @@ import {
  *
  * Pensato per l'uso a bordo pista, in piedi e con i guanti: comandi grandi,
  * barra trascinabile, dissolvenze per non tagliare l'audio dell'impianto.
+ *
+ * Il comando dei passaggi sta in una riga sua e non cambia mai posto: un solo
+ * bottone che prima segna l'inizio e poi chiude il passaggio dove si preme.
  */
 
 const VELOCITA = [0.5, 0.75, 0.9, 1] as const;
@@ -57,6 +61,30 @@ const mmss = (secondi: number) => {
   const s = Math.floor(secondi % 60);
   return `${m}:${String(s).padStart(2, "0")}`;
 };
+
+/** Nell'editor servono i decimi: su una musica mezzo secondo si sente. */
+const mmss_preciso = (secondi: number) => {
+  if (!Number.isFinite(secondi) || secondi < 0) return "0:00.0";
+  const m = Math.floor(secondi / 60);
+  const s = secondi - m * 60;
+  return `${m}:${s.toFixed(1).padStart(4, "0")}`;
+};
+
+/** Legge "1:12.5", "72.5" o "1:12". Restituisce null se non si capisce. */
+const leggi_tempo = (testo: string): number | null => {
+  const pulito = testo.trim().replace(",", ".");
+  if (!pulito) return null;
+  const parti = pulito.split(":");
+  if (parti.length > 2) return null;
+  const minuti = parti.length === 2 ? Number(parti[0]) : 0;
+  const secondi = Number(parti[parti.length - 1]);
+  if (!Number.isFinite(minuti) || !Number.isFinite(secondi)) return null;
+  if (minuti < 0 || secondi < 0) return null;
+  if (parti.length === 2 && secondi >= 60) return null;
+  return minuti * 60 + secondi;
+};
+
+const arrotonda = (secondi: number) => Math.round(secondi * 10) / 10;
 
 /** Volume ricordato fra una sessione e l'altra: mai far saltare il lettore. */
 const leggi_volume = (): number => {
@@ -100,13 +128,16 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
   const [silenziato, set_silenziato] = React.useState(false);
   const [trascina, set_trascina] = React.useState<number | null>(null);
   const [loop_punto, set_loop_punto] = React.useState<PuntoProgramma | null>(null);
-  const [dialogo_punto, set_dialogo_punto] = React.useState(false);
-  const [nome_punto, set_nome_punto] = React.useState("");
   const [salvataggio_punto, set_salvataggio_punto] = React.useState(false);
-  const [punto_modifica, set_punto_modifica] = React.useState<PuntoProgramma | null>(null);
-  const [nome_modifica, set_nome_modifica] = React.useState("");
-  // Punto appena segnato di cui si può ancora indicare la fine (ripetizione).
+  // Passaggio appena segnato di cui si può ancora indicare la fine.
   const [punto_aperto, set_punto_aperto] = React.useState<PuntoProgramma | null>(null);
+
+  // ---- editor di un passaggio già segnato ----
+  const [punto_modifica, set_punto_modifica] = React.useState<PuntoProgramma | null>(null);
+  const [m_nome, set_m_nome] = React.useState("");
+  const [m_inizio, set_m_inizio] = React.useState("");
+  const [m_fine, set_m_fine] = React.useState("");
+
   // Il rinnovo del collegamento non deve entrare in ciclo: due tentativi e basta.
   const tentativi_firma = React.useRef(0);
 
@@ -156,6 +187,12 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
     [punti_disegnati],
   );
 
+  /** Numero mostrato all'utente per un passaggio (ordine per tempo). */
+  const numero_di = React.useCallback(
+    (p: PuntoProgramma | null) =>
+      p ? (punti_disegnati.find((d) => d.punto.id === p.id)?.numero ?? punti_disegnati.length + 1) : 0,
+    [punti_disegnati],
+  );
 
   // Velocità e volume devono sopravvivere al rinnovo del collegamento, che
   // ricarica l'elemento audio: si rileggono sempre da questi riferimenti.
@@ -225,6 +262,7 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
     set_posizione(0);
     set_loop_punto(null);
     set_punto_aperto(null);
+    set_punto_modifica(null);
     set_in_riproduzione(false);
     tentativi_firma.current = 0;
     void rinnova(0);
@@ -377,9 +415,21 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
     set_posizione(a.currentTime);
   }, []);
 
+  /** Premere il passaggio ci porta lì e fa partire la musica. Basta. */
   const usa_punto = (p: PuntoProgramma) => {
-    if (p.secondi_fine != null) set_loop_punto(p);
-    else set_loop_punto(null);
+    vai_a(p.secondi);
+    const a = audio();
+    if (a?.paused) void avvia();
+  };
+
+  /** La ripetizione si accende e si spegne a mano, passaggio per passaggio. */
+  const alterna_ripetizione = (p: PuntoProgramma) => {
+    if (loop_punto?.id === p.id) {
+      set_loop_punto(null);
+      return;
+    }
+    if (p.secondi_fine == null) return;
+    set_loop_punto(p);
     vai_a(p.secondi);
     const a = audio();
     if (a?.paused) void avvia();
@@ -411,7 +461,7 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
       if (a.currentTime >= l.secondi_fine) a.currentTime = l.secondi;
     }, 30);
     return () => window.clearInterval(id);
-  }, [loop_punto?.id, loop_punto?.secondi_fine]);
+  }, [loop_punto?.id, loop_punto?.secondi_fine, loop_punto?.secondi]);
 
   // ---- scorciatoie da tastiera (portatile) ----
   React.useEffect(() => {
@@ -419,7 +469,7 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
       const bersaglio = e.target as HTMLElement | null;
       const tag = bersaglio?.tagName?.toLowerCase();
       if (tag === "input" || tag === "textarea" || tag === "select" || bersaglio?.isContentEditable) return;
-      if (dialogo_punto || punto_modifica) return;
+      if (punto_modifica) return;
       if (document.querySelector("[role='dialog'],[role='alertdialog']")) return;
       if (e.code === "Space") {
         e.preventDefault();
@@ -434,7 +484,7 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
     };
     window.addEventListener("keydown", gestisci);
     return () => window.removeEventListener("keydown", gestisci);
-  }, [alterna_play, sposta_di, dialogo_punto, punto_modifica]);
+  }, [alterna_play, sposta_di, punto_modifica]);
 
   React.useEffect(() => () => ferma_dissolvenza(), []);
 
@@ -464,18 +514,19 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
     vai_a(secondi);
   };
 
-  /** Passo 1: segna l'inizio. Il nome si chiede una volta sola, qui. */
-  const salva_punto = async () => {
-    const nome = nome_punto.trim();
-    if (!nome) return;
+  /**
+   * Un tocco solo: il passaggio nasce dove sta la musica, senza fermarla e
+   * senza chiedere niente. Il nome si mette dopo, se serve.
+   */
+  const segna_passaggio = async () => {
     set_salvataggio_punto(true);
     try {
-      const secondi = Math.floor(audio()?.currentTime ?? posizione);
+      const secondi = arrotonda(audio()?.currentTime ?? posizione);
       const { data, error } = await supabase
         .from("punti_programma")
         .insert({
           programma_id: programma.id,
-          nome,
+          nome: t("musica.passaggio_senza_nome"),
           secondi,
           ordine: punti.length,
         } as any)
@@ -483,21 +534,21 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
         .single();
       if (error) throw error;
       await query_client.invalidateQueries({ queryKey: ["punti_programma", programma.id] });
+      set_errore_audio(null);
       set_punto_aperto((data ?? null) as PuntoProgramma | null);
-      set_dialogo_punto(false);
-      set_nome_punto("");
     } catch (err) {
+      set_errore_audio(t("musica.errore_salva_punto"));
       void segnala_errore("LettoreDisco", t("musica.segna_punto"), err);
     } finally {
       set_salvataggio_punto(false);
     }
   };
 
-  /** Passo 2: segna la fine sullo stesso punto, che diventa una ripetizione. */
-  const segna_fine = async () => {
+  /** Lo stesso bottone, un attimo dopo: il passaggio finisce qui. */
+  const chiudi_passaggio = async () => {
     const aperto = punto_aperto;
     if (!aperto) return;
-    const fine = Math.floor(audio()?.currentTime ?? posizione);
+    const fine = arrotonda(audio()?.currentTime ?? posizione);
     if (fine <= aperto.secondi) {
       set_errore_audio(t("musica.fine_prima_inizio"));
       return;
@@ -511,35 +562,82 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
         .eq("programma_id", programma.id);
       if (error) throw error;
       await query_client.invalidateQueries({ queryKey: ["punti_programma", programma.id] });
-      set_loop_punto({ ...aperto, secondi_fine: fine });
+      set_errore_audio(null);
       set_punto_aperto(null);
     } catch (err) {
-      void segnala_errore("LettoreDisco", t("musica.segna_fine_qui"), err);
+      set_errore_audio(t("musica.errore_salva_punto"));
+      void segnala_errore("LettoreDisco", t("musica.chiudi_qui_azione"), err);
     } finally {
       set_salvataggio_punto(false);
     }
   };
 
-  /** Rinomina di un punto già segnato. */
-  const rinomina_punto = async () => {
+  // ---- editor del passaggio ----
+  const apri_modifica = (p: PuntoProgramma) => {
+    set_punto_modifica(p);
+    set_m_nome(p.nome);
+    set_m_inizio(mmss_preciso(p.secondi));
+    set_m_fine(p.secondi_fine != null ? mmss_preciso(p.secondi_fine) : "");
+  };
+
+  const m_inizio_sec = leggi_tempo(m_inizio);
+  const m_fine_vuota = m_fine.trim() === "";
+  const m_fine_sec = m_fine_vuota ? null : leggi_tempo(m_fine);
+
+  const m_errore: string | null = React.useMemo(() => {
+    if (!punto_modifica) return null;
+    if (!m_nome.trim()) return t("musica.nome_obbligatorio");
+    if (m_inizio_sec == null) return t("musica.formato_tempo_errato");
+    if (!m_fine_vuota && m_fine_sec == null) return t("musica.formato_tempo_errato");
+    if (durata > 0 && m_inizio_sec > durata)
+      return t("musica.fuori_durata", { durata: mmss(durata) });
+    if (m_fine_sec != null && durata > 0 && m_fine_sec > durata)
+      return t("musica.fuori_durata", { durata: mmss(durata) });
+    if (m_fine_sec != null && m_fine_sec <= m_inizio_sec) return t("musica.fine_prima_inizio");
+    return null;
+  }, [punto_modifica, m_nome, m_inizio_sec, m_fine_vuota, m_fine_sec, durata, t]);
+
+  /** Sposta un campo di qualche decimo senza dover riscrivere il tempo. */
+  const sposta_campo = (quale: "inizio" | "fine", delta: number) => {
+    const attuale = quale === "inizio" ? m_inizio_sec : m_fine_sec;
+    if (attuale == null) return;
+    const massimo = durata > 0 ? durata : attuale + delta;
+    const nuovo = arrotonda(Math.min(Math.max(0, attuale + delta), massimo));
+    if (quale === "inizio") set_m_inizio(mmss_preciso(nuovo));
+    else set_m_fine(mmss_preciso(nuovo));
+  };
+
+  const prendi_da_qui = (quale: "inizio" | "fine") => {
+    const ora = arrotonda(audio()?.currentTime ?? posizione);
+    if (quale === "inizio") set_m_inizio(mmss_preciso(ora));
+    else set_m_fine(mmss_preciso(ora));
+  };
+
+  const salva_modifica = async () => {
     const p = punto_modifica;
-    const nome = nome_modifica.trim();
-    if (!p || !nome) return;
+    if (!p || m_errore || m_inizio_sec == null) return;
     set_salvataggio_punto(true);
     try {
+      const aggiornato = {
+        nome: m_nome.trim(),
+        secondi: arrotonda(m_inizio_sec),
+        secondi_fine: m_fine_sec != null ? arrotonda(m_fine_sec) : null,
+      };
       const { error } = await supabase
         .from("punti_programma")
-        .update({ nome } as any)
+        .update(aggiornato as any)
         .eq("id", p.id)
         .eq("programma_id", programma.id);
       if (error) throw error;
       await query_client.invalidateQueries({ queryKey: ["punti_programma", programma.id] });
-      if (loop_punto?.id === p.id) set_loop_punto({ ...loop_punto, nome });
-      if (punto_aperto?.id === p.id) set_punto_aperto({ ...punto_aperto, nome });
+      const nuovo = { ...p, ...aggiornato } as PuntoProgramma;
+      // La ripetizione in corso deve seguire i nuovi tempi, o smettere se la fine è sparita.
+      if (loop_punto?.id === p.id) set_loop_punto(nuovo.secondi_fine != null ? nuovo : null);
+      if (punto_aperto?.id === p.id) set_punto_aperto(nuovo.secondi_fine != null ? null : nuovo);
       set_punto_modifica(null);
-      set_nome_modifica("");
     } catch (err) {
-      void segnala_errore("LettoreDisco", t("musica.errore_rinomina_punto"), err);
+      set_errore_audio(t("musica.errore_salva_punto"));
+      void segnala_errore("LettoreDisco", t("musica.modifica_punto"), err);
     } finally {
       set_salvataggio_punto(false);
     }
@@ -556,6 +654,7 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
       await query_client.invalidateQueries({ queryKey: ["punti_programma", programma.id] });
       if (loop_punto?.id === p.id) set_loop_punto(null);
       if (punto_aperto?.id === p.id) set_punto_aperto(null);
+      if (punto_modifica?.id === p.id) set_punto_modifica(null);
     } catch (err) {
       void segnala_errore("LettoreDisco", t("musica.errore_elimina_punto"), err);
     }
@@ -575,9 +674,22 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
 
   const ALTEZZA_FILA = 22; // px fra una fila di numeri e quella sopra
 
+  /** Una riga sola sotto il comando: dice sempre cosa sta succedendo. */
+  const messaggio_passaggi = punto_aperto
+    ? t("musica.passaggio_aperto", {
+        numero: numero_di(punto_aperto),
+        inizio: mmss(punto_aperto.secondi),
+      })
+    : loop_punto
+      ? t("musica.sta_ripetendo", {
+          nome: loop_punto.nome,
+          inizio: mmss(loop_punto.secondi),
+          fine: mmss(loop_punto.secondi_fine ?? 0),
+        })
+      : t("musica.suggerimento_passaggi");
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 border-t-2 border-primary bg-card p-4 shadow-2xl">
+    <div className="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto border-t-2 border-primary bg-card p-4 shadow-2xl">
       <div className="mx-auto flex max-w-5xl flex-col gap-3">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
@@ -728,7 +840,7 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
           </Button>
         </div>
 
-        {/* seconda fila: velocità, volume, punti */}
+        {/* seconda fila: velocità e volume */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
             {VELOCITA.map((v) => (
@@ -765,28 +877,58 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
               className="h-10 w-full cursor-pointer accent-primary"
             />
           </div>
-          <Button size="lg" variant="outline" className="h-14" onClick={() => set_dialogo_punto(true)}>
-            <Plus className="mr-2 h-5 w-5" />
-            {t("musica.segna_inizio")}
-          </Button>
-          {punto_aperto && (
-            <Button
-              size="lg"
-              variant="secondary"
-              className="h-14"
-              disabled={salvataggio_punto}
-              onClick={() => void segna_fine()}
-            >
-              <Repeat className="mr-2 h-5 w-5" />
-              {t("musica.segna_fine_qui", { nome: punto_aperto.nome })}
-            </Button>
-          )}
-          {loop_punto && (
-            <Button size="lg" variant="secondary" className="h-14" onClick={() => set_loop_punto(null)}>
-              <Repeat className="mr-2 h-5 w-5" />
-              {t("musica.ferma_ripetizione")}
-            </Button>
-          )}
+        </div>
+
+        {/* terza fila: i passaggi. Sta in un riquadro suo e il comando principale
+            è sempre il primo elemento: non si sposta e non va mai a capo da solo. */}
+        <div className="rounded-lg border-2 border-border p-3">
+          <div className="flex flex-wrap items-center gap-2">
+            {punto_aperto ? (
+              <>
+                <Button
+                  size="lg"
+                  className="h-14 w-full sm:w-auto sm:min-w-[18rem]"
+                  disabled={salvataggio_punto}
+                  onClick={() => void chiudi_passaggio()}
+                >
+                  <Flag className="mr-2 h-5 w-5" />
+                  {t("musica.chiudi_qui", { numero: numero_di(punto_aperto) })}
+                </Button>
+                <Button
+                  size="lg"
+                  variant="ghost"
+                  className="h-14"
+                  disabled={salvataggio_punto}
+                  onClick={() => set_punto_aperto(null)}
+                >
+                  {t("musica.lascia_senza_fine")}
+                </Button>
+              </>
+            ) : (
+              <Button
+                size="lg"
+                variant="outline"
+                className="h-14 w-full sm:w-auto sm:min-w-[18rem]"
+                disabled={salvataggio_punto || !url}
+                onClick={() => void segna_passaggio()}
+              >
+                <Plus className="mr-2 h-5 w-5" />
+                {t("musica.segna_punto")}
+              </Button>
+            )}
+            {loop_punto && (
+              <Button
+                size="lg"
+                variant="secondary"
+                className="h-14 sm:ml-auto"
+                onClick={() => set_loop_punto(null)}
+              >
+                <Repeat className="mr-2 h-5 w-5" />
+                {t("musica.ferma_ripetizione")}
+              </Button>
+            )}
+          </div>
+          <p className="mt-2 text-sm text-muted-foreground">{messaggio_passaggi}</p>
         </div>
 
         <p className="text-xs text-muted-foreground">{t("musica.scorciatoie")}</p>
@@ -806,7 +948,11 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
                 <div
                   key={p.id}
                   className={`flex items-center gap-1 rounded-lg border p-1 ${
-                    loop_punto?.id === p.id ? "border-primary bg-primary/10" : "border-border"
+                    loop_punto?.id === p.id
+                      ? "border-primary bg-primary/10"
+                      : punto_aperto?.id === p.id
+                        ? "border-dashed border-primary"
+                        : "border-border"
                   }`}
                 >
                   <Button variant="ghost" className="h-12" onClick={() => usa_punto(p)}>
@@ -816,22 +962,41 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
                     >
                       {numero}
                     </span>
-                    {p.secondi_fine != null && <Repeat className="mr-2 h-4 w-4" />}
                     {p.nome} · {mmss(p.secondi)}
                     {p.secondi_fine != null ? ` – ${mmss(p.secondi_fine)}` : ""}
                   </Button>
 
                   <Button
+                    variant={loop_punto?.id === p.id ? "default" : "ghost"}
+                    className="h-12 w-12 p-0"
+                    disabled={p.secondi_fine == null}
+                    aria-label={
+                      loop_punto?.id === p.id
+                        ? t("musica.ferma_ripetizione")
+                        : p.secondi_fine == null
+                          ? t("musica.ripetizione_serve_fine")
+                          : t("musica.avvia_ripetizione")
+                    }
+                    title={
+                      loop_punto?.id === p.id
+                        ? t("musica.ferma_ripetizione")
+                        : p.secondi_fine == null
+                          ? t("musica.ripetizione_serve_fine")
+                          : t("musica.avvia_ripetizione")
+                    }
+                    onClick={() => alterna_ripetizione(p)}
+                  >
+                    <Repeat className="h-5 w-5" />
+                  </Button>
+
+                  <Button
                     variant="ghost"
                     className="h-12 w-12 p-0"
-                    aria-label={t("musica.rinomina_punto")}
-                    title={t("musica.rinomina_punto")}
-                    onClick={() => {
-                      set_punto_modifica(p);
-                      set_nome_modifica(p.nome);
-                    }}
+                    aria-label={t("musica.modifica_punto")}
+                    title={t("musica.modifica_punto")}
+                    onClick={() => apri_modifica(p)}
                   >
-                    <Pencil className="h-5 w-5" />
+                    <Settings2 className="h-5 w-5" />
                   </Button>
                   <ConfirmButton
                     titolo={t("musica.elimina_punto")}
@@ -886,52 +1051,183 @@ const LettoreDisco: React.FC<Props> = ({ programma, titolo_atleta, onClose }) =>
         />
       </div>
 
-      <Dialog open={dialogo_punto} onOpenChange={set_dialogo_punto}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("musica.segna_inizio")}</DialogTitle>
-          </DialogHeader>
-          <Input
-            value={nome_punto}
-            onChange={(e) => set_nome_punto(e.target.value)}
-            placeholder={t("musica.nome_punto")}
-          />
-          <p className="text-sm text-muted-foreground">{t("musica.ripetizione_spiegazione")}</p>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => set_dialogo_punto(false)}>
-              {t("actions.cancel")}
-            </Button>
-            <Button onClick={() => void salva_punto()} disabled={!nome_punto.trim() || salvataggio_punto}>
-              {t("musica.segna_inizio")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
+      {/* editor del passaggio: nome, inizio, fine e ripetizione */}
       <Dialog
         open={!!punto_modifica}
         onOpenChange={(aperto) => {
           if (!aperto) set_punto_modifica(null);
         }}
       >
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{t("musica.rinomina_punto")}</DialogTitle>
+            <DialogTitle>{t("musica.modifica_punto")}</DialogTitle>
           </DialogHeader>
-          <Input
-            value={nome_modifica}
-            onChange={(e) => set_nome_modifica(e.target.value)}
-            placeholder={t("musica.nome_punto")}
-          />
+
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium">{t("musica.nome_del_passaggio")}</label>
+              <Input
+                value={m_nome}
+                onChange={(e) => set_m_nome(e.target.value)}
+                placeholder={t("musica.nome_punto")}
+              />
+            </div>
+
+            {/* inizio */}
+            <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
+              <label className="text-sm font-medium">{t("musica.campo_inizio")}</label>
+              <div className="flex flex-wrap items-center gap-2">
+                <Input
+                  value={m_inizio}
+                  onChange={(e) => set_m_inizio(e.target.value)}
+                  inputMode="text"
+                  className="h-12 w-28 text-center text-lg tabular-nums"
+                  aria-label={t("musica.campo_inizio")}
+                />
+                <Button variant="outline" className="h-12 w-12 p-0" onClick={() => sposta_campo("inizio", -1)}>
+                  −1s
+                </Button>
+                <Button variant="outline" className="h-12 w-14 p-0" onClick={() => sposta_campo("inizio", -0.1)}>
+                  −0,1
+                </Button>
+                <Button variant="outline" className="h-12 w-14 p-0" onClick={() => sposta_campo("inizio", 0.1)}>
+                  +0,1
+                </Button>
+                <Button variant="outline" className="h-12 w-12 p-0" onClick={() => sposta_campo("inizio", 1)}>
+                  +1s
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="secondary" className="h-11" onClick={() => prendi_da_qui("inizio")}>
+                  {t("musica.prendi_da_qui")}
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="h-11"
+                  disabled={m_inizio_sec == null}
+                  onClick={() => {
+                    if (m_inizio_sec == null) return;
+                    vai_a(m_inizio_sec);
+                    const a = audio();
+                    if (a?.paused) void avvia();
+                  }}
+                >
+                  <Play className="mr-2 h-4 w-4" />
+                  {t("musica.ascolta_da_qui")}
+                </Button>
+              </div>
+            </div>
+
+            {/* fine */}
+            <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
+              <label className="text-sm font-medium">{t("musica.campo_fine")}</label>
+              {m_fine_vuota ? (
+                <>
+                  <p className="text-sm text-muted-foreground">{t("musica.senza_fine")}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button variant="secondary" className="h-11" onClick={() => prendi_da_qui("fine")}>
+                      {t("musica.metti_fine_da_qui")}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-11"
+                      onClick={() => {
+                        const base = m_inizio_sec ?? 0;
+                        const massimo = durata > 0 ? durata : base + 10;
+                        set_m_fine(mmss_preciso(Math.min(base + 10, massimo)));
+                      }}
+                    >
+                      {t("musica.metti_fine_dieci")}
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Input
+                      value={m_fine}
+                      onChange={(e) => set_m_fine(e.target.value)}
+                      inputMode="text"
+                      className="h-12 w-28 text-center text-lg tabular-nums"
+                      aria-label={t("musica.campo_fine")}
+                    />
+                    <Button variant="outline" className="h-12 w-12 p-0" onClick={() => sposta_campo("fine", -1)}>
+                      −1s
+                    </Button>
+                    <Button variant="outline" className="h-12 w-14 p-0" onClick={() => sposta_campo("fine", -0.1)}>
+                      −0,1
+                    </Button>
+                    <Button variant="outline" className="h-12 w-14 p-0" onClick={() => sposta_campo("fine", 0.1)}>
+                      +0,1
+                    </Button>
+                    <Button variant="outline" className="h-12 w-12 p-0" onClick={() => sposta_campo("fine", 1)}>
+                      +1s
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button variant="secondary" className="h-11" onClick={() => prendi_da_qui("fine")}>
+                      {t("musica.prendi_da_qui")}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="h-11 text-destructive"
+                      onClick={() => set_m_fine("")}
+                    >
+                      {t("musica.togli_fine")}
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* ripetizione */}
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-border p-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium">{t("musica.ripeti_in_tondo")}</p>
+                <p className="text-sm text-muted-foreground">
+                  {m_fine_sec == null
+                    ? t("musica.ripetizione_serve_fine")
+                    : punto_modifica && loop_punto?.id === punto_modifica.id
+                      ? t("musica.ripetizione_accesa")
+                      : t("musica.ripetizione_spenta")}
+                </p>
+              </div>
+              <Button
+                variant={
+                  punto_modifica && loop_punto?.id === punto_modifica.id ? "default" : "outline"
+                }
+                className="h-12 flex-shrink-0"
+                disabled={m_fine_sec == null || !!m_errore}
+                onClick={() => {
+                  if (!punto_modifica) return;
+                  if (loop_punto?.id === punto_modifica.id) {
+                    set_loop_punto(null);
+                    return;
+                  }
+                  if (m_inizio_sec == null || m_fine_sec == null) return;
+                  set_loop_punto({
+                    ...punto_modifica,
+                    secondi: arrotonda(m_inizio_sec),
+                    secondi_fine: arrotonda(m_fine_sec),
+                  } as PuntoProgramma);
+                }}
+              >
+                <Repeat className="mr-2 h-5 w-5" />
+                {punto_modifica && loop_punto?.id === punto_modifica.id
+                  ? t("musica.spegni")
+                  : t("musica.accendi")}
+              </Button>
+            </div>
+
+            {m_errore && <p className="text-sm text-destructive">{m_errore}</p>}
+          </div>
+
           <DialogFooter>
             <Button variant="outline" onClick={() => set_punto_modifica(null)}>
               {t("actions.cancel")}
             </Button>
-            <Button
-              onClick={() => void rinomina_punto()}
-              disabled={!nome_modifica.trim() || salvataggio_punto}
-            >
-              {t("musica.salva_nome_punto")}
+            <Button onClick={() => void salva_modifica()} disabled={!!m_errore || salvataggio_punto}>
+              {t("musica.salva_punto")}
             </Button>
           </DialogFooter>
         </DialogContent>
