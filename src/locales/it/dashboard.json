@@ -729,5 +729,8 @@
     "riprova": "Riprova",
     "vedi_tutte_one": "Vedi anche l'altra ({{count}})",
     "vedi_tutte_other": "Vedi tutte ({{count}} in più)"
+  },
+  "comunicazione": {
+    "apri": "Scrivi una comunicazione"
   }
 }

@@ -31,5 +31,8 @@
     "riprova": "Réessayer",
     "vedi_tutte_one": "Voir l'autre ({{count}})",
     "vedi_tutte_other": "Tout voir ({{count}} de plus)"
+  },
+  "comunicazione": {
+    "apri": "Écrire un message"
   }
 }

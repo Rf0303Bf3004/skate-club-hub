@@ -31,5 +31,8 @@
     "riprova": "Try again",
     "vedi_tutte_one": "See the other one ({{count}})",
     "vedi_tutte_other": "See all ({{count}} more)"
+  },
+  "comunicazione": {
+    "apri": "Write a message"
   }
 }
