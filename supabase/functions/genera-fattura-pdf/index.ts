@@ -324,6 +324,9 @@ Deno.serve(async (req) => {
     const byte = new Uint8Array(await blob.arrayBuffer());
 
     let percorso_salvato: string | null = null;
+    if (congela && !puo_congelare) {
+      return json({ error: "congelamento_non_consentito" }, 403);
+    }
     if (congela) {
       const up = await supabase.storage.from(BUCKET_FATTURE).upload(percorso, byte, {
         upsert: true,
@@ -337,17 +340,11 @@ Deno.serve(async (req) => {
       percorso_salvato = percorso;
     }
 
-    let b64 = "";
-    const blocco = 0x8000;
-    for (let i = 0; i < byte.length; i += blocco) {
-      b64 += String.fromCharCode(...byte.subarray(i, i + blocco));
-    }
-
     return json({
       ok: true,
       numero: dati.numero,
       byte: byte.length,
-      pdf_base64: btoa(b64),
+      pdf_base64: in_base64(byte),
       percorso: percorso_salvato,
       congelato: percorso_salvato !== null,
       avvisi,
