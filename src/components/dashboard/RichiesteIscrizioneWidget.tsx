@@ -291,7 +291,9 @@ export const RichiesteIscrizioneWidget: React.FC = () => {
               )}
             </div>
           ))}
+          <RigaVediTutte restanti={totale - visibili.length} to="/richieste-iscrizione" />
         </div>
+
       )}
     </div>
   );
