@@ -154,8 +154,24 @@ Deno.serve(async (req) => {
     if (!f) return json({ error: "forbidden" }, 403);
 
     // --- autorizzazione ---
-    // Chiamata interna fra funzioni: la chiave di servizio come Bearer.
-    const interna = token === service_key;
+    // Due forme di chiamata interna:
+    //  - un'altra funzione server, che presenta la chiave di servizio come Bearer
+    //  - il database, che presenta un gettone usa e getta valido 5 minuti
+    // Il gettone evita di tenere la chiave di servizio dentro i comandi del cron,
+    // dove la vedrebbe chiunque abbia accesso al database.
+    let interna = token === service_key;
+
+    const gettone = String((body as any)?.token_interno ?? "").trim();
+    if (!interna && gettone) {
+      const { data: valido, error: g_err } = await supabase.rpc("consuma_token_interno", {
+        p_token: gettone,
+        p_scopo: "genera-fattura-pdf",
+      });
+      if (g_err) return json({ error: "gettone_non_verificabile", dettaglio: g_err.message }, 500);
+      if (valido !== true) return json({ error: "gettone_non_valido" }, 401);
+      interna = true;
+    }
+
     if (!interna) {
       const user_client = createClient(url, anon_key, {
         global: { headers: { Authorization: `Bearer ${token}` } },
