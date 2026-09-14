@@ -729,7 +729,9 @@ const LezioniPrivatePage: React.FC = () => {
   const aggiungi_atleta_mut = use_aggiungi_atleta_lezione();
 
   const slot_minuti = setup?.slot_lezione_privata_minuti || 20;
-  const { puo_configurare_club, puo_gestire_sportivo } = usePermessiAzione();
+  const { puo_configurare_club, puo_gestire_sportivo, ruolo_in } = usePermessiAzione();
+  // Specchio della funzione del database: approva solo DT, presidenza o amministrazione.
+  const puo_approvare_richieste = ruolo_in(["superadmin", "admin", "presidente", "dt"]);
 
   const [selected_istruttore, set_selected_istruttore] = useState<string>("");
   const [cal_year, set_cal_year] = useState(new Date().getFullYear());
