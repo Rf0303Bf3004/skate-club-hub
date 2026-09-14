@@ -43,18 +43,21 @@ export const RichiesteIscrizioneWidget: React.FC = () => {
   const [rifiuto_id, set_rifiuto_id] = useState<string | null>(null);
   const [motivo, set_motivo] = useState("");
 
-  const { data: richieste, isLoading, isFetching, refetch } = useQuery({
+  const { data, isLoading, isError, isFetching, refetch } = useQuery({
     queryKey: ["richieste_pendenti", club_id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Se ne mostrano al massimo tre: non ha senso scaricarle tutte.
+      const { data, error, count } = await supabase
         .from("richieste_iscrizione")
-        .select("id, created_at, note_richiesta, atleta_id, corso_id")
+        .select("id, created_at, note_richiesta, atleta_id, corso_id", { count: "exact" })
         .eq("club_id", club_id)
         .eq("stato", "in_attesa")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(MAX_RIGHE);
       if (error) throw error;
       const rows = data ?? [];
-      if (rows.length === 0) return [];
+      const totale = count ?? rows.length;
+      if (rows.length === 0) return { righe: [] as any[], totale };
 
       const atl_ids = [...new Set(rows.map((r) => r.atleta_id))];
       const cor_ids = [...new Set(rows.map((r) => r.corso_id))];
@@ -64,14 +67,23 @@ export const RichiesteIscrizioneWidget: React.FC = () => {
       ]);
       const a_map = new Map((atleti ?? []).map((a: any) => [a.id, a]));
       const c_map = new Map((corsi ?? []).map((c: any) => [c.id, c]));
-      return rows.map((r) => ({
-        ...r,
-        atleta: a_map.get(r.atleta_id),
-        corso: c_map.get(r.corso_id),
-      }));
+      return {
+        righe: rows.map((r) => ({
+          ...r,
+          atleta: a_map.get(r.atleta_id),
+          corso: c_map.get(r.corso_id),
+        })),
+        totale,
+      };
     },
     refetchInterval: REFETCH_MS,
   });
+
+  React.useEffect(() => {
+    if (isError) void segnala_errore("Dashboard", "richieste iscrizione", errore_query, undefined, "avviso");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isError]);
+
 
   const approva = useMutation({
     mutationFn: async (r: any) => {
