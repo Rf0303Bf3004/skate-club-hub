@@ -633,7 +633,9 @@ export const RichiesteLezioniPrivateWidget: React.FC = () => {
               </div>
             );
           })}
+          <RigaVediTutte restanti={count - visibili.length} to="/lezioni-private" />
         </div>
+
       )}
     </div>
   );
