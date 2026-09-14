@@ -35,10 +35,19 @@ export interface PuntoProgramma {
   secondi: number;
   secondi_fine: number | null;
   ordine: number;
+  /** Colore deciso dal database: l'app dell'atleta deve mostrare lo stesso. */
+  colore: string | null;
 }
+
+/** Colonne dei punti: se ne aggiungi una al database va aggiunta anche qui. */
+export const CAMPI_PUNTO = "id, programma_id, nome, secondi, secondi_fine, ordine, colore";
+
+/** Grigio neutro: usato se il database non ha ancora un colore per il passaggio. */
+export const COLORE_PUNTO_FALLBACK = "#64748b";
 
 const CAMPI_PROGRAMMA =
   "id, atleta_id, club_id, tipo, titolo_brano, file_path, durata_sec, in_preparazione, attivo";
+
 
 /** Firma un percorso del bucket privato. Lancia se non è possibile. */
 export async function firma_disco(file_path: string): Promise<string> {
