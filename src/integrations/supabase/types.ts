@@ -1195,6 +1195,30 @@ export type Database = {
           },
         ]
       }
+      chiamate_interne: {
+        Row: {
+          creato_il: string
+          id: string
+          scopo: string
+          usato_il: string | null
+          valido_fino: string
+        }
+        Insert: {
+          creato_il?: string
+          id?: string
+          scopo: string
+          usato_il?: string | null
+          valido_fino?: string
+        }
+        Update: {
+          creato_il?: string
+          id?: string
+          scopo?: string
+          usato_il?: string | null
+          valido_fino?: string
+        }
+        Relationships: []
+      }
       club_identity: {
         Row: {
           anno_fondazione: number | null
@@ -8551,6 +8575,10 @@ export type Database = {
           quanti: number
         }[]
       }
+      consuma_token_interno: {
+        Args: { p_scopo: string; p_token: string }
+        Returns: boolean
+      }
       controlla_saturazione_corsi: { Args: never; Returns: number }
       controlli_conformita: {
         Args: never
@@ -9280,6 +9308,7 @@ export type Database = {
         }
         Returns: string
       }
+      token_interno: { Args: { p_scopo: string }; Returns: string }
       user_can_manage_griglia: { Args: never; Returns: boolean }
       user_can_manage_richieste: { Args: never; Returns: boolean }
       user_can_see_finance: { Args: never; Returns: boolean }
