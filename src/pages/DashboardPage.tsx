@@ -1563,7 +1563,7 @@ const DashboardPage: React.FC = () => {
 
 
       {/* Banner compleanni del giorno */}
-      {compleanni_oggi.length > 0 && (
+      {mostra("compleanni_oggi") && compleanni_oggi.length > 0 && (
         <div className="rounded-xl border border-yellow-300 bg-gradient-to-r from-yellow-50 via-amber-50 to-pink-50 px-5 py-4 shadow-sm">
           <div className="flex items-start gap-3 flex-wrap">
             <div className="text-3xl leading-none">🎂</div>
