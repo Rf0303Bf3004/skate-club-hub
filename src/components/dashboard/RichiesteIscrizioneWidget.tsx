@@ -406,7 +406,7 @@ export const RichiesteLezioniPrivateWidget: React.FC = () => {
   const [rifiuto_id, set_rifiuto_id] = useState<string | null>(null);
   const [motivo, set_motivo] = useState("");
 
-  const { data: lezioni, isLoading, isFetching, refetch } = useQuery({
+  const { data: lezioni, isLoading, isError, error: errore_query, isFetching, refetch } = useQuery({
     queryKey: ["richieste_lezioni_private", club_id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -493,7 +493,14 @@ export const RichiesteLezioniPrivateWidget: React.FC = () => {
     onError: (e: any) => toast({ title: t("widget_richieste.toast_error"), description: e.message, variant: "destructive" }),
   });
 
-  const count = lezioni?.length ?? 0;
+  React.useEffect(() => {
+    if (isError) void segnala_errore("Dashboard", "richieste lezioni private", errore_query, undefined, "avviso");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isError]);
+
+  const righe = lezioni ?? [];
+  const visibili = righe.slice(0, MOSTRATE);
+  const count = righe.length;
 
   return (
     <div className="bg-card rounded-xl shadow-card p-5 space-y-3">
