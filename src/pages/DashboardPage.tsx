@@ -73,6 +73,8 @@ import OnboardingBanner from "@/components/dashboard/OnboardingBanner";
 import DiagnosticaCard from "@/components/dashboard/DiagnosticaCard";
 import { useAuth } from "@/lib/auth";
 import { usePermessiAzione } from "@/hooks/use-permessi-azione";
+import { useDashboardCardsMatrix } from "@/hooks/usePermessi";
+import { card_visibile_di_default } from "@/config/dashboardCards";
 import NotaPermesso from "@/components/common/NotaPermesso";
 import { get_fattura_stato_ui, fattura_chiusa } from "@/lib/fattura-status";
 
