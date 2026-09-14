@@ -25,5 +25,11 @@
     "available_instructors": "Heute verfügbare Trainer",
     "subscription_requests": "Anmeldeanfragen"
   },
-  "countdown_days": "Countdown: {{count}} T"
+  "countdown_days": "Countdown: {{count}} T",
+  "widget_comune": {
+    "errore_lettura": "Liste derzeit nicht verfügbar.",
+    "riprova": "Erneut versuchen",
+    "vedi_tutte_one": "Weitere ansehen ({{count}})",
+    "vedi_tutte_other": "Alle ansehen ({{count}} weitere)"
+  }
 }
