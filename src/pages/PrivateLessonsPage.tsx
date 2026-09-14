@@ -23,6 +23,9 @@ import RichiesteLezioniPrivateTab, {
   type RichiestaLezione,
 } from "@/components/lezioni/RichiesteLezioniPrivateTab";
 import { segnala_errore } from "@/lib/errori";
+import LezioniDaApprovareTab from "@/components/lezioni/LezioniDaApprovareTab";
+import { use_lezioni_da_approvare } from "@/hooks/use-lezioni-da-approvare";
+import { useSearchParams } from "react-router-dom";
 
 // ─── Helpers ───────────────────────────────────────────────
 function fmt(d: Date): string {
@@ -702,6 +705,9 @@ const CambioDurataModal: React.FC<{
   );
 };
 
+type TabLezioni = "calendario" | "da_approvare" | "richieste";
+const TAB_VALIDI: TabLezioni[] = ["calendario", "da_approvare", "richieste"];
+
 // ─── Main Page ─────────────────────────────────────────────
 const LezioniPrivatePage: React.FC = () => {
   const { t } = useTranslation('corsi');
@@ -738,11 +744,20 @@ const LezioniPrivatePage: React.FC = () => {
   const [aggiungi_open, set_aggiungi_open] = useState(false);
   const [durata_modal, set_durata_modal] = useState(false);
   const [saving_durata, set_saving_durata] = useState(false);
-  const [tab, set_tab] = useState<"calendario" | "richieste">("calendario");
+  const [search_params, set_search_params] = useSearchParams();
+  const tab_url = search_params.get("tab");
+  const tab: TabLezioni = TAB_VALIDI.includes(tab_url as TabLezioni) ? (tab_url as TabLezioni) : "calendario";
+  const set_tab = (v: TabLezioni) => {
+    const next = new URLSearchParams(search_params);
+    next.set("tab", v);
+    set_search_params(next, { replace: true });
+  };
   const [richiesta_pendente, set_richiesta_pendente] = useState<RichiestaLezione | null>(null);
   const { t: tc } = useTranslation("common");
   const richieste_query = use_richieste_lezioni_private();
   const n_in_attesa = (richieste_query.data ?? []).filter((r) => r.stato === "in_attesa").length;
+  const da_approvare_query = use_lezioni_da_approvare();
+  const n_da_approvare = da_approvare_query.isSuccess ? (da_approvare_query.data ?? []).length : 0;
 
   const nome_atleta_richiesta = (id: string) => {
     const a = atleti.find((x: any) => x.id === id);
@@ -1172,12 +1187,20 @@ const LezioniPrivatePage: React.FC = () => {
         <Tabs
           value={tab}
           onValueChange={(v) => {
-            set_tab(v as "calendario" | "richieste");
+            set_tab(v as TabLezioni);
             set_richiesta_pendente(null);
           }}
         >
           <TabsList>
             <TabsTrigger value="calendario">{tc("richieste_private.tab_calendario")}</TabsTrigger>
+            <TabsTrigger value="da_approvare">
+              {tc("lezioni_da_approvare.tab")}
+              {n_da_approvare > 0 && (
+                <span className="ml-2 text-xs font-bold px-1.5 py-0.5 rounded-full bg-primary/15 text-primary">
+                  {n_da_approvare}
+                </span>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="richieste">
               {tc("richieste_private.tab_richieste")}
               {n_in_attesa > 0 && (
@@ -1374,6 +1397,10 @@ const LezioniPrivatePage: React.FC = () => {
             {t("lezioni_private.select_istruttore_empty")}
           </div>
         )}
+          </TabsContent>
+
+          <TabsContent value="da_approvare" className="mt-4">
+            <LezioniDaApprovareTab puo_gestire={puo_gestire_sportivo} />
           </TabsContent>
 
           <TabsContent value="richieste" className="mt-4">
