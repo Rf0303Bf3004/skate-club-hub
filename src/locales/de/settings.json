@@ -42,7 +42,105 @@
     "load_error_title": "Berechtigungen nicht geladen",
     "load_error_desc": "Die Berechtigungen des Clubs konnten nicht gelesen werden. Das Speichern ist deaktiviert, damit die Konfiguration nicht gelöscht wird.",
     "retry": "Erneut versuchen",
-    "stale_warning": "Achtung: Die Berechtigungen konnten nicht neu gelesen werden, die angezeigten Daten sind möglicherweise nicht aktuell."
+    "stale_warning": "Achtung: Die Berechtigungen konnten nicht neu gelesen werden, die angezeigten Daten sind möglicherweise nicht aktuell.",
+    "dashboard_cards": {
+      "title": "Dashboard-Felder pro Rolle",
+      "subtitle": "Lege für jede Rolle fest, welche Felder in ihrem Dashboard erscheinen.",
+      "effetto_reale": "Diese Auswahl ändert wirklich, was jede Rolle in ihrem Dashboard sieht.",
+      "presidente_a_parte": "Die Präsidentin hat ein eigenes Dashboard, das hier nicht konfiguriert wird.",
+      "non_cliccabile": "Feld nicht anklickbar: Es führt zu keiner Seite.",
+      "errore_lettura": "Die Konfiguration der Felder konnte nicht gelesen werden.",
+      "riprova": "Erneut versuchen",
+      "reset_confirm_title": "Ausgangswerte wiederherstellen?",
+      "reset_confirm_desc": "Die aktuelle Auswahl wird überschrieben.",
+      "reset_confirm_cta": "Wiederherstellen",
+      "reset": "Ausgangswerte wiederherstellen",
+      "save": "Speichern",
+      "saving": "Speichern…",
+      "column_card": "Feld",
+      "toast_saved_title": "Felder gespeichert",
+      "toast_saved_desc": "Jede Rolle sieht das neue Dashboard beim nächsten Laden.",
+      "toast_reset_done": "Ausgangswerte angewendet",
+      "toast_error": "Fehler",
+      "note": "Wenn ein Club diese Tabelle nie angepasst hat, gelten die Ausgangswerte und nicht „alles aus“.",
+      "gruppi": {
+        "da_fare": "Zu erledigen",
+        "oggi": "Heute",
+        "andamento": "Entwicklung"
+      },
+      "ruoli": {
+        "segreteria": "Sekretariat",
+        "dt": "Technischer Leiter",
+        "istruttore": "Trainer",
+        "aiuto_monitore": "Hilfsmonitorin"
+      },
+      "cards": {
+        "richieste_iscrizione": {
+          "titolo": "Anmeldeanfragen",
+          "descrizione": "Familien, die auf eine Antwort warten"
+        },
+        "richieste_private": {
+          "titolo": "Anfragen für Privatstunden",
+          "descrizione": "Vom technischen Leiter zu genehmigen"
+        },
+        "fatture_scadenza": {
+          "titolo": "Fällige und überfällige Rechnungen",
+          "descrizione": "Wer noch zahlen muss"
+        },
+        "agenda_giorno": {
+          "titolo": "Tagesagenda",
+          "descrizione": "Kurse, Anwesenheiten und Privatstunden von heute"
+        },
+        "compleanni_oggi": {
+          "titolo": "Geburtstage heute",
+          "descrizione": "Leiste zum Gratulieren"
+        },
+        "compleanni_settimana": {
+          "titolo": "Geburtstage der Woche",
+          "descrizione": "Die nächsten sieben Tage"
+        },
+        "istruttori_oggi": {
+          "titolo": "Heute verfügbare Trainer",
+          "descrizione": "Wer da ist und zu welchen Zeiten"
+        },
+        "comunicazione_rapida": {
+          "titolo": "Schnelle Mitteilung",
+          "descrizione": "Die Schaltfläche zum Schreiben einer Mitteilung"
+        },
+        "kpi_atleti_attivi": {
+          "titolo": "Anzahl aktiver Sportlerinnen",
+          "descrizione": "Zähler oben auf der Seite"
+        },
+        "kpi_corsi_attivi": {
+          "titolo": "Anzahl aktiver Kurse",
+          "descrizione": "Zähler oben auf der Seite"
+        },
+        "kpi_prossime_gare": {
+          "titolo": "Anzahl kommender Wettkämpfe",
+          "descrizione": "Zähler oben auf der Seite"
+        },
+        "kpi_da_incassare": {
+          "titolo": "Ausstehender Betrag",
+          "descrizione": "Zähler oben auf der Seite"
+        },
+        "prossime_gare": {
+          "titolo": "Nächste Wettkämpfe",
+          "descrizione": "Die drei nächsten mit Countdown"
+        },
+        "medagliere": {
+          "titolo": "Medaillenspiegel der Saison",
+          "descrizione": "Die Sportlerinnen mit den meisten Podestplätzen"
+        },
+        "ultime_iscrizioni": {
+          "titolo": "Zuletzt erfasste Sportlerinnen",
+          "descrizione": "Wer kürzlich dazugekommen ist"
+        },
+        "ultime_comunicazioni": {
+          "titolo": "Letzte Mitteilungen",
+          "descrizione": "Kürzlich gesendete Mitteilungen"
+        }
+      }
+    }
   },
   "users": {
     "title": "Benutzer",

@@ -42,7 +42,105 @@
     "load_error_title": "Autorisations non chargées",
     "load_error_desc": "Impossible de lire les autorisations du club. L'enregistrement est désactivé pour ne pas effacer la configuration.",
     "retry": "Réessayer",
-    "stale_warning": "Attention : les autorisations n'ont pas pu être relues, les données affichées peuvent ne pas être à jour."
+    "stale_warning": "Attention : les autorisations n'ont pas pu être relues, les données affichées peuvent ne pas être à jour.",
+    "dashboard_cards": {
+      "title": "Encadrés du tableau de bord par rôle",
+      "subtitle": "Pour chaque rôle, choisissez les encadrés qui apparaissent sur son tableau de bord.",
+      "effetto_reale": "Ces choix changent vraiment ce que chaque rôle voit sur son tableau de bord.",
+      "presidente_a_parte": "La présidence dispose d'un tableau de bord à part, qui ne se configure pas ici.",
+      "non_cliccabile": "Encadré non cliquable : il ne mène à aucune page.",
+      "errore_lettura": "Impossible de lire la configuration des encadrés.",
+      "riprova": "Réessayer",
+      "reset_confirm_title": "Rétablir les valeurs de départ ?",
+      "reset_confirm_desc": "Les choix actuels seront écrasés.",
+      "reset_confirm_cta": "Rétablir",
+      "reset": "Rétablir les valeurs de départ",
+      "save": "Enregistrer",
+      "saving": "Enregistrement…",
+      "column_card": "Encadré",
+      "toast_saved_title": "Encadrés enregistrés",
+      "toast_saved_desc": "Chaque rôle verra le nouveau tableau de bord au prochain chargement.",
+      "toast_reset_done": "Valeurs de départ appliquées",
+      "toast_error": "Erreur",
+      "note": "Si un club n'a jamais touché à ce tableau, ce sont les valeurs de départ qui s'appliquent, et non « tout éteint ».",
+      "gruppi": {
+        "da_fare": "À faire",
+        "oggi": "Aujourd'hui",
+        "andamento": "Tendances"
+      },
+      "ruoli": {
+        "segreteria": "Secrétariat",
+        "dt": "Directeur technique",
+        "istruttore": "Entraîneur",
+        "aiuto_monitore": "Aide-monitrice"
+      },
+      "cards": {
+        "richieste_iscrizione": {
+          "titolo": "Demandes d'inscription",
+          "descrizione": "Familles qui attendent une réponse"
+        },
+        "richieste_private": {
+          "titolo": "Demandes de cours privés",
+          "descrizione": "À approuver par le directeur technique"
+        },
+        "fatture_scadenza": {
+          "titolo": "Factures à échéance et échues",
+          "descrizione": "Qui doit encore payer"
+        },
+        "agenda_giorno": {
+          "titolo": "Agenda du jour",
+          "descrizione": "Cours, présences et cours privés d'aujourd'hui"
+        },
+        "compleanni_oggi": {
+          "titolo": "Anniversaires du jour",
+          "descrizione": "Bandeau pour envoyer les vœux"
+        },
+        "compleanni_settimana": {
+          "titolo": "Anniversaires de la semaine",
+          "descrizione": "Les sept prochains jours"
+        },
+        "istruttori_oggi": {
+          "titolo": "Entraîneurs disponibles aujourd'hui",
+          "descrizione": "Qui est là et à quelles heures"
+        },
+        "comunicazione_rapida": {
+          "titolo": "Message rapide",
+          "descrizione": "Le bouton pour écrire un message"
+        },
+        "kpi_atleti_attivi": {
+          "titolo": "Nombre de patineuses actives",
+          "descrizione": "Compteur en haut de la page"
+        },
+        "kpi_corsi_attivi": {
+          "titolo": "Nombre de cours actifs",
+          "descrizione": "Compteur en haut de la page"
+        },
+        "kpi_prossime_gare": {
+          "titolo": "Nombre de compétitions à venir",
+          "descrizione": "Compteur en haut de la page"
+        },
+        "kpi_da_incassare": {
+          "titolo": "Montant à encaisser",
+          "descrizione": "Compteur en haut de la page"
+        },
+        "prossime_gare": {
+          "titolo": "Prochaines compétitions",
+          "descrizione": "Les trois plus proches avec le compte à rebours"
+        },
+        "medagliere": {
+          "titolo": "Tableau des médailles de la saison",
+          "descrizione": "Les patineuses avec le plus de podiums"
+        },
+        "ultime_iscrizioni": {
+          "titolo": "Dernières patineuses ajoutées",
+          "descrizione": "Celles arrivées récemment"
+        },
+        "ultime_comunicazioni": {
+          "titolo": "Derniers messages",
+          "descrizione": "Les messages envoyés récemment"
+        }
+      }
+    }
   },
   "users": {
     "title": "Utilisateurs",

@@ -9218,6 +9218,10 @@ export type Database = {
       }
       seed_permessi_default: { Args: { p_club_id: string }; Returns: undefined }
       seed_permessi_integrazioni: { Args: { p_club: string }; Returns: number }
+      settimana_planning: {
+        Args: { p_club_id: string; p_data: string }
+        Returns: string
+      }
       setup_iva_club: {
         Args: { p_club: string }
         Returns: {

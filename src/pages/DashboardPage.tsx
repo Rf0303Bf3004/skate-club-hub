@@ -73,6 +73,8 @@ import OnboardingBanner from "@/components/dashboard/OnboardingBanner";
 import DiagnosticaCard from "@/components/dashboard/DiagnosticaCard";
 import { useAuth } from "@/lib/auth";
 import { usePermessiAzione } from "@/hooks/use-permessi-azione";
+import { useDashboardCardsMatrix } from "@/hooks/usePermessi";
+import { card_visibile_di_default } from "@/config/dashboardCards";
 import NotaPermesso from "@/components/common/NotaPermesso";
 import { get_fattura_stato_ui, fattura_chiusa } from "@/lib/fattura-status";
 
@@ -1357,7 +1359,23 @@ const DashboardPage: React.FC = () => {
   };
 
 
-  const is_loading = loading_atleti || loading_corsi || loading_gare || loading_fatture || loading_istruttori;
+  // Quali riquadri vede questo ruolo: deciso dalla matrice del club.
+  const cards_permessi = useDashboardCardsMatrix();
+  const mostra = (codice: string): boolean => {
+    if (cards_permessi.is_admin_like) return true;
+    if (cards_permessi.configurato) return cards_permessi.visibile_set.has(codice);
+    // Mai configurato (o lettura fallita): valgono i valori di partenza del ruolo.
+    return card_visibile_di_default(cards_permessi.ruolo, codice);
+  };
+
+  const is_loading =
+    loading_atleti ||
+    loading_corsi ||
+    loading_gare ||
+    loading_fatture ||
+    loading_istruttori ||
+    // Finché non si sa quali riquadri spettano al ruolo non si disegna niente.
+    cards_permessi.is_loading;
 
   const active_atleti = atleti.filter((a) => a.stato === "attivo").length;
   const active_corsi = corsi.filter((c) => c.stato === "attivo").length;
@@ -1506,33 +1524,46 @@ const DashboardPage: React.FC = () => {
       <DiagnosticaCard />
 
       {/* KPI */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title={td("kpi.active_athletes")} value={String(active_atleti)} icon={<Users className="w-5 h-5" />} to="/atleti?filtro=attivi" />
-        <KPICard title={td("kpi.active_courses")} value={String(active_corsi)} icon={<BookOpen className="w-5 h-5" />} to="/corsi" />
-        <KPICard
-          title={td("kpi.next_competitions")}
-          value={String(upcoming_gare.length)}
-          icon={<Trophy className="w-5 h-5" />}
-          subtitle={next_gara ? td("kpi.next_competition_in", { days: days_until(next_gara.data), nome: next_gara.nome }) : undefined}
-          to="/gare"
-        />
-        <KPICard
-          title={td("kpi.amount_to_collect")}
-          value={`CHF ${totale_fatture.toLocaleString()}`}
-          icon={<CreditCard className="w-5 h-5" />}
-          highlight
-          subtitle={
-            fatture_da_pagare.length > 0
-              ? td("kpi.invoices_status", { scadute: fatture_scadute_count, arrivo: fatture_in_arrivo_count })
-              : undefined
-          }
-          to="/fatture?filtro=da_pagare"
-        />
-      </div>
+      {(mostra("kpi_atleti_attivi") ||
+        mostra("kpi_corsi_attivi") ||
+        mostra("kpi_prossime_gare") ||
+        mostra("kpi_da_incassare")) && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {mostra("kpi_atleti_attivi") && (
+            <KPICard title={td("kpi.active_athletes")} value={String(active_atleti)} icon={<Users className="w-5 h-5" />} to="/atleti?filtro=attivi" />
+          )}
+          {mostra("kpi_corsi_attivi") && (
+            <KPICard title={td("kpi.active_courses")} value={String(active_corsi)} icon={<BookOpen className="w-5 h-5" />} to="/corsi" />
+          )}
+          {mostra("kpi_prossime_gare") && (
+            <KPICard
+              title={td("kpi.next_competitions")}
+              value={String(upcoming_gare.length)}
+              icon={<Trophy className="w-5 h-5" />}
+              subtitle={next_gara ? td("kpi.next_competition_in", { days: days_until(next_gara.data), nome: next_gara.nome }) : undefined}
+              to="/gare"
+            />
+          )}
+          {mostra("kpi_da_incassare") && (
+            <KPICard
+              title={td("kpi.amount_to_collect")}
+              value={`CHF ${totale_fatture.toLocaleString()}`}
+              icon={<CreditCard className="w-5 h-5" />}
+              highlight
+              subtitle={
+                fatture_da_pagare.length > 0
+                  ? td("kpi.invoices_status", { scadute: fatture_scadute_count, arrivo: fatture_in_arrivo_count })
+                  : undefined
+              }
+              to="/fatture?filtro=da_pagare"
+            />
+          )}
+        </div>
+      )}
 
 
       {/* Banner compleanni del giorno */}
-      {compleanni_oggi.length > 0 && (
+      {mostra("compleanni_oggi") && compleanni_oggi.length > 0 && (
         <div className="rounded-xl border border-yellow-300 bg-gradient-to-r from-yellow-50 via-amber-50 to-pink-50 px-5 py-4 shadow-sm">
           <div className="flex items-start gap-3 flex-wrap">
             <div className="text-3xl leading-none">🎂</div>
@@ -1611,6 +1642,7 @@ const DashboardPage: React.FC = () => {
         {/* Colonna sinistra — corsi + presenze */}
         <div className="lg:col-span-2 space-y-5">
           {/* Agenda corsi — un giorno alla volta */}
+          {mostra("agenda_giorno") && (
           <div className="bg-card rounded-xl shadow-card p-5 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{td("agenda.title")}</h3>
@@ -1757,9 +1789,10 @@ const DashboardPage: React.FC = () => {
               />
             )}
           </div>
+          )}
 
           {/* Comunicazione rapida: sta in una finestra, così la pagina resta corta */}
-          {puo_comunicare ? (
+          {mostra("comunicazione_rapida") && (puo_comunicare ? (
             <Dialog open={com_aperta} onOpenChange={(v) => {
               set_com_aperta(v);
               if (!v) set_com_preset(null);
@@ -1790,21 +1823,24 @@ const DashboardPage: React.FC = () => {
           ) : (
 
             <NotaPermesso testo="Solo lo staff di segreteria e direzione può inviare comunicazioni rapide." />
-          )}
+          ))}
         </div>
 
         {/* Colonna destra — widget */}
         <div className="space-y-5">
-          <RichiesteIscrizioneWidget />
-          <UltimeIscrizioniWidget />
-          <RichiesteLezioniPrivateWidget />
-          <IstruttoriDisponibiliWidget />
-          <WidgetCompleanni atleti={atleti} />
-          <WidgetFatture fatture={fatture} atleti={atleti} />
+          {mostra("richieste_iscrizione") && <RichiesteIscrizioneWidget />}
+          {mostra("ultime_iscrizioni") && <UltimeIscrizioniWidget />}
+          {mostra("richieste_private") && <RichiesteLezioniPrivateWidget />}
+          {mostra("istruttori_oggi") && <IstruttoriDisponibiliWidget />}
+          {mostra("compleanni_settimana") && <WidgetCompleanni atleti={atleti} />}
+          {mostra("fatture_scadenza") && <WidgetFatture fatture={fatture} atleti={atleti} />}
 
           {/* Prossime gare */}
-          {upcoming_gare.length > 0 && (
-            <div className="bg-card rounded-xl shadow-card p-5 space-y-3">
+          {mostra("prossime_gare") && upcoming_gare.length > 0 && (
+            <div
+              onClick={() => navigate("/gare")}
+              className="bg-card rounded-xl shadow-card p-5 space-y-3 cursor-pointer transition-all hover:shadow-card-hover"
+            >
               <div className="flex items-center gap-2">
                 <Trophy className="w-4 h-4 text-primary" />
                 <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{td("widgets.competitions")}</h3>
@@ -1830,11 +1866,14 @@ const DashboardPage: React.FC = () => {
           )}
 
           {/* Medagliere stagione (top 5) */}
-          <MedagliereWidget compact limit={5} />
+          {mostra("medagliere") && <MedagliereWidget compact limit={5} />}
 
           {/* Ultime comunicazioni */}
-          {comunicazioni.length > 0 && (
-            <div className="bg-card rounded-xl shadow-card p-5 space-y-3">
+          {mostra("ultime_comunicazioni") && comunicazioni.length > 0 && (
+            <div
+              onClick={() => navigate("/comunicazioni")}
+              className="bg-card rounded-xl shadow-card p-5 space-y-3 cursor-pointer transition-all hover:shadow-card-hover"
+            >
               <div className="flex items-center gap-2">
                 <MessageSquare className="w-4 h-4 text-primary" />
                 <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{td("widgets.communications")}</h3>

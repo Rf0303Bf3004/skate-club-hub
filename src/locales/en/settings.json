@@ -42,7 +42,105 @@
     "load_error_title": "Permissions not loaded",
     "load_error_desc": "The club permissions could not be read. Saving is disabled so the configuration is not wiped.",
     "retry": "Retry",
-    "stale_warning": "Warning: permissions could not be re-read, the data shown may be out of date."
+    "stale_warning": "Warning: permissions could not be re-read, the data shown may be out of date.",
+    "dashboard_cards": {
+      "title": "Dashboard panels by role",
+      "subtitle": "For each role, choose which panels appear on its Dashboard.",
+      "effetto_reale": "These choices really change what each role sees on its own Dashboard.",
+      "presidente_a_parte": "The president has a separate Dashboard, which is not configured here.",
+      "non_cliccabile": "Panel not clickable: it does not lead to any page.",
+      "errore_lettura": "The panel configuration could not be read.",
+      "riprova": "Try again",
+      "reset_confirm_title": "Restore the starting values?",
+      "reset_confirm_desc": "The current panel choices will be overwritten.",
+      "reset_confirm_cta": "Restore",
+      "reset": "Restore the starting values",
+      "save": "Save",
+      "saving": "Saving…",
+      "column_card": "Panel",
+      "toast_saved_title": "Panels saved",
+      "toast_saved_desc": "Each role will see the new Dashboard at the next load.",
+      "toast_reset_done": "Starting values applied",
+      "toast_error": "Error",
+      "note": "If a club has never touched this table, the starting values apply, not \"everything off\".",
+      "gruppi": {
+        "da_fare": "To do",
+        "oggi": "Today",
+        "andamento": "Trends"
+      },
+      "ruoli": {
+        "segreteria": "Office",
+        "dt": "Technical director",
+        "istruttore": "Instructor",
+        "aiuto_monitore": "Assistant monitor"
+      },
+      "cards": {
+        "richieste_iscrizione": {
+          "titolo": "Registration requests",
+          "descrizione": "Families waiting for an answer"
+        },
+        "richieste_private": {
+          "titolo": "Private lesson requests",
+          "descrizione": "To be approved by the technical director"
+        },
+        "fatture_scadenza": {
+          "titolo": "Invoices due and overdue",
+          "descrizione": "Who still has to pay"
+        },
+        "agenda_giorno": {
+          "titolo": "Agenda of the day",
+          "descrizione": "Today's courses, attendance and private lessons"
+        },
+        "compleanni_oggi": {
+          "titolo": "Birthdays today",
+          "descrizione": "Banner to send the wishes"
+        },
+        "compleanni_settimana": {
+          "titolo": "Birthdays this week",
+          "descrizione": "The next seven days"
+        },
+        "istruttori_oggi": {
+          "titolo": "Instructors available today",
+          "descrizione": "Who is in and at what times"
+        },
+        "comunicazione_rapida": {
+          "titolo": "Quick message",
+          "descrizione": "The button to write a message"
+        },
+        "kpi_atleti_attivi": {
+          "titolo": "Number of active athletes",
+          "descrizione": "Counter at the top of the page"
+        },
+        "kpi_corsi_attivi": {
+          "titolo": "Number of active courses",
+          "descrizione": "Counter at the top of the page"
+        },
+        "kpi_prossime_gare": {
+          "titolo": "Number of upcoming competitions",
+          "descrizione": "Counter at the top of the page"
+        },
+        "kpi_da_incassare": {
+          "titolo": "Amount to collect",
+          "descrizione": "Counter at the top of the page"
+        },
+        "prossime_gare": {
+          "titolo": "Upcoming competitions",
+          "descrizione": "The three closest ones with a countdown"
+        },
+        "medagliere": {
+          "titolo": "Season medal table",
+          "descrizione": "The athletes with the most podiums"
+        },
+        "ultime_iscrizioni": {
+          "titolo": "Recently added athletes",
+          "descrizione": "Who arrived lately"
+        },
+        "ultime_comunicazioni": {
+          "titolo": "Latest messages",
+          "descrizione": "Recently sent messages"
+        }
+      }
+    }
   },
   "users": {
     "title": "Users",

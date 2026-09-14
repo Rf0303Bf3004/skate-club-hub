@@ -8,38 +8,14 @@ import { Button } from "@/components/ui/button";
 import ConfirmButton from "@/components/common/ConfirmButton";
 import { Switch } from "@/components/ui/switch";
 import { useTranslation } from "react-i18next";
-import { CARDS, AREE, RUOLI_DASHBOARD, type AreaDashboard } from "@/config/dashboardCards";
-
-type RuoloKey = "presidente" | "segreteria" | "dt" | "istruttore" | "aiuto_monitore";
-
-const DEFAULTS: Record<RuoloKey, string[]> = {
-  presidente: CARDS.map((c) => c.codice),
-  segreteria: [
-    "fatturato_mese","fatturato_anno","da_incassare","fatture_scadute","cash_flow","compensi_mese",
-    "atleti_attivi","compleanni_30gg","tessere_sis_scadenza",
-    "prossime_gare","da_iscrivere_gare",
-    "iscrizioni_pendenti","richieste_private","istruttori_oggi",
-    "comunicazione_rapida","ultime_comunicazioni","rsvp_scaduti",
-  ],
-  dt: [
-    "atleti_attivi","atleti_yoy","distribuzione_livelli",
-    "atleti_pronti_test","medagliere","prossime_gare","storico_gare_stagione","risultati_yoy",
-    "richieste_private","carico_istruttori","presenze_settimana",
-    "occupazione_ghiaccio",
-    "ultime_comunicazioni",
-  ],
-  istruttore: ["compensi_mese","atleti_attivi","presenze_settimana","ultime_comunicazioni"],
-  aiuto_monitore: ["compensi_mese","ultime_comunicazioni"],
-};
-
-const AREA_HEADER_BG: Record<AreaDashboard, string> = {
-  finanziaria: "bg-emerald-50 text-emerald-800 border-emerald-200",
-  atleti: "bg-blue-50 text-blue-800 border-blue-200",
-  sportiva: "bg-amber-50 text-amber-800 border-amber-200",
-  operativa: "bg-purple-50 text-purple-800 border-purple-200",
-  ghiaccio: "bg-cyan-50 text-cyan-800 border-cyan-200",
-  comunicazioni: "bg-rose-50 text-rose-800 border-rose-200",
-};
+import {
+  CARDS,
+  GRUPPI,
+  RUOLI_DASHBOARD,
+  CARDS_DEFAULT_PER_RUOLO,
+  card_visibile_di_default,
+  type GruppoDashboard,
+} from "@/config/dashboardCards";
 
 const DashboardCardsPermessi: React.FC = () => {
   const { t } = useTranslation("settings");
@@ -49,42 +25,43 @@ const DashboardCardsPermessi: React.FC = () => {
   const [saving, set_saving] = useState(false);
   const [matrix, set_matrix] = useState<Record<string, Record<string, boolean>>>({});
 
-  const { isLoading } = useQuery({
+  const { data: righe, isLoading, isError, refetch } = useQuery({
     queryKey: ["dashboard_card_permessi_admin", club_id],
+    enabled: !!club_id,
     queryFn: async () => {
-      if (!club_id) return [];
       const { data, error } = await supabase
         .from("dashboard_card_permessi")
         .select("ruolo, codice_card, visibile")
-        .eq("club_id", club_id);
+        .eq("club_id", club_id!);
       if (error) throw error;
-      const m: Record<string, Record<string, boolean>> = {};
-      for (const r of RUOLI_DASHBOARD) {
-        m[r.codice] = {};
-        for (const c of CARDS) {
-          if (r.codice === "presidente") {
-            m[r.codice][c.codice] = true;
-            continue;
-          }
-          const row = (data ?? []).find((x: any) => x.ruolo === r.codice && x.codice_card === c.codice);
-          m[r.codice][c.codice] = row ? row.visibile : true;
-        }
-      }
-      set_matrix(m);
       return data ?? [];
     },
-    enabled: !!club_id,
   });
 
-  const cards_per_area = useMemo(() => {
-    const map = new Map<AreaDashboard, typeof CARDS>();
-    for (const a of AREE) map.set(a.codice, [] as any);
-    for (const c of CARDS) (map.get(c.area) as any).push(c);
+  // La matrice si popola dai dati, non dentro la queryFn: al rientro da cache
+  // la queryFn non rigira e lo stato resterebbe vuoto.
+  React.useEffect(() => {
+    if (!righe) return;
+    const m: Record<string, Record<string, boolean>> = {};
+    for (const r of RUOLI_DASHBOARD) {
+      m[r.codice] = {};
+      for (const c of CARDS) {
+        const row = righe.find((x) => x.ruolo === r.codice && x.codice_card === c.codice);
+        // Nessuna riga = mai configurato: valgono i valori di partenza.
+        m[r.codice][c.codice] = row ? !!row.visibile : card_visibile_di_default(r.codice, c.codice);
+      }
+    }
+    set_matrix(m);
+  }, [righe]);
+
+  const cards_per_gruppo = useMemo(() => {
+    const map = new Map<GruppoDashboard, typeof CARDS>();
+    for (const g of GRUPPI) map.set(g.codice, []);
+    for (const c of CARDS) map.get(c.gruppo)!.push(c);
     return map;
   }, []);
 
   const toggle = (ruolo: string, codice_card: string) => {
-    if (ruolo === "presidente") return;
     set_matrix((prev) => ({
       ...prev,
       [ruolo]: { ...prev[ruolo], [codice_card]: !prev[ruolo]?.[codice_card] },
@@ -95,23 +72,20 @@ const DashboardCardsPermessi: React.FC = () => {
     if (!club_id) return;
     set_saving(true);
     try {
-      const rows: any[] = [];
-      for (const r of RUOLI_DASHBOARD) {
-        if (r.codice === "presidente") continue;
-        for (const c of CARDS) {
-          rows.push({
-            club_id,
-            ruolo: r.codice,
-            codice_card: c.codice,
-            visibile: matrix[r.codice]?.[c.codice] ?? true,
-          });
-        }
-      }
+      const rows = RUOLI_DASHBOARD.flatMap((r) =>
+        CARDS.map((c) => ({
+          club_id,
+          ruolo: r.codice,
+          codice_card: c.codice,
+          visibile: matrix[r.codice]?.[c.codice] ?? card_visibile_di_default(r.codice, c.codice),
+        })),
+      );
       const { error } = await supabase
         .from("dashboard_card_permessi")
         .upsert(rows, { onConflict: "club_id,ruolo,codice_card" });
       if (error) throw error;
       qc.invalidateQueries({ queryKey: ["dashboard_card_permessi_admin"] });
+      qc.invalidateQueries({ queryKey: ["dashboard_card_permessi_self"] });
       toast({ title: t("roles.dashboard_cards.toast_saved_title"), description: t("roles.dashboard_cards.toast_saved_desc") });
     } catch (err: any) {
       toast({ title: t("roles.dashboard_cards.toast_error"), description: err?.message, variant: "destructive" });
@@ -124,26 +98,25 @@ const DashboardCardsPermessi: React.FC = () => {
     if (!club_id) return;
     set_saving(true);
     try {
-      await supabase.from("dashboard_card_permessi").delete().eq("club_id", club_id);
-      const rows: any[] = [];
+      const { error: err_del } = await supabase.from("dashboard_card_permessi").delete().eq("club_id", club_id);
+      if (err_del) throw err_del;
       const m: Record<string, Record<string, boolean>> = {};
-      for (const r of RUOLI_DASHBOARD) {
+      const rows = RUOLI_DASHBOARD.flatMap((r) => {
         m[r.codice] = {};
-        const def = DEFAULTS[r.codice as RuoloKey] ?? [];
-        for (const c of CARDS) {
-          const visibile = r.codice === "presidente" ? true : def.includes(c.codice);
+        const def = CARDS_DEFAULT_PER_RUOLO[r.codice] ?? [];
+        return CARDS.map((c) => {
+          const visibile = def.includes(c.codice);
           m[r.codice][c.codice] = visibile;
-          if (r.codice !== "presidente") {
-            rows.push({ club_id, ruolo: r.codice, codice_card: c.codice, visibile });
-          }
-        }
-      }
+          return { club_id, ruolo: r.codice, codice_card: c.codice, visibile };
+        });
+      });
       const { error } = await supabase
         .from("dashboard_card_permessi")
         .upsert(rows, { onConflict: "club_id,ruolo,codice_card" });
       if (error) throw error;
       set_matrix(m);
       qc.invalidateQueries({ queryKey: ["dashboard_card_permessi_admin"] });
+      qc.invalidateQueries({ queryKey: ["dashboard_card_permessi_self"] });
       toast({ title: t("roles.dashboard_cards.toast_reset_done") });
     } catch (err: any) {
       toast({ title: t("roles.dashboard_cards.toast_error"), description: err?.message, variant: "destructive" });
@@ -156,6 +129,17 @@ const DashboardCardsPermessi: React.FC = () => {
     return (
       <div className="flex items-center justify-center h-32">
         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 space-y-2">
+        <p className="text-sm text-amber-900">{t("roles.dashboard_cards.errore_lettura")}</p>
+        <Button size="sm" variant="outline" onClick={() => refetch()}>
+          {t("roles.dashboard_cards.riprova")}
+        </Button>
       </div>
     );
   }
@@ -191,6 +175,11 @@ const DashboardCardsPermessi: React.FC = () => {
         </div>
       </div>
 
+      <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
+        <p className="text-xs text-blue-800">{t("roles.dashboard_cards.effetto_reale")}</p>
+        <p className="text-xs text-blue-800 mt-1">{t("roles.dashboard_cards.presidente_a_parte")}</p>
+      </div>
+
       <div className="bg-card rounded-xl shadow-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px]">
@@ -199,45 +188,46 @@ const DashboardCardsPermessi: React.FC = () => {
                 <th className="text-left px-4 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wide w-[42%]">{t("roles.dashboard_cards.column_card")}</th>
                 {RUOLI_DASHBOARD.map((r) => (
                   <th key={r.codice} className="text-center px-3 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wide">
-                    {r.label}
-                    {r.codice === "presidente" && (
-                      <div className="text-[10px] font-normal normal-case text-muted-foreground/70 mt-0.5">{t("roles.dashboard_cards.sees_all")}</div>
-                    )}
+                    {t(r.chiave_label)}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {AREE.map((area) => {
-                const area_cards = cards_per_area.get(area.codice) ?? [];
+              {GRUPPI.map((gruppo) => {
+                const gruppo_cards = cards_per_gruppo.get(gruppo.codice) ?? [];
                 return (
-                  <React.Fragment key={area.codice}>
-                    <tr className={`border-b ${AREA_HEADER_BG[area.codice]}`}>
+                  <React.Fragment key={gruppo.codice}>
+                    <tr className={`border-b ${gruppo.classi_intestazione}`}>
                       <td colSpan={1 + RUOLI_DASHBOARD.length} className="px-4 py-2 text-xs font-bold uppercase tracking-wide">
-                        {area.label}
+                        {t(gruppo.chiave_label)}
                       </td>
                     </tr>
-                    {area_cards.map((c, idx) => (
+                    {gruppo_cards.map((c, idx) => (
                       <tr key={c.codice} className={`border-b border-border/50 ${idx % 2 === 0 ? "bg-background" : "bg-muted/10"}`}>
                         <td className="px-4 py-2.5">
-                          <div className="text-sm font-medium text-foreground">{c.titolo}</div>
-                          <div className="text-xs text-muted-foreground">{c.descrizione}</div>
+                          <div className="text-sm font-medium text-foreground">
+                            {t(`roles.dashboard_cards.cards.${c.codice}.titolo`)}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {t(`roles.dashboard_cards.cards.${c.codice}.descrizione`)}
+                          </div>
+                          {!c.destinazione && (
+                            <div className="text-[11px] text-muted-foreground/80 mt-0.5">
+                              {t("roles.dashboard_cards.non_cliccabile")}
+                            </div>
+                          )}
                         </td>
-                        {RUOLI_DASHBOARD.map((r) => {
-                          const checked = matrix[r.codice]?.[c.codice] ?? false;
-                          const disabled = r.codice === "presidente";
-                          return (
-                            <td key={r.codice} className="px-3 py-2.5 text-center">
-                              <div className="inline-flex">
-                                <Switch
-                                  checked={checked}
-                                  onCheckedChange={() => toggle(r.codice, c.codice)}
-                                  disabled={disabled}
-                                />
-                              </div>
-                            </td>
-                          );
-                        })}
+                        {RUOLI_DASHBOARD.map((r) => (
+                          <td key={r.codice} className="px-3 py-2.5 text-center">
+                            <div className="inline-flex">
+                              <Switch
+                                checked={matrix[r.codice]?.[c.codice] ?? false}
+                                onCheckedChange={() => toggle(r.codice, c.codice)}
+                              />
+                            </div>
+                          </td>
+                        ))}
                       </tr>
                     ))}
                   </React.Fragment>
