@@ -1359,7 +1359,23 @@ const DashboardPage: React.FC = () => {
   };
 
 
-  const is_loading = loading_atleti || loading_corsi || loading_gare || loading_fatture || loading_istruttori;
+  // Quali riquadri vede questo ruolo: deciso dalla matrice del club.
+  const cards_permessi = useDashboardCardsMatrix();
+  const mostra = (codice: string): boolean => {
+    if (cards_permessi.is_admin_like) return true;
+    if (cards_permessi.configurato) return cards_permessi.visibile_set.has(codice);
+    // Mai configurato (o lettura fallita): valgono i valori di partenza del ruolo.
+    return card_visibile_di_default(cards_permessi.ruolo, codice);
+  };
+
+  const is_loading =
+    loading_atleti ||
+    loading_corsi ||
+    loading_gare ||
+    loading_fatture ||
+    loading_istruttori ||
+    // Finché non si sa quali riquadri spettano al ruolo non si disegna niente.
+    cards_permessi.is_loading;
 
   const active_atleti = atleti.filter((a) => a.stato === "attivo").length;
   const active_corsi = corsi.filter((c) => c.stato === "attivo").length;
