@@ -342,7 +342,10 @@
     "nessun_istruttore": "Die Liste der Lehrpersonen ist nicht verfügbar: die Anfrage wird ohne Präferenz gesendet.",
     "creata_parziale": "Lektion erstellt, aber einige Schritte sind fehlgeschlagen",
     "gia_gestita": "Die Anfrage wurde vom Club bereits bearbeitet.",
-    "collegamento_atleta_diverso": "Die erstellte Lektion betrifft nicht die angefragte Athletin: die Anfrage bleibt offen"
+    "collegamento_atleta_diverso": "Die erstellte Lektion betrifft nicht die angefragte Athletin: die Anfrage bleibt offen",
+    "lezioni_autorizzate": "{{totale}} Stunden bewilligt, {{passate}} bereits stattgefunden",
+    "conteggio_in_corso": "Stunden werden gezählt…",
+    "conteggio_non_disponibile": "Die Stunden dieser Anfrage konnten nicht gezählt werden."
   },
   "musica": {
     "ascolta": "Anhören",
@@ -422,25 +425,27 @@
     "errore_inesistente": "Dieses Datum existiert nicht.",
     "errore_anno_range": "Das Jahr muss zwischen {{min}} und {{max}} liegen."
   },
-  "lezioni_da_approvare": {
-    "tab": "Zu genehmigen",
-    "titolo": "Zu genehmigende Privatstunden",
-    "aggiorna": "Aktualisieren",
-    "errore_lettura": "Liste nicht verfügbar: Laden fehlgeschlagen.",
-    "riprova": "Erneut versuchen",
-    "vuoto": "Keine Stunden zu genehmigen.",
+  "approva_richiesta": {
+    "titolo": "Anfrage genehmigen",
+    "sottotitolo": "Anfrage von {{nome}}: Lege fest, wann sie stattfindet und wie oft sie sich wiederholt.",
     "istruttore": "Trainer",
-    "atlete": "Läuferinnen",
-    "nessuna_atleta": "keine Läuferin",
-    "ricorrente": "Wiederkehrend",
-    "approva": "Genehmigen",
-    "rifiuta": "Ablehnen",
-    "motivo_rifiuto": "Grund der Ablehnung",
-    "conferma_rifiuto": "Ablehnung bestätigen",
+    "istruttore_placeholder": "Trainer wählen",
+    "data": "Datum der ersten Stunde",
+    "ora": "Beginn",
+    "durata": "Dauer in Minuten",
+    "ricorrenza": "Wiederholung",
+    "una_tantum": "Nur eine Stunde",
+    "settimanale": "Jede Woche",
+    "altro_numero": "Andere Anzahl",
+    "costo": "Kosten pro Stunde (CHF)",
+    "anteprima_singola": "Es wird eine Stunde erstellt: {{date}}, um {{ora}}. Für weitere Stunden braucht es eine neue Anfrage der Familie.",
+    "anteprima_ricorrente_one": "Es wird {{count}} Stunde erstellt: {{date}}, um {{ora}}. Nach der letzten braucht es eine neue Anfrage der Familie.",
+    "anteprima_ricorrente_other": "Es werden {{count}} Stunden erstellt: {{date}}, alle um {{ora}}. Nach der letzten braucht es eine neue Anfrage der Familie.",
     "annulla": "Abbrechen",
-    "toast_approvata": "Stunde genehmigt",
-    "toast_rifiutata": "Stunde abgelehnt",
-    "toast_errore": "Vorgang fehlgeschlagen",
-    "etichetta_calendario": "zu genehmigen"
+    "conferma": "Genehmigen und Stunden erstellen",
+    "riuscita_one": "Anfrage genehmigt: {{count}} Stunde erstellt",
+    "riuscita_other": "Anfrage genehmigt: {{count}} Stunden erstellt",
+    "riuscita_parziale_one": "Anfrage genehmigt, {{count}} Stunde erstellt, aber etwas muss geprüft werden",
+    "riuscita_parziale_other": "Anfrage genehmigt, {{count}} Stunden erstellt, aber etwas muss geprüft werden"
   }
 }

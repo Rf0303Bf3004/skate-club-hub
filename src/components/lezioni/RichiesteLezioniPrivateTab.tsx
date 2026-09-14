@@ -6,6 +6,7 @@ import { segnala_errore } from "@/lib/errori";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Loader2, CalendarClock, User } from "lucide-react";
 import { toast } from "sonner";
+import ApprovaRichiestaDialog from "@/components/lezioni/ApprovaRichiestaDialog";
 
 export interface RichiestaLezione {
   id: string;
@@ -48,20 +49,38 @@ function giorni_attesa(created_at: string): number {
   return Math.max(0, Math.floor(ms / 86400000));
 }
 
+/** Lezioni già nate da una richiesta: servono per dire quante ne restano. */
+function use_lezioni_per_richiesta() {
+  return useQuery({
+    queryKey: ["lezioni_richiesta", get_current_club_id()],
+    enabled: !!get_current_club_id(),
+    queryFn: async (): Promise<{ richiesta_id: string; data: string; annullata: boolean }[]> => {
+      const { data, error } = await supabase
+        .from("lezioni_private")
+        .select("richiesta_id, data, annullata")
+        .eq("club_id", get_current_club_id())
+        .not("richiesta_id", "is", null);
+      if (error) throw error;
+      return (data ?? []) as { richiesta_id: string; data: string; annullata: boolean }[];
+    },
+  });
+}
+
 interface Props {
   atleti: { id: string; nome: string; cognome: string }[];
-  istruttori: { id: string; nome: string; cognome: string }[];
+  istruttori: { id: string; nome: string; cognome: string; costo_minuto_lezione_privata?: number | null }[];
   puo_gestire: boolean;
-  richiesta_pendente_id: string | null;
-  on_accetta: (r: RichiestaLezione) => void;
+  /** Approvare una richiesta è riservato a DT, presidenza e amministrazione. */
+  puo_approvare: boolean;
+  durata_default: number;
 }
 
 const RichiesteLezioniPrivateTab: React.FC<Props> = ({
   atleti,
   istruttori,
   puo_gestire,
-  richiesta_pendente_id,
-  on_accetta,
+  puo_approvare,
+  durata_default,
 }) => {
   const { t, i18n } = useTranslation("common");
   const qc = useQueryClient();
@@ -77,6 +96,21 @@ const RichiesteLezioniPrivateTab: React.FC<Props> = ({
   const [rifiuta_id, set_rifiuta_id] = useState<string | null>(null);
   const [nota_rifiuto, set_nota_rifiuto] = useState("");
   const [salvando, set_salvando] = useState(false);
+  const [approva_richiesta, set_approva_richiesta] = useState<RichiestaLezione | null>(null);
+
+  const lezioni_rich = use_lezioni_per_richiesta();
+  const oggi = new Date().toISOString().slice(0, 10);
+  const conteggio_lezioni = useMemo(() => {
+    const m = new Map<string, { totale: number; passate: number }>();
+    for (const l of lezioni_rich.data ?? []) {
+      if (!l.richiesta_id || l.annullata) continue;
+      const c = m.get(l.richiesta_id) ?? { totale: 0, passate: 0 };
+      c.totale += 1;
+      if (l.data < oggi) c.passate += 1;
+      m.set(l.richiesta_id, c);
+    }
+    return m;
+  }, [lezioni_rich.data, oggi]);
 
   const richieste = data ?? [];
   const in_attesa = useMemo(() => richieste.filter((r) => r.stato === "in_attesa"), [richieste]);
@@ -169,7 +203,7 @@ const RichiesteLezioniPrivateTab: React.FC<Props> = ({
   const Riga: React.FC<{ r: RichiestaLezione; storico?: boolean }> = ({ r, storico }) => (
     <div
       className={`rounded-xl border p-4 space-y-2 ${
-        richiesta_pendente_id === r.id ? "border-primary bg-primary/5" : "border-border bg-muted/20"
+        approva_richiesta?.id === r.id ? "border-primary bg-primary/5" : "border-border bg-muted/20"
       }`}
     >
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -203,17 +237,31 @@ const RichiesteLezioniPrivateTab: React.FC<Props> = ({
           {r.note_risposta}
         </p>
       )}
+      {storico && r.stato === "accettata" && (
+        <p className="text-xs text-muted-foreground">
+          {lezioni_rich.isError
+            ? t("richieste_private.conteggio_non_disponibile")
+            : lezioni_rich.isSuccess
+              ? t("richieste_private.lezioni_autorizzate", {
+                  totale: conteggio_lezioni.get(r.id)?.totale ?? 0,
+                  passate: conteggio_lezioni.get(r.id)?.passate ?? 0,
+                })
+              : t("richieste_private.conteggio_in_corso")}
+        </p>
+      )}
       {!storico && (
         <div className="flex items-center justify-between gap-3 flex-wrap pt-1">
           <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <CalendarClock className="w-3.5 h-3.5" />
             {t("richieste_private.attesa_giorni", { count: giorni_attesa(r.created_at) })}
           </span>
-          {puo_gestire && (
-            <div className="flex gap-2">
-              <Button size="sm" disabled={!azioni_attive} onClick={() => on_accetta(r)}>
+          <div className="flex gap-2">
+            {puo_approvare && (
+              <Button size="sm" disabled={!azioni_attive} onClick={() => set_approva_richiesta(r)}>
                 {t("richieste_private.accetta")}
               </Button>
+            )}
+            {puo_gestire && (
               <Button
                 size="sm"
                 variant="outline"
@@ -225,8 +273,8 @@ const RichiesteLezioniPrivateTab: React.FC<Props> = ({
               >
                 {t("richieste_private.rifiuta")}
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -234,6 +282,31 @@ const RichiesteLezioniPrivateTab: React.FC<Props> = ({
 
   return (
     <div className="space-y-4">
+      {approva_richiesta && (
+        <ApprovaRichiestaDialog
+          richiesta={approva_richiesta}
+          nome_atleta={nome_atleta(approva_richiesta.atleta_id)}
+          istruttori={istruttori}
+          durata_default={durata_default}
+          on_close={() => set_approva_richiesta(null)}
+          on_esito={(esito) => {
+            set_approva_richiesta(null);
+            if (esito.problemi.length > 0) {
+              // Riuscita a metà: mai il messaggio verde.
+              toast.warning(t("approva_richiesta.riuscita_parziale", { count: esito.lezioni_create }), {
+                description: esito.problemi.join(" · "),
+              });
+            } else {
+              toast.success(t("approva_richiesta.riuscita", { count: esito.lezioni_create }));
+            }
+          }}
+          on_errore={(e) => {
+            void segnala_errore("RichiesteLezioniPrivateTab", t("approva_richiesta.titolo"), e, {
+              richiesta_id: approva_richiesta.id,
+            });
+          }}
+        />
+      )}
       {rifiuta_id && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4">

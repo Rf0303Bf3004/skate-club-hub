@@ -34,5 +34,12 @@
   },
   "comunicazione": {
     "apri": "Écrire un message"
+  },
+  "widget_lezioni_private": {
+    "title": "Demandes de cours privés",
+    "recurring": "(récurrent)",
+    "empty": "Aucune demande en attente",
+    "nessuna_data": "Aucune date souhaitée",
+    "apri": "Ouvrir les demandes"
   }
 }

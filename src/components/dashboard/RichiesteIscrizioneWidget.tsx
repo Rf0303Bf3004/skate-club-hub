@@ -13,11 +13,6 @@ import { useTranslation } from "react-i18next";
 import FotoAtleta from "@/components/common/FotoAtleta";
 import { Link } from "react-router-dom";
 import { segnala_errore } from "@/lib/errori";
-import {
-  use_lezioni_da_approvare,
-  use_approva_lezione_privata,
-  use_rifiuta_lezione_privata,
-} from "@/hooks/use-lezioni-da-approvare";
 
 function fmt_data_breve_localizzata(data_iso: string, locale_code: string): string {
   const dt = new Date(data_iso + "T00:00:00");
@@ -396,38 +391,54 @@ export const UltimeIscrizioniWidget: React.FC = () => {
   );
 };
 
-// ─── Card 3: Richieste lezioni private ───────────────────────
-function fmt_ora(t?: string | null): string {
-  if (!t) return "—";
-  return t.slice(0, 5);
-}
-
+// ─── Card 3: Richieste di lezione privata delle famiglie ─────
+/**
+ * Si approva la richiesta, non la lezione: qui si elencano le richieste
+ * delle famiglie ancora in attesa. L'approvazione avvienne nella linguetta
+ * "Richieste" di Lezioni Private, dove si decide ricorrenza e ripetizioni.
+ */
 export const RichiesteLezioniPrivateWidget: React.FC = () => {
   const { t } = useTranslation("dashboard");
   const club_id = get_current_club_id();
-  const qc = useQueryClient();
   const { locale } = useI18n();
   const locale_code = locale_to_bcp47(locale);
-  const [rifiuto_id, set_rifiuto_id] = useState<string | null>(null);
-  const [motivo, set_motivo] = useState("");
 
-  const { data: lezioni, isLoading, isError, error: errore_query, isFetching, refetch } =
-    use_lezioni_da_approvare(REFETCH_MS);
+  const { data, isLoading, isError, error: errore_query, isFetching, refetch } = useQuery({
+    queryKey: ["richieste_lezioni_private", "dashboard", club_id],
+    enabled: !!club_id,
+    refetchInterval: REFETCH_MS,
+    queryFn: async () => {
+      const { data, error, count } = await supabase
+        .from("richieste_lezioni_private")
+        .select("id, created_at, atleta_id, istruttore_id, data_preferita, note_richiesta", { count: "exact" })
+        .eq("club_id", club_id)
+        .eq("stato", "in_attesa")
+        .order("created_at", { ascending: true })
+        .limit(MAX_RIGHE);
+      if (error) throw error;
+      const rows = data ?? [];
+      const totale = count ?? rows.length;
+      if (rows.length === 0) return { righe: [] as any[], totale };
 
-  const approva = use_approva_lezione_privata({
-    onSuccess: () => toast({ title: t("widget_lezioni_private.toast_approved") }),
-    onError: (e: any) =>
-      toast({ title: t("widget_richieste.toast_error"), description: e?.message, variant: "destructive" }),
-  });
-
-  const rifiuta = use_rifiuta_lezione_privata({
-    onSuccess: () => {
-      toast({ title: t("widget_lezioni_private.toast_rejected") });
-      set_rifiuto_id(null);
-      set_motivo("");
+      const atl_ids = [...new Set(rows.map((r) => r.atleta_id).filter(Boolean))] as string[];
+      const ist_ids = [...new Set(rows.map((r) => r.istruttore_id).filter(Boolean))] as string[];
+      const [atleti_res, istruttori_res] = await Promise.all([
+        supabase.from("atleti").select("id, nome, cognome, foto_path").in("id", atl_ids.length ? atl_ids : ["-"]),
+        supabase.from("istruttori").select("id, nome, cognome").in("id", ist_ids.length ? ist_ids : ["-"]),
+      ]);
+      if (atleti_res.error) throw atleti_res.error;
+      if (istruttori_res.error) throw istruttori_res.error;
+      const a_map = new Map((atleti_res.data ?? []).map((a: any) => [a.id, a]));
+      const i_map = new Map((istruttori_res.data ?? []).map((i: any) => [i.id, i]));
+      return {
+        righe: rows.map((r) => ({
+          ...r,
+          atleta: a_map.get(r.atleta_id),
+          istruttore: r.istruttore_id ? i_map.get(r.istruttore_id) : null,
+        })),
+        totale,
+      };
     },
-    onError: (e: any) =>
-      toast({ title: t("widget_richieste.toast_error"), description: e?.message, variant: "destructive" }),
   });
 
   React.useEffect(() => {
@@ -435,9 +446,9 @@ export const RichiesteLezioniPrivateWidget: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isError]);
 
-  const righe = lezioni ?? [];
+  const righe = data?.righe ?? [];
+  const totale = data?.totale ?? 0;
   const visibili = righe.slice(0, MOSTRATE);
-  const count = righe.length;
 
   return (
     <div className="bg-card rounded-xl shadow-card p-5 space-y-3">
@@ -446,11 +457,7 @@ export const RichiesteLezioniPrivateWidget: React.FC = () => {
         <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
           {t("widget_lezioni_private.title")}
         </h3>
-        {count > 0 && (
-          <Badge variant="default">
-            {count}
-          </Badge>
-        )}
+        {totale > 0 && <Badge variant="default">{totale}</Badge>}
         <button
           onClick={() => refetch()}
           disabled={isFetching}
@@ -469,110 +476,52 @@ export const RichiesteLezioniPrivateWidget: React.FC = () => {
         </div>
       ) : isError ? (
         <BloccoErrore onRiprova={() => refetch()} />
-      ) : count === 0 ? (
-        <p className="text-sm text-muted-foreground py-2">{t("widget_richieste.empty")}</p>
+      ) : righe.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-2">{t("widget_lezioni_private.empty")}</p>
       ) : (
         <div className="space-y-3">
-          {visibili.map((l: any) => {
-            const a0 = l.atleti?.[0];
-            const altri = (l.atleti?.length ?? 0) - 1;
-            return (
-              <div key={l.id} className="border border-border rounded-lg p-3 space-y-2">
-                <div className="flex items-center gap-2">
-                  <FotoAtleta
-                    foto_path={a0?.foto_path}
-                    nome={a0?.nome}
-                    cognome={a0?.cognome}
-                    className="w-8 h-8 rounded-full"
-                    fallback={
-                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground">
-                        {a0 ? `${a0.nome?.[0] ?? ""}${a0.cognome?.[0] ?? ""}` : "?"}
-                      </div>
-                    }
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">
-                      {a0 ? `${a0.nome} ${a0.cognome}` : "—"}
-                      {altri > 0 && (
-                        <span className="text-muted-foreground font-normal"> +{altri}</span>
-                      )}
-                      <span className="text-muted-foreground font-normal">
-                        {" → "}
-                        {l.istruttore ? `${l.istruttore.nome} ${l.istruttore.cognome}` : "—"}
-                      </span>
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {fmt_data_breve_localizzata(l.data, locale_code)}
-                      {" · "}
-                      {fmt_ora(l.ora_inizio)}–{fmt_ora(l.ora_fine)}
-                      {l.ricorrente && (
-                        <span className="ml-1 italic">{t("widget_lezioni_private.recurring")}</span>
-                      )}
-                    </p>
+          {visibili.map((r: any) => (
+            <div key={r.id} className="flex items-center gap-2">
+              <FotoAtleta
+                foto_path={r.atleta?.foto_path}
+                nome={r.atleta?.nome}
+                cognome={r.atleta?.cognome}
+                className="w-8 h-8 rounded-full"
+                fallback={
+                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground">
+                    {r.atleta ? `${r.atleta.nome?.[0] ?? ""}${r.atleta.cognome?.[0] ?? ""}` : "?"}
                   </div>
-                </div>
-                {l.note && (
-                  <p className="text-xs text-muted-foreground italic pl-10">"{l.note}"</p>
-                )}
-
-                {rifiuto_id === l.id ? (
-                  <div className="space-y-2 pl-10">
-                    <Textarea
-                      value={motivo}
-                      onChange={(e) => set_motivo(e.target.value)}
-                      placeholder={t("widget_richieste.reject_reason")}
-                      className="w-full min-h-[60px] text-xs border border-border rounded px-2 py-1 bg-background resize-none"
-                      autoFocus
-                    />
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        disabled={rifiuta.isPending}
-                        onClick={() =>
-                          rifiuta.mutate({ id: l.id, note_attuale: l.note, motivo })
-                        }
-                      >
-                        {t("widget_richieste.confirm_reject")}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          set_rifiuto_id(null);
-                          set_motivo("");
-                        }}
-                      >
-                        {t("widget_richieste.cancel")}
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex gap-2 pl-10">
-                    <Button
-                      size="sm"
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white h-7 px-2"
-                      disabled={approva.isPending}
-                      onClick={() => approva.mutate(l.id)}
-                    >
-                      <Check className="w-3 h-3 mr-1" /> {t("widget_richieste.approve")}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      className="h-7 px-2"
-                      onClick={() => set_rifiuto_id(l.id)}
-                    >
-                      <X className="w-3 h-3 mr-1" /> {t("widget_richieste.reject")}
-                    </Button>
-                  </div>
-                )}
+                }
+              />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">
+                  {r.atleta ? `${r.atleta.nome} ${r.atleta.cognome}` : "—"}
+                  {r.istruttore && (
+                    <span className="text-muted-foreground font-normal">
+                      {" → "}
+                      {r.istruttore.nome} {r.istruttore.cognome}
+                    </span>
+                  )}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {r.data_preferita
+                    ? fmt_data_breve_localizzata(r.data_preferita, locale_code)
+                    : t("widget_lezioni_private.nessuna_data")}
+                  {" · "}
+                  {tempo_relativo(r.created_at, t)}
+                </p>
               </div>
-            );
-          })}
-          <RigaVediTutte restanti={count - visibili.length} to="/lezioni-private?tab=da_approvare" />
+            </div>
+          ))}
+          <Link
+            to="/lezioni-private?tab=richieste"
+            className="block text-center text-xs font-semibold text-primary hover:underline pt-1"
+          >
+            {totale > visibili.length
+              ? t("widget_comune.vedi_tutte", { count: totale - visibili.length })
+              : t("widget_lezioni_private.apri")}
+          </Link>
         </div>
-
       )}
     </div>
   );
