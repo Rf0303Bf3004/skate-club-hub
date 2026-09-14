@@ -155,8 +155,9 @@
   "widget_lezioni_private": {
     "title": "Richieste lezioni private",
     "recurring": "(ricorrente)",
-    "toast_approved": "Lezione approvata",
-    "toast_rejected": "Lezione rifiutata"
+    "empty": "Nessuna richiesta in attesa",
+    "nessuna_data": "Nessuna data preferita",
+    "apri": "Apri le richieste"
   },
   "widget_istruttori": {
     "title": "Istruttori disponibili",

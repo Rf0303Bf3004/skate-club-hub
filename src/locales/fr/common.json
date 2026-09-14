@@ -342,7 +342,10 @@
     "nessun_istruttore": "La liste des instructeurs n'est pas disponible : la demande sera envoyée sans préférence.",
     "creata_parziale": "Leçon créée, mais certaines étapes ont échoué",
     "gia_gestita": "La demande a déjà été traitée par le club.",
-    "collegamento_atleta_diverso": "La leçon créée ne concerne pas l'athlète de la demande : la demande reste en attente"
+    "collegamento_atleta_diverso": "La leçon créée ne concerne pas l'athlète de la demande : la demande reste en attente",
+    "lezioni_autorizzate": "{{totale}} cours autorisés, {{passate}} déjà donnés",
+    "conteggio_in_corso": "Comptage des cours en cours…",
+    "conteggio_non_disponibile": "Impossible de compter les cours de cette demande."
   },
   "musica": {
     "ascolta": "Écouter",
@@ -422,25 +425,27 @@
     "errore_inesistente": "Cette date n'existe pas.",
     "errore_anno_range": "L'année doit être comprise entre {{min}} et {{max}}."
   },
-  "lezioni_da_approvare": {
-    "tab": "À approuver",
-    "titolo": "Leçons privées à approuver",
-    "aggiorna": "Actualiser",
-    "errore_lettura": "Liste indisponible : le chargement a échoué.",
-    "riprova": "Réessayer",
-    "vuoto": "Aucune leçon à approuver.",
-    "istruttore": "Moniteur",
-    "atlete": "Patineuses",
-    "nessuna_atleta": "aucune patineuse",
-    "ricorrente": "Récurrente",
-    "approva": "Approuver",
-    "rifiuta": "Refuser",
-    "motivo_rifiuto": "Motif du refus",
-    "conferma_rifiuto": "Confirmer le refus",
+  "approva_richiesta": {
+    "titolo": "Approuver la demande",
+    "sottotitolo": "Demande de {{nome}} : choisissez quand elle a lieu et combien de fois elle se répète.",
+    "istruttore": "Entraîneur",
+    "istruttore_placeholder": "Choisissez l'entraîneur",
+    "data": "Date du premier cours",
+    "ora": "Heure de début",
+    "durata": "Durée en minutes",
+    "ricorrenza": "Répétition",
+    "una_tantum": "Un seul cours",
+    "settimanale": "Chaque semaine",
+    "altro_numero": "Autre nombre",
+    "costo": "Coût de chaque cours (CHF)",
+    "anteprima_singola": "Un cours sera créé : {{date}}, à {{ora}}. Pour d'autres cours, la famille devra faire une nouvelle demande.",
+    "anteprima_ricorrente_one": "{{count}} cours sera créé : {{date}}, à {{ora}}. Après le dernier, la famille devra faire une nouvelle demande.",
+    "anteprima_ricorrente_other": "{{count}} cours seront créés : {{date}}, tous à {{ora}}. Après le dernier, la famille devra faire une nouvelle demande.",
     "annulla": "Annuler",
-    "toast_approvata": "Leçon approuvée",
-    "toast_rifiutata": "Leçon refusée",
-    "toast_errore": "Opération échouée",
-    "etichetta_calendario": "à approuver"
+    "conferma": "Approuver et créer les cours",
+    "riuscita_one": "Demande approuvée : {{count}} cours créé",
+    "riuscita_other": "Demande approuvée : {{count}} cours créés",
+    "riuscita_parziale_one": "Demande approuvée, {{count}} cours créé, mais il y a un point à régler",
+    "riuscita_parziale_other": "Demande approuvée, {{count}} cours créés, mais il y a un point à régler"
   }
 }

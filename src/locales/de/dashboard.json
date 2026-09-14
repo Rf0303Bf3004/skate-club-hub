@@ -34,5 +34,12 @@
   },
   "comunicazione": {
     "apri": "Mitteilung schreiben"
+  },
+  "widget_lezioni_private": {
+    "title": "Anfragen für Privatstunden",
+    "recurring": "(wiederkehrend)",
+    "empty": "Keine offenen Anfragen",
+    "nessuna_data": "Kein Wunschdatum",
+    "apri": "Anfragen öffnen"
   }
 }

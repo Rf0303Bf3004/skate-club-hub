@@ -34,5 +34,12 @@
   },
   "comunicazione": {
     "apri": "Write a message"
+  },
+  "widget_lezioni_private": {
+    "title": "Private lesson requests",
+    "recurring": "(recurring)",
+    "empty": "No pending requests",
+    "nessuna_data": "No preferred date",
+    "apri": "Open the requests"
   }
 }

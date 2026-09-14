@@ -427,7 +427,10 @@
     "nessun_istruttore": "L'elenco degli istruttori non è disponibile: la richiesta verrà inviata senza preferenza.",
     "creata_parziale": "Lezione creata, ma alcuni passaggi non sono riusciti",
     "gia_gestita": "La richiesta è già stata gestita dal club.",
-    "collegamento_atleta_diverso": "La lezione creata non riguarda l'atleta della richiesta: la richiesta resta in attesa"
+    "collegamento_atleta_diverso": "La lezione creata non riguarda l'atleta della richiesta: la richiesta resta in attesa",
+    "lezioni_autorizzate": "{{totale}} lezioni autorizzate, {{passate}} già svolte",
+    "conteggio_in_corso": "Conteggio delle lezioni in corso…",
+    "conteggio_non_disponibile": "Non è stato possibile contare le lezioni di questa richiesta."
   },
   "musica": {
     "ascolta": "Ascolta",
@@ -500,25 +503,27 @@
     "oggi": "Oggi",
     "scegli_data": "Scegli data"
   },
-  "lezioni_da_approvare": {
-    "tab": "Da approvare",
-    "titolo": "Lezioni private da approvare",
-    "aggiorna": "Aggiorna",
-    "errore_lettura": "Elenco non disponibile: la lettura non è riuscita.",
-    "riprova": "Riprova",
-    "vuoto": "Nessuna lezione da approvare.",
+  "approva_richiesta": {
+    "titolo": "Approva la richiesta",
+    "sottotitolo": "Richiesta di {{nome}}: decidi quando si svolge e quante volte si ripete.",
     "istruttore": "Istruttore",
-    "atlete": "Atlete",
-    "nessuna_atleta": "nessuna atleta",
-    "ricorrente": "Ricorrente",
-    "approva": "Approva",
-    "rifiuta": "Rifiuta",
-    "motivo_rifiuto": "Motivo del rifiuto",
-    "conferma_rifiuto": "Conferma rifiuto",
+    "istruttore_placeholder": "Scegli l'istruttore",
+    "data": "Data della prima lezione",
+    "ora": "Ora di inizio",
+    "durata": "Durata in minuti",
+    "ricorrenza": "Ripetizione",
+    "una_tantum": "Una lezione sola",
+    "settimanale": "Ogni settimana",
+    "altro_numero": "Altro numero",
+    "costo": "Costo di ogni lezione (CHF)",
+    "anteprima_singola": "Verrà creata una lezione: {{date}}, alle {{ora}}. Per altre lezioni servirà una richiesta nuova della famiglia.",
+    "anteprima_ricorrente_one": "Verrà creata {{count}} lezione: {{date}}, alle {{ora}}. Dopo l'ultima servirà una richiesta nuova della famiglia.",
+    "anteprima_ricorrente_other": "Verranno create {{count}} lezioni: {{date}}, tutte alle {{ora}}. Dopo l'ultima servirà una richiesta nuova della famiglia.",
     "annulla": "Annulla",
-    "toast_approvata": "Lezione approvata",
-    "toast_rifiutata": "Lezione rifiutata",
-    "toast_errore": "Operazione non riuscita",
-    "etichetta_calendario": "da approvare"
+    "conferma": "Approva e crea le lezioni",
+    "riuscita_one": "Richiesta approvata: {{count}} lezione creata",
+    "riuscita_other": "Richiesta approvata: {{count}} lezioni create",
+    "riuscita_parziale_one": "Richiesta approvata, {{count}} lezione creata, ma c'è qualcosa da sistemare",
+    "riuscita_parziale_other": "Richiesta approvata, {{count}} lezioni create, ma c'è qualcosa da sistemare"
   }
 }
