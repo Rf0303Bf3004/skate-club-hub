@@ -406,91 +406,23 @@ export const RichiesteLezioniPrivateWidget: React.FC = () => {
   const [rifiuto_id, set_rifiuto_id] = useState<string | null>(null);
   const [motivo, set_motivo] = useState("");
 
-  const { data: lezioni, isLoading, isError, error: errore_query, isFetching, refetch } = useQuery({
-    queryKey: ["richieste_lezioni_private", club_id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("lezioni_private")
-        .select("id, data, ora_inizio, ora_fine, ricorrente, note, istruttore_id, created_at")
-        .eq("club_id", club_id)
-        .eq("richiede_approvazione", true)
-        .eq("annullata", false)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      const rows = data ?? [];
-      if (rows.length === 0) return [];
+  const { data: lezioni, isLoading, isError, error: errore_query, isFetching, refetch } =
+    use_lezioni_da_approvare(REFETCH_MS);
 
-      const lez_ids = rows.map((r) => r.id);
-      const ist_ids = [...new Set(rows.map((r) => r.istruttore_id).filter(Boolean))];
-
-      const [{ data: lpa }, { data: istruttori }] = await Promise.all([
-        supabase
-          .from("lezioni_private_atlete")
-          .select("lezione_id, atleta_id")
-          .in("lezione_id", lez_ids),
-        ist_ids.length
-          ? supabase.from("istruttori").select("id, nome, cognome, colore").in("id", ist_ids)
-          : Promise.resolve({ data: [] as any[] }),
-      ]);
-
-      const atl_ids = [...new Set((lpa ?? []).map((x: any) => x.atleta_id))];
-      const { data: atleti } = atl_ids.length
-        ? await supabase
-            .from("atleti")
-            .select("id, nome, cognome, foto_url, foto_path")
-            .in("id", atl_ids)
-        : { data: [] as any[] };
-
-      const a_map = new Map((atleti ?? []).map((a: any) => [a.id, a]));
-      const i_map = new Map((istruttori ?? []).map((i: any) => [i.id, i]));
-      const atleti_per_lezione = new Map<string, any[]>();
-      (lpa ?? []).forEach((x: any) => {
-        const arr = atleti_per_lezione.get(x.lezione_id) ?? [];
-        const a = a_map.get(x.atleta_id);
-        if (a) arr.push(a);
-        atleti_per_lezione.set(x.lezione_id, arr);
-      });
-
-      return rows.map((r) => ({
-        ...r,
-        istruttore: r.istruttore_id ? i_map.get(r.istruttore_id) : null,
-        atleti: atleti_per_lezione.get(r.id) ?? [],
-      }));
-    },
-    refetchInterval: REFETCH_MS,
+  const approva = use_approva_lezione_privata({
+    onSuccess: () => toast({ title: t("widget_lezioni_private.toast_approved") }),
+    onError: (e: any) =>
+      toast({ title: t("widget_richieste.toast_error"), description: e?.message, variant: "destructive" }),
   });
 
-  const approva = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("lezioni_private")
-        .update({ richiede_approvazione: false })
-        .eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast({ title: t("widget_lezioni_private.toast_approved") });
-      qc.invalidateQueries({ queryKey: ["richieste_lezioni_private"] });
-    },
-    onError: (e: any) => toast({ title: t("widget_richieste.toast_error"), description: e.message, variant: "destructive" }),
-  });
-
-  const rifiuta = useMutation({
-    mutationFn: async ({ id, note_attuale, motivo }: { id: string; note_attuale: string | null; motivo: string }) => {
-      const nuove_note = `${note_attuale ?? ""}${note_attuale ? " | " : ""}RIFIUTATA: ${motivo}`.trim();
-      const { error } = await supabase
-        .from("lezioni_private")
-        .update({ annullata: true, richiede_approvazione: false, note: nuove_note })
-        .eq("id", id);
-      if (error) throw error;
-    },
+  const rifiuta = use_rifiuta_lezione_privata({
     onSuccess: () => {
       toast({ title: t("widget_lezioni_private.toast_rejected") });
       set_rifiuto_id(null);
       set_motivo("");
-      qc.invalidateQueries({ queryKey: ["richieste_lezioni_private"] });
     },
-    onError: (e: any) => toast({ title: t("widget_richieste.toast_error"), description: e.message, variant: "destructive" }),
+    onError: (e: any) =>
+      toast({ title: t("widget_richieste.toast_error"), description: e?.message, variant: "destructive" }),
   });
 
   React.useEffect(() => {
