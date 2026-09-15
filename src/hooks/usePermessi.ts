@@ -72,11 +72,13 @@ export function useDashboardCardsMatrix(): {
   is_error: boolean;
 } {
   const { session } = useAuth();
-  const admin_like = is_admin_like(session?.ruolo);
+  // Solo il superadmin salta la matrice: admin e vicepresidente la leggono
+  // come tutti gli altri ruoli, con i valori di partenza se mai configurata.
+  const is_superadmin = session?.ruolo === "superadmin";
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["dashboard_card_permessi_self", session?.club_id, session?.ruolo],
-    enabled: !!session?.club_id && !!session?.ruolo && !admin_like,
+    enabled: !!session?.club_id && !!session?.ruolo && !is_superadmin,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("dashboard_card_permessi")
