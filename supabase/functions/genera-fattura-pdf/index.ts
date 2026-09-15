@@ -17,25 +17,24 @@ import QRCode from "qrcode";
 import { genera_fattura_atleta_blob } from "../_shared/fattura-documento.tsx";
 import type { FatturaAtletaData, FatturaAtletaRiga } from "../_shared/fattura-documento.tsx";
 
-const ORIGINI_AMMESSE = [
-  "https://app.icearena.ch",
-  "https://ice-arena-manager.lovable.app",
-  "https://id-preview--f73d3b52-ac71-4df5-835a-6a9b98a06a92.lovable.app",
-  "http://localhost:8080",
-];
-
+/**
+ * Stesse regole delle altre diciassette funzioni del progetto: origine aperta.
+ * Qui l'identità viaggia nell'intestazione Authorization e non nei cookie,
+ * quindi una pagina ostile non può comunque ottenere il token di chi naviga.
+ * L'elenco chiuso che c'era prima bloccava l'anteprima della fattura ogni volta
+ * che l'app girava su un indirizzo non previsto.
+ * Le intestazioni ammesse rispecchiano quelle chieste dal browser: il client
+ * Supabase ne aggiunge di nuove fra una versione e l'altra, e un elenco fisso
+ * torna a rompersi da solo al primo aggiornamento.
+ */
 function cors(req: Request): Record<string, string> {
-  const origin = req.headers.get("origin") ?? "";
-  const ammessa = ORIGINI_AMMESSE.includes(origin)
-    ? origin
-    : /^https:\/\/[a-z0-9-]+\.lovable\.app$/.test(origin)
-      ? origin
-      : ORIGINI_AMMESSE[0];
   return {
-    "Access-Control-Allow-Origin": ammessa,
-    "Vary": "Origin",
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers":
+      req.headers.get("access-control-request-headers") ??
+      "authorization, x-client-info, apikey, content-type",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Max-Age": "86400",
   };
 }
 
