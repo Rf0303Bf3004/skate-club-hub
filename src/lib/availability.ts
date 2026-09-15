@@ -490,3 +490,48 @@ export function ore_distinte_per_data(slot: slot_datato[]): number {
   for (const lista of per_data.values()) minuti += minuti_distinti_giorno(lista);
   return minuti / 60;
 }
+
+export type slot_ore_reali = slot_datato & { ore_effettive: number };
+
+/**
+ * Ore REALMENTE lavorate (entrata/uscita registrate), senza contare due volte
+ * le sessioni sovrapposte: dentro un gruppo di fasce che si sovrappongono nella
+ * stessa giornata si tiene la durata reale più lunga, non la somma.
+ * A differenza di `ore_distinte_per_data` NON usa la durata pianificata.
+ */
+export function ore_reali_senza_sovrapposizioni(slot: slot_ore_reali[]): number {
+  const per_data = new Map<string, slot_ore_reali[]>();
+  for (const s of slot ?? []) {
+    if (!s?.data) continue;
+    const lista = per_data.get(s.data) ?? [];
+    lista.push(s);
+    per_data.set(s.data, lista);
+  }
+
+  let ore = 0;
+  for (const lista of per_data.values()) {
+    const righe = lista
+      .map((s) => ({ s: time_to_min(s.ora_inizio), e: time_to_min(s.ora_fine), ore: Number(s.ore_effettive) || 0 }))
+      .filter((r) => r.ore > 0)
+      .sort((a, b) => a.s - b.s);
+
+    let fine_gruppo = -Infinity;
+    let max_gruppo = 0;
+    for (const r of righe) {
+      const inizio = Number.isFinite(r.s) ? r.s : fine_gruppo;
+      const fine = Number.isFinite(r.e) ? r.e : inizio;
+      if (inizio < fine_gruppo) {
+        // si sovrappone al gruppo in corso: vale la durata reale più lunga
+        max_gruppo = Math.max(max_gruppo, r.ore);
+        fine_gruppo = Math.max(fine_gruppo, fine);
+      } else {
+        ore += max_gruppo;
+        max_gruppo = r.ore;
+        fine_gruppo = fine;
+      }
+    }
+    ore += max_gruppo;
+  }
+  return ore;
+}
+
