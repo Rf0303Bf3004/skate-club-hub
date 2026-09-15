@@ -1419,6 +1419,11 @@ export default function TestLivelloPage() {
                   <div className="space-y-2">
                     {chain_rows.map((step, idx) => {
                       const is_first = idx === 0;
+                      const stato_step = (step.stato ?? "invitata") as StatoInvito;
+                      // L'esito si registra anche per chi non ha risposto all'invito:
+                      // si blocca solo se l'invito è stato annullato o ritirato.
+                      const esito_modificabile =
+                        puo_gestire_sportivo && stato_step !== "annullata" && stato_step !== "ritirata";
                       return (
                         <div key={step.id} className="grid gap-2 md:grid-cols-[auto_1fr_auto_auto_auto] items-center bg-muted/30 rounded-md px-3 py-2 text-sm">
                           <Badge variant="outline" className="font-mono">#{step.ordine}</Badge>
@@ -1432,7 +1437,8 @@ export default function TestLivelloPage() {
                               </Badge>
                             )}
                           </div>
-                          {puo_gestire_sportivo && (step.stato ?? "invitata") === "accettata" ? (
+                          {esito_modificabile ? (
+
                             <Select
                               value={step.esito}
                               onValueChange={(v) => handle_change_esito(step.id, v as "in_attesa" | "superato" | "non_superato" | "non_sostenuto")}
