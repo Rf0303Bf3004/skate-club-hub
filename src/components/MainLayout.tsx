@@ -66,8 +66,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  const is_legacy = is_admin || is_superadmin;
-  const is_nuovo_ruolo = !is_legacy && RUOLI_NUOVI.includes(session?.ruolo as string);
+  const is_nuovo_ruolo = !is_superadmin && RUOLI_NUOVI.includes(session?.ruolo as string);
 
   const { data: permessi_sezioni = [] } = useQuery({
     queryKey: ["ruoli_permessi_sezioni", session?.club_id, session?.ruolo],
