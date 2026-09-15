@@ -145,6 +145,11 @@ Deno.serve(async (req) => {
     const rigenera = (body as any)?.rigenera === true;
     if (!fattura_id) return json({ error: "missing_params" }, 400);
 
+    // Un identificativo scritto male è un errore di chi chiama, non un guasto:
+    // senza questo controllo il database rifiuta la query e la risposta esce 500.
+    const FORMA_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!FORMA_UUID.test(fattura_id)) return json({ error: "fattura_id_non_valido" }, 400);
+
     const { data: f, error: f_err } = await supabase
       .from("fatture")
       .select("*")

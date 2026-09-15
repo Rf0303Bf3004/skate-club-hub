@@ -45,6 +45,11 @@ Deno.serve(async (req) => {
     const prova = (body as any)?.prova === true;
     const solo_club = String((body as any)?.club_id ?? "").trim() || null;
 
+    const FORMA_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (solo_club && !FORMA_UUID.test(solo_club)) {
+      return json({ error: "club_id_non_valido" }, 400);
+    }
+
     // --- chi chiama ---
     let interna = token === service_key;
     const gettone = String((body as any)?.token_interno ?? "").trim();

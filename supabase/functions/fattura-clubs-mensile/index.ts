@@ -19,36 +19,47 @@ function periodo_corrente(): string {
 }
 
 Deno.serve(async (req) => {
-  // Solo lavoro pianificato interno: richiede la chiave di servizio come Bearer token.
-  const auth = req.headers.get("authorization") || "";
-  const expected = `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`;
-  if (auth !== expected) {
-    return new Response(JSON.stringify({ error: "unauthorized" }), {
-      status: 401,
+  const risposta = (corpo: unknown, status = 200) =>
+    new Response(JSON.stringify(corpo), {
+      status,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  }
 
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!SUPABASE_URL || !SERVICE_ROLE) {
-      return new Response(JSON.stringify({ error: "missing_env" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    let periodo = periodo_corrente();
-    let oggi = new Date().toISOString().slice(0, 10);
-    try {
-      const body = await req.json();
-      if (body?.periodo && /^\d{4}-(0[1-9]|1[0-2])$/.test(body.periodo)) periodo = body.periodo;
-      if (body?.data_emissione) oggi = body.data_emissione;
-    } catch (_) { /* no body */ }
+    if (!SUPABASE_URL || !SERVICE_ROLE) return risposta({ error: "missing_env" }, 500);
 
     const sb = createClient(SUPABASE_URL, SERVICE_ROLE, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
+
+    // Il corpo va letto prima dell'identificazione: il gettone arriva lì dentro.
+    let body: any = {};
+    try { body = await req.json(); } catch (_) { /* nessun corpo */ }
+
+    // Due forme ammesse: la chiave di servizio come Bearer, oppure un gettone
+    // usa e getta emesso dal database. Prima esisteva solo la prima, e il lavoro
+    // pianificato passava la chiave pubblica: veniva respinto ogni mese.
+    const auth = req.headers.get("authorization") || "";
+    const token = auth.replace(/^Bearer\s+/i, "").trim();
+    let interna = token === SERVICE_ROLE;
+    const gettone = String(body?.token_interno ?? "").trim();
+    if (!interna && gettone) {
+      const { data: valido, error: g_err } = await sb.rpc("consuma_token_interno", {
+        p_token: gettone,
+        p_scopo: "fattura-clubs-mensile",
+      });
+      if (g_err) return risposta({ error: "gettone_non_verificabile", dettaglio: g_err.message }, 500);
+      if (valido !== true) return risposta({ error: "gettone_non_valido" }, 401);
+      interna = true;
+    }
+    if (!interna) return risposta({ error: "unauthorized" }, 401);
+
+    let periodo = periodo_corrente();
+    let oggi = new Date().toISOString().slice(0, 10);
+    if (body?.periodo && /^\d{4}-(0[1-9]|1[0-2])$/.test(body.periodo)) periodo = body.periodo;
+    if (body?.data_emissione) oggi = body.data_emissione;
 
     const { data: clubs, error: e_clubs } = await sb
       .from("clubs")
