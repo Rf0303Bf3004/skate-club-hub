@@ -50,6 +50,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const is_superadmin = session?.ruolo === "superadmin";
   const is_admin = session?.ruolo === "admin";
   const is_presidente = (session?.ruolo as string) === "presidente";
+  const is_presidenza = is_presidente || is_admin || (session?.ruolo as string) === "vicepresidente";
   const can_manage_users = is_superadmin || is_admin || is_presidente;
   const non_lette_iscrizioni = use_count_iscrizioni_non_lette();
   const richieste_pendenti = use_count_richieste_pendenti();
@@ -99,8 +100,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const extra_per_gruppo = React.useCallback((id: MenuGruppo) => ({
     tabellone: id === "soldi" && visibile_set.has("fatture"),
     utenti: id === "accessi" && can_manage_users && !visibile_set.has("gestione_utenti"),
-    relazione: id === "struttura" && is_presidente,
-  }), [visibile_set, can_manage_users, is_presidente]);
+    relazione: id === "struttura" && is_presidenza,
+  }), [visibile_set, can_manage_users, is_presidenza]);
 
   const gruppo_ha_voci = React.useCallback((gruppo: typeof MENU_GRUPPI[number]) => {
     const extra = extra_per_gruppo(gruppo.id);
