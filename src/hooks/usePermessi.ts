@@ -72,11 +72,13 @@ export function useDashboardCardsMatrix(): {
   is_error: boolean;
 } {
   const { session } = useAuth();
-  const admin_like = is_admin_like(session?.ruolo);
+  // Solo il superadmin salta la matrice: admin e vicepresidente la leggono
+  // come tutti gli altri ruoli, con i valori di partenza se mai configurata.
+  const is_superadmin = session?.ruolo === "superadmin";
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["dashboard_card_permessi_self", session?.club_id, session?.ruolo],
-    enabled: !!session?.club_id && !!session?.ruolo && !admin_like,
+    enabled: !!session?.club_id && !!session?.ruolo && !is_superadmin,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("dashboard_card_permessi")
@@ -109,12 +111,13 @@ export function useDashboardCardsMatrix(): {
 
   return {
     visibile_set,
-    is_admin_like: admin_like,
+    // Nel caso dei riquadri il bypass vale solo per il superadmin.
+    is_admin_like: is_superadmin,
     configurato: righe_note.length > 0,
     ruolo: session?.ruolo ?? null,
-    // L'amministrazione non interroga la tabella: per lei non c'è attesa.
-    is_loading: admin_like ? false : isLoading,
-    is_error: admin_like ? false : isError,
+    // Il superadmin non interroga la tabella: per lui non c'è attesa.
+    is_loading: is_superadmin ? false : isLoading,
+    is_error: is_superadmin ? false : isError,
   };
 }
 

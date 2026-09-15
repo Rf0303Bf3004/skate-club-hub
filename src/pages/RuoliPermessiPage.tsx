@@ -41,8 +41,8 @@ const RuoliPermessiPage: React.FC = () => {
   // Prova esplicita che la matrice viene da una lettura riuscita, non dall'assenza di dati.
   const [matrice_caricata, set_matrice_caricata] = useState(false);
 
-  // Allineato al database: scrittura su ruoli_permessi_sezioni solo per superadmin e presidente.
-  const puo_gestire_ruoli = session?.ruolo === "superadmin" || session?.ruolo === "presidente";
+  // Allineato al database: scrittura su ruoli_permessi_sezioni per presidenza e amministrazione.
+  const puo_gestire_ruoli = ["superadmin", "admin", "presidente", "vicepresidente"].includes(session?.ruolo ?? "");
 
   const { data, isLoading, isError, isFetching, error, refetch } = useQuery({
     queryKey: ["ruoli_permessi_sezioni_admin", club_id],

@@ -198,7 +198,9 @@ export const CARDS_DEFAULT_PER_RUOLO: Record<string, string[]> = {
   // Chi sta sul ghiaccio: la propria giornata e i compleanni.
   istruttore: ['agenda_giorno', 'compleanni_oggi', 'compleanni_settimana'],
   aiuto_monitore: ['agenda_giorno', 'compleanni_oggi', 'compleanni_settimana'],
-  // Amministrazione: tutto.
+  // Presidenza e amministrazione: tutto. Il vicepresidente segue il presidente.
+  presidente: TUTTI_I_CODICI,
+  vicepresidente: TUTTI_I_CODICI,
   admin: TUTTI_I_CODICI,
   superadmin: TUTTI_I_CODICI,
 };

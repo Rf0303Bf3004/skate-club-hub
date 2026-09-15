@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { use_club } from "@/hooks/use-supabase-data";
 import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
-import { LayoutDashboard, Users, BookOpen, Trophy, CreditCard, MessageSquare, Settings, Calendar, UserCheck, Tent, GraduationCap, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, Lock, ClipboardList, ClipboardCheck, Sparkles, ChevronDown, ChevronRight, FileText, Tablet, Search, LayoutGrid, BadgePercent, Smartphone, FileSpreadsheet } from "lucide-react";
+import { Users, Settings, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, ChevronDown, ChevronRight, FileText, Search, LayoutGrid, BadgePercent, Smartphone } from "lucide-react";
 import GlobalSearchPalette from "@/components/common/GlobalSearchPalette";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -14,31 +14,6 @@ import { use_count_iscrizioni_non_lette } from "@/components/comunicazioni/Iscri
 import { MENU_BLOCCHI, MENU_GRUPPI, MENU_TOP, gruppi_del_blocco, type MenuBlocco, type MenuGruppo } from "@/config/menuSections";
 import { registra_silenzioso } from "@/lib/errori";
 
-
-// Voci legacy raggruppate (admin/superadmin)
-const legacy_dashboard = { key: "dashboard", path: "/", icon: LayoutDashboard };
-
-const legacy_gruppo_operativita = [
-  { key: "pista", path: "/pista", icon: Tablet, label_key: "menu.pista" },
-  { key: "atleti", path: "/atleti", icon: Users },
-  { key: "richieste_iscrizione", path: "/richieste-iscrizione", icon: ClipboardList },
-  { key: "istruttori", path: "/istruttori", icon: UserCheck },
-  { key: "griglia_ghiaccio", path: "/griglia-ghiaccio", icon: LayoutGrid, label: "Griglia Ghiaccio" },
-  { key: "planning_ghiaccio", path: "/planning", icon: Calendar },
-  { key: "corsi", path: "/corsi", icon: BookOpen },
-  { key: "lezioni_private", path: "/lezioni-private", icon: GraduationCap },
-];
-
-const legacy_gruppo_gare = [
-  { key: "gare", path: "/gare", icon: Trophy },
-  { key: "test_livello", path: "/test", icon: ClipboardCheck },
-  { key: "eventi", path: "/eventi", icon: Sparkles },
-];
-
-const legacy_gruppo_fatturazione = [
-  { key: "fatture", path: "/fatture", icon: CreditCard },
-  { key: "segreteria_fatture", path: "/segreteria/fatture", icon: LayoutGrid },
-];
 
 
 function use_count_richieste_pendenti() {
@@ -59,7 +34,7 @@ function use_count_richieste_pendenti() {
   return data;
 }
 
-const RUOLI_NUOVI = ["presidente", "segreteria", "dt", "istruttore", "aiuto_monitore"];
+const RUOLI_NUOVI = ["presidente", "vicepresidente", "admin", "segreteria", "dt", "istruttore", "aiuto_monitore"];
 
 interface MainLayoutProps { children: React.ReactNode; }
 
@@ -75,6 +50,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const is_superadmin = session?.ruolo === "superadmin";
   const is_admin = session?.ruolo === "admin";
   const is_presidente = (session?.ruolo as string) === "presidente";
+  const is_presidenza = is_presidente || is_admin || (session?.ruolo as string) === "vicepresidente";
   const can_manage_users = is_superadmin || is_admin || is_presidente;
   const non_lette_iscrizioni = use_count_iscrizioni_non_lette();
   const richieste_pendenti = use_count_richieste_pendenti();
@@ -91,8 +67,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  const is_legacy = is_admin || is_superadmin;
-  const is_nuovo_ruolo = !is_legacy && RUOLI_NUOVI.includes(session?.ruolo as string);
+  const is_nuovo_ruolo = !is_superadmin && RUOLI_NUOVI.includes(session?.ruolo as string);
 
   const { data: permessi_sezioni = [] } = useQuery({
     queryKey: ["ruoli_permessi_sezioni", session?.club_id, session?.ruolo],
@@ -125,8 +100,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const extra_per_gruppo = React.useCallback((id: MenuGruppo) => ({
     tabellone: id === "soldi" && visibile_set.has("fatture"),
     utenti: id === "accessi" && can_manage_users && !visibile_set.has("gestione_utenti"),
-    relazione: id === "struttura" && is_presidente,
-  }), [visibile_set, can_manage_users, is_presidente]);
+    relazione: id === "struttura" && is_presidenza,
+  }), [visibile_set, can_manage_users, is_presidenza]);
 
   const gruppo_ha_voci = React.useCallback((gruppo: typeof MENU_GRUPPI[number]) => {
     const extra = extra_per_gruppo(gruppo.id);
@@ -173,10 +148,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     }
     return defaults;
   });
-  const [op_open, set_op_open] = React.useState(true);
-  const [gare_open, set_gare_open] = React.useState(true);
-  const [fatt_open, set_fatt_open] = React.useState(true);
-  const [conf_open, set_conf_open] = React.useState(false);
 
   React.useEffect(() => {
     const gruppo_attivo = MENU_GRUPPI.find((gruppo) =>
@@ -250,29 +221,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     );
   };
 
-  const render_group = (
-    label: string,
-    Icon: any,
-    open: boolean,
-    toggle: () => void,
-    children: React.ReactNode,
-  ) => (
-    <div className="pt-2">
-      <button
-        onClick={toggle}
-        className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
-      >
-        <Icon className="w-4 h-4 shrink-0" />
-        <span>{label}</span>
-        {open ? <ChevronDown className="w-4 h-4 ml-auto" /> : <ChevronRight className="w-4 h-4 ml-auto" />}
-      </button>
-      {open && (
-        <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border pl-2">{children}</div>
-      )}
-    </div>
-  );
 
-  const is_menu_legacy = is_admin && !is_superadmin;
 
 
 
@@ -298,42 +247,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           </button>
         </div>
         <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
-          {/* Admin: menu legacy raggruppato */}
-          {is_menu_legacy && (
-            <>
-              {render_nav_item(legacy_dashboard.path, legacy_dashboard.icon, t(legacy_dashboard.key), legacy_dashboard.key)}
-              {render_group("Operatività", LayoutGrid, op_open, () => set_op_open((o) => !o),
-                legacy_gruppo_operativita.map((i) => render_nav_item(i.path, i.icon, (i as any).label_key ? tc((i as any).label_key) : (i as any).label ?? t(i.key), i.key))
-              )}
-              {render_group("Gare & Eventi", Trophy, gare_open, () => set_gare_open((o) => !o),
-                legacy_gruppo_gare.map((i) => render_nav_item(i.path, i.icon, t(i.key), i.key))
-              )}
-              {render_group("Fatturazione", CreditCard, fatt_open, () => set_fatt_open((o) => !o),
-                legacy_gruppo_fatturazione.map((i) => render_nav_item(i.path, i.icon, t(i.key), i.key))
-              )}
-              {render_nav_item("/comunicazioni", MessageSquare, t("comunicazioni"), "comunicazioni")}
-              {render_group("Configurazione", Settings, conf_open, () => set_conf_open((o) => !o),
-                <>
-                  {render_nav_item("/setup-club", Settings, t("setup_club"), "setup_club")}
-                  {render_nav_item("/stagioni", Calendar, "Stagioni", "stagioni")}
-                  {can_manage_users && render_nav_item("/utenti", Users, tc("menu.utenti"), "utenti")}
-                  {is_admin && render_nav_item("/ruoli-permessi", Lock, tc("menu.gestione_ruoli"), "ruoli_permessi")}
-                  {session && render_nav_item("/convenzioni", BadgePercent, "Convenzioni", "convenzioni")}
-                  {render_nav_item("/pacchetti-sponsor", FileSpreadsheet, "Pacchetti Sponsor", "pacchetti_sponsor")}
-                  {render_nav_item("/import-atleti", FileSpreadsheet, "Import dati", "import_atleti")}
-                  {is_admin && (
-                    <NavLink to="/gestione-avanzata" onClick={() => set_sidebar_open(false)}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/gestione-avanzata" ? "bg-destructive text-destructive-foreground shadow-sm" : "text-destructive/70 hover:bg-destructive/10 hover:text-destructive"}`}>
-                      <ShieldAlert className="w-4 h-4 shrink-0" />
-                      <span>{tc("menu.gestione_avanzata")}</span>
-                    </NavLink>
-                  )}
-                </>
-              )}
-            </>
-          )}
-
-          {/* Nuovi ruoli: voci principali + gruppi operativi espandibili */}
+          {/* Ruoli del club: voci principali + gruppi operativi espandibili */}
           {is_nuovo_ruolo && (
             <>
               {blocchi_visibili.length > 1 && (
@@ -400,14 +314,14 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           )}
 
 
-          {can_manage_users && !is_superadmin && !is_menu_legacy && !is_nuovo_ruolo && (
+          {can_manage_users && !is_superadmin && !is_nuovo_ruolo && (
             <NavLink to="/utenti" onClick={() => set_sidebar_open(false)}
               className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/utenti" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
               <Users className="w-4 h-4 shrink-0" />
               <span>{tc("menu.utenti")}</span>
             </NavLink>
           )}
-          {!is_superadmin && session && !is_menu_legacy && !is_nuovo_ruolo && (
+          {!is_superadmin && session && !is_nuovo_ruolo && (
             <NavLink to="/convenzioni" onClick={() => set_sidebar_open(false)}
               className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/convenzioni" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
               <BadgePercent className="w-4 h-4 shrink-0" />

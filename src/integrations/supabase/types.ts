@@ -9387,6 +9387,7 @@ export type Database = {
       user_has_ruolo: { Args: { _ruolo: string }; Returns: boolean }
       user_is_admin_like: { Args: never; Returns: boolean }
       user_is_presidente: { Args: never; Returns: boolean }
+      user_is_presidenza: { Args: never; Returns: boolean }
       user_is_vicepresidente: { Args: never; Returns: boolean }
       user_ruolo: { Args: never; Returns: string }
     }
