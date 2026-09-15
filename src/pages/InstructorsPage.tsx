@@ -29,7 +29,7 @@ import ConfirmButton from "@/components/common/ConfirmButton";
 import NotaPermesso from "@/components/common/NotaPermesso";
 import CreaAccessoDialog from "@/components/istruttori/CreaAccessoDialog";
 import { use_email_utenti_club } from "@/hooks/use-accessi-utenti";
-import { ore_distinte_per_data } from "@/lib/availability";
+import { ore_distinte_per_data, ore_reali_senza_sovrapposizioni } from "@/lib/availability";
 
 
 const GIORNI = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
