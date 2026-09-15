@@ -284,7 +284,7 @@ export async function invia_fattura_email(fattura_id: string, destinatario: stri
   const { data, error } = await supabase.functions.invoke("send-fattura-email-atleta", {
     body: { fattura_id, destinatario: email },
   });
-  if (error) throw error;
+  if (error) throw new Error(await motivo_errore(error, "La fattura non è stata inviata."));
   const r = data as any;
   if (r?.error) {
     throw new Error(r?.messaggio || r?.dettaglio || String(r.error));
