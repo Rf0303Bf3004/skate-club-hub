@@ -1,10 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import type { FatturaAtletaData, FatturaAtletaRiga, FatturaQrData } from "@/lib/fattura-atleta-pdf";
-import { genera_fattura_atleta_blob } from "@/lib/fattura-atleta-pdf";
 import { genera_qr_data_url } from "@/lib/qr";
-import { segnala_a_vuoto } from "@/lib/errori";
-
-const BUCKET_FATTURE = "fatture-atleti";
 
 export type FatturaFull = {
   id: string;
@@ -203,138 +199,79 @@ export async function carica_dati_pdf(id: string): Promise<FatturaAtletaData> {
   return build_pdf_data(r.fattura, r.atleta, r.club, qr);
 }
 
-/** URL temporaneo del PDF congelato in archivio, se presente. */
-export async function url_pdf_salvato(pdf_url: string | null | undefined): Promise<string | null> {
-  if (!pdf_url) return null;
-  if (pdf_url.startsWith("http")) return pdf_url;
-  const { data } = await supabase.storage.from(BUCKET_FATTURE).createSignedUrl(pdf_url, 3600);
-  return data?.signedUrl ?? null;
-}
-
-/** Le fatture non in bozza servono il PDF congelato, mai rigenerato. */
-export async function url_pdf_congelato(id: string): Promise<string | null> {
-  const { data } = await supabase.from("fatture").select("stato, pdf_url").eq("id", id).maybeSingle();
-  if (!data || (data as any).stato === "bozza") return null;
-  return await url_pdf_salvato((data as any).pdf_url);
-}
-
-function estrai_percorso_pdf_storage(pdf_url: string): string {
-  if (!pdf_url.startsWith("http")) {
-    const percorso = pdf_url.replace(/^\/+/, "");
-    return percorso.startsWith(`${BUCKET_FATTURE}/`)
-      ? percorso.slice(BUCKET_FATTURE.length + 1)
-      : percorso;
-  }
-
-  const url = new URL(pdf_url);
-  const marker = `/${BUCKET_FATTURE}/`;
-  const indice = url.pathname.indexOf(marker);
-  if (indice < 0) throw new Error("Percorso del PDF archiviato non valido");
-  return decodeURIComponent(url.pathname.slice(indice + marker.length));
+/** Il server manda il PDF in base64: qui torna a essere un file. */
+function blob_da_base64(b64: string): Blob {
+  const grezzo = atob(b64);
+  const byte = new Uint8Array(grezzo.length);
+  for (let i = 0; i < grezzo.length; i += 1) byte[i] = grezzo.charCodeAt(i);
+  return new Blob([byte], { type: "application/pdf" });
 }
 
 /**
- * Prepara sempre un Blob locale e il relativo object URL. Anche i documenti
- * congelati vengono scaricati dallo storage, così anteprima, download e stampa
- * non dipendono dal visualizzatore PDF o dalle regole cross-origin del browser.
+ * Il PDF lo fa il server, sempre, per tutti.
+ * Una fattura già uscita dalla bozza torna indietro congelata, cioè esattamente
+ * il documento che la famiglia ha ricevuto, non una ricostruzione dai dati di adesso.
+ */
+export async function pdf_dal_server(
+  fattura_id: string,
+  opzioni?: { congela?: boolean; rigenera?: boolean },
+): Promise<{ blob: Blob; numero: string; congelato: boolean; percorso: string | null; avvisi: string[] }> {
+  const { data, error } = await supabase.functions.invoke("genera-fattura-pdf", {
+    body: {
+      fattura_id,
+      congela: opzioni?.congela === true,
+      rigenera: opzioni?.rigenera === true,
+    },
+  });
+  if (error) throw error;
+  const r = data as any;
+  if (!r?.ok || !r?.pdf_base64) {
+    throw new Error(r?.dettaglio || r?.error || "Il PDF della fattura non è stato prodotto.");
+  }
+  return {
+    blob: blob_da_base64(String(r.pdf_base64)),
+    numero: String(r.numero ?? fattura_id.slice(0, 8)),
+    congelato: r.congelato === true,
+    percorso: r.percorso ?? null,
+    avvisi: Array.isArray(r.avvisi) ? r.avvisi : [],
+  };
+}
+
+/**
+ * Anteprima, scarica e stampa passano tutte da qui, e tutte dal server.
+ * Prima il browser rigenerava il PDF per conto suo e il portale famiglie ne
+ * riceveva una versione ricostruita: due strade diverse per lo stesso documento.
  */
 export async function prepara_pdf_fattura(
   id: string,
-  opzioni?: { preferisci_locale?: boolean },
-): Promise<{ blob: Blob; url: string; nome_file: string; congelato: boolean }> {
-  // Il portale famiglie non ha accesso all'archivio storage del club:
-  // in quel caso il PDF viene sempre rigenerato lato client.
-  const solo_locale = opzioni?.preferisci_locale === true;
-  const { data: fattura, error } = await supabase
-    .from("fatture")
-    .select("stato, pdf_url, numero")
-    .eq("id", id)
-    .maybeSingle();
-  if (error) throw error;
-
-  if (!solo_locale && fattura && (fattura as any).stato !== "bozza" && (fattura as any).pdf_url) {
-    const percorso = estrai_percorso_pdf_storage(String((fattura as any).pdf_url));
-    const { data: blob_archiviato, error: download_error } = await supabase.storage
-      .from(BUCKET_FATTURE)
-      .download(percorso);
-    if (download_error || !blob_archiviato) {
-      throw download_error ?? new Error("PDF archiviato non disponibile");
-    }
-    const blob = blob_archiviato.type === "application/pdf"
-      ? blob_archiviato
-      : new Blob([blob_archiviato], { type: "application/pdf" });
-    return {
-      blob,
-      url: URL.createObjectURL(blob),
-      nome_file: `fattura-${(fattura as any).numero || id.slice(0, 8)}.pdf`,
-      congelato: true,
-    };
-  }
-
-  const data = await carica_dati_pdf(id);
-  const blob = await genera_fattura_atleta_blob(data);
-  return { blob, url: URL.createObjectURL(blob), nome_file: `fattura-${data.numero}.pdf`, congelato: false };
-}
-
-
-export async function genera_pdf_blob_per_email(id: string): Promise<{ blob: Blob; numero: string; data: FatturaAtletaData }> {
-  const data = await carica_dati_pdf(id);
-  const blob = await genera_fattura_atleta_blob(data);
-  return { blob, numero: data.numero, data };
+  opzioni?: { rigenera?: boolean },
+): Promise<{ blob: Blob; url: string; nome_file: string; congelato: boolean; avvisi: string[] }> {
+  const r = await pdf_dal_server(id, { rigenera: opzioni?.rigenera === true });
+  return {
+    blob: r.blob,
+    url: URL.createObjectURL(r.blob),
+    nome_file: `fattura-${r.numero}.pdf`,
+    congelato: r.congelato,
+    avvisi: r.avvisi,
+  };
 }
 
 /**
- * Invio della fattura: congela il PDF in archivio (pdf_url), invia l'email e
- * porta il documento in stato "inviata".
+ * Invio della fattura. Il congelamento del PDF in archivio non lo fa più il
+ * browser: lo garantisce la funzione di invio, che ha i permessi per farlo anche
+ * quando a premere è una famiglia o, di notte, nessuno.
  */
 export async function invia_fattura_email(fattura_id: string, destinatario: string) {
   const email = (destinatario ?? "").trim();
-  // Verifica prima di congelare il PDF: senza destinatario l'invio fallisce
-  // e lascerebbe la fattura con un pdf_url già scritto.
   if (!email) throw new Error("Destinatario email mancante");
 
-  const { fattura, atleta, club } = await load_fattura_full(fattura_id);
-  const qr = fattura.tipo_documento === "nota_credito" ? null : await carica_qr_fattura(fattura_id);
-  const data = build_pdf_data(fattura, atleta, club, qr);
-  const blob = await genera_fattura_atleta_blob(data);
-
-  const path = `${fattura.club_id}/${fattura_id}.pdf`;
-  const up = await supabase.storage.from(BUCKET_FATTURE).upload(path, blob, {
-    upsert: true,
-    contentType: "application/pdf",
+  const { data, error } = await supabase.functions.invoke("send-fattura-email-atleta", {
+    body: { fattura_id, destinatario: email },
   });
-  if (up.error) throw up.error;
-
-  const { data: r_pdf, error: e_pdf } = await supabase
-    .from("fatture")
-    .update({ pdf_url: path })
-    .eq("id", fattura_id)
-    .select("id");
-  if (e_pdf) throw e_pdf;
-  if (!r_pdf || r_pdf.length === 0) {
-    await segnala_a_vuoto("fattura-atleta-helpers", "Salvataggio PDF fattura", { fattura_id });
-    throw new Error("La fattura non è stata aggiornata: nessuna riga modificata (permessi o id inesistente).");
+  if (error) throw error;
+  const r = data as any;
+  if (r?.error) {
+    throw new Error(r?.messaggio || r?.dettaglio || String(r.error));
   }
-
-  // Link firmato di lunga durata (30 giorni) da mettere nell'email.
-  const { data: signed } = await supabase.storage.from(BUCKET_FATTURE).createSignedUrl(path, 60 * 60 * 24 * 30);
-
-  const { error: e_fn } = await supabase.functions.invoke("send-fattura-email-atleta", {
-    body: { fattura_id, destinatario: email, pdf_url: signed?.signedUrl ?? null },
-  });
-  if (e_fn) throw e_fn;
-
-
-  const { data: r_stato, error: e_stato } = await supabase
-    .from("fatture")
-    .update({ stato: "inviata", email_inviata_at: new Date().toISOString() })
-    .eq("id", fattura_id)
-    .select("id");
-  if (e_stato) throw e_stato;
-  if (!r_stato || r_stato.length === 0) {
-    await segnala_a_vuoto("fattura-atleta-helpers", "Passaggio fattura in stato inviata", { fattura_id });
-    throw new Error("Email inviata ma lo stato della fattura non è stato aggiornato.");
-  }
-
-  return path;
+  return r?.ok === true;
 }

@@ -145,7 +145,7 @@ const FatturaDetailPage: React.FC = () => {
         </div>
       </div>
 
-      <AnteprimaFatturaAtletaDialog fattura_id={d._id} open={preview_open} onOpenChange={set_preview_open} preferisci_locale />
+      <AnteprimaFatturaAtletaDialog fattura_id={d._id} open={preview_open} onOpenChange={set_preview_open} />
 
 
       <Dialog open={email_open} onOpenChange={set_email_open}>

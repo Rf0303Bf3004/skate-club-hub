@@ -9,17 +9,16 @@ interface Props {
   fattura_id: string;
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  /** true nel portale famiglie: l'archivio storage del club non è accessibile. */
-  preferisci_locale?: boolean;
 }
 
-const AnteprimaFatturaAtletaDialog: React.FC<Props> = ({ fattura_id, open, onOpenChange, preferisci_locale }) => {
+const AnteprimaFatturaAtletaDialog: React.FC<Props> = ({ fattura_id, open, onOpenChange }) => {
 
   const [url, set_url] = useState<string | null>(null);
   const [blob, set_blob] = useState<Blob | null>(null);
   const [nome_file, set_nome_file] = useState("fattura.pdf");
   const [loading, set_loading] = useState(false);
   const [errore, set_errore] = useState<string | null>(null);
+  const [avvisi, set_avvisi] = useState<string[]>([]);
   const da_revocare = useRef<string | null>(null);
   const iframe_stampa_ref = useRef<HTMLIFrameElement | null>(null);
 
@@ -32,11 +31,12 @@ const AnteprimaFatturaAtletaDialog: React.FC<Props> = ({ fattura_id, open, onOpe
     }
     set_loading(true);
     set_errore(null);
+    set_avvisi([]);
     set_url(null);
     set_blob(null);
     (async () => {
       try {
-        const r = await prepara_pdf_fattura(fattura_id, { preferisci_locale });
+        const r = await prepara_pdf_fattura(fattura_id);
         if (!alive) {
           URL.revokeObjectURL(r.url);
           return;
@@ -45,6 +45,7 @@ const AnteprimaFatturaAtletaDialog: React.FC<Props> = ({ fattura_id, open, onOpe
         set_url(r.url);
         set_blob(r.blob);
         set_nome_file(r.nome_file);
+        set_avvisi(r.avvisi);
       } catch (e: any) {
         if (alive) set_errore(e?.message ?? "Errore nella generazione del PDF");
       } finally {
@@ -54,7 +55,7 @@ const AnteprimaFatturaAtletaDialog: React.FC<Props> = ({ fattura_id, open, onOpe
     return () => {
       alive = false;
     };
-  }, [open, fattura_id, preferisci_locale]);
+  }, [open, fattura_id]);
 
   // Libera il blob quando il dialogo si chiude o il componente viene smontato.
   useEffect(() => {
@@ -119,6 +120,11 @@ const AnteprimaFatturaAtletaDialog: React.FC<Props> = ({ fattura_id, open, onOpe
             </Button>
           </div>
         </DialogHeader>
+        {avvisi.length > 0 && (
+          <div className="px-5 py-2 border-b border-amber-300 bg-amber-50 text-sm text-amber-900">
+            {avvisi.map((a, i) => <p key={i}>{a}</p>)}
+          </div>
+        )}
         <div className="flex-1 min-h-0 overflow-hidden bg-muted/30">
           {loading ? (
             <div className="h-full flex items-center justify-center">
