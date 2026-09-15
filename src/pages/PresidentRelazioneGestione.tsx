@@ -28,7 +28,8 @@ export default function PresidentRelazioneGestione() {
     if (!stagione_id && stagione_attiva) set_stagione_id(stagione_attiva.id);
   }, [stagione_attiva, stagione_id]);
 
-  if (session && (session.ruolo as string) !== "presidente") {
+  // Specchio di user_is_presidenza() del database, esteso ad amministrazione e superadmin.
+  if (session && !["superadmin", "admin", "presidente", "vicepresidente"].includes(session.ruolo as string)) {
     return <Navigate to="/" replace />;
   }
 

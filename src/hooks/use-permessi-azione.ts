@@ -40,7 +40,8 @@ export const RUOLI_PIANIFICAZIONE: RuoloUtente[] = [
 
 export const RUOLI_FATTURE: RuoloUtente[] = ["superadmin", "admin", "presidente", "segreteria"];
 
-export const RUOLI_SOLO_PRESIDENTE: RuoloUtente[] = ["superadmin", "presidente"];
+/** Specchio di user_is_presidenza() del database (presidente + vicepresidente), con admin e superadmin. */
+export const RUOLI_SOLO_PRESIDENTE: RuoloUtente[] = ["superadmin", "admin", "presidente", "vicepresidente"];
 
 /** Chi può creare accessi al portale: stessi ruoli accettati dalla funzione `manage-user`. */
 export const RUOLI_CREAZIONE_ACCESSI: RuoloUtente[] = ["superadmin", "admin", "presidente"];

@@ -38,7 +38,8 @@ export default function PresidentRelazione() {
   });
 
   // hook order safe: counts independent of role
-  if (session && (session.ruolo as string) !== "presidente") {
+  // Specchio di user_is_presidenza() del database, esteso ad amministrazione e superadmin.
+  if (session && !["superadmin", "admin", "presidente", "vicepresidente"].includes(session.ruolo as string)) {
     return <Navigate to="/" replace />;
   }
 
