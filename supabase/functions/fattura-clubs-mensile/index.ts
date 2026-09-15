@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
 
       if (importo <= 0) { risultato.push({ club: c.id, skip: "nulla da fatturare" }); continue; }
 
-      const { error: e_ins } = await sb.from("fatture_clubs").upsert(
+      const { data: create, error: e_ins } = await sb.from("fatture_clubs").upsert(
         {
           club_id: c.id,
           periodo,
@@ -131,8 +131,19 @@ Deno.serve(async (req) => {
           intestatario_iban: (c as any).iban ?? null,
         },
         { onConflict: "club_id,periodo", ignoreDuplicates: true },
-      );
+      ).select("id");
       if (e_ins) { risultato.push({ club: c.id, error: e_ins.message }); continue; }
+
+      // Con ignoreDuplicates una riga già esistente non viene restituita: vuol
+      // dire che per questo club e questo periodo la fattura c'era già. Tutto
+      // quello che segue (costo di attivazione segnato come fatturato,
+      // comunicazione alla presidenza) deve avvenire SOLO su una fattura nuova,
+      // altrimenti una seconda esecuzione annuncia fatture inesistenti e marca
+      // come incassato un costo che nessuno ha fatturato.
+      if (!create || create.length === 0) {
+        risultato.push({ club: c.id, skip: "già fatturato per questo periodo" });
+        continue;
+      }
 
       if (importo_setup > 0) {
         await sb.from("clubs").update({ setup_fatturato: true }).eq("id", c.id);
