@@ -80,12 +80,12 @@
     }
   },
   "billing_tab": {
-    "auto_title": "Generazione automatica",
+    "auto_title": "Le fatture del mese",
     "auto_desc": "Le fatture mensili vengono generate automaticamente nel giorno scelto del mese.",
-    "day_label": "Giorno del mese (1-28)",
+    "day_label": "Giorno del mese",
     "test_cost_label": "Costo per test di livello (CHF)",
-    "email_auto_label": "Invio email automatico ai genitori",
-    "email_auto_desc": "Quando attivo, ogni fattura generata viene inviata via email al genitore.",
+    "email_auto_label": "Invia le fatture da solo, senza che nessuno prema Invia",
+    "email_auto_desc": "Ogni fattura creata dal sistema viene spedita all'indirizzo della famiglia e passa in stato inviata. Vengono saltate le fatture con importo zero, quelle senza indirizzo e quelle con i dati di pagamento incompleti.",
     "save": "Salva impostazioni",
     "manual_title": "Generazione manuale con anteprima",
     "manual_desc": "Visualizza in anticipo le fatture che verrebbero generate per un mese specifico, poi conferma.",
@@ -118,6 +118,20 @@
     "month_9": "Settembre",
     "month_10": "Ottobre",
     "month_11": "Novembre",
-    "month_12": "Dicembre"
+    "month_12": "Dicembre",
+    "auto_switch_label": "Crea le fatture da solo ogni mese",
+    "auto_switch_desc": "Il sistema prepara da solo le fatture di tutti gli atleti, nel giorno che scegli. Restano in bozza: nessuna parte finché non la mandi tu, o finché non accendi l'invio automatico qui sotto.",
+    "auto_off_note": "Con la creazione automatica spenta, le fatture le prepari tu dal bottone più in basso.",
+    "reference_month_label": "Mese di riferimento",
+    "reference_month_previous": "Il mese appena finito",
+    "reference_month_current": "Il mese in corso",
+    "sending_title": "L'invio alle famiglie",
+    "email_auto_warning": "Perché le email arrivino davvero serve un dominio di invio verificato. Finché non c'è, gli invii vengono registrati come falliti e le fatture restano dove sono.",
+    "reminder_title": "Solleciti",
+    "reminder_switch_label": "Avvisa la famiglia quando la fattura è scaduta",
+    "reminder_switch_desc": "Passata la scadenza, il sistema manda un promemoria e segna la fattura come sollecitata.",
+    "reminder_days_label": "Giorni dopo la scadenza",
+    "reminder_days_help": "Per esempio 7, 21: il primo promemoria una settimana dopo la scadenza, il secondo tre settimane dopo.",
+    "reminder_days_invalid": "Scrivi i giorni separati da virgola, per esempio 7, 21"
   }
 }

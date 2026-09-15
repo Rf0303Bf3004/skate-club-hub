@@ -32,5 +32,25 @@
     "send_reminder": "Send reminder",
     "download_pdf": "Download PDF",
     "view_details": "Details"
+  },
+  "billing_tab": {
+    "auto_title": "This month's invoices",
+    "auto_switch_label": "Create invoices automatically every month",
+    "auto_switch_desc": "The system prepares the invoices for all athletes on its own, on the day you choose. They stay as drafts: nothing goes out until you send it, or until you turn on automatic sending below.",
+    "auto_off_note": "With automatic creation off, you prepare the invoices yourself using the button further down.",
+    "reference_month_label": "Reference month",
+    "reference_month_previous": "The month just ended",
+    "reference_month_current": "The current month",
+    "day_label": "Day of the month",
+    "sending_title": "Sending to families",
+    "email_auto_label": "Send invoices automatically, without anyone pressing Send",
+    "email_auto_desc": "Every invoice created by the system is sent to the family's address and marked as sent. Invoices with a zero amount, without an address, or with incomplete payment details are skipped.",
+    "email_auto_warning": "For emails to actually arrive, a verified sending domain is required. Until then, sends are recorded as failed and the invoices stay where they are.",
+    "reminder_title": "Reminders",
+    "reminder_switch_label": "Notify the family when an invoice is overdue",
+    "reminder_switch_desc": "Once the due date has passed, the system sends a reminder and marks the invoice as reminded.",
+    "reminder_days_label": "Days after the due date",
+    "reminder_days_help": "For example 7, 21: the first reminder one week after the due date, the second three weeks after.",
+    "reminder_days_invalid": "Enter the days separated by commas, for example 7, 21"
   }
 }

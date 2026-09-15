@@ -32,5 +32,25 @@
     "send_reminder": "Envoyer un rappel",
     "download_pdf": "Télécharger le PDF",
     "view_details": "Détails"
+  },
+  "billing_tab": {
+    "auto_title": "Les factures du mois",
+    "auto_switch_label": "Créer les factures automatiquement chaque mois",
+    "auto_switch_desc": "Le système prépare lui-même les factures de tous les athlètes, le jour que vous choisissez. Elles restent en brouillon : rien ne part tant que vous ne l'envoyez pas, ou tant que vous n'activez pas l'envoi automatique ci-dessous.",
+    "auto_off_note": "Avec la création automatique désactivée, vous préparez les factures vous-même avec le bouton plus bas.",
+    "reference_month_label": "Mois de référence",
+    "reference_month_previous": "Le mois qui vient de finir",
+    "reference_month_current": "Le mois en cours",
+    "day_label": "Jour du mois",
+    "sending_title": "L'envoi aux familles",
+    "email_auto_label": "Envoyer les factures automatiquement, sans que personne n'appuie sur Envoyer",
+    "email_auto_desc": "Chaque facture créée par le système est envoyée à l'adresse de la famille et passe à l'état envoyée. Les factures d'un montant nul, sans adresse ou avec des données de paiement incomplètes sont ignorées.",
+    "email_auto_warning": "Pour que les e-mails arrivent vraiment, un domaine d'envoi vérifié est nécessaire. Tant qu'il n'y en a pas, les envois sont enregistrés comme échoués et les factures restent en l'état.",
+    "reminder_title": "Rappels",
+    "reminder_switch_label": "Avertir la famille quand la facture est échue",
+    "reminder_switch_desc": "Une fois l'échéance passée, le système envoie un rappel et marque la facture comme relancée.",
+    "reminder_days_label": "Jours après l'échéance",
+    "reminder_days_help": "Par exemple 7, 21 : le premier rappel une semaine après l'échéance, le second trois semaines après.",
+    "reminder_days_invalid": "Écrivez les jours séparés par des virgules, par exemple 7, 21"
   }
 }

@@ -32,5 +32,25 @@
     "send_reminder": "Mahnung senden",
     "download_pdf": "PDF herunterladen",
     "view_details": "Details"
+  },
+  "billing_tab": {
+    "auto_title": "Die Rechnungen des Monats",
+    "auto_switch_label": "Rechnungen jeden Monat automatisch erstellen",
+    "auto_switch_desc": "Das System bereitet die Rechnungen aller Athletinnen selbst vor, am von dir gewählten Tag. Sie bleiben als Entwurf: Nichts geht raus, bis du sie sendest oder bis du den automatischen Versand unten einschaltest.",
+    "auto_off_note": "Bei ausgeschalteter automatischer Erstellung bereitest du die Rechnungen selbst über die Schaltfläche weiter unten vor.",
+    "reference_month_label": "Referenzmonat",
+    "reference_month_previous": "Der gerade beendete Monat",
+    "reference_month_current": "Der laufende Monat",
+    "day_label": "Tag des Monats",
+    "sending_title": "Der Versand an die Familien",
+    "email_auto_label": "Rechnungen automatisch senden, ohne dass jemand auf Senden drückt",
+    "email_auto_desc": "Jede vom System erstellte Rechnung wird an die Adresse der Familie geschickt und gilt als gesendet. Übersprungen werden Rechnungen mit Betrag null, ohne Adresse und mit unvollständigen Zahlungsdaten.",
+    "email_auto_warning": "Damit die E-Mails wirklich ankommen, ist eine verifizierte Absenderdomain nötig. Solange es keine gibt, werden Sendungen als fehlgeschlagen erfasst und die Rechnungen bleiben, wo sie sind.",
+    "reminder_title": "Mahnungen",
+    "reminder_switch_label": "Die Familie benachrichtigen, wenn die Rechnung fällig ist",
+    "reminder_switch_desc": "Nach Ablauf der Frist sendet das System eine Erinnerung und markiert die Rechnung als gemahnt.",
+    "reminder_days_label": "Tage nach Fälligkeit",
+    "reminder_days_help": "Zum Beispiel 7, 21: die erste Erinnerung eine Woche nach Fälligkeit, die zweite drei Wochen danach.",
+    "reminder_days_invalid": "Schreibe die Tage durch Komma getrennt, zum Beispiel 7, 21"
   }
 }
