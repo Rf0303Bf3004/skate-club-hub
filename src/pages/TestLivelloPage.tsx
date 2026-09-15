@@ -603,6 +603,9 @@ export default function TestLivelloPage() {
 
   const invita_selezionate = useMutation({
     mutationFn: async () => {
+      if (!accesso_test) {
+        throw new Error("Questo test non dice ancora a che livello si riferisce: scegli il passaggio prima di invitare.");
+      }
       if (!selected_test_id || invite_selected.size === 0) return { inserite: 0, duplicate: 0 };
       let inserite = 0, duplicate = 0;
       for (const atleta_id of invite_selected) {
