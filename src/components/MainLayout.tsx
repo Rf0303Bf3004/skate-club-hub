@@ -338,14 +338,14 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           )}
 
 
-          {can_manage_users && !is_superadmin && !is_menu_legacy && !is_nuovo_ruolo && (
+          {can_manage_users && !is_superadmin && !is_nuovo_ruolo && (
             <NavLink to="/utenti" onClick={() => set_sidebar_open(false)}
               className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/utenti" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
               <Users className="w-4 h-4 shrink-0" />
               <span>{tc("menu.utenti")}</span>
             </NavLink>
           )}
-          {!is_superadmin && session && !is_menu_legacy && !is_nuovo_ruolo && (
+          {!is_superadmin && session && !is_nuovo_ruolo && (
             <NavLink to="/convenzioni" onClick={() => set_sidebar_open(false)}
               className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/convenzioni" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
               <BadgePercent className="w-4 h-4 shrink-0" />
