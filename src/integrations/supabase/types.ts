@@ -2700,6 +2700,77 @@ export type Database = {
         }
         Relationships: []
       }
+      esecuzioni_automatismi: {
+        Row: {
+          automatismo: string
+          club_id: string | null
+          dettaglio: Json | null
+          errore: string | null
+          esaminate: number
+          fallite: number
+          finita_il: string | null
+          id: string
+          iniziata_il: string
+          riuscite: number
+          saltate: number
+        }
+        Insert: {
+          automatismo: string
+          club_id?: string | null
+          dettaglio?: Json | null
+          errore?: string | null
+          esaminate?: number
+          fallite?: number
+          finita_il?: string | null
+          id?: string
+          iniziata_il?: string
+          riuscite?: number
+          saltate?: number
+        }
+        Update: {
+          automatismo?: string
+          club_id?: string | null
+          dettaglio?: Json | null
+          errore?: string | null
+          esaminate?: number
+          fallite?: number
+          finita_il?: string | null
+          id?: string
+          iniziata_il?: string
+          riuscite?: number
+          saltate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "esecuzioni_automatismi_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "esecuzioni_automatismi_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs_mobile_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "esecuzioni_automatismi_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "elenco_club"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "esecuzioni_automatismi_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "kpi_pitch_sponsor"
+            referencedColumns: ["club_id"]
+          },
+        ]
+      }
       eventi_calendario: {
         Row: {
           atleta_id: string
