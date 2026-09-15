@@ -15,31 +15,6 @@ import { MENU_BLOCCHI, MENU_GRUPPI, MENU_TOP, gruppi_del_blocco, type MenuBlocco
 import { registra_silenzioso } from "@/lib/errori";
 
 
-// Voci legacy raggruppate (admin/superadmin)
-const legacy_dashboard = { key: "dashboard", path: "/", icon: LayoutDashboard };
-
-const legacy_gruppo_operativita = [
-  { key: "pista", path: "/pista", icon: Tablet, label_key: "menu.pista" },
-  { key: "atleti", path: "/atleti", icon: Users },
-  { key: "richieste_iscrizione", path: "/richieste-iscrizione", icon: ClipboardList },
-  { key: "istruttori", path: "/istruttori", icon: UserCheck },
-  { key: "griglia_ghiaccio", path: "/griglia-ghiaccio", icon: LayoutGrid, label: "Griglia Ghiaccio" },
-  { key: "planning_ghiaccio", path: "/planning", icon: Calendar },
-  { key: "corsi", path: "/corsi", icon: BookOpen },
-  { key: "lezioni_private", path: "/lezioni-private", icon: GraduationCap },
-];
-
-const legacy_gruppo_gare = [
-  { key: "gare", path: "/gare", icon: Trophy },
-  { key: "test_livello", path: "/test", icon: ClipboardCheck },
-  { key: "eventi", path: "/eventi", icon: Sparkles },
-];
-
-const legacy_gruppo_fatturazione = [
-  { key: "fatture", path: "/fatture", icon: CreditCard },
-  { key: "segreteria_fatture", path: "/segreteria/fatture", icon: LayoutGrid },
-];
-
 
 function use_count_richieste_pendenti() {
   const { session } = useAuth();
@@ -59,7 +34,7 @@ function use_count_richieste_pendenti() {
   return data;
 }
 
-const RUOLI_NUOVI = ["presidente", "segreteria", "dt", "istruttore", "aiuto_monitore"];
+const RUOLI_NUOVI = ["presidente", "vicepresidente", "admin", "segreteria", "dt", "istruttore", "aiuto_monitore"];
 
 interface MainLayoutProps { children: React.ReactNode; }
 
