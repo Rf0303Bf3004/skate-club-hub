@@ -1255,16 +1255,22 @@ export default function TestLivelloPage() {
                   );
                 })}
               </div>
-              <div className="flex justify-end p-2 border-t bg-muted/30">
+              <div className="flex items-center justify-end gap-3 p-2 border-t bg-muted/30">
+                {!accesso_test && (
+                  <span className="text-xs text-amber-800">
+                    Scegli prima il livello del test: senza, gli inviti non si possono creare.
+                  </span>
+                )}
                 <Button
                   size="sm"
-                  disabled={invite_selected.size === 0 || invita_selezionate.isPending}
+                  disabled={invite_selected.size === 0 || !accesso_test || invita_selezionate.isPending}
                   onClick={() => invita_selezionate.mutate()}
                 >
                   <Send className="w-4 h-4 mr-1" />
                   {t("level_tests.invite_selected", { count: invite_selected.size, defaultValue: `Invita le selezionate (${invite_selected.size})` })}
                 </Button>
               </div>
+
             </div>
           )}
 
