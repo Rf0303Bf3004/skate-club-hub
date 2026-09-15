@@ -646,8 +646,10 @@ const TabOreLavoro: React.FC<{
       .filter((r) => r.stato === "override")
       .reduce((s, r) => s + r.ore_effettive, 0);
     const reali = slot_righe.filter((r) => r.stato !== "override" && r.ore_effettive > 0);
-    return override_ore + ore_distinte_per_data(reali);
+    // Si usano le ore reali (entrata/uscita); le sessioni sovrapposte non si sommano.
+    return override_ore + ore_reali_senza_sovrapposizioni(reali);
   }, [slot_righe]);
+
   const ore_mancanti = ore_distinte_per_data(slot_righe.filter((r) => r.stato === "mancante"));
   const slot_mancanti_count = slot_righe.filter((r) => r.stato === "mancante").length;
   const slot_override_count = slot_righe.filter((r) => r.stato === "override").length;
