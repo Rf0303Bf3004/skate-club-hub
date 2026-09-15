@@ -603,6 +603,9 @@ export default function TestLivelloPage() {
 
   const invita_selezionate = useMutation({
     mutationFn: async () => {
+      if (!accesso_test) {
+        throw new Error("Questo test non dice ancora a che livello si riferisce: scegli il passaggio prima di invitare.");
+      }
       if (!selected_test_id || invite_selected.size === 0) return { inserite: 0, duplicate: 0 };
       let inserite = 0, duplicate = 0;
       for (const atleta_id of invite_selected) {
@@ -1255,16 +1258,22 @@ export default function TestLivelloPage() {
                   );
                 })}
               </div>
-              <div className="flex justify-end p-2 border-t bg-muted/30">
+              <div className="flex items-center justify-end gap-3 p-2 border-t bg-muted/30">
+                {!accesso_test && (
+                  <span className="text-xs text-amber-800">
+                    Scegli prima il livello del test: senza, gli inviti non si possono creare.
+                  </span>
+                )}
                 <Button
                   size="sm"
-                  disabled={invite_selected.size === 0 || invita_selezionate.isPending}
+                  disabled={invite_selected.size === 0 || !accesso_test || invita_selezionate.isPending}
                   onClick={() => invita_selezionate.mutate()}
                 >
                   <Send className="w-4 h-4 mr-1" />
                   {t("level_tests.invite_selected", { count: invite_selected.size, defaultValue: `Invita le selezionate (${invite_selected.size})` })}
                 </Button>
               </div>
+
             </div>
           )}
 
@@ -1419,6 +1428,11 @@ export default function TestLivelloPage() {
                   <div className="space-y-2">
                     {chain_rows.map((step, idx) => {
                       const is_first = idx === 0;
+                      const stato_step = (step.stato ?? "invitata") as StatoInvito;
+                      // L'esito si registra anche per chi non ha risposto all'invito:
+                      // si blocca solo se l'invito è stato annullato o ritirato.
+                      const esito_modificabile =
+                        puo_gestire_sportivo && stato_step !== "annullata" && stato_step !== "ritirata";
                       return (
                         <div key={step.id} className="grid gap-2 md:grid-cols-[auto_1fr_auto_auto_auto] items-center bg-muted/30 rounded-md px-3 py-2 text-sm">
                           <Badge variant="outline" className="font-mono">#{step.ordine}</Badge>
@@ -1432,7 +1446,8 @@ export default function TestLivelloPage() {
                               </Badge>
                             )}
                           </div>
-                          {puo_gestire_sportivo && (step.stato ?? "invitata") === "accettata" ? (
+                          {esito_modificabile ? (
+
                             <Select
                               value={step.esito}
                               onValueChange={(v) => handle_change_esito(step.id, v as "in_attesa" | "superato" | "non_superato" | "non_sostenuto")}
