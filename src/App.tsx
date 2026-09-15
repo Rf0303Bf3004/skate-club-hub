@@ -13,6 +13,7 @@ import { AuthProvider, useAuth } from "@/lib/auth";
 import MainLayout from "@/components/MainLayout";
 import LoginPage from "@/pages/LoginPage";
 import DashboardPage from "@/pages/DashboardPage";
+import PresidentDashboard from "@/components/dashboard/PresidentDashboard";
 import DiagnosticaPage from "@/pages/DiagnosticaPage";
 import AthletesPage from "@/pages/AthletesPage";
 import InstructorsPage from "@/pages/InstructorsPage";
@@ -207,7 +208,12 @@ const SmartHome = () => {
       navigate("/superadmin", { replace: true });
     }
   }, [session, navigate]);
-  return session?.ruolo === "superadmin" ? null : <DashboardPage />;
+  if (session?.ruolo === "superadmin") return null;
+  // Presidenza e amministrazione atterrano sulla Dashboard del presidente.
+  if (session?.ruolo === "presidente" || session?.ruolo === "vicepresidente" || session?.ruolo === "admin") {
+    return <PresidentDashboard />;
+  }
+  return <DashboardPage />;
 };
 
 const ProtectedSuperAdmin = ({ children }: { children: React.ReactNode }) => {
@@ -250,11 +256,12 @@ const SezioneGuard = ({
   return allowed ? <>{children}</> : null;
 };
 
-/** Guard per pagine riservate al presidente (e superadmin), senza sezione dedicata. */
+/** Guard per pagine riservate alla presidenza (e superadmin), senza sezione dedicata. */
 const SoloPresidenteGuard = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const { session, is_loading } = useAuth();
-  const allowed = session?.ruolo === "superadmin" || session?.ruolo === "presidente";
+  // Specchio di user_is_presidenza() del database, esteso ad amministrazione e superadmin.
+  const allowed = ["superadmin", "admin", "presidente", "vicepresidente"].includes(session?.ruolo ?? "");
 
   useEffect(() => {
     if (!is_loading && !allowed) {
