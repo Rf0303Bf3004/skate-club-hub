@@ -208,6 +208,22 @@ function blob_da_base64(b64: string): Blob {
 }
 
 /**
+ * supabase-js non porta il corpo della risposta quando lo stato non è 2xx:
+ * senza questo, un errore spiegato bene dal server arriva all'utente come
+ * "Edge Function returned a non-2xx status code".
+ */
+async function motivo_errore(errore: any, predefinito: string): Promise<string> {
+  try {
+    const corpo = await errore?.context?.json?.();
+    const testo = corpo?.messaggio || corpo?.dettaglio || corpo?.error;
+    if (testo) return String(testo);
+  } catch {
+    /* il corpo non era leggibile: resta il messaggio predefinito */
+  }
+  return errore?.message || predefinito;
+}
+
+/**
  * Il PDF lo fa il server, sempre, per tutti.
  * Una fattura già uscita dalla bozza torna indietro congelata, cioè esattamente
  * il documento che la famiglia ha ricevuto, non una ricostruzione dai dati di adesso.
@@ -223,7 +239,7 @@ export async function pdf_dal_server(
       rigenera: opzioni?.rigenera === true,
     },
   });
-  if (error) throw error;
+  if (error) throw new Error(await motivo_errore(error, "Il PDF della fattura non è stato prodotto."));
   const r = data as any;
   if (!r?.ok || !r?.pdf_base64) {
     throw new Error(r?.dettaglio || r?.error || "Il PDF della fattura non è stato prodotto.");
