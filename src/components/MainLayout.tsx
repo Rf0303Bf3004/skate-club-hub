@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { use_club } from "@/hooks/use-supabase-data";
 import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
-import { LayoutDashboard, Users, BookOpen, Trophy, CreditCard, MessageSquare, Settings, Calendar, UserCheck, Tent, GraduationCap, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, Lock, ClipboardList, ClipboardCheck, Sparkles, ChevronDown, ChevronRight, FileText, Tablet, Search, LayoutGrid, BadgePercent, Smartphone, FileSpreadsheet } from "lucide-react";
+import { Users, Settings, LogOut, Globe, Menu, X, ShieldAlert, ShieldCheck, ChevronDown, ChevronRight, FileText, Search, LayoutGrid, BadgePercent, Smartphone } from "lucide-react";
 import GlobalSearchPalette from "@/components/common/GlobalSearchPalette";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -147,10 +147,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     }
     return defaults;
   });
-  const [op_open, set_op_open] = React.useState(true);
-  const [gare_open, set_gare_open] = React.useState(true);
-  const [fatt_open, set_fatt_open] = React.useState(true);
-  const [conf_open, set_conf_open] = React.useState(false);
 
   React.useEffect(() => {
     const gruppo_attivo = MENU_GRUPPI.find((gruppo) =>
@@ -224,27 +220,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     );
   };
 
-  const render_group = (
-    label: string,
-    Icon: any,
-    open: boolean,
-    toggle: () => void,
-    children: React.ReactNode,
-  ) => (
-    <div className="pt-2">
-      <button
-        onClick={toggle}
-        className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
-      >
-        <Icon className="w-4 h-4 shrink-0" />
-        <span>{label}</span>
-        {open ? <ChevronDown className="w-4 h-4 ml-auto" /> : <ChevronRight className="w-4 h-4 ml-auto" />}
-      </button>
-      {open && (
-        <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border pl-2">{children}</div>
-      )}
-    </div>
-  );
 
 
 
