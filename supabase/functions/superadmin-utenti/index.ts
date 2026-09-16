@@ -100,7 +100,8 @@ Deno.serve(async (req) => {
         ruolo: r.ruolo,
         club_id: r.club_id,
         club_nome: r.clubs?.nome ?? null,
-        tipo: "staff",
+        // Il contrassegno nei metadati vince sempre: è il criterio di riconoscimento.
+        tipo: users_map.get(r.user_id)?.tipo ?? "staff",
       }));
       // Account senza riga in utenti_club: sono i portali famiglia (e restano tali,
       // nessuna riga va creata per loro). Vengono marcati, non nascosti.
