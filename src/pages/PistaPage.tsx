@@ -714,8 +714,7 @@ const PistaPage: React.FC = () => {
     if (sessioni_tutte_query.isLoading) return <Caricamento />;
     if (sessioni_tutte_query.error)
       return <MessaggioCentrale variante="errore" testo={(sessioni_tutte_query.error as Error).message} />;
-    if (sessioni.length === 0)
-      return <MessaggioCentrale testo={session?.club_id ? t("pista.nessuna_sessione") : t("pista.serve_club")} />;
+    if (sessioni.length === 0) return <MessaggioCentrale testo={t("pista.nessuna_sessione")} />;
     return (
       <>
         <div className="flex gap-3 overflow-x-auto pb-2">
@@ -728,7 +727,7 @@ const PistaPage: React.FC = () => {
                 className={`min-w-[190px] min-h-[96px] shrink-0 rounded-xl border-2 px-4 py-3 text-left transition-colors ${
                   attiva
                     ? "border-primary bg-primary text-primary-foreground"
-                    : s.in_corso
+                    : e_in_corso(s)
                       ? "border-primary bg-primary/10 text-foreground"
                       : "border-border bg-card text-foreground hover:bg-muted"
                 }`}
@@ -758,8 +757,7 @@ const PistaPage: React.FC = () => {
   };
 
   const vista_istruttore = () => {
-    // Finché la linguetta non è stata scelta la query è disabilitata: è ancora caricamento.
-    if (tab === null || sessioni_istruttore_query.isLoading) return <Caricamento />;
+    if (sessioni_istruttore_query.isLoading) return <Caricamento />;
     if (sessioni_istruttore_query.error)
       return <MessaggioCentrale variante="errore" testo={(sessioni_istruttore_query.error as Error).message} />;
     if (sessioni.length === 0) return <MessaggioCentrale testo={t("pista.istruttore_senza_sessioni")} />;
@@ -777,7 +775,7 @@ const PistaPage: React.FC = () => {
                   className={`min-w-[160px] min-h-[72px] shrink-0 rounded-xl border-2 px-4 py-2 text-left transition-colors ${
                     attiva
                       ? "border-primary bg-primary text-primary-foreground"
-                      : s.in_corso
+                      : e_in_corso(s)
                         ? "border-primary bg-primary/10 text-foreground"
                         : "border-border bg-card text-foreground hover:bg-muted"
                   }`}
@@ -818,11 +816,12 @@ const PistaPage: React.FC = () => {
   };
 
   const contenuto = () => {
+    // Un account senza club (per esempio un superadmin) non ha nessun ghiaccio da mostrare:
+    // va detto com'è, non confuso con "nessuna sessione pubblicata".
+    if (senza_club) return <MessaggioCentrale testo={t("pista.senza_club")} />;
     if (istruttori_query.isLoading) return <Caricamento />;
     if (istruttori_query.error)
       return <MessaggioCentrale variante="errore" testo={(istruttori_query.error as Error).message} />;
-    if (istruttori.length === 0 && !in_tutto)
-      return <MessaggioCentrale testo={session?.club_id ? t("pista.nessuna_sessione") : t("pista.serve_club")} />;
     return in_tutto ? vista_tutto() : vista_istruttore();
   };
 
