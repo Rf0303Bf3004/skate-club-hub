@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { Check, Clock, Maximize2, Minimize2, Music, StickyNote, Trash2 } from "lucide-react";
+import { Check, Clock, LogOut, Maximize2, Minimize2, Music, StickyNote, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import DateInput from "@/components/forms/DateInput";
 import { Button } from "@/components/ui/button";
