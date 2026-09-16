@@ -497,7 +497,7 @@ const PistaPage: React.FC = () => {
   const applica_istruttore = (id: string) => {
     azzera_appello();
     set_tab(id);
-    set_scelta_manuale_istruttore(true);
+    
     set_sessione_id(null);
     set_scelta_manuale(false);
   };
@@ -543,14 +543,21 @@ const PistaPage: React.FC = () => {
     }
   };
 
+  // Corrimano orario: si registra da 15 minuti prima dell'inizio in poi. Dopo la
+  // fine della lezione resta aperto: l'istruttore registra quando scende dal ghiaccio.
+  const inizio_sessione_min = minuti_da_ora(sessione_selezionata?.ora_inizio ?? null);
+  const minuti_sblocco = inizio_sessione_min == null ? null : inizio_sessione_min - ANTICIPO_APPELLO_MIN;
+  const appello_sbloccato = minuti_sblocco == null ? true : minuti_riferimento >= minuti_sblocco;
+  const ora_sblocco = minuti_sblocco == null ? "" : da_minuti(minuti_sblocco);
+
   const lingua = i18n.language || "it";
-  const data_estesa = adesso.toLocaleDateString(lingua, {
+  const data_estesa = riferimento.toLocaleDateString(lingua, {
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
   });
-  const ora_corrente = adesso.toLocaleTimeString(lingua, { hour: "2-digit", minute: "2-digit" });
+  const ora_corrente = riferimento.toLocaleTimeString(lingua, { hour: "2-digit", minute: "2-digit" });
 
   const compleanni = compleanni_query.data ?? [];
 
