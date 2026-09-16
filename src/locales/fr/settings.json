@@ -21,11 +21,24 @@
       "auguri_compleanno_modello_post": " : créez un modèle appelé « Auguri di compleanno » avec les espaces réservés {nome_atleta} et {eta}. Sans modèle, un texte standard est utilisé."
     },
     "sezioni": {
-      "auguri_compleanno": "🎂 Vœux d'anniversaire"
+      "auguri_compleanno": "🎂 Vœux d'anniversaire",
+      "codice_pista": "Code de la tablette de bord de piste"
     },
     "fields": {
       "auguri_compleanno_attivo": "Vœux d'anniversaire aux familles",
       "auguri_compleanno_orario": "Heure d'envoi des vœux (heure locale suisse)"
+    },
+    "pista": {
+      "spiegazione": "La tablette au bord de la glace se connecte avec ce code du club, et non avec le compte d'une personne. Elle n'ouvre que la piste : séances du jour, appel et notes.",
+      "caricamento": "Lecture du code…",
+      "errore_lettura": "Impossible de lire le code du club. Réessayez dans un instant.",
+      "assente": "Aucun code",
+      "rigenera": "Régénérer le code",
+      "rigenerato": "Nouveau code créé",
+      "conferma_titolo": "Régénérer le code de la piste ?",
+      "conferma_testo": "Le code actuel cesse immédiatement de fonctionner : les tablettes déjà connectées devront être reconfigurées avec le nouveau code.",
+      "avviso": "Régénérez le code lorsqu'une tablette est perdue ou que quelqu'un quitte le club.",
+      "senza_club": "Aucun club sélectionné."
     }
   },
   "seasons": {

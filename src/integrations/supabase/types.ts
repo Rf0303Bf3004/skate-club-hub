@@ -1272,6 +1272,7 @@ export type Database = {
           cap: string | null
           citta: string | null
           codice_fiscale: string | null
+          codice_pista: string | null
           colore_primario: string | null
           costo_setup_chf: number
           created_at: string
@@ -1331,6 +1332,7 @@ export type Database = {
           cap?: string | null
           citta?: string | null
           codice_fiscale?: string | null
+          codice_pista?: string | null
           colore_primario?: string | null
           costo_setup_chf?: number
           created_at?: string
@@ -1390,6 +1392,7 @@ export type Database = {
           cap?: string | null
           citta?: string | null
           codice_fiscale?: string | null
+          codice_pista?: string | null
           colore_primario?: string | null
           costo_setup_chf?: number
           created_at?: string
@@ -8804,6 +8807,7 @@ export type Database = {
       genera_auguri_compleanno: { Args: { p_data?: string }; Returns: number }
       genera_codice_atleta: { Args: never; Returns: string }
       genera_codice_istruttore: { Args: never; Returns: string }
+      genera_codice_pista: { Args: never; Returns: string }
       genera_fattura_club_ospite: { Args: { p_riga: string }; Returns: string }
       genera_fatture_mensili_automatiche: {
         Args: { p_data?: string }
@@ -8926,6 +8930,7 @@ export type Database = {
       invia_push_comunicazioni_programmate: { Args: never; Returns: number }
       is_mobile_parent: { Args: never; Returns: boolean }
       is_mobile_staff: { Args: never; Returns: boolean }
+      is_pista: { Args: never; Returns: boolean }
       is_superadmin: { Args: never; Returns: boolean }
       istruttore_corrente: { Args: never; Returns: string }
       istruttore_su_sessione: {
@@ -9035,6 +9040,7 @@ export type Database = {
           stato: string
         }[]
       }
+      pista_club_id: { Args: never; Returns: string }
       pista_compleanni: {
         Args: { p_club_id?: string; p_data?: string }
         Returns: {
@@ -9217,6 +9223,7 @@ export type Database = {
       }
       riferimento_qrr: { Args: { p_numero: number }; Returns: string }
       riferimento_scor: { Args: { p_numero: number }; Returns: string }
+      rigenera_codice_pista: { Args: { p_club_id: string }; Returns: string }
       righe_fatturabili_gare: {
         Args: { p_anno: number; p_club: string; p_mese: number }
         Returns: {

@@ -512,5 +512,15 @@
     "errore_prossimo": "Deine nächste Einheit konnte nicht gelesen werden.",
     "errore_atlete": "Die vollständige Liste der Läuferinnen konnte nicht gelesen werden.",
     "errore_messaggi": "Deine Nachrichten konnten nicht gelesen werden. Bitte versuche es gleich erneut."
+  },
+  "pista_login": {
+    "titolo": "Zugang Eisrand",
+    "sottotitolo": "Gib den Vereinscode vom Blatt ein.",
+    "entra": "Eintreten",
+    "cancella": "Löschen",
+    "accesso_in_corso": "Anmeldung läuft…",
+    "codice_errato": "Ungültiger Code. Prüfe das Blatt und versuche es erneut.",
+    "troppi_tentativi": "Zu viele Versuche. Bitte gleich nochmals versuchen.",
+    "aiuto": "Den Code findest du in den Vereinseinstellungen beim Eisrand-Tablet."
   }
 }

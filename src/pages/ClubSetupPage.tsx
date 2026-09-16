@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { use_stagione_attiva } from "@/lib/stagione-attiva";
 import { use_club, use_setup_club, use_stagioni, use_atleti, use_istruttori } from "@/hooks/use-supabase-data";
+import CodicePistaSection from "@/components/setup/CodicePistaSection";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -119,7 +120,7 @@ const ClubSetupPage: React.FC = () => {
   const { t: t_old } = useI18n();
   const { t } = useTranslation("settings");
   const queryClient = useQueryClient();
-  const { data: club, isLoading: loading_club } = use_club();
+  const { data: club, isLoading: loading_club, isError: errore_club } = use_club();
   const { data: setup } = use_setup_club();
   const { data: stagioni = [] } = use_stagioni();
   const { data: atleti = [] } = use_atleti();
@@ -608,6 +609,7 @@ const ClubSetupPage: React.FC = () => {
       { id: "contratto", label: t("club.sezioni.clausole_contratto") },
       { id: "stagione", label: t("club.sezioni.stagione") },
       { id: "banca", label: t("club.sezioni.dati_bancari") },
+      { id: "pista", label: t("club.sezioni.codice_pista") },
     ],
     automatismi: [
       { id: "medagliere", label: t("club.sezioni.medagliere") },
@@ -835,6 +837,16 @@ const ClubSetupPage: React.FC = () => {
             </Field>
           </div>
         </SetupSection>
+
+        {/* Codice del tablet di bordo pista */}
+        <SetupSection id="pista" titolo={t("club.sezioni.codice_pista")}>
+          <CodicePistaSection
+            codice={(club as any)?.codice_pista}
+            in_caricamento={loading_club}
+            errore={errore_club}
+          />
+        </SetupSection>
+
 
         {/* Dati bancari */}
         <SetupSection id="banca" titolo={t("club.sezioni.dati_bancari")} mancanti={mancanti.banca}>

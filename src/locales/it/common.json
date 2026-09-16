@@ -590,5 +590,15 @@
     "errore_prossimo": "Non è stato possibile leggere il tuo prossimo turno.",
     "errore_atlete": "Non è stato possibile leggere l'elenco completo delle atlete.",
     "errore_messaggi": "Non è stato possibile leggere i tuoi messaggi. Riprova fra poco."
+  },
+  "pista_login": {
+    "titolo": "Accesso bordo pista",
+    "sottotitolo": "Digita il codice del club stampato sul foglio.",
+    "entra": "Entra",
+    "cancella": "Cancella",
+    "accesso_in_corso": "Accesso in corso…",
+    "codice_errato": "Codice non valido. Controlla il foglio e riprova.",
+    "troppi_tentativi": "Troppi tentativi. Riprova fra poco.",
+    "aiuto": "Il codice lo trovi nelle impostazioni del club, alla voce del tablet di bordo pista."
   }
 }

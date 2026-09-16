@@ -49,7 +49,8 @@
       "lezioni_private": "🎿 Lezioni Private",
       "disponibilita_strutture": "Disponibilità strutture settimanale",
       "pulizia_ghiaccio": "🧹 Pulizia Ghiaccio",
-      "tipo_pianificazione": "🗓️ Tipo di pianificazione disponibilità"
+      "tipo_pianificazione": "🗓️ Tipo di pianificazione disponibilità",
+      "codice_pista": "Codice del tablet di bordo pista"
     },
     "fields": {
       "logo_placeholder": "Logo",
@@ -148,6 +149,18 @@
       "plus_slot": "+ Slot",
       "rinnova_disponibilita": "Rinnova disponibilità per il prossimo periodo",
       "riprova": "Riprova"
+    },
+    "pista": {
+      "spiegazione": "Il tablet a bordo ghiaccio entra con questo codice del club, non con l'accesso di una persona. Apre soltanto la pista: elenco delle sessioni di oggi, appello e note.",
+      "caricamento": "Sto leggendo il codice…",
+      "errore_lettura": "Non sono riuscito a leggere il codice del club. Riprova fra poco.",
+      "assente": "Nessun codice",
+      "rigenera": "Rigenera il codice",
+      "rigenerato": "Nuovo codice creato",
+      "conferma_titolo": "Rigenerare il codice della pista?",
+      "conferma_testo": "Il codice attuale smette subito di funzionare: i tablet già accesi dovranno essere riaccreditati con il nuovo codice.",
+      "avviso": "Rigenera il codice quando un tablet si perde o qualcuno lascia il club.",
+      "senza_club": "Nessun club selezionato."
     }
   },
   "seasons": {
