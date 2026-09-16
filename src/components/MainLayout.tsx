@@ -273,7 +273,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               )}
               {blocco_corrente === "conduzione" &&
                 nuovo_top.map((s) => render_nav_item(s.path, s.icon, menu_label(s.codice, s.label), s.codice, s.non_implementato))}
-              {blocco_corrente === "conduzione" && session &&
+              {blocco_corrente === "conduzione" && session && puo_vedere_convenzioni &&
                 render_nav_item("/convenzioni", BadgePercent, "Convenzioni", "convenzioni")}
               {gruppi_del_blocco(blocco_corrente).map((gruppo) => {
                 const voci_visibili = gruppo.voci.filter((voce) => visibile_set.has(voce.codice));
@@ -323,7 +323,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               <span>{tc("menu.utenti")}</span>
             </NavLink>
           )}
-          {!is_superadmin && session && !is_nuovo_ruolo && (
+          {!is_superadmin && session && !is_nuovo_ruolo && puo_vedere_convenzioni && (
             <NavLink to="/convenzioni" onClick={() => set_sidebar_open(false)}
               className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ${location.pathname === "/convenzioni" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
               <BadgePercent className="w-4 h-4 shrink-0" />
