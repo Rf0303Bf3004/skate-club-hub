@@ -50,6 +50,12 @@ const CodicePistaSection: React.FC<Props> = ({ codice, in_caricamento, errore })
     }
   };
 
+  const indirizzo_accesso =
+    codice && typeof window !== "undefined"
+      ? `${window.location.origin}/pista-login?c=${encodeURIComponent(codice)}`
+      : "";
+  const qr = use_qr_data_url(indirizzo_accesso, 320);
+
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground">{t("club.pista.spiegazione")}</p>
@@ -61,23 +67,42 @@ const CodicePistaSection: React.FC<Props> = ({ codice, in_caricamento, errore })
       ) : in_caricamento ? (
         <p className="text-sm text-muted-foreground">{t("club.pista.caricamento")}</p>
       ) : (
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="inline-flex items-center gap-2 rounded-xl border-2 border-border bg-muted px-4 py-3 font-mono text-2xl tracking-widest">
-            <Tablet className="h-5 w-5 text-muted-foreground" />
-            {codice || t("club.pista.assente")}
-          </span>
-          {puo_rigenerare && (
-            <ConfirmButton
-              titolo={t("club.pista.conferma_titolo")}
-              descrizione={t("club.pista.conferma_testo")}
-              conferma_label={t("club.pista.rigenera")}
-              on_conferma={() => void rigenera()}
-            >
-              <Button variant="outline" disabled={in_corso}>
-                <RefreshCw className="mr-2 h-4 w-4" />
-                {t("club.pista.rigenera")}
-              </Button>
-            </ConfirmButton>
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="inline-flex items-center gap-2 rounded-xl border-2 border-border bg-muted px-4 py-3 font-mono text-2xl tracking-widest">
+              <Tablet className="h-5 w-5 text-muted-foreground" />
+              {codice || t("club.pista.assente")}
+            </span>
+            {puo_rigenerare && (
+              <ConfirmButton
+                titolo={t("club.pista.conferma_titolo")}
+                descrizione={t("club.pista.conferma_testo")}
+                conferma_label={t("club.pista.rigenera")}
+                on_conferma={() => void rigenera()}
+              >
+                <Button variant="outline" disabled={in_corso}>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  {t("club.pista.rigenera")}
+                </Button>
+              </ConfirmButton>
+            )}
+          </div>
+
+          {qr && (
+            <div className="flex flex-wrap items-center gap-4 rounded-xl border-2 border-border bg-card p-4">
+              <img
+                src={qr}
+                alt={t("club.pista.qr_alt")}
+                width={240}
+                height={240}
+                className="h-60 w-60 rounded-lg bg-white p-2"
+              />
+              <div className="min-w-[16rem] flex-1 space-y-2">
+                <p className="text-sm font-medium">{t("club.pista.qr_istruzione")}</p>
+                <p className="text-sm text-muted-foreground">{t("club.pista.qr_chiave")}</p>
+                <p className="break-all font-mono text-xs text-muted-foreground">{indirizzo_accesso}</p>
+              </div>
+            </div>
           )}
         </div>
       )}
