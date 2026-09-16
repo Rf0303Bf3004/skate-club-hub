@@ -130,6 +130,19 @@ const PistaGate = ({ children }: { children: React.ReactNode }) => {
     <BrowserRouter>
       <Routes>
         <Route path="/pista" element={<PistaPage sessione_pista />} />
+        {/* Due vie d'uscita lasciate aperte anche con sessione pista attiva:
+            chi ha creduto il proprio dispositivo un tablet, o vuole uscire,
+            deve poter arrivare a una pagina che chiede credenziali invece di
+            restare chiuso dentro. Non danno accesso a nessun dato. */}
+        <Route path="/pista-login" element={<PistaLoginPage />} />
+        <Route
+          path="/staff"
+          element={
+            <AuthProvider>
+              <LoginPage />
+            </AuthProvider>
+          }
+        />
         <Route path="*" element={<Navigate to="/pista" replace />} />
       </Routes>
     </BrowserRouter>
