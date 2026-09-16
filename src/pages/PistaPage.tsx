@@ -229,6 +229,8 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
     istruttori_ids?: string[] | null;
     altri_istruttori?: string | null;
     istruttori?: string | null;
+    risorsa_nome?: string | null;
+    risorsa_tipo?: string | null;
   };
 
   const sessioni_query = in_tutto ? sessioni_tutte_query : sessioni_istruttore_query;
@@ -236,6 +238,17 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
     () => (sessioni_query.data ?? []) as Sessione[],
     [sessioni_query.data],
   );
+
+  // Il posto di ogni sessione si mostra solo se il giorno ne usa più di uno:
+  // con una risorsa sola (una pista, una palestra) il nome sarebbe rumore.
+  const mostra_risorsa = React.useMemo(() => {
+    const nomi = new Set<string>();
+    for (const s of sessioni) {
+      const n = s.risorsa_nome?.trim();
+      if (n) nomi.add(n);
+    }
+    return nomi.size > 1;
+  }, [sessioni]);
 
   // "In corso" si calcola sull'istante di riferimento: quello del server è su now().
   const e_in_corso = React.useCallback(
@@ -757,6 +770,9 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
               >
                 <div className="text-2xl font-bold tabular-nums">{ora_breve(s.ora_inizio)}</div>
                 <div className="text-base font-medium truncate">{s.titolo ?? ""}</div>
+                {mostra_risorsa && s.risorsa_nome && (
+                  <div className="text-base font-semibold truncate">{s.risorsa_nome}</div>
+                )}
                 <div className="text-sm opacity-80">{t("pista.n_atlete", { count: s.n_atleti ?? 0 })}</div>
               </button>
             );
@@ -766,7 +782,15 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
         {sessione_selezionata && (
           <div className="mt-4 text-lg">
             {sessione_selezionata.specialita && <span className="font-semibold">{sessione_selezionata.specialita}</span>}
-            {sessione_selezionata.specialita && sessione_selezionata.istruttori && <span className="mx-2">·</span>}
+            {mostra_risorsa && sessione_selezionata.risorsa_nome && (
+              <span className={`font-semibold ${sessione_selezionata.specialita ? "ml-2" : ""}`}>
+                {sessione_selezionata.risorsa_nome}
+              </span>
+            )}
+            {sessione_selezionata.istruttori &&
+              (sessione_selezionata.specialita || (mostra_risorsa && sessione_selezionata.risorsa_nome)) && (
+                <span className="mx-2">·</span>
+              )}
             {sessione_selezionata.istruttori && (
               <span className="text-muted-foreground">{sessione_selezionata.istruttori}</span>
             )}
@@ -805,6 +829,9 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
                 >
                   <div className="text-xl font-bold tabular-nums">{ora_breve(s.ora_inizio)}</div>
                   <div className="text-sm font-medium truncate">{s.titolo ?? ""}</div>
+                  {mostra_risorsa && s.risorsa_nome && (
+                    <div className="text-sm font-semibold truncate">{s.risorsa_nome}</div>
+                  )}
                 </button>
               );
             })}
@@ -822,7 +849,15 @@ const PistaPage: React.FC<{ sessione_pista?: boolean }> = ({ sessione_pista = fa
               {sessione_selezionata.specialita && (
                 <span className="font-semibold">{sessione_selezionata.specialita}</span>
               )}
-              {sessione_selezionata.specialita && sessione_selezionata.altri_istruttori && <span className="mx-2">·</span>}
+              {mostra_risorsa && sessione_selezionata.risorsa_nome && (
+                <span className={`font-semibold ${sessione_selezionata.specialita ? "ml-2" : ""}`}>
+                  {sessione_selezionata.risorsa_nome}
+                </span>
+              )}
+              {sessione_selezionata.altri_istruttori &&
+                (sessione_selezionata.specialita || (mostra_risorsa && sessione_selezionata.risorsa_nome)) && (
+                  <span className="mx-2">·</span>
+                )}
               {sessione_selezionata.altri_istruttori && (
                 <span className="text-muted-foreground">
                   {t("pista.con_istruttori", { nomi: sessione_selezionata.altri_istruttori })}
